@@ -946,6 +946,7 @@ const translations = {
       title: '审计日志',
       description: '谁在本项目里改动或删除了什么、何时、来自哪个写入面(Web、API 或 MCP)。',
       empty: '暂无审计日志。',
+      loadError: '审计日志加载失败,请刷新重试。',
       endOfLog: '没有更多记录了。',
       columns: {
         time: '时间',
@@ -988,6 +989,14 @@ const translations = {
         allActors: '全部操作者',
         environment: '环境',
         clear: '清除筛选',
+        resourceLabels: {
+          api_token: 'API 密钥',
+          access_token: 'SDK 令牌',
+          signing_secret: '签名密钥',
+          oauth_grant: '已连接的应用',
+          sso_provider: 'SSO 提供商',
+          project_sso_settings: 'SSO 设置',
+        },
       },
     },
     connectedApps: {
@@ -1018,6 +1027,9 @@ const translations = {
       headerDocs: '阅读 API 文档',
       newButton: '新建密钥',
       empty: '暂无个人 API 密钥。',
+      form: {
+        environmentRequired: '所选权限范围需要至少选择一个环境',
+      },
       columns: {
         name: '名称',
         key: '密钥',

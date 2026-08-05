@@ -1,4 +1,5 @@
 import { Reflector } from '@nestjs/core';
+import { Capability } from '@usertour/types';
 
 import { AdminResolver } from '@/admin/admin.resolver';
 import { AnalyticsResolver } from '@/analytics/analytics.resolver';
@@ -75,6 +76,41 @@ describe('deriveAudit (v2 REST capability → audit descriptor)', () => {
     expect(deriveAudit('segment:read', 'GET')).toBeNull();
     expect(deriveAudit('project:manage', 'POST')).toBeNull(); // project not an audited resource
     expect(deriveAudit('billing:read', 'GET')).toBeNull();
+  });
+});
+
+describe('capability coverage tripwire — every write capability derives or is consciously exempt', () => {
+  // No v2 REST route carries these WRITE capabilities today — their lifecycles
+  // are audited on the web surface via @AuditWeb instead. This test guards the
+  // ENUM only: a brand-new capability must land in RESOURCE_BY_PREFIX or here.
+  // It cannot see routes — the ROUTE-level guarantee (a new endpoint using one
+  // of these exempt capabilities must derive or carry an explicit @Audit) is
+  // audit-route-coverage.spec.ts, which scans the actual controllers.
+  const EXEMPT_WRITE_PREFIXES = new Set([
+    'localization', // v2 exposure deferred; web mutations carry @AuditWeb
+    'accesstoken', // SDK-token lifecycle is web-only (@AuditWeb access_token)
+    'integration', // web-only mutations (@AuditWeb integration)
+    'project', // web-only mutations (@AuditWeb project)
+    'billing', // web-only (updateProjectLicense carries @AuditWeb)
+    'team', // web-only mutations (@AuditWeb member)
+    'sso', // web-only mutations (@AuditWeb sso_provider)
+  ]);
+  // `activate` = switching the active project in the UI — the adjudicated
+  // unaudited activeUserProject, not a durable write.
+  const NON_WRITE_VERBS = new Set(['read', 'activate']);
+
+  it('derives a descriptor for every non-exempt write capability', () => {
+    for (const cap of Object.values(Capability)) {
+      const [prefix, verb] = String(cap).split(':');
+      if (NON_WRITE_VERBS.has(verb) || EXEMPT_WRITE_PREFIXES.has(prefix)) {
+        continue;
+      }
+      // Wrap in an object so a failure names the offending capability.
+      expect({ cap, derived: deriveAudit(String(cap), 'POST') }).toEqual({
+        cap,
+        derived: expect.objectContaining({ resourceType: expect.any(String) }),
+      });
+    }
   });
 });
 
@@ -265,14 +301,17 @@ describe('resolveWebAuditProjectIds — resolver wins over the guard stash', () 
     expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma)).toEqual(['P1']);
   });
 
-  it('reports the resolver error and falls back to the stash instead of crashing', async () => {
+  it('drops the entry (no stash fallback) when a declared resolver THROWS', async () => {
+    // The stash may belong to a different field of the same document — even one
+    // the actor was denied on. Wrong-project attribution misleads forensics
+    // worse than a loudly-logged missing row does.
     const onError = jest.fn();
     const meta = {
       resolveProjectId: async () => {
         throw new Error('boom');
       },
     };
-    expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma, onError)).toEqual(['P1']);
+    expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma, onError)).toEqual([]);
     expect(onError).toHaveBeenCalledTimes(1);
   });
 

@@ -128,4 +128,68 @@ describe('redactSnapshot', () => {
       config: { x: 1 },
     });
   });
+
+  it('strips secret keys at ANY depth, arrays included (a nested include must not leak)', () => {
+    // The one-step-away scenario: a write handler adds `include: { integrationOAuth: true }`
+    // and the relation carries PLAINTEXT third-party tokens.
+    expect(
+      redactSnapshot('integration', {
+        id: 'i1',
+        integrationOAuth: { accessToken: 'plain-at', refreshToken: 'plain-rt', scope: 's' },
+      }),
+    ).toEqual({
+      id: 'i1',
+      integrationOAuth: {
+        accessToken: '[redacted]',
+        refreshToken: '[redacted]',
+        scope: 's',
+      },
+    });
+    // Arrays used to bypass redaction entirely.
+    expect(
+      redactSnapshot('segment', { id: 's1', items: [{ token: 'x' }, { name: 'ok' }] }),
+    ).toEqual({
+      id: 's1',
+      items: [{ token: '[redacted]' }, { name: 'ok' }],
+    });
+    // Nested object one level down.
+    expect(redactSnapshot('segment', { auth: { token: 'x', region: 'eu' } })).toEqual({
+      auth: { token: '[redacted]', region: 'eu' },
+    });
+  });
+
+  it('strips PII blobs at any depth for redacted-policy resources, not for full', () => {
+    // e.g. a future expand nesting memberships with their attribute blobs.
+    expect(
+      redactSnapshot('user', {
+        externalId: 'e1',
+        memberships: [{ id: 'm1', attributes: { role: 'admin' } }],
+      }),
+    ).toEqual({
+      externalId: 'e1',
+      memberships: [{ id: 'm1', attributes: '[redacted]' }],
+    });
+    // Full-policy resources keep their `data` (the segment definition IS the data).
+    expect(redactSnapshot('segment', { id: 's1', data: { foo: 'bar' } })).toEqual({
+      id: 's1',
+      data: { foo: 'bar' },
+    });
+  });
+
+  it('keeps Date leaves intact instead of recursing into them', () => {
+    const createdAt = new Date('2026-01-01T00:00:00Z');
+    expect(redactSnapshot('segment', { id: 's1', createdAt })).toEqual({ id: 's1', createdAt });
+  });
+
+  it('blanks the project license and the OAuth grace-period hash (SECRET_KEYS additions)', () => {
+    expect(redactSnapshot('project', { id: 'p1', name: 'Acme', license: 'jwt...' })).toEqual({
+      id: 'p1',
+      name: 'Acme',
+      license: '[redacted]',
+    });
+    expect(redactSnapshot('oauth_grant', { id: 'g1', previousHashedRefreshToken: 'sha' })).toEqual({
+      id: 'g1',
+      previousHashedRefreshToken: '[redacted]',
+    });
+  });
 });

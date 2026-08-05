@@ -28,27 +28,31 @@ import {
 } from '@/components/token-scopes';
 import { useAppContext } from '@/contexts/app-context';
 
-/** Shared shape for the create + edit token dialogs. */
-export const tokenFormSchema = z
-  .object({
-    name: z.string().min(2).max(50),
-    projectIds: z.array(z.string()).min(1),
-    // Environments this token may act on. Empty = "all" (only allowed when no scope is
-    // env-targeted — see the superRefine); the UI never pre-selects an environment.
-    environmentIds: z.array(z.string()),
-    scopes: z.array(z.string()).min(1),
-  })
-  .superRefine((val, ctx) => {
-    if (environmentSelectionMissing(val.scopes, val.environmentIds)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['environmentIds'],
-        message: 'Select at least one environment for the selected scopes',
-      });
-    }
-  });
+/**
+ * Shared shape for the create + edit token dialogs. A factory (not a const) so
+ * the superRefine message is localized — build it with the dialog's `t`.
+ */
+export const buildTokenFormSchema = (t: (key: string) => string) =>
+  z
+    .object({
+      name: z.string().min(2).max(50),
+      projectIds: z.array(z.string()).min(1),
+      // Environments this token may act on. Empty = "all" (only allowed when no scope is
+      // env-targeted — see the superRefine); the UI never pre-selects an environment.
+      environmentIds: z.array(z.string()),
+      scopes: z.array(z.string()).min(1),
+    })
+    .superRefine((val, ctx) => {
+      if (environmentSelectionMissing(val.scopes, val.environmentIds)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['environmentIds'],
+          message: t('settings.personalApiKeys.form.environmentRequired'),
+        });
+      }
+    });
 
-export type TokenFormValues = z.infer<typeof tokenFormSchema>;
+export type TokenFormValues = z.infer<ReturnType<typeof buildTokenFormSchema>>;
 
 export const tokenFormDefaults: TokenFormValues = {
   name: '',

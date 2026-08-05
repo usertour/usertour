@@ -330,7 +330,14 @@ export async function resolveWebAuditProjectIds(
       }
     } catch (error) {
       onError?.(error as Error);
+      // A declared resolver that THREW must not fall back to the stash: the
+      // stash may belong to a different field of the same document — even one
+      // the actor was denied on. A dropped entry misleads less than one
+      // attributed to the wrong project; the caller logs the drop loudly.
+      return [];
     }
+    // Resolved to nothing (e.g. the row is already gone): the stash fallback
+    // below is intentional for that benign case.
   }
   return stashedProjectId ? [stashedProjectId] : [];
 }
@@ -452,6 +459,8 @@ export async function fetchBefore(
       return prisma.projectSSOIdentityProvider.findUnique({ where: { id: String(id) } });
     case 'environment':
       return prisma.environment.findUnique({ where: { id: String(id) } });
+    case 'project':
+      return prisma.project.findUnique({ where: { id: String(id) } });
     default: // content → snapshot policy is 'none' anyway
       return undefined;
   }

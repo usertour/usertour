@@ -15,7 +15,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { SpinnerIcon } from '@usertour/icons';
-import { TokenFormFields, type TokenFormValues, tokenFormSchema } from './token-form';
+import { TokenFormFields, type TokenFormValues, buildTokenFormSchema } from './token-form';
 
 interface EditDialogProps {
   token: ApiToken;
@@ -31,7 +31,7 @@ export const EditDialog = (props: EditDialogProps) => {
   const { t } = useTranslation();
 
   const form = useForm<TokenFormValues>({
-    resolver: zodResolver(tokenFormSchema),
+    resolver: zodResolver(buildTokenFormSchema(t)),
     defaultValues: {
       name: token.name,
       projectIds: token.projectIds,

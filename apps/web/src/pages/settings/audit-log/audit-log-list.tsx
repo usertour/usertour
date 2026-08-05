@@ -82,11 +82,11 @@ export const AuditLogList = () => {
     [filters],
   );
 
-  const { auditLogs, loading, loadingMore, hasNextPage, fetchNextPage } = useListAuditLogsQuery(
-    project?.id,
-    auditFilter,
-    { ...SHARED_CACHE_QUERY_OPTIONS, skip: !entitled },
-  );
+  const { auditLogs, loading, loadingMore, hasNextPage, fetchNextPage, error } =
+    useListAuditLogsQuery(project?.id, auditFilter, {
+      ...SHARED_CACHE_QUERY_OPTIONS,
+      skip: !entitled,
+    });
   const { t } = useTranslation();
   const [selected, setSelected] = useState<AuditLog | null>(null);
   const isSelfHosted = !!globalConfig?.isSelfHostedMode;
@@ -192,7 +192,10 @@ export const AuditLogList = () => {
         columns={columns}
         rows={auditLogs}
         loading={loading || (configLoading && !projectConfig)}
-        empty={t('settings.auditLog.empty')}
+        // A rejected query (e.g. an entitlement drop the cached config hasn't
+        // caught up with) must not masquerade as "no entries" — that reads as
+        // data loss. The empty-state slot carries the error line instead.
+        empty={error ? t('settings.auditLog.loadError') : t('settings.auditLog.empty')}
         getRowKey={(log) => log.id}
         onRowClick={setSelected}
         footer={

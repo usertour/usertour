@@ -14,6 +14,7 @@ import {
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
 } from '@/common/consts/queen';
+import { AuditService } from '@/audit/audit.service';
 import { RedisService } from '@/shared/redis.service';
 import { TeamService } from '@/team/team.service';
 import { ProjectsService } from '@/projects/projects.service';
@@ -114,6 +115,7 @@ describe('AuthService', () => {
         { provide: ProjectsService, useValue: projects },
         { provide: RedisService, useValue: redis },
         { provide: TwoFactorService, useValue: twoFactor },
+        { provide: AuditService, useValue: { record: jest.fn() } },
         { provide: getQueueToken(QUEUE_SEND_MAGIC_LINK_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_SEND_RESET_PASSWORD_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS), useValue: noopQueue },

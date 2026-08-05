@@ -997,6 +997,7 @@ const translations = {
       description:
         'Who changed or deleted what in this project, when, and from which surface (web, API, or MCP).',
       empty: 'No audit log entries yet.',
+      loadError: 'Failed to load the audit log. Refresh to retry.',
       endOfLog: 'End of log.',
       columns: {
         time: 'Time',
@@ -1040,6 +1041,14 @@ const translations = {
         allActors: 'All actors',
         environment: 'Environment',
         clear: 'Clear filters',
+        resourceLabels: {
+          api_token: 'API key',
+          access_token: 'SDK token',
+          signing_secret: 'Signing secret',
+          oauth_grant: 'Connected app',
+          sso_provider: 'SSO provider',
+          project_sso_settings: 'SSO settings',
+        },
       },
     },
     connectedApps: {
@@ -1074,6 +1083,9 @@ const translations = {
       headerDocs: 'Read the API reference',
       newButton: 'New key',
       empty: 'No personal API keys yet.',
+      form: {
+        environmentRequired: 'Select at least one environment for the selected scopes',
+      },
       columns: {
         name: 'Name',
         key: 'Key',
