@@ -197,16 +197,13 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   }, []);
 
   useLayoutEffect(() => {
-    if (!store || !bannerData) {
-      return;
-    }
-
-    if (requiresElement && !targetElement) {
-      // The component below returns null so the CONTENT unmounts, but the
-      // mount shell insertMountEl placed into the page (with the banner's
-      // height styles) is only removed on component unmount — leaving a
-      // transparent banner-sized gap while the target is hidden. Pull the
-      // shell out; the effect re-inserts it when the target reappears.
+    if (!store || !bannerData || (requiresElement && !targetElement)) {
+      // The component below returns null in these states so the CONTENT
+      // unmounts, but the mount shell insertMountEl placed into the page
+      // (with the banner's height styles) is only removed on component
+      // unmount — leaving a transparent banner-sized gap while the banner
+      // is closed (visibility loop hid it) or its target is missing. Pull
+      // the shell out; the effect re-inserts it on reopen.
       const mountEl = mountElRef.current;
       if (mountEl?.parentNode) {
         mountEl.parentNode.removeChild(mountEl);
