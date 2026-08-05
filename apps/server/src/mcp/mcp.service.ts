@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { z } from 'zod';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
@@ -60,6 +60,7 @@ const SERVER_INFO = { name: 'usertour', version: readServerVersion() };
  */
 @Injectable()
 export class McpService {
+  private readonly logger = new Logger(McpService.name);
   private readonly tools: McpTool[];
   private readonly services: McpServices;
 
@@ -169,8 +170,10 @@ export class McpService {
    * Run a tool handler and, for write tools carrying `audit` metadata, capture an
    * audit entry around it: resolve the environment once (env-scoped resources),
    * snapshot `before` (delete/update), run the handler, then record the change
-   * with the actor from the token. Auditing is a side-channel — `record` never
-   * throws — so it cannot affect the handler's result.
+   * with the actor from the token. Auditing is a side-channel: the before-fetch
+   * and the entry build are guarded here (mirroring the REST/web interceptor
+   * branches), so an audit-side failure can neither block the business write nor
+   * turn an already-committed write into an `isError` reply.
    */
   private async runWithAudit(
     tool: McpTool,
@@ -184,13 +187,29 @@ export class McpService {
     // Resolve the env ONCE for env-scoped audited tools and stash it on ctx, so
     // the handler's own resolveEnvironment reuses it instead of resolving a
     // second time (two lookups + scope checks, or two full env scans by default).
+    // NOT audit-side: this is the same scope-fence check the handler would run.
     const environment = meta.envScoped ? await resolveEnvironment(args, ctx) : undefined;
     if (environment) {
       ctx.resolvedEnvironment = environment;
     }
-    const before = meta.fetchBefore ? await meta.fetchBefore(args, ctx, environment) : undefined;
+    let before: unknown;
+    if (meta.fetchBefore) {
+      try {
+        before = await meta.fetchBefore(args, ctx, environment);
+      } catch (error) {
+        this.logger.error('Audit before-fetch failed', error as Error);
+      }
+    }
     const result = await tool.handler(args, ctx);
-    this.audit.record(buildMcpAuditEntry(tool, ctx, args, result, before, environment));
+    try {
+      // This try guards the entry BUILD (resourceId fns etc.) — `record` itself
+      // never throws. An unguarded build throw here would turn the already-
+      // committed write into an isError reply.
+      const entry = buildMcpAuditEntry(tool, ctx, args, result, before, environment);
+      this.audit.record(entry);
+    } catch (error) {
+      this.logger.error('Failed to build MCP audit entry', error as Error);
+    }
     return result;
   }
 

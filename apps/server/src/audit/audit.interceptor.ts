@@ -28,7 +28,9 @@ import type {
  * ApiTokenGuard already populated. Read endpoints (e.g. `*:read`) derive to
  * `null` and are skipped. v1 `src/openapi` (env-AccessToken auth, no
  * capabilities) is covered via explicit `@Audit` decorators on its write
- * endpoints; web-admin GraphQL via explicit `@AuditWeb` on lifecycle mutations.
+ * endpoints — and an explicit `@Audit` also overrides the capability derivation
+ * on v2 routes where the capability is the wrong descriptor (membership routes);
+ * web-admin GraphQL via explicit `@AuditWeb` on lifecycle mutations.
  */
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
@@ -52,34 +54,32 @@ export class AuditInterceptor implements NestInterceptor {
     const req = context.switchToHttp().getRequest<AuditHttpRequest>();
 
     // v2 endpoints derive from @RequireCapability; v1 endpoints carry explicit @Audit.
+    // An explicit @Audit WINS over the derivation — a v2 route uses it when the
+    // capability's resource/action is the wrong audit descriptor (e.g. membership
+    // routes under `company:write`, which must record the MEMBER, not the company).
     const capability = this.reflector.get<string>(RequireCapability, handler);
     const explicit = this.reflector.get(Audit, handler);
     let resourceType: string;
     let action: AuditAction;
     let resourceId: (r: AuditHttpRequest, result: unknown) => string = (r, result) =>
       resolveResourceId(r.params, result, action);
-    if (capability) {
-      const derived = deriveAudit(String(capability), req.method);
-      if (!derived) {
-        return next.handle();
-      }
-      ({ resourceType, action } = derived);
-    } else if (explicit) {
+    if (explicit) {
       resourceType = explicit.resourceType;
       action = explicit.action;
       if (explicit.resourceId) {
         resourceId = explicit.resourceId;
       }
+    } else if (capability) {
+      const derived = deriveAudit(String(capability), req.method);
+      if (!derived) {
+        return next.handle();
+      }
+      ({ resourceType, action } = derived);
     } else {
       return next.handle();
     }
 
-    // The guard sets req.environment only for `:environmentId` path routes. v2 writes
-    // that carry the target env in the BODY (publish / unpublish / duplicate) would
-    // otherwise record a null environmentId — fall back to the body value so the
-    // audit entry still names the environment acted on.
-    const bodyEnvId = typeof req.body?.environmentId === 'string' ? req.body.environmentId : null;
-    const environmentId = req.environment?.id ?? bodyEnvId;
+    const environmentId = req.environment?.id ?? bodyEnvironmentId(capability, req.body);
     let before: unknown;
     try {
       before = await fetchBefore(resourceType, action, req.params, environmentId, this.prisma);
@@ -259,6 +259,25 @@ export function buildRestAuditEntry(
   };
 }
 
+/**
+ * The audit entry's environmentId when the guard set no `req.environment` (only
+ * `:environmentId` path routes get one). ONLY publish-verb routes (publish /
+ * unpublish) legitimately carry the target env in the body, and their controllers
+ * validate it against the token's environment fence. Everywhere else `req.body`
+ * is UNVALIDATED at this point — interceptors run before the zod pipes, and
+ * body-less routes (DELETE / restore / end) never run them at all — so a stray
+ * `environmentId` key would pollute the entry's attribution verbatim. Ignore it.
+ */
+export function bodyEnvironmentId(
+  capability: string | undefined,
+  body: Record<string, unknown> | undefined,
+): string | null {
+  if (!capability?.endsWith(':publish')) {
+    return null;
+  }
+  return typeof body?.environmentId === 'string' ? body.environmentId : null;
+}
+
 /** capability prefix → audit resourceType. Absent (read/localization/project/...) → not audited. */
 const RESOURCE_BY_PREFIX: Record<string, string> = {
   content: 'content',
@@ -367,7 +386,12 @@ export function resolveResourceId(
   if (action === 'create' && resultId != null) {
     return String(resultId);
   }
-  return String(params?.id ?? params?.contentId ?? params?.externalId ?? resultId ?? '');
+  // `contentId` outranks `id`: on the version routes (PATCH|POST
+  // /content/:contentId/versions/:id) the audited resource is the CONTENT
+  // (resourceType 'content'), and MCP/web record the content id for the same
+  // operations — a version id here would split the per-content history across
+  // two id spaces. No other route carries both params.
+  return String(params?.contentId ?? params?.id ?? params?.externalId ?? resultId ?? '');
 }
 
 /** before-snapshot for delete/update on a single resource; redaction is applied later in AuditService. */
@@ -381,7 +405,9 @@ export async function fetchBefore(
   if (action === 'create') {
     return undefined;
   }
-  const id = params?.id ?? params?.contentId;
+  // Same precedence as resolveResourceId: the before-row must be the resource the
+  // entry names (only the content-version routes carry both, and hit `default`).
+  const id = params?.contentId ?? params?.id;
   if (!id) {
     return undefined;
   }

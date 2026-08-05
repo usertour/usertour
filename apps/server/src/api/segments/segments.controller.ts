@@ -21,6 +21,7 @@ import { Capability } from '@usertour/types';
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
@@ -154,6 +155,14 @@ export class ApiSegmentMembersController {
 
   @Put(':externalId')
   @RequireCapability(Capability.SegmentUpdate)
+  // Deriving from `segment:update` would record "segment updated" and lose the
+  // member — override so the entry names WHO was added (same descriptor as
+  // MCP's add_segment_member).
+  @Audit({
+    action: 'update',
+    resourceType: 'segmentMember',
+    resourceId: (req) => `${String(req.params?.id)}:${String(req.params?.externalId)}`,
+  })
   @ApiOperation({
     summary: 'Add a member',
     description: "Add a user or company (per the segment's bizType) to a manual segment.",
@@ -184,6 +193,11 @@ export class ApiSegmentMembersController {
   @Delete(':externalId')
   @HttpCode(204)
   @RequireCapability(Capability.SegmentUpdate)
+  @Audit({
+    action: 'delete',
+    resourceType: 'segmentMember',
+    resourceId: (req) => `${String(req.params?.id)}:${String(req.params?.externalId)}`,
+  })
   @ApiOperation({
     summary: 'Remove a member',
     description: "Remove a user or company (per the segment's bizType) from a manual segment.",

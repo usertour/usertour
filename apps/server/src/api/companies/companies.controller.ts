@@ -17,6 +17,7 @@ import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
@@ -103,6 +104,14 @@ export class ApiCompaniesController {
 
   @Put(':id/memberships/:userId')
   @RequireCapability(Capability.CompanyWrite)
+  // Deriving from `company:write` would record "company updated" and lose the
+  // member — override so the entry names WHO joined (same descriptor as v1's
+  // DELETE /company-memberships and MCP's add_company_member).
+  @Audit({
+    action: 'update',
+    resourceType: 'companyMember',
+    resourceId: (req) => `${String(req.params?.userId)}:${String(req.params?.id)}`,
+  })
   @ApiOperation({
     summary: 'Add a member',
     description:
@@ -129,6 +138,13 @@ export class ApiCompaniesController {
   @Delete(':id/memberships/:userId')
   @HttpCode(204)
   @RequireCapability(Capability.CompanyWrite)
+  // The removal is irreversible and the response is a 204 — without the override
+  // the entry would read "company updated" with the removed userId nowhere.
+  @Audit({
+    action: 'delete',
+    resourceType: 'companyMember',
+    resourceId: (req) => `${String(req.params?.userId)}:${String(req.params?.id)}`,
+  })
   @ApiOperation({
     summary: 'Remove a member',
     description:
