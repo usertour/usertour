@@ -1,11 +1,20 @@
 import { INestApplication } from '@nestjs/common';
-import { Capability } from '@usertour/types';
+import { BizEvents, Capability, ContentEditorElementType } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
 import { createTestApp } from '../create-test-app';
-import { buildContent, buildEnvironment, buildProject, buildVersion } from '../factories';
+import {
+  buildBizUser,
+  buildContent,
+  buildEnvironment,
+  buildEvent,
+  buildProject,
+  buildSession,
+  buildStep,
+  buildVersion,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 
 const CREATE = `mutation($input: CreateApiTokenInput!){
@@ -13,9 +22,11 @@ const CREATE = `mutation($input: CreateApiTokenInput!){
 }`;
 
 /**
- * v2 content analytics — contract-level e2e. Deep metric correctness lives in
- * the mapper unit spec (synthetic domain payloads); here we prove the typed
- * envelope, the range defaults, and the auth/env-scope chain over real HTTP.
+ * v2 content analytics — contract-level e2e PLUS aggregate-number correctness.
+ * The mapper unit spec covers response SHAPING from synthetic domain payloads;
+ * the exact-numbers tests here are the only place the domain AGGREGATION
+ * (unique = distinct users, total = distinct sessions, via the
+ * BizEvent→BizSession join) is asserted against a known seeded dataset.
  */
 describe('API v2 content analytics (e2e)', () => {
   let app: INestApplication;
@@ -107,6 +118,121 @@ describe('API v2 content analytics (e2e)', () => {
     const res = await api(`${base()}/questions?environmentId=${environmentId}`, token);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ results: [] });
+  });
+
+  it('computes exact flow numbers from a seeded dataset (unique=users, total=sessions)', async () => {
+    const token = await mint([Capability.AnalyticsRead]);
+    // The counting trio the flow branch requires — absent definitions
+    // short-circuit to the all-zero envelope.
+    const startedDef = await buildEvent(prisma, { projectId, codeName: BizEvents.FLOW_STARTED });
+    const completedDef = await buildEvent(prisma, {
+      projectId,
+      codeName: BizEvents.FLOW_COMPLETED,
+    });
+    await buildEvent(prisma, { projectId, codeName: BizEvents.FLOW_STEP_SEEN });
+
+    // Fresh content so the empty-envelope test above stays untouched.
+    // Dataset: user A starts twice (two sessions) and completes once;
+    // user B starts once. → uniqueStarts 2, totalStarts 3, completions 1/1.
+    const flow = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const flowVersionId = (await buildVersion(prisma, { contentId: flow.id, sequence: 0 })).id;
+    const userA = await buildBizUser(prisma, { environmentId });
+    const userB = await buildBizUser(prisma, { environmentId });
+    const mkSession = (bizUserId: string) =>
+      buildSession(prisma, {
+        bizUserId,
+        contentId: flow.id,
+        versionId: flowVersionId,
+        environmentId,
+        projectId,
+      });
+    const [a1, a2, b1] = [
+      await mkSession(userA.id),
+      await mkSession(userA.id),
+      await mkSession(userB.id),
+    ];
+    await prisma.bizEvent.createMany({
+      data: [
+        { bizSessionId: a1.id, eventId: startedDef.id, bizUserId: userA.id },
+        { bizSessionId: a2.id, eventId: startedDef.id, bizUserId: userA.id },
+        { bizSessionId: b1.id, eventId: startedDef.id, bizUserId: userB.id },
+        { bizSessionId: a1.id, eventId: completedDef.id, bizUserId: userA.id },
+      ],
+    });
+
+    const res = await api(
+      `/v2/projects/${projectId}/content/${flow.id}/analytics?environmentId=${environmentId}`,
+      token,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      contentType: 'flow',
+      uniqueStarts: 2,
+      totalStarts: 3,
+      uniqueCompletions: 1,
+      totalCompletions: 1,
+    });
+    // The daily breakdown reconciles with the aggregates (everything today).
+    const daySum = (res.body.byDay as Array<Record<string, number>>).reduce(
+      (acc, d) => acc + (d.totalStarts ?? 0),
+      0,
+    );
+    expect(daySum).toBe(3);
+  });
+
+  it('question analytics computes exact NPS numbers from seeded answers', async () => {
+    const token = await mint([Capability.AnalyticsRead]);
+    // A survey (flow + NPS question step, resolved via editedVersionId) with
+    // two real answers from two users: 9 and 6 → totalResponses 2, one
+    // distribution row each.
+    const survey = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const surveyVersionId = (await buildVersion(prisma, { contentId: survey.id, sequence: 0 })).id;
+    await buildStep(prisma, {
+      versionId: surveyVersionId,
+      sequence: 0,
+      data: [
+        {
+          element: {
+            type: ContentEditorElementType.NPS,
+            data: { cvid: 'q_nps_exact', name: 'How likely?' },
+          },
+        },
+      ] as unknown as object,
+    });
+    const userA = await buildBizUser(prisma, { environmentId });
+    const userB = await buildBizUser(prisma, { environmentId });
+    const answer = (n: number, bizUserId: string, tag: string) => ({
+      bizEventId: `evt-nps-exact-${tag}`,
+      bizSessionId: `sess-nps-exact-${tag}`,
+      contentId: survey.id,
+      versionId: surveyVersionId,
+      bizUserId,
+      environmentId,
+      cvid: 'q_nps_exact',
+      numberAnswer: n,
+    });
+    await prisma.bizAnswer.createMany({
+      data: [answer(9, userA.id, 'a'), answer(6, userB.id, 'b')],
+    });
+
+    const res = await api(
+      `/v2/projects/${projectId}/content/${survey.id}/analytics/questions?environmentId=${environmentId}`,
+      token,
+    );
+    expect(res.status).toBe(200);
+    const rows = res.body.results ?? res.body.items ?? res.body;
+    const row = (Array.isArray(rows) ? rows : []).find(
+      (r: { question?: { cvid?: string } }) => r.question?.cvid === 'q_nps_exact',
+    );
+    expect(row).toBeDefined();
+    expect(row.totalResponses).toBe(2);
+    const counts = Object.fromEntries(
+      (row.distribution as Array<{ answer: unknown; count: number }>).map((d) => [
+        String(d.answer),
+        d.count,
+      ]),
+    );
+    expect(counts).toEqual({ '9': 1, '6': 1 });
   });
 
   it('rejects a missing Authorization header (401 E1010)', async () => {
