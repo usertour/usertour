@@ -41,7 +41,15 @@ const leafSchema = (c: ThemeSettingConstraint): z.ZodTypeAny => {
         (v) => (typeof v === 'string' ? v.trim() : v),
         z.string().regex(HEX, 'Must be a hex color (e.g. #2563eb)'),
       );
-      return c.allowAuto ? z.union([hex, z.literal('Auto')]) : hex;
+      return c.allowAuto
+        ? z
+            .union([hex, z.literal('Auto')])
+            .describe(
+              'A hex color (e.g. "#2563eb"), or the literal "Auto" to derive the value from ' +
+                'the theme\'s base colors. Reads return the stored intent — "Auto" comes back ' +
+                'as "Auto", not resolved.',
+            )
+        : hex;
     }
     case 'enum': {
       const values = c.values;
