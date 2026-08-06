@@ -1,5 +1,5 @@
 import type { ValidationIssue } from '@/common/errors/errors';
-import { singleColorUnknownKeyHint } from '@/api/themes/settings.schema';
+import { unknownColorKeyHint } from '@/api/themes/settings.schema';
 
 /** zod path array → `a[0].b`-style path, matching the write guards' path style. */
 export function formatZodPath(
@@ -44,7 +44,7 @@ export function zodIssuesToValidationIssues(
         // Domain signpost from the theme schema (a deliberate one-off layering
         // inversion): a color-group companion key on a single-color theme
         // setting is the habitual wrong reach — point at the field that renders.
-        const hint = prefixed ? singleColorUnknownKeyHint(prefixed, key) : undefined;
+        const hint = prefixed ? unknownColorKeyHint(prefixed, key) : undefined;
         return {
           rule: 'schema' as const,
           message: hint ? `Unrecognized key: "${key}" — ${hint}` : `Unrecognized key: "${key}"`,

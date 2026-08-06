@@ -89,20 +89,52 @@ const buildTree = (flat: Record<string, ThemeSettingConstraint>): Tree => {
 };
 
 /**
- * Color-group companion keys. The SSOT lists only the keys the builder UI
- * exposes, but `ThemeTypesSettingsColor` is one uniform stored shape —
- * `{background, color, hover, active, autoHover?, autoActive?}` — and the
- * builder's color control always persists the whole group (auto* are the
- * derived concrete colors behind 'Auto'). Without these, reading a theme and
- * writing it back failed on unrecognized keys in EVERY stored theme. They are
- * storage companions, not UI fields, so they are completed here rather than
- * added to the SSOT (the builder-parity test pins the SSOT to the UI).
- *
- * The resource-center launcher color group ({background, hover, active,
- * foreground}) is a different type — detected by `foreground` and left alone.
+ * Color-group key vocabulary. The stored `ThemeTypesSettingsColor` is one
+ * uniform shape — `{background, color, hover, active, autoHover?, autoActive?}`
+ * — persisted whole by the builder's color control even where a setting only
+ * renders some of the keys. The CONTRACT does not mirror that template: each
+ * color node accepts exactly the keys the renderer reads (see
+ * COLOR_GROUP_KEY_SETS / SINGLE_COLOR_SETTINGS), reads strip the stored
+ * remainder, and writes reject it with a signpost.
  */
 const COLOR_GROUP_KEYS = ['background', 'color', 'hover', 'active'] as const;
 const COLOR_COMPANION_KEYS = [...COLOR_GROUP_KEYS, 'autoHover', 'autoActive'] as const;
+const AUTO_KEYS = ['autoHover', 'autoActive'] as const;
+
+/**
+ * The ALLOWED key set per multi-key color node — the renderer's actual reads,
+ * audited key-by-key against convert-settings + the widget (2026-08-06):
+ * - text/border colors have no `background`; fills have no `color`;
+ * - `autoHover`/`autoActive` exist only where the server persists them on
+ *   write (deriveThemeAutoColors: the base pair + the six `buttons.*` groups);
+ *   every other group resolves 'Auto' at render time from the cascade;
+ * - the checklist-launcher counter badge is a {background, color} pair — it
+ *   has no interactive states;
+ * - the resource-center launcher uses `foreground` where everything else says
+ *   `color` (its stored type differs).
+ * completeColorGroups fails LOUDLY on a color node missing from both this
+ * table and SINGLE_COLOR_SETTINGS, so a new setting cannot silently inherit
+ * the old six-key template.
+ */
+const TEXT_WITH_AUTO = ['color', 'hover', 'active', ...AUTO_KEYS] as const;
+const FILL_WITH_AUTO = ['background', 'hover', 'active', ...AUTO_KEYS] as const;
+const COLOR_GROUP_KEY_SETS: Readonly<Record<string, readonly string[]>> = {
+  mainColor: COLOR_COMPANION_KEYS,
+  brandColor: COLOR_COMPANION_KEYS,
+  'buttons.primary.textColor': TEXT_WITH_AUTO,
+  'buttons.primary.backgroundColor': FILL_WITH_AUTO,
+  'buttons.primary.border.color': TEXT_WITH_AUTO,
+  'buttons.secondary.textColor': TEXT_WITH_AUTO,
+  'buttons.secondary.backgroundColor': FILL_WITH_AUTO,
+  'buttons.secondary.border.color': TEXT_WITH_AUTO,
+  'launcherButtons.primary.textColor': ['color', 'hover', 'active'],
+  'launcherButtons.primary.backgroundColor': ['background', 'hover', 'active'],
+  'launcherButtons.primary.border.color': ['color', 'hover', 'active'],
+  'launcherIcon.color': ['color', 'hover', 'active'],
+  'checklistLauncher.color': ['background', 'color', 'hover', 'active'],
+  'checklistLauncher.counter': ['background', 'color'],
+  'resourceCenterLauncherButton.color': ['background', 'foreground', 'hover', 'active'],
+};
 
 /**
  * Settings that hold ONE authorable color (map value = the key that renders) —
@@ -139,41 +171,56 @@ const SINGLE_COLOR_SETTINGS: Readonly<Record<string, string>> = {
   'banner.textColor': 'color',
 };
 
+/** Unified allowed-keys lookup covering both single-color and group nodes. */
+const allowedColorKeys = (path: string): readonly string[] | undefined => {
+  const single = SINGLE_COLOR_SETTINGS[path];
+  return single !== undefined ? [single] : COLOR_GROUP_KEY_SETS[path];
+};
+
 /**
- * The schema does NOT accept color-group companion keys on these settings —
- * nothing stores them (the over-completion window of 2026-07/08 left zero
- * residue across the full production dump), so they are plain unknown paths.
- * But they are the one unknown path worth a signpost: `background` IS the fill
- * in every real color group, so it is the first key anyone reaches for, while
- * these settings render `color` (the one inversion of the house convention).
- * This turns the bare strict-mode rejection into directions to the right field.
+ * A color-group key the node does not take is a plain unknown path (reads
+ * never return one — normalizeStoredSettings strips the stored template
+ * remainder), but it is the one unknown path worth a signpost: `background`
+ * IS the fill in most groups yet absent on text/border colors, single-color
+ * settings render `color`, and the RC launcher says `foreground` — the exact
+ * spots where reaching by convention goes wrong. This turns the bare
+ * strict-mode rejection into directions to the right field.
  */
-export const singleColorUnknownKeyHint = (parentPath: string, key: string): string | undefined => {
+export const unknownColorKeyHint = (parentPath: string, key: string): string | undefined => {
   // Callers pass body-rooted paths (`settings.backdrop`) or schema-relative
   // ones (`backdrop`) depending on the validation layer.
   const node = parentPath.startsWith('settings.')
     ? parentPath.slice('settings.'.length)
     : parentPath;
-  const realKey = SINGLE_COLOR_SETTINGS[node];
-  return realKey !== undefined && COLOR_COMPANION_KEYS.some((k) => k !== realKey && k === key)
-    ? `\`${node}\` takes a single color under \`${node}.${realKey}\``
-    : undefined;
+  const allowed = allowedColorKeys(node);
+  if (!allowed || allowed.includes(key) || !COLOR_COMPANION_KEYS.some((k) => k === key)) {
+    return undefined;
+  }
+  return allowed.length === 1
+    ? `\`${node}\` takes a single color under \`${node}.${allowed[0]}\``
+    : `\`${node}\` has no \`${key}\` — it takes {${allowed.join(', ')}}`;
 };
 
 const completeColorGroups = (tree: Tree, path = ''): void => {
-  const isStandardColorGroup =
-    !('foreground' in tree) &&
-    !(path in SINGLE_COLOR_SETTINGS) &&
-    COLOR_GROUP_KEYS.some((k) => {
-      const child = tree[k];
-      return child && isConstraint(child) && child.kind === 'color';
-    });
-  if (isStandardColorGroup) {
-    for (const key of COLOR_COMPANION_KEYS) {
+  const allowed = COLOR_GROUP_KEY_SETS[path];
+  if (allowed) {
+    for (const key of allowed) {
       if (!(key in tree)) {
         tree[key] = { kind: 'color', allowAuto: true };
       }
     }
+  } else if (
+    !(path in SINGLE_COLOR_SETTINGS) &&
+    COLOR_GROUP_KEYS.some((k) => {
+      const child = tree[k];
+      return child && isConstraint(child) && child.kind === 'color';
+    })
+  ) {
+    // Exhaustiveness tripwire: a color node the tables don't classify would
+    // silently fall back to guesswork — refuse to build the schema instead.
+    throw new Error(
+      `Unclassified color node "${path}" — add it to COLOR_GROUP_KEY_SETS or SINGLE_COLOR_SETTINGS (settings.schema.ts) with the keys the renderer reads.`,
+    );
   }
   for (const [key, child] of Object.entries(tree)) {
     if (!isConstraint(child)) {
@@ -315,10 +362,10 @@ export function normalizeStoredSettings<T>(value: T): T {
       return node;
     }
     const out: Record<string, unknown> = { ...(node as Record<string, unknown>) };
-    const realKey = SINGLE_COLOR_SETTINGS[path];
-    if (realKey !== undefined) {
+    const allowed = allowedColorKeys(path);
+    if (allowed) {
       for (const key of COLOR_COMPANION_KEYS) {
-        if (key !== realKey) delete out[key];
+        if (!allowed.includes(key)) delete out[key];
       }
     }
     for (const [key, child] of Object.entries(tree)) {

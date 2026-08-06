@@ -32,7 +32,7 @@ import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import {
   BUILDER_MANAGED_SETTING_PATHS,
-  singleColorUnknownKeyHint,
+  unknownColorKeyHint,
   themeSettingsPatchSchema,
 } from './settings.schema';
 import { mapTheme } from './themes.mapper';
@@ -124,10 +124,10 @@ export class ApiThemesService {
           : issue.message
         : 'Invalid theme settings';
       // Signpost the one habitual unknown path: a color-group companion key on
-      // a single-color setting (see singleColorUnknownKeyHint).
+      // a color node that does not take it (see unknownColorKeyHint).
       if (issue?.code === 'unrecognized_keys') {
         const hint = issue.keys
-          .map((key) => singleColorUnknownKeyHint(issue.path.join('.'), key))
+          .map((key) => unknownColorKeyHint(issue.path.join('.'), key))
           .find(Boolean);
         if (hint) message += ` — ${hint}`;
       }

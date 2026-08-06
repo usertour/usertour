@@ -1005,13 +1005,13 @@ export function buildReadTools(): McpTool[] {
         'Get a single theme by id. Pass `expand: ["settings"]` to read its ACTUAL stored style ' +
         'settings (colors, fonts, sizes, …) — what create_theme / update_theme persisted and ' +
         'derived (e.g. "Auto" colors resolved); read this to verify a theme you wrote. ' +
-        'Reading a color group you will see up to six keys — the contract: `background`/`color` ' +
-        'always apply; `hover`/`active` apply when set to a concrete color. `autoHover`/' +
-        '`autoActive` (the derived values used when hover/active are "Auto") are PERSISTED only ' +
-        'on the base colors (mainColor/brandColor) and the two button groups — recomputed there ' +
-        'on every write, never authored. Every OTHER color group resolves "Auto" at render time ' +
-        'from the base colors and carries NO auto* keys — their absence is by design, not ' +
-        'missing derivation. ' +
+        'A color group reads back exactly the keys it takes (per-group — a text color has no ' +
+        '`background`, a fill no `color`; get_theme_schema is the authority). `hover`/`active` ' +
+        'apply when set to a concrete color. `autoHover`/`autoActive` (the derived values used ' +
+        'when hover/active are "Auto") exist only on the base colors (mainColor/brandColor) and ' +
+        'the `buttons.*` groups — recomputed there on every write, never authored. Every other ' +
+        'color group resolves "Auto" at render time from the base colors and carries no auto* ' +
+        'keys — their absence is by design, not missing derivation. ' +
         '`expand: ["variations"]` for conditional variations. Base fields (id, name, isDefault) ' +
         'always return; settings/variations only when expanded. (get_theme_schema is the writable ' +
         'shape; this returns the actual values.)',
@@ -1041,11 +1041,12 @@ export function buildReadTools(): McpTool[] {
         'Return the JSON Schema of the writable theme `settings` — the fields you can pass to ' +
         'create_theme / update_theme and their ranges/enums. The tool exposes `settings` as a ' +
         'generic object, so fetch the shape here before theming. Settings is field-merged onto ' +
-        'the current settings. Color groups: set `hover`/`active` to "Auto" (the default) and ' +
-        'the concrete colors are DERIVED server-side into `autoHover`/`autoActive` on every ' +
-        'write — never author the auto* keys (accepted only so read-modify-write round-trips; ' +
-        'the derivation overwrites the ones the runtime reads), and note they only take effect ' +
-        'while the matching hover/active is "Auto". `customCss` is plan-gated (Growth and ' +
+        'the current settings. Each color group accepts exactly the keys it renders (a text ' +
+        'color has no `background`, a fill no `color` — the schema is the authority). Set ' +
+        '`hover`/`active` to "Auto" (the default) and the concrete colors are DERIVED ' +
+        'server-side into `autoHover`/`autoActive` on every write — never author auto* (where ' +
+        'a group has them they are accepted only so read-modify-write round-trips, and the ' +
+        'derivation overwrites them). `customCss` is plan-gated (Growth and ' +
         'above): introducing or changing it on a lower plan is refused (E1038) — echoing the ' +
         'stored value back, or clearing it, always passes. The full schema is large (~10k ' +
         'tokens); when you already know which part you are styling, pass `section` for just ' +
