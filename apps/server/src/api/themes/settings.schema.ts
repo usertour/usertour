@@ -1,4 +1,5 @@
 import { THEME_SETTING_CONSTRAINTS, type ThemeSettingConstraint } from '@usertour/constants';
+import { AvatarType } from '@usertour/types';
 import { z } from 'zod';
 
 import { isHttpUrl } from '@/common/url';
@@ -252,12 +253,18 @@ const completeColorGroups = (tree: Tree, path = ''): void => {
  * image/embed content blocks that render to the same end users. Those three
  * are now plainly writable (WRITABLE_MEDIA_URL_PATHS below).
  */
-export const BUILDER_MANAGED_SETTING_PATHS: readonly string[] = [
-  'avatar.type',
-  'avatar.url',
-  'avatar.name',
-  'resourceCenter.dividerLines',
-];
+const BUILDER_MANAGED_SETTING_TYPES: Readonly<
+  Record<string, 'string' | 'boolean' | readonly string[]>
+> = {
+  // Values derived from the TS enum so the contract can't drift from it.
+  'avatar.type': Object.values(AvatarType),
+  'avatar.url': 'string',
+  'avatar.name': 'string',
+  'resourceCenter.dividerLines': 'boolean',
+};
+export const BUILDER_MANAGED_SETTING_PATHS: readonly string[] = Object.keys(
+  BUILDER_MANAGED_SETTING_TYPES,
+);
 
 /**
  * Media URLs the API may WRITE. Admin-provided URLs, same trust model as the
@@ -277,8 +284,12 @@ const addMarkerLeaves = (tree: Tree, paths: readonly string[], marker: string): 
     let node = tree;
     segments.forEach((seg, i) => {
       if (i === segments.length - 1) {
-        // Marker consumed by treeToZod.
-        node[seg] = { kind: marker } as unknown as ThemeSettingConstraint;
+        // Marker consumed by treeToZod. `base` gives the echo-only leaves a
+        // real declared type (they used to doc-render as `any`).
+        node[seg] = {
+          kind: marker,
+          base: BUILDER_MANAGED_SETTING_TYPES[path],
+        } as unknown as ThemeSettingConstraint;
         return;
       }
       const next = node[seg];
@@ -296,12 +307,15 @@ const treeToZod = (tree: Tree): z.ZodTypeAny => {
   for (const [key, child] of Object.entries(tree)) {
     const leaf = isConstraint(child)
       ? (child.kind as string) === 'builder-managed'
-        ? z
-            .unknown()
-            .describe(
-              'Read-only through the API: echo it back unchanged or omit it — a changed value ' +
-                'is rejected.',
-            )
+        ? (Array.isArray((child as unknown as { base?: unknown }).base)
+            ? z.enum((child as unknown as { base: [string, ...string[]] }).base)
+            : (child as unknown as { base?: string }).base === 'boolean'
+              ? z.boolean()
+              : z.string()
+          ).describe(
+            'Read-only through the API: echo it back unchanged or omit it — a changed value ' +
+              'is rejected.',
+          )
         : (child.kind as string) === 'media-url'
           ? z
               .string()

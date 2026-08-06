@@ -331,9 +331,11 @@ describe('API v2 themes + version themeId (e2e)', () => {
   it('reports EVERY violated builder-managed path at once (no one-at-a-time crawl)', async () => {
     const token = await mint([Capability.ThemeCreate, Capability.ThemeUpdate]);
     const created = await send('post', basePath(), token).send({ name: 'MediaGuardAll' });
+    // Valid SHAPES (type is a real enum member), changed VALUES — junk like
+    // type:'photo' now dies earlier at the schema layer naming the enum.
     const res = await send('patch', `${basePath()}/${created.body.id}`, token).send({
       settings: {
-        avatar: { type: 'photo', name: 'someone', url: 'https://x/a.png' },
+        avatar: { type: 'upload', name: 'someone', url: 'https://x/a.png' },
       },
     });
     expect(res.status).toBe(400);
