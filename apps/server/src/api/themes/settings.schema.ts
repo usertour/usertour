@@ -105,32 +105,39 @@ const COLOR_GROUP_KEYS = ['background', 'color', 'hover', 'active'] as const;
 const COLOR_COMPANION_KEYS = [...COLOR_GROUP_KEYS, 'autoHover', 'autoActive'] as const;
 
 /**
- * Settings that hold ONE rendered color under `color` — they are NOT color
- * groups, so the completion above must not turn them into one.
+ * Settings that hold ONE authorable color (map value = the key that renders) —
+ * they are NOT color groups, so the completion above must not turn them into
+ * one.
  *
  * It used to, and the result was a silent write loss: `resourceCenter.
  * headerBackground` gained a `background` key that validated, stored, and was
  * never read. A reviewer theming a resource center reached for it FIRST —
  * `.background` is the fill everywhere else in this schema — got no error, and
  * shipped a white-on-white header whose close button was invisible. The fill
- * for these lives in `color` (the one inversion of the house convention, which
- * is why guessing goes wrong here).
+ * for most of these lives in `color` (the one inversion of the house
+ * convention, which is why guessing goes wrong here).
  *
- * The list is explicit because the SSOT cannot discriminate: `banner.textColor`
- * also declares only `color`, yet IS a real group (the builder persists its
- * hover/active/background). settings.schema.spec pins the list against the
- * built-in default theme's stored shape, which is the actual evidence.
+ * Two kinds of evidence back the list (the SSOT cannot discriminate):
+ * - For the `color`-keyed entries, the built-in default theme stores exactly
+ *   one color on each — pinned by settings.schema.spec.
+ * - The banner pair DOES store a legacy {background,color,hover,active} shape
+ *   (defaults + every stored theme), but the renderer recomputes hover/active
+ *   unconditionally from the two base colors (convert-settings' banner block),
+ *   so the companions carry no information: reads strip them
+ *   (normalizeStoredSettings), writes reject them with the signpost below.
  */
-const SINGLE_COLOR_SETTING_PATHS: readonly string[] = [
-  'backdrop',
-  'backdrop.highlight',
-  'focusHighlight',
-  'launcherBeacon',
-  'progress',
-  'survey',
-  'xbutton',
-  'resourceCenter.headerBackground',
-];
+const SINGLE_COLOR_SETTINGS: Readonly<Record<string, string>> = {
+  backdrop: 'color',
+  'backdrop.highlight': 'color',
+  focusHighlight: 'color',
+  launcherBeacon: 'color',
+  progress: 'color',
+  survey: 'color',
+  xbutton: 'color',
+  'resourceCenter.headerBackground': 'color',
+  'banner.backgroundColor': 'background',
+  'banner.textColor': 'color',
+};
 
 /**
  * The schema does NOT accept color-group companion keys on these settings —
@@ -147,16 +154,16 @@ export const singleColorUnknownKeyHint = (parentPath: string, key: string): stri
   const node = parentPath.startsWith('settings.')
     ? parentPath.slice('settings.'.length)
     : parentPath;
-  return SINGLE_COLOR_SETTING_PATHS.includes(node) &&
-    COLOR_COMPANION_KEYS.some((k) => k !== 'color' && k === key)
-    ? `\`${node}\` takes a single color under \`${node}.color\``
+  const realKey = SINGLE_COLOR_SETTINGS[node];
+  return realKey !== undefined && COLOR_COMPANION_KEYS.some((k) => k !== realKey && k === key)
+    ? `\`${node}\` takes a single color under \`${node}.${realKey}\``
     : undefined;
 };
 
 const completeColorGroups = (tree: Tree, path = ''): void => {
   const isStandardColorGroup =
     !('foreground' in tree) &&
-    !SINGLE_COLOR_SETTING_PATHS.includes(path) &&
+    !(path in SINGLE_COLOR_SETTINGS) &&
     COLOR_GROUP_KEYS.some((k) => {
       const child = tree[k];
       return child && isConstraint(child) && child.kind === 'color';
@@ -282,9 +289,15 @@ export type ThemeSettingsPatch = z.infer<typeof themeSettingsPatchSchema>;
  * the constraint SSOT and coerce ONLY known leaves (numeric strings → number,
  * colors trimmed); unknown keys and non-coercible values pass through
  * untouched — read fidelity over cleverness.
+ *
+ * One deliberate exception to pass-through: on a single-color setting, stored
+ * color-group companion keys are STRIPPED. The banner pair stores a legacy
+ * {background,color,hover,active} shape whose companions the renderer ignores
+ * (hover/active are recomputed from the base colors on every render) — echoing
+ * them would advertise keys the write schema rejects, breaking read-modify-write.
  */
 export function normalizeStoredSettings<T>(value: T): T {
-  const walk = (node: unknown, tree: Tree | ThemeSettingConstraint): unknown => {
+  const walk = (node: unknown, tree: Tree | ThemeSettingConstraint, path: string): unknown => {
     if (isConstraint(tree)) {
       if (
         tree.kind === 'number' &&
@@ -302,12 +315,18 @@ export function normalizeStoredSettings<T>(value: T): T {
       return node;
     }
     const out: Record<string, unknown> = { ...(node as Record<string, unknown>) };
+    const realKey = SINGLE_COLOR_SETTINGS[path];
+    if (realKey !== undefined) {
+      for (const key of COLOR_COMPANION_KEYS) {
+        if (key !== realKey) delete out[key];
+      }
+    }
     for (const [key, child] of Object.entries(tree)) {
       if (key in out) {
-        out[key] = walk(out[key], child);
+        out[key] = walk(out[key], child, path ? `${path}.${key}` : key);
       }
     }
     return out;
   };
-  return walk(value, settingsTree) as T;
+  return walk(value, settingsTree, '') as T;
 }

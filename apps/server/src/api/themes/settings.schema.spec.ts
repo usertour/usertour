@@ -1,5 +1,9 @@
 import { defaultSettings } from '@usertour/constants';
-import { singleColorUnknownKeyHint, themeSettingsPatchSchema } from './settings.schema';
+import {
+  normalizeStoredSettings,
+  singleColorUnknownKeyHint,
+  themeSettingsPatchSchema,
+} from './settings.schema';
 
 // The schema is generated from the builder field schema (the constraint SSOT).
 // These cover the generation rules, not every field — a builder change to a
@@ -127,9 +131,6 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
             textColor: { color: 'Auto', hover: 'Auto', active: 'Auto', background: '#FFFFFF' },
           },
         },
-        banner: {
-          backgroundColor: { color: '#FFFFFF', hover: 'Auto', active: 'Auto', background: 'Auto' },
-        },
       }),
     ).toBe(true);
   });
@@ -220,11 +221,37 @@ describe('single-color settings are not turned into color groups', () => {
     );
     // `color` itself is the real field, and real groups get no hint.
     expect(singleColorUnknownKeyHint('backdrop', 'color')).toBeUndefined();
-    expect(singleColorUnknownKeyHint('banner.textColor', 'background')).toBeUndefined();
+    // The banner pair are single-color settings whose real key differs:
+    // backgroundColor renders `background`, textColor renders `color`.
+    expect(singleColorUnknownKeyHint('banner.backgroundColor', 'hover')).toBe(
+      '`banner.backgroundColor` takes a single color under `banner.backgroundColor.background`',
+    );
+    expect(singleColorUnknownKeyHint('banner.backgroundColor', 'background')).toBeUndefined();
+    expect(singleColorUnknownKeyHint('banner.textColor', 'background')).toContain(
+      'banner.textColor.color',
+    );
   });
 
-  it('still extends genuine groups that the SSOT under-declares', () => {
-    // banner.textColor declares only `color` in the SSOT but IS a group.
-    expect(ok({ banner: { textColor: { background: '#FFFFFF', hover: 'Auto' } } })).toBe(true);
+  it('banner colors are single-color: real key accepted, stored companions stripped on read', () => {
+    // The renderer recomputes banner hover/active from the two base colors on
+    // every render (convert-settings' banner block) — the stored companions
+    // carry no information, so the contract models two single colors.
+    expect(ok({ banner: { backgroundColor: { background: '#0B5FFF' } } })).toBe(true);
+    expect(ok({ banner: { textColor: { color: 'Auto' } } })).toBe(true);
+    expect(ok({ banner: { backgroundColor: { hover: '#FF0000' } } })).toBe(false);
+    expect(ok({ banner: { textColor: { background: '#FFFFFF', hover: 'Auto' } } })).toBe(false);
+
+    // Reads strip the legacy stored shape down to the real key (both the base
+    // settings and each variation go through normalizeStoredSettings).
+    const read = normalizeStoredSettings({
+      banner: {
+        backgroundColor: { background: 'Auto', color: '#FFFFFF', hover: 'Auto', active: 'Auto' },
+        textColor: { background: '#FFFFFF', color: 'Auto', hover: 'Auto', active: 'Auto' },
+        padding: 8,
+      },
+    });
+    expect(read.banner.backgroundColor).toEqual({ background: 'Auto' });
+    expect(read.banner.textColor).toEqual({ color: 'Auto' });
+    expect(read.banner.padding).toBe(8);
   });
 });
