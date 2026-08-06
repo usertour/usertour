@@ -1,5 +1,5 @@
 import { defaultSettings } from '@usertour/constants';
-import { themeSettingsPatchSchema } from './settings.schema';
+import { singleColorUnknownKeyHint, themeSettingsPatchSchema } from './settings.schema';
 
 // The schema is generated from the builder field schema (the constraint SSOT).
 // These cover the generation rules, not every field — a builder change to a
@@ -193,15 +193,34 @@ describe('single-color settings are not turned into color groups', () => {
     }
   });
 
-  it('accepts the rendered `color` and still round-trips a stored companion', () => {
+  it('accepts the rendered `color`; companion keys are plain unknown paths', () => {
     // `color` is the fill for these (the one inversion of the house convention).
     expect(ok({ resourceCenter: { headerBackground: { type: 'color', color: '#111111' } } })).toBe(
       true,
     );
-    // Companions parse (a read-modify-write of a theme that stored them must not
-    // 400) — the service is what rejects a CHANGED value, see themes.service.
-    expect(ok({ resourceCenter: { headerBackground: { background: '#111111' } } })).toBe(true);
-    expect(ok({ xbutton: { hover: 'Auto' } })).toBe(true);
+    // No stored theme carries group companions on a single-color setting (the
+    // 2026-07/08 over-completion window left zero residue), so the schema does
+    // not accept them at all — strict mode rejects, and the service appends the
+    // signpost (singleColorUnknownKeyHint) pointing at `.color`.
+    expect(ok({ resourceCenter: { headerBackground: { background: '#111111' } } })).toBe(false);
+    expect(ok({ xbutton: { hover: 'Auto' } })).toBe(false);
+    expect(ok({ backdrop: { autoHover: '#111111' } })).toBe(false);
+  });
+
+  it('signposts the habitual wrong key toward `.color`', () => {
+    expect(singleColorUnknownKeyHint('backdrop', 'background')).toBe(
+      '`backdrop` takes a single color under `backdrop.color`',
+    );
+    // Body-rooted form, as the REST pipe's issue paths arrive.
+    expect(singleColorUnknownKeyHint('settings.backdrop', 'background')).toBe(
+      '`backdrop` takes a single color under `backdrop.color`',
+    );
+    expect(singleColorUnknownKeyHint('resourceCenter.headerBackground', 'autoActive')).toContain(
+      'resourceCenter.headerBackground.color',
+    );
+    // `color` itself is the real field, and real groups get no hint.
+    expect(singleColorUnknownKeyHint('backdrop', 'color')).toBeUndefined();
+    expect(singleColorUnknownKeyHint('banner.textColor', 'background')).toBeUndefined();
   });
 
   it('still extends genuine groups that the SSOT under-declares', () => {

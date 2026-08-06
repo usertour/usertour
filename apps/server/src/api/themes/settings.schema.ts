@@ -133,14 +133,25 @@ const SINGLE_COLOR_SETTING_PATHS: readonly string[] = [
 ];
 
 /**
- * The companion keys those single-color settings must still ACCEPT (themes
- * written while the completion was too eager carry them, and a read-modify-write
- * has to round-trip) but may never CHANGE — the renderer does not read them, so
- * accepting a new value would be the silent no-op all over again.
+ * The schema does NOT accept color-group companion keys on these settings —
+ * nothing stores them (the over-completion window of 2026-07/08 left zero
+ * residue across the full production dump), so they are plain unknown paths.
+ * But they are the one unknown path worth a signpost: `background` IS the fill
+ * in every real color group, so it is the first key anyone reaches for, while
+ * these settings render `color` (the one inversion of the house convention).
+ * This turns the bare strict-mode rejection into directions to the right field.
  */
-export const INERT_COLOR_COMPANION_PATHS: readonly string[] = SINGLE_COLOR_SETTING_PATHS.flatMap(
-  (node) => COLOR_COMPANION_KEYS.filter((k) => k !== 'color').map((k) => `${node}.${k}`),
-);
+export const singleColorUnknownKeyHint = (parentPath: string, key: string): string | undefined => {
+  // Callers pass body-rooted paths (`settings.backdrop`) or schema-relative
+  // ones (`backdrop`) depending on the validation layer.
+  const node = parentPath.startsWith('settings.')
+    ? parentPath.slice('settings.'.length)
+    : parentPath;
+  return SINGLE_COLOR_SETTING_PATHS.includes(node) &&
+    COLOR_COMPANION_KEYS.some((k) => k !== 'color' && k === key)
+    ? `\`${node}\` takes a single color under \`${node}.color\``
+    : undefined;
+};
 
 const completeColorGroups = (tree: Tree, path = ''): void => {
   const isStandardColorGroup =
@@ -229,25 +240,17 @@ const treeToZod = (tree: Tree): z.ZodTypeAny => {
               'Built-in (builder-managed): echo it back unchanged or omit it — a changed value ' +
                 'is rejected.',
             )
-        : (child.kind as string) === 'inert-color'
+        : (child.kind as string) === 'media-url'
           ? z
-              .unknown()
+              .string()
+              .refine((v) => v === '' || isHttpUrl(v), {
+                message: 'must be an http(s) URL, or an empty string to clear the image',
+              })
               .describe(
-                'NOT RENDERED: this setting takes a single color under `color` — it is not a ' +
-                  '{background,color,hover,active} group. Accepted so a read-modify-write ' +
-                  'round-trips; a changed value is rejected rather than silently ignored.',
+                'Image URL rendered to end users (writable). Empty string clears it. The builder ' +
+                  'sets this via upload; the API accepts any http(s) URL you host.',
               )
-          : (child.kind as string) === 'media-url'
-            ? z
-                .string()
-                .refine((v) => v === '' || isHttpUrl(v), {
-                  message: 'must be an http(s) URL, or an empty string to clear the image',
-                })
-                .describe(
-                  'Image URL rendered to end users (writable). Empty string clears it. The builder ' +
-                    'sets this via upload; the API accepts any http(s) URL you host.',
-                )
-            : leafSchema(child)
+          : leafSchema(child)
       : treeToZod(child);
     // Stored settings use null for "unset" in places (e.g. a borderRadius the
     // builder never touched) — treat null exactly like an omitted key: the
@@ -266,7 +269,6 @@ const settingsTree = buildTree(
 );
 completeColorGroups(settingsTree);
 addMarkerLeaves(settingsTree, BUILDER_MANAGED_SETTING_PATHS, 'builder-managed');
-addMarkerLeaves(settingsTree, INERT_COLOR_COMPANION_PATHS, 'inert-color');
 addMarkerLeaves(settingsTree, WRITABLE_MEDIA_URL_PATHS, 'media-url');
 export const themeSettingsPatchSchema = treeToZod(settingsTree);
 export type ThemeSettingsPatch = z.infer<typeof themeSettingsPatchSchema>;

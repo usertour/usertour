@@ -199,6 +199,21 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejects a group companion key on a single-color setting, pointing at `.color`', async () => {
+    // `background` is the fill in every real color group; these settings render
+    // `color`. The key is a plain unknown path (nothing stores it), but the
+    // error walks the caller to the right field.
+    const token = await mint([Capability.ThemeCreate]);
+    const res = await send('post', basePath(), token).send({
+      name: 'Bad companion',
+      settings: { backdrop: { background: '#0B3FB0' } },
+    });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toContain(
+      '`backdrop` takes a single color under `backdrop.color`',
+    );
+  });
+
   it('rejects a settings value outside the field range', async () => {
     const token = await mint([Capability.ThemeCreate]);
     const res = await send('post', basePath(), token).send({
