@@ -1,10 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray } from '../shared/query';
+import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 /**
  * v2 environments — read-only project metadata. An environment is where content
@@ -32,8 +32,8 @@ export const environment = z.object({
    * discovery but reads/writes/publish targeting it will be rejected (E1029).
    */
   inTokenScope: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
 });
 export class EnvironmentDto extends createZodDto(environment) {}
 
@@ -47,8 +47,8 @@ export class ListEnvironmentsQueryDto extends createZodDto(listEnvironmentsQuery
 
 export const listEnvironmentsResponse = z.object({
   results: z.array(environment),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListEnvironmentsResponseDto extends createZodDto(listEnvironmentsResponse) {}
 

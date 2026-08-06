@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { nextPageUrl, previousPageUrl, limit, cursor } from '../shared/pagination.schema';
 import { orderByField, singleOrArray } from '../shared/query';
 
 import {
@@ -29,8 +30,8 @@ export const getContentVersionQuery = z.object({
 export class GetContentVersionQueryDto extends createZodDto(getContentVersionQuery) {}
 
 export const listContentVersionsQuery = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  cursor: z.string().optional(),
+  limit,
+  cursor,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
   expand: singleOrArray(versionExpand).describe(
     'Inline: questions, steps (the full step tree — how you read a flow body), data.',
@@ -38,7 +39,26 @@ export const listContentVersionsQuery = z.object({
 });
 export class ListContentVersionsQueryDto extends createZodDto(listContentVersionsQuery) {}
 
-export class ContentVersionDto extends createZodDto(contentVersion) {}
+/**
+ * Read shape: the version with its decompiled non-flow `data` fully typed — the
+ * same six per-type shapes as the write body, fully populated on read.
+ */
+// `data` stays untyped here: embedding the six-type union in the read DTOs hangs
+// the OpenAPI document build (nestjs-zod/swagger conversion never returns —
+// reproduced via capability-matrix; the write-side union converts fine). The
+// describe carries the contract instead; revisit if the converter gets fixed.
+export const contentVersionRead = contentVersion.extend({
+  data: z
+    .unknown()
+    .optional()
+    .describe(
+      'Decompiled type-specific body for non-flow content — the same six per-type shapes as ' +
+        'the write `data` (that schema is the field dictionary), fully populated on read. ' +
+        'Present only when the `data` expand is requested; a flow has no `data` — its body ' +
+        'is `steps`.',
+    ),
+});
+export class ContentVersionDto extends createZodDto(contentVersionRead) {}
 
 /**
  * Write body for PATCH content-versions/:id. All fields optional — only the
@@ -106,9 +126,9 @@ export class UpdateVersionBodyDto extends createZodDto(updateVersionBody) {}
 export type UpdateVersionBody = z.infer<typeof updateVersionBody>;
 
 export const listContentVersionsResponse = z.object({
-  results: z.array(contentVersion),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  results: z.array(contentVersionRead),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListContentVersionsResponseDto extends createZodDto(listContentVersionsResponse) {}
 

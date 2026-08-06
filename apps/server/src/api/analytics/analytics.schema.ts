@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 
 import { isUnambiguousIsoDate } from '@/common/filters';
 import { z } from 'zod';
+import { questionTypeEnum, stepTypeEnum } from '../content-representation/representation.schema';
 
 import { ApiObjectType } from '../shared/object-type';
 
@@ -75,7 +76,7 @@ export type AnalyticsQuery = z.infer<typeof analyticsQuery>;
  * convenience — it does not leak into this contract.
  */
 
-const int = () => z.number().int();
+const int = () => z.number().int().min(0);
 
 const analyticsBase = {
   object: z.literal(ApiObjectType.CONTENT_ANALYTICS),
@@ -155,7 +156,7 @@ export const stepAnalytics = z.object({
   name: z.string(),
   cvid: z.string(),
   stepIndex: int(),
-  type: z.string(),
+  type: stepTypeEnum,
   uniqueViews: int().describe(
     'Distinct users who saw this step. This is the funnel: step-to-step drop-off is the ' +
       'difference between consecutive rows’ uniqueViews.',
@@ -186,7 +187,12 @@ export const stepAnalytics = z.object({
  */
 export const taskAnalytics = z.object({
   name: z.string(),
-  taskId: z.string(),
+  taskId: z
+    .string()
+    .describe(
+      "The task's stable identity — equals the checklist definition's `data.items[].id` on the " +
+        'version; join on it to pair analytics rows with task definitions.',
+    ),
   uniqueViews: int().describe(
     'Times the CHECKLIST panel was expanded (unique users) — a whole-checklist count repeated on ' +
       'every task row, not this task’s own visibility.',
@@ -290,7 +296,10 @@ export class AnnouncementAnalyticsDto extends createZodDto(announcementAnalytics
 
 // ── question analytics (surveys) ─────────────────────────────────────────────
 
-const share = z.object({ count: z.number().int(), percentage: z.number() });
+const share = z.object({
+  count: z.number().int(),
+  percentage: z.number().describe('0-100 (not 0-1).'),
+});
 
 const rollingWindowDays = z
   .number()
@@ -321,7 +330,7 @@ export const questionAnalytics = z.object({
   question: z.object({
     cvid: z.string(),
     name: z.string(),
-    type: z.string(),
+    type: questionTypeEnum,
   }),
   totalResponses: z.number().int(),
   distribution: z
@@ -329,7 +338,7 @@ export const questionAnalytics = z.object({
       z.object({
         answer: z.union([z.string(), z.number()]),
         count: z.number().int(),
-        percentage: z.number(),
+        percentage: z.number().describe('0-100 (not 0-1).'),
       }),
     )
     .describe(

@@ -127,8 +127,8 @@ export class ApiContentController {
       'Soft delete (recoverable via POST /content/{id}/restore). Deleting also UNPUBLISHES the ' +
       'content from every environment and permanently discards the per-environment publish state ' +
       '(which environments, which version, since when) — restore returns an UNPUBLISHED draft, ' +
-      'not that history. "Was this ever live?" is answerable afterwards only through the ' +
-      "dashboard's audit log.",
+      'not that history. "Was this ever live?" is answerable afterwards through the publish ' +
+      "history (available through the MCP) or the app's audit log.",
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })

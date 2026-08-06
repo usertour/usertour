@@ -798,7 +798,7 @@ function validateLauncher(
   ) {
     err(
       'icon.type',
-      `"${data.iconType}" is not a registered builtin icon — it renders nothing. Use a RemixIcon kebab name from get_authoring_guide's icon table (section: "icons"; e.g. "home-line", "question-line").`,
+      `"${data.iconType}" is not a registered builtin icon — it renders nothing. Use a RemixIcon kebab name from the MCP authoring guide's icon table (section: "icons"; e.g. "home-line", "question-line").`,
     );
   }
   const actionType = data?.behavior?.actionType;
@@ -932,7 +932,7 @@ function validateTracker(
     } else if (event.predefined) {
       err(
         'eventId',
-        `A tracker can only fire a custom event — "${event.codeName}" is a built-in system event. Create a custom event with create_event_definition and point the tracker at that.`,
+        `A tracker can only fire a custom event — "${event.codeName}" is a built-in system event. Create a custom event definition and point the tracker at that.`,
       );
     }
   }

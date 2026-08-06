@@ -298,7 +298,7 @@ export function mapQuestionAnalytics(
       question: {
         cvid: String(question?.data?.cvid ?? ''),
         name: String(question?.data?.name ?? ''),
-        type: String(question?.type ?? ''),
+        type: String(question?.type ?? '') as QuestionAnalytics['question']['type'],
       },
       totalResponses: int(raw?.totalResponse),
       distribution: withPercentages(distributionCounts(raw), int(raw?.totalResponse)),

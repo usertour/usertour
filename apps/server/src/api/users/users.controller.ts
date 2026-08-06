@@ -45,8 +45,8 @@ export class ApiUsersController {
   @Get()
   @RequireCapability(Capability.UserRead)
   @ApiOperation({ summary: 'List users' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiResponse({ status: 200, description: 'List of users', type: ListUsersResponseDto })
   async list(
     @RequestUrl() requestUrl: string,
@@ -59,8 +59,8 @@ export class ApiUsersController {
   @Get(':id')
   @RequireCapability(Capability.UserRead)
   @ApiOperation({ summary: 'Get a user' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'User external ID' })
   @ApiResponse({ status: 200, description: 'User found', type: UserDto })
   @ApiResponse({ status: 404, description: 'User not found', type: ErrorResponseDto })
@@ -75,8 +75,8 @@ export class ApiUsersController {
   @Put(':id')
   @RequireCapability(Capability.UserWrite)
   @ApiOperation({ summary: 'Create or update a user' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'User external ID' })
   @ApiResponse({ status: 200, description: 'User created or updated', type: UserDto })
   async upsert(
@@ -90,9 +90,16 @@ export class ApiUsersController {
   @Delete(':id')
   @HttpCode(204)
   @RequireCapability(Capability.UserDelete)
-  @ApiOperation({ summary: 'Delete a user' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiOperation({
+    summary: 'Delete a user',
+    description:
+      'DESTRUCTIVE and permanent — removes the user AND everything hanging off them in this ' +
+      'environment: attributes, company memberships, segment memberships, question answers ' +
+      'and event history. There is no restore; re-identifying the same external id later ' +
+      'starts a brand-new user.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'User external ID' })
   @ApiResponse({ status: 204, description: 'User deleted' })
   @ApiResponse({ status: 404, description: 'User not found', type: ErrorResponseDto })

@@ -1,11 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray } from '../shared/query';
+import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { codeName as codeNameSchema } from '../shared/codename';
 import { createdAtRangeFields } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 export const userExpand = z.enum(['companies', 'memberships', 'memberships.company']);
 
@@ -38,7 +38,7 @@ export const upsertUserBody = z
       .record(codeNameSchema, z.any())
       .optional()
       .describe(
-        'Custom attributes to set on the user (merged into existing attributes). Each key must ' +
+        'Custom attributes to set on the user (merged into existing attributes). Attributes with an unknown codeName AUTO-CREATE a definition (dataType inferred from the value) — a mistyped key silently creates a new attribute instead of updating the real one. Each key must ' +
           'be a valid codeName: start with a letter, then letters/digits/underscores, 2–20 chars.',
       ),
   })
@@ -49,34 +49,43 @@ export const company = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.COMPANY),
   attributes: z.record(z.string(), z.any()),
-  createdAt: z.string(),
+  createdAt: isoTimestamp,
 });
 
 export const companyMembership = z.object({
-  id: z.string(),
+  id: z
+    .string()
+    .describe(
+      'Internal membership record id (not addressable anywhere) — join on userId/companyId instead.',
+    ),
   object: z.literal(ApiObjectType.COMPANY_MEMBERSHIP),
   attributes: z.record(z.string(), z.any()),
-  createdAt: z.string(),
+  createdAt: isoTimestamp,
   companyId: z.string().describe('External company id — the id companies are addressed by.'),
   userId: z.string().describe('External user id — the id users are addressed by.'),
   company: company.optional(),
 });
 
 export const user = z.object({
-  id: z.string(),
+  id: z.string().describe('External user id — the id your app supplied at identify/upsert.'),
   object: z.literal(ApiObjectType.USER),
   attributes: z.record(z.string(), z.any()),
-  createdAt: z.string(),
-  // Always present (null when the expand isn't requested) — mirrors v1.
-  companies: z.array(company).nullable(),
-  memberships: z.array(companyMembership).nullable(),
+  createdAt: isoTimestamp,
+  companies: z
+    .array(company)
+    .nullable()
+    .describe('null = not expanded (pass expand: ["companies"]); [] = expanded, none.'),
+  memberships: z
+    .array(companyMembership)
+    .nullable()
+    .describe('null = not expanded (pass expand: ["memberships"]); [] = expanded, none.'),
 });
 export class UserDto extends createZodDto(user) {}
 
 export const listUsersResponse = z.object({
   results: z.array(user),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListUsersResponseDto extends createZodDto(listUsersResponse) {}
 

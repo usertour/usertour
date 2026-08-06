@@ -1,11 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { singleOrArray } from '../shared/query';
+import { singleOrArray, isoTimestamp } from '../shared/query';
 
 import { codeName as codeNameSchema } from '../shared/codename';
 import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 /**
  * The single source of truth for the v2 event-definitions endpoint: these zod
@@ -31,7 +31,7 @@ export class ListEventDefinitionsQueryDto extends createZodDto(listEventDefiniti
 export const eventDefinition = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.EVENT_DEFINITION),
-  createdAt: z.string(),
+  createdAt: isoTimestamp,
   description: z.string(),
   displayName: z.string(),
   codeName: z.string(),
@@ -40,7 +40,7 @@ export const eventDefinition = z.object({
     .describe(
       'true = a built-in Usertour lifecycle event (flow/launcher/checklist/survey/… ' +
         'started/ended/etc.) — NOT trackable: a tracker can only fire a CUSTOM event. ' +
-        'false = a custom event you created (with create_event_definition).',
+        'false = a custom event you created.',
     ),
   attributes: z
     .array(z.string())
@@ -56,7 +56,7 @@ const eventAttributes = z
     'codeNames of EXISTING event-scoped attributes to attach to this event — the built-in / ' +
       'predefined ones, custom event properties auto-registered at ingestion when your app ' +
       'tracked an event with a properties payload, or ones pre-defined via ' +
-      'create_attribute_definition with scope `eventDefinition`. Unknown codeNames are rejected.',
+      'the attribute definition first with scope `eventDefinition`. Unknown codeNames are rejected.',
   );
 
 export const createEventDefinitionBody = z
@@ -86,8 +86,8 @@ export class UpdateEventDefinitionBodyDto extends createZodDto(updateEventDefini
 
 export const listEventDefinitionsResponse = z.object({
   results: z.array(eventDefinition),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListEventDefinitionsResponseDto extends createZodDto(listEventDefinitionsResponse) {}
 

@@ -740,7 +740,7 @@ export class ApiContentVersionsService {
     report.warnings.push({
       severity: 'warning',
       path: 'themeId',
-      message: `This version switches theme from "${nameOf(liveThemeId)}" (${liveCount} conditional variation${liveCount === 1 ? '' : 's'}) to "${nameOf(draftThemeId)}" (${draftCount}) — variations do NOT travel with the content, so every user those conditions targeted (e.g. dark mode) silently falls back to base styling. Recreate the variations on the target theme (duplicate_theme copies them verbatim), or keep the current theme.`,
+      message: `This version switches theme from "${nameOf(liveThemeId)}" (${liveCount} conditional variation${liveCount === 1 ? '' : 's'}) to "${nameOf(draftThemeId)}" (${draftCount}) — variations do NOT travel with the content, so every user those conditions targeted (e.g. dark mode) silently falls back to base styling. Recreate the variations on the target theme (duplicating the theme copies them verbatim), or keep the current theme.`,
     });
   }
 

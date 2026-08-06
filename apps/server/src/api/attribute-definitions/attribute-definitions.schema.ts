@@ -1,13 +1,13 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { singleOrArray } from '../shared/query';
+import { singleOrArray, isoTimestamp } from '../shared/query';
 
 import { AttributeDataTypeNames } from '@/attributes/models/attribute.model';
 
 import { codeName as codeNameSchema } from '../shared/codename';
 import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 // Enum values are validated by zod, so a bad value yields E1017 (matching v1's
 // class-validator enum). `scope` is deliberately a free string so an invalid
@@ -27,6 +27,7 @@ export const listAttributeDefinitionsQuery = z.object({
   ...nameSearchField,
   scope: z
     .string()
+    .meta({ enum: ['user', 'company', 'companyMembership', 'eventDefinition'] })
     .optional()
     .describe(
       'Filter by scope: user, company, companyMembership, or eventDefinition (event attributes ' +
@@ -57,8 +58,14 @@ export const attribute = z.object({
   object: z.literal(ApiObjectType.ATTRIBUTE_DEFINITION),
   /** Built-in attribute (seeded by Usertour): not editable or deletable. */
   predefined: z.boolean(),
-  createdAt: z.string(),
-  dataType: z.nativeEnum(AttributeDataTypeNames),
+  createdAt: isoTimestamp,
+  dataType: z
+    .nativeEnum(AttributeDataTypeNames)
+    .describe(
+      'Value type. `random_ab` / `random_number` are SYSTEM-GENERATED bucketing types (stable ' +
+        'per-user random values for splits) — they appear in reads and conditions but cannot ' +
+        'be created through the API.',
+    ),
   description: z.string(),
   displayName: z.string(),
   codeName: z.string(),
@@ -121,8 +128,8 @@ export class UpdateAttributeBodyDto extends createZodDto(updateAttributeBody) {}
 
 export const listAttributeDefinitionsResponse = z.object({
   results: z.array(attribute),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListAttributeDefinitionsResponseDto extends createZodDto(
   listAttributeDefinitionsResponse,

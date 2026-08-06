@@ -146,7 +146,6 @@ export function mapContentSession(
             createdAt: session.bizCompany.createdAt.toISOString(),
           }
         : null,
-    isPreview: false,
     lastActivityAt: session.updatedAt.toISOString(),
     progress: session.progress,
     userId: session.bizUser?.externalId || null,

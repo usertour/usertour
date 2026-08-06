@@ -90,9 +90,17 @@ async function bootstrap() {
   // `servers`. The same-origin Swagger UI at /api-v2 uses the browser origin.
   const v2Config = new DocumentBuilder()
     .setTitle('Usertour API v2')
-    .setDescription('Project-scoped v2 API — personal API token (utp_) authentication.')
+    .setDescription(
+      'Project-scoped v2 API. Authenticate with a personal API token — an opaque `utp_...` ' +
+        'string (NOT a JWT: do not try to decode it), created in the Usertour app under ' +
+        'Settings → API, sent as `Authorization: Bearer utp_...`.',
+    )
     .setVersion('2.0')
-    .addBearerAuth()
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'utp_... personal API token (opaque)',
+    })
     .build();
   const v2Document = normalizeOpenApiParameters(
     cleanupOpenApiDoc(SwaggerModule.createDocument(app, v2Config, { include: [ApiModule] })),

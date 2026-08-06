@@ -256,7 +256,7 @@ export class ApiThemesService {
       const prev = v.id ? storedById.get(v.id) : undefined;
       if (v.id && !prev) {
         throw new ValidationError(
-          `${at}.id "${v.id}" does not match an existing variation — echo an id from get_theme (expand: ["variations"]) to update one in place, or omit \`id\` to create a new variation.`,
+          `${at}.id "${v.id}" does not match an existing variation — echo an id from the theme\'s variations read to update one in place, or omit \`id\` to create a new variation.`,
         );
       }
       const mergeBase = (prev?.settings ?? baseSettings) as Partial<ThemeTypesSetting>;

@@ -27,3 +27,6 @@ export function toArray<T>(value: T | T[] | undefined): T[] {
  * enum (e.g. attribute-definitions adds codeName / displayName).
  */
 export const orderByField = z.enum(['createdAt', '-createdAt']);
+
+/** Response timestamp: ISO 8601, documented as format: date-time. */
+export const isoTimestamp = z.string().meta({ format: 'date-time' });

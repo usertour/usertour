@@ -26,6 +26,7 @@ import { Environment } from '@/environments/models/environment.model';
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiCompaniesService } from './companies.service';
 import {
+  CompanyMembershipDto,
   CompanyDto,
   GetCompanyQueryDto,
   ListCompaniesQueryDto,
@@ -47,8 +48,8 @@ export class ApiCompaniesController {
   @Get()
   @RequireCapability(Capability.CompanyRead)
   @ApiOperation({ summary: 'List companies' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiResponse({ status: 200, description: 'List of companies', type: ListCompaniesResponseDto })
   async list(
     @RequestUrl() requestUrl: string,
@@ -61,8 +62,8 @@ export class ApiCompaniesController {
   @Get(':id')
   @RequireCapability(Capability.CompanyRead)
   @ApiOperation({ summary: 'Get a company' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiResponse({ status: 200, description: 'Company found', type: CompanyDto })
   @ApiResponse({ status: 404, description: 'Company not found', type: ErrorResponseDto })
@@ -77,8 +78,8 @@ export class ApiCompaniesController {
   @Put(':id')
   @RequireCapability(Capability.CompanyWrite)
   @ApiOperation({ summary: 'Create or update a company' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiResponse({ status: 200, description: 'Company created or updated', type: CompanyDto })
   async upsert(
@@ -92,9 +93,15 @@ export class ApiCompaniesController {
   @Delete(':id')
   @HttpCode(204)
   @RequireCapability(Capability.CompanyDelete)
-  @ApiOperation({ summary: 'Delete a company' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiOperation({
+    summary: 'Delete a company',
+    description:
+      'DESTRUCTIVE and permanent — removes the company, every membership in it (with their ' +
+      'membership attributes) and its segment rows. Users themselves survive. There is no ' +
+      'restore; re-grouping the same external id later starts a brand-new company.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiResponse({ status: 204, description: 'Company deleted' })
   @ApiResponse({ status: 404, description: 'Company not found', type: ErrorResponseDto })
@@ -113,18 +120,22 @@ export class ApiCompaniesController {
     resourceId: (req) => `${String(req.params?.userId)}:${String(req.params?.id)}`,
   })
   @ApiOperation({
-    summary: 'Add a member',
+    summary: 'Add a company member',
     description:
       'Add a user to the company, or update the membership (idempotent). Returns the membership ' +
       '(external ids + attributes). Membership attributes with an unknown codeName auto-create a ' +
       "definition (dataType inferred from the value) — a typo'd codeName therefore silently " +
       'creates a new attribute while the real one is not updated.',
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiParam({ name: 'userId', description: 'User external ID' })
-  @ApiResponse({ status: 200, description: 'Membership created or updated (echoed)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Membership created or updated (echoed)',
+    type: CompanyMembershipDto,
+  })
   @ApiResponse({ status: 404, description: 'Company or user not found', type: ErrorResponseDto })
   async upsertMembership(
     @Param('id') id: string,
@@ -146,15 +157,15 @@ export class ApiCompaniesController {
     resourceId: (req) => `${String(req.params?.userId)}:${String(req.params?.id)}`,
   })
   @ApiOperation({
-    summary: 'Remove a member',
+    summary: 'Remove a company member',
     description:
       'Remove a user from the company. DESTRUCTIVE, not a hide: the membership record and its ' +
       'membership-scoped attributes (e.g. a role) are deleted for good — re-adding creates a ' +
       'brand-new membership with empty attributes and a new join date, so remove-then-re-add ' +
       'is NOT an undo.',
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Company external ID' })
   @ApiParam({ name: 'userId', description: 'User external ID' })
   @ApiResponse({ status: 204, description: 'Membership removed' })

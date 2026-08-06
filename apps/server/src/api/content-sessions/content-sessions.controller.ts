@@ -46,8 +46,8 @@ export class ApiContentSessionsController {
     summary: 'List sessions',
     description: 'Sessions in this environment. Filter by contentId / userId.',
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiResponse({
     status: 200,
     description: 'List of content sessions',
@@ -64,8 +64,8 @@ export class ApiContentSessionsController {
   @Get(':id')
   @RequireCapability(Capability.SessionRead)
   @ApiOperation({ summary: 'Get a session' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 200, description: 'Content session found', type: ContentSessionDto })
   @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
@@ -89,8 +89,8 @@ export class ApiContentSessionsController {
       'onto the user via bindAttribute REMAIN on the user (clearing those is a separate ' +
       'user-attribute update, or the profile will contradict the survey analytics).',
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 204, description: 'Content session deleted' })
   @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
@@ -107,8 +107,8 @@ export class ApiContentSessionsController {
       'End an in-progress session. Idempotent: a session already in its terminal state is ' +
       'returned as-is. Tracker sessions have no end semantics and refuse with E1017.',
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Content session ID' })
   @ApiResponse({ status: 200, description: 'Content session ended', type: ContentSessionDto })
   @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })

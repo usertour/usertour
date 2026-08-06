@@ -55,7 +55,7 @@ export class ApiSegmentsController {
   @Get()
   @RequireCapability(Capability.SegmentRead)
   @ApiOperation({ summary: 'List segments' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiResponse({ status: 200, description: 'List of segments', type: ListSegmentsResponseDto })
   async list(
     @RequestUrl() requestUrl: string,
@@ -68,7 +68,7 @@ export class ApiSegmentsController {
   @Get(':id')
   @RequireCapability(Capability.SegmentRead)
   @ApiOperation({ summary: 'Get a segment' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 200, description: 'Segment found', type: SegmentDto })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
@@ -90,7 +90,7 @@ export class ApiSegmentsController {
   @Post()
   @RequireCapability(Capability.SegmentCreate)
   @ApiOperation({ summary: 'Create a segment' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiResponse({ status: 201, description: 'Segment created', type: SegmentDto })
   async create(@Param('projectId') projectId: string, @Body() body: CreateSegmentBodyDto) {
     return this.service.create(projectId, body);
@@ -99,7 +99,7 @@ export class ApiSegmentsController {
   @Patch(':id')
   @RequireCapability(Capability.SegmentUpdate)
   @ApiOperation({ summary: 'Update a segment' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 200, description: 'Segment updated', type: SegmentDto })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
@@ -122,7 +122,7 @@ export class ApiSegmentsController {
   @HttpCode(204)
   @RequireCapability(Capability.SegmentDelete)
   @ApiOperation({ summary: 'Delete a segment' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 204, description: 'Segment deleted' })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
@@ -164,11 +164,11 @@ export class ApiSegmentMembersController {
     resourceId: (req) => `${String(req.params?.id)}:${String(req.params?.externalId)}`,
   })
   @ApiOperation({
-    summary: 'Add a member',
+    summary: 'Add a segment member',
     description: "Add a user or company (per the segment's bizType) to a manual segment.",
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiParam({
     name: 'externalId',
@@ -199,11 +199,11 @@ export class ApiSegmentMembersController {
     resourceId: (req) => `${String(req.params?.id)}:${String(req.params?.externalId)}`,
   })
   @ApiOperation({
-    summary: 'Remove a member',
+    summary: 'Remove a segment member',
     description: "Remove a user or company (per the segment's bizType) from a manual segment.",
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiParam({
     name: 'externalId',

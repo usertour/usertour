@@ -31,10 +31,10 @@ export const representationTracker = z
       .nullable()
       .describe(
         "The CUSTOM event this tracker fires when its startRules match. A custom event's " +
-          'codeName (preferred) or id from list_event_definitions — accepted either way, ' +
+          'codeName (preferred) or id from the event definitions list — accepted either way, ' +
           'stored and returned as the codeName. MUST be a custom event: built-in / system ' +
           '(predefined) events are rejected (a tracker can only fire custom events; create one ' +
-          'with create_event_definition). A tracker is headless — no UI, no theme; it just ' +
+          'a custom event definition you created). A tracker is headless — no UI, no theme; it just ' +
           'fires this event whenever its startRules trigger conditions are met. null when unset.',
       ),
   })
@@ -265,7 +265,7 @@ export const representationLauncher = z
             "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` " +
               'style — e.g. `home-line`, `question-line`, `rocket`. NOT lucide names ' +
               '(`help-circle` / `sparkles` / `book-open` render nothing, silently). Unsure? Use ' +
-              "source='none'. Common names + an intent→name table are in get_authoring_guide.",
+              "source='none'. Common names + an intent→name table are in the MCP authoring guide (icons section).",
           ),
       })
       .optional(),

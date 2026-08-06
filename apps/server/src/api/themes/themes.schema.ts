@@ -1,12 +1,12 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray } from '../shared/query';
+import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { representationCondition } from '../content-representation/representation.schema';
 import { nameSearchField } from '@/common/filters';
 import { displayName } from '../shared/name';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 import { themeSettingsPatchSchema } from './settings.schema';
 
 /**
@@ -40,8 +40,8 @@ export const theme = z.object({
   isDefault: z.boolean(),
   /** System themes are read-only: not updatable, not deletable — create your own instead. */
   isSystem: z.boolean(),
-  updatedAt: z.string(),
-  createdAt: z.string(),
+  updatedAt: isoTimestamp,
+  createdAt: isoTimestamp,
   variationCount: z
     .number()
     .int()
@@ -53,7 +53,12 @@ export const theme = z.object({
         'errors. Read the variations themselves with expand: ["variations"].',
     ),
   // Present only when the corresponding expand is requested.
-  settings: themeSettings.optional(),
+  settings: themeSettings
+    .optional()
+    .describe(
+      'Stored style INTENT — the same shape as the create/update `settings` body (that write ' +
+        'schema is the field dictionary); Auto-capable colors read back as the literal "Auto".',
+    ),
   resolvedSettings: themeSettings
     .optional()
     .describe(
@@ -85,8 +90,8 @@ export class GetThemeQueryDto extends createZodDto(getThemeQuery) {}
 
 export const listThemesResponse = z.object({
   results: z.array(theme),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListThemesResponseDto extends createZodDto(listThemesResponse) {}
 
@@ -94,14 +99,14 @@ export class ListThemesResponseDto extends createZodDto(listThemesResponse) {}
 // neutral SSOT, see settings.schema): a created theme starts from the default
 // styling and a write field-merges onto it, so callers send only what they change.
 // Both settings and variations are readable via expand.
-const settingsField = themeSettingsPatchSchema
+const settingsFieldText = (base: string) =>
+  `Partial theme styling merged onto ${base} (colors, fonts, sizes, …). Send only the fields you change; omitted fields are kept. This is pure INTENT: Auto-capable color fields take a hex or the literal "Auto" (derived at render); read what "Auto" resolves to with expand: ["resolvedSettings"].`;
+const createSettingsField = themeSettingsPatchSchema
   .optional()
-  .describe(
-    'Partial theme styling to merge onto the current settings (colors, fonts, ' +
-      'sizes, …). Send only the fields you change; omitted fields are kept. This is pure ' +
-      'INTENT: Auto-capable color fields take a hex or the literal "Auto" (derived at ' +
-      'render); read what "Auto" resolves to with expand: ["resolvedSettings"].',
-  );
+  .describe(settingsFieldText('the built-in default styling (a new theme starts from it)'));
+const updateSettingsField = themeSettingsPatchSchema
+  .optional()
+  .describe(settingsFieldText("the theme's current settings"));
 
 /**
  * One conditional variation on a write. Validated by the SERVICE (not the body
@@ -117,7 +122,7 @@ export const themeVariationInput = z
       .string()
       .optional()
       .describe(
-        'Echo an existing variation id (from get_theme expand:["variations"]) to update it in ' +
+        'Echo an existing variation id (from a theme read with the variations expand) to update it in ' +
           'place — its stored settings are the merge base. Omit to create a new variation ' +
           '(the theme base settings are the merge base).',
       ),
@@ -150,7 +155,7 @@ export const createThemeBody = z
   .object({
     name: displayName.describe('Theme name.'),
     isDefault: z.boolean().optional().describe('Make this the project default theme.'),
-    settings: settingsField,
+    settings: createSettingsField,
     variations: variationsField,
   })
   .strict();
@@ -176,7 +181,7 @@ export const updateThemeBody = z
           'cleared). `false` on the current default is rejected — default another ' +
           'theme instead; a project always keeps a default.',
       ),
-    settings: settingsField,
+    settings: updateSettingsField,
     variations: variationsField,
   })
   .strict();

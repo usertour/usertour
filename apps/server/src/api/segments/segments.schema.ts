@@ -1,11 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray } from '../shared/query';
+import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { attributeCondition } from '../content-representation/representation.schema';
 import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 /**
  * v2 segments. Segment definitions are project-level; membership is env-level
@@ -59,20 +59,28 @@ export const segment = z.object({
   object: z.literal(ApiObjectType.SEGMENT),
   name: z.string(),
   bizType: segmentBizType,
-  kind: segmentKind,
-  // Present for condition segments (decompiled to stable codes).
-  conditions: z.array(segmentCondition).optional(),
+  kind: segmentKind.describe(
+    '`all` = the built-in everyone segment (one per bizType; immutable, cannot be deleted); ' +
+      '`condition` = membership computed from `conditions`; `manual` = explicit member list.',
+  ),
+  conditions: z
+    .array(segmentCondition)
+    .optional()
+    .describe(
+      'Present on condition segments (decompiled to stable attribute codes). Top-level ' +
+        'siblings are ANDed; an OR lives inside a match:"any" group — same rules as writes.',
+    ),
   memberCount: z
     .number()
     .optional()
     .describe(
-      'Members in the requested environment — only with `expand=memberCount` (+ environmentId). ' +
+      'Members in the requested environment — only on GET one segment with `expand=memberCount` (+ environmentId); the list endpoint never returns it. ' +
         'manual = explicit members; condition = users/companies matching the conditions right ' +
         'now; all = everyone in the environment. Counted with the SAME filter the users/' +
         'companies list applies for `segmentId`, so the two always agree.',
     ),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
 });
 export class SegmentDto extends createZodDto(segment) {}
 
@@ -99,9 +107,11 @@ export const listSegmentsQuery = z.object({
 export class ListSegmentsQueryDto extends createZodDto(listSegmentsQuery) {}
 
 export const listSegmentsResponse = z.object({
-  results: z.array(segment),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  // The LIST endpoint takes no expand/environmentId, so memberCount is never
+  // populated there — advertise the reachable shape (GET one segment for counts).
+  results: z.array(segment.omit({ memberCount: true })),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListSegmentsResponseDto extends createZodDto(listSegmentsResponse) {}
 
@@ -117,7 +127,7 @@ export const createSegmentBody = z
       .describe(
         'Membership conditions (condition segments only) — ATTRIBUTE conditions and groups of ' +
           'them, nothing else (a segment is an attribute query). Multiple top-level conditions ' +
-          'are ANDed — [A, B] means A AND B (measured, not assumed); for OR wrap them in one ' +
+          'are ANDed — [A, B] means A AND B; for OR wrap them in one ' +
           '{ "type": "group", "match": "any", "conditions": [A, B] }, same as content rules. For ' +
           '"users who did X" audiences, store the fact as an attribute too and segment on that, ' +
           "or put the event condition on the content's start rules.",
@@ -134,8 +144,8 @@ export const updateSegmentBody = z
       .optional()
       .describe(
         'Replaces the conditions (condition segments only). Attribute conditions and groups ' +
-          'only; top-level siblings are ANDed, wrap in a match:"any" group for OR — see ' +
-          'create_segment.',
+          'only; top-level siblings are ANDed, wrap in a match:"any" group for OR — same rules ' +
+          'as segment creation.',
       ),
   })
   // Only name/conditions are mutable — bizType and kind are immutable. Reject a

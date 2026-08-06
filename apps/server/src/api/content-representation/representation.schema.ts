@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isoTimestamp } from '../shared/query';
 
 import { ATTR_OPS } from './attr-ops';
 import { ApiObjectType } from '../shared/object-type';
@@ -278,7 +279,7 @@ const attributeConditionFields = {
     .describe(
       'Which entity owns the attribute — `user` (the end user), `company`, or ' +
         "`companyMembership`. Same value as the attribute definition's `scope` " +
-        '(list_attribute_definitions); required to disambiguate a codeName that exists ' +
+        '(see the attribute definitions list); required to disambiguate a codeName that exists ' +
         'in more than one scope.',
     ),
   attribute: z.string(),
@@ -299,7 +300,7 @@ const attributeConditionFields = {
         'therefore needs BOTH bounds** — `less_than N` AND `more_than 0` in one `all` group; ' +
         '`less_than N` alone silently includes anyone whose date is in the future (a mis-mapped ' +
         'trial-end column, a clock/timezone slip), and those are exactly the users a new-user ' +
-        'audience must not contain (measured). Negative N shifts the bound into the ' +
+        'audience must not contain (observed in testing). Negative N shifts the bound into the ' +
         'future: the rolling "within the NEXT 7 days" window is `less_than` value "0" AND ' +
         '`more_than` value "-7" (two conditions, both required). The relative ops are ' +
         'DAY-granularity only — no unit field; for hour/minute windows use an `event` condition ' +
@@ -370,7 +371,7 @@ export const representationCondition = z.lazy(() =>
           '`present` means NOT CLIPPED AWAY: the element is in the DOM and its box lies inside ' +
             'the viewport / its scroll ancestors — scrolled off-screen or `display:none` never ' +
             'satisfies it (and `hidden` is its negation). It is NOT "the user can see something ' +
-            'there": an EMPTY, zero-height placeholder node satisfies `present` (measured — a ' +
+            'there": an EMPTY, zero-height placeholder node satisfies `present` (observed in testing: a ' +
             'checklist task keyed on an initially-empty `<p>` status line ticked itself the ' +
             'moment the checklist appeared, before the shopper did anything). So do not use ' +
             'element presence as a proxy for "the app has said something": most apps keep the ' +
@@ -385,7 +386,7 @@ export const representationCondition = z.lazy(() =>
             'is redone each poll. Two consequences, one of them silent: (1) **an element that ' +
             'UNMOUNTS on click can NEVER satisfy it** — the click lands, the element vanishes, ' +
             'the lookup fails from then on and the condition stays false forever with no error ' +
-            '(measured: a tracker on a button that clears its own toolbar counted ZERO real ' +
+            '(observed in testing: a tracker on a button that clears its own toolbar counted ZERO real ' +
             'clicks); (2) an element that unmounts and REMOUNTS satisfies it again, so a ' +
             'tracker gated on it fires once per remount — not once per page load. Unlike ' +
             '`present`, this lookup does NOT require viewport visibility: scrolling the target ' +
@@ -400,7 +401,7 @@ export const representationCondition = z.lazy(() =>
       content: z
         .string()
         .describe(
-          'contentId of the FLOW or CHECKLIST whose per-user state to check (from list_content). ' +
+          'contentId of the FLOW or CHECKLIST whose per-user state to check (an id from the content list). ' +
             'Only flows and checklists record this state — referencing a banner / launcher / ' +
             'resource-center / tracker is rejected at write.',
         ),
@@ -464,7 +465,7 @@ export const representationCondition = z.lazy(() =>
           'Whose event activity to count (default `current_user`). `current_user` = only this ' +
             "user's own events. `current_user_in_company` = this user's events, but counted within " +
             'their currently-associated company context (needs the user associated to a company via ' +
-            '`group()` / add_company_member). `any_user_in_company` = events by ANY user in this ' +
+            '`group()` / the company-membership API). `any_user_in_company` = events by ANY user in this ' +
             'user\'s company — account-level activity (e.g. "anyone on the account has done X"). ' +
             'The two company scopes require the user to be in a company or they never match.',
         ),
@@ -496,7 +497,13 @@ export const representationCondition = z.lazy(() =>
         .optional()
         .describe('Window end (ISO datetime). Omit for an open-ended "from start onwards" window.'),
     }),
-    z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
+    z
+      .object({ type: z.literal('unsupported'), note: z.string().optional() })
+      .describe(
+        'Read-side placeholder for a stored condition this API cannot express (`note` = the ' +
+          'internal type). Never author one: echoing it back is rejected with instructions — ' +
+          'remove it (deleting that stored condition) or edit the conditions in the Usertour app.',
+      ),
   ]),
 ) as unknown as z.ZodType<RepresentationCondition>;
 
@@ -543,7 +550,7 @@ export const representationAction = z.discriminatedUnion('type', [
     content: z
       .string()
       .describe(
-        'contentId of the flow or checklist to launch (from list_content) — a raw content id, NOT ' +
+        'contentId of the flow or checklist to launch (an id from the content list) — a raw content id, NOT ' +
           'a step key (unlike goto_step). Must reference a flow or checklist (a banner / launcher / ' +
           'resource-center / tracker is rejected at write). The target must be PUBLISHED to actually ' +
           'start at runtime; an unknown/dangling id is rejected at validate.',
@@ -630,9 +637,9 @@ const bindAttributeField = z
   .string()
   .optional()
   .describe(
-    'Optional: codeName of an EXISTING attribute (create it first with create_attribute_definition) ' +
+    'Optional: codeName of an EXISTING attribute (create the attribute definition first) ' +
       'to ALSO save this answer onto the user for targeting/segmentation — use the codeName, NOT the ' +
-      'id. The write does not check it, but validate_content_version WARNS when the attribute is ' +
+      'id. The write does not check it, but the version validation WARNS when the attribute is ' +
       'missing or its dataType mismatches the answer — read warnings. A wrong code that slips ' +
       'through silently captures nothing at runtime. ' +
       'Match the attribute dataType to the answer: number (nps / rating), string (single-select choice), ' +
@@ -939,6 +946,18 @@ export const representationBlock = z.lazy(() =>
   ]),
 ) as unknown as z.ZodType<RepresentationBlock>;
 
+/** The four flow step kinds (mirrors the write-side step type enum). */
+export const stepTypeEnum = z.enum(['tooltip', 'modal', 'hidden', 'bubble']);
+/** The six question element kinds (the question members of ContentEditorElementType). */
+export const questionTypeEnum = z.enum([
+  'nps',
+  'star-rating',
+  'scale',
+  'single-line-text',
+  'multi-line-text',
+  'multiple-choice',
+]);
+
 // ── Step ─────────────────────────────────────────────────────────────────────
 export const representationStep = z.object({
   object: z.literal(ApiObjectType.STEP),
@@ -946,15 +965,24 @@ export const representationStep = z.object({
   /** Front-end logical id — the write upsert key. Round-trips on read. */
   cvid: z.string().nullable(),
   name: z.string(),
-  /** tooltip | modal | bubble | hidden */
-  type: z.string(),
-  sequence: z.number(),
+  type: stepTypeEnum,
+  sequence: z
+    .number()
+    .describe(
+      '0-based display order. On write an explicit `sequence` wins; steps without one fall ' +
+        'back to their array index.',
+    ),
   /** Per-step theme override; null = inherit the version (flow) theme. */
   themeId: z.string().nullable(),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
-  /** Per-step width override in pixels; absent = the theme's surface width. */
-  width: z.number().optional(),
+  width: z
+    .number()
+    .optional()
+    .describe(
+      "Per-step width override in pixels (border-box outer width) — absent = the theme's " +
+        'surface width.',
+    ),
   skippable: z.boolean().optional(),
   /** Marks this step as an explicit completion point for the flow. */
   explicitCompletionStep: z.boolean().optional(),
@@ -962,7 +990,17 @@ export const representationStep = z.object({
   triggers: z.array(representationTrigger).optional(),
   /** Actions run when the user clicks the step's target element (click-to-advance). */
   onClick: z.array(representationAction).optional(),
-  advanced: z.object({ hasUnsupported: z.boolean() }).optional(),
+  advanced: z
+    .object({
+      hasUnsupported: z
+        .boolean()
+        .describe(
+          'true = this step carries stored configuration this API cannot express (e.g. an ' +
+            'auto-recorded element fingerprint). Read-only signal: echoing the step back ' +
+            'preserves that configuration untouched; it is not editable here.',
+        ),
+    })
+    .optional(),
 });
 export type RepresentationStep = z.infer<typeof representationStep>;
 
@@ -1059,13 +1097,13 @@ export const representationStepInput = z.object({
     .optional()
     .describe(
       'Primary id of an existing step to update in place. It is regenerated when you fork a ' +
-        'version (create_content_version), so for edits that must survive a fork prefer `cvid`.',
+        'version, so for edits that must survive a fork prefer `cvid`.',
     ),
   cvid: z
     .string()
     .optional()
     .describe(
-      'Stable step handle that survives forking (create_content_version): echo it to update an ' +
+      'Stable step handle that survives forking: echo it to update an ' +
         'existing step in place without re-reading new ids. A step is matched by `id` first, then ' +
         '`cvid`; omit both to create a new step.',
     ),
@@ -1088,7 +1126,7 @@ export const representationStepInput = z.object({
     .optional()
     .describe(
       'Per-step theme override. Omit to keep the current value; set to a theme id ' +
-        '(from list_themes) to override; set to null to clear and inherit the flow theme.',
+        '(from the themes list) to override; set to null to clear and inherit the flow theme.',
     ),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
@@ -1132,7 +1170,7 @@ export const question = z.object({
   object: z.literal(ApiObjectType.QUESTION),
   cvid: z.string(),
   name: z.string(),
-  type: z.string(),
+  type: questionTypeEnum,
 });
 
 export const contentVersion = z.object({
@@ -1145,11 +1183,11 @@ export const contentVersion = z.object({
     .describe(
       'When this version FIRST went live (ISO). Non-null means the version is frozen: it can ' +
         'never be edited again — not even after unpublishing — edit by forking ' +
-        '(create_content_version). null means it never went live — OR its first publish ' +
+        '(by forking). null means it never went live — OR its first publish ' +
         'predates this stamp (older versions were never backfilled), so on old data null is ' +
         'not proof it never shipped. This is history, not live state: for "is it live NOW, ' +
         'where" read the content\'s `environments[]`; for who published what when, ' +
-        '`list_publish_history`.',
+        'the publish history (available through the MCP).',
     ),
   themeId: z.string().nullable(),
   questions: z.array(question).nullable(),
@@ -1170,9 +1208,16 @@ export const contentVersion = z.object({
    * ordering. Present only when set (publish stamps it when the author left it
    * null, so published announcements always carry one).
    */
-  scheduledAt: z.string().optional(),
-  updatedAt: z.string(),
-  createdAt: z.string(),
+  scheduledAt: z
+    .string()
+    .optional()
+    .describe(
+      'Announcement versions only: the "announcement time" gating feed visibility and ordering. ' +
+        'Absent on other content types and until set (publish stamps it when the author left it ' +
+        'null, so published announcements always carry one).',
+    ),
+  updatedAt: isoTimestamp,
+  createdAt: isoTimestamp,
 });
 
 export type ContentVersion = z.infer<typeof contentVersion>;

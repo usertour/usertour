@@ -63,7 +63,9 @@ export function decompileStep(
     id: step.id,
     cvid: step.cvid ?? null,
     name: step.name ?? '',
-    type: step.type ?? '',
+    // Stored steps always carry one of the four kinds (the builder requires it);
+    // the legacy '' fallback survives only for hypothetical pre-builder rows.
+    type: (step.type ?? '') as RepresentationStep['type'],
     sequence: step.sequence,
     themeId: step.themeId ?? null,
     ...(target ? { target } : {}),

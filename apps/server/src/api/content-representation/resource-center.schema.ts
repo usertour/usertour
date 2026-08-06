@@ -24,7 +24,7 @@ const rcIconType = z
       'e.g. `home-line`, `question-line`, `chat-line`, `settings-line`, `rocket`. ' +
       'NOT lucide names: `help-circle` / `sparkles` / `book-open` / `message-circle` are not in ' +
       "the set and render nothing (silent, no error). Unsure of a name? Use source='none' rather " +
-      'than guess. Common names + an intent→name table are in get_authoring_guide.',
+      'than guess. Common names + an intent→name table are in the MCP authoring guide (icons section).',
   );
 
 const rcIcon = z
