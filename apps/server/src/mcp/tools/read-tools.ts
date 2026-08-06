@@ -1002,25 +1002,26 @@ export function buildReadTools(): McpTool[] {
       title: 'Get theme',
       capability: Capability.ThemeRead,
       description:
-        'Get a single theme by id. Pass `expand: ["settings"]` to read its ACTUAL stored style ' +
-        'settings (colors, fonts, sizes, …) — what create_theme / update_theme persisted and ' +
-        'derived (e.g. "Auto" colors resolved); read this to verify a theme you wrote. ' +
-        'A color group reads back exactly the keys it takes (per-group — a text color has no ' +
-        '`background`, a fill no `color`; get_theme_schema is the authority). `hover`/`active` ' +
-        'apply when set to a concrete color. `autoHover`/`autoActive` (the derived values used ' +
-        'when hover/active are "Auto") exist only on the base colors (mainColor/brandColor) and ' +
-        'the `buttons.*` groups — recomputed there on every write, never authored. Every other ' +
-        'color group resolves "Auto" at render time from the base colors and carries no auto* ' +
-        'keys — their absence is by design, not missing derivation. ' +
+        'Get a single theme by id. `expand: ["settings"]` reads the stored style INTENT ' +
+        '(colors, fonts, sizes, …) — Auto-capable colors come back as the literal "Auto", ' +
+        'unresolved; read this to round-trip edits. `expand: ["resolvedSettings"]` reads the ' +
+        'render truth instead: the same shape with every "Auto" replaced by the concrete color ' +
+        'the renderer derives — use it to verify what end users actually see. A color group ' +
+        'carries exactly the keys it takes (a text color has no `background`, a fill no ' +
+        '`color`; get_theme_schema is the authority). ' +
         '`expand: ["variations"]` for conditional variations. Base fields (id, name, isDefault) ' +
         'always return; settings/variations only when expanded. (get_theme_schema is the writable ' +
         'shape; this returns the actual values.)',
       inputSchema: {
         id: z.string().describe('The theme id (from list_themes).'),
         expand: z
-          .array(z.enum(['settings', 'variations']))
+          .array(z.enum(['settings', 'variations', 'resolvedSettings']))
           .optional()
-          .describe('Related data to inline: settings (actual style values), variations.'),
+          .describe(
+            'Related data to inline: settings (stored intent — "Auto" stays "Auto"), ' +
+              'variations, resolvedSettings (every "Auto" resolved to the concrete color the ' +
+              'renderer derives).',
+          ),
       },
       async handler(args, ctx) {
         const id = asString(args.id);
@@ -1042,11 +1043,11 @@ export function buildReadTools(): McpTool[] {
         'create_theme / update_theme and their ranges/enums. The tool exposes `settings` as a ' +
         'generic object, so fetch the shape here before theming. Settings is field-merged onto ' +
         'the current settings. Each color group accepts exactly the keys it renders (a text ' +
-        'color has no `background`, a fill no `color` — the schema is the authority). Set ' +
-        '`hover`/`active` to "Auto" (the default) and the concrete colors are DERIVED ' +
-        'server-side into `autoHover`/`autoActive` on every write — never author auto* (where ' +
-        'a group has them they are accepted only so read-modify-write round-trips, and the ' +
-        'derivation overwrites them). `customCss` is plan-gated (Growth and ' +
+        'color has no `background`, a fill no `color` — the schema is the authority). Settings ' +
+        'are pure INTENT: write a hex to customize an Auto-capable color, or the literal ' +
+        '"Auto" (the default for hover/active) to let the renderer derive it; read what ' +
+        '"Auto" resolves to with get_theme expand: ["resolvedSettings"]. ' +
+        '`customCss` is plan-gated (Growth and ' +
         'above): introducing or changing it on a lower plan is refused (E1038) — echoing the ' +
         'stored value back, or clearing it, always passes. The full schema is large (~10k ' +
         'tokens); when you already know which part you are styling, pass `section` for just ' +

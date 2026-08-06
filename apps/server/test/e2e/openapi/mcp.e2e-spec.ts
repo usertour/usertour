@@ -2787,8 +2787,8 @@ describe('MCP endpoint (e2e)', () => {
       expect(created).toMatchObject({ object: 'theme', name: 'MCP themed' });
       expect(created.settings.font.fontSize).toBe(18);
       expect(created.settings.brandColor.background).toBe('#ff0000');
-      // auto colors derived server-side; untouched defaults preserved
-      expect(created.settings.brandColor.autoHover).toBeTruthy();
+      // the derivation cache never leaks into reads; untouched defaults preserved
+      expect(created.settings.brandColor.autoHover).toBeUndefined();
       expect(created.settings.font.lineHeight).toBeTruthy();
     });
 

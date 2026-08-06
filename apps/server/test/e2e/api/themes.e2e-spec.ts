@@ -184,10 +184,22 @@ describe('API v2 themes + version themeId (e2e)', () => {
     // patch applied
     expect(res.body.settings.font.fontSize).toBe(18);
     expect(res.body.settings.brandColor.background).toBe('#ff0000');
-    // untouched default fields preserved; auto colors derived from the new base
+    // untouched default fields preserved; the derivation cache never leaks into reads
     expect(res.body.settings.font.lineHeight).toBeTruthy();
-    expect(res.body.settings.brandColor.autoHover).toBeTruthy();
+    expect(res.body.settings.brandColor.autoHover).toBeUndefined();
     expect(res.body.variations).toEqual([]);
+
+    // The render truth lives in the resolvedSettings view: every "Auto" concrete.
+    const resolved = await send(
+      'get',
+      `${basePath()}/${res.body.id}?expand=resolvedSettings`,
+      token,
+    );
+    expect(resolved.status).toBe(200);
+    expect(resolved.body.resolvedSettings.brandColor.hover).toMatch(/^#[0-9a-fA-F]{6}$/);
+    expect(resolved.body.resolvedSettings.brandColor.autoHover).toBeUndefined();
+    // intent stays unresolved in the settings view
+    expect(res.body.settings.brandColor.hover).toBe('Auto');
   });
 
   it('rejects a settings patch with an unknown path (strict)', async () => {
@@ -408,7 +420,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(res.body.settings.font.fontSize).toBe(20);
     expect(res.body.settings.brandColor.background).toBe('#123456');
     expect(res.body.settings.buttons.primary.backgroundColor).toBeTruthy();
-    expect(res.body.settings.brandColor.autoHover).toBeTruthy();
+    expect(res.body.settings.brandColor.autoHover).toBeUndefined();
   });
 
   it('updates theme settings (field-merged) and reads them back', async () => {
@@ -690,11 +702,10 @@ describe('API v2 themes + version themeId (e2e)', () => {
       ]),
     );
     // A variation stores a COMPLETE settings copy: the patch applied, the rest
-    // inherited from the theme base, auto colors derived per variation.
+    // inherited from the theme base; the derivation cache never leaks into reads.
     expect(dark.settings.brandColor.background).toBe('#000000');
     expect(dark.settings.font.fontSize).toBeTruthy();
-    expect(dark.settings.brandColor.autoHover).toBeTruthy();
-    expect(dark.settings.brandColor.autoHover).not.toBe(created.body.settings.brandColor.autoHover);
+    expect(dark.settings.brandColor.autoHover).toBeUndefined();
     // No patch on the second variation — it IS the base.
     expect(pro.settings.brandColor.background).toBe('#112233');
     expect(dark.id).toBeTruthy();

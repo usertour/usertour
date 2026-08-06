@@ -1,3 +1,6 @@
+import { convertSettings } from '@usertour/helpers';
+import type { ThemeTypesSetting } from '@usertour/types';
+
 import { type DecompileResolvers, decompileWhen } from '../content-representation/rules.decompile';
 import { ApiObjectType } from '../shared/object-type';
 import { normalizeStoredSettings } from './settings.schema';
@@ -61,6 +64,16 @@ export function mapTheme(
         // colors) so the read matches the declared types — see
         // normalizeStoredSettings.
         { settings: normalizeStoredSettings((node.settings ?? {}) as Record<string, unknown>) }
+      : {}),
+    ...(expand.includes('resolvedSettings')
+      ? // The render truth: the SAME derivation pipeline the SDK runs
+        // (convertSettings), then normalized to the contract shape — every
+        // "Auto" concrete, no derivation-cache keys.
+        {
+          resolvedSettings: normalizeStoredSettings(
+            convertSettings((node.settings ?? {}) as unknown as ThemeTypesSetting),
+          ) as unknown as Record<string, unknown>,
+        }
       : {}),
     ...(expand.includes('variations')
       ? { variations: mapVariations(node.variations, resolvers) }

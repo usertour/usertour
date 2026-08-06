@@ -107,22 +107,15 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
   });
 
   it('accepts each color group exactly as wide as the renderer reads it', () => {
-    // brandColor is a full base group; the buttons groups persist server-derived
-    // auto* — but a text color has no `background` and a fill has no `color`.
+    // Groups carry INTENT only — a text color has no `background`, a fill has
+    // no `color`, and the derivation cache (auto*) is not a contract key.
     expect(
       ok({
-        brandColor: {
-          color: '#f8fafc',
-          hover: 'Auto',
-          active: 'Auto',
-          background: '#111111',
-          autoHover: '#3162ec',
-          autoActive: '#274fbd',
-        },
+        brandColor: { color: '#f8fafc', hover: 'Auto', active: 'Auto', background: '#111111' },
         buttons: {
           primary: {
             backgroundColor: { hover: 'Auto', active: 'Auto', background: 'Auto' },
-            textColor: { color: 'Auto', hover: 'Auto', active: 'Auto', autoHover: '#111111' },
+            textColor: { color: 'Auto', hover: 'Auto', active: 'Auto' },
           },
         },
       }),
@@ -135,24 +128,40 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
     expect(ok({ buttons: { primary: { textColor: { background: '#FFFFFF' } } } })).toBe(false);
     expect(ok({ buttons: { primary: { backgroundColor: { color: '#FFFFFF' } } } })).toBe(false);
     expect(ok({ checklistLauncher: { counter: { hover: 'Auto' } } })).toBe(false);
-    // auto* only exists where the server persists it (base pair + buttons.*).
+    // The derivation cache is a delivery detail, not a contract key — anywhere.
+    expect(ok({ brandColor: { autoHover: '#3162ec' } })).toBe(false);
     expect(ok({ launcherButtons: { primary: { textColor: { autoHover: '#111111' } } } })).toBe(
       false,
     );
     expect(unknownColorKeyHint('buttons.primary.textColor', 'background')).toBe(
-      '`buttons.primary.textColor` has no `background` — it takes {color, hover, active, autoHover, autoActive}',
+      '`buttons.primary.textColor` has no `background` — it takes {color, hover, active}',
     );
+    expect(unknownColorKeyHint('brandColor', 'autoHover')).toContain('{background, color, hover');
     expect(unknownColorKeyHint('resourceCenterLauncherButton.color', 'color')).toContain(
       'foreground',
     );
 
     const read = normalizeStoredSettings({
+      brandColor: {
+        background: '#111111',
+        color: '#f8fafc',
+        hover: 'Auto',
+        active: 'Auto',
+        autoHover: '#3162ec',
+        autoActive: '#274fbd',
+      },
       buttons: {
         primary: {
           textColor: { color: 'Auto', hover: 'Auto', active: 'Auto', background: '#FFFFFF' },
         },
       },
       checklistLauncher: { counter: { background: 'Auto', color: 'Auto' } },
+    });
+    expect(read.brandColor).toEqual({
+      background: '#111111',
+      color: '#f8fafc',
+      hover: 'Auto',
+      active: 'Auto',
     });
     expect(read.buttons.primary.textColor).toEqual({
       color: 'Auto',

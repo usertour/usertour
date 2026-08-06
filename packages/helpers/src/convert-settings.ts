@@ -342,6 +342,32 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   // Survey auto values
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
 
+  // Checklist checkmark — Auto follows the brand fill (same family as
+  // progress/survey). Unresolved, the literal "Auto" leaked into the CSS var
+  // and the checkmark lost its color (a hole open since v1; zero themes ever
+  // stored 'Auto' here, so wiring it changes nothing existing).
+  data.checklist.checkmarkColor = resolveAutoValue(
+    data.checklist.checkmarkColor,
+    data.brandColor.background,
+  );
+
+  // RC header background — mirrors what the downstream consumers already did
+  // with 'Auto' (the css-var stage and the widget's gradient fallbacks), so
+  // resolving here is behavior-preserving: solid falls to mainColor.active
+  // (the soft brand tint), the gradient runs brand background → surface
+  // background. Centralised so every consumer (builder swatches, the
+  // resolvedSettings view, CSS vars) reads one answer.
+  const headerBackground = data.resourceCenter!.headerBackground;
+  headerBackground.color = resolveAutoValue(headerBackground.color, data.mainColor.active);
+  headerBackground.gradientFrom = resolveAutoValue(
+    headerBackground.gradientFrom,
+    data.brandColor.background,
+  );
+  headerBackground.gradientTo = resolveAutoValue(
+    headerBackground.gradientTo,
+    data.mainColor.background,
+  );
+
   // Focus highlight auto values
   data.focusHighlight.color = resolveAutoValue(data.focusHighlight.color, data.mainColor.active);
 

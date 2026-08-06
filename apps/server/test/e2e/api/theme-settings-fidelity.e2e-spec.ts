@@ -219,10 +219,16 @@ describe('API v2 theme settings per-item fidelity (e2e)', () => {
       .filter(({ read }) => read !== 'Auto');
     expect(notAuto).toEqual([]);
 
-    // 'Auto' is only renderable because the server derived the concrete
-    // companions from the base colors on write.
-    expect(after.body.settings.brandColor.autoHover).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(after.body.settings.brandColor.autoActive).toMatch(/^#[0-9a-f]{6}$/i);
-    expect(after.body.settings.mainColor.autoHover).toMatch(/^#[0-9a-f]{6}$/i);
+    // The derivation cache never leaks into reads; the render truth is the
+    // resolvedSettings view — every Auto-capable path comes back concrete.
+    expect(after.body.settings.brandColor.autoHover).toBeUndefined();
+    expect(after.body.settings.mainColor.autoHover).toBeUndefined();
+
+    const resolved = await send('get', `${basePath()}/${themeId}?expand=resolvedSettings`);
+    expect(resolved.status).toBe(200);
+    const unresolved = autoPaths
+      .map((path) => ({ path, read: getAtPath(resolved.body.resolvedSettings, path) }))
+      .filter(({ read }) => read === 'Auto');
+    expect(unresolved).toEqual([]);
   }, 60000);
 });

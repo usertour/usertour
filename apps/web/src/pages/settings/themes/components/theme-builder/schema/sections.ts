@@ -822,14 +822,14 @@ export const builderSections: BuilderSection[] = [
             ],
           },
           {
+            // These three (and checkmark) resolve 'Auto' in convertSettings now,
+            // so the default finalSettings swatch is the runtime truth — the old
+            // per-field autoFallbacks drifted from it (gradientTo previewed
+            // brandColor.color while the runtime falls to the surface background).
             type: 'color',
             path: 'resourceCenter.headerBackground.color',
             label: 'themeBuilder.fields.resourceCenter.backgroundColor',
             allowAuto: true,
-            autoFallback: (s) =>
-              s.mainColor.active === 'Auto'
-                ? ((s.mainColor.autoActive as string) ?? s.mainColor.background)
-                : s.mainColor.active,
             visibleWhen: (s) => s.resourceCenter?.headerBackground.type === 'color',
           },
           {
@@ -837,7 +837,6 @@ export const builderSections: BuilderSection[] = [
             path: 'resourceCenter.headerBackground.gradientFrom',
             label: 'themeBuilder.fields.resourceCenter.gradientFrom',
             allowAuto: true,
-            autoFallback: (s) => s.brandColor.background,
             visibleWhen: (s) => s.resourceCenter?.headerBackground.type === 'gradient',
           },
           {
@@ -845,7 +844,6 @@ export const builderSections: BuilderSection[] = [
             path: 'resourceCenter.headerBackground.gradientTo',
             label: 'themeBuilder.fields.resourceCenter.gradientTo',
             allowAuto: true,
-            autoFallback: (s) => s.brandColor.color,
             visibleWhen: (s) => s.resourceCenter?.headerBackground.type === 'gradient',
           },
           {

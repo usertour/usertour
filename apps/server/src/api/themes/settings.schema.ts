@@ -107,15 +107,15 @@ const buildTree = (flat: Record<string, ThemeSettingConstraint>): Tree => {
  */
 const COLOR_GROUP_KEYS = ['background', 'color', 'hover', 'active'] as const;
 const COLOR_COMPANION_KEYS = [...COLOR_GROUP_KEYS, 'autoHover', 'autoActive'] as const;
-const AUTO_KEYS = ['autoHover', 'autoActive'] as const;
 
 /**
- * The ALLOWED key set per multi-key color node — the renderer's actual reads,
- * audited key-by-key against convert-settings + the widget (2026-08-06):
+ * The ALLOWED key set per multi-key color node — the contract carries INTENT
+ * only, audited key-by-key against the renderer (2026-08-06):
  * - text/border colors have no `background`; fills have no `color`;
- * - `autoHover`/`autoActive` exist only where the server persists them on
- *   write (deriveThemeAutoColors: the base pair + the six `buttons.*` groups);
- *   every other group resolves 'Auto' at render time from the cascade;
+ * - `autoHover`/`autoActive` are NOT contract keys anywhere: they are the
+ *   server's persisted derivation cache (deriveThemeAutoColors) — a delivery
+ *   detail for the SDK, stripped from reads and rejected on writes. The
+ *   render resolution is readable via `expand: ["resolvedSettings"]` instead;
  * - the checklist-launcher counter badge is a {background, color} pair — it
  *   has no interactive states;
  * - the resource-center launcher uses `foreground` where everything else says
@@ -124,21 +124,21 @@ const AUTO_KEYS = ['autoHover', 'autoActive'] as const;
  * table and SINGLE_COLOR_SETTINGS, so a new setting cannot silently inherit
  * the old six-key template.
  */
-const TEXT_WITH_AUTO = ['color', 'hover', 'active', ...AUTO_KEYS] as const;
-const FILL_WITH_AUTO = ['background', 'hover', 'active', ...AUTO_KEYS] as const;
+const TEXT_KEYS = ['color', 'hover', 'active'] as const;
+const FILL_KEYS = ['background', 'hover', 'active'] as const;
 const COLOR_GROUP_KEY_SETS: Readonly<Record<string, readonly string[]>> = {
-  mainColor: COLOR_COMPANION_KEYS,
-  brandColor: COLOR_COMPANION_KEYS,
-  'buttons.primary.textColor': TEXT_WITH_AUTO,
-  'buttons.primary.backgroundColor': FILL_WITH_AUTO,
-  'buttons.primary.border.color': TEXT_WITH_AUTO,
-  'buttons.secondary.textColor': TEXT_WITH_AUTO,
-  'buttons.secondary.backgroundColor': FILL_WITH_AUTO,
-  'buttons.secondary.border.color': TEXT_WITH_AUTO,
-  'launcherButtons.primary.textColor': ['color', 'hover', 'active'],
-  'launcherButtons.primary.backgroundColor': ['background', 'hover', 'active'],
-  'launcherButtons.primary.border.color': ['color', 'hover', 'active'],
-  'launcherIcon.color': ['color', 'hover', 'active'],
+  mainColor: COLOR_GROUP_KEYS,
+  brandColor: COLOR_GROUP_KEYS,
+  'buttons.primary.textColor': TEXT_KEYS,
+  'buttons.primary.backgroundColor': FILL_KEYS,
+  'buttons.primary.border.color': TEXT_KEYS,
+  'buttons.secondary.textColor': TEXT_KEYS,
+  'buttons.secondary.backgroundColor': FILL_KEYS,
+  'buttons.secondary.border.color': TEXT_KEYS,
+  'launcherButtons.primary.textColor': TEXT_KEYS,
+  'launcherButtons.primary.backgroundColor': FILL_KEYS,
+  'launcherButtons.primary.border.color': TEXT_KEYS,
+  'launcherIcon.color': TEXT_KEYS,
   'checklistLauncher.color': ['background', 'color', 'hover', 'active'],
   'checklistLauncher.counter': ['background', 'color'],
   'resourceCenterLauncherButton.color': ['background', 'foreground', 'hover', 'active'],

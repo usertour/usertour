@@ -20,7 +20,7 @@ import { themeSettingsPatchSchema } from './settings.schema';
  * `variations[].settings` is pass-through like the base settings.
  */
 
-export const themeExpand = z.enum(['settings', 'variations']);
+export const themeExpand = z.enum(['settings', 'variations', 'resolvedSettings']);
 
 /** Theme settings — an opaque (pass-through) object. */
 const themeSettings = z.record(z.string(), z.unknown());
@@ -54,6 +54,13 @@ export const theme = z.object({
     ),
   // Present only when the corresponding expand is requested.
   settings: themeSettings.optional(),
+  resolvedSettings: themeSettings
+    .optional()
+    .describe(
+      'Read-only render resolution of `settings`: the same shape with every "Auto" replaced ' +
+        'by the concrete color the renderer derives (the shared derivation the SDK runs). ' +
+        'Request with expand: ["resolvedSettings"]. Not writable — author intent in `settings`.',
+    ),
   variations: z.array(themeVariation).optional(),
 });
 export class ThemeDto extends createZodDto(theme) {}
@@ -63,12 +70,16 @@ export const listThemesQuery = z.object({
   cursor,
   ...nameSearchField,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
-  expand: singleOrArray(themeExpand).describe('Inline: settings, variations.'),
+  expand: singleOrArray(themeExpand).describe(
+    'Inline: settings (stored intent), variations, resolvedSettings (every "Auto" resolved).',
+  ),
 });
 export class ListThemesQueryDto extends createZodDto(listThemesQuery) {}
 
 export const getThemeQuery = z.object({
-  expand: singleOrArray(themeExpand).describe('Inline: settings, variations.'),
+  expand: singleOrArray(themeExpand).describe(
+    'Inline: settings (stored intent), variations, resolvedSettings (every "Auto" resolved).',
+  ),
 });
 export class GetThemeQueryDto extends createZodDto(getThemeQuery) {}
 
@@ -87,11 +98,9 @@ const settingsField = themeSettingsPatchSchema
   .optional()
   .describe(
     'Partial theme styling to merge onto the current settings (colors, fonts, ' +
-      'sizes, …). Send only the fields you change; omitted fields are kept. "Auto" ' +
-      'hover/active colors: the base colors (mainColor/brandColor) and the two button groups ' +
-      'get persisted `auto*` values derived server-side on write; every OTHER color group ' +
-      'resolves "Auto" at render time from the base colors — its objects carry no `auto*` ' +
-      'keys, by design.',
+      'sizes, …). Send only the fields you change; omitted fields are kept. This is pure ' +
+      'INTENT: Auto-capable color fields take a hex or the literal "Auto" (derived at ' +
+      'render); read what "Auto" resolves to with expand: ["resolvedSettings"].',
   );
 
 /**
