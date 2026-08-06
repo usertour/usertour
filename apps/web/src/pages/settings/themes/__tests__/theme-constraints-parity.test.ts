@@ -70,7 +70,10 @@ const projectField = (f: FieldDef): Array<[string, Constraint]> => {
     case 'font-family':
     case 'code':
       return [[f.path, { kind: 'string' }]];
-    case 'placement':
+    case 'placement': {
+      const offsets: Constraint = { kind: 'number' };
+      if (f.offsetMin !== undefined) offsets.min = f.offsetMin;
+      if (f.offsetMax !== undefined) offsets.max = f.offsetMax;
       return [
         [
           `${f.path}.position`,
@@ -79,14 +82,16 @@ const projectField = (f: FieldDef): Array<[string, Constraint]> => {
             values: f.options ? f.options.map((o) => o.value) : DEFAULT_PLACEMENT_POSITIONS,
           },
         ],
-        [`${f.path}.positionOffsetX`, { kind: 'number' }],
-        [`${f.path}.positionOffsetY`, { kind: 'number' }],
+        [`${f.path}.positionOffsetX`, { ...offsets }],
+        [`${f.path}.positionOffsetY`, { ...offsets }],
       ];
+    }
     case 'dynamic-number':
       return f.allPaths.map((p) => {
         const c: Constraint = { kind: 'number' };
-        if (f.min !== undefined) c.min = f.min;
-        if (f.max !== undefined) c.max = f.max;
+        const bounds = f.boundsByPath?.[p] ?? { min: f.min, max: f.max };
+        if (bounds.min !== undefined) c.min = bounds.min;
+        if (bounds.max !== undefined) c.max = bounds.max;
         return [p, c] as [string, Constraint];
       });
     case 'sub-section':

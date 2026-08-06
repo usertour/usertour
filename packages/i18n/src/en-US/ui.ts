@@ -2924,8 +2924,8 @@ const translations = {
       selectWidget: 'Select widget…',
     },
     validation: {
-      toleranceMax: 'Maximum value is {{max}}',
-      widthZero: 'Width cannot be 0',
+      range: 'Between {{min}} and {{max}} — the preview uses the nearest allowed value',
+      min: 'At least {{min}} — the preview uses the nearest allowed value',
       invalidVariation: '"{{name}}" has incomplete conditions — fix or remove them before saving.',
     },
     alerts: {

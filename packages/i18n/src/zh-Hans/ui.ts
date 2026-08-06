@@ -2760,8 +2760,8 @@ const translations = {
       selectWidget: '选择 widget…',
     },
     validation: {
-      toleranceMax: '最大值为 {{max}}',
-      widthZero: '宽度不能为 0',
+      range: '范围 {{min}} 到 {{max}},预览按就近的允许值渲染',
+      min: '最小 {{min}},预览按就近的允许值渲染',
       invalidVariation: '“{{name}}” 还有未填写完整的条件,先修复或移除再保存。',
     },
     alerts: {

@@ -82,7 +82,7 @@ What it costs to skip the decision: a default-themed modal is 600px wide and sim
 ---
 
 **If you chose (2), these are the numbers to set** — none of them adapts on its own:
-- \`modal.width\` — default 600. Minimum accepted is **320**, which is the only value that leaves margin on a 375px screen. Drop \`modal.padding\` (default 40) too or the content column gets squeezed to nothing.
+- \`modal.width\` — default 600. On a 375px screen, ~**320–340** is the band that still leaves side margins (the field accepts down to 100, but below ~320 the content column collapses). Drop \`modal.padding\` (default 40) too or what column remains gets squeezed to nothing.
 - \`announcement.modalWidth\` / \`announcement.bubbleWidth\` — default 600 / 480, **separate fields from \`modal\`**: theming the modal does NOT narrow announcement popups (a reviewer who patched every size field they could think of still shipped a 600px announcement, because that one lives under its own section — read the \`sections\` list \`get_theme_schema\` returns, don't theme from memory).
 - \`checklist.width\` (360), \`resourceCenter.normalWidth\` / \`largeWidth\` (360 / 480), \`bubble.width\` (300), \`tooltip.width\` (300).
 

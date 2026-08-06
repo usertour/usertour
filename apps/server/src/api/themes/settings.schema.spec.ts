@@ -84,7 +84,8 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
     expect(r.success).toBe(true);
     expect((r as { data: { border: { borderRadius: number } } }).data.border.borderRadius).toBe(8);
     // Range still applies to the coerced value; junk strings still fail.
-    expect(ok({ border: { borderRadius: '999' } })).toBe(false);
+    // (borderRadius has no upper bound, so the range probe is its min.)
+    expect(ok({ border: { borderRadius: '-1' } })).toBe(false);
     expect(ok({ border: { borderRadius: 'abc' } })).toBe(false);
   });
 
