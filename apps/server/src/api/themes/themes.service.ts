@@ -161,11 +161,11 @@ export class ApiThemesService {
       // round-tripping once per field.
       const paths = changed.map((path) => `settings.${path}`);
       throw new ValidationError(
-        `${paths.join(', ')} ${paths.length === 1 ? 'is' : 'are'} managed in the theme builder and read-only via the API — write them back unchanged or omit them.`,
+        `${paths.join(', ')} ${paths.length === 1 ? 'is' : 'are'} read-only through the API — write them back unchanged or omit them.`,
         paths.map((path) => ({
           rule: 'schema',
           path,
-          message: 'built-in (builder-managed): echo back unchanged or omit',
+          message: 'read-only through the API: echo back unchanged or omit',
         })),
       );
     }
@@ -290,12 +290,12 @@ export class ApiThemesService {
         const type = (c as { type?: unknown })?.type;
         if (type === 'unsupported') {
           throw new ValidationError(
-            `"unsupported" at ${at} is a read-side placeholder for a stored condition this API cannot express — it cannot be written back. Remove it (which DELETES that stored condition) or migrate the variation's conditions in the theme builder first.`,
+            `"unsupported" at ${at} is a read-side placeholder for a stored condition this API cannot express — it cannot be written back. Remove it (which DELETES that stored condition) or migrate the variation's conditions in the Usertour app first.`,
           );
         }
         if (typeof type !== 'string' || !ALLOWED.has(type)) {
           throw new ValidationError(
-            `Variation conditions support only user attribute / current_url conditions (and groups of them) — the same set the theme builder's variation editor offers; got "${String(type)}" at ${at}. Put audience logic in the CONTENT start rules; drive state-based styling (e.g. dark mode) off a user attribute your app sets.`,
+            `Variation conditions support only user attribute / current_url conditions (and groups of them); got "${String(type)}" at ${at}. Put audience logic in the CONTENT start rules; drive state-based styling (e.g. dark mode) off a user attribute your app sets.`,
           );
         }
         if (type === 'attribute' && (c as { scope?: unknown }).scope !== 'user') {

@@ -313,7 +313,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
     });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('E1017');
-    expect(res.body.error.message).toContain('theme builder');
+    expect(res.body.error.message).toContain('read-only through the API');
   });
 
   it('reports EVERY violated builder-managed path at once (no one-at-a-time crawl)', async () => {
@@ -754,7 +754,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
       ],
     });
     expect(el.status).toBe(400);
-    expect(el.body.error.message).toContain('theme builder');
+    expect(el.body.error.message).toContain('user attribute / current_url');
 
     // attribute conditions align to the builder's USER attributes.
     const co = await send('post', basePath(), token).send({

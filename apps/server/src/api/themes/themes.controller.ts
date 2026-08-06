@@ -96,9 +96,8 @@ export class ApiThemesController {
   @ApiOperation({
     summary: 'Duplicate a theme',
     description:
-      'Copy a theme (settings + variations verbatim) into a fresh non-default theme — the same ' +
-      "path the builder's duplicate dialog uses. System themes may be duplicated (the natural " +
-      '"derive from Standard Light" flow).',
+      'Copy a theme (settings + variations verbatim) into a fresh non-default theme. System ' +
+      'themes may be duplicated (the natural "derive from Standard Light" flow).',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID (the source)' })

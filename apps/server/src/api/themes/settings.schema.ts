@@ -237,7 +237,7 @@ const treeToZod = (tree: Tree): z.ZodTypeAny => {
         ? z
             .unknown()
             .describe(
-              'Built-in (builder-managed): echo it back unchanged or omit it — a changed value ' +
+              'Read-only through the API: echo it back unchanged or omit it — a changed value ' +
                 'is rejected.',
             )
         : (child.kind as string) === 'media-url'
@@ -247,8 +247,8 @@ const treeToZod = (tree: Tree): z.ZodTypeAny => {
                 message: 'must be an http(s) URL, or an empty string to clear the image',
               })
               .describe(
-                'Image URL rendered to end users (writable). Empty string clears it. The builder ' +
-                  'sets this via upload; the API accepts any http(s) URL you host.',
+                'Image URL rendered to end users (writable). Empty string clears it. ' +
+                  'Any http(s) URL you host.',
               )
           : leafSchema(child)
       : treeToZod(child);

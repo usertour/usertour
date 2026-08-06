@@ -112,15 +112,14 @@ export const themeVariationInput = z
           'place — its stored settings are the merge base. Omit to create a new variation ' +
           '(the theme base settings are the merge base).',
       ),
-    name: z.string().min(1).describe('Variation label shown in the theme builder.'),
+    name: z.string().min(1).describe('Human-readable label for this variation.'),
     conditions: z
       .array(representationCondition)
       .min(1)
       .describe(
         'When this variation applies — evaluated in the BROWSER on each render; the first ' +
           'variation (in array order) whose conditions match wins, else the base settings ' +
-          'apply. Takes user attribute / current_url conditions and groups of them (the same ' +
-          "set the theme builder's variation editor offers).",
+          'apply. Takes user attribute / current_url conditions and groups of them.',
       ),
     settings: themeSettingsPatchSchema
       .optional()

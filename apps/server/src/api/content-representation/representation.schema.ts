@@ -571,9 +571,10 @@ export const representationAction = z.discriminatedUnion('type', [
   z
     .object({ type: z.literal('run_javascript'), script: z.string() })
     .describe(
-      'Read-back of a builder-authored script action. Echo it back UNCHANGED (same script) when ' +
-        'rewriting the surrounding list and the stored action is preserved; omitting it deletes it ' +
-        '(action lists are full replacements). Authoring a new or edited script is rejected.',
+      'Read-back of an existing script action — scripts are not authorable through this API. ' +
+        'Echo it back UNCHANGED (same script) when rewriting the surrounding list and the stored ' +
+        'action is preserved; omitting it deletes it (action lists are full replacements). ' +
+        'Authoring a new or edited script is rejected.',
     ),
   z
     .object({ type: z.literal('unsupported'), note: z.string().optional() })
