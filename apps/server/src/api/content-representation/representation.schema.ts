@@ -952,6 +952,7 @@ export const representationStep = z.object({
   themeId: z.string().nullable(),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
+  /** Per-step width override in pixels; absent = the theme's surface width. */
   width: z.number().optional(),
   skippable: z.boolean().optional(),
   /** Marks this step as an explicit completion point for the flow. */
@@ -1090,7 +1091,15 @@ export const representationStepInput = z.object({
     ),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
-  width: z.number().optional(),
+  width: z
+    .number()
+    .optional()
+    .describe(
+      "Step width in pixels — OVERRIDES the theme's surface width (tooltip.width / " +
+        'modal.width / bubble.width) for THIS step only; omit to use the theme width. ' +
+        'Widths are border-box: the outer edge renders at exactly this value (border inside); ' +
+        'the inner iframe measures 2x the theme border width less.',
+    ),
   skippable: z.boolean().optional(),
   explicitCompletionStep: z
     .boolean()

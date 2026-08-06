@@ -10,12 +10,13 @@ export function hexToHSLString(hexColor: string): string {
     const color = chroma(hexColor);
     const [h, s, l] = color.hsl();
 
-    // Convert to degrees and percentages
-    const hDeg = Math.round(h || 0);
-    const sPct = Math.round(s * 100);
-    const lPct = Math.round(l * 100);
+    // Two decimals, not integers: integer rounding drifted the rendered color
+    // by up to 1/255 from the authored hex (#0B5FFF came back #0A60FF), which
+    // fails any design-token audit comparing hex values. Two decimals carry
+    // enough precision for the browser to reconstruct the exact 8-bit channel.
+    const fmt = (n: number): number => Math.round(n * 100) / 100;
 
-    return `${hDeg} ${sPct}% ${lPct}%`;
+    return `${fmt(h || 0)} ${fmt(s * 100)}% ${fmt(l * 100)}%`;
   } catch (error) {
     console.warn(`Failed to convert ${hexColor} to HSL string:`, error);
     return '0 0% 0%'; // Fallback to black

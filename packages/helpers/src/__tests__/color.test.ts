@@ -1,3 +1,5 @@
+import chroma from 'chroma-js';
+
 import { generateStateColors, hexToHSLAString, hexToHSLString, hexToRGBStr } from '../color';
 
 /**
@@ -17,9 +19,9 @@ describe('color conversions', () => {
       ['#ffff00', '60 100% 50%'],
       ['#00ffff', '180 100% 50%'],
       ['#ff00ff', '300 100% 50%'],
-      ['#ff8000', '30 100% 50%'],
-      ['#800080', '300 100% 25%'],
-      ['#808080', '0 0% 50%'],
+      ['#ff8000', '30.12 100% 50%'],
+      ['#800080', '300 100% 25.1%'],
+      ['#808080', '0 0% 50.2%'],
       ['#f00', '0 100% 50%'],
     ])('converts %s to "%s"', (hex, expected) => {
       expect(hexToHSLString(hex)).toBe(expected);
@@ -30,6 +32,20 @@ describe('color conversions', () => {
       expect(hexToHSLString('Auto')).toBe('0 0% 0%');
       expect(hexToHSLString('')).toBe('0 0% 0%');
       warn.mockRestore();
+    });
+
+    it('round-trips back to the exact authored hex (lossless at 8-bit)', () => {
+      // Integer-rounded HSL drifted the rendered color by up to 1/255 from
+      // the authored hex (#0B5FFF rendered as #0A60FF) — caught by the
+      // zero-knowledge theme eval, invisible to eyes but fatal to any
+      // design-token audit comparing hex values. Two decimals reconstruct
+      // the exact channel; these hexes are the ones that drifted.
+      for (const hex of ['#0b5fff', '#0b3fb0', '#e7eaf0', '#155eef', '#2a2ad5', '#cedcfb']) {
+        const [h, s, l] = hexToHSLString(hex)
+          .split(' ')
+          .map((part) => Number.parseFloat(part));
+        expect(chroma.hsl(h, s / 100, l / 100).hex()).toBe(hex);
+      }
     });
   });
 

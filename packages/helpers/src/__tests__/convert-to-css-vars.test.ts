@@ -226,7 +226,7 @@ const expectedTooltipVars: Record<string, string> = {
   '--usertour-font-weight-bold': '640',
   '--usertour-h1-font-size': '31px',
   '--usertour-h2-font-size': '27px',
-  '--usertour-link-color': '30 100% 50%',
+  '--usertour-link-color': '30.12 100% 50%',
   '--usertour-widget-popper-border-width': '3px',
   '--usertour-widget-popper-border-color': '#111213',
   '--usertour-button-border-radius': '9px',
@@ -316,7 +316,7 @@ const expectedTooltipVars: Record<string, string> = {
   '--usertour-banner-padding': '13px',
   '--usertour-checklist-trigger-height': '57px',
   '--usertour-checklist-trigger-hover-background-color': '#575859',
-  '--usertour-question-color': '300 100% 25%',
+  '--usertour-question-color': '300 100% 25.1%',
   '--usertour-launcher-button-height': '37px',
   '--usertour-launcher-button-width': '121px',
   '--usertour-launcher-button-horizontal-padding': '18px',
@@ -449,11 +449,11 @@ describe('convertSettings -> convertToCssVars pipeline', () => {
     } as ThemeTypesSetting);
     const parsed = parseCssVars(convertToCssVars(resolved));
     expect(parsed['--usertour-banner-background-color']).toBe('0 0% 100%');
-    expect(parsed['--usertour-banner-foreground-color']).toBe('220 87% 51%');
-    expect(parsed['--usertour-banner-hover-background-color']).toBe('219 85% 95%');
-    expect(parsed['--usertour-banner-active-background-color']).toBe('220 89% 89%');
-    expect(parsed['--usertour-banner-hover-foreground-color']).toBe('220 87% 59%');
-    expect(parsed['--usertour-banner-active-foreground-color']).toBe('220 84% 43%');
+    expect(parsed['--usertour-banner-foreground-color']).toBe('219.91 87.2% 50.98%');
+    expect(parsed['--usertour-banner-hover-background-color']).toBe('219.13 85.19% 94.71%');
+    expect(parsed['--usertour-banner-active-background-color']).toBe('220 88.89% 89.41%');
+    expect(parsed['--usertour-banner-hover-foreground-color']).toBe('219.78 87.44% 59.41%');
+    expect(parsed['--usertour-banner-active-foreground-color']).toBe('219.89 83.71% 43.33%');
   });
 
   it('cascades resource-center launcher colors from brand when the RC blocks are absent', () => {
@@ -467,7 +467,7 @@ describe('convertSettings -> convertToCssVars pipeline', () => {
     // Hover/active derive via generateStateColors('#0000ff', '#ffff00')
     // = #2a2ad5 / #0000ff (see color.test.ts).
     expect(parsed['--usertour-resource-center-launcher-hover-background-color']).toBe(
-      '240 67% 50%',
+      '240 67.06% 50%',
     );
     expect(parsed['--usertour-resource-center-launcher-active-background-color']).toBe(
       '240 100% 50%',
@@ -479,7 +479,9 @@ describe('convertSettings -> convertToCssVars pipeline', () => {
     // Default header background is 'Auto' -> resolved mainColor.active,
     // i.e. defaultSettings.mainColor.autoActive (#cedcfb).
     expect(defaultSettings.mainColor.autoActive).toBe('#cedcfb');
-    expect(parsed['--usertour-resource-center-header-background-color']).toBe('221 85% 90%');
+    expect(parsed['--usertour-resource-center-header-background-color']).toBe(
+      '221.33 84.91% 89.61%',
+    );
   });
 
   it('resolves System font to the default stack before mapping', () => {

@@ -286,7 +286,10 @@ export const representationLauncher = z
         placement: launcherPlacement
           .optional()
           .describe('Where the tooltip opens relative to its anchor (see `reference`).'),
-        width: z.number().optional().describe('Tooltip width in pixels. Omit for the default.'),
+        width: z
+          .number()
+          .optional()
+          .describe("Tooltip width in pixels. Omit to use the theme's tooltip.width."),
         reference: z
           .enum(['target', 'launcher'])
           .optional()
