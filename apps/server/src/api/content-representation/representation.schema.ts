@@ -100,9 +100,18 @@ export const representationPlacement = z
               'always carry concrete side/align even in `auto` mode (the auto starting position, ' +
               'bottom/center) — `alignType` is what governs, and `auto` still flips at runtime.',
           ),
-        // A tooltip may dim the page (backdrop) and block clicks on its target.
-        backdrop: z.boolean().optional(),
-        blockTarget: z.boolean().optional(),
+        backdrop: z
+          .boolean()
+          .optional()
+          .describe('Dim the rest of the page while this tooltip is up.'),
+        blockTarget: z
+          .boolean()
+          .optional()
+          .describe(
+            'Make the backdrop swallow clicks on the highlighted element, so the user must ' +
+              'use the tooltip. REQUIRES `backdrop: true` — on its own it does nothing ' +
+              '(the renderer only consults it inside the backdrop branch).',
+          ),
       })
       // `.strict()`: reject unknown keys so a modal-shape `{ position }` does NOT
       // match this branch (all its own fields are optional now) and get silently
@@ -132,7 +141,6 @@ export const representationPlacement = z
           ),
         offsetY: z.number().optional().describe('See `offsetX`.'),
         backdrop: z.boolean().optional(),
-        blockTarget: z.boolean().optional(),
       })
       .strict(),
   ])
@@ -140,7 +148,9 @@ export const representationPlacement = z
     'Two placement shapes, by step kind: a TOOLTIP (anchored to a `target`) uses ' +
       '`{ side, align, sideOffset?, alignOffset?, alignType? }` positioned relative to the ' +
       'element; a MODAL or any anchorless step uses `{ position, offsetX?, offsetY? }` on a ' +
-      '9-cell viewport grid (e.g. `"center"`). Both may set `backdrop` / `blockTarget`.',
+      '9-cell viewport grid (e.g. `"center"`). Both may set `backdrop`; `blockTarget` is ' +
+      'TOOLTIP-ONLY (a modal already covers the page) and additionally requires `backdrop: true` ' +
+      '— it makes the backdrop swallow clicks on the highlighted element.',
   );
 export type RepresentationPlacement = z.infer<typeof representationPlacement>;
 
@@ -568,8 +578,10 @@ export const representationAction = z.discriminatedUnion('type', [
         'Absolute URL, or an app-relative path ("/docs/x") resolved against the origin the ' +
           'user is on — relative paths are the normal choice for in-app navigation.',
       ),
-    newTab: z.boolean().optional(),
-    newWindow: z.boolean().optional(),
+    newTab: z
+      .boolean()
+      .optional()
+      .describe('Open the URL in a new browser tab instead of navigating the current one.'),
   }),
   z.object({ type: z.literal('dismiss') }),
   // Echo-only pair: read-backs expose non-representable stored actions as these;
@@ -680,7 +692,6 @@ export const representationQuestion = z.discriminatedUnion('kind', [
     range: z
       .object({ low: z.number(), high: z.number() })
       .describe('Numeric range, e.g. { low: 1, high: 5 }.'),
-    default: z.number().optional(),
     lowLabel: z.string().optional(),
     highLabel: z.string().optional(),
     bindAttribute: bindAttributeField,

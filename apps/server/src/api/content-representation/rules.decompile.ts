@@ -348,7 +348,6 @@ export function decompileAction(a: RuleNode): RepresentationAction {
         type: 'navigate',
         url: typeof d.url === 'string' ? d.url : decompileText(d.value),
         ...(d.openType === 'new' || d.openNewTab ? { newTab: true } : {}),
-        ...(d.openNewWindow ? { newWindow: true } : {}),
       };
     case 'javascript-evaluate':
       return { type: 'run_javascript', script: typeof d.value === 'string' ? d.value : '' };

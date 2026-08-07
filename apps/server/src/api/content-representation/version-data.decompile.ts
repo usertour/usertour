@@ -105,7 +105,12 @@ function decompileLauncher(data: unknown, r: DecompileResolvers): Representation
       ? d.type
       : LauncherDataType.ICON,
     icon: {
-      ...(d.iconSource ? { source: d.iconSource } : {}),
+      // Only the three sources the launcher renderer actually branches on reach the
+      // contract; legacy stored 'none' / 'inherit' were never implemented here and
+      // are dropped so a read-back can be written straight back.
+      ...(d.iconSource === 'builtin' || d.iconSource === 'upload' || d.iconSource === 'url'
+        ? { source: d.iconSource }
+        : {}),
       ...(d.iconUrl ? { url: d.iconUrl } : {}),
       ...(d.iconType ? { type: d.iconType } : {}),
     },

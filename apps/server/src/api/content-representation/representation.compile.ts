@@ -145,7 +145,8 @@ function compileSetting(step: StepToCompile, existingSetting: unknown): unknown 
     if (p.offsetX !== undefined) s.positionOffsetX = p.offsetX;
     if (p.offsetY !== undefined) s.positionOffsetY = p.offsetY;
     if (p.backdrop !== undefined) s.enabledBackdrop = p.backdrop;
-    if (p.blockTarget !== undefined) s.enabledBlockTarget = p.blockTarget;
+    // No blockTarget on this branch: it is tooltip-only at render time, so the
+    // grid placement no longer accepts it (see representationPlacement).
   } else if (p) {
     // Tooltip placement (the non-modal member; side/align/alignType all
     // optional). alignType is DERIVED so the author's direction is honored
@@ -403,7 +404,6 @@ function compileQuestion(
           ...base,
           lowRange: q.range.low,
           highRange: q.range.high,
-          ...(q.default !== undefined ? { rating: q.default } : {}),
           ...(q.lowLabel ? { lowLabel: q.lowLabel } : {}),
           ...(q.highLabel ? { highLabel: q.highLabel } : {}),
         },

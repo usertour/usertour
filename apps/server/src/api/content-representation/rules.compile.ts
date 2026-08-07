@@ -304,7 +304,6 @@ function compileAction(
       return rule('page-navigate', {
         value: compilePlainText(a.url),
         ...(a.newTab ? { openType: 'new', openNewTab: true } : { openType: 'same' }),
-        ...(a.newWindow ? { openNewWindow: true } : {}),
       });
     case 'dismiss':
       return rule(dismiss, {});

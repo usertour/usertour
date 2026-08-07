@@ -248,11 +248,13 @@ export const representationLauncher = z
     icon: z
       .object({
         source: z
-          .enum(['none', 'builtin', 'upload', 'url', 'inherit'])
+          .enum(['builtin', 'upload', 'url'])
           .optional()
           .describe(
             'Where the icon comes from: `builtin` uses `type` (a RemixIcon name), `upload`/`url` ' +
-              'use `url`, `inherit` takes the theme launcher icon, `none` shows no icon.',
+              'use `url`. A launcher always renders an icon — there is no `none` / `inherit` ' +
+              'here (the resource-center block icons are a different field and DO support them); ' +
+              'to keep a launcher off the page, gate it with start rules instead.',
           ),
         url: z
           .string()
@@ -264,8 +266,8 @@ export const representationLauncher = z
           .describe(
             "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` " +
               'style — e.g. `home-line`, `question-line`, `rocket`. NOT lucide names ' +
-              '(`help-circle` / `sparkles` / `book-open` render nothing, silently). Unsure? Use ' +
-              "source='none'. Common names + an intent→name table are in the MCP authoring guide (icons section).",
+              '(`help-circle` / `sparkles` / `book-open` render nothing, silently). Common names ' +
+              '+ an intent→name table are in the MCP authoring guide (icons section).',
           ),
       })
       .optional(),

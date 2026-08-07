@@ -986,7 +986,7 @@ describe('unsupported blocks are echo-only', () => {
 });
 
 describe('rating scale `default` round-trip (flow acceptance eval #22)', () => {
-  it('a scale question default survives compile → decompile', () => {
+  it('a stray `default` is neither compiled nor read back', () => {
     const compiled = compileStep(
       {
         name: 'Q',
@@ -1022,6 +1022,10 @@ describe('rating scale `default` round-trip (flow acceptance eval #22)', () => {
       back.content as { type: string; question?: { default?: number; style?: string } }[]
     ).find((b) => b.type === 'question')?.question;
     expect(q?.style).toBe('scale');
-    expect(q?.default).toBe(5);
+    // `default` used to compile into the star-rating `rating` storage slot, which no
+    // renderer reads (the widget's star-rating / scale components only read
+    // low/highRange + labels), so the contract dropped it.
+    expect(q?.default).toBeUndefined();
+    expect(JSON.stringify(compiled.data)).not.toContain('"rating"');
   });
 });
