@@ -279,8 +279,14 @@ export const representationLauncher = z
     target: launcherTarget
       .optional()
       .describe('The page element the launcher anchors to (selector + beacon placement on it).'),
-    /** Stacking order (CSS z-index — must be an integer; may be negative). */
-    zIndex: z.number().int().optional(),
+    zIndex: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        'Stacking order (CSS z-index). Integer; negative values are allowed. Omit to use the ' +
+          "SDK's default stacking.",
+      ),
     tooltip: z
       .object({
         placement: launcherPlacement
@@ -378,8 +384,14 @@ export const representationBanner = z
           'require `containerTarget`.',
       ),
     content: z.array(representationBlock).optional(),
-    /** Stacking order (CSS z-index — must be an integer; may be negative). */
-    zIndex: z.number().int().optional(),
+    zIndex: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        'Stacking order (CSS z-index). Integer; negative values are allowed. Omit to use the ' +
+          "SDK's default stacking.",
+      ),
     settings: z
       .object({
         overlayOverAppContent: z

@@ -56,8 +56,9 @@ const attributeScope = z.enum([
 export const attribute = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.ATTRIBUTE_DEFINITION),
-  /** Built-in attribute (seeded by Usertour): not editable or deletable. */
-  predefined: z.boolean(),
+  predefined: z
+    .boolean()
+    .describe('Built-in attribute shipped by Usertour: it cannot be edited or deleted.'),
   createdAt: isoTimestamp,
   dataType: z
     .nativeEnum(AttributeDataTypeNames)

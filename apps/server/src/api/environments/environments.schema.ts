@@ -26,12 +26,13 @@ export const environment = z.object({
         'ingestion, so handing it out would let a scoped credential act on an environment it ' +
         'was denied).',
     ),
-  /**
-   * Whether the CURRENT credential may act on this environment (token
-   * environment allowlist ∩ its owner's membership scope). false = listed for
-   * discovery but reads/writes/publish targeting it will be rejected (E1029).
-   */
-  inTokenScope: z.boolean(),
+  inTokenScope: z
+    .boolean()
+    .describe(
+      'Whether the CURRENT credential may act on this environment. false = the environment is ' +
+        'listed for discovery, but reads / writes / publishing targeted at it are rejected ' +
+        '(E1029) — plan against this instead of discovering scope limits from errors.',
+    ),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
 });

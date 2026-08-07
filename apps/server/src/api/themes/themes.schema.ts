@@ -38,8 +38,12 @@ export const theme = z.object({
   object: z.literal(ApiObjectType.THEME),
   name: z.string(),
   isDefault: z.boolean(),
-  /** System themes are read-only: not updatable, not deletable — create your own instead. */
-  isSystem: z.boolean(),
+  isSystem: z
+    .boolean()
+    .describe(
+      'Built-in theme: read-only — it cannot be updated or deleted (duplicating it into your ' +
+        'own theme is the way to start from it). It CAN be made the project default.',
+    ),
   updatedAt: isoTimestamp,
   createdAt: isoTimestamp,
   variationCount: z

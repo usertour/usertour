@@ -962,8 +962,14 @@ export const questionTypeEnum = z.enum([
 export const representationStep = z.object({
   object: z.literal(ApiObjectType.STEP),
   id: z.string(),
-  /** Front-end logical id — the write upsert key. Round-trips on read. */
-  cvid: z.string().nullable(),
+  cvid: z
+    .string()
+    .nullable()
+    .describe(
+      'Stable step handle that SURVIVES forking (unlike `id`, which is regenerated) — echo it ' +
+        'on a write to update this step in place. Prefer it over `id` for edits that must ' +
+        'outlive a new version.',
+    ),
   name: z.string(),
   type: stepTypeEnum,
   sequence: z
@@ -972,8 +978,10 @@ export const representationStep = z.object({
       '0-based display order. On write an explicit `sequence` wins; steps without one fall ' +
         'back to their array index.',
     ),
-  /** Per-step theme override; null = inherit the version (flow) theme. */
-  themeId: z.string().nullable(),
+  themeId: z
+    .string()
+    .nullable()
+    .describe("Per-step theme override; null = this step inherits the flow version's theme."),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
   width: z
@@ -984,12 +992,26 @@ export const representationStep = z.object({
         'surface width.',
     ),
   skippable: z.boolean().optional(),
-  /** Marks this step as an explicit completion point for the flow. */
-  explicitCompletionStep: z.boolean().optional(),
+  explicitCompletionStep: z
+    .boolean()
+    .optional()
+    .describe(
+      "Marks this step as the flow's completion point: reaching it counts the flow as " +
+        'COMPLETED (progress hits 100 and the completion event fires there), and later steps ' +
+        'no longer report progress. With no step marked, only reaching the LAST step completes ' +
+        'the flow — which is what a checklist task waiting on "this flow completed" depends on.',
+    ),
   content: z.array(representationBlock),
   triggers: z.array(representationTrigger).optional(),
-  /** Actions run when the user clicks the step's target element (click-to-advance). */
-  onClick: z.array(representationAction).optional(),
+  onClick: z
+    .array(representationAction)
+    .optional()
+    .describe(
+      "Actions that run when the user clicks the step's TARGET ELEMENT on the page " +
+        '(click-to-advance) — distinct from a `button` block, whose actions fire on a button ' +
+        'rendered inside the step. `tooltip` steps only: the other kinds have no target ' +
+        'element to click, and the write rejects `onClick` on them.',
+    ),
   advanced: z
     .object({
       hasUnsupported: z
@@ -1156,8 +1178,10 @@ export const representationStepInput = z.object({
     .array(representationAction)
     .optional()
     .describe(
-      "Actions to run when the user clicks the step's target element (click-to-advance). " +
-        'Tooltip steps with a `target` only.',
+      "Actions to run when the user clicks the step's TARGET ELEMENT on the page " +
+        '(click-to-advance) — distinct from a `button` block, whose actions fire on a button ' +
+        'rendered inside the step. `tooltip` steps only (the other kinds have no target ' +
+        'element); sending it on a modal / bubble / hidden step is rejected.',
     ),
 });
 export type RepresentationStepInput = z.infer<typeof representationStepInput>;
