@@ -59,6 +59,7 @@ describe('mapContentAnalytics (pure)', () => {
     expect(out).not.toHaveProperty('tasks');
     expect(out).not.toHaveProperty('blocks');
     expect(out).not.toHaveProperty('uniqueViews');
+    expect(out).not.toHaveProperty('uniqueOpens');
     expect(out.byDay).toEqual([
       {
         date: '2026-07-01',
@@ -81,10 +82,12 @@ describe('mapContentAnalytics (pure)', () => {
     ]);
   });
 
-  it('checklist: starts/completions + task rows; non-array domain signals normalize to []', () => {
+  it('checklist: starts/completions + panel opens + task rows; non-array domain signals normalize to []', () => {
     // Checklist path: viewsByStep comes back as `false`, viewsByDay as null.
     const raw = {
       ...rawCounts,
+      uniqueOpens: 7,
+      totalOpens: 12,
       viewsByDay: null,
       viewsByStep: false,
       viewsByTask: [
@@ -93,16 +96,22 @@ describe('mapContentAnalytics (pure)', () => {
       viewsByBlock: [],
     };
     const out = mapContentAnalytics(raw, meta(ContentDataType.CHECKLIST));
-    expect(out).toMatchObject({ contentType: 'checklist', uniqueStarts: 10, uniqueCompletions: 4 });
+    expect(out).toMatchObject({
+      contentType: 'checklist',
+      uniqueStarts: 10,
+      uniqueCompletions: 4,
+      uniqueOpens: 7,
+      totalOpens: 12,
+    });
     expect(out.byDay).toEqual([]);
     expect(out).not.toHaveProperty('steps');
-    // No totalViews on task rows: the domain's per-task view counters are
-    // whole-checklist session counts repeated on every row (fake per-task data).
+    // Task rows carry ONLY the task's own counts: the domain's per-task view
+    // counters are whole-checklist numbers repeated on every row — dropped;
+    // the checklist-level number ships as headline uniqueOpens/totalOpens.
     expect(out.contentType === 'checklist' && out.tasks).toEqual([
       {
         name: 'T1',
         taskId: 't1',
-        uniqueViews: 10,
         uniqueCompletions: 4,
         totalCompletions: 5,
         uniqueClicks: 7,

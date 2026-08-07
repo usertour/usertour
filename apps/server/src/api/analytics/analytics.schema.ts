@@ -119,11 +119,12 @@ const firstTouchSeriesNote =
  * Counting rules — each field's describe is the contract, but the shape is
  * deliberate: `unique*` always counts distinct USERS in the range. What
  * `total*` counts depends on the content type's session shape:
- * - flow/checklist: RUNS (one session = one run-through, so "times started"
- *   is the session count — a user who ran it twice counts twice).
- * - resource-center: EVENTS (an RC session is lifetime-long, so a session
- *   count would always equal `unique*`; only raw events answer "how many
- *   times", and they reconcile with the per-block rows).
+ * - flow/checklist starts+completions: RUNS (one session = one run-through,
+ *   so "times started" is the session count — a user who ran it twice counts
+ *   twice).
+ * - panel opens (resource-center total*, checklist totalOpens): EVENTS — an
+ *   expansion repeats within one session, so only raw events answer "how many
+ *   times", and (for RC) they reconcile with the per-block rows.
  * - tracker/announcement: EVENTS.
  * - launcher/banner: NO totals — their events fire once per user (lifetime
  *   single session), so a range scopes every metric to users NEW in it and a
@@ -223,11 +224,9 @@ export const stepAnalytics = z.object({
 });
 
 /**
- * Per-task row. completions/clicks are the task's OWN counts (keyed by task id);
- * uniqueViews is NOT — there is no per-task view event, so the domain aggregation
- * counts whole-checklist expansions (CHECKLIST_SEEN) and repeats that number on
- * every row. Truth-told in the field description so API consumers don't read
- * identical rows as "every task equally viewed".
+ * Per-task row — ONLY the task's own counts (keyed by task id). There is no
+ * per-task view event, so no per-task denominator is shipped; rate against the
+ * headline uniqueOpens (panel opens), minding its completion caveat.
  */
 export const taskAnalytics = z.object({
   name: z.string(),
@@ -237,10 +236,6 @@ export const taskAnalytics = z.object({
       "The task's stable identity — equals the checklist definition's `data.items[].id` on the " +
         'version; join on it to pair analytics rows with task definitions.',
     ),
-  uniqueViews: int().describe(
-    'Distinct users who expanded the CHECKLIST panel — a whole-checklist count repeated on ' +
-      'every task row (there is no per-task view event), not this task’s own visibility.',
-  ),
   uniqueCompletions: int().describe('Distinct users who completed this task.'),
   totalCompletions: int().describe('Runs in which this task was completed.'),
   uniqueClicks: int().describe('Distinct users who clicked this task.'),
@@ -279,6 +274,16 @@ export const checklistAnalytics = z.object({
   ...startsCompletions,
   uniqueCompletions: startsCompletions.uniqueCompletions.describe(
     'Distinct users who completed every visible task.',
+  ),
+  // Panel-open pair — same vocabulary and semantics as the resource-center's.
+  uniqueOpens: int().describe(
+    'Distinct users who expanded the checklist panel in the range — the denominator for ' +
+      'per-task click/completion rates. Caveat: completion conditions evaluate regardless of ' +
+      'expansion or task visibility (a condition-driven task completes for users who never ' +
+      'opened the panel), so only click-completed tasks form a true funnel against this.',
+  ),
+  totalOpens: int().describe(
+    'Panel expansions in the range — every expansion counts, so repeats by the same user add up.',
   ),
   byDay: dailySeries(startsCompletions, incrementSeriesNote),
   tasks: z.array(taskAnalytics),

@@ -144,6 +144,7 @@ const EVENTS = [
   BizEvents.LAUNCHER_SEEN,
   BizEvents.LAUNCHER_ACTIVATED,
   BizEvents.CHECKLIST_STARTED,
+  BizEvents.CHECKLIST_SEEN,
   BizEvents.CHECKLIST_COMPLETED,
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
@@ -458,6 +459,29 @@ export class AnalyticsService {
             eventId: completeEvent.id,
             isDistinct: false,
           });
+    // Checklist panel-open counters — same pair as the resource-center's:
+    // CHECKLIST_SEEN fires on every collapsed→expanded transition, so unique
+    // counts users who opened the panel and total counts expansions (events).
+    // The per-task rows carry only task-scoped counts; this is their
+    // denominator (public API); the dashboard keeps its own per-task copy.
+    const isChecklist = contentType === ContentType.CHECKLIST;
+    const checklistSeenEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_SEEN);
+    const opens =
+      isChecklist && checklistSeenEvent
+        ? {
+            uniqueOpens: await this.aggregationByEvent({
+              ...condition,
+              eventId: checklistSeenEvent.id,
+            }),
+            totalOpens: await this.countEventsByContent({
+              ...condition,
+              eventId: checklistSeenEvent.id,
+            }),
+          }
+        : isChecklist
+          ? { uniqueOpens: 0, totalOpens: 0 }
+          : {};
+
     const viewsByStep = isFlow
       ? await this.aggregationStepsByContent(
           condition,
@@ -480,6 +504,7 @@ export class AnalyticsService {
       totalViews,
       uniqueCompletions,
       totalCompletions,
+      ...opens,
       viewsByDay,
       viewsByStep,
       viewsByTask,

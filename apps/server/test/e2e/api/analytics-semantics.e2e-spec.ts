@@ -296,6 +296,98 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     expect(res.body).not.toHaveProperty('totalDismissals');
   });
 
+  it('checklist: panel opens count events, task rows carry only their own counts, completion needs no open', async () => {
+    const startedDef = await buildEvent(prisma, {
+      projectId,
+      codeName: BizEvents.CHECKLIST_STARTED,
+    });
+    const completedDef = await buildEvent(prisma, {
+      projectId,
+      codeName: BizEvents.CHECKLIST_COMPLETED,
+    });
+    const seenDef = await buildEvent(prisma, { projectId, codeName: BizEvents.CHECKLIST_SEEN });
+    const taskCompletedDef = await buildEvent(prisma, {
+      projectId,
+      codeName: BizEvents.CHECKLIST_TASK_COMPLETED,
+    });
+    await buildEvent(prisma, { projectId, codeName: BizEvents.CHECKLIST_TASK_CLICKED });
+
+    const checklist = await buildContent(prisma, {
+      projectId,
+      environmentId,
+      type: 'checklist',
+      name: 'Onboarding tasks',
+    });
+    const versionId = (
+      await buildVersion(prisma, {
+        contentId: checklist.id,
+        sequence: 0,
+        data: {
+          items: [
+            { id: 't1', name: 'Profile' },
+            { id: 't2', name: 'Invite (condition-completed)' },
+          ],
+        } as unknown as object,
+      })
+    ).id;
+
+    // opener: starts, opens the panel twice (collapse → re-expand), completes t1.
+    // sideliner: starts but NEVER opens — yet t2 completes for them (condition-
+    // driven completion evaluates regardless of expansion).
+    const opener = await buildBizUser(prisma, { environmentId });
+    const sideliner = await buildBizUser(prisma, { environmentId });
+    const mkSession = (bizUserId: string) =>
+      buildSession(prisma, {
+        bizUserId,
+        contentId: checklist.id,
+        versionId,
+        environmentId,
+        projectId,
+      });
+    const openerS = await mkSession(opener.id);
+    const sideS = await mkSession(sideliner.id);
+
+    const ev = (session: { id: string }, user: { id: string }, eventId: string, data = {}) => ({
+      bizSessionId: session.id,
+      bizUserId: user.id,
+      eventId,
+      data,
+    });
+    await prisma.bizEvent.createMany({
+      data: [
+        ev(openerS, opener, startedDef.id),
+        ev(openerS, opener, seenDef.id),
+        ev(openerS, opener, seenDef.id), // re-expand → totalOpens counts it
+        ev(openerS, opener, taskCompletedDef.id, { checklist_task_id: 't1' }),
+        ev(sideS, sideliner, startedDef.id),
+        ev(sideS, sideliner, taskCompletedDef.id, { checklist_task_id: 't2' }),
+      ],
+    });
+    void completedDef; // top-level completion not exercised here
+
+    const res = await rest(analyticsUrl(checklist.id));
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      contentType: 'checklist',
+      uniqueStarts: 2,
+      uniqueOpens: 1, // only the opener
+      totalOpens: 2, // expansions are events — the re-expand adds
+    });
+
+    // Task rows: only the task's own counts — no per-task view fields.
+    const tasks = res.body.tasks as Array<Record<string, unknown>>;
+    expect(tasks).toHaveLength(2);
+    expect(tasks[0]).toMatchObject({ taskId: 't1', uniqueCompletions: 1 });
+    expect(tasks[1]).toMatchObject({ taskId: 't2', uniqueCompletions: 1 });
+    for (const task of tasks) {
+      expect(task).not.toHaveProperty('uniqueViews');
+      expect(task).not.toHaveProperty('totalViews');
+    }
+    // The caveat pinned: t2 completed for a user who never opened the panel,
+    // so per-task completions can exceed the uniqueOpens denominator's reach.
+    expect(res.body.uniqueOpens).toBe(1);
+  });
+
   it('announcement: uniqueSeen only — first-seen-only writes make an event total redundant', async () => {
     await buildEvent(prisma, { projectId, codeName: BizEvents.ANNOUNCEMENT_SEEN });
     const announcement = await buildContent(prisma, {

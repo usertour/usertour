@@ -133,16 +133,17 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
         ...base,
         contentType: 'checklist',
         ...startsCompletions(top),
+        // Panel-open pair (RC-shaped). The domain's per-task view counters are
+        // whole-checklist numbers repeated on every row — dropped from the task
+        // rows; the honest checklist-level number ships here instead.
+        uniqueOpens: int(raw?.uniqueOpens),
+        totalOpens: int(raw?.totalOpens),
         byDay: byDay(startsCompletions),
         tasks: Array.isArray(raw?.viewsByTask)
           ? // biome-ignore lint/suspicious/noExplicitAny: see above
             raw.viewsByTask.map((row: any) => ({
               name: String(row.name ?? ''),
               taskId: String(row.taskId ?? ''),
-              // No totalViews: the domain's per-task view counters are
-              // whole-checklist session counts repeated on every row; only the
-              // unique one is exposed (as the honest whole-checklist number).
-              uniqueViews: int(row.analytics?.uniqueViews),
               uniqueCompletions: int(row.analytics?.uniqueCompletions),
               totalCompletions: int(row.analytics?.totalCompletions),
               uniqueClicks: int(row.analytics?.uniqueClicks),

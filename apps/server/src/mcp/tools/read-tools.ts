@@ -1630,14 +1630,17 @@ export function buildReadTools(): McpTool[] {
         'How is this content performing? The response shape follows the content type: flows ' +
         'report starts + completions and a per-step funnel with tooltip-target-missing counts ' +
         '(the selector-health signal); checklists starts + completions (= every visible task ' +
-        'done) and per-task rows; launchers seen + activations; banners seen + dismissals; ' +
+        'done), panel opens (the per-task rate denominator — completion does NOT require ' +
+        'opening, so only click-completed tasks form a true funnel) and per-task rows; ' +
+        'launchers seen + activations; banners seen + dismissals; ' +
         'resource centers opens + block clicks; trackers users + occurrences of the tracked ' +
         'event; announcements seen counts (once per user). All with a per-day series. Defaults ' +
         'to the last 30 days, UTC. Reading the numbers: `unique*` always counts distinct ' +
-        'USERS in the range; what `total*` counts follows the type. Flow/checklist `total*` ' +
-        'counts RUNS — a flow run twice by the same person is 1 unique / 2 total. ' +
-        'Resource-center and tracker `total*` counts EVENTS (repeats included), and the RC ' +
-        "headline totalClicks normally equals the sum of the block rows'. Launchers and " +
+        'USERS in the range; what `total*` counts follows the type. Flow/checklist starts and ' +
+        'completions count RUNS — a flow run twice by the same person is 1 unique / 2 total. ' +
+        'Panel opens (checklist + resource-center) and tracker `total*` count EVENTS ' +
+        '(repeats included), and the RC headline totalClicks normally equals the sum of the ' +
+        "block rows'. Launchers and " +
         'banners have NO totals — their seen fires once per user (lifetime single surface), ' +
         'so a range counts users NEWLY reached in it, and the launcher reports ' +
         '`newActivations` (users whose first-ever activation fell in the range; can exceed ' +
