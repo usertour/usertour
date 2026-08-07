@@ -197,6 +197,25 @@ function evaluateNumberCondition(
   expectedValue: number,
   expectedValue2?: number,
 ): boolean {
+  const hasValue = actualValue !== null && actualValue !== undefined && actualValue !== '';
+
+  if (logic === 'empty') {
+    return !hasValue;
+  }
+  if (logic === 'any') {
+    return hasValue;
+  }
+
+  // An unset attribute never satisfies a POSITIVE comparison. Without this
+  // guard, Number(null) / Number('') coerce to 0 and slip past the NaN check,
+  // so e.g. `lte 6` matched every user who hadn't been given the attribute yet.
+  // `not` is the exception: it is exclusion, not comparison — a user without
+  // the value IS "not X", matching the string evaluator (missing compares as
+  // '') and the segment SQL filter (`not` ORs in AnyNull deliberately).
+  if (!hasValue) {
+    return logic === 'not';
+  }
+
   const numActualValue = Number(actualValue);
   const numExpectedValue = Number(expectedValue);
   const numExpectedValue2 = Number(expectedValue2);
@@ -220,10 +239,6 @@ function evaluateNumberCondition(
       return numActualValue >= numExpectedValue;
     case 'between':
       return numActualValue >= numExpectedValue && numActualValue <= numExpectedValue2;
-    case 'empty':
-      return actualValue === null || actualValue === undefined || actualValue === '';
-    case 'any':
-      return actualValue !== null && actualValue !== undefined && actualValue !== '';
     default:
       return false;
   }
@@ -303,6 +318,16 @@ function evaluateDateTimeCondition(
   const actualDate = actualValue ? new Date(actualValue) : null;
   const now = new Date();
 
+  // 'empty'/'any' must be answered before the parse guard — with the guard
+  // first, an unset value returned false out of 'empty' too, so "date is
+  // empty" could never match anyone.
+  if (logic === 'empty') {
+    return !actualValue || actualValue === '';
+  }
+  if (logic === 'any') {
+    return Boolean(actualValue) && actualValue !== '';
+  }
+
   if (!actualDate || Number.isNaN(actualDate.getTime())) {
     return false;
   }
@@ -336,10 +361,6 @@ function evaluateDateTimeCondition(
       const expectedDateAfter = new Date(expectedValue);
       return actualDate >= expectedDateAfter;
     }
-    case 'empty':
-      return !actualValue || actualValue === '';
-    case 'any':
-      return actualValue && actualValue !== '';
     default:
       return false;
   }

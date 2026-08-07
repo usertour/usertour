@@ -1865,4 +1865,126 @@ describe('Attribute Filter - Complete Test Suite', () => {
       expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
     });
   });
+
+  describe('Unset number values never satisfy positive comparisons (NPS-branch regression)', () => {
+    // A never-set attribute reaches the evaluator as null or undefined
+    // (depending on the path); '' comes from empty form values. All three
+    // coerce to 0 (or NaN) via Number() and used to slip past the NaN guard,
+    // so e.g. `isLessThanOrEqualTo 6` matched every user who had not been
+    // given the attribute yet. `not` is deliberately the exception — it is
+    // exclusion, not comparison, matching the string evaluator and the
+    // segment SQL filter.
+    const numberCondition = (logic: string, value?: number, value2?: number): RulesCondition => ({
+      id: `unset-num-${logic}`,
+      type: 'condition',
+      operators: 'and',
+      data: { logic, value, value2, attrId: 'age-attr' },
+    });
+    const optionsWithAge = (age: any) => ({
+      ...defaultOptions,
+      userAttributes: { ...testUserAttributes, age } as UserTourTypes.Attributes,
+    });
+
+    const comparisonCases: Array<[string, number, number?]> = [
+      ['is', 0],
+      ['isLessThan', 10],
+      ['isLessThanOrEqualTo', 6],
+      ['isGreaterThan', -1],
+      ['isGreaterThanOrEqualTo', 0],
+      ['between', 0, 10],
+    ];
+
+    for (const unset of [null, undefined, '']) {
+      const label = unset === '' ? "''" : String(unset);
+
+      test(`positive comparisons are false when the value is ${label}`, () => {
+        for (const [logic, value, value2] of comparisonCases) {
+          expect(
+            evaluateAttributeCondition(
+              numberCondition(logic, value, value2),
+              optionsWithAge(unset),
+            ),
+          ).toBe(false);
+        }
+      });
+
+      test(`"not" is true when the value is ${label} — exclusion covers the unset`, () => {
+        expect(evaluateAttributeCondition(numberCondition('not', 5), optionsWithAge(unset))).toBe(
+          true,
+        );
+      });
+
+      test(`"empty" is true and "any" is false when the value is ${label}`, () => {
+        expect(evaluateAttributeCondition(numberCondition('empty'), optionsWithAge(unset))).toBe(
+          true,
+        );
+        expect(evaluateAttributeCondition(numberCondition('any'), optionsWithAge(unset))).toBe(
+          false,
+        );
+      });
+    }
+
+    test('"not" still excludes an actual match: value 5 fails "not 5"', () => {
+      expect(evaluateAttributeCondition(numberCondition('not', 5), optionsWithAge(5))).toBe(false);
+      expect(evaluateAttributeCondition(numberCondition('not', 5), optionsWithAge(3))).toBe(true);
+    });
+
+    test('a non-numeric value counts as present ("any") but satisfies no comparison', () => {
+      expect(evaluateAttributeCondition(numberCondition('any'), optionsWithAge('abc'))).toBe(true);
+      expect(evaluateAttributeCondition(numberCondition('empty'), optionsWithAge('abc'))).toBe(
+        false,
+      );
+      expect(
+        evaluateAttributeCondition(
+          numberCondition('isLessThanOrEqualTo', 6),
+          optionsWithAge('abc'),
+        ),
+      ).toBe(false);
+    });
+
+    test('zero is a real value: comparisons still see it', () => {
+      expect(
+        evaluateAttributeCondition(numberCondition('isLessThanOrEqualTo', 6), optionsWithAge(0)),
+      ).toBe(true);
+      expect(evaluateAttributeCondition(numberCondition('empty'), optionsWithAge(0))).toBe(false);
+      expect(evaluateAttributeCondition(numberCondition('any'), optionsWithAge(0))).toBe(true);
+    });
+  });
+
+  describe('Unset DateTime values: "empty"/"any" answered before the parse guard', () => {
+    const dateCondition = (logic: string, value?: string | number): RulesCondition => ({
+      id: `unset-date-${logic}`,
+      type: 'condition',
+      operators: 'and',
+      data: { logic, value, attrId: 'signUpDate-attr' },
+    });
+    const optionsWithDate = (signUpDate: any) => ({
+      ...defaultOptions,
+      userAttributes: { ...testUserAttributes, signUpDate } as UserTourTypes.Attributes,
+    });
+
+    test('"empty" is true for an unset date (used to be unreachable and always false)', () => {
+      expect(evaluateAttributeCondition(dateCondition('empty'), optionsWithDate(null))).toBe(true);
+      expect(evaluateAttributeCondition(dateCondition('empty'), optionsWithDate(''))).toBe(true);
+      expect(evaluateAttributeCondition(dateCondition('empty'), optionsWithDate(undefined))).toBe(
+        true,
+      );
+    });
+
+    test('"any" is false for an unset date and true for a set one', () => {
+      expect(evaluateAttributeCondition(dateCondition('any'), optionsWithDate(null))).toBe(false);
+      expect(
+        evaluateAttributeCondition(dateCondition('any'), optionsWithDate('2024-01-15T10:30:00Z')),
+      ).toBe(true);
+    });
+
+    test('date comparisons are false for an unset date', () => {
+      expect(
+        evaluateAttributeCondition(
+          dateCondition('before', '2030-01-01T00:00:00Z'),
+          optionsWithDate(null),
+        ),
+      ).toBe(false);
+    });
+  });
 });
