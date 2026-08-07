@@ -88,7 +88,9 @@ describe('mapContentAnalytics (pure)', () => {
       ...rawCounts,
       uniqueOpens: 7,
       totalOpens: 12,
-      viewsByDay: null,
+      viewsByDay: [
+        { date: new Date('2026-07-01T00:00:00Z'), ...rawCounts, uniqueOpens: 3, totalOpens: 6 },
+      ],
       viewsByStep: false,
       viewsByTask: [
         { name: 'T1', taskId: 't1', analytics: { ...rawCounts, uniqueClicks: 7, totalClicks: 9 } },
@@ -103,7 +105,18 @@ describe('mapContentAnalytics (pure)', () => {
       uniqueOpens: 7,
       totalOpens: 12,
     });
-    expect(out.byDay).toEqual([]);
+    // byDay rows carry the opens pair too — every headline total* has a series.
+    expect(out.byDay).toEqual([
+      {
+        date: '2026-07-01',
+        uniqueStarts: 10,
+        totalStarts: 14,
+        uniqueCompletions: 4,
+        totalCompletions: 5,
+        uniqueOpens: 3,
+        totalOpens: 6,
+      },
+    ]);
     expect(out).not.toHaveProperty('steps');
     // Task rows carry ONLY the task's own counts: the domain's per-task view
     // counters are whole-checklist numbers repeated on every row — dropped;

@@ -497,6 +497,7 @@ export class AnalyticsService {
       timezone,
       startEvent,
       completeEvent,
+      isChecklist ? checklistSeenEvent : undefined,
     );
 
     return {
@@ -692,6 +693,10 @@ export class AnalyticsService {
     timezone: string,
     startEvent: Event,
     completeEvent: Event,
+    // Checklist only: CHECKLIST_SEEN — adds per-day panel-open columns so the
+    // byDay rows carry every headline total* (sum-of-rows = headline holds
+    // for opens too, matching the resource-center series).
+    opensEvent?: Event,
   ) {
     const { startDateStr, endDateStr } = condition;
 
@@ -738,6 +743,12 @@ export class AnalyticsService {
             },
             timezone,
           );
+    const uniqueOpensByDay = opensEvent
+      ? await this.aggregationByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      : null;
+    const totalOpensByDay = opensEvent
+      ? await this.countEventsByContentByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      : null;
 
     // Calendar walk in the requested timezone (NOT 24h stepping — see the
     // tracker path). The SQL buckets label days as plain `to_char` strings in
@@ -752,6 +763,12 @@ export class AnalyticsService {
         totalViews: totalViewsByDay.find((views) => views.day === dd)?.count || 0,
         uniqueCompletions: uniqueCompletionByDay.find((views) => views.day === dd)?.count || 0,
         totalCompletions: totalCompletionByDay.find((views) => views.day === dd)?.count || 0,
+        ...(uniqueOpensByDay && totalOpensByDay
+          ? {
+              uniqueOpens: uniqueOpensByDay.find((views) => views.day === dd)?.count || 0,
+              totalOpens: totalOpensByDay.find((views) => views.day === dd)?.count || 0,
+            }
+          : {}),
       });
     }
 

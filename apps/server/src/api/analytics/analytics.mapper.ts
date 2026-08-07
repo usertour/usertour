@@ -138,7 +138,13 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
         // rows; the honest checklist-level number ships here instead.
         uniqueOpens: int(raw?.uniqueOpens),
         totalOpens: int(raw?.totalOpens),
-        byDay: byDay(startsCompletions),
+        // biome-ignore lint/suspicious/noExplicitAny: see above
+        byDay: days.map((day, i) => ({
+          date: day.date,
+          ...startsCompletions(day.counts),
+          uniqueOpens: int((raw?.viewsByDay?.[i] as any)?.uniqueOpens),
+          totalOpens: int((raw?.viewsByDay?.[i] as any)?.totalOpens),
+        })),
         tasks: Array.isArray(raw?.viewsByTask)
           ? // biome-ignore lint/suspicious/noExplicitAny: see above
             raw.viewsByTask.map((row: any) => ({

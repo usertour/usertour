@@ -285,7 +285,10 @@ export const checklistAnalytics = z.object({
   totalOpens: int().describe(
     'Panel expansions in the range — every expansion counts, so repeats by the same user add up.',
   ),
-  byDay: dailySeries(startsCompletions, incrementSeriesNote),
+  byDay: dailySeries(
+    { ...startsCompletions, uniqueOpens: int(), totalOpens: int() },
+    incrementSeriesNote,
+  ),
   tasks: z.array(taskAnalytics),
 });
 

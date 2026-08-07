@@ -386,6 +386,12 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     // The caveat pinned: t2 completed for a user who never opened the panel,
     // so per-task completions can exceed the uniqueOpens denominator's reach.
     expect(res.body.uniqueOpens).toBe(1);
+
+    // byDay rows carry the opens pair, and the sum-of-rows = headline
+    // convention holds for them like every other total*.
+    const byDay = res.body.byDay as Array<{ uniqueOpens: number; totalOpens: number }>;
+    expect(byDay.reduce((sum, d) => sum + d.totalOpens, 0)).toBe(2);
+    expect(byDay.reduce((sum, d) => sum + d.uniqueOpens, 0)).toBe(1);
   });
 
   it('announcement: uniqueSeen only — first-seen-only writes make an event total redundant', async () => {
