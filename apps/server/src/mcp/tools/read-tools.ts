@@ -1633,14 +1633,21 @@ export function buildReadTools(): McpTool[] {
         'done) and per-task rows; launchers seen + activations; banners seen + dismissals; ' +
         'resource centers opens + block clicks; trackers users + occurrences of the tracked ' +
         'event; announcements seen counts (once per user). All with a per-day series. Defaults ' +
-        'to the last 30 days, UTC. Reading the numbers: `unique*` counts distinct USERS, ' +
-        '`total*` counts events (repeats included) — a flow shown twice to the same person is ' +
-        '1 unique / 2 total, so a per-user rate uses unique and a per-impression rate uses ' +
-        'total. byDay rows are per-day increments whose `unique*` is unique WITHIN THAT DAY: ' +
-        'summing them reproduces `total*`, never the range-wide `unique*`. In a flow funnel ' +
-        'the drop-off is between consecutive steps’ uniqueViews; a step’s `uniqueCompletions` ' +
-        'is the FLOW completion attributed to the step it fired on (0 on every step but the ' +
-        'last is normal, not a failure).',
+        'to the last 30 days, UTC. Reading the numbers: `unique*` always counts distinct ' +
+        'USERS in the range; what `total*` counts follows the type. Flow/checklist `total*` ' +
+        'counts RUNS — a flow run twice by the same person is 1 unique / 2 total. ' +
+        'Resource-center and tracker `total*` counts EVENTS (repeats included), and the RC ' +
+        "headline totalClicks normally equals the sum of the block rows'. Launchers and " +
+        'banners have NO totals — their seen fires once per user (lifetime single surface), ' +
+        'so a range counts users NEWLY reached in it, and the launcher reports ' +
+        '`newActivations` (users whose first-ever activation fell in the range; can exceed ' +
+        'uniqueSeen when someone reached earlier activates now). byDay rows are per-day: ' +
+        'summing `total*` rows reproduces the headline `total*`; `unique*` rows are unique ' +
+        'WITHIN THAT DAY — except launcher/banner/announcement rows, which are first-touch ' +
+        '(each user on exactly one day, so summing rows equals the range headline). In a ' +
+        'flow funnel the drop-off is between consecutive steps’ uniqueViews; a step’s ' +
+        '`uniqueCompletions` is the FLOW completion attributed to the step it fired on (0 on ' +
+        'every step but the last is normal, not a failure).',
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,

@@ -90,59 +90,101 @@ const analyticsBase = {
 const date = z.string().describe('ISO date (bucketed in the requested timezone).');
 
 /**
- * The content-analytics day series is per-day INCREMENTS; the question-analytics
- * nps/rating byDay is rolling-window CUMULATIVE. Both describes spell out the
- * contrast — a charting consumer who assumes one convention silently draws the
- * wrong graph with the other.
+ * The content-analytics day series is per-day rows (increments or first-touch,
+ * spelled out per type below); the question-analytics nps/rating byDay is
+ * rolling-window CUMULATIVE. The describes spell out the contrast — a charting
+ * consumer who assumes one convention silently draws the wrong graph with the
+ * other.
  */
-const dailySeries = <T extends z.ZodRawShape>(shape: T) =>
-  z
-    .array(z.object({ date, ...shape }))
-    .describe(
-      "Per-day activity: each row counts only that calendar day's events (increments, NOT " +
-        'a running total). Summing rows reproduces the `total*` headline; it does NOT ' +
-        'reproduce the `unique*` headline — a `unique*` row is distinct users WITHIN THAT ' +
-        'DAY, so a user active on three days is counted three times and the sum over-counts ' +
-        '(it converges to `total*`). There is no daily series for range-unique users. Note ' +
-        'the question-analytics nps/rating byDay uses the OPPOSITE convention ' +
-        '(rolling-window cumulative).',
-    );
+const dailySeries = <T extends z.ZodRawShape>(shape: T, description: string) =>
+  z.array(z.object({ date, ...shape })).describe(description);
 
-// unique* = distinct users in range; total* = events in range, repeats included.
+/** flow / checklist / resource-center / tracker byDay: per-day increments. */
+const incrementSeriesNote =
+  'Per-day activity: each row counts only that calendar day (increments, NOT a running ' +
+  'total). Summing the `total*` rows reproduces the `total*` headline; a `unique*` row is ' +
+  'distinct users WITHIN THAT DAY, so summing `unique*` rows over-counts a user active on ' +
+  'several days — there is no daily series for range-wide unique users. Note the ' +
+  'question-analytics nps/rating byDay uses the OPPOSITE convention (rolling-window ' +
+  'cumulative).';
+
+/** launcher / banner / announcement byDay: per-day FIRST-TOUCH rows. */
+const firstTouchSeriesNote =
+  'Per-day FIRST-TOUCH activity: each row counts the users whose first event of that kind ' +
+  'fell on that calendar day. A user appears on exactly one day, so rows never double-count ' +
+  'and summing them equals the range headline. Note the question-analytics nps/rating byDay ' +
+  'uses a different convention (rolling-window cumulative).';
+
+/**
+ * Counting rules — each field's describe is the contract, but the shape is
+ * deliberate: `unique*` always counts distinct USERS in the range. What
+ * `total*` counts depends on the content type's session shape:
+ * - flow/checklist: RUNS (one session = one run-through, so "times started"
+ *   is the session count — a user who ran it twice counts twice).
+ * - resource-center: EVENTS (an RC session is lifetime-long, so a session
+ *   count would always equal `unique*`; only raw events answer "how many
+ *   times", and they reconcile with the per-block rows).
+ * - tracker/announcement: EVENTS.
+ * - launcher/banner: NO totals — their events fire once per user (lifetime
+ *   single session), so a range scopes every metric to users NEW in it and a
+ *   total would only repeat the unique count.
+ */
 const startsCompletions = {
-  uniqueStarts: int(),
-  totalStarts: int(),
+  uniqueStarts: int().describe('Distinct users who started it in the range.'),
+  totalStarts: int().describe(
+    'Runs started in the range — one per session, so a user who ran it twice counts twice.',
+  ),
   uniqueCompletions: int(),
-  totalCompletions: int(),
+  totalCompletions: int().describe('Runs completed in the range.'),
 };
-const seenActivations = {
-  uniqueSeen: int(),
-  totalSeen: int(),
-  uniqueActivations: int().describe('Distinct users who clicked (activated) the launcher.'),
-  totalActivations: int(),
+const launcherCounts = {
+  uniqueSeen: int().describe(
+    'Distinct users whose launcher FIRST appeared in the range. The seen event fires once ' +
+      'per user (at first display; a launcher has one lifetime session), so a range counts ' +
+      'users NEWLY reached in it — a user first reached before the range does not appear ' +
+      'here no matter how often they still see the launcher.',
+  ),
+  newActivations: int().describe(
+    'Distinct users whose FIRST-EVER activation (click / hover, per the launcher setting) ' +
+      'fell in the range. Later activations never re-count a user, so this pairs with ' +
+      'uniqueSeen as a first-touch funnel. A user first reached in an earlier range who ' +
+      'first activates now counts here but not in uniqueSeen, so per-range ' +
+      'newActivations/uniqueSeen can exceed 1; over an all-time range it cannot.',
+  ),
 };
-const seenDismissals = {
-  uniqueSeen: int(),
-  totalSeen: int(),
-  uniqueDismissals: int().describe('Distinct users who closed the banner.'),
-  totalDismissals: int(),
+const bannerCounts = {
+  uniqueSeen: int().describe(
+    'Distinct users whose banner FIRST appeared in the range — the seen event fires once ' +
+      'per user (lifetime single session), so a range counts users newly reached in it, ' +
+      'not users who merely still had it on screen.',
+  ),
+  uniqueDismissals: int().describe(
+    'Distinct users who dismissed the banner in the range (a dismissal happens at most ' +
+      'once per user).',
+  ),
 };
 const opensClicks = {
-  uniqueOpens: int(),
-  totalOpens: int(),
+  uniqueOpens: int().describe('Distinct users who expanded the panel in the range.'),
+  totalOpens: int().describe(
+    'Panel expansions in the range — every expansion counts, so repeats by the same user ' +
+      'add up.',
+  ),
   uniqueClicks: int().describe('Distinct users who clicked a block inside the panel.'),
-  totalClicks: int(),
+  totalClicks: int().describe(
+    'Block-click events in the range (repeats included). Normally equals the sum of the ' +
+      "block rows' totalClicks; it can exceed that sum when clicks were recorded on blocks " +
+      'since removed from the published version.',
+  ),
 };
 const usersOccurrences = {
   uniqueUsers: int().describe('Distinct users who fired the tracked event.'),
-  totalOccurrences: int().describe('Occurrences of the tracked event.'),
+  totalOccurrences: int().describe('Occurrences of the tracked event (repeats included).'),
 };
 const seenOnly = {
   uniqueSeen: int().describe(
     'Distinct users who saw the announcement (opened the feed listing it, or had its popup ' +
-      'presented). Seen fires once per (user, announcement), so unique and total normally match.',
+      'presented). Seen fires once per (user, announcement) — repeat views never add.',
   ),
-  totalSeen: int(),
 };
 
 /**
@@ -161,7 +203,9 @@ export const stepAnalytics = z.object({
     'Distinct users who saw this step. This is the funnel: step-to-step drop-off is the ' +
       'difference between consecutive rows’ uniqueViews.',
   ),
-  totalViews: int(),
+  totalViews: int().describe(
+    'Runs in which this step was shown (re-visits within one run do not add).',
+  ),
   uniqueCompletions: int().describe(
     'Distinct users whose FLOW completion fired on this step — not "users who advanced past ' +
       'it". Normally 0 on every step but the last (or an explicit completion step); a 0 here ' +
@@ -171,18 +215,18 @@ export const stepAnalytics = z.object({
     'Flow completions attributed to this step — see uniqueCompletions.',
   ),
   uniqueTooltipTargetMissing: int().describe(
-    "Sessions where this tooltip step's target element was never found — the selector-health " +
-      'signal. Only meaningful on tooltip steps; the field is present (and always 0) on other ' +
-      'step types to keep rows uniform.',
+    "Distinct users for whom this tooltip step's target element was never found — the " +
+      'selector-health signal. Only meaningful on tooltip steps; the field is present (and ' +
+      'always 0) on other step types to keep rows uniform.',
   ),
-  totalTooltipTargetMissing: int(),
+  totalTooltipTargetMissing: int().describe('Runs in which the target element was never found.'),
 });
 
 /**
  * Per-task row. completions/clicks are the task's OWN counts (keyed by task id);
- * the view counts are NOT per-task — the domain aggregation counts whole-checklist
- * expansions (CHECKLIST_SEEN), so uniqueViews/totalViews repeat the same numbers
- * on every row. Truth-told in the field descriptions so API consumers don't read
+ * uniqueViews is NOT — there is no per-task view event, so the domain aggregation
+ * counts whole-checklist expansions (CHECKLIST_SEEN) and repeats that number on
+ * every row. Truth-told in the field description so API consumers don't read
  * identical rows as "every task equally viewed".
  */
 export const taskAnalytics = z.object({
@@ -194,25 +238,28 @@ export const taskAnalytics = z.object({
         'version; join on it to pair analytics rows with task definitions.',
     ),
   uniqueViews: int().describe(
-    'Times the CHECKLIST panel was expanded (unique users) — a whole-checklist count repeated on ' +
-      'every task row, not this task’s own visibility.',
+    'Distinct users who expanded the CHECKLIST panel — a whole-checklist count repeated on ' +
+      'every task row (there is no per-task view event), not this task’s own visibility.',
   ),
-  totalViews: int().describe(
-    'Whole-checklist expansions (all), repeated on every row — see uniqueViews.',
-  ),
-  uniqueCompletions: int(),
-  totalCompletions: int(),
-  uniqueClicks: int(),
-  totalClicks: int(),
+  uniqueCompletions: int().describe('Distinct users who completed this task.'),
+  totalCompletions: int().describe('Runs in which this task was completed.'),
+  uniqueClicks: int().describe('Distinct users who clicked this task.'),
+  totalClicks: int().describe('Task-click events (repeats included).'),
 });
 
 /** Per-block click row. */
 export const blockAnalytics = z.object({
   name: z.string(),
   blockId: z.string(),
+  tabId: z
+    .string()
+    .describe(
+      "The tab's stable identity — group block rows by it (tabName can be null or " +
+        'duplicated across tabs).',
+    ),
   tabName: z.string().nullable(),
-  uniqueClicks: int(),
-  totalClicks: int(),
+  uniqueClicks: int().describe('Distinct users who clicked this block.'),
+  totalClicks: int().describe('Click events on this block (repeats included).'),
 });
 
 export const flowAnalytics = z.object({
@@ -222,7 +269,7 @@ export const flowAnalytics = z.object({
   uniqueCompletions: startsCompletions.uniqueCompletions.describe(
     'Distinct users who reached the end of the flow (or an explicit completion step).',
   ),
-  byDay: dailySeries(startsCompletions),
+  byDay: dailySeries(startsCompletions, incrementSeriesNote),
   steps: z.array(stepAnalytics),
 });
 
@@ -233,29 +280,29 @@ export const checklistAnalytics = z.object({
   uniqueCompletions: startsCompletions.uniqueCompletions.describe(
     'Distinct users who completed every visible task.',
   ),
-  byDay: dailySeries(startsCompletions),
+  byDay: dailySeries(startsCompletions, incrementSeriesNote),
   tasks: z.array(taskAnalytics),
 });
 
 export const launcherAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('launcher'),
-  ...seenActivations,
-  byDay: dailySeries(seenActivations),
+  ...launcherCounts,
+  byDay: dailySeries(launcherCounts, firstTouchSeriesNote),
 });
 
 export const bannerAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('banner'),
-  ...seenDismissals,
-  byDay: dailySeries(seenDismissals),
+  ...bannerCounts,
+  byDay: dailySeries(bannerCounts, firstTouchSeriesNote),
 });
 
 export const resourceCenterAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('resource-center'),
   ...opensClicks,
-  byDay: dailySeries(opensClicks),
+  byDay: dailySeries(opensClicks, incrementSeriesNote),
   blocks: z.array(blockAnalytics),
 });
 
@@ -263,14 +310,14 @@ export const trackerAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('tracker'),
   ...usersOccurrences,
-  byDay: dailySeries(usersOccurrences),
+  byDay: dailySeries(usersOccurrences, incrementSeriesNote),
 });
 
 export const announcementAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('announcement'),
   ...seenOnly,
-  byDay: dailySeries(seenOnly),
+  byDay: dailySeries(seenOnly, firstTouchSeriesNote),
 });
 
 export const contentAnalytics = z.discriminatedUnion('contentType', [

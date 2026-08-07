@@ -45,17 +45,19 @@ const startsCompletions = (c: ReturnType<typeof counts>) => ({
   uniqueCompletions: c.uniqueCompletions,
   totalCompletions: c.totalCompletions,
 });
-const seenActivations = (c: ReturnType<typeof counts>) => ({
+// Launcher/banner expose ONLY the first-touch user counts: their seen event
+// fires once per user (lifetime single session), so the session-distinct
+// totals the domain computes always repeat the unique numbers — dropped from
+// the contract rather than shipped as fake information. The launcher's
+// activation counter is first-ever-activation-in-range (paired with the
+// first-touch denominator), named newActivations so the name says so.
+const launcherCounts = (c: ReturnType<typeof counts>) => ({
   uniqueSeen: c.uniqueViews,
-  totalSeen: c.totalViews,
-  uniqueActivations: c.uniqueCompletions,
-  totalActivations: c.totalCompletions,
+  newActivations: c.uniqueCompletions,
 });
-const seenDismissals = (c: ReturnType<typeof counts>) => ({
+const bannerCounts = (c: ReturnType<typeof counts>) => ({
   uniqueSeen: c.uniqueViews,
-  totalSeen: c.totalViews,
   uniqueDismissals: c.uniqueCompletions,
-  totalDismissals: c.totalCompletions,
 });
 const opensClicks = (c: ReturnType<typeof counts>) => ({
   uniqueOpens: c.uniqueViews,
@@ -69,10 +71,11 @@ const usersOccurrences = (c: ReturnType<typeof counts>) => ({
   totalOccurrences: c.totalViews,
 });
 // Announcements have ONE signal (SEEN, once per user); the domain runs them
-// through the tracker-style event aggregation, whose "completions" mirror views.
+// through the tracker-style event aggregation, whose "completions" mirror
+// views. The event total always equals the unique count (first-seen-only
+// writes), so only uniqueSeen is exposed.
 const seenOnly = (c: ReturnType<typeof counts>) => ({
   uniqueSeen: c.uniqueViews,
-  totalSeen: c.totalViews,
 });
 
 export interface AnalyticsMeta {
@@ -136,7 +139,12 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
             raw.viewsByTask.map((row: any) => ({
               name: String(row.name ?? ''),
               taskId: String(row.taskId ?? ''),
-              ...counts(row.analytics),
+              // No totalViews: the domain's per-task view counters are
+              // whole-checklist session counts repeated on every row; only the
+              // unique one is exposed (as the honest whole-checklist number).
+              uniqueViews: int(row.analytics?.uniqueViews),
+              uniqueCompletions: int(row.analytics?.uniqueCompletions),
+              totalCompletions: int(row.analytics?.totalCompletions),
               uniqueClicks: int(row.analytics?.uniqueClicks),
               totalClicks: int(row.analytics?.totalClicks),
             }))
@@ -146,15 +154,15 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
       return {
         ...base,
         contentType: 'launcher',
-        ...seenActivations(top),
-        byDay: byDay(seenActivations),
+        ...launcherCounts(top),
+        byDay: byDay(launcherCounts),
       };
     case ContentDataType.BANNER:
       return {
         ...base,
         contentType: 'banner',
-        ...seenDismissals(top),
-        byDay: byDay(seenDismissals),
+        ...bannerCounts(top),
+        byDay: byDay(bannerCounts),
       };
     case ContentDataType.RESOURCE_CENTER:
       return {
@@ -167,6 +175,7 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
             raw.viewsByBlock.map((row: any) => ({
               name: String(row.name ?? ''),
               blockId: String(row.blockId ?? ''),
+              tabId: String(row.tabId ?? ''),
               tabName: row.tabName != null ? String(row.tabName) : null,
               uniqueClicks: int(row.analytics?.uniqueClicks),
               totalClicks: int(row.analytics?.totalClicks),

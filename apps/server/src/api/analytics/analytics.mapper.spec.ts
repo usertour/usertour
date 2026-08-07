@@ -96,36 +96,48 @@ describe('mapContentAnalytics (pure)', () => {
     expect(out).toMatchObject({ contentType: 'checklist', uniqueStarts: 10, uniqueCompletions: 4 });
     expect(out.byDay).toEqual([]);
     expect(out).not.toHaveProperty('steps');
+    // No totalViews on task rows: the domain's per-task view counters are
+    // whole-checklist session counts repeated on every row (fake per-task data).
     expect(out.contentType === 'checklist' && out.tasks).toEqual([
-      { name: 'T1', taskId: 't1', ...rawCounts, uniqueClicks: 7, totalClicks: 9 },
+      {
+        name: 'T1',
+        taskId: 't1',
+        uniqueViews: 10,
+        uniqueCompletions: 4,
+        totalCompletions: 5,
+        uniqueClicks: 7,
+        totalClicks: 9,
+      },
     ]);
   });
 
-  it('launcher: seen/activations naming, no breakdown', () => {
+  it('launcher: first-touch counts only — session totals repeat unique (dropped), activation is newActivations', () => {
     const out = mapContentAnalytics(
-      { ...rawCounts, viewsByDay: [] },
+      { ...rawCounts, viewsByDay: [{ date: new Date('2026-07-01T00:00:00Z'), ...rawCounts }] },
       meta(ContentDataType.LAUNCHER),
     );
     expect(out).toMatchObject({
       contentType: 'launcher',
       uniqueSeen: 10,
-      totalSeen: 14,
-      uniqueActivations: 4,
-      totalActivations: 5,
+      newActivations: 4,
     });
+    expect(out).not.toHaveProperty('totalSeen');
+    expect(out).not.toHaveProperty('totalActivations');
+    expect(out).not.toHaveProperty('uniqueActivations');
     expect(out).not.toHaveProperty('steps');
     expect(out).not.toHaveProperty('uniqueCompletions');
+    expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueSeen: 10, newActivations: 4 }]);
   });
 
-  it("banner: a dismissal is a dismissal — no 'completions' field exists", () => {
+  it("banner: a dismissal is a dismissal — no 'completions', no fake totals", () => {
     const out = mapContentAnalytics({ ...rawCounts, viewsByDay: [] }, meta(ContentDataType.BANNER));
     expect(out).toMatchObject({
       contentType: 'banner',
       uniqueSeen: 10,
-      totalSeen: 14,
       uniqueDismissals: 4,
-      totalDismissals: 5,
     });
+    expect(out).not.toHaveProperty('totalSeen');
+    expect(out).not.toHaveProperty('totalDismissals');
     expect(out).not.toHaveProperty('uniqueCompletions');
   });
 
@@ -137,12 +149,14 @@ describe('mapContentAnalytics (pure)', () => {
         {
           name: 'Docs',
           blockId: 'b1',
+          tabId: 'tab1',
           tabName: 'Help',
           analytics: { uniqueClicks: 1, totalClicks: 2 },
         },
         {
           name: 'Chat',
           blockId: 'b2',
+          tabId: 'tab1',
           tabName: null,
           analytics: { uniqueClicks: 0, totalClicks: 0 },
         },
@@ -160,8 +174,22 @@ describe('mapContentAnalytics (pure)', () => {
       { date: '2026-07-01', uniqueOpens: 10, totalOpens: 14, uniqueClicks: 4, totalClicks: 5 },
     ]);
     expect(out.contentType === 'resource-center' && out.blocks).toEqual([
-      { name: 'Docs', blockId: 'b1', tabName: 'Help', uniqueClicks: 1, totalClicks: 2 },
-      { name: 'Chat', blockId: 'b2', tabName: null, uniqueClicks: 0, totalClicks: 0 },
+      {
+        name: 'Docs',
+        blockId: 'b1',
+        tabId: 'tab1',
+        tabName: 'Help',
+        uniqueClicks: 1,
+        totalClicks: 2,
+      },
+      {
+        name: 'Chat',
+        blockId: 'b2',
+        tabId: 'tab1',
+        tabName: null,
+        uniqueClicks: 0,
+        totalClicks: 0,
+      },
     ]);
   });
 
@@ -176,15 +204,16 @@ describe('mapContentAnalytics (pure)', () => {
     expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueUsers: 10, totalOccurrences: 14 }]);
   });
 
-  it('announcement: seen counts only — was the mapper default-throw gap (announcement A+B, L1)', () => {
+  it('announcement: uniqueSeen only — seen is first-seen-only, so an event total would just repeat it', () => {
     const raw = {
       ...rawCounts,
       viewsByDay: [{ date: new Date('2026-07-01T00:00:00Z'), ...rawCounts }],
     };
     const out = mapContentAnalytics(raw, meta(ContentDataType.ANNOUNCEMENT));
-    expect(out).toMatchObject({ contentType: 'announcement', uniqueSeen: 10, totalSeen: 14 });
+    expect(out).toMatchObject({ contentType: 'announcement', uniqueSeen: 10 });
+    expect(out).not.toHaveProperty('totalSeen');
     expect(out).not.toHaveProperty('uniqueCompletions');
-    expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueSeen: 10, totalSeen: 14 }]);
+    expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueSeen: 10 }]);
   });
 
   it('covers EVERY content type the service admits — none may hit the default throw', () => {

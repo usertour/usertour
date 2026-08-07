@@ -432,22 +432,32 @@ export class AnalyticsService {
       endDateStr,
       isDistinct: true,
     };
+    // Resource-center totals count EVENTS, not sessions: an RC session is
+    // lifetime-long, so the session-distinct total would always equal the
+    // unique count (zero information) and contradict the per-block counters,
+    // which count events. Other session-based types keep session totals — for
+    // them a session IS one run, so "times started" is the session count.
+    const isResourceCenter = contentType === ContentType.RESOURCE_CENTER;
     const uniqueViews = await this.aggregationByEvent({ ...condition });
-    const totalViews = await this.aggregationByEvent({
-      ...condition,
-      isDistinct: false,
-    });
+    const totalViews = isResourceCenter
+      ? await this.countEventsByContent(condition)
+      : await this.aggregationByEvent({
+          ...condition,
+          isDistinct: false,
+        });
     const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
     const uniqueCompletions = isLauncherActivated
       ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
       : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
-    const totalCompletions = isLauncherActivated
-      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
-      : await this.aggregationByEvent({
-          ...condition,
-          eventId: completeEvent.id,
-          isDistinct: false,
-        });
+    const totalCompletions = isResourceCenter
+      ? await this.countEventsByContent({ ...condition, eventId: completeEvent.id })
+      : isLauncherActivated
+        ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+        : await this.aggregationByEvent({
+            ...condition,
+            eventId: completeEvent.id,
+            isDistinct: false,
+          });
     const viewsByStep = isFlow
       ? await this.aggregationStepsByContent(
           condition,
@@ -669,30 +679,40 @@ export class AnalyticsService {
       return [];
     }
 
-    // Get aggregated statistics
+    // Get aggregated statistics. Resource-center totals count events per day
+    // (see querySessionBasedContentAnalytics) so the rows still sum to the
+    // headline totals.
+    const isResourceCenter = startEvent.codeName === BizEvents.RESOURCE_CENTER_OPENED;
     const uniqueViewsByDay = await this.aggregationByDay(
       { ...condition, eventId: startEvent.id },
       timezone,
     );
-    const totalViewsByDay = await this.aggregationByDay(
-      { ...condition, eventId: startEvent.id, isDistinct: false },
-      timezone,
-    );
+    const totalViewsByDay = isResourceCenter
+      ? await this.countEventsByContentByDay({ ...condition, eventId: startEvent.id }, timezone)
+      : await this.aggregationByDay(
+          { ...condition, eventId: startEvent.id, isDistinct: false },
+          timezone,
+        );
     // For LAUNCHER_ACTIVATED, only count the first occurrence per user
     const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
     const uniqueCompletionByDay = isLauncherActivated
       ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
       : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
-    const totalCompletionByDay = isLauncherActivated
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
-      : await this.aggregationByDay(
-          {
-            ...condition,
-            eventId: completeEvent.id,
-            isDistinct: false,
-          },
-          timezone,
-        );
+    const totalCompletionByDay = isResourceCenter
+      ? await this.countEventsByContentByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : isLauncherActivated
+        ? await this.aggregationFirstEventByDay(
+            { ...condition, eventId: completeEvent.id },
+            timezone,
+          )
+        : await this.aggregationByDay(
+            {
+              ...condition,
+              eventId: completeEvent.id,
+              isDistinct: false,
+            },
+            timezone,
+          );
 
     // Calendar walk in the requested timezone (NOT 24h stepping — see the
     // tracker path). The SQL buckets label days as plain `to_char` strings in
@@ -1146,6 +1166,47 @@ export class AnalyticsService {
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
     `;
     return Number.parseInt(data[0].count.toString());
+  }
+
+  /**
+   * Plain event count (repeats included) — the resource-center `total*`
+   * semantics. The session-distinct counter above collapses a user's repeated
+   * opens/clicks to 1 because an RC session is lifetime-long; only a raw
+   * Count(*) can answer "how many times", and it reconciles with the per-block
+   * counters (countTotalEvents), which already count this way.
+   */
+  async countEventsByContent(condition: Omit<AnalyticsConditions, 'isDistinct'>) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw`
+      SELECT Count(*) from "BizEvent"
+        left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
+        AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
+    `;
+    return Number.parseInt(data[0].count.toString());
+  }
+
+  /** Per-day companion of countEventsByContent — same day-label contract as aggregationByDay. */
+  async countEventsByContentByDay(
+    condition: Omit<AnalyticsConditions, 'isDistinct'>,
+    timezone: string,
+  ) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = (await this.prisma.$queryRaw`
+      SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+        Count(*) from "BizEvent"
+        left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
+        AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
+        GROUP BY DAY
+      `) as [{ day: string; count: number }];
+    return data.map((dd) => ({ ...dd, count: Number(dd.count) }));
   }
 
   /**
