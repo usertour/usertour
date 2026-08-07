@@ -1933,12 +1933,15 @@ const translations = {
         totalViews: '总浏览量',
         totalCompletionRate: '总完成率',
         launcher: {
-          uniqueViewsTooltip: '看到该启动器的独立用户数。',
+          uniqueViewsTooltip:
+            '在所选时间范围内首次看到该启动器的用户数——每位用户只在首次触达的那天计一次。',
           activationRate: '激活率',
-          activationRateTooltip: '看到启动器并将其激活（例如点击或悬停）的用户占比。',
+          activationRateTooltip:
+            '在该范围内新触达的用户中，完成首次激活（例如点击或悬停）的占比。重复激活不会重复计数。',
         },
         banner: {
-          uniqueViewsTooltip: '看到该横幅的独立用户数。',
+          uniqueViewsTooltip:
+            '在所选时间范围内首次看到该横幅的用户数——每位用户只在首次触达的那天计一次。',
           dismissals: '关闭次数',
           dismissalsTooltip: '关闭该横幅的独立用户数。',
         },

@@ -2045,13 +2045,15 @@ const translations = {
         totalViews: 'Total views',
         totalCompletionRate: 'Total completion rate',
         launcher: {
-          uniqueViewsTooltip: 'Unique users who saw the launcher.',
+          uniqueViewsTooltip:
+            'Users who saw the launcher for the FIRST time in the selected date range — each user counts once, on the day they were first reached.',
           activationRate: 'Activation rate',
           activationRateTooltip:
-            'Percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it).',
+            'Of the users first reached in the range, the share who made their first activation (e.g. clicking or hovering). Repeat activations never re-count a user.',
         },
         banner: {
-          uniqueViewsTooltip: 'Unique users who saw the banner.',
+          uniqueViewsTooltip:
+            'Users who saw the banner for the FIRST time in the selected date range — each user counts once, on the day they were first reached.',
           dismissals: 'Dismissals',
           dismissalsTooltip: 'Unique users who dismissed the banner.',
         },
