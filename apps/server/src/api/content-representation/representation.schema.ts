@@ -1104,7 +1104,10 @@ export const representationStartRules = z.preprocess(
           .object({ duration: z.number(), unit: durationUnit })
           .optional()
           .describe(
-            'Only auto-start if no other content has been shown within this window — avoids showing a user too many at once.',
+            'Only auto-start if no OTHER content of the SAME type has been shown within this ' +
+              'window — and since only flows accept this knob, in practice: no other FLOW. A ' +
+              'banner / checklist / launcher showing does NOT block it. Avoids stacking ' +
+              'several flows on a user at once.',
           ),
       })
       .optional()
