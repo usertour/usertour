@@ -194,11 +194,14 @@ describe('decompileCondition', () => {
     });
   });
 
-  it('unknown / non-authorable types → unsupported', () => {
-    expect(decompileCondition({ type: 'wait', data: {} }, IDENTITY_RESOLVERS)).toEqual({
-      type: 'unsupported',
-      note: 'wait',
-    });
+  it('unknown / non-authorable types → unsupported, note says what it was and how to resolve it', () => {
+    const out = decompileCondition({ type: 'wait', data: {} }, IDENTITY_RESOLVERS) as {
+      type: string;
+      note?: string;
+    };
+    expect(out.type).toBe('unsupported');
+    expect(out.note).toContain('wait');
+    expect(out.note).toContain('cannot be written back');
   });
 });
 

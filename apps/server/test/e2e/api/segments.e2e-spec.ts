@@ -289,7 +289,9 @@ describe('API v2 segments (e2e)', () => {
     // choke on the whole list because one segment carries it).
     const res = await api('get', `${segPath()}/${weird.id}`, token);
     expect(res.status).toBe(200);
-    expect(res.body.conditions?.[0]).toEqual({ type: 'unsupported', note: 'weird-legacy-type' });
+    expect(res.body.conditions?.[0]).toMatchObject({ type: 'unsupported' });
+    expect(String(res.body.conditions?.[0]?.note)).toContain('weird-legacy-type');
+    expect(String(res.body.conditions?.[0]?.note)).toContain('cannot be written back');
 
     // Write-back of the echo is refused with directions, never silently dropped.
     const upd = await send('patch', `${segPath()}/${weird.id}`, token).send({

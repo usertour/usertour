@@ -459,6 +459,28 @@ describe('API v2 /content-versions (e2e)', () => {
       type: 'event',
       within: expect.objectContaining({ value: 7, unit: 'days' }),
     });
+
+    // Echoing the placeholder back is REFUSED with directions — the same
+    // contract as the segment surface, never a silent drop (the placeholder
+    // carries no data; a filter here would delete the stored condition and
+    // could bring an AND-pinned rule to life without a word).
+    const echo = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({ startRules: { when } });
+    expect(echo.status).toBe(400);
+    expect(echo.body.error.code).toBe('E1017');
+    expect(echo.body.error.message).toContain('cannot be written back');
+
+    // Removing the placeholder (the explicit delete) writes clean.
+    const cleaned = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({ startRules: { when: when.slice(1) } });
+    expect(cleaned.status).toBe(200);
+    expect(cleaned.body.startRules.when).toHaveLength(1);
   });
 
   it('seeds the builder-default frequency (once) when a startRules write leaves it unset', async () => {

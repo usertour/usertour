@@ -123,9 +123,7 @@ export function compileConditions(
   r: CompileResolvers,
   joiner: 'and' | 'or' = 'and',
 ): Rule[] {
-  return (conditions ?? [])
-    .filter((c) => c.type !== 'unsupported')
-    .map((c) => ({ ...compileCondition(c, r), operators: joiner }));
+  return (conditions ?? []).map((c) => ({ ...compileCondition(c, r), operators: joiner }));
 }
 
 function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
@@ -222,8 +220,18 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
         ...(c.start ? { startTime: c.start } : {}),
         ...(c.end ? { endTime: c.end } : {}),
       });
+    case 'unsupported': {
+      // Read-side placeholder for a stored condition the schema cannot express.
+      // Echoing it back cannot preserve the stored condition (condition lists
+      // are full replacements and the placeholder carries no data), so refuse
+      // with directions instead of silently dropping it — same contract as the
+      // segment surface (segments.service assertSegmentConditionTypes).
+      const note = (c as { note?: string }).note;
+      throw new ValidationError(
+        `"unsupported" is a read-side placeholder for a stored condition this API cannot express${note ? ` (here: ${note})` : ''} — it cannot be written back. Remove it from the list (which DELETES that stored condition) or repair the conditions in the builder first.`,
+      );
+    }
     default:
-      // `unsupported` is filtered out by compileConditions; nothing else remains.
       throw new ValidationError(
         `Cannot write a "${(c as { type: string }).type}" condition — supported condition types: ${SUPPORTED_CONDITION_TYPES}.`,
       );

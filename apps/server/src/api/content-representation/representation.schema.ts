@@ -511,8 +511,9 @@ export const representationCondition = z.lazy(() =>
       // draft-in-progress — it is a mistake, and the runtime treats it as
       // never matching. Read-backs cannot carry the shape either: the
       // decompiler emits stored legacy end-only windows as `unsupported`
-      // placeholders (dead conditions; rewriting the list drops them, same as
-      // deleted-attribute conditions).
+      // placeholders (dead conditions; echoing one back is rejected, and
+      // removing it from the list deletes it — same as deleted-attribute
+      // conditions).
       start: z
         .string()
         .describe(
@@ -528,9 +529,14 @@ export const representationCondition = z.lazy(() =>
     z
       .object({ type: z.literal('unsupported'), note: z.string().optional() })
       .describe(
-        'Read-side placeholder for a stored condition this API cannot express (`note` = the ' +
-          'internal type). Never author one: echoing it back is rejected with instructions — ' +
-          'remove it (deleting that stored condition) or edit the conditions in the Usertour app.',
+        'Read-side placeholder for a stored condition this API cannot express (`note` says what ' +
+          'it stands for — usually a DEAD condition the runtime never matches: a deleted ' +
+          'attribute/event, an end-only time window). It cannot be written back (the ' +
+          'placeholder carries no data to preserve): echoing it is rejected. Either remove it ' +
+          'from the list you write — an explicit choice that DELETES the stored condition; ' +
+          'mind that a never-matching node inside an AND list pins the whole rule to "never ' +
+          'fires", so deleting it can bring the remaining conditions to life — or repair the ' +
+          'original condition in the Usertour builder first.',
       ),
   ]),
 ) as unknown as z.ZodType<RepresentationCondition>;

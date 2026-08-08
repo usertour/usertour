@@ -186,7 +186,7 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
       if (attrCode === undefined) {
         return {
           type: 'unsupported',
-          note: `references a deleted attribute (was internal id ${attrId}) — this condition no longer matches anything; remove it or recreate the attribute`,
+          note: `references a deleted attribute (was internal id ${attrId}) — never matches at runtime and cannot be written back; remove it from the list to delete it, or recreate the attribute and repair the condition in the builder`,
         };
       }
       return {
@@ -207,7 +207,7 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
       if (eventAttrCode === undefined) {
         return {
           type: 'unsupported',
-          note: `references a deleted event attribute (was internal id ${eventAttrId})`,
+          note: `references a deleted event attribute (was internal id ${eventAttrId}) — never matches at runtime and cannot be written back; remove it from the list to delete it`,
         };
       }
       return {
@@ -249,7 +249,7 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
       if (eventCode === undefined) {
         return {
           type: 'unsupported',
-          note: `references a deleted event (was internal id ${eventId})`,
+          note: `references a deleted event (was internal id ${eventId}) — never matches at runtime and cannot be written back; remove it from the list to delete it`,
         };
       }
       return {
@@ -279,7 +279,10 @@ export function decompileCondition(c: RuleNode, r: DecompileResolvers): Compilab
     case 'time':
       return mapTime(d);
     default:
-      return { type: 'unsupported', ...(c.type ? { note: c.type } : {}) };
+      return {
+        type: 'unsupported',
+        note: `${c.type ?? 'unrecognized condition'} — not expressible in this API and cannot be written back; remove it from the list to delete it, or edit these conditions in the builder`,
+      };
   }
 }
 
@@ -335,14 +338,21 @@ function mapTime(d: any): RepresentationCondition {
     // write schema requires `start` — emitting it as time_window would put a
     // schema-violating shape on the wire AND break the read→write round-trip.
     // Same treatment as deleted-attribute conditions: an `unsupported`
-    // placeholder whose note says what it was; rewriting the list drops it.
+    // placeholder whose note says what it was; echoing it back is rejected,
+    // and removing it from the list deletes it.
     return {
       type: 'unsupported',
-      note: `end-only time window (until ${d.endTime}) — never matches at runtime; rewriting these conditions drops it. To recreate the window, add a start.`,
+      note: `end-only time window (until ${d.endTime}) — never matches at runtime and cannot be written back; remove it from the list to delete it, or write a time_window WITH a start to recreate the window as supported`,
     };
   }
-  // legacy MM/dd/yyyy component format → not modeled
-  return { type: 'unsupported', note: 'time:legacy' };
+  // Legacy MM/dd/yyyy component format → not modeled. NOT dead: the runtime
+  // still evaluates this shape (helpers/conditions/time.ts legacy path), which
+  // is why write-back rejection matters here — silently dropping it would
+  // delete a LIVE targeting condition.
+  return {
+    type: 'unsupported',
+    note: 'legacy-format time condition (STILL evaluated at runtime) — not expressible in this API and cannot be written back; removing it from the list deletes a live condition. To keep or change it, edit these conditions in the builder.',
+  };
 }
 
 // ── Actions ──────────────────────────────────────────────────────────────────
