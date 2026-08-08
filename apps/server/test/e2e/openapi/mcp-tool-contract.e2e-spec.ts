@@ -85,7 +85,19 @@ describe('MCP tool contract (e2e)', () => {
       { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
       token,
     );
-    return extractResult(res).result;
+    const rpcResponse = extractResult(res);
+    if (!rpcResponse?.result) {
+      // Seen intermittently as a transport-level `{error}` envelope instead of
+      // a tool result (get_session, ~1 in 4 full runs). Fail with the whole
+      // envelope so the NEXT occurrence is diagnosable, instead of the bare
+      // "cannot read isError of undefined" this produced.
+      throw new Error(
+        `MCP tools/call ${name} returned no result (status ${
+          (res as { status?: number }).status
+        }): ${JSON.stringify(rpcResponse ?? res.body)}`,
+      );
+    }
+    return rpcResponse.result;
   }
 
   function toolText(result: any): string {

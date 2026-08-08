@@ -30,8 +30,8 @@ export async function createTestApp(
   // generated from — see ./response-contract. Test-only: production must not
   // pay a parse per response, and a contract slip there should not 500.
   // The tally is asserted by a global afterAll (test/setup-contract-e2e.ts),
-  // NOT here — several specs race `close()` against a 5s timeout, which would
-  // skip anything hanging off it.
+  // NOT here — the wrapped close() below is itself raced against a cap, so
+  // nothing that must run may hang off it.
   app.useGlobalInterceptors(new ResponseContractInterceptor());
   await app.init();
 
@@ -42,9 +42,17 @@ export async function createTestApp(
   // leaked and accumulated — 59 suites × 3 > Postgres max_connections (100),
   // and the parallel full run drowned in "too many clients" 500s while
   // individual suites stayed green. Close the pool with the app.
+  //
+  // The Nest close itself is CAPPED at 10s: it normally completes in ~15ms but
+  // intermittently blocks far past the 60s hook timeout on lingering
+  // redis/bullmq handles — capability-matrix failed 3 of 6 full runs on
+  // exactly this (afterAll timeout, 60/60 tests green; probed teardown 65ms +
+  // close 13ms on the good runs). The process is reaped by jest --forceExit,
+  // so a hung shutdown costs nothing — but the Prisma disconnect below must
+  // run EVEN WHEN the cap wins, or the pool leak above comes back.
   const close = app.close.bind(app);
   app.close = async () => {
-    await close();
+    await Promise.race([close(), new Promise((resolve) => setTimeout(resolve, 10_000).unref())]);
     await app.get(PrismaService).$disconnect();
   };
   return app;
