@@ -96,8 +96,23 @@ function objTable(obj: JS, root: JS): string {
     .map(([k, raw]) => {
       const p = raw as JS;
       const req = required.includes(k) ? 'yes' : '';
-      const desc = (p.description ?? '').replace(/\n/g, ' ').replace(/\|/g, '\\|');
-      return `| \`${k}\` | ${NAMED[k] ?? typeLabel(p, root)} | ${req} | ${desc} |`;
+      // MDX parses a bare `{ … }` in a table cell as a JSX expression and
+      // SILENTLY blanks the whole page body — backtick any brace shape that
+      // isn't already inside inline code (segments alternate around backticks).
+      const braceSafe = (s: string) =>
+        s
+          .split('`')
+          .map((seg, idx) =>
+            idx % 2 ? seg : seg.replace(/\{\{[^}]*\}\}|\{[^{}]*\}/g, (m) => `\`${m}\``),
+          )
+          .join('`');
+      const desc = braceSafe((p.description ?? '').replace(/\n/g, ' ').replace(/\|/g, '\\|'));
+      // The name→type map is a rendering convenience for structured fields; a
+      // field whose schema is a plain string must NOT inherit it — `content`
+      // is Block[] on a step but a contentId STRING on content_state /
+      // start_content, and the map used to stamp Block[] on both.
+      const named = p.type === 'string' ? undefined : NAMED[k];
+      return `| \`${k}\` | ${named ?? typeLabel(p, root)} | ${req} | ${desc} |`;
     });
   if (!rows.length) return '_(no fields)_\n';
   const lines = ['| Field | Type | Required | Description |', '|---|---|---|---|', ...rows];
