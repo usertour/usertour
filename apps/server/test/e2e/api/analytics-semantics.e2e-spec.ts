@@ -24,10 +24,12 @@ import { createTestApp } from '../create-test-app';
  *   lifetime-long, so the old session-distinct totals always equaled `unique*`
  *   and contradicted the per-block rows (live: headline 53 vs blocks-sum 81).
  *   Headline totalClicks must reconcile with the block rows, which carry tabId.
- * - launcher metrics are FIRST-TOUCH: seen fires once per user (at first
- *   display), and `newActivations` counts users whose first-EVER activation
- *   fell in the range — a user reached before the range stays invisible in it
- *   no matter how active they still are. No `total*` fields exist.
+ * - launcher/banner metrics are FIRST-TOUCH at the QUERY level: every count
+ *   aggregates each user's first-EVER event (then filters to the range), so a
+ *   user reached before the range stays invisible in it no matter how active
+ *   they still are — even over legacy repeat events (current delivery fires
+ *   seen once per user for life, but pre-rework production code wrote
+ *   repeats). No `total*` fields exist.
  * - banner exposes only the two first-touch user counts; announcement only
  *   uniqueSeen. The session totals the domain still computes for them repeat
  *   the unique numbers and must NOT appear in the payload.
@@ -202,8 +204,11 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     });
     const versionId = (await buildVersion(prisma, { contentId: launcher.id, sequence: 0 })).id;
 
-    // oldUser: first reached AND first activated 40 days ago, still active
-    // 5 days ago (activation events repeat — nothing dedups them at write).
+    // oldUser: first reached AND first activated 40 days ago, then SEEN again
+    // and activated again 5 days ago. The in-range repeat seen is legacy-style
+    // dirt — current delivery fires seen once per (user, content) for life,
+    // but pre-rework production code wrote repeats, so the query must count
+    // each user at their first-ever event, not trust the stream to be clean.
     // newUser: first reached + twice activated 5 days ago.
     const oldUser = await buildBizUser(prisma, { environmentId });
     const newUser = await buildBizUser(prisma, { environmentId });
@@ -227,6 +232,7 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     await prisma.bizEvent.createMany({
       data: [
         ev(oldS, oldUser, seenDef.id, daysAgo(40)),
+        ev(oldS, oldUser, seenDef.id, daysAgo(5)), // legacy repeat seen in range
         ev(oldS, oldUser, activatedDef.id, daysAgo(40)),
         ev(oldS, oldUser, activatedDef.id, daysAgo(5)), // repeat activity in range
         ev(newS, newUser, seenDef.id, daysAgo(5)),
@@ -236,7 +242,8 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     });
 
     // Default range (last 30 days): only newUser counts. oldUser's in-range
-    // activation does NOT resurface them — first-touch, not window activity.
+    // repeat seen + activation do NOT resurface them — first-touch, not window
+    // activity (a range-distinct query would report uniqueSeen: 2 here).
     const recent = await rest(analyticsUrl(launcher.id));
     expect(recent.status).toBe(200);
     expect(recent.body).toMatchObject({
@@ -271,17 +278,33 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     });
     const versionId = (await buildVersion(prisma, { contentId: banner.id, sequence: 0 })).id;
     const user = await buildBizUser(prisma, { environmentId });
-    const session = await buildSession(prisma, {
-      bizUserId: user.id,
-      contentId: banner.id,
-      versionId,
-      environmentId,
-      projectId,
-    });
+    // oldUser: first seen + first dismissed 40 days ago, with legacy-style
+    // repeats of BOTH events 5 days ago — must stay invisible in the default
+    // range (first-touch counts each user at their first-ever event).
+    const oldUser = await buildBizUser(prisma, { environmentId });
+    const mkSession = (bizUserId: string) =>
+      buildSession(prisma, {
+        bizUserId,
+        contentId: banner.id,
+        versionId,
+        environmentId,
+        projectId,
+      });
+    const session = await mkSession(user.id);
+    const oldSession = await mkSession(oldUser.id);
     await prisma.bizEvent.createMany({
       data: [
         { bizSessionId: session.id, bizUserId: user.id, eventId: seenDef.id, data: {} },
         { bizSessionId: session.id, bizUserId: user.id, eventId: dismissedDef.id, data: {} },
+        ...[seenDef.id, dismissedDef.id].flatMap((eventId) =>
+          [daysAgo(40), daysAgo(5)].map((createdAt) => ({
+            bizSessionId: oldSession.id,
+            bizUserId: oldUser.id,
+            eventId,
+            data: {},
+            createdAt,
+          })),
+        ),
       ],
     });
 

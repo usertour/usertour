@@ -140,10 +140,11 @@ const startsCompletions = {
 };
 const launcherCounts = {
   uniqueSeen: int().describe(
-    'Distinct users whose launcher FIRST appeared in the range. The seen event fires once ' +
-      'per user (at first display; a launcher has one lifetime session), so a range counts ' +
-      'users NEWLY reached in it — a user first reached before the range does not appear ' +
-      'here no matter how often they still see the launcher.',
+    'Distinct users whose launcher FIRST appeared in the range — counted from each ' +
+      "user's first-ever seen event, so a range counts users NEWLY reached in it and a " +
+      'user first reached before the range never appears, no matter how often they ' +
+      'still see the launcher. (Delivery shows a launcher once per user: one lifetime ' +
+      'session.)',
   ),
   newActivations: int().describe(
     'Distinct users whose FIRST-EVER activation (click / hover, per the launcher setting) ' +
@@ -155,13 +156,13 @@ const launcherCounts = {
 };
 const bannerCounts = {
   uniqueSeen: int().describe(
-    'Distinct users whose banner FIRST appeared in the range — the seen event fires once ' +
-      'per user (lifetime single session), so a range counts users newly reached in it, ' +
-      'not users who merely still had it on screen.',
+    'Distinct users whose banner FIRST appeared in the range — counted from each ' +
+      "user's first-ever seen event, so a range counts users newly reached in it, not " +
+      'users who merely still had it on screen.',
   ),
   uniqueDismissals: int().describe(
-    'Distinct users who dismissed the banner in the range (a dismissal happens at most ' +
-      'once per user).',
+    "Distinct users whose first dismissal fell in the range (counted from each user's " +
+      'first dismissal event; a banner is dismissed at most once per user).',
   ),
 };
 const opensClicks = {

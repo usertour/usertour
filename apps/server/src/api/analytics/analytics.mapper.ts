@@ -45,12 +45,13 @@ const startsCompletions = (c: ReturnType<typeof counts>) => ({
   uniqueCompletions: c.uniqueCompletions,
   totalCompletions: c.totalCompletions,
 });
-// Launcher/banner expose ONLY the first-touch user counts: their seen event
-// fires once per user (lifetime single session), so the session-distinct
-// totals the domain computes always repeat the unique numbers — dropped from
-// the contract rather than shipped as fake information. The launcher's
-// activation counter is first-ever-activation-in-range (paired with the
-// first-touch denominator), named newActivations so the name says so.
+// Launcher/banner expose ONLY the first-touch user counts: the domain counts
+// each user's FIRST-EVER event (delivery shows these once per user — one
+// lifetime session — and the first-event query stays true even over legacy
+// repeat events), so the range-scoped totals it also computes carry no extra
+// information — dropped from the contract rather than shipped as fake data.
+// The launcher's activation counter is first-ever-activation-in-range (paired
+// with the first-touch denominator), named newActivations so the name says so.
 const launcherCounts = (c: ReturnType<typeof counts>) => ({
   uniqueSeen: c.uniqueViews,
   newActivations: c.uniqueCompletions,

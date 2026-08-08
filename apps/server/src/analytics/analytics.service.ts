@@ -439,20 +439,33 @@ export class AnalyticsService {
     // which count events. Other session-based types keep session totals — for
     // them a session IS one run, so "times started" is the session count.
     const isResourceCenter = contentType === ContentType.RESOURCE_CENTER;
-    const uniqueViews = await this.aggregationByEvent({ ...condition });
+    // Launcher/banner metrics are first-touch by contract ("users NEWLY reached
+    // in the range"). Current delivery does fire seen/dismissed at most once per
+    // (user, content) — filterSingleSessionContentVersions blocks a second
+    // session for life — but pre-rework production code wrote repeat events, so
+    // these aggregate each user's FIRST event over all history (then filter to
+    // the range) instead of trusting the stored stream to be clean.
+    const isFirstTouchSeen =
+      startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
+      startEvent.codeName === BizEvents.BANNER_SEEN;
+    const isFirstTouchComplete =
+      completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
+      completeEvent.codeName === BizEvents.BANNER_DISMISSED;
+    const uniqueViews = isFirstTouchSeen
+      ? await this.aggregationFirstEvent({ ...condition })
+      : await this.aggregationByEvent({ ...condition });
     const totalViews = isResourceCenter
       ? await this.countEventsByContent(condition)
       : await this.aggregationByEvent({
           ...condition,
           isDistinct: false,
         });
-    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
-    const uniqueCompletions = isLauncherActivated
+    const uniqueCompletions = isFirstTouchComplete
       ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
       : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
     const totalCompletions = isResourceCenter
       ? await this.countEventsByContent({ ...condition, eventId: completeEvent.id })
-      : isLauncherActivated
+      : isFirstTouchComplete
         ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
         : await this.aggregationByEvent({
             ...condition,
@@ -713,24 +726,29 @@ export class AnalyticsService {
     // (see querySessionBasedContentAnalytics) so the rows still sum to the
     // headline totals.
     const isResourceCenter = startEvent.codeName === BizEvents.RESOURCE_CENTER_OPENED;
-    const uniqueViewsByDay = await this.aggregationByDay(
-      { ...condition, eventId: startEvent.id },
-      timezone,
-    );
+    // First-touch pairs (see querySessionBasedContentAnalytics): each user
+    // lands on the day of their first-ever event, immune to legacy repeats.
+    const isFirstTouchSeen =
+      startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
+      startEvent.codeName === BizEvents.BANNER_SEEN;
+    const isFirstTouchComplete =
+      completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
+      completeEvent.codeName === BizEvents.BANNER_DISMISSED;
+    const uniqueViewsByDay = isFirstTouchSeen
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: startEvent.id }, timezone)
+      : await this.aggregationByDay({ ...condition, eventId: startEvent.id }, timezone);
     const totalViewsByDay = isResourceCenter
       ? await this.countEventsByContentByDay({ ...condition, eventId: startEvent.id }, timezone)
       : await this.aggregationByDay(
           { ...condition, eventId: startEvent.id, isDistinct: false },
           timezone,
         );
-    // For LAUNCHER_ACTIVATED, only count the first occurrence per user
-    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
-    const uniqueCompletionByDay = isLauncherActivated
+    const uniqueCompletionByDay = isFirstTouchComplete
       ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
       : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
     const totalCompletionByDay = isResourceCenter
       ? await this.countEventsByContentByDay({ ...condition, eventId: completeEvent.id }, timezone)
-      : isLauncherActivated
+      : isFirstTouchComplete
         ? await this.aggregationFirstEventByDay(
             { ...condition, eventId: completeEvent.id },
             timezone,
@@ -1105,7 +1123,8 @@ export class AnalyticsService {
 
   /**
    * Aggregate first event per user, counting only first events that occurred within the query time range
-   * This is used for LAUNCHER_ACTIVATED events where multiple activations should only count as one
+   * Used for the first-touch metrics (launcher seen/activated, banner seen/dismissed) where
+   * repeat events must never re-count a user
    * The first event is determined from all historical events, then filtered by the query time range
    * Returns total count (not grouped by day)
    */

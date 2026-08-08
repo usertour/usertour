@@ -1641,8 +1641,8 @@ export function buildReadTools(): McpTool[] {
         'Panel opens (checklist + resource-center) and tracker `total*` count EVENTS ' +
         '(repeats included), and the RC headline totalClicks normally equals the sum of the ' +
         "block rows'. Launchers and " +
-        'banners have NO totals — their seen fires once per user (lifetime single surface), ' +
-        'so a range counts users NEWLY reached in it, and the launcher reports ' +
+        'banners have NO totals — their metrics are first-touch (each user counted at their ' +
+        'first-ever event), so a range counts users NEWLY reached in it, and the launcher reports ' +
         '`newActivations` (users whose first-ever activation fell in the range; can exceed ' +
         'uniqueSeen when someone reached earlier activates now). byDay rows are per-day: ' +
         'summing `total*` rows reproduces the headline `total*`; `unique*` rows are unique ' +
