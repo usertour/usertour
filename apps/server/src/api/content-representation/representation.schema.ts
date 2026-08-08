@@ -1112,9 +1112,12 @@ export const representationStartRules = z.preprocess(
       })
       .optional()
       .describe(
-        'How often the content may auto-start. OMITTED entirely, the runtime behaves as `once` ' +
-          '(show a single time, ever) — the default is applied at evaluation time and does NOT ' +
-          'appear on read-backs, so set it explicitly if you want anything else.',
+        'How often the content may auto-start (flow/checklist only). Left unset on a write, ' +
+          'the builder default (`once`) is seeded and STORED — read-backs show the effective ' +
+          'mode explicitly. A version stored with NO frequency at all (reachable only through ' +
+          'legacy/builder-external writes, never through this API) runs with NO limit: it ' +
+          'starts again every time its rules match once the prior session ends — ' +
+          'validate_content_version warns on that state.',
       ),
     priority: z
       .enum(['highest', 'high', 'medium', 'low', 'lowest'])

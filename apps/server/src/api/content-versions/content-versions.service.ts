@@ -1,7 +1,12 @@
 import { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { toArray } from '../shared/query';
-import { CONTENT_TYPE_TRAITS, cuid } from '@usertour/helpers';
+import {
+  AUTO_START_CAPABILITIES,
+  CONTENT_TYPE_TRAITS,
+  cuid,
+  defaultFrequencyFor,
+} from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { RulesCondition, Step } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -560,6 +565,20 @@ export class ApiContentVersionsService {
           {};
         Object.assign(config, compiled);
         const mergedSetting = { ...existingSetting, ...(compiled.autoStartRulesSetting ?? {}) };
+        // Builder parity: buildConfig always persists a frequency for the types
+        // that have the knob — a version STORED without one runs with NO limit
+        // (the runtime gate returns true unconditionally: the flow re-starts on
+        // every dismiss; see DEFAULT_FREQUENCY in @usertour/helpers). The
+        // builder can't produce that state; this write path couldn't avoid it
+        // until now. Seed the same default (`once`) when the merged setting
+        // still lacks one — explicitly stored, so read-backs show it. An
+        // explicit or previously-stored frequency always wins.
+        if (
+          AUTO_START_CAPABILITIES[contentType as ContentDataType]?.frequency &&
+          mergedSetting.frequency == null
+        ) {
+          mergedSetting.frequency = defaultFrequencyFor(contentType as ContentDataType);
+        }
         if (Object.keys(mergedSetting).length > 0) {
           (config as { autoStartRulesSetting?: unknown }).autoStartRulesSetting = mergedSetting;
         }

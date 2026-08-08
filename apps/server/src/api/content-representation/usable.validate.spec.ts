@@ -193,6 +193,62 @@ describe('validateVersionUsable', () => {
     });
   });
 
+  describe('frequency-less auto-start (legacy no-limit state)', () => {
+    const base = {
+      type: ContentDataType.FLOW,
+      themeId: 't1',
+      steps: [{ type: StepContentType.MODAL, data: textBlocks, sequence: 0, cvid: 'a' } as never],
+    };
+
+    it('warns when auto-start is enabled with NO stored frequency', () => {
+      // The runtime gate passes unconditionally without a frequency: the flow
+      // re-starts every time its rules match after the prior session ends.
+      // Builder and API writes both persist a default now — only legacy data
+      // reaches this state, and it must not ship silently.
+      const r = validateVersionUsable({
+        ...base,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [{ type: 'current-page', data: { includes: ['*'] } } as never],
+          autoStartRulesSetting: {},
+        },
+      });
+      expect(paths(r.warnings)).toContain('startRules.frequency');
+    });
+
+    it('stays silent with a stored frequency, when disabled, and for no-knob types', () => {
+      const stored = validateVersionUsable({
+        ...base,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [{ type: 'current-page', data: { includes: ['*'] } } as never],
+          autoStartRulesSetting: { frequency: { frequency: 'once' } as never },
+        },
+      });
+      expect(paths(stored.warnings)).not.toContain('startRules.frequency');
+
+      const disabled = validateVersionUsable({
+        ...base,
+        config: { enabledAutoStartRules: false, autoStartRules: [] },
+      });
+      expect(paths(disabled.warnings)).not.toContain('startRules.frequency');
+
+      // Banner has no frequency knob — an unset frequency there is load-bearing
+      // (baking `once` in would cap it at a single show), never warnable.
+      const banner = validateVersionUsable({
+        type: ContentDataType.BANNER,
+        themeId: 't1',
+        data: { content: textBlocks },
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [{ type: 'current-page', data: { includes: ['*'] } } as never],
+          autoStartRulesSetting: {},
+        },
+      });
+      expect(paths(banner.warnings)).not.toContain('startRules.frequency');
+    });
+  });
+
   describe('theme (cross-cutting)', () => {
     it('errors when a UI type has no theme', () => {
       const r = validateVersionUsable({

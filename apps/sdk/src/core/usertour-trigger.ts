@@ -1,3 +1,4 @@
+import { MAX_WAIT_SECONDS } from '@usertour/constants';
 import { StepTrigger, RulesCondition, SessionAttribute } from '@usertour/types';
 import { uuidV4, isConditionsActived } from '@usertour/helpers';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
@@ -12,7 +13,9 @@ import { logger } from '@/utils/logger';
  */
 export class UsertourTrigger extends Evented {
   // === Static Members ===
-  private static readonly MAX_WAIT_TIME = 300; // Maximum wait time in seconds
+  // Shared with the server's delivery clamp and the wait-timer monitor — one
+  // constant so the "capped at 300 seconds" contract can't drift per surface.
+  private static readonly MAX_WAIT_TIME = MAX_WAIT_SECONDS;
 
   // === Properties ===
   private triggers: StepTrigger[] = [];

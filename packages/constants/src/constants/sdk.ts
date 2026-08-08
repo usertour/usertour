@@ -74,3 +74,15 @@ export const flowReasonTitleMap = {
   [contentEndReason.STORE_NOT_FOUND]: 'Store not found',
   [contentEndReason.ADMIN_ENDED]: 'Ended by admin',
 };
+
+/**
+ * Upper bound, in SECONDS, for every wait timer the runtime arms — a step
+ * trigger's `waitSeconds` and a start rule's `waitSeconds` alike. The single
+ * shared value: the server clamps at delivery (content-utils buildWaitTimers)
+ * and the SDK clamps at consumption (trigger executor + wait-timer monitor),
+ * so the schema's "capped at 300 seconds by the runtime" promise cannot drift
+ * between the two sides. The cap exists because the field is SECONDS and the
+ * recurring authoring mistake is pasting a milliseconds value (300000 → a
+ * 3.5-day timer without this bound).
+ */
+export const MAX_WAIT_SECONDS = 300;

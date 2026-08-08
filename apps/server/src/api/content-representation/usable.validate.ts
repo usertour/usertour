@@ -1,5 +1,6 @@
 import { BUILTIN_LAUNCHER_ICON_NAMES } from '@usertour/constants';
 import {
+  AUTO_START_CAPABILITIES,
   CONTENT_TYPE_TRAITS,
   type ValidateContext,
   hasMissingRequiredData,
@@ -64,8 +65,9 @@ export interface ValidateUsableInput {
   data?: unknown;
   /** version.config (carries autoStartRules + the start-delay setting). */
   config?: {
+    enabledAutoStartRules?: boolean;
     autoStartRules?: RulesCondition[] | null;
-    autoStartRulesSetting?: { wait?: number } | null;
+    autoStartRulesSetting?: { wait?: number; frequency?: unknown } | null;
   } | null;
   /**
    * Project reference lists for SEMANTIC condition validation (attribute
@@ -332,6 +334,26 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
         );
       }
     }
+  }
+
+  // A frequency-capable type (flow/checklist) with auto-start enabled but NO
+  // stored frequency runs with NO limit: the runtime gate passes
+  // unconditionally, so the content starts again every time its rules match
+  // once the prior session ends. The builder always persists a default and the
+  // v2 write path seeds `once`, so only legacy / builder-external writes reach
+  // this state — surface it instead of letting it ship silently.
+  if (
+    AUTO_START_CAPABILITIES[input.type as ContentDataType]?.frequency &&
+    input.config?.enabledAutoStartRules === true &&
+    input.config?.autoStartRulesSetting?.frequency == null
+  ) {
+    warn(
+      'startRules.frequency',
+      'No frequency is stored, so this version auto-starts with NO limit — every time its ' +
+        'start rules match after the previous session ends, it starts again. The intended ' +
+        'default is once; re-save the start rules (the API seeds `once` when frequency is ' +
+        'left unset) or set one explicitly.',
+    );
   }
 
   if (AUTO_START_REQUIRED_TYPES.has(input.type)) {

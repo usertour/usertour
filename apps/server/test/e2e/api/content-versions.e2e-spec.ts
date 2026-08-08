@@ -370,6 +370,39 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(settingsOnly.body.startRules).toMatchObject({ priority: 'high' });
   });
 
+  it('seeds the builder-default frequency (once) when a startRules write leaves it unset', async () => {
+    // A version STORED without a frequency runs with NO limit (the runtime
+    // gate passes unconditionally — the flow re-starts on every dismiss). The
+    // builder always persists a default; this write path must too, or
+    // API-authored auto-start silently diverges from every builder flow.
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const path = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+
+    // No frequency in the write → seeded `once`, stored, visible on read-back.
+    const enable = await api('patch', path, token).send({
+      startRules: { when: [{ type: 'current_url', includes: ['/app/*'] }] },
+    });
+    expect(enable.status).toBe(200);
+    expect(enable.body.startRules.frequency).toMatchObject({ mode: 'once' });
+
+    // An explicit frequency wins over the seed…
+    const explicit = await api('patch', path, token).send({
+      startRules: { frequency: { mode: 'unlimited' } },
+    });
+    expect(explicit.status).toBe(200);
+    expect(explicit.body.startRules.frequency).toMatchObject({ mode: 'unlimited' });
+
+    // …and a later settings-only patch does NOT re-seed over the stored value.
+    const other = await api('patch', path, token).send({
+      startRules: { priority: 'high' },
+    });
+    expect(other.status).toBe(200);
+    expect(other.body.startRules.frequency).toMatchObject({ mode: 'unlimited' });
+    expect(other.body.startRules.priority).toBe('high');
+  });
+
   it('refuses conditions referencing unknown attributes/events (like segments always did)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
@@ -1609,7 +1642,15 @@ describe('API v2 /content-versions (e2e)', () => {
       expect(rewritten.body.startRules).toMatchObject({ priority: 'low' });
       expect(rewritten.body.startRules.waitSeconds).toBeUndefined();
       expect(rewritten.body.startRules.startIfNotComplete).toBeUndefined();
-      expect(rewritten.body.startRules.frequency).toBeUndefined();
+      // frequency IS present — but it is the SEEDED builder default (full
+      // shape with every/atLeast, see the seeding test above), not the
+      // pre-clear value resurrected: the earlier write stored a bare
+      // { mode: 'once' } with no every/atLeast.
+      expect(rewritten.body.startRules.frequency).toEqual({
+        mode: 'once',
+        every: { times: 2, duration: 1, unit: 'days' },
+        atLeast: { duration: 0, unit: 'minutes' },
+      });
     });
   });
 });

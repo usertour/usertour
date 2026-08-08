@@ -4,7 +4,7 @@ import { Evented } from '@/utils/evented';
 import { autoBind } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
 import { ConditionWaitTimer } from '@usertour/types';
-import { SDKClientEvents } from '@usertour/constants';
+import { MAX_WAIT_SECONDS, SDKClientEvents } from '@usertour/constants';
 
 // === Interfaces ===
 /**
@@ -75,13 +75,16 @@ export class ConditionWaitTimersMonitor extends Evented {
 
     this.waitTimers.set(condition.versionId, waitTimerItem);
 
-    // Set timeout using timerManager
+    // Set timeout using timerManager. Clamp mirrors the trigger executor and
+    // the server's delivery-side cap (one shared constant): the field is
+    // SECONDS, and an unclamped pasted milliseconds value (300000) would arm a
+    // 3.5-day timer — the exact mistake the documented 300s cap exists to bound.
     timerManager.setTimeout(
       timerId,
       () => {
         this.handleTimerFired(condition.versionId);
       },
-      condition.waitTime * 1000, // Convert seconds to milliseconds
+      Math.min(condition.waitTime, MAX_WAIT_SECONDS) * 1000, // Convert seconds to milliseconds
     );
 
     // Report timer started
