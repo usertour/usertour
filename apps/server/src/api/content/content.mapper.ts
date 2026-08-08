@@ -23,7 +23,11 @@ export function mapContent(
   return {
     id: node.id,
     object: ApiObjectType.CONTENT,
-    name: node.name,
+    // Stored name is nullable (v1 GraphQL accepts a nameless create; legacy
+    // rows exist) while the v2 contract promises a string — '' for those rows,
+    // same fallback the step decompiler uses. Caught by the e2e response-
+    // contract check, not by TypeScript (node is `any`).
+    name: node.name ?? '',
     type: node.type,
     buildUrl: node.buildUrl ?? null,
     editedVersionId: node.editedVersionId,

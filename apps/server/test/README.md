@@ -149,6 +149,37 @@ node -e "console.log(require('$JWT_PATH').sign({userId:'<USER_ID>'}, process.env
 
 Local dev defaults `JWT_SECRET=test` in `.env`.
 
+## v2 response contract (automatic, every e2e spec)
+
+`createTestApp` installs [`e2e/response-contract.ts`](./e2e/response-contract.ts),
+which parses **every `/v2` response** through the zod schema its `@ApiResponse`
+DTO wraps — the same schema the published OpenAPI is generated from. No spec
+opts in and none needs changing; a suite fails on `app.close()` if it produced a
+violation.
+
+It exists because the two halves of the v2 contract were never checked against
+each other. Mappers are typed, so TypeScript catches a missing or misspelled
+key — but their input is `any` (Prisma rows, decompiled JSON), so a value-level
+drift compiles clean and ships. Two kinds are reported:
+
+| Kind | Meaning |
+|---|---|
+| `schema` | `safeParse` rejected — missing required field, wrong type, enum value outside the declared set |
+| `extra` | parse succeeded but the body carried keys the schema does not declare. zod **strips** unknown keys instead of rejecting, so these are invisible to `safeParse`; they are found by diffing the raw body against the parsed output |
+
+An `extra` is a real defect, not noise: clients generated from the spec cannot
+see the field, yet it silently becomes part of the de-facto contract.
+
+```bash
+CONTRACT_CHECK=off pnpm test:e2e ...            # disable (is the check itself wrong?)
+CONTRACT_COVERAGE_OUT=/tmp/cov.jsonl pnpm test:e2e test/e2e/api   # which operations got validated
+```
+
+Coverage as of writing: **54 of the 59 v2 operations exercised, 42 schema-validated**
+(the other 12 are 204 deletes, which legitimately declare no body). Never
+exercised: `GET`/`PATCH`/`DELETE event-definitions/{id}`, `GET users/{id}`,
+`POST themes/{id}/duplicate`.
+
 ## Files
 
 ```
@@ -163,6 +194,7 @@ test/
 │   ├── permission.e2e-spec.ts jest contract test
 │   ├── factories.ts           Prisma fixture factories (createProject etc.)
 │   ├── auth.ts                signToken + graphql + isPermissionDenied helpers
+│   ├── response-contract.ts   v2 response ⇄ zod schema check (auto, all specs)
 │   └── create-test-app.ts     boots the AppModule once per spec
 └── smoke/
     ├── permissions.ts         Node fetch runner (automated, env-driven)

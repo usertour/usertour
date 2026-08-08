@@ -128,7 +128,9 @@ export function mapContentSession(
         ? {
             id: session.content.id,
             object: ApiObjectType.CONTENT,
-            name: session.content.name,
+            // Nullable in storage, string in the contract — '' for legacy
+            // nameless rows (see content.mapper).
+            name: session.content.name ?? '',
             type: session.content.type,
             editedVersionId: session.content.editedVersionId,
             updatedAt: session.content.updatedAt.toISOString(),
