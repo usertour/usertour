@@ -365,7 +365,17 @@ function decompilePlacement(raw: unknown, type: string): RepresentationPlacement
   if (!s || typeof s !== 'object') {
     return undefined;
   }
-  if (type === StepContentType.MODAL || type === StepContentType.BUBBLE) {
+  if (type === StepContentType.BUBBLE) {
+    // A bubble is positioned by the THEME's bubble placement — the stored
+    // step-level position/offsets (builder-seeded defaults) are never read by
+    // the renderer. Echo only `backdrop`, the one placement key a bubble
+    // honors, so read→write round-trips stay inside what the write accepts.
+    if (typeof s.enabledBackdrop !== 'boolean') {
+      return undefined;
+    }
+    return { backdrop: s.enabledBackdrop };
+  }
+  if (type === StepContentType.MODAL) {
     if (typeof s.position !== 'string' || !POSITIONS.has(s.position)) {
       return undefined;
     }

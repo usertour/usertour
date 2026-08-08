@@ -9,12 +9,21 @@
  * concerns (labels, tooltips, widget choice, visibleWhen) also stay in the builder;
  * for enums the allowed *values* live here, their display *labels* in the builder.
  */
-export type ThemeSettingConstraint =
+export type ThemeSettingConstraint = (
   | { kind: 'number'; min?: number; max?: number }
   | { kind: 'color'; allowAuto: boolean }
   | { kind: 'enum'; values: readonly (string | number)[] }
   | { kind: 'boolean' }
-  | { kind: 'string' };
+  | { kind: 'string' }
+) & {
+  /**
+   * Unit / applicability note surfaced verbatim in the public API schema
+   * (OpenAPI + MCP get_theme_schema). Only for keys whose meaning is not
+   * evident from name + bounds — units (seconds vs ms, 0-100 percent),
+   * per-type applicability, override precedence.
+   */
+  describe?: string;
+};
 
 export const THEME_SETTING_CONSTRAINTS = {
   'announcement.bubbleWidth': { kind: 'number', min: 100, max: 1000 },
@@ -22,12 +31,22 @@ export const THEME_SETTING_CONSTRAINTS = {
   'avatar.size': { kind: 'number', min: 10, max: 200 },
   'backdrop.color': { kind: 'color', allowAuto: false },
   'backdrop.highlight.color': { kind: 'color', allowAuto: false },
-  'backdrop.highlight.opacity': { kind: 'number', min: 0, max: 100 },
+  'backdrop.highlight.opacity': {
+    kind: 'number',
+    min: 0,
+    max: 100,
+    describe: 'Percent, 0-100 (not 0-1).',
+  },
   'backdrop.highlight.radius': { kind: 'number', min: 0, max: 100 },
   'backdrop.highlight.spread': { kind: 'number', min: 0, max: 100 },
   'backdrop.highlight.type': { kind: 'enum', values: ['outside', 'inside'] },
-  'backdrop.opacity': { kind: 'number', min: 0, max: 100 },
-  'banner.animationDuration': { kind: 'number', min: 0, max: 10000 },
+  'backdrop.opacity': { kind: 'number', min: 0, max: 100, describe: 'Percent, 0-100 (not 0-1).' },
+  'banner.animationDuration': {
+    kind: 'number',
+    min: 0,
+    max: 10000,
+    describe: 'Milliseconds.',
+  },
   'banner.animationTiming': { kind: 'enum', values: ['smooth', 'snappy', 'gentle', 'linear'] },
   'banner.backgroundColor.background': { kind: 'color', allowAuto: true },
   'banner.padding': { kind: 'number', min: 0, max: 100 },
@@ -119,8 +138,18 @@ export const THEME_SETTING_CONSTRAINTS = {
   'checklistLauncher.placement.positionOffsetY': { kind: 'number', min: 0, max: 1000 },
   customCss: { kind: 'string' },
   'focusHighlight.color': { kind: 'color', allowAuto: true },
-  'focusHighlight.opacity': { kind: 'number', min: 0, max: 100 },
-  'font.customFontFamily': { kind: 'string' },
+  'focusHighlight.opacity': {
+    kind: 'number',
+    min: 0,
+    max: 100,
+    describe: 'Percent, 0-100 (not 0-1).',
+  },
+  'font.customFontFamily': {
+    kind: 'string',
+    describe:
+      'Font family name used when font.fontFamily is "Custom font" (declare the face itself ' +
+      'via customCss @font-face). When set this way it OVERRIDES font.fontFamily at render.',
+  },
   'font.fontFamily': { kind: 'string' },
   'font.fontSize': { kind: 'number', min: 10, max: 50 },
   'font.fontWeightBold': { kind: 'enum', values: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
@@ -153,7 +182,12 @@ export const THEME_SETTING_CONSTRAINTS = {
   'launcherIcon.color.active': { kind: 'color', allowAuto: true },
   'launcherIcon.color.color': { kind: 'color', allowAuto: true },
   'launcherIcon.color.hover': { kind: 'color', allowAuto: true },
-  'launcherIcon.opacity': { kind: 'number', min: 0, max: 100 },
+  'launcherIcon.opacity': {
+    kind: 'number',
+    min: 0,
+    max: 100,
+    describe: 'Percent, 0-100 (not 0-1).',
+  },
   'launcherIcon.size': { kind: 'number', min: 1, max: 200 },
   'mainColor.active': { kind: 'color', allowAuto: true },
   'mainColor.background': { kind: 'color', allowAuto: false },
@@ -162,14 +196,45 @@ export const THEME_SETTING_CONSTRAINTS = {
   'modal.backdropClickBehavior': { kind: 'enum', values: ['do-nothing', 'dismiss-flow'] },
   'modal.padding': { kind: 'number', min: 0, max: 100 },
   'modal.width': { kind: 'number', min: 100, max: 1000 },
-  'progress.chainRoundedHeight': { kind: 'number', min: 1, max: 10 },
-  'progress.chainSquaredHeight': { kind: 'number', min: 1, max: 10 },
+  'progress.chainRoundedHeight': {
+    kind: 'number',
+    min: 1,
+    max: 10,
+    describe: 'Pixels. Applies ONLY when progress.type is "chain-rounded".',
+  },
+  'progress.chainSquaredHeight': {
+    kind: 'number',
+    min: 1,
+    max: 10,
+    describe: 'Pixels. Applies ONLY when progress.type is "chain-squared".',
+  },
   'progress.color': { kind: 'color', allowAuto: true },
-  'progress.dotsHeight': { kind: 'number', min: 1, max: 10 },
+  'progress.dotsHeight': {
+    kind: 'number',
+    min: 1,
+    max: 10,
+    describe: 'Pixels. Applies ONLY when progress.type is "dots".',
+  },
   'progress.enabled': { kind: 'boolean' },
-  'progress.height': { kind: 'number', min: 0, max: 10 },
-  'progress.narrowHeight': { kind: 'number', min: 1, max: 10 },
-  'progress.numberedHeight': { kind: 'number', min: 1, max: 100 },
+  'progress.height': {
+    kind: 'number',
+    min: 0,
+    max: 10,
+    describe:
+      'Pixels. Applies ONLY when progress.type is "full-width" — each progress type reads its own height key.',
+  },
+  'progress.narrowHeight': {
+    kind: 'number',
+    min: 1,
+    max: 10,
+    describe: 'Pixels. Applies ONLY when progress.type is "narrow".',
+  },
+  'progress.numberedHeight': {
+    kind: 'number',
+    min: 1,
+    max: 100,
+    describe: 'Pixels. Applies ONLY when progress.type is "numbered".',
+  },
   'progress.position': { kind: 'enum', values: ['top', 'bottom'] },
   'progress.type': {
     kind: 'enum',
@@ -191,7 +256,12 @@ export const THEME_SETTING_CONSTRAINTS = {
     kind: 'enum',
     values: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
   },
-  'resourceCenter.transitionDuration': { kind: 'number', min: 0, max: 10000 },
+  'resourceCenter.transitionDuration': {
+    kind: 'number',
+    min: 0,
+    max: 10000,
+    describe: 'Milliseconds.',
+  },
   'resourceCenter.zIndex': { kind: 'number' },
   'resourceCenterLauncherButton.borderRadius': { kind: 'number', min: 0, max: 100 },
   'resourceCenterUnreadBadge.backgroundColor': { kind: 'color', allowAuto: false },
@@ -212,7 +282,14 @@ export const THEME_SETTING_CONSTRAINTS = {
   },
   'survey.color': { kind: 'color', allowAuto: true },
   'tooltip.missingTargetBehavior': { kind: 'enum', values: ['auto-dismiss', 'use-bubble'] },
-  'tooltip.missingTargetTolerance': { kind: 'number', min: 0, max: 10 },
+  'tooltip.missingTargetTolerance': {
+    kind: 'number',
+    min: 0,
+    max: 10,
+    describe:
+      'SECONDS to keep looking for a missing tooltip target before missingTargetBehavior kicks ' +
+      'in. A runtime SDK missing-target setting, when configured, takes precedence over this.',
+  },
   'tooltip.notchSize': { kind: 'number', min: 5, max: 100 },
   'tooltip.width': { kind: 'number', min: 100, max: 1000 },
   'xbutton.color': { kind: 'color', allowAuto: true },

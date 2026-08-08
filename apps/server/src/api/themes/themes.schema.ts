@@ -13,16 +13,19 @@ import { themeSettingsPatchSchema } from './settings.schema';
  * v2 themes endpoint. The base projection (id/name/isDefault/timestamps) is always
  * returned; the heavy `settings` and `variations` are opt-in via `expand`.
  *
- * `settings` is passed through as an opaque object (the theme builder's config
- * shape) — validated as an object, stored as-is. `variations[].conditions` is the
- * one structured part: it's the same rule-condition model content uses, so it goes
- * through the shared rules codec (internal ids <-> stable codes) on read/write;
- * `variations[].settings` is pass-through like the base settings.
+ * `settings` is NOT opaque: a write is a partial patch validated key-by-key
+ * against THEME_SETTING_CONSTRAINTS (the neutral SSOT — see settings.schema),
+ * deep-merged onto the stored settings (create merges onto the built-in
+ * defaults), and reads are normalized (keys outside the allowed sets stripped,
+ * see normalizeStoredSettings). `variations[].conditions` is the other
+ * structured part: the same rule-condition model content uses, through the
+ * shared rules codec (internal ids <-> stable codes) on read/write;
+ * `variations[].settings` stays read-only (builder-authored).
  */
 
 export const themeExpand = z.enum(['settings', 'variations', 'resolvedSettings']);
 
-/** Theme settings — an opaque (pass-through) object. */
+/** Theme settings as returned on read (shape documented by the write schema). */
 const themeSettings = z.record(z.string(), z.unknown());
 
 /** A conditional variation as returned on read (conditions decompiled to codes). */
@@ -66,9 +69,13 @@ export const theme = z.object({
   resolvedSettings: themeSettings
     .optional()
     .describe(
-      'Read-only render resolution of `settings`: the same shape with every "Auto" replaced ' +
-        'by the concrete color the renderer derives (the shared derivation the SDK runs). ' +
-        'Request with expand: ["resolvedSettings"]. Not writable — author intent in `settings`.',
+      'Read-only render resolution of `settings` (the shared derivation the SDK runs). ' +
+        'Three transformations, not just Auto colors: every "Auto" is replaced by the concrete ' +
+        'derived color; `font.fontFamily` is rewritten to the real font stack ("System font" → ' +
+        'the system stack, "Custom font" → the `customFontFamily` value); and defaults are ' +
+        'filled in, so this is a SUPERSET of what was stored — do not diff it against ' +
+        '`settings` to find your edits. Request with expand: ["resolvedSettings"]. Not ' +
+        'writable — author intent in `settings`.',
     ),
   variations: z.array(themeVariation).optional(),
 });

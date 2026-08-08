@@ -147,10 +147,13 @@ export const representationPlacement = z
   .describe(
     'Two placement shapes, by step kind: a TOOLTIP (anchored to a `target`) uses ' +
       '`{ side, align, sideOffset?, alignOffset?, alignType? }` positioned relative to the ' +
-      'element; a MODAL or any anchorless step uses `{ position, offsetX?, offsetY? }` on a ' +
-      '9-cell viewport grid (e.g. `"center"`). Both may set `backdrop`; `blockTarget` is ' +
-      'TOOLTIP-ONLY (a modal already covers the page) and additionally requires `backdrop: true` ' +
-      '— it makes the backdrop swallow clicks on the highlighted element.',
+      'element; a MODAL uses `{ position, offsetX?, offsetY? }` on a 9-cell viewport grid ' +
+      '(e.g. `"center"`). Both may set `backdrop`; `blockTarget` is TOOLTIP-ONLY (a modal ' +
+      'already covers the page) and additionally requires `backdrop: true` — it makes the ' +
+      'backdrop swallow clicks on the highlighted element. A BUBBLE step is positioned by its ' +
+      "THEME's bubble placement, so the only key it accepts here is `{ backdrop }` (positional " +
+      'keys are rejected — move the bubble by changing the theme); a HIDDEN step renders no UI ' +
+      'and rejects `placement` entirely.',
   );
 export type RepresentationPlacement = z.infer<typeof representationPlacement>;
 
@@ -583,7 +586,14 @@ export const representationAction = z.discriminatedUnion('type', [
       .optional()
       .describe('Open the URL in a new browser tab instead of navigating the current one.'),
   }),
-  z.object({ type: z.literal('dismiss') }),
+  z
+    .object({ type: z.literal('dismiss') })
+    .describe(
+      'Dismiss the piece the action lives on. NOT accepted everywhere this union appears: a ' +
+        'resource center has no dismiss (closing the panel is a UI affordance, not an action) ' +
+        'and an announcement is marked seen, never dismissed — writes there are rejected ' +
+        '(E1017), not ignored. Flows / checklists / launchers / banners all accept it.',
+    ),
   // Echo-only pair: read-backs expose non-representable stored actions as these;
   // compile preserves the stored action when the echo matches the version being
   // edited (echoActions pool), and rejects fresh authoring (no AI/API-injected JS).
@@ -626,7 +636,16 @@ const rejectLegacyWaitMs = (raw: unknown, ctx: z.RefinementCtx): unknown => {
 export const representationTrigger = z.preprocess(
   rejectLegacyWaitMs,
   z.object({
-    when: z.array(representationCondition).optional(),
+    when: z
+      .array(representationCondition)
+      .optional()
+      .describe(
+        'REACTIVE slot — polled live in the browser while the step is on screen, so it accepts ' +
+          'only client-evaluable condition types: attribute / current_url / element / ' +
+          'text_input / text_filled / time_window. Event / segment / content_state conditions ' +
+          'are server-evaluated and rejected here (E1017). A trigger with NO `when` never ' +
+          'fires (an empty set is "not matched", not "always").',
+      ),
     do: z.array(representationAction),
     waitSeconds: z
       .number()
@@ -882,8 +901,22 @@ export const representationBlock = z.lazy(() =>
       type: z.literal('button'),
       text: z.string(),
       actions: z.array(representationAction).optional(),
-      disabledWhen: z.array(representationCondition).optional(),
-      hiddenWhen: z.array(representationCondition).optional(),
+      disabledWhen: z
+        .array(representationCondition)
+        .optional()
+        .describe(
+          'REACTIVE slot — polled live in the browser (the button disables the moment the ' +
+            'conditions match). Client-evaluable condition types only: attribute / current_url ' +
+            '/ element / text_input / text_filled / time_window; event / segment / ' +
+            'content_state are rejected (E1017).',
+        ),
+      hiddenWhen: z
+        .array(representationCondition)
+        .optional()
+        .describe(
+          'REACTIVE slot — polled live in the browser (the button shows/hides as conditions ' +
+            'change). Same client-evaluable-only rule as `disabledWhen`.',
+        ),
       variant: z.enum(['primary', 'secondary']).optional(),
       margin: spacingShape,
     }),

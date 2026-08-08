@@ -1,6 +1,8 @@
 import {
   AUTO_START_CAPABILITIES,
+  CONTENT_ACTION_CAPABILITIES,
   CONTENT_REFERENCE_TARGET_TYPES,
+  CONTENT_TYPE_TRAITS,
   STEP_CAPABILITIES,
 } from '@usertour/helpers';
 import { ContentDataType, StepContentType } from '@usertour/types';
@@ -108,8 +110,38 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(STEP_CAPABILITIES[StepContentType.TOOLTIP].onClick).toBe(true);
     expect(STEP_CAPABILITIES[StepContentType.MODAL].onClick).toBe(false);
     expect(AUTHORING_GUIDE).toContain('**Placement is shaped by the step kind**');
-    expect(AUTHORING_GUIDE).toContain('a step-level `placement` on a bubble is ignored');
+    expect(AUTHORING_GUIDE).toContain(
+      'positional keys in a step-level `placement` on a bubble are rejected',
+    );
     expect(AUTHORING_GUIDE).toContain('Tooltip steps with a `target` only');
+  });
+
+  it('theme requirement: every type but tracker needs a theme, and the guide says both halves', () => {
+    // matrix side
+    const themeless = Object.entries(CONTENT_TYPE_TRAITS)
+      .filter(([, t]) => !t.requiresTheme)
+      .map(([type]) => type);
+    expect(themeless).toEqual(['tracker']);
+    // guide side: the universal claim + the tracker exception
+    expect(AUTHORING_GUIDE).toContain('Every visual type needs a theme or the SDK renders nothing');
+    expect(AUTHORING_GUIDE).toContain('no theme (it has no UI)');
+  });
+
+  it('persistent surfaces need start rules to appear: matrix trio matches the guide claim', () => {
+    // matrix side
+    const trio = Object.entries(CONTENT_TYPE_TRAITS)
+      .filter(([, t]) => t.autoStartRequiredToAppear)
+      .map(([type]) => type)
+      .sort();
+    expect(trio).toEqual(['banner', 'launcher', 'resource-center']);
+    // guide side: the claim carriers (validate section + start-rules section)
+    expect(AUTHORING_GUIDE).toContain('a persistent surface with no start rules');
+    expect(AUTHORING_GUIDE).toContain('Banner, Launcher, and Resource Center are single-session');
+  });
+
+  it('resource center has no dismiss: matrix null variant matches the guide claim', () => {
+    expect(CONTENT_ACTION_CAPABILITIES[ContentDataType.RESOURCE_CENTER].dismissVariant).toBeNull();
+    expect(AUTHORING_GUIDE).toContain('NO dismiss affordance');
   });
 });
 

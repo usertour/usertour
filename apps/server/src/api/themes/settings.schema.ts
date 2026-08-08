@@ -245,7 +245,9 @@ const completeColorGroups = (tree: Tree, path = ''): void => {
  * API: the service rejects a patch whose value differs from the theme's
  * current one (no silent drop, per the strict-body decision). The avatar
  * triple (type+name+url) addresses the builder's built-in avatar collections
- * and must move as one; dividerLines is a builder-internal toggle.
+ * and must move as one; dividerLines is kept read-only because it was NEVER
+ * WIRED to the renderer (the builder's own field list says so) — same class
+ * as largeWidth, a control without a feature; writable would promise nothing.
  *
  * NOTE this list used to also hold the logo/header/launcher-icon URLs — that
  * was a scope cut from when theme writes first opened, not a real boundary:
@@ -326,7 +328,11 @@ const treeToZod = (tree: Tree): z.ZodTypeAny => {
                 'Image URL rendered to end users (writable). Empty string clears it. ' +
                   'Any http(s) URL you host.',
               )
-          : leafSchema(child)
+          : // Unit / applicability notes ride the SSOT constraint (seconds vs
+            // ms, 0-100 percent, per-type applicability) into the public schema.
+            child.describe
+            ? leafSchema(child).describe(child.describe)
+            : leafSchema(child)
       : treeToZod(child);
     // Stored settings use null for "unset" in places (e.g. a borderRadius the
     // builder never touched) — treat null exactly like an omitted key: the

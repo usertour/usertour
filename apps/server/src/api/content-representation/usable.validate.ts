@@ -1,5 +1,9 @@
 import { BUILTIN_LAUNCHER_ICON_NAMES } from '@usertour/constants';
-import { type ValidateContext, hasMissingRequiredData } from '@usertour/helpers';
+import {
+  CONTENT_TYPE_TRAITS,
+  type ValidateContext,
+  hasMissingRequiredData,
+} from '@usertour/helpers';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
@@ -72,32 +76,20 @@ export interface ValidateUsableInput {
   conditionContext?: ValidateContext;
 }
 
-// UI content types that render and therefore require a theme. Tracker is the
-// only headless type (it fires an event, no UI). Announcement is included even
-// though its theme only styles the POPUP presentation (the feed rows use the
-// resource center's own theme) — the builder seeds every announcement draft
-// with the default theme, and one uniform rule beats a per-distribution
-// exception.
-const UI_TYPES = new Set<string>([
-  ContentDataType.FLOW,
-  ContentDataType.CHECKLIST,
-  ContentDataType.LAUNCHER,
-  ContentDataType.BANNER,
-  ContentDataType.RESOURCE_CENTER,
-  ContentDataType.ANNOUNCEMENT,
-]);
+// Both sets are DERIVED from the capability matrix's per-type traits — the
+// rationale (why announcement needs a theme, why flow/checklist are exempt
+// from the auto-start warning) lives on CONTENT_TYPE_TRAITS, the SSOT.
+const UI_TYPES = new Set<string>(
+  Object.entries(CONTENT_TYPE_TRAITS)
+    .filter(([, t]) => t.requiresTheme)
+    .map(([type]) => type),
+);
 
-// Types that appear ONLY when their auto-start conditions match — they have no
-// session-resume first-show path (Banner is re-evaluated every toggle; Launcher
-// and Resource Center need auto-start to create the first session). With an empty
-// rule set the runtime's isEnabledAutoStartRules bails, so the content can never
-// surface on its own — but publish still succeeds. Flow/Checklist are excluded:
-// they routinely resume sessions and are commonly started via usertour.start().
-const AUTO_START_REQUIRED_TYPES = new Set<string>([
-  ContentDataType.LAUNCHER,
-  ContentDataType.BANNER,
-  ContentDataType.RESOURCE_CENTER,
-]);
+const AUTO_START_REQUIRED_TYPES = new Set<string>(
+  Object.entries(CONTENT_TYPE_TRAITS)
+    .filter(([, t]) => t.autoStartRequiredToAppear)
+    .map(([type]) => type),
+);
 
 /** Whether a content type renders UI and therefore needs a theme (everything but tracker). */
 export function requiresTheme(type: string): boolean {

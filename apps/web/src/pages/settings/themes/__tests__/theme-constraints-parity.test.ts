@@ -117,7 +117,16 @@ const projectBuilder = (): Record<string, Constraint> => {
 
 describe('theme settings constraints ↔ builder parity', () => {
   it('THEME_SETTING_CONSTRAINTS equals the builder field schema projection', () => {
-    expect(projectBuilder()).toEqual(THEME_SETTING_CONSTRAINTS);
+    // `describe` is the constraint's API-documentation note (units, per-type
+    // applicability) — it has no builder counterpart, so strip it before the
+    // deep-equal: parity here is about VALIDATION shape, not prose.
+    const withoutDescribe = Object.fromEntries(
+      Object.entries(THEME_SETTING_CONSTRAINTS).map(([path, c]) => {
+        const { describe: _describe, ...rest } = c as { describe?: string };
+        return [path, rest];
+      }),
+    );
+    expect(projectBuilder()).toEqual(withoutDescribe);
   });
 
   it('excludes media-asset fields (avatar / image-upload) from the API', () => {

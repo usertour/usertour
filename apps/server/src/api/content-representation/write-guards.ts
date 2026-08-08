@@ -5,6 +5,7 @@ import { isHttpUrl } from '@/common/url';
 
 import {
   REACTIVE_REJECTED_REP_CONDITION_TYPES,
+  REP_ACTION_TYPE_TO_INTERNAL,
   contentActionCapabilities,
   stepCapabilities,
 } from './contract-map';
@@ -120,6 +121,30 @@ export function collectWriteViolations(input: {
           message: `A modal step needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
         });
       }
+      // Bubble: position comes from the THEME's bubble placement; the only
+      // step-level placement key the renderer reads is `backdrop`. Anything
+      // positional would be stored and echoed back yet never rendered — the
+      // silent-success trap this rule exists to close.
+      if (caps.placement === 'theme') {
+        const positional = Object.keys(placement).filter((k) => k !== 'backdrop');
+        if (positional.length > 0) {
+          issues.push({
+            rule: 'step_shape',
+            path: `${at}.placement`,
+            message: `A bubble step is positioned by its theme's bubble placement — \`${positional.join('`, `')}\` would be ignored. Only \`backdrop\` applies on a bubble step; to move the bubble, change the theme.`,
+          });
+        }
+      }
+      // Hidden: no UI at all — nothing to place, nothing to backdrop.
+      if (caps.placement === 'none') {
+        issues.push({
+          rule: 'step_shape',
+          path: `${at}.placement`,
+          message:
+            'A hidden step renders no UI, so placement does not apply — remove it. ' +
+            '(Hidden steps exist to run triggers, e.g. as a routing step.)',
+        });
+      }
     }
     const onClick = s.onClick;
     if (Array.isArray(onClick) && onClick.length > 0 && !caps?.onClick) {
@@ -219,6 +244,10 @@ export function collectWriteViolations(input: {
     // announcement) can't dismiss; types with no action slots at all (tracker)
     // are left to their own schema.
     const rejectDismiss = caps !== undefined && caps.actions.length > 0 && !caps.dismissVariant;
+    // Matrix-driven check for the remaining action names (see walk below);
+    // skipped for unknown types (compile rejects those) and no-action-slot
+    // types (their schema owns it).
+    const checkGeneralActions = caps !== undefined && caps.actions.length > 0;
     const slotHint = `${contentType === 'announcement' ? 'an' : 'a'} ${contentType}'s content`;
     // Name the actions this type ACTUALLY allows (public representation names) —
     // the previous fixed text recommended `dismiss` to types that reject it, and
@@ -258,6 +287,27 @@ export function collectWriteViolations(input: {
             perTypeDismissReason[contentType ?? ''] ?? 'This content type has no dismiss action.'
           } Use ${allowedHint || 'the actions this type supports'} instead.`,
         });
+      }
+      // Every OTHER representation action name is checked against the matrix
+      // too — not just the two special-cased above. Today this rejects nothing
+      // extra (all types with action slots allow start_content / navigate /
+      // run_javascript); it exists so REMOVING an action from
+      // CONTENT_ACTION_CAPABILITIES starts rejecting writes here with no code
+      // change — previously nothing would have.
+      if (
+        checkGeneralActions &&
+        typeof obj.type === 'string' &&
+        obj.type !== 'goto_step' &&
+        obj.type !== 'dismiss'
+      ) {
+        const internal = REP_ACTION_TYPE_TO_INTERNAL[obj.type];
+        if (internal !== undefined && !caps!.actions.includes(internal)) {
+          issues.push({
+            rule: 'action_not_allowed',
+            path,
+            message: `A "${obj.type}" action can't be used in ${slotHint} — use ${allowedHint || 'the actions this type supports'} instead.`,
+          });
+        }
       }
       for (const key of Object.keys(obj)) {
         walk(obj[key], `${path}.${key}`);

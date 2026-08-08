@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { toArray } from '../shared/query';
-import { cuid } from '@usertour/helpers';
+import { CONTENT_TYPE_TRAITS, cuid } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { RulesCondition, Step } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -576,10 +576,10 @@ export class ApiContentVersionsService {
     }
 
     if (body.scheduledAt !== undefined) {
-      // The "announcement time" only means something on the announcement feed
-      // (visibility gate + ordering key); on any other type it would be a silent
-      // no-op stored on the row — reject instead of accepting dead input.
-      if (contentType !== ContentDataType.ANNOUNCEMENT) {
+      // Matrix trait: the "announcement time" only means something on the
+      // announcement feed (visibility gate + ordering key); on any other type
+      // it would be a silent no-op stored on the row — reject dead input.
+      if (!CONTENT_TYPE_TRAITS[contentType as ContentDataType]?.allowsScheduledAt) {
         throw new ValidationError('scheduledAt is only supported on announcement versions.');
       }
       content.scheduledAt = body.scheduledAt === null ? null : new Date(body.scheduledAt);
@@ -680,7 +680,7 @@ export class ApiContentVersionsService {
     // code is a real entry point the server cannot see.
     const rules = (v.config as { autoStartRules?: RulesCondition[] } | null)?.autoStartRules;
     const startsOnDemandOnly =
-      (type === ContentDataType.FLOW || type === ContentDataType.CHECKLIST) &&
+      CONTENT_TYPE_TRAITS[type as ContentDataType]?.startsOnDemand === true &&
       (!rules || rules.length === 0);
     // THEME-SWITCH guard: variations do NOT travel with content, so pointing a
     // draft at a theme with fewer variations than the version that is currently

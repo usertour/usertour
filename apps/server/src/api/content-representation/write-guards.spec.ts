@@ -150,6 +150,43 @@ describe('collectWriteViolations (single write walk)', () => {
     ]);
   });
 
+  it('bubble placement: positional keys rejected, bare backdrop passes', () => {
+    // Bubble position comes from the THEME; the renderer reads only the
+    // step-level backdrop. Anything positional used to be silently stored and
+    // echoed back — the silent-success trap.
+    const bad = collectWriteViolations({
+      steps: [
+        { name: 'B1', type: 'bubble', placement: { position: 'leftBottom' } },
+        { name: 'B2', type: 'bubble', placement: { side: 'top', backdrop: true } },
+      ],
+      contentType: 'flow',
+    });
+    expect(bad.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].placement' },
+      { rule: 'step_shape', path: 'steps[1].placement' },
+    ]);
+
+    const ok = collectWriteViolations({
+      steps: [{ name: 'B3', type: 'bubble', placement: { backdrop: true } }],
+      contentType: 'flow',
+    });
+    expect(ok.issues).toEqual([]);
+  });
+
+  it('hidden placement: rejected entirely — a hidden step renders no UI', () => {
+    const out = collectWriteViolations({
+      steps: [
+        { name: 'H', type: 'hidden', placement: { position: 'center' } },
+        { name: 'H2', type: 'hidden', placement: { backdrop: true } },
+      ],
+      contentType: 'flow',
+    });
+    expect(out.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].placement' },
+      { rule: 'step_shape', path: 'steps[1].placement' },
+    ]);
+  });
+
   it('returns nothing for a clean write', () => {
     const out = collectWriteViolations({
       steps: [
