@@ -661,6 +661,23 @@ export class InvalidScopeError extends OpenAPIError {
 }
 
 /**
+ * The rule families a structured validation problem can name. Runtime array so
+ * every surface that lists them (the OpenAPI `issues[].rule` describe, docs)
+ * derives from ONE vocabulary — the `media_url` addition updated the type and
+ * errors.mdx but not the hand-written spec describe, and nothing noticed.
+ * Adding a member here updates the spec text automatically.
+ */
+export const VALIDATION_ISSUE_RULES = [
+  'schema',
+  'reactive_condition',
+  'action_not_allowed',
+  'step_shape',
+  'reference_target',
+  'auto_start',
+  'media_url',
+] as const;
+
+/**
  * One structured validation problem. `rule` names the rule family so a client
  * can group or react programmatically:
  *  - `schema`             — the request body doesn't match the write schema;
@@ -668,17 +685,11 @@ export class InvalidScopeError extends OpenAPIError {
  *  - `action_not_allowed` — an action type this content type's slots don't offer;
  *  - `step_shape`         — placement shape / onClick not matching the step kind;
  *  - `reference_target`   — a cross-content reference to a type that can't be targeted;
- *  - `auto_start`         — a start/hide-rule knob the content type doesn't support.
+ *  - `auto_start`         — a start/hide-rule knob the content type doesn't support;
+ *  - `media_url`          — an image/embed URL that isn't http(s).
  */
 export type ValidationIssue = {
-  rule:
-    | 'schema'
-    | 'reactive_condition'
-    | 'action_not_allowed'
-    | 'step_shape'
-    | 'reference_target'
-    | 'auto_start'
-    | 'media_url';
+  rule: (typeof VALIDATION_ISSUE_RULES)[number];
   message: string;
   /** Path into the request body (e.g. `steps[0].triggers[0].when[1]`). */
   path?: string;
