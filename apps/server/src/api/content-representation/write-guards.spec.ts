@@ -187,6 +187,44 @@ describe('collectWriteViolations (single write walk)', () => {
     ]);
   });
 
+  it('one question per step: a second question block is rejected, columns included', () => {
+    const out = collectWriteViolations({
+      steps: [
+        {
+          name: 'Two flat',
+          type: 'modal',
+          content: [
+            { type: 'question', question: { kind: 'nps', name: 'q1' } },
+            { type: 'question', question: { kind: 'nps', name: 'q2' } },
+          ],
+        },
+        {
+          name: 'Nested in columns',
+          type: 'modal',
+          content: [
+            { type: 'question', question: { kind: 'nps', name: 'q3' } },
+            {
+              type: 'columns',
+              columns: [
+                { blocks: [{ type: 'question', question: { kind: 'scale', name: 'q4' } }] },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'One is fine',
+          type: 'modal',
+          content: [{ type: 'question', question: { kind: 'nps', name: 'q5' } }],
+        },
+      ],
+      contentType: 'flow',
+    });
+    expect(out.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].content' },
+      { rule: 'step_shape', path: 'steps[1].content' },
+    ]);
+  });
+
   it('returns nothing for a clean write', () => {
     const out = collectWriteViolations({
       steps: [

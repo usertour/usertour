@@ -304,22 +304,41 @@ function mapWithin(
   if (typeof d.timeLogic !== 'string') {
     return {};
   }
+  const op = (own(TIME_OP, d.timeLogic) ?? 'any_time') as never as string;
+  // A stored windowed op with NO unit is LIVE at runtime — the evaluator
+  // silently assumes days (toMilliseconds default). Normalize the read-back to
+  // an explicit `days`: byte-identical behavior, and the write schema (which
+  // requires a unit on windowed ops) round-trips clean. Emitting the stored
+  // shape verbatim would violate the response contract; `unsupported` would
+  // silently DROP a live targeting condition on rewrite.
+  const unit = typeof d.timeUnit === 'string' ? d.timeUnit : op !== 'any_time' ? 'days' : undefined;
   return {
     within: {
-      op: (own(TIME_OP, d.timeLogic) ?? 'any_time') as never,
+      op: op as never,
       ...(typeof d.windowValue === 'number' ? { value: d.windowValue } : {}),
       ...(typeof d.windowValue2 === 'number' ? { value2: d.windowValue2 } : {}),
-      ...(typeof d.timeUnit === 'string' ? { unit: d.timeUnit as never } : {}),
+      ...(unit ? { unit: unit as never } : {}),
     },
   };
 }
 
 function mapTime(d: any): RepresentationCondition {
-  if (typeof d.startTime === 'string' || typeof d.endTime === 'string') {
+  if (typeof d.startTime === 'string') {
     return {
       type: 'time_window',
-      ...(typeof d.startTime === 'string' ? { start: d.startTime } : {}),
+      start: d.startTime,
       ...(typeof d.endTime === 'string' ? { end: d.endTime } : {}),
+    };
+  }
+  if (typeof d.endTime === 'string') {
+    // A start-less window never matches at runtime (a dead condition) and the
+    // write schema requires `start` — emitting it as time_window would put a
+    // schema-violating shape on the wire AND break the read→write round-trip.
+    // Same treatment as deleted-attribute conditions: an `unsupported`
+    // placeholder whose note says what it was; rewriting the list drops it.
+    return {
+      type: 'unsupported',
+      note: `end-only time window (until ${d.endTime}) — never matches at runtime; rewriting these conditions drops it. To recreate the window, add a start.`,
     };
   }
   // legacy MM/dd/yyyy component format → not modeled

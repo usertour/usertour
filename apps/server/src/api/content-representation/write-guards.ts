@@ -91,6 +91,20 @@ export function collectWriteViolations(input: {
     });
   };
 
+  /** Question blocks anywhere in a step's content tree (columns included). */
+  const countQuestionBlocks = (node: unknown): number => {
+    if (Array.isArray(node)) {
+      return node.reduce((sum: number, n) => sum + countQuestionBlocks(n), 0);
+    }
+    if (!node || typeof node !== 'object') return 0;
+    const obj = node as Record<string, unknown>;
+    let count = obj.type === 'question' ? 1 : 0;
+    for (const key of Object.keys(obj)) {
+      count += countQuestionBlocks(obj[key]);
+    }
+    return count;
+  };
+
   /** Per-step shape: placement shape by kind + onClick only where it can fire. */
   const stepShape = (step: unknown, i: number): void => {
     if (!step || typeof step !== 'object') return;
@@ -145,6 +159,19 @@ export function collectWriteViolations(input: {
             '(Hidden steps exist to run triggers, e.g. as a routing step.)',
         });
       }
+    }
+    // At most ONE question block per step: the runtime renders and reports
+    // only the first — a second is invisible (no answers, no analytics). A
+    // step's content is authored atomically (steps are full-list replacements),
+    // so two questions is never a draft-in-progress; reject at write. The
+    // usable-validate error remains as the belt for stored legacy steps.
+    const questionCount = countQuestionBlocks(s.content);
+    if (questionCount > 1) {
+      issues.push({
+        rule: 'step_shape',
+        path: `${at}.content`,
+        message: `A step renders only its FIRST question — ${questionCount} question blocks would leave the rest invisible (no answers, no analytics). One question per step; chain steps for a multi-question survey.`,
+      });
     }
     const onClick = s.onClick;
     if (Array.isArray(onClick) && onClick.length > 0 && !caps?.onClick) {

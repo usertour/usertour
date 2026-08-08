@@ -233,7 +233,7 @@ export type RepresentationCondition =
     }
   | { type: 'text_input'; target?: RepresentationTarget; op: StringOp; value?: string }
   | { type: 'text_filled'; target?: RepresentationTarget }
-  | { type: 'time_window'; start?: string; end?: string }
+  | { type: 'time_window'; start: string; end?: string }
   | { type: 'unsupported'; note?: string };
 
 /**
@@ -463,13 +463,26 @@ export const representationCondition = z.lazy(() =>
           value2: z.number().optional(),
           unit: z.enum(['seconds', 'minutes', 'hours', 'days']).optional(),
         })
+        // A condition object is authored atomically — a windowed op missing its
+        // value/unit is never a draft-in-progress, it is a mistake (the runtime
+        // would silently assume days for a missing unit). Read-backs cannot
+        // carry the shape: the decompiler normalizes a stored unit-less window
+        // to an explicit `days` (the exact runtime behavior), so round-trips
+        // stay closed.
+        .refine((w) => w.op === 'any_time' || (w.value !== undefined && w.unit !== undefined), {
+          message:
+            'A windowed op (`in_the_last` / `more_than` / `between`) requires both `value` and ' +
+            '`unit` — without a unit the runtime would silently assume days.',
+        })
+        .refine((w) => w.op !== 'between' || w.value2 !== undefined, {
+          message: '`between` needs `value2` (the upper bound of the window).',
+        })
         .optional()
         .describe(
           'Optional time window for the event count. Omit it (or use `any_time`) to count over ' +
             'all time — "the event has ever happened". Any other `op` (`in_the_last` / `more_than` ' +
-            '/ `between`) requires BOTH `value` and `unit` (a windowed op with no `unit` is ' +
-            'rejected — the runtime would otherwise silently assume days); `between` also needs ' +
-            '`value2`.',
+            '/ `between`) requires BOTH `value` and `unit`, and `between` also `value2` — ' +
+            'rejected at write otherwise.',
         ),
       scope: z
         .enum(['current_user', 'current_user_in_company', 'any_user_in_company'])
@@ -493,17 +506,19 @@ export const representationCondition = z.lazy(() =>
     z.object({ type: z.literal('text_filled'), target: representationTarget.optional() }),
     z.object({
       type: z.literal('time_window'),
-      // Both optional at the TYPE level (read-backs can carry legacy end-only
-      // data), but a WRITE without `start` is rejected by validation: the
-      // runtime treats a start-less window as never matching, so persisting one
-      // would ship a dead condition.
+      // REQUIRED at write: a condition object is authored atomically (when
+      // lists are full replacements), so a start-less window is never a
+      // draft-in-progress — it is a mistake, and the runtime treats it as
+      // never matching. Read-backs cannot carry the shape either: the
+      // decompiler emits stored legacy end-only windows as `unsupported`
+      // placeholders (dead conditions; rewriting the list drops them, same as
+      // deleted-attribute conditions).
       start: z
         .string()
-        .optional()
         .describe(
-          'Window start (ISO datetime). REQUIRED on write — the runtime never matches a window ' +
-            'without a start, so validation rejects end-only windows. For "until X" semantics, ' +
-            'set start to any past instant and end to X.',
+          'Window start (ISO datetime). REQUIRED — the runtime never matches a window without ' +
+            'a start, so an end-only window is rejected at write. For "until X" semantics, set ' +
+            'start to any past instant and end to X.',
         ),
       end: z
         .string()

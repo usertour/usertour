@@ -8,6 +8,7 @@ import { gqlData, graphql } from '../auth';
 import {
   buildContent,
   buildEnvironment,
+  buildEvent,
   buildProject,
   buildStep,
   buildUsableFlowVersion,
@@ -368,6 +369,96 @@ describe('API v2 /content-versions (e2e)', () => {
     ).send({ startRules: { priority: 'high' } });
     expect(settingsOnly.status).toBe(200);
     expect(settingsOnly.body.startRules).toMatchObject({ priority: 'high' });
+  });
+
+  it('rejects node-local condition mistakes at WRITE: end-only window, unit-less event window', async () => {
+    // A condition object is authored atomically (when lists are full
+    // replacements) — a start-less window or a unit-less windowed op is never
+    // a draft-in-progress, it is a mistake. Reject at write with the zod path;
+    // stored legacy shapes never reach the wire (decompile emits end-only as
+    // `unsupported` and normalizes a missing unit to explicit `days`).
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const eventDef = await buildEvent(prisma, { projectId });
+    const path = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+
+    const endOnly = await api('patch', path, token).send({
+      startRules: { when: [{ type: 'time_window', end: '2030-01-01T00:00:00Z' }] },
+    });
+    expect(endOnly.status).toBe(400);
+    expect(endOnly.body.error.code).toBe('E1017');
+    expect(JSON.stringify(endOnly.body.error)).toContain('start');
+
+    const unitless = await api('patch', path, token).send({
+      startRules: {
+        when: [
+          { type: 'event', event: eventDef.codeName, within: { op: 'in_the_last', value: 7 } },
+        ],
+      },
+    });
+    expect(unitless.status).toBe(400);
+    expect(unitless.body.error.code).toBe('E1017');
+    expect(JSON.stringify(unitless.body.error)).toContain('unit');
+
+    // A complete window writes fine.
+    const ok = await api('patch', path, token).send({
+      startRules: {
+        when: [
+          { type: 'time_window', start: '2026-01-01T00:00:00Z', end: '2030-01-01T00:00:00Z' },
+          {
+            type: 'event',
+            event: eventDef.codeName,
+            within: { op: 'in_the_last', value: 7, unit: 'days' },
+          },
+        ],
+      },
+    });
+    expect(ok.status).toBe(200);
+  });
+
+  it('stored legacy dirt never reaches the wire: end-only → unsupported, unit-less → explicit days', async () => {
+    // Seed the two legacy shapes DIRECTLY into config (no write path can
+    // produce them anymore) and read back through the API.
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const eventDef = await buildEvent(prisma, { projectId });
+    const version = await buildVersion(prisma, {
+      contentId: content.id,
+      sequence: 0,
+      config: {
+        enabledAutoStartRules: true,
+        autoStartRules: [
+          { type: 'time', operators: 'and', data: { endTime: '2030-01-01T00:00:00Z' } },
+          {
+            type: 'event',
+            operators: 'and',
+            data: {
+              eventId: eventDef.id,
+              countLogic: 'atLeast',
+              count: 1,
+              timeLogic: 'inTheLast',
+              windowValue: 7,
+            },
+          },
+        ],
+        autoStartRulesSetting: {},
+      } as unknown as Prisma.InputJsonValue,
+    });
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    );
+    expect(res.status).toBe(200);
+    const when = res.body.startRules.when as Array<Record<string, unknown>>;
+    expect(when[0]).toMatchObject({ type: 'unsupported' });
+    expect(String(when[0].note)).toContain('end-only');
+    // Live condition preserved with the runtime's actual default made explicit.
+    expect(when[1]).toMatchObject({
+      type: 'event',
+      within: expect.objectContaining({ value: 7, unit: 'days' }),
+    });
   });
 
   it('seeds the builder-default frequency (once) when a startRules write leaves it unset', async () => {
