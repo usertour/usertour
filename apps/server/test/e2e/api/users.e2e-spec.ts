@@ -122,6 +122,21 @@ describe('API v2 /users parity with v1 (e2e)', () => {
     expect(v2item).toEqual(v1item);
   });
 
+  it('returns byte-identical user JSON on v1 and v2 (get by id)', async () => {
+    // The list parity above does not cover this route: get-by-id runs its own
+    // query + mapper path, and until this existed only its 404 branch was
+    // exercised — so the 200 body was never checked against the contract.
+    const v1 = await openapi(app, {
+      method: 'get',
+      path: `/v1/users/${externalId}`,
+      token: fx.apiKey,
+    });
+    const v2 = await api('get', v2path(`/${externalId}`), v2Token);
+    expect(v1.status).toBe(200);
+    expect(v2.status).toBe(200);
+    expect(v2.body).toEqual(v1.body);
+  });
+
   it('returns 404 for an unknown user (E1001)', async () => {
     const res = await api('get', v2path('/nope'), v2Token);
     expect(res.status).toBe(404);

@@ -6,6 +6,8 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import type { ZodType } from 'zod';
 
+import { contentAnalytics } from '@/api/analytics/analytics.schema';
+
 /**
  * Response-contract check for the v2 API, wired into every e2e spec by
  * `createTestApp`.
@@ -33,7 +35,9 @@ import type { ZodType } from 'zod';
  *
  * Violations are collected rather than thrown: throwing here would surface as a
  * 500 and wreck the spec's own assertions, hiding what actually broke. Each
- * suite asserts its own tally when `createTestApp`'s app is closed.
+ * suite asserts its own tally from the global `afterAll` in
+ * ../setup-contract-e2e.ts — deliberately NOT from `app.close()`, which a spec
+ * can race against a timeout and thereby skip.
  *
  * Set `CONTRACT_CHECK=off` to disable (e.g. to confirm a failure is the check
  * itself and not the code under test).
@@ -104,6 +108,18 @@ function declaredDto(handler: object, status: number): ZodDtoClass | undefined {
   return type?.isZodDto ? type : undefined;
 }
 
+/**
+ * Routes whose declared response is a stitched oneOf UNION: a class cannot
+ * extend a zod union, so the controller documents per-variant DTOs and no
+ * single `@ApiResponse` type carries the schema — `declaredDto` comes back
+ * empty and the route would silently skip validation. Explicit fallbacks so
+ * the union-shaped responses (analytics: the most drift-prone family on the
+ * surface) are still checked against their real zod union.
+ */
+const UNION_FALLBACKS: Array<{ method: string; routeEnd: string; schema: ZodType }> = [
+  { method: 'GET', routeEnd: '/analytics', schema: contentAnalytics as unknown as ZodType },
+];
+
 @Injectable()
 export class ResponseContractInterceptor implements NestInterceptor {
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -127,7 +143,10 @@ export class ResponseContractInterceptor implements NestInterceptor {
         if (status < 200 || status >= 300) return;
 
         const dto = declaredDto(ctx.getHandler(), status);
-        if (!dto?.schema) {
+        const schema =
+          dto?.schema ??
+          UNION_FALLBACKS.find((f) => f.method === method && route.endsWith(f.routeEnd))?.schema;
+        if (!schema) {
           // 204s legitimately declare no body; anything else means the route
           // documents no schema for the status it actually returned.
           coverage.set(key, { method, route, status, validated: false });
@@ -135,7 +154,7 @@ export class ResponseContractInterceptor implements NestInterceptor {
         }
         coverage.set(key, { method, route, status, validated: true });
 
-        const result = dto.schema.safeParse(body);
+        const result = schema.safeParse(body);
         if (!result.success) {
           for (const issue of result.error.issues.slice(0, 5)) {
             const at = issue.path.join('.') || '<root>';
@@ -176,12 +195,17 @@ export function dumpContractCoverage(): void {
 }
 
 /**
- * Throws if this run produced contract violations. Called from the app's
- * `close()` so a suite fails on its OWN violations, next to the spec that
- * caused them.
+ * Throws if this spec file produced contract violations, then clears the tally
+ * so the next spec starts clean (jest reuses the worker, and this module's state
+ * with it). Called from the global `afterAll` in test/setup-contract-e2e.ts, so
+ * a suite fails on its OWN violations, next to the spec that caused them.
  */
 export function assertNoContractViolations(): void {
-  if (!violations.length) return;
+  const found = violations.length;
+  if (!found) {
+    resetContractState();
+    return;
+  }
   const seen = new Set<string>();
   const lines: string[] = [];
   for (const v of violations) {
@@ -190,7 +214,6 @@ export function assertNoContractViolations(): void {
     seen.add(line);
     lines.push(line);
   }
-  const found = violations.length;
   resetContractState();
   throw new Error(
     `v2 response contract: ${found} violation(s) — the response did not match the ` +

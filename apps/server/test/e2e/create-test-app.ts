@@ -5,12 +5,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { AppModule } from '@/app.module';
 import { configureApp } from '@/configure-app';
 
-import {
-  ResponseContractInterceptor,
-  assertNoContractViolations,
-  dumpContractCoverage,
-  resetContractState,
-} from './response-contract';
+import { ResponseContractInterceptor } from './response-contract';
 
 /**
  * Boots the full application for an HTTP e2e spec. Connects to whatever
@@ -34,7 +29,9 @@ export async function createTestApp(
   // Every /v2 response is parsed through the zod schema its OpenAPI entry is
   // generated from — see ./response-contract. Test-only: production must not
   // pay a parse per response, and a contract slip there should not 500.
-  resetContractState();
+  // The tally is asserted by a global afterAll (test/setup-contract-e2e.ts),
+  // NOT here — several specs race `close()` against a 5s timeout, which would
+  // skip anything hanging off it.
   app.useGlobalInterceptors(new ResponseContractInterceptor());
   await app.init();
 
@@ -49,10 +46,6 @@ export async function createTestApp(
   app.close = async () => {
     await close();
     await app.get(PrismaService).$disconnect();
-    dumpContractCoverage();
-    // Last, and after the pool is closed: this throws on a contract violation,
-    // and the teardown above must still run so the suite does not also leak.
-    assertNoContractViolations();
   };
   return app;
 }

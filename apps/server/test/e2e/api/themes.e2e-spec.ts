@@ -202,6 +202,33 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(res.body.settings.brandColor.hover).toBe('Auto');
   });
 
+  it('duplicates a theme — settings copied verbatim, name defaults to the source', async () => {
+    const token = await mint([Capability.ThemeCreate, Capability.ThemeRead]);
+    const source = await send('post', basePath(), token).send({
+      name: 'Duplicate source',
+      settings: { font: { fontSize: 21 }, brandColor: { background: '#0a0a0a' } },
+    });
+    expect(source.status).toBe(201);
+
+    // No `name` in the body → the copy keeps the source's name.
+    const copy = await send('post', `${basePath()}/${source.body.id}/duplicate`, token).send({});
+    expect(copy.status).toBe(201);
+    expect(copy.body.id).not.toBe(source.body.id);
+    expect(copy.body).toMatchObject({ object: 'theme', name: 'Duplicate source' });
+    expect(copy.body.settings).toEqual(source.body.settings);
+
+    // An explicit name wins.
+    const renamed = await send('post', `${basePath()}/${source.body.id}/duplicate`, token).send({
+      name: 'Derived',
+    });
+    expect(renamed.status).toBe(201);
+    expect(renamed.body.name).toBe('Derived');
+
+    const missing = await send('post', `${basePath()}/nope/duplicate`, token).send({});
+    expect(missing.status).toBe(404);
+    expect(missing.body.error.code).toBe('E1021');
+  });
+
   it('rejects a settings patch with an unknown path (strict)', async () => {
     const token = await mint([Capability.ThemeCreate]);
     const res = await send('post', basePath(), token).send({
