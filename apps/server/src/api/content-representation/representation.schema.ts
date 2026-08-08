@@ -1146,12 +1146,12 @@ export const representationStartRules = z.preprocess(
       .number()
       .optional()
       .describe(
-        'Delay in SECONDS between the conditions first matching and the content becoming ' +
-          'ELIGIBLE to start. The timer latches on first match (leaving the matching state ' +
-          'mid-wait does NOT cancel it — same as a step trigger wait), but unlike a trigger the ' +
-          'start conditions are re-checked at show time: after the wait elapses the content ' +
-          'appears at the next moment the conditions match again. Capped at 300 seconds by the ' +
-          'runtime (a larger value is clamped).',
+        'Delay in SECONDS between the start conditions matching and the content becoming ' +
+          'ELIGIBLE to start. NOT latched — the OPPOSITE of a step trigger wait: if the ' +
+          'conditions stop matching mid-wait the timer is CANCELLED, and a later re-match ' +
+          'starts it over from zero (the server cancels/re-arms the timer on every condition ' +
+          'pass); when the wait does elapse the conditions are re-checked once more at show ' +
+          'time. Capped at 300 seconds by the runtime (a larger value is clamped).',
       ),
     startIfNotComplete: z
       .boolean()
