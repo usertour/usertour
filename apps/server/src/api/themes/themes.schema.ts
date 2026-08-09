@@ -70,12 +70,13 @@ export const theme = z.object({
     .optional()
     .describe(
       'Read-only render resolution of `settings` (the shared derivation the SDK runs). ' +
-        'Three transformations, not just Auto colors: every "Auto" is replaced by the concrete ' +
-        'derived color; `font.fontFamily` is rewritten to the real font stack ("System font" → ' +
-        'the system stack, "Custom font" → the `customFontFamily` value); and defaults are ' +
-        'filled in, so this is a SUPERSET of what was stored — do not diff it against ' +
-        '`settings` to find your edits. Request with expand: ["resolvedSettings"]. Not ' +
-        'writable — author intent in `settings`.',
+        'Two transformations: every "Auto" is replaced by the concrete derived color, and ' +
+        '`font.fontFamily` is rewritten to the real font stack ("System font" → the system ' +
+        'stack, "Custom font" → the `customFontFamily` value, named fonts gain a sans-serif ' +
+        'fallback). Same field set as `settings` (stored settings are grounded complete at ' +
+        'write) — differences between the two are exactly these derivations, so diff against ' +
+        'the `settings` you wrote, not this, to find your edits. Request with expand: ' +
+        '["resolvedSettings"]. Not writable — author intent in `settings`.',
     ),
   variations: z.array(themeVariation).optional(),
 });

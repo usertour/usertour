@@ -498,9 +498,10 @@ describe('convertSettings -> convertToCssVars pipeline', () => {
       font: { fontFamily: 'Inter' },
     } as ThemeTypesSetting);
     const parsed = parseCssVars(convertToCssVars(resolved));
-    // convertSettings appends ', sans-serif;' with a stray trailing
-    // semicolon; in the emitted css string it just closes the declaration
-    // early, so the effective value consumers see is this.
+    // The appended fallback is a clean CSS value (a stray trailing semicolon
+    // used to ride along here — harmless in stylesheets but it leaked into the
+    // resolvedSettings API and would invalidate inline-style assignment).
     expect(parsed['--usertour-font-family']).toBe('Inter, sans-serif');
+    expect(resolved.font?.fontFamily).toBe('Inter, sans-serif');
   });
 });

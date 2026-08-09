@@ -294,13 +294,13 @@ Before you call the build done, walk every flow you created and confirm it has a
   {
     name: 'icons',
     title: 'Builtin icon names (resource center + launcher)',
-    summary: 'Builtin RemixIcon names — an invalid name renders nothing.',
+    summary: 'Builtin RemixIcon names — validate flags an invalid name.',
     appliesTo: ['resource-center', 'launcher'],
-    body: `An icon field with \`source: "builtin"\` takes a **RemixIcon** name in \`-line\` / \`-fill\` kebab style — **NOT lucide names**. A name that isn't in the set renders **nothing, silently** (no error). So don't guess lucide-style names like \`help-circle\`, \`book-open\`, \`sparkles\`, \`message-circle\` — they will not render. Intent → valid name:
+    body: `An icon field with \`source: "builtin"\` takes a **RemixIcon** name in \`-line\` / \`-fill\` kebab style — **NOT lucide names**. A name that isn't in the set would render **nothing**, so validate flags it with the bad name spelled out: an **error** on the launcher icon (an icon-mode launcher IS the icon — bad name = fully invisible, publish blocked), a **warning** on resource-center tab/block/item icons (the glyph slot renders empty but the block still shows). Don't guess lucide-style names like \`help-circle\`, \`book-open\`, \`sparkles\`, \`message-circle\`. Intent → valid name:
 - help / support → \`${BuiltinLauncherIcon.QuestionLine}\` · chat / message → \`${BuiltinLauncherIcon.ChatLine}\` · home → \`${BuiltinLauncherIcon.HomeLine}\` · settings → \`${BuiltinLauncherIcon.SettingsLine}\`
 - new / launch → \`${BuiltinLauncherIcon.Rocket}\` · doc / file → \`${BuiltinLauncherIcon.FileTextLine}\` · list / menu → \`${BuiltinLauncherIcon.ListCheck}\` or \`${BuiltinLauncherIcon.MenuLine}\` · search → \`${BuiltinLauncherIcon.SearchLine}\`
 - star / favorite → \`${BuiltinLauncherIcon.StarLine}\` · notification → \`${BuiltinLauncherIcon.NotificationLine}\` · check → \`${BuiltinLauncherIcon.CheckLine}\` · info → \`${BuiltinLauncherIcon.InformationFill}\` · mail → \`${BuiltinLauncherIcon.MailLine}\`
-Names are \`thing-line\` / \`thing-fill\` (e.g. \`${BuiltinLauncherIcon.HomeLine}\`, \`${BuiltinLauncherIcon.HomeFill}\`); \`${BuiltinLauncherIcon.KeyboardLine}\` / \`${BuiltinLauncherIcon.BookLine}\` / \`${BuiltinLauncherIcon.BugLine}\` exist too. **A name outside the registry silently renders nothing — validate now rejects it with the bad name spelled out; when unsure, use \`source: "none"\`.**`,
+Names are \`thing-line\` / \`thing-fill\` (e.g. \`${BuiltinLauncherIcon.HomeLine}\`, \`${BuiltinLauncherIcon.HomeFill}\`); \`${BuiltinLauncherIcon.KeyboardLine}\` / \`${BuiltinLauncherIcon.BookLine}\` / \`${BuiltinLauncherIcon.BugLine}\` exist too. **When unsure of a name, use \`source: "none"\` rather than guess.**`,
   },
 ];
 

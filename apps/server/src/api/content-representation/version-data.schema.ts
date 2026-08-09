@@ -266,8 +266,10 @@ export const representationLauncher = z
           .describe(
             "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` " +
               'style — e.g. `home-line`, `question-line`, `rocket`. NOT lucide names ' +
-              '(`help-circle` / `sparkles` / `book-open` render nothing, silently). Common names ' +
-              '+ an intent→name table are in the MCP authoring guide (icons section).',
+              '(`help-circle` / `sparkles` / `book-open`): a name outside the registry is ' +
+              'rejected by validate/publish with the bad name spelled out (it would render ' +
+              'nothing). Common names + an intent→name table are in the MCP authoring guide ' +
+              '(icons section).',
           ),
       })
       .optional(),

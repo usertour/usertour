@@ -958,8 +958,9 @@ export const representationBlock = z.lazy(() =>
       height: mediaWidthShape.describe(
         'Embed height. Optional ONLY for provider embeds (YouTube/Vimeo/… size themselves by ' +
           'aspect ratio); a URL with NO oEmbed provider has no ratio, and omitting a pixel ' +
-          'height collapses the container to 0px — the embed passes validation yet renders ' +
-          'BLANK. For plain-iframe URLs always set `{ "unit": "pixels", "value": … }`.',
+          "height leaves the iframe at the browser's built-in default — a strip ~150px tall, " +
+          'almost never the intended size (validate warns). For plain-iframe URLs always set ' +
+          '`{ "unit": "pixels", "value": … }`.',
       ),
       margin: spacingShape,
     }),

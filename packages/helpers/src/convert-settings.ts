@@ -429,7 +429,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
       data.font.fontFamily = defaultFontFamily;
     }
   } else if (!data.font.fontFamily.includes('sans-serif')) {
-    data.font.fontFamily += ', sans-serif;';
+    // No trailing semicolon: the value is a CSS VALUE, not a declaration —
+    // a ';' inside it invalidates inline-style assignment (the custom-font
+    // branch above was always clean; this one shipped 'Inter, sans-serif;'
+    // for years, harmless in stylesheets but leaked into resolvedSettings).
+    data.font.fontFamily += ', sans-serif';
   }
 
   return data;

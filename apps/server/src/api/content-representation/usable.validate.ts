@@ -266,7 +266,7 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       validateBanner(parseData<BannerData>(input.data), err);
       break;
     case ContentDataType.RESOURCE_CENTER:
-      validateResourceCenter(parseData<ResourceCenterData>(input.data), err);
+      validateResourceCenter(parseData<ResourceCenterData>(input.data), err, warn);
       break;
     case ContentDataType.ANNOUNCEMENT:
       validateAnnouncement(parseData<AnnouncementData>(input.data), err, warn);
@@ -485,13 +485,14 @@ function collectEmbedResolutionWarnings(
         );
         // Provider embeds size themselves from the oEmbed aspect ratio; a plain
         // iframe has none, and the widget's height fallback is a PERCENTAGE of a
-        // content-sized parent — 100% of 0. Without an explicit pixel height the
-        // block passes every write/publish gate and renders as nothing (acceptance
-        // review: the one defect that was fully green yet blank on screen).
+        // content-sized parent, which the browser ignores — the in-flow iframe
+        // then falls back to its built-in default (~150px tall). Not 0px (that
+        // geometry belongs to the oEmbed branch, whose inner div is absolutely
+        // positioned), but a stub strip nobody sized on purpose.
         if (!(o as { height?: unknown }).height) {
           warn(
             'embed',
-            `Embed "${o.url}" also has NO height — with no oEmbed provider there is no aspect ratio to derive one, so the container collapses to 0px and shows as BLANK. Set a pixel height on the embed block (e.g. "height": { "unit": "pixels", "value": 315 }).`,
+            `Embed "${o.url}" also has NO height — with no oEmbed provider there is no aspect ratio to derive one, and the iframe falls back to the browser's built-in default (a strip ~150px tall), which is almost never the intended size. Set a pixel height on the embed block (e.g. "height": { "unit": "pixels", "value": 315 }).`,
           );
         }
       }
@@ -885,12 +886,31 @@ function validateAnnouncement(
 function validateResourceCenter(
   data: ResourceCenterData | null,
   err: (path: string, message: string) => void,
+  warn: (path: string, message: string) => void,
 ): void {
   const tabs = asArray<ResourceCenterData['tabs'][number]>(data?.tabs);
   if (tabs.length === 0) {
     err('tabs', 'Resource center has no tabs.');
     return;
   }
+  // Same registry check as the launcher icon, at WARNING level: a bad builtin
+  // name here leaves an empty glyph slot next to a still-readable label (the
+  // launcher's is an error because an icon-mode launcher IS the icon — bad
+  // name = fully invisible). Same agent mistake either way: guessing
+  // lucide-style names.
+  const warnBadIcon = (source: unknown, type: unknown, path: string) => {
+    if (
+      source === 'builtin' &&
+      typeof type === 'string' &&
+      type &&
+      !BUILTIN_LAUNCHER_ICON_NAMES.includes(type)
+    ) {
+      warn(
+        path,
+        `"${type}" is not a registered builtin icon — that icon slot renders empty (the block itself still shows). Use a RemixIcon kebab name from the MCP authoring guide's icon table (section: "icons"; e.g. "home-line", "question-line").`,
+      );
+    }
+  };
   tabs.forEach((tab, i) => {
     const label = `tabs[${i}]${tab?.name ? ` "${tab.name}"` : ''}`;
     if (!tab?.name || !String(tab.name).trim()) {
@@ -899,9 +919,32 @@ function validateResourceCenter(
     if (!tabHasRenderableBlock(asArray(tab?.blocks))) {
       err(label, 'Resource center tab has no content blocks.');
     }
+    const t = tab as unknown as { iconSource?: unknown; iconType?: unknown };
+    warnBadIcon(t?.iconSource, t?.iconType, `${label}.icon`);
     asArray(tab?.blocks).forEach((raw, j) => {
-      const block = raw as { content?: unknown };
-      errIfBrokenBlocks(block?.content, `${label}.blocks[${j}].content`, err);
+      const block = raw as {
+        content?: unknown;
+        iconSource?: unknown;
+        iconType?: unknown;
+        flowIconSource?: unknown;
+        flowIconType?: unknown;
+        checklistIconSource?: unknown;
+        checklistIconType?: unknown;
+        contentItems?: unknown;
+      };
+      const blockPath = `${label}.blocks[${j}]`;
+      errIfBrokenBlocks(block?.content, `${blockPath}.content`, err);
+      warnBadIcon(block?.iconSource, block?.iconType, `${blockPath}.icon`);
+      warnBadIcon(block?.flowIconSource, block?.flowIconType, `${blockPath}.flowIcon`);
+      warnBadIcon(
+        block?.checklistIconSource,
+        block?.checklistIconType,
+        `${blockPath}.checklistIcon`,
+      );
+      asArray(block?.contentItems).forEach((rawItem, k) => {
+        const item = rawItem as { iconSource?: unknown; iconType?: unknown };
+        warnBadIcon(item?.iconSource, item?.iconType, `${blockPath}.items[${k}].icon`);
+      });
     });
   });
 }

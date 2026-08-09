@@ -23,7 +23,8 @@ const rcIconType = z
     "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` style — " +
       'e.g. `home-line`, `question-line`, `chat-line`, `settings-line`, `rocket`. ' +
       'NOT lucide names: `help-circle` / `sparkles` / `book-open` / `message-circle` are not in ' +
-      "the set and render nothing (silent, no error). Unsure of a name? Use source='none' rather " +
+      'the set — validate warns on an unregistered name (the icon slot renders empty; the block ' +
+      "itself still shows). Unsure of a name? Use source='none' rather " +
       'than guess. Common names + an intent→name table are in the MCP authoring guide (icons section).',
   );
 
@@ -163,9 +164,11 @@ const rcLiveChatBlock = z
       ])
       .describe(
         'Which chat widget the click opens. The SDK only INVOKES the provider — the host page must ' +
-          "already have that provider's script installed, or clicking logs a console warning and " +
-          'nothing opens. Not checkable at write time (the server cannot see the host page), so ' +
-          'confirm which provider the host actually runs.',
+          "already have that provider's script installed, or clicking opens nothing (the SDK logs " +
+          'a warning naming the provider, but its console output is off by default — visible only ' +
+          "with the debug flag `localStorage.debug = 'usertour-widget:*'`). Not checkable at " +
+          'write time (the server cannot see the host page), so confirm which provider the host ' +
+          'actually runs.',
       ),
     customCode: z
       .string()

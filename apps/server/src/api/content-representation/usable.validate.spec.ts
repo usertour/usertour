@@ -56,17 +56,20 @@ describe('validateVersionUsable', () => {
       expect(w[0].message).toContain('provider refused');
     });
 
-    it('warns framing-requirement AND height-collapse for a raw non-provider iframe url', () => {
-      // No provider = no aspect ratio; without a pixel height the container
-      // collapses to 0px — green through every gate, blank on screen (field-
-      // reported). Two warnings: frameability + the collapse.
+    it('warns framing-requirement AND default-height-stub for a raw non-provider iframe url', () => {
+      // No provider = no aspect ratio; without a pixel height the widget's
+      // percentage fallback is ignored (content-sized parent) and the in-flow
+      // iframe falls to the browser default — a ~150px strip nobody sized
+      // (field-verified; the old "collapses to 0px" claim was the oEmbed
+      // branch's absolute-position geometry, wrong for this branch). Two
+      // warnings: frameability + the stub height.
       const w = embedWarnings({
         url: 'https://internal.example.com/dash',
         parsedUrl: 'https://internal.example.com/dash',
       });
       expect(w).toHaveLength(2);
       expect(w[0].message).toContain('allows being framed');
-      expect(w[1].message).toContain('collapses to 0px');
+      expect(w[1].message).toContain("browser's built-in default");
     });
 
     it('does not warn height-collapse when the raw iframe has a pixel height', () => {
@@ -600,6 +603,72 @@ describe('validateVersionUsable', () => {
         },
       });
       expect(r.ok).toBe(true);
+    });
+
+    it('warns (never errors) on unregistered builtin icon names in every icon slot', () => {
+      // Same registry as the launcher's icon ERROR, at warning level: a bad
+      // name leaves the glyph slot empty but the block still shows. Slots:
+      // tab icon, block icon, content-list flow/checklist default icons,
+      // per-item icons.
+      const r = validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't',
+        data: {
+          tabs: [
+            {
+              name: 'Home',
+              iconSource: 'builtin',
+              iconType: 'help-circle', // lucide-style guess
+              blocks: [
+                { type: ResourceCenterBlockType.RICH_TEXT, content: textBlocks },
+                {
+                  type: ResourceCenterBlockType.ACTION,
+                  name: 'Contact',
+                  iconSource: 'builtin',
+                  iconType: 'sparkles',
+                  clickedActions: [],
+                },
+                {
+                  type: ResourceCenterBlockType.CONTENT_LIST,
+                  name: 'Guides',
+                  flowIconSource: 'builtin',
+                  flowIconType: 'book-open',
+                  contentItems: [
+                    { contentId: 'c1', iconSource: 'builtin', iconType: 'message-circle' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      });
+      expect(r.ok).toBe(true); // warnings only — publish stays open
+      const iconWarnings = r.warnings.filter((w) => w.message.includes('registered builtin icon'));
+      expect(iconWarnings.map((w) => w.path)).toEqual([
+        'tabs[0] "Home".icon',
+        'tabs[0] "Home".blocks[1].icon',
+        'tabs[0] "Home".blocks[2].flowIcon',
+        'tabs[0] "Home".blocks[2].items[0].icon',
+      ]);
+      expect(iconWarnings[0].message).toContain('help-circle');
+    });
+
+    it('a registered icon name warns nothing', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't',
+        data: {
+          tabs: [
+            {
+              name: 'Home',
+              iconSource: 'builtin',
+              iconType: 'home-line',
+              blocks: [{ type: ResourceCenterBlockType.RICH_TEXT, content: textBlocks }],
+            },
+          ],
+        },
+      });
+      expect(r.warnings.filter((w) => w.message.includes('builtin icon'))).toHaveLength(0);
     });
   });
 
