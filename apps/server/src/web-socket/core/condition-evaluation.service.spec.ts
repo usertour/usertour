@@ -18,6 +18,11 @@ import {
   EventScope,
 } from '@usertour/types';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import {
+  createBizCompanyConditionsFilter,
+  createBizUserConditionsFilter,
+} from '@/common/attribute/filter';
 import { Step } from '@/common/types/schema';
 
 describe('ConditionEvaluationService', () => {
@@ -37,7 +42,12 @@ describe('ConditionEvaluationService', () => {
     },
     bizUser: {
       id: 'biz-user-1',
-      externalUserId: 'user-1',
+      // The model field is `externalId` (prisma: BizUser.externalId) and the
+      // CONDITION-segment path reads it directly. The fixture used to carry
+      // `externalUserId`, a name that exists only as a local in
+      // web-socket.service.ts — no code reads it off a BizUser, and the `as
+      // any` cast hid the mismatch.
+      externalId: 'user-1',
       externalCompanyId: 'company-1',
       data: {
         email: 'user@example.com',
@@ -178,6 +188,9 @@ describe('ConditionEvaluationService', () => {
       bizCompanyOnSegment: {
         findFirst: jest.fn(),
       },
+      bizCompany: {
+        findFirst: jest.fn(),
+      },
       bizSession: {
         count: jest.fn(),
         findFirst: jest.fn(),
@@ -204,6 +217,16 @@ describe('ConditionEvaluationService', () => {
                 envId: string,
                 externalCompanyId: string,
               ) => `bizUserOnCompanyWithBizCompany:${bizUserId}:${envId}:${externalCompanyId}`,
+              // Segment lookups memoize under their own namespaces. Missing
+              // these is why the segment path could not be exercised at all:
+              // the service calls memoKeys.segment(...) before any query, so a
+              // segment test threw on an undefined key builder rather than
+              // failing an assertion.
+              segment: (segmentId: string) => `segment:${segmentId}`,
+              bizUserOnSegment: (segmentId: string, bizUserId: string) =>
+                `bizUserOnSegment:${segmentId}:${bizUserId}`,
+              bizCompanyOnSegment: (segmentId: string, bizCompanyId: string) =>
+                `bizCompanyOnSegment:${segmentId}:${bizCompanyId}`,
             },
           },
         },
@@ -1342,6 +1365,387 @@ describe('ConditionEvaluationService', () => {
 
         const passedWhere = mockPrismaService.bizEvent.count.mock.calls[0][0].where;
         expect(passedWhere.createdAt.lte).toBeInstanceOf(Date);
+      });
+    });
+  });
+
+  // ==========================================================================
+  // Segment conditions
+  // ==========================================================================
+
+  /**
+   * Segment conditions were the one DB-backed family with NO unit coverage: the
+   * four segment tables were listed in the Prisma mock but never given a return
+   * value, and `RulesType.SEGMENT` did not appear in this file. The real-DB e2e
+   * suite exercises the behaviour end to end, but it cannot see the WHERE
+   * clauses — and those carry the load here. A membership lookup keyed on the
+   * wrong id, or a CONDITION segment that forgets to bind the session's company,
+   * returns a plausible boolean and silently targets the wrong people.
+   *
+   * So every case asserts twice: the verdict, and the query that produced it.
+   */
+  describe('Segment Condition Evaluation', () => {
+    const SEG_ID = 'seg-1';
+    /** The same attribute definitions the service will be handed at runtime. */
+    const attrs = createMockContext().attributes;
+
+    const segCondition = (logic?: 'is' | 'not'): RulesCondition[] => [
+      {
+        id: 'seg-cond-1',
+        type: RulesType.SEGMENT,
+        operators: 'and',
+        data: { segmentId: SEG_ID, ...(logic ? { logic } : {}) },
+      },
+    ];
+
+    /** The stored Segment row the service fetches before doing anything else. */
+    const segmentRow = (bizType: SegmentBizType, dataType: SegmentDataType, data: any = []) => ({
+      id: SEG_ID,
+      bizType,
+      dataType,
+      data,
+    });
+
+    /** A membership row shaped like the `include: { bizCompany: true }` result. */
+    const membershipRow = {
+      id: 'rel-1',
+      bizUserId: 'biz-user-1',
+      bizCompanyId: 'biz-company-1',
+      bizCompany: { id: 'biz-company-1', externalId: 'company-1', environmentId: 'env-1' },
+    };
+
+    /** A user-scoped leaf, and a COMPANY-scoped one (see the fixture attributes). */
+    const userEmailIs = (value: string) => ({
+      type: 'user-attr',
+      operators: 'and',
+      data: { attrId: 'attr-email', logic: 'is', value },
+    });
+    const companyNameIs = (value: string) => ({
+      type: 'user-attr',
+      operators: 'and',
+      data: { attrId: 'attr-companyName', logic: 'is', value },
+    });
+
+    const contextWithoutCompany = (): ConditionEvaluationContext => {
+      const ctx = createMockContext() as any;
+      ctx.externalCompanyId = undefined;
+      return ctx as ConditionEvaluationContext;
+    };
+
+    const evaluate = async (
+      logic?: 'is' | 'not',
+      context: ConditionEvaluationContext = createMockContext(),
+    ) => (await service.evaluateRulesConditions(segCondition(logic), context))[0].actived;
+
+    describe('lookup and routing', () => {
+      it('a segment id that resolves to nothing is FALSE, and is asked for by id alone', async () => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(null);
+
+        expect(await evaluate()).toBe(false);
+        expect(mockPrismaService.segment.findFirst).toHaveBeenCalledWith({
+          where: { id: SEG_ID },
+        });
+        // Nothing downstream should have been attempted.
+        expect(mockPrismaService.bizUserOnSegment.findFirst).not.toHaveBeenCalled();
+        expect(mockPrismaService.bizUser.findFirst).not.toHaveBeenCalled();
+      });
+
+      it('a COMPANY segment on a session with no company is FALSE without touching the DB', async () => {
+        // The session is the only place a company comes from; with none, a
+        // company segment cannot be decided, and asking would be meaningless.
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.COMPANY, SegmentDataType.ALL),
+        );
+
+        expect(await evaluate('is', contextWithoutCompany())).toBe(false);
+        expect(mockPrismaService.bizUserOnCompany.findFirst).not.toHaveBeenCalled();
+        expect(mockPrismaService.bizCompanyOnSegment.findFirst).not.toHaveBeenCalled();
+      });
+
+      it('an unrecognised dataType is FALSE rather than a guess', async () => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.USER, 99 as SegmentDataType),
+        );
+        expect(await evaluate()).toBe(false);
+      });
+
+      it('`logic` defaults to `is` when the condition omits it', async () => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.USER, SegmentDataType.ALL),
+        );
+        expect(await evaluate(undefined)).toBe(true);
+      });
+    });
+
+    describe('USER segment', () => {
+      it('ALL matches everyone — `is` true, `not` false, and no membership query at all', async () => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.USER, SegmentDataType.ALL),
+        );
+
+        expect(await evaluate('is')).toBe(true);
+        expect(await evaluate('not')).toBe(false);
+        // The short-circuit is the point: an "everyone" segment must not cost a query.
+        expect(mockPrismaService.bizUserOnSegment.findFirst).not.toHaveBeenCalled();
+        expect(mockPrismaService.bizUser.findFirst).not.toHaveBeenCalled();
+      });
+
+      it('MANUAL reads the membership row keyed on (segment, user)', async () => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.USER, SegmentDataType.MANUAL),
+        );
+        mockPrismaService.bizUserOnSegment.findFirst.mockResolvedValue({ id: 'row-1' });
+
+        expect(await evaluate('is')).toBe(true);
+        expect(mockPrismaService.bizUserOnSegment.findFirst).toHaveBeenCalledWith({
+          where: { segmentId: SEG_ID, bizUserId: 'biz-user-1' },
+        });
+      });
+
+      it('MANUAL with no membership row is FALSE, and `not` inverts both outcomes', async () => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.USER, SegmentDataType.MANUAL),
+        );
+
+        mockPrismaService.bizUserOnSegment.findFirst.mockResolvedValue(null);
+        expect(await evaluate('is')).toBe(false);
+        expect(await evaluate('not')).toBe(true);
+
+        mockPrismaService.bizUserOnSegment.findFirst.mockResolvedValue({ id: 'row-1' });
+        expect(await evaluate('not')).toBe(false);
+      });
+
+      it('CONDITION re-asks for THIS user, narrowed by the compiled segment filter', async () => {
+        // The envelope is what this test owns — filter semantics belong to
+        // common/attribute/filter.spec.ts. What must hold here: the service
+        // anchors on the session's own user (environment + externalId) and
+        // ANDs the compiled filter onto it, rather than querying the segment
+        // population and checking membership afterwards.
+        const definition = [userEmailIs('user@example.com')];
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.USER, SegmentDataType.CONDITION, definition),
+        );
+        mockPrismaService.bizUser.findFirst.mockResolvedValue({ id: 'biz-user-1' });
+
+        expect(await evaluate('is')).toBe(true);
+
+        const expectedFilter = createBizUserConditionsFilter(definition, attrs, {
+          type: 'current',
+          bizCompanyWhere: { externalId: 'company-1', environmentId: 'env-1' },
+        });
+        expect(mockPrismaService.bizUser.findFirst).toHaveBeenCalledWith({
+          where: {
+            environmentId: 'env-1',
+            externalId: 'user-1',
+            AND: [expectedFilter],
+          },
+        });
+      });
+
+      it('CONDITION binds company leaves to the SESSION company — and to nobody when there is none', async () => {
+        // A company-scoped leaf inside a USER segment is existential over the
+        // session's company. Drop the company and the same definition must
+        // stop matching, not fall back to "any company" (which would leak the
+        // segment to every user whose *some* company qualifies).
+        const definition = [companyNameIs('Acme')];
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.USER, SegmentDataType.CONDITION, definition),
+        );
+        mockPrismaService.bizUser.findFirst.mockResolvedValue({ id: 'biz-user-1' });
+
+        await evaluate('is');
+        const boundWhere = mockPrismaService.bizUser.findFirst.mock.calls[0][0].where;
+
+        mockPrismaService.bizUser.findFirst.mockClear();
+        await evaluate('is', contextWithoutCompany());
+        const unboundWhere = mockPrismaService.bizUser.findFirst.mock.calls[0][0].where;
+
+        expect(boundWhere).toEqual({
+          environmentId: 'env-1',
+          externalId: 'user-1',
+          AND: [
+            createBizUserConditionsFilter(definition, attrs, {
+              type: 'current',
+              bizCompanyWhere: { externalId: 'company-1', environmentId: 'env-1' },
+            }),
+          ],
+        });
+        expect(unboundWhere).toEqual({
+          environmentId: 'env-1',
+          externalId: 'user-1',
+          AND: [createBizUserConditionsFilter(definition, attrs, { type: 'none' })],
+        });
+        // The two must not collapse into the same query.
+        expect(unboundWhere).not.toEqual(boundWhere);
+        // With no company to bind, a company-only definition matches nobody.
+        expect(unboundWhere.AND[0]).toEqual({ id: { in: [] } });
+      });
+    });
+
+    describe('COMPANY segment', () => {
+      const withMembership = (dataType: SegmentDataType, data: any = []) => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.COMPANY, dataType, data),
+        );
+        mockPrismaService.bizUserOnCompany.findFirst.mockResolvedValue(membershipRow);
+      };
+
+      it('resolves the session company through the membership row, company included', async () => {
+        withMembership(SegmentDataType.ALL);
+
+        expect(await evaluate('is')).toBe(true);
+        expect(mockPrismaService.bizUserOnCompany.findFirst).toHaveBeenCalledWith({
+          where: {
+            bizUserId: 'biz-user-1',
+            bizCompany: { externalId: 'company-1', environmentId: 'env-1' },
+          },
+          include: { bizCompany: true },
+        });
+      });
+
+      it('a session whose user is not IN the company is FALSE', async () => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(SegmentBizType.COMPANY, SegmentDataType.MANUAL),
+        );
+        mockPrismaService.bizUserOnCompany.findFirst.mockResolvedValue(null);
+
+        expect(await evaluate('is')).toBe(false);
+        expect(mockPrismaService.bizCompanyOnSegment.findFirst).not.toHaveBeenCalled();
+      });
+
+      it('MANUAL reads the membership row keyed on (segment, COMPANY) — not the user', async () => {
+        withMembership(SegmentDataType.MANUAL);
+        mockPrismaService.bizCompanyOnSegment.findFirst.mockResolvedValue({ id: 'row-1' });
+
+        expect(await evaluate('is')).toBe(true);
+        expect(mockPrismaService.bizCompanyOnSegment.findFirst).toHaveBeenCalledWith({
+          where: { segmentId: SEG_ID, bizCompanyId: 'biz-company-1' },
+        });
+        expect(mockPrismaService.bizUserOnSegment.findFirst).not.toHaveBeenCalled();
+      });
+
+      it('MANUAL with no row is FALSE, and `not` inverts', async () => {
+        withMembership(SegmentDataType.MANUAL);
+
+        mockPrismaService.bizCompanyOnSegment.findFirst.mockResolvedValue(null);
+        expect(await evaluate('is')).toBe(false);
+        expect(await evaluate('not')).toBe(true);
+      });
+
+      it('CONDITION re-asks for THIS company, narrowed by the compiled filter', async () => {
+        const definition = [companyNameIs('Acme')];
+        withMembership(SegmentDataType.CONDITION, definition);
+        mockPrismaService.bizCompany.findFirst.mockResolvedValue({ id: 'biz-company-1' });
+
+        expect(await evaluate('is')).toBe(true);
+        expect(mockPrismaService.bizCompany.findFirst).toHaveBeenCalledWith({
+          where: {
+            id: 'biz-company-1',
+            environmentId: 'env-1',
+            AND: [createBizCompanyConditionsFilter(definition, attrs)],
+          },
+        });
+      });
+
+      it('CONDITION that matches no company is FALSE, and `not` inverts', async () => {
+        withMembership(SegmentDataType.CONDITION, [companyNameIs('Acme')]);
+        mockPrismaService.bizCompany.findFirst.mockResolvedValue(null);
+
+        expect(await evaluate('is')).toBe(false);
+        expect(await evaluate('not')).toBe(true);
+      });
+    });
+
+    /**
+     * Which table answers which cell, stated once. A new SegmentDataType (or a
+     * route that quietly starts querying something else) shows up here as a
+     * changed table name rather than as a still-green boolean somewhere.
+     */
+    describe('the bizType × dataType routing table', () => {
+      const CELLS: Array<{
+        bizType: SegmentBizType;
+        dataType: SegmentDataType;
+        label: string;
+        table: string | null;
+      }> = [
+        {
+          bizType: SegmentBizType.USER,
+          dataType: SegmentDataType.ALL,
+          label: 'user/all',
+          table: null,
+        },
+        {
+          bizType: SegmentBizType.USER,
+          dataType: SegmentDataType.MANUAL,
+          label: 'user/manual',
+          table: 'bizUserOnSegment',
+        },
+        {
+          bizType: SegmentBizType.USER,
+          dataType: SegmentDataType.CONDITION,
+          label: 'user/condition',
+          table: 'bizUser',
+        },
+        {
+          bizType: SegmentBizType.COMPANY,
+          dataType: SegmentDataType.ALL,
+          label: 'company/all',
+          table: null,
+        },
+        {
+          bizType: SegmentBizType.COMPANY,
+          dataType: SegmentDataType.MANUAL,
+          label: 'company/manual',
+          table: 'bizCompanyOnSegment',
+        },
+        {
+          bizType: SegmentBizType.COMPANY,
+          dataType: SegmentDataType.CONDITION,
+          label: 'company/condition',
+          table: 'bizCompany',
+        },
+      ];
+
+      const MEMBERSHIP_TABLES = [
+        'bizUserOnSegment',
+        'bizUser',
+        'bizCompanyOnSegment',
+        'bizCompany',
+      ];
+
+      it.each(CELLS)('$label resolves through $table', async (cell) => {
+        mockPrismaService.segment.findFirst.mockResolvedValue(
+          segmentRow(cell.bizType, cell.dataType, [companyNameIs('Acme')]),
+        );
+        mockPrismaService.bizUserOnCompany.findFirst.mockResolvedValue(membershipRow);
+        for (const t of MEMBERSHIP_TABLES) mockPrismaService[t].findFirst.mockResolvedValue(null);
+
+        await evaluate('is');
+
+        const queried = MEMBERSHIP_TABLES.filter(
+          (t) => mockPrismaService[t].findFirst.mock.calls.length > 0,
+        );
+        expect(queried).toEqual(cell.table ? [cell.table] : []);
+      });
+
+      it('every COMPANY cell first resolves the session membership; no USER cell does', async () => {
+        for (const cell of CELLS) {
+          mockPrismaService.bizUserOnCompany.findFirst.mockClear();
+          mockPrismaService.segment.findFirst.mockResolvedValue(
+            segmentRow(cell.bizType, cell.dataType, []),
+          );
+          mockPrismaService.bizUserOnCompany.findFirst.mockResolvedValue(membershipRow);
+
+          await evaluate('is');
+
+          expect({
+            cell: cell.label,
+            askedMembership: mockPrismaService.bizUserOnCompany.findFirst.mock.calls.length > 0,
+          }).toEqual({
+            cell: cell.label,
+            askedMembership: cell.bizType === SegmentBizType.COMPANY,
+          });
+        }
       });
     });
   });
