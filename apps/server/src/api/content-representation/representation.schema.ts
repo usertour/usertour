@@ -277,7 +277,10 @@ export const eventWhereCondition: z.ZodType<EventWhereCondition> = z.lazy(() =>
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(eventWhereCondition),
+      conditions: z
+        .array(eventWhereCondition)
+        .min(1, NON_EMPTY_GROUP)
+        .describe(NON_EMPTY_GROUP_DESCRIBE),
     }),
   ]),
 ) as unknown as z.ZodType<EventWhereCondition>;
@@ -346,12 +349,45 @@ export const attributeCondition = z.object({
   ...attributeConditionFields,
 });
 
+/**
+ * A group is a CONTAINER of conditions; an empty one is not an empty filter, it
+ * is a permanently FALSE node (the runtime scores an empty list false), so
+ * inside an `all` list it pins the whole rule to "never matches" — a start rule
+ * that publishes green and never fires. Condition lists are full replacements,
+ * so an empty group is never a draft-in-progress: rejected at write, on every
+ * slot that takes a group.
+ *
+ * The constraint stays in the schema (rather than moving to compile) even
+ * though the builder can save an empty group and this schema also types the
+ * read side: the contract describes what v2/MCP accepts and produces, and
+ * content authored here round-trips clean. A stored empty group reads back as
+ * it is and is REFUSED on write-back with a field path — the same deal as an
+ * `unsupported` placeholder. Same call as the other write constraints legacy
+ * data can violate (non-negative block width, non-empty selector).
+ */
+export const NON_EMPTY_GROUP = {
+  message:
+    'A condition group must contain at least one condition — an EMPTY group never matches, ' +
+    'so inside an "all" group it makes the whole rule unmatchable (the content would publish ' +
+    'fine and never start). Add the conditions it should hold, or drop the group node.',
+} as const;
+
+/** Same fact as {@link NON_EMPTY_GROUP}, phrased for schema readers. */
+export const NON_EMPTY_GROUP_DESCRIBE =
+  'The grouped conditions — at least one. An EMPTY group is not "no filter": it never ' +
+  'matches, so next to an AND it makes the whole rule unmatchable, and writing one is ' +
+  'rejected. A version saved with an empty group in the BUILDER still reads back with it ' +
+  '(validate warns); writing that list back is refused until the group is filled or dropped.';
+
 export const representationCondition = z.lazy(() =>
   z.discriminatedUnion('type', [
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(representationCondition),
+      conditions: z
+        .array(representationCondition)
+        .min(1, NON_EMPTY_GROUP)
+        .describe(NON_EMPTY_GROUP_DESCRIBE),
     }),
     // attribute condition (user / company / companyMembership — see `scope`).
     attributeCondition,
@@ -552,7 +588,10 @@ export const completeWhenCondition: z.ZodType<CompletionCondition> = z.lazy(() =
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(completeWhenCondition),
+      conditions: z
+        .array(completeWhenCondition)
+        .min(1, NON_EMPTY_GROUP)
+        .describe(NON_EMPTY_GROUP_DESCRIBE),
     }),
     representationCondition,
   ]),

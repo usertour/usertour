@@ -2,7 +2,11 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
-import { attributeCondition } from '../content-representation/representation.schema';
+import {
+  NON_EMPTY_GROUP,
+  NON_EMPTY_GROUP_DESCRIBE,
+  attributeCondition,
+} from '../content-representation/representation.schema';
 import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
@@ -38,7 +42,12 @@ export const segmentCondition: z.ZodType<SegmentCondition> = z.lazy(() =>
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(segmentCondition),
+      // Empty group = permanently false (here it compiles to `id in []`, a
+      // segment matching nobody). Same rejection as the content surface.
+      conditions: z
+        .array(segmentCondition)
+        .min(1, NON_EMPTY_GROUP)
+        .describe(NON_EMPTY_GROUP_DESCRIBE),
     }),
     attributeCondition,
     // Read-side placeholder for a STORED condition this schema cannot express

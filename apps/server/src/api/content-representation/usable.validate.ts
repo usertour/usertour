@@ -436,7 +436,74 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
 
   collectEmbedResolutionWarnings([input.data, input.steps], warn);
 
+  // Stored EMPTY groups. The write schema rejects new ones, but the builder
+  // lets you add a group and never fill it, so published data carries them.
+  {
+    const config = input.config as
+      | { autoStartRules?: unknown; hideRules?: unknown }
+      | null
+      | undefined;
+    collectEmptyGroupWarnings(config?.autoStartRules, 'startRules.when', warn);
+    collectEmptyGroupWarnings(config?.hideRules, 'hideRules.when', warn);
+    collectEmptyGroupWarnings(input.data, 'data', warn);
+    const steps = asArray<Step>(input.steps);
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
+      const label = (s as { name?: string })?.name;
+      const base = `steps[${i}]${label ? ` "${label}"` : ''}`;
+      collectEmptyGroupWarnings((s as { data?: unknown }).data, `${base}.content`, warn);
+      collectEmptyGroupWarnings((s as { trigger?: unknown }).trigger, `${base}.triggers`, warn);
+    }
+  }
+
   return { ok: errors.length === 0, errors, warnings };
+}
+
+/**
+ * A group node with NO children scores FALSE at runtime (an empty list
+ * activates nothing) — it is not an empty filter that gets ignored. Inside an
+ * `all` list that pins the entire rule to "never matches": a start rule that
+ * writes, validates and publishes green and never fires once. The write schema
+ * now rejects empty groups, so these are builder-authored or legacy — warn,
+ * don't block: the content may still be reachable via usertour.start() / a
+ * resource-center entry, same call as the no-start-rules warning.
+ *
+ * The message distinguishes the two fates because they need different fixes:
+ * in an AND list the group is fatal to the whole rule; in an OR list it is a
+ * dead branch that merely never contributes.
+ */
+function collectEmptyGroupWarnings(
+  root: unknown,
+  path: string,
+  warn: (path: string, message: string) => void,
+): void {
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      // A list's and/or lives on its FIRST node's `operators` (runtime:
+      // isConditionsActived) — that decides what an empty group does to it.
+      const first = node[0] as { operators?: unknown; type?: unknown } | undefined;
+      const isAndList = first?.operators === 'and';
+      for (const item of node) {
+        const c = item as { type?: unknown; conditions?: unknown } | null;
+        if (c && typeof c === 'object' && c.type === 'group') {
+          const children = Array.isArray(c.conditions) ? c.conditions : [];
+          if (children.length === 0) {
+            warn(
+              path,
+              isAndList || node.length === 1
+                ? 'An EMPTY condition group makes this whole rule unmatchable: an empty group never matches, and it is joined with AND, so the rule can never fire no matter what the other conditions do. Remove the empty group, or fill in the conditions it was meant to hold.'
+                : 'An EMPTY condition group is a dead branch — it never matches, so this OR list behaves as if the group were not there. Remove it, or fill in the conditions it was meant to hold.',
+            );
+          }
+        }
+        walk(item);
+      }
+      return;
+    }
+    for (const value of Object.values(node as Record<string, unknown>)) walk(value);
+  };
+  walk(root);
 }
 
 /**

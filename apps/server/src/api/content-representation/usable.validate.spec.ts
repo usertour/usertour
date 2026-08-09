@@ -83,6 +83,85 @@ describe('validateVersionUsable', () => {
     });
   });
 
+  describe('empty condition groups (cross-cutting)', () => {
+    // The write schema rejects these, but the builder lets you add a group and
+    // leave it empty, so stored data has them — and an empty group is FALSE at
+    // runtime, not "no filter". Before this warning the whole chain (write,
+    // validate, publish) was green and the content simply never started.
+    const emptyGroup = (operators: 'and' | 'or') => ({
+      id: 'g',
+      type: 'group',
+      operators,
+      data: {},
+      conditions: [],
+    });
+    const urlRule = (operators: 'and' | 'or') => ({
+      id: 'u',
+      type: 'current-page',
+      operators,
+      data: { includes: ['*'] },
+    });
+    const flowWith = (autoStartRules: unknown[]) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        steps: [{ type: 'modal', data: textBlocks } as never],
+        config: { enabledAutoStartRules: true, autoStartRules, autoStartRulesSetting: {} } as never,
+      });
+
+    it('warns FATAL wording when the empty group sits in an AND list', () => {
+      const r = flowWith([urlRule('and'), emptyGroup('and')]);
+      expect(r.ok).toBe(true); // still publishable — usertour.start() can reach it
+      const w = r.warnings.filter((x) => x.message.includes('EMPTY condition group'));
+      expect(w).toHaveLength(1);
+      expect(w[0].path).toBe('startRules.when');
+      expect(w[0].message).toContain('unmatchable');
+    });
+
+    it('warns DEAD-BRANCH wording when it sits in an OR list', () => {
+      const r = flowWith([urlRule('or'), emptyGroup('or')]);
+      const w = r.warnings.filter((x) => x.message.includes('EMPTY condition group'));
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('dead branch');
+    });
+
+    it('an empty group as the ONLY condition is fatal regardless of its operator', () => {
+      const w = flowWith([emptyGroup('or')]).warnings.filter((x) =>
+        x.message.includes('EMPTY condition group'),
+      );
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('unmatchable');
+    });
+
+    it('a group WITH conditions warns nothing', () => {
+      const filled = { ...emptyGroup('and'), conditions: [urlRule('and')] };
+      expect(
+        flowWith([urlRule('and'), filled]).warnings.filter((x) =>
+          x.message.includes('EMPTY condition group'),
+        ),
+      ).toHaveLength(0);
+    });
+
+    it('finds them in hide rules and step triggers too, under their own paths', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        steps: [
+          {
+            type: 'modal',
+            data: textBlocks,
+            trigger: [{ conditions: [emptyGroup('and')], actions: [] }],
+          },
+        ] as never,
+        config: { hideRules: [emptyGroup('and')] } as never,
+      });
+      const paths = r.warnings
+        .filter((x) => x.message.includes('EMPTY condition group'))
+        .map((x) => x.path);
+      expect(paths).toEqual(['hideRules.when', 'steps[0].triggers']);
+    });
+  });
+
   describe('interpolation scope (cross-cutting)', () => {
     // `{{ }}` resolves against the USER's attributes only. A token naming a
     // company / membership attribute renders as an empty gap in live copy and

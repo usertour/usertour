@@ -302,6 +302,22 @@ describe('API v2 segments (e2e)', () => {
     expect(upd.body.error.message).toContain('cannot be written back');
   });
 
+  it('rejects an EMPTY condition group — it compiles to a segment matching nobody', async () => {
+    // Same rejection as the content surface: an empty group is a permanently
+    // false node, and here it compiles to `id IN ()` — a condition segment that
+    // silently has zero members.
+    const token = await mint([Capability.SegmentCreate]);
+    const res = await send('post', segPath(), token).send({
+      name: 'empty group seg',
+      bizType: 'user',
+      kind: 'condition',
+      conditions: [{ type: 'group', match: 'all', conditions: [] }],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    expect(JSON.stringify(res.body.error)).toContain('at least one condition');
+  });
+
   it('a condition whose attribute was DELETED reads as `unsupported`, not a leaked cuid', async () => {
     // Full loop from console sweep endpoint 15: create attribute -> reference
     // it in a segment -> delete the attribute (204, nothing blocks it). The

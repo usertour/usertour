@@ -417,6 +417,103 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(ok.status).toBe(200);
   });
 
+  it('rejects an EMPTY condition group at write, and warns about a stored one at validate', async () => {
+    // An empty group is not an empty filter — the runtime scores an empty list
+    // FALSE, so in an AND list it pins the rule to "never matches". It used to
+    // write, validate and publish green and simply never fire.
+    const token = await mint([
+      Capability.ContentRead,
+      Capability.ContentUpdate,
+      Capability.ContentPublish,
+    ]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const path = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+
+    const empty = await api('patch', path, token).send({
+      startRules: {
+        when: [
+          { type: 'current_url', includes: ['*'] },
+          { type: 'group', match: 'all', conditions: [] },
+        ],
+      },
+    });
+    expect(empty.status).toBe(400);
+    expect(empty.body.error.code).toBe('E1017');
+    expect(JSON.stringify(empty.body.error)).toContain('at least one condition');
+
+    // A group WITH a condition writes fine.
+    const filled = await api('patch', path, token).send({
+      startRules: {
+        when: [
+          {
+            type: 'group',
+            match: 'any',
+            conditions: [{ type: 'current_url', includes: ['/app/*'] }],
+          },
+        ],
+      },
+    });
+    expect(filled.status).toBe(200);
+
+    // Stored one (the builder allows it) surfaces as a WARNING, not an error —
+    // the content stays publishable because usertour.start() can still reach it.
+    const legacy = await buildUsableFlowVersion(prisma, {
+      contentId: content.id,
+      projectId,
+      sequence: 1,
+    });
+    await prisma.version.update({
+      where: { id: legacy.id },
+      data: {
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [
+            { id: 'u', type: 'current-page', operators: 'and', data: { includes: ['*'] } },
+            { id: 'g', type: 'group', operators: 'and', data: {}, conditions: [] },
+          ],
+          autoStartRulesSetting: {},
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+    const report = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${legacy.id}/validate`,
+      token,
+    );
+    expect(report.status).toBe(200);
+    expect(report.body.ok).toBe(true);
+    const w = (report.body.warnings as Array<{ path: string; message: string }>).filter((x) =>
+      x.message.includes('EMPTY condition group'),
+    );
+    expect(w).toHaveLength(1);
+    expect(w[0].path).toBe('startRules.when');
+    expect(w[0].message).toContain('unmatchable');
+
+    // …and writing that version's conditions back — the shape a read-back
+    // hands you — is refused with the offending path, so the empty group can
+    // only leave by being filled or dropped, never by an unwitting echo.
+    // (The list is hand-built rather than GET-ed on purpose: a response
+    // carrying a stored empty group violates the schema the OpenAPI doc is
+    // generated from, and the contract checker rightly flags it — verified.
+    // Legacy shapes predating the contract are out of its scope; producing one
+    // in a test would only silence the alarm.)
+    const echo = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${legacy.id}`,
+      token,
+    ).send({
+      startRules: {
+        when: [
+          { type: 'current_url', includes: ['*'] },
+          { type: 'group', match: 'all', conditions: [] },
+        ],
+      },
+    });
+    expect(echo.status).toBe(400);
+    expect(JSON.stringify(echo.body.error)).toContain('startRules.when');
+  });
+
   it('stored legacy dirt never reaches the wire: end-only → unsupported, unit-less → explicit days', async () => {
     // Seed the two legacy shapes DIRECTLY into config (no write path can
     // produce them anymore) and read back through the API.
