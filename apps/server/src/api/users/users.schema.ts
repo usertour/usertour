@@ -39,7 +39,7 @@ export const upsertUserBody = z
       .optional()
       .describe(
         'Custom attributes to set on the user (merged into existing attributes). Attributes with an unknown codeName AUTO-CREATE a definition (dataType inferred from the value) — a mistyped key silently creates a new attribute instead of updating the real one. Each key must ' +
-          'be a valid codeName: start with a letter, then letters/digits/underscores, 2–20 chars.',
+          'be a valid codeName: start with a letter, then letters/digits/underscores, 2–100 chars.',
       ),
   })
   .strict();

@@ -102,7 +102,7 @@ export const createAttributeBody = z
     dataType: createDataType.describe('The attribute value type.'),
     codeName: codeNameSchema.describe(
       'Stable identifier, unique per project + scope. Immutable. Must start with a letter, then ' +
-        'letters/digits/underscores, 2\u201320 chars.',
+        'letters/digits/underscores, 2\u2013100 chars.',
     ),
     displayName: z.string().min(1).describe('Human-readable name.'),
     description: z.string().optional().describe('Optional description.'),

@@ -397,6 +397,32 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(issues).toHaveLength(2); // one per stray key, not one blob
   });
 
+  it('codeName length: 100 chars is the cap — 100 creates, 101 rejects', async () => {
+    // The cap was 20, copied from the builder's form rule — which the
+    // product's own built-ins violate (resource_center_version_number is 30),
+    // so v2 could not even create names in the house style. Raised to 100;
+    // this pins both sides of the new boundary.
+    const token = await mint([Capability.AttributeCreate, Capability.AttributeDelete]);
+    const base = 'a'.repeat(99);
+    const ok = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: `${base}b`, // 100
+      displayName: 'long name ok',
+    });
+    expect(ok.status).toBe(201);
+    await send('delete', `${basePath()}/${ok.body.id}`, token);
+
+    const tooLong = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: `${base}bc`, // 101
+      displayName: 'too long',
+    });
+    expect(tooLong.status).toBe(400);
+    expect(tooLong.body.error.code).toBe('E1017');
+  });
+
   it('rejects a duplicate codeName (409 E1023)', async () => {
     const token = await mint([Capability.AttributeCreate]);
     const res = await send('post', basePath(), token).send({

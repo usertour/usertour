@@ -32,7 +32,7 @@ export const upsertCompanyBody = z
       .optional()
       .describe(
         'Custom attributes to set on the company (merged into existing attributes). Attributes with an unknown codeName AUTO-CREATE a definition (dataType inferred from the value) — a mistyped key silently creates a new attribute instead of updating the real one. Each key must ' +
-          'be a valid codeName: start with a letter, then letters/digits/underscores, 2–20 chars.',
+          'be a valid codeName: start with a letter, then letters/digits/underscores, 2–100 chars.',
       ),
   })
   .strict();
@@ -47,7 +47,7 @@ export const upsertMembershipBody = z
       .describe(
         "Custom attributes to set on the membership (e.g. the user's role in the company). Each " +
           'key must be a valid codeName: start with a letter, then letters/digits/underscores, ' +
-          '2–20 chars.',
+          '2–100 chars.',
       ),
   })
   .strict();
