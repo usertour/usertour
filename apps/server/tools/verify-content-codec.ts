@@ -21,7 +21,7 @@
  * Volatile ids are stripped. Diffs aggregate by field-path signature per
  * dimension. Read-only.
  *
- * Run: DATABASE_URL=... npx ts-node -r tsconfig-paths/register scripts/verify-content-codec.ts [limit]
+ * Run: DATABASE_URL=... npx ts-node -r tsconfig-paths/register tools/verify-content-codec.ts [limit]
  */
 import { PrismaClient } from '@prisma/client';
 import { stripIds, diffPaths } from './codec-diff';

@@ -15,7 +15,7 @@
  * semantics (top-level OR wrapping, group match derived from children) are
  * covered by the representation.compile/decompile unit tests instead.
  *
- * Run:  DATABASE_URL=... npx ts-node -r tsconfig-paths/register scripts/verify-codec.ts [limitPerType]
+ * Run:  DATABASE_URL=... npx ts-node -r tsconfig-paths/register tools/verify-codec.ts [limitPerType]
  */
 import { PrismaClient } from '@prisma/client';
 import { stripIds, diffPaths } from './codec-diff';

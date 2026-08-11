@@ -9,7 +9,7 @@
  * and diffs the result against the original builder internal. Diffs (minus the
  * intentional-loss allowlist) are exactly where MCP-create != builder.
  *
- * Run: DATABASE_URL=... npx ts-node -r tsconfig-paths/register scripts/verify-create-parity.ts [limit]
+ * Run: DATABASE_URL=... npx ts-node -r tsconfig-paths/register tools/verify-create-parity.ts [limit]
  */
 import { PrismaClient } from '@prisma/client';
 import { stripIds, diffPaths } from './codec-diff';

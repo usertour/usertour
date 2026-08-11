@@ -3,7 +3,7 @@
  * straight from the zod schemas (SSOT) — so the docs' field tables never drift.
  * Prose + JSON examples are hand-written in the MDX; this emits only the tables.
  *
- * Run: npx ts-node -r tsconfig-paths/register scripts/gen-doc-tables.ts <group>
+ * Run: npx ts-node -r tsconfig-paths/register tools/gen-doc-tables.ts <group>
  *   groups: blocks | conditions | actions | rules | data
  */
 import { z } from 'zod';
