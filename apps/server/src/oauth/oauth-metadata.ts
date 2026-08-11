@@ -26,10 +26,18 @@ export interface AuthorizationServerMetadata {
 // stored on a token's `scopes` and intersected with the owner's role per request.
 const SCOPES_SUPPORTED = Object.values(Capability);
 
-/** The MCP resource (`<origin>/mcp`) points back at this server as its own AS. */
-export function buildProtectedResourceMetadata(origin: string): ProtectedResourceMetadata {
+/**
+ * The MCP resource points back at this server as its own AS. `resource` is the
+ * EXACT public MCP URL (clients compare it against the URL they connected to,
+ * RFC 9728) — passed in rather than derived so it stays byte-identical to what
+ * resolveMcpResource serves everywhere else.
+ */
+export function buildProtectedResourceMetadata(
+  origin: string,
+  resource: string,
+): ProtectedResourceMetadata {
   return {
-    resource: `${origin}/mcp`,
+    resource,
     authorization_servers: [origin],
     scopes_supported: SCOPES_SUPPORTED,
     bearer_methods_supported: ['header'],

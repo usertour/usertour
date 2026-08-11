@@ -4,7 +4,7 @@ const ORIGIN = 'https://api.usertour.io';
 
 describe('oauth discovery metadata', () => {
   it('protected-resource metadata points /mcp at this server as its own AS', () => {
-    const m = buildProtectedResourceMetadata(ORIGIN);
+    const m = buildProtectedResourceMetadata(ORIGIN, `${ORIGIN}/mcp`);
     expect(m.resource).toBe(`${ORIGIN}/mcp`);
     expect(m.authorization_servers).toEqual([ORIGIN]);
     expect(m.bearer_methods_supported).toEqual(['header']);

@@ -2,7 +2,7 @@ import { Controller, Get, Req } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 
-import { resolveOrigin } from '@/common/http/resolve-origin';
+import { resolveMcpOrigin, resolveMcpResource } from '@/common/http/resolve-origin';
 
 import { buildAuthorizationServerMetadata, buildProtectedResourceMetadata } from './oauth-metadata';
 
@@ -19,11 +19,16 @@ export class OAuthDiscoveryController {
 
   @Get(['oauth-protected-resource', 'oauth-protected-resource/mcp'])
   protectedResource(@Req() req: Request) {
-    return buildProtectedResourceMetadata(resolveOrigin(this.config, req));
+    // MCP-derived, not the API origin: when MCP_SERVER_URL puts /mcp on its
+    // own domain, `resource` must equal the URL clients actually connect to.
+    return buildProtectedResourceMetadata(
+      resolveMcpOrigin(this.config, req),
+      resolveMcpResource(this.config, req),
+    );
   }
 
   @Get(['oauth-authorization-server', 'oauth-authorization-server/mcp'])
   authorizationServer(@Req() req: Request) {
-    return buildAuthorizationServerMetadata(resolveOrigin(this.config, req));
+    return buildAuthorizationServerMetadata(resolveMcpOrigin(this.config, req));
   }
 }

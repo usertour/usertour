@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
@@ -69,6 +70,35 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     const as = await http().get('/.well-known/oauth-authorization-server').expect(200);
     expect(as.body.code_challenge_methods_supported).toEqual(['S256']);
     expect(as.body.grant_types_supported).toContain('authorization_code');
+  });
+
+  it('MCP_SERVER_URL is the single truth for the advertised resource (split-domain MCP)', async () => {
+    // Display read MCP_SERVER_URL while the metadata read API_URL, so a
+    // deployment serving /mcp on its own domain told users one URL and OAuth
+    // clients another — RFC 9728 resource validation then refused the mismatch
+    // ("Protected resource X does not match expected Y") and auth died. All
+    // three surfaces now derive from app.mcpServerUrl.
+    const config = app.get(ConfigService);
+    const prev = config.get('app.mcpServerUrl');
+    config.set('app.mcpServerUrl', 'https://mcp2.example.com/mcp');
+    try {
+      const prm = await http().get('/.well-known/oauth-protected-resource/mcp').expect(200);
+      expect(prm.body.resource).toBe('https://mcp2.example.com/mcp');
+      expect(prm.body.authorization_servers).toEqual(['https://mcp2.example.com']);
+
+      // The AS endpoints follow the MCP origin (that domain proxies /oauth/*).
+      const as = await http().get('/.well-known/oauth-authorization-server').expect(200);
+      expect(as.body.issuer).toBe('https://mcp2.example.com');
+      expect(as.body.token_endpoint).toBe('https://mcp2.example.com/oauth/token');
+
+      // The /mcp 401 challenge points at the SAME origin's metadata.
+      const denied = await http().post('/mcp').send({}).expect(401);
+      expect(denied.headers['www-authenticate']).toContain(
+        'https://mcp2.example.com/.well-known/oauth-protected-resource/mcp',
+      );
+    } finally {
+      config.set('app.mcpServerUrl', prev);
+    }
   });
 
   it('rejects a non-allowlisted DCR redirect_uri', async () => {

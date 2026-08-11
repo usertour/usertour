@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { BaseError } from '@/common/errors/base';
 import { OpenAPIError, ValidationError } from '@/common/errors/errors';
 import { ExpiredApiKeyError, InvalidApiKeyError, MissingApiKeyError } from '@/common/errors';
-import { resolveOrigin } from '@/common/http/resolve-origin';
+import { resolveMcpOrigin } from '@/common/http/resolve-origin';
 
 /**
  * Domain BaseErrors (thrown below the API layer, no HTTP status of their own)
@@ -104,7 +104,7 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
       exception instanceof ExpiredApiKeyError;
     if (isAuthError && request.path.replace(/\/+$/, '') === '/mcp') {
       status = HttpStatus.UNAUTHORIZED;
-      const origin = resolveOrigin(this.configService, request);
+      const origin = resolveMcpOrigin(this.configService, request);
       response.setHeader(
         'WWW-Authenticate',
         `Bearer realm="OAuth", resource_metadata="${origin}/.well-known/oauth-protected-resource/mcp", error="invalid_token"`,
