@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apk add --no-cache openssl openssl-dev
 
 # Install pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@9.6.0
 
 # Copy all files (filtered by .dockerignore)
 COPY . .
@@ -46,7 +46,7 @@ FROM node:22.13-alpine
 WORKDIR /app
 
 # Install pnpm and system dependencies
-RUN npm install -g pnpm && \
+RUN npm install -g pnpm@9.6.0 && \
     apk add --no-cache nginx openssl openssl-dev libc6-compat gettext postgresql16-client
 
 # Copy nginx configuration
