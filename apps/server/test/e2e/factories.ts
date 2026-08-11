@@ -38,10 +38,14 @@ import type { PrismaClient } from '@prisma/client';
  */
 
 let counter = 0;
-// `process.pid` disambiguates parallel Jest workers sharing the test DB — two
-// workers can otherwise hit the same `Date.now()` with a counter that restarts
-// at 0 per process, colliding on unique columns (e.g. Subscription.subscriptionId).
-const unique = () => `e2e-${process.pid}-${Date.now()}-${counter++}`;
+// Include the jest worker id + a random suffix so values never collide across
+// parallel workers sharing the test DB. Two specs booting in the same
+// millisecond would otherwise both emit `e2e-<ms>-0` and trip unique
+// constraints (e.g. User.email, Subscription.subscriptionId).
+const unique = () =>
+  `e2e-${process.env.JEST_WORKER_ID ?? '0'}-${Date.now()}-${counter++}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
 
 // ── root nodes (no parent FKs) ─────────────────────────────────────
 
@@ -289,6 +293,34 @@ export async function buildStep(
   return prisma.step.create({
     data: { type: 'tooltip', ...overrides, versionId: overrides.versionId },
   });
+}
+
+/** A minimal renderable step body (one text block) — passes the usability validator. */
+export const USABLE_STEP_DATA = [
+  { children: [{ children: [{ element: { type: 'text', data: {} } }] }] },
+];
+
+/**
+ * A flow version that passes the strict usability validator: a project theme +
+ * one modal step with content. Use this when a test needs to actually publish.
+ */
+export async function buildUsableFlowVersion(
+  prisma: PrismaClient,
+  args: { contentId: string; projectId: string; sequence?: number },
+) {
+  const theme = await buildTheme(prisma, { projectId: args.projectId });
+  const version = await buildVersion(prisma, {
+    contentId: args.contentId,
+    sequence: args.sequence ?? 0,
+    themeId: theme.id,
+  });
+  await buildStep(prisma, {
+    versionId: version.id,
+    type: 'modal',
+    sequence: 0,
+    data: USABLE_STEP_DATA as unknown as Prisma.InputJsonValue,
+  });
+  return version;
 }
 
 export async function buildBizUser(

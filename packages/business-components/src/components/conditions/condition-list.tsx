@@ -105,7 +105,7 @@ export function ConditionList({
   autoOpenAddMenu,
   onAddMenuClose,
 }: Props) {
-  const { isHorizontal, isShowIf, disabled } = useConditionsContext();
+  const { isHorizontal, isShowIf, disabled, narrow } = useConditionsContext();
   const t = useConditionsT();
   // Memoize the id-backfill so the same cuid sticks across rerenders for a
   // given conditions reference. Otherwise legacy data missing ids would get
@@ -221,10 +221,25 @@ export function ConditionList({
           );
         }
 
+        // Narrow hosts (320px trigger sidebar): the [prefix][chip] two-column
+        // rhythm taxes ~52px per depth, and a nested group pays it twice —
+        // leaf chips ended up wrapping element selectors at ~70px, one letter
+        // per line. Stack the prefix ABOVE the chip for the rows that carry
+        // depth (group rows and every row inside a nested list) so the chip
+        // gets the full row width; flat leaf rows keep the two-column layout,
+        // which is fine at this width and confirmed as the desired rhythm.
+        const stackPrefix = narrow && (condition.type === 'group' || isNested);
+
         return (
-          <div key={condition.id ?? index} className="flex w-full items-start gap-2">
+          <div
+            key={condition.id ?? index}
+            className={cn(
+              'flex w-full',
+              stackPrefix ? 'flex-col items-start gap-1' : 'items-start gap-2',
+            )}
+          >
             {prefix}
-            <div className="min-w-0 flex-1">
+            <div className={cn('min-w-0', stackPrefix ? 'w-full' : 'flex-1')}>
               <ConditionRow
                 condition={condition}
                 onChange={(next) => handleChange(index, next)}

@@ -98,8 +98,9 @@ export const extractQuestionData = (data: ContentEditorRoot[]): ContentEditorQue
   const result: ContentEditorQuestionElement[] = [];
   // Helper function to recursively search through the data
   function traverse(item: ContentEditorRoot) {
-    // Check if current element has type "multiple-choice"
-    if (questionTypes.includes(item.element.type as ContentEditorElementType)) {
+    // Check if current element has type "multiple-choice". Group/column nodes may
+    // carry no element (e.g. partial trees) — guard so traversal never throws.
+    if (item.element && questionTypes.includes(item.element.type as ContentEditorElementType)) {
       result.push(item.element as unknown as ContentEditorQuestionElement);
     }
 

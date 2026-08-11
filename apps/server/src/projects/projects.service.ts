@@ -177,6 +177,8 @@ export class ProjectsService {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
       customCss: false,
+      auditLogs: false,
+      auditLogRetentionDays: 0,
       ssoOidc: false,
       ssoSaml: false,
       planType: PlanType.HOBBY,
@@ -238,6 +240,9 @@ export class ProjectsService {
     return {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
+      auditLogs: features.auditLogs,
+      auditLogRetentionDays:
+        features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       ssoOidc: features.ssoOidc,
       ssoSaml: features.ssoSaml,
       planType,
@@ -281,6 +286,9 @@ export class ProjectsService {
     return {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
+      auditLogs: features.auditLogs,
+      auditLogRetentionDays:
+        features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       ssoOidc: features.ssoOidc,
       ssoSaml: features.ssoSaml,
       planType,
@@ -296,6 +304,8 @@ export class ProjectsService {
     const defaultConfig: ProjectConfig = {
       removeBranding: false,
       customCss: false,
+      auditLogs: false,
+      auditLogRetentionDays: 0,
       ssoOidc: false,
       ssoSaml: false,
       planType: PlanType.HOBBY,
@@ -323,6 +333,9 @@ export class ProjectsService {
     return {
       removeBranding: features.removeBranding,
       customCss: features.customCss,
+      auditLogs: features.auditLogs,
+      auditLogRetentionDays:
+        features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       ssoOidc: features.ssoOidc,
       ssoSaml: features.ssoSaml,
       planType: subscription.planType,

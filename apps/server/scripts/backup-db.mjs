@@ -125,7 +125,10 @@ async function uploadToS3(filePath, key, config) {
 
 async function main() {
   const config = loadConfig();
-  const timestamp = new Date().toISOString().replace(/[:]/g, '-').replace(/\.\d{3}Z$/, 'Z');
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[:]/g, '-')
+    .replace(/\.\d{3}Z$/, 'Z');
   const key = buildObjectKey(config.prefix, config.filePrefix, timestamp);
   const tempFile = path.join(os.tmpdir(), `${config.filePrefix}_${process.pid}_${timestamp}.dump`);
 

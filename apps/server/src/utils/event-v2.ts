@@ -54,13 +54,26 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.RESOURCE_CENTER_DISMISSED,
 ] as const;
 
-// Events that should invalidate subsequent events
+// Events that should invalidate subsequent events. These are the session-ENDING
+// events (flip state → 1); the reason a session ended is on the event's
+// `*_end_reason` attribute. NOT the same as genuine completion — a flow that is
+// dismissed also emits FLOW_ENDED.
 export const DISMISSED_EVENTS = [
   BizEvents.CHECKLIST_DISMISSED,
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.FLOW_ENDED,
   BizEvents.BANNER_DISMISSED,
   BizEvents.RESOURCE_CENTER_DISMISSED,
+] as const;
+
+// GENUINE goal completion — only flows and checklists have a real "completed"
+// concept (reach the end / check every task). Independent of session state: a
+// flow can emit FLOW_COMPLETED at an explicit completion step and keep running
+// (state 0), and a checklist can be all-done but still open (state 0). So
+// completion must be read from THIS event, never derived from state === 1.
+export const GENUINE_COMPLETION_EVENTS = [
+  BizEvents.FLOW_COMPLETED,
+  BizEvents.CHECKLIST_COMPLETED,
 ] as const;
 
 // ============================================================================

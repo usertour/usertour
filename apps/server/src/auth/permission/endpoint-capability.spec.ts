@@ -38,6 +38,7 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'content.unpublishedContentVersion': W,
   'content.deleteContent': W,
   'content.listContentVersions': R,
+  'content.listContentPublishRecords': R,
   'content.listVersionLocalizations': R,
   'content.upsertVersionLocalization': W,
   'localizations.translateLocalizationUnits': W,
@@ -48,6 +49,7 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'environments.deleteEnvironments': W,
   'environments.userEnvironments': R,
   'environments.verifyInstallation': R,
+  'environments.projectHasEnvironmentAccessTokens': O,
   'environments.listAccessTokens': O,
   'environments.getAccessToken': O,
   'environments.createAccessToken': O,
@@ -130,11 +132,13 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'team.changeTeamMemberRole': O,
   'team.cancelInvite': O,
   'team.activeUserProject': R,
+  // audit
+  'audit.auditLogs': O,
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(99);
+  it('snapshot covers exactly the same 102 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(102);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 

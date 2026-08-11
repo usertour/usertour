@@ -104,7 +104,9 @@ export class WebSocketV2Service {
    * @returns The environment or null if not found
    */
   private async fetchEnvironmentByToken(token: string): Promise<Environment | null> {
-    return await this.prisma.environment.findFirst({ where: { token } });
+    // `deleted: false` is part of the credential check — a deleted environment's
+    // SDK token must stop authenticating (see web-socket.guard for the full note).
+    return await this.prisma.environment.findFirst({ where: { token, deleted: false } });
   }
 
   /**

@@ -33,7 +33,7 @@ export const useContentVersionUpdate = () => {
   const ensureEditableVersionId = useCallback(
     async (configOverride?: ContentConfigObject): Promise<string> => {
       if (!version || !content) throw new Error('Missing version or content');
-      return resolveEditableVersionId(content, version.id, createContentVersion, configOverride);
+      return resolveEditableVersionId(version.id, createContentVersion, configOverride);
     },
     [version, content, createContentVersion],
   );

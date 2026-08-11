@@ -10,6 +10,7 @@ import {
   EditableTitle,
   ScrollArea,
   Separator,
+  useToast,
 } from '@usertour/ui';
 import {
   Align,
@@ -231,6 +232,7 @@ const FlowBuilderDetailBody = () => {
 const FlowBuilderDetailFooter = () => {
   const contentRef = useBuilderContentRef();
   const { currentStep, setIsShowError, exitToFlow } = useFlowEditor();
+  const { toast } = useToast();
   const setCurrentVersion = useBuilderStore((state) => state.setCurrentVersion);
   const actionsGate = useActionsSaveGate();
   const { t } = useTranslation();
@@ -245,6 +247,17 @@ const FlowBuilderDetailFooter = () => {
       return;
     }
     if (currentStep.type !== StepContentType.HIDDEN && hasMissingRequiredData(currentStep.data)) {
+      // Surface why the save didn't go through instead of a silent dead button.
+      // Each content block self-flags its own incompleteness live (button /
+      // question via their own error tooltip; image / embed redden on an empty
+      // url), so the offending block is already highlighted; this toast is the
+      // step-level summary.
+      setIsShowError(true);
+      toast({
+        variant: 'destructive',
+        title: t('contentBuilder.incompleteBlocks.title'),
+        description: t('contentBuilder.incompleteBlocks.description'),
+      });
       return;
     }
     if (
@@ -301,7 +314,7 @@ const FlowBuilderDetailFooter = () => {
       };
     });
     exitToFlow();
-  }, [currentStep, contentRef, actionsGate, setIsShowError, setCurrentVersion, exitToFlow]);
+  }, [currentStep, contentRef, actionsGate, setIsShowError, setCurrentVersion, exitToFlow, toast]);
 
   return (
     <CardFooter className="flex-none border-t border-border/50 p-4">

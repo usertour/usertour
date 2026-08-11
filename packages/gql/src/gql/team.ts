@@ -11,6 +11,7 @@ export const getTeamMembers = gql`
         name
         email
         avatarUrl
+        twoFactorEnabled
       }
     }
   }
@@ -30,15 +31,8 @@ export const getInvites = gql`
 
 export const inviteTeamMember = gql`
   mutation inviteTeamMember($projectId: String!, $name: String!, $email: String!, $role: Role!) {
-    inviteTeamMember(
-      data: {
-        name: $name
-        projectId: $projectId
-        email: $email
-        role: $role
-      }
-    )
- }
+    inviteTeamMember(data: { name: $name, projectId: $projectId, email: $email, role: $role })
+  }
 `;
 
 export const cancelInvite = gql`
@@ -55,7 +49,7 @@ export const removeTeamMember = gql`
 
 export const changeTeamMemberRole = gql`
   mutation changeTeamMemberRole($projectId: String!, $userId: String!, $role: Role!) {
-    changeTeamMemberRole(data: { projectId: $projectId, userId: $userId, role: $role } )
+    changeTeamMemberRole(data: { projectId: $projectId, userId: $userId, role: $role })
   }
 `;
 

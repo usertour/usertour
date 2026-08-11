@@ -9,80 +9,6 @@ import { subDays, startOfDay, endOfDay } from 'date-fns';
 import { isArray } from '../type-utils';
 
 /**
- * Evaluate filter conditions and return boolean result
- * @param conditions - Filter conditions to evaluate
- * @param options - Evaluation options including attributes, user attributes, company attributes, and membership attributes
- * @returns boolean indicating if conditions are met
- */
-export function evaluateFilterConditions(
-  conditions: RulesCondition[],
-  options: Pick<
-    RulesEvaluationOptions,
-    'attributes' | 'userAttributes' | 'companyAttributes' | 'membershipAttributes'
-  >,
-): boolean {
-  if (!conditions || !conditions.length) {
-    return true; // No conditions means always true
-  }
-
-  const result = evaluateAttributeConditionsGroup(conditions, options);
-  return evaluateFilterResult(result);
-}
-
-/**
- * Evaluate a group of attribute conditions with AND/OR logic
- * @param conditions - Attribute filter conditions
- * @param options - Evaluation options including attributes, user attributes, company attributes, and membership attributes
- * @returns Evaluation result structure with AND/OR logic
- */
-function evaluateAttributeConditionsGroup(
-  conditions: RulesCondition[],
-  options: Pick<
-    RulesEvaluationOptions,
-    'attributes' | 'userAttributes' | 'companyAttributes' | 'membershipAttributes'
-  >,
-): any {
-  if (!conditions || !conditions.length) {
-    return false;
-  }
-
-  const AND: any[] = [];
-  const OR: any[] = [];
-
-  for (const condition of conditions) {
-    const { operators } = condition;
-    const item =
-      condition.type !== 'group'
-        ? evaluateAttributeCondition(condition, options)
-        : evaluateAttributeConditionsGroup(condition.conditions || [], options);
-
-    if (!item) {
-      continue;
-    }
-
-    if (operators === 'and') {
-      AND.push(item);
-    } else {
-      OR.push(item);
-    }
-  }
-
-  const filter: Record<string, any> = {};
-  if (AND.length > 0) {
-    filter.AND = AND;
-  }
-  if (OR.length > 0) {
-    filter.OR = OR;
-  }
-  // If no conditions were added to AND or OR arrays, return false
-  if (AND.length === 0 && OR.length === 0) {
-    return false;
-  }
-
-  return filter;
-}
-
-/**
  * Evaluate a single attribute condition
  * @param condition - Single attribute filter condition
  * @param options - Evaluation options including attributes, user attributes, company attributes, and membership attributes
@@ -194,6 +120,25 @@ function evaluateNumberCondition(
   expectedValue: number,
   expectedValue2?: number,
 ): boolean {
+  const hasValue = actualValue !== null && actualValue !== undefined && actualValue !== '';
+
+  if (logic === 'empty') {
+    return !hasValue;
+  }
+  if (logic === 'any') {
+    return hasValue;
+  }
+
+  // An unset attribute never satisfies a POSITIVE comparison. Without this
+  // guard, Number(null) / Number('') coerce to 0 and slip past the NaN check,
+  // so e.g. `lte 6` matched every user who hadn't been given the attribute yet.
+  // `not` is the exception: it is exclusion, not comparison — a user without
+  // the value IS "not X", matching the string evaluator (missing compares as
+  // '') and the segment SQL filter (`not` ORs in AnyNull deliberately).
+  if (!hasValue) {
+    return logic === 'not';
+  }
+
   const numActualValue = Number(actualValue);
   const numExpectedValue = Number(expectedValue);
   const numExpectedValue2 = Number(expectedValue2);
@@ -217,10 +162,6 @@ function evaluateNumberCondition(
       return numActualValue >= numExpectedValue;
     case 'between':
       return numActualValue >= numExpectedValue && numActualValue <= numExpectedValue2;
-    case 'empty':
-      return actualValue === null || actualValue === undefined || actualValue === '';
-    case 'any':
-      return actualValue !== null && actualValue !== undefined && actualValue !== '';
     default:
       return false;
   }
@@ -300,6 +241,16 @@ function evaluateDateTimeCondition(
   const actualDate = actualValue ? new Date(actualValue) : null;
   const now = new Date();
 
+  // 'empty'/'any' must be answered before the parse guard — with the guard
+  // first, an unset value returned false out of 'empty' too, so "date is
+  // empty" could never match anyone.
+  if (logic === 'empty') {
+    return !actualValue || actualValue === '';
+  }
+  if (logic === 'any') {
+    return Boolean(actualValue) && actualValue !== '';
+  }
+
   if (!actualDate || Number.isNaN(actualDate.getTime())) {
     return false;
   }
@@ -333,43 +284,7 @@ function evaluateDateTimeCondition(
       const expectedDateAfter = new Date(expectedValue);
       return actualDate >= expectedDateAfter;
     }
-    case 'empty':
-      return !actualValue || actualValue === '';
-    case 'any':
-      return actualValue && actualValue !== '';
     default:
       return false;
   }
-}
-
-/**
- * Evaluate filter result structure
- * @param filter - Filter structure with AND/OR logic
- * @returns Boolean result
- */
-function evaluateFilterResult(filter: any): boolean {
-  if (!filter) {
-    return false;
-  }
-
-  if (filter.AND) {
-    return filter.AND.every((item: any) => evaluateFilterResult(item));
-  }
-
-  if (filter.OR) {
-    return filter.OR.some((item: any) => evaluateFilterResult(item));
-  }
-
-  // If it's a direct condition result (boolean)
-  if (typeof filter === 'boolean') {
-    return filter;
-  }
-
-  // If it's a condition object, evaluate it
-  if (typeof filter === 'object') {
-    // This should be a condition result from createFilterItem
-    return true; // The condition was already evaluated in createFilterItem
-  }
-
-  return false;
 }

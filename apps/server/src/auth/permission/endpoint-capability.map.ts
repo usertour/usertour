@@ -36,6 +36,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'content.unpublishedContentVersion': Capability.ContentPublish, // W
   'content.deleteContent': Capability.ContentDelete, // W
   'content.listContentVersions': Capability.ContentRead, // R
+  'content.listContentPublishRecords': Capability.ContentRead, // R
   'content.listVersionLocalizations': Capability.ContentRead, // R
   'content.upsertVersionLocalization': Capability.ContentUpdate, // W
   'localizations.translateLocalizationUnits': Capability.ContentUpdate, // W
@@ -47,6 +48,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'environments.deleteEnvironments': Capability.EnvironmentManage, // W
   'environments.userEnvironments': Capability.EnvironmentRead, // R
   'environments.verifyInstallation': Capability.EnvironmentRead, // R
+  'environments.projectHasEnvironmentAccessTokens': Capability.AccessTokenRead, // O
   'environments.listAccessTokens': Capability.AccessTokenRead, // O
   'environments.getAccessToken': Capability.AccessTokenRead, // O
   'environments.createAccessToken': Capability.AccessTokenManage, // O
@@ -60,18 +62,18 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'environments.validateIdentityToken': Capability.AccessTokenRead, // O
 
   // biz
-  'biz.queryBizUser': Capability.BizdataRead, // R
-  'biz.queryBizCompany': Capability.BizdataRead, // R
-  'biz.queryBizUserEvents': Capability.BizdataRead, // R
-  'biz.queryBizCompanyEvents': Capability.BizdataRead, // R
+  'biz.queryBizUser': Capability.UserRead, // R
+  'biz.queryBizCompany': Capability.CompanyRead, // R
+  'biz.queryBizUserEvents': Capability.UserRead, // R
+  'biz.queryBizCompanyEvents': Capability.CompanyRead, // R
   'biz.createSegment': Capability.SegmentCreate, // W
   'biz.updateSegment': Capability.SegmentUpdate, // W
   'biz.deleteSegment': Capability.SegmentDelete, // W
   'biz.listSegment': Capability.SegmentRead, // R
   'biz.createBizUserOnSegment': Capability.SegmentUpdate, // W
   'biz.deleteBizUserOnSegment': Capability.SegmentUpdate, // W
-  'biz.deleteBizUser': Capability.BizdataDelete, // W
-  'biz.deleteBizCompany': Capability.BizdataDelete, // W
+  'biz.deleteBizUser': Capability.UserDelete, // W
+  'biz.deleteBizCompany': Capability.CompanyDelete, // W
   'biz.createBizCompanyOnSegment': Capability.SegmentUpdate, // W
   'biz.deleteBizCompanyOnSegment': Capability.SegmentUpdate, // W
 
@@ -137,4 +139,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'team.changeTeamMemberRole': Capability.TeamManage, // O
   'team.cancelInvite': Capability.TeamManage, // O
   'team.activeUserProject': Capability.ProjectActivate, // R
+
+  // audit (owner-only)
+  'audit.auditLogs': Capability.AuditRead, // O
 };

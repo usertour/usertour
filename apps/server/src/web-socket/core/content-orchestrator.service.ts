@@ -264,12 +264,21 @@ export class ContentOrchestratorService {
       preparationResult.versionId,
     );
 
+    // A content-targeted start (versionId resolved from options.contentId) is an
+    // INCREMENTAL operation: the batch carries just that one content, so absent
+    // sessions must not be treated as removed. The SDK starts each found
+    // launcher with its own StartContent — under the full-state semantics every
+    // one of those calls REMOVED all the other launchers' sessions, so a page
+    // with many launchers kept only the last few on first paint.
+    const incremental = !!preparationResult.versionId;
+
     return await this.executeBatchOperations(
       context.socket,
       context.socketData,
       sessions,
       preparationResult.shouldTrackVersions,
       contentType,
+      incremental,
     );
   }
 
@@ -304,11 +313,17 @@ export class ContentOrchestratorService {
     );
     const validSessions = sessions.filter((session): session is CustomContentSession => !!session);
 
+    // Same incremental rule as startBatch above: a content-targeted start
+    // carries just that one tracker, so absent sessions must not be treated
+    // as removed. No caller passes a contentId today (trackers start via
+    // toggleContents full syncs), but a future one must not re-introduce the
+    // sibling-removal bug the launchers had.
     return await this.socketOperationService.activateBatchSessions(
       socket,
       socketData,
       validSessions,
       ContentDataType.TRACKER,
+      !!versionId,
     );
   }
 
@@ -1866,6 +1881,7 @@ export class ContentOrchestratorService {
     sessions: CustomContentSession[],
     shouldTrackVersions: CustomContentVersion[],
     contentType: ContentDataType,
+    incremental = false,
   ): Promise<boolean> {
     // Activate sessions via socket operation service
     const sessionsActivated = await this.socketOperationService.activateBatchSessions(
@@ -1873,6 +1889,7 @@ export class ContentOrchestratorService {
       socketData,
       sessions,
       contentType,
+      incremental,
     );
     if (!sessionsActivated) {
       return false;

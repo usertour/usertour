@@ -6,6 +6,7 @@ import { LicenseInfo } from './models/license-info.model';
 import { ProjectsService } from './projects.service';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
@@ -30,6 +31,13 @@ export class ProjectsResolver {
 
   @Mutation(() => Project)
   @RequirePermission({ capability: Capability.ProjectManage, scope: ScopeKind.Project })
+  // Same rationale as environment renames: a project rename/logo change has no
+  // history anywhere else — the before snapshot is the only record.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'project',
+    resourceId: (a) => String(a.projectId),
+  })
   async updateProject(
     @UserEntity() user: User,
     @Args('projectId') projectId: string,
@@ -41,6 +49,14 @@ export class ProjectsResolver {
 
   @Mutation(() => Project)
   @RequirePermission({ capability: Capability.BillingManage, scope: ScopeKind.Project })
+  // A license swap changes the project's entitlements — including the read gate
+  // of the audit log itself. The license VALUE never lands in the row (it is a
+  // SECRET_KEY); the entry records that it changed, by whom, when.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'project',
+    resourceId: (a) => String(a.projectId),
+  })
   async updateProjectLicense(
     @UserEntity() user: User,
     @Args('projectId') projectId: string,

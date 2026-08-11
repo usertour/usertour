@@ -4,6 +4,7 @@ import {
   duplicateContent,
   getContent,
   getContentVersion,
+  listContentPublishRecords,
   listContentVersions,
   listVersionLocalizations,
   publishedContentVersion,
@@ -14,6 +15,7 @@ import {
 import type {
   Content,
   ContentDataType,
+  ContentPublishRecord,
   ContentVersion,
   VersionOnLocalization,
 } from '@usertour/types';
@@ -236,6 +238,66 @@ export const useListContentVersionsQuery = (
   };
 };
 
+interface ListContentPublishRecordsData {
+  listContentPublishRecords: {
+    totalCount: number;
+    edges: { cursor: string; node: ContentPublishRecord }[];
+    pageInfo: { endCursor?: string | null; hasNextPage?: boolean };
+  };
+}
+
+const PUBLISH_HISTORY_PAGE_SIZE = 20;
+
+/** Per-content publish history (cursor pagination; cache merge owned by the
+ * `Query.listContentPublishRecords` typePolicy, same accumulator pattern as
+ * the versions list). */
+export const useListContentPublishRecordsQuery = (
+  contentId: string | undefined,
+  environmentId?: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, networkStatus, fetchMore, refetch } =
+    useQuery<ListContentPublishRecordsData>(listContentPublishRecords, {
+      variables: { contentId, environmentId, first: PUBLISH_HISTORY_PAGE_SIZE },
+      notifyOnNetworkStatusChange: true,
+      skip: !contentId,
+      ...options,
+    });
+
+  const connection = data?.listContentPublishRecords;
+  const recordList = useMemo(
+    () => connection?.edges?.map((edge) => edge.node) ?? [],
+    [connection?.edges],
+  );
+  const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
+  const endCursor = connection?.pageInfo?.endCursor ?? null;
+  const totalCount = connection?.totalCount ?? 0;
+
+  const { loadingMore, fetchNextPage } = useCursorFetchMore({
+    loading,
+    networkStatus,
+    hasNextPage,
+    endCursor,
+    fetchMore,
+    buildVariables: (after) => ({
+      contentId,
+      environmentId,
+      first: PUBLISH_HISTORY_PAGE_SIZE,
+      after,
+    }),
+  });
+
+  return {
+    recordList,
+    totalCount,
+    hasNextPage,
+    loading: loading && !loadingMore,
+    loadingMore,
+    fetchNextPage,
+    refetch,
+  };
+};
+
 // ---- mutations ----
 
 export interface CreateContentInput {
@@ -263,7 +325,6 @@ export const useCreateContentMutation = () => {
 export interface DuplicateContentInput {
   contentId: string;
   name: string;
-  targetEnvironmentId?: string;
 }
 
 export const useDuplicateContentMutation = () => {
@@ -284,7 +345,7 @@ export const usePublishContentVersionMutation = () => {
   // refetch the owning content so list cell + detail header reflect
   // the new state.
   const [mutation, { loading, error }] = useMutation(publishedContentVersion, {
-    refetchQueries: ['getContent', 'queryContent'],
+    refetchQueries: ['getContent', 'queryContent', 'listContentPublishRecords'],
   });
   const invoke = async (versionId: string, environmentId: string): Promise<boolean> => {
     const response = await mutation({ variables: { versionId, environmentId } });
@@ -295,7 +356,7 @@ export const usePublishContentVersionMutation = () => {
 
 export const useUnpublishContentVersionMutation = () => {
   const [mutation, { loading, error }] = useMutation(unpublishedContentVersion, {
-    refetchQueries: ['getContent', 'queryContent'],
+    refetchQueries: ['getContent', 'queryContent', 'listContentPublishRecords'],
   });
   const invoke = async (contentId: string, environmentId: string): Promise<boolean> => {
     const response = await mutation({ variables: { contentId, environmentId } });

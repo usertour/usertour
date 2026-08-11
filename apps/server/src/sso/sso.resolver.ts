@@ -1,4 +1,6 @@
 import { UseGuards } from '@nestjs/common';
+
+import { AuditWeb } from '@/audit/audit.decorator';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
 
@@ -23,6 +25,7 @@ export class SsoResolver {
 
   @Mutation(() => SsoProviderModel)
   @RequirePermission({ capability: Capability.SsoManage, scope: ScopeKind.Project })
+  @AuditWeb({ action: 'create', resourceType: 'sso_provider' })
   async createOidcSsoProvider(
     @Args('projectId') projectId: string,
     @Args('input') input: CreateOidcSsoProviderInput,
@@ -32,12 +35,14 @@ export class SsoResolver {
 
   @Mutation(() => SsoProviderModel)
   @RequirePermission({ capability: Capability.SsoManage, scope: ScopeKind.Sso })
+  @AuditWeb({ action: 'update', resourceType: 'sso_provider' })
   async updateSsoProvider(@Args('id') id: string, @Args('input') input: UpdateSsoProviderInput) {
     return this.ssoService.updateProvider(id, input);
   }
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.SsoManage, scope: ScopeKind.Sso })
+  @AuditWeb({ action: 'delete', resourceType: 'sso_provider' })
   async deleteSsoProvider(@Args('id') id: string) {
     return this.ssoService.deleteProvider(id);
   }
@@ -57,6 +62,11 @@ export class SsoResolver {
 
   @Mutation(() => ProjectSsoSettingsModel)
   @RequirePermission({ capability: Capability.SsoManage, scope: ScopeKind.Project })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'project_sso_settings',
+    resourceId: (args) => String(args.projectId ?? ''),
+  })
   async updateProjectSsoSettings(
     @Args('projectId') projectId: string,
     @Args('input') input: UpdateProjectSsoSettingsInput,

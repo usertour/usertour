@@ -7,7 +7,10 @@ import { RedisIoAdapter } from './adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { OpenAPIModule } from './openapi/openapi.module';
+import { ApiModule } from './api/api.module';
+import { normalizeOpenApiParameters } from './common/openapi/normalize-parameters';
 import { configureApp } from './configure-app';
 
 // Import tracer for OpenTelemetry
@@ -66,10 +69,43 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(app, config, {
-    include: [OpenAPIModule],
-  });
+  // v1 (OpenAPIModule, @ApiProperty DTOs) and v2 (ApiModule, zod DTOs) are
+  // scanned into one document; cleanupOpenApiDoc renders the zod-derived schemas.
+  // normalizeOpenApiParameters fixes union query params (singleOrArray) that
+  // nestjs-zod renders with `anyOf` at the parameter top level — invalid per the
+  // OpenAPI spec, rejected by strict validators (swagger-parser, Mintlify).
+  const document = normalizeOpenApiParameters(
+    cleanupOpenApiDoc(
+      SwaggerModule.createDocument(app, config, {
+        include: [OpenAPIModule, ApiModule],
+      }),
+    ),
+  );
   SwaggerModule.setup('api', app, document);
+
+  // A v2-only OpenAPI document (ApiModule, contract-first zod), served at
+  // /api-v2 (UI) + /api-v2-json (JSON). Host-agnostic on purpose: the server only
+  // guarantees a clean, v2-only, valid spec is reachable here. The public docs own
+  // the published host — they commit a snapshot of this spec and stamp their own
+  // `servers`. The same-origin Swagger UI at /api-v2 uses the browser origin.
+  const v2Config = new DocumentBuilder()
+    .setTitle('Usertour API v2')
+    .setDescription(
+      'Project-scoped v2 API. Authenticate with a personal API token — an opaque `utp_...` ' +
+        'string (NOT a JWT: do not try to decode it), created in the Usertour app under ' +
+        'Settings → API, sent as `Authorization: Bearer utp_...`.',
+    )
+    .setVersion('2.0')
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'utp_... personal API token (opaque)',
+    })
+    .build();
+  const v2Document = normalizeOpenApiParameters(
+    cleanupOpenApiDoc(SwaggerModule.createDocument(app, v2Config, { include: [ApiModule] })),
+  );
+  SwaggerModule.setup('api-v2', app, v2Document);
 
   const configService = app.get(ConfigService);
   // Uncomment these lines to use the Redis adapter:

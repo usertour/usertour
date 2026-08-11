@@ -1,6 +1,6 @@
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { Card } from '@usertour/ui';
-import { buildConfig } from '@usertour/helpers';
+import { buildConfig, getAutoStartCapabilities } from '@usertour/helpers';
 import { ContentDataType, RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import type { TFunction } from 'i18next';
@@ -111,12 +111,9 @@ export const ContentDetailSettings = () => {
     return null;
   }
 
-  const isShowOnly = SHOW_ONLY_CONTENT_TYPES.includes(contentType);
-  const isResourceCenter = contentType === ContentDataType.RESOURCE_CENTER;
-  // Flow / Checklist show the full advanced rule options; RC uses auto-start semantics but
-  // intentionally keeps the advanced options hidden.
-  const showAdvancedOptions = !isShowOnly && !isResourceCenter;
-  const enabledAutoStartRules = !isShowOnly;
+  // Which controls this content type exposes — the shared SSOT also enforced by
+  // the v2/MCP write path (see AUTO_START_CAPABILITIES in @usertour/helpers).
+  const caps = getAutoStartCapabilities(contentType);
 
   return (
     // Element-picker host so the rule conditions' "pick element" buttons work
@@ -134,17 +131,17 @@ export const ContentDetailSettings = () => {
             onDataChange={handleAutoStartRulesDataChange}
             content={content}
             type={ContentDetailAutoStartRulesType.START_RULES}
-            showIfCompleted={showAdvancedOptions}
-            showFrequency={showAdvancedOptions}
-            showAtLeast={contentType !== ContentDataType.CHECKLIST}
-            showWait={showAdvancedOptions}
-            showPriority={showAdvancedOptions || isResourceCenter}
+            showIfCompleted={caps.ifCompleted}
+            showFrequency={caps.frequency}
+            showAtLeast={caps.atLeast}
+            showWait={caps.wait}
+            showPriority={caps.priority}
             disabled={isViewOnly}
             featureTooltip={AutoStartTooltips(contentType, t)}
           />
         </Card>
 
-        {enabledAutoStartRules && (
+        {caps.hideRules && (
           <Card className="px-4 py-6 space-y-3">
             <ContentDetailAutoStartRules
               defaultConditions={config.hideRules}

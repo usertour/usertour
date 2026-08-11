@@ -21,13 +21,14 @@ import { OpenAPIUsersService } from './users.service';
 import { UpsertUserRequestDto, ExpandType, ListUsersQueryDto, GetUserQueryDto } from './users.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { User } from '../models/user.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { Environment } from '@/environments/models/environment.model';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 
-@ApiTags('Users')
+@ApiTags('Users (v1)')
 @Controller('v1/users')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)
@@ -61,6 +62,7 @@ export class OpenAPIUsersController {
   }
 
   @Post()
+  @Audit({ action: 'update', resourceType: 'user' })
   @ApiOperation({ summary: 'Create or update a user' })
   @ApiResponse({ status: 200, description: 'User created/updated successfully' })
   async upsertUser(@Body() data: UpsertUserRequestDto, @EnvironmentId() environmentId: string) {
@@ -68,6 +70,7 @@ export class OpenAPIUsersController {
   }
 
   @Delete(':id')
+  @Audit({ action: 'delete', resourceType: 'user' })
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })

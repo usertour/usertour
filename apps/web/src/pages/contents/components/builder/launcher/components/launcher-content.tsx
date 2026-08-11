@@ -1,3 +1,4 @@
+import { CONTENT_ACTION_CAPABILITIES } from '@usertour/helpers';
 import { BUILDER_Z } from '@usertour/constants';
 import {
   PopperMadeWith,
@@ -11,7 +12,7 @@ import {
 import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 import {
-  ContentActionsItemType,
+  ContentDataType,
   LauncherActionType,
   LauncherData,
   LauncherPositionType,
@@ -56,12 +57,7 @@ export const LauncherContentMain = forwardRef<HTMLDivElement, LauncherContentPro
                   attributes={attributeList || []}
                   zIndex={BUILDER_Z.canvas}
                   customUploadRequest={onCustomUploadRequest}
-                  actionItems={[
-                    ContentActionsItemType.LAUNCHER_DISMIS,
-                    ContentActionsItemType.JAVASCRIPT_EVALUATE,
-                    ContentActionsItemType.PAGE_NAVIGATE,
-                    ContentActionsItemType.FLOW_START,
-                  ]}
+                  actionItems={[...CONTENT_ACTION_CAPABILITIES[ContentDataType.LAUNCHER].actions]}
                   projectId={projectId}
                   initialValue={
                     data.tooltip.content.length > 0

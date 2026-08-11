@@ -93,6 +93,10 @@ export type ContentEditorPadding = {
 export type ContentEditorImageElement = {
   type: ContentEditorElementType.IMAGE;
   url: string;
+  /** Alternative text announced by screen readers. Authored through the API
+   * (the builder has no field for it yet) and stored as written; the renderer
+   * falls back to a generic localized word when it is absent. */
+  alt?: string;
   link?: ContentEditorLinkData;
   width?: ContentEditorElementWidth;
   margin?: ContentEditorElementMargin;

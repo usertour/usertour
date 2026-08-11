@@ -1,3 +1,4 @@
+import { CONTENT_ACTION_CAPABILITIES } from '@usertour/helpers';
 import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT, BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
@@ -5,11 +6,7 @@ import { useSize } from '@usertour/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour/widget';
 import { ContentEditor } from '@usertour/editor';
 import type { ContentEditorRoot } from '@usertour/types';
-import {
-  ContentEditorElementType,
-  ContentActionsItemType,
-  BannerEmbedPlacement,
-} from '@usertour/types';
+import { ContentEditorElementType, ContentDataType, BannerEmbedPlacement } from '@usertour/types';
 import { isEqual } from 'lodash';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -29,12 +26,7 @@ const ENABLED_ELEMENT_TYPES = [
   ContentEditorElementType.BUTTON,
 ];
 
-const ACTION_ITEMS = [
-  ContentActionsItemType.BANNER_DISMIS,
-  ContentActionsItemType.FLOW_START,
-  ContentActionsItemType.PAGE_NAVIGATE,
-  ContentActionsItemType.JAVASCRIPT_EVALUATE,
-];
+const ACTION_ITEMS = [...CONTENT_ACTION_CAPABILITIES[ContentDataType.BANNER].actions];
 
 interface PlacementPreviewProps {
   placement: BannerEmbedPlacement;

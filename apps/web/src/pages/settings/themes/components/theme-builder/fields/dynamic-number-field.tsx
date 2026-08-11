@@ -1,7 +1,4 @@
-import { useId } from 'react';
-import { useBuilderContext } from '../builder-context';
-import { Input } from '@usertour/ui';
-import { FieldRow } from './field-row';
+import { NumberField } from './number-field';
 
 export interface DynamicNumberFieldProps {
   // Both `label` and `path` are pre-resolved by FieldRenderer (which knows the
@@ -12,37 +9,12 @@ export interface DynamicNumberFieldProps {
   max?: number;
   step?: number;
   suffix?: string;
+  rangeMessage?: string;
   tooltip?: string;
 }
 
+// Same control as NumberField — the "dynamic" part (resolving path/label/bounds
+// from the active settings) lives in FieldRenderer.
 export const DynamicNumberField = (props: DynamicNumberFieldProps) => {
-  const { label, path, min, max, step = 1, suffix, tooltip } = props;
-  const id = useId();
-  const { getField, setField, isReadOnly } = useBuilderContext();
-  const value = getField<number>(path);
-
-  return (
-    <FieldRow label={label} htmlFor={id} tooltip={tooltip}>
-      <Input
-        variant="compact-muted"
-        id={id}
-        type="number"
-        value={value ?? ''}
-        min={min}
-        max={max}
-        step={step}
-        disabled={isReadOnly}
-        onChange={(e) => {
-          const next = Number.parseFloat(e.target.value);
-          if (!Number.isNaN(next)) setField(path, next);
-        }}
-        className={suffix ? 'pr-8' : undefined}
-      />
-      {suffix && (
-        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
-          {suffix}
-        </span>
-      )}
-    </FieldRow>
-  );
+  return <NumberField {...props} />;
 };

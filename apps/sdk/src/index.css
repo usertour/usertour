@@ -10,8 +10,18 @@
     @apply border-sdk-border;
   }
   body {
-    @apply bg-sdk-background text-sdk-foreground;
-    /* @apply text-xs; */
+    /* Deliberately NO background. Per-shape audit (2026-07): every surface
+       that needs the theme backdrop paints it itself with the SAME variable
+       (surface-panel for poppers/checklist, the RC root when open, banner's
+       bar) — so on full-bleed frames this layer was invisible. On the
+       non-full-bleed frames (checklist pill, RC compact circle, launcher
+       beacon, bubble) it was the BUG: a rectangle of backdrop behind rounded
+       content bleeds through the anti-aliased seam between the iframe's
+       border-radius clip and the content's own radius — a light fringe on
+       dark host pages (invisible on light ones, which is why it shipped).
+       Residual risk: a tenant customCss that relied on the default body fill
+       (near-zero; self-healable with one body{background} rule). */
+    @apply text-sdk-foreground;
   }
 }
 

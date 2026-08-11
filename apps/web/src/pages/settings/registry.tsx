@@ -6,7 +6,10 @@ import {
   RiBox1Line,
   RiFlashlightLine,
   RiKey2Line,
+  RiRobot2Line,
+  RiKeyLine,
   RiPaletteLine,
+  RiPlugLine,
   RiProjectorLine,
   RiPuzzleLine,
   RiShieldKeyholeLine,
@@ -37,16 +40,20 @@ export type SettingsSectionKey =
   | 'attributes'
   | 'events'
   | 'localizations'
+  | 'audit-log'
   | 'team'
   | 'billing'
   | 'subscription'
   | 'account'
+  | 'personal-api-keys'
+  | 'connected-apps'
   | 'api'
+  | 'mcp'
   | 'identity-verification'
   | 'integrations'
   | 'sso';
 
-export type SettingsSectionGroup = 'general' | 'developer';
+export type SettingsSectionGroup = 'general' | 'account';
 
 /**
  * Deployment mode the section is visible in. Cloud-only items hide on
@@ -182,6 +189,17 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     ),
   },
   {
+    key: 'audit-log',
+    title: 'Audit log',
+    icon: <RiArticleLine className={ICON_CLASS} />,
+    capability: Capability.AuditRead,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    component: lazy(() =>
+      import('./audit-log').then((module) => ({ default: module.AuditLogList })),
+    ),
+  },
+  {
     key: 'team',
     title: 'Team',
     icon: <RiTeamLine className={ICON_CLASS} />,
@@ -243,10 +261,10 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   },
   {
     key: 'account',
-    title: 'Account',
+    title: 'Profile',
     icon: <RiAccountCircle2Line className={ICON_CLASS} />,
     // Personal account settings — not project-scoped, always visible.
-    group: 'general',
+    group: 'account',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     surface: 'muted',
     component: lazy(() =>
@@ -254,20 +272,53 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     ),
   },
   {
+    key: 'connected-apps',
+    title: 'Connected apps',
+    icon: <RiPlugLine className={ICON_CLASS} />,
+    // Account-level OAuth grants (MCP connectors / AI agents) — always visible.
+    group: 'account',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    component: lazy(() =>
+      import('./connected-apps').then((m) => ({ default: m.ConnectedAppsList })),
+    ),
+  },
+  {
+    key: 'personal-api-keys',
+    title: 'Personal API keys',
+    icon: <RiKeyLine className={ICON_CLASS} />,
+    // Account-level (caller's own tokens across projects) — always visible.
+    // Default (non-muted) surface to match the env-key /settings/api list page.
+    group: 'account',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    component: lazy(() =>
+      import('./personal-api-keys').then((m) => ({ default: m.PersonalApiKeysList })),
+    ),
+  },
+  {
     key: 'api',
     title: 'API',
     icon: <RiKey2Line className={ICON_CLASS} />,
     capability: Capability.AccessTokenRead,
-    group: 'developer',
+    group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     component: lazy(() => import('./api').then((module) => ({ default: module.SettingsApiList }))),
+  },
+  {
+    key: 'mcp',
+    title: 'MCP',
+    icon: <RiRobot2Line className={ICON_CLASS} />,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    // Card-stack layout (like sso) — sits on the muted surface.
+    surface: 'muted',
+    component: lazy(() => import('./mcp').then((module) => ({ default: module.SettingsMcpPage }))),
   },
   {
     key: 'integrations',
     title: 'Integrations',
     icon: <RiPuzzleLine className={ICON_CLASS} />,
     capability: Capability.IntegrationRead,
-    group: 'developer',
+    group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     hideFromSidebar: true,
     component: lazy(() =>

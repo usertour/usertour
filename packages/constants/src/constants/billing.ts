@@ -22,6 +22,7 @@ const HOBBY: PlanFeatures = {
   removeBranding: false,
   customCss: false,
   auditLogs: false,
+  auditLogRetentionDays: 0,
   ssoSaml: false,
   ssoOidc: false,
   sessionsLimit: HobbySessionLimit,
@@ -45,6 +46,9 @@ const GROWTH: PlanFeatures = {
   ...STARTER,
   removeBranding: true,
   customCss: true,
+  // Growth can view the audit log, but only a recent window; Business is full.
+  auditLogs: true,
+  auditLogRetentionDays: 7,
   sessionsLimit: GrowthSessionLimit,
   teamMemberLimit: 10,
   environmentLimit: 3,
@@ -55,6 +59,7 @@ const GROWTH: PlanFeatures = {
 const BUSINESS: PlanFeatures = {
   ...GROWTH,
   auditLogs: true,
+  auditLogRetentionDays: 'unlimited',
   ssoSaml: true,
   ssoOidc: true,
   sessionsLimit: BusinessSessionLimit,

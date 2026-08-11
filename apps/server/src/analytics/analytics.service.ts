@@ -5,17 +5,20 @@ import {
   StepSettings,
   contentEndReason,
 } from '@usertour/types';
+import { rollingDayWindows } from '@/analytics/rolling-day-windows';
+import { GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
+import { createdAtWhere } from '@/common/filters';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { BizSession, Event } from '@prisma/client';
-import { addDays, isBefore, lightFormat, format, subDays, endOfDay, startOfDay } from 'date-fns';
+import { isBefore } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import { AnalyticsOrder } from './dto/analytics-order.input';
 import { AnalyticsQuery } from './dto/analytics-query.input';
 import { TooltipTargetMissingQuery } from './dto/tooltip-target-missing-query.input';
-import { toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
 import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
@@ -104,7 +107,10 @@ const DISMISSED_END_CONFIG: Partial<
   },
 };
 
-const EVENT_TYPE_MAPPING = {
+// Per-type start/"success action" events — the analytics vocabulary (a launcher's
+// "complete" is activation, a banner's is dismissal). Exported as the SSOT for
+// any surface whose numbers must reconcile with queryContentAnalytics.
+export const EVENT_TYPE_MAPPING = {
   [ContentType.FLOW]: {
     start: BizEvents.FLOW_STARTED,
     complete: BizEvents.FLOW_COMPLETED,
@@ -138,6 +144,7 @@ const EVENTS = [
   BizEvents.LAUNCHER_SEEN,
   BizEvents.LAUNCHER_ACTIVATED,
   BizEvents.CHECKLIST_STARTED,
+  BizEvents.CHECKLIST_SEEN,
   BizEvents.CHECKLIST_COMPLETED,
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
@@ -329,7 +336,7 @@ export class AnalyticsService {
       { date: string; totalViews: number; uniqueUserIds: Set<string> }
     >();
     for (const item of trackerEvents) {
-      const date = format(toZonedTime(item.createdAt, timezone), 'yyyy-MM-dd');
+      const date = formatInTimeZone(item.createdAt, timezone, 'yyyy-MM-dd');
       const current = viewsByDayMap.get(date) ?? {
         date,
         totalViews: 0,
@@ -340,19 +347,23 @@ export class AnalyticsService {
       viewsByDayMap.set(date, current);
     }
 
+    // Calendar walk in the requested timezone (NOT 24h stepping, which lands
+    // twice on a 25h DST fall-back day and duplicates/drops rows).
     const viewsByDay = [];
-    let currentDate = startDateObj;
-    while (isBefore(currentDate, endDateObj)) {
-      const date = format(toZonedTime(currentDate, timezone), 'yyyy-MM-dd');
+    for (const { day: date, dayStart } of rollingDayWindows(
+      startDateObj,
+      endDateObj,
+      timezone,
+      1,
+    )) {
       const day = viewsByDayMap.get(date);
       viewsByDay.push({
-        date: currentDate,
+        date: dayStart,
         uniqueViews: day?.uniqueUserIds.size ?? 0,
         uniqueCompletions: day?.uniqueUserIds.size ?? 0,
         totalViews: day?.totalViews ?? 0,
         totalCompletions: day?.totalViews ?? 0,
       });
-      currentDate = addDays(currentDate, 1);
     }
 
     return {
@@ -422,22 +433,68 @@ export class AnalyticsService {
       endDateStr,
       isDistinct: true,
     };
-    const uniqueViews = await this.aggregationByEvent({ ...condition });
-    const totalViews = await this.aggregationByEvent({
-      ...condition,
-      isDistinct: false,
-    });
-    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
-    const uniqueCompletions = isLauncherActivated
-      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
-      : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
-    const totalCompletions = isLauncherActivated
-      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+    // Resource-center totals count EVENTS, not sessions: an RC session is
+    // lifetime-long, so the session-distinct total would always equal the
+    // unique count (zero information) and contradict the per-block counters,
+    // which count events. Other session-based types keep session totals — for
+    // them a session IS one run, so "times started" is the session count.
+    const isResourceCenter = contentType === ContentType.RESOURCE_CENTER;
+    // Launcher/banner metrics are first-touch by contract ("users NEWLY reached
+    // in the range"). Current delivery does fire seen/dismissed at most once per
+    // (user, content) — filterSingleSessionContentVersions blocks a second
+    // session for life — but pre-rework production code wrote repeat events, so
+    // these aggregate each user's FIRST event over all history (then filter to
+    // the range) instead of trusting the stored stream to be clean.
+    const isFirstTouchSeen =
+      startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
+      startEvent.codeName === BizEvents.BANNER_SEEN;
+    const isFirstTouchComplete =
+      completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
+      completeEvent.codeName === BizEvents.BANNER_DISMISSED;
+    const uniqueViews = isFirstTouchSeen
+      ? await this.aggregationFirstEvent({ ...condition })
+      : await this.aggregationByEvent({ ...condition });
+    const totalViews = isResourceCenter
+      ? await this.countEventsByContent(condition)
       : await this.aggregationByEvent({
           ...condition,
-          eventId: completeEvent.id,
           isDistinct: false,
         });
+    const uniqueCompletions = isFirstTouchComplete
+      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+      : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
+    const totalCompletions = isResourceCenter
+      ? await this.countEventsByContent({ ...condition, eventId: completeEvent.id })
+      : isFirstTouchComplete
+        ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+        : await this.aggregationByEvent({
+            ...condition,
+            eventId: completeEvent.id,
+            isDistinct: false,
+          });
+    // Checklist panel-open counters — same pair as the resource-center's:
+    // CHECKLIST_SEEN fires on every collapsed→expanded transition, so unique
+    // counts users who opened the panel and total counts expansions (events).
+    // The per-task rows carry only task-scoped counts; this is their
+    // denominator (public API); the dashboard keeps its own per-task copy.
+    const isChecklist = contentType === ContentType.CHECKLIST;
+    const checklistSeenEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_SEEN);
+    const opens =
+      isChecklist && checklistSeenEvent
+        ? {
+            uniqueOpens: await this.aggregationByEvent({
+              ...condition,
+              eventId: checklistSeenEvent.id,
+            }),
+            totalOpens: await this.countEventsByContent({
+              ...condition,
+              eventId: checklistSeenEvent.id,
+            }),
+          }
+        : isChecklist
+          ? { uniqueOpens: 0, totalOpens: 0 }
+          : {};
+
     const viewsByStep = isFlow
       ? await this.aggregationStepsByContent(
           condition,
@@ -453,6 +510,7 @@ export class AnalyticsService {
       timezone,
       startEvent,
       completeEvent,
+      isChecklist ? checklistSeenEvent : undefined,
     );
 
     return {
@@ -460,6 +518,7 @@ export class AnalyticsService {
       totalViews,
       uniqueCompletions,
       totalCompletions,
+      ...opens,
       viewsByDay,
       viewsByStep,
       viewsByTask,
@@ -647,6 +706,10 @@ export class AnalyticsService {
     timezone: string,
     startEvent: Event,
     completeEvent: Event,
+    // Checklist only: CHECKLIST_SEEN — adds per-day panel-open columns so the
+    // byDay rows carry every headline total* (sum-of-rows = headline holds
+    // for opens too, matching the resource-center series).
+    opensEvent?: Event,
   ) {
     const { startDateStr, endDateStr } = condition;
 
@@ -659,61 +722,72 @@ export class AnalyticsService {
       return [];
     }
 
-    // Get aggregated statistics
-    const uniqueViewsByDay = await this.aggregationByDay(
-      { ...condition, eventId: startEvent.id },
-      timezone,
-    );
-    const totalViewsByDay = await this.aggregationByDay(
-      { ...condition, eventId: startEvent.id, isDistinct: false },
-      timezone,
-    );
-    // For LAUNCHER_ACTIVATED, only count the first occurrence per user
-    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
-    const uniqueCompletionByDay = isLauncherActivated
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
-      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
-    const totalCompletionByDay = isLauncherActivated
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
+    // Get aggregated statistics. Resource-center totals count events per day
+    // (see querySessionBasedContentAnalytics) so the rows still sum to the
+    // headline totals.
+    const isResourceCenter = startEvent.codeName === BizEvents.RESOURCE_CENTER_OPENED;
+    // First-touch pairs (see querySessionBasedContentAnalytics): each user
+    // lands on the day of their first-ever event, immune to legacy repeats.
+    const isFirstTouchSeen =
+      startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
+      startEvent.codeName === BizEvents.BANNER_SEEN;
+    const isFirstTouchComplete =
+      completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
+      completeEvent.codeName === BizEvents.BANNER_DISMISSED;
+    const uniqueViewsByDay = isFirstTouchSeen
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: startEvent.id }, timezone)
+      : await this.aggregationByDay({ ...condition, eventId: startEvent.id }, timezone);
+    const totalViewsByDay = isResourceCenter
+      ? await this.countEventsByContentByDay({ ...condition, eventId: startEvent.id }, timezone)
       : await this.aggregationByDay(
-          {
-            ...condition,
-            eventId: completeEvent.id,
-            isDistinct: false,
-          },
+          { ...condition, eventId: startEvent.id, isDistinct: false },
           timezone,
         );
+    const uniqueCompletionByDay = isFirstTouchComplete
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
+    const totalCompletionByDay = isResourceCenter
+      ? await this.countEventsByContentByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : isFirstTouchComplete
+        ? await this.aggregationFirstEventByDay(
+            { ...condition, eventId: completeEvent.id },
+            timezone,
+          )
+        : await this.aggregationByDay(
+            {
+              ...condition,
+              eventId: completeEvent.id,
+              isDistinct: false,
+            },
+            timezone,
+          );
+    const uniqueOpensByDay = opensEvent
+      ? await this.aggregationByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      : null;
+    const totalOpensByDay = opensEvent
+      ? await this.countEventsByContentByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      : null;
 
+    // Calendar walk in the requested timezone (NOT 24h stepping — see the
+    // tracker path). The SQL buckets label days as plain `to_char` strings in
+    // the same timezone, so matching is string === string; no Date parsing
+    // round-trip (the old lightFormat(new Date(day)) read a UTC-parsed bucket
+    // with the SERVER clock and shifted a day on negative-offset machines).
     const data = [];
-    let currentDate = startDate;
-    const finalEndDate = endDate;
-
-    // Iterate through each day in the date range
-    while (isBefore(currentDate, finalEndDate)) {
-      // Format date considering timezone
-      const dd = format(toZonedTime(currentDate, timezone), 'yyyy-MM-dd');
-
-      // Build daily statistics object with default value 0 for missing data
+    for (const { day: dd, dayStart } of rollingDayWindows(startDate, endDate, timezone, 1)) {
       data.push({
-        date: currentDate,
-        uniqueViews:
-          uniqueViewsByDay.find((views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd)
-            ?.count || 0,
-        totalViews:
-          totalViewsByDay.find((views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd)
-            ?.count || 0,
-        uniqueCompletions:
-          uniqueCompletionByDay.find(
-            (views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd,
-          )?.count || 0,
-        totalCompletions:
-          totalCompletionByDay.find(
-            (views) => lightFormat(new Date(views.day), 'yyyy-MM-dd') === dd,
-          )?.count || 0,
+        date: dayStart,
+        uniqueViews: uniqueViewsByDay.find((views) => views.day === dd)?.count || 0,
+        totalViews: totalViewsByDay.find((views) => views.day === dd)?.count || 0,
+        uniqueCompletions: uniqueCompletionByDay.find((views) => views.day === dd)?.count || 0,
+        totalCompletions: totalCompletionByDay.find((views) => views.day === dd)?.count || 0,
+        ...(uniqueOpensByDay && totalOpensByDay
+          ? {
+              uniqueOpens: uniqueOpensByDay.find((views) => views.day === dd)?.count || 0,
+              totalOpens: totalOpensByDay.find((views) => views.day === dd)?.count || 0,
+            }
+          : {}),
       });
-
-      // Move to next day
-      currentDate = addDays(currentDate, 1);
     }
 
     return data;
@@ -977,12 +1051,16 @@ export class AnalyticsService {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
+    // The day label leaves SQL as TEXT ('YYYY-MM-DD' in the requested
+    // timezone). A DATE_TRUNC timestamp here gets parsed as UTC by Prisma and
+    // any local re-formatting shifts it a day on negative-offset servers —
+    // calendar names travel as strings, never as instants.
     let data: [{ day: string; count: number }];
     if (!isDistinct) {
       // Count total sessions per day
       data = await this.prisma.$queryRaw`
-        SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
-          Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent" 
+        SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+          Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent"
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
           AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -991,8 +1069,8 @@ export class AnalyticsService {
     } else {
       // Count unique users per day
       data = await this.prisma.$queryRaw`
-        SELECT DATE_TRUNC( 'DAY', "BizEvent"."createdAt" AT TIME ZONE ${timezone} ) AS DAY,
-          Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent" 
+        SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+          Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
           AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
@@ -1020,7 +1098,7 @@ export class AnalyticsService {
         SELECT DISTINCT ON (be."bizUserId")
           be."bizUserId",
           be."createdAt",
-          DATE_TRUNC('DAY', be."createdAt" AT TIME ZONE ${timezone}) AS day
+          to_char(be."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD') AS day
         FROM "BizEvent" be
         LEFT JOIN "BizSession" bs ON be."bizSessionId" = bs.id
         WHERE
@@ -1034,17 +1112,19 @@ export class AnalyticsService {
       WHERE "createdAt" >= ${startDate} AND "createdAt" <= ${endDate}
       GROUP BY day
       ORDER BY day
-    `) as Array<{ day: Date | string; count: bigint }>;
+    `) as Array<{ day: string; count: bigint }>;
 
+    // `day` is already a plain 'YYYY-MM-DD' label in the requested timezone.
     return data.map((dd) => ({
-      day: dd.day instanceof Date ? dd.day.toISOString() : String(dd.day),
+      day: dd.day,
       count: Number(dd.count),
     }));
   }
 
   /**
    * Aggregate first event per user, counting only first events that occurred within the query time range
-   * This is used for LAUNCHER_ACTIVATED events where multiple activations should only count as one
+   * Used for the first-touch metrics (launcher seen/activated, banner seen/dismissed) where
+   * repeat events must never re-count a user
    * The first event is determined from all historical events, then filtered by the query time range
    * Returns total count (not grouped by day)
    */
@@ -1147,6 +1227,47 @@ export class AnalyticsService {
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
     `;
     return Number.parseInt(data[0].count.toString());
+  }
+
+  /**
+   * Plain event count (repeats included) — the resource-center `total*`
+   * semantics. The session-distinct counter above collapses a user's repeated
+   * opens/clicks to 1 because an RC session is lifetime-long; only a raw
+   * Count(*) can answer "how many times", and it reconciles with the per-block
+   * counters (countTotalEvents), which already count this way.
+   */
+  async countEventsByContent(condition: Omit<AnalyticsConditions, 'isDistinct'>) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw`
+      SELECT Count(*) from "BizEvent"
+        left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
+        AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
+    `;
+    return Number.parseInt(data[0].count.toString());
+  }
+
+  /** Per-day companion of countEventsByContent — same day-label contract as aggregationByDay. */
+  async countEventsByContentByDay(
+    condition: Omit<AnalyticsConditions, 'isDistinct'>,
+    timezone: string,
+  ) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = (await this.prisma.$queryRaw`
+      SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+        Count(*) from "BizEvent"
+        left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
+        AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
+        GROUP BY DAY
+      `) as [{ day: string; count: number }];
+    return data.map((dd) => ({ ...dd, count: Number(dd.count) }));
   }
 
   /**
@@ -1784,26 +1905,24 @@ export class AnalyticsService {
     startEventId: string | null,
   ): Promise<Array<NPSMetricsByDay | RatingMetricsByDay>> {
     const data: Array<NPSMetricsByDay | RatingMetricsByDay> = [];
-    const startDate = startOfDay(toZonedTime(new Date(startDateStr), timezone));
-    const endDate = endOfDay(toZonedTime(new Date(endDateStr), timezone));
     const isNps = type === 'nps';
 
-    let currentDate = startDate;
-    while (isBefore(currentDate, endDate)) {
-      // Calculate start date for rolling window
-
-      const windowStartDate = startOfDay(
-        toZonedTime(subDays(currentDate, rollingWindow - 1), timezone),
-      );
-      const windowEndDate = endOfDay(toZonedTime(currentDate, timezone));
-
+    // Day grid + per-day rolling-window bounds, all in the REQUESTED timezone
+    // (timezone-pure — see rollingDayWindows; the server's own timezone must
+    // not participate, or results change with the deployment).
+    for (const { dayStart, windowStart, windowEnd } of rollingDayWindows(
+      startDateStr,
+      endDateStr,
+      timezone,
+      rollingWindow,
+    )) {
       // Get answers within the rolling window period
       const distribution = await this.aggregationQuestionAnswer(
         environmentId,
         contentId,
         questionCvid,
-        windowStartDate.toISOString(),
-        windowEndDate.toISOString(),
+        windowStart.toISOString(),
+        windowEnd.toISOString(),
         'numberAnswer',
       );
 
@@ -1816,8 +1935,8 @@ export class AnalyticsService {
             environmentId,
             contentId,
             eventId: startEventId,
-            startDateStr: windowStartDate.toISOString(),
-            endDateStr: windowEndDate.toISOString(),
+            startDateStr: windowStart.toISOString(),
+            endDateStr: windowEnd.toISOString(),
             isDistinct: false,
           })
         : 0;
@@ -1828,9 +1947,9 @@ export class AnalyticsService {
         : { ...this.calculateRatingMetrics(distribution), views };
 
       const baseData: BaseMetricsByDay = {
-        day: currentDate,
-        startDate: windowStartDate,
-        endDate: windowEndDate,
+        day: dayStart,
+        startDate: windowStart,
+        endDate: windowEnd,
         distribution: isNps ? completeDistribution(distribution) : distribution,
       };
 
@@ -1845,8 +1964,6 @@ export class AnalyticsService {
           metrics,
         } as RatingMetricsByDay);
       }
-
-      currentDate = addDays(currentDate, 1);
     }
 
     return data;
@@ -1924,12 +2041,7 @@ export class AnalyticsService {
   async getContentSessionWithRelations(
     id: string,
     environmentId: string,
-    include?: {
-      content?: boolean;
-      bizCompany?: boolean;
-      bizUser?: boolean;
-      version?: boolean;
-    },
+    include?: Prisma.BizSessionInclude,
   ) {
     return await this.prisma.bizSession.findUnique({
       where: { id, environmentId },
@@ -1939,7 +2051,7 @@ export class AnalyticsService {
 
   async listContentSessionsWithRelations(
     environmentId: string,
-    contentId: string,
+    contentId: string | undefined,
     paginationArgs: {
       first?: number;
       last?: number;
@@ -1949,11 +2061,29 @@ export class AnalyticsService {
     userId?: string,
     include?: Prisma.BizSessionInclude,
     orderBy?: Prisma.BizSessionOrderByWithRelationInput[],
+    completed?: boolean,
+    createdAfter?: string,
+    createdBefore?: string,
   ): Promise<PaginationConnection<Prisma.BizSessionGetPayload<{ include: typeof include }>>> {
     const where: Prisma.BizSessionWhereInput = {
       contentId,
       environmentId,
       bizUser: userId ? { externalId: userId } : undefined,
+      // "completed" = the session genuinely reached its goal (has a
+      // FLOW_COMPLETED / CHECKLIST_COMPLETED event), NOT state === 1 (which also
+      // covers dismissals). Matches the honest `completed` field in the mapper.
+      ...(completed !== undefined
+        ? {
+            bizEvent: completed
+              ? {
+                  some: { event: { codeName: { in: [...GENUINE_COMPLETION_EVENTS] as string[] } } },
+                }
+              : {
+                  none: { event: { codeName: { in: [...GENUINE_COMPLETION_EVENTS] as string[] } } },
+                },
+          }
+        : {}),
+      ...createdAtWhere(createdAfter, createdBefore),
     };
 
     return findManyCursorConnection(

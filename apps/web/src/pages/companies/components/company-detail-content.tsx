@@ -2,7 +2,7 @@ import { useCompanyListQuery, useListAttributesQuery, useUserListQuery } from '@
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CalendarIcon, IdCardIcon, ReloadIcon } from '@radix-ui/react-icons';
 import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';
-import { Delete2Icon, SpinnerIcon } from '@usertour/icons';
+import { Delete2Icon, GroupIcon2, SpinnerIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import {
   AttributeBizTypes,
@@ -310,10 +310,11 @@ const CompanyActivityCard = ({
               return (
                 <Link
                   to={`/env/${environmentId}/user/${bizUser.id}`}
-                  className="block max-w-[160px] truncate text-xs hover:text-primary"
+                  className="inline-flex max-w-[160px] items-center gap-1 text-xs hover:text-primary"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {displayName}
+                  <GroupIcon2 width={12} height={12} className="shrink-0 text-foreground/60" />
+                  <span className="truncate">{displayName}</span>
                 </Link>
               );
             }}

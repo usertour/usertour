@@ -1,3 +1,4 @@
+import { createdAtWhere, nameContains } from '@/common/filters';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { UpdateContentInput } from './dto/content-update.input';
@@ -9,6 +10,8 @@ import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
 import {
+  ContentPublishedDeleteError,
+  EnvironmentProjectMismatchError,
   ParamsError,
   UnknownError,
   VersionConflictError,
@@ -23,6 +26,42 @@ import {
   remapVersionDataTranslationIdentifiers,
 } from '@usertour/helpers';
 import { ProjectCacheService } from '@/shared/project-cache.service';
+
+/**
+ * Who performed a version / publish write. Web passes the session user; the
+ * API/MCP surfaces pass the key: `userId` = the key's OWNER (used for the
+ * version rows' created/updatedBy attribution) and `tokenId` = the key itself
+ * (publish records store either-or, mirroring AuditLog, so an automation's
+ * action is never disguised as a hand-made one).
+ */
+export type WriteActor = { userId?: string | null; tokenId?: string | null };
+
+/**
+ * Actor columns for a ContentPublishRecord — ids AND their names.
+ *
+ * The ids alone were not enough. OAuth access-token rows are short-lived and
+ * replaced on every refresh, so a read-time join dropped `actorTokenName` to
+ * null within the hour — and the surviving `actorName` then made the row read
+ * exactly like a hand-made dashboard publish. That is worse than "unknown": a
+ * release-ops review watched one publish change hands between two reads
+ * minutes apart and could no longer trust the ledger for its incident report.
+ * So the names are SNAPSHOTTED here, the same denormalization `versionSequence`
+ * already uses; the read side prefers them and only falls back to the join for
+ * rows written before this.
+ */
+const publishActorFields = (actor?: WriteActor, names?: PublishActorNames) => ({
+  ...(actor?.tokenId ? { actorTokenId: actor.tokenId } : {}),
+  ...(actor?.userId ? { actorUserId: actor.userId } : {}),
+  ...(names?.actorName ? { actorName: names.actorName } : {}),
+  ...(names?.actorTokenName ? { actorTokenName: names.actorTokenName } : {}),
+  ...(names?.environmentName ? { environmentName: names.environmentName } : {}),
+});
+
+type PublishActorNames = {
+  actorName?: string | null;
+  actorTokenName?: string | null;
+  environmentName?: string | null;
+};
 
 @Injectable()
 export class ContentService {
@@ -104,7 +143,7 @@ export class ContentService {
     return await this.getContent(contentId);
   }
 
-  async createContentVersion(input: ContentVersionInput) {
+  async createContentVersion(input: ContentVersionInput, actor?: WriteActor) {
     const { versionId, config } = input;
 
     try {
@@ -148,7 +187,10 @@ export class ContentService {
         const editedVersionPublished = content.contentOnEnvironments?.some(
           (env) => env.published && env.publishedVersionId === editedVersion.id,
         );
-        if (!editedVersionPublished) {
+        // Frozen covers EVER-published too: an unpublished-but-once-live edit
+        // version must fork, not be reused as a draft (same rule as the write
+        // guards — see versionFrozen).
+        if (!this.versionFrozen(editedVersion, editedVersionPublished)) {
           // A concurrent save already forked this into an unpublished draft.
           // Honor the same contract the fork branch does — the returned draft
           // carries THIS caller's config, with regenerated condition ids — by
@@ -183,6 +225,8 @@ export class ContentService {
             // an immediately-visible one once the forked draft is republished.
             scheduledAt: editedVersion.scheduledAt,
             contentId,
+            createdByUserId: actor?.userId ?? null,
+            updatedByUserId: actor?.userId ?? null,
             steps: { create: steps },
           } as any,
         });
@@ -212,9 +256,13 @@ export class ContentService {
     });
   }
 
-  async updateContentVersion(input: VersionUpdateInput) {
+  async updateContentVersion(input: VersionUpdateInput, actor?: WriteActor) {
     const { versionId, content, expectedUpdatedAt } = input;
-    const { steps, ...versionFields } = content;
+    const { steps, ...bareFields } = content;
+    // Stamp who wrote the version row alongside the write itself.
+    const versionFields = actor?.userId
+      ? { ...bareFields, updatedByUserId: actor.userId }
+      : bareFields;
 
     // Contract: when steps are sent (the builder's whole-version save) each one
     // must carry a front-end cvid — it's the upsert key. Cheap to validate
@@ -308,6 +356,73 @@ export class ContentService {
     });
   }
 
+  /**
+   * Publish history for one content — newest first, enriched with display names
+   * (actor user / key, environment). Names resolve at read time so records
+   * survive user/token/environment deletion (they just lose the pretty name).
+   */
+  async listContentPublishRecords(
+    contentId: string,
+    pagination: { first?: number; last?: number; before?: string; after?: string },
+    environmentId?: string,
+  ) {
+    const where = { contentId, ...(environmentId ? { environmentId } : {}) };
+    const connection = await findManyCursorConnection(
+      (args) =>
+        this.prisma.contentPublishRecord.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          ...args,
+        }),
+      () => this.prisma.contentPublishRecord.count({ where }),
+      pagination,
+    );
+
+    const nodes = connection.edges.map((e) => e.node);
+    const userIds = [...new Set(nodes.map((n) => n.actorUserId).filter(Boolean))] as string[];
+    const tokenIds = [...new Set(nodes.map((n) => n.actorTokenId).filter(Boolean))] as string[];
+    const envIds = [...new Set(nodes.map((n) => n.environmentId))];
+    // An empty `in: []` list returns [] — no need to special-case.
+    const [users, tokens, envs] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true },
+      }),
+      this.prisma.apiToken.findMany({
+        where: { id: { in: tokenIds } },
+        select: { id: true, name: true, user: { select: { name: true } } },
+      }),
+      this.prisma.environment.findMany({
+        where: { id: { in: envIds } },
+        select: { id: true, name: true },
+      }),
+    ]);
+    const userName = new Map(users.map((u) => [u.id, u.name]));
+    const tokenById = new Map(tokens.map((t) => [t.id, t]));
+    const envName = new Map(envs.map((e) => [e.id, e.name]));
+
+    for (const edge of connection.edges) {
+      const n = edge.node as (typeof nodes)[number] & {
+        actorName?: string | null;
+        actorTokenName?: string | null;
+        environmentName?: string | null;
+      };
+      // The SNAPSHOT written with the record wins; the live join is only a
+      // fallback for rows written before the snapshot columns existed. Doing it
+      // the other way round would re-introduce the defect this fixed: an
+      // OAuth token is replaced on every refresh, the join then yields null,
+      // and a row with an actorName but no token name reads as a hand-made
+      // dashboard publish — a false attribution, not a missing one.
+      const token = n.actorTokenId ? tokenById.get(n.actorTokenId) : undefined;
+      n.actorName =
+        n.actorName ??
+        (n.actorUserId ? (userName.get(n.actorUserId) ?? null) : (token?.user?.name ?? null));
+      n.actorTokenName = n.actorTokenName ?? token?.name ?? null;
+      n.environmentName = n.environmentName ?? envName.get(n.environmentId) ?? null;
+    }
+    return connection;
+  }
+
   async listContentVersions(
     contentId: string,
     pagination: { first?: number; last?: number; before?: string; after?: string },
@@ -325,11 +440,93 @@ export class ContentService {
     );
   }
 
-  async publishedContentVersion(versionId: string, environmentId: string) {
-    const version = await this.getContentVersionById(versionId);
-    const now = new Date();
+  /**
+   * Publish/unpublish take a client-supplied environmentId, but the caller is
+   * only authorized against the CONTENT's project (PermissionGuard's Content
+   * scope derives the project from the version/content, never from the env).
+   * Without this guard a member of project A could publish their content into
+   * project B's environment — the SDK runtime serves published content purely
+   * by ContentOnEnvironment.environmentId, so that is cross-tenant content
+   * injection. The v2 REST/MCP wrapper checks this too; enforcing it in the
+   * domain method is the single point every caller (web GraphQL included)
+   * funnels through.
+   */
+  private async requireEnvironmentInContentProject(
+    environmentId: string,
+    contentId: string,
+  ): Promise<void> {
+    const [content, environment] = await Promise.all([
+      this.prisma.content.findUnique({
+        where: { id: contentId },
+        select: { projectId: true },
+      }),
+      this.prisma.environment.findUnique({
+        where: { id: environmentId },
+        select: { projectId: true, deleted: true },
+      }),
+    ]);
+    if (
+      !content ||
+      !environment ||
+      environment.deleted ||
+      environment.projectId !== content.projectId
+    ) {
+      throw new EnvironmentProjectMismatchError();
+    }
+  }
 
-    const content = await this.prisma.$transaction(async (tx) => {
+  /**
+   * Look up the display names to SNAPSHOT onto a publish record. One query per
+   * publish (an infrequent, deliberate action), which buys an audit trail that
+   * survives the actor row being deleted or an OAuth token being rotated.
+   */
+  private async resolvePublishActorNames(
+    environmentId: string,
+    actor?: WriteActor,
+  ): Promise<PublishActorNames> {
+    const [user, token, environment] = await Promise.all([
+      actor?.userId
+        ? this.prisma.user.findUnique({ where: { id: actor.userId }, select: { name: true } })
+        : null,
+      actor?.tokenId
+        ? this.prisma.apiToken.findUnique({ where: { id: actor.tokenId }, select: { name: true } })
+        : null,
+      this.prisma.environment.findUnique({
+        where: { id: environmentId },
+        select: { name: true },
+      }),
+    ]);
+    return {
+      actorName: user?.name ?? null,
+      actorTokenName: token?.name ?? null,
+      environmentName: environment?.name ?? null,
+    };
+  }
+
+  async publishedContentVersion(versionId: string, environmentId: string, actor?: WriteActor) {
+    const version = await this.getContentVersionById(versionId);
+    await this.requireEnvironmentInContentProject(environmentId, version.contentId);
+    const now = new Date();
+    // Resolved BEFORE the transaction: the names are snapshotted onto the
+    // ledger row so attribution outlives the actor (see publishActorFields).
+    const actorNames = await this.resolvePublishActorNames(environmentId, actor);
+
+    const { content, supersededVersionId } = await this.prisma.$transaction(async (tx) => {
+      // Freeze stamp: a version that has EVER been live stays read-only for the
+      // rest of its life (see versionEverPublished) — unpublishing used to
+      // unlock it, letting the same version id/number be rewritten in place
+      // with no trace. Stamp only the FIRST publish so the mark means "first
+      // went live at"; re-publishes keep the original date. The column is the
+      // long-dead Version.publishedAt (0 rows set in the wild), adopted here —
+      // deliberately NOT backfilled: only versions published after this ships
+      // get frozen.
+      if (!version.publishedAt) {
+        await tx.version.update({
+          where: { id: version.id },
+          data: { publishedAt: now },
+        });
+      }
+
       // Update Content table
       const content = await tx.content.update({
         where: { id: version.contentId },
@@ -359,6 +556,16 @@ export class ContentService {
         });
       }
 
+      // Capture the version this publish SUPERSEDES (if any) before the
+      // upsert overwrites it — its versionFull cache entry must be wiped, see
+      // below.
+      const priorCoe = await tx.contentOnEnvironment.findUnique({
+        where: {
+          environmentId_contentId: { environmentId, contentId: content.id },
+        },
+        select: { publishedVersionId: true },
+      });
+
       // Update or create ContentOnEnvironment
       await tx.contentOnEnvironment.upsert({
         where: {
@@ -381,18 +588,46 @@ export class ContentService {
         },
       });
 
-      return content;
+      // Publish history: product data, written in the SAME transaction as the
+      // publish (unlike the audit log's async side-channel).
+      await tx.contentPublishRecord.create({
+        data: {
+          contentId: content.id,
+          versionId: version.id,
+          versionSequence: version.sequence,
+          environmentId,
+          action: 'publish',
+          ...publishActorFields(actor, actorNames),
+        },
+      });
+
+      return { content, supersededVersionId: priorCoe?.publishedVersionId ?? null };
     });
 
-    await this.cache.invalidate([
+    // versionFull caches Version + Steps on the assumption that a published
+    // version is immutable (see unpublishedContentVersion, which wipes it on
+    // detach). A publish breaks that invariant in two directions and must wipe
+    // BOTH: the SUPERSEDED version detaches and becomes editable again (its
+    // cached entry would go stale on the next edit), and the version being
+    // published may itself have been published→superseded→edited before — a
+    // poisoned entry from its first live period would serve the pre-edit
+    // snapshot to new users for up to the 30-min TTL (RC tier-C, defect 1).
+    const keys = [
       ...this.cache.envContentKeys(environmentId),
       this.cache.keys.publishedVersionId(environmentId, content.id),
-    ]);
+      this.cache.keys.versionFull(version.id),
+    ];
+    if (supersededVersionId && supersededVersionId !== version.id) {
+      keys.push(this.cache.keys.versionFull(supersededVersionId));
+    }
+    await this.cache.invalidate(keys);
 
     return content;
   }
 
-  async unpublishedContentVersion(contentId: string, environmentId: string) {
+  async unpublishedContentVersion(contentId: string, environmentId: string, actor?: WriteActor) {
+    await this.requireEnvironmentInContentProject(environmentId, contentId);
+    const actorNames = await this.resolvePublishActorNames(environmentId, actor);
     const result = await this.prisma.$transaction(async (tx) => {
       // Update Content table
       const content = await tx.content.update({
@@ -422,6 +657,20 @@ export class ContentService {
             },
           },
         });
+        const unpublished = await tx.version.findUnique({
+          where: { id: contentOnEnv.publishedVersionId },
+          select: { sequence: true },
+        });
+        await tx.contentPublishRecord.create({
+          data: {
+            contentId: content.id,
+            versionId: contentOnEnv.publishedVersionId,
+            versionSequence: unpublished?.sequence ?? 0,
+            environmentId,
+            action: 'unpublish',
+            ...publishActorFields(actor, actorNames),
+          },
+        });
       }
 
       return { content, unpublishedVersionId: contentOnEnv?.publishedVersionId ?? null };
@@ -449,6 +698,17 @@ export class ContentService {
   }
 
   async deleteContent(contentId: string) {
+    // Refuse to delete content that is still live in any environment — deleting
+    // it would pull a published experience out from under users. The web UI
+    // disables delete while published; enforce the same rule here so every
+    // caller (GraphQL, v2 REST, MCP) is bound by it, not just the UI. Unpublish
+    // from all environments first, then delete.
+    const publishedCount = await this.prisma.contentOnEnvironment.count({
+      where: { contentId, published: true },
+    });
+    if (publishedCount > 0) {
+      throw new ContentPublishedDeleteError();
+    }
     // Same multi-environment caveat as updateContent: a Content can have
     // ContentOnEnvironment rows in several envs, and each env has its
     // own cached slice + pubver mapping that must be invalidated.
@@ -480,6 +740,20 @@ export class ContentService {
   }
 
   /**
+   * Reverse deleteContent's soft-delete. deleteContent refuses while published
+   * and drops every ContentOnEnvironment row, so a deleted content holds no
+   * publish state — restoring reintroduces none and has no caches to
+   * invalidate. The content returns as an unpublished draft (versions, steps
+   * and publish history were never touched).
+   */
+  async restoreContent(contentId: string) {
+    return await this.prisma.content.update({
+      where: { id: contentId },
+      data: { deleted: false },
+    });
+  }
+
+  /**
    * All env ids that have this content cached. Pulls every COE row plus
    * the legacy `Content.environmentId` (some old rows may have a primary
    * env without a matching COE entry — defend in depth).
@@ -505,7 +779,7 @@ export class ContentService {
     return [...envIds];
   }
 
-  async duplicateContent(contentId: string, name: string, targetEnvironmentId?: string) {
+  async duplicateContent(contentId: string, name: string) {
     const duplicateContent = await this.prisma.content.findUnique({
       where: { id: contentId },
       include: { environment: true },
@@ -524,7 +798,9 @@ export class ContentService {
           data: {
             name: name || duplicateContent.name,
             buildUrl: duplicateContent.buildUrl,
-            environmentId: targetEnvironmentId || duplicateContent.environmentId,
+            // Homing follows the source — the legacy column is inert (nothing
+            // user-visible reads WHICH env it names), so there is no target choice.
+            environmentId: duplicateContent.environmentId,
             type: duplicateContent.type,
             projectId: duplicateContent.projectId,
           },
@@ -541,6 +817,11 @@ export class ContentService {
             config: newConfig,
             data: processedData as Prisma.JsonValue,
             themeId: editedVersion.themeId,
+            // Announcement time carries into the copy like fork/restore —
+            // without it, duplicating a future-scheduled announcement and
+            // publishing made it live IMMEDIATELY (publish stamps an empty
+            // scheduledAt with `now`).
+            scheduledAt: editedVersion.scheduledAt,
             steps: { create: [...steps] },
           },
         });
@@ -587,7 +868,7 @@ export class ContentService {
     }
   }
 
-  async restoreContentVersion(versionId: string) {
+  async restoreContentVersion(versionId: string, actor?: WriteActor) {
     try {
       return await this.prisma.$transaction(async (tx) => {
         const restoreVersion = await tx.version.findUnique({
@@ -612,9 +893,15 @@ export class ContentService {
           data: {
             sequence: editedVersion.sequence + 1,
             contentId: restoreVersion.contentId,
+            createdByUserId: actor?.userId ?? null,
+            updatedByUserId: actor?.userId ?? null,
             config: restoreVersion.config,
             data: restoreVersion.data,
             themeId: restoreVersion.themeId,
+            // Announcement time carries like fork does — restoring an old
+            // announcement then publishing must not re-stamp `now` and hoist
+            // it to the top of the feed.
+            scheduledAt: restoreVersion.scheduledAt,
             steps: { create: [...oldSteps] },
           } as any,
         });
@@ -651,6 +938,22 @@ export class ContentService {
     });
   }
 
+  /**
+   * THE freeze rule, defined once: a version is frozen when it is live somewhere
+   * NOW, or has EVER been live (Version.publishedAt is stamped on first publish
+   * and never cleared or copied to forks). "Ever" is what makes version numbers
+   * trustworthy: without it, unpublishing unlocked the version and the same
+   * id/number could be rewritten in place — "what ran in production last week"
+   * became unanswerable AND unverifiable. Editing continues on a fork
+   * (createContentVersion), exactly like editing a currently-live version.
+   */
+  private versionFrozen(
+    version: { publishedAt: Date | null },
+    currentlyLive: boolean | undefined,
+  ): boolean {
+    return !!currentlyLive || version.publishedAt != null;
+  }
+
   async contentVersionIsEditable(versionId: string) {
     const version = await this.prisma.version.findUnique({
       where: { id: versionId, deleted: false },
@@ -670,14 +973,15 @@ export class ContentService {
       throw new ParamsError();
     }
 
-    const isPublished = contentItem.contentOnEnvironments?.find(
+    const isPublished = contentItem.contentOnEnvironments?.some(
       (env) => env.published && env.publishedVersionId === versionId,
     );
 
-    // Not the content's edited version (someone forked a newer one) or
-    // already live in an environment — either way writes are refused with a
-    // dedicated code so clients can tell "stale editor" apart from bad input.
-    if (contentItem.editedVersionId !== versionId || isPublished) {
+    // Not the content's edited version (someone forked a newer one), live in an
+    // environment, or EVER live (frozen history) — either way writes are
+    // refused with a dedicated code so clients can tell "stale editor" apart
+    // from bad input.
+    if (contentItem.editedVersionId !== versionId || this.versionFrozen(version, isPublished)) {
       throw new VersionNotEditableError();
     }
 
@@ -710,7 +1014,7 @@ export class ContentService {
     const isPublished = contentItem.contentOnEnvironments?.some(
       (env) => env.published && env.publishedVersionId === versionId,
     );
-    if (contentItem.editedVersionId !== versionId || isPublished) {
+    if (contentItem.editedVersionId !== versionId || this.versionFrozen(version, isPublished)) {
       throw new VersionNotEditableError();
     }
   }
@@ -804,6 +1108,15 @@ export class ContentService {
     });
   }
 
+  /**
+   * Like {@link getContentWithRelations} but with a caller-provided Prisma
+   * include — lets the v2 API load per-environment publish rows
+   * (`contentOnEnvironments`) that the v1 flag-based variant can't express.
+   */
+  async findContentWithRelations(id: string, projectId: string, include: Prisma.ContentInclude) {
+    return await this.prisma.content.findFirst({ where: { id, projectId }, include });
+  }
+
   async getContentVersionWithRelations(
     versionId: string,
     projectId: string,
@@ -866,9 +1179,34 @@ export class ContentService {
     },
     include?: Prisma.ContentInclude,
     orderBy?: Prisma.ContentOrderByWithRelationInput[],
+    type?: string,
+    published?: boolean,
+    createdAfter?: string,
+    createdBefore?: string,
+    name?: string,
+    deleted = false,
   ) {
+    const nameFilter = nameContains(name);
     const baseQuery = {
-      where: { projectId },
+      // Soft-deleted content is excluded by default — the public-API list (v1 +
+      // v2) must never surface archived content unless the caller explicitly
+      // asks for the recovery pool (v2 `?deleted=true`, for restore).
+      where: {
+        projectId,
+        deleted,
+        ...(type ? { type } : {}),
+        ...(nameFilter ? { name: nameFilter } : {}),
+        ...createdAtWhere(createdAfter, createdBefore),
+        // "published" is per-environment — ContentOnEnvironment is the source of
+        // truth, NOT the legacy Content.published column.
+        ...(published !== undefined
+          ? {
+              contentOnEnvironments: published
+                ? { some: { published: true } }
+                : { none: { published: true } },
+            }
+          : {}),
+      },
       include,
       orderBy,
     };

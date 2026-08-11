@@ -238,6 +238,11 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   }
 };
 
+// A Prisma predicate that matches no row — `id IN ()`. Wrapped in AND so it
+// survives callers that later assign `where.id` / `where.OR` (it can't be
+// clobbered). Used to fail a segment CLOSED when it can't be evaluated.
+const NEVER_MATCH = { AND: [{ id: { in: [] as string[] } }] };
+
 export const createConditionsFilter = (conditions: any, attributes: Attribute[]) => {
   if (!conditions || !conditions.length) {
     return false;
@@ -252,6 +257,12 @@ export const createConditionsFilter = (conditions: any, attributes: Attribute[])
         ? createFilterItem(condition, attributes)
         : createConditionsFilter(condition.conditions, attributes);
     if (!item) {
+      // A falsy item means this condition can't be turned into a membership query —
+      // an unsupported condition type (event / page / element / flow) or a broken
+      // leaf (deleted attribute, malformed value). SKIP it and let the surviving
+      // conditions define the match. This is the long-standing behavior, kept so a
+      // stored segment that loses one attribute keeps working on its remaining
+      // conditions (backward-compatible); the all-unevaluable case is guarded below.
       continue;
     }
     if (operators === 'and') {
@@ -259,6 +270,13 @@ export const createConditionsFilter = (conditions: any, attributes: Attribute[])
     } else {
       OR.push(item);
     }
+  }
+
+  // EVERY condition was unevaluable → an empty {} filter would match EVERY user
+  // (fail-open). A segment whose whole definition is unresolvable must match nobody
+  // instead — the one case we refuse to let skip collapse into match-all.
+  if (AND.length === 0 && OR.length === 0) {
+    return NEVER_MATCH;
   }
 
   const filter: Record<string, any> = {};
@@ -442,6 +460,8 @@ const compileCrossEntityConditions = (
  * match nobody, not everybody.
  */
 const MATCHES_NO_BIZ_USER: Record<string, any> = { id: { in: [] } };
+/** BizCompany twin of {@link MATCHES_NO_BIZ_USER}. */
+const MATCHES_NO_BIZ_COMPANY: Record<string, any> = { id: { in: [] } };
 
 /**
  * Build a Prisma filter over BizUser for a condition tree that may mix user,
@@ -455,8 +475,9 @@ const MATCHES_NO_BIZ_USER: Record<string, any> = { id: { in: [] } };
  * keeping offline results consistent with runtime evaluation.
  *
  * Trees without company/membership leaves compile to exactly the same filter
- * as `createConditionsFilter`. Returns `false` only for empty/unusable
- * condition input (same contract as `createConditionsFilter`).
+ * as `createConditionsFilter`. Returns `false` for EMPTY input; a non-empty tree
+ * whose conditions are all unevaluable returns a matches-nobody filter (never {},
+ * which would match everyone) — same contract as `createConditionsFilter`.
  */
 export const createBizUserConditionsFilter = (
   conditions: any,
@@ -466,6 +487,14 @@ export const createBizUserConditionsFilter = (
   const compiled = compileCrossEntityConditions(conditions, attributes);
   if (!compiled) {
     return false;
+  }
+  // Conditions were supplied but NONE compiled to a usable leaf (every attribute
+  // deleted / unsupported). The projections collapse to {} — an empty filter that
+  // matches EVERY user (fail-open). A segment whose whole definition is unresolvable
+  // must match nobody instead. (A partly-unevaluable tree still matches on its
+  // surviving leaves — only the all-unevaluable case is refused.)
+  if (!compiled.hasUserOrMembershipLeaf && !compiled.hasCompanyOrMembershipLeaf) {
+    return MATCHES_NO_BIZ_USER;
   }
   if (!compiled.hasCompanyOrMembershipLeaf) {
     return compiled.userAnchored;
@@ -499,8 +528,9 @@ export const createBizUserConditionsFilter = (
  * segment's definition in both offline and runtime contexts.
  *
  * Trees without user/membership leaves compile to exactly the same filter as
- * `createConditionsFilter`. Returns `false` only for empty/unusable condition
- * input (same contract as `createConditionsFilter`).
+ * `createConditionsFilter`. Returns `false` for EMPTY input; a non-empty tree
+ * whose conditions are all unevaluable returns a matches-nobody filter (never {},
+ * which would match everyone) — same contract as `createConditionsFilter`.
  */
 export const createBizCompanyConditionsFilter = (
   conditions: any,
@@ -509,6 +539,11 @@ export const createBizCompanyConditionsFilter = (
   const compiled = compileCrossEntityConditions(conditions, attributes);
   if (!compiled) {
     return false;
+  }
+  // All-unevaluable guard, same as createBizUserConditionsFilter: a fully
+  // unresolvable definition must match no company, not collapse to {} (everyone).
+  if (!compiled.hasUserOrMembershipLeaf && !compiled.hasCompanyOrMembershipLeaf) {
+    return MATCHES_NO_BIZ_COMPANY;
   }
   if (!compiled.hasUserOrMembershipLeaf) {
     return compiled.companyAnchored;

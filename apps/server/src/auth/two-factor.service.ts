@@ -15,6 +15,7 @@ import {
   TooManyTwoFactorAttemptsError,
   TwoFactorAlreadyEnabledError,
   TwoFactorEnforcedDisableNotAllowedError,
+  TwoFactorEnrollmentRequiredError,
   TwoFactorNotEnabledError,
 } from '@/common/errors';
 import { LicenseService } from '@/license/license.service';
@@ -349,6 +350,23 @@ export class TwoFactorService {
       throw new InvalidTwoFactorChallengeError();
     }
     return this.startSetup(user);
+  }
+
+  /**
+   * Throw unless `user` satisfies the instance-level "require 2FA" policy:
+   * enrolled users always pass, and nothing is required when the instance does
+   * not enforce. The ONE rule shared by the GraphQL enrollment guard and the
+   * REST surfaces that mint long-lived credentials (OAuth consent) — a
+   * non-enrolled user must not sidestep the GraphQL wall by acquiring a machine
+   * credential instead.
+   */
+  async assertEnrollmentSatisfied(user: Pick<User, 'twoFactorEnabled'>): Promise<void> {
+    if (user.twoFactorEnabled) {
+      return;
+    }
+    if (await this.isInstanceEnforcing()) {
+      throw new TwoFactorEnrollmentRequiredError();
+    }
   }
 
   // ---------------------------------------------------------------------------

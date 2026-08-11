@@ -1,0 +1,381 @@
+import { ContentActionsItemType, ContentDataType } from '@usertour/types';
+
+import type { ValidationIssue } from '@/common/errors/errors';
+import { isHttpUrl } from '@/common/url';
+
+import {
+  REACTIVE_REJECTED_REP_CONDITION_TYPES,
+  REP_ACTION_TYPE_TO_INTERNAL,
+  contentActionCapabilities,
+  stepCapabilities,
+} from './contract-map';
+
+/**
+ * The single write-time contract walk. One traversal over everything a version
+ * write can carry — `steps`, `data`, `startRules.when`, `hideRules.when` — that
+ * COLLECTS every violation (instead of throwing on the first) and every
+ * cross-content reference (for the caller's batch target-type check). The rules
+ * come from the capability matrix (via contract-map); this module owns only the
+ * traversal and the entry list.
+ *
+ * Why one walk: the guards used to be four independent recursive walkers, each
+ * privately remembering which entries to cover — and every historical gap
+ * (body.data missed by the reactive guard; two of the three reference carriers
+ * missed) came from an entry list going stale. Here the entry list exists once.
+ *
+ * Rules enforced (each maps to a ValidationIssue `rule`):
+ *  - `reactive_condition`: reactive slots — a step trigger's `when`, a button's
+ *    `hiddenWhen`/`disabledWhen`, a tracker's start conditions — are polled live
+ *    in the browser, so server-evaluated condition types (event / segment /
+ *    content-state) can never fire there. The builder omits them; reject them.
+ *  - `action_not_allowed`: a non-flow body can't carry `goto_step` (no steps to
+ *    go to), and a type without a dismiss variant (resource center) can't carry
+ *    `dismiss` (it would compile to flow-dismiss and silently no-op).
+ *  - `step_shape`: placement shape must match the step kind (tooltip→{side,align},
+ *    modal→{position}; wrong-shape fields are silently dropped otherwise), and
+ *    onClick (click-the-target-to-advance) only works on a tooltip.
+ *  - `media_url`: an image/embed block's `url` (and an image's `link.url`) must
+ *    be an absolute http(s) URL — the SDK renders it verbatim into src/href, so
+ *    anything else is a silently broken image/iframe (same bar as theme media
+ *    URLs). A value the stored version already carries passes VERBATIM
+ *    (preserve-not-endorse, the dangling-goto policy): legacy data must stay
+ *    echo-editable.
+ * checklist `completeWhen` / RC `onlyShowWhen` intentionally allow the full
+ * condition set — only the reactive slots above are restricted.
+ */
+
+export type ContentReference = {
+  /** The referenced contentId. */
+  id: string;
+  /** Where in the body it sits (issue path). */
+  path: string;
+  /** Which entry it came from — used in the human message ("in a start rule"). */
+  where: string;
+  /** The carrier, for the message ("A content-state condition" / …). */
+  kind: string;
+};
+
+export type WriteWalkResult = { issues: ValidationIssue[]; refs: ContentReference[] };
+
+export function collectWriteViolations(input: {
+  steps?: unknown;
+  data?: unknown;
+  startRules?: { when?: unknown } | null;
+  hideRules?: { when?: unknown } | null;
+  contentType?: string;
+  /** URL strings the stored version already carries — verbatim echoes of these
+   * pass the media_url rule (legacy data stays echo-editable). */
+  storedUrls?: ReadonlySet<string>;
+}): WriteWalkResult {
+  const issues: ValidationIssue[] = [];
+  const refs: ContentReference[] = [];
+
+  // ── rule helpers ───────────────────────────────────────────────────────────
+
+  /** Reactive-slot condition check: each condition node, recursing into groups. */
+  const reactiveConditions = (conditions: unknown, path: string, slot: string): void => {
+    if (!Array.isArray(conditions)) return;
+    conditions.forEach((c, i) => {
+      const at = `${path}[${i}]`;
+      const type = (c as { type?: unknown })?.type;
+      if (typeof type === 'string' && REACTIVE_REJECTED_REP_CONDITION_TYPES.has(type)) {
+        issues.push({
+          rule: 'reactive_condition',
+          path: at,
+          message: `A "${type}" condition can't be used in ${slot} — that is evaluated live in the browser and supports only attribute / current_url / element / text_input / text_filled / time conditions. Event / segment / content-state conditions are server-evaluated and aren't supported here.`,
+        });
+      }
+      if (type === 'group') {
+        reactiveConditions((c as { conditions?: unknown }).conditions, `${at}.conditions`, slot);
+      }
+    });
+  };
+
+  /** Question blocks anywhere in a step's content tree (columns included). */
+  const countQuestionBlocks = (node: unknown): number => {
+    if (Array.isArray(node)) {
+      return node.reduce((sum: number, n) => sum + countQuestionBlocks(n), 0);
+    }
+    if (!node || typeof node !== 'object') return 0;
+    const obj = node as Record<string, unknown>;
+    let count = obj.type === 'question' ? 1 : 0;
+    for (const key of Object.keys(obj)) {
+      count += countQuestionBlocks(obj[key]);
+    }
+    return count;
+  };
+
+  /** Per-step shape: placement shape by kind + onClick only where it can fire. */
+  const stepShape = (step: unknown, i: number): void => {
+    if (!step || typeof step !== 'object') return;
+    const s = step as Record<string, unknown>;
+    const type = s.type;
+    const at = `steps[${i}]`;
+    const caps = stepCapabilities(type);
+    const placement = s.placement as Record<string, unknown> | undefined;
+    if (placement && typeof placement === 'object' && caps) {
+      // Placement is a 2-member union: a `position` key = modal shape; anything
+      // else (side/align/alignType/offsets, or even an empty object now that
+      // side/align are optional) = tooltip shape. Keyed on the sole modal
+      // discriminant so a partial tooltip shape (e.g. only `align`) on a modal
+      // step is still flagged.
+      const isModalShape = 'position' in placement;
+      const isTooltipShape = !isModalShape;
+      if (caps.placement === 'anchor' && isModalShape) {
+        issues.push({
+          rule: 'step_shape',
+          path: `${at}.placement`,
+          message: `A tooltip step needs a tooltip placement { side, align } anchored to its target — it can't use a modal placement { position }, which would be ignored.`,
+        });
+      }
+      if (caps.placement === 'grid' && isTooltipShape) {
+        issues.push({
+          rule: 'step_shape',
+          path: `${at}.placement`,
+          message: `A modal step needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
+        });
+      }
+      // Bubble: position comes from the THEME's bubble placement; the only
+      // step-level placement key the renderer reads is `backdrop`. Anything
+      // positional would be stored and echoed back yet never rendered — the
+      // silent-success trap this rule exists to close.
+      if (caps.placement === 'theme') {
+        const positional = Object.keys(placement).filter((k) => k !== 'backdrop');
+        if (positional.length > 0) {
+          issues.push({
+            rule: 'step_shape',
+            path: `${at}.placement`,
+            message: `A bubble step is positioned by its theme's bubble placement — \`${positional.join('`, `')}\` would be ignored. Only \`backdrop\` applies on a bubble step; to move the bubble, change the theme.`,
+          });
+        }
+      }
+      // Hidden: no UI at all — nothing to place, nothing to backdrop.
+      if (caps.placement === 'none') {
+        issues.push({
+          rule: 'step_shape',
+          path: `${at}.placement`,
+          message:
+            'A hidden step renders no UI, so placement does not apply — remove it. ' +
+            '(Hidden steps exist to run triggers, e.g. as a routing step.)',
+        });
+      }
+    }
+    // At most ONE question block per step: the runtime renders and reports
+    // only the first — a second is invisible (no answers, no analytics). A
+    // step's content is authored atomically (steps are full-list replacements),
+    // so two questions is never a draft-in-progress; reject at write. The
+    // usable-validate error remains as the belt for stored legacy steps.
+    const questionCount = countQuestionBlocks(s.content);
+    if (questionCount > 1) {
+      issues.push({
+        rule: 'step_shape',
+        path: `${at}.content`,
+        message: `A step renders only its FIRST question — ${questionCount} question blocks would leave the rest invisible (no answers, no analytics). One question per step; chain steps for a multi-question survey.`,
+      });
+    }
+    const onClick = s.onClick;
+    if (Array.isArray(onClick) && onClick.length > 0 && !caps?.onClick) {
+      issues.push({
+        rule: 'step_shape',
+        path: `${at}.onClick`,
+        message: `onClick (click the target element to advance) only works on a tooltip step; a ${String(
+          type,
+        )} step has no target element to click, so the action would never fire. Use a step trigger or a button action instead.`,
+      });
+    }
+  };
+
+  /** Button blocks (any nesting, incl. columns): hiddenWhen/disabledWhen are reactive. */
+  const buttonReactive = (node: unknown, path: string): void => {
+    if (Array.isArray(node)) {
+      node.forEach((n, i) => buttonReactive(n, `${path}[${i}]`));
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+    const obj = node as Record<string, unknown>;
+    if (obj.type === 'button') {
+      reactiveConditions(obj.hiddenWhen, `${path}.hiddenWhen`, "a button's show/hide rule");
+      reactiveConditions(
+        obj.disabledWhen,
+        `${path}.disabledWhen`,
+        "a button's enable/disable rule",
+      );
+    }
+    for (const key of Object.keys(obj)) {
+      buttonReactive(obj[key], `${path}.${key}`);
+    }
+  };
+
+  /** Image/embed blocks (any nesting, like buttons): url fields must be http(s). */
+  const mediaUrlAt = (value: unknown, path: string, what: string): void => {
+    if (typeof value !== 'string') return;
+    if (isHttpUrl(value) || input.storedUrls?.has(value)) return;
+    issues.push({
+      rule: 'media_url',
+      path,
+      message: `${what} must be a full http(s) URL (it is rendered verbatim on the page, so ${JSON.stringify(
+        value,
+      )} would just be broken there). Host the asset somewhere reachable and pass its absolute URL.`,
+    });
+  };
+  const mediaUrls = (node: unknown, path: string): void => {
+    if (Array.isArray(node)) {
+      node.forEach((n, i) => mediaUrls(n, `${path}[${i}]`));
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+    const obj = node as Record<string, unknown>;
+    if (obj.type === 'image' || obj.type === 'embed') {
+      mediaUrlAt(obj.url, `${path}.url`, `An ${String(obj.type)} block's url`);
+      if (obj.type === 'image') {
+        mediaUrlAt(
+          (obj.link as Record<string, unknown> | undefined)?.url,
+          `${path}.link.url`,
+          "An image block's link url",
+        );
+      }
+    }
+    for (const key of Object.keys(obj)) {
+      mediaUrls(obj[key], `${path}.${key}`);
+    }
+  };
+
+  /** Cross-content references, wherever they sit (the caller checks target types). */
+  const collectRefs = (node: unknown, path: string, where: string): void => {
+    if (Array.isArray(node)) {
+      node.forEach((n, i) => collectRefs(n, `${path}[${i}]`, where));
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+    const obj = node as Record<string, unknown>;
+    if (obj.type === 'content_state' && typeof obj.content === 'string') {
+      refs.push({ id: obj.content, path, where, kind: 'A content-state condition' });
+    } else if (obj.type === 'start_content' && typeof obj.content === 'string') {
+      refs.push({ id: obj.content, path, where, kind: 'A start_content action' });
+    } else if (typeof obj.content === 'string' && typeof obj.contentType === 'string') {
+      // A resource-center content-list item: { content: <id>, contentType: 'flow'|'checklist' }.
+      refs.push({ id: obj.content, path, where, kind: 'A resource-center content-list item' });
+    }
+    for (const key of Object.keys(obj)) {
+      collectRefs(obj[key], `${path}.${key}`, where);
+    }
+  };
+
+  /** Non-flow data: action types the host's slots don't offer (capability matrix). */
+  const dataActions = (data: unknown, contentType: string): void => {
+    const caps = contentActionCapabilities(contentType);
+    // goto_step is flow-only — every non-flow type's action set excludes STEP_GOTO
+    // (unknown type: reject too; compile rejects the type right after).
+    const rejectGotoStep = !caps?.actions.includes(ContentActionsItemType.STEP_GOTO);
+    // A type with action slots but no dismiss variant (resource center,
+    // announcement) can't dismiss; types with no action slots at all (tracker)
+    // are left to their own schema.
+    const rejectDismiss = caps !== undefined && caps.actions.length > 0 && !caps.dismissVariant;
+    // Matrix-driven check for the remaining action names (see walk below);
+    // skipped for unknown types (compile rejects those) and no-action-slot
+    // types (their schema owns it).
+    const checkGeneralActions = caps !== undefined && caps.actions.length > 0;
+    const slotHint = `${contentType === 'announcement' ? 'an' : 'a'} ${contentType}'s content`;
+    // Name the actions this type ACTUALLY allows (public representation names) —
+    // the previous fixed text recommended `dismiss` to types that reject it, and
+    // used internal names; both sent authors straight into a second E1017.
+    const allowedHint = [
+      caps?.actions.includes(ContentActionsItemType.FLOW_START) ? 'start_content' : null,
+      caps?.actions.includes(ContentActionsItemType.PAGE_NAVIGATE) ? 'navigate' : null,
+      caps?.dismissVariant ? 'dismiss' : null,
+    ]
+      .filter(Boolean)
+      .join(' / ');
+    const perTypeDismissReason: Record<string, string> = {
+      'resource-center':
+        "A resource center has no dismiss action — its panel's close button only collapses it back to the launcher; the session has no user-facing dismiss.",
+      announcement:
+        'An announcement has no dismiss action — feed entries are marked seen, never dismissed, and the popup dismisses itself on any interaction.',
+    };
+    const walk = (node: unknown, path: string): void => {
+      if (Array.isArray(node)) {
+        node.forEach((n, i) => walk(n, `${path}[${i}]`));
+        return;
+      }
+      if (!node || typeof node !== 'object') return;
+      const obj = node as Record<string, unknown>;
+      if (rejectGotoStep && obj.type === 'goto_step') {
+        issues.push({
+          rule: 'action_not_allowed',
+          path,
+          message: `A "goto_step" action can't be used in ${slotHint}. goto_step navigates between the steps of a flow, and this content type has no steps — use ${allowedHint || 'the actions this type supports'} instead.`,
+        });
+      }
+      if (rejectDismiss && obj.type === 'dismiss') {
+        issues.push({
+          rule: 'action_not_allowed',
+          path,
+          message: `A "dismiss" action can't be used in ${slotHint}. ${
+            perTypeDismissReason[contentType ?? ''] ?? 'This content type has no dismiss action.'
+          } Use ${allowedHint || 'the actions this type supports'} instead.`,
+        });
+      }
+      // Every OTHER representation action name is checked against the matrix
+      // too — not just the two special-cased above. Today this rejects nothing
+      // extra (all types with action slots allow start_content / navigate /
+      // run_javascript); it exists so REMOVING an action from
+      // CONTENT_ACTION_CAPABILITIES starts rejecting writes here with no code
+      // change — previously nothing would have.
+      if (
+        checkGeneralActions &&
+        typeof obj.type === 'string' &&
+        obj.type !== 'goto_step' &&
+        obj.type !== 'dismiss'
+      ) {
+        const internal = REP_ACTION_TYPE_TO_INTERNAL[obj.type];
+        if (internal !== undefined && !caps!.actions.includes(internal)) {
+          issues.push({
+            rule: 'action_not_allowed',
+            path,
+            message: `A "${obj.type}" action can't be used in ${slotHint} — use ${allowedHint || 'the actions this type supports'} instead.`,
+          });
+        }
+      }
+      for (const key of Object.keys(obj)) {
+        walk(obj[key], `${path}.${key}`);
+      }
+    };
+    walk(data, 'data');
+  };
+
+  // ── THE entry list (the one place that knows where rules apply) ─────────────
+
+  // steps (flow): shape per step, reactive slots (trigger when + button rules), refs.
+  if (Array.isArray(input.steps)) {
+    input.steps.forEach((s, i) => {
+      stepShape(s, i);
+      const step = s as { triggers?: { when?: unknown }[]; content?: unknown };
+      (step.triggers ?? []).forEach((t, ti) =>
+        reactiveConditions(t?.when, `steps[${i}].triggers[${ti}].when`, 'a step trigger'),
+      );
+      buttonReactive(step.content, `steps[${i}].content`);
+    });
+    collectRefs(input.steps, 'steps', 'a step');
+    mediaUrls(input.steps, 'steps');
+  }
+
+  // data (non-flow body): action-type rules, button reactive slots, refs.
+  if (input.data !== undefined) {
+    if (input.contentType) {
+      dataActions(input.data, input.contentType);
+    }
+    buttonReactive(input.data, 'data');
+    collectRefs(input.data, 'data', "the content's data");
+    mediaUrls(input.data, 'data');
+  }
+
+  // start / hide rules: refs; a tracker's start conditions are a reactive slot
+  // (they fire the tracker's event live in the browser).
+  collectRefs(input.startRules?.when, 'startRules.when', 'a start rule');
+  collectRefs(input.hideRules?.when, 'hideRules.when', 'a hide rule');
+  if (input.contentType === ContentDataType.TRACKER) {
+    reactiveConditions(input.startRules?.when, 'startRules.when', "a tracker's start conditions");
+  }
+
+  return { issues, refs };
+}

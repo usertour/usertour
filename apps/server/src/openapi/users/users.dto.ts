@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsObject,
   IsArray,
+  Matches,
   ValidateNested,
   IsNumber,
   Min,
@@ -29,6 +30,9 @@ export type ExpandTypes = ExpandType[];
 export class CompanyDto {
   @ApiProperty({ description: 'The unique identifier for the company' })
   @IsString()
+  // A blank external id would create a company no id-keyed read/delete can
+  // ever address again (their guards reject blank ids).
+  @Matches(/\S/, { message: 'company id must be a non-empty string' })
   id: string;
 
   @ApiProperty({ description: 'The attributes of the company', required: false })
@@ -52,6 +56,8 @@ export class MembershipDto {
 export class UpsertUserRequestDto {
   @ApiProperty({ description: 'The unique identifier for the user' })
   @IsString()
+  // Same rule as CompanyDto.id: blank ids create unaddressable rows.
+  @Matches(/\S/, { message: 'id must be a non-empty string' })
   id: string;
 
   @ApiProperty({ description: 'The attributes of the user', required: false })

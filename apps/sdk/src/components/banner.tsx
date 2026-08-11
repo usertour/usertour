@@ -166,6 +166,10 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   const store = useBannerStore(banner);
   const mountElRef = useRef<HTMLDivElement | null>(null);
   const [portalEl, setPortalEl] = useState<HTMLDivElement | null>(null);
+  // Live banner height reported from inside the frame (BannerRoot measures it);
+  // null = pending, keeps the wrapper hidden until the reveal can use the real
+  // height. BannerRoot fails open after 500ms so this always resolves.
+  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
 
   const { bannerData, themeSettings, assets, userAttributes, targetElement, zIndex, globalStyle } =
     store ?? {};
@@ -193,11 +197,17 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   }, []);
 
   useLayoutEffect(() => {
-    if (!store || !bannerData) {
-      return;
-    }
-
-    if (requiresElement && !targetElement) {
+    if (!store || !bannerData || (requiresElement && !targetElement)) {
+      // The component below returns null in these states so the CONTENT
+      // unmounts, but the mount shell insertMountEl placed into the page
+      // (with the banner's height styles) is only removed on component
+      // unmount — leaving a transparent banner-sized gap while the banner
+      // is closed (visibility loop hid it) or its target is missing. Pull
+      // the shell out; the effect re-inserts it on reopen.
+      const mountEl = mountElRef.current;
+      if (mountEl?.parentNode) {
+        mountEl.parentNode.removeChild(mountEl);
+      }
       return;
     }
 
@@ -206,7 +216,7 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
       return;
     }
 
-    const wrapperStyle = getBannerWrapperStyle(bannerData, themeSettings, zIndex);
+    const wrapperStyle = getBannerWrapperStyle(bannerData, themeSettings, zIndex, measuredHeight);
     mountEl.className = 'usertour-widget-banner';
     applyStyleObject(mountEl, wrapperStyle);
 
@@ -216,7 +226,7 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
     }
 
     insertMountEl(mountEl, resolved);
-  }, [store, bannerData, placement, targetElement, requiresElement, portalEl]);
+  }, [store, bannerData, placement, targetElement, requiresElement, portalEl, measuredHeight]);
 
   if (!store || !bannerData || !themeSettings) {
     return null;
@@ -241,6 +251,7 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
           assets={assets}
           globalStyle={globalStyle}
           onDismiss={banner.handleDismiss}
+          onMeasuredHeightChange={setMeasuredHeight}
         >
           <BannerFrame>
             <ContentEditorSerialize

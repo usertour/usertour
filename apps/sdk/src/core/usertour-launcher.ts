@@ -8,6 +8,7 @@ import {
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
 import { logger } from '@/utils';
+import { isVisibleNode } from '@usertour/dom';
 import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
@@ -19,6 +20,8 @@ const LAUNCHER_TARGET_MISSING_SECONDS = 3600;
 export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   // === Properties ===
   private watcher: UsertourElementWatcher | null = null;
+  // Serialized target the live watcher was built for (idempotency key).
+  private watcherTargetKey: string | null = null;
 
   // === Abstract Methods Implementation ===
   /**
@@ -47,6 +50,9 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   async show() {
     const storeData = await this.buildStoreData();
+    logger.info(
+      `[launcher] show() hasData=${!!storeData?.launcherData} sid=${this.getSessionId() || 'NONE'}`,
+    );
     if (!storeData?.launcherData) {
       return;
     }
@@ -141,14 +147,18 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    * Sets up the element watcher for a launcher
    * @private
    */
-  private setupElementWatcher(store: LauncherStore): void {
-    const data = store.launcherData;
+  /**
+   * The store the NEXT element-found should render. The found handler must
+   * not rely on its closure: with watcher reuse, a content update that lands
+   * while the element is still unfound re-enters here (same targetKey, no
+   * element yet) and would otherwise be shown with the OLD closure snapshot
+   * when the element finally appears.
+   */
+  private pendingWatcherStore: LauncherStore | null = null;
 
-    // Clean up existing watcher
-    if (this.watcher) {
-      this.watcher.destroy();
-      this.watcher = null;
-    }
+  private setupElementWatcher(store: LauncherStore): void {
+    this.pendingWatcherStore = store;
+    const data = store.launcherData;
 
     const targetElement = data?.target?.element as ElementSelectorPropsData;
     if (!targetElement) {
@@ -156,6 +166,56 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       return;
     }
 
+    // Idempotent for an unchanged target: show() re-runs whenever the server
+    // re-sends AddLauncher (which it does whenever an ack times out — with many
+    // launchers activating at once the SDK's serialized message handling easily
+    // exceeds the 2s ack window, so re-sends arrive in waves). Tearing down a
+    // LIVE watcher on every re-send wipes its found/announced element state
+    // mid-flight and drops most beacons on first paint; keep it instead.
+    const targetKey = JSON.stringify(targetElement);
+    logger.info(
+      `[launcher] watcher reuse=${!!(this.watcher && this.watcherTargetKey === targetKey)} hasWatcher=${!!this.watcher} el=${!!this.watcher?.getElement()} sid=${this.getSessionId() || 'NONE'}`,
+    );
+    if (this.watcher && this.watcherTargetKey === targetKey) {
+      // The re-run may carry NEW session state: a sessionless pre-activation
+      // found its element and called startContent (no store written — the
+      // ELEMENT_FOUND handler only opens when a session exists), and this
+      // re-send is the server handing back the real session. The watcher's
+      // once(ELEMENT_FOUND) is already consumed, so complete the found path
+      // here or the beacon never opens.
+      const el = this.watcher.getElement();
+      if (el && this.getSessionId()) {
+        if (el.isConnected) {
+          // Same gate as the banner's reuse branch: a re-send while the
+          // target is CSS-hidden must not force one wrong tick of an open
+          // beacon at a hidden element's position — the check loop reopens
+          // when the target shows.
+          this.setStoreData({
+            ...store,
+            openState: isVisibleNode(el),
+            triggerRef: el as HTMLElement,
+          });
+          logger.info('[launcher] handoff complete — beacon opened');
+        } else {
+          // The found element has since been DETACHED (SPA re-render kept the
+          // JS reference but unmounted the node). Don't hand a dead reference
+          // to the positioning layer — write the store closed instead; the
+          // 200ms check loop's checkVisibility() re-finds by selector and
+          // reopens via ELEMENT_CHANGED. (The store must exist either way, or
+          // checkTargetVisibility bails on !store and the beacon never opens.)
+          this.setStoreData({ ...store, openState: false, triggerRef: undefined });
+        }
+      }
+      return;
+    }
+
+    // Clean up existing watcher (target actually changed)
+    if (this.watcher) {
+      this.watcher.destroy();
+      this.watcher = null;
+    }
+
+    this.watcherTargetKey = targetKey;
     this.watcher = new UsertourElementWatcher(targetElement);
 
     // Use launcher-specific timeout (1 hour) for continuous element monitoring
@@ -164,7 +224,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     // Handle element found
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
-        this.handleElementFound(el, store);
+        this.handleElementFound(el, this.pendingWatcherStore ?? store);
       }
     });
 
@@ -190,6 +250,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   private handleElementFound(el: Element, store: LauncherStore): void {
     const sessionId = this.getSessionId();
+    logger.info(`[launcher] elementFound sid=${sessionId || 'NONE'}`);
     if (!sessionId) {
       this.instance.startContent(
         this.getContentId(),
@@ -289,5 +350,6 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       this.watcher.destroy();
       this.watcher = null;
     }
+    this.watcherTargetKey = null;
   }
 }

@@ -34,6 +34,9 @@ export class OpenAPIKeyGuard implements CanActivate {
 
     // Attach the environment to the request for later use
     request.environment = accessToken.environment;
+    // Attach the access token so the audit interceptor can record it as the actor
+    // (v1 keys are environment-scoped — no user owner).
+    request.accessToken = accessToken;
 
     return true;
   }

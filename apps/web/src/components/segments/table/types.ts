@@ -96,17 +96,6 @@ export interface DataTableViewOptionsProps<TData> {
   disabled?: boolean;
 }
 
-// Faceted filter props interface
-export interface DataTableFacetedFilterProps {
-  column?: any;
-  title?: string;
-  options: Array<{
-    label: string;
-    value: string;
-    icon?: React.ComponentType<{ className?: string }>;
-  }>;
-}
-
 // Dynamic column configuration
 export interface DynamicColumnConfig {
   codeName: string;

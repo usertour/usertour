@@ -15,6 +15,7 @@ export const globalConfig = gql`
     globalConfig {
       isSelfHostedMode
       apiUrl
+      mcpServerUrl
       ssoCallbackUrl
       allowUserRegistration
       allowProjectLevelSubscriptionManagement

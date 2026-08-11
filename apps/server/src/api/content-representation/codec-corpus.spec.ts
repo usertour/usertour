@@ -1,0 +1,457 @@
+import { compileStep } from './representation.compile';
+import { decompileStep } from './representation.decompile';
+import { compileText } from './text.compile';
+import { decompileText } from './text.decompile';
+import { compileVersionData } from './version-data.compile';
+import { decompileVersionData } from './version-data.decompile';
+
+/**
+ * Codec faithfulness corpus — the permanent home for what the one-off prod-dump
+ * round-trip sweeps verified (B3 + the markdown-it migration): real-shaped content
+ * must survive decompile↔compile with ZERO corruption. Curated synthetic fixtures
+ * (no prod data) spanning the shape matrix + every pattern that has caught a real
+ * bug. The invariant is IDEMPOTENCE: the codec must be a fixpoint after the first
+ * normalization (a one-time normalization is fine; drift on a second round is a bug).
+ * NOTE: round-trip alone can be fooled (a buggy compile whose garbage decompiles back
+ * to the same string) — so the structural assertions in representation.compile.spec
+ * (marks, link data) are the companion guard; this file is the breadth net.
+ */
+const ids = { attributeId: (c: string) => c, eventId: (c: string) => c } as never;
+const idR = { attributeCode: (i: string) => i, eventCode: (i: string) => i } as never;
+
+// Server-owned ids (a step/question `cvid`, a block `id`) are freshly generated on a
+// from-scratch compile — preserved only across UPDATES via the field-level merge, not
+// echoed from the representation. The faithfulness invariant is "stable modulo those
+// ids", so strip them before comparing (same as the B3 prod sweep: ids/cvids stripped).
+const stripIds = (v: unknown): unknown => {
+  if (Array.isArray(v)) return v.map(stripIds);
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(
+      Object.entries(v as Record<string, unknown>)
+        .filter(([k]) => k !== 'cvid' && k !== 'id')
+        .map(([k, x]) => [k, stripIds(x)]),
+    );
+  }
+  return v;
+};
+
+// ── Markdown / text (where every recent codec bug lived) ────────────────────────
+describe('codec corpus: markdown text is round-trip idempotent', () => {
+  const norm = (md: string) => decompileText(compileText(md));
+  const CORPUS: [string, string][] = [
+    ['plain', 'Just a sentence.'],
+    ['bold + italic', 'Some **bold** and *italic* words.'],
+    ['nested emphasis', '**bold *italic* word**'],
+    ['bold link', 'See **[changelog](https://x.io/changelog)** now'],
+    ['italic link', 'Read *[the docs](https://docs.x.io)* please'],
+    ['url with markdown chars', 'Open [it](https://x.io/a_b*c/d) here'],
+    ['headings', '# Title\n\n## Subtitle'],
+    ['bulleted list', '- alpha\n- beta\n- gamma'],
+    ['numbered list', '1. first\n2. second\n3. third'],
+    ['loose list continuation', '1. Pick one\n\n    then confirm\n2. Done'],
+    ['code fence', '```\nconst x = 1;\n```'],
+    ['liquid', 'Hi {{ first_name | default: "friend" }}!'],
+    ['liquid with markdown chars', 'Plan: {{ plan | default: "*VIP*" }} now'],
+    ['new-tab link suffix', 'Read [the docs](https://docs.x.io){target=_blank} today'],
+    ['bold wrapping liquid', '**Hi {{ name }}!** welcome'],
+    ['bold wrapping liquid only', 'Hi **{{ name }}**, welcome!'],
+    ['emphasis ending in liquid', '*Hey {{ name }}*'],
+    [
+      'mixed everything',
+      '# Welcome\n\nA paragraph with **bold**, *italic*, a [link](https://x.io) and {{ name }}.\n\n- item *one*\n- item **two**',
+    ],
+  ];
+
+  it.each(CORPUS)('%s is a fixpoint', (_label, md) => {
+    const once = norm(md);
+    expect(norm(once)).toBe(once);
+  });
+
+  it('no fixture leaks a literal markdown asterisk into the rendered text', () => {
+    // compiled Slate's leaf text must never contain a raw `*` (the nested-emphasis trap)
+    const leakText = (nodes: any[]): string =>
+      nodes
+        .map((n) =>
+          typeof n.text === 'string'
+            ? n.text
+            : Array.isArray(n.children)
+              ? leakText(n.children)
+              : '',
+        )
+        .join('');
+    for (const [, md] of CORPUS) {
+      const blocks = compileText(md) as any[];
+      expect(leakText(blocks)).not.toContain('*');
+    }
+  });
+
+  describe('link new-tab suffix (the ONE recognized attribute form)', () => {
+    const findLink = (nodes: any[]): any =>
+      nodes
+        .flatMap((n) => (n.type === 'link' ? [n] : Array.isArray(n.children) ? [n.children] : []))
+        .flatMap((x) => (Array.isArray(x) ? [findLink(x)] : [x]))
+        .find(Boolean);
+
+    it('compiles {target=_blank} after a link into openType new (suffix consumed)', () => {
+      const blocks = compileText('Go [here](https://x.io){target=_blank} now') as any[];
+      const link = findLink(blocks);
+      expect(link.openType).toBe('new');
+      const text = JSON.stringify(blocks);
+      expect(text).not.toContain('{target=_blank}');
+      expect(text).toContain(' now');
+    });
+
+    it('decompiles openType new back to the suffix (builder New tab survives edits)', () => {
+      const md = decompileText([
+        {
+          type: 'paragraph',
+          children: [
+            { text: 'Go ' },
+            { type: 'link', url: 'https://x.io', openType: 'new', children: [{ text: 'here' }] },
+          ],
+        },
+      ]);
+      expect(md).toBe('Go [here](https://x.io){target=_blank}');
+    });
+
+    it('requires strict adjacency — a space keeps the braces literal', () => {
+      const blocks = compileText('Go [here](https://x.io) {target=_blank}') as any[];
+      expect(findLink(blocks).openType).toBeUndefined();
+      expect(JSON.stringify(blocks)).toContain('{target=_blank}');
+    });
+
+    it('a bare {target=_blank} with no link stays literal text', () => {
+      const blocks = compileText('just {target=_blank} words') as any[];
+      expect(JSON.stringify(blocks)).toContain('{target=_blank}');
+    });
+  });
+
+  describe('emphasis × liquid runs survive STRUCTURALLY (string fixpoint can lie)', () => {
+    // The bug this pins: per-leaf mark wrapping emitted `*Hey *{{ name }}` — a
+    // space-before-closer CommonMark refuses — so the SECOND compile silently
+    // dropped the emphasis while the string round-trip stayed equal. Assert on
+    // the SLATE, not the string.
+    const roundTripSlate = (md: string) => compileText(decompileText(compileText(md)));
+
+    it('emphasis ending in a liquid node keeps its mark through a full round-trip', () => {
+      const s1 = compileText('*Hey {{ name }}*') as any[];
+      const s2 = roundTripSlate('*Hey {{ name }}*') as any[];
+      expect(s2).toEqual(s1);
+      expect(s2[0].children[0].italic).toBe(true);
+    });
+
+    it('bold wrapping a liquid node emits ONE span, not fragments', () => {
+      expect(decompileText(compileText('**Hi {{ name }}!** welcome'))).toBe(
+        '**Hi {{ name }}!** welcome',
+      );
+    });
+
+    it('emphasis wrapping ONLY an interpolation lands on the node and round-trips', () => {
+      // The flag has a home now (element-level marks the widget renders as
+      // b/i) — the old behavior normalized the wrap away because storing it
+      // had no renderable meaning.
+      const s1 = compileText('Hi **{{ name | default: "there" }}**, welcome!') as any[];
+      const attr = s1[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBe(true);
+      expect(attr.fallback).toBe('there');
+      const out = decompileText(s1);
+      expect(out).toBe('Hi **{{ name | default: "there" }}**, welcome!');
+      expect(compileText(out)).toEqual(s1);
+    });
+
+    it('emphasis wrapping words AND an interpolation flags the node too', () => {
+      const s1 = compileText('**Hi {{ name }}!** welcome') as any[];
+      const attr = s1[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBe(true);
+      expect(decompileText(s1)).toBe('**Hi {{ name }}!** welcome');
+    });
+
+    it('LEGACY unflagged interpolation between bold leaves stays unbold through write-back', () => {
+      // Builder-era storage: leaves bold, node unflagged (the name never
+      // rendered bold). The read form must keep the node OUTSIDE the emphasis
+      // so an echo does not silently bold it.
+      const legacy = [
+        {
+          type: 'paragraph',
+          children: [
+            { text: 'Hi ', bold: true },
+            { type: 'user-attribute', attrCode: 'name', fallback: '', children: [{ text: '' }] },
+            { text: '!', bold: true },
+          ],
+        },
+      ];
+      const md = decompileText(legacy);
+      expect(md).toBe('**Hi** {{ name }}**!**');
+      const back = compileText(md) as any[];
+      const attr = back[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBeUndefined();
+    });
+
+    it('builder-shaped trailing-space bold leaf moves the space outside the markers', () => {
+      // Builder data can hold a bold leaf ending in a space (markdown never
+      // compiles to this, but decompile must not emit `**Hi **x` — invalid).
+      const md = decompileText([
+        { type: 'paragraph', children: [{ text: 'Hi ', bold: true }, { text: 'x' }] },
+      ]);
+      expect(md).toBe('**Hi** x');
+      const back = compileText(md) as any[];
+      expect(back[0].children[0]).toMatchObject({ text: 'Hi', bold: true });
+    });
+  });
+
+  // Out-of-subset markdown is intentionally normalized/dropped, not rejected. Lock the
+  // degradation so a parser change can't silently start emitting unsupported Slate nodes.
+  describe('out-of-subset markdown degrades silently (documented behavior)', () => {
+    const norm = (md: string) => decompileText(compileText(md));
+
+    it('clamps h3+ to h2', () => {
+      expect(norm('### Deep heading')).toBe('## Deep heading');
+      expect(norm('###### Deepest')).toBe('## Deepest');
+    });
+
+    it('flattens a blockquote to a plain paragraph', () => {
+      expect(norm('> A quoted line')).toBe('A quoted line');
+    });
+
+    it('drops a table entirely', () => {
+      expect(norm('| a | b |\n| --- | --- |\n| 1 | 2 |')).toBe('');
+    });
+
+    it('drops a horizontal rule', () => {
+      expect(norm('above\n\n---\n\nbelow')).toBe('above\n\nbelow');
+    });
+
+    it('degrades strikethrough to plain text', () => {
+      expect(norm('Some ~~struck~~ text')).toBe('Some struck text');
+    });
+
+    it('drops liquid filters other than default', () => {
+      expect(norm('{{ name | upcase }}')).not.toContain('upcase');
+    });
+  });
+});
+
+// ── Flow steps (the bulk of real Step.data: content blocks + conditions + triggers) ──
+describe('codec corpus: flow steps are round-trip idempotent', () => {
+  const meta = { id: 'sx', name: 'Step', sequence: 0 };
+  const roundTrip = (rep: any, type: string) => {
+    const c: any = compileStep({ ...rep, ...meta, type }, undefined, ids);
+    return decompileStep({
+      ...meta,
+      type,
+      cvid: c.cvid,
+      data: c.data,
+      target: c.target,
+      setting: c.setting,
+      trigger: c.trigger,
+    } as never);
+  };
+
+  const STEPS: [string, string, any][] = [
+    [
+      'modal: rich text + buttons',
+      'modal',
+      {
+        placement: { position: 'center' },
+        content: [
+          { object: 'block', type: 'text', markdown: 'Hello **there** — *welcome*' },
+          {
+            object: 'block',
+            type: 'button',
+            text: 'Next',
+            variant: 'primary',
+            actions: [{ type: 'dismiss' }],
+          },
+        ],
+      },
+    ],
+    [
+      'tooltip: target + placement + trigger',
+      'tooltip',
+      {
+        target: { selector: '.cta', nth: 1 },
+        placement: { side: 'bottom', align: 'center' },
+        width: 320,
+        content: [{ object: 'block', type: 'text', markdown: 'Click here' }],
+        triggers: [
+          {
+            when: [{ type: 'current_url', includes: ['*/app/*'] }],
+            do: [{ type: 'dismiss' }],
+          },
+        ],
+      },
+    ],
+    [
+      'modal: nps question bound to an attribute',
+      'modal',
+      {
+        placement: { position: 'center' },
+        content: [
+          { object: 'block', type: 'text', markdown: 'How likely to recommend?' },
+          {
+            object: 'block',
+            type: 'question',
+            question: { kind: 'nps', name: 'NPS', bindAttribute: 'nps_score' },
+          },
+        ],
+      },
+    ],
+    [
+      'modal: columns + image',
+      'modal',
+      {
+        placement: { position: 'center' },
+        content: [
+          {
+            object: 'block',
+            type: 'columns',
+            columns: [
+              { blocks: [{ object: 'block', type: 'text', markdown: 'Left' }] },
+              { blocks: [{ object: 'block', type: 'image', url: 'https://x.io/a.png', alt: 'a' }] },
+            ],
+          },
+        ],
+      },
+    ],
+    [
+      'tooltip: onClick + grouped conditions',
+      'tooltip',
+      {
+        target: { selector: 'a[href="/tasks"]' },
+        placement: { side: 'right', align: 'start' },
+        content: [{ object: 'block', type: 'text', markdown: 'Go to tasks' }],
+        onClick: [{ type: 'dismiss' }],
+        triggers: [
+          {
+            when: [
+              {
+                type: 'group',
+                match: 'all',
+                conditions: [
+                  { type: 'attribute', scope: 'user', attribute: 'plan', op: 'is', value: 'pro' },
+                  { type: 'content_state', content: 'flow-1', state: 'completed' },
+                ],
+              },
+            ],
+            do: [{ type: 'navigate', url: '/tasks' }],
+          },
+        ],
+      },
+    ],
+  ];
+
+  it.each(STEPS)('%s is a fixpoint', (_label, type, rep) => {
+    const r1 = roundTrip(rep, type);
+    const r2 = roundTrip(r1, type);
+    expect(stripIds(r2)).toEqual(stripIds(r1));
+  });
+});
+
+// ── Non-flow version data (checklist / resource-center / banner) ─────────────────
+describe('codec corpus: non-flow version data is round-trip idempotent', () => {
+  const roundTrip = (type: string, rep: any) =>
+    decompileVersionData(type, compileVersionData(type, rep, undefined, ids), idR);
+
+  const DATA: [string, string, any][] = [
+    [
+      'checklist',
+      'checklist',
+      {
+        buttonText: 'Get started',
+        initialDisplay: 'expanded',
+        completionOrder: 'any',
+        content: [{ object: 'block', type: 'text', markdown: 'Finish these **steps**' }],
+        items: [
+          {
+            name: 'Create a task',
+            completeWhen: [{ type: 'task_clicked' }],
+            clickActions: [{ type: 'navigate', url: '/tasks' }],
+          },
+        ],
+      },
+    ],
+    [
+      'resource-center',
+      'resource-center',
+      {
+        buttonText: 'Help',
+        tabs: [
+          {
+            name: 'Guides',
+            blocks: [
+              {
+                type: 'richtext',
+                content: [{ object: 'block', type: 'text', markdown: 'Read **this**' }],
+              },
+              { type: 'divider' },
+            ],
+          },
+        ],
+      },
+    ],
+    [
+      'banner',
+      'banner',
+      {
+        placement: 'top-of-page',
+        content: [{ object: 'block', type: 'text', markdown: 'Heads up: *new* feature' }],
+      },
+    ],
+    [
+      'announcement (badge)',
+      'announcement',
+      {
+        title: 'v2.1 released',
+        introContent: [{ object: 'block', type: 'text', markdown: 'We shipped **dark mode**' }],
+        enableReadMore: true,
+        readMoreLabel: 'See details',
+        detailContent: [
+          { object: 'block', type: 'text', markdown: '# Dark mode\nFull details here' },
+          {
+            object: 'block',
+            type: 'button',
+            text: 'Try it',
+            actions: [{ type: 'navigate', url: '/settings/appearance' }],
+          },
+        ],
+        distribution: 'badge',
+      },
+    ],
+    [
+      'announcement (popup)',
+      'announcement',
+      {
+        title: 'Maintenance window',
+        introContent: [{ object: 'block', type: 'text', markdown: 'Saturday 02:00 UTC' }],
+        distribution: 'popup',
+        popupConfig: { style: 'modal' },
+      },
+    ],
+    [
+      'resource-center with announcement block',
+      'resource-center',
+      {
+        buttonText: 'Help',
+        tabs: [
+          {
+            name: 'News',
+            blocks: [
+              {
+                type: 'announcement',
+                name: "What's new",
+                icon: { source: 'builtin', type: 'notification-line' },
+              },
+              { type: 'divider' },
+            ],
+          },
+        ],
+      },
+    ],
+  ];
+
+  it.each(DATA)('%s is a fixpoint', (_label, type, rep) => {
+    const r1 = roundTrip(type, rep);
+    const r2 = roundTrip(type, r1);
+    expect(r2).toEqual(r1);
+  });
+});

@@ -18,6 +18,7 @@ import { ConditionEvaluationService } from './core/condition-evaluation.service'
 import { ContentDataService } from './core/content-data.service';
 import { SessionBuilderService } from './core/session-builder.service';
 import { ContentOrchestratorService } from './core/content-orchestrator.service';
+import { ContentDiagnosisService } from './core/content-diagnosis.service';
 import { SocketOperationService } from './core/socket-operation.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
@@ -47,13 +48,17 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
         throttlers: [
           {
             name: 'short',
-            ttl: configService.get<number>('WS_THROTTLE_SHORT_TTL', 1000),
-            limit: configService.get<number>('WS_THROTTLE_SHORT_LIMIT', 30),
+            // Number(...) is load-bearing: env values are STRINGS, and the
+            // throttler storage computes `Date.now() + ttl` — string concat
+            // would push expiry out ~5.6M years and the window would never
+            // reset (same latent bug the v2 API limiter shipped and fixed).
+            ttl: Number(configService.get('WS_THROTTLE_SHORT_TTL') ?? 1000),
+            limit: Number(configService.get('WS_THROTTLE_SHORT_LIMIT') ?? 30),
           },
           {
             name: 'medium',
-            ttl: configService.get<number>('WS_THROTTLE_MEDIUM_TTL', 60000),
-            limit: configService.get<number>('WS_THROTTLE_MEDIUM_LIMIT', 300),
+            ttl: Number(configService.get('WS_THROTTLE_MEDIUM_TTL') ?? 60000),
+            limit: Number(configService.get('WS_THROTTLE_MEDIUM_LIMIT') ?? 300),
           },
         ],
       }),
@@ -73,6 +78,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     ContentDataService,
     SessionBuilderService,
     ContentOrchestratorService,
+    ContentDiagnosisService,
     SocketOperationService,
     SocketEmitterService,
     SocketParallelService,
@@ -82,6 +88,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     AnnouncementService,
     WebSocketV2MessageHandler,
   ],
-  exports: [WebSocketGateway, WebSocketV2Gateway],
+  exports: [WebSocketGateway, WebSocketV2Gateway, ContentDiagnosisService],
 })
 export class WebSocketModule {}

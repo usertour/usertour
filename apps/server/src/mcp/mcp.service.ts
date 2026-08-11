@@ -1,0 +1,243 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Injectable, Logger } from '@nestjs/common';
+import { z } from 'zod';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from 'nestjs-prisma';
+
+import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
+import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
+import { ApiCompaniesService } from '@/api/companies/companies.service';
+import { ApiContentService } from '@/api/content/content.service';
+import { ApiContentSessionsService } from '@/api/content-sessions/content-sessions.service';
+import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
+import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
+import { ApiUsageOverviewService } from '@/api/analytics/usage-overview.service';
+import { ApiReferencesService } from '@/api/references/references.service';
+import { ApiEnvironmentsService } from '@/api/environments/environments.service';
+import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
+import { ApiSegmentsService } from '@/api/segments/segments.service';
+import { ApiThemesService } from '@/api/themes/themes.service';
+import { ApiUsersService } from '@/api/users/users.service';
+import { BaseError } from '@/common/errors/base';
+import { AuditService } from '@/audit/audit.service';
+import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
+
+import { McpServices, McpTool, McpToolContext } from './mcp.types';
+import { SERVER_INSTRUCTIONS } from './server-instructions';
+import { buildMcpAuditEntry } from './tools/audit-meta';
+import { buildReadTools, resolveEnvironment } from './tools/read-tools';
+import { buildWriteTools } from './tools/write-tools';
+
+/**
+ * The real server release from package.json (../../ resolves to apps/server from
+ * both src/mcp and the flat dist/mcp build output), so an MCP client's
+ * `serverInfo.version` reflects the actual deployment instead of a hardcoded
+ * constant — the only signal a client has that the server (and with it the tool
+ * schemas it caches at connect time) has changed.
+ */
+function readServerVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8')) as {
+      version?: unknown;
+    };
+    return typeof pkg.version === 'string' ? pkg.version : '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
+const SERVER_INFO = { name: 'usertour', version: readServerVersion() };
+
+/**
+ * The MCP application layer. Owns the read-only tool registry and builds a fresh
+ * {@link McpServer} per request with only the tools whose capability is in the
+ * caller's token scopes registered. The protocol (JSON-RPC framing, batching,
+ * the initialize handshake, SSE/JSON responses) is handled by the SDK transport
+ * wired up in the controller; auth lives in {@link ApiTokenAuthService}.
+ */
+@Injectable()
+export class McpService {
+  private readonly logger = new Logger(McpService.name);
+  private readonly tools: McpTool[];
+  private readonly services: McpServices;
+
+  constructor(
+    private readonly auth: ApiTokenAuthService,
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+    private readonly audit: AuditService,
+    private readonly contentDiagnosis: ContentDiagnosisService,
+    contentService: ApiContentService,
+    contentVersionsService: ApiContentVersionsService,
+    attributeDefinitionsService: ApiAttributeDefinitionsService,
+    eventDefinitionsService: ApiEventDefinitionsService,
+    usersService: ApiUsersService,
+    themesService: ApiThemesService,
+    companiesService: ApiCompaniesService,
+    segmentsService: ApiSegmentsService,
+    sessionsService: ApiContentSessionsService,
+    environmentsService: ApiEnvironmentsService,
+    analyticsService: ApiAnalyticsService,
+    usageOverviewService: ApiUsageOverviewService,
+    referencesService: ApiReferencesService,
+  ) {
+    this.services = {
+      content: contentService,
+      contentVersions: contentVersionsService,
+      attributeDefinitions: attributeDefinitionsService,
+      eventDefinitions: eventDefinitionsService,
+      users: usersService,
+      themes: themesService,
+      companies: companiesService,
+      segments: segmentsService,
+      sessions: sessionsService,
+      environments: environmentsService,
+      analytics: analyticsService,
+      usageOverview: usageOverviewService,
+      references: referencesService,
+    };
+    this.tools = [...buildReadTools(), ...buildWriteTools()];
+  }
+
+  /**
+   * Build a per-request MCP server for `token`, registering only the tools whose
+   * capability is in the token's granted scopes (so `tools/list` is scope-gated
+   * by construction). Project resolution and capability re-checks happen lazily
+   * inside each tool callback — never at build time — so `initialize` and
+   * `tools/list` keep working even for a token that isn't valid for any one tool
+   * (e.g. a multi-project token).
+   */
+  createServer(token: AuthedApiToken): McpServer {
+    // `instructions` rides the initialize result: the agent gets the routing map
+    // (which tool for which intent; read get_authoring_guide before authoring)
+    // before its first tool call — see server-instructions.ts.
+    const server = new McpServer(SERVER_INFO, {
+      capabilities: { tools: {} },
+      instructions: SERVER_INSTRUCTIONS,
+    });
+    const scopes = this.auth.scopes(token);
+
+    for (const tool of this.tools) {
+      if (!scopes.includes(tool.capability)) {
+        continue;
+      }
+      server.registerTool(
+        tool.name,
+        {
+          title: tool.title,
+          description: tool.description,
+          // .strict(): an unknown top-level key is an InvalidParams error naming
+          // the key. Zod's default (strip) made the SDK silently drop unknown
+          // keys before the handler ran — a misspelled field "succeeded" while
+          // doing nothing. Also advertises additionalProperties:false.
+          inputSchema: z.object(tool.inputSchema).strict(),
+          ...(tool.annotations ? { annotations: tool.annotations } : {}),
+        },
+        async (args: Record<string, unknown>) => {
+          try {
+            // Resolve the (single) project lazily so building the server can't
+            // fail for a multi-project token — only the tool call does.
+            const projectId = this.resolveProjectId(token);
+            await this.auth.authorize(token, projectId, tool.capability);
+            const ctx: McpToolContext = {
+              token,
+              projectId,
+              dashboardUrl: this.configService.get<string>('app.homepageUrl') || '',
+              auth: this.auth,
+              prisma: this.prisma,
+              services: this.services,
+              contentDiagnosis: this.contentDiagnosis,
+            };
+            const payload = await this.runWithAudit(tool, args ?? {}, ctx);
+            return { content: [{ type: 'text' as const, text: JSON.stringify(payload) }] };
+          } catch (error) {
+            return {
+              content: [{ type: 'text' as const, text: this.errorMessage(error) }],
+              isError: true,
+            };
+          }
+        },
+      );
+    }
+
+    return server;
+  }
+
+  /**
+   * Run a tool handler and, for write tools carrying `audit` metadata, capture an
+   * audit entry around it: resolve the environment once (env-scoped resources),
+   * snapshot `before` (delete/update), run the handler, then record the change
+   * with the actor from the token. Auditing is a side-channel: the before-fetch
+   * and the entry build are guarded here (mirroring the REST/web interceptor
+   * branches), so an audit-side failure can neither block the business write nor
+   * turn an already-committed write into an `isError` reply.
+   */
+  private async runWithAudit(
+    tool: McpTool,
+    args: Record<string, unknown>,
+    ctx: McpToolContext,
+  ): Promise<unknown> {
+    const meta = tool.audit;
+    if (!meta) {
+      return tool.handler(args, ctx);
+    }
+    // Resolve the env ONCE for env-scoped audited tools and stash it on ctx, so
+    // the handler's own resolveEnvironment reuses it instead of resolving a
+    // second time (two lookups + scope checks, or two full env scans by default).
+    // NOT audit-side: this is the same scope-fence check the handler would run.
+    const environment = meta.envScoped ? await resolveEnvironment(args, ctx) : undefined;
+    if (environment) {
+      ctx.resolvedEnvironment = environment;
+    }
+    let before: unknown;
+    if (meta.fetchBefore) {
+      try {
+        before = await meta.fetchBefore(args, ctx, environment);
+      } catch (error) {
+        this.logger.error('Audit before-fetch failed', error as Error);
+      }
+    }
+    const result = await tool.handler(args, ctx);
+    try {
+      // This try guards the entry BUILD (resourceId fns etc.) — `record` itself
+      // never throws. An unguarded build throw here would turn the already-
+      // committed write into an isError reply.
+      const entry = buildMcpAuditEntry(tool, ctx, args, result, before, environment);
+      this.audit.record(entry);
+    } catch (error) {
+      this.logger.error('Failed to build MCP audit entry', error as Error);
+    }
+    return result;
+  }
+
+  /**
+   * The single project the token may act on. MCP carries no `:projectId` in the
+   * path, so a token must be scoped to exactly one project to be usable here.
+   */
+  resolveProjectId(token: AuthedApiToken): string {
+    if (token.projects.length === 1) {
+      return token.projects[0].projectId;
+    }
+    throw new Error('API token must be scoped to exactly one project to use MCP.');
+  }
+
+  /** Turn any thrown error into a human-readable message for the tool result. */
+  private errorMessage(error: unknown): string {
+    // Every domain error extends BaseError and carries its text in
+    // getMessage()/messageDict — the native Error.message is left empty. Checking
+    // only OpenAPIError (a BaseError subclass) left the errors that extend
+    // BaseError directly — version-lock (E0049), conflict (E0050), params, no
+    // permission — surfacing as an empty string ("Command failed with no output").
+    // Prefix the code so an agent gets a stable handle to branch on.
+    if (error instanceof BaseError) {
+      return `[${error.code}] ${error.getMessage('en')}`;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return String(error);
+  }
+}

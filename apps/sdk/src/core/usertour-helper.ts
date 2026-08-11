@@ -144,6 +144,25 @@ const evaluateButtonConditionsInChild = async (
   };
 };
 
+/**
+ * Does any button in these roots carry disable/hide conditions? Cheap guard so
+ * the per-tick re-evaluation (see checkAndUpdateButtonConditions in the
+ * components) skips content without conditional buttons entirely.
+ */
+export const rootsHaveButtonConditions = (value: unknown): boolean => {
+  if (Array.isArray(value)) {
+    return value.some((item) => rootsHaveButtonConditions(item));
+  }
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const data = (value as { data?: { disableButton?: boolean; hideButton?: boolean } }).data;
+  if (data && (data.disableButton || data.hideButton)) {
+    return true;
+  }
+  return Object.values(value).some((child) => rootsHaveButtonConditions(child));
+};
+
 // ============================================================================
 // Content Filtering and Validation Functions
 // ============================================================================

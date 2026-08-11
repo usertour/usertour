@@ -7,6 +7,8 @@ import {
 } from './integration.dto';
 import { IntegrationService } from './integration.service';
 import { UseGuards } from '@nestjs/common';
+
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
@@ -52,6 +54,14 @@ export class IntegrationResolver {
    */
   @Mutation(() => Integration)
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Environment })
+  // Third-party data-flow config on/off — credentials in the snapshot are blanked
+  // by REDACT_KEYS_BY_TYPE (key / accessToken / config).
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+    environmentId: (a) => String(a.environmentId ?? ''),
+  })
   async updateIntegration(
     @Args('environmentId') environmentId: string,
     @Args('provider') provider: string,
@@ -111,6 +121,11 @@ export class IntegrationResolver {
    */
   @Mutation(() => IntegrationObjectMapping)
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => String(a.integrationId ?? ''),
+  })
   async upsertIntegrationObjectMapping(
     @Args('integrationId') integrationId: string,
     @Args('input') input: CreateIntegrationObjectMappingInput,
@@ -132,6 +147,12 @@ export class IntegrationResolver {
    */
   @Mutation(() => IntegrationObjectMapping)
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  // args carry only the MAPPING id; the integration id comes from the result.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (_a, r) => String((r as { integrationId?: string })?.integrationId ?? ''),
+  })
   async updateIntegrationObjectMapping(
     @Args('id') id: string,
     @Args('input') input: UpdateIntegrationObjectMappingInput,
@@ -150,6 +171,12 @@ export class IntegrationResolver {
    */
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  // Only the mapping id is available (result is a Boolean); operation names the act.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => String(a.id ?? ''),
+  })
   async deleteIntegrationObjectMapping(@Args('id') id: string) {
     await this.integrationService.deleteIntegrationObjectMapping(id);
     return true;
@@ -163,6 +190,12 @@ export class IntegrationResolver {
    */
   @Mutation(() => Integration)
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Environment })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+    environmentId: (a) => String(a.environmentId ?? ''),
+  })
   async disconnectIntegration(
     @Args('environmentId') environmentId: string,
     @Args('provider') provider: string,

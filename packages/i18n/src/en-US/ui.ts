@@ -1,6 +1,28 @@
 const translations = {
   language: 'English',
   productName: 'Usertour',
+  oauth: {
+    consent: {
+      title: '{{client}} wants to connect',
+      subtitle: 'You will return to {{host}} after approving.',
+      projectLabel: 'Project',
+      scopesLabel: 'Permissions',
+      readOnly: 'Read-only',
+      environmentsLabel: 'Environments',
+      environmentsHelp:
+        'Which environments this connection can act on (publishing, end-user data, analytics). It does not limit which content it can see — content is project-level.',
+      environmentsSelect: 'Select environments',
+      selectEnvironment: 'Select at least one environment for the selected permissions.',
+      noGrantableScopes:
+        'Your role on this project cannot grant any of the permissions this app requested.',
+      allow: 'Allow',
+      deny: 'Deny',
+      errorTitle: 'Authorization error',
+      invalidRequest: 'This authorization request is invalid or has expired.',
+      twoFactorRequired:
+        'This instance requires two-factor authentication. Enable 2FA in your account security settings, then start the connection again from your app.',
+    },
+  },
   admin: {
     common: {
       cancel: 'Cancel',
@@ -229,10 +251,103 @@ const translations = {
     },
   },
   settings: {
+    mcp: {
+      title: 'MCP server',
+      betaBadge: 'Beta',
+      subtitle:
+        'Connect AI assistants like Claude, Cursor, and ChatGPT to Usertour — they can build, publish, and manage your onboarding through conversation.',
+      docsLink: 'Docs',
+      serverUrlLabel: 'Server URL',
+      clientsTitle: 'Connect a client',
+      clientsSubtitle:
+        'Pick your AI assistant — every value below is pre-filled for this instance.',
+      consentNote:
+        'One server for everything: what a connection may do — which project, which environments, read-only or full access — is chosen on the authorization screen when you connect.',
+      copied: 'Copied to clipboard',
+      notes: {
+        permissions:
+          'Once connected, an AI assistant acts as you — capped by your role, and further narrowed by whatever you grant on the authorization screen (read-only, specific environments). Changes it makes (publishing, deleting) count as yours.',
+        audit:
+          'Every action an assistant takes via MCP is recorded in the audit log under your account.',
+      },
+      clients: {
+        claude: {
+          title: 'Claude (claude.ai)',
+          blurb: 'Add Usertour as a custom connector inside claude.ai.',
+          step1: 'Open Settings → Connectors and click "Add custom connector":',
+          step2: 'Set the connector name:',
+          step3: 'Paste the Server URL:',
+          step4:
+            'Click Add — Claude opens the Usertour authorization screen. Pick the project, environments, and access level, then approve.',
+        },
+        chatgpt: {
+          title: 'ChatGPT',
+          blurb: 'Connect via ChatGPT plugins (Developer mode).',
+          step1:
+            'Open Settings → Plugins, enable Developer mode, and click "New Plugin". (Requires a paid ChatGPT plan.)',
+          step2: 'Set the name and MCP Server URL:',
+          step3:
+            'Leave Authentication on OAuth and submit — ChatGPT opens the Usertour authorization screen. Approve to connect.',
+        },
+        cursor: {
+          title: 'Cursor',
+          blurb: 'One-click install via the Cursor deeplink.',
+          button: 'Add to Cursor',
+          step1:
+            'Click "Add to Cursor" — Cursor opens with the server pre-filled and walks you through authorization.',
+          step2:
+            'Prefer manual setup? Cursor → Settings → MCP → Add new MCP server, with this URL:',
+          skillNote: 'Optional: also install the authoring skill for workflow guidance:',
+        },
+        claudeCode: {
+          title: 'Claude Code',
+          blurb: 'Install the plugin — skills and the MCP connection in one.',
+          envStep:
+            'Self-hosted / custom instance: set your server URL in the shell you launch Claude Code from (the plugin defaults to Usertour Cloud):',
+          pluginStep:
+            'Inside Claude Code, install the Usertour plugin — it registers the MCP connection AND the authoring skills:',
+          authStep:
+            'Run /mcp inside Claude Code to authorize — the Usertour authorization screen opens in your browser.',
+          mcpOnly: 'Prefer the MCP connection only (without the skills)? One command:',
+        },
+        codex: {
+          title: 'Codex (CLI & IDE extension)',
+          blurb: "Register the server — shared by Codex's CLI and IDE extension (not Codex Cloud).",
+          step1: 'Run this to register the server:',
+          loginNote:
+            'Codex supports OAuth natively and prompts you to authorize the first time you use a Usertour tool. To authorize right away instead, run:',
+          skillNote: 'Optional: also install the authoring skill for workflow guidance:',
+        },
+        vscode: {
+          title: 'VS Code',
+          blurb: 'Add it to mcp.json for GitHub Copilot Chat (Agent mode).',
+          step1:
+            'Open the Command Palette and run "MCP: Open User Configuration" to open your mcp.json.',
+          step2: 'Add this entry (the root key is `servers`, not `mcpServers`):',
+          step3:
+            'Save the file — the server is available next time you chat with Copilot in Agent mode. First use prompts you to authorize.',
+        },
+        other: {
+          title: 'Other clients',
+          blurb: 'Any client that reads an mcpServers.json (Continue, Zed, …).',
+          body: 'Any client that reads an mcpServers.json (Continue, Zed, …): add the entry below. The authorization flow runs automatically on first use.',
+        },
+      },
+      manage: {
+        prefix: 'Manage or revoke connected assistants in',
+        connectedApps: 'Connected apps',
+        suffix: '.',
+      },
+      apiKeyNote: {
+        prefix: 'Client without OAuth support? Create a',
+        link: 'personal API key',
+        suffix: ' and connect via mcp-remote with a Bearer header.',
+      },
+    },
     nav: {
       heading: 'Settings',
       general: 'General',
-      developer: 'Advanced',
+      account: 'Account',
       sections: {
         general: 'Project',
         themes: 'Themes',
@@ -240,13 +355,17 @@ const translations = {
         attributes: 'Attributes',
         events: 'Events',
         localizations: 'Localization',
+        'audit-log': 'Audit log',
         team: 'Team',
         sso: 'SSO',
         billing: 'Billing',
         subscription: 'Subscription',
-        account: 'Account',
+        account: 'Profile',
+        'personal-api-keys': 'Personal API keys',
+        'connected-apps': 'Connected apps',
         installation: 'Installation',
         api: 'API',
+        mcp: 'MCP',
         'identity-verification': 'Identity Verification',
         integrations: 'Integrations',
       },
@@ -524,6 +643,11 @@ const translations = {
         name: 'Name',
         email: 'Email',
         role: 'Role',
+        twoFactor: '2FA',
+      },
+      twoFactor: {
+        on: 'Enabled',
+        off: 'Off',
       },
       invitePending: 'Invite pending',
       cancelInviteMenuItem: 'Cancel invite',
@@ -630,6 +754,7 @@ const translations = {
       unlimited: 'Unlimited',
       yearOne: '1 Year',
       yearsN: '{{value}} Years',
+      auditDays: '{{value}} days',
       sections: {
         billingPlan: 'Billing plan',
         billingPlanDescription: 'View and manage your billing plan',
@@ -676,6 +801,7 @@ const translations = {
           teamMembers: 'Team members',
           customTheming: 'Custom theming',
           customCss: 'Custom CSS',
+          auditLogs: 'Audit log',
           customAttributes: 'Custom user attributes',
           flowTriggering: 'Automatic, segmented flow triggering',
           versionHistory: 'Version history',
@@ -685,7 +811,6 @@ const translations = {
           integrations: 'Integrations (coming soon)',
           alerting: 'Alerting (coming soon)',
           sso: 'Single Sign-On (SSO)',
-          auditLog: 'Audit log (coming soon)',
         },
       },
       banner: {
@@ -834,6 +959,8 @@ const translations = {
     },
     api: {
       title: 'API keys for {{environment}}',
+      deprecation:
+        'Environment API keys are being deprecated and will be removed in a future release. Use <a>Personal API keys</a> instead.',
       newButton: 'New API key',
       columns: {
         name: 'Name',
@@ -864,6 +991,186 @@ const translations = {
       headerEnvironment:
         "Each environment has its own keys; you're viewing <strong>{{environment}}</strong>. Switch via the environment menu in the top-left.",
       headerDocs: 'Read the API reference',
+    },
+    auditLog: {
+      title: 'Audit log',
+      description:
+        'Who changed or deleted what in this project, when, and from which surface (web, API, or MCP).',
+      empty: 'No audit log entries yet.',
+      loadError: 'Failed to load the audit log. Refresh to retry.',
+      endOfLog: 'End of log.',
+      columns: {
+        time: 'Time',
+        actor: 'Actor',
+        source: 'Source',
+        action: 'Action',
+        resource: 'Resource',
+        operation: 'Operation',
+      },
+      detail: {
+        title: 'Audit detail',
+        via: 'via',
+        before: 'Before',
+        after: 'After',
+        metadata: 'Metadata',
+        noSnapshot: 'No snapshot was captured for this change.',
+      },
+      locked: {
+        cloud: {
+          title: 'Audit log is a Business feature',
+          description:
+            'Track who changed or deleted what across your project on the Business plan.',
+          upgrade: 'Upgrade to Business',
+        },
+        selfHosted: {
+          title: 'Audit log requires a license',
+          description: 'Activate a license on this instance to enable audit logging.',
+        },
+      },
+      retention: {
+        tooltip: 'Showing the last {{days}} days. Upgrade to Business for full history.',
+        endOfWindow: 'Showing the last {{days}} days only.',
+        rangeBeyondWindow: 'Records older than {{days}} days are not visible on your current plan.',
+        upgrade: 'Upgrade for full history',
+      },
+      filters: {
+        allSources: 'All sources',
+        allActions: 'All actions',
+        allResources: 'All resources',
+        allEnvironments: 'All environments',
+        allActors: 'All actors',
+        environment: 'Environment',
+        clear: 'Clear filters',
+        resourceLabels: {
+          api_token: 'API key',
+          access_token: 'SDK token',
+          signing_secret: 'Signing secret',
+          oauth_grant: 'Connected app',
+          sso_provider: 'SSO provider',
+          project_sso_settings: 'SSO settings',
+        },
+      },
+    },
+    connectedApps: {
+      title: 'Connected apps',
+      description:
+        "Apps you've authorized to access Usertour on your behalf (e.g. MCP connectors).",
+      empty: 'No connected apps yet.',
+      revoke: 'Revoke',
+      revokeTitle: 'Revoke {{name}}?',
+      revokeDescription:
+        'This immediately invalidates its access. The app must be re-authorized to connect again.',
+      never: 'Never',
+      allEnvironments: 'All',
+      noEnvironments: 'No environments',
+      noEnvironmentsTooltip:
+        'The environments granted to this app have been deleted, so it can no longer act on any environment. Revoke it and reconnect to grant new environments.',
+      columns: {
+        app: 'App',
+        project: 'Project',
+        environments: 'Environments',
+        access: 'Access',
+        lastUsed: 'Last used',
+        authorized: 'Authorized',
+      },
+    },
+    personalApiKeys: {
+      title: 'Personal API keys',
+      description:
+        'Personal API keys authenticate REST API requests on your behalf, scoped to the projects and permissions you select.',
+      descriptionOnce:
+        '<strong>The full key is shown only once</strong> right after creation and cannot be retrieved again.',
+      headerDocs: 'Read the API reference',
+      newButton: 'New key',
+      empty: 'No personal API keys yet.',
+      form: {
+        environmentRequired: 'Select at least one environment for the selected scopes',
+      },
+      columns: {
+        name: 'Name',
+        key: 'Key',
+        projects: 'Projects',
+        environments: 'Environments',
+        scopes: 'Scopes',
+        lastUsed: 'Last used',
+        createdAt: 'Created at',
+      },
+      scopesAll: 'All scopes',
+      scopesCount_one: '{{count}} scope',
+      scopesCount_other: '{{count}} scopes',
+      environmentsAllBadge: 'All',
+      environmentsCount_one: '{{count}} env',
+      environmentsCount_other: '{{count}} envs',
+      environmentsNoneBadge: 'No environments',
+      environmentsNoneTooltip:
+        'The environments this key was scoped to have been deleted, so it can no longer act on any environment. Edit it to select new environments, or delete it.',
+      lastUsedNever: 'Never',
+      createTitle: 'New personal API key',
+      nameLabel: 'Name',
+      namePlaceholder: 'Enter key name',
+      projectsLabel: 'Projects',
+      projectLabel: 'Project',
+      projectPlaceholder: 'Select a project',
+      projectSearch: 'Search projects...',
+      projectEmpty: 'No project found.',
+      environmentsLabel: 'Environments',
+      environmentsHelp:
+        'Which environments this key can act on: publishing, end-user data (users / companies / sessions / segment membership), analytics and the environment records themselves. It does NOT limit what content the key can SEE — content, versions and themes are project-level, so any key with content scopes can read (and edit or delete) every piece in the project, including one that is live in an environment it cannot act on. For real isolation, use a separate project.',
+      environmentsPickProject: 'Select a project first.',
+      environmentsSelect: 'Select environments',
+      scopesLabel: 'Scopes',
+      createButton: 'Create key',
+      creating: 'Creating...',
+      createSuccess: 'Personal API key created successfully',
+      createFailure: 'Failed to create personal API key.',
+      scopeLevels: {
+        none: 'No access',
+        read: 'Read',
+        write: 'Write',
+      },
+      scopeResources: {
+        content: 'Content',
+        theme: 'Themes',
+        user: 'Users',
+        company: 'Companies',
+        session: 'Sessions',
+        segment: 'Segments',
+        attribute: 'Attributes',
+        event: 'Events',
+        analytics: 'Analytics',
+        environment: 'Environment settings',
+      },
+      scopeNoWrite: 'No write API yet',
+      presets: {
+        placeholder: 'Select preset',
+        aiAgent: 'AI agent (full authoring)',
+        contentAuthoring: 'Content authoring',
+        userDataSync: 'User data sync',
+        readOnly: 'Read-only access',
+        allAccess: 'All access',
+      },
+      revealTitle: 'Save your API key now',
+      revealDescription:
+        "This key is shown only once and can't be retrieved later. Copy and store it somewhere safe before closing this dialog.",
+      copied: 'Key copied to clipboard',
+      copyFailed: 'Failed to copy key. Please copy it manually.',
+      editMenuItem: 'Edit',
+      editTitle: 'Edit personal API key',
+      saveButton: 'Save changes',
+      saving: 'Saving...',
+      updateSuccess: 'Personal API key updated',
+      updateFailure: 'Failed to update personal API key.',
+      rotateMenuItem: 'Rotate key',
+      rotateConfirmTitle: 'Rotate this key?',
+      rotateConfirmDescription:
+        'A new secret will be generated for <strong>{{name}}</strong>. The current key stops working immediately, so any integration using it must be updated.',
+      rotateConfirmButton: 'Rotate key',
+      rotateSuccess: 'Key rotated — copy the new secret now',
+      rotateFailure: 'Failed to rotate key',
+      deleteMenuItem: 'Delete',
+      deleteResource: 'API key',
+      deleteSuccess: 'API key deleted',
+      deleteFailure: 'Failed to delete API key',
     },
     identityVerification: {
       title: 'Identity verification for {{environment}}',
@@ -1738,13 +2045,15 @@ const translations = {
         totalViews: 'Total views',
         totalCompletionRate: 'Total completion rate',
         launcher: {
-          uniqueViewsTooltip: 'Unique users who saw the launcher.',
+          uniqueViewsTooltip:
+            'Users who saw the launcher for the FIRST time in the selected date range — each user counts once, on the day they were first reached.',
           activationRate: 'Activation rate',
           activationRateTooltip:
-            'Percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it).',
+            'Of the users first reached in the range, the share who made their first activation (e.g. clicking or hovering). Repeat activations never re-count a user.',
         },
         banner: {
-          uniqueViewsTooltip: 'Unique users who saw the banner.',
+          uniqueViewsTooltip:
+            'Users who saw the banner for the FIRST time in the selected date range — each user counts once, on the day they were first reached.',
           dismissals: 'Dismissals',
           dismissalsTooltip: 'Unique users who dismissed the banner.',
         },
@@ -2304,7 +2613,8 @@ const translations = {
       title: 'Version history',
       tooltip:
         'A timeline of every version, including your current draft and anything currently live. Restore or review past versions from here.',
-      countLabel: '{{count}} versions',
+      countLabel_one: '{{count}} version',
+      countLabel_other: '{{count}} versions',
       empty: 'No versions yet.',
       endOfHistory: 'End of history',
       createdLabel: 'Created',
@@ -2313,6 +2623,30 @@ const translations = {
       chip: { currentDraft: 'Current draft', live: 'Live in {{environment}}' },
       group: { today: 'Today', yesterday: 'Yesterday' },
       action: { publish: 'Publish...', restore: 'Restore...' },
+      editedBy: 'edited {{time}} by {{name}}',
+    },
+    environments: {
+      title: 'Environments',
+      tooltip:
+        'Where this content is live right now — each environment with its published version.',
+      since: 'since {{date}}',
+      notPublished: 'Not published',
+      draftAhead: 'Draft v{{version}} ahead',
+    },
+    publishHistory: {
+      title: 'Publish history',
+      tooltip:
+        'Every publish and unpublish for this content — which version went to which environment, when, and by whom.',
+      countLabel_one: '{{count}} event',
+      countLabel_other: '{{count}} events',
+      empty: 'Not published yet.',
+      endOfHistory: 'End of history',
+      unpublished: 'unpublished from',
+      filterAll: 'All environments',
+      emptyFiltered: 'No publishes in this environment yet.',
+      by: 'by {{name}}',
+      viaToken: 'via {{token}}',
+      viaApi: 'via API',
     },
     goalStep: 'Goal step',
   },
@@ -2592,8 +2926,8 @@ const translations = {
       selectWidget: 'Select widget…',
     },
     validation: {
-      toleranceMax: 'Maximum value is {{max}}',
-      widthZero: 'Width cannot be 0',
+      range: 'Between {{min}} and {{max}} — the preview uses the nearest allowed value',
+      min: 'At least {{min}} — the preview uses the nearest allowed value',
       invalidVariation: '"{{name}}" has incomplete conditions — fix or remove them before saving.',
     },
     alerts: {
@@ -2861,6 +3195,11 @@ const translations = {
   },
   contentBuilder: {
     loadingBuilder: 'Loading builder...',
+    incompleteBlocks: {
+      title: 'Fill in required fields before saving',
+      description:
+        'A block is missing required content (e.g. a button label, or an image / embed URL).',
+    },
     versionConflict: {
       title: 'This content was updated elsewhere',
       description:
@@ -3805,6 +4144,7 @@ const translations = {
       userAttr: {
         selectAttribute: 'Please select an attribute',
         selectOperator: 'Please select a condition',
+        invalidOperator: 'This operator is not valid for the attribute type',
         enterValue: 'Please enter a value',
       },
       currentPage: {
@@ -3827,6 +4167,7 @@ const translations = {
         enterCount: 'Please enter a count',
         enterSecondCount: 'Please enter the second count',
         enterTimeWindow: 'Please enter a time value',
+        selectTimeUnit: 'Please select a time unit',
         enterSecondTimeWindow: 'Please enter the second time value',
         invalidWhere: 'One or more filter conditions are incomplete — open the event to fix them.',
       },
@@ -3915,6 +4256,12 @@ const translations = {
       },
       question: {
         incomplete: 'One or more actions are incomplete — open the question to fix them',
+      },
+      image: {
+        emptyUrl: 'Upload an image — this block has no image yet',
+      },
+      embed: {
+        emptyUrl: 'Add an embed URL — this block has no URL yet',
       },
       trigger: {
         emptyConditions: 'Please add at least 1 condition',

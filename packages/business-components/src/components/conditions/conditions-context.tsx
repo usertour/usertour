@@ -20,6 +20,12 @@ interface ConditionsContextValue {
   events?: Event[];
   isHorizontal: boolean;
   isShowIf: boolean;
+  // Narrow-host mode (e.g. the 320px builder trigger sidebar). Vertical group
+  // rows and nested-list rows stack their If/AND prefix ABOVE the chip instead
+  // of beside it — inside a nested group the [prefix][chip] two-column layout
+  // left ~70px for chip text, chopping element selectors into a one-letter
+  // column. Wide hosts keep the two-column rhythm.
+  narrow?: boolean;
   filterItems: string[];
   disabled: boolean;
   baseZIndex: number;

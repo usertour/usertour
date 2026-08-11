@@ -1,5 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, ValidateNested, Min, Max, IsInt, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  Matches,
+  ValidateNested,
+  Min,
+  Max,
+  IsInt,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { Company } from '../models/company.model';
 
@@ -16,6 +25,9 @@ export enum CompanyOrderByType {
 
 export class UpsertUserDto {
   @IsString()
+  // A blank external id would create a user no id-keyed read/delete can ever
+  // address again (their guards reject blank ids).
+  @Matches(/\S/, { message: 'user id must be a non-empty string' })
   @ApiProperty({ example: '1745492995926' })
   id: string;
 
@@ -36,6 +48,8 @@ export class UpsertMembershipDto {
 
 export class UpsertCompanyRequestDto {
   @IsString()
+  // Same rule as UpsertUserDto.id: blank ids create unaddressable rows.
+  @Matches(/\S/, { message: 'id must be a non-empty string' })
   @ApiProperty({ example: '1745492995926' })
   id: string;
 

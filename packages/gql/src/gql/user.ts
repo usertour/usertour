@@ -18,6 +18,7 @@ export const getUserInfo = gql`
         role
         capabilities
         actived
+        allowedEnvironmentIds
         project {
           id
           name

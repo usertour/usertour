@@ -9,6 +9,9 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { useAppContext } from '@/contexts/app-context';
+import { useProjectHasEnvironmentAccessTokensQuery } from '@usertour/hooks';
+import { Capability } from '@usertour/types';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -71,7 +74,7 @@ const NavSection = ({ title, items, currentPath, onNavigate }: NavSectionProps) 
 
 const GROUP_LABEL_KEY: Record<SettingsSectionGroup, string> = {
   general: 'settings.nav.general',
-  developer: 'settings.nav.developer',
+  account: 'settings.nav.account',
 };
 
 export const SettingsSidebarNav = () => {
@@ -84,8 +87,26 @@ export const SettingsSidebarNav = () => {
     ? SettingsMode.SELF_HOSTED
     : SettingsMode.CLOUD;
 
+  // The legacy env-key API ("API" item) is being deprecated: show it only while
+  // the project still has env keys, steering new projects to Personal API keys.
+  // This is project-level — a key in ANY environment keeps the item visible — so
+  // it must not be pinned to the currently-selected environment. Only query when
+  // the caller can actually read env keys — otherwise the query returns a
+  // permission error that the global Apollo error link turns into a full-page
+  // redirect. Users without the capability don't see the API item anyway
+  // (capability filter below).
+  const canReadEnvKeys = can(Capability.AccessTokenRead);
+  const { hasEnvironmentAccessTokens } = useProjectHasEnvironmentAccessTokensQuery(
+    canReadEnvKeys ? project?.id : undefined,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
+  const hasEnvKeys = hasEnvironmentAccessTokens ?? false;
+
   const visibleItems = SETTINGS_SECTIONS.filter((section) => {
     if (section.hideFromSidebar) {
+      return false;
+    }
+    if (section.key === 'api' && !hasEnvKeys) {
       return false;
     }
     if (section.capability && !can(section.capability)) {
@@ -104,7 +125,7 @@ export const SettingsSidebarNav = () => {
   }));
 
   const generalItems = visibleItems.filter(({ section }) => section.group === 'general');
-  const developerItems = visibleItems.filter(({ section }) => section.group === 'developer');
+  const accountItems = visibleItems.filter(({ section }) => section.group === 'account');
 
   return (
     <AdminSidebarContainerTemplate>
@@ -120,8 +141,8 @@ export const SettingsSidebarNav = () => {
         />
         <div className="h-2" />
         <NavSection
-          title={t(GROUP_LABEL_KEY.developer)}
-          items={developerItems}
+          title={t(GROUP_LABEL_KEY.account)}
+          items={accountItems}
           currentPath={location.pathname}
           onNavigate={navigate}
         />

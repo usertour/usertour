@@ -10,11 +10,13 @@
     "^@ai-sdk/amazon-bedrock$": "<rootDir>/test/mocks/ai-sdk.stub.ts"
   },
   "testEnvironment": "node",
-  "testTimeout": 30000,
-  "maxWorkers": 8,
+  "testTimeout": 60000,
+  "maxWorkers": 1,
+  "workerIdleMemoryLimit": "1500MB",
   "testRegex": ".e2e-spec.ts$",
   "globalSetup": "<rootDir>/test/global-setup-e2e.ts",
   "setupFiles": ["<rootDir>/test/setup-e2e.ts"],
+  "setupFilesAfterEnv": ["<rootDir>/test/setup-contract-e2e.ts"],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   }

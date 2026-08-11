@@ -1,5 +1,8 @@
 export { Conditions } from './components/conditions';
-export { DEFAULT_CONDITION_TYPES } from './components/conditions/registry';
+export {
+  CLIENT_EVALUABLE_CONDITION_TYPES,
+  DEFAULT_CONDITION_TYPES,
+} from './components/conditions/registry';
 export {
   ConditionFrequency,
   ConditionIfCompleted,

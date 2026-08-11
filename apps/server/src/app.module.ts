@@ -5,6 +5,7 @@ import { AppService } from '@/app.service';
 import { AttributesModule } from '@/attributes/attributes.module';
 import { AuthModule } from '@/auth/auth.module';
 import { BizModule } from '@/biz/biz.module';
+import { ApiTokenModule } from '@/api-token/api-token.module';
 import config from '@/common/configs/config';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
@@ -31,9 +32,14 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
 // import api from '@opentelemetry/api';
 import { OpenAPIModule } from './openapi/openapi.module';
+import { ApiModule } from './api/api.module';
+import { McpModule } from './mcp/mcp.module';
+import { OAuthModule } from './oauth/oauth.module';
 import { IntegrationModule } from './integration/integration.module';
 import { LicenseModule } from './license/license.module';
 import { SharedModule } from './shared/shared.module';
+import { AuditModule } from './audit/audit.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { loggingMiddleware } from 'nestjs-prisma';
 import { Logger } from '@nestjs/common';
 
@@ -108,6 +114,7 @@ import { Logger } from '@nestjs/common';
       }),
       inject: [ConfigService],
     }),
+    EventEmitterModule.forRoot(),
     (StripeModule as any).forRootAsync(StripeModule, {
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -129,6 +136,7 @@ import { Logger } from '@nestjs/common';
     HttpModule,
     WebSocketModule,
     AuthModule,
+    ApiTokenModule,
     UsersModule,
     ContentModule,
     EnvironmentsModule,
@@ -144,8 +152,12 @@ import { Logger } from '@nestjs/common';
     TeamModule,
     SubscriptionModule,
     IntegrationModule,
+    AuditModule,
     LicenseModule,
     OpenAPIModule,
+    ApiModule,
+    McpModule,
+    OAuthModule,
     SharedModule,
     AdminModule,
   ],

@@ -175,6 +175,7 @@ export const defaultEvents = [
       EventAttributes.LAUNCHER_ID,
       EventAttributes.LAUNCHER_NAME,
       EventAttributes.LAUNCHER_SESSION_ID,
+      EventAttributes.LAUNCHER_END_REASON,
       EventAttributes.LAUNCHER_VERSION_ID,
       EventAttributes.LAUNCHER_VERSION_NUMBER,
       EventAttributes.LOCALE_CODE,
@@ -191,6 +192,7 @@ export const defaultEvents = [
       EventAttributes.LAUNCHER_ID,
       EventAttributes.LAUNCHER_NAME,
       EventAttributes.LAUNCHER_SESSION_ID,
+      EventAttributes.LAUNCHER_START_REASON,
       EventAttributes.LAUNCHER_VERSION_ID,
       EventAttributes.LAUNCHER_VERSION_NUMBER,
       EventAttributes.LOCALE_CODE,
@@ -668,6 +670,25 @@ export const defaultAttributes: ProjectDefaultAttribute[] = [
     description: 'Number of the Usertour launcher version',
   },
   {
+    // Referenced by LAUNCHER_SEEN's attribute list and written by the SEEN event
+    // builder, but the DEFINITION was missing here — so the Attribute row was
+    // never seeded, the AttributeOnEvent link never made, and the reason was
+    // silently dropped from every launcher seen event (launcher recon L1, the
+    // same class as the RC/announcement reason gaps).
+    codeName: EventAttributes.LAUNCHER_START_REASON,
+    displayName: 'Launcher Start Reason',
+    bizType: AttributeBizTypes.Event,
+    dataType: AttributeDataType.String,
+    description: 'Why the launcher started',
+  },
+  {
+    codeName: EventAttributes.LAUNCHER_END_REASON,
+    displayName: 'Launcher End Reason',
+    bizType: AttributeBizTypes.Event,
+    dataType: AttributeDataType.String,
+    description: 'Why the launcher ended',
+  },
+  {
     codeName: EventAttributes.BANNER_ID,
     displayName: 'Banner ID',
     bizType: AttributeBizTypes.Event,
@@ -842,6 +863,19 @@ export const defaultAttributes: ProjectDefaultAttribute[] = [
     bizType: AttributeBizTypes.Event,
     dataType: AttributeDataType.String,
     description: 'Display name of the Usertour resource center tab the block belongs to',
+  },
+  {
+    // Referenced by the RESOURCE_CENTER_STARTED event's attribute list since
+    // that event shipped, but the attribute DEFINITION was missing here — so
+    // the Attribute row was never seeded, the AttributeOnEvent link never
+    // created, and filterEventDataByAttributes silently dropped the reason
+    // from every started event (RC tier-C finding). The diff-based
+    // initialization backfills existing projects once this exists.
+    codeName: EventAttributes.RESOURCE_CENTER_START_REASON,
+    displayName: 'Resource Center Start Reason',
+    bizType: AttributeBizTypes.Event,
+    dataType: AttributeDataType.String,
+    description: 'Why the resource center started',
   },
   {
     codeName: EventAttributes.RESOURCE_CENTER_END_REASON,

@@ -6,6 +6,8 @@ export type TeamMember = {
   role: TeamMemberRole;
   createdAt: string;
   isInvite?: boolean;
+  /** Undefined on pending-invite rows (no account yet). */
+  twoFactorEnabled?: boolean;
   logo?: string;
 };
 

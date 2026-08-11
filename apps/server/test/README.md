@@ -149,6 +149,52 @@ node -e "console.log(require('$JWT_PATH').sign({userId:'<USER_ID>'}, process.env
 
 Local dev defaults `JWT_SECRET=test` in `.env`.
 
+## v2 response contract (automatic, every e2e spec)
+
+`createTestApp` installs [`e2e/response-contract.ts`](./e2e/response-contract.ts),
+which parses **every `/v2` response** through the zod schema its `@ApiResponse`
+DTO wraps — the same schema the published OpenAPI is generated from. No spec
+opts in and none needs changing; the tally is asserted by a global `afterAll` in
+[`setup-contract-e2e.ts`](./setup-contract-e2e.ts), so a suite fails on its own
+violations.
+
+That assertion deliberately does **not** hang off `createTestApp`'s wrapped
+`app.close()`. `event-definitions` closes with
+`Promise.race([app?.close(), timeout(5000)])` because `close()` can block on
+lingering redis/bullmq handles — when the timeout won that race, anything after
+`close()` never ran, so that suite's violations were silently dropped while the
+run stayed green. A jest-level hook cannot be raced away.
+
+It exists because the two halves of the v2 contract were never checked against
+each other. Mappers are typed, so TypeScript catches a missing or misspelled
+key — but their input is `any` (Prisma rows, decompiled JSON), so a value-level
+drift compiles clean and ships. Two kinds are reported:
+
+| Kind | Meaning |
+|---|---|
+| `schema` | `safeParse` rejected — missing required field, wrong type, enum value outside the declared set |
+| `extra` | parse succeeded but the body carried keys the schema does not declare. zod **strips** unknown keys instead of rejecting, so these are invisible to `safeParse`; they are found by diffing the raw body against the parsed output |
+
+An `extra` is a real defect, not noise: clients generated from the spec cannot
+see the field, yet it silently becomes part of the de-facto contract.
+
+```bash
+CONTRACT_CHECK=off pnpm test:e2e ...            # disable (is the check itself wrong?)
+CONTRACT_COVERAGE_OUT=/tmp/cov.jsonl pnpm test:e2e test/e2e/api   # which operations got validated
+```
+
+Coverage as of writing: **all 59 v2 operations exercised, 47 schema-validated** —
+the other 12 are 204s (11 deletes + the segment-member PUT), which legitimately
+declare no body. Keep it there: a new v2 route with no spec is a route whose
+response shape nothing checks.
+
+One route needs special handling: `GET …/content/{id}/analytics` declares its
+response as a stitched oneOf union (one DTO per content type — a class cannot
+extend a zod union), so no single `@ApiResponse` type carries a schema and the
+metadata lookup finds nothing. `UNION_FALLBACKS` in `response-contract.ts` maps
+it to the real `contentAnalytics` zod union explicitly — without that entry the
+most drift-prone response family on the surface would silently skip validation.
+
 ## Files
 
 ```
@@ -157,12 +203,14 @@ test/
 ├── jest-e2e.json              jest config (e2e)
 ├── load-test-env.ts           DATABASE_URL loader for e2e (reads .env.test)
 ├── setup-e2e.ts               jest setupFiles entry
+├── setup-contract-e2e.ts      global afterAll: asserts the v2 response contract
 ├── global-setup-e2e.ts        jest globalSetup: runs `prisma migrate deploy`
 ├── e2e/
 │   ├── endpoints.ts           SHARED 93-endpoint table
 │   ├── permission.e2e-spec.ts jest contract test
 │   ├── factories.ts           Prisma fixture factories (createProject etc.)
 │   ├── auth.ts                signToken + graphql + isPermissionDenied helpers
+│   ├── response-contract.ts   v2 response ⇄ zod schema check (auto, all specs)
 │   └── create-test-app.ts     boots the AppModule once per spec
 └── smoke/
     ├── permissions.ts         Node fetch runner (automated, env-driven)
