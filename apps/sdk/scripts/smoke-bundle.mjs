@@ -13,7 +13,7 @@
  * thing, not a re-implementation.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
@@ -21,11 +21,42 @@ import { JSDOM } from 'jsdom';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SELF = fileURLToPath(import.meta.url);
 
-// Parent mode: run the boot check twice — a normal DOM, then one where ANY
-// localStorage access THROWS (sandboxed iframe / strict privacy policies).
-// A logger or cache touching storage unguarded at module scope kills the whole
-// SDK in exactly those pages, and the normal pass can't see it.
+// Parent mode: first a static scan, then the boot check twice — a normal DOM,
+// then one where ANY localStorage access THROWS (sandboxed iframe / strict
+// privacy policies). A logger or cache touching storage unguarded at module
+// scope kills the whole SDK in exactly those pages, and the normal pass can't
+// see it.
 if (!process.env.SMOKE_MODE) {
+  // Static scan: no bundle file may contain the string `VITE_`. When a
+  // `VITE_*` var has a value at build time, vite substitutes the value and the
+  // NAME disappears from the output; the name surviving means the var was
+  // undefined and `import.meta.env.VITE_X` compiled to `({}).VITE_X` —
+  // runtime `undefined`. That is how the published 0.7.9 (built without
+  // apps/sdk/.env) shipped with the WS_URI and ASSETS_URI production
+  // fallbacks silently gone: CSS resolved to `<page-origin>/undefined/...`.
+  const pkgVersion = JSON.parse(readFileSync(join(HERE, '../package.json'), 'utf8')).version;
+  const distRoot = join(HERE, `../dist/${pkgVersion}`);
+  const bundleFiles = [];
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith('.js')) bundleFiles.push(p);
+    }
+  };
+  if (existsSync(distRoot)) walk(distRoot);
+  const leaked = bundleFiles.filter((f) => readFileSync(f, 'utf8').includes('VITE_'));
+  if (leaked.length > 0) {
+    console.error('SMOKE FAIL [env-vars] — unreplaced VITE_* env vars in the bundle:');
+    for (const f of leaked) {
+      const src = readFileSync(f, 'utf8');
+      const i = src.indexOf('VITE_');
+      console.error(`   ${f}`);
+      console.error(`     ...${src.slice(Math.max(0, i - 40), i + 40)}...`);
+    }
+    console.error('   Build with apps/sdk/.env present (see .env.example) so every VITE_* var has a value.');
+    process.exit(1);
+  }
   for (const mode of ['normal', 'no-storage']) {
     execFileSync(process.execPath, [SELF], {
       stdio: 'inherit',
