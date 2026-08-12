@@ -1,4 +1,5 @@
 import type { ValidationIssue } from '@/common/errors/errors';
+import { unknownColorKeyHint } from '@/api/themes/settings.schema';
 
 /** zod path array → `a[0].b`-style path, matching the write guards' path style. */
 export function formatZodPath(
@@ -39,11 +40,17 @@ export function zodIssuesToValidationIssues(
     // it so each stray key gets its own issue WITH a path — the whole point of
     // `issues` is per-field, machine-actionable errors.
     if (issue.code === 'unrecognized_keys' && issue.keys?.length) {
-      return issue.keys.map((key) => ({
-        rule: 'schema' as const,
-        message: `Unrecognized key: "${key}"`,
-        path: prefixed ? `${prefixed}.${key}` : key,
-      }));
+      return issue.keys.map((key) => {
+        // Domain signpost from the theme schema (a deliberate one-off layering
+        // inversion): a color-group companion key on a single-color theme
+        // setting is the habitual wrong reach — point at the field that renders.
+        const hint = prefixed ? unknownColorKeyHint(prefixed, key) : undefined;
+        return {
+          rule: 'schema' as const,
+          message: hint ? `Unrecognized key: "${key}" — ${hint}` : `Unrecognized key: "${key}"`,
+          path: prefixed ? `${prefixed}.${key}` : key,
+        };
+      });
     }
 
     return [

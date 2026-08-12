@@ -63,7 +63,8 @@ type StepToCompile = {
   width?: number;
   skippable?: boolean;
   explicitCompletionStep?: boolean;
-  content: RepresentationBlock[];
+  /** Omitted = keep the matched existing step's content ([] explicitly clears). */
+  content?: RepresentationBlock[];
   triggers?: RepresentationTrigger[];
   onClick?: RepresentationAction[];
 };
@@ -100,7 +101,14 @@ export function compileStep(
     name: step.name,
     type: step.type,
     sequence: step.sequence,
-    data: compileContent(step.content, existing?.data, resolvers),
+    // Omit (undefined) preserves the existing step's content, exactly like
+    // `triggers` below — an acceptance review caught a placement-only echo
+    // wiping every block because the schema default turned "omitted" into []
+    // before the merge could see the difference. Explicit [] still clears.
+    data:
+      step.content !== undefined
+        ? compileContent(step.content, existing?.data, resolvers)
+        : (existing?.data ?? []),
     target,
     // Omit (undefined) preserves the existing step's triggers, like themeId /
     // onClick above — otherwise a partial update that doesn't re-send `triggers`
@@ -137,7 +145,8 @@ function compileSetting(step: StepToCompile, existingSetting: unknown): unknown 
     if (p.offsetX !== undefined) s.positionOffsetX = p.offsetX;
     if (p.offsetY !== undefined) s.positionOffsetY = p.offsetY;
     if (p.backdrop !== undefined) s.enabledBackdrop = p.backdrop;
-    if (p.blockTarget !== undefined) s.enabledBlockTarget = p.blockTarget;
+    // No blockTarget on this branch: it is tooltip-only at render time, so the
+    // grid placement no longer accepts it (see representationPlacement).
   } else if (p) {
     // Tooltip placement (the non-modal member; side/align/alignType all
     // optional). alignType is DERIVED so the author's direction is honored
@@ -395,7 +404,6 @@ function compileQuestion(
           ...base,
           lowRange: q.range.low,
           highRange: q.range.high,
-          ...(q.default !== undefined ? { rating: q.default } : {}),
           ...(q.lowLabel ? { lowLabel: q.lowLabel } : {}),
           ...(q.highLabel ? { highLabel: q.highLabel } : {}),
         },

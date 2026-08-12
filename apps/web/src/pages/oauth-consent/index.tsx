@@ -64,7 +64,13 @@ export const OAuthConsent = () => {
       credentials: 'include',
     })
       .then(async (res) => {
-        if (!res.ok) throw new Error(String(res.status));
+        if (!res.ok) {
+          // The body may carry a canonical error code (e.g. E0044 "enroll 2FA
+          // first") — surface it so the user gets told what to DO, not just
+          // that something is invalid.
+          const body = (await res.json().catch(() => null)) as { code?: string } | null;
+          throw new Error(body?.code ?? String(res.status));
+        }
         return (await res.json()) as ConsentInfo;
       })
       .then((data) => {
@@ -72,7 +78,15 @@ export const OAuthConsent = () => {
         setInfo(data);
         setProjectId(data.projects[0]?.id ?? '');
       })
-      .catch(() => !cancelled && setError(t('oauth.consent.invalidRequest')));
+      .catch(
+        (e) =>
+          !cancelled &&
+          setError(
+            (e as Error).message === 'E0044'
+              ? t('oauth.consent.twoFactorRequired')
+              : t('oauth.consent.invalidRequest'),
+          ),
+      );
     return () => {
       cancelled = true;
     };

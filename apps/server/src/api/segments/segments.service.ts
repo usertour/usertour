@@ -3,6 +3,11 @@ import { Prisma, type Segment as PrismaSegment } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { PrismaService } from 'nestjs-prisma';
 
+import { AttributeBizType } from '@/attributes/models/attribute.model';
+import {
+  createBizCompanyConditionsFilter,
+  createBizUserConditionsFilter,
+} from '@/common/attribute/filter';
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import {
@@ -24,10 +29,12 @@ import {
 } from '../content-representation/attribute-resolvers';
 import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';
+import { toArray } from '../shared/query';
 import { parseOrderBy } from '../shared/sort';
 import { mapSegment } from './segments.mapper';
 import {
   CreateSegmentBody,
+  GetSegmentQuery,
   ListSegmentsQuery,
   Segment,
   UpdateSegmentBody,
@@ -82,10 +89,72 @@ export class ApiSegmentsService {
     });
   }
 
-  async get(id: string, projectId: string): Promise<Segment> {
+  async get(id: string, projectId: string, query: GetSegmentQuery = {}): Promise<Segment> {
     const seg = await this.requireSegment(id, projectId);
     const resolvers = await loadDecompileResolvers(this.prisma, projectId);
-    return mapSegment(seg, resolvers);
+    const mapped = mapSegment(seg, resolvers);
+    if (toArray(query.expand).includes('memberCount')) {
+      // Segment definitions are project-level but members are env-scoped, so a
+      // count only means something against one environment. The caller's layer
+      // (REST controller / MCP resolveEnvironment) has already checked the
+      // token's environment allowlist; this validates project membership.
+      if (!query.environmentId) {
+        throw new ValidationError(
+          'expand=memberCount needs `environmentId` — segment members are environment-scoped.',
+        );
+      }
+      const env = await this.prisma.environment.findFirst({
+        where: { id: query.environmentId, projectId, deleted: false },
+      });
+      if (!env) {
+        throw new ValidationError('Environment not found in this project');
+      }
+      mapped.memberCount = await this.countMembers(seg, env.id);
+    }
+    return mapped;
+  }
+
+  /**
+   * Count the segment's members in one environment with the SAME where-clause
+   * the v2 users/companies lists build for their `segmentId` filter (all /
+   * manual / condition) — so this count always agrees with what those lists
+   * return page by page.
+   */
+  private async countMembers(seg: PrismaSegment, environmentId: string): Promise<number> {
+    const conditionFilterAttributes = async () =>
+      this.prisma.attribute.findMany({
+        where: {
+          projectId: seg.projectId,
+          bizType: {
+            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+          },
+        },
+      });
+    if (seg.bizType === SegmentBizType.COMPANY) {
+      let where: Prisma.BizCompanyWhereInput = { environmentId, deleted: false };
+      if (seg.dataType === SegmentDataType.MANUAL) {
+        where.bizCompaniesOnSegment = { some: { segmentId: seg.id } };
+      } else if (seg.dataType === SegmentDataType.CONDITION) {
+        const filter = createBizCompanyConditionsFilter(
+          seg.data,
+          await conditionFilterAttributes(),
+        );
+        if (filter) {
+          where = { ...where, AND: [filter] };
+        }
+      }
+      return this.prisma.bizCompany.count({ where });
+    }
+    let where: Prisma.BizUserWhereInput = { environmentId };
+    if (seg.dataType === SegmentDataType.MANUAL) {
+      where.bizUsersOnSegment = { some: { segmentId: seg.id } };
+    } else if (seg.dataType === SegmentDataType.CONDITION) {
+      const filter = createBizUserConditionsFilter(seg.data, await conditionFilterAttributes());
+      if (filter) {
+        where = { ...where, AND: [filter] };
+      }
+    }
+    return this.prisma.bizUser.count({ where });
   }
 
   /** Create a condition or manual segment (project-level; `all` is not creatable). */

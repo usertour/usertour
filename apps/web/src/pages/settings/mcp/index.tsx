@@ -15,6 +15,7 @@ import {
   AccordionTrigger,
   Alert,
   AlertDescription,
+  Badge,
   Button,
   Label,
   Separator,
@@ -139,8 +140,11 @@ export const SettingsMcpPage = () => {
         <div className="space-y-6">
           {/* Title + description grouped tightly, then the separator (SSO pattern). */}
           <div className="space-y-2">
-            <div className="flex h-10 flex-row items-center">
+            <div className="flex h-10 flex-row items-center gap-2">
               <h3 className="text-xl font-medium tracking-tight">{t('settings.mcp.title')}</h3>
+              <Badge variant="secondary" className="font-normal">
+                {t('settings.mcp.betaBadge')}
+              </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
               {t('settings.mcp.subtitle')}{' '}

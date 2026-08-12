@@ -374,6 +374,36 @@ describe('compileStep → decompileStep round-trip', () => {
     expect(back.triggers).toEqual([{ do: [{ type: 'dismiss' }] }]);
   });
 
+  // Regression (acceptance review, measured): a placement-only echo of an
+  // existing step wiped every block, because "omitted content" reached the
+  // compiler as [] (schema default + a service `?? []`) and [] is a full
+  // replacement. Omit must PRESERVE, like triggers; explicit [] still clears.
+  it('omitting `content` on an echoed step preserves the existing blocks', () => {
+    const existing = compileStep(
+      {
+        name: 'Welcome',
+        type: 'modal',
+        sequence: 0,
+        content: [{ object: 'block', type: 'text', markdown: 'Precious **blocks**' }],
+      } as any,
+      undefined,
+      ids,
+    );
+    const updated = compileStep(
+      { cvid: existing.cvid, name: 'Welcome moved', type: 'modal', sequence: 0 } as any,
+      existing as any,
+      ids,
+    );
+    expect(updated.data).toEqual(existing.data);
+
+    const cleared = compileStep(
+      { cvid: existing.cvid, name: 'Welcome', type: 'modal', sequence: 0, content: [] } as any,
+      existing as any,
+      ids,
+    );
+    expect(cleared.data).toEqual([]);
+  });
+
   // Regression: both fields are consumed by compileStep and emitted by decompile,
   // but were absent from the write schema (representationStepInput), so zod silently
   // stripped them on write — readable yet not writable. They must now survive parse.
@@ -956,7 +986,7 @@ describe('unsupported blocks are echo-only', () => {
 });
 
 describe('rating scale `default` round-trip (flow acceptance eval #22)', () => {
-  it('a scale question default survives compile → decompile', () => {
+  it('a stray `default` is neither compiled nor read back', () => {
     const compiled = compileStep(
       {
         name: 'Q',
@@ -992,6 +1022,10 @@ describe('rating scale `default` round-trip (flow acceptance eval #22)', () => {
       back.content as { type: string; question?: { default?: number; style?: string } }[]
     ).find((b) => b.type === 'question')?.question;
     expect(q?.style).toBe('scale');
-    expect(q?.default).toBe(5);
+    // `default` used to compile into the star-rating `rating` storage slot, which no
+    // renderer reads (the widget's star-rating / scale components only read
+    // low/highRange + labels), so the contract dropped it.
+    expect(q?.default).toBeUndefined();
+    expect(JSON.stringify(compiled.data)).not.toContain('"rating"');
   });
 });

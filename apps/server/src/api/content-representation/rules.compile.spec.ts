@@ -62,6 +62,40 @@ describe('compileConditions — event without `within`', () => {
   });
 });
 
+describe('compileConditions — `unsupported` placeholders are echo-refused', () => {
+  // Same contract as the segment surface (assertSegmentConditionTypes): the
+  // placeholder carries no data to preserve, so a silent filter would delete
+  // the stored condition on an innocent echo write. Refuse with directions.
+  const msgOf = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (e) {
+      return (e as { getMessage?: (l: string) => string }).getMessage?.('en') ?? String(e);
+    }
+    throw new Error('expected throw');
+  };
+
+  it('rejects the echo with directions (never a silent drop), quoting the note', () => {
+    const message = msgOf(() =>
+      compileConditions([{ type: 'unsupported', note: 'xyz-note' } as any], r),
+    );
+    expect(message).toMatch(/cannot be written back/);
+    expect(message).toMatch(/DELETES that stored condition/);
+    expect(message).toMatch(/xyz-note/);
+  });
+
+  it('rejects it nested inside a group (the compile recurses)', () => {
+    expect(
+      msgOf(() =>
+        compileConditions(
+          [{ type: 'group', match: 'any', conditions: [{ type: 'unsupported' }] } as any],
+          r,
+        ),
+      ),
+    ).toMatch(/cannot be written back/);
+  });
+});
+
 describe('compileConditions — bare event (no count, no within)', () => {
   // `{type:event, event}` with nothing else is the common "has this happened?"
   // check. A missing `count` is dangerous (runtime `count ?? 0` → at_least 0 =

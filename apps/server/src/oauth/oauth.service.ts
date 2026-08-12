@@ -7,7 +7,7 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { OAuthModelService } from './oauth-model.service';
 import { generateOpaqueSecret, hashSecret, tokenFingerprint } from './oauth.crypto';
-import { isAllowedRedirectUri } from './redirect-allowlist';
+import { isAllowedRedirectUri, matchesRegisteredRedirectUri } from './redirect-allowlist';
 
 // OAuth scopes ARE our Capability strings (mirrors oauth-metadata's scopes_supported).
 const SUPPORTED_SCOPES: ReadonlySet<string> = new Set<string>(Object.values(Capability));
@@ -16,6 +16,16 @@ const ACCESS_TOKEN_LIFETIME = 60 * 60; // 1h
 const REFRESH_TOKEN_LIFETIME = 30 * 24 * 60 * 60; // 30d
 const AUTH_CODE_LIFETIME = 10 * 60; // 10m
 const TRANSACTION_LIFETIME = '10m';
+
+// DCR is open and unauthenticated (every call writes a row), so registration
+// input gets hard bounds; only metadata this AS can actually serve is stored.
+const SUPPORTED_GRANT_TYPES = ['authorization_code', 'refresh_token'];
+const MAX_REDIRECT_URIS = 10;
+const MAX_URI_LENGTH = 2048;
+
+/** Display-only metadata URI (logo/client): kept only when a sane-length string. */
+const metadataUri = (value: unknown): string | null =>
+  typeof value === 'string' && value.length > 0 && value.length <= MAX_URI_LENGTH ? value : null;
 
 /** The validated authorize request, carried (signed) to the consent page. */
 export interface TransactionClaims {
@@ -94,7 +104,7 @@ export class OAuthService {
     const redirectUris = Array.isArray(client.redirectUris)
       ? (client.redirectUris as string[])
       : [];
-    if (!redirectUris.includes(redirectUri)) {
+    if (!matchesRegisteredRedirectUri(redirectUris, redirectUri)) {
       throw new BadRequestException('redirect_uri does not match a registered URI');
     }
     // PKCE is required (public clients) — S256 only.
@@ -285,6 +295,12 @@ export class OAuthService {
     if (redirectUris.length === 0) {
       throw new BadRequestException('redirect_uris is required');
     }
+    if (redirectUris.length > MAX_REDIRECT_URIS) {
+      throw new BadRequestException(`redirect_uris: at most ${MAX_REDIRECT_URIS} entries`);
+    }
+    if (redirectUris.some((uri) => uri.length > MAX_URI_LENGTH)) {
+      throw new BadRequestException(`redirect_uri too long (max ${MAX_URI_LENGTH} characters)`);
+    }
     const invalid = redirectUris.filter((uri) => !isAllowedRedirectUri(uri));
     if (invalid.length > 0) {
       throw new BadRequestException(`redirect_uri not allowed: ${invalid.join(', ')}`);
@@ -293,10 +309,19 @@ export class OAuthService {
     const authMethod =
       body.token_endpoint_auth_method === 'client_secret_post' ? 'client_secret_post' : 'none';
     const clientType = authMethod === 'client_secret_post' ? 'confidential' : 'public';
-    const grantTypes =
+    // Store only the intersection with what this AS serves. A client registered
+    // without authorization_code can never complete a flow — refuse it HERE, not
+    // at consent-approve after the user already walked the authorize+consent UI.
+    const requestedGrants =
       Array.isArray(body.grant_types) && body.grant_types.length > 0
         ? (body.grant_types as unknown[]).map(String)
-        : ['authorization_code', 'refresh_token'];
+        : SUPPORTED_GRANT_TYPES;
+    const grantTypes = requestedGrants.filter((g) => SUPPORTED_GRANT_TYPES.includes(g));
+    if (!grantTypes.includes('authorization_code')) {
+      throw new BadRequestException(
+        `grant_types must include authorization_code (supported: ${SUPPORTED_GRANT_TYPES.join(', ')})`,
+      );
+    }
 
     const secret = clientType === 'confidential' ? generateOpaqueSecret() : null;
     const registrationAccessToken = generateOpaqueSecret();
@@ -304,12 +329,15 @@ export class OAuthService {
     const client = await this.prisma.oAuthClient.create({
       data: {
         clientType,
-        name: body.client_name?.slice(0, 200) || 'MCP client',
+        name:
+          typeof body.client_name === 'string' && body.client_name
+            ? body.client_name.slice(0, 200)
+            : 'MCP client',
         clientSecretHash: secret ? hashSecret(secret) : null,
         redirectUris,
         grantTypes,
-        logoUri: body.logo_uri ?? null,
-        clientUri: body.client_uri ?? null,
+        logoUri: metadataUri(body.logo_uri),
+        clientUri: metadataUri(body.client_uri),
         registrationAccessTokenHash: hashSecret(registrationAccessToken),
         createdByUserId: null,
       },
@@ -366,7 +394,12 @@ export class OAuthService {
       }),
       envIds.length
         ? this.prisma.environment.findMany({
-            where: { id: { in: envIds } },
+            // deleted: false — a grant made before an environment was deleted keeps
+            // the id (deleting cleans it going forward, but pre-existing grants and
+            // any hard-deleted row can still dangle). Resolving it anyway listed a
+            // deleted environment on the authorization screen as something the app
+            // may act on, which the resolvers had already stopped honouring.
+            where: { id: { in: envIds }, deleted: false },
             select: { id: true, name: true },
           })
         : Promise.resolve([]),
@@ -391,7 +424,11 @@ export class OAuthService {
         projectId: g.projectId,
         projectName: projectName.get(g.projectId) ?? g.projectId,
         scopes: (g.scopes as string[]) ?? [],
-        environmentNames: allowed ? allowed.map((id) => envName.get(id) ?? id) : null,
+        // Drop ids that no longer resolve rather than falling back to the raw id:
+        // the fallback printed a bare cuid in the console next to real names.
+        environmentNames: allowed
+          ? allowed.filter((id) => envName.has(id)).map((id) => envName.get(id) as string)
+          : null,
         createdAt: g.createdAt,
         // Live token rows win (freshest); the grant column is the durable rollup
         // written by the expiry cleanup before it prunes those rows.

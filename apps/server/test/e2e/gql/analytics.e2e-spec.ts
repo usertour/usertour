@@ -97,6 +97,9 @@ describe('GraphQL analytics (e2e)', () => {
     userIds.push(owner.user.id);
   }, 60000);
 
+  // Same 60s allowance as the beforeAll: this suite seeds the largest analytics
+  // fixture set, and tearing it down under a parallel full run can exceed the
+  // default 30s hook timeout.
   afterAll(async () => {
     if (prisma) {
       await teardownProject(prisma, projectId);
@@ -105,7 +108,7 @@ describe('GraphQL analytics (e2e)', () => {
       }
     }
     await app?.close();
-  });
+  }, 60000);
 
   // Seed a BizSession (with at least one BizEvent, so the `bizEvent: { some: {} }`
   // filter in queryRecentSessions includes it) for the shared FLOW content.

@@ -1,5 +1,11 @@
 import { INestApplication } from '@nestjs/common';
-import { Capability, ContentEditorElementType } from '@usertour/types';
+import {
+  BizEvents,
+  Capability,
+  ContentEditorElementType,
+  contentEndReason,
+  EventAttributes,
+} from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
@@ -8,6 +14,7 @@ import {
   buildBizUser,
   buildContent,
   buildEnvironment,
+  buildEvent,
   buildProject,
   buildSession,
   buildStep,
@@ -290,6 +297,59 @@ describe('API v2 /sessions (e2e)', () => {
     expect(t.body.error.message).toContain('cannot be ended');
   });
 
+  it('ends an ACTIVE flow session — endedAt set, FLOW_ENDED written, replay idempotent', async () => {
+    const token = await mint([Capability.SessionRead, Capability.SessionManage]);
+    // endFlowSession reads the project's default flow event definitions; the
+    // bare fixture doesn't seed project defaults, so create the two it uses.
+    const endedDef = await buildEvent(prisma, { projectId, codeName: BizEvents.FLOW_ENDED });
+    const seenDef = await buildEvent(prisma, { projectId, codeName: BizEvents.FLOW_STEP_SEEN });
+
+    const flow = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const fv = await buildVersion(prisma, { contentId: flow.id, sequence: 0 });
+    const bizUser = await buildBizUser(prisma, { environmentId });
+    const active = await buildSession(prisma, {
+      bizUserId: bizUser.id,
+      contentId: flow.id,
+      versionId: fv.id,
+      environmentId,
+      projectId,
+    });
+    // The shape a live flow session actually carries — endFlowSession copies
+    // the last step-seen event's attributes onto the end event.
+    await prisma.bizEvent.create({
+      data: {
+        bizSessionId: active.id,
+        eventId: seenDef.id,
+        bizUserId: bizUser.id,
+        data: { [EventAttributes.FLOW_STEP_NUMBER]: 0 },
+      },
+    });
+
+    const res = await api('post', `${base()}/${active.id}/end`, token);
+    expect(res.status).toBe(200);
+    expect(res.body.id).toBe(active.id);
+    expect(res.body.endedAt).toEqual(expect.any(String));
+    // Ended by admin is NOT a completion — `completed` reads completion events.
+    expect(res.body.completed).toBe(false);
+
+    const row = await prisma.bizSession.findUniqueOrThrow({ where: { id: active.id } });
+    expect(row.state).toBe(1);
+    const endEvent = await prisma.bizEvent.findFirst({
+      where: { bizSessionId: active.id, eventId: endedDef.id },
+    });
+    expect((endEvent?.data as Record<string, unknown>)?.[EventAttributes.FLOW_END_REASON]).toBe(
+      contentEndReason.ADMIN_ENDED,
+    );
+
+    // Replay lands in the already-ended idempotent branch, not a second write.
+    const again = await api('post', `${base()}/${active.id}/end`, token);
+    expect(again.status).toBe(200);
+    const endEvents = await prisma.bizEvent.count({
+      where: { bizSessionId: active.id, eventId: endedDef.id },
+    });
+    expect(endEvents).toBe(1);
+  });
+
   it('returns 404 for an unknown session (E1005)', async () => {
     const token = await mint([Capability.SessionRead]);
     const res = await api('get', base('/nope'), token);
@@ -321,10 +381,9 @@ describe('API v2 /sessions (e2e)', () => {
     expect(res.body.error.code).toBe('E1012');
   });
 
-  // NOTE: happy-path end isn't asserted here — like the v1 suite, ending a flow
-  // session needs the project's default flow event definitions + a prior
-  // step-seen event seeded (endFlowSession reads them), which the bare test
-  // fixture doesn't set up. The guard + not-found paths are covered instead.
+  // Happy-path end lives in the main suite above ("ends an ACTIVE flow
+  // session"), which seeds the flow event definitions endFlowSession reads.
+  // This block covers the guard + not-found paths.
   it('end 404 for an unknown session (E1005)', async () => {
     const token = await mint([Capability.SessionManage]);
     const res = await send('post', '/nope/end', token);

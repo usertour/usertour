@@ -174,9 +174,8 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
   });
 
   it('filters event attributes with scope=eventDefinition (and excludes them from scope=user)', async () => {
-    // Event attributes (bizType 4) are readable through the same list — the
-    // scope filter accepts `eventDefinition` even though CREATE deliberately
-    // doesn't (event attributes are managed via the event-definitions surface).
+    // Event attributes (bizType 4) flow through the same list under the
+    // `eventDefinition` scope, separate from the three biz-data scopes.
     await buildAttribute(prisma, {
       projectId: fx.projectId,
       codeName: 'attr_event_scoped',
@@ -252,6 +251,48 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
     const list = await api('get', basePath(), token);
     expect(list.body.results.map((a: { id: string }) => a.id)).not.toContain(id);
+  });
+
+  it('creates an EVENT-scoped attribute, attaches it to an event, and delete severs the link', async () => {
+    // Builder parity: the attributes page's Events tab hand-creates event
+    // attributes too — pre-define → attach must work without any track.
+    const token = await mint([
+      Capability.AttributeCreate,
+      Capability.AttributeDelete,
+      Capability.AttributeRead,
+      Capability.EventCreate,
+    ]);
+    const created = await send('post', basePath(), token).send({
+      scope: 'eventDefinition',
+      dataType: 'string',
+      codeName: 'evt_attr_via_api',
+      displayName: 'Evt attr',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({ scope: 'eventDefinition', codeName: 'evt_attr_via_api' });
+
+    const listed = await api('get', `${basePath()}?scope=eventDefinition&limit=100`, token);
+    expect(listed.body.results.map((a: { codeName: string }) => a.codeName)).toContain(
+      'evt_attr_via_api',
+    );
+    const asUser = await api('get', `${basePath()}?scope=user&limit=100`, token);
+    expect(asUser.body.results.map((a: { codeName: string }) => a.codeName)).not.toContain(
+      'evt_attr_via_api',
+    );
+
+    const evt = await send('post', `/v2/projects/${fx.projectId}/event-definitions`, token).send({
+      codeName: 'evt_predef_attr',
+      displayName: 'Evt',
+      attributes: ['evt_attr_via_api'],
+    });
+    expect(evt.status).toBe(201);
+    expect(evt.body.attributes).toEqual(['evt_attr_via_api']);
+
+    // Delete clears the AttributeOnEvent join in the same transaction — a bare
+    // delete would P2003 on the link the attach above just created.
+    expect((await send('delete', `${basePath()}/${created.body.id}`, token).send()).status).toBe(
+      204,
+    );
   });
 
   it('retypes an attribute when no stored value conflicts, and rejects when one does', async () => {
@@ -354,6 +395,32 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     const paths = issues.map((i) => i.path);
     expect(paths).toEqual(expect.arrayContaining(['bogusA', 'bogusB']));
     expect(issues).toHaveLength(2); // one per stray key, not one blob
+  });
+
+  it('codeName length: 100 chars is the cap — 100 creates, 101 rejects', async () => {
+    // The cap was 20, copied from the builder's form rule — which the
+    // product's own built-ins violate (resource_center_version_number is 30),
+    // so v2 could not even create names in the house style. Raised to 100;
+    // this pins both sides of the new boundary.
+    const token = await mint([Capability.AttributeCreate, Capability.AttributeDelete]);
+    const base = 'a'.repeat(99);
+    const ok = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: `${base}b`, // 100
+      displayName: 'long name ok',
+    });
+    expect(ok.status).toBe(201);
+    await send('delete', `${basePath()}/${ok.body.id}`, token);
+
+    const tooLong = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: `${base}bc`, // 101
+      displayName: 'too long',
+    });
+    expect(tooLong.status).toBe(400);
+    expect(tooLong.body.error.code).toBe('E1017');
   });
 
   it('rejects a duplicate codeName (409 E1023)', async () => {

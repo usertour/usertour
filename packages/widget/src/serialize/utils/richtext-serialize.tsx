@@ -16,7 +16,6 @@ import {
 import { ALIGN_MAPPING } from '../constants';
 import type { DescendantNode, ElementNode } from '../types';
 import { isTextNode } from '../types';
-import { getTextStyles } from './text-styles';
 import { useLinkDecorator } from '../link-decorator-context';
 // Non-breaking space for empty paragraphs
 const NBSP = '\u00A0';
@@ -42,11 +41,28 @@ export const serializeLeaf = (node: DescendantNode, key = ''): ReactNode => {
     return null;
   }
 
-  const style = getTextStyles(node);
+  // Mark ELEMENTS, not inline styles: the widget stylesheet themes them
+  // (`.usertour-widget-root b, strong { font-weight: var(--usertour-font-
+  // weight-bold, 600) }`, `i, em { font-style: italic }`), so bold follows the
+  // theme's fontWeightBold instead of a hardcoded 700, and a tenant's
+  // customCss can restyle marks with plain selectors (inline styles outrank
+  // any stylesheet). Single-letter tags (b/i/u) by house decision — u has no
+  // longhand anyway, and the stylesheet pairs cover b/strong and i/em alike.
+  // Only `color` stays inline — a per-leaf arbitrary value, not a themable role.
+  let content: ReactNode = string;
+  if (node.bold) {
+    content = <b>{content}</b>;
+  }
+  if (node.italic) {
+    content = <i>{content}</i>;
+  }
+  if (node.underline) {
+    content = <u>{content}</u>;
+  }
 
   return (
-    <span style={style} key={key}>
-      {string}
+    <span style={node.color ? { color: node.color } : undefined} key={key}>
+      {content}
     </span>
   );
 };
@@ -171,7 +187,21 @@ interface UserAttrSerializeProps {
 }
 
 const UserAttrSerialize = memo(({ element }: UserAttrSerializeProps) => {
-  return <span>{element.value}</span>;
+  // Marks arrive as ELEMENT flags (a void inline has no text leaves), written
+  // by the markdown codec (`**Hi {{ name }}!**`) or the builder chip — wrap
+  // the value the same way serializeLeaf wraps text. The class is the
+  // customCss hook (without it the value had no selector at all).
+  let content: ReactNode = element.value;
+  if (element.bold) {
+    content = <b>{content}</b>;
+  }
+  if (element.italic) {
+    content = <i>{content}</i>;
+  }
+  if (element.underline) {
+    content = <u>{content}</u>;
+  }
+  return <span className="usertour-widget-user-attribute">{content}</span>;
 });
 UserAttrSerialize.displayName = 'UserAttrSerialize';
 

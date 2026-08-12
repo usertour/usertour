@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isoTimestamp } from '../shared/query';
 
 import { ATTR_OPS } from './attr-ops';
 import { ApiObjectType } from '../shared/object-type';
@@ -99,9 +100,18 @@ export const representationPlacement = z
               'always carry concrete side/align even in `auto` mode (the auto starting position, ' +
               'bottom/center) — `alignType` is what governs, and `auto` still flips at runtime.',
           ),
-        // A tooltip may dim the page (backdrop) and block clicks on its target.
-        backdrop: z.boolean().optional(),
-        blockTarget: z.boolean().optional(),
+        backdrop: z
+          .boolean()
+          .optional()
+          .describe('Dim the rest of the page while this tooltip is up.'),
+        blockTarget: z
+          .boolean()
+          .optional()
+          .describe(
+            'Make the backdrop swallow clicks on the highlighted element, so the user must ' +
+              'use the tooltip. REQUIRES `backdrop: true` — on its own it does nothing ' +
+              '(the renderer only consults it inside the backdrop branch).',
+          ),
       })
       // `.strict()`: reject unknown keys so a modal-shape `{ position }` does NOT
       // match this branch (all its own fields are optional now) and get silently
@@ -131,15 +141,19 @@ export const representationPlacement = z
           ),
         offsetY: z.number().optional().describe('See `offsetX`.'),
         backdrop: z.boolean().optional(),
-        blockTarget: z.boolean().optional(),
       })
       .strict(),
   ])
   .describe(
     'Two placement shapes, by step kind: a TOOLTIP (anchored to a `target`) uses ' +
       '`{ side, align, sideOffset?, alignOffset?, alignType? }` positioned relative to the ' +
-      'element; a MODAL or any anchorless step uses `{ position, offsetX?, offsetY? }` on a ' +
-      '9-cell viewport grid (e.g. `"center"`). Both may set `backdrop` / `blockTarget`.',
+      'element; a MODAL uses `{ position, offsetX?, offsetY? }` on a 9-cell viewport grid ' +
+      '(e.g. `"center"`). Both may set `backdrop`; `blockTarget` is TOOLTIP-ONLY (a modal ' +
+      'already covers the page) and additionally requires `backdrop: true` — it makes the ' +
+      'backdrop swallow clicks on the highlighted element. A BUBBLE step is positioned by its ' +
+      "THEME's bubble placement, so the only key it accepts here is `{ backdrop }` (positional " +
+      'keys are rejected — move the bubble by changing the theme); a HIDDEN step renders no UI ' +
+      'and rejects `placement` entirely.',
   );
 export type RepresentationPlacement = z.infer<typeof representationPlacement>;
 
@@ -219,7 +233,7 @@ export type RepresentationCondition =
     }
   | { type: 'text_input'; target?: RepresentationTarget; op: StringOp; value?: string }
   | { type: 'text_filled'; target?: RepresentationTarget }
-  | { type: 'time_window'; start?: string; end?: string }
+  | { type: 'time_window'; start: string; end?: string }
   | { type: 'unsupported'; note?: string };
 
 /**
@@ -263,7 +277,10 @@ export const eventWhereCondition: z.ZodType<EventWhereCondition> = z.lazy(() =>
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(eventWhereCondition),
+      conditions: z
+        .array(eventWhereCondition)
+        .min(1, NON_EMPTY_GROUP)
+        .describe(NON_EMPTY_GROUP_DESCRIBE),
     }),
   ]),
 ) as unknown as z.ZodType<EventWhereCondition>;
@@ -278,7 +295,7 @@ const attributeConditionFields = {
     .describe(
       'Which entity owns the attribute — `user` (the end user), `company`, or ' +
         "`companyMembership`. Same value as the attribute definition's `scope` " +
-        '(list_attribute_definitions); required to disambiguate a codeName that exists ' +
+        '(see the attribute definitions list); required to disambiguate a codeName that exists ' +
         'in more than one scope.',
     ),
   attribute: z.string(),
@@ -290,13 +307,16 @@ const attributeConditionFields = {
         'Number: is | not | lt | lte | gt | gte | between | any | empty. ' +
         'Boolean: true | false | any | empty. ' +
         'List: includes_any | includes_all | not_includes_any | not_includes_all | any | empty. ' +
-        'DateTime: less_than | exactly | more_than (relative — `value` is a number of days; e.g. ' +
-        'attribute `first_seen_at` with op `less_than`, value `7` = "first seen in the last 7 ' +
-        'days", the canonical new-user filter) | before | on | after (`value` is an absolute ' +
+        'DateTime: less_than | exactly | more_than (relative — `value` is a number of days) | ' +
+        'before | on | after (`value` is an absolute ' +
         'date) | any | empty. The relative ops are ONE-SIDED bounds around (now − N days): ' +
         '`less_than N` = the date is AFTER now−N — so it also matches every FUTURE date, and on ' +
         'a future-dated attribute (a trial end, a renewal date) it is NOT "within the last N ' +
-        'days"; `more_than N` = the date is BEFORE now−N. Negative N shifts the bound into the ' +
+        'days"; `more_than N` = the date is BEFORE now−N. **"Signed up in the last N days" ' +
+        'therefore needs BOTH bounds** — `less_than N` AND `more_than 0` in one `all` group; ' +
+        '`less_than N` alone silently includes anyone whose date is in the future (a mis-mapped ' +
+        'trial-end column, a clock/timezone slip), and those are exactly the users a new-user ' +
+        'audience must not contain (observed in testing). Negative N shifts the bound into the ' +
         'future: the rolling "within the NEXT 7 days" window is `less_than` value "0" AND ' +
         '`more_than` value "-7" (two conditions, both required). The relative ops are ' +
         'DAY-granularity only — no unit field; for hour/minute windows use an `event` condition ' +
@@ -329,12 +349,45 @@ export const attributeCondition = z.object({
   ...attributeConditionFields,
 });
 
+/**
+ * A group is a CONTAINER of conditions; an empty one is not an empty filter, it
+ * is a permanently FALSE node (the runtime scores an empty list false), so
+ * inside an `all` list it pins the whole rule to "never matches" — a start rule
+ * that publishes green and never fires. Condition lists are full replacements,
+ * so an empty group is never a draft-in-progress: rejected at write, on every
+ * slot that takes a group.
+ *
+ * The constraint stays in the schema (rather than moving to compile) even
+ * though the builder can save an empty group and this schema also types the
+ * read side: the contract describes what v2/MCP accepts and produces, and
+ * content authored here round-trips clean. A stored empty group reads back as
+ * it is and is REFUSED on write-back with a field path — the same deal as an
+ * `unsupported` placeholder. Same call as the other write constraints legacy
+ * data can violate (non-negative block width, non-empty selector).
+ */
+export const NON_EMPTY_GROUP = {
+  message:
+    'A condition group must contain at least one condition — an EMPTY group never matches, ' +
+    'so inside an "all" group it makes the whole rule unmatchable (the content would publish ' +
+    'fine and never start). Add the conditions it should hold, or drop the group node.',
+} as const;
+
+/** Same fact as {@link NON_EMPTY_GROUP}, phrased for schema readers. */
+export const NON_EMPTY_GROUP_DESCRIBE =
+  'The grouped conditions — at least one. An EMPTY group is not "no filter": it never ' +
+  'matches, so next to an AND it makes the whole rule unmatchable, and writing one is ' +
+  'rejected. A version saved with an empty group in the BUILDER still reads back with it ' +
+  '(validate warns); writing that list back is refused until the group is filled or dropped.';
+
 export const representationCondition = z.lazy(() =>
   z.discriminatedUnion('type', [
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(representationCondition),
+      conditions: z
+        .array(representationCondition)
+        .min(1, NON_EMPTY_GROUP)
+        .describe(NON_EMPTY_GROUP_DESCRIBE),
     }),
     // attribute condition (user / company / companyMembership — see `scope`).
     attributeCondition,
@@ -364,9 +417,32 @@ export const representationCondition = z.lazy(() =>
       state: z
         .enum(['present', 'hidden', 'disabled', 'enabled', 'clicked', 'unclicked'])
         .describe(
-          '`present` means VISIBLE IN THE VIEWPORT, not merely in the DOM — an element that is ' +
-            'scrolled off-screen, clipped, or covered never satisfies it (and `hidden` is its ' +
-            'negation). Appearances shorter than about a second can be missed entirely.',
+          '`present` means NOT CLIPPED AWAY: the element is in the DOM and its box lies inside ' +
+            'the viewport / its scroll ancestors — scrolled off-screen or `display:none` never ' +
+            'satisfies it (and `hidden` is its negation). It is NOT "the user can see something ' +
+            'there": an EMPTY, zero-height placeholder node satisfies `present` (observed in testing: a ' +
+            'checklist task keyed on an initially-empty `<p>` status line ticked itself the ' +
+            'moment the checklist appeared, before the shopper did anything). So do not use ' +
+            'element presence as a proxy for "the app has said something": most apps keep the ' +
+            'container mounted and only fill in its text. Match the TEXT instead ' +
+            '(`target.text` + `present`, or the negation trick: the old text `hidden`). ' +
+            'Appearances shorter than about a second can be missed entirely. ' +
+            '`disabled`/`enabled` read the element disabled state at evaluation time. ' +
+            '**`clicked` means "clicked since page load AND the element is STILL in the DOM ' +
+            'right now"** — both halves, re-checked every evaluation. The click memory latches ' +
+            '(the listener attaches the FIRST time the condition is evaluated, so earlier ' +
+            'clicks are invisible, and the memory survives a re-render), but the element lookup ' +
+            'is redone each poll. Two consequences, one of them silent: (1) **an element that ' +
+            'UNMOUNTS on click can NEVER satisfy it** — the click lands, the element vanishes, ' +
+            'the lookup fails from then on and the condition stays false forever with no error ' +
+            '(observed in testing: a tracker on a button that clears its own toolbar counted ZERO real ' +
+            'clicks); (2) an element that unmounts and REMOUNTS satisfies it again, so a ' +
+            'tracker gated on it fires once per remount — not once per page load. Unlike ' +
+            '`present`, this lookup does NOT require viewport visibility: scrolling the target ' +
+            'off-screen keeps `clicked` true. `unclicked` negates the same pair, so it is also ' +
+            'false while the element is absent. To count a COMPLETED action, condition on what ' +
+            'the app shows afterwards (a success toast, a state change) rather than `clicked` ' +
+            'on the button that starts it.',
         ),
     }),
     z.object({
@@ -374,7 +450,7 @@ export const representationCondition = z.lazy(() =>
       content: z
         .string()
         .describe(
-          'contentId of the FLOW or CHECKLIST whose per-user state to check (from list_content). ' +
+          'contentId of the FLOW or CHECKLIST whose per-user state to check (an id from the content list). ' +
             'Only flows and checklists record this state — referencing a banner / launcher / ' +
             'resource-center / tracker is rejected at write.',
         ),
@@ -423,13 +499,26 @@ export const representationCondition = z.lazy(() =>
           value2: z.number().optional(),
           unit: z.enum(['seconds', 'minutes', 'hours', 'days']).optional(),
         })
+        // A condition object is authored atomically — a windowed op missing its
+        // value/unit is never a draft-in-progress, it is a mistake (the runtime
+        // would silently assume days for a missing unit). Read-backs cannot
+        // carry the shape: the decompiler normalizes a stored unit-less window
+        // to an explicit `days` (the exact runtime behavior), so round-trips
+        // stay closed.
+        .refine((w) => w.op === 'any_time' || (w.value !== undefined && w.unit !== undefined), {
+          message:
+            'A windowed op (`in_the_last` / `more_than` / `between`) requires both `value` and ' +
+            '`unit` — without a unit the runtime would silently assume days.',
+        })
+        .refine((w) => w.op !== 'between' || w.value2 !== undefined, {
+          message: '`between` needs `value2` (the upper bound of the window).',
+        })
         .optional()
         .describe(
           'Optional time window for the event count. Omit it (or use `any_time`) to count over ' +
             'all time — "the event has ever happened". Any other `op` (`in_the_last` / `more_than` ' +
-            '/ `between`) requires BOTH `value` and `unit` (a windowed op with no `unit` is ' +
-            'rejected — the runtime would otherwise silently assume days); `between` also needs ' +
-            '`value2`.',
+            '/ `between`) requires BOTH `value` and `unit`, and `between` also `value2` — ' +
+            'rejected at write otherwise.',
         ),
       scope: z
         .enum(['current_user', 'current_user_in_company', 'any_user_in_company'])
@@ -438,7 +527,7 @@ export const representationCondition = z.lazy(() =>
           'Whose event activity to count (default `current_user`). `current_user` = only this ' +
             "user's own events. `current_user_in_company` = this user's events, but counted within " +
             'their currently-associated company context (needs the user associated to a company via ' +
-            '`group()` / add_company_member). `any_user_in_company` = events by ANY user in this ' +
+            '`group()` / the company-membership API). `any_user_in_company` = events by ANY user in this ' +
             'user\'s company — account-level activity (e.g. "anyone on the account has done X"). ' +
             'The two company scopes require the user to be in a company or they never match.',
         ),
@@ -453,24 +542,38 @@ export const representationCondition = z.lazy(() =>
     z.object({ type: z.literal('text_filled'), target: representationTarget.optional() }),
     z.object({
       type: z.literal('time_window'),
-      // Both optional at the TYPE level (read-backs can carry legacy end-only
-      // data), but a WRITE without `start` is rejected by validation: the
-      // runtime treats a start-less window as never matching, so persisting one
-      // would ship a dead condition.
+      // REQUIRED at write: a condition object is authored atomically (when
+      // lists are full replacements), so a start-less window is never a
+      // draft-in-progress — it is a mistake, and the runtime treats it as
+      // never matching. Read-backs cannot carry the shape either: the
+      // decompiler emits stored legacy end-only windows as `unsupported`
+      // placeholders (dead conditions; echoing one back is rejected, and
+      // removing it from the list deletes it — same as deleted-attribute
+      // conditions).
       start: z
         .string()
-        .optional()
         .describe(
-          'Window start (ISO datetime). REQUIRED on write — the runtime never matches a window ' +
-            'without a start, so validation rejects end-only windows. For "until X" semantics, ' +
-            'set start to any past instant and end to X.',
+          'Window start (ISO datetime). REQUIRED — the runtime never matches a window without ' +
+            'a start, so an end-only window is rejected at write. For "until X" semantics, set ' +
+            'start to any past instant and end to X.',
         ),
       end: z
         .string()
         .optional()
         .describe('Window end (ISO datetime). Omit for an open-ended "from start onwards" window.'),
     }),
-    z.object({ type: z.literal('unsupported'), note: z.string().optional() }),
+    z
+      .object({ type: z.literal('unsupported'), note: z.string().optional() })
+      .describe(
+        'Read-side placeholder for a stored condition this API cannot express (`note` says what ' +
+          'it stands for — usually a DEAD condition the runtime never matches: a deleted ' +
+          'attribute/event, an end-only time window). It cannot be written back (the ' +
+          'placeholder carries no data to preserve): echoing it is rejected. Either remove it ' +
+          'from the list you write — an explicit choice that DELETES the stored condition; ' +
+          'mind that a never-matching node inside an AND list pins the whole rule to "never ' +
+          'fires", so deleting it can bring the remaining conditions to life — or repair the ' +
+          'original condition in the Usertour builder first.',
+      ),
   ]),
 ) as unknown as z.ZodType<RepresentationCondition>;
 
@@ -485,13 +588,26 @@ export const completeWhenCondition: z.ZodType<CompletionCondition> = z.lazy(() =
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(completeWhenCondition),
+      conditions: z
+        .array(completeWhenCondition)
+        .min(1, NON_EMPTY_GROUP)
+        .describe(NON_EMPTY_GROUP_DESCRIBE),
     }),
     representationCondition,
   ]),
 ) as unknown as z.ZodType<CompletionCondition>;
 
 // ── Rules: actions ───────────────────────────────────────────────────────────
+/**
+ * EXECUTION ORDER of an action list (measured in the SDK's action manager):
+ * `navigate` actions ALWAYS run last regardless of where they sit in the
+ * array; everything else runs in the order written, awaited one by one, and a
+ * failing action does not stop the ones after it. So [start_content, dismiss]
+ * hands off then closes as written, while [navigate, start_content] runs
+ * start_content FIRST — the array order is not the execution order once a
+ * navigate is involved. Documented on the union so every carrier (button
+ * actions, trigger `do`, question actions, onClick) shares one truth.
+ */
 export const representationAction = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('goto_step'),
@@ -507,7 +623,7 @@ export const representationAction = z.discriminatedUnion('type', [
     content: z
       .string()
       .describe(
-        'contentId of the flow or checklist to launch (from list_content) — a raw content id, NOT ' +
+        'contentId of the flow or checklist to launch (an id from the content list) — a raw content id, NOT ' +
           'a step key (unlike goto_step). Must reference a flow or checklist (a banner / launcher / ' +
           'resource-center / tracker is rejected at write). The target must be PUBLISHED to actually ' +
           'start at runtime; an unknown/dangling id is rejected at validate.',
@@ -525,19 +641,29 @@ export const representationAction = z.discriminatedUnion('type', [
         'Absolute URL, or an app-relative path ("/docs/x") resolved against the origin the ' +
           'user is on — relative paths are the normal choice for in-app navigation.',
       ),
-    newTab: z.boolean().optional(),
-    newWindow: z.boolean().optional(),
+    newTab: z
+      .boolean()
+      .optional()
+      .describe('Open the URL in a new browser tab instead of navigating the current one.'),
   }),
-  z.object({ type: z.literal('dismiss') }),
+  z
+    .object({ type: z.literal('dismiss') })
+    .describe(
+      'Dismiss the piece the action lives on. NOT accepted everywhere this union appears: a ' +
+        'resource center has no dismiss (closing the panel is a UI affordance, not an action) ' +
+        'and an announcement is marked seen, never dismissed — writes there are rejected ' +
+        '(E1017), not ignored. Flows / checklists / launchers / banners all accept it.',
+    ),
   // Echo-only pair: read-backs expose non-representable stored actions as these;
   // compile preserves the stored action when the echo matches the version being
   // edited (echoActions pool), and rejects fresh authoring (no AI/API-injected JS).
   z
     .object({ type: z.literal('run_javascript'), script: z.string() })
     .describe(
-      'Read-back of a builder-authored script action. Echo it back UNCHANGED (same script) when ' +
-        'rewriting the surrounding list and the stored action is preserved; omitting it deletes it ' +
-        '(action lists are full replacements). Authoring a new or edited script is rejected.',
+      'Read-back of an existing script action — scripts are not authorable through this API. ' +
+        'Echo it back UNCHANGED (same script) when rewriting the surrounding list and the stored ' +
+        'action is preserved; omitting it deletes it (action lists are full replacements). ' +
+        'Authoring a new or edited script is rejected.',
     ),
   z
     .object({ type: z.literal('unsupported'), note: z.string().optional() })
@@ -570,7 +696,16 @@ const rejectLegacyWaitMs = (raw: unknown, ctx: z.RefinementCtx): unknown => {
 export const representationTrigger = z.preprocess(
   rejectLegacyWaitMs,
   z.object({
-    when: z.array(representationCondition).optional(),
+    when: z
+      .array(representationCondition)
+      .optional()
+      .describe(
+        'REACTIVE slot — polled live in the browser while the step is on screen, so it accepts ' +
+          'only client-evaluable condition types: attribute / current_url / element / ' +
+          'text_input / text_filled / time_window. Event / segment / content_state conditions ' +
+          'are server-evaluated and rejected here (E1017). A trigger with NO `when` never ' +
+          'fires (an empty set is "not matched", not "always").',
+      ),
     do: z.array(representationAction),
     waitSeconds: z
       .number()
@@ -593,9 +728,11 @@ const bindAttributeField = z
   .string()
   .optional()
   .describe(
-    'Optional: codeName of an EXISTING attribute (create it first with create_attribute_definition) ' +
+    'Optional: codeName of an EXISTING attribute (create the attribute definition first) ' +
       'to ALSO save this answer onto the user for targeting/segmentation — use the codeName, NOT the ' +
-      "id. It is NOT validated: a wrong/typo'd code still publishes and then silently captures nothing. " +
+      'id. The write does not check it, but the version validation WARNS when the attribute is ' +
+      'missing or its dataType mismatches the answer — read warnings. A wrong code that slips ' +
+      'through silently captures nothing at runtime. ' +
       'Match the attribute dataType to the answer: number (nps / rating), string (single-select choice), ' +
       'list (multi-select choice). Leaving it unset still records the answer as a response event — bind ' +
       'only when you need to target/segment on it.',
@@ -634,7 +771,6 @@ export const representationQuestion = z.discriminatedUnion('kind', [
     range: z
       .object({ low: z.number(), high: z.number() })
       .describe('Numeric range, e.g. { low: 1, high: 5 }.'),
-    default: z.number().optional(),
     lowLabel: z.string().optional(),
     highLabel: z.string().optional(),
     bindAttribute: bindAttributeField,
@@ -825,17 +961,46 @@ export const representationBlock = z.lazy(() =>
       type: z.literal('button'),
       text: z.string(),
       actions: z.array(representationAction).optional(),
-      disabledWhen: z.array(representationCondition).optional(),
-      hiddenWhen: z.array(representationCondition).optional(),
+      disabledWhen: z
+        .array(representationCondition)
+        .optional()
+        .describe(
+          'REACTIVE slot — polled live in the browser (the button disables the moment the ' +
+            'conditions match). Client-evaluable condition types only: attribute / current_url ' +
+            '/ element / text_input / text_filled / time_window; event / segment / ' +
+            'content_state are rejected (E1017).',
+        ),
+      hiddenWhen: z
+        .array(representationCondition)
+        .optional()
+        .describe(
+          'REACTIVE slot — polled live in the browser (the button shows/hides as conditions ' +
+            'change). Same client-evaluable-only rule as `disabledWhen`.',
+        ),
       variant: z.enum(['primary', 'secondary']).optional(),
       margin: spacingShape,
     }),
     z.object({
       ...blockBase,
       type: z.literal('embed'),
-      url: z.string().min(1, 'An embed block needs a non-empty url.'),
+      url: z
+        .string()
+        .min(1, 'An embed block needs a non-empty url.')
+        .describe(
+          "Paste the page's normal URL (e.g. a youtube.com/watch link) — on write it is " +
+            'resolved through the standard oEmbed provider registry (YouTube, Vimeo, Loom, ' +
+            "Figma, …) and the provider's official embed markup is stored, so you never " +
+            'hand-build /embed/ URLs. A URL no provider claims is iframed as-is — it renders ' +
+            'only if that site allows being framed (no X-Frame-Options/CSP block).',
+        ),
       width: mediaWidthShape,
-      height: mediaWidthShape,
+      height: mediaWidthShape.describe(
+        'Embed height. Optional ONLY for provider embeds (YouTube/Vimeo/… size themselves by ' +
+          'aspect ratio); a URL with NO oEmbed provider has no ratio, and omitting a pixel ' +
+          "height leaves the iframe at the browser's built-in default — a strip ~150px tall, " +
+          'almost never the intended size (validate warns). For plain-iframe URLs always set ' +
+          '`{ "unit": "pixels", "value": … }`.',
+      ),
       margin: spacingShape,
     }),
     z.object({
@@ -886,29 +1051,83 @@ export const representationBlock = z.lazy(() =>
   ]),
 ) as unknown as z.ZodType<RepresentationBlock>;
 
+/** The four flow step kinds (mirrors the write-side step type enum). */
+export const stepTypeEnum = z.enum(['tooltip', 'modal', 'hidden', 'bubble']);
+/** The six question element kinds (the question members of ContentEditorElementType). */
+export const questionTypeEnum = z.enum([
+  'nps',
+  'star-rating',
+  'scale',
+  'single-line-text',
+  'multi-line-text',
+  'multiple-choice',
+]);
+
 // ── Step ─────────────────────────────────────────────────────────────────────
 export const representationStep = z.object({
   object: z.literal(ApiObjectType.STEP),
   id: z.string(),
-  /** Front-end logical id — the write upsert key. Round-trips on read. */
-  cvid: z.string().nullable(),
+  cvid: z
+    .string()
+    .nullable()
+    .describe(
+      'Stable step handle that SURVIVES forking (unlike `id`, which is regenerated) — echo it ' +
+        'on a write to update this step in place. Prefer it over `id` for edits that must ' +
+        'outlive a new version.',
+    ),
   name: z.string(),
-  /** tooltip | modal | bubble | hidden */
-  type: z.string(),
-  sequence: z.number(),
-  /** Per-step theme override; null = inherit the version (flow) theme. */
-  themeId: z.string().nullable(),
+  type: stepTypeEnum,
+  sequence: z
+    .number()
+    .describe(
+      '0-based display order. On write an explicit `sequence` wins; steps without one fall ' +
+        'back to their array index.',
+    ),
+  themeId: z
+    .string()
+    .nullable()
+    .describe("Per-step theme override; null = this step inherits the flow version's theme."),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
-  width: z.number().optional(),
+  width: z
+    .number()
+    .optional()
+    .describe(
+      "Per-step width override in pixels (border-box outer width) — absent = the theme's " +
+        'surface width.',
+    ),
   skippable: z.boolean().optional(),
-  /** Marks this step as an explicit completion point for the flow. */
-  explicitCompletionStep: z.boolean().optional(),
+  explicitCompletionStep: z
+    .boolean()
+    .optional()
+    .describe(
+      "Marks this step as the flow's completion point: reaching it counts the flow as " +
+        'COMPLETED (progress hits 100 and the completion event fires there), and later steps ' +
+        'no longer report progress. With no step marked, only reaching the LAST step completes ' +
+        'the flow — which is what a checklist task waiting on "this flow completed" depends on.',
+    ),
   content: z.array(representationBlock),
   triggers: z.array(representationTrigger).optional(),
-  /** Actions run when the user clicks the step's target element (click-to-advance). */
-  onClick: z.array(representationAction).optional(),
-  advanced: z.object({ hasUnsupported: z.boolean() }).optional(),
+  onClick: z
+    .array(representationAction)
+    .optional()
+    .describe(
+      "Actions that run when the user clicks the step's TARGET ELEMENT on the page " +
+        '(click-to-advance) — distinct from a `button` block, whose actions fire on a button ' +
+        'rendered inside the step. `tooltip` steps only: the other kinds have no target ' +
+        'element to click, and the write rejects `onClick` on them.',
+    ),
+  advanced: z
+    .object({
+      hasUnsupported: z
+        .boolean()
+        .describe(
+          'true = this step carries stored configuration this API cannot express (e.g. an ' +
+            'auto-recorded element fingerprint). Read-only signal: echoing the step back ' +
+            'preserves that configuration untouched; it is not editable here.',
+        ),
+    })
+    .optional(),
 });
 export type RepresentationStep = z.infer<typeof representationStep>;
 
@@ -946,14 +1165,20 @@ export const representationStartRules = z.preprocess(
           .object({ duration: z.number(), unit: durationUnit })
           .optional()
           .describe(
-            'Only auto-start if no other content has been shown within this window — avoids showing a user too many at once.',
+            'Only auto-start if no OTHER content of the SAME type has been shown within this ' +
+              'window — and since only flows accept this knob, in practice: no other FLOW. A ' +
+              'banner / checklist / launcher showing does NOT block it. Avoids stacking ' +
+              'several flows on a user at once.',
           ),
       })
       .optional()
       .describe(
-        'How often the content may auto-start. OMITTED entirely, the runtime behaves as `once` ' +
-          '(show a single time, ever) — the default is applied at evaluation time and does NOT ' +
-          'appear on read-backs, so set it explicitly if you want anything else.',
+        'How often the content may auto-start (flow/checklist only). Left unset on a write, ' +
+          'the builder default (`once`) is seeded and STORED — read-backs show the effective ' +
+          'mode explicitly. A version stored with NO frequency at all (reachable only through ' +
+          'legacy/builder-external writes, never through this API) runs with NO limit: it ' +
+          'starts again every time its rules match once the prior session ends — ' +
+          'validate_content_version warns on that state.',
       ),
     priority: z
       .enum(['highest', 'high', 'medium', 'low', 'lowest'])
@@ -967,12 +1192,14 @@ export const representationStartRules = z.preprocess(
       .number()
       .optional()
       .describe(
-        'Delay in SECONDS between the conditions first matching and the content becoming ' +
-          'ELIGIBLE to start. The timer latches on first match (leaving the matching state ' +
-          'mid-wait does NOT cancel it — same as a step trigger wait), but unlike a trigger the ' +
-          'start conditions are re-checked at show time: after the wait elapses the content ' +
-          'appears at the next moment the conditions match again. Capped at 300 seconds by the ' +
-          'runtime (a larger value is clamped).',
+        'Delay in SECONDS between the start conditions matching and the content becoming ' +
+          'ELIGIBLE to start. The countdown itself survives the conditions un-matching ' +
+          'mid-wait, but unlike a trigger wait (which fires its actions regardless), an ' +
+          'elapsed start-rule wait guarantees nothing: the conditions are RE-CHECKED at show ' +
+          'time, and the content starts at the next moment they match again. One exception: ' +
+          'when a session of the same content type starts or ends mid-wait, in-flight timers ' +
+          'are cancelled and re-armed — a still-matching version then restarts its wait from ' +
+          'zero. Capped at 300 seconds by the runtime (a larger value is clamped).',
       ),
     startIfNotComplete: z
       .boolean()
@@ -1005,13 +1232,13 @@ export const representationStepInput = z.object({
     .optional()
     .describe(
       'Primary id of an existing step to update in place. It is regenerated when you fork a ' +
-        'version (create_content_version), so for edits that must survive a fork prefer `cvid`.',
+        'version, so for edits that must survive a fork prefer `cvid`.',
     ),
   cvid: z
     .string()
     .optional()
     .describe(
-      'Stable step handle that survives forking (create_content_version): echo it to update an ' +
+      'Stable step handle that survives forking: echo it to update an ' +
         'existing step in place without re-reading new ids. A step is matched by `id` first, then ' +
         '`cvid`; omit both to create a new step.',
     ),
@@ -1034,24 +1261,40 @@ export const representationStepInput = z.object({
     .optional()
     .describe(
       'Per-step theme override. Omit to keep the current value; set to a theme id ' +
-        '(from list_themes) to override; set to null to clear and inherit the flow theme.',
+        '(from the themes list) to override; set to null to clear and inherit the flow theme.',
     ),
   target: representationTarget.optional(),
   placement: representationPlacement.optional(),
-  width: z.number().optional(),
+  width: z
+    .number()
+    .optional()
+    .describe(
+      "Step width in pixels — OVERRIDES the theme's surface width (tooltip.width / " +
+        'modal.width / bubble.width) for THIS step only; omit to use the theme width. ' +
+        'Widths are border-box: the outer edge renders at exactly this value (border inside); ' +
+        'the inner iframe measures 2x the theme border width less.',
+    ),
   skippable: z.boolean().optional(),
   explicitCompletionStep: z
     .boolean()
     .optional()
     .describe('Marks this step as an explicit completion point — reaching it completes the flow.'),
-  content: z.array(representationBlock).default([]),
+  content: z
+    .array(representationBlock)
+    .optional()
+    .describe(
+      "The step's body blocks. On an ECHOED step (matched by cvid/id), omit to keep the stored " +
+        'content unchanged — an explicit [] clears it. Same omit-keeps semantics as `triggers`.',
+    ),
   triggers: z.array(representationTrigger).optional(),
   onClick: z
     .array(representationAction)
     .optional()
     .describe(
-      "Actions to run when the user clicks the step's target element (click-to-advance). " +
-        'Tooltip steps with a `target` only.',
+      "Actions to run when the user clicks the step's TARGET ELEMENT on the page " +
+        '(click-to-advance) — distinct from a `button` block, whose actions fire on a button ' +
+        'rendered inside the step. `tooltip` steps only (the other kinds have no target ' +
+        'element); sending it on a modal / bubble / hidden step is rejected.',
     ),
 });
 export type RepresentationStepInput = z.infer<typeof representationStepInput>;
@@ -1064,13 +1307,25 @@ export const question = z.object({
   object: z.literal(ApiObjectType.QUESTION),
   cvid: z.string(),
   name: z.string(),
-  type: z.string(),
+  type: questionTypeEnum,
 });
 
 export const contentVersion = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_VERSION),
   number: z.number(),
+  firstPublishedAt: z
+    .string()
+    .nullable()
+    .describe(
+      'When this version FIRST went live (ISO). Non-null means the version is frozen: it can ' +
+        'never be edited again — not even after unpublishing — edit by forking ' +
+        '(by forking). null means it never went live — OR its first publish ' +
+        'predates this stamp (older versions were never backfilled), so on old data null is ' +
+        'not proof it never shipped. This is history, not live state: for "is it live NOW, ' +
+        'where" read the content\'s `environments[]`; for who published what when, ' +
+        'the publish history (available through the MCP).',
+    ),
   themeId: z.string().nullable(),
   questions: z.array(question).nullable(),
   /** Decompiled steps — only present when the `steps` expand is requested. */
@@ -1090,9 +1345,16 @@ export const contentVersion = z.object({
    * ordering. Present only when set (publish stamps it when the author left it
    * null, so published announcements always carry one).
    */
-  scheduledAt: z.string().optional(),
-  updatedAt: z.string(),
-  createdAt: z.string(),
+  scheduledAt: z
+    .string()
+    .optional()
+    .describe(
+      'Announcement versions only: the "announcement time" gating feed visibility and ordering. ' +
+        'Absent on other content types and until set (publish stamps it when the author left it ' +
+        'null, so published announcements always carry one).',
+    ),
+  updatedAt: isoTimestamp,
+  createdAt: isoTimestamp,
 });
 
 export type ContentVersion = z.infer<typeof contentVersion>;

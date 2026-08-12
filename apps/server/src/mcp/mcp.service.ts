@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { z } from 'zod';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 
 import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
@@ -12,6 +14,8 @@ import { ApiContentService } from '@/api/content/content.service';
 import { ApiContentSessionsService } from '@/api/content-sessions/content-sessions.service';
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
+import { ApiUsageOverviewService } from '@/api/analytics/usage-overview.service';
+import { ApiReferencesService } from '@/api/references/references.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
 import { ApiSegmentsService } from '@/api/segments/segments.service';
@@ -58,12 +62,14 @@ const SERVER_INFO = { name: 'usertour', version: readServerVersion() };
  */
 @Injectable()
 export class McpService {
+  private readonly logger = new Logger(McpService.name);
   private readonly tools: McpTool[];
   private readonly services: McpServices;
 
   constructor(
     private readonly auth: ApiTokenAuthService,
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
     private readonly audit: AuditService,
     private readonly contentDiagnosis: ContentDiagnosisService,
     contentService: ApiContentService,
@@ -77,6 +83,8 @@ export class McpService {
     sessionsService: ApiContentSessionsService,
     environmentsService: ApiEnvironmentsService,
     analyticsService: ApiAnalyticsService,
+    usageOverviewService: ApiUsageOverviewService,
+    referencesService: ApiReferencesService,
     webhooksService: ApiWebhooksService,
   ) {
     this.services = {
@@ -91,6 +99,8 @@ export class McpService {
       sessions: sessionsService,
       environments: environmentsService,
       analytics: analyticsService,
+      usageOverview: usageOverviewService,
+      references: referencesService,
       webhooks: webhooksService,
     };
     this.tools = [...buildReadTools(), ...buildWriteTools(), ...buildWebhookTools()];
@@ -123,7 +133,11 @@ export class McpService {
         {
           title: tool.title,
           description: tool.description,
-          inputSchema: tool.inputSchema,
+          // .strict(): an unknown top-level key is an InvalidParams error naming
+          // the key. Zod's default (strip) made the SDK silently drop unknown
+          // keys before the handler ran — a misspelled field "succeeded" while
+          // doing nothing. Also advertises additionalProperties:false.
+          inputSchema: z.object(tool.inputSchema).strict(),
           ...(tool.annotations ? { annotations: tool.annotations } : {}),
         },
         async (args: Record<string, unknown>) => {
@@ -135,6 +149,7 @@ export class McpService {
             const ctx: McpToolContext = {
               token,
               projectId,
+              dashboardUrl: this.configService.get<string>('app.homepageUrl') || '',
               auth: this.auth,
               prisma: this.prisma,
               services: this.services,
@@ -159,8 +174,10 @@ export class McpService {
    * Run a tool handler and, for write tools carrying `audit` metadata, capture an
    * audit entry around it: resolve the environment once (env-scoped resources),
    * snapshot `before` (delete/update), run the handler, then record the change
-   * with the actor from the token. Auditing is a side-channel — `record` never
-   * throws — so it cannot affect the handler's result.
+   * with the actor from the token. Auditing is a side-channel: the before-fetch
+   * and the entry build are guarded here (mirroring the REST/web interceptor
+   * branches), so an audit-side failure can neither block the business write nor
+   * turn an already-committed write into an `isError` reply.
    */
   private async runWithAudit(
     tool: McpTool,
@@ -174,13 +191,29 @@ export class McpService {
     // Resolve the env ONCE for env-scoped audited tools and stash it on ctx, so
     // the handler's own resolveEnvironment reuses it instead of resolving a
     // second time (two lookups + scope checks, or two full env scans by default).
+    // NOT audit-side: this is the same scope-fence check the handler would run.
     const environment = meta.envScoped ? await resolveEnvironment(args, ctx) : undefined;
     if (environment) {
       ctx.resolvedEnvironment = environment;
     }
-    const before = meta.fetchBefore ? await meta.fetchBefore(args, ctx, environment) : undefined;
+    let before: unknown;
+    if (meta.fetchBefore) {
+      try {
+        before = await meta.fetchBefore(args, ctx, environment);
+      } catch (error) {
+        this.logger.error('Audit before-fetch failed', error as Error);
+      }
+    }
     const result = await tool.handler(args, ctx);
-    this.audit.record(buildMcpAuditEntry(tool, ctx, args, result, before, environment));
+    try {
+      // This try guards the entry BUILD (resourceId fns etc.) — `record` itself
+      // never throws. An unguarded build throw here would turn the already-
+      // committed write into an isError reply.
+      const entry = buildMcpAuditEntry(tool, ctx, args, result, before, environment);
+      this.audit.record(entry);
+    } catch (error) {
+      this.logger.error('Failed to build MCP audit entry', error as Error);
+    }
     return result;
   }
 

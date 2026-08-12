@@ -49,6 +49,12 @@ export type UserAttributeElementType = {
   attrCode: string;
   fallback: string;
   value?: string;
+  // Marks carried as ELEMENT flags — a void inline has no text leaves for
+  // Slate marks to live on. Written by toggleTextProps, read by the chip
+  // render and the widget serializer.
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
   children: Descendant[];
 };
 

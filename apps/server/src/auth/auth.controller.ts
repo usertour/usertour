@@ -11,6 +11,38 @@ import { User } from '@/users/models/user.model';
 import { AuthenticationExpiredError, OAuthError, SsoRequiredError } from '@/common/errors';
 import { REFRESH_TOKEN_COOKIE } from '@/utils/cookie';
 
+/**
+ * Same-origin `next` path from the OAuth `state` round-trip, or undefined.
+ * State is CLIENT-controlled input echoed back by the provider, so this is the
+ * load-bearing validation: only a relative path ('/x', never '//x' or an
+ * absolute URL) may become a redirect target — anything else would be an open
+ * redirect. Mirrors the web's resolveNextPath rules.
+ */
+function nextFromState(req: Request): string | undefined {
+  const state = req.query?.state;
+  if (typeof state !== 'string' || !state) {
+    return undefined;
+  }
+  try {
+    const next = JSON.parse(Buffer.from(state, 'base64').toString()).next;
+    // 2048, not 512: the MCP consent path carries a `transaction` JWT (all
+    // granted scopes + PKCE challenge), so a real `next` is ~590 chars — a
+    // 512 cap silently dropped exactly the flow this exists to resume. The
+    // bound only guards against an absurdly long state, not business length.
+    if (
+      typeof next === 'string' &&
+      next.startsWith('/') &&
+      !next.startsWith('//') &&
+      next.length <= 2048
+    ) {
+      return next;
+    }
+  } catch {
+    /* malformed state is the strategy's problem (it throws OAuthError) */
+  }
+  return undefined;
+}
+
 @Controller('api/auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
@@ -37,10 +69,10 @@ export class AuthController {
   @UseGuards(GithubOauthGuard)
   @Get('github/callback')
   @Public()
-  async githubAuthCallback(@UserEntity() user: User, @Res() res: Response) {
+  async githubAuthCallback(@UserEntity() user: User, @Req() req: Request, @Res() res: Response) {
     try {
       this.logger.log(`github oauth callback success, req.user = ${user?.email}`);
-      await this.finishOauth(user.id, res);
+      await this.finishOauth(user.id, res, nextFromState(req));
     } catch (error) {
       this.logger.error('GitHub OAuth callback failed:', error.stack);
       throw new OAuthError();
@@ -50,10 +82,10 @@ export class AuthController {
   @UseGuards(GoogleOauthGuard)
   @Get('google/callback')
   @Public()
-  async googleAuthCallback(@UserEntity() user: User, @Res() res: Response) {
+  async googleAuthCallback(@UserEntity() user: User, @Req() req: Request, @Res() res: Response) {
     try {
       this.logger.log(`google oauth callback success, req.user = ${user?.email}`);
-      await this.finishOauth(user.id, res);
+      await this.finishOauth(user.id, res, nextFromState(req));
     } catch (error) {
       this.logger.error('Google OAuth callback failed:', error.stack);
       throw new OAuthError();
@@ -65,7 +97,7 @@ export class AuthController {
    * the user on the app, or redirect them to the 2FA second-step / setup page
    * with a short-lived challenge token in the URL.
    */
-  private async finishOauth(userId: string, res: Response) {
+  private async finishOauth(userId: string, res: Response, next?: string) {
     const homepage = this.configService.get<string>('app.homepageUrl') || '';
     let result: Awaited<ReturnType<AuthService['issueTokensOrChallenge']>>;
     try {
@@ -81,12 +113,18 @@ export class AuthController {
       throw error;
     }
     if (result.kind === 'tokens') {
-      // Land at SPA root and let LandingRedirect pick the user's env.
-      this.auth.setAuthCookie(res, result.tokens).redirect(homepage || '/');
+      // Resume the interrupted flow (`next` from the OAuth state — e.g. the MCP
+      // consent page) or land at SPA root and let LandingRedirect pick the env.
+      this.auth
+        .setAuthCookie(res, result.tokens)
+        .redirect(next ? `${homepage}${next}` : homepage || '/');
       return;
     }
     const path = result.purpose === 'mfa-verify' ? '/auth/2fa' : '/auth/2fa/setup';
-    const url = `${homepage}${path}?challenge=${encodeURIComponent(result.challengeToken)}`;
+    // Forward `next` into the 2FA step: the web's useAuthAfterLogin reads it
+    // off the page URL after verification and resumes the flow.
+    const forwardNext = next ? `&next=${encodeURIComponent(next)}` : '';
+    const url = `${homepage}${path}?challenge=${encodeURIComponent(result.challengeToken)}${forwardNext}`;
     res.redirect(url);
   }
 

@@ -63,7 +63,9 @@ export function decompileStep(
     id: step.id,
     cvid: step.cvid ?? null,
     name: step.name ?? '',
-    type: step.type ?? '',
+    // Stored steps always carry one of the four kinds (the builder requires it);
+    // the legacy '' fallback survives only for hypothetical pre-builder rows.
+    type: (step.type ?? '') as RepresentationStep['type'],
     sequence: step.sequence,
     themeId: step.themeId ?? null,
     ...(target ? { target } : {}),
@@ -308,7 +310,6 @@ function decompileQuestion(e: any): RepresentationQuestion | undefined {
           low: typeof d.lowRange === 'number' ? d.lowRange : 1,
           high: typeof d.highRange === 'number' ? d.highRange : 5,
         },
-        ...(typeof d.rating === 'number' ? { default: d.rating } : {}),
         ...(lo ? { lowLabel: lo } : {}),
         ...(hi ? { highLabel: hi } : {}),
       };
@@ -321,9 +322,6 @@ function decompileQuestion(e: any): RepresentationQuestion | undefined {
           low: typeof d.lowRange === 'number' ? d.lowRange : 0,
           high: typeof d.highRange === 'number' ? d.highRange : 10,
         },
-        // Same `rating` storage as star-rating — the read-back was missing only
-        // here, silently dropping a written `default` (flow acceptance eval #22).
-        ...(typeof d.rating === 'number' ? { default: d.rating } : {}),
         ...(lo ? { lowLabel: lo } : {}),
         ...(hi ? { highLabel: hi } : {}),
       };
@@ -367,7 +365,17 @@ function decompilePlacement(raw: unknown, type: string): RepresentationPlacement
   if (!s || typeof s !== 'object') {
     return undefined;
   }
-  if (type === StepContentType.MODAL || type === StepContentType.BUBBLE) {
+  if (type === StepContentType.BUBBLE) {
+    // A bubble is positioned by the THEME's bubble placement — the stored
+    // step-level position/offsets (builder-seeded defaults) are never read by
+    // the renderer. Echo only `backdrop`, the one placement key a bubble
+    // honors, so read→write round-trips stay inside what the write accepts.
+    if (typeof s.enabledBackdrop !== 'boolean') {
+      return undefined;
+    }
+    return { backdrop: s.enabledBackdrop };
+  }
+  if (type === StepContentType.MODAL) {
     if (typeof s.position !== 'string' || !POSITIONS.has(s.position)) {
       return undefined;
     }
@@ -375,8 +383,10 @@ function decompilePlacement(raw: unknown, type: string): RepresentationPlacement
       position: s.position,
       ...(typeof s.positionOffsetX === 'number' ? { offsetX: s.positionOffsetX } : {}),
       ...(typeof s.positionOffsetY === 'number' ? { offsetY: s.positionOffsetY } : {}),
+      // blockTarget is tooltip-only at render (a modal covers the page anyway), so a
+      // stored value here is inert — drop it rather than echo a field the write
+      // no longer accepts, keeping read→write round-trips closed.
       ...(typeof s.enabledBackdrop === 'boolean' ? { backdrop: s.enabledBackdrop } : {}),
-      ...(typeof s.enabledBlockTarget === 'boolean' ? { blockTarget: s.enabledBlockTarget } : {}),
     };
   }
   if (type === StepContentType.TOOLTIP) {

@@ -1,5 +1,6 @@
 import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { SystemAdminGuard } from './admin.guard';
 import { AdminService } from './admin.service';
 import {
@@ -167,8 +168,18 @@ export class AdminResolver {
     return this.adminService.getProjectMembers(projectId);
   }
 
+  // The four admin member mutations change the same roster as the audited
+  // team.resolver ones — the instance admin must not be the one actor whose
+  // changes leave no trace. SystemAdminGuard stashes no projectId (it is not
+  // PermissionGuard), so each meta resolves the project from its own args.
   @Mutation(() => Boolean)
   @UseGuards(SystemAdminGuard)
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'member',
+    resourceId: (a) => String(a.userId),
+    resolveProjectId: async (a) => String(a.projectId),
+  })
   async adminAddProjectMember(
     @Args('projectId') projectId: string,
     @Args('userId') userId: string,
@@ -180,6 +191,12 @@ export class AdminResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(SystemAdminGuard)
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'member',
+    resourceId: (a) => String(a.userId),
+    resolveProjectId: async (a) => String(a.projectId),
+  })
   async adminChangeProjectMemberRole(
     @Args('projectId') projectId: string,
     @Args('userId') userId: string,
@@ -191,6 +208,12 @@ export class AdminResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(SystemAdminGuard)
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'member',
+    resourceId: (a) => String(a.userId),
+    resolveProjectId: async (a) => String(a.projectId),
+  })
   async adminTransferProjectOwnership(
     @Args('projectId') projectId: string,
     @Args('userId') userId: string,
@@ -201,6 +224,12 @@ export class AdminResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(SystemAdminGuard)
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'member',
+    resourceId: (a) => String(a.userId),
+    resolveProjectId: async (a) => String(a.projectId),
+  })
   async adminRemoveProjectMember(
     @Args('projectId') projectId: string,
     @Args('userId') userId: string,

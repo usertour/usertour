@@ -7,6 +7,9 @@ import {
 } from '@usertour/types';
 import { BannerStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
+import { rootsHaveButtonConditions } from '@/core/usertour-helper';
+import { isEqual } from '@usertour/helpers';
+import { isVisibleNode } from '@usertour/dom';
 import { logger } from '@/utils';
 import { ActionSource } from '@/core/action-handlers';
 import { UsertourElementWatcher } from './usertour-element-watcher';
@@ -30,6 +33,7 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
   async check(): Promise<void> {
     try {
       await this.checkTargetVisibility();
+      await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
       logger.error('Error in banner checking:', error);
@@ -105,8 +109,12 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
       this.watcher.destroy();
       this.watcher = null;
       this.watcherTargetKey = null;
-      this.updateStore({ targetElement: undefined });
     }
+    // Mirror show(): a page-anchored banner is unconditionally visible. If the
+    // check loop had hidden the element-attached banner before this placement
+    // flip, nothing else ever reopens a watcherless banner — without the
+    // explicit openState it stayed closed until session end.
+    this.updateStore({ openState: true, targetElement: undefined });
   }
 
   async handleDismiss(): Promise<void> {
@@ -126,6 +134,29 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
       return bannerData.zIndex;
     }
     return this.getBaseZIndex();
+  }
+
+  /**
+   * Re-evaluates banner button disable/hide conditions against the live page —
+   * same defect class as the tour (see usertour-tour.ts
+   * checkAndUpdateButtonConditions): the flags were baked once per session
+   * update and page-state conditions froze.
+   * @private
+   */
+  private async checkAndUpdateButtonConditions(): Promise<void> {
+    const store = this.getStoreData();
+    const bannerData = store?.bannerData;
+    const contents = bannerData?.contents;
+    if (!bannerData || !contents || !rootsHaveButtonConditions(contents)) {
+      return;
+    }
+    const evaluated = await this.evaluateButtonConditionsInData(contents);
+    if (isEqual(evaluated, contents)) {
+      return;
+    }
+    this.updateStore({
+      bannerData: { ...bannerData, contents: evaluated },
+    } as unknown as Partial<BannerStore>);
   }
 
   protected async getCustomStoreData(
@@ -166,7 +197,12 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
       const el = this.watcher.getElement();
       if (el) {
         if (el.isConnected) {
-          this.setStoreData({ ...store, openState: true, targetElement: el });
+          // The re-send may land while the check loop has the banner hidden
+          // (target CSS-hidden): forcing open here mounts a full in-flow
+          // banner for one 200ms tick and reflows the host page. Gate on the
+          // check loop's own sync predicate instead; the loop reopens when
+          // the target actually shows.
+          this.setStoreData({ ...store, openState: isVisibleNode(el), targetElement: el });
         } else {
           // Detached (SPA re-render) — don't hand a dead reference to the
           // renderer; the check loop's checkVisibility() re-finds by selector

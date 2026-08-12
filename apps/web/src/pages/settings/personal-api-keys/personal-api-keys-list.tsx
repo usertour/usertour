@@ -16,6 +16,7 @@ import { type ApiToken, useListApiTokensQuery } from '@usertour/hooks';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CreateDialog } from './components/create-dialog';
+import { RevealDialog } from './components/reveal-dialog';
 import { RowActions } from './components/row-actions';
 import { SCOPE_RESOURCES, summarizeScopes } from '@/components/token-scopes';
 
@@ -37,11 +38,12 @@ const NewKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
 
 export const PersonalApiKeysList = () => {
   const { projects } = useAppContext();
-  // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
-  // false for refetches, so the table updates in place instead of flashing
-  // back to the skeleton when a token is created/deleted.
   const { apiTokens, loading, refetch } = useListApiTokensQuery(SHARED_CACHE_QUERY_OPTIONS);
   const { t } = useTranslation();
+  // Rotate's one-time secret reveal. Owned by the page, not the table row —
+  // the table subtree is replaced by the skeleton during refetches, which
+  // would destroy any row-held state (and this secret is unrecoverable).
+  const [rotatedToken, setRotatedToken] = useState('');
 
   const projectNameById = useMemo(() => {
     const index: Record<string, string> = {};
@@ -79,17 +81,34 @@ export const PersonalApiKeysList = () => {
     },
     {
       header: t('settings.personalApiKeys.columns.environments'),
-      // null/empty allowlist = all environments; otherwise a compact count (the exact
-      // environments are shown — and editable — in the Edit dialog).
-      cell: (token) => (
-        <Badge variant="secondary" className="cursor-default font-normal">
-          {!token.environmentIds || token.environmentIds.length === 0
-            ? t('settings.personalApiKeys.environmentsAllBadge')
-            : t('settings.personalApiKeys.environmentsCount', {
-                count: token.environmentIds.length,
-              })}
-        </Badge>
-      ),
+      // null/absent allowlist = all environments; otherwise a compact count (the exact
+      // environments are shown — and editable — in the Edit dialog). A present-but-EMPTY
+      // allowlist is neither: every environment it named has been deleted, and the
+      // delete sweep shrinks a list but never widens it to "all" — the key can act on
+      // NOTHING, so rendering it as "All" would state the exact opposite.
+      cell: (token) =>
+        token.environmentIds && token.environmentIds.length === 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="destructive" className="cursor-default font-normal">
+                  {t('settings.personalApiKeys.environmentsNoneBadge')}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                {t('settings.personalApiKeys.environmentsNoneTooltip')}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <Badge variant="secondary" className="cursor-default font-normal">
+            {!token.environmentIds
+              ? t('settings.personalApiKeys.environmentsAllBadge')
+              : t('settings.personalApiKeys.environmentsCount', {
+                  count: token.environmentIds.length,
+                })}
+          </Badge>
+        ),
     },
     {
       header: t('settings.personalApiKeys.columns.scopes'),
@@ -145,40 +164,50 @@ export const PersonalApiKeysList = () => {
     {
       header: '',
       headerClassName: 'w-20',
-      cell: (token) => <RowActions token={token} />,
+      cell: (token) => <RowActions token={token} onRotated={setRotatedToken} />,
     },
   ];
 
   return (
-    <ResourceListPage<ApiToken>
-      title={t('settings.personalApiKeys.title')}
-      actions={<NewKeyButton onSuccess={refetch} />}
-      description={
-        <>
-          {t('settings.personalApiKeys.description')}
-          <br />
-          <Trans
-            i18nKey="settings.personalApiKeys.descriptionOnce"
-            components={{ strong: <span className="font-bold text-foreground" /> }}
-          />
-          <br />
-          <a
-            href="https://docs.usertour.io/api-reference/introduction"
-            className="text-primary"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span>{t('settings.personalApiKeys.headerDocs')}</span>
-            <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
-          </a>
-        </>
-      }
-      columns={columns}
-      rows={apiTokens}
-      loading={loading}
-      empty={t('settings.personalApiKeys.empty')}
-      getRowKey={(token) => token.id}
-    />
+    <>
+      <ResourceListPage<ApiToken>
+        title={t('settings.personalApiKeys.title')}
+        actions={<NewKeyButton onSuccess={refetch} />}
+        description={
+          <>
+            {t('settings.personalApiKeys.description')}
+            <br />
+            <Trans
+              i18nKey="settings.personalApiKeys.descriptionOnce"
+              components={{ strong: <span className="font-bold text-foreground" /> }}
+            />
+            <br />
+            <a
+              href="https://docs.usertour.io/api-reference-v2/introduction"
+              className="text-primary"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>{t('settings.personalApiKeys.headerDocs')}</span>
+              <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
+            </a>
+          </>
+        }
+        columns={columns}
+        rows={apiTokens}
+        // Not bare `loading`: the list hook turns on notifyOnNetworkStatusChange,
+        // so every refetch flips it too — and swapping the table for the skeleton
+        // mid-refetch would unmount the rows. Skeleton only before first data.
+        loading={loading && !apiTokens}
+        empty={t('settings.personalApiKeys.empty')}
+        getRowKey={(token) => token.id}
+      />
+      <RevealDialog
+        token={rotatedToken}
+        open={!!rotatedToken}
+        onOpenChange={() => setRotatedToken('')}
+      />
+    </>
   );
 };
 

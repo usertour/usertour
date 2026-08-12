@@ -1,10 +1,16 @@
 import { Reflector } from '@nestjs/core';
+import { Capability } from '@usertour/types';
 
-import { ContentResolver } from '@/content/content.resolver';
+import { AdminResolver } from '@/admin/admin.resolver';
+import { AnalyticsResolver } from '@/analytics/analytics.resolver';
+import { ApiCompaniesController } from '@/api/companies/companies.controller';
+import { ApiSegmentMembersController } from '@/api/segments/segments.controller';
 import { ApiTokenResolver } from '@/api-token/api-token.resolver';
+import { ContentResolver } from '@/content/content.resolver';
 
-import { AuditWeb } from './audit.decorator';
+import { Audit, AuditWeb } from './audit.decorator';
 import {
+  bodyEnvironmentId,
   buildWebAuditEntry,
   deriveAudit,
   fetchBefore,
@@ -70,6 +76,41 @@ describe('deriveAudit (v2 REST capability → audit descriptor)', () => {
     expect(deriveAudit('segment:read', 'GET')).toBeNull();
     expect(deriveAudit('project:manage', 'POST')).toBeNull(); // project not an audited resource
     expect(deriveAudit('billing:read', 'GET')).toBeNull();
+  });
+});
+
+describe('capability coverage tripwire — every write capability derives or is consciously exempt', () => {
+  // No v2 REST route carries these WRITE capabilities today — their lifecycles
+  // are audited on the web surface via @AuditWeb instead. This test guards the
+  // ENUM only: a brand-new capability must land in RESOURCE_BY_PREFIX or here.
+  // It cannot see routes — the ROUTE-level guarantee (a new endpoint using one
+  // of these exempt capabilities must derive or carry an explicit @Audit) is
+  // audit-route-coverage.spec.ts, which scans the actual controllers.
+  const EXEMPT_WRITE_PREFIXES = new Set([
+    'localization', // v2 exposure deferred; web mutations carry @AuditWeb
+    'accesstoken', // SDK-token lifecycle is web-only (@AuditWeb access_token)
+    'integration', // web-only mutations (@AuditWeb integration)
+    'project', // web-only mutations (@AuditWeb project)
+    'billing', // web-only (updateProjectLicense carries @AuditWeb)
+    'team', // web-only mutations (@AuditWeb member)
+    'sso', // web-only mutations (@AuditWeb sso_provider)
+  ]);
+  // `activate` = switching the active project in the UI — the adjudicated
+  // unaudited activeUserProject, not a durable write.
+  const NON_WRITE_VERBS = new Set(['read', 'activate']);
+
+  it('derives a descriptor for every non-exempt write capability', () => {
+    for (const cap of Object.values(Capability)) {
+      const [prefix, verb] = String(cap).split(':');
+      if (NON_WRITE_VERBS.has(verb) || EXEMPT_WRITE_PREFIXES.has(prefix)) {
+        continue;
+      }
+      // Wrap in an object so a failure names the offending capability.
+      expect({ cap, derived: deriveAudit(String(cap), 'POST') }).toEqual({
+        cap,
+        derived: expect.objectContaining({ resourceType: expect.any(String) }),
+      });
+    }
   });
 });
 
@@ -154,10 +195,38 @@ describe('fetchBefore biz-entity id spaces (REST externalId vs web internal id)'
   });
 });
 
+describe('bodyEnvironmentId — the body fallback is fenced to publish-verb routes', () => {
+  it('reads the body env for publish/unpublish (the routes that validate it)', () => {
+    expect(bodyEnvironmentId('content:publish', { environmentId: 'env1' })).toBe('env1');
+  });
+
+  it('ignores a stray body environmentId on every other capability', () => {
+    // The exact pollution path: interceptors run before the zod pipes (and
+    // body-less DELETE/restore routes never run them), so req.body is
+    // unvalidated here. A stray key must not label the entry with an
+    // environment the write never touched.
+    expect(bodyEnvironmentId('content:update', { environmentId: 'evil' })).toBeNull();
+    expect(bodyEnvironmentId('theme:delete', { environmentId: 'evil' })).toBeNull();
+    expect(bodyEnvironmentId(undefined, { environmentId: 'evil' })).toBeNull();
+  });
+
+  it('returns null for a missing or non-string value', () => {
+    expect(bodyEnvironmentId('content:publish', undefined)).toBeNull();
+    expect(bodyEnvironmentId('content:publish', { environmentId: 42 })).toBeNull();
+  });
+});
+
 describe('resolveResourceId — create attributes to the created resource, not a path id', () => {
   it('a create prefers result.id over params.id (POST /:id/duplicate names the COPY, not the source)', () => {
     // params.id is the SOURCE content; the created copy's id is in the result.
     expect(resolveResourceId({ id: 'SRC' }, { id: 'NEW' }, 'create')).toBe('NEW');
+  });
+
+  it('contentId outranks id: version routes record the CONTENT, not the version', () => {
+    // PATCH /content/:contentId/versions/:id derives resourceType 'content';
+    // MCP/web record the content id for the same operation — params.id (the
+    // version) winning here would split the per-content history in two.
+    expect(resolveResourceId({ contentId: 'C', id: 'V' }, { id: 'V' }, 'update')).toBe('C');
   });
 
   it('a plain create (no path id) still uses result.id', () => {
@@ -232,18 +301,82 @@ describe('resolveWebAuditProjectIds — resolver wins over the guard stash', () 
     expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma)).toEqual(['P1']);
   });
 
-  it('reports the resolver error and falls back to the stash instead of crashing', async () => {
+  it('drops the entry (no stash fallback) when a declared resolver THROWS', async () => {
+    // The stash may belong to a different field of the same document — even one
+    // the actor was denied on. Wrong-project attribution misleads forensics
+    // worse than a loudly-logged missing row does.
     const onError = jest.fn();
     const meta = {
       resolveProjectId: async () => {
         throw new Error('boom');
       },
     };
-    expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma, onError)).toEqual(['P1']);
+    expect(await resolveWebAuditProjectIds(meta, {}, 'P1', prisma, onError)).toEqual([]);
     expect(onError).toHaveBeenCalledTimes(1);
   });
 
   it('returns [] when neither source resolves (the wiring-bug case)', async () => {
     expect(await resolveWebAuditProjectIds({}, {}, undefined, prisma)).toEqual([]);
+  });
+});
+
+describe('v2 membership routes override the capability derivation', () => {
+  // Deriving from company:write / segment:update would record "company/segment
+  // updated" with the member id nowhere — "who removed user U" would be
+  // answerable on v1/MCP/web but not v2. The explicit @Audit mirrors v1's and
+  // MCP's composite descriptor.
+  const reflector = new Reflector();
+
+  it.each([
+    ['add', ApiCompaniesController.prototype.upsertMembership, 'update'],
+    ['remove', ApiCompaniesController.prototype.removeMembership, 'delete'],
+  ])('company member %s records companyMember userId:companyId', (_label, handler, action) => {
+    const meta = reflector.get(Audit, handler);
+    expect(meta).toMatchObject({ action, resourceType: 'companyMember' });
+    expect(
+      meta.resourceId?.({ method: 'PUT', params: { id: 'acme', userId: 'jane' } }, undefined),
+    ).toBe('jane:acme');
+  });
+
+  it.each([
+    ['add', ApiSegmentMembersController.prototype.add, 'update'],
+    ['remove', ApiSegmentMembersController.prototype.remove, 'delete'],
+  ])('segment member %s records segmentMember segmentId:externalId', (_label, handler, action) => {
+    const meta = reflector.get(Audit, handler);
+    expect(meta).toMatchObject({ action, resourceType: 'segmentMember' });
+    expect(
+      meta.resourceId?.({ method: 'PUT', params: { id: 'seg1', externalId: 'jane' } }, undefined),
+    ).toBe('seg1:jane');
+  });
+});
+
+describe('web session and admin member mutations carry @AuditWeb', () => {
+  const reflector = new Reflector();
+
+  it('deleteSession/endSession are audited (the one surface that was trace-free)', () => {
+    const del = reflector.get(AuditWeb, AnalyticsResolver.prototype.deleteSession);
+    expect(del).toMatchObject({ action: 'delete', resourceType: 'session' });
+    expect(del.resourceId?.({ sessionId: 's1' }, undefined)).toBe('s1');
+
+    const end = reflector.get(AuditWeb, AnalyticsResolver.prototype.endSession);
+    expect(end).toMatchObject({ action: 'update', resourceType: 'session' });
+    expect(end.resourceId?.({ sessionId: 's1' }, undefined)).toBe('s1');
+  });
+
+  it.each([
+    ['adminAddProjectMember', 'create'],
+    ['adminChangeProjectMemberRole', 'update'],
+    ['adminTransferProjectOwnership', 'update'],
+    ['adminRemoveProjectMember', 'delete'],
+  ] as const)('%s records member %s attributed via its own projectId arg', async (name, action) => {
+    // SystemAdminGuard stashes no projectId (it is not PermissionGuard) — without
+    // resolveProjectId the interceptor logs a wiring error and drops the entry.
+    const meta = reflector.get(
+      AuditWeb,
+      AdminResolver.prototype[name as keyof AdminResolver] as (...args: never[]) => unknown,
+    );
+    expect(meta).toMatchObject({ action, resourceType: 'member' });
+    expect(meta.resourceId?.({ userId: 'u1', projectId: 'p1' }, undefined)).toBe('u1');
+    await expect(meta.resolveProjectId?.({ projectId: 'p1' }, {} as never)).resolves.toBe('p1');
   });
 });

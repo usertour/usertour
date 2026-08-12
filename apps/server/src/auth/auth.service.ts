@@ -44,6 +44,7 @@ import {
   SystemAdminSetupUnavailableError,
   WrongInviteAccountError,
 } from '@/common/errors';
+import { AuditService } from '@/audit/audit.service';
 import { TeamService } from '@/team/team.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -98,6 +99,7 @@ export class AuthService implements OnModuleInit {
     private readonly projectsService: ProjectsService,
     private readonly redisService: RedisService,
     private readonly twoFactorService: TwoFactorService,
+    private readonly audit: AuditService,
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
     @InjectQueue(QUEUE_SEND_RESET_PASSWORD_EMAIL) private resetPasswordQueue: Queue,
     @InjectQueue(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS)
@@ -1018,6 +1020,23 @@ export class AuthService implements OnModuleInit {
           inviteEnvScope(invite),
         );
       },
+      // Roster boundary capture: the invite entry (resourceId = email) records
+      // the OFFER, this one records the JOIN. The mutation is @Public and its
+      // Auth result carries no user id, so the GraphQL audit interceptor cannot
+      // attribute it — record at the service boundary, post-commit, instead.
+      // `after.email` joins the two entries.
+      (user) =>
+        this.audit.record({
+          source: 'web',
+          projectId: invite.projectId,
+          actorUserId: user.id,
+          action: 'create',
+          operation: 'acceptInvite',
+          resourceType: 'member',
+          resourceId: user.id,
+          after: { userId: user.id, email: invite.email, role: invite.role },
+          metadata: { credentialType: 'session' },
+        }),
     );
   }
 
@@ -1026,6 +1045,10 @@ export class AuthService implements OnModuleInit {
     email: string,
     password: string,
     postCreate: (tx: Prisma.TransactionClient, user: User) => Promise<void>,
+    // Runs after the transaction COMMITS but before token issuance (which can
+    // still throw, e.g. force-SSO) — so a committed side effect gets its audit
+    // entry even when the caller ends up without tokens.
+    onCommitted?: (user: User) => void,
   ): Promise<AuthResult> {
     const hashedPassword = await this.passwordService.hashPassword(password);
     try {
@@ -1036,6 +1059,7 @@ export class AuthService implements OnModuleInit {
         return user;
       });
       this.logger.log(`User ${user.id} created`);
+      onCommitted?.(user);
       return this.issueTokensOrChallenge(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {

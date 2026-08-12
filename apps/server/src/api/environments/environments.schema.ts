@@ -1,10 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray } from '../shared/query';
+import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 /**
  * v2 environments — read-only project metadata. An environment is where content
@@ -18,17 +18,23 @@ export const environment = z.object({
   isPrimary: z.boolean(),
   token: z
     .string()
+    .nullable()
     .describe(
-      "The environment's SDK token — pass it to usertour.init() to load this environment's published content.",
+      "The environment's SDK token — pass it to usertour.init() to load this environment's " +
+        'published content. null when `inTokenScope` is false: an out-of-scope environment is ' +
+        'listed for discovery, but its key is withheld (the SDK token accepts identify/track ' +
+        'ingestion, so handing it out would let a scoped credential act on an environment it ' +
+        'was denied).',
     ),
-  /**
-   * Whether the CURRENT credential may act on this environment (token
-   * environment allowlist ∩ its owner's membership scope). false = listed for
-   * discovery but reads/writes/publish targeting it will be rejected (E1029).
-   */
-  inTokenScope: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  inTokenScope: z
+    .boolean()
+    .describe(
+      'Whether the CURRENT credential may act on this environment. false = the environment is ' +
+        'listed for discovery, but reads / writes / publishing targeted at it are rejected ' +
+        '(E1029) — plan against this instead of discovering scope limits from errors.',
+    ),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
 });
 export class EnvironmentDto extends createZodDto(environment) {}
 
@@ -42,8 +48,8 @@ export class ListEnvironmentsQueryDto extends createZodDto(listEnvironmentsQuery
 
 export const listEnvironmentsResponse = z.object({
   results: z.array(environment),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListEnvironmentsResponseDto extends createZodDto(listEnvironmentsResponse) {}
 

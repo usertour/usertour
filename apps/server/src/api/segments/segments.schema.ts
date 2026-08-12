@@ -1,11 +1,15 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray } from '../shared/query';
+import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
-import { attributeCondition } from '../content-representation/representation.schema';
+import {
+  NON_EMPTY_GROUP,
+  NON_EMPTY_GROUP_DESCRIBE,
+  attributeCondition,
+} from '../content-representation/representation.schema';
 import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 /**
  * v2 segments. Segment definitions are project-level; membership is env-level
@@ -38,7 +42,12 @@ export const segmentCondition: z.ZodType<SegmentCondition> = z.lazy(() =>
     z.object({
       type: z.literal('group'),
       match: z.enum(['all', 'any']),
-      conditions: z.array(segmentCondition),
+      // Empty group = permanently false (here it compiles to `id in []`, a
+      // segment matching nobody). Same rejection as the content surface.
+      conditions: z
+        .array(segmentCondition)
+        .min(1, NON_EMPTY_GROUP)
+        .describe(NON_EMPTY_GROUP_DESCRIBE),
     }),
     attributeCondition,
     // Read-side placeholder for a STORED condition this schema cannot express
@@ -59,13 +68,43 @@ export const segment = z.object({
   object: z.literal(ApiObjectType.SEGMENT),
   name: z.string(),
   bizType: segmentBizType,
-  kind: segmentKind,
-  // Present for condition segments (decompiled to stable codes).
-  conditions: z.array(segmentCondition).optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  kind: segmentKind.describe(
+    '`all` = the built-in everyone segment (one per bizType; immutable, cannot be deleted); ' +
+      '`condition` = membership computed from `conditions`; `manual` = explicit member list.',
+  ),
+  conditions: z
+    .array(segmentCondition)
+    .optional()
+    .describe(
+      'Present on condition segments (decompiled to stable attribute codes). Top-level ' +
+        'siblings are ANDed; an OR lives inside a match:"any" group — same rules as writes.',
+    ),
+  memberCount: z
+    .number()
+    .optional()
+    .describe(
+      'Members in the requested environment — only on GET one segment with `expand=memberCount` (+ environmentId); the list endpoint never returns it. ' +
+        'manual = explicit members; condition = users/companies matching the conditions right ' +
+        'now; all = everyone in the environment. Counted with the SAME filter the users/' +
+        'companies list applies for `segmentId`, so the two always agree.',
+    ),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
 });
 export class SegmentDto extends createZodDto(segment) {}
+
+export const segmentExpand = z.enum(['memberCount']);
+export const getSegmentQuery = z.object({
+  expand: singleOrArray(segmentExpand).describe('Inline: memberCount (needs environmentId).'),
+  environmentId: z
+    .string()
+    .optional()
+    .describe(
+      'Environment whose members to count (segment definitions are project-level, members are ' +
+        'environment-scoped). Required with expand=memberCount.',
+    ),
+});
+export class GetSegmentQueryDto extends createZodDto(getSegmentQuery) {}
 
 export const listSegmentsQuery = z.object({
   bizType: segmentBizType.optional().describe('Filter to user or company segments.'),
@@ -77,9 +116,11 @@ export const listSegmentsQuery = z.object({
 export class ListSegmentsQueryDto extends createZodDto(listSegmentsQuery) {}
 
 export const listSegmentsResponse = z.object({
-  results: z.array(segment),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  // The LIST endpoint takes no expand/environmentId, so memberCount is never
+  // populated there — advertise the reachable shape (GET one segment for counts).
+  results: z.array(segment.omit({ memberCount: true })),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListSegmentsResponseDto extends createZodDto(listSegmentsResponse) {}
 
@@ -94,9 +135,11 @@ export const createSegmentBody = z
       .optional()
       .describe(
         'Membership conditions (condition segments only) — ATTRIBUTE conditions and groups of ' +
-          'them, nothing else (a segment is an attribute query). For "users who did X" audiences, ' +
-          'store the fact as an attribute too and segment on that, or put the event condition on ' +
-          "the content's start rules.",
+          'them, nothing else (a segment is an attribute query). Multiple top-level conditions ' +
+          'are ANDed — [A, B] means A AND B; for OR wrap them in one ' +
+          '{ "type": "group", "match": "any", "conditions": [A, B] }, same as content rules. For ' +
+          '"users who did X" audiences, store the fact as an attribute too and segment on that, ' +
+          "or put the event condition on the content's start rules.",
       ),
   })
   .strict();
@@ -110,7 +153,8 @@ export const updateSegmentBody = z
       .optional()
       .describe(
         'Replaces the conditions (condition segments only). Attribute conditions and groups ' +
-          'only — see create_segment.',
+          'only; top-level siblings are ANDed, wrap in a match:"any" group for OR — same rules ' +
+          'as segment creation.',
       ),
   })
   // Only name/conditions are mutable — bizType and kind are immutable. Reject a
@@ -121,6 +165,7 @@ export class UpdateSegmentBodyDto extends createZodDto(updateSegmentBody) {}
 
 export type Segment = z.infer<typeof segment>;
 export type SegmentBizTypeName = z.infer<typeof segmentBizType>;
+export type GetSegmentQuery = z.infer<typeof getSegmentQuery>;
 export type ListSegmentsQuery = z.infer<typeof listSegmentsQuery>;
 export type CreateSegmentBody = z.infer<typeof createSegmentBody>;
 export type UpdateSegmentBody = z.infer<typeof updateSegmentBody>;

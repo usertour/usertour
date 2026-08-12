@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { roleCan } from '@usertour/constants';
 import { Capability, Role } from '@usertour/types';
 import { Environment, Prisma } from '@prisma/client';
@@ -19,7 +19,10 @@ import { hashApiTokenSecret, stripTokenPrefix } from './api-token.crypto';
 
 /** An authenticated ApiToken row with its project scope loaded. */
 export type AuthedApiToken = Prisma.ApiTokenGetPayload<{
-  include: { projects: { select: { projectId: true } } };
+  include: {
+    projects: { select: { projectId: true } };
+    user: { select: { disabled: true } };
+  };
 }> & {
   /**
    * The key OWNER's membership-level environment restriction on the authorized
@@ -39,6 +42,8 @@ export type AuthedApiToken = Prisma.ApiTokenGetPayload<{
  */
 @Injectable()
 export class ApiTokenAuthService {
+  private readonly logger = new Logger(ApiTokenAuthService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -59,9 +64,26 @@ export class ApiTokenAuthService {
 
     const token = await this.prisma.apiToken.findUnique({
       where: { hashedSecret: hashApiTokenSecret(secret) },
-      include: { projects: { select: { projectId: true } } },
+      include: {
+        projects: { select: { projectId: true } },
+        user: { select: { disabled: true } },
+      },
     });
     if (!token || !token.isActive) {
+      throw new InvalidApiKeyError();
+    }
+    // The owner's account state gates every credential they minted: disabling a
+    // user refuses their dashboard sessions (validateUser), and the same must
+    // hold for their machine credentials — `utp_` and `uto_` alike (re-enabling
+    // restores them, symmetric with sessions). Deliberately the same opaque 401
+    // as an unknown key: the holder may not BE the owner, so the account's
+    // state is not theirs to learn.
+    if (token.user.disabled) {
+      // The client gets the opaque E1000; the REAL reason lands here so an admin
+      // tracing "why does this key 403" finds the answer in the server log.
+      this.logger.warn(
+        `API token ${token.id} ("${token.name}") refused: owner account is disabled`,
+      );
       throw new InvalidApiKeyError();
     }
     if (token.expiresAt && token.expiresAt.getTime() <= Date.now()) {

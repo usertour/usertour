@@ -37,12 +37,21 @@ const transformsStyle = (data: EmbedData): React.CSSProperties => {
     style.paddingBottom = '0px';
   }
 
-  // Handle height
-  if (!data.height || data.height?.type === 'percent') {
-    const height = data?.height?.value ?? DEFAULT_EMBED_HEIGHT;
+  // Handle height. When NO height is set and the oEmbed payload carries an
+  // aspect ratio, keep the ratio box the width branch just built — this branch
+  // used to run unconditionally and clobber it (height back to a percentage of
+  // a content-sized parent = 0px, a provider video silently rendering blank
+  // for percent/omitted widths; acceptance-review find).
+  if (!data.height) {
+    if (aspectRatio === 0) {
+      style.height = `calc(${DEFAULT_EMBED_HEIGHT}% + 0px)`;
+      style.paddingBottom = '0px';
+    }
+  } else if (data.height.type === 'percent') {
+    const height = data.height.value ?? DEFAULT_EMBED_HEIGHT;
     style.height = `calc(${height}% + 0px)`;
     style.paddingBottom = '0px';
-  } else if (data?.height?.value) {
+  } else if (data.height.value) {
     style.height = `${data.height.value}px`;
     style.paddingBottom = '0px';
   }

@@ -24,94 +24,132 @@ import { representationResourceCenter } from './resource-center.schema';
 // ── tracker ──────────────────────────────────────────────────────────────────
 // A tracker's trigger lives in config.autoStartRules (authored via startRules);
 // version.data only holds the tracked event reference.
-export const representationTracker = z.object({
-  event: z
-    .string()
-    .nullable()
-    .describe(
-      "The CUSTOM event this tracker fires when its startRules match. A custom event's " +
-        'codeName (preferred) or id from list_event_definitions — accepted either way, ' +
-        'stored and returned as the codeName. MUST be a custom event: built-in / system ' +
-        '(predefined) events are rejected (a tracker can only fire custom events; create one ' +
-        'with create_event_definition). A tracker is headless — no UI, no theme; it just ' +
-        'fires this event whenever its startRules trigger conditions are met. null when unset.',
-    ),
-});
+export const representationTracker = z
+  .object({
+    event: z
+      .string()
+      .nullable()
+      .describe(
+        "The CUSTOM event this tracker fires when its startRules match. A custom event's " +
+          'codeName (preferred) or id from the event definitions list — accepted either way, ' +
+          'stored and returned as the codeName. MUST be a custom event: built-in / system ' +
+          '(predefined) events are rejected (a tracker can only fire custom events; create one ' +
+          'a custom event definition you created). A tracker is headless — no UI, no theme; it just ' +
+          'fires this event whenever its startRules trigger conditions are met. null when unset.',
+      ),
+  })
+  .strict();
 export type RepresentationTracker = z.infer<typeof representationTracker>;
 
 // ── checklist  (from ChecklistData) ──────────────────────────────────────────
 // Items merge by `id` on write (server-owned key, round-trips on read) so runtime
 // state (isCompleted / isVisible …) is preserved; omit `id` for a new item.
 // `completeWhen` / `onlyShowWhen` are conditions; `clickActions` are actions.
-const checklistItem = z.object({
-  id: z.string().optional(),
-  name: z.string(),
-  description: z.string().optional(),
-  // completeWhen also accepts the parameterless `task_clicked` (a task completes
-  // when its item is clicked) — valid only here (incl. nested in OR groups), not
-  // in the general condition set.
-  completeWhen: z
-    .array(completeWhenCondition)
-    .default([])
-    .describe(
-      'Condition(s) that mark THIS task done. Use [{ "type": "task_clicked" }] to complete it ' +
-        'when the user clicks the task — the only option that needs no app instrumentation; ' +
-        'other conditions (event / element / segment / current_url / attribute) require the ' +
-        'matching wiring or data in your app. Empty = the task never auto-completes.',
-    ),
-  clickActions: z
-    .array(representationAction)
-    .default([])
-    .describe(
-      'What happens when the user CLICKS the task row (e.g. [{ "type": "navigate", "url": "/x" }]) ' +
-        '— a side effect, NOT completion. To also mark the task done on that click, add ' +
-        '{ "type": "task_clicked" } to completeWhen.',
-    ),
-  onlyShowWhen: z
-    .array(representationCondition)
-    .optional()
-    .describe(
-      'Condition(s) that gate whether this task is VISIBLE (distinct from `completeWhen`, which ' +
-        'marks it done). Omit = always shown. There is no "task X is completed" condition, so to ' +
-        'make this task appear only after another is done, gate on the same event/state that ' +
-        'completes that other task — you cannot reference another task directly.',
-    ),
-});
-export const representationChecklist = z.object({
-  buttonText: z.string().optional(),
-  initialDisplay: z
-    .enum(['expanded', 'button'])
-    .optional()
-    .describe(
-      'How the checklist first appears: `expanded` shows the whole checklist (tasks and all); ' +
-        '`button` shows just the launcher button.',
-    ),
-  completionOrder: z
-    .enum(['any', 'ordered'])
-    .optional()
-    .describe(
-      'Whether tasks can be completed in `any` order, or must be completed `ordered` (top to ' +
-        'bottom among the tasks the user can currently SEE — a task hidden by `onlyShowWhen` ' +
-        'does not block the ones after it). This is the ONLY built-in cross-task sequencing — ' +
-        'there is no per-task "after task X" condition; for finer dependencies gate a task\'s ' +
-        '`onlyShowWhen` on the shared event/state that completes its prerequisite.',
-    ),
-  preventDismiss: z.boolean().optional().describe("When true, users can't dismiss the checklist."),
-  autoDismiss: z
-    .boolean()
-    .optional()
-    .describe('When true, the checklist closes on its own once every task is done.'),
-  content: z.array(representationBlock).optional(),
-  items: z
-    .array(checklistItem)
-    .optional()
-    .describe(
-      'The checklist tasks. To be usable (enforced at publish) each item needs a `name` AND at ' +
-        'least one of `completeWhen` (how it auto-completes) or `clickActions` (what its row does) ' +
-        '— an item with neither is a dead row. `task_clicked` in `completeWhen` is the only ' +
-        'completion that needs no app instrumentation.',
-    ),
-});
+const checklistItem = z
+  .object({
+    id: z
+      .string()
+      .optional()
+      .describe(
+        'Server-owned task identity — ECHO it back when rewriting `items`. An item written ' +
+          "without its existing id gets a NEW one: in-flight users' completion state for it " +
+          'resets and its per-task analytics rows break. Omit only for a genuinely new task.',
+      ),
+    name: z
+      .string()
+      .describe(
+        'The visible task row label. Plain string — NO `{{ }}` interpolation (braces would render literally).',
+      ),
+    description: z
+      .string()
+      .optional()
+      .describe(
+        'Optional supporting text rendered below the task name. A short benefit statement or time ' +
+          'estimate ("Send an invite so your team can collaborate", "~30 sec") measurably lifts ' +
+          'task click-through — prefer setting it over leaving the row name-only. Plain string — NO `{{ }}` interpolation (braces would render literally).',
+      ),
+    // completeWhen also accepts the parameterless `task_clicked` (a task completes
+    // when its item is clicked) — valid only here (incl. nested in OR groups), not
+    // in the general condition set.
+    completeWhen: z
+      .array(completeWhenCondition)
+      .default([])
+      .describe(
+        'Condition(s) that mark THIS task done. Use [{ "type": "task_clicked" }] to complete it ' +
+          'when the user clicks the task — the only option that needs no app instrumentation; ' +
+          'other conditions (event / element / segment / current_url / attribute) require the ' +
+          'matching wiring or data in your app. Empty = the task never auto-completes.',
+      ),
+    clickActions: z
+      .array(representationAction)
+      .default([])
+      .describe(
+        'What happens when the user CLICKS the task row (e.g. [{ "type": "navigate", "url": "/x" }]) ' +
+          '— a side effect, NOT completion. To also mark the task done on that click, add ' +
+          '{ "type": "task_clicked" } to completeWhen.',
+      ),
+    onlyShowWhen: z
+      .array(representationCondition)
+      .optional()
+      .describe(
+        'Condition(s) that gate whether this task is VISIBLE (distinct from `completeWhen`, which ' +
+          'marks it done). Omit = always shown. There is no "task X is completed" condition, so to ' +
+          'make this task appear only after another is done, gate on the same event/state that ' +
+          'completes that other task — you cannot reference another task directly.',
+      ),
+  })
+  .strict();
+export const representationChecklist = z
+  .object({
+    buttonText: z
+      .string()
+      .optional()
+      .describe(
+        'Label on the collapsed checklist launcher pill (e.g. "Getting started"). Plain string — NO `{{ }}` interpolation (braces would render literally).',
+      ),
+    initialDisplay: z
+      .enum(['expanded', 'button'])
+      .optional()
+      .describe(
+        'How the checklist first appears: `expanded` shows the whole checklist (tasks and all); ' +
+          '`button` shows just the launcher button.',
+      ),
+    completionOrder: z
+      .enum(['any', 'ordered'])
+      .optional()
+      .describe(
+        'Whether tasks can be completed in `any` order, or must be completed `ordered` (top to ' +
+          'bottom among the tasks the user can currently SEE — a task hidden by `onlyShowWhen` ' +
+          'does not block the ones after it). This is the ONLY built-in cross-task sequencing — ' +
+          'there is no per-task "after task X" condition; for finer dependencies gate a task\'s ' +
+          '`onlyShowWhen` on the shared event/state that completes its prerequisite.',
+      ),
+    preventDismiss: z
+      .boolean()
+      .optional()
+      .describe("When true, users can't dismiss the checklist."),
+    autoDismiss: z
+      .boolean()
+      .optional()
+      .describe('When true, the checklist closes on its own once every task is done.'),
+    content: z
+      .array(representationBlock)
+      .optional()
+      .describe(
+        'Rich content shown at the top of the expanded panel, above the task list — typically a ' +
+          'short welcome line framing what the tasks achieve.',
+      ),
+    items: z
+      .array(checklistItem)
+      .optional()
+      .describe(
+        'The checklist tasks. To be usable (enforced at publish) each item needs a `name` AND at ' +
+          'least one of `completeWhen` (how it auto-completes) or `clickActions` (what its row does) ' +
+          '— an item with neither is a dead row. `task_clicked` in `completeWhen` is the only ' +
+          'completion that needs no app instrumentation.',
+      ),
+  })
+  .strict();
 export type RepresentationChecklist = z.infer<typeof representationChecklist>;
 
 // ── launcher  (from LauncherData) ────────────────────────────────────────────
@@ -132,8 +170,14 @@ const launcherPlacement = z.object({
     .enum(['start', 'center', 'end'])
     .optional()
     .describe('Alignment along the side. See `side`.'),
-  sideOffset: z.number().optional(),
-  alignOffset: z.number().optional(),
+  sideOffset: z
+    .number()
+    .optional()
+    .describe('Gap in pixels between the tooltip and its anchor, along `side`.'),
+  alignOffset: z
+    .number()
+    .optional()
+    .describe('Pixel shift along the alignment axis. Only applies when `align` is `start`/`end`.'),
   // Position mode, derived on compile like a flow tooltip: explicit wins;
   // else side/align given → `fixed`; else `auto`. Exposed so `align` can
   // actually take effect (a launcher left in `auto` renders center regardless).
@@ -161,7 +205,10 @@ const beaconPlacement = z.object({
     .enum(['start', 'center', 'end'])
     .optional()
     .describe('Alignment along the side. See `side`.'),
-  sideOffset: z.number().optional(),
+  sideOffset: z
+    .number()
+    .optional()
+    .describe('Gap in pixels between the beacon and the target edge, along `side`.'),
   alignOffset: z
     .number()
     .optional()
@@ -188,147 +235,238 @@ const launcherTarget = representationTarget.extend({
         'Read back ONLY when a side/align is pinned — an auto-centered beacon omits it.',
     ),
 });
-export const representationLauncher = z.object({
-  style: z.enum(['beacon', 'icon', 'hidden', 'button']).optional(),
-  icon: z
-    .object({
-      source: z.enum(['none', 'builtin', 'upload', 'url', 'inherit']).optional(),
-      url: z.string().optional(),
-      type: z
-        .string()
-        .optional()
-        .describe(
-          "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` " +
-            'style — e.g. `home-line`, `question-line`, `rocket`. NOT lucide names ' +
-            '(`help-circle` / `sparkles` / `book-open` render nothing, silently). Unsure? Use ' +
-            "source='none'. Common names + an intent→name table are in get_authoring_guide.",
-        ),
-    })
-    .optional(),
-  buttonText: z.string().optional(),
-  target: launcherTarget.optional(),
-  /** Stacking order (CSS z-index — must be an integer; may be negative). */
-  zIndex: z.number().int().optional(),
-  tooltip: z
-    .object({
-      placement: launcherPlacement.optional(),
-      width: z.number().optional(),
-      reference: z
-        .enum(['target', 'launcher'])
-        .optional()
-        .describe('Whether the tooltip anchors to the target element or to the launcher itself.'),
-      content: z.array(representationBlock).optional(),
-      settings: z
-        .object({
-          dismissAfterFirstActivation: z
-            .boolean()
-            .optional()
-            .describe('Dismiss the launcher after its tooltip is first shown and closed.'),
-          keepOpenWhenHovered: z
-            .boolean()
-            .optional()
-            .describe(
-              'READ-ONLY — not wired at runtime: the tooltip ALWAYS stays open while hovered ' +
-                'regardless of this value. Echoed for round-trip; changing it is rejected.',
-            ),
-          hideLauncherWhenTooltipShown: z
-            .boolean()
-            .optional()
-            .describe(
-              'READ-ONLY — not wired at runtime: the launcher is NEVER hidden while its tooltip ' +
-                'shows. Echoed for round-trip; changing it is rejected.',
-            ),
-        })
-        .optional(),
-    })
-    .optional(),
-  behavior: z
-    .object({
-      triggerElement: z.enum(['launcher', 'target', 'target-or-launcher']).optional(),
-      event: z.enum(['clicked', 'hovered']).optional(),
-      action: z.enum(['show-tooltip', 'perform-action']).optional(),
-      actions: z.array(representationAction).optional(),
-    })
-    .optional(),
-});
+export const representationLauncher = z
+  .object({
+    style: z
+      .enum(['beacon', 'icon', 'hidden', 'button'])
+      .optional()
+      .describe(
+        'Visual form: `beacon` = pulsing dot, `icon` = a static icon (see `icon`), `button` = a ' +
+          'text button (see `buttonText`), `hidden` = no visual — interactions on the target ' +
+          'element itself drive `behavior`.',
+      ),
+    icon: z
+      .object({
+        source: z
+          .enum(['builtin', 'upload', 'url'])
+          .optional()
+          .describe(
+            'Where the icon comes from: `builtin` uses `type` (a RemixIcon name), `upload`/`url` ' +
+              'use `url`. A launcher always renders an icon — there is no `none` / `inherit` ' +
+              'here (the resource-center block icons are a different field and DO support them); ' +
+              'to keep a launcher off the page, gate it with start rules instead.',
+          ),
+        url: z
+          .string()
+          .optional()
+          .describe("Image URL for the icon — only used when source is 'upload' or 'url'."),
+        type: z
+          .string()
+          .optional()
+          .describe(
+            "Builtin icon name (when source='builtin'): a RemixIcon name in kebab `-line`/`-fill` " +
+              'style — e.g. `home-line`, `question-line`, `rocket`. NOT lucide names ' +
+              '(`help-circle` / `sparkles` / `book-open`): a name outside the registry is ' +
+              'rejected by validate/publish with the bad name spelled out (it would render ' +
+              'nothing). Common names + an intent→name table are in the MCP authoring guide ' +
+              '(icons section).',
+          ),
+      })
+      .optional(),
+    buttonText: z
+      .string()
+      .optional()
+      .describe(
+        "Label of the button — only rendered when style is 'button'. " +
+          'Plain string — NO `{{ }}` interpolation.',
+      ),
+    target: launcherTarget
+      .optional()
+      .describe('The page element the launcher anchors to (selector + beacon placement on it).'),
+    zIndex: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        'Stacking order (CSS z-index). Integer; negative values are allowed. Omit to use the ' +
+          "SDK's default stacking.",
+      ),
+    tooltip: z
+      .object({
+        placement: launcherPlacement
+          .optional()
+          .describe('Where the tooltip opens relative to its anchor (see `reference`).'),
+        width: z
+          .number()
+          .optional()
+          .describe("Tooltip width in pixels. Omit to use the theme's tooltip.width."),
+        reference: z
+          .enum(['target', 'launcher'])
+          .optional()
+          .describe('Whether the tooltip anchors to the target element or to the launcher itself.'),
+        content: z.array(representationBlock).optional(),
+        settings: z
+          .object({
+            dismissAfterFirstActivation: z
+              .boolean()
+              .optional()
+              .describe('Dismiss the launcher after its tooltip is first shown and closed.'),
+            keepOpenWhenHovered: z
+              .boolean()
+              .optional()
+              .describe(
+                'READ-ONLY — not wired at runtime: the tooltip ALWAYS stays open while hovered ' +
+                  'regardless of this value. Echoed for round-trip; changing it is rejected.',
+              ),
+            hideLauncherWhenTooltipShown: z
+              .boolean()
+              .optional()
+              .describe(
+                'READ-ONLY — not wired at runtime: the launcher is NEVER hidden while its tooltip ' +
+                  'shows. Echoed for round-trip; changing it is rejected.',
+              ),
+          })
+          .optional(),
+      })
+      .optional(),
+    behavior: z
+      .object({
+        triggerElement: z
+          .enum(['launcher', 'target', 'target-or-launcher'])
+          .optional()
+          .describe(
+            'Which element listens for the interaction: the launcher visual, the target element ' +
+              "itself, or either. With style 'hidden' the target is the only thing to interact with.",
+          ),
+        event: z
+          .enum(['clicked', 'hovered'])
+          .optional()
+          .describe('The interaction that triggers the launcher: click or hover.'),
+        action: z
+          .enum(['show-tooltip', 'perform-action'])
+          .optional()
+          .describe(
+            "What the interaction does: 'show-tooltip' opens `tooltip.content`; 'perform-action' " +
+              'runs `actions` directly (e.g. start a flow) with no tooltip.',
+          ),
+        actions: z
+          .array(representationAction)
+          .optional()
+          .describe(
+            "The action list run when action is 'perform-action' (e.g. " +
+              '[{ "type": "start_content", "content": "<flowId>" }]). Ignored under ' +
+              "'show-tooltip' — put button actions inside the tooltip content instead.",
+          ),
+      })
+      .optional()
+      .describe(
+        'How users interact with the launcher and what that interaction does. Omit for the ' +
+          'default (click the launcher to show the tooltip).',
+      ),
+  })
+  .strict();
 export type RepresentationLauncher = z.infer<typeof representationLauncher>;
 
 // ── banner  (from BannerData) ────────────────────────────────────────────────
 // `content` are blocks; `containerTarget` is the anchor element for container/
 // element-relative placements. Computed height / zIndex are dropped + preserved.
-export const representationBanner = z.object({
-  placement: z
-    .enum([
-      'top-of-page',
-      'bottom-of-page',
-      'top-of-container-element',
-      'bottom-of-container-element',
-      'immediately-before-element',
-      'immediately-after-element',
-    ])
-    .optional()
-    .describe(
-      'Where the banner shows: the top/bottom of the page, or relative to a container element ' +
-        '(top/bottom of it, or immediately before/after it). The container/element variants ' +
-        'require `containerTarget`.',
-    ),
-  content: z.array(representationBlock).optional(),
-  /** Stacking order (CSS z-index — must be an integer; may be negative). */
-  zIndex: z.number().int().optional(),
-  settings: z
-    .object({
-      overlayOverAppContent: z
-        .boolean()
-        .optional()
-        .describe(
-          'When true the banner floats over the page; when false it takes its own space and ' +
-            "pushes the page content down. Push mode only displaces normal-flow content — the host app's " +
-            '`position: fixed` bars (top nav, sidebars) do NOT move and will overlap the banner. For such ' +
-            'apps, either float the banner over the content (true), or use a container/element-relative ' +
-            '`placement` so the banner lives inside the scrolling content area instead of fighting the ' +
-            'fixed bars.',
-        ),
-      stickToTop: z
-        .boolean()
-        .optional()
-        .describe('Keeps the banner pinned at the top while the user scrolls.'),
-      allowDismiss: z
-        .boolean()
-        .optional()
-        .describe('Adds an X button so the user can permanently dismiss the banner.'),
-      animateOnAppear: z
-        .boolean()
-        .optional()
-        .describe('Slide the banner in instead of popping into place.'),
-    })
-    .optional(),
-  containerTarget: representationTarget.optional(),
-  layout: z
-    .object({
-      maxContentWidth: z
-        .number()
-        .optional()
-        .describe('Max width of the banner content, in pixels. Omit for no limit.'),
-      maxEmbedWidth: z
-        .number()
-        .optional()
-        .describe('Max width of the embed container, in pixels. Omit for no limit.'),
-      borderRadius: z
-        .number()
-        .optional()
-        .describe('Corner rounding in pixels. Omit for the theme default.'),
-      outerMargin: z
-        .object({
-          top: z.number(),
-          right: z.number(),
-          bottom: z.number(),
-          left: z.number(),
-        })
-        .optional()
-        .describe('Space (in pixels) around the banner on all four sides.'),
-    })
-    .optional(),
-});
+export const representationBanner = z
+  .object({
+    placement: z
+      .enum([
+        'top-of-page',
+        'bottom-of-page',
+        'top-of-container-element',
+        'bottom-of-container-element',
+        'immediately-before-element',
+        'immediately-after-element',
+      ])
+      .optional()
+      .describe(
+        'Where the banner shows: the top/bottom of the page, or relative to a container element ' +
+          '(top/bottom of it, or immediately before/after it). The container/element variants ' +
+          'require `containerTarget`.',
+      ),
+    content: z.array(representationBlock).optional(),
+    zIndex: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        'Stacking order (CSS z-index). Integer; negative values are allowed. Omit to use the ' +
+          "SDK's default stacking.",
+      ),
+    settings: z
+      .object({
+        overlayOverAppContent: z
+          .boolean()
+          .optional()
+          .describe(
+            'When true the banner floats over the page; when false it takes its own space and ' +
+              "pushes the page content down. Push mode only displaces normal-flow content — the host app's " +
+              '`position: fixed` bars (top nav, sidebars) do NOT move and will overlap the banner. For such ' +
+              'apps, either float the banner over the content (true), or use a container/element-relative ' +
+              '`placement` so the banner lives inside the scrolling content area instead of fighting the ' +
+              'fixed bars. Floating alone does NOT keep the banner on screen — it still scrolls away ' +
+              'with the page (CSS absolute); pair it with `stickToTop` for the always-visible floating ' +
+              'bar (see the 2x2 there).',
+          ),
+        stickToTop: z
+          .boolean()
+          .optional()
+          .describe(
+            'Pins the banner to the viewport edge while the user scrolls — the EDGE follows ' +
+              '`placement`, despite the name: top variants pin to the top, bottom variants to the ' +
+              'BOTTOM. Combines with `overlayOverAppContent` into four modes (CSS position): ' +
+              'neither = in-flow, scrolls away with the page (the default); stick only = keeps its ' +
+              'own space and pins (sticky); overlay only = floats but STILL scrolls away ' +
+              '(absolute); both = floats and stays pinned (fixed) — the classic always-visible ' +
+              'bar. So for "visible while scrolling", set this true regardless of overlay.',
+          ),
+        allowDismiss: z
+          .boolean()
+          .optional()
+          .describe('Adds an X button so the user can permanently dismiss the banner.'),
+        animateOnAppear: z
+          .boolean()
+          .optional()
+          .describe('Slide the banner in instead of popping into place.'),
+      })
+      .optional(),
+    containerTarget: representationTarget
+      .optional()
+      .describe(
+        'The anchor element for the container/element-relative `placement` variants (top/bottom ' +
+          'of it, or immediately before/after it). Required by those placements; ignored for ' +
+          'top/bottom-of-page.',
+      ),
+    layout: z
+      .object({
+        maxContentWidth: z
+          .number()
+          .optional()
+          .describe('Max width of the banner content, in pixels. Omit for no limit.'),
+        maxEmbedWidth: z
+          .number()
+          .optional()
+          .describe('Max width of the embed container, in pixels. Omit for no limit.'),
+        borderRadius: z
+          .number()
+          .optional()
+          .describe('Corner rounding in pixels. Omit for the theme default.'),
+        outerMargin: z
+          .object({
+            top: z.number(),
+            right: z.number(),
+            bottom: z.number(),
+            left: z.number(),
+          })
+          .optional()
+          .describe('Space (in pixels) around the banner on all four sides.'),
+      })
+      .optional(),
+  })
+  .strict();
 export type RepresentationBanner = z.infer<typeof representationBanner>;
 
 // ── announcement  (from AnnouncementData) ────────────────────────────────────
@@ -345,7 +483,7 @@ export const representationAnnouncement = z
         'Title shown in the feed row and the detail view. Required to publish — an untitled ' +
           "announcement would render a blank row. Seeded from the content's `name` at create, " +
           'then INDEPENDENT: renaming the content later does not update the title (and events/' +
-          'analytics label by the content name, not this title).',
+          'analytics label by the content name, not this title). Plain string — NO `{{ }}` interpolation (braces would render literally). For a personalized body use the intro/detail content blocks.',
       ),
     introContent: z
       .array(representationBlock)
@@ -398,6 +536,7 @@ export const representationAnnouncement = z
           'the default (bubble).',
       ),
   })
+  .strict()
   .describe(
     'The announcement body (`data`). NOTE the "announcement time" is NOT in here — it is the ' +
       'version-level `scheduledAt` field on update_content_version (feed hides the announcement ' +

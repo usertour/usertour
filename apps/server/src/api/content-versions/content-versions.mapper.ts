@@ -12,6 +12,8 @@ import { ApiObjectType } from '../shared/object-type';
 type VersionNode = {
   id: string;
   sequence: number;
+  /** Freeze stamp (first time live); null = never published. */
+  publishedAt?: Date | null;
   themeId: string | null;
   scheduledAt?: Date | null;
   updatedAt: Date;
@@ -52,6 +54,9 @@ export function mapVersion(
     id: version.id,
     object: ApiObjectType.CONTENT_VERSION,
     number: version.sequence,
+    // Internal column is Version.publishedAt (the adopted freeze stamp); the
+    // API name says what it MEANS — first time live, never cleared.
+    firstPublishedAt: version.publishedAt?.toISOString() ?? null,
     themeId: version.themeId ?? null,
     questions,
     ...(steps ? { steps } : {}),

@@ -22,6 +22,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContentPublishForm } from '../../../shared/content-publish-form';
 import { ContentUnpublishForm } from '../../../shared/content-unpublish-form';
+import { useVersionActionState } from './use-version-action-state';
 
 /**
  * The "now" layer of the versions tab: one row per project environment with
@@ -38,6 +39,10 @@ export const EnvironmentsCard = () => {
   const { isViewOnly } = useAppContext();
   const [openPublish, setOpenPublish] = useState(false);
   const [openUnpublish, setOpenUnpublish] = useState(false);
+  // This card's Publish ships the CURRENT DRAFT (the dialog below is prefilled
+  // with editedVersionId) — so it shares the same "nowhere left to publish"
+  // gate as the version-history rows and the top-bar publish button.
+  const { publishDisabled } = useVersionActionState(content?.editedVersionId ?? '');
 
   if (!content || !environmentList) {
     return (
@@ -124,7 +129,7 @@ export const EnvironmentsCard = () => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       className="cursor-pointer"
-                      disabled={isViewOnly}
+                      disabled={isViewOnly || publishDisabled}
                       onClick={() => setOpenPublish(true)}
                     >
                       <PlaneIcon className="mr-2 h-4 w-4" />

@@ -24,6 +24,7 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiThemesService } from './themes.service';
 import {
+  DuplicateThemeBodyDto,
   CreateThemeBodyDto,
   GetThemeQueryDto,
   ListThemesQueryDto,
@@ -75,8 +76,39 @@ export class ApiThemesController {
   @ApiOperation({ summary: 'Create a theme' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({ status: 201, description: 'Theme created', type: ThemeDto })
+  // NOTE: an endpoint-level 403 OVERRIDES the shared ApiStandardErrorResponses
+  // 403 in the generated spec — restate the standard refusals alongside E1038
+  // or they vanish from this endpoint's docs.
+  @ApiResponse({
+    status: 403,
+    description:
+      'Refused — E1000 invalid key, E1011 project not in token scope, E1012 insufficient ' +
+      'scope; E1038 custom CSS requires the Growth plan or above (below that the runtime ' +
+      'strips `customCss` at delivery, so the write is refused instead of silently stored).',
+    type: ErrorResponseDto,
+  })
   async create(@Param('projectId') projectId: string, @Body() body: CreateThemeBodyDto) {
     return this.service.create(projectId, body);
+  }
+
+  @Post(':id/duplicate')
+  @RequireCapability(Capability.ThemeCreate)
+  @ApiOperation({
+    summary: 'Duplicate a theme',
+    description:
+      'Copy a theme (settings + variations verbatim) into a fresh non-default theme. System ' +
+      'themes may be duplicated (the natural "derive from Standard Light" flow).',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Theme ID (the source)' })
+  @ApiResponse({ status: 201, description: 'Theme duplicated', type: ThemeDto })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
+  async duplicate(
+    @Param('projectId') projectId: string,
+    @Param('id') id: string,
+    @Body() body: DuplicateThemeBodyDto,
+  ) {
+    return this.service.duplicate(id, projectId, body);
   }
 
   @Patch(':id')
@@ -91,6 +123,16 @@ export class ApiThemesController {
     description:
       'System themes cannot be modified (E1035) — duplicate one into your own theme; ' +
       'isDefault: true alone is allowed (it only moves the project default pointer).',
+    type: ErrorResponseDto,
+  })
+  // Same override note as create: restate the standard 403 refusals.
+  @ApiResponse({
+    status: 403,
+    description:
+      'Refused — E1000 invalid key, E1011 project not in token scope, E1012 insufficient ' +
+      'scope; E1038 custom CSS requires the Growth plan or above — introducing or changing ' +
+      'a non-empty `customCss` is refused below that plan (echoing the stored value back, ' +
+      'or clearing it, always passes).',
     type: ErrorResponseDto,
   })
   async update(

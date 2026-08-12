@@ -47,6 +47,15 @@ export const FieldRenderer = (props: FieldRendererProps) => {
   // field components stay i18n-agnostic, matching the `label` convention.
   const tooltip = 'tooltip' in field && field.tooltip ? t(field.tooltip) : undefined;
 
+  // Out-of-range hint for number inputs (values snap into range on blur). No
+  // field is max-only today, so only the two shapes that exist get a message.
+  const rangeMessage = (min?: number, max?: number): string | undefined =>
+    min !== undefined && max !== undefined
+      ? t('themeBuilder.validation.range', { min, max })
+      : min !== undefined
+        ? t('themeBuilder.validation.min', { min })
+        : undefined;
+
   switch (field.type) {
     case 'color':
       return (
@@ -70,16 +79,7 @@ export const FieldRenderer = (props: FieldRendererProps) => {
           suffix={field.suffix}
           optional={field.optional}
           placeholder={field.placeholder ? t(field.placeholder) : undefined}
-          // `validate` returns a translation key; resolve it at the consumer layer
-          // (NumberField) so error messages also flow through i18n.
-          validate={
-            field.validate
-              ? (v) => {
-                  const errorKey = field.validate?.(v);
-                  return errorKey ? t(errorKey, { max: 10 }) : undefined;
-                }
-              : undefined
-          }
+          rangeMessage={rangeMessage(field.min, field.max)}
           tooltip={tooltip}
         />
       );
@@ -134,6 +134,9 @@ export const FieldRenderer = (props: FieldRendererProps) => {
         <PlacementField
           path={field.path}
           label={t(field.label)}
+          offsetMin={field.offsetMin}
+          offsetMax={field.offsetMax}
+          offsetRangeMessage={rangeMessage(field.offsetMin, field.offsetMax)}
           options={field.options?.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
           labels={
             field.labels
@@ -156,14 +159,16 @@ export const FieldRenderer = (props: FieldRendererProps) => {
       // Resolve label + path here so the leaf component takes plain strings.
       const resolvedPath = field.getPath(activeSettings);
       const resolvedLabel = t(field.getLabel(activeSettings));
+      const bounds = field.boundsByPath?.[resolvedPath] ?? { min: field.min, max: field.max };
       return (
         <DynamicNumberField
           label={resolvedLabel}
           path={resolvedPath}
-          min={field.min}
-          max={field.max}
+          min={bounds.min}
+          max={bounds.max}
           step={field.step}
           suffix={field.suffix}
+          rangeMessage={rangeMessage(bounds.min, bounds.max)}
           tooltip={tooltip}
         />
       );

@@ -7,6 +7,7 @@ import {
   CompanyMembershipNotFoundError,
   CompanyNotFoundError,
   UserNotFoundError,
+  ValidationError,
 } from '@/common/errors/errors';
 import { Environment } from '@/environments/models/environment.model';
 
@@ -16,11 +17,13 @@ import { mapCompany } from './companies.mapper';
 import {
   Company,
   CompanyExpand,
+  CompanyMembership,
   GetCompanyQuery,
   ListCompaniesQuery,
   UpsertCompanyBody,
   UpsertMembershipBody,
 } from './companies.schema';
+import { mapMembership } from '../shared/biz-refs';
 
 /**
  * v2 companies handler (environment-scoped). Prisma->API mapping + the per-method
@@ -51,9 +54,11 @@ export class ApiCompaniesService {
   ): Promise<{ results: Company[]; next: string | null; previous: string | null }> {
     const { limit, cursor, segmentId, createdAfter, createdBefore } = query;
     const expand = toArray<CompanyExpand>(query.expand);
-    // v1: always load the membership rows; load the user only when needed.
-    const includeBizUser = expand.includes('memberships.user') || expand.includes('users');
-    const include = { bizUsersOnCompany: { include: { bizUser: includeBizUser } } };
+    // Always load the membership rows; load the user for ANY expand — even the
+    // plain memberships expand needs bizUser.externalId (v2 emits external ids
+    // on memberships, unlike v1 which only loaded the user for user-shaped
+    // expands). Mirrors the getCompany include above.
+    const include = { bizUsersOnCompany: { include: { bizUser: expand.length > 0 } } };
     const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
 
     // A foreign segmentId must 404, not silently apply another tenant's segment.
@@ -81,6 +86,11 @@ export class ApiCompaniesService {
 
   /** Upsert a company by external id (merges attributes), then return it. */
   async upsert(id: string, environment: Environment, body: UpsertCompanyBody): Promise<Company> {
+    // Same rule as users.service.upsert: a blank external id creates a row no
+    // id-keyed read/delete can ever address again.
+    if (!id.trim()) {
+      throw new ValidationError('Company external id must be a non-empty string.');
+    }
     // v2 is strict: a type-mismatched attribute value is rejected, not silently
     // dropped (the SDK identify path keeps the lenient drop-and-log).
     await this.biz.assertAttributeValueTypes(
@@ -118,7 +128,7 @@ export class ApiCompaniesService {
     userId: string,
     environment: Environment,
     body: UpsertMembershipBody,
-  ): Promise<void> {
+  ): Promise<CompanyMembership> {
     const bizCompany = await this.biz.getBizCompany(companyId, environment.id);
     if (!bizCompany) {
       throw new CompanyNotFoundError();
@@ -134,12 +144,16 @@ export class ApiCompaniesService {
       AttributeBizType.MEMBERSHIP,
       body.attributes,
     );
-    await this.biz.upsertBizCompanyMembership(
+    const membership = await this.biz.upsertBizCompanyMembership(
       environment.projectId,
       bizCompany.id,
       bizUser.id,
       body.attributes ?? {},
     );
+    // Echo the membership itself (this was the ONLY write returning a bare
+    // success) — with the EXTERNAL ids the v2 surface addresses by, not the
+    // internal row ids.
+    return mapMembership(membership, { companyId, userId }) as CompanyMembership;
   }
 
   /** Remove the membership linking a user to a company. 404 when not linked. */

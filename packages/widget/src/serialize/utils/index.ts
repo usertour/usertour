@@ -9,4 +9,3 @@ export {
   transformMarginStyle,
   transformPaddingStyle,
 } from './style-transforms';
-export { getTextStyles } from './text-styles';

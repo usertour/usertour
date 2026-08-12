@@ -12,6 +12,9 @@ export function mapCompany(bizCompany: any, expand?: CompanyExpand[]): Company {
       ? bizCompany.bizUsersOnCompany?.map((membership: any) =>
           mapMembership(
             membership,
+            // External ids: the company side is the parent being mapped; the
+            // user side comes off the bizUser relation (loaded for any expand).
+            { companyId: bizCompany.externalId, userId: membership.bizUser.externalId },
             expand?.includes('memberships.user')
               ? { user: mapUserRef(membership.bizUser) }
               : undefined,

@@ -217,6 +217,51 @@ describe('decompileStep', () => {
     expect(out.target).toBeUndefined();
     expect(out.placement).toEqual({ position: 'center', offsetX: 10, backdrop: true });
   });
+
+  it('bubble: echoes ONLY backdrop — stored position/offsets are theme-superseded dead data', () => {
+    // Builder seeds every step's setting with position defaults; a bubble never
+    // reads them (position comes from the theme's bubble placement). Echoing
+    // them faked "the position setting worked" — and the write now rejects
+    // positional keys on a bubble, so echoing would break read→write round-trips.
+    const out = decompileStep({
+      id: 's4',
+      cvid: 'cv4',
+      name: 'Bubble',
+      type: 'bubble',
+      sequence: 3,
+      data: [],
+      target: null,
+      setting: { position: 'leftBottom', positionOffsetX: 20, enabledBackdrop: true },
+    });
+    expect(out.placement).toEqual({ backdrop: true });
+
+    // No backdrop stored → no placement at all.
+    const bare = decompileStep({
+      id: 's5',
+      cvid: 'cv5',
+      name: 'Bubble2',
+      type: 'bubble',
+      sequence: 4,
+      data: [],
+      target: null,
+      setting: { position: 'leftBottom' },
+    });
+    expect(bare.placement).toBeUndefined();
+  });
+
+  it('hidden: never emits placement — there is no UI to place', () => {
+    const out = decompileStep({
+      id: 's6',
+      cvid: 'cv6',
+      name: 'Router',
+      type: 'hidden',
+      sequence: 5,
+      data: [],
+      target: null,
+      setting: { position: 'center', enabledBackdrop: true },
+    });
+    expect(out.placement).toBeUndefined();
+  });
 });
 
 describe('decompilePlainText — inverse of compilePlainText (plain-text fields)', () => {

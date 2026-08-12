@@ -16,14 +16,13 @@ import {
 import {
   type CreateContentBody,
   createContentBody,
+  duplicateContentBody,
   updateContentBody,
 } from '@/api/content/content.schema';
+import { updateVersionBody } from '@/api/content-versions/content-versions.schema';
+import { zodIssuesToValidationIssues } from '@/api/shared/zod-issues';
+import { ValidationError } from '@/common/errors/errors';
 import { isoDateTime } from '@/common/filters';
-import {
-  representationHideRules,
-  representationStartRules,
-  representationStepInput,
-} from '@/api/content-representation/representation.schema';
 import {
   createEnvironmentBody,
   type CreateEnvironmentBody,
@@ -43,6 +42,7 @@ import {
   type UpdateSegmentBody,
 } from '@/api/segments/segments.schema';
 import {
+  duplicateThemeBody,
   createThemeBody,
   type CreateThemeBody,
   updateThemeBody,
@@ -54,6 +54,26 @@ import { McpTool } from '../mcp.types';
 import { writeAnnotationsFor } from './annotations';
 import { environmentIdSchema, resolveEnvironment } from './read-tools';
 import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
+import { editorUrlFor, withEditorUrl } from './editor-url';
+
+// Variations mirror the settings pattern: a permissive array on the tool (the
+// full condition-union schema would bloat every tools/list), validated strictly
+// by the SERVICE against the same rules REST enforces.
+const themeVariationsMcpField = z
+  .array(z.record(z.string(), z.any()))
+  .optional()
+  .describe(
+    'Conditional variations: [{ id?, name, conditions, settings? }] — FULL replacement of the ' +
+      'list when present (a variation you omit is deleted; omit the field to leave them ' +
+      'untouched). Array order is evaluation priority: the browser applies the FIRST variation ' +
+      'whose conditions match on each render, else the base settings. `conditions` take user ' +
+      "attribute / current_url conditions and groups of them (the theme builder's variation " +
+      'set) — e.g. dark mode driven by a user attribute your app sets on identify: ' +
+      '[{ "type": "attribute", "scope": "user", "attribute": "color_scheme", "op": "is", "value": "dark" }]. ' +
+      "`settings` is a partial style patch: onto that variation's current settings when `id` " +
+      'is echoed (from get_theme expand:["variations"]), onto the theme base settings for a ' +
+      'new variation. Auto colors derive per variation; customCss stays plan-gated (E1038).',
+  );
 
 // Theme `settings` is exposed to MCP as a permissive object (its full ~136-field
 // schema would bloat every tools/list); the agent fetches the exact fields/ranges
@@ -87,7 +107,9 @@ export function buildWriteTools(): McpTool[] {
         'A survey is a flow with question blocks — there is no separate survey type. An ' +
         'announcement is a feed item: it reaches users ONLY through a resource center that has an ' +
         '`announcement` block. Returns the created content (use `update_content_version` to add ' +
-        'steps; use `list_themes` to pick a themeId).',
+        'steps; use `list_themes` to pick a themeId). The response includes `editorUrl` — a ' +
+        'dashboard deep link a human can open to review it in the visual editor (present when ' +
+        'the server knows its dashboard URL).',
       // Spread the REST create body (single source of truth — a new field there
       // shows up here automatically); override only themeId's description with
       // MCP-specific guidance (point at list_themes, not the REST endpoint).
@@ -98,8 +120,13 @@ export function buildWriteTools(): McpTool[] {
             '(no UI). Use `list_themes`; pick the one with isDefault if unsure.',
         ),
       },
-      handler: (args, ctx) =>
-        ctx.services.content.create(ctx.projectId, args as unknown as CreateContentBody),
+      handler: async (args, ctx) => {
+        const content = await ctx.services.content.create(
+          ctx.projectId,
+          args as unknown as CreateContentBody,
+        );
+        return withEditorUrl(content, await editorUrlFor(ctx, content.type, content.id));
+      },
     },
     {
       name: 'update_content',
@@ -126,7 +153,14 @@ export function buildWriteTools(): McpTool[] {
       audit: auditDelete('content', undefined, { idArg: 'contentId' }),
       title: 'Delete content',
       capability: Capability.ContentDelete,
-      description: 'Delete a piece of content (soft delete — recoverable with `restore_content`).',
+      description:
+        'Delete a piece of content (soft delete — recoverable with `restore_content`). It REFUSES ' +
+        'while the content is still published anywhere: E1028, "unpublish it from all environments ' +
+        'first" — deleting does NOT unpublish for you. So the order is unpublish_content (per ' +
+        'environment), then delete. Restore brings the content back as an UNPUBLISHED draft with ' +
+        'its versions intact. `environments[]` goes empty the moment you unpublish, but "was this ' +
+        'ever live, and on which version?" stays answerable: `list_publish_history` is the ' +
+        'permanent publish/unpublish ledger and survives deletion.',
       inputSchema: { contentId: z.string() },
       handler: async (args, ctx) => {
         await ctx.services.content.remove(String(args.contentId), ctx.projectId);
@@ -140,8 +174,10 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Restore a soft-deleted content (find it via `list_content` with `deleted: true`). It comes ' +
-        'back as an UNPUBLISHED draft with its versions and history intact — publish again explicitly ' +
-        'to go live. Idempotent if the content is not deleted. Returns the restored content.',
+        'back as an UNPUBLISHED draft with its VERSIONS intact, and nothing is live again until you ' +
+        'publish explicitly. `environments[]` comes back EMPTY — the per-environment publish state ' +
+        'is not restored; what used to be live, where, reads from `list_publish_history`. ' +
+        'Idempotent if the content is not deleted. Returns the restored content.',
       inputSchema: { contentId: z.string() },
       handler: (args, ctx) => ctx.services.content.restore(String(args.contentId), ctx.projectId),
     },
@@ -152,19 +188,70 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Write steps and/or start/hide rules to a draft (editable) content version. `steps` is ' +
-        'the COMPLETE step list, not a patch — any existing step you omit is deleted. Match a ' +
+        'the COMPLETE step list, not a patch — any existing step you omit is deleted. Omitting ' +
+        'the `steps` FIELD entirely leaves all steps untouched (replacement applies only when ' +
+        'the field is present), so a rules-only or theme-only update need not resend them. Match a ' +
         'step to update by its `cvid` (stable across forks) or primary `id`; omit both to add a ' +
-        'new one. Editing a published version fails with E0049 — fork it first with ' +
+        'new one. Editing a version that is live — or was EVER live (unpublishing does not ' +
+        'unlock it; a shipped version is frozen as history) — fails with E0049; fork first with ' +
         'create_content_version. Text blocks use markdown, with `{{ attribute | default: "x" }}` ' +
         'for user attributes. Returns the updated version with the persisted body decompiled — ' +
         '`steps` for a flow, `data` for other types — so you can confirm the write without a re-read.',
       inputSchema: {
-        contentId: z.string(),
-        versionId: z.string(),
-        steps: z.array(representationStepInput).optional(),
-        startRules: representationStartRules.nullable().optional(),
-        hideRules: representationHideRules.nullable().optional(),
-        themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        versionId: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
+        // steps/startRules/hideRules are declared LOOSELY on purpose: their full
+        // vocabulary (blocks / actions / conditions) inlined here put ~11k tokens
+        // into every tools/list. get_content_schema serves the exact shapes on
+        // demand, and the handler validates against the SAME zod schema REST
+        // uses — nothing is accepted that the typed surface would reject.
+        steps: z
+          .array(z.record(z.string(), z.any()))
+          .optional()
+          .describe(
+            'The COMPLETE step list, not a patch (an omitted existing step is deleted; omit the ' +
+              'FIELD to leave steps untouched). Validated server-side against the flow step ' +
+              "schema — fetch it with get_content_schema('flow') before authoring (the step/" +
+              'block/action vocabulary is served there, not inlined here).',
+          ),
+        startRules: z
+          .record(z.string(), z.any())
+          .nullable()
+          .optional()
+          .describe(
+            'Auto-start rules: { when: [conditions], frequency?, priority?, waitSeconds?, ' +
+              'startIfNotComplete? }. The condition vocabulary ships with get_content_schema ' +
+              '($defs), and which knobs / which `when` condition types the CONTENT TYPE ' +
+              'supports is its `capabilities` block — unsupported ones are rejected. null ' +
+              'clears. Validated server-side against the same schema REST uses.',
+          ),
+        hideRules: z
+          .record(z.string(), z.any())
+          .nullable()
+          .optional()
+          .describe(
+            'Temporarily-hide rules: { when: [conditions] }. Only some types support them (see ' +
+              '`capabilities` in get_content_schema). null clears.',
+          ),
+        themeId: z
+          .string()
+          .optional()
+          .describe(
+            'Theme to apply to this version (cannot be cleared) — this is how you MIGRATE a ' +
+              'piece of content to another theme; no need to resend steps/data. Variations do ' +
+              'NOT travel with the content: if the current theme has conditional variations ' +
+              '(dark mode …) and the target has none, those users silently fall back to base ' +
+              'styling. Compare `variationCount` on list_themes first, and recreate the ' +
+              'variations on the target (duplicate_theme copies them verbatim).',
+          ),
         data: z
           // A permissive object (not z.unknown) so the MCP client can actually
           // pass a nested body; its real per-type shape comes from
@@ -188,14 +275,23 @@ export function buildWriteTools(): McpTool[] {
               'time). A future value defers visibility.',
           ),
       },
-      handler: (args, ctx) =>
-        ctx.services.contentVersions.update(
-          String(args.versionId),
-          String(args.contentId),
+      handler: (args, ctx) => {
+        const { contentId, versionId, ...body } = args;
+        // The loose tool schema above trades tools/list size for a HERE-parse:
+        // the body runs through the REST write schema, so both surfaces accept
+        // and reject identically, with the same issue paths.
+        const parsed = updateVersionBody.safeParse(body);
+        if (!parsed.success) {
+          throw ValidationError.fromIssues(zodIssuesToValidationIssues(parsed.error));
+        }
+        return ctx.services.contentVersions.update(
+          String(versionId),
+          String(contentId),
           ctx.projectId,
-          args as never,
+          parsed.data as never,
           { userId: ctx.token.userId, tokenId: ctx.token.id },
-        ),
+        );
+      },
     },
     {
       name: 'create_content_version',
@@ -204,7 +300,8 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.ContentUpdate,
       description:
         'Ensure an editable draft version. If the current edited version is an unpublished draft ' +
-        'it is returned AS-IS (no new version); only when it is PUBLISHED (locked) is it forked ' +
+        'it is returned AS-IS (no new version); when it is live, or has EVER been live ' +
+        '(frozen — unpublishing does not unlock a shipped version), it is forked ' +
         'into a fresh draft, which becomes the new editable version while the published one stays ' +
         'frozen as history. A fork copies the steps and data, and each step keeps its `cvid` ' +
         '(only the primary `id` is regenerated), so you can keep targeting steps by `cvid`/`key` ' +
@@ -229,7 +326,18 @@ export function buildWriteTools(): McpTool[] {
         'name it does NOT change what end-users see; the live/published version is untouched until ' +
         'you separately `publish_content` this restored draft. To recover a DELETED content, use ' +
         '`restore_content` instead. Returns the new version.',
-      inputSchema: { contentId: z.string(), versionId: z.string() },
+      inputSchema: {
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        versionId: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
+      },
       handler: (args, ctx) =>
         ctx.services.contentVersions.restore(
           String(args.versionId),
@@ -249,9 +357,11 @@ export function buildWriteTools(): McpTool[] {
         'diverged draft you get the draft, NOT production); the copy starts UNPUBLISHED and carries ' +
         'no version history. Optionally set a `name`. Content is project-level — use publish_content ' +
         'to make the copy live in an environment. Returns the new content.',
+      // Spread the REST body (SSOT) — a hand-inlined `name: z.string()` here
+      // once bypassed the non-blank-name rule the REST DTO enforced.
       inputSchema: {
         contentId: z.string(),
-        name: z.string().optional(),
+        ...duplicateContentBody.shape,
       },
       handler: (args, ctx) =>
         ctx.services.content.duplicate(String(args.contentId), ctx.projectId, {
@@ -269,20 +379,41 @@ export function buildWriteTools(): McpTool[] {
         'but if it can act on multiple you must pass `environmentId` (it is NOT chosen for you). ' +
         'When the user has not named a target environment, never choose one yourself: ask, or ' +
         'leave the version unpublished and report that publishing needs an environment choice. ' +
-        'Returns the content with refreshed `environments[]`.',
+        'Returns the content with refreshed `environments[]` and `editorUrl` (a dashboard deep ' +
+        'link for human review) — after publishing, share that link so the user can see what ' +
+        'went live. **Rolling back is publishing an OLDER versionId** (frozen versions stay ' +
+        'forever, so re-pointing at one is the whole rollback — do NOT use ' +
+        'restore_content_version, which only forks a draft and changes nothing live). One ' +
+        'follow-up the rollback leaves behind: `editedVersionId` still points at the NEWER ' +
+        '(rolled-back-from) draft, so the next publish from the dashboard ships it again — fork ' +
+        'from the restored version if you want the draft to match what is live. Republishing a ' +
+        'version that is ALREADY live is accepted, but it is a real publish event: it moves ' +
+        '`publishedAt` and adds a ledger row, so never use it to probe permissions.',
       inputSchema: {
-        contentId: z.string(),
-        versionId: z.string(),
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        versionId: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
-        return ctx.services.content.publish(
+        const content = await ctx.services.content.publish(
           String(args.contentId),
           ctx.projectId,
           environment.id,
           String(args.versionId),
           { userId: ctx.token.userId, tokenId: ctx.token.id },
+        );
+        return withEditorUrl(
+          content,
+          await editorUrlFor(ctx, content.type, content.id, environment.id),
         );
       },
     },
@@ -292,7 +423,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'Unpublish content from an environment',
       capability: Capability.ContentPublish,
       description:
-        "Clear an environment's live version for a content. Per-environment: if the token can act " +
+        "Clear an environment's live version for a content. The version itself STAYS frozen — " +
+        'having shipped once, it can never be edited again (edit by forking). `environments[]` ' +
+        'empties here, but nothing is lost: every publish/unpublish lands in a permanent ledger — ' +
+        'read it with `list_publish_history`. ' +
+        'Per-environment: if the token can act ' +
         'on a single environment it defaults to that one, but with multiple you must pass ' +
         '`environmentId` (it is NOT chosen for you). Returns the content with refreshed ' +
         '`environments[]`.',
@@ -325,10 +460,12 @@ export function buildWriteTools(): McpTool[] {
         'is rejected. An attribute with NO definition yet is AUTO-CREATED, its type inferred from ' +
         'this first value — so send the correct JSON type on the first write (a number as 42 not ' +
         '"42", a date as full ISO-UTC), or it locks in as String. The type can be corrected later ' +
-        'via update_attribute_definition only while no stored value conflicts. With multiple ' +
+        'via update_attribute_definition only while no stored value conflicts. A TYPO in a codeName ' +
+        'therefore creates a new attribute silently and the real one is NOT updated — double-check ' +
+        'codeNames against list_attribute_definitions. With multiple ' +
         'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The user external id.'),
+        id: z.string().trim().min(1).describe('The user external id (non-empty).'),
         environmentId: environmentIdSchema,
         ...upsertUserBody.shape,
       },
@@ -355,7 +492,7 @@ export function buildWriteTools(): McpTool[] {
         'Delete an end-user by external id. With multiple environments you must pass ' +
         '`environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The user external id.'),
+        id: z.string().trim().min(1).describe('The user external id (non-empty).'),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
@@ -375,10 +512,11 @@ export function buildWriteTools(): McpTool[] {
         'existing ones and are type-checked against each definition (a type mismatch is rejected). ' +
         'An attribute with NO definition yet is AUTO-CREATED with its type inferred from this first ' +
         'value — send the correct JSON type (42 not "42"), or it locks in as String (correctable ' +
-        'via update_attribute_definition only while no stored value conflicts). With multiple ' +
+        'via update_attribute_definition only while no stored value conflicts). A TYPO in a ' +
+        'codeName silently creates a new attribute and the real one is NOT updated. With multiple ' +
         'environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The company external id.'),
+        id: z.string().trim().min(1).describe('The company external id (non-empty).'),
         environmentId: environmentIdSchema,
         ...upsertCompanyBody.shape,
       },
@@ -405,7 +543,7 @@ export function buildWriteTools(): McpTool[] {
         'Delete a company by external id. With multiple environments you must pass ' +
         '`environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The company external id.'),
+        id: z.string().trim().min(1).describe('The company external id (non-empty).'),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
@@ -425,7 +563,11 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.CompanyWrite,
       description:
         'Add a user to a company, or update the membership (idempotent). Optional membership ' +
-        'attributes merge. With multiple environments you must pass `environmentId` (single-env projects default).',
+        'attributes merge. Returns the membership (external ids + attributes). An attribute with ' +
+        'an unknown codeName AUTO-CREATES a definition (dataType inferred from the value) — a ' +
+        "typo'd codeName therefore lands on a silently-created new attribute while the REAL one " +
+        'is not updated. With multiple environments you must pass `environmentId` (single-env ' +
+        'projects default).',
       inputSchema: {
         companyId: z.string().describe('The company external id.'),
         userId: z.string().describe('The user external id.'),
@@ -433,13 +575,12 @@ export function buildWriteTools(): McpTool[] {
         ...upsertMembershipBody.shape,
       },
       handler: async (args, ctx) => {
-        await ctx.services.companies.upsertMembership(
+        return ctx.services.companies.upsertMembership(
           String(args.companyId),
           String(args.userId),
           await resolveEnvironment(args, ctx),
           args as unknown as UpsertMembershipBody,
         );
-        return { success: true };
       },
     },
     {
@@ -453,8 +594,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'Remove a user from a company',
       capability: Capability.CompanyWrite,
       description:
-        'Remove a user from a company. With multiple environments you must pass `environmentId` ' +
-        '(single-env projects default).',
+        'Remove a user from a company. DESTRUCTIVE, not a hide: the membership record and its ' +
+        'membership-scoped attributes (e.g. a role) are deleted for good — re-adding the user ' +
+        'creates a brand-new membership with empty attributes and a new join date, so ' +
+        'remove-then-re-add is NOT an undo. With multiple environments you must pass ' +
+        '`environmentId` (single-env projects default).',
       inputSchema: {
         companyId: z.string().describe('The company external id.'),
         userId: z.string().describe('The user external id.'),
@@ -506,7 +650,10 @@ export function buildWriteTools(): McpTool[] {
       ),
       title: 'Delete a segment',
       capability: Capability.SegmentDelete,
-      description: 'Delete a segment.',
+      description:
+        'Delete a segment. Not blocked while referenced: a content start/hide rule gating on it ' +
+        'keeps a dead reference that FAILS CLOSED (the condition never matches again). Check ' +
+        '`list_references(kind: "segment")` first.',
       inputSchema: { id: z.string().describe('The segment id.') },
       handler: async (args, ctx) => {
         await ctx.services.segments.delete(String(args.id), ctx.projectId);
@@ -519,25 +666,32 @@ export function buildWriteTools(): McpTool[] {
         action: 'update',
         resourceType: 'segmentMember',
         envScoped: true,
-        resourceId: (args) => `${String(args.id)}:${String(args.externalId)}`,
+        resourceId: (args) => `${String(args.segmentId)}:${String(args.memberId)}`,
       },
       title: 'Add a member to a manual segment',
       capability: Capability.SegmentUpdate,
       description:
-        'Add a user or company (per the segment bizType) to a manual segment. With multiple ' +
-        'environments you must pass `environmentId` (single-env projects default).',
+        'Add a member to a manual segment. Whose id `memberId` is depends on the segment: a ' +
+        'USER external id for a user segment, a COMPANY external id for a company segment ' +
+        '(check `bizType` with get_segment). With multiple environments you must pass ' +
+        '`environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The segment id.'),
-        externalId: z.string().describe('User or company external id (per segment bizType).'),
+        segmentId: z.string().describe('The segment id.'),
+        memberId: z
+          .string()
+          .describe(
+            'The member to add: a user external id (user segment) or company external id ' +
+              '(company segment) — per the segment bizType.',
+          ),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
         await ctx.services.segments.addMember(
-          String(args.id),
+          String(args.segmentId),
           ctx.projectId,
           environment.id,
-          String(args.externalId),
+          String(args.memberId),
         );
         return { success: true };
       },
@@ -548,25 +702,31 @@ export function buildWriteTools(): McpTool[] {
         action: 'delete',
         resourceType: 'segmentMember',
         envScoped: true,
-        resourceId: (args) => `${String(args.id)}:${String(args.externalId)}`,
+        resourceId: (args) => `${String(args.segmentId)}:${String(args.memberId)}`,
       },
       title: 'Remove a member from a manual segment',
       capability: Capability.SegmentUpdate,
       description:
-        'Remove a user or company from a manual segment. With multiple environments you must ' +
-        'pass `environmentId` (single-env projects default).',
+        'Remove a member from a manual segment. `memberId` is a user external id (user ' +
+        'segment) or company external id (company segment) — per the segment bizType. With ' +
+        'multiple environments you must pass `environmentId` (single-env projects default).',
       inputSchema: {
-        id: z.string().describe('The segment id.'),
-        externalId: z.string().describe('User or company external id (per segment bizType).'),
+        segmentId: z.string().describe('The segment id.'),
+        memberId: z
+          .string()
+          .describe(
+            'The member to remove: a user external id (user segment) or company external id ' +
+              '(company segment) — per the segment bizType.',
+          ),
         environmentId: environmentIdSchema,
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
         await ctx.services.segments.removeMember(
-          String(args.id),
+          String(args.segmentId),
           ctx.projectId,
           environment.id,
-          String(args.externalId),
+          String(args.memberId),
         );
         return { success: true };
       },
@@ -581,9 +741,13 @@ export function buildWriteTools(): McpTool[] {
       description:
         'Create a theme. Starts from a fixed built-in default styling (a neutral base — NOT a ' +
         "copy of your project's default / `isDefault` theme); pass a partial `settings` to " +
-        'override colors / fonts / sizes (field-merged, auto colors derived). `variations` ' +
-        'are not yet editable via the API.',
-      inputSchema: { ...createThemeBody.shape, settings: themeSettingsMcpField },
+        'override colors / fonts / sizes (field-merged, auto colors derived); pass `variations` ' +
+        'for conditional styling (e.g. a dark-mode variant).',
+      inputSchema: {
+        ...createThemeBody.shape,
+        settings: themeSettingsMcpField,
+        variations: themeVariationsMcpField,
+      },
       handler: (args, ctx) =>
         ctx.services.themes.create(ctx.projectId, args as unknown as CreateThemeBody),
     },
@@ -599,12 +763,13 @@ export function buildWriteTools(): McpTool[] {
         'patch, field-merged onto the current settings with auto colors derived). System themes ' +
         '(`isSystem: true` on list_themes) reject content changes (name / settings) — ' +
         'create_theme your own copy instead — but `isDefault: true` IS allowed on them: it ' +
-        'only moves the project default pointer. ' +
-        '`variations` are not yet editable via the API.',
+        'only moves the project default pointer. `variations` writes REPLACE the whole list ' +
+        '(see the field description).',
       inputSchema: {
         id: z.string().describe('The theme id.'),
         ...updateThemeBody.shape,
         settings: themeSettingsMcpField,
+        variations: themeVariationsMcpField,
       },
       handler: (args, ctx) =>
         ctx.services.themes.update(
@@ -612,6 +777,22 @@ export function buildWriteTools(): McpTool[] {
           ctx.projectId,
           args as unknown as UpdateThemeBody,
         ),
+    },
+    {
+      name: 'duplicate_theme',
+      audit: auditCreate('theme'),
+      title: 'Duplicate a theme',
+      capability: Capability.ThemeCreate,
+      description:
+        "Copy a theme — settings AND variations verbatim — into a fresh non-default theme (the builder's " +
+        'duplicate dialog path). The way to derive "same as X except …": duplicate, then ' +
+        'update_theme the copy. System themes may be duplicated. Returns the new theme.',
+      inputSchema: {
+        id: z.string().describe('The source theme id.'),
+        ...duplicateThemeBody.shape,
+      },
+      handler: (args, ctx) =>
+        ctx.services.themes.duplicate(String(args.id), ctx.projectId, args as { name?: string }),
     },
     {
       name: 'delete_theme',
@@ -638,11 +819,13 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create an attribute definition',
       capability: Capability.AttributeCreate,
       description:
-        'Define a custom attribute on user / company / companyMembership. codeName + scope are ' +
+        'Define a custom attribute on user / company / companyMembership / eventDefinition (an ' +
+        'event property — attach it to events via update_event_definition). codeName + scope are ' +
         'immutable; dataType can be changed later (update_attribute_definition) only while no ' +
         'stored value conflicts with the new type. Note: upsert_user/upsert_company AUTO-CREATE an ' +
-        'undefined attribute (type inferred from the first value), so define it up front only when ' +
-        'you want to pin the type before any write.',
+        'undefined attribute (type inferred from the first value), and tracking auto-registers ' +
+        'event properties at ingestion — so define one up front only to pin the type before any ' +
+        'write.',
       inputSchema: { ...createAttributeBody.shape },
       handler: (args, ctx) =>
         ctx.services.attributeDefinitions.create(
@@ -658,10 +841,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'Update an attribute definition',
       capability: Capability.AttributeUpdate,
       description:
-        'Update an attribute definition (displayName / description only). `codeName`, `scope`, and ' +
-        '`dataType` are IMMUTABLE — there is no type-change path; a passed dataType/scope/codeName ' +
-        'is ignored (the call returns the unchanged value, with no error). To change a type, create ' +
-        'a new attribute.',
+        'Update an attribute definition. `codeName` and `scope` are IMMUTABLE — passing either is ' +
+        'silently ignored (the call returns the unchanged value, no error). `dataType` CAN be ' +
+        'changed, but only while nothing conflicts: with stored values that do not fit the new ' +
+        'type the call fails with E1017 naming how many values block it, so a type change is safe ' +
+        'to attempt — it either applies or tells you why not.',
       inputSchema: { id: z.string().describe('The attribute id.'), ...updateAttributeBody.shape },
       handler: (args, ctx) =>
         ctx.services.attributeDefinitions.update(
@@ -683,7 +867,8 @@ export function buildWriteTools(): McpTool[] {
         'a survey `bindAttribute`, or a theme variation keeps a now-dead reference and silently ' +
         'FAILS CLOSED — a segment on it then matches nobody, content gated on it stops showing ' +
         '(never fail-open, but silently broken). Stored user values for it are orphaned, not ' +
-        'purged. Rewire / unbind references BEFORE deleting.',
+        'purged. Find every reference first with `list_references(kind: "attribute")`, rewire ' +
+        'or unbind them, THEN delete.',
       inputSchema: { id: z.string().describe('The attribute id.') },
       handler: async (args, ctx) => {
         await ctx.services.attributeDefinitions.delete(String(args.id), ctx.projectId);
@@ -752,8 +937,11 @@ export function buildWriteTools(): McpTool[] {
       title: 'End a session',
       capability: Capability.SessionManage,
       description:
-        'End an in-progress session. With multiple environments you must pass `environmentId` ' +
-        '(single-env projects default). Returns the completed session.',
+        'End an in-progress session (endReason admin_ended). Idempotent: ending an already-ended ' +
+        'session is a no-op that returns it unchanged — the original endedAt/endReason are ' +
+        'preserved, not overwritten. Tracker sessions have no end semantics and refuse with E1017. ' +
+        'With multiple environments you must pass `environmentId` ' +
+        '(single-env projects default). Returns the ended session.',
       inputSchema: {
         id: z.string().describe('The session id.'),
         environmentId: environmentIdSchema,
@@ -771,7 +959,13 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete a session',
       capability: Capability.SessionManage,
       description:
-        'Delete a session. With multiple environments you must pass `environmentId` (single-env projects default).',
+        'Delete a session — PERMANENT, with three distinct consequences: (1) the session record ' +
+        'is gone (no restore_session exists); (2) its recorded answers vanish from question ' +
+        'analytics irreversibly — deleting "test" sessions rewrites real response counts; (3) ' +
+        'attribute values the session wrote onto the user via bindAttribute REMAIN on the user — ' +
+        'clearing those is a separate user-attribute update, or the user profile will contradict ' +
+        'the survey analytics. With multiple environments you must pass `environmentId` ' +
+        '(single-env projects default).',
       inputSchema: {
         id: z.string().describe('The session id.'),
         environmentId: environmentIdSchema,

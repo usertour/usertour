@@ -97,7 +97,9 @@ export function compileVersionData(
     case ContentDataType.RESOURCE_CENTER:
       return compileResourceCenter(parse(representationResourceCenter, data), existingData, r);
     default:
-      throw new ValidationError(`Content type "${contentType}" does not accept a data body`);
+      throw new ValidationError(
+        `Content type "${contentType}" does not accept a data body — \`data\` is for checklist / launcher / banner / tracker / announcement / resource-center; a flow authors its body via \`steps\`.`,
+      );
   }
 }
 

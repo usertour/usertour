@@ -1,9 +1,11 @@
 import { ContentActionsItemType, ContentDataType } from '@usertour/types';
 
 import type { ValidationIssue } from '@/common/errors/errors';
+import { isHttpUrl } from '@/common/url';
 
 import {
   REACTIVE_REJECTED_REP_CONDITION_TYPES,
+  REP_ACTION_TYPE_TO_INTERNAL,
   contentActionCapabilities,
   stepCapabilities,
 } from './contract-map';
@@ -32,6 +34,12 @@ import {
  *  - `step_shape`: placement shape must match the step kind (tooltip→{side,align},
  *    modal→{position}; wrong-shape fields are silently dropped otherwise), and
  *    onClick (click-the-target-to-advance) only works on a tooltip.
+ *  - `media_url`: an image/embed block's `url` (and an image's `link.url`) must
+ *    be an absolute http(s) URL — the SDK renders it verbatim into src/href, so
+ *    anything else is a silently broken image/iframe (same bar as theme media
+ *    URLs). A value the stored version already carries passes VERBATIM
+ *    (preserve-not-endorse, the dangling-goto policy): legacy data must stay
+ *    echo-editable.
  * checklist `completeWhen` / RC `onlyShowWhen` intentionally allow the full
  * condition set — only the reactive slots above are restricted.
  */
@@ -55,6 +63,9 @@ export function collectWriteViolations(input: {
   startRules?: { when?: unknown } | null;
   hideRules?: { when?: unknown } | null;
   contentType?: string;
+  /** URL strings the stored version already carries — verbatim echoes of these
+   * pass the media_url rule (legacy data stays echo-editable). */
+  storedUrls?: ReadonlySet<string>;
 }): WriteWalkResult {
   const issues: ValidationIssue[] = [];
   const refs: ContentReference[] = [];
@@ -78,6 +89,20 @@ export function collectWriteViolations(input: {
         reactiveConditions((c as { conditions?: unknown }).conditions, `${at}.conditions`, slot);
       }
     });
+  };
+
+  /** Question blocks anywhere in a step's content tree (columns included). */
+  const countQuestionBlocks = (node: unknown): number => {
+    if (Array.isArray(node)) {
+      return node.reduce((sum: number, n) => sum + countQuestionBlocks(n), 0);
+    }
+    if (!node || typeof node !== 'object') return 0;
+    const obj = node as Record<string, unknown>;
+    let count = obj.type === 'question' ? 1 : 0;
+    for (const key of Object.keys(obj)) {
+      count += countQuestionBlocks(obj[key]);
+    }
+    return count;
   };
 
   /** Per-step shape: placement shape by kind + onClick only where it can fire. */
@@ -110,6 +135,43 @@ export function collectWriteViolations(input: {
           message: `A modal step needs a modal placement { position } on the viewport grid — it can't use a tooltip placement { side, align }, which would be ignored.`,
         });
       }
+      // Bubble: position comes from the THEME's bubble placement; the only
+      // step-level placement key the renderer reads is `backdrop`. Anything
+      // positional would be stored and echoed back yet never rendered — the
+      // silent-success trap this rule exists to close.
+      if (caps.placement === 'theme') {
+        const positional = Object.keys(placement).filter((k) => k !== 'backdrop');
+        if (positional.length > 0) {
+          issues.push({
+            rule: 'step_shape',
+            path: `${at}.placement`,
+            message: `A bubble step is positioned by its theme's bubble placement — \`${positional.join('`, `')}\` would be ignored. Only \`backdrop\` applies on a bubble step; to move the bubble, change the theme.`,
+          });
+        }
+      }
+      // Hidden: no UI at all — nothing to place, nothing to backdrop.
+      if (caps.placement === 'none') {
+        issues.push({
+          rule: 'step_shape',
+          path: `${at}.placement`,
+          message:
+            'A hidden step renders no UI, so placement does not apply — remove it. ' +
+            '(Hidden steps exist to run triggers, e.g. as a routing step.)',
+        });
+      }
+    }
+    // At most ONE question block per step: the runtime renders and reports
+    // only the first — a second is invisible (no answers, no analytics). A
+    // step's content is authored atomically (steps are full-list replacements),
+    // so two questions is never a draft-in-progress; reject at write. The
+    // usable-validate error remains as the belt for stored legacy steps.
+    const questionCount = countQuestionBlocks(s.content);
+    if (questionCount > 1) {
+      issues.push({
+        rule: 'step_shape',
+        path: `${at}.content`,
+        message: `A step renders only its FIRST question — ${questionCount} question blocks would leave the rest invisible (no answers, no analytics). One question per step; chain steps for a multi-question survey.`,
+      });
     }
     const onClick = s.onClick;
     if (Array.isArray(onClick) && onClick.length > 0 && !caps?.onClick) {
@@ -144,6 +206,40 @@ export function collectWriteViolations(input: {
     }
   };
 
+  /** Image/embed blocks (any nesting, like buttons): url fields must be http(s). */
+  const mediaUrlAt = (value: unknown, path: string, what: string): void => {
+    if (typeof value !== 'string') return;
+    if (isHttpUrl(value) || input.storedUrls?.has(value)) return;
+    issues.push({
+      rule: 'media_url',
+      path,
+      message: `${what} must be a full http(s) URL (it is rendered verbatim on the page, so ${JSON.stringify(
+        value,
+      )} would just be broken there). Host the asset somewhere reachable and pass its absolute URL.`,
+    });
+  };
+  const mediaUrls = (node: unknown, path: string): void => {
+    if (Array.isArray(node)) {
+      node.forEach((n, i) => mediaUrls(n, `${path}[${i}]`));
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+    const obj = node as Record<string, unknown>;
+    if (obj.type === 'image' || obj.type === 'embed') {
+      mediaUrlAt(obj.url, `${path}.url`, `An ${String(obj.type)} block's url`);
+      if (obj.type === 'image') {
+        mediaUrlAt(
+          (obj.link as Record<string, unknown> | undefined)?.url,
+          `${path}.link.url`,
+          "An image block's link url",
+        );
+      }
+    }
+    for (const key of Object.keys(obj)) {
+      mediaUrls(obj[key], `${path}.${key}`);
+    }
+  };
+
   /** Cross-content references, wherever they sit (the caller checks target types). */
   const collectRefs = (node: unknown, path: string, where: string): void => {
     if (Array.isArray(node)) {
@@ -175,6 +271,10 @@ export function collectWriteViolations(input: {
     // announcement) can't dismiss; types with no action slots at all (tracker)
     // are left to their own schema.
     const rejectDismiss = caps !== undefined && caps.actions.length > 0 && !caps.dismissVariant;
+    // Matrix-driven check for the remaining action names (see walk below);
+    // skipped for unknown types (compile rejects those) and no-action-slot
+    // types (their schema owns it).
+    const checkGeneralActions = caps !== undefined && caps.actions.length > 0;
     const slotHint = `${contentType === 'announcement' ? 'an' : 'a'} ${contentType}'s content`;
     // Name the actions this type ACTUALLY allows (public representation names) —
     // the previous fixed text recommended `dismiss` to types that reject it, and
@@ -215,6 +315,27 @@ export function collectWriteViolations(input: {
           } Use ${allowedHint || 'the actions this type supports'} instead.`,
         });
       }
+      // Every OTHER representation action name is checked against the matrix
+      // too — not just the two special-cased above. Today this rejects nothing
+      // extra (all types with action slots allow start_content / navigate /
+      // run_javascript); it exists so REMOVING an action from
+      // CONTENT_ACTION_CAPABILITIES starts rejecting writes here with no code
+      // change — previously nothing would have.
+      if (
+        checkGeneralActions &&
+        typeof obj.type === 'string' &&
+        obj.type !== 'goto_step' &&
+        obj.type !== 'dismiss'
+      ) {
+        const internal = REP_ACTION_TYPE_TO_INTERNAL[obj.type];
+        if (internal !== undefined && !caps!.actions.includes(internal)) {
+          issues.push({
+            rule: 'action_not_allowed',
+            path,
+            message: `A "${obj.type}" action can't be used in ${slotHint} — use ${allowedHint || 'the actions this type supports'} instead.`,
+          });
+        }
+      }
       for (const key of Object.keys(obj)) {
         walk(obj[key], `${path}.${key}`);
       }
@@ -235,6 +356,7 @@ export function collectWriteViolations(input: {
       buttonReactive(step.content, `steps[${i}].content`);
     });
     collectRefs(input.steps, 'steps', 'a step');
+    mediaUrls(input.steps, 'steps');
   }
 
   // data (non-flow body): action-type rules, button reactive slots, refs.
@@ -244,6 +366,7 @@ export function collectWriteViolations(input: {
     }
     buttonReactive(input.data, 'data');
     collectRefs(input.data, 'data', "the content's data");
+    mediaUrls(input.data, 'data');
   }
 
   // start / hide rules: refs; a tracker's start conditions are a reactive slot

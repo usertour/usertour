@@ -15,6 +15,238 @@ const empty: never[] = [];
 const paths = (issues: { path: string }[]) => issues.map((i) => i.path);
 
 describe('validateVersionUsable', () => {
+  describe('embed resolution (cross-cutting)', () => {
+    const flowWithEmbed = (embed: Record<string, unknown>) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: [
+          {
+            type: StepContentType.MODAL,
+            data: [{ children: [{ children: [{ element: { type: 'embed', ...embed } }] }] }],
+            sequence: 0,
+            cvid: 'a',
+          } as never,
+        ],
+      });
+    const embedWarnings = (embed: Record<string, unknown>) =>
+      flowWithEmbed(embed).warnings.filter((w) => w.path === 'embed');
+
+    it('stays silent when the oEmbed payload is stored', () => {
+      expect(
+        embedWarnings({
+          url: 'https://youtu.be/x',
+          parsedUrl: 'https://youtu.be/x',
+          oembed: { html: '<iframe/>' },
+        }),
+      ).toEqual([]);
+    });
+
+    it('warns EMPTY-placeholder when the embed was never resolved (no parsedUrl)', () => {
+      const w = embedWarnings({ url: 'https://youtu.be/x' });
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('EMPTY placeholder');
+    });
+
+    it('warns provider-refused when a known provider claims the url but no payload is stored', () => {
+      // The field-reported case: an embed-disabled video writes fine and
+      // publishes fine, then renders the provider's unavailable screen.
+      const w = embedWarnings({ url: 'https://youtu.be/x', parsedUrl: 'https://youtu.be/x' });
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('provider refused');
+    });
+
+    it('warns framing-requirement AND default-height-stub for a raw non-provider iframe url', () => {
+      // No provider = no aspect ratio; without a pixel height the widget's
+      // percentage fallback is ignored (content-sized parent) and the in-flow
+      // iframe falls to the browser default — a ~150px strip nobody sized
+      // (field-verified; the old "collapses to 0px" claim was the oEmbed
+      // branch's absolute-position geometry, wrong for this branch). Two
+      // warnings: frameability + the stub height.
+      const w = embedWarnings({
+        url: 'https://internal.example.com/dash',
+        parsedUrl: 'https://internal.example.com/dash',
+      });
+      expect(w).toHaveLength(2);
+      expect(w[0].message).toContain('allows being framed');
+      expect(w[1].message).toContain("browser's built-in default");
+    });
+
+    it('does not warn height-collapse when the raw iframe has a pixel height', () => {
+      const w = embedWarnings({
+        url: 'https://internal.example.com/dash',
+        parsedUrl: 'https://internal.example.com/dash',
+        height: { type: 'pixels', value: 315 },
+      });
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('allows being framed');
+    });
+  });
+
+  describe('empty condition groups (cross-cutting)', () => {
+    // The write schema rejects these, but the builder lets you add a group and
+    // leave it empty, so stored data has them — and an empty group is FALSE at
+    // runtime, not "no filter". Before this warning the whole chain (write,
+    // validate, publish) was green and the content simply never started.
+    const emptyGroup = (operators: 'and' | 'or') => ({
+      id: 'g',
+      type: 'group',
+      operators,
+      data: {},
+      conditions: [],
+    });
+    const urlRule = (operators: 'and' | 'or') => ({
+      id: 'u',
+      type: 'current-page',
+      operators,
+      data: { includes: ['*'] },
+    });
+    const flowWith = (autoStartRules: unknown[]) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        steps: [{ type: 'modal', data: textBlocks } as never],
+        config: { enabledAutoStartRules: true, autoStartRules, autoStartRulesSetting: {} } as never,
+      });
+
+    it('warns FATAL wording when the empty group sits in an AND list', () => {
+      const r = flowWith([urlRule('and'), emptyGroup('and')]);
+      expect(r.ok).toBe(true); // still publishable — usertour.start() can reach it
+      const w = r.warnings.filter((x) => x.message.includes('EMPTY condition group'));
+      expect(w).toHaveLength(1);
+      expect(w[0].path).toBe('startRules.when');
+      expect(w[0].message).toContain('unmatchable');
+    });
+
+    it('warns DEAD-BRANCH wording when it sits in an OR list', () => {
+      const r = flowWith([urlRule('or'), emptyGroup('or')]);
+      const w = r.warnings.filter((x) => x.message.includes('EMPTY condition group'));
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('dead branch');
+    });
+
+    it('an empty group as the ONLY condition is fatal regardless of its operator', () => {
+      const w = flowWith([emptyGroup('or')]).warnings.filter((x) =>
+        x.message.includes('EMPTY condition group'),
+      );
+      expect(w).toHaveLength(1);
+      expect(w[0].message).toContain('unmatchable');
+    });
+
+    it('a group WITH conditions warns nothing', () => {
+      const filled = { ...emptyGroup('and'), conditions: [urlRule('and')] };
+      expect(
+        flowWith([urlRule('and'), filled]).warnings.filter((x) =>
+          x.message.includes('EMPTY condition group'),
+        ),
+      ).toHaveLength(0);
+    });
+
+    it('finds them in hide rules and step triggers too, under their own paths', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't',
+        steps: [
+          {
+            type: 'modal',
+            data: textBlocks,
+            trigger: [{ conditions: [emptyGroup('and')], actions: [] }],
+          },
+        ] as never,
+        config: { hideRules: [emptyGroup('and')] } as never,
+      });
+      const paths = r.warnings
+        .filter((x) => x.message.includes('EMPTY condition group'))
+        .map((x) => x.path);
+      expect(paths).toEqual(['hideRules.when', 'steps[0].triggers']);
+    });
+  });
+
+  describe('interpolation scope (cross-cutting)', () => {
+    // `{{ }}` resolves against the USER's attributes only. A token naming a
+    // company / membership attribute renders as an empty gap in live copy and
+    // was invisible to write, validate, publish and diagnose alike — a
+    // targeting reviewer found it only by probing six tokens deliberately.
+    const ctx = {
+      attributes: [
+        { codeName: 'name', bizType: 1 },
+        { codeName: 'trial_ends_at', bizType: 2 },
+      ],
+      segments: [],
+      contents: [],
+      events: [],
+    } as never;
+    // `{{ code }}` is stored as a STRUCTURED Slate node (compiled from the
+    // markdown), never as literal braces — the first version of this check
+    // scanned strings and silently found nothing on real content.
+    const token = (attrCode: string) => ({
+      type: 'user-attribute',
+      attrCode,
+      fallback: '',
+      children: [{ text: '' }],
+    });
+    const withTokens = (...codes: string[]) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: [
+          {
+            type: StepContentType.MODAL,
+            sequence: 0,
+            cvid: 'a',
+            data: [
+              {
+                children: [
+                  {
+                    children: [
+                      {
+                        element: {
+                          type: 'text',
+                          data: [
+                            {
+                              type: 'paragraph',
+                              children: [{ text: 'Hi ' }, ...codes.map(token)],
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          } as never,
+        ],
+        conditionContext: ctx,
+      });
+
+    it('stays silent for a user-scoped token', () => {
+      const r = withTokens('name');
+      expect(r.warnings.some((w) => w.message.includes('{{'))).toBe(false);
+    });
+
+    it('warns when the token names a COMPANY attribute (renders empty)', () => {
+      const w = withTokens('trial_ends_at').warnings.find((x) =>
+        x.message.includes('trial_ends_at'),
+      );
+      expect(w?.message).toContain('EMPTY gap');
+      expect(w?.message).toContain('identify()');
+    });
+
+    it('warns when the token names nothing defined at all', () => {
+      expect(
+        withTokens('company_name').warnings.some(
+          (x) => x.message.includes('company_name') && x.message.includes('EMPTY'),
+        ),
+      ).toBe(true);
+    });
+
+    it('reports each distinct token once, however often it appears', () => {
+      const r = withTokens('mystery', 'mystery', 'name');
+      expect(r.warnings.filter((x) => x.message.includes('mystery'))).toHaveLength(1);
+    });
+  });
+
   describe('url patterns (cross-cutting)', () => {
     it('warns when a start-rule URL include is the root-only "*/" pattern', () => {
       const r = validateVersionUsable({
@@ -40,6 +272,62 @@ describe('validateVersionUsable', () => {
         },
       });
       expect(paths(ok.warnings)).not.toContain('config.autoStartRules');
+    });
+  });
+
+  describe('frequency-less auto-start (legacy no-limit state)', () => {
+    const base = {
+      type: ContentDataType.FLOW,
+      themeId: 't1',
+      steps: [{ type: StepContentType.MODAL, data: textBlocks, sequence: 0, cvid: 'a' } as never],
+    };
+
+    it('warns when auto-start is enabled with NO stored frequency', () => {
+      // The runtime gate passes unconditionally without a frequency: the flow
+      // re-starts every time its rules match after the prior session ends.
+      // Builder and API writes both persist a default now — only legacy data
+      // reaches this state, and it must not ship silently.
+      const r = validateVersionUsable({
+        ...base,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [{ type: 'current-page', data: { includes: ['*'] } } as never],
+          autoStartRulesSetting: {},
+        },
+      });
+      expect(paths(r.warnings)).toContain('startRules.frequency');
+    });
+
+    it('stays silent with a stored frequency, when disabled, and for no-knob types', () => {
+      const stored = validateVersionUsable({
+        ...base,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [{ type: 'current-page', data: { includes: ['*'] } } as never],
+          autoStartRulesSetting: { frequency: { frequency: 'once' } as never },
+        },
+      });
+      expect(paths(stored.warnings)).not.toContain('startRules.frequency');
+
+      const disabled = validateVersionUsable({
+        ...base,
+        config: { enabledAutoStartRules: false, autoStartRules: [] },
+      });
+      expect(paths(disabled.warnings)).not.toContain('startRules.frequency');
+
+      // Banner has no frequency knob — an unset frequency there is load-bearing
+      // (baking `once` in would cap it at a single show), never warnable.
+      const banner = validateVersionUsable({
+        type: ContentDataType.BANNER,
+        themeId: 't1',
+        data: { content: textBlocks },
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [{ type: 'current-page', data: { includes: ['*'] } } as never],
+          autoStartRulesSetting: {},
+        },
+      });
+      expect(paths(banner.warnings)).not.toContain('startRules.frequency');
     });
   });
 
@@ -270,6 +558,39 @@ describe('validateVersionUsable', () => {
       expect(r.ok).toBe(false);
     });
 
+    it('errors on a builtin icon name outside the registry (renders nothing, silently)', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.LAUNCHER,
+        themeId: 't',
+        data: {
+          iconSource: 'builtin',
+          iconType: 'help-circle', // a LUCIDE name — the classic mistake
+          target: { element: { customSelector: '#x' } },
+          behavior: { actionType: LauncherActionType.SHOW_TOOLTIP },
+          tooltip: { content: textBlocks },
+        },
+      });
+      expect(r.ok).toBe(false);
+      expect(r.errors.some((i) => i.message.includes('help-circle'))).toBe(true);
+    });
+
+    it('accepts a registered builtin icon name (incl. the gap fills: keyboard/book/bug)', () => {
+      for (const iconType of ['home-line', 'keyboard-line', 'book-line', 'bug-line']) {
+        const r = validateVersionUsable({
+          type: ContentDataType.LAUNCHER,
+          themeId: 't',
+          data: {
+            iconSource: 'builtin',
+            iconType,
+            target: { element: { customSelector: '#x' } },
+            behavior: { actionType: LauncherActionType.SHOW_TOOLTIP },
+            tooltip: { content: textBlocks },
+          },
+        });
+        expect(r.ok).toBe(true);
+      }
+    });
+
     it('accepts a show-tooltip launcher with target + content', () => {
       const r = validateVersionUsable({
         type: ContentDataType.LAUNCHER,
@@ -362,6 +683,72 @@ describe('validateVersionUsable', () => {
       });
       expect(r.ok).toBe(true);
     });
+
+    it('warns (never errors) on unregistered builtin icon names in every icon slot', () => {
+      // Same registry as the launcher's icon ERROR, at warning level: a bad
+      // name leaves the glyph slot empty but the block still shows. Slots:
+      // tab icon, block icon, content-list flow/checklist default icons,
+      // per-item icons.
+      const r = validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't',
+        data: {
+          tabs: [
+            {
+              name: 'Home',
+              iconSource: 'builtin',
+              iconType: 'help-circle', // lucide-style guess
+              blocks: [
+                { type: ResourceCenterBlockType.RICH_TEXT, content: textBlocks },
+                {
+                  type: ResourceCenterBlockType.ACTION,
+                  name: 'Contact',
+                  iconSource: 'builtin',
+                  iconType: 'sparkles',
+                  clickedActions: [],
+                },
+                {
+                  type: ResourceCenterBlockType.CONTENT_LIST,
+                  name: 'Guides',
+                  flowIconSource: 'builtin',
+                  flowIconType: 'book-open',
+                  contentItems: [
+                    { contentId: 'c1', iconSource: 'builtin', iconType: 'message-circle' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      });
+      expect(r.ok).toBe(true); // warnings only — publish stays open
+      const iconWarnings = r.warnings.filter((w) => w.message.includes('registered builtin icon'));
+      expect(iconWarnings.map((w) => w.path)).toEqual([
+        'tabs[0] "Home".icon',
+        'tabs[0] "Home".blocks[1].icon',
+        'tabs[0] "Home".blocks[2].flowIcon',
+        'tabs[0] "Home".blocks[2].items[0].icon',
+      ]);
+      expect(iconWarnings[0].message).toContain('help-circle');
+    });
+
+    it('a registered icon name warns nothing', () => {
+      const r = validateVersionUsable({
+        type: ContentDataType.RESOURCE_CENTER,
+        themeId: 't',
+        data: {
+          tabs: [
+            {
+              name: 'Home',
+              iconSource: 'builtin',
+              iconType: 'home-line',
+              blocks: [{ type: ResourceCenterBlockType.RICH_TEXT, content: textBlocks }],
+            },
+          ],
+        },
+      });
+      expect(r.warnings.filter((w) => w.message.includes('builtin icon'))).toHaveLength(0);
+    });
   });
 
   describe('announcement', () => {
@@ -415,6 +802,35 @@ describe('validateVersionUsable', () => {
         detailContent: textBlocks,
       });
       expect(on.warnings.some((w) => w.message.includes('unreachable'))).toBe(false);
+
+      // The CREATE path seeds detailContent with a placeholder column holding a
+      // single blank text element. That is not authored content, so a freshly
+      // created announcement must not warn about it (support-round finding: the
+      // API warning about its own default).
+      const seeded = announcement({
+        title: 'v2.1',
+        introContent: textBlocks,
+        enableReadMore: false,
+        detailContent: [
+          {
+            element: { type: 'group' },
+            children: [
+              {
+                element: { type: 'column' },
+                children: [
+                  {
+                    element: {
+                      type: 'text',
+                      data: [{ type: 'paragraph', children: [{ text: '' }] }],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ] as never,
+      });
+      expect(seeded.warnings.some((w) => w.message.includes('unreachable'))).toBe(false);
     });
 
     it('accepts a titled announcement with intro content and a filled Read more page', () => {

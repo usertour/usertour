@@ -15,10 +15,14 @@ export interface PlacementFieldProps {
   label: string;
   options?: { value: string; label: string }[];
   labels?: { position?: string; offsetX?: string; offsetY?: string };
+  // Bounds applied to both offset inputs; message pre-translated by FieldRenderer.
+  offsetMin?: number;
+  offsetMax?: number;
+  offsetRangeMessage?: string;
 }
 
 export const PlacementField = (props: PlacementFieldProps) => {
-  const { path, label, options, labels } = props;
+  const { path, label, options, labels, offsetMin, offsetMax, offsetRangeMessage } = props;
   const { t } = useTranslation();
 
   const defaultOptions: { value: string; label: string }[] = [
@@ -59,8 +63,22 @@ export const PlacementField = (props: PlacementFieldProps) => {
     <div className="space-y-1">
       <div className={sectionLabelClass}>{label}</div>
       <SelectField path={`${path}.position`} label={lbls.position} options={opts} />
-      <NumberField path={`${path}.positionOffsetX`} label={lbls.offsetX} suffix="px" />
-      <NumberField path={`${path}.positionOffsetY`} label={lbls.offsetY} suffix="px" />
+      <NumberField
+        path={`${path}.positionOffsetX`}
+        label={lbls.offsetX}
+        min={offsetMin}
+        max={offsetMax}
+        rangeMessage={offsetRangeMessage}
+        suffix="px"
+      />
+      <NumberField
+        path={`${path}.positionOffsetY`}
+        label={lbls.offsetY}
+        min={offsetMin}
+        max={offsetMax}
+        rangeMessage={offsetRangeMessage}
+        suffix="px"
+      />
     </div>
   );
 };

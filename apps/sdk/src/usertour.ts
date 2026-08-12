@@ -40,6 +40,9 @@ function neutralizeLeftoverStubs(
     if (typeof record[key] === 'function' && !(key in api)) {
       record[key] = () => {
         logger.warn(`usertour.js: '${key}' is not supported by this SDK build — call ignored`);
+        // The loader stubs returned a pending Promise for deferred methods —
+        // keep host-side `.then()` chains from throwing on the replacement.
+        return Promise.resolve();
       };
     }
   }

@@ -150,3 +150,85 @@ export const CONTENT_REFERENCE_TARGET_TYPES: readonly ContentDataType[] = [
   ContentDataType.FLOW,
   ContentDataType.CHECKLIST,
 ];
+
+/**
+ * Per-content-type traits that used to live as independent hand-maintained
+ * type sets scattered across validators/services (the drift class this matrix
+ * exists to kill). Consumers derive their sets from THIS table.
+ */
+export type ContentTypeTraits = {
+  /**
+   * Renders UI → requires a theme. Tracker is the only headless type.
+   * Announcement is included even though its theme only styles the POPUP
+   * presentation (feed rows use the resource center's theme) — the builder
+   * seeds every announcement draft with the default theme, and one uniform
+   * rule beats a per-distribution exception.
+   */
+  requiresTheme: boolean;
+  /**
+   * Appears ONLY when its auto-start conditions match — no session-resume
+   * first-show path. With an empty rule set the runtime's
+   * isEnabledAutoStartRules bails and the content never surfaces on its own
+   * (publish still succeeds), so validators warn on missing start rules.
+   * Flow/checklist are false: they resume sessions and are routinely started
+   * on demand.
+   */
+  autoStartRequiredToAppear: boolean;
+  /**
+   * Legitimately started on demand (a resource-center list entry, a
+   * start_content button, usertour.start()) — so missing start rules alone is
+   * NOT warnable; only "no rules AND no inbound reference" is dead content.
+   */
+  startsOnDemand: boolean;
+  /**
+   * Whether the version accepts `scheduledAt` — the announcement feed's
+   * visibility gate / ordering key. On any other type it would be a silent
+   * no-op stored on the row.
+   */
+  allowsScheduledAt: boolean;
+};
+
+export const CONTENT_TYPE_TRAITS: Record<ContentDataType, ContentTypeTraits> = {
+  [ContentDataType.FLOW]: {
+    requiresTheme: true,
+    autoStartRequiredToAppear: false,
+    startsOnDemand: true,
+    allowsScheduledAt: false,
+  },
+  [ContentDataType.CHECKLIST]: {
+    requiresTheme: true,
+    autoStartRequiredToAppear: false,
+    startsOnDemand: true,
+    allowsScheduledAt: false,
+  },
+  [ContentDataType.LAUNCHER]: {
+    requiresTheme: true,
+    autoStartRequiredToAppear: true,
+    startsOnDemand: false,
+    allowsScheduledAt: false,
+  },
+  [ContentDataType.BANNER]: {
+    requiresTheme: true,
+    autoStartRequiredToAppear: true,
+    startsOnDemand: false,
+    allowsScheduledAt: false,
+  },
+  [ContentDataType.RESOURCE_CENTER]: {
+    requiresTheme: true,
+    autoStartRequiredToAppear: true,
+    startsOnDemand: false,
+    allowsScheduledAt: false,
+  },
+  [ContentDataType.TRACKER]: {
+    requiresTheme: false,
+    autoStartRequiredToAppear: false,
+    startsOnDemand: false,
+    allowsScheduledAt: false,
+  },
+  [ContentDataType.ANNOUNCEMENT]: {
+    requiresTheme: true,
+    autoStartRequiredToAppear: false,
+    startsOnDemand: false,
+    allowsScheduledAt: true,
+  },
+};

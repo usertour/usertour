@@ -59,6 +59,7 @@ describe('mapContentAnalytics (pure)', () => {
     expect(out).not.toHaveProperty('tasks');
     expect(out).not.toHaveProperty('blocks');
     expect(out).not.toHaveProperty('uniqueViews');
+    expect(out).not.toHaveProperty('uniqueOpens');
     expect(out.byDay).toEqual([
       {
         date: '2026-07-01',
@@ -81,11 +82,15 @@ describe('mapContentAnalytics (pure)', () => {
     ]);
   });
 
-  it('checklist: starts/completions + task rows; non-array domain signals normalize to []', () => {
+  it('checklist: starts/completions + panel opens + task rows; non-array domain signals normalize to []', () => {
     // Checklist path: viewsByStep comes back as `false`, viewsByDay as null.
     const raw = {
       ...rawCounts,
-      viewsByDay: null,
+      uniqueOpens: 7,
+      totalOpens: 12,
+      viewsByDay: [
+        { date: new Date('2026-07-01T00:00:00Z'), ...rawCounts, uniqueOpens: 3, totalOpens: 6 },
+      ],
       viewsByStep: false,
       viewsByTask: [
         { name: 'T1', taskId: 't1', analytics: { ...rawCounts, uniqueClicks: 7, totalClicks: 9 } },
@@ -93,39 +98,68 @@ describe('mapContentAnalytics (pure)', () => {
       viewsByBlock: [],
     };
     const out = mapContentAnalytics(raw, meta(ContentDataType.CHECKLIST));
-    expect(out).toMatchObject({ contentType: 'checklist', uniqueStarts: 10, uniqueCompletions: 4 });
-    expect(out.byDay).toEqual([]);
+    expect(out).toMatchObject({
+      contentType: 'checklist',
+      uniqueStarts: 10,
+      uniqueCompletions: 4,
+      uniqueOpens: 7,
+      totalOpens: 12,
+    });
+    // byDay rows carry the opens pair too — every headline total* has a series.
+    expect(out.byDay).toEqual([
+      {
+        date: '2026-07-01',
+        uniqueStarts: 10,
+        totalStarts: 14,
+        uniqueCompletions: 4,
+        totalCompletions: 5,
+        uniqueOpens: 3,
+        totalOpens: 6,
+      },
+    ]);
     expect(out).not.toHaveProperty('steps');
+    // Task rows carry ONLY the task's own counts: the domain's per-task view
+    // counters are whole-checklist numbers repeated on every row — dropped;
+    // the checklist-level number ships as headline uniqueOpens/totalOpens.
     expect(out.contentType === 'checklist' && out.tasks).toEqual([
-      { name: 'T1', taskId: 't1', ...rawCounts, uniqueClicks: 7, totalClicks: 9 },
+      {
+        name: 'T1',
+        taskId: 't1',
+        uniqueCompletions: 4,
+        totalCompletions: 5,
+        uniqueClicks: 7,
+        totalClicks: 9,
+      },
     ]);
   });
 
-  it('launcher: seen/activations naming, no breakdown', () => {
+  it('launcher: first-touch counts only — session totals repeat unique (dropped), activation is newActivations', () => {
     const out = mapContentAnalytics(
-      { ...rawCounts, viewsByDay: [] },
+      { ...rawCounts, viewsByDay: [{ date: new Date('2026-07-01T00:00:00Z'), ...rawCounts }] },
       meta(ContentDataType.LAUNCHER),
     );
     expect(out).toMatchObject({
       contentType: 'launcher',
       uniqueSeen: 10,
-      totalSeen: 14,
-      uniqueActivations: 4,
-      totalActivations: 5,
+      newActivations: 4,
     });
+    expect(out).not.toHaveProperty('totalSeen');
+    expect(out).not.toHaveProperty('totalActivations');
+    expect(out).not.toHaveProperty('uniqueActivations');
     expect(out).not.toHaveProperty('steps');
     expect(out).not.toHaveProperty('uniqueCompletions');
+    expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueSeen: 10, newActivations: 4 }]);
   });
 
-  it("banner: a dismissal is a dismissal — no 'completions' field exists", () => {
+  it("banner: a dismissal is a dismissal — no 'completions', no fake totals", () => {
     const out = mapContentAnalytics({ ...rawCounts, viewsByDay: [] }, meta(ContentDataType.BANNER));
     expect(out).toMatchObject({
       contentType: 'banner',
       uniqueSeen: 10,
-      totalSeen: 14,
       uniqueDismissals: 4,
-      totalDismissals: 5,
     });
+    expect(out).not.toHaveProperty('totalSeen');
+    expect(out).not.toHaveProperty('totalDismissals');
     expect(out).not.toHaveProperty('uniqueCompletions');
   });
 
@@ -137,12 +171,14 @@ describe('mapContentAnalytics (pure)', () => {
         {
           name: 'Docs',
           blockId: 'b1',
+          tabId: 'tab1',
           tabName: 'Help',
           analytics: { uniqueClicks: 1, totalClicks: 2 },
         },
         {
           name: 'Chat',
           blockId: 'b2',
+          tabId: 'tab1',
           tabName: null,
           analytics: { uniqueClicks: 0, totalClicks: 0 },
         },
@@ -160,8 +196,22 @@ describe('mapContentAnalytics (pure)', () => {
       { date: '2026-07-01', uniqueOpens: 10, totalOpens: 14, uniqueClicks: 4, totalClicks: 5 },
     ]);
     expect(out.contentType === 'resource-center' && out.blocks).toEqual([
-      { name: 'Docs', blockId: 'b1', tabName: 'Help', uniqueClicks: 1, totalClicks: 2 },
-      { name: 'Chat', blockId: 'b2', tabName: null, uniqueClicks: 0, totalClicks: 0 },
+      {
+        name: 'Docs',
+        blockId: 'b1',
+        tabId: 'tab1',
+        tabName: 'Help',
+        uniqueClicks: 1,
+        totalClicks: 2,
+      },
+      {
+        name: 'Chat',
+        blockId: 'b2',
+        tabId: 'tab1',
+        tabName: null,
+        uniqueClicks: 0,
+        totalClicks: 0,
+      },
     ]);
   });
 
@@ -176,15 +226,16 @@ describe('mapContentAnalytics (pure)', () => {
     expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueUsers: 10, totalOccurrences: 14 }]);
   });
 
-  it('announcement: seen counts only — was the mapper default-throw gap (announcement A+B, L1)', () => {
+  it('announcement: uniqueSeen only — seen is first-seen-only, so an event total would just repeat it', () => {
     const raw = {
       ...rawCounts,
       viewsByDay: [{ date: new Date('2026-07-01T00:00:00Z'), ...rawCounts }],
     };
     const out = mapContentAnalytics(raw, meta(ContentDataType.ANNOUNCEMENT));
-    expect(out).toMatchObject({ contentType: 'announcement', uniqueSeen: 10, totalSeen: 14 });
+    expect(out).toMatchObject({ contentType: 'announcement', uniqueSeen: 10 });
+    expect(out).not.toHaveProperty('totalSeen');
     expect(out).not.toHaveProperty('uniqueCompletions');
-    expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueSeen: 10, totalSeen: 14 }]);
+    expect(out.byDay).toEqual([{ date: '2026-07-01', uniqueSeen: 10 }]);
   });
 
   it('covers EVERY content type the service admits — none may hit the default throw', () => {
@@ -211,6 +262,8 @@ describe('mapQuestionAnalytics (pure)', () => {
     distribution: [],
     metrics,
   });
+  // Distinct per-kind values so the tests can tell WHICH window each series echoed.
+  const windows = { nps: 30, rate: 90, scale: 7 };
 
   it('maps an NPS question: slim question ref, overall = LAST rolling-window day', () => {
     const raw = [
@@ -238,15 +291,17 @@ describe('mapQuestionAnalytics (pure)', () => {
         ],
       },
     ];
-    const [out] = mapQuestionAnalytics(raw, 'UTC');
+    const [out] = mapQuestionAnalytics(raw, 'UTC', windows);
     expect(out.question).toEqual({ cvid: 'q1', name: 'How satisfied?', type: 'nps' });
     expect(out.totalResponses).toBe(57);
-    expect(out.distribution).toEqual([{ answer: 9, count: 21, percentage: 36.8 }]);
+    // Percentages are recomputed as integers by the mapper (21/57 → 37).
+    expect(out.distribution).toEqual([{ answer: 9, count: 21, percentage: 37 }]);
     expect(out.rating).toBeNull();
     expect(out.nps).toMatchObject({
       score: 42,
       promoters: { count: 30, percentage: 52.6 },
       detractors: { count: 11, percentage: 19.3 },
+      rollingWindowDays: 30,
     });
     expect(out.nps?.byDay).toEqual([
       { date: '2026-07-01', score: 50, total: 2 },
@@ -268,15 +323,82 @@ describe('mapQuestionAnalytics (pure)', () => {
         answer: [{ answer: 'Great', count: 1, percentage: 50 }],
       },
     ];
-    const [rating, text] = mapQuestionAnalytics(raw, 'UTC');
+    const [rating, text] = mapQuestionAnalytics(raw, 'UTC', windows);
     expect(rating.nps).toBeNull();
     expect(rating.rating).toEqual({
       average: 4.2,
+      rollingWindowDays: 90,
       byDay: [{ date: '2026-07-02', average: 4.2, total: 5 }],
     });
     expect(text.nps).toBeNull();
     expect(text.rating).toBeNull();
     expect(text.totalResponses).toBe(2);
+  });
+
+  it('a scale question echoes the SCALE window, not the star-rating one', () => {
+    const raw = [
+      {
+        totalResponse: 3,
+        question: { type: 'scale', data: { cvid: 'q4', name: 'Effort' } },
+        answer: [],
+        averageByDay: [day('2026-07-02', { average: 5.5, total: 3, views: 3 })],
+      },
+    ];
+    const [out] = mapQuestionAnalytics(raw, 'UTC', windows);
+    expect(out.rating?.rollingWindowDays).toBe(7);
+  });
+
+  it('choice distribution zero-fills configured options in order; removed-option answers keep their rows', () => {
+    const raw = [
+      {
+        totalResponse: 3,
+        question: {
+          type: 'multiple-choice',
+          data: {
+            cvid: 'q5',
+            name: 'most_used_feature',
+            options: [{ value: 'users' }, { value: 'tasks' }, { value: 'reports' }],
+          },
+        },
+        // 'email' was recorded under an option since removed from the question.
+        answer: [
+          { answer: 'users', count: 1, percentage: 33 },
+          { answer: 'reports', count: 1, percentage: 33 },
+          { answer: 'email', count: 1, percentage: 33 },
+        ],
+      },
+    ];
+    const [out] = mapQuestionAnalytics(raw, 'UTC', windows);
+    // Option order, unchosen 'tasks' present at 0, stray 'email' last — and the
+    // exclusive percentages reconcile to 100 (34/33/33, not the domain's 99).
+    expect(out.distribution).toEqual([
+      { answer: 'users', count: 1, percentage: 34 },
+      { answer: 'tasks', count: 0, percentage: 0 },
+      { answer: 'reports', count: 1, percentage: 33 },
+      { answer: 'email', count: 1, percentage: 33 },
+    ]);
+  });
+
+  it('multi-select shares stay per-option (not forced to sum to 100)', () => {
+    const raw = [
+      {
+        totalResponse: 2,
+        question: {
+          type: 'multiple-choice',
+          data: { cvid: 'q6', name: 'areas', options: [{ value: 'perf' }, { value: 'docs' }] },
+        },
+        // Both respondents picked both options — counts overlap respondents.
+        answer: [
+          { answer: 'perf', count: 2, percentage: 100 },
+          { answer: 'docs', count: 2, percentage: 100 },
+        ],
+      },
+    ];
+    const [out] = mapQuestionAnalytics(raw, 'UTC', windows);
+    expect(out.distribution).toEqual([
+      { answer: 'perf', count: 2, percentage: 100 },
+      { answer: 'docs', count: 2, percentage: 100 },
+    ]);
   });
 
   it('labels byDay dates in the REQUESTED timezone, not UTC', () => {
@@ -290,7 +412,7 @@ describe('mapQuestionAnalytics (pure)', () => {
         npsAnalysisByDay: [day(shanghaiMidnight.toISOString(), { npsScore: 100, total: 1 })],
       },
     ];
-    const [out] = mapQuestionAnalytics(raw, 'Asia/Shanghai');
+    const [out] = mapQuestionAnalytics(raw, 'Asia/Shanghai', windows);
     expect(out.nps?.byDay).toEqual([{ date: '2026-07-05', score: 100, total: 1 }]);
   });
 });
@@ -335,9 +457,34 @@ describe('resolveRange default dates (in the requested timezone)', () => {
 
   it('an explicit endDate is respected verbatim', () => {
     const now = new Date('2026-07-04T23:30:00.000Z');
-    expect(resolveRange({ environmentId: 'e', endDate: '2026-06-01' }, now).endDate).toBe(
-      '2026-06-01',
+    expect(
+      resolveRange({ environmentId: 'e', startDate: '2026-05-01', endDate: '2026-06-01' }, now)
+        .endDate,
+    ).toBe('2026-06-01');
+  });
+
+  it('REFUSES an inverted range instead of reporting all-zero analytics', () => {
+    // Swapped bounds match no rows, and every aggregation then returns a
+    // structurally valid all-zero report — indistinguishable from "nobody
+    // used it" (read-only-credential audit). This also covers the sneaky
+    // form: an explicit endDate older than the DEFAULT 30-day startDate.
+    const now = new Date('2026-07-04T23:30:00.000Z');
+    // ValidationError carries its text in messageDict (locale-resolved), not
+    // the native Error.message — assert the class, then the resolved text.
+    const thrown = (fn: () => unknown) => {
+      try {
+        fn();
+      } catch (e) {
+        return e as { messageDict?: { en: string } };
+      }
+      throw new Error('expected resolveRange to throw');
+    };
+    const inverted = thrown(() =>
+      resolveRange({ environmentId: 'e', startDate: '2026-07-31', endDate: '2026-07-01' }, now),
     );
+    expect(inverted.messageDict?.en).toMatch(/after endDate/);
+    const sneaky = thrown(() => resolveRange({ environmentId: 'e', endDate: '2026-06-01' }, now));
+    expect(sneaky.messageDict?.en).toMatch(/after endDate/);
   });
 });
 

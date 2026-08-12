@@ -15,7 +15,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { SpinnerIcon } from '@usertour/icons';
-import { TokenFormFields, type TokenFormValues, tokenFormSchema } from './token-form';
+import { TokenFormFields, type TokenFormValues, buildTokenFormSchema } from './token-form';
 
 interface EditDialogProps {
   token: ApiToken;
@@ -31,7 +31,7 @@ export const EditDialog = (props: EditDialogProps) => {
   const { t } = useTranslation();
 
   const form = useForm<TokenFormValues>({
-    resolver: zodResolver(tokenFormSchema),
+    resolver: zodResolver(buildTokenFormSchema(t)),
     defaultValues: {
       name: token.name,
       projectIds: token.projectIds,
@@ -62,9 +62,12 @@ export const EditDialog = (props: EditDialogProps) => {
         name: values.name.trim(),
         projectIds: values.projectIds,
         scopes: values.scopes,
-        // Omit when empty → leave the env scope unchanged (the form blocks an empty set
-        // when scopes are env-targeted; an empty set here means a project-level-only token).
-        ...(values.environmentIds.length > 0 ? { environmentIds: values.environmentIds } : {}),
+        // The form state IS the desired allowlist, so always send it. An empty set maps
+        // to null = CLEAR ("all environments") — un-checking every environment must
+        // stick, not silently no-op. The form blocks an empty set while any scope is
+        // env-targeted, so null only ever goes out for a project-level-only token
+        // (where the server accepts it; on a token with no allowlist it's a no-op).
+        environmentIds: values.environmentIds.length > 0 ? values.environmentIds : null,
       });
       if (!result) {
         toast({ title: t('settings.personalApiKeys.updateFailure'), variant: 'destructive' });

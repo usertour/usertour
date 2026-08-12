@@ -342,6 +342,32 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
   // Survey auto values
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
 
+  // Checklist checkmark — Auto follows the brand fill (same family as
+  // progress/survey). Unresolved, the literal "Auto" leaked into the CSS var
+  // and the checkmark lost its color (a hole open since v1; zero themes ever
+  // stored 'Auto' here, so wiring it changes nothing existing).
+  data.checklist.checkmarkColor = resolveAutoValue(
+    data.checklist.checkmarkColor,
+    data.brandColor.background,
+  );
+
+  // RC header background — mirrors what the downstream consumers already did
+  // with 'Auto' (the css-var stage and the widget's gradient fallbacks), so
+  // resolving here is behavior-preserving: solid falls to mainColor.active
+  // (the soft brand tint), the gradient runs brand background → surface
+  // background. Centralised so every consumer (builder swatches, the
+  // resolvedSettings view, CSS vars) reads one answer.
+  const headerBackground = data.resourceCenter!.headerBackground;
+  headerBackground.color = resolveAutoValue(headerBackground.color, data.mainColor.active);
+  headerBackground.gradientFrom = resolveAutoValue(
+    headerBackground.gradientFrom,
+    data.brandColor.background,
+  );
+  headerBackground.gradientTo = resolveAutoValue(
+    headerBackground.gradientTo,
+    data.mainColor.background,
+  );
+
   // Focus highlight auto values
   data.focusHighlight.color = resolveAutoValue(data.focusHighlight.color, data.mainColor.active);
 
@@ -403,7 +429,11 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
       data.font.fontFamily = defaultFontFamily;
     }
   } else if (!data.font.fontFamily.includes('sans-serif')) {
-    data.font.fontFamily += ', sans-serif;';
+    // No trailing semicolon: the value is a CSS VALUE, not a declaration —
+    // a ';' inside it invalidates inline-style assignment (the custom-font
+    // branch above was always clean; this one shipped 'Inter, sans-serif;'
+    // for years, harmless in stylesheets but leaked into resolvedSettings).
+    data.font.fontFamily += ', sans-serif';
   }
 
   return data;

@@ -1,8 +1,12 @@
 import { INestApplication } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { requiresEnvironmentScope } from '@usertour/helpers';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
+
+import { ApiCompaniesService } from '@/api/companies/companies.service';
+import { ApiUsersService } from '@/api/users/users.service';
 
 import { gqlData, graphql } from '../auth';
 import {
@@ -10,6 +14,10 @@ import {
   buildBizUser,
   buildBizUserOnCompany,
   buildContent,
+  buildEvent,
+  buildSegment,
+  buildSession,
+  buildStep,
   buildVersion,
   buildEnvironment,
   buildProject,
@@ -46,6 +54,7 @@ describe('MCP endpoint (e2e)', () => {
   let envA: string;
   let envB: string;
   let themeId: string;
+  let panAttrId: string;
   const bizUserExternalId = 'mcp-biz-1';
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
@@ -137,6 +146,20 @@ describe('MCP endpoint (e2e)', () => {
     ownerUserId = owner.user.id;
 
     await buildBizUser(prisma, { environmentId: envA, externalId: bizUserExternalId });
+    // Attributes referenced by rule fixtures must exist BEFORE any diagnose call
+    // warms the project attribute cache (5-min TTL; API writes invalidate it,
+    // direct prisma inserts in tests do not).
+    panAttrId = (
+      await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'pan_plan',
+          displayName: 'plan',
+          bizType: 1,
+          dataType: 2,
+        },
+      })
+    ).id;
     await buildContent(prisma, { projectId: projectA, environmentId: envA, type: 'flow' });
     themeId = (await buildTheme(prisma, { projectId: projectA })).id;
   }, 60000);
@@ -202,6 +225,7 @@ describe('MCP endpoint (e2e)', () => {
       expect(names).toEqual(
         [
           'diagnose_content',
+          'diagnose_user',
           'get_attribute_definition',
           'get_authoring_guide',
           'get_content',
@@ -212,6 +236,8 @@ describe('MCP endpoint (e2e)', () => {
           'list_attribute_definitions',
           'list_content',
           'list_content_versions',
+          'list_publish_history',
+          'list_references',
           'list_event_definitions',
           'list_users',
           'validate_content_version',
@@ -219,12 +245,12 @@ describe('MCP endpoint (e2e)', () => {
       );
     });
 
-    it('a user:read-only token sees only the user tools', async () => {
+    it('a user:read-only token sees the user tools (diagnose registers here, not under content:read)', async () => {
       const token = await mint([Capability.UserRead], [projectA]);
       const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token);
       const result = extractResult(res);
       const names = result.result.tools.map((t: { name: string }) => t.name).sort();
-      expect(names).toEqual(['get_user', 'list_users']);
+      expect(names).toEqual(['diagnose_content', 'diagnose_user', 'get_user', 'list_users']);
     });
 
     it('does not list a tool whose capability is outside the token scope', async () => {
@@ -234,6 +260,39 @@ describe('MCP endpoint (e2e)', () => {
       const names = result.result.tools.map((t: { name: string }) => t.name);
       expect(names).toContain('list_content');
       expect(names).not.toContain('list_users');
+      // The diagnose tools return END-USER data (attribute values, session
+      // state), so content:read alone — a project-level scope with no
+      // environment allowlist required — must not surface them.
+      expect(names).not.toContain('diagnose_content');
+      expect(names).not.toContain('diagnose_user');
+    });
+
+    it('diagnose_user without content:read fails with a named both-scopes error', async () => {
+      const token = await mint([Capability.UserRead], [projectA]);
+      const result = await callTool(
+        'diagnose_user',
+        { userId: 'whoever', url: 'https://app.example.com/', environmentId: envA },
+        token,
+      );
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('content:read');
+    });
+
+    it('diagnose honors the environment allowlist (out-of-scope env → E1029)', async () => {
+      // The point of the capability change: a diagnose credential is env-fenced.
+      const fencedEnv = (await buildEnvironment(prisma, { projectId: projectA })).id;
+      const token = await mint(
+        [Capability.UserRead, Capability.ContentRead],
+        [projectA],
+        [fencedEnv],
+      );
+      const result = await callTool(
+        'diagnose_user',
+        { userId: 'whoever', url: 'https://app.example.com/', environmentId: envA },
+        token,
+      );
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('E1029');
     });
 
     it('exposes MCP tool annotations (read-only vs destructive hints)', async () => {
@@ -293,6 +352,170 @@ describe('MCP endpoint (e2e)', () => {
       });
       expect(payload).not.toHaveProperty('uniqueViews');
       expect(payload).not.toHaveProperty('tasks');
+    });
+
+    it('get_usage_overview ranks all content and scopes to a company with a member roster', async () => {
+      // Own environment: the overview sweeps EVERY content with activity in the
+      // environment, so suite neighbours' sessions would pollute the table.
+      const envU = (await buildEnvironment(prisma, { projectId: projectA })).id;
+      const token = await mint([Capability.AnalyticsRead], [projectA], [envU]);
+
+      const flowA = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envU,
+        type: 'flow',
+        name: 'Onboarding tour',
+      });
+      const flowAVersion = await buildVersion(prisma, { contentId: flowA.id, sequence: 0 });
+      const flowB = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envU,
+        type: 'flow',
+        name: 'Unused flow',
+      });
+      const flowBVersion = await buildVersion(prisma, { contentId: flowB.id, sequence: 0 });
+      const tracker = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envU,
+        type: 'tracker',
+        name: 'Signup clicks',
+      });
+      const trackerVersion = await buildVersion(prisma, { contentId: tracker.id, sequence: 0 });
+      for (const [contentId, publishedVersionId] of [
+        [flowA.id, flowAVersion.id],
+        [flowB.id, flowBVersion.id],
+        [tracker.id, trackerVersion.id],
+      ] as const) {
+        await prisma.contentOnEnvironment.create({
+          data: { contentId, environmentId: envU, publishedVersionId, published: true },
+        });
+      }
+
+      const u1 = await buildBizUser(prisma, {
+        environmentId: envU,
+        externalId: 'usage-u1',
+        data: { name: 'Ada' },
+      });
+      const u2 = await buildBizUser(prisma, { environmentId: envU, externalId: 'usage-u2' });
+      const co = await buildBizCompany(prisma, { environmentId: envU, externalId: 'usage-co' });
+      await buildBizUserOnCompany(prisma, { bizUserId: u1.id, bizCompanyId: co.id });
+
+      // flowA: two sessions for the member (the LATER one completed at 100%),
+      // one for the non-member. Distinct createdAt keeps "latest" deterministic.
+      await buildSession(prisma, {
+        environmentId: envU,
+        contentId: flowA.id,
+        versionId: flowAVersion.id,
+        bizUserId: u1.id,
+        progress: 20,
+        state: 1,
+        createdAt: new Date(Date.now() - 60_000),
+      });
+      const latest = await buildSession(prisma, {
+        environmentId: envU,
+        contentId: flowA.id,
+        versionId: flowAVersion.id,
+        bizUserId: u1.id,
+        progress: 100,
+        state: 1,
+      });
+      await buildSession(prisma, {
+        environmentId: envU,
+        contentId: flowA.id,
+        versionId: flowAVersion.id,
+        bizUserId: u2.id,
+        progress: 50,
+        state: 0,
+      });
+      // Genuine flow completion by the member → goalUsers + roster `completed`.
+      // No contentId on the event row — production session events don't carry
+      // it (the content resolves through the session), so neither may the fixture.
+      const flowCompleted = await buildEvent(prisma, {
+        projectId: projectA,
+        codeName: 'flow_completed',
+      });
+      await prisma.bizEvent.create({
+        data: { eventId: flowCompleted.id, bizUserId: u1.id, bizSessionId: latest.id },
+      });
+      // Tracker: two firings by the NON-member (no sessions — event-counted).
+      const tracked = await buildEvent(prisma, { projectId: projectA });
+      for (let i = 0; i < 2; i++) {
+        await prisma.bizEvent.create({
+          data: { eventId: tracked.id, bizUserId: u2.id, contentId: tracker.id },
+        });
+      }
+
+      // ── Whole-environment table, ranked by reach ──
+      const res = await callTool('get_usage_overview', { environmentId: envU }, token);
+      expect(res.isError).toBeFalsy();
+      const overview = JSON.parse(res.content[0].text);
+      expect(overview.items.map((r: { id: string }) => r.id)).toEqual([
+        flowA.id,
+        tracker.id,
+        flowB.id,
+      ]);
+      const [rowA, rowT, rowB] = overview.items;
+      expect(rowA).toMatchObject({
+        activity: 3,
+        activityKind: 'sessions',
+        uniqueUsers: 2,
+        goalUsers: 1,
+        goalKind: 'completed',
+        published: true,
+      });
+      expect(rowA.lastActivityAt).toBeTruthy();
+      expect(rowT).toMatchObject({
+        activity: 2,
+        activityKind: 'events',
+        uniqueUsers: 1,
+        goalUsers: null,
+        goalKind: null,
+      });
+      // Published-but-unused stays visible — the dead-content signal.
+      expect(rowB).toMatchObject({ activity: 0, uniqueUsers: 0, published: true });
+
+      // ── Company-scoped with the member roster ──
+      const scoped = await callTool(
+        'get_usage_overview',
+        { environmentId: envU, companyId: 'usage-co', expand: ['users'] },
+        token,
+      );
+      expect(scoped.isError).toBeFalsy();
+      const byCompany = JSON.parse(scoped.content[0].text);
+      expect(byCompany.company).toEqual({ id: 'usage-co', memberCount: 1 });
+      const scopedA = byCompany.items.find((r: { id: string }) => r.id === flowA.id);
+      // Only the member's activity counts now — u2's session is out.
+      expect(scopedA).toMatchObject({ activity: 2, uniqueUsers: 1, goalUsers: 1 });
+      expect(scopedA.users).toEqual([
+        {
+          id: 'usage-u1',
+          name: 'Ada',
+          activity: 2,
+          latestProgress: 100,
+          latestState: 'ended',
+          completed: true,
+          lastActivityAt: expect.any(String),
+        },
+      ]);
+      // The tracker's firings were all the non-member's.
+      const scopedT = byCompany.items.find((r: { id: string }) => r.id === tracker.id);
+      expect(scopedT).toMatchObject({ activity: 0, uniqueUsers: 0 });
+
+      // The roster without a company is refused, not silently global.
+      const bad = await callTool(
+        'get_usage_overview',
+        { environmentId: envU, expand: ['users'] },
+        token,
+      );
+      expect(bad.isError).toBe(true);
+      expect(bad.content[0].text).toContain('companyId');
+
+      // Un-publish the fixtures: a later test asserts NOTHING in the project is
+      // published, and publish state is project-visible across environments.
+      await prisma.contentOnEnvironment.updateMany({
+        where: { environmentId: envU },
+        data: { published: false },
+      });
     });
 
     it('get_content_analytics validates timezone/date at the boundary (clean tool error, no RangeError)', async () => {
@@ -510,7 +733,7 @@ describe('MCP endpoint (e2e)', () => {
       expect(await listContent({ published: true })).toHaveLength(0);
     });
 
-    it('get_authoring_guide returns the guide text', async () => {
+    it('get_authoring_guide with no args returns the core guide + a table of contents', async () => {
       const token = await mint([Capability.ContentRead], [projectA]);
       const res = await rpc(
         {
@@ -523,8 +746,49 @@ describe('MCP endpoint (e2e)', () => {
       );
       expect(res.status).toBe(200);
       const payload = parseToolContent(extractResult(res));
+      // core inlined: lifecycle + per-type publish requirements — NOT the full text
       expect(typeof payload.guide).toBe('string');
-      expect(payload.guide).toContain('goto_step');
+      expect(payload.guide).toContain('validate_content_version');
+      expect(payload.guide).toContain('## What each type needs');
+      expect(payload.guide).not.toContain('## Flow steps');
+      // the TOC names every section with the fields an agent picks by
+      expect(payload.sections.map((s: { name: string }) => s.name)).toEqual(
+        expect.arrayContaining(['lifecycle', 'flow-steps', 'conditions', 'start-rules', 'icons']),
+      );
+      for (const s of payload.sections) {
+        expect(typeof s.summary).toBe('string');
+        expect(s.approxTokens).toBeGreaterThan(0);
+        expect(s.appliesTo === 'all' || Array.isArray(s.appliesTo)).toBe(true);
+      }
+      expect(payload.totalApproxTokens).toBeGreaterThan(10000);
+    });
+
+    it('get_authoring_guide serves requested sections in canonical order', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const result = await callTool(
+        'get_authoring_guide',
+        { section: ['surveys', 'flow-steps'] },
+        token,
+      );
+      expect(result.isError).toBeFalsy();
+      const payload = JSON.parse(result.content[0].text);
+      expect(payload.guide).toContain('goto_step'); // flow-steps content
+      expect(payload.guide).toContain('## Surveys & questions');
+      expect(payload.guide).not.toContain('## Themes');
+      // canonical guide order even though the request said surveys first
+      expect(payload.guide.indexOf('## Flow steps')).toBeLessThan(
+        payload.guide.indexOf('## Surveys & questions'),
+      );
+      // the full name list rides along for follow-up fetches
+      expect(payload.sections).toContain('icons');
+    });
+
+    it('get_authoring_guide rejects an unknown section naming the valid set', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const result = await callTool('get_authoring_guide', { section: 'starting-rules' }, token);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('starting-rules');
+      expect(result.content[0].text).toContain('start-rules');
     });
 
     it('get_content_schema returns the data JSON Schema for a non-flow type', async () => {
@@ -541,6 +805,9 @@ describe('MCP endpoint (e2e)', () => {
       expect(res.status).toBe(200);
       const payload = parseToolContent(extractResult(res));
       expect(payload.body).toBe('data');
+      // the type→guide-section pointer: universal sections plus checklist's own
+      expect(payload.guideSections).toEqual(expect.arrayContaining(['lifecycle', 'orchestration']));
+      expect(payload.guideSections).not.toContain('surveys');
       // update_content_version only types `data` as a generic object (its shape is
       // polymorphic); this tool surfaces the full per-type shape incl. nested fields.
       expect(Object.keys(payload.schema.properties)).toEqual(
@@ -571,6 +838,463 @@ describe('MCP endpoint (e2e)', () => {
       const payload = parseToolContent(extractResult(res));
       expect(payload.body).toBe('steps');
       expect(payload.schema.type).toBe('array');
+    });
+
+    it('diagnose_content answers for ARCHIVED content with an archived gate instead of E1004', async () => {
+      // diagnose returns end-user data → user:read (env-fenced) + content:read.
+      const token = await mint([Capability.ContentRead, Capability.UserRead], [projectA]);
+      const archived = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+        deleted: true,
+        name: 'mcp archived flow',
+      });
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'diagnose_content',
+            arguments: {
+              contentId: archived.id,
+              environmentId: envA,
+              url: 'https://app.example.com/',
+              userId: bizUserExternalId,
+            },
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(200);
+      const payload = parseToolContent(extractResult(res));
+      // The #1 real-world "why isn't it showing" answer must be an ANSWER:
+      // a diagnosis whose single failing gate says archived + the way back —
+      // not a Content-not-found error indistinguishable from a wrong id.
+      expect(payload.blockedBy).toEqual(['archived']);
+      expect(payload.gates).toHaveLength(1);
+      expect(payload.gates[0]).toMatchObject({ id: 'archived', status: 'fail' });
+      expect(payload.gates[0].detail).toContain('restore_content');
+      expect(payload.summary).toContain('ARCHIVED');
+    });
+
+    it('diagnose expands a segment leaf: users excluded for DIFFERENT reasons read differently', async () => {
+      // The original complaint (three eval rounds in a row): a plan-mismatch user
+      // and an out-of-window user produced byte-identical reports — just
+      // "segment ... unmatched". The expansion must name the failing inner
+      // condition with the user's actual value, per user.
+      const token = await mint([Capability.ContentRead, Capability.UserRead], [projectA]);
+      // dataType 2 = String (1 is Number — a string value against a Number
+      // attribute compiles to a filter that matches nothing).
+      const planAttr = await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'seg_plan',
+          displayName: 'plan',
+          bizType: 1,
+          dataType: 2,
+        },
+      });
+      const regionAttr = await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'seg_region',
+          displayName: 'region',
+          bizType: 1,
+          dataType: 2,
+        },
+      });
+      const segment = await buildSegment(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        bizType: 1, // USER
+        dataType: 2, // CONDITION
+        name: 'pro users in eu',
+        data: [
+          {
+            id: 'c1',
+            type: 'user-attr',
+            data: { attrId: planAttr.id, logic: 'is', value: 'pro' },
+            operators: 'and',
+          },
+          {
+            id: 'c2',
+            type: 'user-attr',
+            data: { attrId: regionAttr.id, logic: 'is', value: 'eu' },
+            operators: 'and',
+          },
+        ] as unknown as Prisma.InputJsonValue,
+      });
+      // Two users, each failing a DIFFERENT condition.
+      await prisma.bizUser.create({
+        data: {
+          externalId: 'seg-wrong-plan',
+          environmentId: envA,
+          data: { seg_plan: 'free', seg_region: 'eu' },
+        },
+      });
+      await prisma.bizUser.create({
+        data: {
+          externalId: 'seg-wrong-region',
+          environmentId: envA,
+          data: { seg_plan: 'pro', seg_region: 'us' },
+        },
+      });
+      const gated = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+      });
+      const gatedV = await buildVersion(prisma, {
+        contentId: gated.id,
+        sequence: 0,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [
+            {
+              id: 'r1',
+              type: 'segment',
+              data: { segmentId: segment.id, logic: 'is' },
+              operators: 'and',
+            },
+          ],
+          autoStartRulesSetting: {},
+        } as unknown as Prisma.InputJsonValue,
+      });
+      await prisma.contentOnEnvironment.create({
+        data: {
+          environmentId: envA,
+          contentId: gated.id,
+          published: true,
+          publishedVersionId: gatedV.id,
+        },
+      });
+
+      const diagnose = async (userId: string) => {
+        const res = await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: {
+              name: 'diagnose_content',
+              arguments: {
+                contentId: gated.id,
+                environmentId: envA,
+                url: 'https://app.example.com/',
+                userId,
+              },
+            },
+          },
+          token,
+        );
+        return parseToolContent(extractResult(res));
+      };
+      const wrongPlan = await diagnose('seg-wrong-plan');
+      const wrongRegion = await diagnose('seg-wrong-region');
+
+      const segLeaf = (p: any) =>
+        p.startConditions.conditions.find((c: any) => c.type === 'segment');
+      for (const p of [wrongPlan, wrongRegion]) {
+        expect(p.blockedBy).toContain('start_rules');
+        expect(segLeaf(p).segmentKind).toBe('condition');
+        expect(segLeaf(p).segmentConditions).toBeDefined();
+      }
+      const inner = (p: any, code: string) =>
+        segLeaf(p).segmentConditions.conditions.find((c: any) => c.attribute === code);
+      // wrong-plan user: plan condition failed (actual 'free'), region matched.
+      expect(inner(wrongPlan, 'seg_plan')).toMatchObject({ status: 'unmatched', actual: 'free' });
+      expect(inner(wrongPlan, 'seg_region').status).toBe('matched');
+      // wrong-region user: the exact mirror.
+      expect(inner(wrongRegion, 'seg_plan').status).toBe('matched');
+      expect(inner(wrongRegion, 'seg_region')).toMatchObject({ status: 'unmatched', actual: 'us' });
+      // And the two reports are no longer byte-identical.
+      expect(JSON.stringify(wrongPlan)).not.toBe(JSON.stringify(wrongRegion));
+    });
+
+    it('diagnose_user: one call settles the slot race and buckets everything', async () => {
+      // Own environment: other tests publish flows into envA, and a panorama by
+      // definition sees EVERYTHING published — isolate the race to this test.
+      const panEnv = (await buildEnvironment(prisma, { projectId: projectA })).id;
+      const token = await mint([Capability.ContentRead, Capability.UserRead], [projectA], [panEnv]);
+      const attr = { id: panAttrId };
+      await prisma.bizUser.create({
+        data: { externalId: 'pan-user', environmentId: panEnv, data: { pan_plan: 'pro' } },
+      });
+      const mkFlow = async (name: string, rules: unknown[], priority?: string) => {
+        const c = await buildContent(prisma, {
+          projectId: projectA,
+          environmentId: panEnv,
+          type: 'flow',
+          name,
+        });
+        const v = await buildVersion(prisma, {
+          contentId: c.id,
+          sequence: 0,
+          config: {
+            enabledAutoStartRules: true,
+            autoStartRules: rules,
+            autoStartRulesSetting: priority ? { priority } : {},
+          } as unknown as Prisma.InputJsonValue,
+        });
+        await prisma.contentOnEnvironment.create({
+          data: {
+            environmentId: panEnv,
+            contentId: c.id,
+            published: true,
+            publishedVersionId: v.id,
+          },
+        });
+        return c;
+      };
+      const matchRule = [
+        {
+          id: 'r1',
+          type: 'user-attr',
+          data: { attrId: attr.id, logic: 'is', value: 'pro' },
+          operators: 'and',
+        },
+      ];
+      const missRule = [
+        {
+          id: 'r1',
+          type: 'user-attr',
+          data: { attrId: attr.id, logic: 'is', value: 'enterprise' },
+          operators: 'and',
+        },
+      ];
+      const winner = await mkFlow('pan winner', matchRule, 'high');
+      const loser = await mkFlow('pan loser', matchRule, 'low');
+      const excluded = await mkFlow('pan excluded', missRule);
+
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'diagnose_user',
+            arguments: {
+              userId: 'pan-user',
+              environmentId: panEnv,
+              url: 'https://app.example.com/',
+            },
+          },
+        },
+        token,
+      );
+      const p = parseToolContent(extractResult(res));
+      const byId = (list: any[], id: string) => list.find((r: any) => r.contentId === id);
+
+      // The race is settled in one answer: winner shows, loser is queued BEHIND
+      // the named winner (the visibility item 7 asked for), excluded is blocked
+      // with exactly one gate.
+      expect(byId(p.showing, winner.id)).toMatchObject({ via: 'auto_start' });
+      expect(byId(p.queued, loser.id)).toMatchObject({
+        queueReason: 'outranked',
+        behindContentId: winner.id,
+        behindName: 'pan winner',
+      });
+      expect(byId(p.blocked, excluded.id)).toMatchObject({ gate: 'start_rules' });
+      // And nothing leaks between buckets.
+      expect(byId(p.showing, loser.id)).toBeUndefined();
+      expect(byId(p.blocked, winner.id)).toBeUndefined();
+    });
+
+    it('list_references finds every live holder of an attribute / segment / theme / content', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const refAttr = await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'ref_probe',
+          displayName: 'ref',
+          bizType: 1,
+          dataType: 2,
+        },
+      });
+      const refSegment = await buildSegment(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        bizType: 1,
+        dataType: 2,
+        name: 'ref probe segment',
+        data: [
+          {
+            id: 's1',
+            type: 'user-attr',
+            data: { attrId: refAttr.id, logic: 'is', value: 'x' },
+            operators: 'and',
+          },
+        ] as unknown as Prisma.InputJsonValue,
+      });
+      const refTheme = await buildTheme(prisma, { projectId: projectA });
+      const targetFlow = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+        name: 'ref target flow',
+      });
+
+      // One content whose DRAFT holds every reference kind at once: start rules
+      // gate on the attribute AND the segment, the version uses the theme, a
+      // step question binds the attribute BY CODENAME, and a step trigger
+      // starts the target flow.
+      const holder = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+        name: 'ref holder',
+      });
+      const holderV = await buildVersion(prisma, {
+        contentId: holder.id,
+        sequence: 0,
+        themeId: refTheme.id,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [
+            {
+              id: 'r1',
+              type: 'user-attr',
+              data: { attrId: refAttr.id, logic: 'is', value: 'pro' },
+              operators: 'and',
+            },
+            {
+              id: 'r2',
+              type: 'segment',
+              data: { segmentId: refSegment.id, logic: 'is' },
+              operators: 'and',
+            },
+          ],
+          autoStartRulesSetting: {},
+        } as unknown as Prisma.InputJsonValue,
+      });
+      await buildStep(prisma, {
+        versionId: holderV.id,
+        type: 'modal',
+        sequence: 0,
+        data: [
+          {
+            element: {
+              type: 'nps',
+              data: {
+                cvid: 'q1',
+                name: 'q',
+                bindToAttribute: true,
+                selectedAttribute: 'ref_probe',
+              },
+            },
+          },
+        ] as unknown as Prisma.InputJsonValue,
+        trigger: [
+          {
+            conditions: [],
+            actions: [{ type: 'flow-start', data: { contentId: targetFlow.id } }],
+            wait: 0,
+          },
+        ] as unknown as Prisma.InputJsonValue,
+      });
+      await prisma.content.update({
+        where: { id: holder.id },
+        data: { editedVersionId: holderV.id },
+      });
+
+      const refs = async (kind: string, id: string) =>
+        parseToolContent(
+          extractResult(
+            await rpc(
+              {
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'tools/call',
+                params: { name: 'list_references', arguments: { kind, id } },
+              },
+              token,
+            ),
+          ),
+        );
+
+      // Attribute: found in start rules AND the question binding (codeName
+      // vocabulary) AND the segment's own definition.
+      const a = await refs('attribute', refAttr.id);
+      const holderRow = a.referencedBy.find((r: any) => r.id === holder.id);
+      expect(holderRow.where).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('start rules'),
+          expect.stringContaining('question binding'),
+        ]),
+      );
+      expect(a.referencedBy.find((r: any) => r.id === refSegment.id)).toMatchObject({
+        referrerKind: 'segment',
+        where: ['segment conditions'],
+      });
+
+      // Segment / theme / content each resolve to the holder with the right spot.
+      const sg = await refs('segment', refSegment.id);
+      expect(sg.referencedBy.find((r: any) => r.id === holder.id).where[0]).toContain(
+        'start rules',
+      );
+      const th = await refs('theme', refTheme.id);
+      expect(th.referencedBy.find((r: any) => r.id === holder.id).where[0]).toContain(
+        'version theme',
+      );
+      const ct = await refs('content', targetFlow.id);
+      expect(ct.referencedBy.find((r: any) => r.id === holder.id).where[0]).toContain('trigger');
+
+      // Nothing references the TARGET flow's own attribute-free sibling query:
+      // an unreferenced probe answers "safe to delete".
+      const lonely = await prisma.attribute.create({
+        data: {
+          projectId: projectA,
+          codeName: 'ref_lonely',
+          displayName: 'lonely',
+          bizType: 1,
+          dataType: 2,
+        },
+      });
+      const empty = await refs('attribute', lonely.id);
+      expect(empty.referencedBy).toEqual([]);
+      expect(empty.summary).toContain('safe to delete');
+    });
+
+    it('get_content_schema batches several types with the shared $defs emitted once', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const res = await rpc(
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'get_content_schema',
+            arguments: { type: ['flow', 'checklist', 'launcher'] },
+          },
+        },
+        token,
+      );
+      expect(res.status).toBe(200);
+      const payload = parseToolContent(extractResult(res));
+      expect(payload.types).toEqual(['flow', 'checklist', 'launcher']);
+      expect(payload.body).toEqual({ flow: 'steps', checklist: 'data', launcher: 'data' });
+      // Each requested type is a property of one wrapper schema...
+      expect(Object.keys(payload.schema.properties)).toEqual(['flow', 'checklist', 'launcher']);
+      // ...and the shared vocabulary is hoisted into ONE $defs — the batch must be
+      // materially smaller than three standalone fetches, or batching is pointless.
+      const single = async (t: string) => {
+        const r = await rpc(
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: { name: 'get_content_schema', arguments: { type: t } },
+          },
+          token,
+        );
+        return JSON.stringify(parseToolContent(extractResult(r)).schema).length;
+      };
+      const standalone =
+        (await single('flow')) + (await single('checklist')) + (await single('launcher'));
+      const batched = JSON.stringify(payload.schema).length;
+      expect(batched).toBeLessThan(standalone * 0.6);
     });
 
     it('calling a tool outside the token scope is unknown to the token', async () => {
@@ -648,6 +1372,425 @@ describe('MCP endpoint (e2e)', () => {
         ),
       );
       expect(payload.items.map((e: { id: string }) => e.id)).toContain(envA);
+    });
+  });
+
+  describe('argument hardening', () => {
+    it('refuses a blank external id on upsert_user / upsert_company (nothing created)', async () => {
+      const token = await mint([Capability.UserWrite, Capability.CompanyWrite], [projectA]);
+      for (const [name, id] of [
+        ['upsert_user', ''],
+        ['upsert_user', '   '],
+        ['upsert_company', ''],
+        ['upsert_company', '   '],
+      ] as const) {
+        const res = await callTool(name, { id }, token);
+        // Refused at the schema layer, so the handler — and the upsert — never
+        // runs. (The SDK surfaces schema violations as isError tool results.)
+        expect(res.isError).toBe(true);
+        expect(res.content[0].text).toMatch(/Input validation error/i);
+      }
+      expect(
+        await prisma.bizUser.count({
+          where: { environmentId: envA, externalId: { in: ['', '   '] } },
+        }),
+      ).toBe(0);
+      expect(
+        await prisma.bizCompany.count({
+          where: { environmentId: envA, externalId: { in: ['', '   '] } },
+        }),
+      ).toBe(0);
+    });
+
+    it('service chokepoint refuses a blank id even without the schema layer', async () => {
+      // The MCP schema already blocks blank ids; this pins the DEFENSE IN DEPTH:
+      // any other caller of the v2 upsert services (v2 REST path params can
+      // carry '%20') hits the same refusal.
+      const usersService = app.get(ApiUsersService);
+      const environment = await prisma.environment.findUniqueOrThrow({ where: { id: envA } });
+      await expect(usersService.upsert('   ', environment, {} as never)).rejects.toMatchObject({
+        code: 'E1017',
+      });
+      const companiesService = app.get(ApiCompaniesService);
+      await expect(companiesService.upsert('', environment, {} as never)).rejects.toMatchObject({
+        code: 'E1017',
+      });
+    });
+
+    it('rejects unknown argument keys instead of silently dropping them', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      // `contentType` is a plausible misspelling of list_content's `type`.
+      const res = await callTool('list_content', { contentType: 'flow' }, token);
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toMatch(/unrecognized/i);
+      expect(res.content[0].text).toContain('contentType');
+    });
+
+    it('advertises additionalProperties:false in tools/list JSON Schemas', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const tools = extractResult(await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token))
+        .result.tools;
+      for (const tool of tools) {
+        expect(tool.inputSchema.additionalProperties).toBe(false);
+      }
+    });
+
+    it('get_content refuses conflicting id/contentId aliases and accepts matching ones', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const content = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+      });
+
+      const conflict = await callTool(
+        'get_content',
+        { id: content.id, contentId: 'some-other-id' },
+        token,
+      );
+      expect(conflict.isError).toBe(true);
+      expect(conflict.content[0].text).toMatch(/aliases.*different values/);
+
+      const ok = parseToolContent({
+        result: await callTool('get_content', { id: content.id, contentId: content.id }, token),
+      });
+      expect(ok).toMatchObject({ object: 'content', id: content.id });
+    });
+  });
+
+  describe('inline version parity & discovery capabilities', () => {
+    it('get_content expand inlines the SAME version object get_content_version returns', async () => {
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'Inline parity', themeId },
+          token,
+        ),
+      });
+      await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          startRules: { when: [{ type: 'current_url', includes: ['/app'] }] },
+        },
+        token,
+      );
+
+      const inline = parseToolContent({
+        result: await callTool('get_content', { id: created.id, expand: ['editedVersion'] }, token),
+      }).editedVersion;
+      // The once-dropped fields: the freeze stamp is present-and-null on a
+      // draft, questions is null (= not requested, never []), rules are there.
+      expect(inline.firstPublishedAt).toBeNull();
+      expect(inline.questions).toBeNull();
+      expect(inline.startRules).toMatchObject({
+        when: [{ type: 'current_url', includes: ['/app'] }],
+      });
+
+      // Full equivalence: inline === standalone read without its expands.
+      const standalone = parseToolContent({
+        result: await callTool(
+          'get_content_version',
+          { contentId: created.id, id: created.editedVersionId },
+          token,
+        ),
+      });
+      expect(inline).toEqual(standalone);
+    });
+
+    it('get_segment expand=memberCount counts members in the requested environment', async () => {
+      const token = await mint(
+        [Capability.SegmentCreate, Capability.SegmentRead, Capability.SegmentUpdate],
+        [projectA],
+      );
+      const seg = parseToolContent({
+        result: await callTool(
+          'create_segment',
+          { name: 'Member count seg', bizType: 'user', kind: 'manual' },
+          token,
+        ),
+      });
+      // Plain get: no count (env-scoped data stays opt-in).
+      const plain = parseToolContent({
+        result: await callTool('get_segment', { id: seg.id }, token),
+      });
+      expect(plain).not.toHaveProperty('memberCount');
+
+      const before = parseToolContent({
+        result: await callTool(
+          'get_segment',
+          { id: seg.id, expand: ['memberCount'], environmentId: envA },
+          token,
+        ),
+      });
+      expect(before.memberCount).toBe(0);
+
+      await callTool(
+        'add_segment_member',
+        { segmentId: seg.id, memberId: bizUserExternalId, environmentId: envA },
+        token,
+      );
+      const after = parseToolContent({
+        result: await callTool(
+          'get_segment',
+          { id: seg.id, expand: ['memberCount'], environmentId: envA },
+          token,
+        ),
+      });
+      expect(after.memberCount).toBe(1);
+    });
+
+    it('update_content_version validates its loosely-declared body against the REST schema', async () => {
+      // The tool schema declares steps/rules loosely (the full vocabulary would
+      // dominate tools/list); the handler must reject a malformed body with the
+      // SAME issue shape REST produces — not pass garbage to the compiler.
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'Loose-body parse', themeId },
+          token,
+        ),
+      });
+      const res = await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          steps: [{ name: 'Bad', type: 'modal', content: 'not-an-array' }],
+        },
+        token,
+      );
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toMatch(/steps\[0\]\.content/);
+    });
+
+    it('echoing a step WITHOUT `content` preserves its blocks (placement-only edit)', async () => {
+      // Regression for the acceptance review's S-level find: the schema default
+      // + a service `?? []` turned "omitted content" into a full wipe.
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'Keep my blocks', themeId },
+          token,
+        ),
+      });
+      const authored = parseToolContent({
+        result: await callTool(
+          'update_content_version',
+          {
+            contentId: created.id,
+            versionId: created.editedVersionId,
+            steps: [
+              {
+                name: 'Step',
+                type: 'modal',
+                content: [{ type: 'text', markdown: 'Precious **blocks**' }],
+              },
+            ],
+          },
+          token,
+        ),
+      });
+      const cvid = authored.steps[0].cvid;
+
+      const moved = parseToolContent({
+        result: await callTool(
+          'update_content_version',
+          {
+            contentId: created.id,
+            versionId: created.editedVersionId,
+            // No `content` — a placement-only echo must keep the blocks.
+            steps: [{ cvid, name: 'Step', type: 'modal', placement: { position: 'center' } }],
+          },
+          token,
+        ),
+      });
+      expect(moved.steps[0].content[0]).toMatchObject({
+        type: 'text',
+        markdown: 'Precious **blocks**',
+      });
+      expect(moved.steps[0].placement).toMatchObject({ position: 'center' });
+    });
+
+    it('validate warns when a theme switch LOSES the live theme’s variations', async () => {
+      // The one change in the maintenance round that could silently harm real
+      // users: variations do not travel with content, so moving onto a
+      // variation-less theme drops dark mode for exactly the users it targeted
+      // — green through write, publish and diagnose alike.
+      const token = await mint(
+        [
+          Capability.ContentRead,
+          Capability.ContentCreate,
+          Capability.ContentUpdate,
+          Capability.ContentPublish,
+          Capability.ThemeCreate,
+          Capability.ThemeRead,
+        ],
+        [projectA],
+      );
+      const themed = parseToolContent({
+        result: await callTool(
+          'create_theme',
+          {
+            name: 'With dark variation',
+            variations: [
+              {
+                name: 'Dark',
+                conditions: [
+                  { type: 'attribute', scope: 'user', attribute: 'pan_plan', op: 'is', value: 'x' },
+                ],
+              },
+            ],
+          },
+          token,
+        ),
+      });
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'Theme migration', themeId: themed.id },
+          token,
+        ),
+      });
+      await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          steps: [{ name: 'S', type: 'modal', content: [{ type: 'text', markdown: 'hi' }] }],
+          startRules: { when: [{ type: 'current_url', includes: ['*'] }] },
+        },
+        token,
+      );
+      await callTool(
+        'publish_content',
+        { contentId: created.id, versionId: created.editedVersionId, environmentId: envA },
+        token,
+      );
+
+      // Fork and point the draft at the variation-less theme.
+      const draft = parseToolContent({
+        result: await callTool('create_content_version', { contentId: created.id }, token),
+      });
+      await callTool(
+        'update_content_version',
+        { contentId: created.id, versionId: draft.id, themeId },
+        token,
+      );
+      const report = parseToolContent({
+        result: await callTool(
+          'validate_content_version',
+          { contentId: created.id, id: draft.id },
+          token,
+        ),
+      });
+      const themeWarning = report.warnings.find((w: { path: string }) => w.path === 'themeId');
+      expect(themeWarning?.message).toMatch(/variations do NOT travel/);
+      expect(themeWarning?.message).toContain('(1 conditional variation)');
+    });
+
+    it('rejects an unknown key INSIDE a non-flow data body, naming it', async () => {
+      // Maintenance-round find: `actions` (the real key is `clickActions`) was
+      // stripped by zod's default inside the polymorphic `data`, so the write
+      // returned 200 with the task silently action-less. The type bodies are
+      // strict now — same contract as unknown top-level tool args.
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'checklist', name: 'Strict data body', themeId },
+          token,
+        ),
+      });
+      const res = await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          data: { items: [{ name: 'Task', actions: [{ type: 'navigate', url: '/x' }] }] },
+        },
+        token,
+      );
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toMatch(/Unrecognized key: "actions"/);
+      expect(res.content[0].text).toContain('data.items[0]');
+    });
+
+    it('duplicate_theme copies settings + variations into a fresh non-default theme', async () => {
+      const token = await mint([Capability.ThemeRead, Capability.ThemeCreate], [projectA]);
+      const dup = parseToolContent({
+        result: await callTool('duplicate_theme', { id: themeId, name: 'Derived copy' }, token),
+      });
+      expect(dup).toMatchObject({ object: 'theme', name: 'Derived copy', isDefault: false });
+      expect(dup.id).not.toBe(themeId);
+    });
+
+    it('get_content_schema advertises per-type startRules capabilities', async () => {
+      const token = await mint([Capability.ContentRead], [projectA]);
+      const single = parseToolContent({
+        result: await callTool('get_content_schema', { type: 'launcher' }, token),
+      });
+      // A launcher supports none of the start knobs — exactly what the write rejects.
+      expect(single.capabilities).toEqual({
+        startRules: {
+          when: 'all',
+          frequency: false,
+          frequencyAtLeast: false,
+          priority: false,
+          waitSeconds: false,
+          startIfNotComplete: false,
+        },
+        hideRules: false,
+      });
+
+      const batch = parseToolContent({
+        result: await callTool('get_content_schema', { type: ['flow', 'announcement'] }, token),
+      });
+      expect(batch.capabilities.flow.startRules.when).toBe('all');
+      // The scale itself, so nobody has to guess a valid value in production.
+      expect(batch.capabilities.flow.startRules.priority).toEqual([
+        'highest',
+        'high',
+        'medium',
+        'low',
+        'lowest',
+      ]);
+      // Announcement targeting is an audience filter: attribute/segment only.
+      expect(batch.capabilities.announcement.startRules.when).toEqual(['attribute', 'segment']);
+    });
+
+    it('refuses a whitespace-only display name (same family as blank external ids)', async () => {
+      const token = await mint([Capability.ContentRead, Capability.ContentCreate], [projectA]);
+      const res = await callTool('create_content', { type: 'flow', name: '   ', themeId }, token);
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toMatch(/non-whitespace/);
+
+      // duplicate_content once bypassed the rule with a hand-inlined `name`
+      // schema (an audit caught it) — pin that its args ride the shared body.
+      const source = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'flow',
+      });
+      const dup = await callTool('duplicate_content', { contentId: source.id, name: '   ' }, token);
+      expect(dup.isError).toBe(true);
+      expect(dup.content[0].text).toMatch(/non-whitespace/);
     });
   });
 
@@ -755,6 +1898,28 @@ describe('MCP endpoint (e2e)', () => {
         ),
       );
       expect(report).toMatchObject({ ok: true, errors: [] });
+
+      // list_content_versions works with contentId alone. Regression: a
+      // multi-site anchor edit once pasted diagnose_content's url/userId
+      // guards into this handler, bricking the tool while every suite stayed
+      // green — because nothing here ever called it.
+      const versions = parseToolContent(
+        extractResult(
+          await rpc(
+            {
+              jsonrpc: '2.0',
+              id: 5,
+              method: 'tools/call',
+              params: {
+                name: 'list_content_versions',
+                arguments: { contentId: created.id },
+              },
+            },
+            token,
+          ),
+        ),
+      );
+      expect(versions.items.map((v: { id: string }) => v.id)).toContain(created.editedVersionId);
     });
 
     it('update_content_version writes a non-flow data body (checklist) via MCP', async () => {
@@ -1086,6 +2251,61 @@ describe('MCP endpoint (e2e)', () => {
       );
       expect(forked).toMatchObject({ object: 'contentVersion' });
       expect(forked.id).not.toBe(created.editedVersionId);
+    });
+
+    it('list_publish_history returns the publish/unpublish ledger with resolved names', async () => {
+      const token = await mint(
+        [
+          Capability.ContentRead,
+          Capability.ContentCreate,
+          Capability.ContentUpdate,
+          Capability.ContentPublish,
+        ],
+        [projectA],
+      );
+      const created = JSON.parse(
+        (await callTool('create_content', { type: 'flow', name: 'MCP ledger', themeId }, token))
+          .content[0].text,
+      );
+      await callTool(
+        'update_content_version',
+        {
+          contentId: created.id,
+          versionId: created.editedVersionId,
+          steps: [{ name: 'Welcome', type: 'modal', content: [{ type: 'text', markdown: 'Hi' }] }],
+        },
+        token,
+      );
+      await callTool(
+        'publish_content',
+        { contentId: created.id, versionId: created.editedVersionId },
+        token,
+      );
+      await callTool('unpublish_content', { contentId: created.id }, token);
+
+      const res = await callTool('list_publish_history', { contentId: created.id }, token);
+      expect(res.isError).toBeFalsy();
+      const page = JSON.parse(res.content[0].text);
+      // Newest first: the unpublish tops the ledger, the original publish follows.
+      expect(page.items.map((r: { action: string }) => r.action)).toEqual(['unpublish', 'publish']);
+      for (const row of page.items) {
+        expect(row.versionId).toBe(created.editedVersionId);
+        expect(typeof row.versionSequence).toBe('number');
+        expect(row.environmentId).toBe(envA);
+        // Names resolve at read time: the environment and the API token that acted.
+        expect(row.environmentName).toBeTruthy();
+        expect(row.actorTokenName).toBe('mcp');
+        expect(row.createdAt).toEqual(expect.any(String));
+      }
+
+      // A typo'd environment filter must read as an error, not an empty history.
+      const bogus = await callTool(
+        'list_publish_history',
+        { contentId: created.id, environmentId: 'env_nope' },
+        token,
+      );
+      expect(bogus.isError).toBe(true);
+      expect(bogus.content[0].text).toContain('Environment not found');
     });
 
     it('update_content_version on a published version returns a readable E0049', async () => {
@@ -1482,6 +2702,27 @@ describe('MCP endpoint (e2e)', () => {
         expect(dead.content[0].text).toContain('E1026');
       });
 
+      it('list_environments withholds the SDK token of out-of-scope environments', async () => {
+        // The confirmed leak from the read-only-credential audit: discovery
+        // listed the out-of-scope environment WITH its SDK token — an
+        // ingestion credential (identify/track), i.e. a usable key to the
+        // very environment the scope denies. Discovery stays; the key goes.
+        const token = await mint([Capability.EnvironmentRead], [projectA], [envA]);
+        const res = await callTool('list_environments', {}, token);
+        expect(res.isError).toBeFalsy();
+        const items = JSON.parse(res.content[0].text).items as {
+          id: string;
+          inTokenScope: boolean;
+          token: string | null;
+        }[];
+        const inScope = items.find((e) => e.id === envA);
+        const outOfScope = items.find((e) => e.id === envB);
+        expect(inScope?.inTokenScope).toBe(true);
+        expect(typeof inScope?.token).toBe('string');
+        expect(outOfScope?.inTokenScope).toBe(false);
+        expect(outOfScope?.token).toBeNull();
+      });
+
       it('duplicate_content works for an env-restricted token (project-level action)', async () => {
         const source = await buildContent(prisma, {
           projectId: projectA,
@@ -1546,8 +2787,8 @@ describe('MCP endpoint (e2e)', () => {
       expect(created).toMatchObject({ object: 'theme', name: 'MCP themed' });
       expect(created.settings.font.fontSize).toBe(18);
       expect(created.settings.brandColor.background).toBe('#ff0000');
-      // auto colors derived server-side; untouched defaults preserved
-      expect(created.settings.brandColor.autoHover).toBeTruthy();
+      // the derivation cache never leaks into reads; untouched defaults preserved
+      expect(created.settings.brandColor.autoHover).toBeUndefined();
       expect(created.settings.font.lineHeight).toBeTruthy();
     });
 

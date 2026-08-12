@@ -1,4 +1,4 @@
-import { ContentDataType, RulesCondition } from '@usertour/types';
+import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
 
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
 import type { DiagnoseFacts } from '@/web-socket/core/content-diagnosis.service';
@@ -6,6 +6,7 @@ import type { DiagnoseFacts } from '@/web-socket/core/content-diagnosis.service'
 import {
   type AnnotatedCondition,
   annotateConditions,
+  annotateFromVerdicts,
   attachConditionNames,
   attachUserAttributeValues,
   buildDiagnoseReport,
@@ -150,6 +151,19 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
     expect(c[1].actual).toBeNull(); // user scope, absent → null (attribute not set)
     expect(c[2].actual).toBeUndefined(); // company scope → untouched (not user data)
     expect(c[3].actual).toBeUndefined(); // segment → untouched
+    // An unmatched leaf whose attribute has NO value at all carries a note —
+    // it did not fail on a wrong value, it cannot match until something writes
+    // the attribute (agents chased targeting logic here; console sweep C-item).
+    const notes = tree.conditions as Array<{ note?: string }>;
+    expect(notes[1].note).toContain('NO value');
+    expect(notes[1].note).toContain('missing_attr');
+    // The note must name the ONE writer of a user attribute — identify(). It
+    // used to add "event-derived attributes only exist after their first event
+    // lands", which is false for a plain user attribute and sent a support
+    // reviewer hunting a nonexistent event pipeline.
+    expect(notes[1].note).toContain('identify()');
+    expect(notes[1].note).not.toContain('event-derived');
+    expect(notes[0].note).toBeUndefined(); // present value, no note
   });
 
   it('content (flow-state) condition uses the runtime .actived, not live-only unknown', () => {
@@ -173,13 +187,37 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
         value: 'enterprise',
       },
     ] as any;
-    expect(annotateConditions(stamped, readable, false, false)?.conditions?.[0].status).toBe(
-      'unknown',
-    );
+    expect(annotateConditions(stamped, readable, false)?.conditions?.[0].status).toBe('unknown');
     // With a company context it is evaluated against the runtime stamp (actived false → unmatched).
-    expect(annotateConditions(stamped, readable, false, true)?.conditions?.[0].status).toBe(
-      'unmatched',
-    );
+    expect(annotateConditions(stamped, readable, true)?.conditions?.[0].status).toBe('unmatched');
+  });
+
+  it('company-scoped condition, user in NO company: decided unmatched AND says why', () => {
+    // Decided, not undecidable — but `unmatched` alone reads as "their company doesn't
+    // qualify". A growth reviewer spent two extra calls (list_users + list_companies)
+    // establishing which of the two it was before trusting the verdict; the note says it.
+    const stamped: RulesCondition[] = [attr('enterprise', false)];
+    const readable = [
+      {
+        type: 'attribute',
+        scope: 'companyMembership',
+        attribute: 'role',
+        op: 'is',
+        value: 'admin',
+      },
+    ] as any;
+    const leaf = annotateConditions(stamped, readable, false, false)?.conditions?.[0];
+    expect(leaf?.status).toBe('unmatched');
+    expect(leaf?.note).toContain('belongs to NO company');
+    expect(leaf?.note).toContain('group()');
+    // Undecidable case keeps its abstention and stays note-free — nothing to explain.
+    expect(
+      annotateConditions(stamped, readable, false, true)?.conditions?.[0].note,
+    ).toBeUndefined();
+    // With a real company context the leaf is a plain runtime verdict, no note.
+    expect(
+      annotateConditions(stamped, readable, true, false)?.conditions?.[0].note,
+    ).toBeUndefined();
   });
 });
 
@@ -242,6 +280,29 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.gates.find((g) => g.id === 'outranked')?.detail).toContain('c_winner');
   });
 
+  it('start_rules stays on the checklist even with an active session (config fact, informational)', () => {
+    // The dead-checklist audit case: no auto-start configured, but the asked-about
+    // user happens to have an active session. The gate list must still carry the
+    // configuration truth — while NOT counting it as a blocker (it is showing).
+    const r = buildDiagnoseReport(facts({ hasActiveSession: true, startRulesActive: false }));
+    const gate = r.gates.find((g) => g.id === 'start_rules');
+    expect(gate?.status).toBe('fail');
+    expect(gate?.detail).toContain('informational');
+    expect(gate?.detail).toContain('never appears on its own');
+    expect(r.blockedBy).not.toContain('start_rules');
+    expect(r.summary).toMatch(/currently active/i);
+  });
+
+  it('active-session summary hedges when a render target cannot be verified', () => {
+    const r = buildDiagnoseReport(
+      facts({ hasActiveSession: true, startRulesActive: true }),
+      undefined,
+      undefined,
+      ['a[href="/tasks"]'],
+    );
+    expect(r.summary).toContain('provided its target element exists');
+  });
+
   it('active slot held by another content → blocked, even though its own gates pass', () => {
     const r = buildDiagnoseReport(
       facts({ activeSlotHeldByContentId: 'c_holder', activeSlotHeldByName: 'Welcome Tour' }),
@@ -251,19 +312,25 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(r.gates.find((g) => g.id === 'active_slot')?.detail).toContain('Welcome Tour');
   });
 
-  it('unknown leaves are flagged NOT blockers, with how to resolve each (url vs live-only)', () => {
-    // Real blocker (frequency) PLUS a current_url leaf that is unknown because no url was
-    // passed. The summary must not let the unknown read as a second blocker, and must say
-    // `url` resolves it — the gap the diagnose eval flagged (unknown easily misread as fail).
+  it('unknown leaves are flagged NOT blockers, with how to resolve each (live-only)', () => {
+    // Real blocker (frequency) PLUS an element leaf that is unknown because it can only be
+    // observed in the running app. The summary must not let the unknown read as a second
+    // blocker, and must say how to resolve it. (current_url no longer produces unknowns:
+    // `url` is required at the tool boundary, so it is always evaluated.)
     const stamped: RulesCondition[] = [
-      { id: id(), type: 'current-page', data: { includes: ['*/'] }, operators: 'and' },
+      {
+        id: id(),
+        type: 'element',
+        data: { elementData: { customSelector: '.cta' }, logic: 'present' },
+        operators: 'and',
+      },
     ];
     const tree = annotateConditions(stamped, decompileConditions(stamped, resolvers), false);
-    expect(tree?.conditions?.[0].status).toBe('unknown'); // current_url, no url → unknown
+    expect(tree?.conditions?.[0].status).toBe('unknown'); // live-only: DOM state
     const r = buildDiagnoseReport(facts({ frequencyAllowed: false }), tree);
     expect(r.blockedBy).toEqual(['frequency']); // the unknown leaf is NOT in blockedBy
     expect(r.summary).toMatch(/not blockers/i);
-    expect(r.summary).toContain('pass `url`');
+    expect(r.summary).toContain('live-only');
     expect(r.summary).toContain('startConditions');
   });
 
@@ -291,14 +358,62 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
         value: 'enterprise',
       },
     ] as any;
-    const tree = annotateConditions(stamped, readable, false, false); // company unknown
+    const tree = annotateConditions(stamped, readable, false); // company unknown
+    const r = buildDiagnoseReport(
+      facts({ startRulesActive: false, autoStartRules: stamped }),
+      tree,
+    );
+    // The gate is UNDETERMINED, not failed: the only leaf that fails is one the
+    // server cannot evaluate, so it must stay out of blockedBy — otherwise the
+    // report contradicts its own "`unknown` is not a blocker" contract.
+    expect(r.blockedBy).not.toContain('start_rules');
+    expect(r.gates.find((g) => g.id === 'start_rules')?.status).toBe('unknown');
+    // With nothing reported as blocked, the old "`unknown` conditions are NOT
+    // blockers" disclaimer is gone too — there is no longer a contradiction to
+    // explain away. The summary just says what to do next.
+    expect(r.summary).toMatch(/no server-side blocker/i);
+    expect(r.summary).toContain('pass `companyId`');
+  });
+
+  it('live-only leaf alone → undetermined, not blocked (every tracker hit this)', () => {
+    // A start rule whose only condition is "is this element on the page" can never
+    // be decided server-side. It used to fold to unmatched and put start_rules in
+    // blockedBy, so the summary read "Blocked by: start_rules" and, in the same
+    // sentence, "`unknown` conditions are NOT blockers". Trackers are gated on
+    // exactly this, so 100% of them reported as blocked.
+    const stamped: RulesCondition[] = [
+      { id: 'e1', type: RulesType.ELEMENT, data: {}, operators: 'and', actived: false } as any,
+    ];
+    const readable = [{ type: 'element', state: 'present', target: { selector: '#cta' } }] as any;
+    const tree = annotateConditions(stamped, readable, false);
+    const r = buildDiagnoseReport(
+      facts({ startRulesActive: false, autoStartRules: stamped }),
+      tree,
+    );
+    expect(r.blockedBy).not.toContain('start_rules');
+    expect(r.gates.find((g) => g.id === 'start_rules')?.status).toBe('unknown');
+    expect(r.summary).not.toMatch(/^Blocked by/);
+  });
+
+  it('a definitively unmatched leaf still blocks, even beside an unknown one', () => {
+    // The optimistic re-fold must not swallow real failures: with one leaf that
+    // is genuinely unmatched AND one that is unknown, the AND group fails no
+    // matter what the unknown turns out to be — that is a real block.
+    const stamped: RulesCondition[] = [
+      attr('enterprise', false),
+      { id: 'e1', type: RulesType.ELEMENT, data: {}, operators: 'and', actived: false } as any,
+    ];
+    const readable = [
+      { type: 'attribute', scope: 'user', attribute: 'plan_tier', op: 'is', value: 'enterprise' },
+      { type: 'element', state: 'present', target: { selector: '#cta' } },
+    ] as any;
+    const tree = annotateConditions(stamped, readable, false);
     const r = buildDiagnoseReport(
       facts({ startRulesActive: false, autoStartRules: stamped }),
       tree,
     );
     expect(r.blockedBy).toContain('start_rules');
-    expect(r.summary).toMatch(/not blockers/i);
-    expect(r.summary).toContain('pass `companyId`');
+    expect(r.gates.find((g) => g.id === 'start_rules')?.status).toBe('fail');
   });
 
   it('a passing tracker fires its event — summary says fire, not "show" (headless type)', () => {
@@ -331,5 +446,60 @@ describe('buildDiagnoseReport (gate checklist + summary)', () => {
     expect(buildDiagnoseReport(facts({ hasActiveSession: true })).summary).toMatch(
       /currently active/i,
     );
+  });
+});
+
+describe('annotateFromVerdicts (segment expansion, three-valued fold)', () => {
+  const leaf = (actived: boolean | undefined): RulesCondition =>
+    ({
+      id: 'l',
+      type: RulesType.USER_ATTR,
+      operators: 'and',
+      data: {},
+      ...(actived === undefined ? {} : { actived }),
+    }) as RulesCondition;
+  const readableLeaf = {
+    type: 'attribute',
+    scope: 'user',
+    attribute: 'plan',
+    op: 'is',
+    value: 'pro',
+  } as any;
+
+  it('leaves map verdicts to matched/unmatched, unset to unknown', () => {
+    const tree = annotateFromVerdicts(
+      [leaf(true), leaf(false), leaf(undefined)],
+      [readableLeaf, readableLeaf, readableLeaf],
+    );
+    expect(tree?.conditions?.map((c) => c.status)).toEqual(['matched', 'unmatched', 'unknown']);
+  });
+
+  it('AND fold: one unmatched forces unmatched; an unknown that could flip keeps unknown', () => {
+    const and = (ls: RulesCondition[]) => ls.map((l) => ({ ...l, operators: 'and' as const }));
+    expect(
+      annotateFromVerdicts(and([leaf(true), leaf(false)]), [readableLeaf, readableLeaf])?.status,
+    ).toBe('unmatched');
+    expect(
+      annotateFromVerdicts(and([leaf(true), leaf(undefined)]), [readableLeaf, readableLeaf])
+        ?.status,
+    ).toBe('unknown');
+    expect(
+      annotateFromVerdicts(and([leaf(true), leaf(true)]), [readableLeaf, readableLeaf])?.status,
+    ).toBe('matched');
+  });
+
+  it('OR fold: one matched wins; all-unmatched fails; else unknown', () => {
+    // The top-level join comes from the FIRST leaf's `operators` — 'or' here.
+    const or = (ls: RulesCondition[]) => ls.map((l) => ({ ...l, operators: 'or' as const }));
+    expect(
+      annotateFromVerdicts(or([leaf(false), leaf(true)]), [readableLeaf, readableLeaf])?.status,
+    ).toBe('matched');
+    expect(
+      annotateFromVerdicts(or([leaf(false), leaf(false)]), [readableLeaf, readableLeaf])?.status,
+    ).toBe('unmatched');
+    expect(
+      annotateFromVerdicts(or([leaf(false), leaf(undefined)]), [readableLeaf, readableLeaf])
+        ?.status,
+    ).toBe('unknown');
   });
 });

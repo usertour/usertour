@@ -2,10 +2,12 @@ import { Reflector } from '@nestjs/core';
 import type { ExplicitAuditMeta, WebAuditMeta } from './audit.types';
 
 /**
- * Explicit audit metadata for write endpoints that don't carry
- * `@RequireCapability` — i.e. the v1 `src/openapi` REST surface (it authenticates
- * with an environment `AccessToken`, not a user `ApiToken`). The AuditInterceptor
- * reads this and records `source='api'` with the access-token as the actor.
+ * Explicit audit metadata for REST write endpoints: the v1 `src/openapi` surface
+ * (no `@RequireCapability` to derive from; actor = environment `AccessToken`),
+ * and v2 routes whose capability derives the wrong descriptor (membership
+ * routes) — an explicit `@Audit` always wins over the capability derivation.
+ * The AuditInterceptor records `source='api'` with the request's credential
+ * (ApiToken or AccessToken) as the actor.
  *
  *   @Audit({ action: 'delete', resourceType: 'user' })
  */

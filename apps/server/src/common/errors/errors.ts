@@ -9,30 +9,6 @@ export class UnknownError extends BaseError {
   };
 }
 
-export class ContentTooLargeError extends BaseError {
-  code = 'E2004';
-  messageDict = {
-    en: 'Content is too large. Maximum length is 100k characters.',
-    'zh-CN': '内容过长。最大长度为 10 万字符。',
-  };
-}
-
-export class PayloadTooLargeError extends BaseError {
-  code = 'E2005';
-  messageDict = {
-    en: 'Request payload is too large. Maximum size is 100KB.',
-    'zh-CN': '请求数据过大。最大大小为 100KB。',
-  };
-}
-
-export class ConnectionError extends BaseError {
-  code = 'E0001';
-  messageDict = {
-    en: 'Cannot connect to the Usertour server, please try again later.',
-    'zh-CN': '无法连接到 Usertour 服务器，请稍后重试。',
-  };
-}
-
 export class ParamsError extends BaseError {
   code = 'E0003';
   messageDict = {
@@ -81,35 +57,11 @@ export class InvalidVerificationSession extends BaseError {
   };
 }
 
-export class IncorrectVerificationCode extends BaseError {
-  code = 'E0009';
-  messageDict = {
-    en: 'Verification code is incorrect, please try again',
-    'zh-CN': '验证码错误，请重试',
-  };
-}
-
-export class OperationTooFrequent extends BaseError {
-  code = 'E0010';
-  messageDict = {
-    en: 'Operation too frequent, please try again later',
-    'zh-CN': '操作过于频繁，请稍后再试',
-  };
-}
-
 export class AuthenticationExpiredError extends BaseError {
   code = 'E0011';
   messageDict = {
     en: 'Authentication expired, please log in again',
     'zh-CN': '身份验证已过期，请重新登录',
-  };
-}
-
-export class UnsupportedFileTypeError extends BaseError {
-  code = 'E0012';
-  messageDict = {
-    en: 'This file type is temporarily not supported',
-    'zh-CN': '暂不支持该文件类型',
   };
 }
 
@@ -131,14 +83,6 @@ export class MemberEnvironmentNotAllowedError extends BaseError {
   messageDict = {
     en: 'Your project membership does not allow acting on this environment',
     'zh-CN': '您的成员权限不包含该环境，无法在此环境执行操作',
-  };
-}
-
-export class ContentNotPublishedError extends BaseError {
-  code = 'E0014';
-  messageDict = {
-    en: 'You have reached your Survey questions limit. Please upgrade your Usertour account under Settings → Billing.',
-    'zh-CN': '您已经达到了 Survey 问题的限制，请在设置 → 账单中升级您的 Usertour 账户。',
   };
 }
 
@@ -244,8 +188,11 @@ export class EnvironmentNotInTokenScopeError extends OpenAPIError {
   code = 'E1029';
   statusCode = HttpStatus.FORBIDDEN;
   messageDict = {
-    en: 'API key is not scoped to the requested environment',
-    'zh-CN': 'API 密钥未授权访问该环境',
+    en:
+      'API key is not scoped to the requested environment. List environments ' +
+      '(list_environments / GET /environments) — entries with inTokenScope: true are the ones ' +
+      'this credential may act on.',
+    'zh-CN': 'API 密钥未授权访问该环境。可通过环境列表查看 inTokenScope 为 true 的可用环境。',
   };
 
   /**
@@ -305,6 +252,29 @@ export class DefaultThemeCannotBeDeletedError extends OpenAPIError {
   messageDict = {
     en: 'Cannot delete the default theme — set another theme as the project default first.',
     'zh-CN': '无法删除默认主题——请先将其他主题设为项目默认。',
+  };
+}
+
+/**
+ * Writing custom CSS on a plan that doesn't include it. The builder blocks the
+ * same field behind an upsell at this predicate; if the API accepted the write,
+ * the CSS would store and round-trip on reads while the session builder strips
+ * it at delivery — the author sees success everywhere and users see nothing.
+ * Refuse upfront and name the requirement instead. Echoing a STORED customCss
+ * back unchanged stays legal (read-modify-write), as does clearing it.
+ */
+export class CustomCssPlanRequiredError extends OpenAPIError {
+  code = 'E1038';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en:
+      "Custom CSS requires the Growth plan or above — on the project's current plan the " +
+      'runtime strips `customCss` before delivery, so the write is refused rather than ' +
+      'silently stored. Remove `customCss` from the settings patch, or upgrade the plan ' +
+      '(Settings → Billing).',
+    'zh-CN':
+      '自定义 CSS 需要 Growth 及以上套餐——当前套餐下运行时会在下发前剥离 customCss,' +
+      '因此写入被拒绝而非静默存储。请从 settings 中移除 customCss,或升级套餐(设置 → 账单)。',
   };
 }
 
@@ -623,6 +593,17 @@ export class ContentNotFoundError extends OpenAPIError {
     en: 'Content not found',
     'zh-CN': '内容未找到',
   };
+
+  // Same code, optionally sharper message (mirrors ValidationError): "no such
+  // id" and "exists but archived" demand opposite next moves, and the envelope
+  // renders from messageDict — a bare `super(message)` never reaches it.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
 }
 
 export class ContentSessionNotFoundError extends OpenAPIError {
@@ -649,24 +630,6 @@ export class InvalidCursorError extends OpenAPIError {
   messageDict = {
     en: 'Invalid cursor parameter',
     'zh-CN': '无效的游标参数',
-  };
-}
-
-export class InvalidCursorPreviousError extends OpenAPIError {
-  code = 'E1008';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid previous cursor parameter',
-    'zh-CN': '无效的上一个游标参数',
-  };
-}
-
-export class InvalidRequestError extends OpenAPIError {
-  code = 'E1009';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid request',
-    'zh-CN': '无效的请求',
   };
 }
 
@@ -697,14 +660,22 @@ export class InvalidScopeError extends OpenAPIError {
   };
 }
 
-export class InvalidOrderByError extends OpenAPIError {
-  code = 'E1016';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid orderBy parameter.',
-    'zh-CN': '无效的排序参数。',
-  };
-}
+/**
+ * The rule families a structured validation problem can name. Runtime array so
+ * every surface that lists them (the OpenAPI `issues[].rule` describe, docs)
+ * derives from ONE vocabulary — the `media_url` addition updated the type and
+ * errors.mdx but not the hand-written spec describe, and nothing noticed.
+ * Adding a member here updates the spec text automatically.
+ */
+export const VALIDATION_ISSUE_RULES = [
+  'schema',
+  'reactive_condition',
+  'action_not_allowed',
+  'step_shape',
+  'reference_target',
+  'auto_start',
+  'media_url',
+] as const;
 
 /**
  * One structured validation problem. `rule` names the rule family so a client
@@ -714,16 +685,11 @@ export class InvalidOrderByError extends OpenAPIError {
  *  - `action_not_allowed` — an action type this content type's slots don't offer;
  *  - `step_shape`         — placement shape / onClick not matching the step kind;
  *  - `reference_target`   — a cross-content reference to a type that can't be targeted;
- *  - `auto_start`         — a start/hide-rule knob the content type doesn't support.
+ *  - `auto_start`         — a start/hide-rule knob the content type doesn't support;
+ *  - `media_url`          — an image/embed URL that isn't http(s).
  */
 export type ValidationIssue = {
-  rule:
-    | 'schema'
-    | 'reactive_condition'
-    | 'action_not_allowed'
-    | 'step_shape'
-    | 'reference_target'
-    | 'auto_start';
+  rule: (typeof VALIDATION_ISSUE_RULES)[number];
   message: string;
   /** Path into the request body (e.g. `steps[0].triggers[0].when[1]`). */
   path?: string;
@@ -937,8 +903,9 @@ export class ResourceAlreadyExistsError extends BaseError {
 export class VersionNotEditableError extends BaseError {
   code = 'E0049';
   messageDict = {
-    en: 'This version can no longer be edited — it is published, or has been superseded by a newer draft. Create a new editable version to make changes.',
-    'zh-CN': '该版本不可编辑——它已发布,或已被更新的草稿取代。请创建新的可编辑版本后再修改。',
+    en: 'This version can no longer be edited — it is live now, HAS been live before (a version that ever shipped is frozen as history, unpublishing does not unlock it), or has been superseded by a newer draft. Create a new editable version to make changes.',
+    'zh-CN':
+      '该版本不可编辑——它正在线上、曾经上过线(上过线的版本永久封存为历史,下线也不会解锁),或已被更新的草稿取代。请创建新的可编辑版本后再修改。',
   };
 }
 
@@ -1045,99 +1012,4 @@ export class IdentityVerificationRequiresActiveSecretError extends BaseError {
     en: 'Identity verification requires at least one active signing secret.',
     'zh-CN': '身份验证需要至少一个有效的签名密钥。',
   };
-}
-
-// Create a mapping of error codes to error classes
-const errorMap = {
-  E0000: UnknownError,
-  E0001: ConnectionError,
-  E0003: ParamsError,
-  E0004: OAuthError,
-  E0005: AccountNotFoundError,
-  E0006: PasswordIncorrect,
-  E0007: EmailAlreadyRegistered,
-  E0008: InvalidVerificationSession,
-  E0009: IncorrectVerificationCode,
-  E0010: OperationTooFrequent,
-  E0011: AuthenticationExpiredError,
-  E0012: UnsupportedFileTypeError,
-  E0013: NoPermissionError,
-  E0014: ContentNotPublishedError,
-  E0015: TeamMemberLimitError,
-  E0016: InvalidLicenseError,
-  E0017: LicenseExpiredError,
-  E0018: LicenseProjectMismatchError,
-  E0019: LicenseDecodeError,
-  E1000: InvalidApiKeyError,
-  E1001: UserNotFoundError,
-  E1002: CompanyNotFoundError,
-  E1003: CompanyMembershipNotFoundError,
-  E1004: ContentNotFoundError,
-  E1005: ContentSessionNotFoundError,
-  E1006: InvalidLimitError,
-  E1007: InvalidCursorError,
-  E1008: InvalidCursorPreviousError,
-  E1009: InvalidRequestError,
-  E1010: MissingApiKeyError,
-  E1013: RateLimitExceededError,
-  E1014: ServiceUnavailableError,
-  E1015: InvalidScopeError,
-  E1016: InvalidOrderByError,
-  E1017: ValidationError,
-  E1018: SDKAuthenticationError,
-  E1022: AttributeDefinitionNotFoundError,
-  E1023: ResourceConflictError,
-  E1024: EventDefinitionNotFoundError,
-  E1025: SegmentNotFoundError,
-  E1026: EnvironmentNotFoundError,
-  E1027: ContentNotPublishableError,
-  E0020: EmailConfigNotSetError,
-  E0021: S3ConfigNotSetError,
-  E0022: LastEnvironmentCannotBeDeletedError,
-  E0023: PrimaryEnvironmentCannotBeDeletedError,
-  E0024: UserDisabledError,
-  E0025: UserRegistrationDisabledError,
-  E0026: SystemAdminAlreadyInitializedError,
-  E0027: SystemAdminSetupUnavailableError,
-  E0028: SystemAdminSetupRequiredError,
-  E0029: InstanceLicenseProjectLimitReachedError,
-  E0030: EnvironmentLimitError,
-  E0031: TeamMemberAlreadyInvitedError,
-  E0032: TeamMemberAlreadyInProjectError,
-  E0033: InvitationDeliveryFailedError,
-  E0034: TooManyLoginAttemptsError,
-  E0035: InvalidTwoFactorCodeError,
-  E0036: InvalidRecoveryCodeError,
-  E0037: TwoFactorAlreadyEnabledError,
-  E0038: TwoFactorNotEnabledError,
-  E0039: TooManyTwoFactorAttemptsError,
-  E0040: InvalidTwoFactorChallengeError,
-  E0041: SystemAdminMustEnable2FAFirstError,
-  E0042: TwoFactorEnforcedDisableNotAllowedError,
-  E0043: FeatureRequiresLicenseError,
-  E0044: TwoFactorEnrollmentRequiredError,
-  E0045: WrongInviteAccountError,
-  E0046: OAuthOnlyAccountError,
-  E0047: InviteSeatExhaustedError,
-  E0048: ResourceAlreadyExistsError,
-  E0049: VersionNotEditableError,
-  E0050: VersionConflictError,
-  E0051: SsoRequiredError,
-  E0052: SsoRequiresActiveProviderError,
-  E0053: SsoAccessDeniedError,
-  E0054: EgressUrlNotAllowedError,
-  E0055: AiNotConfiguredError,
-  E0056: MachineTranslationRequiresPaidPlanError,
-  E0057: MachineTranslationFailedError,
-  E0058: SigningSecretLimitReachedError,
-  E0059: IdentityVerificationRequiresActiveSecretError,
-  E0060: MemberEnvironmentNotAllowedError,
-};
-
-export function getErrorMessage(code: string, locale: string): string {
-  const ErrorClass = errorMap[code];
-  if (!ErrorClass) {
-    return new UnknownError().getMessage(locale);
-  }
-  return new ErrorClass().getMessage(locale);
 }

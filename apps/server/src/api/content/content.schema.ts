@@ -1,12 +1,13 @@
 import { ContentDataType } from '@usertour/types';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray } from '../shared/query';
+import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { contentVersion } from '../content-representation/representation.schema';
 import { createdAtRangeFields, nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { displayName } from '../shared/name';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 export const contentExpand = z.enum(['editedVersion', 'publishedVersion']);
 
@@ -33,10 +34,12 @@ export const listContentQuery = z.object({
     ),
   published: z
     .stringbool()
+    .meta({ enum: ['true', 'false'] })
     .optional()
     .describe('Filter to content published in at least one environment (true) or none (false).'),
   deleted: z
     .stringbool()
+    .meta({ enum: ['true', 'false'] })
     .optional()
     .describe(
       'List soft-deleted (archived) content instead of live content — the recovery pool for restore.',
@@ -52,34 +55,65 @@ export const getContentQuery = z.object({
 });
 export class GetContentQueryDto extends createZodDto(getContentQuery) {}
 
+// Embedded versions reuse the base shape with `data` left untyped: inlining the
+// six-type union here exploded OpenAPI generation (it would render up to 6×).
+// The standalone content-versions endpoint types `data` fully — read it there.
+const embeddedVersion = contentVersion.extend({
+  data: z
+    .unknown()
+    .optional()
+    .describe(
+      'Decompiled type-specific body for non-flow content — the same six per-type shapes as ' +
+        'the write `data` (fully typed on the content-versions endpoints). Present only with ' +
+        'the `data` expand; a flow has no `data` — its body is `steps`.',
+    ),
+});
 /** Per-environment publish state — the v2 replacement for the deprecated single publishedVersionId. */
 export const contentEnvironment = z.object({
   environmentId: z.string(),
-  published: z.boolean(),
+  published: z
+    .boolean()
+    .describe(
+      'Always true on a returned row: `environments[]` lists ONLY the environments this ' +
+        'content is currently published to. Unpublishing removes the row — a missing ' +
+        'environment means "not published there", it never appears as false.',
+    ),
   publishedVersionId: z.string(),
-  publishedAt: z.string(),
-  publishedVersion: contentVersion.optional(),
+  publishedAt: isoTimestamp,
+  publishedVersion: embeddedVersion.optional(),
 });
 
 export const content = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT),
   name: z.string(),
-  type: z.string(),
-  buildUrl: z.string().nullable(),
+  type: contentTypeEnum,
+  buildUrl: z
+    .string()
+    .nullable()
+    .describe(
+      'URL of the app page where this content is authored and previewed (the visual editor ' +
+        'opens it there). Metadata only — it plays NO part in runtime targeting; where content ' +
+        'shows is controlled by its start rules.',
+    ),
   editedVersionId: z.string(),
-  editedVersion: contentVersion.optional(),
-  environments: z.array(contentEnvironment),
+  editedVersion: embeddedVersion.optional(),
+  environments: z
+    .array(contentEnvironment)
+    .describe(
+      'Where this content is live RIGHT NOW: one row per environment it is currently ' +
+        'published to (empty = published nowhere). Rows disappear on unpublish.',
+    ),
   deleted: z.boolean(),
-  updatedAt: z.string(),
-  createdAt: z.string(),
+  updatedAt: isoTimestamp,
+  createdAt: isoTimestamp,
 });
 export class ContentDto extends createZodDto(content) {}
 
 export const listContentResponse = z.object({
   results: z.array(content),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListContentResponseDto extends createZodDto(listContentResponse) {}
 
@@ -90,12 +124,15 @@ export const createContentBody = z
       'Content kind. An `announcement` is a feed item delivered through a resource center that ' +
         'has an `announcement` block — publish alone does not surface it without one.',
     ),
-    name: z
-      .string()
-      .min(1)
+    name: displayName
       .optional()
       .describe('Display name. For `announcement` it also seeds the draft title.'),
-    buildUrl: z.string().optional(),
+    buildUrl: z
+      .string()
+      .optional()
+      .describe(
+        'URL of the app page where this content is authored and previewed. Metadata only — no effect on runtime targeting (start rules control where content shows).',
+      ),
     themeId: z
       .string()
       .optional()
@@ -112,8 +149,13 @@ export type CreateContentBody = z.infer<typeof createContentBody>;
 /** Write body for PATCH content/:id (metadata only). */
 export const updateContentBody = z
   .object({
-    name: z.string().min(1).optional(),
-    buildUrl: z.string().optional(),
+    name: displayName.optional(),
+    buildUrl: z
+      .string()
+      .optional()
+      .describe(
+        'URL of the app page where this content is authored and previewed. Metadata only — no effect on runtime targeting (start rules control where content shows).',
+      ),
   })
   .strict();
 export class UpdateContentBodyDto extends createZodDto(updateContentBody) {}
@@ -140,7 +182,7 @@ export type UnpublishContentBody = z.infer<typeof unpublishContentBody>;
 // inert promise the v2 contract does not repeat. Publishing (the actually
 // env-scoped act) stays explicit on the publish endpoint.
 export const duplicateContentBody = z.object({
-  name: z.string().min(1).optional().describe('Name for the copy (defaults to the source name).'),
+  name: displayName.optional().describe('Name for the copy (defaults to the source name).'),
 });
 export class DuplicateContentBodyDto extends createZodDto(duplicateContentBody) {}
 export type DuplicateContentBody = z.infer<typeof duplicateContentBody>;

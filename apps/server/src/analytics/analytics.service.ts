@@ -109,7 +109,10 @@ const DISMISSED_END_CONFIG: Partial<
   },
 };
 
-const EVENT_TYPE_MAPPING = {
+// Per-type start/"success action" events — the analytics vocabulary (a launcher's
+// "complete" is activation, a banner's is dismissal). Exported as the SSOT for
+// any surface whose numbers must reconcile with queryContentAnalytics.
+export const EVENT_TYPE_MAPPING = {
   [ContentType.FLOW]: {
     start: BizEvents.FLOW_STARTED,
     complete: BizEvents.FLOW_COMPLETED,
@@ -143,6 +146,7 @@ const EVENTS = [
   BizEvents.LAUNCHER_SEEN,
   BizEvents.LAUNCHER_ACTIVATED,
   BizEvents.CHECKLIST_STARTED,
+  BizEvents.CHECKLIST_SEEN,
   BizEvents.CHECKLIST_COMPLETED,
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
@@ -446,22 +450,68 @@ export class AnalyticsService {
       endDateStr,
       isDistinct: true,
     };
-    const uniqueViews = await this.aggregationByEvent({ ...condition });
-    const totalViews = await this.aggregationByEvent({
-      ...condition,
-      isDistinct: false,
-    });
-    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
-    const uniqueCompletions = isLauncherActivated
-      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
-      : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
-    const totalCompletions = isLauncherActivated
-      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+    // Resource-center totals count EVENTS, not sessions: an RC session is
+    // lifetime-long, so the session-distinct total would always equal the
+    // unique count (zero information) and contradict the per-block counters,
+    // which count events. Other session-based types keep session totals — for
+    // them a session IS one run, so "times started" is the session count.
+    const isResourceCenter = contentType === ContentType.RESOURCE_CENTER;
+    // Launcher/banner metrics are first-touch by contract ("users NEWLY reached
+    // in the range"). Current delivery does fire seen/dismissed at most once per
+    // (user, content) — filterSingleSessionContentVersions blocks a second
+    // session for life — but pre-rework production code wrote repeat events, so
+    // these aggregate each user's FIRST event over all history (then filter to
+    // the range) instead of trusting the stored stream to be clean.
+    const isFirstTouchSeen =
+      startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
+      startEvent.codeName === BizEvents.BANNER_SEEN;
+    const isFirstTouchComplete =
+      completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
+      completeEvent.codeName === BizEvents.BANNER_DISMISSED;
+    const uniqueViews = isFirstTouchSeen
+      ? await this.aggregationFirstEvent({ ...condition })
+      : await this.aggregationByEvent({ ...condition });
+    const totalViews = isResourceCenter
+      ? await this.countEventsByContent(condition)
       : await this.aggregationByEvent({
           ...condition,
-          eventId: completeEvent.id,
           isDistinct: false,
         });
+    const uniqueCompletions = isFirstTouchComplete
+      ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+      : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
+    const totalCompletions = isResourceCenter
+      ? await this.countEventsByContent({ ...condition, eventId: completeEvent.id })
+      : isFirstTouchComplete
+        ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+        : await this.aggregationByEvent({
+            ...condition,
+            eventId: completeEvent.id,
+            isDistinct: false,
+          });
+    // Checklist panel-open counters — same pair as the resource-center's:
+    // CHECKLIST_SEEN fires on every collapsed→expanded transition, so unique
+    // counts users who opened the panel and total counts expansions (events).
+    // The per-task rows carry only task-scoped counts; this is their
+    // denominator (public API); the dashboard keeps its own per-task copy.
+    const isChecklist = contentType === ContentType.CHECKLIST;
+    const checklistSeenEvent = events.find((ev) => ev.codeName === BizEvents.CHECKLIST_SEEN);
+    const opens =
+      isChecklist && checklistSeenEvent
+        ? {
+            uniqueOpens: await this.aggregationByEvent({
+              ...condition,
+              eventId: checklistSeenEvent.id,
+            }),
+            totalOpens: await this.countEventsByContent({
+              ...condition,
+              eventId: checklistSeenEvent.id,
+            }),
+          }
+        : isChecklist
+          ? { uniqueOpens: 0, totalOpens: 0 }
+          : {};
+
     const viewsByStep = isFlow
       ? await this.aggregationStepsByContent(
           condition,
@@ -477,6 +527,7 @@ export class AnalyticsService {
       timezone,
       startEvent,
       completeEvent,
+      isChecklist ? checklistSeenEvent : undefined,
     );
 
     return {
@@ -484,6 +535,7 @@ export class AnalyticsService {
       totalViews,
       uniqueCompletions,
       totalCompletions,
+      ...opens,
       viewsByDay,
       viewsByStep,
       viewsByTask,
@@ -671,6 +723,10 @@ export class AnalyticsService {
     timezone: string,
     startEvent: Event,
     completeEvent: Event,
+    // Checklist only: CHECKLIST_SEEN — adds per-day panel-open columns so the
+    // byDay rows carry every headline total* (sum-of-rows = headline holds
+    // for opens too, matching the resource-center series).
+    opensEvent?: Event,
   ) {
     const { startDateStr, endDateStr } = condition;
 
@@ -683,30 +739,51 @@ export class AnalyticsService {
       return [];
     }
 
-    // Get aggregated statistics
-    const uniqueViewsByDay = await this.aggregationByDay(
-      { ...condition, eventId: startEvent.id },
-      timezone,
-    );
-    const totalViewsByDay = await this.aggregationByDay(
-      { ...condition, eventId: startEvent.id, isDistinct: false },
-      timezone,
-    );
-    // For LAUNCHER_ACTIVATED, only count the first occurrence per user
-    const isLauncherActivated = completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED;
-    const uniqueCompletionByDay = isLauncherActivated
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
-      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
-    const totalCompletionByDay = isLauncherActivated
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
+    // Get aggregated statistics. Resource-center totals count events per day
+    // (see querySessionBasedContentAnalytics) so the rows still sum to the
+    // headline totals.
+    const isResourceCenter = startEvent.codeName === BizEvents.RESOURCE_CENTER_OPENED;
+    // First-touch pairs (see querySessionBasedContentAnalytics): each user
+    // lands on the day of their first-ever event, immune to legacy repeats.
+    const isFirstTouchSeen =
+      startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
+      startEvent.codeName === BizEvents.BANNER_SEEN;
+    const isFirstTouchComplete =
+      completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
+      completeEvent.codeName === BizEvents.BANNER_DISMISSED;
+    const uniqueViewsByDay = isFirstTouchSeen
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: startEvent.id }, timezone)
+      : await this.aggregationByDay({ ...condition, eventId: startEvent.id }, timezone);
+    const totalViewsByDay = isResourceCenter
+      ? await this.countEventsByContentByDay({ ...condition, eventId: startEvent.id }, timezone)
       : await this.aggregationByDay(
-          {
-            ...condition,
-            eventId: completeEvent.id,
-            isDistinct: false,
-          },
+          { ...condition, eventId: startEvent.id, isDistinct: false },
           timezone,
         );
+    const uniqueCompletionByDay = isFirstTouchComplete
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
+    const totalCompletionByDay = isResourceCenter
+      ? await this.countEventsByContentByDay({ ...condition, eventId: completeEvent.id }, timezone)
+      : isFirstTouchComplete
+        ? await this.aggregationFirstEventByDay(
+            { ...condition, eventId: completeEvent.id },
+            timezone,
+          )
+        : await this.aggregationByDay(
+            {
+              ...condition,
+              eventId: completeEvent.id,
+              isDistinct: false,
+            },
+            timezone,
+          );
+    const uniqueOpensByDay = opensEvent
+      ? await this.aggregationByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      : null;
+    const totalOpensByDay = opensEvent
+      ? await this.countEventsByContentByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      : null;
 
     // Calendar walk in the requested timezone (NOT 24h stepping — see the
     // tracker path). The SQL buckets label days as plain `to_char` strings in
@@ -721,6 +798,12 @@ export class AnalyticsService {
         totalViews: totalViewsByDay.find((views) => views.day === dd)?.count || 0,
         uniqueCompletions: uniqueCompletionByDay.find((views) => views.day === dd)?.count || 0,
         totalCompletions: totalCompletionByDay.find((views) => views.day === dd)?.count || 0,
+        ...(uniqueOpensByDay && totalOpensByDay
+          ? {
+              uniqueOpens: uniqueOpensByDay.find((views) => views.day === dd)?.count || 0,
+              totalOpens: totalOpensByDay.find((views) => views.day === dd)?.count || 0,
+            }
+          : {}),
       });
     }
 
@@ -1057,7 +1140,8 @@ export class AnalyticsService {
 
   /**
    * Aggregate first event per user, counting only first events that occurred within the query time range
-   * This is used for LAUNCHER_ACTIVATED events where multiple activations should only count as one
+   * Used for the first-touch metrics (launcher seen/activated, banner seen/dismissed) where
+   * repeat events must never re-count a user
    * The first event is determined from all historical events, then filtered by the query time range
    * Returns total count (not grouped by day)
    */
@@ -1160,6 +1244,47 @@ export class AnalyticsService {
         AND "BizEvent"."data" ->> ${key} = ${String(value)}
     `;
     return Number.parseInt(data[0].count.toString());
+  }
+
+  /**
+   * Plain event count (repeats included) — the resource-center `total*`
+   * semantics. The session-distinct counter above collapses a user's repeated
+   * opens/clicks to 1 because an RC session is lifetime-long; only a raw
+   * Count(*) can answer "how many times", and it reconciles with the per-block
+   * counters (countTotalEvents), which already count this way.
+   */
+  async countEventsByContent(condition: Omit<AnalyticsConditions, 'isDistinct'>) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = await this.prisma.$queryRaw`
+      SELECT Count(*) from "BizEvent"
+        left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
+        AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
+    `;
+    return Number.parseInt(data[0].count.toString());
+  }
+
+  /** Per-day companion of countEventsByContent — same day-label contract as aggregationByDay. */
+  async countEventsByContentByDay(
+    condition: Omit<AnalyticsConditions, 'isDistinct'>,
+    timezone: string,
+  ) {
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const data = (await this.prisma.$queryRaw`
+      SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+        Count(*) from "BizEvent"
+        left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
+        "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
+        AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
+        GROUP BY DAY
+      `) as [{ day: string; count: number }];
+    return data.map((dd) => ({ ...dd, count: Number(dd.count) }));
   }
 
   /**

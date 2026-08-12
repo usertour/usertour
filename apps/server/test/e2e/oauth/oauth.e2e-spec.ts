@@ -1,10 +1,17 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
-import { OAUTH_TOKEN_PREFIX, hashApiTokenSecret } from '@/api-token/api-token.crypto';
+import {
+  API_TOKEN_PREFIX,
+  OAUTH_TOKEN_PREFIX,
+  hashApiTokenSecret,
+} from '@/api-token/api-token.crypto';
+import { TwoFactorService } from '@/auth/two-factor.service';
+import { EnvironmentsService } from '@/environments/environments.service';
 
 import { buildEnvironment, buildMembership, buildProject } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
@@ -65,6 +72,35 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     expect(as.body.grant_types_supported).toContain('authorization_code');
   });
 
+  it('MCP_SERVER_URL is the single truth for the advertised resource (split-domain MCP)', async () => {
+    // Display read MCP_SERVER_URL while the metadata read API_URL, so a
+    // deployment serving /mcp on its own domain told users one URL and OAuth
+    // clients another — RFC 9728 resource validation then refused the mismatch
+    // ("Protected resource X does not match expected Y") and auth died. All
+    // three surfaces now derive from app.mcpServerUrl.
+    const config = app.get(ConfigService);
+    const prev = config.get('app.mcpServerUrl');
+    config.set('app.mcpServerUrl', 'https://mcp2.example.com/mcp');
+    try {
+      const prm = await http().get('/.well-known/oauth-protected-resource/mcp').expect(200);
+      expect(prm.body.resource).toBe('https://mcp2.example.com/mcp');
+      expect(prm.body.authorization_servers).toEqual(['https://mcp2.example.com']);
+
+      // The AS endpoints follow the MCP origin (that domain proxies /oauth/*).
+      const as = await http().get('/.well-known/oauth-authorization-server').expect(200);
+      expect(as.body.issuer).toBe('https://mcp2.example.com');
+      expect(as.body.token_endpoint).toBe('https://mcp2.example.com/oauth/token');
+
+      // The /mcp 401 challenge points at the SAME origin's metadata.
+      const denied = await http().post('/mcp').send({}).expect(401);
+      expect(denied.headers['www-authenticate']).toContain(
+        'https://mcp2.example.com/.well-known/oauth-protected-resource/mcp',
+      );
+    } finally {
+      config.set('app.mcpServerUrl', prev);
+    }
+  });
+
   it('rejects a non-allowlisted DCR redirect_uri', async () => {
     await http()
       .post('/oauth/register')
@@ -108,6 +144,48 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     // Canonical `Bearer` still works.
     const upper = await http().get(`/oauth/register/${cid}`).set('Authorization', `Bearer ${rat}`);
     expect(upper.status).toBe(200);
+  });
+
+  it('rejects DCR metadata this AS cannot serve: bad grant_types, oversized redirect_uris', async () => {
+    // grant_types without authorization_code can never complete a flow — it used
+    // to be stored verbatim and only fail at consent-approve, AFTER the user
+    // walked the whole authorize+consent UI. Now it's refused at registration.
+    await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'No auth-code',
+        redirect_uris: [redirectUri],
+        grant_types: ['implicit'],
+      })
+      .expect(400);
+
+    // Open, unauthenticated endpoint — every call writes a row, so entry count
+    // and per-URI length are bounded.
+    await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Too many URIs',
+        redirect_uris: Array.from({ length: 11 }, (_, i) => `http://127.0.0.1:${4100 + i}/cb`),
+      })
+      .expect(400);
+    await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Oversized URI',
+        redirect_uris: [`http://127.0.0.1:4200/${'a'.repeat(2100)}`],
+      })
+      .expect(400);
+
+    // Supported-but-extra grant_types are intersected, not stored verbatim.
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Extra grants',
+        redirect_uris: [redirectUri],
+        grant_types: ['authorization_code', 'refresh_token', 'client_credentials'],
+      })
+      .expect(201);
+    expect(reg.body.grant_types).toEqual(['authorization_code', 'refresh_token']);
   });
 
   it('requires PKCE on authorize and redirects to consent when valid', async () => {
@@ -222,8 +300,10 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     expect(refreshed.body.access_token).toMatch(/^uto_/);
     expect(refreshed.body.refresh_token).not.toBe(tok.body.refresh_token);
 
-    // the old refresh token is now rejected (rotation / reuse detection)
-    await http()
+    // the rotated-away token stays honored for a short GRACE window — the
+    // lost-response retry: it succeeds and hands the client another fresh pair
+    // (we store hashes only, so re-sending the lost pair is impossible).
+    const graceRetry = await http()
       .post('/oauth/token')
       .type('form')
       .send({
@@ -231,7 +311,38 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
         refresh_token: tok.body.refresh_token,
         client_id: clientId,
       })
+      .expect(200);
+    expect(graceRetry.body.refresh_token).not.toBe(refreshed.body.refresh_token);
+
+    // outside the window the reuse rejection is intact: rewind rotatedAt past
+    // the grace and the previous-slot token (rotation #2 parked `refreshed`'s
+    // token there) is refused.
+    await prisma.oAuthGrant.updateMany({
+      where: { clientId },
+      data: { rotatedAt: new Date(Date.now() - 10 * 60_000) },
+    });
+    await http()
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        refresh_token: refreshed.body.refresh_token,
+        client_id: clientId,
+      })
       .expect((r) => expect(r.status).toBeGreaterThanOrEqual(400));
+
+    // …while the CURRENT token still refreshes fine — an expired grace window
+    // must never damage the live chain.
+    const current = await http()
+      .post('/oauth/token')
+      .type('form')
+      .send({
+        grant_type: 'refresh_token',
+        refresh_token: graceRetry.body.refresh_token,
+        client_id: clientId,
+      })
+      .expect(200);
+    expect(current.body.access_token).toMatch(/^uto_/);
 
     // revoke the access token → MCP now 401
     await http().post('/oauth/revoke').send({ token: refreshed.body.access_token }).expect(201);
@@ -241,6 +352,136 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
       .set('Accept', 'application/json, text/event-stream')
       .send({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
     expect(after.status).toBe(401);
+  });
+
+  it('consent refusals are named 400s, not HTTP-200 "unknown error" bodies', async () => {
+    // These used to throw the library's OAuthError, which is no HttpException —
+    // the global filter turned them into HTTP 200 + a generic UnknownError body
+    // and an error-level log. Now they map to the token endpoint's named shape.
+    const auth = await http()
+      .get('/oauth/authorize')
+      .query({
+        response_type: 'code',
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        scope: 'content:read',
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+      })
+      .expect(302);
+    const transaction = new URL(auth.headers.location).searchParams.get('transaction') as string;
+
+    // Malformed body shape: scopes as a string was a TypeError → 200 before.
+    const malformed = await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction, projectId, approved: true, scopes: 'content:read' })
+      .expect(400);
+    expect(malformed.body.error).toBe('invalid_request');
+    expect(malformed.body.error_description).toBeTruthy();
+
+    // A project the user is not a member of.
+    const foreign = await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction, projectId: 'clzzzzzzzzzzzzzzzzzzzzzzz', approved: true })
+      .expect(400);
+    expect(foreign.body.error).toBe('invalid_request');
+
+    // A Prisma filter object smuggled as projectId must die at the shape gate,
+    // not reach the membership/environment `where` clauses.
+    await http()
+      .post('/oauth/authorize/consent')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ transaction, projectId: { not: '' }, approved: true, environmentIds: [envMain] })
+      .expect(400);
+  });
+
+  it('accepts a trailing-slash redirect_uri against a bare registered loopback URI', async () => {
+    // The VS Code incident shape: it registers `http://127.0.0.1:<port>` and then
+    // sends `http://127.0.0.1:<port>/` on authorize AND token exchange — an RFC
+    // 3986 equivalence the old exact-string compare rejected. The exchange side is
+    // safe because the code stores the authorize-time string verbatim and the
+    // client sends the same form both times.
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Trailing-slash',
+        redirect_uris: ['http://127.0.0.1:33418'],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    const v = randomBytes(40).toString('base64url');
+    const ch = createHash('sha256').update(v).digest('base64url');
+    const slashed = 'http://127.0.0.1:33418/';
+    try {
+      const auth = await http()
+        .get('/oauth/authorize')
+        .query({
+          response_type: 'code',
+          client_id: cid,
+          redirect_uri: slashed,
+          scope: 'content:read',
+          code_challenge: ch,
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+      expect(auth.headers.location).toContain('/oauth-consent?transaction=');
+      const transaction = new URL(auth.headers.location).searchParams.get('transaction') as string;
+
+      const consent = await http()
+        .post('/oauth/authorize/consent')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ transaction, projectId, approved: true, environmentIds: [envMain] })
+        .expect(201);
+      const code = new URL(consent.body.redirect).searchParams.get('code') as string;
+
+      const tok = await http()
+        .post('/oauth/token')
+        .type('form')
+        .send({
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: slashed,
+          client_id: cid,
+          code_verifier: v,
+        })
+        .expect(200);
+      expect(tok.body.access_token).toMatch(/^uto_/);
+
+      // Loopback also matches on a DIFFERENT port (RFC 8252 §7.3) — native
+      // clients bind a random one per run.
+      await http()
+        .get('/oauth/authorize')
+        .query({
+          response_type: 'code',
+          client_id: cid,
+          redirect_uri: 'http://127.0.0.1:51000/',
+          scope: 'content:read',
+          code_challenge: ch,
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+
+      // A fragment-bearing redirect_uri stays rejected (RFC 6749 §3.1.2).
+      await http()
+        .get('/oauth/authorize')
+        .query({
+          response_type: 'code',
+          client_id: cid,
+          redirect_uri: 'http://127.0.0.1:33418/#steal',
+          scope: 'content:read',
+          code_challenge: ch,
+          code_challenge_method: 'S256',
+        })
+        .expect(400);
+    } finally {
+      await prisma.apiToken.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
   });
 
   // Run authorize (PKCE) → consent → token exchange for a client and return the
@@ -315,6 +556,145 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
     } finally {
       await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
       await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
+  });
+
+  it('instance-enforced 2FA walls off consent for a non-enrolled user (E0044)', async () => {
+    // The GraphQL APP_GUARD can't see these REST endpoints, so consent enforces
+    // the same rule itself — otherwise a non-enrolled user could trade their
+    // session for a longer-lived uto_ + refresh chain. Enforcement needs
+    // self-hosted + setting + license; spy on the one predicate instead.
+    const spy = jest
+      .spyOn(app.get(TwoFactorService), 'isInstanceEnforcing')
+      .mockResolvedValue(true);
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Enrollment-wall',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    try {
+      const auth = await http()
+        .get('/oauth/authorize')
+        .query({
+          response_type: 'code',
+          client_id: cid,
+          redirect_uri: redirectUri,
+          scope: 'content:read',
+          state: 'st',
+          code_challenge: challenge,
+          code_challenge_method: 'S256',
+        })
+        .expect(302);
+      const tx = new URL(auth.headers.location).searchParams.get('transaction') as string;
+
+      // The consent PAGE learns at load time…
+      const info = await http()
+        .get('/oauth/consent-info')
+        .query({ transaction: tx })
+        .set('Authorization', `Bearer ${ownerToken}`);
+      expect(info.status).toBe(403);
+      expect(info.body.code).toBe('E0044');
+
+      // …and the approve POST (the minting moment) is a hard wall regardless.
+      const consent = await http()
+        .post('/oauth/authorize/consent')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ transaction: tx, projectId, approved: true, environmentIds: [envMain] });
+      expect(consent.status).toBe(403);
+      expect(consent.body.code).toBe('E0044');
+
+      // Enrolled users pass the wall — the rule is enrollment, not a blanket off-switch.
+      await prisma.user.update({ where: { id: ownerUserId }, data: { twoFactorEnabled: true } });
+      await http()
+        .get('/oauth/consent-info')
+        .query({ transaction: tx })
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .expect(200);
+    } finally {
+      spy.mockRestore();
+      await prisma.user.update({ where: { id: ownerUserId }, data: { twoFactorEnabled: false } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthClient.deleteMany({ where: { id: cid } });
+    }
+  });
+
+  it('a disabled owner freezes every credential: utp_ use, uto_ use, and refresh renewal', async () => {
+    const reg = await http()
+      .post('/oauth/register')
+      .send({
+        client_name: 'Disabled-owner',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+      })
+      .expect(201);
+    const cid = reg.body.client_id as string;
+    // A personal key of the same owner, alongside the OAuth chain.
+    const secret = randomBytes(32).toString('base64url');
+    await prisma.apiToken.create({
+      data: {
+        userId: ownerUserId,
+        name: 'Disabled-owner personal key',
+        prefix: API_TOKEN_PREFIX,
+        hashedSecret: hashApiTokenSecret(secret),
+        partialKey: secret.slice(-4),
+        scopes: ['content:read'],
+        isActive: true,
+        projects: { create: [{ projectId }] },
+      },
+    });
+    const utpToken = `${API_TOKEN_PREFIX}${secret}`;
+    try {
+      const tokens = await runFlow(cid);
+      // Both credentials work while the owner is active…
+      await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${utpToken}`)
+        .expect(200);
+      await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${tokens.access_token}`)
+        .expect(200);
+
+      await prisma.user.update({ where: { id: ownerUserId }, data: { disabled: true } });
+      // …then disabling refuses their USE — both prefixes, with the SAME opaque
+      // E1000 an unknown key gets (the holder may not be the owner; the account's
+      // state is not theirs to learn).
+      const utp = await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${utpToken}`);
+      expect(utp.status).toBe(403);
+      expect(utp.body.error.code).toBe('E1000');
+      const uto = await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${tokens.access_token}`);
+      expect(uto.status).toBe(403);
+      expect(uto.body.error.code).toBe('E1000');
+      // …and their RENEWAL (invalid_grant — the 30-day chain must not outlive the account).
+      await http()
+        .post('/oauth/token')
+        .type('form')
+        .send({ grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: cid })
+        .expect((r) => expect(r.status).toBeGreaterThanOrEqual(400));
+
+      // Re-enabling restores the same credentials — the gate is the account flag,
+      // not a destructive sweep of token rows.
+      await prisma.user.update({ where: { id: ownerUserId }, data: { disabled: false } });
+      await http()
+        .get(`/v2/projects/${projectId}/content`)
+        .set('Authorization', `Bearer ${utpToken}`)
+        .expect(200);
+    } finally {
+      await prisma.user.update({ where: { id: ownerUserId }, data: { disabled: false } });
+      await prisma.apiToken.deleteMany({ where: { hashedSecret: hashApiTokenSecret(secret) } });
+      await prisma.apiToken.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });
+      await prisma.oAuthGrant.deleteMany({ where: { clientId: cid } });
       await prisma.oAuthClient.deleteMany({ where: { id: cid } });
     }
   });
@@ -649,6 +1029,30 @@ describe('OAuth 2.1 AS for MCP (e2e)', () => {
       (c: { clientName: string }) => c.clientName === 'Env MCP',
     );
     expect(conn.environmentNames).toEqual([env.name]);
+
+    // Deleting that environment must take the id OFF the machine allowlists too.
+    // It used to clean only UserOnProject (the human holder of the same third
+    // permission dimension), so the grant kept the dead id — and since a refresh
+    // rebuilds the token row FROM the grant, it kept coming back. The console then
+    // listed a deleted environment as something the app may act on, while the
+    // resolvers (which filter `deleted: false`) had long stopped honouring it.
+    await app.get(EnvironmentsService).delete(env.id);
+    const grantAfter = await prisma.oAuthGrant.findFirst({ where: { clientId: cid } });
+    // Fail-closed, exactly like the member rule: emptied out stays [], never null/all.
+    expect(grantAfter?.allowedEnvironmentIds).toEqual([]);
+    const tokenAfter = await prisma.apiToken.findFirst({ where: { clientId: cid } });
+    expect(tokenAfter?.allowedEnvironmentIds).toEqual([]);
+
+    const connsAfter = await http()
+      .post('/graphql')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ query: '{ oauthConnections { clientName environmentNames } }' })
+      .expect(200);
+    const connAfter = connsAfter.body.data.oauthConnections.find(
+      (c: { clientName: string }) => c.clientName === 'Env MCP',
+    );
+    // Not the raw id either — the old fallback printed a bare cuid beside real names.
+    expect(connAfter.environmentNames).toEqual([]);
 
     await prisma.apiToken.deleteMany({ where: { clientId: cid } });
     await prisma.oAuthAuthorizationCode.deleteMany({ where: { clientId: cid } });

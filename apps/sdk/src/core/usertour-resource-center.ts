@@ -19,11 +19,13 @@ import {
 } from '@usertour/types';
 import { ResourceCenterStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
+import { rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { logger } from '@/utils';
 import { CommonActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour/constants';
-import { isDisplayOnlyBlockType, storage } from '@usertour/helpers';
+import { isDisplayOnlyBlockType, isEqual, storage } from '@usertour/helpers';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
+import { UsertourTheme } from '@/core/usertour-theme';
 
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
   getAnnouncementBadgeCount(): number {
@@ -36,10 +38,39 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
 
   async check(): Promise<void> {
     try {
+      await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
+      await this.checkAndUpdatePopupAnnouncementTheme();
     } catch (error) {
       logger.error('Error in resource center checking:', error);
     }
+  }
+
+  /**
+   * Settle the popup announcement's OWN theme from its sessionTheme
+   * (variations evaluated in the browser), mirroring what
+   * checkAndUpdateThemeSettings does for the panel theme. The server seeds
+   * popup.themeSettings with the theme's BASE settings only — without this
+   * settle the popup ignored dark-mode/etc. variations while every other
+   * surface honored them (acceptance-review find). No-op when the payload
+   * carries no sessionTheme (older server) or nothing changed.
+   */
+  private async checkAndUpdatePopupAnnouncementTheme(): Promise<void> {
+    const resourceCenterData = this.getStoreData()?.resourceCenterData;
+    const popup = resourceCenterData?.popupAnnouncement;
+    if (!resourceCenterData || !popup?.sessionTheme) {
+      return;
+    }
+    const settled = await UsertourTheme.getThemeSettings(popup.id, popup.sessionTheme);
+    if (!settled || isEqual(popup.themeSettings, settled)) {
+      return;
+    }
+    this.updateStore({
+      resourceCenterData: {
+        ...resourceCenterData,
+        popupAnnouncement: { ...popup, themeSettings: settled },
+      },
+    });
   }
 
   async show(): Promise<void> {
@@ -377,6 +408,51 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       return themeZIndex;
     }
     return this.getBaseZIndex() + WidgetZIndex.RESOURCE_CENTER_OFFSET;
+  }
+
+  /**
+   * Re-evaluates button disable/hide conditions inside rich-text blocks against
+   * the live page — same defect class as the tour (see usertour-tour.ts
+   * checkAndUpdateButtonConditions). Rebuilds tabs immutably (the store must
+   * not share references with the source data).
+   * @private
+   */
+  private async checkAndUpdateButtonConditions(): Promise<void> {
+    const store = this.getStoreData();
+    const resourceCenterData = store?.resourceCenterData;
+    if (!resourceCenterData || !rootsHaveButtonConditions(resourceCenterData.tabs)) {
+      return;
+    }
+    let changed = false;
+    const tabs = await Promise.all(
+      resourceCenterData.tabs.map(async (tab) => {
+        const blocks = await Promise.all(
+          tab.blocks.map(async (block) => {
+            if (
+              block.type !== ResourceCenterBlockType.RICH_TEXT ||
+              !block.content ||
+              !rootsHaveButtonConditions(block.content)
+            ) {
+              return block;
+            }
+            const evaluated = await this.evaluateButtonConditionsInData(
+              block.content as ContentEditorRoot[],
+            );
+            if (isEqual(evaluated, block.content)) {
+              return block;
+            }
+            changed = true;
+            return { ...block, content: evaluated as typeof block.content };
+          }),
+        );
+        return { ...tab, blocks };
+      }),
+    );
+    if (changed) {
+      this.updateStore({
+        resourceCenterData: { ...resourceCenterData, tabs },
+      } as unknown as Partial<ResourceCenterStore>);
+    }
   }
 
   protected async getCustomStoreData(

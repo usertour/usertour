@@ -46,9 +46,11 @@ export interface AuditHttpRequest {
 }
 
 /**
- * Explicit audit metadata for write endpoints that don't carry
- * `@RequireCapability` (the v1 `src/openapi` REST surface). v2 endpoints derive
- * their descriptor from the capability instead.
+ * Explicit audit metadata for REST write endpoints. Two uses: the v1
+ * `src/openapi` surface (no `@RequireCapability` to derive from), and v2 routes
+ * whose capability derives the WRONG descriptor (membership routes under
+ * `company:write` / `segment:update` must record the member, not the parent) —
+ * an explicit `@Audit` always wins over the capability derivation.
  */
 export interface ExplicitAuditMeta {
   action: AuditAction;

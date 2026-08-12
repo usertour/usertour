@@ -19,8 +19,8 @@ import { RevealDialog } from './reveal-dialog';
 import {
   TokenFormFields,
   type TokenFormValues,
+  buildTokenFormSchema,
   tokenFormDefaults,
-  tokenFormSchema,
 } from './token-form';
 
 interface CreateDialogProps {
@@ -37,7 +37,7 @@ export const CreateDialog = (props: CreateDialogProps) => {
   const { t } = useTranslation();
 
   const form = useForm<TokenFormValues>({
-    resolver: zodResolver(tokenFormSchema),
+    resolver: zodResolver(buildTokenFormSchema(t)),
     defaultValues: tokenFormDefaults,
     mode: 'onChange',
   });
@@ -84,7 +84,7 @@ export const CreateDialog = (props: CreateDialogProps) => {
               <DialogHeader>
                 <DialogTitle>{t('settings.personalApiKeys.createTitle')}</DialogTitle>
               </DialogHeader>
-              <TokenFormFields control={form.control} />
+              <TokenFormFields control={form.control} autoSelectSingleEnvironment />
               <DialogFooter className="mt-6">
                 <Button
                   variant="outline"

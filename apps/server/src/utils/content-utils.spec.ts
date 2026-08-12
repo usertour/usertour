@@ -1,4 +1,8 @@
-import { canCompleteChecklistItem, priorityCompare } from './content-utils';
+import {
+  canCompleteChecklistItem,
+  extractClientConditionWaitTimers,
+  priorityCompare,
+} from './content-utils';
 
 // Sort semantics: negative = a first. PRIORITIES is ordered highest→lowest, so
 // a lower index sorts first.
@@ -67,5 +71,33 @@ describe('canCompleteChecklistItem — ordered skips invisible predecessors', ()
   it("'any' order never gates", () => {
     const items = [item('a'), item('b')];
     expect(canCompleteChecklistItem('any', items, items[1])).toBe(true);
+  });
+});
+
+describe('extractClientConditionWaitTimers — the delivery-side 300s cap', () => {
+  const version = (wait: number) =>
+    ({
+      id: 'v1',
+      contentId: 'c1',
+      content: { type: 'flow' },
+      config: {
+        enabledAutoStartRules: true,
+        autoStartRules: [{ type: 'current_url' }],
+        autoStartRulesSetting: { wait },
+      },
+    }) as never;
+
+  it('clamps a pasted-milliseconds value to 300 seconds', () => {
+    // 300000 is the recurring mistake: a milliseconds value in the SECONDS
+    // field. Unclamped it armed a 3.5-day timer while every describe promised
+    // "capped at 300 seconds by the runtime".
+    const [timer] = extractClientConditionWaitTimers([version(300_000)]);
+    expect(timer.waitTime).toBe(300);
+  });
+
+  it('passes legal values through untouched', () => {
+    const [timer] = extractClientConditionWaitTimers([version(45)]);
+    expect(timer.waitTime).toBe(45);
+    expect(extractClientConditionWaitTimers([version(0)])).toEqual([]);
   });
 });

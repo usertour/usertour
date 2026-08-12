@@ -22,6 +22,7 @@ import {
   hashSecret,
   tokenFingerprint,
 } from './oauth.crypto';
+import { matchesRegisteredRedirectUri } from './redirect-allowlist';
 
 const ALL_CAPABILITIES = new Set<string>(Object.values(Capability));
 
@@ -75,7 +76,7 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
   }
 
   async validateRedirectUri(redirectUri: string, client: Client): Promise<boolean> {
-    return toUris(client.redirectUris).includes(redirectUri);
+    return matchesRegisteredRedirectUri(toUris(client.redirectUris), redirectUri);
   }
 
   // Requested scopes must all be known Capability strings; the consent screen has
@@ -213,7 +214,15 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
       }
 
       // Rotating refresh overwrites the prior hash so an old refresh token no
-      // longer resolves (reuse detection).
+      // longer resolves (reuse detection) — EXCEPT for a short grace window:
+      // the outgoing hash moves to the previous slot (stamped rotatedAt), so a
+      // client whose refresh RESPONSE was lost in transit can retry with the
+      // old token instead of bricking the grant (getRefreshToken honors the
+      // slot for REFRESH_ROTATION_GRACE_MS, then it's dead).
+      const existing = await tx.oAuthGrant.findUnique({
+        where: { id: u.grantId },
+        select: { hashedRefreshToken: true },
+      });
       await tx.oAuthGrant.upsert({
         where: { id: u.grantId },
         create: {
@@ -230,6 +239,8 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
           scopes,
           allowedEnvironmentIds: u.allowedEnvironmentIds ?? undefined,
           hashedRefreshToken: token.refreshToken ? tokenFingerprint(token.refreshToken) : null,
+          previousHashedRefreshToken: existing?.hashedRefreshToken ?? null,
+          rotatedAt: existing?.hashedRefreshToken ? new Date() : null,
           refreshExpiresAt: token.refreshTokenExpiresAt ?? null,
           revokedAt: null,
         },
@@ -284,14 +295,26 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
     if (!fingerprint) {
       return false;
     }
-    const grant = await this.prisma.oAuthGrant.findUnique({
-      where: { hashedRefreshToken: fingerprint },
-    });
+    const grant =
+      (await this.prisma.oAuthGrant.findUnique({
+        where: { hashedRefreshToken: fingerprint },
+      })) ?? (await this.grantByPreviousHashWithinGrace(fingerprint));
     if (
       !grant ||
       grant.revokedAt ||
       (grant.refreshExpiresAt && grant.refreshExpiresAt.getTime() <= Date.now())
     ) {
+      return false;
+    }
+    // A disabled owner's grant must stop renewing: the access-token side already
+    // refuses at ApiTokenAuthService.authenticate, and letting refresh keep
+    // minting would extend the credential chain indefinitely. Standard
+    // invalid_grant (false); re-enabling the user restores the grant unchanged.
+    const owner = await this.prisma.user.findUnique({
+      where: { id: grant.userId },
+      select: { disabled: true },
+    });
+    if (!owner || owner.disabled) {
       return false;
     }
     const client = await this.getClient(grant.clientId, '');
@@ -317,4 +340,31 @@ export class OAuthModelService implements AuthorizationCodeModel, RefreshTokenMo
     // so the old refresh no longer resolves. Nothing to do here but acknowledge.
     return true;
   }
+
+  /**
+   * Rotation grace: resolve a refresh token that was JUST rotated away. A lost
+   * refresh response leaves the client holding only the old token; refusing it
+   * bricks the grant (interactive re-consent — MCP clients refresh unattended,
+   * so a network blip becomes a human interruption). Within the window the old
+   * token performs a NORMAL rotation — the retry hands the client a fresh pair
+   * (we store hashes only, so re-sending the lost pair is impossible by design).
+   * The trade is explicit: someone who stole the OLD token gets these same 60
+   * seconds — but they could have used it before the rotation anyway. Outside
+   * the window, and for revoked grants, refusal stays absolute.
+   */
+  private async grantByPreviousHashWithinGrace(fingerprint: string) {
+    const grant = await this.prisma.oAuthGrant.findUnique({
+      where: { previousHashedRefreshToken: fingerprint },
+    });
+    if (
+      !grant?.rotatedAt ||
+      grant.rotatedAt.getTime() <= Date.now() - OAuthModelService.REFRESH_ROTATION_GRACE_MS
+    ) {
+      return null;
+    }
+    return grant;
+  }
+
+  /** How long a rotated-away refresh token keeps resolving (lost-response retries). */
+  static readonly REFRESH_ROTATION_GRACE_MS = 60_000;
 }

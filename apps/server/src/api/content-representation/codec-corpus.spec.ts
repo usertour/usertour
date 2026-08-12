@@ -52,6 +52,10 @@ describe('codec corpus: markdown text is round-trip idempotent', () => {
     ['code fence', '```\nconst x = 1;\n```'],
     ['liquid', 'Hi {{ first_name | default: "friend" }}!'],
     ['liquid with markdown chars', 'Plan: {{ plan | default: "*VIP*" }} now'],
+    ['new-tab link suffix', 'Read [the docs](https://docs.x.io){target=_blank} today'],
+    ['bold wrapping liquid', '**Hi {{ name }}!** welcome'],
+    ['bold wrapping liquid only', 'Hi **{{ name }}**, welcome!'],
+    ['emphasis ending in liquid', '*Hey {{ name }}*'],
     [
       'mixed everything',
       '# Welcome\n\nA paragraph with **bold**, *italic*, a [link](https://x.io) and {{ name }}.\n\n- item *one*\n- item **two**',
@@ -79,6 +83,120 @@ describe('codec corpus: markdown text is round-trip idempotent', () => {
       const blocks = compileText(md) as any[];
       expect(leakText(blocks)).not.toContain('*');
     }
+  });
+
+  describe('link new-tab suffix (the ONE recognized attribute form)', () => {
+    const findLink = (nodes: any[]): any =>
+      nodes
+        .flatMap((n) => (n.type === 'link' ? [n] : Array.isArray(n.children) ? [n.children] : []))
+        .flatMap((x) => (Array.isArray(x) ? [findLink(x)] : [x]))
+        .find(Boolean);
+
+    it('compiles {target=_blank} after a link into openType new (suffix consumed)', () => {
+      const blocks = compileText('Go [here](https://x.io){target=_blank} now') as any[];
+      const link = findLink(blocks);
+      expect(link.openType).toBe('new');
+      const text = JSON.stringify(blocks);
+      expect(text).not.toContain('{target=_blank}');
+      expect(text).toContain(' now');
+    });
+
+    it('decompiles openType new back to the suffix (builder New tab survives edits)', () => {
+      const md = decompileText([
+        {
+          type: 'paragraph',
+          children: [
+            { text: 'Go ' },
+            { type: 'link', url: 'https://x.io', openType: 'new', children: [{ text: 'here' }] },
+          ],
+        },
+      ]);
+      expect(md).toBe('Go [here](https://x.io){target=_blank}');
+    });
+
+    it('requires strict adjacency — a space keeps the braces literal', () => {
+      const blocks = compileText('Go [here](https://x.io) {target=_blank}') as any[];
+      expect(findLink(blocks).openType).toBeUndefined();
+      expect(JSON.stringify(blocks)).toContain('{target=_blank}');
+    });
+
+    it('a bare {target=_blank} with no link stays literal text', () => {
+      const blocks = compileText('just {target=_blank} words') as any[];
+      expect(JSON.stringify(blocks)).toContain('{target=_blank}');
+    });
+  });
+
+  describe('emphasis × liquid runs survive STRUCTURALLY (string fixpoint can lie)', () => {
+    // The bug this pins: per-leaf mark wrapping emitted `*Hey *{{ name }}` — a
+    // space-before-closer CommonMark refuses — so the SECOND compile silently
+    // dropped the emphasis while the string round-trip stayed equal. Assert on
+    // the SLATE, not the string.
+    const roundTripSlate = (md: string) => compileText(decompileText(compileText(md)));
+
+    it('emphasis ending in a liquid node keeps its mark through a full round-trip', () => {
+      const s1 = compileText('*Hey {{ name }}*') as any[];
+      const s2 = roundTripSlate('*Hey {{ name }}*') as any[];
+      expect(s2).toEqual(s1);
+      expect(s2[0].children[0].italic).toBe(true);
+    });
+
+    it('bold wrapping a liquid node emits ONE span, not fragments', () => {
+      expect(decompileText(compileText('**Hi {{ name }}!** welcome'))).toBe(
+        '**Hi {{ name }}!** welcome',
+      );
+    });
+
+    it('emphasis wrapping ONLY an interpolation lands on the node and round-trips', () => {
+      // The flag has a home now (element-level marks the widget renders as
+      // b/i) — the old behavior normalized the wrap away because storing it
+      // had no renderable meaning.
+      const s1 = compileText('Hi **{{ name | default: "there" }}**, welcome!') as any[];
+      const attr = s1[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBe(true);
+      expect(attr.fallback).toBe('there');
+      const out = decompileText(s1);
+      expect(out).toBe('Hi **{{ name | default: "there" }}**, welcome!');
+      expect(compileText(out)).toEqual(s1);
+    });
+
+    it('emphasis wrapping words AND an interpolation flags the node too', () => {
+      const s1 = compileText('**Hi {{ name }}!** welcome') as any[];
+      const attr = s1[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBe(true);
+      expect(decompileText(s1)).toBe('**Hi {{ name }}!** welcome');
+    });
+
+    it('LEGACY unflagged interpolation between bold leaves stays unbold through write-back', () => {
+      // Builder-era storage: leaves bold, node unflagged (the name never
+      // rendered bold). The read form must keep the node OUTSIDE the emphasis
+      // so an echo does not silently bold it.
+      const legacy = [
+        {
+          type: 'paragraph',
+          children: [
+            { text: 'Hi ', bold: true },
+            { type: 'user-attribute', attrCode: 'name', fallback: '', children: [{ text: '' }] },
+            { text: '!', bold: true },
+          ],
+        },
+      ];
+      const md = decompileText(legacy);
+      expect(md).toBe('**Hi** {{ name }}**!**');
+      const back = compileText(md) as any[];
+      const attr = back[0].children.find((n: any) => n.type === 'user-attribute');
+      expect(attr.bold).toBeUndefined();
+    });
+
+    it('builder-shaped trailing-space bold leaf moves the space outside the markers', () => {
+      // Builder data can hold a bold leaf ending in a space (markdown never
+      // compiles to this, but decompile must not emit `**Hi **x` — invalid).
+      const md = decompileText([
+        { type: 'paragraph', children: [{ text: 'Hi ', bold: true }, { text: 'x' }] },
+      ]);
+      expect(md).toBe('**Hi** x');
+      const back = compileText(md) as any[];
+      expect(back[0].children[0]).toMatchObject({ text: 'Hi', bold: true });
+    });
   });
 
   // Out-of-subset markdown is intentionally normalized/dropped, not rejected. Lock the

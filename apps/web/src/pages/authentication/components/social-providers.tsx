@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@usertour/ui';
 import { GithubIcon, GoogleIcon, SpinnerIcon } from '@usertour/icons';
 import { apiUrl } from '@/utils/env';
@@ -13,10 +14,22 @@ interface SocialProvidersProps {
   inviteCode?: string;
 }
 
-const buildHref = (provider: AuthProvider, inviteCode?: string) =>
-  inviteCode
-    ? `${apiUrl}/api/auth/${provider}?inviteCode=${inviteCode}`
-    : `${apiUrl}/api/auth/${provider}`;
+// `next` rides along so the server can thread it through the OAuth state
+// round-trip and land the callback back on the interrupted flow (e.g. the MCP
+// consent page). Without it, a social login always ended on the homepage and
+// silently killed whatever needed the login. Same-origin validation happens
+// server-side; this only forwards.
+const buildHref = (provider: AuthProvider, inviteCode?: string, next?: string | null) => {
+  const params = new URLSearchParams();
+  if (inviteCode) {
+    params.set('inviteCode', inviteCode);
+  }
+  if (next?.startsWith('/') && !next.startsWith('//')) {
+    params.set('next', next);
+  }
+  const qs = params.toString();
+  return `${apiUrl}/api/auth/${provider}${qs ? `?${qs}` : ''}`;
+};
 
 export const SocialProviders = ({
   googleEnabled,
@@ -26,6 +39,7 @@ export const SocialProviders = ({
 }: SocialProvidersProps) => {
   const { t } = useTranslation('ui');
   const [pending, setPending] = useState<AuthProvider | null>(null);
+  const [searchParams] = useSearchParams();
 
   if (!googleEnabled && !githubEnabled) {
     return null;
@@ -33,7 +47,7 @@ export const SocialProviders = ({
 
   const launch = (provider: AuthProvider) => {
     setPending(provider);
-    window.location.href = buildHref(provider, inviteCode);
+    window.location.href = buildHref(provider, inviteCode, searchParams.get('next'));
   };
 
   return (

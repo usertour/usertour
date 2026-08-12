@@ -107,11 +107,7 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
       // Toggling on a published version forks a draft first (same behavior as
       // "Edit in builder"); the fork copies every translation row. The refetch
       // repoints the page at the draft.
-      const editableVersionId = await resolveEditableVersionId(
-        content,
-        version.id,
-        createContentVersion,
-      );
+      const editableVersionId = await resolveEditableVersionId(version.id, createContentVersion);
       // State-only write: omitting localized/backup keeps the stored
       // translation untouched — echoing this tab's cached copy back would
       // overwrite whatever a translator saved since the tab loaded.

@@ -74,10 +74,20 @@ export function mapSessionAnswers(
       // questions keep a number, multiple-choice keeps the option array, the rest
       // are text. Selecting by TYPE (not by which column is truthy) is why a scale
       // answer of 0 and an empty text answer no longer collapse or drop.
+      // Multiple-choice storage depends on the question's allowMultiple: multi
+      // select stores listAnswer, SINGLE select stores textAnswer (the contract
+      // the SDK, aggregate analytics and the web response view all share) — so
+      // read whichever column carries the answer and always emit the documented
+      // array shape. Keying off the stored row (not the question's CURRENT
+      // allowMultiple) keeps answers readable after the question is reconfigured.
       const answerValue = numberQuestionTypes.includes(question.type)
         ? (answer.numberAnswer ?? null)
         : question.type === ContentEditorElementType.MULTIPLE_CHOICE
-          ? (answer.listAnswer ?? [])
+          ? answer.listAnswer?.length
+            ? answer.listAnswer
+            : answer.textAnswer
+              ? [answer.textAnswer]
+              : []
           : (answer.textAnswer ?? '');
       return {
         id: answer.id,
@@ -118,7 +128,9 @@ export function mapContentSession(
         ? {
             id: session.content.id,
             object: ApiObjectType.CONTENT,
-            name: session.content.name,
+            // Nullable in storage, string in the contract — '' for legacy
+            // nameless rows (see content.mapper).
+            name: session.content.name ?? '',
             type: session.content.type,
             editedVersionId: session.content.editedVersionId,
             updatedAt: session.content.updatedAt.toISOString(),
@@ -136,7 +148,6 @@ export function mapContentSession(
             createdAt: session.bizCompany.createdAt.toISOString(),
           }
         : null,
-    isPreview: false,
     lastActivityAt: session.updatedAt.toISOString(),
     progress: session.progress,
     userId: session.bizUser?.externalId || null,

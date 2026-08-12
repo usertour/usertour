@@ -9,7 +9,8 @@ const translations = {
       scopesLabel: '权限',
       readOnly: '只读',
       environmentsLabel: '环境',
-      environmentsHelp: '此连接可作用的环境。',
+      environmentsHelp:
+        '此连接可作用的环境(发布、终端用户数据、分析)。它不限制可见的内容范围——内容是项目级的。',
       environmentsSelect: '选择环境',
       selectEnvironment: '所选权限需要至少选择一个环境。',
       noGrantableScopes: '你在该项目的角色无法授予此应用请求的任何权限。',
@@ -17,6 +18,8 @@ const translations = {
       deny: '拒绝',
       errorTitle: '授权出错',
       invalidRequest: '此授权请求无效或已过期。',
+      twoFactorRequired:
+        '当前实例要求开启二步验证。请先在账号安全设置中启用 2FA,然后从您的应用重新发起连接。',
     },
   },
   admin: {
@@ -244,6 +247,7 @@ const translations = {
   settings: {
     mcp: {
       title: 'MCP 服务器',
+      betaBadge: 'Beta',
       subtitle:
         '把 Claude、Cursor、ChatGPT 等 AI 助手连接到 Usertour——它们可以通过对话为你构建、发布和管理引导内容。',
       docsLink: '文档',
@@ -269,8 +273,9 @@ const translations = {
         },
         chatgpt: {
           title: 'ChatGPT',
-          blurb: '通过 ChatGPT 开发者模式的连接器接入。',
-          step1: '打开 Settings → Connectors → Advanced，开启 Developer mode，点击 "Create app"。',
+          blurb: '通过 ChatGPT 插件(Developer mode)接入。',
+          step1:
+            '打开 Settings → Plugins，开启 Developer mode，点击 "New Plugin"。（需要 ChatGPT 付费账号。）',
           step2: '设置名称和 MCP Server URL：',
           step3: 'Authentication 保持 OAuth 并提交——ChatGPT 会打开 Usertour 授权页，批准即连接。',
         },
@@ -942,6 +947,7 @@ const translations = {
       title: '审计日志',
       description: '谁在本项目里改动或删除了什么、何时、来自哪个写入面(Web、API 或 MCP)。',
       empty: '暂无审计日志。',
+      loadError: '审计日志加载失败,请刷新重试。',
       endOfLog: '没有更多记录了。',
       columns: {
         time: '时间',
@@ -984,6 +990,14 @@ const translations = {
         allActors: '全部操作者',
         environment: '环境',
         clear: '清除筛选',
+        resourceLabels: {
+          api_token: 'API 密钥',
+          access_token: 'SDK 令牌',
+          signing_secret: '签名密钥',
+          oauth_grant: '已连接的应用',
+          sso_provider: 'SSO 提供商',
+          project_sso_settings: 'SSO 设置',
+        },
       },
     },
     connectedApps: {
@@ -995,6 +1009,9 @@ const translations = {
       revokeDescription: '这将立即使其访问失效。该应用需重新授权才能再次连接。',
       never: '从未',
       allEnvironments: '全部',
+      noEnvironments: '无可用环境',
+      noEnvironmentsTooltip:
+        '授权给此应用的环境已被删除,它已无法对任何环境操作。请撤销后重新连接,以授权新的环境。',
       columns: {
         app: '应用',
         project: '项目',
@@ -1011,6 +1028,9 @@ const translations = {
       headerDocs: '阅读 API 文档',
       newButton: '新建密钥',
       empty: '暂无个人 API 密钥。',
+      form: {
+        environmentRequired: '所选权限范围需要至少选择一个环境',
+      },
       columns: {
         name: '名称',
         key: '密钥',
@@ -1024,6 +1044,9 @@ const translations = {
       scopesCount_other: '{{count}} 项权限',
       environmentsAllBadge: '全部',
       environmentsCount_other: '{{count}} 个环境',
+      environmentsNoneBadge: '无可用环境',
+      environmentsNoneTooltip:
+        '此密钥圈定的环境已被删除,目前无法对任何环境操作。请编辑重新选择环境,或删除此密钥。',
       lastUsedNever: '从未',
       createTitle: '新建个人 API 密钥',
       nameLabel: '名称',
@@ -1034,7 +1057,8 @@ const translations = {
       projectSearch: '搜索项目...',
       projectEmpty: '未找到项目。',
       environmentsLabel: '环境',
-      environmentsHelp: '此密钥可作用的环境(发布、用户、会话等)。',
+      environmentsHelp:
+        '此密钥可作用的环境:发布、终端用户数据(用户 / 公司 / 会话 / 分群成员)、分析,以及环境记录本身。它并不限制此密钥能"看到"哪些内容——内容、版本、主题都是项目级的,只要带内容权限就能读取(并按权限修改或删除)项目里的全部内容,包括正在其他环境上线的那些。要做到真正隔离,请使用独立项目。',
       environmentsPickProject: '请先选择项目。',
       environmentsSelect: '选择环境',
       scopesLabel: '权限范围',
@@ -2010,12 +2034,15 @@ const translations = {
         totalViews: '总浏览量',
         totalCompletionRate: '总完成率',
         launcher: {
-          uniqueViewsTooltip: '看到该启动器的独立用户数。',
+          uniqueViewsTooltip:
+            '在所选时间范围内首次看到该启动器的用户数——每位用户只在首次触达的那天计一次。',
           activationRate: '激活率',
-          activationRateTooltip: '看到启动器并将其激活（例如点击或悬停）的用户占比。',
+          activationRateTooltip:
+            '在该范围内新触达的用户中，完成首次激活（例如点击或悬停）的占比。重复激活不会重复计数。',
         },
         banner: {
-          uniqueViewsTooltip: '看到该横幅的独立用户数。',
+          uniqueViewsTooltip:
+            '在所选时间范围内首次看到该横幅的用户数——每位用户只在首次触达的那天计一次。',
           dismissals: '关闭次数',
           dismissalsTooltip: '关闭该横幅的独立用户数。',
         },
@@ -2837,8 +2864,8 @@ const translations = {
       selectWidget: '选择 widget…',
     },
     validation: {
-      toleranceMax: '最大值为 {{max}}',
-      widthZero: '宽度不能为 0',
+      range: '范围 {{min}} 到 {{max}},预览按就近的允许值渲染',
+      min: '最小 {{min}},预览按就近的允许值渲染',
       invalidVariation: '“{{name}}” 还有未填写完整的条件,先修复或移除再保存。',
     },
     alerts: {

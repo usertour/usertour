@@ -1,4 +1,9 @@
-import { themeSettingsPatchSchema } from './settings.schema';
+import { defaultSettings } from '@usertour/constants';
+import {
+  normalizeStoredSettings,
+  unknownColorKeyHint,
+  themeSettingsPatchSchema,
+} from './settings.schema';
 
 // The schema is generated from the builder field schema (the constraint SSOT).
 // These cover the generation rules, not every field — a builder change to a
@@ -53,8 +58,20 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
     // rejects them when the value differs from the theme's current one.
     expect(ok({ avatar: { type: 'url', url: 'https://x/a.png' } })).toBe(true);
     expect(ok({ resourceCenter: { logoUrl: 'https://x/l.png' } })).toBe(true);
+
     // a plain style number (icon size) stays in
     expect(ok({ avatar: { size: 40 } })).toBe(true);
+  });
+
+  it('media URLs are writable with real validation: http(s) or empty only', () => {
+    // Writable — the caller is the workspace admin; same trust as image/embed blocks.
+    expect(ok({ resourceCenter: { logoUrl: 'https://cdn.example.com/logo.svg' } })).toBe(true);
+    expect(ok({ resourceCenterLauncherButton: { iconUrl: 'http://a.b/i.png' } })).toBe(true);
+    expect(ok({ resourceCenter: { headerBackground: { imageUrl: '' } } })).toBe(true); // clear
+    // But not garbage — these render straight into end users' pages.
+    expect(ok({ resourceCenter: { logoUrl: 'not a url' } })).toBe(false);
+    expect(ok({ resourceCenter: { logoUrl: 'javascript:alert(1)' } })).toBe(false);
+    expect(ok({ resourceCenter: { headerBackground: { imageUrl: 'ftp://x/y' } } })).toBe(false);
   });
 
   it('accepts an empty patch', () => {
@@ -71,7 +88,8 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
     expect(r.success).toBe(true);
     expect((r as { data: { border: { borderRadius: number } } }).data.border.borderRadius).toBe(8);
     // Range still applies to the coerced value; junk strings still fail.
-    expect(ok({ border: { borderRadius: '999' } })).toBe(false);
+    // (borderRadius has no upper bound, so the range probe is its min.)
+    expect(ok({ border: { borderRadius: '-1' } })).toBe(false);
     expect(ok({ border: { borderRadius: 'abc' } })).toBe(false);
   });
 
@@ -88,36 +106,69 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
     expect(data.resourceCenterLauncherButton?.borderRadius).toBeUndefined();
   });
 
-  it('accepts the full stored color-group shape incl. derived auto* companions', () => {
-    // ThemeTypesSettingsColor always persists all six keys; the SSOT only
-    // lists the UI-exposed ones. brandColor's autoHover/autoActive are the
-    // derived concrete colors behind 'Auto' (re-derived server-side on write).
+  it('accepts each color group exactly as wide as the renderer reads it', () => {
+    // Groups carry INTENT only — a text color has no `background`, a fill has
+    // no `color`, and the derivation cache (auto*) is not a contract key.
     expect(
       ok({
-        brandColor: {
-          color: '#f8fafc',
-          hover: 'Auto',
-          active: 'Auto',
-          background: '#111111',
-          autoHover: '#3162ec',
-          autoActive: '#274fbd',
-        },
+        brandColor: { color: '#f8fafc', hover: 'Auto', active: 'Auto', background: '#111111' },
         buttons: {
           primary: {
-            backgroundColor: {
-              color: '#FFFFFF',
-              hover: 'Auto',
-              active: 'Auto',
-              background: 'Auto',
-            },
-            textColor: { color: 'Auto', hover: 'Auto', active: 'Auto', background: '#FFFFFF' },
+            backgroundColor: { hover: 'Auto', active: 'Auto', background: 'Auto' },
+            textColor: { color: 'Auto', hover: 'Auto', active: 'Auto' },
           },
-        },
-        banner: {
-          backgroundColor: { color: '#FFFFFF', hover: 'Auto', active: 'Auto', background: 'Auto' },
         },
       }),
     ).toBe(true);
+  });
+
+  it('rejects template keys a group does not take; reads strip the stored remainder', () => {
+    // The uniform stored template carries keys some groups never render — the
+    // contract does not accept them (audited key-by-key against the renderer).
+    expect(ok({ buttons: { primary: { textColor: { background: '#FFFFFF' } } } })).toBe(false);
+    expect(ok({ buttons: { primary: { backgroundColor: { color: '#FFFFFF' } } } })).toBe(false);
+    expect(ok({ checklistLauncher: { counter: { hover: 'Auto' } } })).toBe(false);
+    // The derivation cache is a delivery detail, not a contract key — anywhere.
+    expect(ok({ brandColor: { autoHover: '#3162ec' } })).toBe(false);
+    expect(ok({ launcherButtons: { primary: { textColor: { autoHover: '#111111' } } } })).toBe(
+      false,
+    );
+    expect(unknownColorKeyHint('buttons.primary.textColor', 'background')).toBe(
+      '`buttons.primary.textColor` has no `background` — it takes {color, hover, active}',
+    );
+    expect(unknownColorKeyHint('brandColor', 'autoHover')).toContain('{background, color, hover');
+    expect(unknownColorKeyHint('resourceCenterLauncherButton.color', 'color')).toContain(
+      'foreground',
+    );
+
+    const read = normalizeStoredSettings({
+      brandColor: {
+        background: '#111111',
+        color: '#f8fafc',
+        hover: 'Auto',
+        active: 'Auto',
+        autoHover: '#3162ec',
+        autoActive: '#274fbd',
+      },
+      buttons: {
+        primary: {
+          textColor: { color: 'Auto', hover: 'Auto', active: 'Auto', background: '#FFFFFF' },
+        },
+      },
+      checklistLauncher: { counter: { background: 'Auto', color: 'Auto' } },
+    });
+    expect(read.brandColor).toEqual({
+      background: '#111111',
+      color: '#f8fafc',
+      hover: 'Auto',
+      active: 'Auto',
+    });
+    expect(read.buttons.primary.textColor).toEqual({
+      color: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+    });
+    expect(read.checklistLauncher.counter).toEqual({ background: 'Auto', color: 'Auto' });
   });
 
   it('does NOT extend the resource-center launcher color group (a different type)', () => {
@@ -140,5 +191,103 @@ describe('themeSettingsPatchSchema (generated from the field SSOT)', () => {
       }),
     ).toBe(true);
     expect(ok({ announcement: { bubbleWidth: 9999 } })).toBe(false);
+  });
+});
+
+describe('single-color settings are not turned into color groups', () => {
+  const ok = (v: unknown) => themeSettingsPatchSchema.safeParse(v).success;
+
+  it('pins the single-color list against the built-in default theme stored shape', () => {
+    // The evidence that these are NOT groups: the built-in theme stores exactly
+    // one color on each (plus non-color siblings). If the builder ever starts
+    // persisting hover/active/background on one, this fails and the path must
+    // move out of SINGLE_COLOR_SETTING_PATHS — otherwise a real field would be
+    // frozen as "not rendered".
+    const at = (path: string): Record<string, unknown> =>
+      path
+        .split('.')
+        .reduce<Record<string, unknown>>(
+          (o, k) => o[k] as Record<string, unknown>,
+          defaultSettings as unknown as Record<string, unknown>,
+        );
+    for (const path of [
+      'backdrop',
+      'backdrop.highlight',
+      'focusHighlight',
+      'launcherBeacon',
+      'progress',
+      'survey',
+      'xbutton',
+      'resourceCenter.headerBackground',
+    ]) {
+      const node = at(path);
+      expect({ path, keys: Object.keys(node).filter((k) => k !== 'color') }).toEqual({
+        path,
+        keys: Object.keys(node).filter(
+          (k) => !['color', 'background', 'hover', 'active', 'autoHover', 'autoActive'].includes(k),
+        ),
+      });
+    }
+  });
+
+  it('accepts the rendered `color`; companion keys are plain unknown paths', () => {
+    // `color` is the fill for these (the one inversion of the house convention).
+    expect(ok({ resourceCenter: { headerBackground: { type: 'color', color: '#111111' } } })).toBe(
+      true,
+    );
+    // No stored theme carries group companions on a single-color setting (the
+    // 2026-07/08 over-completion window left zero residue), so the schema does
+    // not accept them at all — strict mode rejects, and the service appends the
+    // signpost (unknownColorKeyHint) pointing at `.color`.
+    expect(ok({ resourceCenter: { headerBackground: { background: '#111111' } } })).toBe(false);
+    expect(ok({ xbutton: { hover: 'Auto' } })).toBe(false);
+    expect(ok({ backdrop: { autoHover: '#111111' } })).toBe(false);
+  });
+
+  it('signposts the habitual wrong key toward `.color`', () => {
+    expect(unknownColorKeyHint('backdrop', 'background')).toBe(
+      '`backdrop` takes a single color under `backdrop.color`',
+    );
+    // Body-rooted form, as the REST pipe's issue paths arrive.
+    expect(unknownColorKeyHint('settings.backdrop', 'background')).toBe(
+      '`backdrop` takes a single color under `backdrop.color`',
+    );
+    expect(unknownColorKeyHint('resourceCenter.headerBackground', 'autoActive')).toContain(
+      'resourceCenter.headerBackground.color',
+    );
+    // `color` itself is the real field, and real groups get no hint.
+    expect(unknownColorKeyHint('backdrop', 'color')).toBeUndefined();
+    // The banner pair are single-color settings whose real key differs:
+    // backgroundColor renders `background`, textColor renders `color`.
+    expect(unknownColorKeyHint('banner.backgroundColor', 'hover')).toBe(
+      '`banner.backgroundColor` takes a single color under `banner.backgroundColor.background`',
+    );
+    expect(unknownColorKeyHint('banner.backgroundColor', 'background')).toBeUndefined();
+    expect(unknownColorKeyHint('banner.textColor', 'background')).toContain(
+      'banner.textColor.color',
+    );
+  });
+
+  it('banner colors are single-color: real key accepted, stored companions stripped on read', () => {
+    // The renderer recomputes banner hover/active from the two base colors on
+    // every render (convert-settings' banner block) — the stored companions
+    // carry no information, so the contract models two single colors.
+    expect(ok({ banner: { backgroundColor: { background: '#0B5FFF' } } })).toBe(true);
+    expect(ok({ banner: { textColor: { color: 'Auto' } } })).toBe(true);
+    expect(ok({ banner: { backgroundColor: { hover: '#FF0000' } } })).toBe(false);
+    expect(ok({ banner: { textColor: { background: '#FFFFFF', hover: 'Auto' } } })).toBe(false);
+
+    // Reads strip the legacy stored shape down to the real key (both the base
+    // settings and each variation go through normalizeStoredSettings).
+    const read = normalizeStoredSettings({
+      banner: {
+        backgroundColor: { background: 'Auto', color: '#FFFFFF', hover: 'Auto', active: 'Auto' },
+        textColor: { background: '#FFFFFF', color: 'Auto', hover: 'Auto', active: 'Auto' },
+        padding: 8,
+      },
+    });
+    expect(read.banner.backgroundColor).toEqual({ background: 'Auto' });
+    expect(read.banner.textColor).toEqual({ color: 'Auto' });
+    expect(read.banner.padding).toBe(8);
   });
 });

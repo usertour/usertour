@@ -62,7 +62,7 @@ export const useListAuditLogsQuery = (
   options?: QueryHookOptions,
 ) => {
   const query = filter && Object.values(filter).some((v) => v != null) ? filter : undefined;
-  const { data, loading, networkStatus, refetch, fetchMore } = useQuery(ListAuditLogs, {
+  const { data, loading, networkStatus, error, refetch, fetchMore } = useQuery(ListAuditLogs, {
     variables: { projectId, first: AUDIT_LOG_PAGE_SIZE, orderBy: AUDIT_LOG_ORDER, query },
     skip: !projectId,
     notifyOnNetworkStatusChange: true,
@@ -103,5 +103,9 @@ export const useListAuditLogsQuery = (
     loadingMore,
     fetchNextPage,
     refetch,
+    // Surfaced so the page can render a load-error state — a swallowed server
+    // rejection (e.g. an entitlement drop the cached config hasn't caught up
+    // with) otherwise renders as an empty list, which reads as data loss.
+    error,
   };
 };

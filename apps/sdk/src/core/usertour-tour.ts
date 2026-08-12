@@ -11,7 +11,7 @@ import {
   SessionStep,
   SessionTheme,
 } from '@usertour/types';
-import { isQuestionElement } from '@usertour/helpers';
+import { isEqual, isQuestionElement } from '@usertour/helpers';
 import { TourStore, BaseStore } from '@/types/store';
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import {
@@ -21,7 +21,7 @@ import {
 } from '@/core/usertour-component';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
-import { createQuestionAnswerEventData } from '@/core/usertour-helper';
+import { createQuestionAnswerEventData, rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
@@ -69,6 +69,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       await this.checkTargetVisibility();
       // Process triggers
       await this.checkAndProcessTrigger();
+      // Re-evaluate button disable/hide conditions against the live page
+      await this.checkAndUpdateButtonConditions();
       // Check and update theme settings if needed
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
@@ -524,6 +526,33 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private resetStepTrigger() {
     this.stepTrigger?.destroy();
     this.stepTrigger = null;
+  }
+
+  /**
+   * Re-evaluates the current step's button disable/hide conditions and updates
+   * the store when the flags changed. The conditions are baked into the store
+   * once per build (evaluateButtonConditionsInData) — without this tick, a
+   * disabledWhen/hiddenWhen keyed on PAGE state (text_input / element) froze at
+   * its step-show value: type into the input, the button stays grey forever
+   * (live-probed). Attribute-keyed conditions were already fine (session pushes
+   * rebuild the store). Mirrors checkAndUpdateThemeSettings: re-derive, deep
+   * compare, update only on change.
+   * @private
+   */
+  private async checkAndUpdateButtonConditions(): Promise<void> {
+    const store = this.getStoreData();
+    const currentStep = store?.currentStep;
+    const data = currentStep?.data as ContentEditorRoot[] | undefined;
+    if (!currentStep || !data || !rootsHaveButtonConditions(data)) {
+      return;
+    }
+    const evaluated = await this.evaluateButtonConditionsInData(data);
+    if (isEqual(evaluated, data)) {
+      return;
+    }
+    this.updateStore({
+      currentStep: { ...currentStep, data: evaluated },
+    } as unknown as Partial<TourStore>);
   }
 
   // === Visibility Checking ===

@@ -1,3 +1,4 @@
+import { MAX_WAIT_SECONDS } from '@usertour/constants';
 import {
   BizEvents,
   ContentDataType,
@@ -1022,7 +1023,14 @@ export const extractClientConditionWaitTimers = (
         contentId: customContentVersion.contentId,
         contentType: customContentVersion.content.type as ContentDataType,
         versionId: customContentVersion.id,
-        waitTime: customContentVersion.config.autoStartRulesSetting.wait,
+        // Delivery-side half of the documented "capped at 300 seconds by the
+        // runtime": stored values are left untouched (legacy rows may carry a
+        // pasted milliseconds value like 300000), the cap applies on the way
+        // out. The SDK wait-timer monitor clamps with the same constant.
+        waitTime: Math.min(
+          customContentVersion.config.autoStartRulesSetting.wait,
+          MAX_WAIT_SECONDS,
+        ),
       });
     }
   }

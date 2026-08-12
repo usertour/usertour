@@ -3,6 +3,8 @@ import { ApiResponse } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+import { VALIDATION_ISSUE_RULES } from '@/common/errors/errors';
+
 /**
  * The v2 error envelope, exactly as OpenAPIExceptionFilter emits it. Declared
  * once so every endpoint's 400/401/403 (and any error status) shares ONE typed
@@ -11,11 +13,15 @@ import { z } from 'zod';
  * failures (validation and auth).
  */
 const errorIssue = z.object({
+  // Deliberately a string + prose list, NOT z.enum: an enum in the spec makes
+  // strict generated clients treat a future rule family as a breaking change.
+  // The list derives from the runtime vocabulary so it cannot drift again.
   rule: z
     .string()
     .describe(
-      'Which validation layer rejected it: schema | reactive_condition | action_not_allowed | ' +
-        'step_shape | reference_target | auto_start.',
+      `Which validation layer rejected it: ${VALIDATION_ISSUE_RULES.join(
+        ' | ',
+      )}. New values may be added; treat an unknown value as a generic validation failure.`,
     ),
   message: z.string(),
   path: z

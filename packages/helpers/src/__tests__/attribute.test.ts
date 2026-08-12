@@ -4,8 +4,10 @@ import {
   RulesCondition,
   SimpleAttribute,
   AttributeBizTypes,
+  RulesType,
 } from '@usertour/types';
-import { evaluateFilterConditions, evaluateAttributeCondition } from '../conditions/attribute';
+import { evaluateAttributeCondition } from '../conditions/attribute';
+import { evaluateRulesConditions, isConditionsActived } from '../conditions/condition';
 
 // Test data setup
 const testAttributes: SimpleAttribute[] = [
@@ -129,7 +131,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "not" condition correctly', () => {
@@ -145,7 +147,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "contains" condition correctly', () => {
@@ -161,7 +163,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "notContain" condition correctly', () => {
@@ -177,7 +179,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "startsWith" condition correctly', () => {
@@ -193,7 +195,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "endsWith" condition correctly', () => {
@@ -209,7 +211,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -224,7 +226,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -239,7 +241,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
   });
 
@@ -257,7 +259,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "not" condition correctly', () => {
@@ -273,7 +275,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isLessThan" condition correctly', () => {
@@ -289,7 +291,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isLessThanOrEqualTo" condition correctly', () => {
@@ -305,7 +307,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isGreaterThan" condition correctly', () => {
@@ -321,7 +323,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isGreaterThanOrEqualTo" condition correctly', () => {
@@ -337,7 +339,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "between" condition correctly', () => {
@@ -354,7 +356,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -369,7 +371,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -384,7 +386,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
   });
 
@@ -402,7 +404,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "is" condition when actualValue is string and expectedValue is number', () => {
@@ -424,7 +426,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(
-        evaluateFilterConditions(condition, {
+        evaluateAttributeCondition(condition[0], {
           ...defaultOptions,
           userAttributes: userAttributesWithStringNumber,
         }),
@@ -450,7 +452,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(
-        evaluateFilterConditions(condition, {
+        evaluateAttributeCondition(condition[0], {
           ...defaultOptions,
           userAttributes: userAttributesWithStringNumber,
         }),
@@ -470,7 +472,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isLessThan" condition when expectedValue is string', () => {
@@ -486,7 +488,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "isGreaterThan" condition when expectedValue is string', () => {
@@ -502,7 +504,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "between" condition when value and value2 are strings', () => {
@@ -519,7 +521,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "between" condition when actualValue is string and values are strings', () => {
@@ -542,7 +544,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(
-        evaluateFilterConditions(condition, {
+        evaluateAttributeCondition(condition[0], {
           ...defaultOptions,
           userAttributes: userAttributesWithStringNumber,
         }),
@@ -568,7 +570,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(
-        evaluateFilterConditions(condition, {
+        evaluateAttributeCondition(condition[0], {
           ...defaultOptions,
           userAttributes: userAttributesWithNaN,
         }),
@@ -594,7 +596,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(
-        evaluateFilterConditions(condition, {
+        evaluateAttributeCondition(condition[0], {
           ...defaultOptions,
           userAttributes: userAttributesWithDecimal,
         }),
@@ -620,7 +622,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(
-        evaluateFilterConditions(condition, {
+        evaluateAttributeCondition(condition[0], {
           ...defaultOptions,
           userAttributes: userAttributesWithNegative,
         }),
@@ -641,7 +643,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "false" condition correctly', () => {
@@ -656,7 +658,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -671,7 +673,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -686,7 +688,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
   });
 
@@ -704,7 +706,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "includesAll" condition correctly', () => {
@@ -720,7 +722,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     describe('notIncludesAtLeastOne condition', () => {
@@ -738,7 +740,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], 'guest' is not included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
       });
 
       test('should return true when at least one value is not included (partial values not included)', () => {
@@ -755,7 +757,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], 'admin' is included but 'guest' is not
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
       });
 
       test('should return true when all values are not included', () => {
@@ -772,7 +774,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], both 'guest' and 'visitor' are not included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
       });
 
       test('should return false when all values are included', () => {
@@ -789,7 +791,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], both values are included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
       });
 
       test('should return false when single value is included', () => {
@@ -806,7 +808,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], 'admin' is included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
       });
 
       test('should return true for numeric list when at least one value is not included', () => {
@@ -823,7 +825,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // tags: [123, 456], 123 is included but 444 is not
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
       });
 
       test('should return false for numeric list when all values are included', () => {
@@ -840,7 +842,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // tags: [123, 456], both values are included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
       });
     });
 
@@ -859,7 +861,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], both 'guest' and 'visitor' are not included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
       });
 
       test('should return true when single value is not included', () => {
@@ -876,7 +878,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], 'guest' is not included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
       });
 
       test('should return false when at least one value is included', () => {
@@ -893,7 +895,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], 'admin' is included but 'guest' is not
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
       });
 
       test('should return false when all values are included', () => {
@@ -910,7 +912,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], both values are included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
       });
 
       test('should return false when single value is included', () => {
@@ -927,7 +929,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // roles: ['admin', 'user'], 'admin' is included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
       });
 
       test('should return true for numeric list when all values are not included', () => {
@@ -944,7 +946,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // tags: [123, 456], both 1234 and 789 are not included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
       });
 
       test('should return false for numeric list when at least one value is included', () => {
@@ -961,7 +963,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // tags: [123, 456], 123 is included but 444 is not
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
       });
 
       test('should return false for numeric list when all values are included', () => {
@@ -978,7 +980,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         ];
         // tags: [123, 456], both values are included
-        expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+        expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
       });
     });
 
@@ -994,7 +996,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -1009,7 +1011,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
   });
 
@@ -1027,7 +1029,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should evaluate "exactly" condition correctly', () => {
@@ -1044,7 +1046,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       // This will be false because the signUpDate is not exactly 30 days ago
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should evaluate "moreThan" condition correctly', () => {
@@ -1060,7 +1062,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "before" condition correctly', () => {
@@ -1076,7 +1078,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "on" condition correctly', () => {
@@ -1092,7 +1094,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "after" condition correctly', () => {
@@ -1108,7 +1110,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate "empty" condition correctly', () => {
@@ -1123,7 +1125,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should evaluate "any" condition correctly', () => {
@@ -1138,7 +1140,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
   });
 
@@ -1166,51 +1168,79 @@ describe('Attribute Filter - Complete Test Suite', () => {
 
     test('lessThan N matches ALL future dates (the "last N days" reading only holds for past dates)', () => {
       expect(
-        evaluateFilterConditions(relCondition('lessThan', 7), optionsWithDate(daysFromNow(30))),
+        evaluateAttributeCondition(
+          relCondition('lessThan', 7)[0],
+          optionsWithDate(daysFromNow(30)),
+        ),
       ).toBe(true);
     });
 
     test('lessThan 0 means "date is in the future"', () => {
       expect(
-        evaluateFilterConditions(relCondition('lessThan', 0), optionsWithDate(daysFromNow(3))),
+        evaluateAttributeCondition(relCondition('lessThan', 0)[0], optionsWithDate(daysFromNow(3))),
       ).toBe(true);
       expect(
-        evaluateFilterConditions(relCondition('lessThan', 0), optionsWithDate(daysFromNow(-3))),
+        evaluateAttributeCondition(
+          relCondition('lessThan', 0)[0],
+          optionsWithDate(daysFromNow(-3)),
+        ),
       ).toBe(false);
     });
 
     test('moreThan −N means "date is before now + N days"', () => {
       expect(
-        evaluateFilterConditions(relCondition('moreThan', -7), optionsWithDate(daysFromNow(3))),
+        evaluateAttributeCondition(
+          relCondition('moreThan', -7)[0],
+          optionsWithDate(daysFromNow(3)),
+        ),
       ).toBe(true);
       expect(
-        evaluateFilterConditions(relCondition('moreThan', -7), optionsWithDate(daysFromNow(10))),
+        evaluateAttributeCondition(
+          relCondition('moreThan', -7)[0],
+          optionsWithDate(daysFromNow(10)),
+        ),
       ).toBe(false);
     });
 
-    test('lessThan 0 AND moreThan −7 = the rolling "within the next 7 days" window', () => {
+    test('lessThan 0 AND moreThan −7 = the rolling "within the next 7 days" window', async () => {
       const window: RulesCondition[] = [
         {
           id: 'w1',
-          type: 'condition',
+          type: 'user-attr',
           operators: 'and',
           data: { logic: 'lessThan', value: 0, attrId: 'signUpDate-attr' },
         },
         {
           id: 'w2',
-          type: 'condition',
+          type: 'user-attr',
           operators: 'and',
           data: { logic: 'moreThan', value: -7, attrId: 'signUpDate-attr' },
         },
       ];
-      expect(evaluateFilterConditions(window, optionsWithDate(daysFromNow(3)))).toBe(true);
-      expect(evaluateFilterConditions(window, optionsWithDate(daysFromNow(10)))).toBe(false);
-      expect(evaluateFilterConditions(window, optionsWithDate(daysFromNow(-3)))).toBe(false);
+      expect(await combined(window, optionsWithDate(daysFromNow(3)))).toBe(true);
+      expect(await combined(window, optionsWithDate(daysFromNow(10)))).toBe(false);
+      expect(await combined(window, optionsWithDate(daysFromNow(-3)))).toBe(false);
     });
   });
 
-  describe('Complex conditions with AND/OR logic', () => {
-    test('should evaluate AND condition correctly', () => {
+  // Composition semantics are the PRODUCTION combiner's: evaluate each leaf
+  // via evaluateRulesConditions (the runtime pipeline that stamps `actived`),
+  // then collapse with isConditionsActived — the joiner comes from
+  // conditions[0].operators, and an empty list is FALSE. (These used to run
+  // through evaluateFilterConditions, a dead never-shipped combiner with
+  // AND/OR buckets and empty-is-true — opposite of production on both counts.)
+  const combined = async (conditions: RulesCondition[], options = defaultOptions) =>
+    isConditionsActived(
+      await evaluateRulesConditions(conditions, {
+        ...options,
+        // Per-type evaluation is OFF by default in evaluateRule; production
+        // callers switch on exactly the types they evaluate.
+        typeControl: { [RulesType.USER_ATTR]: true },
+      }),
+    );
+
+  describe('Complex conditions with AND/OR logic (production combiner)', () => {
+    test('should evaluate AND condition correctly', async () => {
       const condition: RulesCondition[] = [
         {
           id: 'condition-36',
@@ -1220,7 +1250,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           conditions: [
             {
               id: 'condition-36-1',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'and',
               data: {
                 logic: 'contains',
@@ -1230,7 +1260,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
             },
             {
               id: 'condition-36-2',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'and',
               data: {
                 logic: 'isGreaterThan',
@@ -1241,10 +1271,10 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(await combined(condition)).toBe(true);
     });
 
-    test('should evaluate OR condition correctly', () => {
+    test('should evaluate OR condition correctly', async () => {
       const condition: RulesCondition[] = [
         {
           id: 'condition-37',
@@ -1254,7 +1284,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           conditions: [
             {
               id: 'condition-37-1',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'or',
               data: {
                 logic: 'is',
@@ -1264,7 +1294,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
             },
             {
               id: 'condition-37-2',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'or',
               data: {
                 logic: 'isGreaterThan',
@@ -1275,10 +1305,10 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(await combined(condition)).toBe(true);
     });
 
-    test('should evaluate mixed AND/OR condition correctly', () => {
+    test('should evaluate mixed AND/OR condition correctly', async () => {
       const condition: RulesCondition[] = [
         {
           id: 'condition-38',
@@ -1288,7 +1318,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           conditions: [
             {
               id: 'condition-38-1',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'and',
               data: {
                 logic: 'contains',
@@ -1304,7 +1334,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
               conditions: [
                 {
                   id: 'condition-38-2-1',
-                  type: 'condition',
+                  type: 'user-attr',
                   operators: 'or',
                   data: {
                     logic: 'is',
@@ -1314,7 +1344,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
                 },
                 {
                   id: 'condition-38-2-2',
-                  type: 'condition',
+                  type: 'user-attr',
                   operators: 'or',
                   data: {
                     logic: 'isGreaterThan',
@@ -1327,17 +1357,38 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(await combined(condition)).toBe(true);
     });
   });
 
   describe('Edge cases and error handling', () => {
-    test('should handle empty conditions array', () => {
-      expect(evaluateFilterConditions([], defaultOptions)).toBe(true);
+    test('empty conditions list is FALSE (production semantics — the empty-group-bug root cause)', async () => {
+      // The dead combiner said "no conditions means always true"; the runtime
+      // says an empty list activates NOTHING. This is the semantic whose
+      // inversion produced the empty-group bug — pinned in the true direction.
+      expect(await combined([])).toBe(false);
+      expect(isConditionsActived(null as unknown as RulesCondition[])).toBe(false);
     });
 
-    test('should handle null/undefined conditions', () => {
-      expect(evaluateFilterConditions(null as any, defaultOptions)).toBe(true);
+    test('a group with NO children is FALSE, and poisons an AND list containing it', async () => {
+      const emptyGroup: RulesCondition = {
+        id: 'g-empty',
+        type: 'group',
+        operators: 'and',
+        data: {},
+        conditions: [],
+      };
+      expect(await combined([emptyGroup])).toBe(false);
+      const withSibling: RulesCondition[] = [
+        {
+          id: 'sib',
+          type: 'user-attr',
+          operators: 'and',
+          data: { logic: 'contains', value: 'example.com', attrId: 'email-attr' },
+        },
+        emptyGroup,
+      ];
+      expect(await combined(withSibling)).toBe(false);
     });
 
     test('should handle missing attribute', () => {
@@ -1353,7 +1404,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should handle missing user attribute value', () => {
@@ -1375,7 +1426,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(
-        evaluateFilterConditions(condition, {
+        evaluateAttributeCondition(condition[0], {
           ...defaultOptions,
           userAttributes: userAttributesWithoutEmail,
         }),
@@ -1405,7 +1456,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         },
       ];
       expect(
-        evaluateFilterConditions(condition, {
+        evaluateAttributeCondition(condition[0], {
           ...defaultOptions,
           attributes: invalidAttribute,
         }),
@@ -1425,7 +1476,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should handle missing data in condition', () => {
@@ -1437,7 +1488,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           data: undefined,
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
 
     test('should handle missing attrId in condition', () => {
@@ -1452,7 +1503,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(false);
     });
   });
 
@@ -1470,7 +1521,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate company number attribute correctly', () => {
@@ -1486,7 +1537,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should handle missing company attribute value', () => {
@@ -1508,7 +1559,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         companyAttributes: {},
       };
 
-      expect(evaluateFilterConditions(condition, optionsWithoutCompany)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], optionsWithoutCompany)).toBe(false);
     });
   });
 
@@ -1526,7 +1577,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should evaluate membership number attribute correctly', () => {
@@ -1542,7 +1593,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           },
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(evaluateAttributeCondition(condition[0], defaultOptions)).toBe(true);
     });
 
     test('should handle missing membership attribute value', () => {
@@ -1564,12 +1615,12 @@ describe('Attribute Filter - Complete Test Suite', () => {
         membershipAttributes: {},
       };
 
-      expect(evaluateFilterConditions(condition, optionsWithoutMembership)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], optionsWithoutMembership)).toBe(false);
     });
   });
 
   describe('Mixed attribute types in conditions', () => {
-    test('should evaluate mixed user and company attributes with AND logic', () => {
+    test('should evaluate mixed user and company attributes with AND logic', async () => {
       const condition: RulesCondition[] = [
         {
           id: 'mixed-condition-1',
@@ -1579,7 +1630,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           conditions: [
             {
               id: 'mixed-condition-1-1',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'and',
               data: {
                 logic: 'contains',
@@ -1589,7 +1640,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
             },
             {
               id: 'mixed-condition-1-2',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'and',
               data: {
                 logic: 'isGreaterThan',
@@ -1600,10 +1651,10 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(await combined(condition)).toBe(true);
     });
 
-    test('should evaluate mixed user, company, and membership attributes with OR logic', () => {
+    test('should evaluate mixed user, company, and membership attributes with OR logic', async () => {
       const condition: RulesCondition[] = [
         {
           id: 'mixed-condition-2',
@@ -1613,7 +1664,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           conditions: [
             {
               id: 'mixed-condition-2-1',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'or',
               data: {
                 logic: 'is',
@@ -1623,7 +1674,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
             },
             {
               id: 'mixed-condition-2-2',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'or',
               data: {
                 logic: 'is',
@@ -1633,7 +1684,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
             },
             {
               id: 'mixed-condition-2-3',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'or',
               data: {
                 logic: 'is',
@@ -1644,7 +1695,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(await combined(condition)).toBe(true);
     });
   });
 
@@ -1763,7 +1814,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
         membershipAttributes: {},
       };
 
-      expect(evaluateFilterConditions(condition, emptyOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], emptyOptions)).toBe(false);
     });
 
     test('should handle missing attribute contexts', () => {
@@ -1784,10 +1835,10 @@ describe('Attribute Filter - Complete Test Suite', () => {
         attributes: testAttributes,
       };
 
-      expect(evaluateFilterConditions(condition, minimalOptions)).toBe(false);
+      expect(evaluateAttributeCondition(condition[0], minimalOptions)).toBe(false);
     });
 
-    test('should handle complex nested groups with mixed attribute types', () => {
+    test('should handle complex nested groups with mixed attribute types', async () => {
       const condition: RulesCondition[] = [
         {
           id: 'complex-nested-1',
@@ -1803,7 +1854,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
               conditions: [
                 {
                   id: 'complex-nested-1-1-1',
-                  type: 'condition',
+                  type: 'user-attr',
                   operators: 'or',
                   data: {
                     logic: 'contains',
@@ -1813,7 +1864,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
                 },
                 {
                   id: 'complex-nested-1-1-2',
-                  type: 'condition',
+                  type: 'user-attr',
                   operators: 'or',
                   data: {
                     logic: 'is',
@@ -1825,7 +1876,7 @@ describe('Attribute Filter - Complete Test Suite', () => {
             },
             {
               id: 'complex-nested-1-2',
-              type: 'condition',
+              type: 'user-attr',
               operators: 'and',
               data: {
                 logic: 'is',
@@ -1836,10 +1887,10 @@ describe('Attribute Filter - Complete Test Suite', () => {
           ],
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(true);
+      expect(await combined(condition)).toBe(true);
     });
 
-    test('should handle empty group conditions', () => {
+    test('should handle empty group conditions', async () => {
       const condition: RulesCondition[] = [
         {
           id: 'empty-group-1',
@@ -1849,10 +1900,10 @@ describe('Attribute Filter - Complete Test Suite', () => {
           conditions: [],
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(await combined(condition)).toBe(false);
     });
 
-    test('should handle group with undefined conditions', () => {
+    test('should handle group with undefined conditions', async () => {
       const condition: RulesCondition[] = [
         {
           id: 'undefined-group-1',
@@ -1862,7 +1913,129 @@ describe('Attribute Filter - Complete Test Suite', () => {
           conditions: undefined,
         },
       ];
-      expect(evaluateFilterConditions(condition, defaultOptions)).toBe(false);
+      expect(await combined(condition)).toBe(false);
+    });
+  });
+
+  describe('Unset number values never satisfy positive comparisons (NPS-branch regression)', () => {
+    // A never-set attribute reaches the evaluator as null or undefined
+    // (depending on the path); '' comes from empty form values. All three
+    // coerce to 0 (or NaN) via Number() and used to slip past the NaN guard,
+    // so e.g. `isLessThanOrEqualTo 6` matched every user who had not been
+    // given the attribute yet. `not` is deliberately the exception — it is
+    // exclusion, not comparison, matching the string evaluator and the
+    // segment SQL filter.
+    const numberCondition = (logic: string, value?: number, value2?: number): RulesCondition => ({
+      id: `unset-num-${logic}`,
+      type: 'condition',
+      operators: 'and',
+      data: { logic, value, value2, attrId: 'age-attr' },
+    });
+    const optionsWithAge = (age: any) => ({
+      ...defaultOptions,
+      userAttributes: { ...testUserAttributes, age } as UserTourTypes.Attributes,
+    });
+
+    const comparisonCases: Array<[string, number, number?]> = [
+      ['is', 0],
+      ['isLessThan', 10],
+      ['isLessThanOrEqualTo', 6],
+      ['isGreaterThan', -1],
+      ['isGreaterThanOrEqualTo', 0],
+      ['between', 0, 10],
+    ];
+
+    for (const unset of [null, undefined, '']) {
+      const label = unset === '' ? "''" : String(unset);
+
+      test(`positive comparisons are false when the value is ${label}`, () => {
+        for (const [logic, value, value2] of comparisonCases) {
+          expect(
+            evaluateAttributeCondition(
+              numberCondition(logic, value, value2),
+              optionsWithAge(unset),
+            ),
+          ).toBe(false);
+        }
+      });
+
+      test(`"not" is true when the value is ${label} — exclusion covers the unset`, () => {
+        expect(evaluateAttributeCondition(numberCondition('not', 5), optionsWithAge(unset))).toBe(
+          true,
+        );
+      });
+
+      test(`"empty" is true and "any" is false when the value is ${label}`, () => {
+        expect(evaluateAttributeCondition(numberCondition('empty'), optionsWithAge(unset))).toBe(
+          true,
+        );
+        expect(evaluateAttributeCondition(numberCondition('any'), optionsWithAge(unset))).toBe(
+          false,
+        );
+      });
+    }
+
+    test('"not" still excludes an actual match: value 5 fails "not 5"', () => {
+      expect(evaluateAttributeCondition(numberCondition('not', 5), optionsWithAge(5))).toBe(false);
+      expect(evaluateAttributeCondition(numberCondition('not', 5), optionsWithAge(3))).toBe(true);
+    });
+
+    test('a non-numeric value counts as present ("any") but satisfies no comparison', () => {
+      expect(evaluateAttributeCondition(numberCondition('any'), optionsWithAge('abc'))).toBe(true);
+      expect(evaluateAttributeCondition(numberCondition('empty'), optionsWithAge('abc'))).toBe(
+        false,
+      );
+      expect(
+        evaluateAttributeCondition(
+          numberCondition('isLessThanOrEqualTo', 6),
+          optionsWithAge('abc'),
+        ),
+      ).toBe(false);
+    });
+
+    test('zero is a real value: comparisons still see it', () => {
+      expect(
+        evaluateAttributeCondition(numberCondition('isLessThanOrEqualTo', 6), optionsWithAge(0)),
+      ).toBe(true);
+      expect(evaluateAttributeCondition(numberCondition('empty'), optionsWithAge(0))).toBe(false);
+      expect(evaluateAttributeCondition(numberCondition('any'), optionsWithAge(0))).toBe(true);
+    });
+  });
+
+  describe('Unset DateTime values: "empty"/"any" answered before the parse guard', () => {
+    const dateCondition = (logic: string, value?: string | number): RulesCondition => ({
+      id: `unset-date-${logic}`,
+      type: 'condition',
+      operators: 'and',
+      data: { logic, value, attrId: 'signUpDate-attr' },
+    });
+    const optionsWithDate = (signUpDate: any) => ({
+      ...defaultOptions,
+      userAttributes: { ...testUserAttributes, signUpDate } as UserTourTypes.Attributes,
+    });
+
+    test('"empty" is true for an unset date (used to be unreachable and always false)', () => {
+      expect(evaluateAttributeCondition(dateCondition('empty'), optionsWithDate(null))).toBe(true);
+      expect(evaluateAttributeCondition(dateCondition('empty'), optionsWithDate(''))).toBe(true);
+      expect(evaluateAttributeCondition(dateCondition('empty'), optionsWithDate(undefined))).toBe(
+        true,
+      );
+    });
+
+    test('"any" is false for an unset date and true for a set one', () => {
+      expect(evaluateAttributeCondition(dateCondition('any'), optionsWithDate(null))).toBe(false);
+      expect(
+        evaluateAttributeCondition(dateCondition('any'), optionsWithDate('2024-01-15T10:30:00Z')),
+      ).toBe(true);
+    });
+
+    test('date comparisons are false for an unset date', () => {
+      expect(
+        evaluateAttributeCondition(
+          dateCondition('before', '2030-01-01T00:00:00Z'),
+          optionsWithDate(null),
+        ),
+      ).toBe(false);
     });
   });
 });

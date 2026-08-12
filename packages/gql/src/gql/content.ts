@@ -303,6 +303,7 @@ export const getContentVersion = gql`
       createdAt
       updatedAt
       scheduledAt
+      publishedAt
       data
       steps {
         id

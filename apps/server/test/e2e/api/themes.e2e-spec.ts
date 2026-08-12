@@ -4,10 +4,14 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
+import { Prisma } from '@prisma/client';
+
 import {
+  buildAttribute,
   buildContent,
   buildEnvironment,
   buildProject,
+  buildSubscription,
   buildTheme,
   buildVersion,
 } from '../factories';
@@ -180,10 +184,49 @@ describe('API v2 themes + version themeId (e2e)', () => {
     // patch applied
     expect(res.body.settings.font.fontSize).toBe(18);
     expect(res.body.settings.brandColor.background).toBe('#ff0000');
-    // untouched default fields preserved; auto colors derived from the new base
+    // untouched default fields preserved; the derivation cache never leaks into reads
     expect(res.body.settings.font.lineHeight).toBeTruthy();
-    expect(res.body.settings.brandColor.autoHover).toBeTruthy();
+    expect(res.body.settings.brandColor.autoHover).toBeUndefined();
     expect(res.body.variations).toEqual([]);
+
+    // The render truth lives in the resolvedSettings view: every "Auto" concrete.
+    const resolved = await send(
+      'get',
+      `${basePath()}/${res.body.id}?expand=resolvedSettings`,
+      token,
+    );
+    expect(resolved.status).toBe(200);
+    expect(resolved.body.resolvedSettings.brandColor.hover).toMatch(/^#[0-9a-fA-F]{6}$/);
+    expect(resolved.body.resolvedSettings.brandColor.autoHover).toBeUndefined();
+    // intent stays unresolved in the settings view
+    expect(res.body.settings.brandColor.hover).toBe('Auto');
+  });
+
+  it('duplicates a theme — settings copied verbatim, name defaults to the source', async () => {
+    const token = await mint([Capability.ThemeCreate, Capability.ThemeRead]);
+    const source = await send('post', basePath(), token).send({
+      name: 'Duplicate source',
+      settings: { font: { fontSize: 21 }, brandColor: { background: '#0a0a0a' } },
+    });
+    expect(source.status).toBe(201);
+
+    // No `name` in the body → the copy keeps the source's name.
+    const copy = await send('post', `${basePath()}/${source.body.id}/duplicate`, token).send({});
+    expect(copy.status).toBe(201);
+    expect(copy.body.id).not.toBe(source.body.id);
+    expect(copy.body).toMatchObject({ object: 'theme', name: 'Duplicate source' });
+    expect(copy.body.settings).toEqual(source.body.settings);
+
+    // An explicit name wins.
+    const renamed = await send('post', `${basePath()}/${source.body.id}/duplicate`, token).send({
+      name: 'Derived',
+    });
+    expect(renamed.status).toBe(201);
+    expect(renamed.body.name).toBe('Derived');
+
+    const missing = await send('post', `${basePath()}/nope/duplicate`, token).send({});
+    expect(missing.status).toBe(404);
+    expect(missing.body.error.code).toBe('E1021');
   });
 
   it('rejects a settings patch with an unknown path (strict)', async () => {
@@ -193,6 +236,21 @@ describe('API v2 themes + version themeId (e2e)', () => {
       settings: { primaryColor: '#112233' },
     });
     expect(res.status).toBe(400);
+  });
+
+  it('rejects a group companion key on a single-color setting, pointing at `.color`', async () => {
+    // `background` is the fill in every real color group; these settings render
+    // `color`. The key is a plain unknown path (nothing stores it), but the
+    // error walks the caller to the right field.
+    const token = await mint([Capability.ThemeCreate]);
+    const res = await send('post', basePath(), token).send({
+      name: 'Bad companion',
+      settings: { backdrop: { background: '#0B3FB0' } },
+    });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toContain(
+      '`backdrop` takes a single color under `backdrop.color`',
+    );
   });
 
   it('rejects a settings value outside the field range', async () => {
@@ -264,6 +322,28 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(customAfter.body.isDefault).toBe(false);
   });
 
+  it('writes a media URL (logo) — admin-provided URLs are plainly writable now', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    const created = await send('post', basePath(), token).send({ name: 'MediaWrite' });
+    const res = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      settings: { resourceCenter: { logoUrl: 'https://cdn.example.com/brand/logo.svg' } },
+    });
+    expect(res.status).toBe(200);
+    const read = await api('get', `${basePath()}/${created.body.id}?expand=settings`, token);
+    expect(read.body.settings.resourceCenter.logoUrl).toBe(
+      'https://cdn.example.com/brand/logo.svg',
+    );
+    // Garbage is still rejected — it renders straight into end users' pages.
+    const bad = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      settings: { resourceCenter: { logoUrl: 'javascript:alert(1)' } },
+    });
+    expect(bad.status).toBe(400);
+  });
+
   it('rejects CHANGING a builder-managed media key, explicitly (not silently)', async () => {
     const token = await mint([Capability.ThemeCreate, Capability.ThemeUpdate]);
     const created = await send('post', basePath(), token).send({ name: 'MediaGuard' });
@@ -272,7 +352,29 @@ describe('API v2 themes + version themeId (e2e)', () => {
     });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('E1017');
-    expect(res.body.error.message).toContain('theme builder');
+    expect(res.body.error.message).toContain('read-only through the API');
+  });
+
+  it('reports EVERY violated builder-managed path at once (no one-at-a-time crawl)', async () => {
+    const token = await mint([Capability.ThemeCreate, Capability.ThemeUpdate]);
+    const created = await send('post', basePath(), token).send({ name: 'MediaGuardAll' });
+    // Valid SHAPES (type is a real enum member), changed VALUES — junk like
+    // type:'photo' now dies earlier at the schema layer naming the enum.
+    const res = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      settings: {
+        avatar: { type: 'upload', name: 'someone', url: 'https://x/a.png' },
+      },
+    });
+    expect(res.status).toBe(400);
+    const paths = (res.body.error.issues ?? []).map((i: { path?: string }) => i.path);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        'settings.avatar.type',
+        'settings.avatar.name',
+        'settings.avatar.url',
+      ]),
+    );
+    expect(paths).toHaveLength(3);
   });
 
   it('omits settings/variations without expand, includes them with expand', async () => {
@@ -347,7 +449,7 @@ describe('API v2 themes + version themeId (e2e)', () => {
     expect(res.body.settings.font.fontSize).toBe(20);
     expect(res.body.settings.brandColor.background).toBe('#123456');
     expect(res.body.settings.buttons.primary.backgroundColor).toBeTruthy();
-    expect(res.body.settings.brandColor.autoHover).toBeTruthy();
+    expect(res.body.settings.brandColor.autoHover).toBeUndefined();
   });
 
   it('updates theme settings (field-merged) and reads them back', async () => {
@@ -481,5 +583,265 @@ describe('API v2 themes + version themeId (e2e)', () => {
     const res = await send('post', basePath(), token).send({ name: 'x' });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('E1012');
+  });
+
+  it('customCss is plan-gated: introduce/change refused below Growth (E1038); echo + clear pass; a subscription unlocks', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    const css = '.usertour-widget { border-radius: 0 }';
+    try {
+      // Hobby (this project has no subscription): introducing customCss is
+      // refused on create — the builder shows an upsell here; storing it would
+      // only be stripped at delivery.
+      const blockedCreate = await send('post', basePath(), token).send({
+        name: 'CSS blocked',
+        settings: { customCss: css },
+      });
+      expect(blockedCreate.status).toBe(403);
+      expect(blockedCreate.body.error.code).toBe('E1038');
+
+      // …and on update of an existing css-free theme.
+      const plain = await send('post', basePath(), token).send({ name: 'CSS-free' });
+      expect(plain.status).toBe(201);
+      const blockedUpdate = await send('patch', `${basePath()}/${plain.body.id}`, token).send({
+        settings: { customCss: css },
+      });
+      expect(blockedUpdate.status).toBe(403);
+      expect(blockedUpdate.body.error.code).toBe('E1038');
+
+      // A theme that ALREADY stores css (builder-era write before a downgrade):
+      // echoing it back unchanged, and clearing it, must both stay legal —
+      // read-modify-write and cleanup never gate.
+      const stored = await prisma.theme.findUniqueOrThrow({ where: { id: plain.body.id } });
+      await prisma.theme.update({
+        where: { id: plain.body.id },
+        data: {
+          settings: {
+            ...(stored.settings as Record<string, unknown>),
+            customCss: css,
+          } as Prisma.InputJsonValue,
+        },
+      });
+      const echoed = await send('patch', `${basePath()}/${plain.body.id}`, token).send({
+        settings: { customCss: css, font: { fontSize: 17 } },
+      });
+      expect(echoed.status).toBe(200);
+      const cleared = await send('patch', `${basePath()}/${plain.body.id}`, token).send({
+        settings: { customCss: '' },
+      });
+      expect(cleared.status).toBe(200);
+
+      // A Business subscription opens the gate (the config is resolved fresh
+      // per request — no cache to go stale).
+      await buildSubscription(prisma, { projectId });
+      const allowed = await send('patch', `${basePath()}/${plain.body.id}`, token).send({
+        settings: { customCss: css },
+      });
+      expect(allowed.status).toBe(200);
+      const readBack = await send(
+        'get',
+        `${basePath()}/${plain.body.id}?expand=settings`,
+        token,
+      ).send();
+      expect(readBack.body.settings.customCss).toBe(css);
+    } finally {
+      // Restore the hobby state — suite neighbours must not inherit the plan.
+      await prisma.project.update({ where: { id: projectId }, data: { subscriptionId: null } });
+      await prisma.subscription.deleteMany({ where: { projectId } });
+    }
+  });
+
+  it('writes conditional variations: create round-trips, patch by id, list is a full replacement', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    // dataType 2 = String, bizType 1 = user — for codeName<->id compile coverage.
+    await buildAttribute(prisma, {
+      projectId,
+      codeName: 'plan_tier',
+      dataType: 2,
+      bizType: 1,
+    });
+    await buildAttribute(prisma, {
+      projectId,
+      codeName: 'color_scheme',
+      dataType: 2,
+      bizType: 1,
+    });
+
+    const created = await send('post', basePath(), token).send({
+      name: 'Varied',
+      settings: { brandColor: { background: '#112233' } },
+      variations: [
+        {
+          name: 'Dark',
+          conditions: [
+            {
+              type: 'attribute',
+              scope: 'user',
+              attribute: 'color_scheme',
+              op: 'is',
+              value: 'dark',
+            },
+          ],
+          settings: { brandColor: { background: '#000000' } },
+        },
+        {
+          name: 'Pro on app pages',
+          conditions: [
+            {
+              type: 'group',
+              match: 'all',
+              conditions: [
+                {
+                  type: 'attribute',
+                  scope: 'user',
+                  attribute: 'plan_tier',
+                  op: 'is',
+                  value: 'pro',
+                },
+                { type: 'current_url', includes: ['*/app/*'] },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(created.status).toBe(201);
+    const [dark, pro] = created.body.variations;
+    // Conditions round-trip through the codec back to the representation vocabulary.
+    expect(dark.conditions).toEqual([
+      expect.objectContaining({
+        type: 'attribute',
+        scope: 'user',
+        attribute: 'color_scheme',
+        op: 'is',
+        value: 'dark',
+      }),
+    ]);
+    expect(pro.conditions[0].conditions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'attribute', attribute: 'plan_tier', value: 'pro' }),
+        expect.objectContaining({ type: 'current_url', includes: ['*/app/*'] }),
+      ]),
+    );
+    // A variation stores a COMPLETE settings copy: the patch applied, the rest
+    // inherited from the theme base; the derivation cache never leaks into reads.
+    expect(dark.settings.brandColor.background).toBe('#000000');
+    expect(dark.settings.font.fontSize).toBeTruthy();
+    expect(dark.settings.brandColor.autoHover).toBeUndefined();
+    // No patch on the second variation — it IS the base.
+    expect(pro.settings.brandColor.background).toBe('#112233');
+    expect(dark.id).toBeTruthy();
+
+    // Patch the Dark variation in place by echoing its id, and DROP the second
+    // one — the list is a full replacement.
+    const updated = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      variations: [
+        {
+          id: dark.id,
+          name: 'Dark',
+          conditions: dark.conditions,
+          settings: { mainColor: { background: '#101010' } },
+        },
+      ],
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body.variations).toHaveLength(1);
+    const darkAfter = updated.body.variations[0];
+    expect(darkAfter.id).toBe(dark.id);
+    // Merge base was the variation's OWN stored settings, not the theme base.
+    expect(darkAfter.settings.brandColor.background).toBe('#000000');
+    expect(darkAfter.settings.mainColor.background).toBe('#101010');
+
+    // A made-up id must read as an error, not silently create a new variation.
+    const bogus = await send('patch', `${basePath()}/${created.body.id}`, token).send({
+      variations: [{ id: 'nope', name: 'x', conditions: dark.conditions }],
+    });
+    expect(bogus.status).toBe(400);
+    expect(bogus.body.error.message).toContain('does not match an existing variation');
+  });
+
+  it('variation guards: browser-only condition types, unknown refs, system themes, plan-gated css', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeUpdate,
+      Capability.ThemeRead,
+    ]);
+    // segment conditions are server-evaluated — structurally impossible in a
+    // variation, refused with directions.
+    const seg = await send('post', basePath(), token).send({
+      name: 'Bad seg',
+      variations: [{ name: 'v', conditions: [{ type: 'segment', segment: 'whatever', in: true }] }],
+    });
+    expect(seg.status).toBe(400);
+    expect(seg.body.error.message).toContain('start rules');
+
+    // element is browser-evaluable but NOT in the theme builder's variation
+    // editor — the API aligns with the builder and refuses it too.
+    const el = await send('post', basePath(), token).send({
+      name: 'Bad element',
+      variations: [
+        {
+          name: 'v',
+          conditions: [{ type: 'element', target: { selector: 'html.dark' }, state: 'present' }],
+        },
+      ],
+    });
+    expect(el.status).toBe(400);
+    expect(el.body.error.message).toContain('user attribute / current_url');
+
+    // attribute conditions align to the builder's USER attributes.
+    const co = await send('post', basePath(), token).send({
+      name: 'Bad scope',
+      variations: [
+        {
+          name: 'v',
+          conditions: [{ type: 'attribute', scope: 'company', attribute: 'plan_tier', op: 'any' }],
+        },
+      ],
+    });
+    expect(co.status).toBe(400);
+    expect(co.body.error.message).toContain('scope "user"');
+
+    // Unknown attribute codeName fails compilation with a real error.
+    const badRef = await send('post', basePath(), token).send({
+      name: 'Bad ref',
+      variations: [
+        {
+          name: 'v',
+          conditions: [{ type: 'attribute', scope: 'user', attribute: 'no_such_attr', op: 'any' }],
+        },
+      ],
+    });
+    expect(badRef.status).toBe(400);
+
+    // System themes reject variation changes like any content change (E1035).
+    const sys = await buildTheme(prisma, { projectId, name: 'Sys', isSystem: true });
+    const sysRes = await send('patch', `${basePath()}/${sys.id}`, token).send({
+      variations: [],
+    });
+    expect(sysRes.status).toBe(409);
+    expect(sysRes.body.error.code).toBe('E1035');
+
+    // customCss inside a VARIATION is plan-gated exactly like the base (E1038) —
+    // a variation must not smuggle css past the gate.
+    const css = await send('post', basePath(), token).send({
+      name: 'CSS via variation',
+      variations: [
+        {
+          name: 'v',
+          conditions: [{ type: 'current_url', includes: ['*'] }],
+          settings: { customCss: '.x { color: red }' },
+        },
+      ],
+    });
+    expect(css.status).toBe(403);
+    expect(css.body.error.code).toBe('E1038');
   });
 });

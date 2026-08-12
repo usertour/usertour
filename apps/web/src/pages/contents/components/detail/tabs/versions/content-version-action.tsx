@@ -1,5 +1,3 @@
-import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
-import { useContentDetail } from '@/hooks/use-content-detail';
 import { DotsHorizontalIcon, ResetIcon } from '@radix-ui/react-icons';
 import {
   Button,
@@ -16,8 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { ContentPublishForm } from '../../../shared/content-publish-form';
 import { ContentRestoreForm } from '../../../shared/content-restore-form';
 import { useAppContext } from '@/contexts/app-context';
-import { isPublishedInAllEnvironments } from '@/utils/content';
-import { useEnvironmentList } from '@/hooks/use-environment-list';
+import { useVersionActionState } from './use-version-action-state';
 
 type ContentVersionActionProps = {
   version: ContentVersion;
@@ -25,21 +22,17 @@ type ContentVersionActionProps = {
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;
   const { t } = useTranslation();
-  const { contentId } = useContentDetailUI();
   // No `refetch` destructure: the publish / restore mutations declare
   // `refetchQueries: ['getContent', ...]`, so Apollo refreshes the
   // owning content on success without each per-row component holding
   // its own callback. Same reason `useContentVersionList` is gone —
   // `useRestoreContentVersionMutation` already lists
   // `listContentVersions` in its refetchQueries.
-  const { content } = useContentDetail(contentId);
   const { isViewOnly } = useAppContext();
 
   const [openPublish, setOpenPublish] = useState(false);
   const [openRetore, setOpenRestore] = useState(false);
-  const { environmentList } = useEnvironmentList();
-
-  const isDisabledPublish = isPublishedInAllEnvironments(content, environmentList, version);
+  const { publishDisabled, restoreDisabled } = useVersionActionState(version.id);
 
   return (
     <>
@@ -55,7 +48,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[100px]">
           <DropdownMenuItem
-            disabled={isDisabledPublish}
+            disabled={publishDisabled}
             onClick={() => {
               setOpenPublish(true);
             }}
@@ -65,7 +58,7 @@ export const ContentVersionAction = (props: ContentVersionActionProps) => {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={content?.editedVersionId === version.id}
+            disabled={restoreDisabled}
             onClick={() => {
               setOpenRestore(true);
             }}

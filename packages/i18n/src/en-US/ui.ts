@@ -9,7 +9,8 @@ const translations = {
       scopesLabel: 'Permissions',
       readOnly: 'Read-only',
       environmentsLabel: 'Environments',
-      environmentsHelp: 'Which environments this connection can act on.',
+      environmentsHelp:
+        'Which environments this connection can act on (publishing, end-user data, analytics). It does not limit which content it can see — content is project-level.',
       environmentsSelect: 'Select environments',
       selectEnvironment: 'Select at least one environment for the selected permissions.',
       noGrantableScopes:
@@ -18,6 +19,8 @@ const translations = {
       deny: 'Deny',
       errorTitle: 'Authorization error',
       invalidRequest: 'This authorization request is invalid or has expired.',
+      twoFactorRequired:
+        'This instance requires two-factor authentication. Enable 2FA in your account security settings, then start the connection again from your app.',
     },
   },
   admin: {
@@ -250,6 +253,7 @@ const translations = {
   settings: {
     mcp: {
       title: 'MCP server',
+      betaBadge: 'Beta',
       subtitle:
         'Connect AI assistants like Claude, Cursor, and ChatGPT to Usertour — they can build, publish, and manage your onboarding through conversation.',
       docsLink: 'Docs',
@@ -278,9 +282,9 @@ const translations = {
         },
         chatgpt: {
           title: 'ChatGPT',
-          blurb: "Connect via ChatGPT's Developer-mode connectors.",
+          blurb: 'Connect via ChatGPT plugins (Developer mode).',
           step1:
-            'Open Settings → Connectors → Advanced, toggle Developer mode on, and click "Create app".',
+            'Open Settings → Plugins, enable Developer mode, and click "New Plugin". (Requires a paid ChatGPT plan.)',
           step2: 'Set the name and MCP Server URL:',
           step3:
             'Leave Authentication on OAuth and submit — ChatGPT opens the Usertour authorization screen. Approve to connect.',
@@ -994,6 +998,7 @@ const translations = {
       description:
         'Who changed or deleted what in this project, when, and from which surface (web, API, or MCP).',
       empty: 'No audit log entries yet.',
+      loadError: 'Failed to load the audit log. Refresh to retry.',
       endOfLog: 'End of log.',
       columns: {
         time: 'Time',
@@ -1037,6 +1042,14 @@ const translations = {
         allActors: 'All actors',
         environment: 'Environment',
         clear: 'Clear filters',
+        resourceLabels: {
+          api_token: 'API key',
+          access_token: 'SDK token',
+          signing_secret: 'Signing secret',
+          oauth_grant: 'Connected app',
+          sso_provider: 'SSO provider',
+          project_sso_settings: 'SSO settings',
+        },
       },
     },
     connectedApps: {
@@ -1050,6 +1063,9 @@ const translations = {
         'This immediately invalidates its access. The app must be re-authorized to connect again.',
       never: 'Never',
       allEnvironments: 'All',
+      noEnvironments: 'No environments',
+      noEnvironmentsTooltip:
+        'The environments granted to this app have been deleted, so it can no longer act on any environment. Revoke it and reconnect to grant new environments.',
       columns: {
         app: 'App',
         project: 'Project',
@@ -1068,6 +1084,9 @@ const translations = {
       headerDocs: 'Read the API reference',
       newButton: 'New key',
       empty: 'No personal API keys yet.',
+      form: {
+        environmentRequired: 'Select at least one environment for the selected scopes',
+      },
       columns: {
         name: 'Name',
         key: 'Key',
@@ -1083,6 +1102,9 @@ const translations = {
       environmentsAllBadge: 'All',
       environmentsCount_one: '{{count}} env',
       environmentsCount_other: '{{count}} envs',
+      environmentsNoneBadge: 'No environments',
+      environmentsNoneTooltip:
+        'The environments this key was scoped to have been deleted, so it can no longer act on any environment. Edit it to select new environments, or delete it.',
       lastUsedNever: 'Never',
       createTitle: 'New personal API key',
       nameLabel: 'Name',
@@ -1093,7 +1115,8 @@ const translations = {
       projectSearch: 'Search projects...',
       projectEmpty: 'No project found.',
       environmentsLabel: 'Environments',
-      environmentsHelp: 'Which environments this key can act on (publish, users, sessions…).',
+      environmentsHelp:
+        'Which environments this key can act on: publishing, end-user data (users / companies / sessions / segment membership), analytics and the environment records themselves. It does NOT limit what content the key can SEE — content, versions and themes are project-level, so any key with content scopes can read (and edit or delete) every piece in the project, including one that is live in an environment it cannot act on. For real isolation, use a separate project.',
       environmentsPickProject: 'Select a project first.',
       environmentsSelect: 'Select environments',
       scopesLabel: 'Scopes',
@@ -2125,13 +2148,15 @@ const translations = {
         totalViews: 'Total views',
         totalCompletionRate: 'Total completion rate',
         launcher: {
-          uniqueViewsTooltip: 'Unique users who saw the launcher.',
+          uniqueViewsTooltip:
+            'Users who saw the launcher for the FIRST time in the selected date range — each user counts once, on the day they were first reached.',
           activationRate: 'Activation rate',
           activationRateTooltip:
-            'Percentage of users who saw the launcher and activated it (e.g. by clicking or hovering over it).',
+            'Of the users first reached in the range, the share who made their first activation (e.g. clicking or hovering). Repeat activations never re-count a user.',
         },
         banner: {
-          uniqueViewsTooltip: 'Unique users who saw the banner.',
+          uniqueViewsTooltip:
+            'Users who saw the banner for the FIRST time in the selected date range — each user counts once, on the day they were first reached.',
           dismissals: 'Dismissals',
           dismissalsTooltip: 'Unique users who dismissed the banner.',
         },
@@ -3004,8 +3029,8 @@ const translations = {
       selectWidget: 'Select widget…',
     },
     validation: {
-      toleranceMax: 'Maximum value is {{max}}',
-      widthZero: 'Width cannot be 0',
+      range: 'Between {{min}} and {{max}} — the preview uses the nearest allowed value',
+      min: 'At least {{min}} — the preview uses the nearest allowed value',
       invalidVariation: '"{{name}}" has incomplete conditions — fix or remove them before saving.',
     },
     alerts: {

@@ -121,7 +121,9 @@ export class ApiAnalyticsController {
     description:
       'Per-question aggregates for survey questions in this content: answer distribution, ' +
       'NPS score with promoter/passive/detractor shares, rating averages — each with a ' +
-      'rolling-window daily series. Defaults to the last 30 days, UTC.',
+      'rolling-window daily series (CUMULATIVE over the trailing `rollingWindowDays`, ' +
+      'echoed per series — unlike the content-analytics per-day byDay). Defaults to the ' +
+      'last 30 days, UTC.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Content ID' })

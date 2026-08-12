@@ -1,7 +1,15 @@
-import { type ValidateContext, hasMissingRequiredData } from '@usertour/helpers';
+import { BUILTIN_LAUNCHER_ICON_NAMES } from '@usertour/constants';
+import {
+  AUTO_START_CAPABILITIES,
+  CONTENT_TYPE_TRAITS,
+  type ValidateContext,
+  hasMissingRequiredData,
+} from '@usertour/helpers';
+import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';
+import { matchesOembedProvider } from './embed-resolve';
 import {
   type AnnouncementData,
   type BannerData,
@@ -57,8 +65,9 @@ export interface ValidateUsableInput {
   data?: unknown;
   /** version.config (carries autoStartRules + the start-delay setting). */
   config?: {
+    enabledAutoStartRules?: boolean;
     autoStartRules?: RulesCondition[] | null;
-    autoStartRulesSetting?: { wait?: number } | null;
+    autoStartRulesSetting?: { wait?: number; frequency?: unknown } | null;
   } | null;
   /**
    * Project reference lists for SEMANTIC condition validation (attribute
@@ -69,32 +78,20 @@ export interface ValidateUsableInput {
   conditionContext?: ValidateContext;
 }
 
-// UI content types that render and therefore require a theme. Tracker is the
-// only headless type (it fires an event, no UI). Announcement is included even
-// though its theme only styles the POPUP presentation (the feed rows use the
-// resource center's own theme) — the builder seeds every announcement draft
-// with the default theme, and one uniform rule beats a per-distribution
-// exception.
-const UI_TYPES = new Set<string>([
-  ContentDataType.FLOW,
-  ContentDataType.CHECKLIST,
-  ContentDataType.LAUNCHER,
-  ContentDataType.BANNER,
-  ContentDataType.RESOURCE_CENTER,
-  ContentDataType.ANNOUNCEMENT,
-]);
+// Both sets are DERIVED from the capability matrix's per-type traits — the
+// rationale (why announcement needs a theme, why flow/checklist are exempt
+// from the auto-start warning) lives on CONTENT_TYPE_TRAITS, the SSOT.
+const UI_TYPES = new Set<string>(
+  Object.entries(CONTENT_TYPE_TRAITS)
+    .filter(([, t]) => t.requiresTheme)
+    .map(([type]) => type),
+);
 
-// Types that appear ONLY when their auto-start conditions match — they have no
-// session-resume first-show path (Banner is re-evaluated every toggle; Launcher
-// and Resource Center need auto-start to create the first session). With an empty
-// rule set the runtime's isEnabledAutoStartRules bails, so the content can never
-// surface on its own — but publish still succeeds. Flow/Checklist are excluded:
-// they routinely resume sessions and are commonly started via usertour.start().
-const AUTO_START_REQUIRED_TYPES = new Set<string>([
-  ContentDataType.LAUNCHER,
-  ContentDataType.BANNER,
-  ContentDataType.RESOURCE_CENTER,
-]);
+const AUTO_START_REQUIRED_TYPES = new Set<string>(
+  Object.entries(CONTENT_TYPE_TRAITS)
+    .filter(([, t]) => t.autoStartRequiredToAppear)
+    .map(([type]) => type),
+);
 
 /** Whether a content type renders UI and therefore needs a theme (everything but tracker). */
 export function requiresTheme(type: string): boolean {
@@ -116,6 +113,54 @@ function hasBlocks(roots?: ContentEditorRoot[] | null): boolean {
         : false,
     )
   );
+}
+
+/**
+ * Does this block tree render anything a user could actually SEE? `hasBlocks`
+ * only proves a column has children, and the announcement create path seeds a
+ * placeholder column holding one empty text element — so a freshly created
+ * announcement, untouched by its author, tripped the "detailContent is
+ * unreachable" warning against content that does not exist (support-round
+ * finding: the API warning about the API's own default).
+ *
+ * Conservative by construction: only a `text` element whose Slate leaves are all
+ * blank counts as empty. Any other element type (button / image / embed /
+ * question / anything future) counts as renderable.
+ */
+function hasRenderableContent(roots?: ContentEditorRoot[] | null): boolean {
+  let found = false;
+  const walk = (node: unknown): void => {
+    if (found || node === null || node === undefined) return;
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    if (typeof node !== 'object') return;
+    const o = node as {
+      element?: { type?: string; data?: unknown };
+      children?: unknown;
+      text?: unknown;
+    };
+    if (typeof o.text === 'string' && o.text.trim() !== '') {
+      found = true;
+      return;
+    }
+    const type = o.element?.type;
+    if (type && type !== 'group' && type !== 'column') {
+      if (type === 'text' && Array.isArray(o.element?.data)) {
+        // Slate payload lives on element.data — blank leaves mean nothing
+        // renders. Only an ARRAY payload is inspected; any other shape is
+        // treated as renderable rather than assumed empty.
+        walk(o.element?.data);
+      } else {
+        found = true;
+      }
+      return;
+    }
+    walk(o.children);
+  };
+  walk(roots);
+  return found;
 }
 
 function asArray<T>(value: unknown): T[] {
@@ -221,7 +266,7 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       validateBanner(parseData<BannerData>(input.data), err);
       break;
     case ContentDataType.RESOURCE_CENTER:
-      validateResourceCenter(parseData<ResourceCenterData>(input.data), err);
+      validateResourceCenter(parseData<ResourceCenterData>(input.data), err, warn);
       break;
     case ContentDataType.ANNOUNCEMENT:
       validateAnnouncement(parseData<AnnouncementData>(input.data), err, warn);
@@ -291,6 +336,26 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     }
   }
 
+  // A frequency-capable type (flow/checklist) with auto-start enabled but NO
+  // stored frequency runs with NO limit: the runtime gate passes
+  // unconditionally, so the content starts again every time its rules match
+  // once the prior session ends. The builder always persists a default and the
+  // v2 write path seeds `once`, so only legacy / builder-external writes reach
+  // this state — surface it instead of letting it ship silently.
+  if (
+    AUTO_START_CAPABILITIES[input.type as ContentDataType]?.frequency &&
+    input.config?.enabledAutoStartRules === true &&
+    input.config?.autoStartRulesSetting?.frequency == null
+  ) {
+    warn(
+      'startRules.frequency',
+      'No frequency is stored, so this version auto-starts with NO limit — every time its ' +
+        'start rules match after the previous session ends, it starts again. The intended ' +
+        'default is once; re-save the start rules (the API seeds `once` when frequency is ' +
+        'left unset) or set one explicitly.',
+    );
+  }
+
   if (AUTO_START_REQUIRED_TYPES.has(input.type)) {
     const rules = input.config?.autoStartRules;
     if (!rules || rules.length === 0) {
@@ -300,7 +365,15 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
           : '';
       warn(
         'config.autoStartRules',
-        `${input.type} has no start rules, so it never appears on its own — it surfaces only when its auto-start conditions match.${extra} Add at least one auto-start condition; for an always-available surface use a permissive current_url match. It can still be launched programmatically via usertour.start().`,
+        // The old middle clause said it "surfaces only when its auto-start
+        // conditions match" — of a content that HAS no conditions, which reads as
+        // a contradiction and tells the author nothing. State the consequence
+        // instead, then the two ways out.
+        `${input.type} has no start rules, so it never starts on its own for anyone.${extra} Add at least one auto-start condition — for an always-available surface a permissive current_url match. ${
+          input.type === ContentDataType.RESOURCE_CENTER
+            ? 'Or leave it rule-less on purpose and have the host app open it with usertour.start() — that DOES create the first session even with no rules, but then it reaches only the users the app explicitly launches it for.'
+            : 'It can still be launched programmatically via usertour.start().'
+        }`,
       );
     }
   }
@@ -346,6 +419,7 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     if (config?.hideRules) push(collectRuleIssues(config.hideRules, ctx, 'hideRules.when'));
     if (input.data) push(collectRuleIssues(input.data, ctx, 'data'));
     collectBindIssues(input.data, 'data', ctx.attributes, warn);
+    collectInterpolationIssues(input.data, 'data', ctx.attributes, warn);
     const steps = asArray<Step>(input.steps);
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
@@ -355,11 +429,144 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
       push(collectRuleIssues((s as { data?: unknown }).data, ctx, `${base}.content`));
       push(collectRuleIssues((s as { trigger?: unknown }).trigger, ctx, `${base}.triggers`));
       collectBindIssues((s as { data?: unknown }).data, base, ctx.attributes, warn);
+      collectInterpolationIssues((s as { data?: unknown }).data, base, ctx.attributes, warn);
     }
     collectDeadLaunchTargetWarnings([input.data, input.steps], ctx.contents, warn);
   }
 
+  collectEmbedResolutionWarnings([input.data, input.steps], warn);
+
+  // Stored EMPTY groups. The write schema rejects new ones, but the builder
+  // lets you add a group and never fill it, so published data carries them.
+  {
+    const config = input.config as
+      | { autoStartRules?: unknown; hideRules?: unknown }
+      | null
+      | undefined;
+    collectEmptyGroupWarnings(config?.autoStartRules, 'startRules.when', warn);
+    collectEmptyGroupWarnings(config?.hideRules, 'hideRules.when', warn);
+    collectEmptyGroupWarnings(input.data, 'data', warn);
+    const steps = asArray<Step>(input.steps);
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
+      const label = (s as { name?: string })?.name;
+      const base = `steps[${i}]${label ? ` "${label}"` : ''}`;
+      collectEmptyGroupWarnings((s as { data?: unknown }).data, `${base}.content`, warn);
+      collectEmptyGroupWarnings((s as { trigger?: unknown }).trigger, `${base}.triggers`, warn);
+    }
+  }
+
   return { ok: errors.length === 0, errors, warnings };
+}
+
+/**
+ * A group node with NO children scores FALSE at runtime (an empty list
+ * activates nothing) — it is not an empty filter that gets ignored. Inside an
+ * `all` list that pins the entire rule to "never matches": a start rule that
+ * writes, validates and publishes green and never fires once. The write schema
+ * now rejects empty groups, so these are builder-authored or legacy — warn,
+ * don't block: the content may still be reachable via usertour.start() / a
+ * resource-center entry, same call as the no-start-rules warning.
+ *
+ * The message distinguishes the two fates because they need different fixes:
+ * in an AND list the group is fatal to the whole rule; in an OR list it is a
+ * dead branch that merely never contributes.
+ */
+function collectEmptyGroupWarnings(
+  root: unknown,
+  path: string,
+  warn: (path: string, message: string) => void,
+): void {
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) {
+      // A list's and/or lives on its FIRST node's `operators` (runtime:
+      // isConditionsActived) — that decides what an empty group does to it.
+      const first = node[0] as { operators?: unknown; type?: unknown } | undefined;
+      const isAndList = first?.operators === 'and';
+      for (const item of node) {
+        const c = item as { type?: unknown; conditions?: unknown } | null;
+        if (c && typeof c === 'object' && c.type === 'group') {
+          const children = Array.isArray(c.conditions) ? c.conditions : [];
+          if (children.length === 0) {
+            warn(
+              path,
+              isAndList || node.length === 1
+                ? 'An EMPTY condition group makes this whole rule unmatchable: an empty group never matches, and it is joined with AND, so the rule can never fire no matter what the other conditions do. Remove the empty group, or fill in the conditions it was meant to hold.'
+                : 'An EMPTY condition group is a dead branch — it never matches, so this OR list behaves as if the group were not there. Remove it, or fill in the conditions it was meant to hold.',
+            );
+          }
+        }
+        walk(item);
+      }
+      return;
+    }
+    for (const value of Object.values(node as Record<string, unknown>)) walk(value);
+  };
+  walk(root);
+}
+
+/**
+ * Embed blocks whose stored payload carries NO oEmbed markup render degraded,
+ * and nothing said so before publish (field report: the agent hand-curled
+ * YouTube's oEmbed endpoint to check its video allowed embedding — the write
+ * path deliberately never fails on a resolution miss, so this was the only
+ * guard against publishing a "Video unavailable" popup). Three shapes, all
+ * static checks over the stored nodes — no network:
+ * - no `parsedUrl` at all: the widget renders an empty placeholder;
+ * - a KNOWN oEmbed provider claims the url but no payload is stored: the
+ *   provider refused (embedding disabled?) or a transient failure — writes
+ *   retry the resolution (see embed-resolve), so warn until one succeeds;
+ * - no provider claims it: the normal raw-iframe state — works only if the
+ *   site allows being framed, which the server cannot know.
+ */
+function collectEmbedResolutionWarnings(
+  roots: unknown[],
+  warn: (path: string, message: string) => void,
+): void {
+  const seen = new Set<string>();
+  const walk = (x: unknown): void => {
+    if (!x) return;
+    if (Array.isArray(x)) {
+      for (const item of x) walk(item);
+      return;
+    }
+    if (typeof x !== 'object') return;
+    const o = x as { type?: unknown; url?: unknown; parsedUrl?: unknown; oembed?: unknown };
+    if (o.type === 'embed' && typeof o.url === 'string' && o.url && !o.oembed && !seen.has(o.url)) {
+      seen.add(o.url);
+      if (!o.parsedUrl) {
+        warn(
+          'embed',
+          `Embed "${o.url}" was never resolved — it renders as an EMPTY placeholder. Write the url via the API (or confirm it in the builder) to resolve it.`,
+        );
+      } else if (matchesOembedProvider(o.url)) {
+        warn(
+          'embed',
+          `Embed "${o.url}" matches a known embed provider but no embed markup is stored — the provider refused it (embedding may be disabled for this video/resource) or the resolution failed transiently. Any write to this version retries the resolution; while it is missing, end users see the provider's unavailable screen instead of the content.`,
+        );
+      } else {
+        warn(
+          'embed',
+          `Embed "${o.url}" has no oEmbed provider — it renders as a plain iframe of that URL, which works only if the site allows being framed (no X-Frame-Options / CSP frame-ancestors block). Verify it renders inside an iframe before publishing.`,
+        );
+        // Provider embeds size themselves from the oEmbed aspect ratio; a plain
+        // iframe has none, and the widget's height fallback is a PERCENTAGE of a
+        // content-sized parent, which the browser ignores — the in-flow iframe
+        // then falls back to its built-in default (~150px tall). Not 0px (that
+        // geometry belongs to the oEmbed branch, whose inner div is absolutely
+        // positioned), but a stub strip nobody sized on purpose.
+        if (!(o as { height?: unknown }).height) {
+          warn(
+            'embed',
+            `Embed "${o.url}" also has NO height — with no oEmbed provider there is no aspect ratio to derive one, and the iframe falls back to the browser's built-in default (a strip ~150px tall), which is almost never the intended size. Set a pixel height on the embed block (e.g. "height": { "unit": "pixels", "value": 315 }).`,
+          );
+        }
+      }
+    }
+    for (const value of Object.values(o)) walk(value);
+  };
+  for (const root of roots) walk(root);
 }
 
 // A question's bindAttribute (stored as `selectedAttribute` with `bindToAttribute`)
@@ -378,6 +585,57 @@ const QUESTION_BIND_TYPE: Record<string, { type: number; label: string }> = {
   'single-line-text': { type: 2, label: 'string' },
   'multi-line-text': { type: 2, label: 'string' },
 };
+
+/**
+ * `{{ token }}` interpolation resolves against the USER's attributes only. A
+ * token naming a company / membership / event attribute — or nothing at all —
+ * writes fine, validates clean, publishes fine, and renders as an empty gap in
+ * live customer copy ("your ___ trial ends Thursday"). A targeting-round
+ * reviewer only caught it by deliberately probing six tokens on a throwaway
+ * flow; nothing in the product said a word.
+ *
+ * WARNING, not error: the SDK auto-creates user attributes on identify(), so a
+ * token may legitimately name one this project has not defined yet — the author
+ * is the one who knows.
+ */
+function collectInterpolationIssues(
+  roots: unknown,
+  base: string,
+  attrs: { codeName?: string; bizType?: number }[] | undefined,
+  warn: (path: string, message: string) => void,
+): void {
+  if (!attrs) return;
+  const seen = new Set<string>();
+  const walk = (node: unknown): void => {
+    if (!node) return;
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    if (typeof node !== 'object') return;
+    // `{{ code }}` is compiled into a STRUCTURED Slate node, not literal text —
+    // scanning strings for braces finds nothing on stored content.
+    const n = node as { type?: unknown; attrCode?: unknown };
+    if (n.type === 'user-attribute' && typeof n.attrCode === 'string' && n.attrCode) {
+      const code = n.attrCode;
+      if (!seen.has(code)) {
+        seen.add(code);
+        const defined = attrs.filter((a) => a.codeName === code);
+        const userScoped = defined.some((a) => a.bizType === AttributeBizType.USER);
+        if (!userScoped) {
+          warn(
+            base,
+            defined.length > 0
+              ? `\`{{ ${code} }}\` names a NON-user attribute (company / membership / event) — interpolation resolves against the USER's attributes only, so it renders as an EMPTY gap in the copy. Pass the value as a user attribute on identify() and reference that instead.`
+              : `\`{{ ${code} }}\` does not name any attribute defined in this project — it renders as an EMPTY gap unless your app writes \`${code}\` onto the user via identify(). Check the codeName.`,
+          );
+        }
+      }
+    }
+    for (const value of Object.values(node as Record<string, unknown>)) walk(value);
+  };
+  walk(roots);
+}
 
 function collectBindIssues(
   data: unknown,
@@ -609,6 +867,22 @@ function validateLauncher(
   if (!hasTarget(data?.target?.element)) {
     err('target', 'Launcher has no target element to anchor to; it never shows.');
   }
+  // A builtin icon name outside the SDK's registry renders NOTHING, silently —
+  // an icon-style launcher with a bad name is invisible while every write was
+  // green. The registry names are RemixIcon kebab `-line`/`-fill` (NOT lucide:
+  // `help-circle` / `sparkles` render nothing); the neutral name list lives in
+  // @usertour/constants with a parity test against the icons package.
+  if (
+    data?.iconSource === 'builtin' &&
+    typeof data.iconType === 'string' &&
+    data.iconType &&
+    !BUILTIN_LAUNCHER_ICON_NAMES.includes(data.iconType)
+  ) {
+    err(
+      'icon.type',
+      `"${data.iconType}" is not a registered builtin icon — it renders nothing. Use a RemixIcon kebab name from the MCP authoring guide's icon table (section: "icons"; e.g. "home-line", "question-line").`,
+    );
+  }
   const actionType = data?.behavior?.actionType;
   // SHOW_TOOLTIP needs tooltip content; PERFORM_ACTION needs actions.
   if (actionType === LauncherActionType.SHOW_TOOLTIP) {
@@ -666,7 +940,7 @@ function validateAnnouncement(
   }
   // The inverse is a silent dead end: authored detail content that no user can
   // ever reach (the runtime ships moreContent=null when the toggle is off).
-  if (!data?.enableReadMore && hasBlocks(data?.detailContent)) {
+  if (!data?.enableReadMore && hasRenderableContent(data?.detailContent)) {
     warn(
       'detailContent',
       'detailContent has content but enableReadMore is false — the detail page is unreachable (no "Read more" affordance renders). Set enableReadMore to true, or remove the unused detailContent.',
@@ -679,12 +953,31 @@ function validateAnnouncement(
 function validateResourceCenter(
   data: ResourceCenterData | null,
   err: (path: string, message: string) => void,
+  warn: (path: string, message: string) => void,
 ): void {
   const tabs = asArray<ResourceCenterData['tabs'][number]>(data?.tabs);
   if (tabs.length === 0) {
     err('tabs', 'Resource center has no tabs.');
     return;
   }
+  // Same registry check as the launcher icon, at WARNING level: a bad builtin
+  // name here leaves an empty glyph slot next to a still-readable label (the
+  // launcher's is an error because an icon-mode launcher IS the icon — bad
+  // name = fully invisible). Same agent mistake either way: guessing
+  // lucide-style names.
+  const warnBadIcon = (source: unknown, type: unknown, path: string) => {
+    if (
+      source === 'builtin' &&
+      typeof type === 'string' &&
+      type &&
+      !BUILTIN_LAUNCHER_ICON_NAMES.includes(type)
+    ) {
+      warn(
+        path,
+        `"${type}" is not a registered builtin icon — that icon slot renders empty (the block itself still shows). Use a RemixIcon kebab name from the MCP authoring guide's icon table (section: "icons"; e.g. "home-line", "question-line").`,
+      );
+    }
+  };
   tabs.forEach((tab, i) => {
     const label = `tabs[${i}]${tab?.name ? ` "${tab.name}"` : ''}`;
     if (!tab?.name || !String(tab.name).trim()) {
@@ -693,9 +986,32 @@ function validateResourceCenter(
     if (!tabHasRenderableBlock(asArray(tab?.blocks))) {
       err(label, 'Resource center tab has no content blocks.');
     }
+    const t = tab as unknown as { iconSource?: unknown; iconType?: unknown };
+    warnBadIcon(t?.iconSource, t?.iconType, `${label}.icon`);
     asArray(tab?.blocks).forEach((raw, j) => {
-      const block = raw as { content?: unknown };
-      errIfBrokenBlocks(block?.content, `${label}.blocks[${j}].content`, err);
+      const block = raw as {
+        content?: unknown;
+        iconSource?: unknown;
+        iconType?: unknown;
+        flowIconSource?: unknown;
+        flowIconType?: unknown;
+        checklistIconSource?: unknown;
+        checklistIconType?: unknown;
+        contentItems?: unknown;
+      };
+      const blockPath = `${label}.blocks[${j}]`;
+      errIfBrokenBlocks(block?.content, `${blockPath}.content`, err);
+      warnBadIcon(block?.iconSource, block?.iconType, `${blockPath}.icon`);
+      warnBadIcon(block?.flowIconSource, block?.flowIconType, `${blockPath}.flowIcon`);
+      warnBadIcon(
+        block?.checklistIconSource,
+        block?.checklistIconType,
+        `${blockPath}.checklistIcon`,
+      );
+      asArray(block?.contentItems).forEach((rawItem, k) => {
+        const item = rawItem as { iconSource?: unknown; iconType?: unknown };
+        warnBadIcon(item?.iconSource, item?.iconType, `${blockPath}.items[${k}].icon`);
+      });
     });
   });
 }
@@ -740,7 +1056,7 @@ function validateTracker(
     } else if (event.predefined) {
       err(
         'eventId',
-        `A tracker can only fire a custom event — "${event.codeName}" is a built-in system event. Create a custom event with create_event_definition and point the tracker at that.`,
+        `A tracker can only fire a custom event — "${event.codeName}" is a built-in system event. Create a custom event definition and point the tracker at that.`,
       );
     }
   }

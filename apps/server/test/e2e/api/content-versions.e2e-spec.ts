@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Capability } from '@usertour/types';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
@@ -7,6 +8,7 @@ import { gqlData, graphql } from '../auth';
 import {
   buildContent,
   buildEnvironment,
+  buildEvent,
   buildProject,
   buildStep,
   buildUsableFlowVersion,
@@ -309,6 +311,34 @@ describe('API v2 /content-versions (e2e)', () => {
     });
   });
 
+  it('an authored embed gets parsedUrl so it actually renders (not the grey placeholder)', async () => {
+    // The widget renders oembed.html, else iframes parsedUrl, else a grey
+    // placeholder. The compiler only wrote `url`, so an API-authored embed was
+    // a placeholder forever. A url outside every oEmbed provider scheme
+    // resolves without any external call: parsedUrl = url, no oembed.
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const res = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({
+      steps: [
+        {
+          name: 'E',
+          type: 'modal',
+          placement: { position: 'center' },
+          content: [{ type: 'embed', url: 'https://intranet.example.com/demo' }],
+        },
+      ],
+    });
+    expect(res.status).toBe(200);
+    const row = await prisma.step.findFirst({ where: { versionId: version.id } });
+    const json = JSON.stringify(row?.data ?? {});
+    expect(json).toContain('"parsedUrl":"https://intranet.example.com/demo"');
+  });
+
   it('refuses a settings-only startRules patch when auto-start is not enabled (no dead invisible settings)', async () => {
     // frequency/priority written without `when` on a version whose auto-start
     // is off used to land in storage but read back as startRules: null — the
@@ -339,6 +369,248 @@ describe('API v2 /content-versions (e2e)', () => {
     ).send({ startRules: { priority: 'high' } });
     expect(settingsOnly.status).toBe(200);
     expect(settingsOnly.body.startRules).toMatchObject({ priority: 'high' });
+  });
+
+  it('rejects node-local condition mistakes at WRITE: end-only window, unit-less event window', async () => {
+    // A condition object is authored atomically (when lists are full
+    // replacements) — a start-less window or a unit-less windowed op is never
+    // a draft-in-progress, it is a mistake. Reject at write with the zod path;
+    // stored legacy shapes never reach the wire (decompile emits end-only as
+    // `unsupported` and normalizes a missing unit to explicit `days`).
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const eventDef = await buildEvent(prisma, { projectId });
+    const path = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+
+    const endOnly = await api('patch', path, token).send({
+      startRules: { when: [{ type: 'time_window', end: '2030-01-01T00:00:00Z' }] },
+    });
+    expect(endOnly.status).toBe(400);
+    expect(endOnly.body.error.code).toBe('E1017');
+    expect(JSON.stringify(endOnly.body.error)).toContain('start');
+
+    const unitless = await api('patch', path, token).send({
+      startRules: {
+        when: [
+          { type: 'event', event: eventDef.codeName, within: { op: 'in_the_last', value: 7 } },
+        ],
+      },
+    });
+    expect(unitless.status).toBe(400);
+    expect(unitless.body.error.code).toBe('E1017');
+    expect(JSON.stringify(unitless.body.error)).toContain('unit');
+
+    // A complete window writes fine.
+    const ok = await api('patch', path, token).send({
+      startRules: {
+        when: [
+          { type: 'time_window', start: '2026-01-01T00:00:00Z', end: '2030-01-01T00:00:00Z' },
+          {
+            type: 'event',
+            event: eventDef.codeName,
+            within: { op: 'in_the_last', value: 7, unit: 'days' },
+          },
+        ],
+      },
+    });
+    expect(ok.status).toBe(200);
+  });
+
+  it('rejects an EMPTY condition group at write, and warns about a stored one at validate', async () => {
+    // An empty group is not an empty filter — the runtime scores an empty list
+    // FALSE, so in an AND list it pins the rule to "never matches". It used to
+    // write, validate and publish green and simply never fire.
+    const token = await mint([
+      Capability.ContentRead,
+      Capability.ContentUpdate,
+      Capability.ContentPublish,
+    ]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const path = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+
+    const empty = await api('patch', path, token).send({
+      startRules: {
+        when: [
+          { type: 'current_url', includes: ['*'] },
+          { type: 'group', match: 'all', conditions: [] },
+        ],
+      },
+    });
+    expect(empty.status).toBe(400);
+    expect(empty.body.error.code).toBe('E1017');
+    expect(JSON.stringify(empty.body.error)).toContain('at least one condition');
+
+    // A group WITH a condition writes fine.
+    const filled = await api('patch', path, token).send({
+      startRules: {
+        when: [
+          {
+            type: 'group',
+            match: 'any',
+            conditions: [{ type: 'current_url', includes: ['/app/*'] }],
+          },
+        ],
+      },
+    });
+    expect(filled.status).toBe(200);
+
+    // Stored one (the builder allows it) surfaces as a WARNING, not an error —
+    // the content stays publishable because usertour.start() can still reach it.
+    const legacy = await buildUsableFlowVersion(prisma, {
+      contentId: content.id,
+      projectId,
+      sequence: 1,
+    });
+    await prisma.version.update({
+      where: { id: legacy.id },
+      data: {
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [
+            { id: 'u', type: 'current-page', operators: 'and', data: { includes: ['*'] } },
+            { id: 'g', type: 'group', operators: 'and', data: {}, conditions: [] },
+          ],
+          autoStartRulesSetting: {},
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+    const report = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${legacy.id}/validate`,
+      token,
+    );
+    expect(report.status).toBe(200);
+    expect(report.body.ok).toBe(true);
+    const w = (report.body.warnings as Array<{ path: string; message: string }>).filter((x) =>
+      x.message.includes('EMPTY condition group'),
+    );
+    expect(w).toHaveLength(1);
+    expect(w[0].path).toBe('startRules.when');
+    expect(w[0].message).toContain('unmatchable');
+
+    // …and writing that version's conditions back — the shape a read-back
+    // hands you — is refused with the offending path, so the empty group can
+    // only leave by being filled or dropped, never by an unwitting echo.
+    // (The list is hand-built rather than GET-ed on purpose: a response
+    // carrying a stored empty group violates the schema the OpenAPI doc is
+    // generated from, and the contract checker rightly flags it — verified.
+    // Legacy shapes predating the contract are out of its scope; producing one
+    // in a test would only silence the alarm.)
+    const echo = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${legacy.id}`,
+      token,
+    ).send({
+      startRules: {
+        when: [
+          { type: 'current_url', includes: ['*'] },
+          { type: 'group', match: 'all', conditions: [] },
+        ],
+      },
+    });
+    expect(echo.status).toBe(400);
+    expect(JSON.stringify(echo.body.error)).toContain('startRules.when');
+  });
+
+  it('stored legacy dirt never reaches the wire: end-only → unsupported, unit-less → explicit days', async () => {
+    // Seed the two legacy shapes DIRECTLY into config (no write path can
+    // produce them anymore) and read back through the API.
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const eventDef = await buildEvent(prisma, { projectId });
+    const version = await buildVersion(prisma, {
+      contentId: content.id,
+      sequence: 0,
+      config: {
+        enabledAutoStartRules: true,
+        autoStartRules: [
+          { type: 'time', operators: 'and', data: { endTime: '2030-01-01T00:00:00Z' } },
+          {
+            type: 'event',
+            operators: 'and',
+            data: {
+              eventId: eventDef.id,
+              countLogic: 'atLeast',
+              count: 1,
+              timeLogic: 'inTheLast',
+              windowValue: 7,
+            },
+          },
+        ],
+        autoStartRulesSetting: {},
+      } as unknown as Prisma.InputJsonValue,
+    });
+    const res = await api(
+      'get',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    );
+    expect(res.status).toBe(200);
+    const when = res.body.startRules.when as Array<Record<string, unknown>>;
+    expect(when[0]).toMatchObject({ type: 'unsupported' });
+    expect(String(when[0].note)).toContain('end-only');
+    // Live condition preserved with the runtime's actual default made explicit.
+    expect(when[1]).toMatchObject({
+      type: 'event',
+      within: expect.objectContaining({ value: 7, unit: 'days' }),
+    });
+
+    // Echoing the placeholder back is REFUSED with directions — the same
+    // contract as the segment surface, never a silent drop (the placeholder
+    // carries no data; a filter here would delete the stored condition and
+    // could bring an AND-pinned rule to life without a word).
+    const echo = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({ startRules: { when } });
+    expect(echo.status).toBe(400);
+    expect(echo.body.error.code).toBe('E1017');
+    expect(echo.body.error.message).toContain('cannot be written back');
+
+    // Removing the placeholder (the explicit delete) writes clean.
+    const cleaned = await api(
+      'patch',
+      `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`,
+      token,
+    ).send({ startRules: { when: when.slice(1) } });
+    expect(cleaned.status).toBe(200);
+    expect(cleaned.body.startRules.when).toHaveLength(1);
+  });
+
+  it('seeds the builder-default frequency (once) when a startRules write leaves it unset', async () => {
+    // A version STORED without a frequency runs with NO limit (the runtime
+    // gate passes unconditionally — the flow re-starts on every dismiss). The
+    // builder always persists a default; this write path must too, or
+    // API-authored auto-start silently diverges from every builder flow.
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const path = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+
+    // No frequency in the write → seeded `once`, stored, visible on read-back.
+    const enable = await api('patch', path, token).send({
+      startRules: { when: [{ type: 'current_url', includes: ['/app/*'] }] },
+    });
+    expect(enable.status).toBe(200);
+    expect(enable.body.startRules.frequency).toMatchObject({ mode: 'once' });
+
+    // An explicit frequency wins over the seed…
+    const explicit = await api('patch', path, token).send({
+      startRules: { frequency: { mode: 'unlimited' } },
+    });
+    expect(explicit.status).toBe(200);
+    expect(explicit.body.startRules.frequency).toMatchObject({ mode: 'unlimited' });
+
+    // …and a later settings-only patch does NOT re-seed over the stored value.
+    const other = await api('patch', path, token).send({
+      startRules: { priority: 'high' },
+    });
+    expect(other.status).toBe(200);
+    expect(other.body.startRules.frequency).toMatchObject({ mode: 'unlimited' });
+    expect(other.body.startRules.priority).toBe('high');
   });
 
   it('refuses conditions referencing unknown attributes/events (like segments always did)', async () => {
@@ -386,6 +658,67 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('E0049');
     expect(res.body.error.message).toContain('Create a new editable version');
+  });
+
+  it('unpublish does NOT unlock an ever-published version — frozen; editing means forking', async () => {
+    const token = await mint([
+      Capability.ContentRead,
+      Capability.ContentUpdate,
+      Capability.ContentPublish,
+    ]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildUsableFlowVersion(prisma, { contentId: content.id, projectId });
+    await prisma.content.update({
+      where: { id: content.id },
+      data: { editedVersionId: version.id },
+    });
+    const base = `/v2/projects/${projectId}/content/${content.id}`;
+
+    // Before publishing: no freeze stamp, and the version is editable.
+    const before = await api('get', `${base}/versions/${version.id}`, token);
+    expect(before.body.firstPublishedAt).toBeNull();
+
+    const pub = await api('post', `${base}/publish`, token).send({
+      versionId: version.id,
+      environmentId,
+    });
+    expect(pub.status).toBe(200);
+    const published = await api('get', `${base}/versions/${version.id}`, token);
+    expect(published.body.firstPublishedAt).not.toBeNull();
+    const stamp = published.body.firstPublishedAt;
+
+    const unpub = await api('post', `${base}/unpublish`, token).send({ environmentId });
+    expect(unpub.status).toBe(200);
+
+    // THE regression this exists for: unpublishing used to unlock the version,
+    // letting the same id/number be rewritten in place with no trace. It must
+    // stay frozen — 409 E0049, not a silent in-place rewrite.
+    const patch = await api('patch', `${base}/versions/${version.id}`, token).send({
+      startRules: { when: [{ type: 'current_url', includes: ['/rewritten'] }] },
+    });
+    expect(patch.status).toBe(409);
+    expect(patch.body.error.code).toBe('E0049');
+
+    // Editing continues on a fork: new id, number+1, no stamp, and writable.
+    const fork = await api('post', `${base}/versions`, token).send({});
+    expect(fork.status).toBe(201);
+    expect(fork.body.id).not.toBe(version.id);
+    expect(fork.body.number).toBe(before.body.number + 1);
+    expect(fork.body.firstPublishedAt).toBeNull();
+    const editFork = await api('patch', `${base}/versions/${fork.body.id}`, token).send({
+      startRules: { when: [{ type: 'current_url', includes: ['/fork-ok'] }] },
+    });
+    expect(editFork.status).toBe(200);
+
+    // Stamp-once: re-publishing the SAME old version (the rollback path) keeps
+    // the ORIGINAL first-published time.
+    const repub = await api('post', `${base}/publish`, token).send({
+      versionId: version.id,
+      environmentId,
+    });
+    expect(repub.status).toBe(200);
+    const after = await api('get', `${base}/versions/${version.id}`, token);
+    expect(after.body.firstPublishedAt).toBe(stamp);
   });
 
   it('maps a domain ParamsError to 400 E0003 (create version on a version-less content)', async () => {
@@ -737,6 +1070,112 @@ describe('API v2 /content-versions (e2e)', () => {
       ],
     });
     expect(res.status).toBe(400);
+  });
+
+  it('rejects a replacement write whose goto targets a step this same write deletes', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const versionId = (await buildVersion(prisma, { contentId: content.id, sequence: 0 })).id;
+    const base = `/v2/projects/${projectId}/content/${content.id}/versions/${versionId}`;
+    const seed = await api('patch', base, token).send({
+      steps: [
+        {
+          key: 'a',
+          name: 'A',
+          type: 'modal',
+          content: [
+            { type: 'text', markdown: 'a' },
+            { type: 'button', text: 'Go', actions: [{ type: 'goto_step', step: 'b' }] },
+          ],
+        },
+        { key: 'b', name: 'B', type: 'modal', content: [{ type: 'text', markdown: 'b' }] },
+      ],
+    });
+    expect(seed.status).toBe(200);
+    const read = await api('get', `${base}?expand=steps`, token);
+    type StepRow = { name: string; cvid: string };
+    const stepA = read.body.steps.find((s: StepRow) => s.name === 'A');
+    const bCvid = read.body.steps.find((s: StepRow) => s.name === 'B').cvid;
+
+    // The natural-but-dangerous edit: send only step A, its goto still aimed at
+    // B — which this very write would delete. The old validator resolved the
+    // ref against the PRE-write step set and let the dangling goto into the
+    // store silently; now the request itself is the only legal target set.
+    const drop = await api('patch', base, token).send({ steps: [stepA] });
+    expect(drop.status).toBe(400);
+    expect(drop.body.error.code).toBe('E1017');
+    expect(drop.body.error.message).toContain(bCvid);
+    expect(drop.body.error.message).toContain('not part of this request');
+
+    // And the rejection was atomic: both steps are still there.
+    const after = await api('get', `${base}?expand=steps`, token);
+    expect(after.body.steps).toHaveLength(2);
+  });
+
+  it('echoes a pre-existing dangling goto verbatim instead of blocking every edit', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    // Legacy stored shape: a step whose button goto points at a cvid that no
+    // step has (builder-era leftover, or a write from before the guard above).
+    await buildStep(prisma, {
+      versionId: version.id,
+      type: 'modal',
+      name: 'Legacy',
+      cvid: 'legacy-cv-1',
+      sequence: 0,
+      data: [
+        {
+          children: [
+            {
+              children: [
+                {
+                  element: {
+                    type: 'button',
+                    data: {
+                      text: 'Go',
+                      actions: [{ type: 'step-goto', data: { stepCvid: 'ghost-cv-404' } }],
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ] as unknown as Prisma.InputJsonValue,
+    });
+    const base = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+    const read = await api('get', `${base}?expand=steps`, token);
+    type Block = { type: string; actions?: { type: string; step: string }[] };
+    const step = read.body.steps[0];
+    const gotoOf = (blocks: Block[]) => blocks.find((b) => b.type === 'button')?.actions?.[0];
+    // Read-back is honest about the dangling ref…
+    expect(gotoOf(step.content)).toMatchObject({ type: 'goto_step', step: 'ghost-cv-404' });
+
+    // …and echoing it back (with an unrelated copy edit) is ACCEPTED: the ref
+    // is preserved verbatim, not endorsed — validate/publish still flag it.
+    const echo = await api('patch', base, token).send({
+      steps: [{ ...step, name: 'Legacy renamed' }],
+    });
+    expect(echo.status).toBe(200);
+    const after = await api('get', `${base}?expand=steps`, token);
+    expect(after.body.steps[0].name).toBe('Legacy renamed');
+    expect(gotoOf(after.body.steps[0].content)).toMatchObject({
+      type: 'goto_step',
+      step: 'ghost-cv-404',
+    });
+
+    // The exemption is verbatim-only: a DIFFERENT unknown ref is still rejected.
+    const mutated = {
+      ...step,
+      content: (step.content as Block[]).map((b) =>
+        b.type === 'button'
+          ? { ...b, actions: [{ type: 'goto_step', step: 'brand-new-ghost' }] }
+          : b,
+      ),
+    };
+    const fresh = await api('patch', base, token).send({ steps: [mutated] });
+    expect(fresh.status).toBe(400);
   });
 
   it('rejects duplicate step keys in one write (400)', async () => {
@@ -1288,6 +1727,66 @@ describe('API v2 /content-versions (e2e)', () => {
       expect(Array.isArray(res.body.warnings)).toBe(true);
     });
 
+    it('warns on DEAD content: no start rules AND nothing references it', async () => {
+      const token = await mint([Capability.ContentRead]);
+      const deadWarn = (body: { warnings: { message: string }[] }) =>
+        body.warnings.some((w) => w.message.includes('reachable by NO user'));
+
+      // 1) Dead: an on-demand flow that nothing references — warning, not error.
+      const dead = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const deadV = await buildUsableFlowVersion(prisma, { contentId: dead.id, projectId });
+      const validatePath = `/v2/projects/${projectId}/content/${dead.id}/versions/${deadV.id}/validate`;
+      const r1 = await api('get', validatePath, token);
+      expect(r1.body.ok).toBe(true);
+      expect(deadWarn(r1.body)).toBe(true);
+
+      // 2) Referenced: a resource center lists it → no longer dead.
+      const rc = await buildContent(prisma, { projectId, environmentId, type: 'resource-center' });
+      const rcV = await buildVersion(prisma, {
+        contentId: rc.id,
+        sequence: 0,
+        data: {
+          tabs: [
+            {
+              name: 'Home',
+              blocks: [
+                {
+                  type: 'content-list',
+                  name: 'Guides',
+                  contentItems: [{ contentId: dead.id, contentType: 'flow' }],
+                },
+              ],
+            },
+          ],
+        } as unknown as Prisma.InputJsonValue,
+      });
+      await prisma.content.update({ where: { id: rc.id }, data: { editedVersionId: rcV.id } });
+      const r2 = await api('get', validatePath, token);
+      expect(deadWarn(r2.body)).toBe(false);
+
+      // 3) Start rules configured: never dead, referenced or not.
+      const ruled = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const ruledV = await buildUsableFlowVersion(prisma, { contentId: ruled.id, projectId });
+      await prisma.version.update({
+        where: { id: ruledV.id },
+        data: {
+          config: {
+            enabledAutoStartRules: true,
+            autoStartRules: [
+              { id: 'r1', type: 'current-page', data: { includes: ['*'] }, operators: 'and' },
+            ],
+            autoStartRulesSetting: {},
+          } as unknown as Prisma.InputJsonValue,
+        },
+      });
+      const r3 = await api(
+        'get',
+        `/v2/projects/${projectId}/content/${ruled.id}/versions/${ruledV.id}/validate`,
+        token,
+      );
+      expect(deadWarn(r3.body)).toBe(false);
+    });
+
     it('reports errors for an unusable version (no theme) without mutating', async () => {
       const token = await mint([Capability.ContentRead]);
       const res = await api(
@@ -1353,7 +1852,15 @@ describe('API v2 /content-versions (e2e)', () => {
       expect(rewritten.body.startRules).toMatchObject({ priority: 'low' });
       expect(rewritten.body.startRules.waitSeconds).toBeUndefined();
       expect(rewritten.body.startRules.startIfNotComplete).toBeUndefined();
-      expect(rewritten.body.startRules.frequency).toBeUndefined();
+      // frequency IS present — but it is the SEEDED builder default (full
+      // shape with every/atLeast, see the seeding test above), not the
+      // pre-clear value resurrected: the earlier write stored a bare
+      // { mode: 'once' } with no every/atLeast.
+      expect(rewritten.body.startRules.frequency).toEqual({
+        mode: 'once',
+        every: { times: 2, duration: 1, unit: 'days' },
+        atLeast: { duration: 0, unit: 'minutes' },
+      });
     });
   });
 });

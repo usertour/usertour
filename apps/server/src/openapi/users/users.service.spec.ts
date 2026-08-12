@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIUsersService } from './users.service';
 import { BizService } from '@/biz/biz.service';
 import { ConfigService } from '@nestjs/config';
-import { UserNotFoundError, InvalidLimitError, InvalidRequestError } from '@/common/errors/errors';
+import { UserNotFoundError, InvalidLimitError, UnknownError } from '@/common/errors/errors';
 import { ExpandType, GetUserQueryDto, ListUsersQueryDto, UpsertUserRequestDto } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { Environment } from '@/environments/models/environment.model';
@@ -364,9 +364,9 @@ describe('OpenAPIUsersService', () => {
         ],
       };
 
-      mockBizService.upsertUser.mockRejectedValue(new InvalidRequestError());
+      mockBizService.upsertUser.mockRejectedValue(new UnknownError());
 
-      await expect(service.upsertUser(mockData, 'env1')).rejects.toThrow(new InvalidRequestError());
+      await expect(service.upsertUser(mockData, 'env1')).rejects.toThrow(new UnknownError());
     });
   });
 

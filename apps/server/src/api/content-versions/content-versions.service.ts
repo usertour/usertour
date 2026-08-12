@@ -1,6 +1,12 @@
+import { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { toArray } from '../shared/query';
-import { cuid } from '@usertour/helpers';
+import {
+  AUTO_START_CAPABILITIES,
+  CONTENT_TYPE_TRAITS,
+  cuid,
+  defaultFrequencyFor,
+} from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { RulesCondition, Step } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -15,6 +21,8 @@ import { ContentService, type WriteActor } from '@/content/content.service';
 import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
+import { resolveStaleEmbeds } from '../content-representation/embed-resolve';
+import { UtilitiesService } from '@/utilities/utilities.service';
 import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
 import {
   type ContentReference,
@@ -56,6 +64,8 @@ import {
 type VersionNode = {
   id: string;
   sequence: number;
+  /** Freeze stamp (first time live); null = never published, still editable. */
+  publishedAt?: Date | null;
   themeId: string | null;
   config?: unknown;
   data?: unknown;
@@ -95,6 +105,7 @@ export class ApiContentVersionsService {
     private readonly content: ContentService,
     private readonly prisma: PrismaService,
     private readonly themes: ApiThemesService,
+    private readonly utilities: UtilitiesService,
   ) {}
 
   async get(
@@ -320,12 +331,34 @@ export class ApiContentVersionsService {
     // target types are folded in, then everything is rejected in a single E1017
     // whose `issues[]` lists each problem with its rule family and path — so a
     // client fixes the whole request in one round-trip.
+    // Verbatim-echo exemption for the media_url rule: every string under a
+    // url-ish key anywhere in the STORED version. Deliberately over-collected
+    // (a navigate url could exempt an identical image url) — the set can only
+    // preserve values this version already stores, never admit new ones.
+    const storedUrls = new Set<string>();
+    const collectStoredUrls = (node: unknown): void => {
+      if (Array.isArray(node)) {
+        for (const v of node) collectStoredUrls(v);
+        return;
+      }
+      if (!node || typeof node !== 'object') return;
+      for (const [key, value] of Object.entries(node)) {
+        if (typeof value === 'string' && /url/i.test(key)) {
+          storedUrls.add(value);
+        } else {
+          collectStoredUrls(value);
+        }
+      }
+    };
+    collectStoredUrls(version.steps ?? []);
+    collectStoredUrls((version as { data?: unknown }).data ?? undefined);
     const { issues, refs } = collectWriteViolations({
       steps: body.steps,
       data: body.data,
       startRules: body.startRules ?? undefined,
       hideRules: body.hideRules ?? undefined,
       contentType,
+      storedUrls,
     });
     if (body.startRules !== undefined || body.hideRules !== undefined) {
       issues.push(
@@ -427,12 +460,47 @@ export class ApiContentVersionsService {
 
       // One handle→cvid table: every step answers to its own cvid; a step with a
       // `key` also answers to that key (key wins if it ever collides with a cvid).
-      const knownCvids = new Set<string>([
-        ...planned.map((p) => p.cvid),
-        ...((version.steps ?? []) as { cvid?: string }[])
+      //
+      // The legal goto-target set is THIS REQUEST ONLY. `steps` is a full
+      // replacement, so a stored step that isn't echoed here is deleted by this
+      // very write — validating a goto against the pre-write step set would let
+      // the write CREATE a dangling reference (it did: the check passed against
+      // steps it was simultaneously deleting), which then poisons every later
+      // echo edit. An echoed step's own cvid is in `planned`, so referencing
+      // in-request steps by cvid still works.
+      const knownCvids = new Set<string>(planned.map((p) => p.cvid));
+      // Echo exemption, same policy as run_javascript / customCode: a ref that
+      // is ALREADY dangling in the stored data (builder legacy, or writes from
+      // before this guard) passes through VERBATIM. Without it, one stale goto
+      // an author never touched makes the whole flow un-editable — read it
+      // back, write it back, rejected. validate/publish still report it; the
+      // fix belongs there, not as a toll on every unrelated edit.
+      const storedCvids = new Set(
+        ((version.steps ?? []) as { cvid?: string }[])
           .map((s) => s.cvid)
           .filter((c): c is string => Boolean(c)),
-      ]);
+      );
+      const storedDanglingRefs = new Set<string>();
+      const collectDanglingGotoRefs = (node: unknown): void => {
+        if (Array.isArray(node)) {
+          for (const v of node) collectDanglingGotoRefs(v);
+          return;
+        }
+        if (!node || typeof node !== 'object') return;
+        const o = node as { type?: unknown; data?: { stepCvid?: unknown } };
+        // Only step-goto targets THIS content's steps; flow-start's stepCvid
+        // points into ANOTHER content and never goes through this resolver.
+        if (
+          o.type === 'step-goto' &&
+          typeof o.data?.stepCvid === 'string' &&
+          o.data.stepCvid &&
+          !storedCvids.has(o.data.stepCvid)
+        ) {
+          storedDanglingRefs.add(o.data.stepCvid);
+        }
+        for (const v of Object.values(o)) collectDanglingGotoRefs(v);
+      };
+      collectDanglingGotoRefs(version.steps ?? []);
       const keyToCvid = new Map<string, string>();
       for (const p of planned) {
         const key = (p.input as { key?: string }).key;
@@ -455,18 +523,19 @@ export class ApiContentVersionsService {
           if (knownCvids.has(ref)) {
             return ref;
           }
+          if (storedDanglingRefs.has(ref)) {
+            // Verbatim echo of a pre-existing dangling reference: preserved,
+            // not endorsed — validate/publish still flag it.
+            return ref;
+          }
           throw new ValidationError(
-            `"go to step" references unknown step "${ref}" — use a step \`key\` from this request or an existing step cvid.`,
+            `"go to step" references step "${ref}" which is not part of this request — steps are a FULL replacement, so a goto may only target a step \`key\` or cvid present in this same write. To keep the target step, echo it in \`steps\` too.`,
           );
         },
       };
 
       content.steps = planned.map((p) =>
-        compileStep(
-          { ...p.input, cvid: p.cvid, sequence: p.sequence, content: p.input.content ?? [] },
-          p.existing,
-          stepResolvers,
-        ),
+        compileStep({ ...p.input, cvid: p.cvid, sequence: p.sequence }, p.existing, stepResolvers),
       );
     }
 
@@ -496,6 +565,20 @@ export class ApiContentVersionsService {
           {};
         Object.assign(config, compiled);
         const mergedSetting = { ...existingSetting, ...(compiled.autoStartRulesSetting ?? {}) };
+        // Builder parity: buildConfig always persists a frequency for the types
+        // that have the knob — a version STORED without one runs with NO limit
+        // (the runtime gate returns true unconditionally: the flow re-starts on
+        // every dismiss; see DEFAULT_FREQUENCY in @usertour/helpers). The
+        // builder can't produce that state; this write path couldn't avoid it
+        // until now. Seed the same default (`once`) when the merged setting
+        // still lacks one — explicitly stored, so read-backs show it. An
+        // explicit or previously-stored frequency always wins.
+        if (
+          AUTO_START_CAPABILITIES[contentType as ContentDataType]?.frequency &&
+          mergedSetting.frequency == null
+        ) {
+          mergedSetting.frequency = defaultFrequencyFor(contentType as ContentDataType);
+        }
         if (Object.keys(mergedSetting).length > 0) {
           (config as { autoStartRulesSetting?: unknown }).autoStartRulesSetting = mergedSetting;
         }
@@ -512,10 +595,10 @@ export class ApiContentVersionsService {
     }
 
     if (body.scheduledAt !== undefined) {
-      // The "announcement time" only means something on the announcement feed
-      // (visibility gate + ordering key); on any other type it would be a silent
-      // no-op stored on the row — reject instead of accepting dead input.
-      if (contentType !== ContentDataType.ANNOUNCEMENT) {
+      // Matrix trait: the "announcement time" only means something on the
+      // announcement feed (visibility gate + ordering key); on any other type
+      // it would be a silent no-op stored on the row — reject dead input.
+      if (!CONTENT_TYPE_TRAITS[contentType as ContentDataType]?.allowsScheduledAt) {
         throw new ValidationError('scheduledAt is only supported on announcement versions.');
       }
       content.scheduledAt = body.scheduledAt === null ? null : new Date(body.scheduledAt);
@@ -535,6 +618,26 @@ export class ApiContentVersionsService {
 
     // All compiles are done — refuse if any condition referenced an unknown code.
     refuseUnresolvedCodes();
+
+    // Resolve embeds whose url is new or changed (parsedUrl !== url), the way
+    // the builder does — otherwise they render as a grey placeholder (new) or
+    // keep showing the PREVIOUS content (url edited, old oembed retained by
+    // the keep-style merge). 5s cap per provider call; failure degrades to a
+    // plain iframe like the builder's failure path.
+    await Promise.all(
+      [content.steps, content.data].map((payload) =>
+        payload
+          ? resolveStaleEmbeds(payload, (url) =>
+              Promise.race([
+                this.utilities.queryOembedInfo(url),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error('oembed timeout')), 5000),
+                ),
+              ]),
+            )
+          : undefined,
+      ),
+    );
 
     if (Object.keys(content).length > 0) {
       const result = await this.content.updateContentVersion(
@@ -576,13 +679,129 @@ export class ApiContentVersionsService {
       config?: unknown;
       content?: { type?: string };
     };
-    return validateVersionUsable({
-      type: v.content?.type ?? ContentDataType.FLOW,
+    const type = v.content?.type ?? ContentDataType.FLOW;
+    const report = validateVersionUsable({
+      type,
       themeId: v.themeId,
       steps: v.steps as Step[],
       data: v.data,
       config: v.config as { autoStartRules?: RulesCondition[] } | null,
       conditionContext: await loadConditionContext(this.prisma, projectId),
     });
+
+    // DEAD-CONTENT check for the two types the no-start-rules warning exempts
+    // (flow / checklist are legitimately started on demand — from a resource
+    // center list or a start_content button — so missing rules alone is not
+    // warnable). But NO rules AND NO inbound reference means published content
+    // no user can ever reach: the audit found exactly that shipping silently.
+    // Reference scanning needs the DB, so it lives here, not in the pure
+    // validator. Warning, not error: a usertour.start() call in the HOST APP's
+    // code is a real entry point the server cannot see.
+    const rules = (v.config as { autoStartRules?: RulesCondition[] } | null)?.autoStartRules;
+    const startsOnDemandOnly =
+      CONTENT_TYPE_TRAITS[type as ContentDataType]?.startsOnDemand === true &&
+      (!rules || rules.length === 0);
+    // THEME-SWITCH guard: variations do NOT travel with content, so pointing a
+    // draft at a theme with fewer variations than the version that is currently
+    // LIVE silently drops conditional styling (dark mode …) for exactly the
+    // users those conditions targeted — green through write, validate, publish
+    // and diagnose alike (maintenance-round finding: the only change in that
+    // round that could have harmed real users).
+    await this.warnOnThemeVariationLoss(v.themeId, contentId, report);
+
+    if (startsOnDemandOnly && !(await this.isReferencedByOtherContent(projectId, contentId))) {
+      report.warnings.push({
+        severity: 'warning',
+        path: 'config.autoStartRules',
+        message: `${type} has no start rules AND nothing references it (no resource-center list entry, no start_content action) — published, it is reachable by NO user. Add startRules, or reference it from a resource center / button; if your app launches it via usertour.start(), ignore this warning.`,
+      });
+    }
+    return report;
+  }
+
+  /**
+   * Warn when this draft's theme carries FEWER variations than the theme of the
+   * version currently published — the shape a theme migration takes. Compares
+   * against the live version (not an arbitrary sibling), so it fires exactly on
+   * "you switched themes and left the conditional styling behind" and stays
+   * silent for content that simply never had variations.
+   */
+  private async warnOnThemeVariationLoss(
+    draftThemeId: string | null,
+    contentId: string,
+    report: UsabilityReport,
+  ): Promise<void> {
+    if (!draftThemeId) {
+      return;
+    }
+    const live = await this.prisma.contentOnEnvironment.findFirst({
+      where: { contentId, published: true },
+      select: { publishedVersion: { select: { themeId: true } } },
+    });
+    const liveThemeId = live?.publishedVersion?.themeId;
+    if (!liveThemeId || liveThemeId === draftThemeId) {
+      return;
+    }
+    const themes = await this.prisma.theme.findMany({
+      where: { id: { in: [liveThemeId, draftThemeId] } },
+      select: { id: true, name: true, variations: true },
+    });
+    const countOf = (id: string) => {
+      const variations = themes.find((t) => t.id === id)?.variations;
+      return Array.isArray(variations) ? variations.length : 0;
+    };
+    const liveCount = countOf(liveThemeId);
+    const draftCount = countOf(draftThemeId);
+    if (draftCount >= liveCount) {
+      return;
+    }
+    const nameOf = (id: string) => themes.find((t) => t.id === id)?.name ?? id;
+    report.warnings.push({
+      severity: 'warning',
+      path: 'themeId',
+      message: `This version switches theme from "${nameOf(liveThemeId)}" (${liveCount} conditional variation${liveCount === 1 ? '' : 's'}) to "${nameOf(draftThemeId)}" (${draftCount}) — variations do NOT travel with the content, so every user those conditions targeted (e.g. dark mode) silently falls back to base styling. Recreate the variations on the target theme (duplicating the theme copies them verbatim), or keep the current theme.`,
+    });
+  }
+
+  /**
+   * Does any OTHER live content in the project reference this content id
+   * (resource-center content-list entries and start_content actions both store
+   * the raw content id inside their version/step JSON)? Scanned only over the
+   * surfaces that can actually reach users: each live content's edited version
+   * and its published versions — a match inside an old historical version is
+   * not an entry point. Coarse containment filter in SQL (jsonb::text LIKE),
+   * which can only over-count — acceptable for suppressing a warning, never
+   * for raising one.
+   */
+  private async isReferencedByOtherContent(projectId: string, contentId: string): Promise<boolean> {
+    const others = await this.prisma.content.findMany({
+      where: { projectId, deleted: false, id: { not: contentId } },
+      select: {
+        editedVersionId: true,
+        contentOnEnvironments: { select: { publishedVersionId: true } },
+      },
+    });
+    const versionIds = [
+      ...new Set(
+        others.flatMap((c) => [
+          c.editedVersionId,
+          ...c.contentOnEnvironments.map((e) => e.publishedVersionId),
+        ]),
+      ),
+    ].filter((x): x is string => Boolean(x));
+    if (versionIds.length === 0) {
+      return false;
+    }
+    const needle = `%${contentId}%`;
+    const rows = await this.prisma.$queryRaw<{ n: bigint }[]>`
+      SELECT (
+        (SELECT COUNT(*) FROM "Version" v
+          WHERE v.id IN (${Prisma.join(versionIds)}) AND v.data::text LIKE ${needle})
+        +
+        (SELECT COUNT(*) FROM "Step" s
+          WHERE s."versionId" IN (${Prisma.join(versionIds)})
+            AND (s.data::text LIKE ${needle} OR s.trigger::text LIKE ${needle}))
+      ) AS n`;
+    return Number(rows[0]?.n ?? 0) > 0;
   }
 }

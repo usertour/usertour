@@ -9,14 +9,18 @@ import { AttributesModule } from '@/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exception.filter';
+import { UtilitiesModule } from '@/utilities/utilities.module';
 import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
+import { ProjectsModule } from '@/projects/projects.module';
 import { ThemesModule } from '@/themes/themes.module';
 
 import { ApiAnalyticsController } from './analytics/analytics.controller';
 import { ApiAnalyticsService } from './analytics/analytics.service';
+import { ApiUsageOverviewService } from './analytics/usage-overview.service';
+import { ApiReferencesService } from './references/references.service';
 import { ApiAttributeDefinitionsController } from './attribute-definitions/attribute-definitions.controller';
 import { ApiAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
 import { ApiCompaniesController } from './companies/companies.controller';
@@ -80,6 +84,8 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     AnalyticsModule,
     ThemesModule,
     EnvironmentsModule,
+    ProjectsModule,
+    UtilitiesModule,
     WebhooksModule,
   ],
   // Order here drives the OpenAPI tag order (NestJS emits operations per controller),
@@ -102,6 +108,8 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
   ],
   providers: [
     ApiAnalyticsService,
+    ApiUsageOverviewService,
+    ApiReferencesService,
     ApiEventDefinitionsService,
     ApiAttributeDefinitionsService,
     ApiContentService,
@@ -125,6 +133,8 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
   // Exported for the MCP module, which binds these read services as tools.
   exports: [
     ApiAnalyticsService,
+    ApiUsageOverviewService,
+    ApiReferencesService,
     ApiContentService,
     ApiContentVersionsService,
     ApiAttributeDefinitionsService,

@@ -289,7 +289,9 @@ describe('API v2 segments (e2e)', () => {
     // choke on the whole list because one segment carries it).
     const res = await api('get', `${segPath()}/${weird.id}`, token);
     expect(res.status).toBe(200);
-    expect(res.body.conditions?.[0]).toEqual({ type: 'unsupported', note: 'weird-legacy-type' });
+    expect(res.body.conditions?.[0]).toMatchObject({ type: 'unsupported' });
+    expect(String(res.body.conditions?.[0]?.note)).toContain('weird-legacy-type');
+    expect(String(res.body.conditions?.[0]?.note)).toContain('cannot be written back');
 
     // Write-back of the echo is refused with directions, never silently dropped.
     const upd = await send('patch', `${segPath()}/${weird.id}`, token).send({
@@ -298,6 +300,22 @@ describe('API v2 segments (e2e)', () => {
     expect(upd.status).toBe(400);
     expect(upd.body.error.code).toBe('E1017');
     expect(upd.body.error.message).toContain('cannot be written back');
+  });
+
+  it('rejects an EMPTY condition group — it compiles to a segment matching nobody', async () => {
+    // Same rejection as the content surface: an empty group is a permanently
+    // false node, and here it compiles to `id IN ()` — a condition segment that
+    // silently has zero members.
+    const token = await mint([Capability.SegmentCreate]);
+    const res = await send('post', segPath(), token).send({
+      name: 'empty group seg',
+      bizType: 'user',
+      kind: 'condition',
+      conditions: [{ type: 'group', match: 'all', conditions: [] }],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('E1017');
+    expect(JSON.stringify(res.body.error)).toContain('at least one condition');
   });
 
   it('a condition whose attribute was DELETED reads as `unsupported`, not a leaked cuid', async () => {

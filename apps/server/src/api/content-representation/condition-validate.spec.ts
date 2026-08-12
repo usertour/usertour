@@ -30,12 +30,16 @@ describe('collectRuleIssues', () => {
       expect(issues[0]?.message).toMatch(/unknown attribute/);
     });
 
-    it('flags an operator the attribute type does not support', () => {
+    it('flags an operator the attribute type does not support — naming the ops it DOES accept', () => {
       const issues = collectRuleIssues(
         [{ type: 'user-attr', data: { attrId: 'a1', logic: 'includesAll', value: 'x' } }],
         ctx,
       );
+      // a1 is a String attribute: the message appends the String operator set,
+      // translated to the representation op names agents actually write.
       expect(issues[0]?.message).toMatch(/not valid/);
+      expect(issues[0]?.message).toContain('a String attribute accepts: is, not, contains');
+      expect(issues[0]?.message).not.toContain('includesAtLeastOne');
     });
 
     // A numeric 0 (persistable via the untyped web GraphQL write path even though

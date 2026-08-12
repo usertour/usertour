@@ -8,11 +8,16 @@ import { Environment } from '@prisma/client';
 import { z } from 'zod';
 
 import { buildDecompileResolversFrom } from '@/api/content-representation/attribute-resolvers';
+import { autoStartCapabilitySummary } from '@/api/content-representation/auto-start.validate';
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
 
 import { CompanyExpand } from '@/api/companies/companies.schema';
-import { ContentExpand, type ListContentQuery } from '@/api/content/content.schema';
-import { EnvironmentNotInTokenScopeError } from '@/common/errors';
+import {
+  ContentExpand,
+  contentTypeEnum,
+  type ListContentQuery,
+} from '@/api/content/content.schema';
+import { EnvironmentNotInTokenScopeError, InsufficientScopeError } from '@/common/errors';
 import { representationStepInput } from '@/api/content-representation/representation.schema';
 import { representationResourceCenter } from '@/api/content-representation/resource-center.schema';
 import {
@@ -30,10 +35,13 @@ import { themeSettingsPatchSchema } from '@/api/themes/settings.schema';
 import { ThemeExpand } from '@/api/themes/themes.schema';
 
 import { McpTool, McpToolContext } from '../mcp.types';
+import { editorUrlFor, withEditorUrl } from './editor-url';
 import { READ_ONLY } from './annotations';
-import { AUTHORING_GUIDE } from './authoring-guide';
+import { CORE_GUIDE_SECTIONS, GUIDE_SECTIONS, guideSectionNamesFor } from './authoring-guide';
 import {
+  type AnnotatedCondition,
   annotateConditions,
+  annotateFromVerdicts,
   attachConditionNames,
   attachUserAttributeValues,
   buildDiagnoseReport,
@@ -190,7 +198,10 @@ export const environmentIdSchema = z
     'Environment to target. A token scoped to a single environment defaults to it (omit this); ' +
       'a token that can act on MULTIPLE environments MUST set it — the tool will not choose one ' +
       'for you (it errors and lists the environments the token may use). Holds for reads and ' +
-      "writes alike. (Scope follows the environments the TOKEN may act on, not the project's full list.)",
+      'writes alike. (Scope follows the environments the TOKEN may act on, not the ' +
+      "project's full list.) The allowlist gates env-targeted ACTIONS and end-user data, not " +
+      'content visibility — content / versions / themes are project-level and readable (and ' +
+      'writable, with the matching capability) regardless of it; see list_environments.',
   );
 
 /**
@@ -202,6 +213,16 @@ export const environmentIdSchema = z
  * same policy as write-tools. Handlers return a plain JSON-serializable payload.
  * `inputSchema` is a zod raw shape the SDK validates.
  */
+const contentSchemaType = z.enum([
+  'flow',
+  'checklist',
+  'launcher',
+  'banner',
+  'tracker',
+  'resource-center',
+  'announcement',
+]);
+
 export function buildReadTools(): McpTool[] {
   const tools: McpTool[] = [
     {
@@ -209,41 +230,86 @@ export function buildReadTools(): McpTool[] {
       title: 'How to author content',
       capability: Capability.ContentRead,
       description:
-        'Read this BEFORE authoring content. Returns the conventions for building usable ' +
-        'Usertour content: the create→update→validate→publish lifecycle, step types and ' +
-        'targets, wiring goto_step by key, the markdown subset, frequency, and what each ' +
-        'content type needs to be publishable.',
-      inputSchema: {},
-      async handler(_args, _ctx) {
-        return { guide: AUTHORING_GUIDE };
+        'Read this BEFORE authoring content. Called with no args it returns the core — the ' +
+        'create→update→validate→publish lifecycle and what each type must have to publish — ' +
+        'plus a table of contents (per section: name, one-line summary, which content types ' +
+        'it applies to, approx tokens). Then fetch the sections your task touches in ONE ' +
+        'array call, e.g. `section: ["themes", "conditions", "start-rules"]` — pick the rows ' +
+        'whose `appliesTo` covers your content type (`get_content_schema` also names them as ' +
+        '`guideSections`); `sdk` / `host-dependencies` can wait until you verify. Fetching ' +
+        'every section at once is ~16k tokens — almost no task needs that.',
+      inputSchema: {
+        section: z
+          .union([z.string(), z.array(z.string()).min(1)])
+          .optional()
+          .describe(
+            'Guide section(s) to return — one name or an array (names are in the `sections` ' +
+              'list of the no-arg response). Omit for the core sections plus the table of ' +
+              'contents; an unknown name errors listing the valid sections.',
+          ),
+      },
+      async handler(args, _ctx) {
+        const approxTokens = (body: string) => Math.round(body.length / 4);
+        const render = (sections: readonly (typeof GUIDE_SECTIONS)[number][]) =>
+          sections.map((s) => `## ${s.title}\n${s.body}`).join('\n\n');
+        if (args.section === undefined) {
+          return {
+            guide: `# Authoring Usertour content\n\n${render(
+              GUIDE_SECTIONS.filter((s) => CORE_GUIDE_SECTIONS.includes(s.name)),
+            )}`,
+            sections: GUIDE_SECTIONS.map((s) => ({
+              name: s.name,
+              title: s.title,
+              summary: s.summary,
+              appliesTo: s.appliesTo,
+              approxTokens: approxTokens(s.body),
+            })),
+            totalApproxTokens: GUIDE_SECTIONS.reduce((n, s) => n + approxTokens(s.body), 0),
+          };
+        }
+        const names = GUIDE_SECTIONS.map((s) => s.name);
+        const requested = (Array.isArray(args.section) ? args.section : [args.section]).map(String);
+        const unknown = requested.filter((n) => !names.includes(n));
+        if (unknown.length > 0) {
+          throw new Error(
+            `Unknown section(s): ${unknown.join(', ')}. Valid sections: ${names.join(', ')}.`,
+          );
+        }
+        // requested slices come back in canonical guide order, not request order
+        return {
+          sections: names,
+          guide: render(GUIDE_SECTIONS.filter((s) => requested.includes(s.name))),
+        };
       },
     },
 
     {
       name: 'get_content_schema',
-      title: 'Get the write schema for a content type',
+      title: 'Get the write schema for one or more content types',
       capability: Capability.ContentRead,
       description:
         'Return the JSON Schema for the body you write to `update_content_version` for a content ' +
         'type: `flow` → the `steps` array item; checklist / launcher / banner / tracker / ' +
         'announcement / resource-center → the `data` object. The `data` arg is polymorphic so its ' +
-        'schema is NOT on the tool itself — fetch it here before authoring a non-flow type. Pair ' +
-        'with get_authoring_guide.',
+        'schema is NOT on the tool itself — fetch it here before authoring a non-flow type. ' +
+        'Authoring SEVERAL types? Pass an array — the shared vocabulary (conditions / actions / ' +
+        'blocks, ~90% of each schema) is then emitted once in `$defs` instead of once per call. ' +
+        'The response also carries `capabilities`: which startRules knobs (frequency / priority / ' +
+        'waitSeconds / …) and which hideRules the type supports, and which condition types its ' +
+        '`when` accepts — per-type limits the generic update_content_version schema cannot ' +
+        'express (the server rejects what the type does not support). Pair with ' +
+        'get_authoring_guide — the response also carries `guideSections`: the guide sections ' +
+        'that apply to each requested type, fetchable by name.',
       inputSchema: {
         type: z
-          .enum([
-            'flow',
-            'checklist',
-            'launcher',
-            'banner',
-            'tracker',
-            'resource-center',
-            'announcement',
-          ])
-          .describe('Content kind whose write-body schema to return.'),
+          .union([contentSchemaType, z.array(contentSchemaType).min(1)])
+          .describe(
+            'Content kind whose write-body schema to return — or an ARRAY of kinds to fetch ' +
+              'several in one call with the shared `$defs` emitted once.',
+          ),
       },
       async handler(args, _ctx) {
-        const type = String(args.type);
+        const types = Array.isArray(args.type) ? args.type.map(String) : [String(args.type)];
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
         // instead of throwing, so the discovery tool never fails. `reused: 'ref'`
         // hoists the shared sub-schemas (conditions / blocks / actions, referenced
@@ -253,10 +319,8 @@ export function buildReadTools(): McpTool[] {
         // not appear in `required` — otherwise the agent thinks it must send them.
         const toJson = (s: z.ZodType) =>
           z.toJSONSchema(s, { unrepresentable: 'any', reused: 'ref', io: 'input' });
-        if (type === ContentDataType.FLOW) {
-          return { type, body: 'steps', schema: toJson(z.array(representationStepInput)) };
-        }
-        const byType: Record<string, z.ZodType> = {
+        const schemaFor: Record<string, z.ZodType> = {
+          [ContentDataType.FLOW]: z.array(representationStepInput),
           [ContentDataType.CHECKLIST]: representationChecklist,
           [ContentDataType.LAUNCHER]: representationLauncher,
           [ContentDataType.BANNER]: representationBanner,
@@ -264,7 +328,36 @@ export function buildReadTools(): McpTool[] {
           [ContentDataType.RESOURCE_CENTER]: representationResourceCenter,
           [ContentDataType.ANNOUNCEMENT]: representationAnnouncement,
         };
-        return { type, body: 'data', schema: toJson(byType[type]) };
+        const bodyFor = (t: string) => (t === (ContentDataType.FLOW as string) ? 'steps' : 'data');
+        if (types.length === 1) {
+          const type = types[0];
+          return {
+            type,
+            body: bodyFor(type),
+            capabilities: autoStartCapabilitySummary(type),
+            guideSections: guideSectionNamesFor(type),
+            schema: toJson(schemaFor[type]),
+          };
+        }
+        // Several types in ONE toJSONSchema call: wrap them as properties of a
+        // synthetic object so zod hoists the sub-schemas they SHARE into a single
+        // `$defs` — the whole point of batching (fetched separately, each copy of
+        // the common vocabulary is ~90% of the payload). `.optional()` keeps the
+        // wrapper's `required` list empty: the wrapper is a container, not a shape
+        // anyone writes.
+        const wrapper = z.object(
+          Object.fromEntries(types.map((t) => [t, (schemaFor[t] as z.ZodType).optional()])),
+        );
+        return {
+          types,
+          body: Object.fromEntries(types.map((t) => [t, bodyFor(t)])),
+          capabilities: Object.fromEntries(types.map((t) => [t, autoStartCapabilitySummary(t)])),
+          guideSections: Object.fromEntries(types.map((t) => [t, guideSectionNamesFor(t)])),
+          note:
+            "`schema.properties.<type>` is that type's write-body schema; shared definitions " +
+            'are under `schema.$defs`.',
+          schema: toJson(wrapper),
+        };
       },
     },
 
@@ -280,13 +373,15 @@ export function buildReadTools(): McpTool[] {
         'to page.',
       inputSchema: {
         ...nameSearchField,
-        type: z
-          .string()
+        // Strict enum, matching the REST filter — as a free string a typo
+        // ("flows") silently returned an empty list that read as "no such
+        // content" (read-only-credential audit re-hit the exact bug the REST
+        // side had already fixed).
+        type: contentTypeEnum
           .optional()
           .describe(
-            'Filter by content kind: flow, checklist, launcher, banner, tracker, ' +
-              'resource-center, or announcement. (A "survey" is a flow with question blocks — ' +
-              'not a separate kind.)',
+            'Filter by content kind. (A "survey" is a flow with question blocks — not a ' +
+              'separate kind.)',
           ),
         published: z
           .boolean()
@@ -335,7 +430,8 @@ export function buildReadTools(): McpTool[] {
       description:
         'Get a single piece of Usertour content by its id. Optionally `expand` the ' +
         '"editedVersion" and/or "publishedVersion" objects inline. Publish state is ' +
-        'per-environment under `environments[]`.',
+        'per-environment under `environments[]`. Includes `editorUrl` — a dashboard deep link a ' +
+        'human can open to review the content (when the server knows its dashboard URL).',
       inputSchema: {
         id: z
           .string()
@@ -348,33 +444,58 @@ export function buildReadTools(): McpTool[] {
           .describe('Related objects to inline: editedVersion, publishedVersion.'),
       },
       async handler(args, ctx) {
-        const id = asString(args.id) || asString(args.contentId);
-        if (!id) {
+        const id = asString(args.id);
+        const alias = asString(args.contentId);
+        if (id && alias && id !== alias) {
+          throw new Error(
+            `\`id\` and \`contentId\` are aliases but were given different values ('${id}' vs '${alias}') — pass just one.`,
+          );
+        }
+        const resolved = id || alias;
+        if (!resolved) {
           throw new Error('`id` (or `contentId`) is required.');
         }
         const expand = Array.isArray(args.expand)
           ? (args.expand.filter((e) => typeof e === 'string') as ContentExpand[])
           : undefined;
-        return ctx.services.content.get(id, ctx.projectId, { expand });
+        const content = await ctx.services.content.get(resolved, ctx.projectId, { expand });
+        return withEditorUrl(content, await editorUrlFor(ctx, content.type, content.id));
       },
     },
 
     {
       name: 'diagnose_content',
       title: "Diagnose why content isn't showing",
-      capability: Capability.ContentRead,
+      // user:read, NOT content:read: diagnosis is always per end-user and returns
+      // their actual attribute values, segment verdicts and session state — the
+      // same data the purpose-built tools fence behind env-targeted scopes. Under
+      // content:read (project-level, no environment allowlist required) that data
+      // would leak past the environment fence. content:read is asserted in the
+      // handler on top (the gate checklist reads content config too).
+      capability: Capability.UserRead,
       description:
-        'Answer "why isn\'t my content showing?" — the #1 targeting question. Returns a gate ' +
-        'checklist (published / identified / start_rules / frequency / single_session / hidden / ' +
-        'active_session; announcements get their own set: scheduled / rc_reachability / ' +
-        'start_rules-as-audience-filter / seen), each gate evaluated by the SAME runtime function ' +
-        'the websocket uses, plus ' +
+        'Answer "why isn\'t my content showing?" — the #1 targeting question. Requires BOTH ' +
+        '`user:read` (it returns end-user data, environment-fenced) and `content:read` (it reads ' +
+        'the content config). Returns a gate ' +
+        'checklist drawn from: published / identified / start_rules / frequency / ' +
+        'single_session / hidden / active_session / target (announcements get their own set: ' +
+        'scheduled / rc_reachability / start_rules-as-audience-filter / seen). Gates appear ' +
+        'CONDITIONALLY — only the ones that apply to this content type and state (e.g. ' +
+        'active_session only when a session is currently live; target only for launcher/tooltip ' +
+        'render anchors, always status unknown since the server cannot see your DOM) — so absent ' +
+        'gates are normal, not missing checks. Each present gate is evaluated by the SAME ' +
+        'runtime function the websocket uses, plus ' +
         '`blockedBy` (the failing gates) and a one-line `summary`. For the two complex gates it ' +
         'expands the start/hide condition trees with each condition marked matched / unmatched / ' +
-        'unknown so you can see exactly which branch failed. Only gates listed in `blockedBy` ' +
+        'unknown so you can see exactly which branch failed — and a `segment` leaf expands one ' +
+        "level further: `segmentConditions` holds the segment's own conditions with per-leaf " +
+        "verdicts and the user's actual values (manual segments report `isMember`/`memberCount`). Only gates listed in `blockedBy` " +
         'actually block. `unknown` is NOT a blocker — it is a condition that cannot be evaluated ' +
         'server-side (a live-only DOM element/text leaf; current_url when no `url` is passed; or a ' +
-        'company / companyMembership condition when no `companyId` is passed); pass `url` to ' +
+        'company / companyMembership condition when no `companyId` is passed — EXCEPT when the ' +
+        'user belongs to no company AT ALL, which is decided rather than undecidable: those ' +
+        'leaves report `unmatched` and carry a `note` saying so, and no companyId can change ' +
+        'that verdict); pass `url` to ' +
         'resolve current_url, `companyId` to resolve company-scoped conditions, or confirm ' +
         'live-only ones in the app. Pass `userId` to evaluate the per-user gates, `companyId` for ' +
         'company-scoped rules, `url` to test current_url conditions.',
@@ -382,9 +503,11 @@ export function buildReadTools(): McpTool[] {
         contentId: z.string().describe('The content id.'),
         userId: z
           .string()
-          .optional()
           .describe(
-            'externalId of the end-user to diagnose for (omit for a structural-only check).',
+            'REQUIRED: externalId of the end-user to diagnose for. Every real display happens ' +
+              'for an identified user, so diagnosis is always per-user (the identified gate ' +
+              'answers whether this externalId exists). For structural correctness without a ' +
+              'user, use validate_content_version instead.',
           ),
         companyId: z
           .string()
@@ -396,9 +519,10 @@ export function buildReadTools(): McpTool[] {
           ),
         url: z
           .string()
-          .optional()
           .describe(
-            'A page URL to evaluate current_url conditions against (omit → reported as unknown).',
+            'REQUIRED: the page URL to evaluate current_url conditions against — pass the page ' +
+              'where you expect the content to appear. For content with no URL conditions (or a ' +
+              'whole-site wildcard) any real page URL of the app works.',
           ),
         environmentId: environmentIdSchema,
       },
@@ -407,7 +531,51 @@ export function buildReadTools(): McpTool[] {
         if (!contentId) {
           throw new Error('`contentId` is required.');
         }
+        if (!asString(args.url)) {
+          throw new Error('`url` is required — the page URL to evaluate against.');
+        }
+        if (!asString(args.userId)) {
+          throw new Error('`userId` is required — diagnosis is always for a specific end-user.');
+        }
+        // Second capability on top of the dispatch-checked user:read — the gate
+        // checklist also reads content config. Only a SCOPE refusal maps to the
+        // named message; anything else (membership race, DB failure) must keep
+        // its own error, not masquerade as a missing capability.
+        try {
+          await ctx.auth.authorize(ctx.token, ctx.projectId, Capability.ContentRead);
+        } catch (error) {
+          if (error instanceof InsufficientScopeError) {
+            throw new Error(
+              'diagnose_content needs both `user:read` and `content:read` — this credential lacks `content:read`.',
+            );
+          }
+          throw error;
+        }
         const environment = await resolveEnvironment(args, ctx);
+        // Archived content is the #1 real-world reason content "doesn't show" —
+        // the one case this tool must answer, not refuse. A plain get() would
+        // throw E1004 here, indistinguishable from a wrong id; instead return a
+        // real diagnosis with a single failing `archived` gate.
+        const rawNode = await ctx.prisma.content.findFirst({
+          where: { id: contentId, projectId: ctx.projectId },
+          select: { deleted: true, type: true, updatedAt: true },
+        });
+        if (rawNode?.deleted) {
+          return {
+            contentType: rawNode.type,
+            summary:
+              'This content is ARCHIVED (soft-deleted) — that alone is why it never shows. ' +
+              'Archived content is unpublished everywhere and hidden from default lists.',
+            blockedBy: ['archived'],
+            gates: [
+              {
+                id: 'archived',
+                status: 'fail',
+                detail: `soft-deleted (last state change ${rawNode.updatedAt.toISOString()}). restore_content brings it back as an UNPUBLISHED draft — it then still needs publish (and its start rules) before users can see it. No other gate is evaluated while archived.`,
+              },
+            ],
+          };
+        }
         const content = (await ctx.services.content.get(contentId, ctx.projectId, {})) as {
           type: string;
         };
@@ -455,7 +623,6 @@ export function buildReadTools(): McpTool[] {
             }),
           ]);
           const resolvers = buildDecompileResolversFrom(attributes, events);
-          const hasUrl = !!url;
           // Company / companyMembership conditions can only be evaluated when a company context
           // was supplied — else they're `unknown`, not a definitive `unmatched` (see leafStatus).
           const hasCompany = !!asString(args.companyId);
@@ -463,16 +630,16 @@ export function buildReadTools(): McpTool[] {
             startConditions = annotateConditions(
               facts.autoStartRules,
               decompileConditions(facts.autoStartRules, resolvers),
-              hasUrl,
               hasCompany,
+              facts.userHasAnyCompany,
             );
           }
           if (facts.hideRules) {
             hideConditions = annotateConditions(
               facts.hideRules,
               decompileConditions(facts.hideRules, resolvers),
-              hasUrl,
               hasCompany,
+              facts.userHasAnyCompany,
             );
           }
 
@@ -504,6 +671,54 @@ export function buildReadTools(): McpTool[] {
             attachConditionNames(hideConditions, nameById);
           }
 
+          // Expand each segment leaf one level: the segment's OWN conditions,
+          // per-leaf verdicts from the runtime's filter builder (explainSegments),
+          // decompiled + annotated exactly like the outer tree. Without this,
+          // users excluded for entirely different reasons produced byte-identical
+          // reports ("segment ... unmatched") — the single costliest detour in
+          // every eval round. Explanatory only: the leaf's own status (from the
+          // real membership check) stays authoritative.
+          if (segmentIds.length && asString(args.userId)) {
+            const explanations = await ctx.contentDiagnosis.explainSegments(
+              segmentIds,
+              environment,
+              String(asString(args.userId)),
+              asString(args.companyId),
+            );
+            const expand = (tree?: AnnotatedCondition): void => {
+              if (!tree) return;
+              const walk = (n: AnnotatedCondition): void => {
+                for (const child of n.conditions ?? []) walk(child);
+                const segId = (n as { segment?: string }).segment;
+                if (n.type !== 'segment' || !segId) return;
+                const ex = explanations[segId];
+                if (!ex) return;
+                n.segmentKind = ex.kind;
+                if (ex.kind === 'manual') {
+                  n.memberCount = ex.memberCount;
+                  n.isMember = ex.isMember;
+                } else if (ex.kind === 'condition' && ex.conditions) {
+                  const inner = annotateFromVerdicts(
+                    ex.conditions,
+                    decompileConditions(ex.conditions, resolvers),
+                  );
+                  if (inner) {
+                    if (facts.userAttributes)
+                      attachUserAttributeValues(inner, facts.userAttributes);
+                    n.segmentConditions = inner;
+                  }
+                } else if (ex.kind === 'condition') {
+                  const why =
+                    'Segment conditions not evaluable here (company segment without `companyId`, or user not found).';
+                  n.note = n.note ? `${n.note} ${why}` : why;
+                }
+              };
+              walk(tree);
+            };
+            expand(startConditions);
+            expand(hideConditions);
+          }
+
           // Show the user's ACTUAL value next to each user-scoped attribute condition so
           // an unmatched leaf is self-explanatory (no separate get_user + date math).
           if (facts.userAttributes) {
@@ -531,7 +746,31 @@ export function buildReadTools(): McpTool[] {
           }
         }
 
-        return buildDiagnoseReport(facts, startConditions, hideConditions, renderTargets);
+        const report = buildDiagnoseReport(facts, startConditions, hideConditions, renderTargets);
+
+        // Gates decide whether the content may START; nothing in them looks
+        // INSIDE it. Run the same usability check publish enforces against the
+        // LIVE version so broken innards (a task completing on a deleted event,
+        // a dangling goto) surface here instead of requiring the operator to
+        // suspect them and validate by hand.
+        if (facts.published && facts.publishedVersionId) {
+          const health = await ctx.services.contentVersions
+            .validate(facts.publishedVersionId, contentId, ctx.projectId)
+            .catch(() => null);
+          if (health && health.errors.length > 0) {
+            report.liveVersionIssues = {
+              count: health.errors.length,
+              note:
+                'The LIVE version has broken internals — these do NOT block the content from ' +
+                'starting (so every gate above can pass) but they misbehave once it renders: a ' +
+                'task that can never complete, an action pointing nowhere. Fix by forking ' +
+                '(create_content_version), repairing, and publishing; validate_content_version ' +
+                'on the live version id reproduces this list.',
+              errors: health.errors.map((e) => ({ path: e.path, message: e.message })),
+            };
+          }
+        }
+        return report;
       },
     },
 
@@ -564,7 +803,10 @@ export function buildReadTools(): McpTool[] {
         orderBy: z
           .enum(['createdAt', '-createdAt', 'codeName', '-codeName', 'displayName', '-displayName'])
           .optional()
-          .describe('Order by createdAt / codeName / displayName (prefix `-` for descending).'),
+          .describe(
+            'Order by createdAt / codeName / displayName (prefix `-` for descending). Text ' +
+              'sorting is case-sensitive (byte order): uppercase sorts before lowercase.',
+          ),
       },
       async handler(args, ctx) {
         const result = await ctx.services.attributeDefinitions.list(
@@ -732,9 +974,12 @@ export function buildReadTools(): McpTool[] {
       title: 'List themes',
       capability: Capability.ThemeRead,
       description:
-        "List the project's themes (id, name, isDefault) — the theme ids accepted by a version's " +
-        '`themeId`. Optionally filter by `name`. Returns `{ items, nextCursor }` — page until ' +
-        '`nextCursor` is null before concluding a theme does not exist.',
+        "List the project's themes (id, name, isDefault, variationCount) — the theme ids accepted " +
+        "by a version's `themeId`. Optionally filter by `name`. Returns `{ items, nextCursor }` — " +
+        'page until `nextCursor` is null before concluding a theme does not exist. Check ' +
+        '`variationCount` before switching content to another theme: variations do NOT travel ' +
+        'with the content, so moving onto a theme with 0 variations silently drops conditional ' +
+        'styling (dark mode …) for the users those conditions targeted.',
       inputSchema: {
         ...nameSearchField,
         limit: limitSchema,
@@ -757,18 +1002,26 @@ export function buildReadTools(): McpTool[] {
       title: 'Get theme',
       capability: Capability.ThemeRead,
       description:
-        'Get a single theme by id. Pass `expand: ["settings"]` to read its ACTUAL stored style ' +
-        'settings (colors, fonts, sizes, …) — what create_theme / update_theme persisted and ' +
-        'derived (e.g. "Auto" colors resolved); read this to verify a theme you wrote. ' +
+        'Get a single theme by id. `expand: ["settings"]` reads the stored style INTENT ' +
+        '(colors, fonts, sizes, …) — Auto-capable colors come back as the literal "Auto", ' +
+        'unresolved; read this to round-trip edits. `expand: ["resolvedSettings"]` reads the ' +
+        'render truth instead: the same shape with every "Auto" replaced by the concrete color ' +
+        'the renderer derives — use it to verify what end users actually see. A color group ' +
+        'carries exactly the keys it takes (a text color has no `background`, a fill no ' +
+        '`color`; get_theme_schema is the authority). ' +
         '`expand: ["variations"]` for conditional variations. Base fields (id, name, isDefault) ' +
         'always return; settings/variations only when expanded. (get_theme_schema is the writable ' +
         'shape; this returns the actual values.)',
       inputSchema: {
         id: z.string().describe('The theme id (from list_themes).'),
         expand: z
-          .array(z.enum(['settings', 'variations']))
+          .array(z.enum(['settings', 'variations', 'resolvedSettings']))
           .optional()
-          .describe('Related data to inline: settings (actual style values), variations.'),
+          .describe(
+            'Related data to inline: settings (stored intent — "Auto" stays "Auto"), ' +
+              'variations, resolvedSettings (every "Auto" resolved to the concrete color the ' +
+              'renderer derives).',
+          ),
       },
       async handler(args, ctx) {
         const id = asString(args.id);
@@ -789,16 +1042,224 @@ export function buildReadTools(): McpTool[] {
         'Return the JSON Schema of the writable theme `settings` — the fields you can pass to ' +
         'create_theme / update_theme and their ranges/enums. The tool exposes `settings` as a ' +
         'generic object, so fetch the shape here before theming. Settings is field-merged onto ' +
-        'the current settings; "Auto" hover/active colors are derived server-side.',
-      inputSchema: {},
-      async handler(_args, _ctx) {
+        'the current settings. Each color group accepts exactly the keys it renders (a text ' +
+        'color has no `background`, a fill no `color` — the schema is the authority). Settings ' +
+        'are pure INTENT: write a hex to customize an Auto-capable color, or the literal ' +
+        '"Auto" (the default for hover/active) to let the renderer derive it; read what ' +
+        '"Auto" resolves to with get_theme expand: ["resolvedSettings"]. ' +
+        '`customCss` is plan-gated (Growth and ' +
+        'above): introducing or changing it on a lower plan is refused (E1038) — echoing the ' +
+        'stored value back, or clearing it, always passes. The full schema is large (~10k ' +
+        'tokens); when you already know which part you are styling, pass `section` for just ' +
+        'that slice (the response lists every section name either way).',
+      inputSchema: {
+        section: z
+          .union([z.string(), z.array(z.string()).min(1)])
+          .optional()
+          .describe(
+            "Top-level settings section(s) to return (e.g. 'checklist', 'buttons') — one name " +
+              'or an array. Omit for the full schema; an unknown name errors listing the valid ' +
+              'sections.',
+          ),
+      },
+      async handler(args, _ctx) {
         // `unrepresentable: 'any'` degrades any non-JSON-Schema-able node to `{}`
         // instead of throwing, so the discovery tool never fails.
         // (No `reused: 'ref'` here — the generated settings leaves are distinct
         // schema objects, so there's nothing for zod to dedupe; it's a no-op.)
+        const full = z.toJSONSchema(themeSettingsPatchSchema, { unrepresentable: 'any' }) as {
+          properties?: Record<string, unknown>;
+          required?: string[];
+        };
+        const sections = Object.keys(full.properties ?? {});
+        if (args.section === undefined) {
+          return { body: 'settings', sections, schema: full };
+        }
+        const requested = (Array.isArray(args.section) ? args.section : [args.section]).map(String);
+        const unknown = requested.filter((s) => !sections.includes(s));
+        if (unknown.length) {
+          throw new Error(
+            `Unknown section(s): ${unknown.join(', ')}. Valid sections: ${sections.join(', ')}.`,
+          );
+        }
         return {
           body: 'settings',
-          schema: z.toJSONSchema(themeSettingsPatchSchema, { unrepresentable: 'any' }),
+          sections,
+          schema: {
+            ...full,
+            properties: Object.fromEntries(requested.map((s) => [s, full.properties?.[s]])),
+            ...(full.required
+              ? { required: full.required.filter((k) => requested.includes(k)) }
+              : {}),
+          },
+        };
+      },
+    },
+
+    {
+      name: 'diagnose_user',
+      title: 'What would this user see?',
+      // user:read for the same reason as diagnose_content: the panorama is
+      // end-user data (existence, session state, per-content verdicts drawn from
+      // the user's attributes) and must sit behind the environment fence.
+      capability: Capability.UserRead,
+      annotations: READ_ONLY,
+      description:
+        'The per-USER panorama — one call instead of a per-content diagnose whose conclusions ' +
+        'shift as you go. Requires BOTH `user:read` (end-user data, environment-fenced) and ' +
+        "`content:read` (it reads each content's config). " +
+        'Sorts everything published in the environment into: `showing` (with ' +
+        'how — resumed session / won the auto-start race / feed), `queued` (eligible but behind ' +
+        'the slot holder or a higher-priority winner — the race is settled with the SAME ' +
+        'selectors the runtime uses, so the winner/loser verdicts cannot drift), `blocked` ' +
+        '(ONE most-relevant gate per content), and `browser_dependent` (undecidable ' +
+        'server-side: browser-only conditions, headless trackers). Deep-dive a single row with ' +
+        '`diagnose_content` — that returns the full gate list and condition trees.',
+      inputSchema: {
+        userId: z
+          .string()
+          .describe('REQUIRED: externalId of the end-user — the panorama is always per-user.'),
+        url: z
+          .string()
+          .describe(
+            'REQUIRED: the page URL to evaluate current_url conditions against — pass the page ' +
+              'the user would be on.',
+          ),
+        companyId: z
+          .string()
+          .optional()
+          .describe('externalId of the company, for company-scoped rules.'),
+        environmentId: environmentIdSchema,
+      },
+      async handler(args, ctx) {
+        const userId = asString(args.userId);
+        const url = asString(args.url);
+        if (!userId) {
+          throw new Error('`userId` is required.');
+        }
+        if (!url) {
+          throw new Error('`url` is required — the page URL to evaluate against.');
+        }
+        // Second capability on top of the dispatch-checked user:read — the
+        // panorama reads every content's config. Only a SCOPE refusal maps to
+        // the named message; anything else keeps its own error.
+        try {
+          await ctx.auth.authorize(ctx.token, ctx.projectId, Capability.ContentRead);
+        } catch (error) {
+          if (error instanceof InsufficientScopeError) {
+            throw new Error(
+              'diagnose_user needs both `user:read` and `content:read` — this credential lacks `content:read`.',
+            );
+          }
+          throw error;
+        }
+        const environment = await resolveEnvironment(args, ctx);
+        const { userFound, rows } = await ctx.contentDiagnosis.diagnoseUser({
+          environment,
+          externalUserId: userId,
+          externalCompanyId: asString(args.companyId),
+          url,
+        });
+        if (!userFound) {
+          return {
+            userId,
+            userFound: false,
+            summary:
+              'No user with this externalId exists in the environment — identify (or upsert_user) first.',
+          };
+        }
+        // Resolve queue-winner names so "queued behind X" reads without a lookup.
+        const behindIds = [
+          ...new Set(rows.map((r) => r.behindContentId).filter(Boolean)),
+        ] as string[];
+        if (behindIds.length) {
+          const winners = await ctx.prisma.content.findMany({
+            where: { id: { in: behindIds } },
+            select: { id: true, name: true },
+          });
+          const nameById = new Map(winners.map((w) => [w.id, w.name]));
+          for (const r of rows) {
+            if (r.behindContentId) r.behindName = nameById.get(r.behindContentId) ?? undefined;
+          }
+        }
+        const bucket = (v: string) => rows.filter((r) => r.verdict === v);
+        // "showing" means the SERVER-SIDE rules admit it — not that anything has
+        // ever actually rendered. In an environment the SDK has never reached,
+        // every row still reads confidently as showing; a support reviewer took
+        // that at face value and only caught it by separately noticing every
+        // analytics number was zero. Say it once, up front.
+        const environmentHasSessions =
+          (await ctx.prisma.bizSession.count({
+            where: { environmentId: environment.id },
+            take: 1,
+          })) > 0;
+        return {
+          userId,
+          userFound: true,
+          ...(environmentHasSessions
+            ? {}
+            : {
+                note:
+                  'This environment has NEVER recorded a session — no Usertour content has ever ' +
+                  'actually rendered here. The verdicts below are what the rules ALLOW, not what ' +
+                  'users have seen; check that the SDK is installed and pointed at THIS ' +
+                  "environment's token before trusting a `showing` row.",
+              }),
+          showing: bucket('showing'),
+          queued: bucket('queued'),
+          blocked: bucket('blocked'),
+          browserDependent: bucket('browser_dependent'),
+        };
+      },
+    },
+
+    {
+      name: 'list_references',
+      title: 'Who references this?',
+      capability: Capability.ContentRead,
+      annotations: READ_ONLY,
+      description:
+        'Reverse lookup: everything still USING an attribute / event / segment / theme / ' +
+        'content — run it BEFORE a delete, since deletes are not blocked and a dangling ' +
+        'reference fails closed (a segment on a deleted attribute matches nobody; gated ' +
+        "content stops showing). Scans the LIVE surfaces only: every content's edited draft + " +
+        'published versions (start/hide rules, step triggers, question bindings, bodies, theme ' +
+        'assignments), segment definitions, and theme variations. Matching is by exact stored ' +
+        'reference, not text search. NOT covered: `{{ codeName }}` mentions inside text ' +
+        '(display bindings that just render empty) and old historical versions. Empty result = ' +
+        'nothing live references it — safe to delete as far as references go.',
+      inputSchema: {
+        kind: z
+          .enum(['attribute', 'event', 'segment', 'theme', 'content'])
+          .describe('What the target id is.'),
+        id: z.string().describe('The target id (internal id, as returned by its list_ tool).'),
+      },
+      async handler(args, ctx) {
+        const kind = asString(args.kind) as
+          | 'attribute'
+          | 'event'
+          | 'segment'
+          | 'theme'
+          | 'content'
+          | undefined;
+        const id = asString(args.id);
+        if (!kind || !id) {
+          throw new Error('`kind` and `id` are required.');
+        }
+        const { referrers, codeName } = await ctx.services.references.listReferences(
+          ctx.projectId,
+          kind,
+          id,
+        );
+        return {
+          kind,
+          id,
+          ...(codeName ? { codeName } : {}),
+          referencedBy: referrers,
+          summary:
+            referrers.length === 0
+              ? 'Nothing live references this — safe to delete as far as references go.'
+              : `Referenced by ${referrers.length} object(s) — rewire them before deleting.`,
         };
       },
     },
@@ -838,6 +1299,52 @@ export function buildReadTools(): McpTool[] {
     },
 
     {
+      name: 'list_publish_history',
+      title: 'List publish history',
+      capability: Capability.ContentRead,
+      description:
+        'The permanent publish/unpublish ledger for one content, newest first — who put which ' +
+        'version live in which environment, when, and who took it down. Each record: action ' +
+        '(publish|unpublish), versionSequence (the v-number), environment, actor (dashboard user ' +
+        'name, or API token name for API/MCP publishes), timestamp. Records outlive later ' +
+        'deletion of the version, actor or environment (names then read null). Answers "when did ' +
+        'this go live", "what was live in production last month", "who unpublished it". ' +
+        'EPOCH: the ledger records events from the moment this feature shipped, forward; at ' +
+        'rollout each then-live (content, environment) pair was seeded with ONE synthetic ' +
+        'publish record (timestamp = its live publishedAt, actor null). Publishes older than ' +
+        'that have no rows — a long-lived content showing a single seeded record is expected, ' +
+        'not a broken ledger. Returns `{ items, nextCursor }`; pass `nextCursor` back as ' +
+        '`cursor` to page.',
+      inputSchema: {
+        contentId: z.string().describe('The content id.'),
+        environmentId: z
+          .string()
+          .optional()
+          .describe('Narrow to one environment. Default: records from ALL environments.'),
+        limit: limitSchema,
+        cursor: cursorSchema,
+      },
+      annotations: READ_ONLY,
+      async handler(args, ctx) {
+        const contentId = asString(args.contentId);
+        if (!contentId) {
+          throw new Error('`contentId` is required.');
+        }
+        const result = await ctx.services.content.listPublishRecords(
+          'mcp://publish-history',
+          contentId,
+          ctx.projectId,
+          {
+            limit: asLimit(args.limit),
+            cursor: asString(args.cursor),
+            environmentId: asString(args.environmentId),
+          },
+        );
+        return toListPayload(result);
+      },
+    },
+
+    {
       name: 'get_content_version',
       title: 'Get a content version',
       capability: Capability.ContentRead,
@@ -845,8 +1352,16 @@ export function buildReadTools(): McpTool[] {
         'Get a content version by id. `expand: ["steps"]` inlines the decompiled steps — read ' +
         'these before calling `update_content_version`. Also supports "data" and "questions".',
       inputSchema: {
-        contentId: z.string().describe('The content id.'),
-        id: z.string().describe('The content version id.'),
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        id: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
         expand: z
           .array(z.enum(['questions', 'steps', 'data']))
           .optional()
@@ -874,8 +1389,16 @@ export function buildReadTools(): McpTool[] {
         'block publish (e.g. a tooltip step with no target, an empty checklist, no theme). Run ' +
         'this after authoring and before `publish_content`.',
       inputSchema: {
-        contentId: z.string().describe('The content id.'),
-        id: z.string().describe('The content version id.'),
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        id: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
       },
       async handler(args, ctx) {
         const contentId = asString(args.contentId);
@@ -982,14 +1505,36 @@ export function buildReadTools(): McpTool[] {
       name: 'get_segment',
       title: 'Get a segment',
       capability: Capability.SegmentRead,
-      description: 'Get a segment by id (condition segments inline their conditions).',
-      inputSchema: { id: z.string().describe('The segment id.') },
+      description:
+        'Get a segment by id (condition segments inline their conditions). ' +
+        '`expand: ["memberCount"]` adds how many users/companies the segment holds in ONE ' +
+        'environment (members are env-scoped; the count uses the same filter list_users/' +
+        'list_companies apply for segmentId, so they always agree).',
+      inputSchema: {
+        id: z.string().describe('The segment id.'),
+        expand: z
+          .array(z.enum(['memberCount']))
+          .optional()
+          .describe('Inline memberCount (env-scoped — see environmentId).'),
+        environmentId: environmentIdSchema,
+      },
       async handler(args, ctx) {
         const id = asString(args.id);
         if (!id) {
           throw new Error('`id` is required.');
         }
-        return ctx.services.segments.get(id, ctx.projectId);
+        const expand = Array.isArray(args.expand)
+          ? (args.expand.filter((e) => typeof e === 'string') as 'memberCount'[])
+          : undefined;
+        // Environment resolution (single-env default / allowlist enforcement)
+        // only when the count was asked for — a plain get stays project-level.
+        const environment = expand?.includes('memberCount')
+          ? await resolveEnvironment(args, ctx)
+          : undefined;
+        return ctx.services.segments.get(id, ctx.projectId, {
+          expand,
+          environmentId: environment?.id,
+        });
       },
     },
 
@@ -999,7 +1544,10 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.SessionRead,
       description:
         'List content sessions in an environment. Filter by `contentId`, `userId`, `completed`, ' +
-        'or a created-at range. A single-environment token targets its env; with multiple, pass ' +
+        'or a created-at range. To RE-TEST a single-session surface (banner / launcher / resource ' +
+        'center) for a user, find its session here and delete_session it — and never "clean up" ' +
+        'with usertour.endAll() in the page: ending counts as the lifetime session, deleting is ' +
+        'the reset. A single-environment token targets its env; with multiple, pass ' +
         '`environmentId`. Returns `{ items, nextCursor }`.',
       inputSchema: {
         environmentId: environmentIdSchema,
@@ -1082,10 +1630,27 @@ export function buildReadTools(): McpTool[] {
         'How is this content performing? The response shape follows the content type: flows ' +
         'report starts + completions and a per-step funnel with tooltip-target-missing counts ' +
         '(the selector-health signal); checklists starts + completions (= every visible task ' +
-        'done) and per-task rows; launchers seen + activations; banners seen + dismissals; ' +
+        'done), panel opens (the per-task rate denominator — completion does NOT require ' +
+        'opening, so only click-completed tasks form a true funnel) and per-task rows; ' +
+        'launchers seen + activations; banners seen + dismissals; ' +
         'resource centers opens + block clicks; trackers users + occurrences of the tracked ' +
         'event; announcements seen counts (once per user). All with a per-day series. Defaults ' +
-        'to the last 30 days, UTC.',
+        'to the last 30 days, UTC. Reading the numbers: `unique*` always counts distinct ' +
+        'USERS in the range; what `total*` counts follows the type. Flow/checklist starts and ' +
+        'completions count RUNS — a flow run twice by the same person is 1 unique / 2 total. ' +
+        'Panel opens (checklist + resource-center) and tracker `total*` count EVENTS ' +
+        '(repeats included), and the RC headline totalClicks normally equals the sum of the ' +
+        "block rows'. Launchers and " +
+        'banners have NO totals — their metrics are first-touch (each user counted at their ' +
+        'first-ever event), so a range counts users NEWLY reached in it, and the launcher reports ' +
+        '`newActivations` (users whose first-ever activation fell in the range; can exceed ' +
+        'uniqueSeen when someone reached earlier activates now). byDay rows are per-day: ' +
+        'summing `total*` rows reproduces the headline `total*`; `unique*` rows are unique ' +
+        'WITHIN THAT DAY — except launcher/banner/announcement rows, which are first-touch ' +
+        '(each user on exactly one day, so summing rows equals the range headline). In a ' +
+        'flow funnel the drop-off is between consecutive steps’ uniqueViews; a step’s ' +
+        '`uniqueCompletions` is the FLOW completion attributed to the step it fired on (0 on ' +
+        'every step but the last is normal, not a failure).',
       inputSchema: {
         contentId: z.string(),
         environmentId: environmentIdSchema,
@@ -1108,9 +1673,19 @@ export function buildReadTools(): McpTool[] {
       title: 'Get question analytics',
       capability: Capability.AnalyticsRead,
       description:
-        'Survey results for this content, aggregated per question: answer distribution, NPS ' +
-        'score with promoter/passive/detractor shares, rating averages — each with a ' +
-        'rolling-window daily series. Defaults to the last 30 days, UTC. ' +
+        'Survey results for this content, aggregated per question: answer distribution (choice ' +
+        'questions list EVERY configured option, count 0 when unchosen), NPS score with ' +
+        'promoter/passive/detractor shares, rating averages — each with a rolling-window daily ' +
+        'series: byDay rows are CUMULATIVE over the trailing `rollingWindowDays` (echoed per ' +
+        'series), NOT per-day increments like get_content_analytics byDay. Defaults to the ' +
+        'last 30 days, UTC. ' +
+        'Two consequences worth stating before quoting a number: (1) a rising byDay `score` is ' +
+        'a running average catching up, NOT a per-period trend — for a genuine ' +
+        'week-over-week/cohort comparison read the raw dated answers via list_sessions with ' +
+        "expand:['answers'] and bucket them yourself; (2) `percentage` is an INTEGER share " +
+        'reconciled (largest remainder) to sum to exactly 100 on a single-select question, so ' +
+        'an option can read 1 point above count/totalResponses (26/60 → 44, not 43) — that is ' +
+        'the reconciliation, not a rounding bug; quote the counts when exactness matters. ' +
         'Free-text questions (single/multi-line text) are NOT included — there is no ' +
         'aggregate signal for open text. To read what people actually wrote, use ' +
         "list_sessions with expand:['answers'] (each answer carries the raw value, " +
@@ -1133,6 +1708,65 @@ export function buildReadTools(): McpTool[] {
       },
     },
     {
+      name: 'get_usage_overview',
+      title: 'Get usage overview',
+      capability: Capability.AnalyticsRead,
+      description:
+        'Which content is being used, and by whom — every content in ONE ranked table, no ' +
+        'contentId needed upfront. Per row: `activity` + `activityKind` (sessions for ' +
+        'flow/checklist/launcher/banner/resource-center; events for tracker; seen for ' +
+        'announcement — different units, so rows are ranked by `uniqueUsers`, the one ' +
+        "cross-type comparable number), `goalUsers` + `goalKind` (the type's success action, " +
+        'reconciling with get_content_analytics: flow/checklist completed, launcher activated, ' +
+        'banner dismissed, resource-center clicked; null for tracker/announcement), ' +
+        '`lastActivityAt`, `published`. Zero-activity rows appear only for content LIVE in the ' +
+        'environment — the "published but unused" signal. Defaults to the last 30 days. ' +
+        'Scope to one company with `companyId` (numbers then cover its members); add ' +
+        '`expand: ["users"]` for the per-content member roster (latest progress/state, genuine ' +
+        'completed for flow/checklist) — the "how far did this account get" view. For one ' +
+        "content's funnel and daily series use get_content_analytics; for one user's live " +
+        'gates use diagnose_user.',
+      inputSchema: {
+        environmentId: environmentIdSchema,
+        startDate: analyticsStartDate,
+        endDate: analyticsEndDate,
+        timezone: analyticsTimezone,
+        companyId: z
+          .string()
+          .optional()
+          .describe("External company id — scope every number to this company's members."),
+        contentType: z
+          .string()
+          .optional()
+          .describe(
+            'Filter to one content kind: flow, checklist, launcher, banner, tracker, ' +
+              'resource-center, or announcement.',
+          ),
+        expand: z
+          .array(z.enum(['users']))
+          .optional()
+          .describe(
+            'users: the per-content member roster (requires companyId; capped at 100 ' +
+              'users per content, flagged with usersTruncated).',
+          ),
+      },
+      annotations: READ_ONLY,
+      async handler(args, ctx) {
+        const environment = await resolveEnvironment(args, ctx);
+        const expand = asStringArray(args.expand);
+        return ctx.services.usageOverview.overview(ctx.projectId, {
+          environmentId: environment.id,
+          startDate: asString(args.startDate),
+          endDate: asString(args.endDate),
+          timezone: asString(args.timezone),
+          companyId: asString(args.companyId),
+          contentType: asString(args.contentType),
+          expandUsers: expand?.includes('users') ?? false,
+        });
+      },
+    },
+
+    {
       name: 'list_environments',
       title: 'List environments',
       capability: Capability.EnvironmentRead,
@@ -1140,7 +1774,17 @@ export function buildReadTools(): McpTool[] {
         "List the project's environments — the environment ids that the env-scoped tools and " +
         '`publish_content` accept. Each item carries `inTokenScope`: whether THIS credential may ' +
         'act on that environment — plan against it up front rather than discovering scope limits ' +
-        'from write errors. Optionally filter by `name`. Returns `{ items, nextCursor }`.',
+        'from write errors. **What an environment allowlist actually fences: DELIVERY and ' +
+        'END-USER DATA** — publishing / unpublishing, users / companies / sessions / segment ' +
+        'membership, analytics, the diagnose tools (per-user data), and the environment records ' +
+        'themselves (an out-of-scope ' +
+        "environment's SDK `token` is withheld as null). It does NOT fence content VISIBILITY: " +
+        'content, versions, themes and definitions are PROJECT-level, so any credential with ' +
+        '`content:read` can read every piece and every version — including the one live in an ' +
+        'environment it may not act on — and `content:update` / `content:delete` can edit or ' +
+        "delete them. To keep someone away from another environment's content entirely, give " +
+        'them a separate PROJECT; a restricted environment allowlist is not an isolation ' +
+        'boundary. Optionally filter by `name`. Returns `{ items, nextCursor }`.',
       inputSchema: {
         ...nameSearchField,
         limit: limitSchema,

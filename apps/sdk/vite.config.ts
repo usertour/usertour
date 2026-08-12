@@ -91,6 +91,25 @@ const createBuildPlugins = (env: 'development' | 'production') => [
 // Helper function for code splitting
 // Separates @usertour/* workspace packages into their own chunk and keeps core initialization code with main bundle
 const createManualChunks = (moduleName: string): string | undefined => {
+  // types + constants are LEAF packages (types imports no workspace package,
+  // constants imports only types), so this chunk cannot participate in a chunk
+  // cycle: everything imports it, it imports nothing — its top-level bindings
+  // are always evaluated first. That guarantee is load-bearing: both packages
+  // export enums/objects consumed as top-level computed keys in OTHER chunks
+  // (BuiltinLauncherIcon in the icon presets, PlanType in PLAN_FEATURES), and a
+  // cross-chunk cycle turns those into `undefined` at init — the whole SDK dies
+  // on load. Match by PATH as well as package name: workspace deps resolved
+  // from source arrive as packages/<name>/ paths that '@usertour/' never
+  // matches, which is exactly how the enum landed in a lazy chunk.
+  if (
+    moduleName.includes('@usertour/types') ||
+    moduleName.includes('packages/types') ||
+    moduleName.includes('@usertour/constants') ||
+    moduleName.includes('packages/constants')
+  ) {
+    return 'vendor-base';
+  }
+
   // Icons package - separate chunk (typically large due to icon assets)
   // Match both package name and actual file path in monorepo
   if (moduleName.includes('@usertour/icons') || moduleName.includes('packages/icons')) {

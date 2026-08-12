@@ -1157,10 +1157,7 @@ describe('evaluateRulesConditions', () => {
     expect(result[3].actived).toBe(true); // createdAt is before now
     expect(result[4].actived).toBe(true); // onDate is on threeDaysAgo
     expect(result[5].actived).toBe(true); // futureDate is after now
-    // Note: DateTime empty/any logic is checked after date validation
-    // If actualValue is null/undefined/empty string, the function returns false before reaching the switch
-    // So empty string will return false, not true
-    expect(result[6].actived).toBe(false); // emptyDate is empty string, but function returns false before switch
+    expect(result[6].actived).toBe(true); // emptyDate is empty string, so 'empty' matches
     expect(result[7].actived).toBe(true); // hasDate has any value
   });
 

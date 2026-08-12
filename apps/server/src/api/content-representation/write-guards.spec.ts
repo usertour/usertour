@@ -150,6 +150,81 @@ describe('collectWriteViolations (single write walk)', () => {
     ]);
   });
 
+  it('bubble placement: positional keys rejected, bare backdrop passes', () => {
+    // Bubble position comes from the THEME; the renderer reads only the
+    // step-level backdrop. Anything positional used to be silently stored and
+    // echoed back — the silent-success trap.
+    const bad = collectWriteViolations({
+      steps: [
+        { name: 'B1', type: 'bubble', placement: { position: 'leftBottom' } },
+        { name: 'B2', type: 'bubble', placement: { side: 'top', backdrop: true } },
+      ],
+      contentType: 'flow',
+    });
+    expect(bad.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].placement' },
+      { rule: 'step_shape', path: 'steps[1].placement' },
+    ]);
+
+    const ok = collectWriteViolations({
+      steps: [{ name: 'B3', type: 'bubble', placement: { backdrop: true } }],
+      contentType: 'flow',
+    });
+    expect(ok.issues).toEqual([]);
+  });
+
+  it('hidden placement: rejected entirely — a hidden step renders no UI', () => {
+    const out = collectWriteViolations({
+      steps: [
+        { name: 'H', type: 'hidden', placement: { position: 'center' } },
+        { name: 'H2', type: 'hidden', placement: { backdrop: true } },
+      ],
+      contentType: 'flow',
+    });
+    expect(out.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].placement' },
+      { rule: 'step_shape', path: 'steps[1].placement' },
+    ]);
+  });
+
+  it('one question per step: a second question block is rejected, columns included', () => {
+    const out = collectWriteViolations({
+      steps: [
+        {
+          name: 'Two flat',
+          type: 'modal',
+          content: [
+            { type: 'question', question: { kind: 'nps', name: 'q1' } },
+            { type: 'question', question: { kind: 'nps', name: 'q2' } },
+          ],
+        },
+        {
+          name: 'Nested in columns',
+          type: 'modal',
+          content: [
+            { type: 'question', question: { kind: 'nps', name: 'q3' } },
+            {
+              type: 'columns',
+              columns: [
+                { blocks: [{ type: 'question', question: { kind: 'scale', name: 'q4' } }] },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'One is fine',
+          type: 'modal',
+          content: [{ type: 'question', question: { kind: 'nps', name: 'q5' } }],
+        },
+      ],
+      contentType: 'flow',
+    });
+    expect(out.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].content' },
+      { rule: 'step_shape', path: 'steps[1].content' },
+    ]);
+  });
+
   it('returns nothing for a clean write', () => {
     const out = collectWriteViolations({
       steps: [
@@ -168,5 +243,37 @@ describe('collectWriteViolations (single write walk)', () => {
     });
     expect(out.issues).toEqual([]);
     expect(out.refs).toEqual([]);
+  });
+
+  it('media_url: image/embed urls must be http(s) — except verbatim stored echoes', () => {
+    const steps = [
+      {
+        name: 'S',
+        type: 'modal',
+        content: [
+          { type: 'image', url: 'hello', link: { url: 'also-not-a-url' } },
+          { type: 'image', url: 'https://ok.example/a.png' },
+          // Stored verbatim echo: legacy junk already on this version passes.
+          { type: 'embed', url: 'legacy-junk' },
+        ],
+      },
+    ];
+    const out = collectWriteViolations({
+      steps,
+      contentType: 'flow',
+      storedUrls: new Set(['legacy-junk']),
+    });
+    expect(out.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'media_url', path: 'steps[0].content[0].url' },
+      { rule: 'media_url', path: 'steps[0].content[0].link.url' },
+    ]);
+    // Same junk WITHOUT the stored exemption is rejected (data entry covered too).
+    const fresh = collectWriteViolations({
+      data: { content: [{ type: 'embed', url: 'legacy-junk' }] },
+      contentType: 'banner',
+    });
+    expect(fresh.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
+      { rule: 'media_url', path: 'data.content[0].url' },
+    ]);
   });
 });

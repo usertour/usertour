@@ -1,4 +1,4 @@
-import { validateAutoStartForType } from './auto-start.validate';
+import { autoStartCapabilitySummary, validateAutoStartForType } from './auto-start.validate';
 import type { RepresentationStartRules } from './representation.schema';
 
 const when: RepresentationStartRules['when'] = [];
@@ -38,29 +38,50 @@ describe('validateAutoStartForType', () => {
     ]);
   });
 
-  it.each(['launcher', 'banner'])(
-    '%s (show-only) allows conditions but no settings/hide rules',
-    (type) => {
-      // Bare conditions are fine.
-      expect(validateAutoStartForType({ when }, undefined, type)).toEqual([]);
+  it.each(['launcher'])('%s (show-only) allows conditions but no settings/hide rules', (type) => {
+    // Bare conditions are fine.
+    expect(validateAutoStartForType({ when }, undefined, type)).toEqual([]);
 
-      const start: RepresentationStartRules = {
+    const start: RepresentationStartRules = {
+      when,
+      frequency: { mode: 'once' },
+      priority: 'high',
+      waitSeconds: 500,
+      startIfNotComplete: true,
+    };
+    const errs = validateAutoStartForType(start, { when }, type);
+    expect(errs).toEqual([
+      `${type} content does not support a start \`frequency\`.`,
+      `${type} content does not support a start \`priority\`.`,
+      `${type} content does not support a start \`waitSeconds\`.`,
+      `${type} content does not support \`startIfNotComplete\`.`,
+      `${type} content does not support \`hideRules\`.`,
+    ]);
+  });
+
+  it('banner allows priority (it is a singleton and needs a tie-break) but nothing else', () => {
+    // Banner competes for the single banner slot, so the author must be able to
+    // pick the winner. Everything else stays unsupported: it is re-evaluated on
+    // every page, so frequency / wait / if-not-complete / hide rules are moot.
+    expect(validateAutoStartForType({ when, priority: 'high' }, undefined, 'banner')).toEqual([]);
+    const errs = validateAutoStartForType(
+      {
         when,
         frequency: { mode: 'once' },
         priority: 'high',
         waitSeconds: 500,
         startIfNotComplete: true,
-      };
-      const errs = validateAutoStartForType(start, { when }, type);
-      expect(errs).toEqual([
-        `${type} content does not support a start \`frequency\`.`,
-        `${type} content does not support a start \`priority\`.`,
-        `${type} content does not support a start \`waitSeconds\`.`,
-        `${type} content does not support \`startIfNotComplete\`.`,
-        `${type} content does not support \`hideRules\`.`,
-      ]);
-    },
-  );
+      },
+      { when },
+      'banner',
+    );
+    expect(errs).toEqual([
+      'banner content does not support a start `frequency`.',
+      'banner content does not support a start `waitSeconds`.',
+      'banner content does not support `startIfNotComplete`.',
+      'banner content does not support `hideRules`.',
+    ]);
+  });
 
   it('resource-center allows priority + hide rules but not frequency/wait/ifComplete', () => {
     expect(
@@ -118,9 +139,13 @@ describe('validateAutoStartForType', () => {
       ],
     };
     const errs = validateAutoStartForType(start, undefined, 'tracker');
-    expect(errs).toContain('tracker content does not support a `segment` start condition.');
-    expect(errs).toContain('tracker content does not support a `content_state` start condition.');
-    expect(errs).not.toContain('tracker content does not support a `element` start condition.');
+    // Each rejection names the offending type AND the client-evaluable set the
+    // slot does accept (so the fix is one round-trip).
+    const segErr = errs.find((e) => e.includes('a `segment` start condition'));
+    const contentErr = errs.find((e) => e.includes('a `content_state` start condition'));
+    expect(segErr).toContain('client-evaluable types work: attribute, current_url');
+    expect(contentErr).toBeDefined();
+    expect(errs.some((e) => e.includes('a `element` start condition'))).toBe(false);
   });
 
   it('non-tracker types accept any start-condition type (no whitelist)', () => {
@@ -188,5 +213,51 @@ describe('validateAutoStartForType', () => {
     const start: RepresentationStartRules = { when, frequency: { mode: 'once' }, priority: 'high' };
     expect(validateAutoStartForType(start, { when }, 'mystery')).toEqual([]);
     expect(validateAutoStartForType(start, { when }, undefined)).toEqual([]);
+  });
+});
+
+describe('autoStartCapabilitySummary (discovery projection)', () => {
+  it('mirrors the matrix: full support on flow, nothing on launcher', () => {
+    expect(autoStartCapabilitySummary('flow')).toEqual({
+      startRules: {
+        when: 'all',
+        frequency: true,
+        frequencyAtLeast: true,
+        // The VALUES, not a boolean — a support reviewer otherwise has to guess
+        // that "medium" exists and ship the guess to production.
+        priority: ['highest', 'high', 'medium', 'low', 'lowest'],
+        waitSeconds: true,
+        startIfNotComplete: true,
+      },
+      hideRules: true,
+    });
+    expect(autoStartCapabilitySummary('launcher')).toEqual({
+      startRules: {
+        when: 'all',
+        frequency: false,
+        frequencyAtLeast: false,
+        priority: false,
+        waitSeconds: false,
+        startIfNotComplete: false,
+      },
+      hideRules: false,
+    });
+  });
+
+  it('narrowed `when` vocabularies surface as explicit lists', () => {
+    // Announcement: audience filter only.
+    expect(autoStartCapabilitySummary('announcement')?.startRules.when).toEqual([
+      'attribute',
+      'segment',
+    ]);
+    // Tracker: client-evaluable conditions only — never the server-evaluated ones.
+    const trackerWhen = autoStartCapabilitySummary('tracker')?.startRules.when;
+    expect(Array.isArray(trackerWhen)).toBe(true);
+    expect(trackerWhen).toContain('current_url');
+    expect(trackerWhen).not.toContain('segment');
+  });
+
+  it('unknown type yields undefined (same "leave it to others" rule as the validator)', () => {
+    expect(autoStartCapabilitySummary('mystery')).toBeUndefined();
   });
 });

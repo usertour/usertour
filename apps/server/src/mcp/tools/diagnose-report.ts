@@ -35,6 +35,19 @@ export type AnnotatedCondition = RepresentationCondition & {
   /** The user's ACTUAL current value for a user-scoped `attribute` leaf (null = not set),
    * so an unmatched condition explains itself without a separate get_user + date math. */
   actual?: unknown;
+  /** Extra human-readable context for this leaf (e.g. why an unmatched attribute
+   * can never match yet). */
+  note?: string;
+  /** Segment leaves only: how the segment defines membership. */
+  segmentKind?: 'all' | 'manual' | 'condition';
+  /** Segment leaves, kind=condition: the segment's OWN conditions annotated the
+   * same way as the outer tree (status + actual values) — the per-condition
+   * "why is this user outside" that the leaf verdict alone cannot give.
+   * Explanatory: the authoritative in/out verdict is this leaf's own `status`. */
+  segmentConditions?: AnnotatedCondition;
+  /** Segment leaves, kind=manual: list size + whether THIS user/company is on it. */
+  memberCount?: number;
+  isMember?: boolean;
 };
 
 /** Collect the segment + content-state ids referenced anywhere in a condition tree, so the
@@ -87,15 +100,43 @@ export const attachUserAttributeValues = (
   }
   const ref = node as { type: string; scope?: string; attribute?: string };
   if (ref.type === 'attribute' && ref.scope === 'user' && ref.attribute) {
-    node.actual = userAttributes[ref.attribute] ?? null;
+    const value = userAttributes[ref.attribute];
+    node.actual = value ?? null;
+    if (value === undefined && node.status === 'unmatched') {
+      // The condition didn't fail on a wrong VALUE — the user has no value at
+      // all. Name the ONE writer of a user-scoped attribute: the host app's
+      // identify() call. The note used to add "(event-derived attributes only
+      // exist after their first event lands)", which is false for a plain user
+      // attribute and cost a support reviewer a wrong root cause — they went
+      // hunting for the event pipeline that supposedly wrote it, then had to
+      // back it out via list_attribute_definitions.
+      node.note = `the user has NO value for "${ref.attribute}" yet — a user attribute is written by your app's identify() call, so a rule on it cannot match until identify sends it (check list_attribute_definitions for its scope, and whether identify includes this field for THIS user)`;
+    }
   }
 };
 
 export interface DiagnoseReport {
   contentType: string;
+  /** The version these gates were evaluated against — always the PUBLISHED one.
+   * Rollback verification needs it: "is production back on v0?" was otherwise
+   * unanswerable from a green diagnose and took a second get_content call. */
+  diagnosedVersionId?: string | null;
   summary: string;
   blockedBy: string[];
   gates: Gate[];
+  /**
+   * Set when the LIVE version fails the same usability check publish enforces.
+   * The gates answer whether the piece may START; they never look INSIDE it, so
+   * a checklist task whose only completion condition referenced a DELETED event
+   * could never tick while every gate reported pass — a support reviewer spent
+   * their longest detour there and concluded, reasonably, that no tool could
+   * see it. One does; this points at it.
+   */
+  liveVersionIssues?: {
+    count: number;
+    note: string;
+    errors: { path: string; message: string }[];
+  };
   startConditions?: AnnotatedCondition;
   hideConditions?: AnnotatedCondition;
 }
@@ -108,20 +149,49 @@ const LIVE_ONLY = new Set<string>([
   RulesType.WAIT,
 ]);
 
+const isCompanyScoped = (readable: RepresentationCondition): boolean => {
+  const scope = (readable as { scope?: string }).scope;
+  return scope === 'company' || scope === 'companyMembership';
+};
+
+/**
+ * A company-scoped leaf decided `unmatched` because the user has no company at all
+ * reads, on its own, as "their company doesn't qualify" — a support reviewer spent
+ * two extra calls (list_users + list_companies) proving which of the two it was, and
+ * only then trusted the verdict. Say it on the leaf.
+ */
+const companylessNote = (
+  readable: RepresentationCondition,
+  hasCompany: boolean,
+  userHasAnyCompany?: boolean,
+): string | undefined =>
+  !hasCompany && userHasAnyCompany === false && isCompanyScoped(readable)
+    ? 'this user belongs to NO company — every company / companyMembership rule is decided ' +
+      'unmatched for them, and passing `companyId` cannot change it (it would what-if a ' +
+      'company they are not in). The fix is in your app: send the company on the SDK group() ' +
+      'call so the user has a company context at all.'
+    : undefined;
+
 const leafStatus = (
   stamped: RulesCondition,
   readable: RepresentationCondition,
-  hasUrl: boolean,
   hasCompany: boolean,
+  userHasAnyCompany?: boolean,
 ): ConditionStatus => {
   if (LIVE_ONLY.has(stamped.type)) return 'unknown';
-  if (stamped.type === RulesType.CURRENT_PAGE && !hasUrl) return 'unknown';
   // A company / companyMembership attribute condition can't be evaluated without a company
   // context (the diagnose `companyId`). Report unknown — NOT a definitive `unmatched` that
   // would read as "the user's company doesn't qualify" — so the agent passes companyId
   // instead of chasing the wrong cause. Mirrors current_url → unknown when no `url`.
-  const scope = (readable as { scope?: string }).scope;
-  if (!hasCompany && (scope === 'company' || scope === 'companyMembership')) return 'unknown';
+  if (!hasCompany && isCompanyScoped(readable)) {
+    // ... UNLESS the user belongs to no company AT ALL. Then it is not
+    // undecidable, it is decided: nothing can ever satisfy it, and calling it
+    // `unknown` let the report headline read "No server-side blocker" for
+    // company-targeted content those users can never receive. There is also no
+    // remedy to suggest — you cannot pass a companyId for a user who has none
+    // (and passing someone else's is taken AS GIVEN, fabricating a pass).
+    return userHasAnyCompany === false ? 'unmatched' : 'unknown';
+  }
   return stamped.actived ? 'matched' : 'unmatched';
 };
 
@@ -133,8 +203,8 @@ const leafStatus = (
 export const annotateConditions = (
   stamped: RulesCondition[],
   readable: RepresentationCondition[],
-  hasUrl: boolean,
   hasCompany = false,
+  userHasAnyCompany?: boolean,
 ): AnnotatedCondition | undefined => {
   if (!stamped || stamped.length === 0) return undefined;
 
@@ -147,7 +217,13 @@ export const annotateConditions = (
         conditions: s.conditions.map((sc, i) => node(sc, rChildren[i])),
       } as AnnotatedCondition;
     }
-    return { ...(r as object), status: leafStatus(s, r, hasUrl, hasCompany) } as AnnotatedCondition;
+    const leaf = {
+      ...(r as object),
+      status: leafStatus(s, r, hasCompany, userHasAnyCompany),
+    } as AnnotatedCondition;
+    const note = companylessNote(r, hasCompany, userHasAnyCompany);
+    if (note) leaf.note = note;
+    return leaf;
   };
 
   // The top-level list is itself an AND/OR group (the join is on the first item).
@@ -161,6 +237,55 @@ export const annotateConditions = (
 };
 
 /**
+ * Annotate a condition tree from PER-LEAF verdicts (`actived` true/false, unset
+ * = not evaluable) — used for segment expansions, where verdicts come from the
+ * runtime's own filter builder run one leaf at a time. Groups fold three-valued:
+ * a group is matched/unmatched only when the leaves force it; an unknown leaf
+ * that could still flip the outcome keeps the group `unknown`.
+ */
+export const annotateFromVerdicts = (
+  stamped: RulesCondition[],
+  readable: RepresentationCondition[],
+): AnnotatedCondition | undefined => {
+  if (!stamped || stamped.length === 0) return undefined;
+  const leafStatusOf = (s: RulesCondition): ConditionStatus =>
+    s.actived === true ? 'matched' : s.actived === false ? 'unmatched' : 'unknown';
+  const fold = (children: ConditionStatus[], all: boolean): ConditionStatus => {
+    if (all) {
+      if (children.some((c) => c === 'unmatched')) return 'unmatched';
+      return children.every((c) => c === 'matched') ? 'matched' : 'unknown';
+    }
+    if (children.some((c) => c === 'matched')) return 'matched';
+    return children.every((c) => c === 'unmatched') ? 'unmatched' : 'unknown';
+  };
+  const node = (s: RulesCondition, r: RepresentationCondition): AnnotatedCondition => {
+    if (s.conditions?.length) {
+      const rChildren = (r as { conditions?: RepresentationCondition[] }).conditions ?? [];
+      const kids = s.conditions.map((sc, i) => node(sc, rChildren[i]));
+      return {
+        ...(r as object),
+        status: fold(
+          kids.map((k) => k.status),
+          (r as { match?: string }).match === 'all',
+        ),
+        conditions: kids,
+      } as AnnotatedCondition;
+    }
+    return { ...(r as object), status: leafStatusOf(s) } as AnnotatedCondition;
+  };
+  const kids = stamped.map((s, i) => node(s, readable[i]));
+  return {
+    type: 'group',
+    match: stamped[0]?.operators === 'and' ? 'all' : 'any',
+    status: fold(
+      kids.map((k) => k.status),
+      stamped[0]?.operators === 'and',
+    ),
+    conditions: kids,
+  } as AnnotatedCondition;
+};
+
+/**
  * Categorize the `unknown` (not-server-evaluable) leaves so the summary can say what to DO
  * about each — and make explicit they are NOT blockers (an agent must not read an `unknown`
  * leaf as a second blocker alongside the real ones in `blockedBy`). `current_url` unknowns
@@ -169,8 +294,7 @@ export const annotateConditions = (
  */
 const classifyUnknownLeaves = (
   node?: AnnotatedCondition,
-): { urlResolvable: boolean; companyResolvable: boolean; liveOnly: boolean } => {
-  let urlResolvable = false;
+): { companyResolvable: boolean; liveOnly: boolean } => {
   let companyResolvable = false;
   let liveOnly = false;
   const walk = (n?: AnnotatedCondition) => {
@@ -182,13 +306,12 @@ const classifyUnknownLeaves = (
     if (n.status !== 'unknown') return;
     const type = (n as { type?: string }).type;
     const scope = (n as { scope?: string }).scope;
-    if (type === 'current_url') urlResolvable = true;
-    else if (type === 'attribute' && (scope === 'company' || scope === 'companyMembership'))
+    if (type === 'attribute' && (scope === 'company' || scope === 'companyMembership'))
       companyResolvable = true;
     else liveOnly = true;
   };
   walk(node);
-  return { urlResolvable, companyResolvable, liveOnly };
+  return { companyResolvable, liveOnly };
 };
 
 /**
@@ -201,15 +324,45 @@ const classifyUnknownLeaves = (
 const startRulesUnknownCaveat = (tree?: AnnotatedCondition): string => {
   if (!tree) return '';
   const u = classifyUnknownLeaves(tree);
-  if (!(u.urlResolvable || u.companyResolvable || u.liveOnly)) return '';
+  if (!(u.companyResolvable || u.liveOnly)) return '';
   const fixes = [
-    u.urlResolvable ? 'pass `url`' : '',
     u.companyResolvable ? 'pass `companyId`' : '',
     u.liveOnly ? 'confirm live-only leaves in the app' : '',
   ]
     .filter(Boolean)
     .join(' / ');
   return ` NOTE: the tree contains \`unknown\` conditions the server could not evaluate — they count as NOT matched in this verdict, so the fail may be an artifact; ${fixes} for a clean verdict.`;
+};
+
+/**
+ * Fold an annotated condition tree, deciding what an `unknown` leaf counts as.
+ * The runtime's own fold treats unknown as NOT matched (it has no other option
+ * server-side); running the same tree optimistically — unknown as matched —
+ * separates two very different verdicts:
+ *
+ *   optimistic ALSO fails  → some leaf is definitively unmatched: a REAL block
+ *   optimistic passes,
+ *   pessimistic fails      → the difference is only the unknowns: UNDETERMINED
+ *
+ * Without this, a rule whose only leaf is live-only (every tracker, any flow
+ * gated on a DOM element) reported "Blocked by: start_rules" while the tool's
+ * own contract says `unknown` is not a blocker — the report contradicted
+ * itself in one sentence, and sent authors to fix targeting that was fine.
+ */
+const foldAssumingUnknown = (
+  node: AnnotatedCondition | undefined,
+  assume: 'matched' | 'unmatched',
+): boolean => {
+  if (!node) return true;
+  const children = (node as { conditions?: AnnotatedCondition[] }).conditions;
+  if (children && children.length > 0) {
+    const results = children.map((c) => foldAssumingUnknown(c, assume));
+    return (node as { match?: string }).match === 'all'
+      ? results.every(Boolean)
+      : results.some(Boolean);
+  }
+  if (node.status === 'unknown') return assume === 'matched';
+  return node.status === 'matched';
 };
 
 export const buildDiagnoseReport = (
@@ -277,33 +430,57 @@ export const buildDiagnoseReport = (
         // e.g. banner/launcher have no frequency or hide rules, resource-center has no
         // frequency. Showing an inapplicable gate would be noise/misleading.
         const caps = getAutoStartCapabilities(facts.contentType);
-        // The fresh-start gates (start_rules / frequency / single_session) decide
-        // whether the runtime would AUTO-START a NEW session. When one is already
-        // active, the runtime resumes it instead of re-evaluating these — so emitting
-        // them would contradict "currently active" (see active_session). Only the hide
-        // gate still applies to an active session (a hide rule can cancel it).
-        if (!facts.hasActiveSession) {
-          gates.push({
-            id: 'start_rules',
-            status: facts.startRulesActive ? 'pass' : 'fail',
-            // For an announcement the rules are a pure AUDIENCE filter (no rules =
-            // visible to everyone), not an auto-start switch — word it as such.
-            // For other types, "no rules at all" is usually a DESIGNED on-demand
-            // guide (started via start_content / usertour.start()), not a broken
-            // one — say so instead of a generic failure that reads like a bug.
-            detail: isAnnouncement
-              ? facts.startRulesActive
-                ? 'the audience filter matches this user (or there is no targeting).'
+        // The start_rules verdict is a CONFIGURATION fact and must not appear or
+        // disappear based on the session state of whichever user you happened to
+        // diagnose with: hiding it behind an active session made the same content
+        // read healthy via one user and broken via another (the dead-checklist
+        // audit case). Always emit it, truthfully. With an active session a fail
+        // is INFORMATIONAL — the runtime resumes the session without
+        // re-evaluating start rules — so it is excluded from blockedBy there.
+        {
+          // For an announcement the rules are a pure AUDIENCE filter (no rules =
+          // visible to everyone), not an auto-start switch — word it as such.
+          // For other types, "no rules at all" is usually a DESIGNED on-demand
+          // guide (started via start_content / usertour.start()), not a broken
+          // one — say so instead of a generic failure that reads like a bug.
+          // A fail whose ONLY cause is not-evaluable leaves is not a fail — it is
+          // "the server can't tell". Re-fold the tree optimistically to separate
+          // the two, so `unknown` stops landing in `blockedBy` against the tool's
+          // own contract (see foldAssumingUnknown).
+          const undetermined =
+            !facts.startRulesActive &&
+            !!startConditions &&
+            foldAssumingUnknown(startConditions, 'matched');
+          const startRulesDetail = isAnnouncement
+            ? facts.startRulesActive
+              ? 'the audience filter matches this user (or there is no targeting).'
+              : undetermined
+                ? 'the audience filter cannot be decided server-side — every condition that fails here is one the server cannot evaluate; confirm it in the running app.'
                 : 'the audience filter does not match this user — see startConditions.'
-              : facts.startRulesActive
-                ? 'auto-start enabled and start conditions match.'
+            : facts.startRulesActive
+              ? 'auto-start enabled and start conditions match.'
+              : undetermined
+                ? `not decidable server-side: nothing here is definitively unmatched — the conditions that fail are the ones the server cannot evaluate (live-only DOM/text leaves, or company-scoped ones without \`companyId\`). This is NOT a block; confirm those leaves in the running app.${startRulesUnknownCaveat(startConditions)}`
                 : startConditions
                   ? `auto-start disabled or a start condition does not match — see startConditions.${startRulesUnknownCaveat(startConditions)}`
                   : 'auto-start is not configured, so it never appears on its own — the normal ' +
                     'pattern for an on-demand guide launched via a checklist / resource-center ' +
                     '`start_content` reference or `usertour.start()`. Confirm something ' +
-                    'references it; add startRules only if it should also start by itself.',
+                    'references it; add startRules only if it should also start by itself.';
+          gates.push({
+            id: 'start_rules',
+            status: facts.startRulesActive ? 'pass' : undetermined ? 'unknown' : 'fail',
+            detail:
+              facts.hasActiveSession && !facts.startRulesActive
+                ? `informational, not a blocker here (this user is covered by the active session): ${startRulesDetail}`
+                : startRulesDetail,
           });
+        }
+        // The remaining fresh-start gates (frequency / single_session) are
+        // per-user STATE about whether a NEW session may start — meaningless
+        // while one is already active (the runtime resumes it), so they stay
+        // conditional; only the hide gate still applies to an active session.
+        if (!facts.hasActiveSession) {
           // Only meaningful when the audience filter passes — for an excluded
           // user the feed omits the announcement entirely, so a "counts toward
           // the unread badge" line next to a failed start_rules gate would
@@ -335,9 +512,15 @@ export const buildDiagnoseReport = (
             gates.push({
               id: 'single_session',
               status: facts.singleSessionDismissed ? 'fail' : 'pass',
+              // Never lump "never shown" and "still running" into one line: a
+              // support reviewer read the old "not yet shown (or still active)"
+              // as "already used its one show" — the opposite of the truth —
+              // and mis-diagnosed a banner that had simply stopped matching.
               detail: facts.singleSessionDismissed
                 ? `a ${facts.contentType} shows once per user and a prior session was already dismissed/ended.`
-                : 'shows once per user; not yet shown (or still active).',
+                : facts.hasActiveSession
+                  ? `a ${facts.contentType} shows once per user; this user's session is ACTIVE right now — showing/resumable, not used up.`
+                  : `a ${facts.contentType} shows once per user; this user has had NO session yet, so the single show is still available.`,
             });
           }
           // Singleton types fill ONE slot. (a) Another content of this type currently has
@@ -404,25 +587,28 @@ export const buildDiagnoseReport = (
     });
   }
 
-  const blockedBy = gates.filter((g) => g.status === 'fail').map((g) => g.id);
+  const blockedBy = gates
+    .filter((g) => g.status === 'fail')
+    .map((g) => g.id)
+    // A failing start_rules during an ACTIVE session is informational — the
+    // content IS showing (resumed), nothing is blocked by it.
+    .filter((id) => !(facts.hasActiveSession && id === 'start_rules'));
   // `unknown` conditions are NOT blockers (only `blockedBy` blocks). Classify them so the
   // summary names what resolves each, and never lets an agent read an `unknown` leaf as a
   // second blocker beside the real ones.
   const su = classifyUnknownLeaves(startConditions);
   const hu = classifyUnknownLeaves(hideConditions);
-  const urlResolvable = su.urlResolvable || hu.urlResolvable;
   const companyResolvable = su.companyResolvable || hu.companyResolvable;
   const liveOnly = su.liveOnly || hu.liveOnly;
-  const anyUnknown = urlResolvable || companyResolvable || liveOnly;
+  const anyUnknown = companyResolvable || liveOnly;
   const resolveUnknown = [
-    urlResolvable ? 'pass `url` to resolve current_url conditions' : '',
     companyResolvable ? 'pass `companyId` to resolve company-scoped conditions' : '',
     liveOnly ? 'confirm live-only conditions (DOM element / text) in the running app' : '',
   ]
     .filter(Boolean)
     .join('; ');
   const hasUnknown = (c: ReturnType<typeof classifyUnknownLeaves>) =>
-    c.urlResolvable || c.companyResolvable || c.liveOnly;
+    c.companyResolvable || c.liveOnly;
   const unknownWhere = [
     hasUnknown(su) ? 'startConditions' : '',
     hasUnknown(hu) ? 'hideConditions' : '',
@@ -447,7 +633,11 @@ export const buildDiagnoseReport = (
   } else if (facts.hasActiveSession) {
     summary = facts.hidden
       ? 'Has an active session, but a hide rule is active — the runtime will cancel it (won’t show).'
-      : 'Currently active for this user — it is showing (or resumes on the next load).';
+      : `Currently active for this user — it is showing (or resumes on the next load)${
+          renderTargets.length
+            ? ' — provided its target element exists on the page; the server cannot verify that (see the target gate)'
+            : ''
+        }.`;
   } else if (blockedBy.length) {
     summary = `Blocked by: ${blockedBy.join(', ')}.${
       anyUnknown
@@ -472,6 +662,7 @@ export const buildDiagnoseReport = (
 
   return {
     contentType: facts.contentType,
+    diagnosedVersionId: facts.publishedVersionId ?? null,
     summary,
     blockedBy,
     gates,

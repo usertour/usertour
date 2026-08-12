@@ -1,11 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { singleOrArray } from '../shared/query';
+import { singleOrArray, isoTimestamp } from '../shared/query';
 
 import { codeName as codeNameSchema } from '../shared/codename';
 import { nameSearchField } from '@/common/filters';
 import { ApiObjectType } from '../shared/object-type';
-import { cursor, limit } from '../shared/pagination.schema';
+import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 /**
  * The single source of truth for the v2 event-definitions endpoint: these zod
@@ -22,14 +22,16 @@ export const listEventDefinitionsQuery = z.object({
     // Same sortable set as the sibling attribute-definitions catalog: both are
     // definition directories with codeName/displayName columns.
     z.enum(['createdAt', '-createdAt', 'codeName', '-codeName', 'displayName', '-displayName']),
-  ).describe('Order by createdAt / codeName / displayName (prefix - for descending).'),
+  ).describe(
+    'Order by createdAt / codeName / displayName (prefix - for descending). Text sorting is case-sensitive (byte order): uppercase sorts before lowercase.',
+  ),
 });
 export class ListEventDefinitionsQueryDto extends createZodDto(listEventDefinitionsQuery) {}
 
 export const eventDefinition = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.EVENT_DEFINITION),
-  createdAt: z.string(),
+  createdAt: isoTimestamp,
   description: z.string(),
   displayName: z.string(),
   codeName: z.string(),
@@ -38,7 +40,7 @@ export const eventDefinition = z.object({
     .describe(
       'true = a built-in Usertour lifecycle event (flow/launcher/checklist/survey/… ' +
         'started/ended/etc.) — NOT trackable: a tracker can only fire a CUSTOM event. ' +
-        'false = a custom event you created (with create_event_definition).',
+        'false = a custom event you created.',
     ),
   attributes: z
     .array(z.string())
@@ -52,16 +54,17 @@ const eventAttributes = z
   .array(z.string())
   .describe(
     'codeNames of EXISTING event-scoped attributes to attach to this event — the built-in / ' +
-      'predefined ones, or custom event properties that were auto-created when your app tracked ' +
-      'this event with a properties payload. Note: you cannot PRE-DEFINE a new event property via ' +
-      'create_attribute_definition (its scope is only user / company / companyMembership); event ' +
-      'properties are created automatically at ingestion when the SDK calls ' +
-      'usertour.track(name, { prop: value }). Unknown codeNames are rejected.',
+      'predefined ones, custom event properties auto-registered at ingestion when your app ' +
+      'tracked an event with a properties payload, or ones pre-defined via ' +
+      'the attribute definition first with scope `eventDefinition`. Unknown codeNames are rejected.',
   );
 
 export const createEventDefinitionBody = z
   .object({
-    codeName: codeNameSchema.describe('Stable identifier, unique per project. Immutable.'),
+    codeName: codeNameSchema.describe(
+      'Stable identifier, unique per project. Immutable. Must start with a letter, then ' +
+        'letters/digits/underscores, 2\u2013100 chars.',
+    ),
     displayName: z.string().min(1).describe('Human-readable name.'),
     description: z.string().optional().describe('Optional description.'),
     attributes: eventAttributes.optional(),
@@ -83,8 +86,8 @@ export class UpdateEventDefinitionBodyDto extends createZodDto(updateEventDefini
 
 export const listEventDefinitionsResponse = z.object({
   results: z.array(eventDefinition),
-  next: z.string().nullable(),
-  previous: z.string().nullable(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListEventDefinitionsResponseDto extends createZodDto(listEventDefinitionsResponse) {}
 

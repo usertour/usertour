@@ -432,7 +432,7 @@ model OAuthGrant {
   id                    String    @id @default(cuid()) // = grantId
   createdAt             DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
-  // Rolled up from the grant's short-lived access-token rows before the hourly
+  // Rolled up from the grant's short-lived access-token rows before the daily
   // expiry cleanup deletes them — the durable "last used" for Connected Apps.
   lastUsedAt            DateTime? @db.Timestamptz(6)
   userId                String
@@ -443,6 +443,11 @@ model OAuthGrant {
   allowedEnvironmentIds Json?     @db.JsonB
   /// SHA-256 hash of the current refresh token; rotated on each refresh.
   hashedRefreshToken    String?   @unique
+  /// The PREVIOUS refresh hash, honored for a short grace window after rotation
+  /// (rotatedAt) so a client whose refresh RESPONSE was lost can retry with the
+  /// old token instead of bricking the grant. See OAuthModelService.
+  previousHashedRefreshToken String? @unique
+  rotatedAt             DateTime? @db.Timestamptz(6)
   refreshExpiresAt      DateTime? @db.Timestamptz(6)
   revokedAt             DateTime? @db.Timestamptz(6)
 
@@ -533,6 +538,15 @@ model ContentPublishRecord {
   action          String
   actorUserId     String?
   actorTokenId    String?
+  /// Denormalized at write time, same reason as versionSequence: the ledger is
+  /// the audit record, so attribution must survive the actor row disappearing.
+  /// It does disappear routinely — an OAuth-issued token is REPLACED on every
+  /// refresh, so a read-time join silently dropped `actorTokenName` to null and
+  /// the row then read as a dashboard publish by a human (a release-ops review
+  /// watched one publish change hands between two reads minutes apart).
+  actorName       String?
+  actorTokenName  String?
+  environmentName String?
 
   @@index([contentId, createdAt])
 }
@@ -541,6 +555,12 @@ model Version {
   id                    String                  @id @default(cuid())
   createdAt             DateTime                @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime                @updatedAt @db.Timestamptz(6)
+  /// FIRST time this version went live (freeze stamp). Set once in the publish
+  /// transaction, never cleared (unpublish keeps it) and never copied to forks.
+  /// Non-null = the version is frozen read-only forever (see versionFrozen in
+  /// content.service). NOT live state — that lives on ContentOnEnvironment.
+  /// (Column predates this use and was dead/empty; adopted without backfill,
+  /// so only versions published after the freeze rule shipped carry it.)
   publishedAt           DateTime?               @db.Timestamptz(6)
   scheduledAt           DateTime?               @db.Timestamptz(6)
   deleted               Boolean                 @default(false)

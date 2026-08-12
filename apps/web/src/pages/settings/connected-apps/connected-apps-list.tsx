@@ -12,6 +12,10 @@ import {
   Button,
   ResourceListPage,
   type ResourceTableColumn,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@usertour/ui';
 import {
   type OAuthConnection,
@@ -81,12 +85,28 @@ export const ConnectedAppsList = () => {
     },
     {
       header: t('settings.connectedApps.columns.environments'),
-      // null = all environments (legacy / no env restriction); otherwise the granted names.
+      // null = all environments (legacy / no env restriction); otherwise the granted
+      // names. An EMPTY list means every granted environment has been deleted (the
+      // delete sweep shrinks a grant's list, never widens it) — the app can act on
+      // nothing until revoked and re-consented, so say that instead of a blank cell.
       cell: (c) =>
         c.environmentNames === null ? (
           <Badge variant="secondary" className="font-normal">
             {t('settings.connectedApps.allEnvironments')}
           </Badge>
+        ) : c.environmentNames.length === 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="destructive" className="cursor-default font-normal">
+                  {t('settings.connectedApps.noEnvironments')}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                {t('settings.connectedApps.noEnvironmentsTooltip')}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         ) : (
           <div className="flex flex-wrap gap-1">
             {c.environmentNames.map((name) => (

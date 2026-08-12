@@ -10,6 +10,7 @@ import { TooltipTargetMissingQuery } from './dto/tooltip-target-missing-query.in
 import { Analytics } from './models/analytics';
 import { BizSessionConnection, TrackerUserConnection } from './models/analytics-connection.model';
 import { TooltipTargetMissingResponse } from './models/tooltip-target-missing-response';
+import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
@@ -64,12 +65,24 @@ export class AnalyticsResolver {
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.SessionManage, scope: ScopeKind.Session })
+  // The same operation is audited on v1/v2/MCP (delete_session); the web surface
+  // must not be the one path that leaves no trace of an irreversible delete.
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'session',
+    resourceId: (a) => String(a.sessionId),
+  })
   async deleteSession(@Args('sessionId') sessionId: string) {
     return !!(await this.service.deleteSession(sessionId));
   }
 
   @Mutation(() => Boolean)
   @RequirePermission({ capability: Capability.SessionManage, scope: ScopeKind.Session })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'session',
+    resourceId: (a) => String(a.sessionId),
+  })
   async endSession(@Args('sessionId') sessionId: string) {
     return !!(await this.service.endSession(sessionId));
   }

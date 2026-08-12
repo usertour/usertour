@@ -10,6 +10,7 @@ import {
   RepresentationTrigger,
 } from './representation.schema';
 import { ATTR_OP_TO_LOGIC } from './attr-ops';
+import { REP_CONDITION_TYPE_TO_INTERNAL } from './contract-map';
 import { compileTargetToElementData } from './target.compile';
 import { compilePlainText } from './text.compile';
 
@@ -61,6 +62,9 @@ type Rule = { id: string; type: string; data: any; operators?: 'and' | 'or'; con
 
 // representation op → internal logic — single source of truth in attr-ops.ts.
 const ATTR_LOGIC: Record<string, string> = ATTR_OP_TO_LOGIC;
+// For the unknown-type rejection message: the writable condition vocabulary,
+// derived from the codec's own name map so the list can't drift.
+const SUPPORTED_CONDITION_TYPES = Object.keys(REP_CONDITION_TYPE_TO_INTERNAL).sort().join(', ');
 const ELEMENT_LOGIC: Record<string, string> = {
   present: 'present',
   hidden: 'unpresent',
@@ -119,9 +123,7 @@ export function compileConditions(
   r: CompileResolvers,
   joiner: 'and' | 'or' = 'and',
 ): Rule[] {
-  return (conditions ?? [])
-    .filter((c) => c.type !== 'unsupported')
-    .map((c) => ({ ...compileCondition(c, r), operators: joiner }));
+  return (conditions ?? []).map((c) => ({ ...compileCondition(c, r), operators: joiner }));
 }
 
 function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
@@ -218,10 +220,20 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
         ...(c.start ? { startTime: c.start } : {}),
         ...(c.end ? { endTime: c.end } : {}),
       });
-    default:
-      // `unsupported` is filtered out by compileConditions; nothing else remains.
+    case 'unsupported': {
+      // Read-side placeholder for a stored condition the schema cannot express.
+      // Echoing it back cannot preserve the stored condition (condition lists
+      // are full replacements and the placeholder carries no data), so refuse
+      // with directions instead of silently dropping it — same contract as the
+      // segment surface (segments.service assertSegmentConditionTypes).
+      const note = (c as { note?: string }).note;
       throw new ValidationError(
-        `Cannot write a "${(c as { type: string }).type}" condition — this condition type is not supported via the API.`,
+        `"unsupported" is a read-side placeholder for a stored condition this API cannot express${note ? ` (here: ${note})` : ''} — it cannot be written back. Remove it from the list (which DELETES that stored condition) or repair the conditions in the builder first.`,
+      );
+    }
+    default:
+      throw new ValidationError(
+        `Cannot write a "${(c as { type: string }).type}" condition — supported condition types: ${SUPPORTED_CONDITION_TYPES}.`,
       );
   }
 }
@@ -300,7 +312,6 @@ function compileAction(
       return rule('page-navigate', {
         value: compilePlainText(a.url),
         ...(a.newTab ? { openType: 'new', openNewTab: true } : { openType: 'same' }),
-        ...(a.newWindow ? { openNewWindow: true } : {}),
       });
     case 'dismiss':
       return rule(dismiss, {});
@@ -333,7 +344,7 @@ function compileAction(
     }
     default:
       throw new ValidationError(
-        `Cannot write a "${(a as { type: string }).type}" action — this action type is not supported via the API.`,
+        `Cannot write a "${(a as { type: string }).type}" action — writable action types: goto_step, start_content, navigate, dismiss (run_javascript / unsupported are echo-only).`,
       );
   }
 }

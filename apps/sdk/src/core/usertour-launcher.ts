@@ -8,6 +8,7 @@ import {
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
 import { logger } from '@/utils';
+import { isVisibleNode } from '@usertour/dom';
 import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
@@ -49,6 +50,9 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   async show() {
     const storeData = await this.buildStoreData();
+    logger.info(
+      `[launcher] show() hasData=${!!storeData?.launcherData} sid=${this.getSessionId() || 'NONE'}`,
+    );
     if (!storeData?.launcherData) {
       return;
     }
@@ -169,6 +173,9 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     // LIVE watcher on every re-send wipes its found/announced element state
     // mid-flight and drops most beacons on first paint; keep it instead.
     const targetKey = JSON.stringify(targetElement);
+    logger.info(
+      `[launcher] watcher reuse=${!!(this.watcher && this.watcherTargetKey === targetKey)} hasWatcher=${!!this.watcher} el=${!!this.watcher?.getElement()} sid=${this.getSessionId() || 'NONE'}`,
+    );
     if (this.watcher && this.watcherTargetKey === targetKey) {
       // The re-run may carry NEW session state: a sessionless pre-activation
       // found its element and called startContent (no store written — the
@@ -179,7 +186,16 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       const el = this.watcher.getElement();
       if (el && this.getSessionId()) {
         if (el.isConnected) {
-          this.setStoreData({ ...store, openState: true, triggerRef: el as HTMLElement });
+          // Same gate as the banner's reuse branch: a re-send while the
+          // target is CSS-hidden must not force one wrong tick of an open
+          // beacon at a hidden element's position — the check loop reopens
+          // when the target shows.
+          this.setStoreData({
+            ...store,
+            openState: isVisibleNode(el),
+            triggerRef: el as HTMLElement,
+          });
+          logger.info('[launcher] handoff complete — beacon opened');
         } else {
           // The found element has since been DETACHED (SPA re-render kept the
           // JS reference but unmounted the node). Don't hand a dead reference
@@ -234,6 +250,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   private handleElementFound(el: Element, store: LauncherStore): void {
     const sessionId = this.getSessionId();
+    logger.info(`[launcher] elementFound sid=${sessionId || 'NONE'}`);
     if (!sessionId) {
       this.instance.startContent(
         this.getContentId(),

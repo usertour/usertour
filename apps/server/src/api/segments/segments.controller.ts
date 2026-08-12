@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseFilters,
   UseGuards,
   UsePipes,
@@ -17,8 +18,10 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
+import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
@@ -28,6 +31,7 @@ import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiSegmentsService } from './segments.service';
 import {
   CreateSegmentBodyDto,
+  GetSegmentQueryDto,
   ListSegmentsQueryDto,
   ListSegmentsResponseDto,
   SegmentDto,
@@ -43,12 +47,15 @@ import {
 @UsePipes(ApiValidationPipe)
 @ApiBearerAuth()
 export class ApiSegmentsController {
-  constructor(private readonly service: ApiSegmentsService) {}
+  constructor(
+    private readonly service: ApiSegmentsService,
+    private readonly auth: ApiTokenAuthService,
+  ) {}
 
   @Get()
   @RequireCapability(Capability.SegmentRead)
   @ApiOperation({ summary: 'List segments' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiResponse({ status: 200, description: 'List of segments', type: ListSegmentsResponseDto })
   async list(
     @RequestUrl() requestUrl: string,
@@ -61,18 +68,29 @@ export class ApiSegmentsController {
   @Get(':id')
   @RequireCapability(Capability.SegmentRead)
   @ApiOperation({ summary: 'Get a segment' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 200, description: 'Segment found', type: SegmentDto })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
-  async get(@Param('id') id: string, @Param('projectId') projectId: string) {
-    return this.service.get(id, projectId);
+  async get(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Query() query: GetSegmentQueryDto,
+    @Req() req: { apiToken: AuthedApiToken },
+  ) {
+    // The env rides in the QUERY (segments are project-routed), so the guard's
+    // path-param environment-scope check never fires — enforce the token
+    // allowlist here; the service validates project membership.
+    if (query.environmentId) {
+      this.auth.assertEnvironmentInScope(req.apiToken, { id: query.environmentId });
+    }
+    return this.service.get(id, projectId, query);
   }
 
   @Post()
   @RequireCapability(Capability.SegmentCreate)
   @ApiOperation({ summary: 'Create a segment' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiResponse({ status: 201, description: 'Segment created', type: SegmentDto })
   async create(@Param('projectId') projectId: string, @Body() body: CreateSegmentBodyDto) {
     return this.service.create(projectId, body);
@@ -81,7 +99,7 @@ export class ApiSegmentsController {
   @Patch(':id')
   @RequireCapability(Capability.SegmentUpdate)
   @ApiOperation({ summary: 'Update a segment' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 200, description: 'Segment updated', type: SegmentDto })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
@@ -104,7 +122,7 @@ export class ApiSegmentsController {
   @HttpCode(204)
   @RequireCapability(Capability.SegmentDelete)
   @ApiOperation({ summary: 'Delete a segment' })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 204, description: 'Segment deleted' })
   @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
@@ -137,12 +155,20 @@ export class ApiSegmentMembersController {
 
   @Put(':externalId')
   @RequireCapability(Capability.SegmentUpdate)
+  // Deriving from `segment:update` would record "segment updated" and lose the
+  // member — override so the entry names WHO was added (same descriptor as
+  // MCP's add_segment_member).
+  @Audit({
+    action: 'update',
+    resourceType: 'segmentMember',
+    resourceId: (req) => `${String(req.params?.id)}:${String(req.params?.externalId)}`,
+  })
   @ApiOperation({
-    summary: 'Add a member',
+    summary: 'Add a segment member',
     description: "Add a user or company (per the segment's bizType) to a manual segment.",
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiParam({
     name: 'externalId',
@@ -167,12 +193,17 @@ export class ApiSegmentMembersController {
   @Delete(':externalId')
   @HttpCode(204)
   @RequireCapability(Capability.SegmentUpdate)
+  @Audit({
+    action: 'delete',
+    resourceType: 'segmentMember',
+    resourceId: (req) => `${String(req.params?.id)}:${String(req.params?.externalId)}`,
+  })
   @ApiOperation({
-    summary: 'Remove a member',
+    summary: 'Remove a segment member',
     description: "Remove a user or company (per the segment's bizType) from a manual segment.",
   })
-  @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiParam({ name: 'environmentId', description: 'Environment ID' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiParam({
     name: 'externalId',

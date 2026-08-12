@@ -22,8 +22,24 @@ export const ResourceCenterFrameRoot = memo(
 
     useEffect(() => {
       const root = rootRef.current;
-      const activeElement = document.activeElement;
-      if (!root || !(activeElement instanceof HTMLElement) || !root.contains(activeElement)) return;
+      // ownerDocument, not the global: this component renders inside the
+      // widget IFRAME, whose focus lives on the frame's own document — the
+      // lexical `document` is the HOST page's, so the containment check could
+      // never match in-frame focus and the blur never fired (found during the
+      // render-host survey). ownerDocument is correct in both iframe and any
+      // future non-iframe host.
+      // Duck-typed, not `instanceof HTMLElement`: in-frame elements are
+      // instances of the FRAME realm's HTMLElement, so a host-realm instanceof
+      // is always false for exactly the elements this effect exists to blur.
+      const activeElement = root?.ownerDocument.activeElement as HTMLElement | null;
+      if (
+        !root ||
+        !activeElement ||
+        typeof activeElement.blur !== 'function' ||
+        !root.contains(activeElement)
+      ) {
+        return;
+      }
       activeElement.blur();
     }, [isOpen]);
 
