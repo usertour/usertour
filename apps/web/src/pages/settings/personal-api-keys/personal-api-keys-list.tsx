@@ -180,7 +180,7 @@ export const PersonalApiKeysList = () => {
           />
           <br />
           <a
-            href="https://docs.usertour.io/api-reference/introduction"
+            href="https://docs.usertour.io/api-reference-v2/introduction"
             className="text-primary"
             target="_blank"
             rel="noreferrer"
