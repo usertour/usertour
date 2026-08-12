@@ -8,10 +8,17 @@ import {
 } from '@usertour/hooks';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { EditDialog } from './edit-dialog';
-import { RevealDialog } from './reveal-dialog';
 
 interface RowActionsProps {
   token: ApiToken;
+  /**
+   * Reports the freshly-minted plaintext secret after a rotate. The reveal
+   * dialog is owned by the page, NOT this row: the row lives inside the table
+   * subtree, which the list page swaps for a skeleton while the post-mutation
+   * refetch is in flight — any state held here would be destroyed with it,
+   * and the one-time secret is not retrievable again.
+   */
+  onRotated: (token: string) => void;
 }
 
 /**
@@ -23,11 +30,10 @@ interface RowActionsProps {
  * leaked key).
  */
 export const RowActions = (props: RowActionsProps) => {
-  const { token } = props;
+  const { token, onRotated } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [rotateOpen, setRotateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [rotatedToken, setRotatedToken] = useState('');
   const { invoke: rotateApiToken, loading: isRotating } = useRotateApiTokenMutation();
   const { invoke: deleteApiToken, loading: isDeleting } = useDeleteApiTokenMutation();
   const { toast } = useToast();
@@ -38,7 +44,7 @@ export const RowActions = (props: RowActionsProps) => {
       const result = await rotateApiToken(token.id);
       if (result) {
         setRotateOpen(false);
-        setRotatedToken(result.token);
+        onRotated(result.token);
         toast({ variant: 'success', title: t('settings.personalApiKeys.rotateSuccess') });
       } else {
         toast({ variant: 'destructive', title: t('settings.personalApiKeys.rotateFailure') });
@@ -127,12 +133,6 @@ export const RowActions = (props: RowActionsProps) => {
         onOpenChange={setDeleteOpen}
         onConfirm={handleDelete}
         loading={isDeleting}
-      />
-
-      <RevealDialog
-        token={rotatedToken}
-        open={!!rotatedToken}
-        onOpenChange={() => setRotatedToken('')}
       />
     </>
   );
