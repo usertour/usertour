@@ -1,5 +1,7 @@
+import { resolveMcpResource, resolveOrigin } from '@/common/http/resolve-origin';
 import { oEmbedProviders } from '@/common/ombed/ombed';
 import { isMatchUrlPattern } from '@usertour/helpers';
+import { Request } from 'express';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { HttpService } from '@nestjs/axios';
@@ -100,10 +102,16 @@ export class UtilitiesService {
     return providers;
   }
 
-  async globalConfig() {
+  async globalConfig(req: Request) {
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
-    const apiUrl = this.configService.get('app.apiUrl');
-    const mcpServerUrl = this.configService.get('app.mcpServerUrl');
+    // Same fallback chain the live endpoints use (resolve-origin.ts): configured
+    // URL, else derived from the request host. A zero-config self-host otherwise
+    // renders an EMPTY Server URL on Settings → MCP (and installation/webhook
+    // URLs) while the endpoint itself self-describes fine. ssoCallbackUrl stays
+    // config-only on purpose: its display must match what the OIDC runtime
+    // actually sends, not a prettier derivation of it.
+    const apiUrl = resolveOrigin(this.configService, req);
+    const mcpServerUrl = resolveMcpResource(this.configService, req);
     let allowUserRegistration = true;
     let allowProjectLevelSubscriptionManagement = true;
     let needsSystemAdminSetup = false;

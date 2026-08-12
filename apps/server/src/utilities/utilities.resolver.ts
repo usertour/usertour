@@ -3,7 +3,8 @@ import { UserEntity } from '@/common/decorators/user.decorator';
 import { S3ConfigGuard } from '@/common/guards';
 import { User } from '@/users/models/user.model';
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Request } from 'express';
 import { createPresignedUrlInput } from './dto/createPresignedUrl.input';
 import { GlobalConfig } from './models/global.model';
 import { OEmbed } from './models/oembed.model';
@@ -27,7 +28,7 @@ export class UtilitiesResolver {
 
   @Public()
   @Query(() => GlobalConfig)
-  async globalConfig() {
-    return this.utilitiesService.globalConfig();
+  async globalConfig(@Context() context: { req: Request }) {
+    return this.utilitiesService.globalConfig(context.req);
   }
 }
