@@ -13,13 +13,21 @@ export class GithubOauthGuard extends AuthGuard('github') {
 
   getAuthenticateOptions(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    const { inviteCode } = request.query;
+    const { inviteCode, next } = request.query;
 
-    if (inviteCode) {
-      const state = Buffer.from(JSON.stringify({ inviteCode })).toString('base64');
-      return {
-        state,
-      };
+    // `next` rides the OAuth state round-trip like inviteCode, so a login that
+    // interrupted another flow (the MCP OAuth consent page) can resume it.
+    // Only same-origin path shapes are carried; the callback re-validates
+    // before redirecting (state is client-controlled input).
+    const payload: Record<string, string> = {};
+    if (typeof inviteCode === 'string' && inviteCode) {
+      payload.inviteCode = inviteCode;
+    }
+    if (typeof next === 'string' && next.startsWith('/') && !next.startsWith('//')) {
+      payload.next = next;
+    }
+    if (Object.keys(payload).length > 0) {
+      return { state: Buffer.from(JSON.stringify(payload)).toString('base64') };
     }
     return {};
   }
