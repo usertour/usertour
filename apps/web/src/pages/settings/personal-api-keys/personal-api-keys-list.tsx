@@ -16,6 +16,7 @@ import { type ApiToken, useListApiTokensQuery } from '@usertour/hooks';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CreateDialog } from './components/create-dialog';
+import { RevealDialog } from './components/reveal-dialog';
 import { RowActions } from './components/row-actions';
 import { SCOPE_RESOURCES, summarizeScopes } from '@/components/token-scopes';
 
@@ -37,11 +38,12 @@ const NewKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
 
 export const PersonalApiKeysList = () => {
   const { projects } = useAppContext();
-  // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
-  // false for refetches, so the table updates in place instead of flashing
-  // back to the skeleton when a token is created/deleted.
   const { apiTokens, loading, refetch } = useListApiTokensQuery(SHARED_CACHE_QUERY_OPTIONS);
   const { t } = useTranslation();
+  // Rotate's one-time secret reveal. Owned by the page, not the table row —
+  // the table subtree is replaced by the skeleton during refetches, which
+  // would destroy any row-held state (and this secret is unrecoverable).
+  const [rotatedToken, setRotatedToken] = useState('');
 
   const projectNameById = useMemo(() => {
     const index: Record<string, string> = {};
@@ -162,40 +164,50 @@ export const PersonalApiKeysList = () => {
     {
       header: '',
       headerClassName: 'w-20',
-      cell: (token) => <RowActions token={token} />,
+      cell: (token) => <RowActions token={token} onRotated={setRotatedToken} />,
     },
   ];
 
   return (
-    <ResourceListPage<ApiToken>
-      title={t('settings.personalApiKeys.title')}
-      actions={<NewKeyButton onSuccess={refetch} />}
-      description={
-        <>
-          {t('settings.personalApiKeys.description')}
-          <br />
-          <Trans
-            i18nKey="settings.personalApiKeys.descriptionOnce"
-            components={{ strong: <span className="font-bold text-foreground" /> }}
-          />
-          <br />
-          <a
-            href="https://docs.usertour.io/api-reference-v2/introduction"
-            className="text-primary"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span>{t('settings.personalApiKeys.headerDocs')}</span>
-            <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
-          </a>
-        </>
-      }
-      columns={columns}
-      rows={apiTokens}
-      loading={loading}
-      empty={t('settings.personalApiKeys.empty')}
-      getRowKey={(token) => token.id}
-    />
+    <>
+      <ResourceListPage<ApiToken>
+        title={t('settings.personalApiKeys.title')}
+        actions={<NewKeyButton onSuccess={refetch} />}
+        description={
+          <>
+            {t('settings.personalApiKeys.description')}
+            <br />
+            <Trans
+              i18nKey="settings.personalApiKeys.descriptionOnce"
+              components={{ strong: <span className="font-bold text-foreground" /> }}
+            />
+            <br />
+            <a
+              href="https://docs.usertour.io/api-reference-v2/introduction"
+              className="text-primary"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>{t('settings.personalApiKeys.headerDocs')}</span>
+              <OpenInNewWindowIcon className="size-3.5 inline ml-0.5 mb-0.5" />
+            </a>
+          </>
+        }
+        columns={columns}
+        rows={apiTokens}
+        // Not bare `loading`: the list hook turns on notifyOnNetworkStatusChange,
+        // so every refetch flips it too — and swapping the table for the skeleton
+        // mid-refetch would unmount the rows. Skeleton only before first data.
+        loading={loading && !apiTokens}
+        empty={t('settings.personalApiKeys.empty')}
+        getRowKey={(token) => token.id}
+      />
+      <RevealDialog
+        token={rotatedToken}
+        open={!!rotatedToken}
+        onOpenChange={() => setRotatedToken('')}
+      />
+    </>
   );
 };
 
