@@ -7,14 +7,24 @@ import {
 } from '@usertour/types';
 import { BannerStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
+import { rootsHaveButtonConditions } from '@/core/usertour-helper';
+import { isEqual } from '@usertour/helpers';
+import { isVisibleNode } from '@usertour/dom';
 import { logger } from '@/utils';
 import { ActionSource } from '@/core/action-handlers';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, BannerActionHandler } from '@/core/action-handlers';
 import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT, SDKClientEvents } from '@usertour/constants';
 
+// Element-attached banners keep watching for their target for as long as the
+// session lives (same as launchers): in an SPA the target may only render after
+// a client-side navigation, long past a short one-shot timeout.
+const BANNER_TARGET_MISSING_SECONDS = 3600;
+
 export class UsertourBanner extends UsertourComponent<BannerStore> {
   private watcher: UsertourElementWatcher | null = null;
+  // Serialized target the live watcher was built for (idempotency key).
+  private watcherTargetKey: string | null = null;
 
   protected initializeActionHandlers(): void {
     this.registerActionHandlers([new CommonActionHandler(), new BannerActionHandler()]);
@@ -22,9 +32,36 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
 
   async check(): Promise<void> {
     try {
+      await this.checkTargetVisibility();
+      await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
       logger.error('Error in banner checking:', error);
+    }
+  }
+
+  /**
+   * Drives the element watcher from the component's 200ms check loop — the same
+   * pattern as launchers/tours. Without this the watcher was only consulted once
+   * at setup, so a target that disappeared and REAPPEARED via SPA navigation was
+   * never noticed (checkVisibility is what re-finds the element and re-triggers
+   * ELEMENT_CHANGED), and the banner stayed unmounted until a full page reload.
+   */
+  private async checkTargetVisibility(): Promise<void> {
+    const store = this.getStoreData();
+    if (!store || !this.watcher) {
+      return;
+    }
+
+    const { isHidden } = await this.watcher.checkVisibility();
+    if (!isHidden) {
+      if (!store.openState) {
+        this.open();
+      }
+      return;
+    }
+    if (store.openState) {
+      this.hide();
     }
   }
 
@@ -45,6 +82,7 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     if (this.watcher) {
       this.watcher.destroy();
       this.watcher = null;
+      this.watcherTargetKey = null;
     }
 
     this.setStoreData({ ...storeData, openState: true, targetElement: undefined });
@@ -70,8 +108,13 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     if (this.watcher) {
       this.watcher.destroy();
       this.watcher = null;
-      this.updateStore({ targetElement: undefined });
+      this.watcherTargetKey = null;
     }
+    // Mirror show(): a page-anchored banner is unconditionally visible. If the
+    // check loop had hidden the element-attached banner before this placement
+    // flip, nothing else ever reopens a watcherless banner — without the
+    // explicit openState it stayed closed until session end.
+    this.updateStore({ openState: true, targetElement: undefined });
   }
 
   async handleDismiss(): Promise<void> {
@@ -93,6 +136,29 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     return this.getBaseZIndex();
   }
 
+  /**
+   * Re-evaluates banner button disable/hide conditions against the live page —
+   * same defect class as the tour (see usertour-tour.ts
+   * checkAndUpdateButtonConditions): the flags were baked once per session
+   * update and page-state conditions froze.
+   * @private
+   */
+  private async checkAndUpdateButtonConditions(): Promise<void> {
+    const store = this.getStoreData();
+    const bannerData = store?.bannerData;
+    const contents = bannerData?.contents;
+    if (!bannerData || !contents || !rootsHaveButtonConditions(contents)) {
+      return;
+    }
+    const evaluated = await this.evaluateButtonConditionsInData(contents);
+    if (isEqual(evaluated, contents)) {
+      return;
+    }
+    this.updateStore({
+      bannerData: { ...bannerData, contents: evaluated },
+    } as unknown as Partial<BannerStore>);
+  }
+
   protected async getCustomStoreData(
     _context: CustomStoreDataContext,
   ): Promise<Partial<BannerStore>> {
@@ -106,7 +172,13 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     return { bannerData: evaluatedBannerData };
   }
 
+  /** See usertour-launcher.ts: the found handler must render the LATEST
+   * store, not its closure snapshot (watcher reuse + pre-found content
+   * update = stale content on first paint). */
+  private pendingWatcherStore: BannerStore | null = null;
+
   private setupElementWatcher(store: BannerStore): void {
+    this.pendingWatcherStore = store;
     const data = store.bannerData;
     const targetElement = data?.containerElement;
     if (!targetElement) {
@@ -114,16 +186,54 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
       return;
     }
 
+    // Idempotent for an unchanged target — same rationale as the launcher: a
+    // server re-send (ack timeout) re-runs show()/update(), and tearing down a
+    // live watcher wipes its found state mid-flight.
+    const targetKey = JSON.stringify(targetElement);
+    if (this.watcher && this.watcherTargetKey === targetKey) {
+      // once(ELEMENT_FOUND) is already consumed if the element was found —
+      // re-apply the (possibly refreshed) store with the found element so the
+      // re-run still lands the update.
+      const el = this.watcher.getElement();
+      if (el) {
+        if (el.isConnected) {
+          // The re-send may land while the check loop has the banner hidden
+          // (target CSS-hidden): forcing open here mounts a full in-flow
+          // banner for one 200ms tick and reflows the host page. Gate on the
+          // check loop's own sync predicate instead; the loop reopens when
+          // the target actually shows.
+          this.setStoreData({ ...store, openState: isVisibleNode(el), targetElement: el });
+        } else {
+          // Detached (SPA re-render) — don't hand a dead reference to the
+          // renderer; the check loop's checkVisibility() re-finds by selector
+          // and reopens via ELEMENT_CHANGED.
+          this.setStoreData({ ...store, openState: false, targetElement: undefined });
+        }
+      }
+      return;
+    }
+
     if (this.watcher) {
       this.watcher.destroy();
       this.watcher = null;
+      this.watcherTargetKey = null;
     }
 
+    this.watcherTargetKey = targetKey;
     this.watcher = new UsertourElementWatcher(targetElement);
+
+    // Keep looking for the target for the session's lifetime (SPA targets can
+    // appear long after load) — the old 6s default gave up for good and the
+    // banner never mounted without a full page reload.
+    this.watcher.setTargetMissingSeconds(BANNER_TARGET_MISSING_SECONDS);
 
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {
-        this.setStoreData({ ...store, openState: true, targetElement: el });
+        this.setStoreData({
+          ...(this.pendingWatcherStore ?? store),
+          openState: true,
+          targetElement: el,
+        });
       }
     });
 
@@ -147,6 +257,8 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     if (this.watcher) {
       this.watcher.destroy();
       this.watcher = null;
+      this.watcherTargetKey = null;
     }
+    this.watcherTargetKey = null;
   }
 }

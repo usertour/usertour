@@ -3,6 +3,8 @@ import {
   AttributeBizType,
   AttributeDataType,
 } from '@/attributes/models/attribute.model';
+import { createdAtWhere } from '@/common/filters';
+import { SegmentNotFoundError } from '@/common/errors';
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
@@ -25,7 +27,7 @@ import {
   UpdateSegment,
 } from './dto/segment.input';
 import { Segment, SegmentBizType, SegmentDataType } from './models/segment.model';
-import { ParamsError, UnknownError } from '@/common/errors';
+import { ParamsError, UnknownError, ValidationError } from '@/common/errors';
 import { getDefaultColumns } from '@/common/initialization/initialization';
 import { BizAttributeTypes, ColumnSetting } from '@usertour/types';
 import { IntegrationSource } from '@/common/types/integration';
@@ -87,6 +89,21 @@ interface ResolvedAttributes {
   createdNewAttribute: boolean;
 }
 
+/**
+ * Seed data for a NEW biz record. first/last_seen_at were historically written
+ * only as a side effect of the first BizEvent landing (event-tracking's
+ * isFirstEvent branch) — so a brand-new user's FIRST auto-start evaluation ran
+ * before first_seen_at existed, and "new user" targeting (first_seen_at
+ * less_than N) missed exactly the first pageview it exists for (the welcome
+ * screen). Creation IS the first sighting: seed both at create time. Explicit
+ * caller attributes still win (spread after the seed); the event path's
+ * isFirstEvent check is naturally idempotent and keeps refreshing last_seen_at.
+ */
+const seedSeenAttributes = (attributes: Record<string, any>): Record<string, any> => {
+  const now = new Date().toISOString();
+  return { first_seen_at: now, last_seen_at: now, ...attributes };
+};
+
 @Injectable()
 export class BizService {
   private readonly logger = new Logger(BizService.name);
@@ -98,26 +115,33 @@ export class BizService {
 
   async createBizUser(data: CreateBizInput) {
     return await this.prisma.bizUser.create({
-      data,
+      data: { ...data, data: seedSeenAttributes((data.data as Record<string, any>) ?? {}) },
     });
   }
 
   async createBizCompany(data: CreateBizInput) {
     return await this.prisma.bizCompany.create({
-      data,
+      data: { ...data, data: seedSeenAttributes((data.data as Record<string, any>) ?? {}) },
     });
   }
 
   async creatSegment(data: CreatSegment) {
-    const environment = await this.prisma.environment.findFirst({
-      where: { id: data.environmentId },
-    });
-    if (!environment) {
-      throw new ParamsError('Environment not found');
+    // Segments are project-level. `projectId` may be supplied directly; fall back
+    // to deriving it from `environmentId` for the legacy env-first callers (the
+    // segment's own environmentId column is unused — see the v2 segments API).
+    let projectId = data.projectId;
+    if (!projectId) {
+      const environment = await this.prisma.environment.findFirst({
+        where: { id: data.environmentId },
+      });
+      if (!environment) {
+        throw new ParamsError('Environment not found');
+      }
+      projectId = environment.projectId;
     }
 
     // Set default columns if not provided
-    const segmentData = { ...data, projectId: environment.projectId };
+    const segmentData = { ...data, projectId };
     if (!segmentData.columns && segmentData.bizType) {
       segmentData.columns = getDefaultColumns(segmentData.bizType as SegmentBizType);
     } else if (segmentData.columns) {
@@ -677,7 +701,7 @@ export class BizService {
         data: {
           externalId: String(externalUserId),
           environmentId,
-          data: insertAttribute,
+          data: seedSeenAttributes(insertAttribute),
         },
       });
     }
@@ -798,7 +822,7 @@ export class BizService {
       data: {
         externalId: String(externalCompanyId),
         environmentId,
-        data: insertAttribute,
+        data: seedSeenAttributes(insertAttribute),
       },
     });
   }
@@ -968,6 +992,47 @@ export class BizService {
     return { outputData, attrMap, createdNewAttribute };
   }
 
+  /**
+   * Strict pre-check for the v2 REST / MCP write path (NOT the SDK identify
+   * path): reject attribute values whose type doesn't match the attribute's
+   * defined data type. The SDK ingestion path stays lenient — resolveAttributes
+   * drops + logs a bad value so a high-volume identify call never fails on one
+   * messy field. The public API has no UI to constrain types and no human to
+   * notice a dropped value, so here a mismatch throws (per the v2 principle:
+   * fulfill exactly or refuse — never silently discard). Unknown codeNames are
+   * ignored: resolveAttributes auto-creates them with a type inferred from the
+   * value, so no mismatch is possible.
+   */
+  async assertAttributeValueTypes(
+    environmentId: string,
+    bizType: AttributeBizType,
+    attributes: Record<string, any> | undefined,
+  ): Promise<void> {
+    if (!attributes) return;
+    const codeNames = Object.keys(attributes).filter((c) => !isNull(attributes[c]));
+    if (codeNames.length === 0) return;
+    const env = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+      select: { projectId: true },
+    });
+    if (!env) return; // environment validity is enforced by the auth/guard layer
+    const defined = await this.prisma.attribute.findMany({
+      where: { projectId: env.projectId, bizType, codeName: { in: codeNames } },
+    });
+    const failures: string[] = [];
+    for (const attr of defined) {
+      if (!this.validateAttrValue(attr, attributes[attr.codeName]).ok) {
+        const expected = BizAttributeTypes[attr.dataType] ?? String(attr.dataType);
+        failures.push(`"${attr.codeName}" (expected ${expected})`);
+      }
+    }
+    if (failures.length > 0) {
+      throw new ValidationError(
+        `Attribute value type mismatch: ${failures.join(', ')}. Each value must match its attribute's defined data type.`,
+      );
+    }
+  }
+
   private validateAttrValue(
     attr: Attribute,
     value: unknown,
@@ -989,6 +1054,65 @@ export class BizService {
       return { ok: false };
     }
     return { ok: true, value };
+  }
+
+  // A retype is safe only if every stored value already validates as the new
+  // type — bounded to avoid an unbounded scan on a large project.
+  private static readonly RETYPE_SCAN_CAP = 10000;
+
+  /**
+   * Guard an attribute `dataType` change: throw unless every stored value in the
+   * attribute's scope (across the project) already fits the new type. Lets a
+   * wrong type — e.g. inferred from a first mistyped upsert — be corrected while
+   * it is still safe, without silently invalidating existing data.
+   */
+  async assertStoredValuesFitDataType(
+    projectId: string,
+    bizType: AttributeBizType,
+    codeName: string,
+    newDataType: number,
+  ): Promise<void> {
+    const cap = BizService.RETYPE_SCAN_CAP;
+    // Only NON-NULL stored values matter (a null is not a value); AnyNull excludes
+    // both JSON-null and absent keys.
+    const where = { data: { path: [codeName], not: Prisma.AnyNull } };
+    let rows: { data: Prisma.JsonValue | null }[];
+    if (bizType === AttributeBizType.USER) {
+      rows = await this.prisma.bizUser.findMany({
+        where: { environment: { projectId }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else if (bizType === AttributeBizType.COMPANY) {
+      rows = await this.prisma.bizCompany.findMany({
+        where: { environment: { projectId }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else if (bizType === AttributeBizType.MEMBERSHIP) {
+      rows = await this.prisma.bizUserOnCompany.findMany({
+        where: { bizCompany: { environment: { projectId } }, ...where },
+        select: { data: true },
+        take: cap + 1,
+      });
+    } else {
+      return; // event-scoped attributes have no stored end-user values
+    }
+    if (rows.length > cap) {
+      throw new ValidationError(
+        `"${codeName}" has too many stored values to safely re-type. Clear its values, or delete and recreate the attribute with the intended type.`,
+      );
+    }
+    const fakeAttr = { codeName, dataType: newDataType } as Attribute;
+    const conflicts = rows.filter(
+      (r) => !this.validateAttrValue(fakeAttr, (r.data as Record<string, unknown>)?.[codeName]).ok,
+    ).length;
+    if (conflicts > 0) {
+      const expected = BizAttributeTypes[newDataType] ?? String(newDataType);
+      throw new ValidationError(
+        `Cannot change the type of "${codeName}" to ${expected}: ${conflicts} stored value(s) do not fit. Fix or clear those values, or delete and recreate the attribute.`,
+      );
+    }
   }
 
   private async linkAttributesToEvent(
@@ -1040,7 +1164,7 @@ export class BizService {
       data: {
         externalId: String(externalUserId),
         environmentId,
-        data: {},
+        data: seedSeenAttributes({}),
       },
     });
   }
@@ -1124,6 +1248,22 @@ export class BizService {
     return bizCompany;
   }
 
+  /**
+   * Assert a `segmentId` used as a list filter belongs to the given project, so a
+   * caller can't pass another tenant's segment id (which would otherwise be an
+   * existence/type oracle and apply a foreign segment's rules). Mirrors the
+   * ownership check in ApiSegmentsService.requireSegment.
+   */
+  async assertSegmentInProject(segmentId: string, projectId: string): Promise<void> {
+    const segment = await this.prisma.segment.findFirst({
+      where: { id: segmentId, projectId },
+      select: { id: true },
+    });
+    if (!segment) {
+      throw new SegmentNotFoundError();
+    }
+  }
+
   async listBizCompanies(
     environmentId: string,
     paginationArgs: {
@@ -1134,19 +1274,52 @@ export class BizService {
     },
     include?: Prisma.BizCompanyInclude,
     orderBy?: Prisma.BizCompanyOrderByWithRelationInput[],
+    segmentId?: string,
+    createdAfter?: string,
+    createdBefore?: string,
   ) {
-    const baseQuery = {
-      where: {
-        environmentId,
-        deleted: false,
-      },
-      include,
-      orderBy,
+    let where: Prisma.BizCompanyWhereInput = {
+      environmentId,
+      deleted: false,
+      ...createdAtWhere(createdAfter, createdBefore),
     };
 
+    if (segmentId) {
+      const segment = await this.prisma.segment.findFirst({ where: { id: segmentId } });
+      if (segment && segment.dataType !== SegmentDataType.ALL) {
+        if (segment.dataType === SegmentDataType.MANUAL) {
+          where.bizCompaniesOnSegment = { some: { segmentId } };
+        }
+        if (segment.dataType === SegmentDataType.CONDITION) {
+          const environment = await this.prisma.environment.findFirst({
+            where: { id: environmentId },
+          });
+          // A company segment may reference user / membership attributes
+          // (cross-entity), so load all three attribute types and compile with the
+          // cross-entity company filter — mirrors listBizUsers so the API/MCP
+          // "list companies by segment" evaluates the SAME rules the web builder
+          // authored (a company-attributes-only compile would silently mis-count).
+          const attributes = await this.prisma.attribute.findMany({
+            where: {
+              projectId: environment?.projectId,
+              bizType: {
+                in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+              },
+            },
+          });
+          const filter = createBizCompanyConditionsFilter(segment.data, attributes);
+          if (filter) {
+            // Nested under AND so the filter's own bizUsersOnCompany / OR keys
+            // cannot collide with the base where.
+            where = { ...where, AND: [filter] };
+          }
+        }
+      }
+    }
+
     return await findManyCursorConnection(
-      (args) => this.prisma.bizCompany.findMany({ ...baseQuery, ...args }),
-      () => this.prisma.bizCompany.count({ where: baseQuery.where }),
+      (args) => this.prisma.bizCompany.findMany({ where, include, orderBy, ...args }),
+      () => this.prisma.bizCompany.count({ where }),
       paginationArgs,
     );
   }
@@ -1176,6 +1349,22 @@ export class BizService {
     });
   }
 
+  /**
+   * Upsert a single membership (user<->company link) by their already-resolved
+   * internal rows, wrapping the shared {@link upsertBizMembership} in a tx. The
+   * caller resolves the BizUser/BizCompany first (so it can 404 the right one).
+   */
+  async upsertBizCompanyMembership(
+    projectId: string,
+    bizCompanyId: string,
+    bizUserId: string,
+    attributes: Record<string, any>,
+  ): Promise<BizUserOnCompany> {
+    return await this.prisma.$transaction((tx) =>
+      this.upsertBizMembership(tx, projectId, bizCompanyId, bizUserId, attributes),
+    );
+  }
+
   async listBizUsersWithRelations(
     environmentId: string,
     paginationArgs: {
@@ -1189,6 +1378,8 @@ export class BizService {
     email?: string,
     companyId?: string,
     segmentId?: string,
+    createdAfter?: string,
+    createdBefore?: string,
   ) {
     const project = await this.prisma.environment.findFirst({
       where: { id: environmentId },
@@ -1197,6 +1388,7 @@ export class BizService {
 
     let where: Prisma.BizUserWhereInput = {
       environmentId,
+      ...createdAtWhere(createdAfter, createdBefore),
       ...(email && {
         data: {
           path: ['email'],

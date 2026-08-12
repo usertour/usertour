@@ -22,6 +22,10 @@ export function parseOverridePlan(raw: unknown): Partial<PlanFeatures> {
     'teamMemberLimit',
     'environmentLimit',
     'dataRetentionYears',
+    // Must be overridable alongside `auditLogs`: an override that grants the
+    // boolean on a Hobby/Starter base otherwise keeps retention 0 — "unlocked
+    // but forever empty".
+    'auditLogRetentionDays',
   ] as const) {
     const value = input[key];
     if (typeof value === 'number' || value === 'unlimited') {

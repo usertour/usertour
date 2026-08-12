@@ -13,7 +13,7 @@ import { logger } from '@/utils';
 import { CommonActionHandler, ChecklistActionHandler } from '@/core/action-handlers';
 import { StorageKeys, WidgetZIndex } from '@usertour/constants';
 import { isEqual, storage } from '@usertour/helpers';
-import { hasConditionType } from './usertour-helper';
+import { hasConditionType, rootsHaveButtonConditions } from './usertour-helper';
 
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   // === Abstract Methods Implementation ===
@@ -29,6 +29,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    */
   async check(): Promise<void> {
     try {
+      await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
       logger.error('Error in checklist checking:', error);
@@ -210,6 +211,30 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
    * @param _context - Context object (unused in checklist)
    * @protected
    */
+  /**
+   * Re-evaluates checklist content-area button disable/hide conditions against
+   * the live page — same defect class as the tour (see usertour-tour.ts
+   * checkAndUpdateButtonConditions). Item completeWhen/onlyShowWhen are NOT
+   * touched here — those run through the server-orchestrated conditions
+   * monitor and were never affected.
+   * @private
+   */
+  private async checkAndUpdateButtonConditions(): Promise<void> {
+    const store = this.getStoreData();
+    const checklistData = store?.checklistData;
+    const content = checklistData?.content as ContentEditorRoot[] | undefined;
+    if (!checklistData || !content || !rootsHaveButtonConditions(content)) {
+      return;
+    }
+    const evaluated = await this.evaluateButtonConditionsInData(content);
+    if (isEqual(evaluated, content)) {
+      return;
+    }
+    this.updateStore({
+      checklistData: { ...checklistData, content: evaluated },
+    } as unknown as Partial<ChecklistStore>);
+  }
+
   protected async getCustomStoreData(
     _context: CustomStoreDataContext,
   ): Promise<Partial<ChecklistStore>> {

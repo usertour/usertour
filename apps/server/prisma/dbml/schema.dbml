@@ -41,6 +41,7 @@ Table User {
   refreshTokens RefreshToken [not null]
   invites Invite [not null]
   twoFactorRecoveryCodes TwoFactorRecoveryCode [not null]
+  apiTokens ApiToken [not null]
 }
 
 Table TwoFactorRecoveryCode {
@@ -84,6 +85,8 @@ Table Invite {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   code String [unique, not null]
+  allowedEnvironmentIds Json [note: 'Environment ids the invited member may act on once they join (copied to
+UserOnProject on accept). null = all environments.']
   expired Boolean [not null, default: false]
   canceled Boolean [not null, default: false]
   deleted Boolean [not null, default: false]
@@ -128,6 +131,7 @@ Table Project {
   subscriptionId String [note: 'Stripe subscription ID']
   license String [note: 'License']
   users UserOnProject [not null]
+  apiTokens ApiTokenOnProject [not null]
   environments Environment [not null]
   themes Theme [not null]
   attributes Attribute [not null]
@@ -195,6 +199,9 @@ Table UserOnProject {
   updatedAt DateTime [not null]
   role Role [not null]
   actived Boolean [not null]
+  allowedEnvironmentIds Json [note: 'Environment ids this member may act on (the third permission dimension,
+mirrors ApiToken.allowedEnvironmentIds). null = all environments; ignored
+for OWNER. Personal API keys inherit this as a ceiling.']
   project Project
   user User
   projectId String
@@ -256,6 +263,110 @@ Table AccessToken {
   description String
 }
 
+Table ApiToken {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  prefix String [not null, default: 'utp_']
+  hashedSecret String [unique, not null, note: 'SHA-256 hash of the token secret. Plaintext is returned once at creation and never stored.']
+  partialKey String [not null, note: 'Trailing characters of the secret, for display only (e.g. "···a1b2").']
+  scopes Json [not null, note: 'Capability[] (from @usertour/types) the token may exercise, intersected with the owner\'s role per request.']
+  allowedEnvironmentIds Json [note: 'Environment ids this token may ACT ON (read + write of env-scoped resources, and publish).
+null/absent = all environments in the token\'s project(s) — legacy/back-compat default.']
+  clientId String [note: 'Set when issued via an OAuth grant; null for user-created personal tokens.']
+  oauthGrantId String [note: 'The OAuthGrant that issued this access token; revoking the grant kills it.']
+  isActive Boolean [not null, default: true]
+  expiresAt DateTime
+  lastUsedAt DateTime
+  user User [not null]
+  userId String [not null]
+  projects ApiTokenOnProject [not null]
+
+  Note: 'User-owned API token for the public REST API (v2) and MCP/OAuth.
+Authority at request time = ROLE_CAPABILITIES[owner\'s role on the project] ∩ scopes.'
+}
+
+Table ApiTokenOnProject {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  apiToken ApiToken
+  project Project
+  apiTokenId String
+  projectId String
+
+  indexes {
+    (apiTokenId, projectId) [unique]
+  }
+
+  Note: 'Join table scoping an ApiToken to one or more projects (mirrors UserOnProject).'
+}
+
+Table OAuthClient {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  clientType String [not null]
+  clientSecretHash String [note: 'bcrypt/SHA-256 hash of the client secret; null for public clients (PKCE).']
+  name String [not null]
+  redirectUris Json [not null, note: 'string[] of exact-match redirect URIs.']
+  grantTypes Json [not null, note: 'string[] of granted grant types.']
+  logoUri String
+  clientUri String
+  registrationAccessTokenHash String [unique, note: 'SHA-256 hash of the RFC 7592 registration access token (manage this client).']
+  createdByUserId String [note: 'The user who registered it interactively; null for pure DCR.']
+  lastUsedAt DateTime
+
+  Note: 'An OAuth 2.1 client (Phase 3). Created via Dynamic Client Registration (RFC
+7591) or seeded; project-agnostic — the project is chosen by the user at
+consent time. Public clients (MCP connectors) have no secret and use PKCE.'
+}
+
+Table OAuthAuthorizationCode {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  hashedCode String [unique, not null, note: 'SHA-256 hash of the code; the plaintext is only in the redirect.']
+  clientId String [not null]
+  userId String [not null]
+  projectId String [not null]
+  scopes Json [not null]
+  allowedEnvironmentIds Json [note: 'Environment ids the consent granted; carried to the grant/token. null = all (Phase 2).']
+  redirectUri String [not null]
+  codeChallenge String
+  codeChallengeMethod String
+  grantId String [not null]
+  resource String
+  expiresAt DateTime [not null]
+  consumedAt DateTime
+
+  Note: 'A one-time OAuth authorization code (short TTL). Carries the consent decision
+(chosen project + scopes) and the PKCE challenge until token exchange.'
+}
+
+Table OAuthGrant {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  lastUsedAt DateTime
+  userId String [not null]
+  clientId String [not null]
+  projectId String [not null]
+  scopes Json [not null]
+  allowedEnvironmentIds Json [note: 'Environment ids this grant\'s issued tokens may act on; null = all (set at consent, Phase 2).']
+  hashedRefreshToken String [unique, note: 'SHA-256 hash of the current refresh token; rotated on each refresh.']
+  previousHashedRefreshToken String [unique, note: 'The PREVIOUS refresh hash, honored for a short grace window after rotation
+(rotatedAt) so a client whose refresh RESPONSE was lost can retry with the
+old token instead of bricking the grant. See OAuthModelService.']
+  rotatedAt DateTime
+  refreshExpiresAt DateTime
+  revokedAt DateTime
+
+  Note: 'A durable OAuth grant: the user\'s standing authorization of a client for a
+project, and the current (rotating) refresh token. Revoking it cascade-kills
+the access tokens (ApiToken rows) it issued, via ApiToken.oauthGrantId.'
+}
+
 Table Theme {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
@@ -297,6 +408,7 @@ Reading this field directly picks the wrong version in multi-environment setups.
   editedVersionId String [unique]
   bizSession BizSession [not null]
   contentOnEnvironments ContentOnEnvironment [not null]
+  publishRecords ContentPublishRecord [not null]
 }
 
 Table ContentOnEnvironment {
@@ -317,14 +429,53 @@ Table ContentOnEnvironment {
   }
 }
 
+Table ContentPublishRecord {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  content Content [not null]
+  contentId String [not null]
+  versionId String [not null]
+  versionSequence Int [not null, note: 'Denormalized so "v3" still renders if the version row is later deleted.']
+  environmentId String [not null]
+  action String [not null, note: 'publish | unpublish']
+  actorUserId String
+  actorTokenId String
+  actorName String [note: 'Denormalized at write time, same reason as versionSequence: the ledger is
+the audit record, so attribution must survive the actor row disappearing.
+It does disappear routinely — an OAuth-issued token is REPLACED on every
+refresh, so a read-time join silently dropped `actorTokenName` to null and
+the row then read as a dashboard publish by a human (a release-ops review
+watched one publish change hands between two reads minutes apart).']
+  actorTokenName String
+  environmentName String
+
+  Note: 'One publish / unpublish event — the per-content "Publish history" product
+surface (permanent, content-scoped, visible to anyone who can read the
+content). Deliberately NOT derived from AuditLog: audit is owner-only,
+plan-gated and read-time windowed; this is product data written in the same
+transaction as the publish itself. Actor is either-or (web user OR the API
+key/OAuth token that acted) — plain ids, no FKs, mirroring AuditLog: records
+outlive users/tokens/environments; names resolve at read time.'
+}
+
 Table Version {
   id String [pk]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  publishedAt DateTime
+  publishedAt DateTime [note: 'FIRST time this version went live (freeze stamp). Set once in the publish
+transaction, never cleared (unpublish keeps it) and never copied to forks.
+Non-null = the version is frozen read-only forever (see versionFrozen in
+content.service). NOT live state — that lives on ContentOnEnvironment.
+(Column predates this use and was dead/empty; adopted without backfill,
+so only versions published after the freeze rule shipped carry it.)']
   scheduledAt DateTime
   deleted Boolean [not null, default: false]
   sequence Int [not null, default: 0]
+  createdByUserId String [note: 'Who created this version row (web session user, or the API key\'s owner).
+Nullable: rows predating the column, and system-created seeds.']
+  updatedByUserId String [note: 'Who last wrote the version ROW (whole-version save / scalar fields). Step
+sub-row operations (sequence drag, location data) don\'t bump the row\'s
+updatedAt and intentionally don\'t restamp this either — the pair stays consistent.']
   theme Theme
   themeId String
   content Content [not null]
@@ -757,6 +908,30 @@ Table IntegrationLog {
   data Json [note: 'data of integration log']
 }
 
+Table AuditLog {
+  id String [pk, note: 'Primary key']
+  createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
+  projectId String [not null]
+  environmentId String
+  source String [not null]
+  actorUserId String
+  actorTokenId String
+  action String [not null]
+  operation String [not null]
+  resourceType String [not null]
+  resourceId String [not null]
+  before Json
+  after Json
+  metadata Json
+
+  Note: 'Append-only audit trail for the open write surface (v2 API + MCP).
+Typed columns are the query / filter / forensic axes; JSONB holds variable,
+redacted detail (snapshots, request metadata) that is never used as a filter
+predicate. No foreign keys on purpose: an audit row must outlive the entities
+it references (resources may be hard-deleted, tokens rotated, users removed),
+and `resourceId` is polymorphic across many tables. Rows are append-only.'
+}
+
 Enum SsoProviderType {
   OIDC
   SAML
@@ -793,6 +968,12 @@ Ref: EnvironmentSigningSecret.environmentId > Environment.id
 
 Ref: AccessToken.environmentId > Environment.id
 
+Ref: ApiToken.userId > User.id [delete: Cascade]
+
+Ref: ApiTokenOnProject.apiTokenId > ApiToken.id [delete: Cascade]
+
+Ref: ApiTokenOnProject.projectId > Project.id [delete: Cascade]
+
 Ref: Theme.projectId > Project.id
 
 Ref: Content.environmentId > Environment.id
@@ -808,6 +989,8 @@ Ref: ContentOnEnvironment.environmentId > Environment.id
 Ref: ContentOnEnvironment.contentId > Content.id
 
 Ref: ContentOnEnvironment.publishedVersionId > Version.id
+
+Ref: ContentPublishRecord.contentId > Content.id [delete: Cascade]
 
 Ref: Version.themeId > Theme.id
 

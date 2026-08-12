@@ -42,8 +42,6 @@ export type FieldDef =
       // like z-index / launcher button width.
       optional?: boolean;
       placeholder?: string;
-      // Returns an error message to surface inline; `undefined` means valid.
-      validate?: (value: number) => string | undefined;
     })
   | (FieldBase & {
       type: 'slider';
@@ -94,6 +92,9 @@ export type FieldDef =
       // positions while bubble/tooltip use 7). Defaults to all 7.
       options?: { value: string; label: string }[];
       labels?: { position?: string; offsetX?: string; offsetY?: string };
+      // Bounds applied to BOTH offset inputs (X and Y).
+      offsetMin?: number;
+      offsetMax?: number;
     })
   | (FieldBase & {
       type: 'font-family';
@@ -114,6 +115,9 @@ export type FieldDef =
       allPaths: string[];
       min?: number;
       max?: number;
+      // Per-path bounds override `min`/`max` when the possible paths need
+      // different ranges (e.g. progress.height allows 0 = hidden, the rest don't).
+      boundsByPath?: Record<string, { min?: number; max?: number }>;
       step?: number;
       suffix?: string;
     })

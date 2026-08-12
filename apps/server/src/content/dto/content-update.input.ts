@@ -26,10 +26,6 @@ export class ContentDuplicateInput extends PartialType(
   @Field()
   @IsNotEmpty()
   contentId: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  targetEnvironmentId?: string;
 }
 
 @InputType()

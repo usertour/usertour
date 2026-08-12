@@ -9,6 +9,10 @@ const config = {
       'ts-jest',
       {
         useESM: true,
+        // chroma-js ships a CJS default export; without interop the ts-jest
+        // CJS transpile reads `.default` as undefined and every hexToHSL*
+        // call silently falls back to black.
+        tsconfig: { esModuleInterop: true },
       },
     ],
   },

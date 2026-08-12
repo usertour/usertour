@@ -1,3 +1,5 @@
+import { SERVER_EVALUATED_CONDITION_TYPES } from '@usertour/helpers';
+
 import type { AnySchema } from './schema-types';
 import { contentSchema } from './types/content';
 import { currentPageSchema } from './types/current-page';
@@ -54,6 +56,16 @@ export const DEFAULT_CONDITION_TYPES: string[] = [
   'time',
   'group',
 ];
+
+// The subset of DEFAULT_CONDITION_TYPES that reactive slots may offer — a step
+// trigger's `when`, a button's show/hide/disable rules, a tracker's start
+// conditions. Those slots are polled live in the browser, so the
+// server-evaluated types (event / segment / content-state) can never fire
+// there. Derived from the capability matrix — the same table the server's
+// write guards enforce — so the pickers and the API can't drift apart.
+export const CLIENT_EVALUABLE_CONDITION_TYPES: string[] = DEFAULT_CONDITION_TYPES.filter(
+  (type) => !(SERVER_EVALUATED_CONDITION_TYPES as readonly string[]).includes(type),
+);
 
 export function getConditionSchema(type: string): AnySchema | undefined {
   return CONDITION_SCHEMAS.find((s) => s.type === type);

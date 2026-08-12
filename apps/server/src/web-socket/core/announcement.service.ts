@@ -1,5 +1,6 @@
 import {
   cuid,
+  isConditionsActived,
   matchTranslationByLocale,
   mergeLocalizedVersionData,
   resolveUserLocaleCode,
@@ -13,7 +14,9 @@ import {
   ContentDataType,
   ContentEditorRoot,
   PopupAnnouncement,
+  RulesCondition,
   ThemeTypesSetting,
+  ThemeVariation,
 } from '@usertour/types';
 import {
   ANNOUNCEMENT_FEED_SCAN_LIMIT,
@@ -21,7 +24,7 @@ import {
   DEFAULT_POPUP_CONFIG,
 } from '@usertour/constants';
 import { BizUser, Environment } from '@/common/types/schema';
-import { extractUserAttrCodes } from '@/utils/content-utils';
+import { extractThemeVariationsAttributeIds, extractUserAttrCodes } from '@/utils/content-utils';
 import { ContentDataService } from './content-data.service';
 import {
   type AutoStartRulesConfig,
@@ -97,6 +100,34 @@ export class AnnouncementService {
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
       },
     };
+  }
+
+  /**
+   * Diagnose support: evaluate ONE announcement's targeting for a user and
+   * return the verdict plus the STAMPED conditions (`.actived` per leaf) — the
+   * same context + evaluator the feed gate uses (filterByTargeting), exposing
+   * the per-condition facts the feed's boolean filter throws away. No rules /
+   * targeting disabled = visible to everyone.
+   */
+  async evaluateTargetingForDiagnosis(
+    config: AutoStartRulesConfig | null | undefined,
+    environment: Environment,
+    bizUser: BizUser,
+    externalCompanyId?: string,
+  ): Promise<{ matched: boolean; stamped: RulesCondition[] }> {
+    if (!config?.enabledAutoStartRules || !config.autoStartRules?.length) {
+      return { matched: true, stamped: [] };
+    }
+    const context = await this.buildEvaluationContext(
+      environment,
+      bizUser,
+      externalCompanyId ?? '',
+    );
+    const stamped = await this.conditionEvaluationService.evaluateRulesConditions(
+      config.autoStartRules,
+      context,
+    );
+    return { matched: isConditionsActived(stamped), stamped };
   }
 
   /**
@@ -435,9 +466,14 @@ export class AnnouncementService {
    * Build the self-presenting popup payload for a visible POPUP-level
    * announcement. The popup renders outside both the RC session and the feed,
    * so what it shows — intro content, its resolved attribute values, and the
-   * announcement's own theme (per version.themeId, resolved through the same
-   * variation-aware pipeline flows use) — is bundled here to avoid a second
-   * round trip at presentation time. Detail content is NOT bundled: Read more
+   * announcement's own theme (per version.themeId) — is bundled here to avoid
+   * a second round trip at presentation time. The theme rides as a
+   * `sessionTheme` (settings + variations + the attribute values the variation
+   * conditions read — the SAME shape session steps carry) so the SDK settles
+   * variations in the browser like every other surface; `themeSettings` is
+   * seeded with the base settings for older SDKs (an acceptance review caught
+   * the popup rendering base-only while the RC panel honored the dark
+   * variation — this bundle previously dropped the variations). Detail content is NOT bundled: Read more
    * navigates into the resource center's detail view, which fetches it on
    * demand.
    */
@@ -459,13 +495,27 @@ export class AnnouncementService {
       this.contentDataService.findThemes({ environment, externalUserId, externalCompanyId }),
     ]);
     const theme = themes.find((item) => item.id === visible.publishedVersion.themeId);
+    const settings = theme ? (theme.settings as unknown as ThemeTypesSetting) : undefined;
+    const variations = theme ? ((theme.variations as ThemeVariation[] | null) ?? []) : [];
+    const variationAttrIds = extractThemeVariationsAttributeIds(variations);
+    const variationAttributes = variationAttrIds.length
+      ? await this.contentDataService.resolveSessionAttributes(
+          variationAttrIds,
+          environment,
+          externalUserId,
+          externalCompanyId,
+        )
+      : [];
 
     return {
       ...this.buildItemBase(visible.content, visible.publishedVersion),
       moreContent: null,
       attributes,
       popupConfig: data.popupConfig ?? DEFAULT_POPUP_CONFIG,
-      themeSettings: theme ? (theme.settings as unknown as ThemeTypesSetting) : undefined,
+      themeSettings: settings,
+      ...(settings
+        ? { sessionTheme: { settings, variations, attributes: variationAttributes } }
+        : {}),
     };
   }
 }

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { format } from 'date-fns';
 import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
+import { WarningIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { type AccessToken, useListAccessTokensQuery } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
@@ -21,7 +23,7 @@ const NewApiKeyButton = ({ onSuccess }: { onSuccess: () => void }) => {
 };
 
 export const SettingsApiList = () => {
-  const { environment } = useAppContext();
+  const { environment, project } = useAppContext();
   // Skipping `isRefetching` here on purpose — Apollo's `loading` flag stays
   // false for refetches, so the table updates in place instead of flashing
   // back to the skeleton when a token is created/deleted. `!environment`
@@ -59,6 +61,22 @@ export const SettingsApiList = () => {
       actions={<NewApiKeyButton onSuccess={refetch} />}
       description={
         <>
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-warning/50 px-4 py-3 text-sm text-warning">
+            <WarningIcon className="h-4 w-4 shrink-0" />
+            <span>
+              <Trans
+                i18nKey="settings.api.deprecation"
+                components={{
+                  a: (
+                    <Link
+                      to={`/project/${project?.id}/settings/personal-api-keys`}
+                      className="font-medium underline"
+                    />
+                  ),
+                }}
+              />
+            </span>
+          </div>
           {t('settings.api.headerBody')}
           <br />
           <Trans

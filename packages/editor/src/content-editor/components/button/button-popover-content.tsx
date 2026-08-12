@@ -1,6 +1,6 @@
 // Button popover content component
 
-import { Conditions } from '@usertour/business-components';
+import { CLIENT_EVALUABLE_CONDITION_TYPES, Conditions } from '@usertour/business-components';
 import { BooleanField, Label, SelectField, type SelectFieldOption, TextField } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
 import type { Attribute, Content, ContentVersion, Segment, Step } from '@usertour/types';
@@ -13,19 +13,6 @@ import type { ContentEditorButtonElement } from '../../../types/editor';
 import { BUTTON_STYLES } from '../../constants';
 import { ActionButtonsBase, MarginControls } from '../../shared';
 import type { MarginPosition } from '../../types';
-
-// Disable/Hide-button conditions evaluate at render time against the
-// current viewer state, so per-event predicates ("user fired event X")
-// don't make sense here — exclude `event` along with segment/content.
-const BUTTON_CONDITION_FILTER_ITEMS = [
-  'user-attr',
-  'current-page',
-  'element',
-  'text-input',
-  'text-fill',
-  'time',
-  'group',
-];
 
 export interface ButtonPopoverContentProps {
   element: ContentEditorButtonElement;
@@ -151,7 +138,10 @@ export const ButtonPopoverContent = memo(
               segments={segments}
               token={token}
               baseZIndex={zIndex}
-              filterItems={BUTTON_CONDITION_FILTER_ITEMS}
+              // Disable/Hide-button rules are polled live in the browser, so only the
+              // client-evaluable subset applies (capability matrix, shared with the
+              // server's write guard).
+              filterItems={CLIENT_EVALUABLE_CONDITION_TYPES}
               t={t}
             />
           )}
@@ -172,7 +162,7 @@ export const ButtonPopoverContent = memo(
               segments={segments}
               token={token}
               baseZIndex={zIndex}
-              filterItems={BUTTON_CONDITION_FILTER_ITEMS}
+              filterItems={CLIENT_EVALUABLE_CONDITION_TYPES}
               t={t}
             />
           )}

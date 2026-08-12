@@ -14,6 +14,7 @@ import {
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
 } from '@/common/consts/queen';
+import { AuditService } from '@/audit/audit.service';
 import { RedisService } from '@/shared/redis.service';
 import { TeamService } from '@/team/team.service';
 import { ProjectsService } from '@/projects/projects.service';
@@ -50,7 +51,13 @@ describe('AuthService', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
         updateMany: jest.fn(),
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
+      apiToken: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        groupBy: jest.fn().mockResolvedValue([]),
+      },
+      oAuthGrant: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
       // Force-SSO gate lookup — default to "not a member of any enforced project".
       userOnProject: { findMany: jest.fn().mockResolvedValue([]) },
       $transaction: jest.fn((cb: any) => cb(prisma)),
@@ -108,6 +115,7 @@ describe('AuthService', () => {
         { provide: ProjectsService, useValue: projects },
         { provide: RedisService, useValue: redis },
         { provide: TwoFactorService, useValue: twoFactor },
+        { provide: AuditService, useValue: { record: jest.fn() } },
         { provide: getQueueToken(QUEUE_SEND_MAGIC_LINK_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_SEND_RESET_PASSWORD_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS), useValue: noopQueue },
@@ -296,6 +304,41 @@ describe('AuthService', () => {
       const result = await service.issueTokensOrChallenge('user-1', true);
       expect(result.kind).toBe('tokens');
       expect(prisma.userOnProject.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cleanExpiredRefreshTokens', () => {
+    it('also prunes expired OAuth access-token rows (clientId set), never personal keys', async () => {
+      await service.cleanExpiredRefreshTokens();
+      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { expiresAt: { lt: expect.any(Date) } },
+      });
+      // OAuth access tokens accumulate as ApiToken rows on every refresh rotation —
+      // prune the expired ones, scoped to clientId-set (personal `utp_` keys stay).
+      expect(prisma.apiToken.deleteMany).toHaveBeenCalledWith({
+        where: { clientId: { not: null }, expiresAt: { lt: expect.any(Date) } },
+      });
+    });
+
+    it("rolls each grant's max lastUsedAt onto OAuthGrant BEFORE pruning its token rows", async () => {
+      const used = new Date('2026-07-09T10:00:00Z');
+      prisma.apiToken.groupBy.mockResolvedValue([
+        { oauthGrantId: 'grant-1', _max: { lastUsedAt: used } },
+      ]);
+
+      await service.cleanExpiredRefreshTokens();
+
+      // The rollup writes the durable lastUsedAt so Connected Apps / audit names
+      // survive the deletion of the short-lived token rows that carried them.
+      expect(prisma.oAuthGrant.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'grant-1',
+          OR: [{ lastUsedAt: null }, { lastUsedAt: { lt: used } }],
+        },
+        data: { lastUsedAt: used },
+      });
+      // Rollup happens before the delete (mock order can't assert timing, but both fire).
+      expect(prisma.apiToken.deleteMany).toHaveBeenCalled();
     });
   });
 });

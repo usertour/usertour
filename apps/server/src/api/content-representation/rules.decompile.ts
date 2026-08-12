@@ -1,0 +1,454 @@
+import {
+  CompilableCondition,
+  EventWhereCondition,
+  RepresentationAction,
+  RepresentationCondition,
+  RepresentationHideRules,
+  RepresentationStartRules,
+  RepresentationTrigger,
+  StringOp,
+} from './representation.schema';
+import { LOGIC_TO_ATTR_OP } from './attr-ops';
+import type { AttributeScope } from './rules.compile';
+import { decompileText } from './text.decompile';
+import { decompileTarget } from './target.decompile';
+
+/**
+ * Resolves internal ids to the stable codes the representation schema references
+ * (attribute / event by codeName). The service builds these from the project's
+ * attribute + event definitions; unknown ids fall back to the raw id.
+ */
+export interface DecompileResolvers {
+  attributeCode: (id: string) => string;
+  /**
+   * Like attributeCode but returns undefined for an id the catalog does NOT
+   * contain (a deleted attribute). The decompiler turns that into an
+   * `unsupported` condition instead of leaking the raw cuid into a field whose
+   * contract is a codeName — leaking looked healthy on read and only failed on
+   * write-back (console sweep endpoint 15). Optional: identity resolvers
+   * (no catalog at hand) never report "deleted".
+   */
+  tryAttributeCode?: (id: string) => string | undefined;
+  /**
+   * Internal id → its attribute scope, so a `user-attr` condition decompiles to the
+   * `attribute` condition's `scope` (user / company / companyMembership). Optional —
+   * resolvers that don't track scope fall back to `user`.
+   */
+  attributeScope?: (id: string) => AttributeScope;
+  eventCode: (id: string) => string;
+  /** Like eventCode; undefined = deleted event (see tryAttributeCode). */
+  tryEventCode?: (id: string) => string | undefined;
+}
+
+export const IDENTITY_RESOLVERS: DecompileResolvers = {
+  attributeCode: (id) => id,
+  attributeScope: () => 'user',
+  eventCode: (id) => id,
+  // No catalog — identity resolution can't distinguish "deleted" from "unknown
+  // to me", so it never reports deleted.
+  tryAttributeCode: (id) => id,
+  tryEventCode: (id) => id,
+};
+
+type RuleNode = {
+  id?: string;
+  type?: string;
+  data?: any;
+  operators?: string;
+  conditions?: RuleNode[];
+};
+
+// Internal logic strings → representation ops.
+const STRING_OP: Record<string, StringOp> = {
+  is: 'is',
+  not: 'not',
+  contains: 'contains',
+  notContain: 'not_contains',
+  startsWith: 'starts_with',
+  endsWith: 'ends_with',
+  match: 'match',
+  unmatch: 'unmatch',
+  any: 'any',
+  empty: 'empty',
+};
+// internal logic → representation op — single source of truth in attr-ops.ts.
+const ATTR_OP: Record<string, string> = LOGIC_TO_ATTR_OP;
+const ELEMENT_STATE: Record<string, string> = {
+  present: 'present',
+  unpresent: 'hidden',
+  disabled: 'disabled',
+  undisabled: 'enabled',
+  clicked: 'clicked',
+  unclicked: 'unclicked',
+};
+const CONTENT_STATE: Record<string, string> = {
+  seen: 'seen',
+  unseen: 'unseen',
+  completed: 'completed',
+  uncompleted: 'uncompleted',
+  actived: 'active',
+  unactived: 'inactive',
+};
+const COUNT_OP: Record<string, string> = {
+  atLeast: 'at_least',
+  atMost: 'at_most',
+  exactly: 'exactly',
+  between: 'between',
+};
+const TIME_OP: Record<string, string> = {
+  inTheLast: 'in_the_last',
+  moreThan: 'more_than',
+  between: 'between',
+  atAnyPointInTime: 'any_time',
+};
+const SCOPE: Record<string, string> = {
+  byCurrentUserInAnyCompany: 'current_user',
+  byCurrentUserInCurrentCompany: 'current_user_in_company',
+  byAnyUserInCurrentCompany: 'any_user_in_company',
+};
+
+/**
+ * Own-property lookup on a plain operator map. Stored `logic`/`scope` values are
+ * untrusted (the untyped web GraphQL write path persists arbitrary JSON), so a
+ * bare `MAP[key]` for a key like 'constructor'/'toString' returns the inherited
+ * Object.prototype member — a truthy FUNCTION that then defeats the `?? fallback`
+ * / `? :` guards below and leaks into the decompiled `op`, which JSON.stringify
+ * silently drops (leaving a condition with no `op` that no client can repair).
+ * Returns undefined for any non-own key.
+ */
+const own = <T>(map: Record<string, T>, key: unknown): T | undefined =>
+  typeof key === 'string' && Object.prototype.hasOwnProperty.call(map, key) ? map[key] : undefined;
+
+const mapStringOp = (logic: unknown): StringOp => own(STRING_OP, logic) || 'is';
+const mapAttrOp = (logic: unknown): string =>
+  own(ATTR_OP, logic) || (typeof logic === 'string' && logic) || 'is';
+
+// ── Conditions ───────────────────────────────────────────────────────────────
+
+export function decompileConditions(
+  raw: unknown,
+  r: DecompileResolvers,
+): RepresentationCondition[] {
+  // General slots only ever hold general conditions; the context-restricted
+  // event_attribute / task_clicked appear solely inside event.where / checklist
+  // completeWhen, which carry their own narrower types at the boundary.
+  return (Array.isArray(raw) ? raw : []).map((c) =>
+    decompileCondition(c, r),
+  ) as RepresentationCondition[];
+}
+
+/** The and/or of a flat list lives on its first node's `operators`. Mirror the
+ * RUNTIME exactly (isConditionsActived: `operators === 'and' ? all : any`) —
+ * only an explicit 'and' means AND; a missing/other value evaluates as OR, so it
+ * must decompile as OR too, or legacy lists (authored before the builder stamped
+ * `operators`) would be presented — and on a round-trip re-stamped — inverted. */
+const listJoiner = (raw: unknown): 'and' | 'or' =>
+  Array.isArray(raw) && (raw[0] as RuleNode | undefined)?.operators === 'and' ? 'and' : 'or';
+
+/**
+ * Decompile a top-level `when` list. The representation has no field for a flat
+ * list's and/or — a bare `when` array is AND by convention — so an OR list is
+ * wrapped in a single `group{match:'any'}`, the same way OR is expressed at any
+ * other level. (A single condition needs no wrapper: and/or is moot.) This is
+ * the inverse of compileConditions stamping the joiner back onto each node.
+ */
+export function decompileWhen(raw: unknown, r: DecompileResolvers): RepresentationCondition[] {
+  const items = decompileConditions(raw, r);
+  if (items.length <= 1 || listJoiner(raw) !== 'or') return items;
+  return [{ type: 'group', match: 'any', conditions: items }];
+}
+
+export function decompileCondition(c: RuleNode, r: DecompileResolvers): CompilableCondition {
+  const d = c.data ?? {};
+  switch (c.type) {
+    case 'group':
+      // A group's `match` is its INTERNAL and/or — stored on its children's
+      // `operators` (the runtime reads `group.conditions[0].operators`), NOT on
+      // the group node itself (that carries the parent list's joiner).
+      return {
+        type: 'group',
+        match: listJoiner(c.conditions) === 'or' ? 'any' : 'all',
+        conditions: decompileConditions(c.conditions, r),
+      };
+    case 'user-attr':
+    // `company-attr` is a legacy stored type from before attribute conditions
+    // were unified under `user-attr` + attrId. The runtime never dispatches on
+    // the type string here — the segment filters resolve `data.attrId` against
+    // the attribute definitions directly — so stored company-attr conditions
+    // still MATCH in production. Decompiling them as `unsupported` misreported
+    // live data (and made GET /segments emit a shape outside its own schema);
+    // the shape is identical, so read it exactly like user-attr.
+    case 'company-attr': {
+      // One representation `attribute` type; `scope` (from the attribute's bizType)
+      // carries user / company / companyMembership so it round-trips losslessly.
+      const attrId = d.attrId ?? '';
+      const attrCode = (r.tryAttributeCode ?? r.attributeCode)(attrId);
+      if (attrCode === undefined) {
+        return {
+          type: 'unsupported',
+          note: `references a deleted attribute (was internal id ${attrId}) — never matches at runtime and cannot be written back; remove it from the list to delete it, or recreate the attribute and repair the condition in the builder`,
+        };
+      }
+      return {
+        type: 'attribute',
+        scope: r.attributeScope?.(attrId) ?? 'user',
+        attribute: attrCode,
+        op: mapAttrOp(d.logic),
+        ...(d.value != null ? { value: String(d.value) } : {}),
+        ...(d.value2 != null ? { value2: String(d.value2) } : {}),
+        ...(Array.isArray(d.listValues) ? { values: d.listValues } : {}),
+      };
+    }
+    case 'event-attr': {
+      // attrId → code via the shared attributeCode map (ids are unique, so no
+      // bizType ambiguity on the read side).
+      const eventAttrId = d.attrId ?? '';
+      const eventAttrCode = (r.tryAttributeCode ?? r.attributeCode)(eventAttrId);
+      if (eventAttrCode === undefined) {
+        return {
+          type: 'unsupported',
+          note: `references a deleted event attribute (was internal id ${eventAttrId}) — never matches at runtime and cannot be written back; remove it from the list to delete it`,
+        };
+      }
+      return {
+        type: 'event_attribute',
+        attribute: eventAttrCode,
+        op: mapAttrOp(d.logic),
+        ...(d.value != null ? { value: String(d.value) } : {}),
+        ...(d.value2 != null ? { value2: String(d.value2) } : {}),
+        ...(Array.isArray(d.listValues) ? { values: d.listValues } : {}),
+      };
+    }
+    case 'task-is-clicked':
+      return { type: 'task_clicked' };
+    case 'segment':
+      return { type: 'segment', segment: d.segmentId ?? '', in: (d.logic ?? 'is') !== 'not' };
+    case 'current-page':
+      return {
+        type: 'current_url',
+        includes: Array.isArray(d.includes) ? d.includes : [],
+        ...(Array.isArray(d.excludes) && d.excludes.length ? { excludes: d.excludes } : {}),
+      };
+    case 'element': {
+      const target = decompileTarget(d.elementData);
+      return {
+        type: 'element',
+        ...(target ? { target } : {}),
+        state: (own(ELEMENT_STATE, d.logic) ?? 'present') as never,
+      };
+    }
+    case 'content':
+      return {
+        type: 'content_state',
+        content: d.contentId ?? '',
+        state: (own(CONTENT_STATE, d.logic) ?? 'seen') as never,
+      };
+    case 'event': {
+      const eventId = d.eventId ?? '';
+      const eventCode = (r.tryEventCode ?? r.eventCode)(eventId);
+      if (eventCode === undefined) {
+        return {
+          type: 'unsupported',
+          note: `references a deleted event (was internal id ${eventId}) — never matches at runtime and cannot be written back; remove it from the list to delete it`,
+        };
+      }
+      return {
+        type: 'event',
+        event: eventCode,
+        ...mapCount(d),
+        ...mapWithin(d),
+        ...(own(SCOPE, d.scope) ? { scope: own(SCOPE, d.scope) as never } : {}),
+        ...(Array.isArray(d.whereConditions) && d.whereConditions.length
+          ? { where: decompileWhen(d.whereConditions, r) as unknown as EventWhereCondition[] }
+          : {}),
+      };
+    }
+    case 'text-input': {
+      const target = decompileTarget(d.elementData);
+      return {
+        type: 'text_input',
+        ...(target ? { target } : {}),
+        op: mapStringOp(d.logic),
+        ...(d.value != null ? { value: String(d.value) } : {}),
+      };
+    }
+    case 'text-fill': {
+      const target = decompileTarget(d.elementData);
+      return { type: 'text_filled', ...(target ? { target } : {}) };
+    }
+    case 'time':
+      return mapTime(d);
+    default:
+      return {
+        type: 'unsupported',
+        note: `${c.type ?? 'unrecognized condition'} — not expressible in this API and cannot be written back; remove it from the list to delete it, or edit these conditions in the builder`,
+      };
+  }
+}
+
+function mapCount(
+  d: any,
+): Partial<Pick<Extract<RepresentationCondition, { type: 'event' }>, 'count'>> {
+  if (typeof d.countLogic !== 'string') {
+    return {};
+  }
+  return {
+    count: {
+      op: (own(COUNT_OP, d.countLogic) ?? 'at_least') as never,
+      n: typeof d.count === 'number' ? d.count : 0,
+      ...(typeof d.count2 === 'number' ? { n2: d.count2 } : {}),
+    },
+  };
+}
+
+function mapWithin(
+  d: any,
+): Partial<Pick<Extract<RepresentationCondition, { type: 'event' }>, 'within'>> {
+  if (typeof d.timeLogic !== 'string') {
+    return {};
+  }
+  const op = (own(TIME_OP, d.timeLogic) ?? 'any_time') as never as string;
+  // A stored windowed op with NO unit is LIVE at runtime — the evaluator
+  // silently assumes days (toMilliseconds default). Normalize the read-back to
+  // an explicit `days`: byte-identical behavior, and the write schema (which
+  // requires a unit on windowed ops) round-trips clean. Emitting the stored
+  // shape verbatim would violate the response contract; `unsupported` would
+  // silently DROP a live targeting condition on rewrite.
+  const unit = typeof d.timeUnit === 'string' ? d.timeUnit : op !== 'any_time' ? 'days' : undefined;
+  return {
+    within: {
+      op: op as never,
+      ...(typeof d.windowValue === 'number' ? { value: d.windowValue } : {}),
+      ...(typeof d.windowValue2 === 'number' ? { value2: d.windowValue2 } : {}),
+      ...(unit ? { unit: unit as never } : {}),
+    },
+  };
+}
+
+function mapTime(d: any): RepresentationCondition {
+  if (typeof d.startTime === 'string') {
+    return {
+      type: 'time_window',
+      start: d.startTime,
+      ...(typeof d.endTime === 'string' ? { end: d.endTime } : {}),
+    };
+  }
+  if (typeof d.endTime === 'string') {
+    // A start-less window never matches at runtime (a dead condition) and the
+    // write schema requires `start` — emitting it as time_window would put a
+    // schema-violating shape on the wire AND break the read→write round-trip.
+    // Same treatment as deleted-attribute conditions: an `unsupported`
+    // placeholder whose note says what it was; echoing it back is rejected,
+    // and removing it from the list deletes it.
+    return {
+      type: 'unsupported',
+      note: `end-only time window (until ${d.endTime}) — never matches at runtime and cannot be written back; remove it from the list to delete it, or write a time_window WITH a start to recreate the window as supported`,
+    };
+  }
+  // Legacy MM/dd/yyyy component format → not modeled. NOT dead: the runtime
+  // still evaluates this shape (helpers/conditions/time.ts legacy path), which
+  // is why write-back rejection matters here — silently dropping it would
+  // delete a LIVE targeting condition.
+  return {
+    type: 'unsupported',
+    note: 'legacy-format time condition (STILL evaluated at runtime) — not expressible in this API and cannot be written back; removing it from the list deletes a live condition. To keep or change it, edit these conditions in the builder.',
+  };
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────────
+
+export function decompileActions(raw: unknown): RepresentationAction[] {
+  return (Array.isArray(raw) ? raw : []).map(decompileAction);
+}
+
+export function decompileAction(a: RuleNode): RepresentationAction {
+  const d = a.data ?? {};
+  switch (a.type) {
+    case 'step-goto':
+      return { type: 'goto_step', step: d.stepCvid ?? '' };
+    case 'flow-start':
+      return {
+        type: 'start_content',
+        content: d.contentId ?? '',
+        ...(d.stepCvid ? { step: d.stepCvid } : {}),
+      };
+    case 'page-navigate':
+      return {
+        type: 'navigate',
+        url: typeof d.url === 'string' ? d.url : decompileText(d.value),
+        ...(d.openType === 'new' || d.openNewTab ? { newTab: true } : {}),
+      };
+    case 'javascript-evaluate':
+      return { type: 'run_javascript', script: typeof d.value === 'string' ? d.value : '' };
+    case 'flow-dismis':
+    case 'launcher-dismis':
+    case 'checklist-dismis':
+    case 'banner-dismis':
+      return { type: 'dismiss' };
+    default:
+      return { type: 'unsupported', ...(a.type ? { note: a.type } : {}) };
+  }
+}
+
+// ── Triggers ─────────────────────────────────────────────────────────────────
+
+export function decompileTriggers(raw: unknown, r: DecompileResolvers): RepresentationTrigger[] {
+  return (Array.isArray(raw) ? raw : []).map((t) => decompileTrigger(t, r));
+}
+
+function decompileTrigger(t: any, r: DecompileResolvers): RepresentationTrigger {
+  return {
+    ...(Array.isArray(t?.conditions) && t.conditions.length
+      ? { when: decompileWhen(t.conditions, r) }
+      : {}),
+    do: decompileActions(t?.actions),
+    ...(typeof t?.wait === 'number' ? { waitSeconds: t.wait } : {}),
+  };
+}
+
+// ── Version-level start / hide rules (from Version.config) ───────────────────
+
+export function decompileStartRules(
+  config: any,
+  r: DecompileResolvers,
+): RepresentationStartRules | undefined {
+  if (!config?.enabledAutoStartRules) {
+    return undefined;
+  }
+  const setting = config.autoStartRulesSetting ?? {};
+  return {
+    when: decompileWhen(config.autoStartRules, r),
+    ...(setting.frequency ? { frequency: mapFrequency(setting.frequency) } : {}),
+    ...(setting.priority ? { priority: setting.priority } : {}),
+    ...(typeof setting.wait === 'number' ? { waitSeconds: setting.wait } : {}),
+    ...(typeof setting.startIfNotComplete === 'boolean'
+      ? { startIfNotComplete: setting.startIfNotComplete }
+      : {}),
+  };
+}
+
+export function decompileHideRules(
+  config: any,
+  r: DecompileResolvers,
+): RepresentationHideRules | undefined {
+  if (!config?.enabledHideRules) {
+    return undefined;
+  }
+  return { when: decompileWhen(config.hideRules, r) };
+}
+
+function mapFrequency(f: any): RepresentationStartRules['frequency'] {
+  return {
+    mode: f.frequency ?? 'unlimited',
+    ...(f.every
+      ? {
+          every: {
+            ...(typeof f.every.times === 'number' ? { times: f.every.times } : {}),
+            duration: f.every.duration,
+            unit: f.every.unit,
+          },
+        }
+      : {}),
+    ...(f.atLeast ? { atLeast: { duration: f.atLeast.duration, unit: f.atLeast.unit } } : {}),
+  };
+}

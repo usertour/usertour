@@ -8,7 +8,7 @@ import { EnvironmentDecorator } from '@/common/decorators/environment.decorator'
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { ListAttributeDefinitionsQueryDto } from './attribute-definitions.dto';
 
-@ApiTags('Attribute Definitions')
+@ApiTags('Attribute Definitions (v1)')
 @Controller('v1/attribute-definitions')
 @UseGuards(OpenAPIKeyGuard)
 @UseFilters(OpenAPIExceptionFilter)

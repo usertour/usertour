@@ -9,30 +9,6 @@ export class UnknownError extends BaseError {
   };
 }
 
-export class ContentTooLargeError extends BaseError {
-  code = 'E2004';
-  messageDict = {
-    en: 'Content is too large. Maximum length is 100k characters.',
-    'zh-CN': '内容过长。最大长度为 10 万字符。',
-  };
-}
-
-export class PayloadTooLargeError extends BaseError {
-  code = 'E2005';
-  messageDict = {
-    en: 'Request payload is too large. Maximum size is 100KB.',
-    'zh-CN': '请求数据过大。最大大小为 100KB。',
-  };
-}
-
-export class ConnectionError extends BaseError {
-  code = 'E0001';
-  messageDict = {
-    en: 'Cannot connect to the Usertour server, please try again later.',
-    'zh-CN': '无法连接到 Usertour 服务器，请稍后重试。',
-  };
-}
-
 export class ParamsError extends BaseError {
   code = 'E0003';
   messageDict = {
@@ -81,35 +57,11 @@ export class InvalidVerificationSession extends BaseError {
   };
 }
 
-export class IncorrectVerificationCode extends BaseError {
-  code = 'E0009';
-  messageDict = {
-    en: 'Verification code is incorrect, please try again',
-    'zh-CN': '验证码错误，请重试',
-  };
-}
-
-export class OperationTooFrequent extends BaseError {
-  code = 'E0010';
-  messageDict = {
-    en: 'Operation too frequent, please try again later',
-    'zh-CN': '操作过于频繁，请稍后再试',
-  };
-}
-
 export class AuthenticationExpiredError extends BaseError {
   code = 'E0011';
   messageDict = {
     en: 'Authentication expired, please log in again',
     'zh-CN': '身份验证已过期，请重新登录',
-  };
-}
-
-export class UnsupportedFileTypeError extends BaseError {
-  code = 'E0012';
-  messageDict = {
-    en: 'This file type is temporarily not supported',
-    'zh-CN': '暂不支持该文件类型',
   };
 }
 
@@ -121,11 +73,16 @@ export class NoPermissionError extends BaseError {
   };
 }
 
-export class ContentNotPublishedError extends BaseError {
-  code = 'E0014';
+/**
+ * The member's project membership restricts which environments they may act on
+ * (UserOnProject.allowedEnvironmentIds), and this request targets one outside
+ * that set — e.g. publishing to Production with a Development-only membership.
+ */
+export class MemberEnvironmentNotAllowedError extends BaseError {
+  code = 'E0060';
   messageDict = {
-    en: 'You have reached your Survey questions limit. Please upgrade your Usertour account under Settings → Billing.',
-    'zh-CN': '您已经达到了 Survey 问题的限制，请在设置 → 账单中升级您的 Usertour 账户。',
+    en: 'Your project membership does not allow acting on this environment',
+    'zh-CN': '您的成员权限不包含该环境，无法在此环境执行操作',
   };
 }
 
@@ -191,6 +148,317 @@ export class MissingApiKeyError extends OpenAPIError {
   };
 }
 
+export class ExpiredApiKeyError extends OpenAPIError {
+  code = 'E1020';
+  statusCode = HttpStatus.UNAUTHORIZED;
+  messageDict = {
+    en: 'API key has expired',
+    'zh-CN': 'API 密钥已过期',
+  };
+}
+
+export class ProjectNotInTokenScopeError extends OpenAPIError {
+  code = 'E1011';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'API key is not scoped to the requested project',
+    'zh-CN': 'API 密钥未授权访问该项目',
+  };
+}
+
+export class InsufficientScopeError extends OpenAPIError {
+  code = 'E1012';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'API key lacks the required scope for this operation',
+    'zh-CN': 'API 密钥缺少此操作所需的权限范围',
+  };
+}
+
+export class EnvironmentProjectMismatchError extends OpenAPIError {
+  code = 'E1019';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en: 'Environment does not belong to the requested project',
+    'zh-CN': '环境不属于该项目',
+  };
+}
+
+export class EnvironmentNotInTokenScopeError extends OpenAPIError {
+  code = 'E1029';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en:
+      'API key is not scoped to the requested environment. List environments ' +
+      '(list_environments / GET /environments) — entries with inTokenScope: true are the ones ' +
+      'this credential may act on.',
+    'zh-CN': 'API 密钥未授权访问该环境。可通过环境列表查看 inTokenScope 为 true 的可用环境。',
+  };
+
+  /**
+   * Optionally name the environments the token MAY act on, turning a dead-end ("not
+   * scoped") into a redirect ("use one of these") — caller passes them when the names
+   * are on hand (e.g. the MCP env resolver). Omit for the bare, stable message.
+   */
+  constructor(allowed?: { name: string; id: string }[]) {
+    super();
+    if (allowed?.length) {
+      const list = allowed.map((e) => `${e.name} (${e.id})`).join(', ');
+      this.messageDict = {
+        en: `API key is not scoped to the requested environment. It may only act on: ${list}.`,
+        'zh-CN': `API 密钥未授权访问该环境。仅可操作:${list}。`,
+      };
+    }
+  }
+}
+
+/**
+ * Creating an environment with a token restricted to an environment allowlist
+ * would mint an environment OUTSIDE that allowlist — the token could neither use
+ * nor delete it (every follow-up op 403s E1029, an undeletable orphan). Refuse up
+ * front: environment creation needs a token scoped to ALL environments (no
+ * allowlist, and an owner with no environment ceiling). Rename/delete of an
+ * in-scope environment stay allowed for allowlist tokens.
+ */
+export class EnvironmentCreateRequiresFullScopeError extends OpenAPIError {
+  code = 'E1032';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    // NOT "use a token scoped to all environments": tokens holding env-targeted
+    // capabilities (user/company/session/segment/analytics, content:publish) are
+    // REQUIRED to name environments at creation — "all environments" is not
+    // grantable for them, so that advice would be impossible to follow. The
+    // executable fix is a separate project-level-only token.
+    en: 'Cannot create an environment with this token — its environment allowlist cannot cover an environment that does not exist yet. Tokens holding env-targeted capabilities (user/company/session/segment/analytics, content:publish) always carry an allowlist, so use a separate token with project-level capabilities only (e.g. environment:manage, themes, attribute/event definitions, content read/write).',
+    'zh-CN':
+      '此密钥无法创建环境——它的环境名单不可能覆盖一个还不存在的环境。带用户/公司/会话/分群/分析或发布能力的密钥在创建时必须指名环境,因此请另建一把只含项目级能力(环境管理、主题、属性/事件定义、内容读写)的密钥来创建环境。',
+  };
+}
+
+/**
+ * A /v2 request that matched no route at all. Emitted by the global fallback
+ * filter so even "Cannot GET /v2/..." keeps the v2 error envelope (the Nest
+ * default renders a bare {message, error, statusCode} shape).
+ */
+/**
+ * State-conflict deletes on themes, same family as E1028/E1030/E1031 (and the
+ * environments' E0022/E0023): the request is well-formed, the CURRENT STATE
+ * refuses it. E1034 is resolvable (move the default first); E1035 is a
+ * permanent property — the message offers no fake way out.
+ */
+export class DefaultThemeCannotBeDeletedError extends OpenAPIError {
+  code = 'E1034';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete the default theme — set another theme as the project default first.',
+    'zh-CN': '无法删除默认主题——请先将其他主题设为项目默认。',
+  };
+}
+
+/**
+ * Writing custom CSS on a plan that doesn't include it. The builder blocks the
+ * same field behind an upsell at this predicate; if the API accepted the write,
+ * the CSS would store and round-trip on reads while the session builder strips
+ * it at delivery — the author sees success everywhere and users see nothing.
+ * Refuse upfront and name the requirement instead. Echoing a STORED customCss
+ * back unchanged stays legal (read-modify-write), as does clearing it.
+ */
+export class CustomCssPlanRequiredError extends OpenAPIError {
+  code = 'E1038';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en:
+      "Custom CSS requires the Growth plan or above — on the project's current plan the " +
+      'runtime strips `customCss` before delivery, so the write is refused rather than ' +
+      'silently stored. Remove `customCss` from the settings patch, or upgrade the plan ' +
+      '(Settings → Billing).',
+    'zh-CN':
+      '自定义 CSS 需要 Growth 及以上套餐——当前套餐下运行时会在下发前剥离 customCss,' +
+      '因此写入被拒绝而非静默存储。请从 settings 中移除 customCss,或升级套餐(设置 → 账单)。',
+  };
+}
+
+export class SystemThemeCannotBeChangedError extends OpenAPIError {
+  code = 'E1035';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'System themes cannot be modified or deleted. Duplicate one into your own theme if you need a variant. (Setting a system theme as the project default IS allowed.)',
+    'zh-CN':
+      '系统主题不可修改或删除。如需自定义,请基于它创建自己的主题副本。(允许将系统主题设为项目默认。)',
+  };
+}
+
+/**
+ * Predefined attribute/event definitions are a permanent property — like
+ * E1035 (system themes): 409, no un-predefine action exists, so the message
+ * points at the real alternative instead of a fake way out. Shared by all
+ * four sites (attribute/event x modify/delete).
+ */
+export class PredefinedDefinitionCannotBeChangedError extends OpenAPIError {
+  code = 'E1036';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Predefined definitions cannot be modified or deleted — create your own definition instead.',
+    'zh-CN': '预定义的属性/事件不可修改或删除——如需自定义,请新建一个自己的定义。',
+  };
+}
+
+/**
+ * The built-in "all" segment (every user / every company) is a fixture, not
+ * user data — same permanent-property family as E1035/E1036: 409, no way to
+ * un-built-in it, the message points at the real alternative.
+ */
+export class BuiltInSegmentCannotBeChangedError extends OpenAPIError {
+  code = 'E1037';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'The built-in "all" segment cannot be modified or deleted — create a condition segment if you need a filtered audience.',
+    'zh-CN': '内置的"all"分群不可修改或删除——如需筛选人群,请新建一个条件分群。',
+  };
+}
+
+export class UnknownRouteError extends OpenAPIError {
+  code = 'E1033';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Unknown API route',
+    'zh-CN': '未知的 API 路径',
+  };
+}
+
+export class ThemeNotFoundError extends OpenAPIError {
+  code = 'E1021';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Theme not found',
+    'zh-CN': '主题未找到',
+  };
+}
+
+export class AttributeDefinitionNotFoundError extends OpenAPIError {
+  code = 'E1022';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Attribute definition not found',
+    'zh-CN': '属性定义未找到',
+  };
+}
+
+export class ResourceConflictError extends OpenAPIError {
+  code = 'E1023';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'A resource with this identifier already exists',
+    'zh-CN': '该标识的资源已存在',
+  };
+}
+
+export class EventDefinitionNotFoundError extends OpenAPIError {
+  code = 'E1024';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Event definition not found',
+    'zh-CN': '事件定义未找到',
+  };
+}
+
+/**
+ * Deleting an event definition that already has recorded events (BizEvent rows —
+ * e.g. fired by a tracker or `usertour.track()`) is blocked by a DB foreign-key
+ * RESTRICT. Translate that into a clean domain error instead of leaking the raw
+ * Postgres constraint message to API / MCP callers.
+ */
+export class EventDefinitionInUseError extends OpenAPIError {
+  code = 'E1030';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete an event definition that has recorded events. Trackers or usertour.track() calls have already logged events against it.',
+    'zh-CN': '无法删除已记录事件的事件定义（已有 tracker 或 usertour.track() 记录的事件引用它）。',
+  };
+}
+
+/**
+ * Deleting a theme that is still ACTIVELY used — referenced by a live published
+ * version or a content's current draft (version-level themeId or a per-step
+ * override). Without this guard the FK's ON DELETE SET NULL silently strips the
+ * theme from those versions and the SDK stops rendering them (there is no
+ * fallback theme at runtime). Historical-version references don't block.
+ */
+export class ThemeInUseError extends OpenAPIError {
+  code = 'E1031';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete a theme that is used by live or draft content. Switch that content to another theme first.',
+    'zh-CN': '无法删除正被线上或草稿内容使用的主题，请先为这些内容更换主题。',
+  };
+
+  // Same shape as ContentNotPublishableError: the caller may inline the
+  // offending content names so people/agents know what to re-theme.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
+export class SegmentNotFoundError extends OpenAPIError {
+  code = 'E1025';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Segment not found',
+    'zh-CN': '分群未找到',
+  };
+}
+
+export class EnvironmentNotFoundError extends OpenAPIError {
+  code = 'E1026';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Environment not found',
+    'zh-CN': '环境未找到',
+  };
+}
+
+/**
+ * The content version is structurally valid but not usable — it would not
+ * render or function in the SDK (e.g. a tooltip step with no target, an empty
+ * checklist, content with no theme). Carries the list of issues in the message.
+ */
+export class ContentNotPublishableError extends OpenAPIError {
+  code = 'E1027';
+  statusCode = HttpStatus.UNPROCESSABLE_ENTITY;
+  messageDict = {
+    en: 'Content is not publishable',
+    'zh-CN': '内容不可发布',
+  };
+
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
+/**
+ * Deleting content that is still published in one or more environments would
+ * pull a live experience out from under users. Unpublish from all environments
+ * first, then delete. The web UI disables delete while content is published;
+ * this enforces the same rule at the service layer so the API / MCP (which
+ * bypass the UI) can't do what the UI forbids.
+ */
+export class ContentPublishedDeleteError extends OpenAPIError {
+  code = 'E1028';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete content that is still published. Unpublish it from all environments first.',
+    'zh-CN': '无法删除仍处于发布状态的内容，请先在所有环境中取消发布。',
+  };
+}
+
 export class UserNotFoundError extends OpenAPIError {
   code = 'E1001';
   statusCode = HttpStatus.NOT_FOUND;
@@ -198,6 +466,22 @@ export class UserNotFoundError extends OpenAPIError {
     en: 'User not found',
     'zh-CN': '用户未找到',
   };
+
+  /**
+   * Optionally add call-site context (E1029 precedent) — e.g. the segment
+   * member endpoints look the externalId up in the table the SEGMENT's bizType
+   * dictates, and a bare "User not found" reads as a typo hunt when the real
+   * issue is a company externalId aimed at a user segment.
+   */
+  constructor(context?: string) {
+    super();
+    if (context) {
+      this.messageDict = {
+        en: `User not found — ${context}`,
+        'zh-CN': `用户未找到——${context}`,
+      };
+    }
+  }
 }
 
 export class UserRegistrationDisabledError extends BaseError {
@@ -280,6 +564,17 @@ export class CompanyNotFoundError extends OpenAPIError {
     en: 'Company not found',
     'zh-CN': '公司未找到',
   };
+
+  /** Optional call-site context; see {@link UserNotFoundError}. */
+  constructor(context?: string) {
+    super();
+    if (context) {
+      this.messageDict = {
+        en: `Company not found — ${context}`,
+        'zh-CN': `公司未找到——${context}`,
+      };
+    }
+  }
 }
 
 export class CompanyMembershipNotFoundError extends OpenAPIError {
@@ -298,6 +593,17 @@ export class ContentNotFoundError extends OpenAPIError {
     en: 'Content not found',
     'zh-CN': '内容未找到',
   };
+
+  // Same code, optionally sharper message (mirrors ValidationError): "no such
+  // id" and "exists but archived" demand opposite next moves, and the envelope
+  // renders from messageDict — a bare `super(message)` never reaches it.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
 }
 
 export class ContentSessionNotFoundError extends OpenAPIError {
@@ -324,24 +630,6 @@ export class InvalidCursorError extends OpenAPIError {
   messageDict = {
     en: 'Invalid cursor parameter',
     'zh-CN': '无效的游标参数',
-  };
-}
-
-export class InvalidCursorPreviousError extends OpenAPIError {
-  code = 'E1008';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid previous cursor parameter',
-    'zh-CN': '无效的上一个游标参数',
-  };
-}
-
-export class InvalidRequestError extends OpenAPIError {
-  code = 'E1009';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid request',
-    'zh-CN': '无效的请求',
   };
 }
 
@@ -372,27 +660,73 @@ export class InvalidScopeError extends OpenAPIError {
   };
 }
 
-export class InvalidOrderByError extends OpenAPIError {
-  code = 'E1016';
-  statusCode = HttpStatus.BAD_REQUEST;
-  messageDict = {
-    en: 'Invalid orderBy parameter.',
-    'zh-CN': '无效的排序参数。',
-  };
-}
+/**
+ * The rule families a structured validation problem can name. Runtime array so
+ * every surface that lists them (the OpenAPI `issues[].rule` describe, docs)
+ * derives from ONE vocabulary — the `media_url` addition updated the type and
+ * errors.mdx but not the hand-written spec describe, and nothing noticed.
+ * Adding a member here updates the spec text automatically.
+ */
+export const VALIDATION_ISSUE_RULES = [
+  'schema',
+  'reactive_condition',
+  'action_not_allowed',
+  'step_shape',
+  'reference_target',
+  'auto_start',
+  'media_url',
+] as const;
+
+/**
+ * One structured validation problem. `rule` names the rule family so a client
+ * can group or react programmatically:
+ *  - `schema`             — the request body doesn't match the write schema;
+ *  - `reactive_condition` — a server-evaluated condition in a reactive (client-polled) slot;
+ *  - `action_not_allowed` — an action type this content type's slots don't offer;
+ *  - `step_shape`         — placement shape / onClick not matching the step kind;
+ *  - `reference_target`   — a cross-content reference to a type that can't be targeted;
+ *  - `auto_start`         — a start/hide-rule knob the content type doesn't support;
+ *  - `media_url`          — an image/embed URL that isn't http(s).
+ */
+export type ValidationIssue = {
+  rule: (typeof VALIDATION_ISSUE_RULES)[number];
+  message: string;
+  /** Path into the request body (e.g. `steps[0].triggers[0].when[1]`). */
+  path?: string;
+};
 
 export class ValidationError extends OpenAPIError {
   code = 'E1017';
   statusCode = HttpStatus.BAD_REQUEST;
+  /** Present when the request had one or more structured issues. */
+  issues?: ValidationIssue[];
   messageDict = {
     en: 'Validation error',
     'zh-CN': '验证错误',
   };
 
-  constructor(message: string) {
+  constructor(message: string, issues?: ValidationIssue[]) {
     super();
     this.messageDict.en = message;
     this.messageDict['zh-CN'] = message;
+    if (issues?.length) {
+      this.issues = issues;
+    }
+  }
+
+  /**
+   * Aggregate several issues into one error. The message carries EVERY issue
+   * (joined), so single-string surfaces (the MCP tool error text) show them all;
+   * structured clients read `issues` from the REST error body instead. Each
+   * message is prefixed with its field path when one exists — the MCP surface
+   * has no `issues[]`, so without the prefix a schema error in a large payload
+   * is unlocatable.
+   */
+  static fromIssues(issues: ValidationIssue[]): ValidationError {
+    return new ValidationError(
+      issues.map((i) => (i.path ? `${i.path}: ${i.message}` : i.message)).join(' | '),
+      issues,
+    );
   }
 }
 
@@ -569,8 +903,9 @@ export class ResourceAlreadyExistsError extends BaseError {
 export class VersionNotEditableError extends BaseError {
   code = 'E0049';
   messageDict = {
-    en: 'This version is no longer editable — a newer version was created elsewhere. Refresh to load the latest version.',
-    'zh-CN': '该版本已不可编辑——其他位置已创建了新版本。请刷新加载最新版本。',
+    en: 'This version can no longer be edited — it is live now, HAS been live before (a version that ever shipped is frozen as history, unpublishing does not unlock it), or has been superseded by a newer draft. Create a new editable version to make changes.',
+    'zh-CN':
+      '该版本不可编辑——它正在线上、曾经上过线(上过线的版本永久封存为历史,下线也不会解锁),或已被更新的草稿取代。请创建新的可编辑版本后再修改。',
   };
 }
 
@@ -677,92 +1012,4 @@ export class IdentityVerificationRequiresActiveSecretError extends BaseError {
     en: 'Identity verification requires at least one active signing secret.',
     'zh-CN': '身份验证需要至少一个有效的签名密钥。',
   };
-}
-
-// Create a mapping of error codes to error classes
-const errorMap = {
-  E0000: UnknownError,
-  E0001: ConnectionError,
-  E0003: ParamsError,
-  E0004: OAuthError,
-  E0005: AccountNotFoundError,
-  E0006: PasswordIncorrect,
-  E0007: EmailAlreadyRegistered,
-  E0008: InvalidVerificationSession,
-  E0009: IncorrectVerificationCode,
-  E0010: OperationTooFrequent,
-  E0011: AuthenticationExpiredError,
-  E0012: UnsupportedFileTypeError,
-  E0013: NoPermissionError,
-  E0014: ContentNotPublishedError,
-  E0015: TeamMemberLimitError,
-  E0016: InvalidLicenseError,
-  E0017: LicenseExpiredError,
-  E0018: LicenseProjectMismatchError,
-  E0019: LicenseDecodeError,
-  E1000: InvalidApiKeyError,
-  E1001: UserNotFoundError,
-  E1002: CompanyNotFoundError,
-  E1003: CompanyMembershipNotFoundError,
-  E1004: ContentNotFoundError,
-  E1005: ContentSessionNotFoundError,
-  E1006: InvalidLimitError,
-  E1007: InvalidCursorError,
-  E1008: InvalidCursorPreviousError,
-  E1009: InvalidRequestError,
-  E1010: MissingApiKeyError,
-  E1013: RateLimitExceededError,
-  E1014: ServiceUnavailableError,
-  E1015: InvalidScopeError,
-  E1016: InvalidOrderByError,
-  E1017: ValidationError,
-  E1018: SDKAuthenticationError,
-  E0020: EmailConfigNotSetError,
-  E0021: S3ConfigNotSetError,
-  E0022: LastEnvironmentCannotBeDeletedError,
-  E0023: PrimaryEnvironmentCannotBeDeletedError,
-  E0024: UserDisabledError,
-  E0025: UserRegistrationDisabledError,
-  E0026: SystemAdminAlreadyInitializedError,
-  E0027: SystemAdminSetupUnavailableError,
-  E0028: SystemAdminSetupRequiredError,
-  E0029: InstanceLicenseProjectLimitReachedError,
-  E0030: EnvironmentLimitError,
-  E0031: TeamMemberAlreadyInvitedError,
-  E0032: TeamMemberAlreadyInProjectError,
-  E0033: InvitationDeliveryFailedError,
-  E0034: TooManyLoginAttemptsError,
-  E0035: InvalidTwoFactorCodeError,
-  E0036: InvalidRecoveryCodeError,
-  E0037: TwoFactorAlreadyEnabledError,
-  E0038: TwoFactorNotEnabledError,
-  E0039: TooManyTwoFactorAttemptsError,
-  E0040: InvalidTwoFactorChallengeError,
-  E0041: SystemAdminMustEnable2FAFirstError,
-  E0042: TwoFactorEnforcedDisableNotAllowedError,
-  E0043: FeatureRequiresLicenseError,
-  E0044: TwoFactorEnrollmentRequiredError,
-  E0045: WrongInviteAccountError,
-  E0046: OAuthOnlyAccountError,
-  E0047: InviteSeatExhaustedError,
-  E0048: ResourceAlreadyExistsError,
-  E0049: VersionNotEditableError,
-  E0050: VersionConflictError,
-  E0051: SsoRequiredError,
-  E0052: SsoRequiresActiveProviderError,
-  E0053: SsoAccessDeniedError,
-  E0054: EgressUrlNotAllowedError,
-  E0055: AiNotConfiguredError,
-  E0056: MachineTranslationRequiresPaidPlanError,
-  E0057: MachineTranslationFailedError,
-  E0058: SigningSecretLimitReachedError,
-  E0059: IdentityVerificationRequiresActiveSecretError,
-};
-
-export function getErrorMessage(code: string, locale: string): string {
-  const ErrorClass = errorMap[code];
-  if (!ErrorClass) {
-    return new UnknownError().getMessage(locale);
-  }
-  return new ErrorClass().getMessage(locale);
 }

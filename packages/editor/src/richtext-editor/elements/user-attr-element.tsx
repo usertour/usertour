@@ -234,6 +234,13 @@ export const UserAttributeElement = memo((props: RenderElementProps) => {
           {...attributes}
           className={cn(USER_ATTR_TRIGGER_BASE_CLASS, open && USER_ATTR_TRIGGER_FOCUS_CLASS)}
           contentEditable={false}
+          // Element-flag marks made visible on the chip so the editing view
+          // agrees with the runtime (which wraps the value in b/i/u).
+          style={{
+            fontWeight: element.bold ? 'var(--usertour-font-weight-bold, bold)' : undefined,
+            fontStyle: element.italic ? 'italic' : undefined,
+            textDecoration: element.underline ? 'underline' : undefined,
+          }}
         >
           <UserIcon height={16} width={16} />
           {attrName ?? '...'}

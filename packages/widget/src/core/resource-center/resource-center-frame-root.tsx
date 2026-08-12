@@ -22,8 +22,24 @@ export const ResourceCenterFrameRoot = memo(
 
     useEffect(() => {
       const root = rootRef.current;
-      const activeElement = document.activeElement;
-      if (!root || !(activeElement instanceof HTMLElement) || !root.contains(activeElement)) return;
+      // ownerDocument, not the global: this component renders inside the
+      // widget IFRAME, whose focus lives on the frame's own document — the
+      // lexical `document` is the HOST page's, so the containment check could
+      // never match in-frame focus and the blur never fired (found during the
+      // render-host survey). ownerDocument is correct in both iframe and any
+      // future non-iframe host.
+      // Duck-typed, not `instanceof HTMLElement`: in-frame elements are
+      // instances of the FRAME realm's HTMLElement, so a host-realm instanceof
+      // is always false for exactly the elements this effect exists to blur.
+      const activeElement = root?.ownerDocument.activeElement as HTMLElement | null;
+      if (
+        !root ||
+        !activeElement ||
+        typeof activeElement.blur !== 'function' ||
+        !root.contains(activeElement)
+      ) {
+        return;
+      }
       activeElement.blur();
     }, [isOpen]);
 
@@ -40,7 +56,15 @@ export const ResourceCenterFrameRoot = memo(
         data-animate-frame={animateFrame ? 'true' : 'false'}
         className={cn(
           'group',
-          'relative w-full flex flex-col overflow-hidden text-sdk-foreground bg-sdk-background',
+          // The panel backdrop applies to the OPEN state only. This root is
+          // shared by the compact launcher and the expanded panel; painting it
+          // unconditionally put the (light) panel background behind the dark
+          // round launcher, where it bled through the anti-aliased seam
+          // between the iframe clip and the root's own radius — a light ring
+          // around the launcher on dark host pages. Compact state stays
+          // transparent: the trigger layer paints its own launcher background.
+          'relative w-full flex flex-col overflow-hidden text-sdk-foreground',
+          'data-[state=open]:bg-sdk-background',
           mode === 'iframe' && 'h-screen',
           mode !== 'iframe' && 'h-full',
           'rounded-sdk-resource-center-launcher data-[state=open]:rounded-sdk-popper',

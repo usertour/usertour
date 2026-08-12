@@ -5,7 +5,7 @@
 // new session's user record (user-scoped mutations bypass the project-level
 // E0013 guard) or sit on a project the new session has no access to.
 //
-// Mirrors the pattern Bytebase uses for workspace switching — single
+// A common cross-tab workspace-switch pattern — single
 // module-level BroadcastChannel, posting tab doesn't receive its own
 // message (BroadcastChannel spec), receiving tabs hard-navigate to root
 // so AppContext re-initialises and LandingRedirect picks a destination

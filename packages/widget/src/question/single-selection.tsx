@@ -1,7 +1,7 @@
 // Single selection (radio) component for SDK widget
 
 import { cn } from '@usertour/tailwind';
-import { forwardRef, memo, useCallback, useState } from 'react';
+import { forwardRef, memo, useCallback, useId, useState } from 'react';
 
 import { Label, RadioGroup, RadioGroupItem } from '../primitives';
 import { useWidgetLocale } from '../locale/context';
@@ -40,6 +40,10 @@ export const SingleSelection = memo(
       ref,
     ) => {
       const { messages } = useWidgetLocale();
+      // Instance-unique id prefix: the old hard-coded `r1${index}` ids collided
+      // across co-mounted question instances, so a Label's htmlFor could resolve
+      // to ANOTHER instance's radio — clicking the label text then did nothing.
+      const uid = useId();
       const [otherValue, setOtherValue] = useState<string>('');
       const [isEditing, setIsEditing] = useState<boolean>(false);
 
@@ -67,8 +71,8 @@ export const SingleSelection = memo(
             >
               {options.map((option, index) => (
                 <OptionItem key={index}>
-                  <RadioGroupItem value={option.value} id={`r1${index}`} />
-                  <Label htmlFor={`r1${index}`} className="grow cursor-pointer">
+                  <RadioGroupItem value={option.value} id={`${uid}-${index}`} />
+                  <Label htmlFor={`${uid}-${index}`} className="grow cursor-pointer">
                     {option.label || option.value}
                   </Label>
                 </OptionItem>
@@ -80,7 +84,7 @@ export const SingleSelection = memo(
                     isInteractive && isEditing && OPTION_ITEM_EDITING_CLASS,
                   )}
                 >
-                  <RadioGroupItem value="other" id="other-radio" />
+                  <RadioGroupItem value="other" id={`${uid}-other`} />
                   {isInteractive ? (
                     <OtherOptionInput
                       placeholder={otherPlaceholder}

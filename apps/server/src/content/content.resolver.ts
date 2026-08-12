@@ -1,4 +1,7 @@
 import { Common } from '@/auth/models/common.model';
+import { AuditWeb } from '@/audit/audit.decorator';
+import { UserEntity } from '@/common/decorators/user.decorator';
+import { User } from '@/users/models/user.model';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
@@ -10,6 +13,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { PrismaService } from 'nestjs-prisma';
 import { ContentIdArgs } from './args/content-id.args';
 import { VersionIdArgs } from './args/version-id.args';
+import { ContentPublishRecordConnection } from './models/content-publish-record.model';
 import { ContentService } from './content.service';
 import { ContentOrder } from './dto/content-order.input';
 import { ContentQuery } from './dto/content-query.input';
@@ -37,24 +41,35 @@ export class ContentResolver {
 
   @Mutation(() => Content)
   @RequirePermission({ capability: Capability.ContentCreate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+  })
   async createContent(@Args('data') data: ContentInput) {
     return await this.contentService.createContent(data);
   }
 
   @Mutation(() => Content)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+  })
   async updateContent(@Args('data') data: ContentUpdateInput) {
     return await this.contentService.updateContent(data.contentId, data.content);
   }
 
   @Mutation(() => Content)
   @RequirePermission({ capability: Capability.ContentCreate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+  })
   async duplicateContent(@Args('data') data: ContentDuplicateInput) {
-    return await this.contentService.duplicateContent(
-      data.contentId,
-      data.name,
-      data.targetEnvironmentId,
-    );
+    return await this.contentService.duplicateContent(data.contentId, data.name);
   }
 
   // Nullable: the underlying service filters soft-deleted rows, so a contentId
@@ -70,8 +85,15 @@ export class ContentResolver {
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async createContentVersion(@Args('data') data: ContentVersionInput) {
-    return await this.contentService.createContentVersion(data);
+  // Lifecycle boundary (once per edit session on published content) — audited, unlike
+  // the draft-edit stream (updateContentVersion etc.), whose ledger is version history.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
+  })
+  async createContentVersion(@UserEntity() user: User, @Args('data') data: ContentVersionInput) {
+    return await this.contentService.createContentVersion(data, { userId: user.id });
   }
 
   @Query(() => Version)
@@ -82,31 +104,71 @@ export class ContentResolver {
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async updateContentVersion(@Args('data') input: VersionUpdateInput) {
-    return await this.contentService.updateContentVersion(input);
+  async updateContentVersion(@UserEntity() user: User, @Args('data') input: VersionUpdateInput) {
+    return await this.contentService.updateContentVersion(input, { userId: user.id });
   }
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async restoreContentVersion(@Args('data') { versionId }: VersionIdInput) {
-    return await this.contentService.restoreContentVersion(versionId);
+  // Restoring an old version wholesale replaces what's staged for publish — the
+  // classic "who did that?" action.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
+  })
+  async restoreContentVersion(
+    @UserEntity() user: User,
+    @Args('data') { versionId }: VersionIdInput,
+  ) {
+    return await this.contentService.restoreContentVersion(versionId, { userId: user.id });
   }
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
-  async publishedContentVersion(@Args('data') { versionId, environmentId }: VersionIdInput) {
-    return await this.contentService.publishedContentVersion(versionId, environmentId);
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    // publishedContentVersion returns the CONTENT row (its id IS the content id) —
+    // reading `contentId` here yields undefined and the required-column write of
+    // the audit row fails silently, wiping web publishes from the audit trail.
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+    environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
+  })
+  async publishedContentVersion(
+    @UserEntity() user: User,
+    @Args('data') { versionId, environmentId }: VersionIdInput,
+  ) {
+    return await this.contentService.publishedContentVersion(versionId, environmentId, {
+      userId: user.id,
+    });
   }
 
   @Mutation(() => Common)
   @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
-  async unpublishedContentVersion(@Args('data') { contentId, environmentId }: ContentIdInput) {
-    await this.contentService.unpublishedContentVersion(contentId, environmentId);
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+    environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
+  })
+  async unpublishedContentVersion(
+    @UserEntity() user: User,
+    @Args('data') { contentId, environmentId }: ContentIdInput,
+  ) {
+    await this.contentService.unpublishedContentVersion(contentId, environmentId, {
+      userId: user.id,
+    });
     return { success: true };
   }
 
   @Mutation(() => Common)
   @RequirePermission({ capability: Capability.ContentDelete, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+  })
   async deleteContent(@Args('data') { contentId }: ContentIdInput) {
     await this.contentService.deleteContent(contentId);
     return { success: true };
@@ -124,6 +186,20 @@ export class ContentResolver {
       before,
       after,
     });
+  }
+
+  @Query(() => ContentPublishRecordConnection)
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
+  async listContentPublishRecords(
+    @Args() { contentId }: ContentIdArgs,
+    @Args() pagination: PaginationArgs,
+    @Args('environmentId', { nullable: true }) environmentId?: string,
+  ) {
+    return await this.contentService.listContentPublishRecords(
+      contentId,
+      pagination,
+      environmentId ?? undefined,
+    );
   }
 
   @Query(() => [VersionOnLocalization])
@@ -244,5 +320,26 @@ export class ContentResolver {
       where: { id: content.editedVersionId },
       include: { steps: { orderBy: { sequence: 'asc' } } },
     });
+  }
+}
+
+/**
+ * Field resolvers for Version rows. `updatedByName` resolves the author column
+ * to a display name at read time (page-sized lists — a per-row lookup is fine).
+ */
+@Resolver(() => Version)
+export class VersionFieldsResolver {
+  constructor(private prisma: PrismaService) {}
+
+  @ResolveField('updatedByName', () => String, { nullable: true })
+  async updatedByName(@Parent() version: { updatedByUserId?: string | null }) {
+    if (!version.updatedByUserId) {
+      return null;
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: version.updatedByUserId },
+      select: { name: true },
+    });
+    return user?.name ?? null;
   }
 }

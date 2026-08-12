@@ -205,18 +205,8 @@ export const updateContent = gql`
 `;
 
 export const duplicateContent = gql`
-  mutation duplicateContent(
-    $contentId: String!
-    $name: String!
-    $targetEnvironmentId: String
-  ) {
-    duplicateContent(
-      data: {
-        contentId: $contentId
-        name: $name
-        targetEnvironmentId: $targetEnvironmentId
-      }
-    ) {
+  mutation duplicateContent($contentId: String!, $name: String!) {
+    duplicateContent(data: { contentId: $contentId, name: $name }) {
       id
       name
     }
@@ -313,6 +303,7 @@ export const getContentVersion = gql`
       createdAt
       updatedAt
       scheduledAt
+      publishedAt
       data
       steps {
         id
@@ -360,6 +351,49 @@ export const listContentVersions = gql`
           createdAt
           updatedAt
           config
+          updatedByUserId
+          updatedByName
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+`;
+
+export const listContentPublishRecords = gql`
+  query listContentPublishRecords(
+    $contentId: String!
+    $environmentId: String
+    $first: Int
+    $after: String
+  ) {
+    listContentPublishRecords(
+      contentId: $contentId
+      environmentId: $environmentId
+      first: $first
+      after: $after
+    ) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          createdAt
+          contentId
+          versionId
+          versionSequence
+          environmentId
+          environmentName
+          action
+          actorUserId
+          actorTokenId
+          actorName
+          actorTokenName
         }
       }
       pageInfo {

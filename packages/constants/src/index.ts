@@ -9,6 +9,10 @@ export * from './constants/billing';
 export * from './constants/sdk';
 export * from './constants/license';
 export * from './constants/permission';
+// Neutral theme-settings validation constraints — the SSOT the server's
+// write-validation derives from (a parity test in the web theme builder keeps it
+// in sync with the builder's field schema, which stays web-local).
+export * from './constants/theme-settings-constraints';
 export * from './constants/announcement';
 export * from './constants/project-defaults';
 export * from './constants/theme-settings';
@@ -17,4 +21,6 @@ export * from './constants/banner';
 export * from './constants/button';
 export * from './constants/checklist';
 export * from './constants/launcher';
+export * from './constants/builtin-launcher-icons';
+export * from './constants/content-editor-path';
 export * from './constants/resource-center';

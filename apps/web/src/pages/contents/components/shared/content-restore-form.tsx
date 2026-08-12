@@ -59,8 +59,12 @@ export const ContentRestoreForm = (props: ContentRestoreFormProps) => {
           <DialogTitle>{t('contents.shared.restore.title')}</DialogTitle>
         </DialogHeader>
         <div>
-          <p>{t('contents.shared.restore.descriptionLoad', { version: version.sequence })}</p>
-          <p>{t('contents.shared.restore.descriptionConfirm', { version: version.sequence })}</p>
+          {/* Display version numbers are 1-based everywhere else (v{sequence + 1}
+              in version-row / publish / unpublish) — keep this dialog consistent. */}
+          <p>{t('contents.shared.restore.descriptionLoad', { version: version.sequence + 1 })}</p>
+          <p>
+            {t('contents.shared.restore.descriptionConfirm', { version: version.sequence + 1 })}
+          </p>
         </div>
         <DialogFooter>
           <DialogClose asChild>

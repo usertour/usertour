@@ -1,0 +1,180 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Put,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
+import { Capability } from '@usertour/types';
+
+import { ApiTokenGuard } from '@/api-token/api-token.guard';
+import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { Audit } from '@/audit/audit.decorator';
+import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { Environment } from '@/environments/models/environment.model';
+
+import { ApiValidationPipe } from '../shared/validation.pipe';
+import { ApiCompaniesService } from './companies.service';
+import {
+  CompanyMembershipDto,
+  CompanyDto,
+  GetCompanyQueryDto,
+  ListCompaniesQueryDto,
+  ListCompaniesResponseDto,
+  UpsertCompanyBodyDto,
+  UpsertMembershipBodyDto,
+} from './companies.schema';
+
+@ApiTags('Companies')
+@ApiStandardErrorResponses()
+@Controller('v2/projects/:projectId/environments/:environmentId/companies')
+@UseGuards(ApiTokenGuard)
+@UseFilters(OpenAPIExceptionFilter)
+@UsePipes(ApiValidationPipe)
+@ApiBearerAuth()
+export class ApiCompaniesController {
+  constructor(private readonly service: ApiCompaniesService) {}
+
+  @Get()
+  @RequireCapability(Capability.CompanyRead)
+  @ApiOperation({ summary: 'List companies' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiResponse({ status: 200, description: 'List of companies', type: ListCompaniesResponseDto })
+  async list(
+    @RequestUrl() requestUrl: string,
+    @EnvironmentDecorator() environment: Environment,
+    @Query() query: ListCompaniesQueryDto,
+  ) {
+    return this.service.list(requestUrl, environment, query);
+  }
+
+  @Get(':id')
+  @RequireCapability(Capability.CompanyRead)
+  @ApiOperation({ summary: 'Get a company' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Company external ID' })
+  @ApiResponse({ status: 200, description: 'Company found', type: CompanyDto })
+  @ApiResponse({ status: 404, description: 'Company not found', type: ErrorResponseDto })
+  async get(
+    @Param('id') id: string,
+    @EnvironmentDecorator() environment: Environment,
+    @Query() query: GetCompanyQueryDto,
+  ) {
+    return this.service.getCompany(id, environment.id, query);
+  }
+
+  @Put(':id')
+  @RequireCapability(Capability.CompanyWrite)
+  @ApiOperation({ summary: 'Create or update a company' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Company external ID' })
+  @ApiResponse({ status: 200, description: 'Company created or updated', type: CompanyDto })
+  async upsert(
+    @Param('id') id: string,
+    @EnvironmentDecorator() environment: Environment,
+    @Body() body: UpsertCompanyBodyDto,
+  ) {
+    return this.service.upsert(id, environment, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.CompanyDelete)
+  @ApiOperation({
+    summary: 'Delete a company',
+    description:
+      'DESTRUCTIVE and permanent — removes the company, every membership in it (with their ' +
+      'membership attributes) and its segment rows. Users themselves survive. There is no ' +
+      'restore; re-grouping the same external id later starts a brand-new company.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Company external ID' })
+  @ApiResponse({ status: 204, description: 'Company deleted' })
+  @ApiResponse({ status: 404, description: 'Company not found', type: ErrorResponseDto })
+  async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
+    await this.service.delete(id, environment);
+  }
+
+  @Put(':id/memberships/:userId')
+  @RequireCapability(Capability.CompanyWrite)
+  // Deriving from `company:write` would record "company updated" and lose the
+  // member — override so the entry names WHO joined (same descriptor as v1's
+  // DELETE /company-memberships and MCP's add_company_member).
+  @Audit({
+    action: 'update',
+    resourceType: 'companyMember',
+    resourceId: (req) => `${String(req.params?.userId)}:${String(req.params?.id)}`,
+  })
+  @ApiOperation({
+    summary: 'Add a company member',
+    description:
+      'Add a user to the company, or update the membership (idempotent). Returns the membership ' +
+      '(external ids + attributes). Membership attributes with an unknown codeName auto-create a ' +
+      "definition (dataType inferred from the value) — a typo'd codeName therefore silently " +
+      'creates a new attribute while the real one is not updated.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Company external ID' })
+  @ApiParam({ name: 'userId', description: 'User external ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Membership created or updated (echoed)',
+    type: CompanyMembershipDto,
+  })
+  @ApiResponse({ status: 404, description: 'Company or user not found', type: ErrorResponseDto })
+  async upsertMembership(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @EnvironmentDecorator() environment: Environment,
+    @Body() body: UpsertMembershipBodyDto,
+  ) {
+    return this.service.upsertMembership(id, userId, environment, body);
+  }
+
+  @Delete(':id/memberships/:userId')
+  @HttpCode(204)
+  @RequireCapability(Capability.CompanyWrite)
+  // The removal is irreversible and the response is a 204 — without the override
+  // the entry would read "company updated" with the removed userId nowhere.
+  @Audit({
+    action: 'delete',
+    resourceType: 'companyMember',
+    resourceId: (req) => `${String(req.params?.userId)}:${String(req.params?.id)}`,
+  })
+  @ApiOperation({
+    summary: 'Remove a company member',
+    description:
+      'Remove a user from the company. DESTRUCTIVE, not a hide: the membership record and its ' +
+      'membership-scoped attributes (e.g. a role) are deleted for good — re-adding creates a ' +
+      'brand-new membership with empty attributes and a new join date, so remove-then-re-add ' +
+      'is NOT an undo.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Company external ID' })
+  @ApiParam({ name: 'userId', description: 'User external ID' })
+  @ApiResponse({ status: 204, description: 'Membership removed' })
+  @ApiResponse({ status: 404, description: 'Membership not found', type: ErrorResponseDto })
+  async removeMembership(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @EnvironmentDecorator() environment: Environment,
+  ) {
+    await this.service.deleteMembership(id, userId, environment);
+  }
+}

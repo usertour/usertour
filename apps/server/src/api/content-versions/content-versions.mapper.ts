@@ -1,0 +1,71 @@
+import { extractQuestionData } from '@/utils/content-question';
+
+import {
+  ContentVersion,
+  Question,
+  RepresentationHideRules,
+  RepresentationStartRules,
+  RepresentationStep,
+} from '../content-representation/representation.schema';
+import { ApiObjectType } from '../shared/object-type';
+
+type VersionNode = {
+  id: string;
+  sequence: number;
+  /** Freeze stamp (first time live); null = never published. */
+  publishedAt?: Date | null;
+  themeId: string | null;
+  scheduledAt?: Date | null;
+  updatedAt: Date;
+  createdAt: Date;
+};
+
+/** Pure: extract the API questions from a version's steps (mirrors the v1 mapping). */
+export function mapQuestions(steps: { data: unknown }[]): Question[] {
+  const questions: Question[] = [];
+  for (const step of steps) {
+    const questionData = extractQuestionData(step.data as any);
+    const question = questionData[0];
+    if (question) {
+      questions.push({
+        object: ApiObjectType.QUESTION,
+        cvid: question.data.cvid,
+        name: question.data.name,
+        type: question.type,
+      });
+    }
+  }
+  return questions;
+}
+
+/**
+ * Pure version -> API content-version for the versions endpoint. `questions` and
+ * `steps` are populated only when their expand was requested (the service does
+ * that I/O and passes the already-extracted/decompiled values in).
+ */
+export function mapVersion(
+  version: VersionNode,
+  questions: Question[] | null,
+  steps?: RepresentationStep[],
+  rules?: { startRules?: RepresentationStartRules; hideRules?: RepresentationHideRules },
+  data?: unknown,
+): ContentVersion {
+  return {
+    id: version.id,
+    object: ApiObjectType.CONTENT_VERSION,
+    number: version.sequence,
+    // Internal column is Version.publishedAt (the adopted freeze stamp); the
+    // API name says what it MEANS — first time live, never cleared.
+    firstPublishedAt: version.publishedAt?.toISOString() ?? null,
+    themeId: version.themeId ?? null,
+    questions,
+    ...(steps ? { steps } : {}),
+    ...(rules?.startRules ? { startRules: rules.startRules } : {}),
+    ...(rules?.hideRules ? { hideRules: rules.hideRules } : {}),
+    ...(data !== undefined ? { data } : {}),
+    // Announcement "announcement time" — omitted while unset (other types never set it).
+    ...(version.scheduledAt ? { scheduledAt: version.scheduledAt.toISOString() } : {}),
+    updatedAt: version.updatedAt.toISOString(),
+    createdAt: version.createdAt.toISOString(),
+  };
+}

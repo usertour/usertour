@@ -133,6 +133,63 @@ export class EnvironmentsService {
     });
   }
 
+  /**
+   * Take a deleted environment's id off every allowlist that names it — the
+   * third permission dimension, held in three places for two kinds of caller:
+   * members (`UserOnProject`) and machines (an `OAuthGrant` plus the `ApiToken`
+   * rows minted from it).
+   *
+   * A stale id is not a way in — every resolver filters `deleted: false` before
+   * matching — but leaving it costs both kinds of caller something real. A
+   * member's web session filters the live environment list by their allowlist,
+   * so a dead id silently shrinks what they can act on. A grant's id survives
+   * even harder: a refresh rebuilds the token row FROM the grant, so it comes
+   * back every time, and the connected-apps screen keeps listing a deleted
+   * environment as something the app may act on.
+   *
+   * Fail-closed in both cases: an allowlist that empties out stays `[]` — that
+   * caller can act on nothing until re-granted — and is never widened to
+   * null/all. (Pending invites are re-filtered at accept time by
+   * assignUserToProject.)
+   */
+  private async dropFromAllowlists(tx: Prisma.TransactionClient, projectId: string, envId: string) {
+    const without = (allowedEnvironmentIds: unknown): string[] | null => {
+      const allowed = Array.isArray(allowedEnvironmentIds)
+        ? (allowedEnvironmentIds as string[])
+        : null;
+      return allowed?.includes(envId) ? allowed.filter((e) => e !== envId) : null;
+    };
+    const select = { id: true, allowedEnvironmentIds: true };
+
+    for (const row of await tx.userOnProject.findMany({ where: { projectId }, select })) {
+      const next = without(row.allowedEnvironmentIds);
+      if (next) {
+        await tx.userOnProject.update({
+          where: { id: row.id },
+          data: { allowedEnvironmentIds: next },
+        });
+      }
+    }
+    for (const row of await tx.oAuthGrant.findMany({ where: { projectId }, select })) {
+      const next = without(row.allowedEnvironmentIds);
+      if (next) {
+        await tx.oAuthGrant.update({
+          where: { id: row.id },
+          data: { allowedEnvironmentIds: next },
+        });
+      }
+    }
+    for (const row of await tx.apiToken.findMany({
+      where: { projects: { some: { projectId } } },
+      select,
+    })) {
+      const next = without(row.allowedEnvironmentIds);
+      if (next) {
+        await tx.apiToken.update({ where: { id: row.id }, data: { allowedEnvironmentIds: next } });
+      }
+    }
+  }
+
   async delete(id: string) {
     // Fetch contentIds before the tx so we can sweep per-content pubver
     // cache keys after the COE rows are gone — same shape as deleteContent.
@@ -175,6 +232,8 @@ export class EnvironmentsService {
           where: { environmentId: id },
         });
       }
+
+      await this.dropFromAllowlists(tx, environment.projectId, id);
 
       // Update environment to mark as deleted
       return await tx.environment.update({
@@ -230,6 +289,18 @@ export class EnvironmentsService {
         createdAt: 'desc',
       },
     });
+  }
+
+  /**
+   * Whether ANY environment in the project holds an env access key. Drives the
+   * deprecated "API" settings item, which is project-level (hidden once no env in
+   * the project has keys) — the per-environment list can't answer that.
+   */
+  async projectHasAccessTokens(projectId: string): Promise<boolean> {
+    const count = await this.prisma.accessToken.count({
+      where: { environment: { projectId } },
+    });
+    return count > 0;
   }
 
   async findOneAccessToken(environmentId: string, id: string) {

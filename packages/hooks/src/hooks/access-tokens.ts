@@ -4,6 +4,7 @@ import {
   DeleteAccessToken,
   GetAccessToken,
   ListAccessTokens,
+  ProjectHasEnvironmentAccessTokens,
 } from '@usertour/gql';
 
 export interface AccessToken {
@@ -43,6 +44,27 @@ export const useListAccessTokensQuery = (
   const isRefetching = networkStatus === NetworkStatus.refetch;
   const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
   return { accessTokens, loading, error, refetch, isRefetching };
+};
+
+/**
+ * Whether the project holds any environment access key. Backs the deprecated
+ * env-key "API" settings item, which is project-level: the per-environment
+ * {@link useListAccessTokensQuery} can't tell whether ANOTHER environment still
+ * has keys, so switching to a keyless environment would otherwise hide the item
+ * while keys remain elsewhere.
+ */
+export const useProjectHasEnvironmentAccessTokensQuery = (
+  projectId: string | undefined,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(ProjectHasEnvironmentAccessTokens, {
+    variables: { projectId },
+    skip: !projectId,
+    ...options,
+  });
+
+  const hasEnvironmentAccessTokens = data?.projectHasEnvironmentAccessTokens as boolean | undefined;
+  return { hasEnvironmentAccessTokens, loading, error, refetch };
 };
 
 export const useDeleteAccessTokenMutation = () => {

@@ -17,6 +17,10 @@ export class UserOnProject extends BaseModel {
   @Field()
   actived: boolean;
 
+  /** Environments this member may act on; null = all. */
+  @Field(() => [String], { nullable: true })
+  allowedEnvironmentIds?: string[] | null;
+
   @Field(() => Project)
   project: Project;
 

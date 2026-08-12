@@ -9,6 +9,7 @@ import {
   Environment,
   Frequency,
   FrequencyUnits,
+  RulesType,
   type RulesFrequencyValue,
   UserTourTypes,
   autoStartRulesSetting,
@@ -69,8 +70,10 @@ export const DEFAULT_FREQUENCY: RulesFrequencyValue = {
 };
 
 // Checklist hides the "at least" control (showAtLeast=false in settings), so it
-// omits that field while Flow keeps it.
-const defaultFrequencyFor = (contentType: ContentDataType): RulesFrequencyValue =>
+// omits that field while Flow keeps it. Exported: the v2 startRules write path
+// seeds the SAME default when a write leaves frequency unset (builder parity —
+// see the DEFAULT_FREQUENCY note above on what an unset frequency does).
+export const defaultFrequencyFor = (contentType: ContentDataType): RulesFrequencyValue =>
   contentType === ContentDataType.CHECKLIST
     ? { frequency: DEFAULT_FREQUENCY.frequency, every: DEFAULT_FREQUENCY.every }
     : DEFAULT_FREQUENCY;
@@ -111,6 +114,109 @@ export const buildConfig = (
   ),
   hideRulesSetting: config?.hideRulesSetting || {},
 });
+
+/**
+ * Which auto-start settings each content type supports — the single source of
+ * truth shared by the builder (content-detail-settings.tsx shows/hides controls
+ * from this) and the v2/MCP write path (which rejects any setting the matching
+ * capability is false for, so the API can't write what the UI forbids). Keep this
+ * the only place these per-type rules live, or the two surfaces drift.
+ *
+ *   flow            — full control
+ *   checklist       — full, minus the frequency "at least" sub-control
+ *   launcher/banner — "show-only": conditions only, no advanced settings, no hide rules
+ *   resource-center — priority + hide rules only (no frequency / wait / ifComplete)
+ *   tracker         — always-on conditions only (own editor; no advanced settings)
+ */
+export type AutoStartCapabilities = {
+  /** Re-show frequency (mode / every). */
+  frequency: boolean;
+  /** The frequency "at least N" sub-control (flow only). */
+  atLeast: boolean;
+  /** "Only start if not complete". */
+  ifCompleted: boolean;
+  /** Wait N seconds before starting. */
+  wait: boolean;
+  /** Start priority. */
+  priority: boolean;
+  /** The separate hide-rules card. */
+  hideRules: boolean;
+  /**
+   * When true, start conditions are a reactive (client-polled) slot — only
+   * client-evaluable condition types are allowed (a tracker fires its event live
+   * in the browser). The concrete allowed set derives from the capability
+   * matrix's SERVER_EVALUATED_CONDITION_TYPES (see ./capability-matrix); only
+   * tracker sets this.
+   */
+  clientConditionsOnly?: boolean;
+  /**
+   * When set, start (`when`) conditions are restricted to exactly these types —
+   * the type's condition picker offers nothing else. Announcement sets
+   * [USER_ATTR, SEGMENT]: its rules are a server-side audience filter for feed
+   * inclusion, so page/element/event conditions have nothing to evaluate against
+   * (the builder's ANNOUNCEMENT_FILTER_ITEMS mirrors this set).
+   */
+  startConditionTypes?: readonly RulesType[];
+};
+
+const NO_AUTO_START_CAPABILITIES: AutoStartCapabilities = {
+  frequency: false,
+  atLeast: false,
+  ifCompleted: false,
+  wait: false,
+  priority: false,
+  hideRules: false,
+};
+
+export const AUTO_START_CAPABILITIES: Record<ContentDataType, AutoStartCapabilities> = {
+  [ContentDataType.FLOW]: {
+    frequency: true,
+    atLeast: true,
+    ifCompleted: true,
+    wait: true,
+    priority: true,
+    hideRules: true,
+  },
+  [ContentDataType.CHECKLIST]: {
+    frequency: true,
+    atLeast: false,
+    ifCompleted: true,
+    wait: true,
+    priority: true,
+    hideRules: true,
+  },
+  [ContentDataType.LAUNCHER]: { ...NO_AUTO_START_CAPABILITIES },
+  // Banner is a SINGLETON (one shows at a time) but was the only singleton with
+  // no priority: two banners whose rules overlap left the author no way to pick
+  // the winner — the runtime falls back to query order. It already sorts
+  // candidates with priorityCompare, so exposing the knob is all that was
+  // missing. The rest stays off: a banner is re-evaluated every page, so
+  // frequency / wait / if-not-complete / hide rules have nothing to act on.
+  [ContentDataType.BANNER]: { ...NO_AUTO_START_CAPABILITIES, priority: true },
+  // Announcements are a FEED, not a popup: their `when` rules act purely as an
+  // audience filter for feed inclusion (announcement.service filterByTargeting);
+  // none of the session-start knobs (frequency / wait / priority / …) apply, and
+  // the filter conditions are user-attribute / segment only.
+  [ContentDataType.ANNOUNCEMENT]: {
+    ...NO_AUTO_START_CAPABILITIES,
+    startConditionTypes: [RulesType.USER_ATTR, RulesType.SEGMENT],
+  },
+  [ContentDataType.RESOURCE_CENTER]: {
+    ...NO_AUTO_START_CAPABILITIES,
+    priority: true,
+    hideRules: true,
+  },
+  [ContentDataType.TRACKER]: {
+    ...NO_AUTO_START_CAPABILITIES,
+    clientConditionsOnly: true,
+  },
+};
+
+/** Capabilities for a type, defaulting to "nothing supported" for unknown types. */
+export const getAutoStartCapabilities = (
+  contentType: ContentDataType | undefined,
+): AutoStartCapabilities =>
+  (contentType && AUTO_START_CAPABILITIES[contentType]) || NO_AUTO_START_CAPABILITIES;
 
 /**
  * Extract user attribute value with fallback support

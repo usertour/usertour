@@ -37,6 +37,13 @@ export default defineConfig(({ mode }) => {
           secure: false,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
+        // OAuth authorization-server endpoints (consent page + token/etc.).
+        // Trailing slash so the SPA route `/oauth-consent` is NOT proxied.
+        '/oauth/': {
+          target,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   };

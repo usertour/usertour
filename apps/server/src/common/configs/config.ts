@@ -45,6 +45,16 @@ const config: Config = {
   app: {
     homepageUrl: process.env.APP_HOMEPAGE_URL || '',
     apiUrl: process.env.API_URL || '',
+    // Full public MCP endpoint (e.g. https://api.usertour.io/mcp). Defaults to
+    // `${API_URL}/mcp` when unset. Single source of truth for THREE consumers:
+    // the Settings -> MCP display, the OAuth protected-resource metadata
+    // `resource` (clients validate it against the URL they connected to,
+    // RFC 9728), and the /mcp 401 challenge — so serving MCP on its own domain
+    // is just setting this (that domain must proxy /oauth/* and
+    // /.well-known/oauth-* too).
+    mcpServerUrl:
+      process.env.MCP_SERVER_URL ||
+      (process.env.API_URL ? `${process.env.API_URL.replace(/\/+$/, '')}/mcp` : ''),
     docUrl: process.env.DOC_URL || '',
     // The SSO OIDC redirect URI, defined once: override with SSO_CALLBACK_URL,
     // otherwise derived from API_URL (fixed path). Both the openid-client

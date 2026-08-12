@@ -44,6 +44,7 @@ import {
   SystemAdminSetupUnavailableError,
   WrongInviteAccountError,
 } from '@/common/errors';
+import { AuditService } from '@/audit/audit.service';
 import { TeamService } from '@/team/team.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
@@ -74,7 +75,11 @@ interface SsoProvisionContext {
   defaultRole: string;
   allowedDomains: string[];
 }
-const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — matches Google / Stripe / GitHub conventions
+const RESET_CODE_TTL_MS = 60 * 60 * 1000; // 1 hour — the common industry TTL for reset links
+
+/** Invite.allowedEnvironmentIds (JsonB) -> the membership restriction to copy on accept. */
+const inviteEnvScope = (invite: { allowedEnvironmentIds?: unknown }): string[] | null =>
+  Array.isArray(invite.allowedEnvironmentIds) ? (invite.allowedEnvironmentIds as string[]) : null;
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -94,6 +99,7 @@ export class AuthService implements OnModuleInit {
     private readonly projectsService: ProjectsService,
     private readonly redisService: RedisService,
     private readonly twoFactorService: TwoFactorService,
+    private readonly audit: AuditService,
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
     @InjectQueue(QUEUE_SEND_RESET_PASSWORD_EMAIL) private resetPasswordQueue: Queue,
     @InjectQueue(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS)
@@ -136,11 +142,50 @@ export class AuthService implements OnModuleInit {
   // be exchanged again (refreshAccessToken's `expiresAt > now` filter rejects
   // them), so removing them is safe and keeps the table bounded.
   async cleanExpiredRefreshTokens() {
+    const now = new Date();
     const { count } = await this.prisma.refreshToken.deleteMany({
-      where: { expiresAt: { lt: new Date() } },
+      where: { expiresAt: { lt: now } },
     });
-    if (count > 0) {
-      this.logger.log(`Cleaned ${count} expired refresh tokens`);
+    // OAuth writes a fresh short-lived (1h) access token as an ApiToken row on every
+    // authorization AND every refresh rotation, so expired OAuth token rows pile up
+    // unbounded with no other cleanup. Prune them here too — only clientId-set rows
+    // (personal `utp_` keys have no expiry and must stay). An expired row is already
+    // unusable (getAccessToken checks expiresAt), and the grant + its live token are
+    // untouched, so this is pure dead-weight removal.
+    //
+    // Before deleting, roll each grant's max(lastUsedAt) up onto OAuthGrant —
+    // the token rows are the only carrier of "last used", and pruning them
+    // silently reset Connected Apps' lastUsed to "never".
+    const expiring = await this.prisma.apiToken.groupBy({
+      by: ['oauthGrantId'],
+      where: {
+        clientId: { not: null },
+        expiresAt: { lt: now },
+        oauthGrantId: { not: null },
+        lastUsedAt: { not: null },
+      },
+      _max: { lastUsedAt: true },
+    });
+    await Promise.all(
+      expiring
+        .filter((e) => e.oauthGrantId && e._max.lastUsedAt)
+        .map((e) =>
+          this.prisma.oAuthGrant.updateMany({
+            where: {
+              id: e.oauthGrantId as string,
+              OR: [{ lastUsedAt: null }, { lastUsedAt: { lt: e._max.lastUsedAt as Date } }],
+            },
+            data: { lastUsedAt: e._max.lastUsedAt as Date },
+          }),
+        ),
+    );
+    const { count: oauthCount } = await this.prisma.apiToken.deleteMany({
+      where: { clientId: { not: null }, expiresAt: { lt: now } },
+    });
+    if (count > 0 || oauthCount > 0) {
+      this.logger.log(
+        `Cleaned ${count} expired refresh tokens, ${oauthCount} expired OAuth access tokens`,
+      );
     }
   }
 
@@ -393,7 +438,13 @@ export class AuthService implements OnModuleInit {
         const invite = await this.teamService.getValidInviteByCode(inviteCode);
         if (invite) {
           await this.teamService.deleteInvite(tx, inviteCode);
-          await this.teamService.assignUserToProject(tx, newUser.id, invite.projectId, invite.role);
+          await this.teamService.assignUserToProject(
+            tx,
+            newUser.id,
+            invite.projectId,
+            invite.role,
+            inviteEnvScope(invite),
+          );
         }
       } else {
         const project = await this.createProject(tx, 'Unnamed Project', newUser.id);
@@ -490,7 +541,17 @@ export class AuthService implements OnModuleInit {
         await this.teamService.deleteInvite(tx, invite.code);
       }
       // assignUserToProject re-checks the seat limit inside the transaction.
-      await this.teamService.assignUserToProject(tx, newUser.id, ssoContext.projectId, role);
+      // Carry the invite's environment restriction onto the membership (as every
+      // non-SSO accept path does) — else an env-scoped invite accepted via SSO
+      // yields an ALL-environments membership. Auto-provision has no invite, so
+      // it legitimately stays unrestricted (null).
+      await this.teamService.assignUserToProject(
+        tx,
+        newUser.id,
+        ssoContext.projectId,
+        role,
+        invite ? inviteEnvScope(invite) : null,
+      );
       return newUser;
     });
   }
@@ -531,7 +592,15 @@ export class AuthService implements OnModuleInit {
       // the others, so clear any prior active project first — otherwise an
       // existing user ends up with multiple active rows and lands unpredictably.
       await this.teamService.cancelActiveProject(tx, user.id);
-      await this.teamService.assignUserToProject(tx, user.id, ssoContext.projectId, role);
+      // Carry the invite's environment restriction onto the membership (see the
+      // brand-new-email path); auto-provision (no invite) stays unrestricted.
+      await this.teamService.assignUserToProject(
+        tx,
+        user.id,
+        ssoContext.projectId,
+        role,
+        invite ? inviteEnvScope(invite) : null,
+      );
       await this.linkOAuthAccount(user.id, provider, providerAccountId, '', '', tx);
     });
     return user;
@@ -943,8 +1012,31 @@ export class AuthService implements OnModuleInit {
         // inside that call does not double-count this very invite as still
         // "pending" — otherwise the last seat is unreachable.
         await this.teamService.deleteInvite(tx, payload.code);
-        await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+        await this.teamService.assignUserToProject(
+          tx,
+          user.id,
+          invite.projectId,
+          invite.role,
+          inviteEnvScope(invite),
+        );
       },
+      // Roster boundary capture: the invite entry (resourceId = email) records
+      // the OFFER, this one records the JOIN. The mutation is @Public and its
+      // Auth result carries no user id, so the GraphQL audit interceptor cannot
+      // attribute it — record at the service boundary, post-commit, instead.
+      // `after.email` joins the two entries.
+      (user) =>
+        this.audit.record({
+          source: 'web',
+          projectId: invite.projectId,
+          actorUserId: user.id,
+          action: 'create',
+          operation: 'acceptInvite',
+          resourceType: 'member',
+          resourceId: user.id,
+          after: { userId: user.id, email: invite.email, role: invite.role },
+          metadata: { credentialType: 'session' },
+        }),
     );
   }
 
@@ -953,6 +1045,10 @@ export class AuthService implements OnModuleInit {
     email: string,
     password: string,
     postCreate: (tx: Prisma.TransactionClient, user: User) => Promise<void>,
+    // Runs after the transaction COMMITS but before token issuance (which can
+    // still throw, e.g. force-SSO) — so a committed side effect gets its audit
+    // entry even when the caller ends up without tokens.
+    onCommitted?: (user: User) => void,
   ): Promise<AuthResult> {
     const hashedPassword = await this.passwordService.hashPassword(password);
     try {
@@ -963,6 +1059,7 @@ export class AuthService implements OnModuleInit {
         return user;
       });
       this.logger.log(`User ${user.id} created`);
+      onCommitted?.(user);
       return this.issueTokensOrChallenge(user.id);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -1394,7 +1491,13 @@ export class AuthService implements OnModuleInit {
       // recheck inside that call does not double-count this very invite as
       // still "pending" — otherwise the last seat is unreachable.
       await this.teamService.deleteInvite(tx, invite.code);
-      await this.teamService.assignUserToProject(tx, user.id, invite.projectId, invite.role);
+      await this.teamService.assignUserToProject(
+        tx,
+        user.id,
+        invite.projectId,
+        invite.role,
+        inviteEnvScope(invite),
+      );
     });
   }
 }

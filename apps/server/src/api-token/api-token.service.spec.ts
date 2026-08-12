@@ -1,0 +1,246 @@
+import { Prisma } from '@prisma/client';
+import type { PrismaService } from 'nestjs-prisma';
+
+import { Capability } from '@usertour/types';
+
+import { ParamsError } from '@/common/errors';
+
+import { ApiTokenService } from './api-token.service';
+
+/**
+ * Personal API keys (`utp_`) and OAuth-issued access tokens (`uto_`) share the
+ * `ApiToken` table, discriminated by `clientId` (null = personal, set = OAuth).
+ * The personal-key surface must touch ONLY personal rows: OAuth tokens are
+ * managed via "Connected apps" (revokeGrant), and rotating/deleting them here
+ * would silently break or false-revoke the connection. These tests pin that
+ * `clientId: null` constraint on list / update / rotate / delete.
+ */
+
+type Row = {
+  id: string;
+  userId: string;
+  clientId: string | null;
+  name: string;
+  hashedSecret?: string;
+  partialKey?: string;
+};
+
+// Minimal in-memory ApiToken store that honors the simple equality `where`
+// clauses the service builds (incl. `clientId: null` meaning "is null"), so the
+// tests assert real behavior rather than just which args were passed.
+const makeFakePrisma = (rows: Row[]) => {
+  const matches = (row: Row, where: Record<string, unknown>) =>
+    Object.entries(where).every(([k, v]) =>
+      v === null
+        ? (row as Record<string, unknown>)[k] == null
+        : (row as Record<string, unknown>)[k] === v,
+    );
+
+  return {
+    apiToken: {
+      findMany: async ({ where }: { where: Record<string, unknown> }) =>
+        rows.filter((r) => matches(r, where)).map((r) => ({ ...r, projects: [] })),
+      findFirst: async ({ where }: { where: Record<string, unknown> }) => {
+        const r = rows.find((row) => matches(row, where));
+        // requireOwnToken selects id + scopes + allowedEnvironmentIds; return the row.
+        return r ? { ...r } : null;
+      },
+      // ownTokenProjectIds: row + its project joins (default none).
+      findUnique: async ({ where }: { where: { id: string } }) => {
+        const r = rows.find((row) => row.id === where.id);
+        return r
+          ? { ...r, projects: (r as { projects?: { projectId: string }[] }).projects ?? [] }
+          : null;
+      },
+      deleteMany: async ({ where }: { where: Record<string, unknown> }) => {
+        const keep = rows.filter((r) => !matches(r, where));
+        const count = rows.length - keep.length;
+        rows.splice(0, rows.length, ...keep);
+        return { count };
+      },
+      create: async ({ data }: { data: Record<string, unknown> }) => ({ id: 'new', ...data }),
+      update: async ({ where, data }: { where: { id: string }; data: Partial<Row> }) => {
+        const r = rows.find((row) => row.id === where.id);
+        if (!r) throw new Error('not found');
+        Object.assign(r, data);
+        return { ...r, projects: [] };
+      },
+    },
+    // validateProjects checks the caller belongs to each target project (one findMany
+    // over all requested ids — return a membership row for each so all are allowed).
+    userOnProject: {
+      findFirst: async () => ({ id: 'membership' }),
+      findMany: async ({ where }: { where: { projectId: { in: string[] } } }) =>
+        where.projectId.in.map((projectId) => ({ projectId })),
+    },
+  } as unknown as PrismaService;
+};
+
+const personal = (over: Partial<Row> = {}): Row => ({
+  id: 'p1',
+  userId: 'u1',
+  clientId: null,
+  name: 'personal',
+  ...over,
+});
+const oauth = (over: Partial<Row> = {}): Row => ({
+  id: 'o1',
+  userId: 'u1',
+  clientId: 'client-x',
+  name: 'oauth',
+  ...over,
+});
+
+describe('ApiTokenService — personal/OAuth separation', () => {
+  it('listTokens excludes OAuth-issued tokens', async () => {
+    const service = new ApiTokenService(makeFakePrisma([personal(), oauth()]));
+
+    const result = await service.listTokens('u1');
+
+    expect(result.map((t) => t.id)).toEqual(['p1']);
+  });
+
+  it('deleteToken removes a personal token but not an OAuth token', async () => {
+    const rows = [personal(), oauth()];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+
+    await expect(service.deleteToken('u1', 'o1')).resolves.toBe(false); // OAuth: no-op
+    expect(rows.map((r) => r.id)).toEqual(['p1', 'o1']); // OAuth row survives
+
+    await expect(service.deleteToken('u1', 'p1')).resolves.toBe(true); // personal: deleted
+    expect(rows.map((r) => r.id)).toEqual(['o1']);
+  });
+
+  it('updateToken rejects an OAuth token (not found)', async () => {
+    const service = new ApiTokenService(makeFakePrisma([personal(), oauth()]));
+
+    await expect(service.updateToken('u1', 'o1', { name: 'hacked' })).rejects.toBeInstanceOf(
+      ParamsError,
+    );
+  });
+
+  it('rotateToken rejects an OAuth token (not found)', async () => {
+    const service = new ApiTokenService(makeFakePrisma([personal(), oauth()]));
+
+    await expect(service.rotateToken('u1', 'o1')).rejects.toBeInstanceOf(ParamsError);
+  });
+
+  it('still allows update/rotate on the owner’s personal token', async () => {
+    const service = new ApiTokenService(makeFakePrisma([personal(), oauth()]));
+
+    await expect(service.updateToken('u1', 'p1', { name: 'renamed' })).resolves.toMatchObject({
+      id: 'p1',
+      name: 'renamed',
+    });
+    await expect(service.rotateToken('u1', 'p1')).resolves.toHaveProperty('plaintext');
+  });
+
+  // Changing a token's project without a new environment list must clear the old
+  // env allowlist — env ids never span projects, so a stale allowlist would brick
+  // every env-scoped call under the new project (EnvironmentNotInTokenScopeError).
+  it('clears the env allowlist when the project changes without a new env list', async () => {
+    const rows = [
+      personal({
+        allowedEnvironmentIds: ['old-project-env'],
+        projects: [{ projectId: 'projA' }],
+      } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    const res = (await service.updateToken('u1', 'p1', { projectIds: ['projB'] })) as {
+      allowedEnvironmentIds: unknown;
+    };
+    expect(res.allowedEnvironmentIds).toBe(Prisma.DbNull);
+  });
+
+  it('keeps the env allowlist when the echoed projectIds are unchanged (rename must not widen)', async () => {
+    // A client renaming a token naturally echoes the current projectIds — an
+    // env-restricted token must NOT be silently widened to all environments.
+    const rows = [
+      personal({
+        allowedEnvironmentIds: ['env-staging'],
+        projects: [{ projectId: 'projA' }],
+      } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    const res = (await service.updateToken('u1', 'p1', {
+      name: 'renamed',
+      projectIds: ['projA'],
+    })) as { allowedEnvironmentIds: unknown };
+    expect(res.allowedEnvironmentIds).toEqual(['env-staging']);
+  });
+
+  it('leaves the env allowlist untouched on a name-only update', async () => {
+    const rows = [personal({ allowedEnvironmentIds: ['e1'] } as never)];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    const res = (await service.updateToken('u1', 'p1', { name: 'renamed' })) as {
+      allowedEnvironmentIds: unknown;
+    };
+    expect(res.allowedEnvironmentIds).toEqual(['e1']);
+  });
+});
+
+describe('ApiTokenService — env-targeted scopes must NAME environments (no "all")', () => {
+  it('create refuses env-targeted scopes without environmentIds', async () => {
+    const service = new ApiTokenService(makeFakePrisma([]));
+    await expect(
+      service.createToken('u1', {
+        name: 'agent key',
+        scopes: [Capability.UserRead],
+        projectIds: ['projA'],
+      } as never),
+    ).rejects.toBeInstanceOf(ParamsError);
+  });
+
+  it('create allows project-level-only scopes without environmentIds (allowlist stays null)', async () => {
+    const service = new ApiTokenService(makeFakePrisma([]));
+    const res = (await service.createToken('u1', {
+      name: 'theme key',
+      scopes: [Capability.ThemeRead],
+      projectIds: ['projA'],
+    } as never)) as { token: { allowedEnvironmentIds?: unknown } };
+    expect(res.token.allowedEnvironmentIds ?? null).toBeNull();
+  });
+
+  it('update refuses environmentIds:null while the token holds env-targeted scopes', async () => {
+    const rows = [
+      personal({ scopes: [Capability.UserRead], allowedEnvironmentIds: ['env-a'] } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    await expect(
+      service.updateToken('u1', 'p1', { environmentIds: null } as never),
+    ).rejects.toBeInstanceOf(ParamsError);
+  });
+
+  it('update clears the allowlist via explicit null on a project-level-only token', async () => {
+    const rows = [
+      personal({ scopes: [Capability.ThemeRead], allowedEnvironmentIds: ['env-a'] } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    const res = (await service.updateToken('u1', 'p1', { environmentIds: null } as never)) as {
+      allowedEnvironmentIds: unknown;
+    };
+    expect(res.allowedEnvironmentIds).toBe(Prisma.DbNull);
+  });
+
+  it('update refuses a project change that would drop an env-targeted token to "all"', async () => {
+    const rows = [
+      personal({
+        scopes: [Capability.UserRead],
+        allowedEnvironmentIds: ['env-a'],
+        projects: [{ projectId: 'projA' }],
+      } as never),
+    ];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    await expect(
+      service.updateToken('u1', 'p1', { projectIds: ['projB'] } as never),
+    ).rejects.toBeInstanceOf(ParamsError);
+  });
+
+  it('update refuses ADDING an env-targeted scope to a token with no environment list', async () => {
+    const rows = [personal({ scopes: [Capability.ThemeRead] } as never)];
+    const service = new ApiTokenService(makeFakePrisma(rows));
+    await expect(
+      service.updateToken('u1', 'p1', { scopes: [Capability.UserRead] } as never),
+    ).rejects.toBeInstanceOf(ParamsError);
+  });
+});

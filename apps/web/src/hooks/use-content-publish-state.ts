@@ -15,7 +15,7 @@ export const useContentPublishState = () => {
   const { environmentList } = useEnvironmentList();
 
   return useMemo(() => {
-    if (isPublishedInAllEnvironments(content, environmentList, version)) {
+    if (isPublishedInAllEnvironments(content, environmentList, version?.id)) {
       return true;
     }
 

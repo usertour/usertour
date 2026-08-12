@@ -15,6 +15,8 @@ export const getProjectConfig = gql`
     getProjectConfig(projectId: $projectId) {
       removeBranding
       customCss
+      auditLogs
+      auditLogRetentionDays
       ssoOidc
       ssoSaml
       planType

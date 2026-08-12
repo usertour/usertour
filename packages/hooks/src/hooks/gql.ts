@@ -281,6 +281,7 @@ export const useQueryTeamMemberListQuery = (
       email: item.user.email,
       role: item.role,
       logo: item.user.logo,
+      twoFactorEnabled: item.user.twoFactorEnabled === true,
       isInvite: false,
       createdAt: item.createdAt,
     })) ?? [];
@@ -1185,6 +1186,8 @@ export const useGetProjectConfigQuery = (
     projectConfig: data?.getProjectConfig as {
       removeBranding: boolean;
       customCss: boolean;
+      auditLogs: boolean;
+      auditLogRetentionDays: number;
       ssoOidc: boolean;
       ssoSaml: boolean;
       planType: string;

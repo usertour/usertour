@@ -8,5 +8,6 @@ import { UtilitiesService } from './utilities.service';
 @Module({
   imports: [HttpModule, LicenseModule, AiModule],
   providers: [UtilitiesResolver, UtilitiesService],
+  exports: [UtilitiesService],
 })
 export class UtilitiesModule {}

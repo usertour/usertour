@@ -19,7 +19,9 @@ const READ: Capability[] = [
   Capability.EventRead,
   Capability.LocalizationRead,
   Capability.SegmentRead,
-  Capability.BizdataRead,
+  Capability.UserRead,
+  Capability.CompanyRead,
+  Capability.SessionRead,
   Capability.AnalyticsRead,
   Capability.EnvironmentRead,
   Capability.ProjectRead,
@@ -46,12 +48,16 @@ const WRITE: Capability[] = [
   Capability.SegmentCreate,
   Capability.SegmentUpdate,
   Capability.SegmentDelete,
-  Capability.BizdataDelete,
+  Capability.UserWrite,
+  Capability.UserDelete,
+  Capability.CompanyWrite,
+  Capability.CompanyDelete,
   Capability.SessionManage,
   Capability.EnvironmentManage,
 ];
 
 const OWNER_ONLY: Capability[] = [
+  Capability.AuditRead,
   Capability.ProjectManage,
   Capability.BillingRead,
   Capability.BillingManage,

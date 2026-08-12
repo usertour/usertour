@@ -733,6 +733,34 @@ describe('GraphQL content (e2e)', () => {
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
     });
+
+    it("refuses publishing into ANOTHER project's environment (E1019, no cross-tenant COE)", async () => {
+      // The caller is authorized against the CONTENT's project, but the target
+      // environmentId is a plain arg — without the domain env↔project guard an
+      // ADMIN could inject their content into a foreign project's environment,
+      // which the SDK runtime would then serve to that project's end users.
+      const { content, version } = await seedContent();
+      const otherProject = await buildProject(prisma, { name: 'gql-content-foreign' });
+      const foreignEnv = await buildEnvironment(prisma, { projectId: otherProject.id });
+
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: VersionIdInput!) { publishedContentVersion(data: $data) { id } }',
+        variables: { data: { versionId: version.id, environmentId: foreignEnv.id } },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1019');
+
+      // No ContentOnEnvironment row leaked into the foreign environment, and the
+      // content's global published flag was not flipped.
+      const coe = await prisma.contentOnEnvironment.findUnique({
+        where: { environmentId_contentId: { environmentId: foreignEnv.id, contentId: content.id } },
+      });
+      expect(coe).toBeNull();
+      const contentRow = await prisma.content.findUnique({ where: { id: content.id } });
+      expect(contentRow?.published).toBe(false);
+
+      await teardownProject(prisma, otherProject.id);
+    });
   });
 
   // ── unpublishedContentVersion ────────────────────────────────────
@@ -773,6 +801,22 @@ describe('GraphQL content (e2e)', () => {
         variables: { data: { contentId: 'does-not-exist', environmentId } },
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+
+    it("refuses unpublishing against ANOTHER project's environment (E1019)", async () => {
+      const { content } = await seedContent();
+      const otherProject = await buildProject(prisma, { name: 'gql-content-foreign-unpub' });
+      const foreignEnv = await buildEnvironment(prisma, { projectId: otherProject.id });
+
+      const res = await graphql(app, {
+        token,
+        query:
+          'mutation ($data: ContentIdInput!) { unpublishedContentVersion(data: $data) { success } }',
+        variables: { data: { contentId: content.id, environmentId: foreignEnv.id } },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1019');
+
+      await teardownProject(prisma, otherProject.id);
     });
   });
 
@@ -914,12 +958,30 @@ describe('GraphQL content (e2e)', () => {
   // ── deleteContent ────────────────────────────────────────────────
 
   describe('deleteContent', () => {
-    it('soft-deletes a content and drops its ContentOnEnvironment rows', async () => {
+    it('refuses to delete published content (E1028), then soft-deletes once unpublished', async () => {
       const { content, version } = await seedContent();
       await publishVersion(prisma, {
         environmentId,
         contentId: content.id,
         versionId: version.id,
+      });
+
+      // Still live in an environment → delete must refuse, not silently take
+      // the content down (the builder unpublish-first contract, E1028).
+      const refused = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentIdInput!) { deleteContent(data: $data) { success } }',
+        variables: { data: { contentId: content.id } },
+      });
+      expect(refused.body.errors?.[0]?.extensions?.code).toBe('E1028');
+
+      // Unpublish (COE row kept with published=false — the delete guard only blocks
+      // on published=true). deleteContent must still DROP the leftover COE rows, or
+      // findPublishedVersionId re-resolves a versionId for the deleted content when
+      // the env cache repopulates and SDK users are served a deleted experience.
+      await prisma.contentOnEnvironment.updateMany({
+        where: { contentId: content.id },
+        data: { published: false }, // COE row kept; publishedVersionId is non-null
       });
 
       const res = await graphql(app, {
@@ -931,7 +993,7 @@ describe('GraphQL content (e2e)', () => {
 
       const row = await prisma.content.findUnique({ where: { id: content.id } });
       expect(row?.deleted).toBe(true);
-
+      // The invariant this test exists to lock: soft-delete drops per-env rows.
       const coes = await prisma.contentOnEnvironment.findMany({
         where: { contentId: content.id },
       });

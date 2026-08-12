@@ -1,3 +1,4 @@
+import { CONTENT_ACTION_CAPABILITIES } from '@usertour/helpers';
 import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
@@ -16,7 +17,7 @@ import { RiArrowDownSLine, RiSettings3Line, TooltipIcon } from '@usertour/icons'
 import { Actions } from '@usertour/editor';
 import { useTranslation } from 'react-i18next';
 import {
-  ContentActionsItemType,
+  ContentDataType,
   LauncherActionType,
   LauncherBehaviorType,
   LauncherTriggerElement,
@@ -171,12 +172,7 @@ export const LauncherBehavior = () => {
               conditions={localData.behavior.actions}
               attributes={attributeList}
               contents={contents}
-              filterItems={[
-                ContentActionsItemType.LAUNCHER_DISMIS,
-                ContentActionsItemType.JAVASCRIPT_EVALUATE,
-                ContentActionsItemType.PAGE_NAVIGATE,
-                ContentActionsItemType.FLOW_START,
-              ]}
+              filterItems={[...CONTENT_ACTION_CAPABILITIES[ContentDataType.LAUNCHER].actions]}
               t={t}
             />
           </TabsContent>

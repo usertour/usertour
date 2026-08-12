@@ -13,6 +13,11 @@ interface ConditionsProps {
   // Behavior flags — same semantics as v1 Rules, just a re-shaped API.
   isHorizontal?: boolean;
   isShowIf?: boolean;
+  // Narrow-host mode: stack group / nested-row prefixes above their chip so
+  // nested groups keep a readable text width. Pass from hosts whose panel is
+  // too tight for the two-column rhythm (the 320px builder trigger sidebar);
+  // see ConditionsContextValue.narrow.
+  narrow?: boolean;
   filterItems?: string[];
 
   // Lookup data threaded into the conditions context for type editors.
@@ -60,6 +65,7 @@ export function Conditions({
   onChange,
   isHorizontal = false,
   isShowIf = true,
+  narrow = false,
   // Default mirrors v1 `defaultRulesItems` so consumers that don't pass
   // filterItems get the same dropdown set v1 produced — task-is-clicked
   // stays hidden unless explicitly opted in.
@@ -89,6 +95,7 @@ export function Conditions({
       events,
       isHorizontal,
       isShowIf,
+      narrow,
       filterItems,
       disabled,
       baseZIndex,
@@ -106,6 +113,7 @@ export function Conditions({
       events,
       isHorizontal,
       isShowIf,
+      narrow,
       filterItems,
       disabled,
       baseZIndex,

@@ -1,3 +1,4 @@
+export * from './brand-icons';
 export * from './icon';
 export * from './pricing';
 export * from './remix-icon';

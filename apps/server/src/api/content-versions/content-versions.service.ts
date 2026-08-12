@@ -1,0 +1,807 @@
+import { Prisma } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { toArray } from '../shared/query';
+import {
+  AUTO_START_CAPABILITIES,
+  CONTENT_TYPE_TRAITS,
+  cuid,
+  defaultFrequencyFor,
+} from '@usertour/helpers';
+import { ContentDataType } from '@usertour/types';
+import type { RulesCondition, Step } from '@usertour/types';
+import { PrismaService } from 'nestjs-prisma';
+
+import {
+  ContentNotFoundError,
+  ParamsError,
+  ValidationError,
+  type ValidationIssue,
+} from '@/common/errors/errors';
+import { ContentService, type WriteActor } from '@/content/content.service';
+import { ApiThemesService } from '../themes/themes.service';
+
+import { loadConditionContext } from '../content-representation/condition-context';
+import { resolveStaleEmbeds } from '../content-representation/embed-resolve';
+import { UtilitiesService } from '@/utilities/utilities.service';
+import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
+import {
+  type ContentReference,
+  collectWriteViolations,
+} from '../content-representation/write-guards';
+import { compileStep } from '../content-representation/representation.compile';
+import { decompileStep } from '../content-representation/representation.decompile';
+import { ContentVersion } from '../content-representation/representation.schema';
+import {
+  CompileResolvers,
+  compileHideRules,
+  compileStartRules,
+} from '../content-representation/rules.compile';
+import {
+  DecompileResolvers,
+  decompileHideRules,
+  decompileStartRules,
+} from '../content-representation/rules.decompile';
+import {
+  loadDecompileResolvers,
+  loadResolvers,
+} from '../content-representation/attribute-resolvers';
+import {
+  type UsabilityReport,
+  validateVersionUsable,
+} from '../content-representation/usable.validate';
+import { validateAutoStartForType } from '../content-representation/auto-start.validate';
+import { compileVersionData } from '../content-representation/version-data.compile';
+import { decompileVersionData } from '../content-representation/version-data.decompile';
+import { paginate } from '../shared/pagination';
+import { parseOrderBy } from '../shared/sort';
+import { mapQuestions, mapVersion } from './content-versions.mapper';
+import {
+  GetContentVersionQuery,
+  ListContentVersionsQuery,
+  UpdateVersionBody,
+} from './content-versions.schema';
+
+type VersionNode = {
+  id: string;
+  sequence: number;
+  /** Freeze stamp (first time live); null = never published, still editable. */
+  publishedAt?: Date | null;
+  themeId: string | null;
+  config?: unknown;
+  data?: unknown;
+  content?: { type?: string | null } | null;
+  // Present when the steps/questions expand was requested — the domain query
+  // includes them in the SAME fetch, so toVersion needn't re-load per node (N+1).
+  steps?: {
+    id: string;
+    cvid: string | null;
+    name: string | null;
+    type: string | null;
+    themeId?: string | null;
+    sequence: number;
+    data: unknown;
+    target?: unknown;
+    setting?: unknown;
+    trigger?: unknown;
+  }[];
+  updatedAt: Date;
+  createdAt: Date;
+};
+
+/** Whether the response needs the version's step rows (either expand pulls them). */
+const needsSteps = (expand: string[]): boolean =>
+  expand.includes('steps') || expand.includes('questions');
+
+/**
+ * v2 content-versions handler. Depends on the domain {@link ContentService}; the
+ * `questions` and `steps` expands both derive from the version's step rows, which
+ * the service loads once. Rules (start/hide rules on the version, triggers /
+ * button & answer actions on steps) reference attributes / events by stable code
+ * — the service builds the id→code resolvers once per request.
+ */
+@Injectable()
+export class ApiContentVersionsService {
+  constructor(
+    private readonly content: ContentService,
+    private readonly prisma: PrismaService,
+    private readonly themes: ApiThemesService,
+    private readonly utilities: UtilitiesService,
+  ) {}
+
+  async get(
+    id: string,
+    contentId: string,
+    projectId: string,
+    query: GetContentVersionQuery,
+    // Write paths that already loaded the catalogs pass their decompile side in,
+    // so the read-back doesn't re-run the two catalog queries.
+    preloadedResolvers?: DecompileResolvers,
+  ): Promise<ContentVersion> {
+    const expand = toArray(query.expand);
+    const version = await this.content.getContentVersionWithRelations(id, projectId, {
+      content: true,
+      // Fetch steps in the same query when the response needs them (steps or
+      // questions expand) instead of a second round-trip in toVersion.
+      ...(needsSteps(expand) ? { steps: true } : {}),
+    });
+    if (!version || (version as { contentId?: string }).contentId !== contentId) {
+      throw new ContentNotFoundError();
+    }
+    const resolvers = preloadedResolvers ?? (await loadDecompileResolvers(this.prisma, projectId));
+    return this.toVersion(version, projectId, expand, resolvers);
+  }
+
+  async list(
+    requestUrl: string,
+    projectId: string,
+    contentId: string,
+    query: ListContentVersionsQuery,
+  ): Promise<{ results: ContentVersion[]; next: string | null; previous: string | null }> {
+    const { limit, cursor } = query;
+    const expand = toArray(query.expand);
+    const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
+
+    // Scope the existence check to the project so a foreign contentId is a 404,
+    // not a 200-empty (which would leak cross-tenant content-id existence).
+    const content = await this.content.findContentWithRelations(contentId, projectId, {});
+    if (!content) {
+      throw new ContentNotFoundError();
+    }
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
+
+    return paginate({
+      requestUrl,
+      cursor,
+      limit,
+      fetch: (params) =>
+        this.content.listContentVersionsWithRelations(
+          projectId,
+          contentId,
+          params,
+          // Steps in the SAME query when expanded — avoids one findFirst per node.
+          { content: true, ...(needsSteps(expand) ? { steps: true } : {}) },
+          orderBy,
+        ),
+      map: (node) => this.toVersion(node, projectId, expand, resolvers),
+    });
+  }
+
+  /**
+   * Build the API version. `questions` and `steps` derive from the version's step
+   * rows (loaded once when either expand is set); start/hide rules come from the
+   * version config and are always included.
+   */
+  private async toVersion(
+    version: VersionNode,
+    projectId: string,
+    expand: string[],
+    resolvers: DecompileResolvers,
+  ): Promise<ContentVersion> {
+    const startRules = decompileStartRules(version.config, resolvers);
+    const hideRules = decompileHideRules(version.config, resolvers);
+    const rules = {
+      ...(startRules ? { startRules } : {}),
+      ...(hideRules ? { hideRules } : {}),
+    };
+    // Type-specific body (checklist / launcher / banner / tracker / resource-center).
+    const data =
+      expand.includes('data') && version.content?.type
+        ? decompileVersionData(version.content.type, version.data, resolvers)
+        : undefined;
+
+    const wantsQuestions = expand.includes('questions');
+    const wantsSteps = expand.includes('steps');
+    if (!wantsQuestions && !wantsSteps) {
+      return mapVersion(version, null, undefined, rules, data);
+    }
+    // Steps were loaded in the list/get query (needsSteps === true here). Fall back
+    // to a lookup only if a caller passed a node without them (defensive).
+    const steps = version.steps ?? (await this.loadSteps(version.id, projectId));
+    const questions = wantsQuestions ? mapQuestions(steps) : null;
+    const decompiled = wantsSteps ? steps.map((s) => decompileStep(s, resolvers)) : undefined;
+    return mapVersion(version, questions, decompiled, rules, data);
+  }
+
+  private async loadSteps(versionId: string, projectId: string) {
+    const version = await this.content.getContentVersionWithRelations(versionId, projectId, {
+      steps: { orderBy: { sequence: 'asc' } },
+    });
+    return version?.steps ?? [];
+  }
+
+  /**
+   * Write a draft version: compile the representation steps + rules and field-merge
+   * them onto the existing internal version, then delegate persistence to the
+   * domain `updateContentVersion` (the builder's exact path — cvid upsert in a
+   * transaction). Only the provided fields are touched.
+   */
+  /**
+   * Ensure an EDITABLE draft version (the builder's semantics): while the
+   * content's edited version is an unpublished draft it is simply returned —
+   * editing continues there, no gratuitous fork. Only when the edited version is
+   * PUBLISHED (locked) does the domain fork it into a fresh draft, which becomes
+   * the new editedVersion; the published one is frozen as history.
+   */
+  async create(projectId: string, contentId: string, actor?: WriteActor): Promise<ContentVersion> {
+    const content = await this.content.findContentWithRelations(contentId, projectId, {});
+    if (!content || (content as { deleted?: boolean }).deleted) {
+      throw new ContentNotFoundError();
+    }
+    const editedVersionId = (content as { editedVersionId?: string | null }).editedVersionId;
+    if (!editedVersionId) {
+      throw new ParamsError('Content has no editable version to fork');
+    }
+    const created = await this.content.createContentVersion({ versionId: editedVersionId }, actor);
+    if (!created) {
+      throw new ParamsError('Failed to create version');
+    }
+    return this.get(created.id, contentId, projectId, {});
+  }
+
+  /**
+   * Restore a historical version: fork it forward as the new edited (head)
+   * version — config / data / theme / steps copied from version `id`. Binds the
+   * same domain method the builder uses. Returns the new version.
+   */
+  async restore(
+    id: string,
+    contentId: string,
+    projectId: string,
+    actor?: WriteActor,
+  ): Promise<ContentVersion> {
+    const version = await this.content.getContentVersionWithRelations(id, projectId, {
+      content: true,
+    });
+    if (
+      !version ||
+      (version as { contentId?: string }).contentId !== contentId ||
+      (version.content as { deleted?: boolean } | null)?.deleted
+    ) {
+      throw new ContentNotFoundError();
+    }
+    const created = await this.content.restoreContentVersion(id, actor);
+    if (!created) {
+      throw new ParamsError('Failed to restore version');
+    }
+    return this.get(created.id, contentId, projectId, {});
+  }
+
+  /**
+   * Batch target-type check for the cross-content references the write walk
+   * collected. Every reference — a content-state condition, a start_content
+   * action, a resource-center content-list item — must point at a FLOW or a
+   * CHECKLIST (the only types the builder lets you pick; only those record the
+   * per-user state / can be launched). A wrong-type reference would publish and
+   * silently never fire, so it's a deterministic write-time error; the
+   * existence/dangling-id half is forward-ref-tolerant and stays a validate
+   * warning in collectRuleIssues. Unknown / cross-project ids are left to that
+   * existence check.
+   */
+  private async contentReferenceIssues(
+    refs: ContentReference[],
+    projectId: string,
+  ): Promise<ValidationIssue[]> {
+    if (refs.length === 0) {
+      return [];
+    }
+    const ids = [...new Set(refs.map((r) => r.id))];
+    const found = await this.prisma.content.findMany({
+      where: { id: { in: ids }, projectId },
+      select: { id: true, type: true },
+    });
+    const typeById = new Map(found.map((c) => [c.id, c.type]));
+    const issues: ValidationIssue[] = [];
+    for (const r of refs) {
+      const targetType = typeById.get(r.id);
+      if (targetType && !CONTENT_REFERENCE_TARGET_TYPE_SET.has(targetType)) {
+        issues.push({
+          rule: 'reference_target',
+          path: r.path,
+          message: `${r.kind} (in ${r.where}) references a ${targetType}, but it can only reference a flow or a checklist. Point it at a flow or checklist instead.`,
+        });
+      }
+    }
+    return issues;
+  }
+
+  async update(
+    id: string,
+    contentId: string,
+    projectId: string,
+    body: UpdateVersionBody,
+    actor?: WriteActor,
+  ): Promise<ContentVersion> {
+    const version = await this.content.getContentVersionWithRelations(id, projectId, {
+      steps: { orderBy: { sequence: 'asc' } },
+      content: true,
+    });
+    if (!version || (version as { contentId?: string }).contentId !== contentId) {
+      throw new ContentNotFoundError();
+    }
+    // One catalog load builds both directions: `compile` for this write, `decompile`
+    // for the read-back response (passed into get() below so it doesn't re-load).
+    const { compile: resolvers, decompile } = await loadResolvers(this.prisma, projectId);
+    const content: Record<string, unknown> = {};
+    const contentType =
+      (version as { content?: { type?: string | null } | null }).content?.type ?? undefined;
+
+    // ── Contract validation: ONE walk over steps / data / start / hide rules that
+    // collects EVERY violation (reactive slots, per-type actions, step shape) plus
+    // the cross-content references; per-type auto-start knobs and the reference
+    // target types are folded in, then everything is rejected in a single E1017
+    // whose `issues[]` lists each problem with its rule family and path — so a
+    // client fixes the whole request in one round-trip.
+    // Verbatim-echo exemption for the media_url rule: every string under a
+    // url-ish key anywhere in the STORED version. Deliberately over-collected
+    // (a navigate url could exempt an identical image url) — the set can only
+    // preserve values this version already stores, never admit new ones.
+    const storedUrls = new Set<string>();
+    const collectStoredUrls = (node: unknown): void => {
+      if (Array.isArray(node)) {
+        for (const v of node) collectStoredUrls(v);
+        return;
+      }
+      if (!node || typeof node !== 'object') return;
+      for (const [key, value] of Object.entries(node)) {
+        if (typeof value === 'string' && /url/i.test(key)) {
+          storedUrls.add(value);
+        } else {
+          collectStoredUrls(value);
+        }
+      }
+    };
+    collectStoredUrls(version.steps ?? []);
+    collectStoredUrls((version as { data?: unknown }).data ?? undefined);
+    const { issues, refs } = collectWriteViolations({
+      steps: body.steps,
+      data: body.data,
+      startRules: body.startRules ?? undefined,
+      hideRules: body.hideRules ?? undefined,
+      contentType,
+      storedUrls,
+    });
+    if (body.startRules !== undefined || body.hideRules !== undefined) {
+      issues.push(
+        ...validateAutoStartForType(body.startRules, body.hideRules, contentType).map(
+          (message) => ({ rule: 'auto_start' as const, message }),
+        ),
+      );
+    }
+    // A settings-only startRules patch (no `when`) is only meaningful when
+    // auto-start is already enabled on this version. Otherwise the settings
+    // land in storage but the read side keys off the enabled flag — they'd be
+    // stored dead AND invisible (the caller sees startRules: null and assumes
+    // the write was lost). Refuse instead of silently swallowing.
+    if (
+      body.startRules &&
+      body.startRules.when === undefined &&
+      !(version as { config?: { enabledAutoStartRules?: boolean } | null }).config
+        ?.enabledAutoStartRules
+    ) {
+      issues.push({
+        rule: 'auto_start' as const,
+        message:
+          'startRules without `when` only patches settings, but auto-start is not enabled on ' +
+          'this version — include `when` to enable it (the settings would otherwise be stored ' +
+          'dead and read back as null)',
+      });
+    }
+    issues.push(...(await this.contentReferenceIssues(refs, projectId)));
+    if (issues.length > 0) {
+      throw ValidationError.fromIssues(issues);
+    }
+    const refuseUnresolvedCodes = () => {
+      // Segment writes have always refused unknown attribute/event codes
+      // (assertConditionsValid); the version write compiled them into attrId
+      // as the raw codeName — a dead condition the read side then reports as
+      // "references a deleted attribute". Same standard here: draft leniency
+      // tolerates INCOMPLETE content, not never-resolvable references.
+      const misses = [...new Set(resolvers.misses ?? [])];
+      if (misses.length) {
+        throw new ValidationError(
+          `Conditions reference unknown definitions: ${misses.join(', ')}. Create them first or fix the codeName.`,
+        );
+      }
+    };
+
+    if (body.steps) {
+      // Per-step theme overrides must reference a live project theme (a null clears
+      // the override → inherit the version theme, so only validate non-null strings).
+      // Distinct overrides are independent reads, so check them concurrently.
+      await Promise.all(
+        [
+          ...new Set(
+            body.steps.map((s) => s.themeId).filter((t): t is string => typeof t === 'string'),
+          ),
+        ].map((themeId) => this.themes.requireTheme(themeId, projectId)),
+      );
+
+      // Steps merge by handle (echo to update, omit to create). The primary `id`
+      // is the default key, but it is regenerated on fork (create_content_version)
+      // while the `cvid` is preserved — so accept either, preferring `id`, and keep
+      // the matched step's cvid (or the caller's cvid for a fresh one). This lets an
+      // agent edit a just-forked version by the stable cvid it already knows, with
+      // no read-back to learn the new ids.
+      const existingSteps = (version.steps ?? []) as {
+        id: string;
+        cvid?: string;
+        data?: unknown;
+        target?: unknown;
+        setting?: unknown;
+      }[];
+      const existingById = new Map(existingSteps.map((s) => [s.id, s]));
+      const existingByCvid = new Map(
+        existingSteps.filter((s) => s.cvid).map((s) => [s.cvid as string, s]),
+      );
+
+      // Fix every step's cvid BEFORE compiling any content, so a `goto_step` can
+      // reference a step by the author `key` it carries in this same write (or by
+      // an existing cvid). Those references resolve to the real cvid here — no
+      // read-back round-trip, and forward/cyclic links work in one pass.
+      const planned = body.steps.map((s, i) => {
+        // Match by id first, then cvid — falling back on a MISS, not on the
+        // absence of id. A fork (create_content_version) regenerates every step
+        // id but preserves cvid, so a caller echoing a forked version carries a
+        // stale id AND a valid cvid; keying on `s.id ? byId : byCvid` would take
+        // the id branch, miss, and treat every step as new (dropping the originals
+        // in the wholesale upsert). The `??` retries cvid when the id lookup fails.
+        const existing =
+          (s.id ? existingById.get(s.id) : undefined) ??
+          (s.cvid ? existingByCvid.get(s.cvid) : undefined);
+        return {
+          input: s,
+          existing,
+          // cvid stays server-owned: reuse the matched step's, otherwise mint a
+          // fresh one (an unmatched caller cvid is treated as a new step, like id).
+          cvid: existing?.cvid ?? cuid(),
+          sequence: s.sequence ?? i,
+        };
+      });
+
+      // One handle→cvid table: every step answers to its own cvid; a step with a
+      // `key` also answers to that key (key wins if it ever collides with a cvid).
+      //
+      // The legal goto-target set is THIS REQUEST ONLY. `steps` is a full
+      // replacement, so a stored step that isn't echoed here is deleted by this
+      // very write — validating a goto against the pre-write step set would let
+      // the write CREATE a dangling reference (it did: the check passed against
+      // steps it was simultaneously deleting), which then poisons every later
+      // echo edit. An echoed step's own cvid is in `planned`, so referencing
+      // in-request steps by cvid still works.
+      const knownCvids = new Set<string>(planned.map((p) => p.cvid));
+      // Echo exemption, same policy as run_javascript / customCode: a ref that
+      // is ALREADY dangling in the stored data (builder legacy, or writes from
+      // before this guard) passes through VERBATIM. Without it, one stale goto
+      // an author never touched makes the whole flow un-editable — read it
+      // back, write it back, rejected. validate/publish still report it; the
+      // fix belongs there, not as a toll on every unrelated edit.
+      const storedCvids = new Set(
+        ((version.steps ?? []) as { cvid?: string }[])
+          .map((s) => s.cvid)
+          .filter((c): c is string => Boolean(c)),
+      );
+      const storedDanglingRefs = new Set<string>();
+      const collectDanglingGotoRefs = (node: unknown): void => {
+        if (Array.isArray(node)) {
+          for (const v of node) collectDanglingGotoRefs(v);
+          return;
+        }
+        if (!node || typeof node !== 'object') return;
+        const o = node as { type?: unknown; data?: { stepCvid?: unknown } };
+        // Only step-goto targets THIS content's steps; flow-start's stepCvid
+        // points into ANOTHER content and never goes through this resolver.
+        if (
+          o.type === 'step-goto' &&
+          typeof o.data?.stepCvid === 'string' &&
+          o.data.stepCvid &&
+          !storedCvids.has(o.data.stepCvid)
+        ) {
+          storedDanglingRefs.add(o.data.stepCvid);
+        }
+        for (const v of Object.values(o)) collectDanglingGotoRefs(v);
+      };
+      collectDanglingGotoRefs(version.steps ?? []);
+      const keyToCvid = new Map<string, string>();
+      for (const p of planned) {
+        const key = (p.input as { key?: string }).key;
+        if (!key) continue;
+        if (keyToCvid.has(key)) {
+          throw new ValidationError(`Duplicate step key "${key}" in this request.`);
+        }
+        if (knownCvids.has(key)) {
+          throw new ValidationError(`Step key "${key}" must not equal an existing step cvid.`);
+        }
+        keyToCvid.set(key, p.cvid);
+      }
+      const stepResolvers: CompileResolvers = {
+        ...resolvers,
+        stepCvid: (ref: string) => {
+          const byKey = keyToCvid.get(ref);
+          if (byKey) {
+            return byKey;
+          }
+          if (knownCvids.has(ref)) {
+            return ref;
+          }
+          if (storedDanglingRefs.has(ref)) {
+            // Verbatim echo of a pre-existing dangling reference: preserved,
+            // not endorsed — validate/publish still flag it.
+            return ref;
+          }
+          throw new ValidationError(
+            `"go to step" references step "${ref}" which is not part of this request — steps are a FULL replacement, so a goto may only target a step \`key\` or cvid present in this same write. To keep the target step, echo it in \`steps\` too.`,
+          );
+        },
+      };
+
+      content.steps = planned.map((p) =>
+        compileStep({ ...p.input, cvid: p.cvid, sequence: p.sequence }, p.existing, stepResolvers),
+      );
+    }
+
+    if (body.startRules !== undefined || body.hideRules !== undefined) {
+      const config = { ...(((version as { config?: unknown }).config as object) ?? {}) };
+      if (body.startRules === null) {
+        // A null CLEAR wipes the WHOLE start config — conditions AND settings.
+        // Leaving autoStartRulesSetting behind looked cleared on read (the read
+        // keys off enabled/rules) but the stale wait/startIfNotComplete/priority
+        // resurrected on the next startRules write after a fork — a real
+        // acceptance-eval defect (flow round, F3).
+        Object.assign(config, { enabledAutoStartRules: false, autoStartRules: [] });
+        // `undefined` drops the key when the JSON column serializes — no residue.
+        (config as { autoStartRulesSetting?: unknown }).autoStartRulesSetting = undefined;
+      } else if (body.startRules !== undefined) {
+        const compiled = compileStartRules(body.startRules, resolvers) as {
+          autoStartRulesSetting?: Record<string, unknown>;
+        } & Record<string, unknown>;
+        // The start-rule SETTING (frequency / priority / wait / startIfNotComplete) is a
+        // PARTIAL patch: compileStartRules emits only the fields the caller supplied, so
+        // merge them onto the existing setting rather than replacing it wholesale —
+        // otherwise sending `frequency` alone would silently drop a stored `priority`.
+        // `when` is a full replace WHEN PRESENT; omitted, compileStartRules emits no
+        // condition keys and the stored conditions survive (settings-only patch).
+        const existingSetting =
+          (config as { autoStartRulesSetting?: Record<string, unknown> }).autoStartRulesSetting ??
+          {};
+        Object.assign(config, compiled);
+        const mergedSetting = { ...existingSetting, ...(compiled.autoStartRulesSetting ?? {}) };
+        // Builder parity: buildConfig always persists a frequency for the types
+        // that have the knob — a version STORED without one runs with NO limit
+        // (the runtime gate returns true unconditionally: the flow re-starts on
+        // every dismiss; see DEFAULT_FREQUENCY in @usertour/helpers). The
+        // builder can't produce that state; this write path couldn't avoid it
+        // until now. Seed the same default (`once`) when the merged setting
+        // still lacks one — explicitly stored, so read-backs show it. An
+        // explicit or previously-stored frequency always wins.
+        if (
+          AUTO_START_CAPABILITIES[contentType as ContentDataType]?.frequency &&
+          mergedSetting.frequency == null
+        ) {
+          mergedSetting.frequency = defaultFrequencyFor(contentType as ContentDataType);
+        }
+        if (Object.keys(mergedSetting).length > 0) {
+          (config as { autoStartRulesSetting?: unknown }).autoStartRulesSetting = mergedSetting;
+        }
+      }
+      if (body.hideRules !== undefined) {
+        Object.assign(config, compileHideRules(body.hideRules, resolvers));
+      }
+      content.config = config;
+    }
+
+    if (body.themeId !== undefined) {
+      await this.themes.requireTheme(body.themeId, projectId);
+      content.themeId = body.themeId;
+    }
+
+    if (body.scheduledAt !== undefined) {
+      // Matrix trait: the "announcement time" only means something on the
+      // announcement feed (visibility gate + ordering key); on any other type
+      // it would be a silent no-op stored on the row — reject dead input.
+      if (!CONTENT_TYPE_TRAITS[contentType as ContentDataType]?.allowsScheduledAt) {
+        throw new ValidationError('scheduledAt is only supported on announcement versions.');
+      }
+      content.scheduledAt = body.scheduledAt === null ? null : new Date(body.scheduledAt);
+    }
+
+    if (body.data !== undefined) {
+      if (!contentType) {
+        throw new ParamsError('Cannot resolve content type for this version');
+      }
+      content.data = compileVersionData(
+        contentType,
+        body.data,
+        (version as { data?: unknown }).data,
+        resolvers,
+      );
+    }
+
+    // All compiles are done — refuse if any condition referenced an unknown code.
+    refuseUnresolvedCodes();
+
+    // Resolve embeds whose url is new or changed (parsedUrl !== url), the way
+    // the builder does — otherwise they render as a grey placeholder (new) or
+    // keep showing the PREVIOUS content (url edited, old oembed retained by
+    // the keep-style merge). 5s cap per provider call; failure degrades to a
+    // plain iframe like the builder's failure path.
+    await Promise.all(
+      [content.steps, content.data].map((payload) =>
+        payload
+          ? resolveStaleEmbeds(payload, (url) =>
+              Promise.race([
+                this.utilities.queryOembedInfo(url),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error('oembed timeout')), 5000),
+                ),
+              ]),
+            )
+          : undefined,
+      ),
+    );
+
+    if (Object.keys(content).length > 0) {
+      const result = await this.content.updateContentVersion(
+        {
+          versionId: id,
+          content: content as never,
+        },
+        actor,
+      );
+      if (!result) {
+        throw new ParamsError('Version is not editable');
+      }
+    }
+
+    // Echo BOTH steps (flow) and data (checklist/launcher/banner/tracker/
+    // resource-center) so the write response confirms what was persisted in one
+    // round-trip — a flow has no `data` and a non-flow has empty `steps`, so the
+    // mapper just omits the irrelevant one.
+    return this.get(id, contentId, projectId, { expand: ['steps', 'data'] }, decompile);
+  }
+
+  /**
+   * Dry-run usability check — the same validation `publish` enforces, but
+   * non-mutating, so an agent can confirm a draft is renderable before shipping
+   * (the machine equivalent of the builder's live preview).
+   */
+  async validate(id: string, contentId: string, projectId: string): Promise<UsabilityReport> {
+    const version = await this.content.getContentVersionWithRelations(id, projectId, {
+      steps: { orderBy: { sequence: 'asc' } },
+      content: true,
+    });
+    if (!version || (version as { contentId?: string }).contentId !== contentId) {
+      throw new ContentNotFoundError();
+    }
+    const v = version as {
+      themeId: string | null;
+      steps?: unknown;
+      data?: unknown;
+      config?: unknown;
+      content?: { type?: string };
+    };
+    const type = v.content?.type ?? ContentDataType.FLOW;
+    const report = validateVersionUsable({
+      type,
+      themeId: v.themeId,
+      steps: v.steps as Step[],
+      data: v.data,
+      config: v.config as { autoStartRules?: RulesCondition[] } | null,
+      conditionContext: await loadConditionContext(this.prisma, projectId),
+    });
+
+    // DEAD-CONTENT check for the two types the no-start-rules warning exempts
+    // (flow / checklist are legitimately started on demand — from a resource
+    // center list or a start_content button — so missing rules alone is not
+    // warnable). But NO rules AND NO inbound reference means published content
+    // no user can ever reach: the audit found exactly that shipping silently.
+    // Reference scanning needs the DB, so it lives here, not in the pure
+    // validator. Warning, not error: a usertour.start() call in the HOST APP's
+    // code is a real entry point the server cannot see.
+    const rules = (v.config as { autoStartRules?: RulesCondition[] } | null)?.autoStartRules;
+    const startsOnDemandOnly =
+      CONTENT_TYPE_TRAITS[type as ContentDataType]?.startsOnDemand === true &&
+      (!rules || rules.length === 0);
+    // THEME-SWITCH guard: variations do NOT travel with content, so pointing a
+    // draft at a theme with fewer variations than the version that is currently
+    // LIVE silently drops conditional styling (dark mode …) for exactly the
+    // users those conditions targeted — green through write, validate, publish
+    // and diagnose alike (maintenance-round finding: the only change in that
+    // round that could have harmed real users).
+    await this.warnOnThemeVariationLoss(v.themeId, contentId, report);
+
+    if (startsOnDemandOnly && !(await this.isReferencedByOtherContent(projectId, contentId))) {
+      report.warnings.push({
+        severity: 'warning',
+        path: 'config.autoStartRules',
+        message: `${type} has no start rules AND nothing references it (no resource-center list entry, no start_content action) — published, it is reachable by NO user. Add startRules, or reference it from a resource center / button; if your app launches it via usertour.start(), ignore this warning.`,
+      });
+    }
+    return report;
+  }
+
+  /**
+   * Warn when this draft's theme carries FEWER variations than the theme of the
+   * version currently published — the shape a theme migration takes. Compares
+   * against the live version (not an arbitrary sibling), so it fires exactly on
+   * "you switched themes and left the conditional styling behind" and stays
+   * silent for content that simply never had variations.
+   */
+  private async warnOnThemeVariationLoss(
+    draftThemeId: string | null,
+    contentId: string,
+    report: UsabilityReport,
+  ): Promise<void> {
+    if (!draftThemeId) {
+      return;
+    }
+    const live = await this.prisma.contentOnEnvironment.findFirst({
+      where: { contentId, published: true },
+      select: { publishedVersion: { select: { themeId: true } } },
+    });
+    const liveThemeId = live?.publishedVersion?.themeId;
+    if (!liveThemeId || liveThemeId === draftThemeId) {
+      return;
+    }
+    const themes = await this.prisma.theme.findMany({
+      where: { id: { in: [liveThemeId, draftThemeId] } },
+      select: { id: true, name: true, variations: true },
+    });
+    const countOf = (id: string) => {
+      const variations = themes.find((t) => t.id === id)?.variations;
+      return Array.isArray(variations) ? variations.length : 0;
+    };
+    const liveCount = countOf(liveThemeId);
+    const draftCount = countOf(draftThemeId);
+    if (draftCount >= liveCount) {
+      return;
+    }
+    const nameOf = (id: string) => themes.find((t) => t.id === id)?.name ?? id;
+    report.warnings.push({
+      severity: 'warning',
+      path: 'themeId',
+      message: `This version switches theme from "${nameOf(liveThemeId)}" (${liveCount} conditional variation${liveCount === 1 ? '' : 's'}) to "${nameOf(draftThemeId)}" (${draftCount}) — variations do NOT travel with the content, so every user those conditions targeted (e.g. dark mode) silently falls back to base styling. Recreate the variations on the target theme (duplicating the theme copies them verbatim), or keep the current theme.`,
+    });
+  }
+
+  /**
+   * Does any OTHER live content in the project reference this content id
+   * (resource-center content-list entries and start_content actions both store
+   * the raw content id inside their version/step JSON)? Scanned only over the
+   * surfaces that can actually reach users: each live content's edited version
+   * and its published versions — a match inside an old historical version is
+   * not an entry point. Coarse containment filter in SQL (jsonb::text LIKE),
+   * which can only over-count — acceptable for suppressing a warning, never
+   * for raising one.
+   */
+  private async isReferencedByOtherContent(projectId: string, contentId: string): Promise<boolean> {
+    const others = await this.prisma.content.findMany({
+      where: { projectId, deleted: false, id: { not: contentId } },
+      select: {
+        editedVersionId: true,
+        contentOnEnvironments: { select: { publishedVersionId: true } },
+      },
+    });
+    const versionIds = [
+      ...new Set(
+        others.flatMap((c) => [
+          c.editedVersionId,
+          ...c.contentOnEnvironments.map((e) => e.publishedVersionId),
+        ]),
+      ),
+    ].filter((x): x is string => Boolean(x));
+    if (versionIds.length === 0) {
+      return false;
+    }
+    const needle = `%${contentId}%`;
+    const rows = await this.prisma.$queryRaw<{ n: bigint }[]>`
+      SELECT (
+        (SELECT COUNT(*) FROM "Version" v
+          WHERE v.id IN (${Prisma.join(versionIds)}) AND v.data::text LIKE ${needle})
+        +
+        (SELECT COUNT(*) FROM "Step" s
+          WHERE s."versionId" IN (${Prisma.join(versionIds)})
+            AND (s.data::text LIKE ${needle} OR s.trigger::text LIKE ${needle}))
+      ) AS n`;
+    return Number(rows[0]?.n ?? 0) > 0;
+  }
+}

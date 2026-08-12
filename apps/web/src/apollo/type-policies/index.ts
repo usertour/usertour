@@ -109,9 +109,13 @@ export const TypePolicy: TypePolicies = {
       // `fetchMore` (with a different `after`) would land in its own
       // slot — the watch query would never see appended pages.
       listContentVersions: accumulatorMerge(['contentId']),
+      listContentPublishRecords: accumulatorMerge(['contentId', 'environmentId']),
       queryContent: accumulatorMerge(['query', 'orderBy']),
       queryBizUserEvents: accumulatorMerge(['query', 'orderBy']),
       queryBizCompanyEvents: accumulatorMerge(['query', 'orderBy']),
+      // Audit log is its own page (settings tab); filters/sort live in the
+      // top-level `query`/`orderBy` args, `projectId` scopes the cache cell.
+      auditLogs: accumulatorMerge(['projectId', 'query', 'orderBy']),
     },
   },
 };

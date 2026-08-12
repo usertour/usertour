@@ -50,6 +50,15 @@ export const isMissingRequiredData = (element: ContentEditorElement) => {
       return true;
     }
   }
+  // Image / embed need a URL to render anything. The builder's editors guarantee
+  // one (image via upload, embed disables confirm until the URL is non-empty);
+  // the API has no editor, so an empty URL would otherwise render a broken block.
+  if (
+    element.type === ContentEditorElementType.IMAGE ||
+    element.type === ContentEditorElementType.EMBED
+  ) {
+    return isEmptyString((element as { url?: string }).url);
+  }
   return false;
 };
 

@@ -1,4 +1,5 @@
-import { ContentActionsItemType } from '@usertour/types';
+import { CONTENT_ACTION_CAPABILITIES } from '@usertour/helpers';
+import { ContentDataType } from '@usertour/types';
 import type { AnySchema } from './schema-types';
 
 // Schemas register themselves at module-load time via `registerActionSchema`.
@@ -16,15 +17,12 @@ export function registerActionSchema(schema: AnySchema): void {
 }
 
 // Default set of types the dropdown surfaces when a consumer doesn't pass
-// `filterItems`. Matches v1 actions-group.tsx behavior: launcher / checklist
-// / banner dismiss variants are surfaced only when the consumer explicitly
-// asks for them via filterItems (their respective container builders).
+// `filterItems` — the FLOW action set from the capability matrix (the same
+// table the server's write guards enforce). Launcher / checklist / banner
+// dismiss variants are surfaced only when the consumer explicitly asks for
+// them via filterItems (their respective container builders).
 export const DEFAULT_ACTION_TYPES: string[] = [
-  ContentActionsItemType.STEP_GOTO,
-  ContentActionsItemType.FLOW_DISMIS,
-  ContentActionsItemType.FLOW_START,
-  ContentActionsItemType.PAGE_NAVIGATE,
-  ContentActionsItemType.JAVASCRIPT_EVALUATE,
+  ...CONTENT_ACTION_CAPABILITIES[ContentDataType.FLOW].actions,
 ];
 
 export function getActionSchema(type: string): AnySchema | undefined {

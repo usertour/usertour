@@ -9,6 +9,7 @@ interface ProjectMembership {
   role: string;
   actived: boolean;
   capabilities?: Capability[];
+  allowedEnvironmentIds?: string[] | null;
   project: Record<string, unknown>;
 }
 
@@ -25,6 +26,7 @@ export const useUserProjects = (): Project[] => {
         role: p.role,
         actived: p.actived,
         capabilities: p.capabilities ?? [],
+        allowedEnvironmentIds: p.allowedEnvironmentIds ?? null,
         ...p.project,
       })) as Project[]) ?? []
     );

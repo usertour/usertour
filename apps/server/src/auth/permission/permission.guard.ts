@@ -5,11 +5,11 @@ import { roleCan } from '@usertour/constants';
 import { Role } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { NoPermissionError } from '@/common/errors';
+import { MemberEnvironmentNotAllowedError, NoPermissionError } from '@/common/errors';
 import { ProjectsService } from '@/projects/projects.service';
 
 import { RequirePermission } from './require-permission.decorator';
-import { type ScopeResolver, createScopeResolvers } from './scope-resolver.registry';
+import { ScopeKind, type ScopeResolver, createScopeResolvers } from './scope-resolver.registry';
 
 /**
  * Single authorization guard, capability-driven.
@@ -69,13 +69,17 @@ export class PermissionGuard implements CanActivate {
             select: { version: { select: { content: { select: { projectId: true } } } } },
           })
         )?.version?.content?.projectId ?? null,
-      getSessionProjectId: async (sessionId) =>
-        (
-          await this.prisma.bizSession.findUnique({
-            where: { id: sessionId },
-            select: { content: { select: { projectId: true } } },
-          })
-        )?.content?.projectId ?? null,
+      getSessionScope: async (sessionId) => {
+        // ONE lookup yields both the owning project (via content) and the
+        // session's environment (for the membership env ceiling).
+        const session = await this.prisma.bizSession.findUnique({
+          where: { id: sessionId },
+          select: { environmentId: true, content: { select: { projectId: true } } },
+        });
+        return session
+          ? { projectId: session.content?.projectId ?? null, environmentId: session.environmentId }
+          : null;
+      },
       getIntegrationEnvironmentId: async (integrationId) =>
         (
           await this.prisma.integration.findUnique({
@@ -109,16 +113,96 @@ export class PermissionGuard implements CanActivate {
     }
 
     const resolver = this.resolvers[required.scope];
-    const projectId = resolver ? await resolver(args) : null;
-    if (!projectId) {
+    const resolution = resolver ? await resolver(args) : null;
+    if (!resolution) {
       throw new NoPermissionError();
     }
+    const { projectId } = resolution;
+    // Stash for the AuditInterceptor (runs after guards) so web-admin audit
+    // doesn't re-resolve the project — see audit.interceptor `interceptWeb`.
+    (req as { auditProjectId?: string }).auditProjectId = projectId;
 
     const userProject = await this.projectsService.getUserProject(user.id, projectId);
     if (!userProject || !roleCan(userProject.role as Role, required.capability)) {
       throw new NoPermissionError();
     }
 
+    // Third permission dimension (mirrors ApiToken.allowedEnvironmentIds): a
+    // membership may be restricted to a set of environments. OWNER is exempt —
+    // the invariant that owners can never lock themselves out of their project.
+    if (userProject.role !== Role.OWNER) {
+      const allowed = Array.isArray(userProject.allowedEnvironmentIds)
+        ? (userProject.allowedEnvironmentIds as string[])
+        : null;
+      if (allowed) {
+        const targets = [
+          // Environments the scope resolver derived while resolving the project
+          // (integration/mapping/session rows) — same lookup, no re-query.
+          ...(resolution.environmentIds ?? []),
+          ...(await this.resolveTargetEnvironmentIds(required.scope, args)),
+        ];
+        if (targets.some((envId) => !allowed.includes(envId))) {
+          throw new MemberEnvironmentNotAllowedError();
+        }
+      }
+    }
+
     return true;
+  }
+
+  /**
+   * The environment(s) a request ACTS ON, for the membership env check — the
+   * shapes that are NOT a byproduct of scope resolution: explicit environment
+   * arguments (env-scoped endpoints, publish/unpublish `data.environmentId`)
+   * and segment-membership biz rows. Integration / mapping / session
+   * environments arrive via {@link ScopeResolution.environmentIds} instead
+   * (the resolver already had the row in hand). Project-level scopes yield
+   * nothing.
+   */
+  private async resolveTargetEnvironmentIds(
+    scope: ScopeKind,
+    args: Record<string, any>,
+  ): Promise<string[]> {
+    const explicit = [args.environmentId, args.data?.environmentId, args.query?.environmentId];
+    // Environment-scoped endpoints address the environment row itself as `data.id`.
+    if (scope === ScopeKind.Environment) {
+      explicit.push(args.data?.id);
+    }
+    // Segment DEFINITIONS are project-level (updateSegment/deleteSegment carry only
+    // a segmentId — no env dimension), but segment MEMBERSHIP is environment-scoped:
+    // a BizUser/BizCompany belongs to a specific environment. The membership writes
+    // (createBizUserOnSegment / deleteBizUserOnSegment + company equivalents) carry
+    // only the internal biz ids, so resolve their environments here — else an
+    // env-restricted member could add/remove a user from another environment,
+    // escaping their ceiling. (The v2 REST/MCP path resolves the env explicitly.)
+    if (scope === ScopeKind.Segment) {
+      const bizUserIds: string[] = [
+        ...((args.data?.userOnSegment as { bizUserId?: string }[] | undefined)?.map(
+          (u) => u.bizUserId,
+        ) ?? []),
+        ...((args.data?.bizUserIds as string[] | undefined) ?? []),
+      ].filter((id): id is string => typeof id === 'string' && id !== '');
+      const bizCompanyIds: string[] = [
+        ...((args.data?.companyOnSegment as { bizCompanyId?: string }[] | undefined)?.map(
+          (c) => c.bizCompanyId,
+        ) ?? []),
+        ...((args.data?.bizCompanyIds as string[] | undefined) ?? []),
+      ].filter((id): id is string => typeof id === 'string' && id !== '');
+      if (bizUserIds.length) {
+        const users = await this.prisma.bizUser.findMany({
+          where: { id: { in: bizUserIds } },
+          select: { environmentId: true },
+        });
+        explicit.push(...users.map((u) => u.environmentId));
+      }
+      if (bizCompanyIds.length) {
+        const companies = await this.prisma.bizCompany.findMany({
+          where: { id: { in: bizCompanyIds } },
+          select: { environmentId: true },
+        });
+        explicit.push(...companies.map((c) => c.environmentId));
+      }
+    }
+    return [...new Set(explicit.filter((v): v is string => typeof v === 'string' && v !== ''))];
   }
 }

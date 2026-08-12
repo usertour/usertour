@@ -1,0 +1,386 @@
+import { Injectable } from '@nestjs/common';
+import { toArray } from '../shared/query';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from 'nestjs-prisma';
+
+import type { RulesCondition, Step } from '@usertour/types';
+
+import {
+  ContentNotFoundError,
+  ContentNotPublishableError,
+  ParamsError,
+  ValidationError,
+} from '@/common/errors/errors';
+import { ContentService, type WriteActor } from '@/content/content.service';
+import { ApiThemesService } from '../themes/themes.service';
+
+import { loadDecompileResolvers } from '../content-representation/attribute-resolvers';
+import { loadConditionContext } from '../content-representation/condition-context';
+import { ContentVersion } from '../content-representation/representation.schema';
+import { decompileHideRules, decompileStartRules } from '../content-representation/rules.decompile';
+import { requiresTheme, validateVersionUsable } from '../content-representation/usable.validate';
+import { defaultVersionData } from '../content-representation/version-data.defaults';
+import { mapVersion } from '../content-versions/content-versions.mapper';
+import { paginate } from '../shared/pagination';
+import { parseOrderBy } from '../shared/sort';
+import { mapContent } from './content.mapper';
+import {
+  Content,
+  ContentExpand,
+  CreateContentBody,
+  DuplicateContentBody,
+  GetContentQuery,
+  ListContentQuery,
+  UpdateContentBody,
+} from './content.schema';
+
+/**
+ * v2 content handler. Publishing is per-environment, so the response exposes
+ * `environments[]` instead of the deprecated single publishedVersionId — the one
+ * intentional shape change vs v1. Depends on the domain {@link ContentService}.
+ */
+/**
+ * E1004 for content that EXISTS but is soft-deleted. Same code, distinct
+ * message: "no such id" and "archived" demand opposite next moves, and the
+ * shared "Content not found" text sent callers digging through list pages to
+ * prove the id was ever real. Archived is also the #1 real-world reason
+ * content "doesn't show", so the message names the way back (restore).
+ */
+function archivedContentError(): ContentNotFoundError {
+  return new ContentNotFoundError(
+    'Content exists but is ARCHIVED (soft-deleted) — archived content never renders and default ' +
+      'lists hide it. List it with deleted:true; restore it (restore_content / POST ' +
+      '/content/{id}/restore) to work on it again.',
+  );
+}
+
+/** One row of the publish/unpublish ledger (MCP-only surface, hence no zod). */
+export interface PublishRecord {
+  action: 'publish' | 'unpublish';
+  versionId: string;
+  versionSequence: number;
+  environmentId: string;
+  environmentName: string | null;
+  actorName: string | null;
+  actorTokenName: string | null;
+  createdAt: string;
+}
+
+@Injectable()
+export class ApiContentService {
+  constructor(
+    private readonly content: ContentService,
+    private readonly prisma: PrismaService,
+    private readonly themes: ApiThemesService,
+  ) {}
+
+  /** Create content (+ its initial draft version) in the project's primary environment. */
+  async create(projectId: string, body: CreateContentBody): Promise<Content> {
+    const environment = await this.primaryEnvironment(projectId);
+    // A theme is required for every type that renders UI: without one the SDK
+    // can't render the version (it starts, finds nothing renderable, and
+    // completes at progress 0). Tracker has no UI, so its theme is optional.
+    // The themeId seeds the initial draft version (theme is version-level).
+    if (requiresTheme(body.type)) {
+      if (!body.themeId) {
+        throw new ValidationError(`themeId is required for content type "${body.type}".`);
+      }
+      await this.themes.requireTheme(body.themeId, projectId);
+    } else if (body.themeId) {
+      await this.themes.requireTheme(body.themeId, projectId);
+    }
+    // Seed the type's default data so a non-flow draft starts complete; a later
+    // update_content_version field-merges onto it rather than a bare object.
+    const data = defaultVersionData(body.type);
+    if (body.type === 'announcement' && body.name && data && typeof data === 'object') {
+      // Mirror the builder's create form: the content name seeds the draft title
+      // (an untitled announcement can't publish — it would render a blank row).
+      (data as Record<string, unknown>).title = body.name;
+    }
+    const created = await this.content.createContent({
+      type: body.type,
+      name: body.name,
+      buildUrl: body.buildUrl,
+      environmentId: environment.id,
+      themeId: body.themeId,
+      data,
+    });
+    if (!created) {
+      throw new ParamsError('Failed to create content');
+    }
+    return this.get(created.id, projectId, {});
+  }
+
+  /** Update content metadata (name / buildUrl). */
+  async update(id: string, projectId: string, body: UpdateContentBody): Promise<Content> {
+    await this.requireContent(id, projectId);
+    await this.content.updateContent(id, { name: body.name, buildUrl: body.buildUrl });
+    return this.get(id, projectId, {});
+  }
+
+  /** Delete (archive) content. */
+  async remove(id: string, projectId: string): Promise<void> {
+    await this.requireContent(id, projectId);
+    await this.content.deleteContent(id);
+  }
+
+  /**
+   * Restore soft-deleted content. Idempotent — restoring content that isn't
+   * deleted returns it unchanged (mirrors publish), so agent retries are safe.
+   * deleteContent guarantees a deleted content is unpublished everywhere, so it
+   * comes back as a clean unpublished draft; publishing again is a separate,
+   * explicit call.
+   */
+  async restore(id: string, projectId: string): Promise<Content> {
+    const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
+    if (!node) {
+      throw new ContentNotFoundError();
+    }
+    if ((node as { deleted?: boolean }).deleted) {
+      await this.content.restoreContent(id);
+    }
+    return this.get(id, projectId, {});
+  }
+
+  /**
+   * Publish a version as the environment's live version (idempotent). Content is
+   * project-level, so the target environment is a body parameter (like versionId);
+   * we assert it belongs to this project, and that the version belongs to this
+   * content. Returns the content with refreshed `environments[]` so the caller
+   * sees the new live state in one round-trip.
+   */
+  async publish(
+    id: string,
+    projectId: string,
+    environmentId: string,
+    versionId: string,
+    actor?: WriteActor,
+  ): Promise<Content> {
+    const content = await this.requireContent(id, projectId);
+    await this.requireEnvironment(environmentId, projectId);
+    const version = await this.content.getContentVersionById(versionId);
+    if (!version || version.contentId !== id) {
+      throw new ContentNotFoundError();
+    }
+    // A version must actually be usable before it can go live. The builder relies
+    // on a live preview for this; the API enforces it so agent-authored content
+    // can't be published into a silent non-render. `content` is reused from the
+    // requireContent fetch above (no second read just for `type`).
+    const report = validateVersionUsable({
+      type: (content as { type?: string }).type ?? 'flow',
+      themeId: version.themeId,
+      steps: version.steps as unknown as Step[],
+      data: version.data,
+      config: version.config as { autoStartRules?: RulesCondition[] } | null,
+      conditionContext: await loadConditionContext(this.prisma, projectId),
+    });
+    if (!report.ok) {
+      throw new ContentNotPublishableError(
+        `Content is not publishable: ${report.errors
+          .map((e) => `${e.path}: ${e.message}`)
+          .join('; ')}`,
+      );
+    }
+    await this.content.publishedContentVersion(versionId, environmentId, actor);
+    return this.get(id, projectId, {});
+  }
+
+  /** Unpublish the content from an environment (clear its live version). */
+  async unpublish(
+    id: string,
+    projectId: string,
+    environmentId: string,
+    actor?: WriteActor,
+  ): Promise<Content> {
+    await this.requireContent(id, projectId);
+    await this.requireEnvironment(environmentId, projectId);
+    await this.content.unpublishedContentVersion(id, environmentId, actor);
+    return this.get(id, projectId, {});
+  }
+
+  /**
+   * Duplicate content into a fresh content (copies the edited version's steps /
+   * config / data). A PROJECT-level action: the copy inherits the source's legacy
+   * homing column (inert — nothing user-visible reads it) and starts unpublished,
+   * so no environment parameter and no env-allowlist check apply here; publish is
+   * where environments (and their token scope) come into play.
+   */
+  async duplicate(id: string, projectId: string, body: DuplicateContentBody): Promise<Content> {
+    await this.requireContent(id, projectId);
+    const created = await this.content.duplicateContent(id, body.name ?? '');
+    if (!created) {
+      throw new ParamsError('Failed to duplicate content');
+    }
+    return this.get(created.id, projectId, {});
+  }
+
+  /** Assert an environment exists in the project (publish/unpublish target, duplicate target). */
+  private async requireEnvironment(environmentId: string, projectId: string): Promise<void> {
+    const env = await this.prisma.environment.findFirst({
+      where: { id: environmentId, projectId, deleted: false },
+    });
+    if (!env) {
+      throw new ValidationError('Environment not found in this project');
+    }
+  }
+
+  private async requireContent(id: string, projectId: string) {
+    const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
+    if (!node) {
+      throw new ContentNotFoundError();
+    }
+    if ((node as { deleted?: boolean }).deleted) {
+      throw archivedContentError();
+    }
+    return node;
+  }
+
+  private async primaryEnvironment(projectId: string) {
+    const env =
+      (await this.prisma.environment.findFirst({
+        where: { projectId, deleted: false, isPrimary: true },
+      })) ?? (await this.prisma.environment.findFirst({ where: { projectId, deleted: false } }));
+    if (!env) {
+      throw new ParamsError('No environment found for this project');
+    }
+    return env;
+  }
+
+  async list(
+    requestUrl: string,
+    projectId: string,
+    query: ListContentQuery,
+  ): Promise<{ results: Content[]; next: string | null; previous: string | null }> {
+    const { limit, cursor, name, type, published, createdAfter, createdBefore, deleted } = query;
+    const expand = toArray<ContentExpand>(query.expand);
+    const orderBy = parseOrderBy(query.orderBy, ['createdAt']);
+    const mapVersionNode = await this.inlineVersionMapper(expand, projectId);
+
+    return paginate({
+      requestUrl,
+      cursor,
+      limit,
+      fetch: (params) =>
+        this.content.listContentWithRelations(
+          projectId,
+          params,
+          this.include(expand),
+          orderBy,
+          type,
+          published,
+          createdAfter,
+          createdBefore,
+          name,
+          deleted,
+        ),
+      map: (node) => mapContent(node, expand, mapVersionNode),
+    });
+  }
+
+  async get(id: string, projectId: string, query: GetContentQuery): Promise<Content> {
+    const expand = toArray<ContentExpand>(query.expand);
+    const node = await this.content.findContentWithRelations(id, projectId, this.include(expand));
+    if (!node) {
+      throw new ContentNotFoundError();
+    }
+    if ((node as { deleted?: boolean }).deleted) {
+      throw archivedContentError();
+    }
+    return mapContent(node, expand, await this.inlineVersionMapper(expand, projectId));
+  }
+
+  /**
+   * Mapper for the versions the editedVersion/publishedVersion expands inline —
+   * the standalone content-versions mapping (rules decompiled from the version
+   * config, questions null = not requested), so an inline version is exactly
+   * `get_content_version` without its expands. The id→code resolver catalogs
+   * load once per request, and only when a version expand actually asks.
+   */
+  private async inlineVersionMapper(
+    expand: ContentExpand[],
+    projectId: string,
+  ): Promise<(version: any) => ContentVersion> {
+    if (!expand.includes('editedVersion') && !expand.includes('publishedVersion')) {
+      // mapContent only invokes the mapper under those expand flags.
+      return () => {
+        throw new Error('inline version mapper invoked without a version expand');
+      };
+    }
+    const resolvers = await loadDecompileResolvers(this.prisma, projectId);
+    return (version) => {
+      const startRules = decompileStartRules(version.config, resolvers);
+      const hideRules = decompileHideRules(version.config, resolvers);
+      return mapVersion(version, null, undefined, {
+        ...(startRules ? { startRules } : {}),
+        ...(hideRules ? { hideRules } : {}),
+      });
+    };
+  }
+
+  /**
+   * Publish/unpublish ledger for one content, newest first. Wraps the domain
+   * method (which enriches actor/environment names at read time); this layer
+   * adds what the domain method deliberately leaves out — the project-ownership
+   * check, without which any valid content id from ANOTHER project would leak
+   * its history. Archived content stays readable: "was this ever live?" is asked
+   * about archived content more than live content, so no archived guard here.
+   */
+  async listPublishRecords(
+    requestUrl: string,
+    id: string,
+    projectId: string,
+    query: { limit: number; cursor?: string; environmentId?: string },
+  ): Promise<{ results: PublishRecord[]; next: string | null; previous: string | null }> {
+    const node = await this.content.findContentWithRelations(id, projectId, this.include([]));
+    if (!node) {
+      throw new ContentNotFoundError();
+    }
+    if (query.environmentId) {
+      // Validate the filter so a typo'd id reads as an error, not an empty
+      // history. Deleted environments allowed: their records are still real.
+      const env = await this.prisma.environment.findFirst({
+        where: { id: query.environmentId, projectId },
+        select: { id: true },
+      });
+      if (!env) {
+        throw new ValidationError('Environment not found in this project');
+      }
+    }
+    return paginate({
+      requestUrl,
+      cursor: query.cursor,
+      limit: query.limit,
+      fetch: (params) => this.content.listContentPublishRecords(id, params, query.environmentId),
+      map: (node) => {
+        // The domain method enriches nodes in place (names resolved at read
+        // time); its connection type doesn't carry the enrichment, so re-state it.
+        const n = node as typeof node & {
+          actorName?: string | null;
+          actorTokenName?: string | null;
+          environmentName?: string | null;
+        };
+        return {
+          action: n.action as 'publish' | 'unpublish',
+          versionId: n.versionId,
+          versionSequence: n.versionSequence,
+          environmentId: n.environmentId,
+          environmentName: n.environmentName ?? null,
+          actorName: n.actorName ?? null,
+          actorTokenName: n.actorTokenName ?? null,
+          createdAt: n.createdAt.toISOString(),
+        };
+      },
+    });
+  }
+
+  // v2 include: editedVersion + the per-environment publish rows; the nested
+  // published version object is only loaded when the publishedVersion expand is set.
+  private include(expand: ContentExpand[]): Prisma.ContentInclude {
+    return {
+      editedVersion: expand.includes('editedVersion'),
+      contentOnEnvironments: {
+        include: { publishedVersion: expand.includes('publishedVersion') },
+      },
+    };
+  }
+}

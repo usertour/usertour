@@ -336,6 +336,10 @@ interface ActivityFeedListProps {
   events: BizEvent[];
   environmentId?: string;
   loading: boolean;
+  /** Fetch-more in flight. Deliberately separate from `loading`, which stays
+   * false during load-more so the list doesn't collapse into a skeleton —
+   * this flag is what the Load More button's spinner/disabled key off. */
+  loadingMore?: boolean;
   hasMore: boolean;
   loadMore: () => void;
   emptyMessage?: string;
@@ -343,8 +347,16 @@ interface ActivityFeedListProps {
 }
 
 export const ActivityFeedList = (props: ActivityFeedListProps) => {
-  const { events, environmentId, loading, hasMore, loadMore, emptyMessage, renderTrailingContent } =
-    props;
+  const {
+    events,
+    environmentId,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    emptyMessage,
+    renderTrailingContent,
+  } = props;
   const { t } = useTranslation();
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
@@ -407,10 +419,10 @@ export const ActivityFeedList = (props: ActivityFeedListProps) => {
         <div className="flex justify-center mt-4">
           <Button
             onClick={loadMore}
-            disabled={loading}
+            disabled={loading || loadingMore}
             className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-muted border border-border rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
+            {loading || loadingMore ? (
               <div className="flex items-center space-x-2">
                 <SpinnerIcon className="w-4 h-4 animate-spin" />
                 <span>{t('activityFeed.loading')}</span>
@@ -434,6 +446,7 @@ interface ActivityFeedProps {
   environmentId?: string;
   events: BizEvent[];
   loading: boolean;
+  loadingMore?: boolean;
   hasNextPage: boolean;
   totalCount: number;
   loadMore: () => void | Promise<void>;
@@ -446,6 +459,7 @@ export const ActivityFeed = ({
   environmentId,
   events,
   loading,
+  loadingMore,
   hasNextPage,
   totalCount,
   loadMore,
@@ -482,6 +496,7 @@ export const ActivityFeed = ({
         events={events}
         environmentId={environmentId}
         loading={loading}
+        loadingMore={loadingMore}
         hasMore={hasNextPage}
         loadMore={loadMore}
         emptyMessage={emptyMessage}
@@ -507,16 +522,14 @@ interface UserActivityFeedProps {
 
 export const UserActivityFeed = (props: UserActivityFeedProps) => {
   const { environmentId, userId, emptyMessage, renderTrailingContent } = props;
-  const { events, loading, hasNextPage, totalCount, loadMore, refetch } = useUserActivityFeedQuery(
-    environmentId,
-    userId,
-    SHARED_CACHE_QUERY_OPTIONS,
-  );
+  const { events, loading, loadingMore, hasNextPage, totalCount, loadMore, refetch } =
+    useUserActivityFeedQuery(environmentId, userId, SHARED_CACHE_QUERY_OPTIONS);
   return (
     <ActivityFeed
       environmentId={environmentId}
       events={events}
       loading={loading}
+      loadingMore={loadingMore}
       hasNextPage={hasNextPage}
       totalCount={totalCount}
       loadMore={loadMore}
@@ -538,13 +551,14 @@ interface CompanyActivityFeedProps {
 
 export const CompanyActivityFeed = (props: CompanyActivityFeedProps) => {
   const { environmentId, companyId, emptyMessage, renderTrailingContent } = props;
-  const { events, loading, hasNextPage, totalCount, loadMore, refetch } =
+  const { events, loading, loadingMore, hasNextPage, totalCount, loadMore, refetch } =
     useCompanyActivityFeedQuery(environmentId, companyId, SHARED_CACHE_QUERY_OPTIONS);
   return (
     <ActivityFeed
       environmentId={environmentId}
       events={events}
       loading={loading}
+      loadingMore={loadingMore}
       hasNextPage={hasNextPage}
       totalCount={totalCount}
       loadMore={loadMore}

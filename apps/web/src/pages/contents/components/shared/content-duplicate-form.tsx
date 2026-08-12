@@ -1,7 +1,6 @@
 'use client';
 
 import { SpinnerIcon } from '@usertour/icons';
-import { useAppContext } from '@/contexts/app-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Button,
@@ -40,7 +39,6 @@ interface ContentDuplicateFormProps {
 
 const formSchema = z.object({
   name: z.string().max(30).min(1),
-  targetEnvironmentId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,7 +46,6 @@ type FormValues = z.infer<typeof formSchema>;
 export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
   const { onSuccess, content, open, onOpenChange } = props;
   const { invoke: duplicateContent } = useDuplicateContentMutation();
-  const { environment } = useAppContext();
   const contentTypeMeta = getContentTypeMeta(content.type);
 
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -63,7 +60,7 @@ export const ContentDuplicateForm = (props: ContentDuplicateFormProps) => {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: content.name, targetEnvironmentId: environment?.id },
+    defaultValues: { name: content.name },
     mode: 'onChange',
   });
 

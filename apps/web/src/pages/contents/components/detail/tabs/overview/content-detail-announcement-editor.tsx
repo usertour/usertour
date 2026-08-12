@@ -256,17 +256,19 @@ const AnnouncementSettingsColumn = () => {
   // persist the project default when none is set. Guarded per version id so an
   // in-flight save doesn't trigger a second write before the version refetches.
   //
-  // Skip when the current version is published: saveVersionTheme would fork it
-  // into a draft, so merely viewing a published themeless announcement would
-  // create a spurious "unpublished changes" draft. Like the builder, only write
-  // the default onto an already-editable draft — a real edit forks first, then
+  // Skip when the current version is FROZEN — live now, or ever published
+  // (version.publishedAt is stamped on first publish and never cleared):
+  // saveVersionTheme would fork it into a draft, so merely viewing a themeless
+  // published (or published-then-unpublished) announcement would create a
+  // spurious "unpublished changes" draft. This is a view-side-effect guard, so
+  // it must stay client-side and conservative — a real edit forks first, then
   // this fills the themeId on that draft.
   const assignedDefaultThemeFor = useRef<string | null>(null);
   useEffect(() => {
     if (isViewOnly || !content || !version?.id || version.themeId || !defaultTheme) {
       return;
     }
-    if (isVersionPublished(content, version.id)) {
+    if (isVersionPublished(content, version.id) || version.publishedAt) {
       return;
     }
     if (assignedDefaultThemeFor.current === version.id) {

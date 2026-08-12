@@ -726,11 +726,7 @@ const useLocalizationSaveTarget = (
       throw new Error('Missing version or content');
     }
     const bound = forkedRef.current?.base === versionId ? forkedRef.current.forked : versionId;
-    const editableVersionId = await resolveEditableVersionId(
-      currentContent,
-      bound,
-      createContentVersion,
-    );
+    const editableVersionId = await resolveEditableVersionId(bound, createContentVersion);
     if (editableVersionId !== bound) {
       forkedRef.current = { base: versionId, forked: editableVersionId };
       void refetchContent();

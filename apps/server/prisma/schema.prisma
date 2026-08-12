@@ -44,30 +44,31 @@ model Account {
 }
 
 model User {
-  id              String          @id @default(cuid())
-  createdAt       DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime        @updatedAt @db.Timestamptz(6)
-  email           String?         @unique
-  emailVerified   DateTime?       @db.Timestamptz()
-  password        String?
-  avatarUrl       String?
-  name            String?
+  id                     String                  @id @default(cuid())
+  createdAt              DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime                @updatedAt @db.Timestamptz(6)
+  email                  String?                 @unique
+  emailVerified          DateTime?               @db.Timestamptz()
+  password               String?
+  avatarUrl              String?
+  name                   String?
   /// Whether the user is a system admin (self-host only)
-  isSystemAdmin   Boolean         @default(false)
+  isSystemAdmin          Boolean                 @default(false)
   /// Whether the user is disabled (cannot login)
-  disabled        Boolean         @default(false)
+  disabled               Boolean                 @default(false)
   /// Whether the user has completed TOTP two-factor setup
-  twoFactorEnabled Boolean        @default(false)
+  twoFactorEnabled       Boolean                 @default(false)
   /// AES-256-GCM encrypted TOTP secret. Never log or expose.
-  twoFactorSecret  String?
+  twoFactorSecret        String?
   /// Timestamp when 2FA was last enabled
-  twoFactorEnabledAt DateTime?    @db.Timestamptz(6)
-  projects        UserOnProject[]
-  codes           Code[]
-  accounts        Account[]
-  refreshTokens   RefreshToken[]
-  invites         Invite[]
+  twoFactorEnabledAt     DateTime?               @db.Timestamptz(6)
+  projects               UserOnProject[]
+  codes                  Code[]
+  accounts               Account[]
+  refreshTokens          RefreshToken[]
+  invites                Invite[]
   twoFactorRecoveryCodes TwoFactorRecoveryCode[]
+  apiTokens              ApiToken[]
 }
 
 /// One-time backup codes for 2FA account recovery. Stored as bcrypt hash.
@@ -85,27 +86,27 @@ model TwoFactorRecoveryCode {
 /// Instance-level settings for self-hosted mode
 model InstanceSetting {
   /// Primary key
-  id          String   @id @default(cuid())
+  id                                      String   @id @default(cuid())
   /// Singleton key to ensure exactly one instance setting record exists
-  key         String   @unique @default("instance")
+  key                                     String   @unique @default("instance")
   /// Stable instance identifier
-  instanceId  String   @unique @default(cuid())
+  instanceId                              String   @unique @default(cuid())
   /// Instance display name
-  name        String?
+  name                                    String?
   /// Instance system admin contact email
-  contactEmail String?
+  contactEmail                            String?
   /// Whether public user registration is allowed
-  allowUserRegistration Boolean @default(true)
+  allowUserRegistration                   Boolean  @default(true)
   /// Whether all users must enable 2FA. Only meaningful in self-hosted mode.
-  require2FA  Boolean @default(false)
+  require2FA                              Boolean  @default(false)
   /// Whether self-host projects can manage project-level subscriptions
   allowProjectLevelSubscriptionManagement Boolean?
   /// Instance-level license JWT token
-  license     String?
+  license                                 String?
   /// Create timestamp
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  createdAt                               DateTime @default(now()) @db.Timestamptz(6)
   /// Update timestamp
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  updatedAt                               DateTime @updatedAt @db.Timestamptz(6)
 }
 
 model Register {
@@ -122,6 +123,9 @@ model Invite {
   createdAt DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @db.Timestamptz(6)
   code      String    @unique @default(cuid())
+  /// Environment ids the invited member may act on once they join (copied to
+  /// UserOnProject on accept). null = all environments.
+  allowedEnvironmentIds Json? @db.JsonB
   expired   Boolean   @default(false)
   canceled  Boolean   @default(false)
   deleted   Boolean   @default(false)
@@ -141,10 +145,10 @@ model Invite {
 }
 
 model Code {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
-  user      User     @relation(fields: [userId], references: [id])
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id])
   userId    String
   /// When this code stops being valid. Set at creation (typically createdAt + 1h).
   /// Codes are single-use (deleted on consumption); this protects against forwarded
@@ -154,34 +158,35 @@ model Code {
   /// expiresAt, and the `expiresAt > now()` read filter naturally treats
   /// those rows as expired.
   expiresAt DateTime? @db.Timestamptz(6)
-  ext       Json?    @db.JsonB
+  ext       Json?     @db.JsonB
 }
 
 model Project {
-  id             String          @id @default(cuid())
-  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime        @updatedAt @db.Timestamptz(6)
-  name           String
-  logoUrl        String?
+  id                  String                       @id @default(cuid())
+  createdAt           DateTime                     @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime                     @updatedAt @db.Timestamptz(6)
+  name                String
+  logoUrl             String?
   /// Whether this project is assigned to use the instance license entitlement
-  usesInstanceLicense Boolean    @default(false)
+  usesInstanceLicense Boolean                      @default(false)
   /// Stripe customer ID
-  customerId     String?
+  customerId          String?
   /// Stripe subscription ID
-  subscriptionId String?
+  subscriptionId      String?
   /// License
-  license        String?
-  users          UserOnProject[]
-  environments   Environment[]
-  themes         Theme[]
-  attributes     Attribute[]
-  events         Event[]
-  localizations  Localization[]
-  invites        Invite[]
-  contents       Content[]
-  segments       Segment[]
-  ssoProviders   ProjectSSOIdentityProvider[]
-  ssoSettings    ProjectSsoSettings?
+  license             String?
+  users               UserOnProject[]
+  apiTokens           ApiTokenOnProject[]
+  environments        Environment[]
+  themes              Theme[]
+  attributes          Attribute[]
+  events              Event[]
+  localizations       Localization[]
+  invites             Invite[]
+  contents            Content[]
+  segments            Segment[]
+  ssoProviders        ProjectSSOIdentityProvider[]
+  ssoSettings         ProjectSsoSettings?
 }
 
 /// Project-level SSO settings: enforcement (requireSso) and JIT provisioning
@@ -190,11 +195,11 @@ model Project {
 /// Provisioning lives here — not per-provider — because it is a project policy
 /// that should not differ between a project's connections.
 model ProjectSsoSettings {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
-  project   Project  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  projectId String   @unique
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+  project        Project  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  projectId      String   @unique
   /// When true, members of this project must sign in through an SSO provider;
   /// password/social login is rejected for everyone except the project OWNER
   /// and system admins (break-glass so an IdP outage cannot lock the project).
@@ -218,17 +223,17 @@ model ProjectSsoSettings {
 /// feature. One project can hold several named connections. Provisioning policy
 /// (default role, allowed domains) lives on ProjectSsoSettings, not here.
 model ProjectSSOIdentityProvider {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
-  project   Project  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  projectId String
+  id               String          @id @default(cuid())
+  createdAt        DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime        @updatedAt @db.Timestamptz(6)
+  project          Project         @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  projectId        String
   /// OIDC | SAML — only OIDC is used in v1
-  type      SsoProviderType @default(OIDC)
+  type             SsoProviderType @default(OIDC)
   /// Admin-named connection, e.g. "Okta", "Azure Entra ID"
-  name      String
+  name             String
   /// active | inactive | error — live login still re-checks plan entitlement
-  status    String   @default("active")
+  status           String          @default("active")
   // --- OIDC ---
   issuer           String
   clientId         String
@@ -253,6 +258,10 @@ model UserOnProject {
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
   role      Role
   actived   Boolean
+  /// Environment ids this member may act on (the third permission dimension,
+  /// mirrors ApiToken.allowedEnvironmentIds). null = all environments; ignored
+  /// for OWNER. Personal API keys inherit this as a ceiling.
+  allowedEnvironmentIds Json? @db.JsonB
   project   Project? @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   user      User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   projectId String?
@@ -318,6 +327,133 @@ model AccessToken {
   @@index([accessToken])
 }
 
+/// User-owned API token for the public REST API (v2) and MCP/OAuth.
+/// Authority at request time = ROLE_CAPABILITIES[owner's role on the project] ∩ scopes.
+model ApiToken {
+  id                    String              @id @default(cuid())
+  createdAt             DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
+  name                  String
+  prefix                String              @default("utp_")
+  /// SHA-256 hash of the token secret. Plaintext is returned once at creation and never stored.
+  hashedSecret          String              @unique
+  /// Trailing characters of the secret, for display only (e.g. "···a1b2").
+  partialKey            String
+  /// Capability[] (from @usertour/types) the token may exercise, intersected with the owner's role per request.
+  scopes                Json                @db.JsonB
+  /// Environment ids this token may ACT ON (read + write of env-scoped resources, and publish).
+  /// null/absent = all environments in the token's project(s) — legacy/back-compat default.
+  allowedEnvironmentIds Json?               @db.JsonB
+  /// Set when issued via an OAuth grant; null for user-created personal tokens.
+  clientId              String?
+  /// The OAuthGrant that issued this access token; revoking the grant kills it.
+  oauthGrantId          String?
+  isActive              Boolean             @default(true)
+  expiresAt             DateTime?           @db.Timestamptz(6)
+  lastUsedAt            DateTime?           @db.Timestamptz(6)
+  user                  User                @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  userId                String
+  projects              ApiTokenOnProject[]
+
+  @@index([userId])
+  @@index([hashedSecret])
+  @@index([clientId])
+  @@index([oauthGrantId])
+}
+
+/// Join table scoping an ApiToken to one or more projects (mirrors UserOnProject).
+model ApiTokenOnProject {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
+  apiToken   ApiToken? @relation(fields: [apiTokenId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  project    Project?  @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  apiTokenId String?
+  projectId  String?
+
+  @@unique([apiTokenId, projectId])
+}
+
+/// An OAuth 2.1 client (Phase 3). Created via Dynamic Client Registration (RFC
+/// 7591) or seeded; project-agnostic — the project is chosen by the user at
+/// consent time. Public clients (MCP connectors) have no secret and use PKCE.
+model OAuthClient {
+  id                          String    @id @default(cuid()) // = client_id
+  createdAt                   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt                   DateTime  @updatedAt @db.Timestamptz(6)
+  clientType                  String // 'public' | 'confidential'
+  /// bcrypt/SHA-256 hash of the client secret; null for public clients (PKCE).
+  clientSecretHash            String?
+  name                        String
+  /// string[] of exact-match redirect URIs.
+  redirectUris                Json      @db.JsonB
+  /// string[] of granted grant types.
+  grantTypes                  Json      @db.JsonB
+  logoUri                     String?
+  clientUri                   String?
+  /// SHA-256 hash of the RFC 7592 registration access token (manage this client).
+  registrationAccessTokenHash String?   @unique
+  /// The user who registered it interactively; null for pure DCR.
+  createdByUserId             String?
+  lastUsedAt                  DateTime? @db.Timestamptz(6)
+
+  @@index([createdByUserId])
+}
+
+/// A one-time OAuth authorization code (short TTL). Carries the consent decision
+/// (chosen project + scopes) and the PKCE challenge until token exchange.
+model OAuthAuthorizationCode {
+  id                    String    @id @default(cuid())
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  /// SHA-256 hash of the code; the plaintext is only in the redirect.
+  hashedCode            String    @unique
+  clientId              String
+  userId                String
+  projectId             String
+  scopes                Json      @db.JsonB
+  /// Environment ids the consent granted; carried to the grant/token. null = all (Phase 2).
+  allowedEnvironmentIds Json?     @db.JsonB
+  redirectUri           String
+  codeChallenge         String?
+  codeChallengeMethod   String? // 'S256'
+  grantId               String
+  resource              String?
+  expiresAt             DateTime  @db.Timestamptz(6)
+  consumedAt            DateTime? @db.Timestamptz(6)
+
+  @@index([clientId])
+}
+
+/// A durable OAuth grant: the user's standing authorization of a client for a
+/// project, and the current (rotating) refresh token. Revoking it cascade-kills
+/// the access tokens (ApiToken rows) it issued, via ApiToken.oauthGrantId.
+model OAuthGrant {
+  id                    String    @id @default(cuid()) // = grantId
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  // Rolled up from the grant's short-lived access-token rows before the daily
+  // expiry cleanup deletes them — the durable "last used" for Connected Apps.
+  lastUsedAt            DateTime? @db.Timestamptz(6)
+  userId                String
+  clientId              String
+  projectId             String
+  scopes                Json      @db.JsonB
+  /// Environment ids this grant's issued tokens may act on; null = all (set at consent, Phase 2).
+  allowedEnvironmentIds Json?     @db.JsonB
+  /// SHA-256 hash of the current refresh token; rotated on each refresh.
+  hashedRefreshToken    String?   @unique
+  /// The PREVIOUS refresh hash, honored for a short grace window after rotation
+  /// (rotatedAt) so a client whose refresh RESPONSE was lost can retry with the
+  /// old token instead of bricking the grant. See OAuthModelService.
+  previousHashedRefreshToken String? @unique
+  rotatedAt             DateTime? @db.Timestamptz(6)
+  refreshExpiresAt      DateTime? @db.Timestamptz(6)
+  revokedAt             DateTime? @db.Timestamptz(6)
+
+  @@index([userId, clientId])
+  @@index([clientId])
+}
+
 model Theme {
   id         String    @id @default(cuid())
   createdAt  DateTime  @default(now()) @db.Timestamptz(6)
@@ -362,6 +498,7 @@ model Content {
   editedVersionId       String?                @unique
   bizSession            BizSession[]
   contentOnEnvironments ContentOnEnvironment[]
+  publishRecords        ContentPublishRecord[]
 }
 
 model ContentOnEnvironment {
@@ -380,14 +517,60 @@ model ContentOnEnvironment {
   @@unique([environmentId, contentId])
 }
 
+/// One publish / unpublish event — the per-content "Publish history" product
+/// surface (permanent, content-scoped, visible to anyone who can read the
+/// content). Deliberately NOT derived from AuditLog: audit is owner-only,
+/// plan-gated and read-time windowed; this is product data written in the same
+/// transaction as the publish itself. Actor is either-or (web user OR the API
+/// key/OAuth token that acted) — plain ids, no FKs, mirroring AuditLog: records
+/// outlive users/tokens/environments; names resolve at read time.
+model ContentPublishRecord {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  content         Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  contentId       String
+  versionId       String
+  /// Denormalized so "v3" still renders if the version row is later deleted.
+  versionSequence Int
+  environmentId   String
+  /// publish | unpublish
+  action          String
+  actorUserId     String?
+  actorTokenId    String?
+  /// Denormalized at write time, same reason as versionSequence: the ledger is
+  /// the audit record, so attribution must survive the actor row disappearing.
+  /// It does disappear routinely — an OAuth-issued token is REPLACED on every
+  /// refresh, so a read-time join silently dropped `actorTokenName` to null and
+  /// the row then read as a dashboard publish by a human (a release-ops review
+  /// watched one publish change hands between two reads minutes apart).
+  actorName       String?
+  actorTokenName  String?
+  environmentName String?
+
+  @@index([contentId, createdAt])
+}
+
 model Version {
   id                    String                  @id @default(cuid())
   createdAt             DateTime                @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime                @updatedAt @db.Timestamptz(6)
+  /// FIRST time this version went live (freeze stamp). Set once in the publish
+  /// transaction, never cleared (unpublish keeps it) and never copied to forks.
+  /// Non-null = the version is frozen read-only forever (see versionFrozen in
+  /// content.service). NOT live state — that lives on ContentOnEnvironment.
+  /// (Column predates this use and was dead/empty; adopted without backfill,
+  /// so only versions published after the freeze rule shipped carry it.)
   publishedAt           DateTime?               @db.Timestamptz(6)
   scheduledAt           DateTime?               @db.Timestamptz(6)
   deleted               Boolean                 @default(false)
   sequence              Int                     @default(0)
+  /// Who created this version row (web session user, or the API key's owner).
+  /// Nullable: rows predating the column, and system-created seeds.
+  createdByUserId       String?
+  /// Who last wrote the version ROW (whole-version save / scalar fields). Step
+  /// sub-row operations (sequence drag, location data) don't bump the row's
+  /// updatedAt and intentionally don't restamp this either — the pair stays consistent.
+  updatedByUserId       String?
   theme                 Theme?                  @relation(fields: [themeId], references: [id])
   themeId               String?
   content               Content                 @relation("ContentVersions", fields: [contentId], references: [id])
@@ -903,4 +1086,43 @@ model IntegrationLog {
   data          Json?       @db.JsonB
 
   @@index([integrationId, status])
+}
+
+/// Append-only audit trail for the open write surface (v2 API + MCP).
+/// Typed columns are the query / filter / forensic axes; JSONB holds variable,
+/// redacted detail (snapshots, request metadata) that is never used as a filter
+/// predicate. No foreign keys on purpose: an audit row must outlive the entities
+/// it references (resources may be hard-deleted, tokens rotated, users removed),
+/// and `resourceId` is polymorphic across many tables. Rows are append-only.
+model AuditLog {
+  /// Primary key
+  id        String   @id @default(cuid())
+  /// Create timestamp
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  // Where (filter axes)
+  projectId     String
+  environmentId String?
+
+  // Who / how (filter + forensic axes)
+  source       String // 'api' | 'mcp' | 'web' | 'system'
+  actorUserId  String?
+  actorTokenId String?
+
+  // What (filter axes)
+  action       String // 'create' | 'update' | 'delete'
+  operation    String // exact tool / route, e.g. 'delete_segment'
+  resourceType String
+  resourceId   String
+
+  // Variable detail (never filtered on; redacted per resourceType policy)
+  before   Json? @db.JsonB
+  after    Json? @db.JsonB
+  metadata Json? @db.JsonB
+
+  @@index([projectId, resourceType, resourceId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([projectId, source, createdAt])
+  @@index([actorTokenId, createdAt])
+  @@index([actorUserId, createdAt])
 }

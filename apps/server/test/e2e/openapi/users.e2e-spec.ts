@@ -214,6 +214,18 @@ describe('OpenAPI /v1/users (e2e)', () => {
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('E1017');
     });
+
+    it('rejects a blank id on upsert (400) — blank ids create unaddressable rows', async () => {
+      for (const id of ['', '   ']) {
+        const res = await openapi(app, {
+          method: 'post',
+          path: '/v1/users',
+          token: fxPage.apiKey,
+          body: { id, attributes: { name: 'ghost' } },
+        });
+        expect(res.status).toBe(400);
+      }
+    });
   });
 
   describe('environment-scoping (IDOR)', () => {

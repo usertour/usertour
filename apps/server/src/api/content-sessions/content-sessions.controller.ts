@@ -1,0 +1,118 @@
+import {
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
+import { Capability } from '@usertour/types';
+
+import { ApiTokenGuard } from '@/api-token/api-token.guard';
+import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { Environment } from '@/environments/models/environment.model';
+
+import { ApiValidationPipe } from '../shared/validation.pipe';
+import { ApiContentSessionsService } from './content-sessions.service';
+import {
+  ContentSessionDto,
+  GetContentSessionQueryDto,
+  ListContentSessionsQueryDto,
+  ListContentSessionsResponseDto,
+} from './content-sessions.schema';
+
+@ApiTags('Sessions')
+@ApiStandardErrorResponses()
+@Controller('v2/projects/:projectId/environments/:environmentId/sessions')
+@UseGuards(ApiTokenGuard)
+@UseFilters(OpenAPIExceptionFilter)
+@UsePipes(ApiValidationPipe)
+@ApiBearerAuth()
+export class ApiContentSessionsController {
+  constructor(private readonly service: ApiContentSessionsService) {}
+
+  @Get()
+  @RequireCapability(Capability.SessionRead)
+  @ApiOperation({
+    summary: 'List sessions',
+    description: 'Sessions in this environment. Filter by contentId / userId.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiResponse({
+    status: 200,
+    description: 'List of content sessions',
+    type: ListContentSessionsResponseDto,
+  })
+  async list(
+    @RequestUrl() requestUrl: string,
+    @EnvironmentDecorator() environment: Environment,
+    @Query() query: ListContentSessionsQueryDto,
+  ) {
+    return this.service.list(requestUrl, environment, query);
+  }
+
+  @Get(':id')
+  @RequireCapability(Capability.SessionRead)
+  @ApiOperation({ summary: 'Get a session' })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Content session ID' })
+  @ApiResponse({ status: 200, description: 'Content session found', type: ContentSessionDto })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
+  async get(
+    @Param('id') id: string,
+    @EnvironmentDecorator() environment: Environment,
+    @Query() query: GetContentSessionQueryDto,
+  ) {
+    return this.service.get(id, environment, query);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.SessionManage)
+  @ApiOperation({
+    summary: 'Delete a session',
+    description:
+      'PERMANENT, with three distinct consequences: the session record is gone (no restore ' +
+      'exists); its recorded answers vanish from question analytics irreversibly — deleting ' +
+      '"test" sessions rewrites real response counts; and attribute values the session wrote ' +
+      'onto the user via bindAttribute REMAIN on the user (clearing those is a separate ' +
+      'user-attribute update, or the profile will contradict the survey analytics).',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Content session ID' })
+  @ApiResponse({ status: 204, description: 'Content session deleted' })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
+  async remove(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
+    await this.service.delete(id, environment);
+  }
+
+  @Post(':id/end')
+  @HttpCode(200)
+  @RequireCapability(Capability.SessionManage)
+  @ApiOperation({
+    summary: 'End a session',
+    description:
+      'End an in-progress session. Idempotent: a session already in its terminal state is ' +
+      'returned as-is. Tracker sessions have no end semantics and refuse with E1017.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'environmentId', description: 'Environment ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Content session ID' })
+  @ApiResponse({ status: 200, description: 'Content session ended', type: ContentSessionDto })
+  @ApiResponse({ status: 404, description: 'Content session not found', type: ErrorResponseDto })
+  async end(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
+    return this.service.end(id, environment);
+  }
+}

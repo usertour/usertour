@@ -79,6 +79,10 @@ export interface ElementNode {
   attrCode?: string;
   fallback?: string;
   value?: string;
+  // Element-flag marks on a user-attribute (a void inline has no text leaves).
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
 }
 
 export type DescendantNode = TextNode | ElementNode;

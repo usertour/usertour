@@ -170,6 +170,14 @@ const getEventError = (data: EventConditionData | undefined) => {
     ret.showError = true;
     return ret;
   }
+  // A windowed op needs a unit too (else the runtime silently assumes days).
+  if (
+    data.timeLogic !== EventTimeLogic.AT_ANY_POINT_IN_TIME &&
+    (data.timeUnit === undefined || data.timeUnit === null)
+  ) {
+    ret.showError = true;
+    return ret;
+  }
   return ret;
 };
 

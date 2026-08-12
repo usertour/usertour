@@ -1,6 +1,7 @@
 // Main editable embed component
 
 import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
+import { isEmptyString } from '@usertour/helpers';
 import type { EmbedData } from '@usertour/widget';
 import { Embed } from '@usertour/widget';
 import type { ContentOmbedInfo } from '@usertour/types';
@@ -14,6 +15,11 @@ import {
 } from '../../../types/editor';
 import { EMBED_DIMENSION_TYPE_OPTIONS } from '../../constants';
 import { ActionButtonsBase, MarginControls, WidthControls } from '../../shared';
+import {
+  EditorErrorTooltip,
+  EditorErrorTooltipContent,
+  EditorErrorTooltipTrigger,
+} from '../../shared/editor-error-tooltip';
 import type { DimensionType, MarginPosition } from '../../types';
 import { ensureDimensionWithDefaults } from '../../utils';
 import { EmbedUrlInput } from './embed-url-input';
@@ -30,6 +36,11 @@ export const ContentEditorEmbed = memo(({ element, path, id }: ContentEditorEmbe
   const { t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  // An empty url is "missing required data" — the save gate blocks the whole
+  // step on it, so flag this block LIVE (same as button/question). Suppress
+  // while the url-input popover is open so it doesn't fight the field.
+  const isShowError = isEmptyString(element.url) && !isOpen;
 
   // Delete handler
   const handleDelete = useCallback(() => {
@@ -182,60 +193,67 @@ export const ContentEditorEmbed = memo(({ element, path, id }: ContentEditorEmbe
   );
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Embed data={embedData} isReadOnly={false} />
-      </PopoverTrigger>
-      <PopoverContent
-        className="bg-card"
-        side="right"
-        align="start"
-        style={{ zIndex }}
-        sideOffset={10}
-      >
-        <div className="flex flex-col gap-2.5">
-          <EmbedUrlInput
-            url={element.url}
-            isLoading={isLoading}
-            onUrlChange={handleUrlChange}
-            onSubmit={handleSubmitUrl}
-          />
+    <EditorErrorTooltip open={isShowError}>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <EditorErrorTooltipTrigger>
+          <PopoverTrigger asChild>
+            <Embed data={embedData} isReadOnly={false} />
+          </PopoverTrigger>
+        </EditorErrorTooltipTrigger>
+        <PopoverContent
+          className="bg-card"
+          side="right"
+          align="start"
+          style={{ zIndex }}
+          sideOffset={10}
+        >
+          <div className="flex flex-col gap-2.5">
+            <EmbedUrlInput
+              url={element.url}
+              isLoading={isLoading}
+              onUrlChange={handleUrlChange}
+              onSubmit={handleSubmitUrl}
+            />
 
-          <WidthControls
-            label={t('contentBuilder.editor.embed.displayWidth')}
-            value={ensureDimensionWithDefaults(element.width)}
-            options={EMBED_DIMENSION_TYPE_OPTIONS}
-            onTypeChange={handleWidthTypeChange}
-            onValueChange={handleWidthValueChange}
-            zIndex={zIndex}
-            inputPlaceholder={t('contentBuilder.editor.embed.displayWidth')}
-          />
+            <WidthControls
+              label={t('contentBuilder.editor.embed.displayWidth')}
+              value={ensureDimensionWithDefaults(element.width)}
+              options={EMBED_DIMENSION_TYPE_OPTIONS}
+              onTypeChange={handleWidthTypeChange}
+              onValueChange={handleWidthValueChange}
+              zIndex={zIndex}
+              inputPlaceholder={t('contentBuilder.editor.embed.displayWidth')}
+            />
 
-          <WidthControls
-            label={t('contentBuilder.editor.embed.displayHeight')}
-            value={ensureDimensionWithDefaults(element.height)}
-            options={EMBED_DIMENSION_TYPE_OPTIONS}
-            onTypeChange={handleHeightTypeChange}
-            onValueChange={handleHeightValueChange}
-            zIndex={zIndex}
-            inputPlaceholder={t('contentBuilder.editor.embed.displayHeight')}
-          />
+            <WidthControls
+              label={t('contentBuilder.editor.embed.displayHeight')}
+              value={ensureDimensionWithDefaults(element.height)}
+              options={EMBED_DIMENSION_TYPE_OPTIONS}
+              onTypeChange={handleHeightTypeChange}
+              onValueChange={handleHeightValueChange}
+              zIndex={zIndex}
+              inputPlaceholder={t('contentBuilder.editor.embed.displayHeight')}
+            />
 
-          <MarginControls
-            margin={element.margin}
-            onMarginChange={handleMarginValueChange}
-            onMarginEnabledChange={handleMarginCheckedChange}
-          />
+            <MarginControls
+              margin={element.margin}
+              onMarginChange={handleMarginValueChange}
+              onMarginEnabledChange={handleMarginCheckedChange}
+            />
 
-          <ActionButtonsBase
-            entityName="embed"
-            onDelete={handleDelete}
-            onAddLeft={handleAddLeft}
-            onAddRight={handleAddRight}
-          />
-        </div>
-      </PopoverContent>
-    </Popover>
+            <ActionButtonsBase
+              entityName="embed"
+              onDelete={handleDelete}
+              onAddLeft={handleAddLeft}
+              onAddRight={handleAddRight}
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
+      <EditorErrorTooltipContent style={{ zIndex }}>
+        {t('actions.errors.embed.emptyUrl')}
+      </EditorErrorTooltipContent>
+    </EditorErrorTooltip>
   );
 });
 

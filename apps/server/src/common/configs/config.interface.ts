@@ -43,6 +43,7 @@ export interface Config {
   app: {
     homepageUrl: string;
     apiUrl: string;
+    mcpServerUrl: string;
     docUrl: string;
     ssoCallbackUrl: string;
   };

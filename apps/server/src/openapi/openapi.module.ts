@@ -1,5 +1,13 @@
 import { Module } from '@nestjs/common';
 import { OpenAPIKeyGuard } from './openapi.guard';
+
+/**
+ * The v1 REST surface (`/v1/*`) — FROZEN. Do not add endpoints, fields, or
+ * behavior here: v2 (`src/api`, `/v2/projects/:projectId/...`) is the active
+ * surface and the only one that grows. v1 stays online for existing callers —
+ * content is read-only here and writes cover only end-user data (users /
+ * companies / sessions / memberships) — but any new capability belongs in v2.
+ */
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
 import { AnalyticsModule } from '@/analytics/analytics.module';

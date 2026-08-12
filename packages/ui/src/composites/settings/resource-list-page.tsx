@@ -10,6 +10,11 @@ export interface ResourceListPageProps<T>
    * used by attributes for the bizType Tabs row.
    */
   toolbar?: ReactNode;
+  /**
+   * Optional content rendered after the table, inside the scroll container —
+   * used by the audit log for its infinite-scroll sentinel + spinner.
+   */
+  footer?: ReactNode;
 }
 
 /**
@@ -18,8 +23,18 @@ export interface ResourceListPageProps<T>
  * want the page chrome, use `ResourceListBody` directly.
  */
 export function ResourceListPage<T>(props: ResourceListPageProps<T>) {
-  const { columns, rows, getRowKey, loading, skeleton, empty, toolbar, onRowClick, ...pageProps } =
-    props;
+  const {
+    columns,
+    rows,
+    getRowKey,
+    loading,
+    skeleton,
+    empty,
+    toolbar,
+    footer,
+    onRowClick,
+    ...pageProps
+  } = props;
 
   return (
     <SettingsPage {...pageProps}>
@@ -33,6 +48,7 @@ export function ResourceListPage<T>(props: ResourceListPageProps<T>) {
         empty={empty}
         onRowClick={onRowClick}
       />
+      {footer}
     </SettingsPage>
   );
 }
