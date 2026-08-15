@@ -28,7 +28,9 @@ export class UtilitiesResolver {
 
   @Public()
   @Query(() => GlobalConfig)
-  async globalConfig(@Context() context: { req: Request }) {
+  async globalConfig(@Context() context: { req?: Request }) {
+    // `req` is absent over the legacy websocket transport
+    // (installSubscriptionHandlers) — the URL helpers tolerate that.
     return this.utilitiesService.globalConfig(context.req);
   }
 }

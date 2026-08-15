@@ -82,6 +82,26 @@ describe('API v2 rate limiting (e2e)', () => {
     const other = await call('1.2.3.9, 8.8.8.8');
     expect(other.status).not.toBe(429);
   });
+
+  it('a PRIVATE-range peer is the client, not a trusted hop — its XFF claims are ignored', async () => {
+    // LAN deployment shape: nginx appends the real (private) peer as the
+    // rightmost entry. Under a linklocal/uniquelocal-trusting default the
+    // walk would continue PAST 10.0.0.5 into the attacker-controlled prefix
+    // and every rotation would mint a fresh bucket; loopback-only must stop
+    // at the private address itself.
+    const call = (xff: string) =>
+      request(app.getHttpServer())
+        .get('/v2/projects/any/environments')
+        .set('Authorization', 'Bearer utp_garbage_lan')
+        .set('X-Forwarded-For', xff);
+    for (let i = 0; i < 3; i++) {
+      const res = await call(`5.6.7.${i}, 10.0.0.5`);
+      expect(res.status).not.toBe(429);
+    }
+    const overflow = await call('5.6.7.9, 10.0.0.5');
+    expect(overflow.status).toBe(429);
+    expect(overflow.body.error?.code).toBe('E1013');
+  });
 });
 
 /**

@@ -102,7 +102,7 @@ export class UtilitiesService {
     return providers;
   }
 
-  async globalConfig(req: Request) {
+  async globalConfig(req?: Request) {
     const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
     // Same fallback chain the live endpoints use (resolve-origin.ts): configured
     // URL, else derived from the request host. A zero-config self-host otherwise

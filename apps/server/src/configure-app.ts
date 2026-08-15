@@ -31,18 +31,20 @@ import cookieParser from 'cookie-parser';
 export function configureApp(app: INestApplication): void {
   // Express `trust proxy` for the whole pipeline (req.ip / req.protocol),
   // configurable via TRUST_PROXY in every form Express accepts — hop count,
-  // true/false, or an address list. The default trusts loopback + private
-  // ranges: the trust chain walks outward and stops at the first PUBLIC
-  // address, so the bundled nginx (loopback) and any in-network proxy in
-  // front of it are trusted with zero config, while a public client's
-  // spoofed X-Forwarded-For entries sit LEFT of that first public hop and
-  // are never reached. The old `true` (believe the LEFTMOST, i.e.
-  // client-controlled, entry) let rotating fake XFF values mint fresh
-  // per-IP rate-limit buckets. An attacker already inside the private
-  // network can still spoof — accepted, same stance as peer self-hosted
-  // Node apps. Lives here, not main.ts, so e2e runs the same trust
+  // true/false, or an address list. The default trusts ONLY loopback: the
+  // bundled nginx in the same container is the one proxy every shipped
+  // topology is guaranteed to have, and the one nothing outside the box can
+  // impersonate. Anything else — including private-range peers — is treated
+  // as the client itself, so its X-Forwarded-For claims are ignored. Do NOT
+  // widen this to linklocal/uniquelocal: on a LAN deployment that turns
+  // every internal client into a "trusted proxy", and a rotating fake XFF
+  // prefix mints a fresh per-IP rate-limit bucket per request (the exact
+  // bypass the old `true` had). Deployments with a real proxy in front
+  // (Railway, Cloudflare, an ingress) declare it explicitly via TRUST_PROXY;
+  // until then they degrade to coarse-but-safe shared buckets, never to
+  // spoofable ones. Lives here, not main.ts, so e2e runs the same trust
   // semantics production does.
-  const trustProxyRaw = process.env.TRUST_PROXY ?? 'loopback, linklocal, uniquelocal';
+  const trustProxyRaw = process.env.TRUST_PROXY ?? 'loopback';
   const trustProxy = /^\d+$/.test(trustProxyRaw)
     ? Number(trustProxyRaw)
     : trustProxyRaw === 'true'

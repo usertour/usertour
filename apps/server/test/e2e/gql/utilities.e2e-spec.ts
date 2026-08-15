@@ -100,8 +100,10 @@ describe('GraphQL utilities (e2e)', () => {
       for (const p of config.authProviders) {
         expect(typeof p).toBe('string');
       }
-      // apiUrl is nullable in the schema.
-      expect(['string', 'object']).toContain(typeof config.apiUrl); // string or null
+      // Over HTTP, apiUrl is always a string: configured API_URL or derived
+      // from the request (resolveOrigin). The schema stays nullable only for
+      // the req-less legacy websocket transport.
+      expect(typeof config.apiUrl).toBe('string');
     });
 
     it('is reachable with a token too (Public does not require auth)', async () => {
@@ -110,6 +112,10 @@ describe('GraphQL utilities (e2e)', () => {
       expect(typeof config.isSelfHostedMode).toBe('boolean');
     });
   });
+
+  // The URL-derivation contract (derive-from-request vs config-wins) lives in
+  // url-derivation.e2e-spec.ts: the config object is a module-load-time
+  // snapshot, so those cases need a spec file that pins env BEFORE imports.
 
   describe('queryOembedInfo', () => {
     const QUERY_OEMBED = `query ($url: String!) {

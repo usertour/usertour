@@ -8,10 +8,15 @@ import { Request } from 'express';
  * host (dev / when unset). `trust proxy` is on, so `req.protocol` honours
  * `X-Forwarded-Proto`. Returned without a trailing slash.
  */
-export function resolveOrigin(config: ConfigService, req: Request): string {
+export function resolveOrigin(config: ConfigService, req?: Request): string {
   const configured = config.get<string>('app.apiUrl');
   if (configured) {
     return configured.replace(/\/+$/, '');
+  }
+  // No HTTP request to derive from — GraphQL over the legacy websocket
+  // transport builds a context without `req`. Nothing to say, not a crash.
+  if (!req?.get) {
+    return '';
   }
   return `${req.protocol}://${req.get('host')}`;
 }
@@ -26,12 +31,13 @@ export function resolveOrigin(config: ConfigService, req: Request): string {
  * and clients another — RFC 9728 resource validation then refused the
  * mismatch and the whole auth flow died.
  */
-export function resolveMcpResource(config: ConfigService, req: Request): string {
+export function resolveMcpResource(config: ConfigService, req?: Request): string {
   const configured = config.get<string>('app.mcpServerUrl');
   if (configured) {
     return configured.replace(/\/+$/, '');
   }
-  return `${resolveOrigin(config, req)}/mcp`;
+  const origin = resolveOrigin(config, req);
+  return origin ? `${origin}/mcp` : '';
 }
 
 /** Origin of {@link resolveMcpResource} — the base for the OAuth endpoints an
