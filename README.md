@@ -58,6 +58,12 @@ Connecting takes two commands (Claude Code shown; every MCP client works):
 /plugin install usertour@usertour
 ```
 
+**Self-hosting?** Point the plugin at your own instance before connecting — your exact URL is shown in **Settings → MCP**:
+
+```bash
+export USERTOUR_MCP_URL="https://<your-usertour-host>/mcp"
+```
+
 Below: real prompts and the unedited results. Full walkthrough with every prompt — including AI-driven analytics — in [Build Your Onboarding with AI](https://docs.usertour.io/build-onboarding-with-ai).
 
 ### 🪄 "Build an onboarding flow for the Create Task feature"
