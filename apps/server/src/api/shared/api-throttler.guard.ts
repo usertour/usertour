@@ -106,21 +106,25 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     if (resolved) {
       return resolved.tracker;
     }
-    // req.ip is Express's trust-proxy-resolved client: the first address from
-    // the right of X-Forwarded-For that is NOT a trusted hop. Never read
-    // req.ips[0] here — that's the LEFTMOST entry, which the client itself
-    // controls, and a rotating fake value would mint a fresh bucket per
-    // request, bypassing the fallback limit entirely.
+    return ApiThrottlerGuard.ipTracker(req);
+  }
+
+  /**
+   * Fallback tracker key: the trust-proxy-resolved client. `req.ip` is the
+   * first address from the right of X-Forwarded-For that is NOT a trusted
+   * hop. Never read `req.ips[0]` here — that's the LEFTMOST entry, which the
+   * client itself controls, and a rotating fake value would mint a fresh
+   * bucket per request, bypassing the fallback limit entirely.
+   */
+  private static ipTracker(req: Record<string, unknown>): string {
     return `api:ip:${(req.ip as string | undefined) ?? 'unknown'}`;
   }
 
   // ── bucket + limit resolution ───────────────────────────────────────
 
   private async resolveThrottle(req: Record<string, any>): Promise<ResolvedThrottle> {
-    // Same rule as getTracker: trust-proxy-resolved req.ip only (see above).
-    const ip = (req.ip as string | undefined) ?? 'unknown';
     const fallback: ResolvedThrottle = {
-      tracker: `api:ip:${ip}`,
+      tracker: ApiThrottlerGuard.ipTracker(req),
       limit: Number(this.config.get('API_THROTTLE_FALLBACK_LIMIT') ?? 100),
     };
 

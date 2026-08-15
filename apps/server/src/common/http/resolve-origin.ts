@@ -5,8 +5,9 @@ import { Request } from 'express';
  * The public origin the server is reachable at — the issuer/base for OAuth
  * metadata and `WWW-Authenticate` `resource_metadata` URLs. Prefers the
  * configured `app.apiUrl` (the canonical public host); falls back to the request
- * host (dev / when unset). `trust proxy` is on, so `req.protocol` honours
- * `X-Forwarded-Proto`. Returned without a trailing slash.
+ * host (dev / when unset). Whether `req.protocol` honours `X-Forwarded-Proto`
+ * is governed by TRUST_PROXY (default: only the bundled loopback nginx; can be
+ * widened per deployment or set to `false`). Returned without a trailing slash.
  */
 export function resolveOrigin(config: ConfigService, req?: Request): string {
   const configured = config.get<string>('app.apiUrl');

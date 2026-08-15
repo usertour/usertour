@@ -7,8 +7,9 @@ import cookieParser from 'cookie-parser';
  * exercises the SAME request pipeline the public API runs in production.
  *
  * Only contains transport concerns that affect the request/response contract
- * (the global ValidationPipe and cookie parsing). It deliberately excludes
- * logging/tracing/redis/swagger/listen — those belong to `main.ts` alone.
+ * (trust proxy, CORS, cookie parsing, and the global ValidationPipe). It
+ * deliberately excludes logging/tracing/redis/swagger/listen — those belong
+ * to `main.ts` alone.
  *
  * The ValidationPipe's `enableImplicitConversion` is load-bearing for the
  * OpenAPI contract: query params arrive as strings and DTOs like
@@ -44,15 +45,32 @@ export function configureApp(app: INestApplication): void {
   // until then they degrade to coarse-but-safe shared buckets, never to
   // spoofable ones. Lives here, not main.ts, so e2e runs the same trust
   // semantics production does.
-  const trustProxyRaw = process.env.TRUST_PROXY ?? 'loopback';
-  const trustProxy = /^\d+$/.test(trustProxyRaw)
-    ? Number(trustProxyRaw)
-    : trustProxyRaw === 'true'
-      ? true
-      : trustProxyRaw === 'false'
-        ? false
-        : trustProxyRaw;
-  app.getHttpAdapter().getInstance().set('trust proxy', trustProxy);
+  // Sanitize before parsing: `TRUST_PROXY=""` (the .env.example house style
+  // for "unset"), stray whitespace, wrapping quotes, or `True` would otherwise
+  // reach Express verbatim, and proxy-addr throws "invalid IP address" — which
+  // bootstrap()'s error path turns into a clean exit instead of a zombie.
+  const trustProxyRaw = (process.env.TRUST_PROXY ?? '').trim().replace(/^["']+|["']+$/g, '');
+  const trustProxy =
+    trustProxyRaw === ''
+      ? 'loopback'
+      : /^\d+$/.test(trustProxyRaw)
+        ? Number(trustProxyRaw)
+        : trustProxyRaw.toLowerCase() === 'true'
+          ? true
+          : trustProxyRaw.toLowerCase() === 'false'
+            ? false
+            : trustProxyRaw;
+  try {
+    app.getHttpAdapter().getInstance().set('trust proxy', trustProxy);
+  } catch (error) {
+    // Name the variable — Express's own "invalid IP address" says nothing
+    // about WHERE the bad value came from.
+    throw new Error(
+      `Invalid TRUST_PROXY value ${JSON.stringify(process.env.TRUST_PROXY)}: ${
+        (error as Error).message
+      }`,
+    );
+  }
 
   app.enableCors({ exposedHeaders: ['WWW-Authenticate'] });
   app.use(cookieParser());

@@ -132,4 +132,11 @@ async function bootstrap() {
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  // Fail FAST and loud. Without this, a bootstrap error (bad TRUST_PROXY,
+  // unreachable DB, …) only reached the unhandledRejection logger: the
+  // process stayed alive without ever listening — a zombie container nginx
+  // 502s against forever and restart policies never restart.
+  console.error('Fatal: application failed to start', error);
+  process.exit(1);
+});

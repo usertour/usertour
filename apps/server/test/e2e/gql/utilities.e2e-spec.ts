@@ -1,5 +1,7 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
+import request from 'supertest';
 
 import { graphql, gqlData } from '../auth';
 import { createTestApp } from '../create-test-app';
@@ -113,9 +115,73 @@ describe('GraphQL utilities (e2e)', () => {
     });
   });
 
-  // The URL-derivation contract (derive-from-request vs config-wins) lives in
-  // url-derivation.e2e-spec.ts: the config object is a module-load-time
-  // snapshot, so those cases need a spec file that pins env BEFORE imports.
+  /**
+   * The URL-derivation contract (resolveOrigin / resolveMcpResource) through
+   * the real GraphQL pipeline: with nothing configured the URLs self-derive
+   * from the request — scheme from X-Forwarded-Proto (the loopback peer is a
+   * trusted hop under the default TRUST_PROXY, pinned in .env.test), host AND
+   * PORT from the Host header (the port half regressed once: nginx's $host
+   * strips it) — and the derived MCP URL must equal the OAuth metadata
+   * `resource` byte-for-byte (RFC 9728: clients refuse a mismatch). Config is
+   * flipped per test via ConfigService.set (the config OBJECT is evaluated at
+   * module load, so process.env edits inside a test are inert).
+   */
+  describe('globalConfig URL derivation', () => {
+    const QUERY = 'query { globalConfig { apiUrl mcpServerUrl } }';
+    let config: ConfigService;
+    let prevApiUrl: string;
+    let prevMcpUrl: string;
+
+    const fetchConfig = async (host: string, proto: string) => {
+      const res = await request(app.getHttpServer())
+        .post('/graphql')
+        .set('Host', host)
+        .set('X-Forwarded-Proto', proto)
+        .send({ query: QUERY });
+      return gqlData(res).globalConfig;
+    };
+
+    beforeAll(() => {
+      config = app.get(ConfigService);
+      prevApiUrl = config.get('app.apiUrl') as string;
+      prevMcpUrl = config.get('app.mcpServerUrl') as string;
+    });
+
+    afterEach(() => {
+      config.set('app.apiUrl', prevApiUrl);
+      config.set('app.mcpServerUrl', prevMcpUrl);
+    });
+
+    it('with nothing configured, URLs derive from the request and match the OAuth metadata resource byte-for-byte', async () => {
+      config.set('app.apiUrl', '');
+      config.set('app.mcpServerUrl', '');
+      const derived = await fetchConfig('example.test:8443', 'https');
+      expect(derived.apiUrl).toBe('https://example.test:8443');
+      expect(derived.mcpServerUrl).toBe('https://example.test:8443/mcp');
+      const metadata = await request(app.getHttpServer())
+        .get('/.well-known/oauth-protected-resource')
+        .set('Host', 'example.test:8443')
+        .set('X-Forwarded-Proto', 'https');
+      expect(metadata.status).toBe(200);
+      expect(metadata.body.resource).toBe(derived.mcpServerUrl);
+    });
+
+    it('derivation follows each request, not a cached first answer', async () => {
+      config.set('app.apiUrl', '');
+      config.set('app.mcpServerUrl', '');
+      const derived = await fetchConfig('other.test', 'http');
+      expect(derived.apiUrl).toBe('http://other.test');
+      expect(derived.mcpServerUrl).toBe('http://other.test/mcp');
+    });
+
+    it('configured values win over the request', async () => {
+      config.set('app.apiUrl', 'https://configured.example');
+      config.set('app.mcpServerUrl', 'https://pinned.example/mcp');
+      const derived = await fetchConfig('example.test:8443', 'https');
+      expect(derived.apiUrl).toBe('https://configured.example');
+      expect(derived.mcpServerUrl).toBe('https://pinned.example/mcp');
+    });
+  });
 
   describe('queryOembedInfo', () => {
     const QUERY_OEMBED = `query ($url: String!) {
