@@ -29,6 +29,29 @@ import cookieParser from 'cookie-parser';
  * assets it serves from disk (responses that never reach this app).
  */
 export function configureApp(app: INestApplication): void {
+  // Express `trust proxy` for the whole pipeline (req.ip / req.protocol),
+  // configurable via TRUST_PROXY in every form Express accepts — hop count,
+  // true/false, or an address list. The default trusts loopback + private
+  // ranges: the trust chain walks outward and stops at the first PUBLIC
+  // address, so the bundled nginx (loopback) and any in-network proxy in
+  // front of it are trusted with zero config, while a public client's
+  // spoofed X-Forwarded-For entries sit LEFT of that first public hop and
+  // are never reached. The old `true` (believe the LEFTMOST, i.e.
+  // client-controlled, entry) let rotating fake XFF values mint fresh
+  // per-IP rate-limit buckets. An attacker already inside the private
+  // network can still spoof — accepted, same stance as peer self-hosted
+  // Node apps. Lives here, not main.ts, so e2e runs the same trust
+  // semantics production does.
+  const trustProxyRaw = process.env.TRUST_PROXY ?? 'loopback, linklocal, uniquelocal';
+  const trustProxy = /^\d+$/.test(trustProxyRaw)
+    ? Number(trustProxyRaw)
+    : trustProxyRaw === 'true'
+      ? true
+      : trustProxyRaw === 'false'
+        ? false
+        : trustProxyRaw;
+  app.getHttpAdapter().getInstance().set('trust proxy', trustProxy);
+
   app.enableCors({ exposedHeaders: ['WWW-Authenticate'] });
   app.use(cookieParser());
   app.useGlobalPipes(

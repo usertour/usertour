@@ -56,11 +56,8 @@ async function bootstrap() {
     console.error('Unhandled Rejection:', err);
   });
 
-  // Validation (shared with the e2e bootstrap via configureApp)
+  // Validation + trust proxy (shared with the e2e bootstrap via configureApp)
   configureApp(app);
-
-  // trust proxy
-  app.set('trust proxy', true);
 
   // OpenAPI documentation configuration
   const config = new DocumentBuilder()

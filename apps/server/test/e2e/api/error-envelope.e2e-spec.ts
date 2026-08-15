@@ -58,6 +58,30 @@ describe('API v2 rate limiting (e2e)', () => {
     expect(reset).toBeGreaterThan(0);
     expect(reset).toBeLessThanOrEqual(61);
   });
+
+  it('spoofed X-Forwarded-For prefixes do not mint fresh buckets', async () => {
+    // The supertest connection arrives from loopback (a trusted hop under the
+    // default TRUST_PROXY), so req.ip resolves to the RIGHTMOST public entry
+    // of X-Forwarded-For — the part an attacker cannot control (in production
+    // nginx appends the real peer there). Rotating the leftmost prefix, which
+    // trust proxy=true used to believe, must land in ONE shared bucket.
+    const call = (xff: string) =>
+      request(app.getHttpServer())
+        .get('/v2/projects/any/environments')
+        .set('Authorization', 'Bearer utp_garbage_xff')
+        .set('X-Forwarded-For', xff);
+    for (let i = 0; i < 3; i++) {
+      const res = await call(`1.2.3.${i}, 9.9.9.9`);
+      expect(res.status).not.toBe(429);
+    }
+    // Fresh fake prefix, same real client: bucket is already full.
+    const overflow = await call('7.7.7.7, 9.9.9.9');
+    expect(overflow.status).toBe(429);
+    expect(overflow.body.error?.code).toBe('E1013');
+    // A genuinely different client (different rightmost entry) is its own bucket.
+    const other = await call('1.2.3.9, 8.8.8.8');
+    expect(other.status).not.toBe(429);
+  });
 });
 
 /**
