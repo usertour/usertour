@@ -47,6 +47,80 @@ View details in [Self-hosting](https://docs.usertour.io/open-source/self-hosting
 ### Local Development
 View details in [CONTRIBUTING](./CONTRIBUTING.md).
 
+## ✨ Build Your Onboarding with AI
+
+Usertour ships a built-in [MCP server](https://docs.usertour.io/api-reference-v2/mcp): connect an AI assistant like Claude Code, Cursor or Codex, describe the experience you want, and it builds production-ready onboarding directly in your project — reading your app's design system to match the styling, and even wiring up the SDK on its own if it isn't installed yet.
+
+Connecting takes two commands (Claude Code shown; every MCP client works):
+
+```text
+/plugin marketplace add usertour/skills
+/plugin install usertour@usertour
+```
+
+**Self-hosting?** Point the plugin at your own instance before connecting — your exact URL is shown in **Settings → MCP**:
+
+```bash
+export USERTOUR_MCP_URL="https://<your-usertour-host>/mcp"
+```
+
+Below: real prompts and the unedited results. Full walkthrough with every prompt — including AI-driven analytics — in [Build Your Onboarding with AI](https://docs.usertour.io/build-onboarding-with-ai).
+
+### 🪄 "Build an onboarding flow for the Create Task feature"
+
+```text
+Using Usertour, build a user onboarding flow for the Create Task feature.
+
+Requirements:
+1. The visual theme must match the website's existing design.
+2. The flow must be production-ready and suitable for launch.
+3. Every step should provide genuine value to users. Avoid adding steps
+   simply for the sake of having a flow—the experience should help users
+   understand and successfully use the feature.
+```
+
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/b83ce65e-901c-47ec-afc6-8f4713295eb6" width="100%" />
+</p>
+
+### 📋 "Create a product feedback survey"
+
+```text
+Create a survey to collect user feedback about the product's different
+features, including:
+
+* Feature ratings
+* Overall satisfaction
+* Usability feedback
+* Suggestions for improvement
+* Open-ended comments
+
+The survey should be thoughtfully structured and suitable for production use.
+```
+
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/20ad7c9f-6f93-4059-8f05-feb50944ecf9" width="100%" />
+</p>
+
+### 🎬 "A modal that plays this YouTube video"
+
+```text
+Create a one-step flow containing a modal that displays this YouTube video:
+
+https://www.youtube.com/watch?v=ZIaOBAjvc38
+
+Add supporting copy based on the theme:
+
+Sam Altman: "Never a Better Time to Do a Startup"
+
+The copy should briefly introduce the video, explain why it is relevant,
+and encourage users to watch it.
+```
+
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/86c7a0f3-0777-4e46-be64-317f705a7756" width="100%" />
+</p>
+
 ## Features
 
 Usertour makes it easy to design in-app product tours, checklists, launchers, and surveys, enabling anyone to craft effective onboarding experiences. Our team is dedicated to consistently improving Usertour with frequent updates that include new features, bug fixes, and performance enhancements.

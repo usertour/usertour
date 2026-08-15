@@ -93,7 +93,11 @@ export const SettingsMcpPage = () => {
   const { project, globalConfig } = useAppContext();
 
   // The endpoint lives on the API server, not this web origin — the server
-  // reports the full URL (MCP_SERVER_URL env, defaulting to `${API_URL}/mcp`).
+  // reports the full URL via resolveMcpResource (MCP_SERVER_URL env, else
+  // `${API_URL}/mcp`, else derived from the request). Never synthesize a
+  // fallback here: this display must stay byte-identical to the OAuth
+  // metadata `resource` the server advertises, or MCP clients refuse the
+  // mismatch (RFC 9728).
   const serverUrl = globalConfig?.mcpServerUrl ?? '';
   const copied = t('settings.mcp.copied');
 
