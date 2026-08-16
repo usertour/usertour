@@ -21,8 +21,14 @@
           // Auth pages always render light — browser autofill paints inputs a
           // near-white that can't be restyled for dark, so a dark auth page
           // looks broken. Skip applying dark here (kills the first-paint flash);
-          // keep this prefix in sync with AuthLayout's useForceLightTheme.
-          if (location.pathname.indexOf('/auth/') === 0) {
+          // keep these prefixes in sync with AuthLayout's useForceLightTheme.
+          // /onboarding/ is the post-signup step: it wears AuthLayout but must
+          // NOT live under /auth/ — the Apollo error middleware treats /auth
+          // as sessionless and skips token refresh there.
+          if (
+            location.pathname.indexOf('/auth/') === 0 ||
+            location.pathname.indexOf('/onboarding/') === 0
+          ) {
             return;
           }
           var raw = localStorage.getItem('USERTOUR@0.0.1/appearance');

@@ -24,6 +24,7 @@ const translations = {
       back: 'Back',
       continue: 'Continue to dashboard',
       skipNote: 'You can always connect an AI assistant later in Settings → MCP.',
+      configError: 'Couldn’t load the server address — refresh the page to try again.',
       connectedTitle: 'Connected to {{name}}',
       connectedSubtitle: 'Try your first prompt — paste it into your assistant:',
       goToDashboard: 'Go to dashboard',

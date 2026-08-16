@@ -1,6 +1,6 @@
 import { McpClientGuide } from '@/components/mcp-client-guide';
 import { useAppContext } from '@/contexts/app-context';
-import { RiErrorWarningLine, RiExternalLinkLine } from '@usertour/icons';
+import { RiErrorWarningLine } from '@usertour/icons';
 import {
   Alert,
   AlertDescription,
@@ -12,7 +12,8 @@ import {
 } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { CopyableInput } from '../installation/components/copyable-input';
+import { CopyableInput } from '@/components/copyable-input';
+import { ExternalLink } from '@/components/external-link';
 
 /**
  * Settings → MCP: the in-app signpost for connecting AI assistants. One server
@@ -49,15 +50,9 @@ export const SettingsMcpPage = () => {
             </div>
             <p className="text-sm text-muted-foreground">
               {t('settings.mcp.subtitle')}{' '}
-              <a
-                href="https://docs.usertour.io/api-reference-v2/mcp"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-0.5 text-primary hover:underline"
-              >
+              <ExternalLink href="https://docs.usertour.io/api-reference-v2/mcp">
                 {t('settings.mcp.docsLink')}
-                <RiExternalLinkLine className="h-3.5 w-3.5" />
-              </a>
+              </ExternalLink>
             </p>
           </div>
           <Separator />

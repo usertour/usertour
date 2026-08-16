@@ -9,7 +9,8 @@ const gridPattern =
 // background that can't be reliably restyled for dark, so a dark auth page would
 // show light autofilled fields. We pin these pages to light while mounted and
 // restore the user's theme on the way out. The index.html boot script applies
-// the same rule for the first paint (keep the `/auth/` prefix in sync).
+// the same rule for the first paint (keep the prefixes — `/auth/` and
+// `/onboarding/` — in sync with it).
 const useForceLightTheme = () => {
   const { resolvedTheme } = useTheme();
   const resolvedRef = useRef(resolvedTheme);
@@ -50,8 +51,12 @@ export const AuthLayout = ({ wide = false }: { wide?: boolean }) => {
         className="pointer-events-none absolute inset-0 opacity-[0.07]"
         style={{ backgroundImage: gridPattern, backgroundSize: '32px 32px' }}
       />
+      {/* wide (672px) crosses the sm breakpoint (640px), so it keeps padding
+          until md — sm:px-0 left the card flush against 640–671px viewports. */}
       <div
-        className={`relative z-10 w-full px-4 sm:px-0 ${wide ? 'my-10 max-w-2xl' : 'max-w-[480px]'}`}
+        className={`relative z-10 w-full ${
+          wide ? 'my-10 max-w-2xl px-4 md:px-0' : 'max-w-[480px] px-4 sm:px-0'
+        }`}
       >
         <div className="rounded-lg shadow-2xl shadow-black/50 ring-1 ring-white/10">
           <Outlet />

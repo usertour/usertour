@@ -33,9 +33,10 @@ export const resolveNextPath = (next: string | null | undefined, fallback = '/')
 // env on a `/` target.
 //
 // `landingPath` lets a caller interpose a page before the normal landing
-// (the post-signup connect-AI step). An explicit ?next= always wins over
-// it — a signup that interrupted another flow (e.g. MCP consent) must
-// resume that flow, not detour. The landing rides the 2FA forwarding as
+// (the post-signup connect-AI step). A VALID ?next= wins over it — today no
+// signup entry point actually carries one (the magic-link email and the
+// sign-up link are bare), so this is a correctness guard for the login-shaped
+// callers, not a live signup flow. The landing rides the 2FA forwarding as
 // the next param, so it survives an enrolment step in between.
 export const useAuthAfterLogin = () => {
   const navigate = useNavigate();
@@ -46,10 +47,14 @@ export const useAuthAfterLogin = () => {
       if (!result) {
         return false;
       }
-      const next = searchParams.get('next');
-      const landing = !next && options?.landingPath ? options.landingPath : null;
-      const forward = next ?? landing;
-      const forwardNext = forward ? `&next=${encodeURIComponent(forward)}` : '';
+      // ONE normalized target drives every exit. resolveNextPath validates
+      // ?next= and falls back to the caller's landing (or '/') — deriving the
+      // 2FA forwarding AND the final assign from the same value keeps an
+      // invalid or empty ?next= from splitting behavior between branches (an
+      // invalid next used to swallow the landing entirely; an empty string
+      // kept it on the direct exit but dropped it across the 2FA hop).
+      const target = resolveNextPath(searchParams.get('next'), options?.landingPath ?? '/');
+      const forwardNext = target !== '/' ? `&next=${encodeURIComponent(target)}` : '';
 
       if (result.requiresTwoFactor && result.twoFactorChallenge) {
         navigate(
@@ -67,7 +72,7 @@ export const useAuthAfterLogin = () => {
       // so any stale React state in those tabs doesn't keep writing to the
       // previous session's user record.
       broadcastAuthSwitch();
-      window.location.assign(landing ?? resolveNextPath(next));
+      window.location.assign(target);
       return true;
     },
     [navigate, searchParams],

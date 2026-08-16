@@ -1,7 +1,6 @@
 import {
   RiClaudeFill,
   RiCursorAiFill,
-  RiExternalLinkLine,
   RiOpenaiFill,
   RiPuzzleLine,
   VSCodeIcon,
@@ -9,8 +8,9 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Button } from '@usertour/ui';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CodeBlock } from '@/pages/settings/installation/components/code-block';
-import { CopyableInput } from '@/pages/settings/installation/components/copyable-input';
+import { CodeBlock } from '@/components/code-block';
+import { CopyableInput } from '@/components/copyable-input';
+import { ExternalLink } from '@/components/external-link';
 
 const SERVER_NAME = 'Usertour';
 
@@ -18,8 +18,17 @@ const SERVER_NAME = 'Usertour';
  * Unicode-safe base64. Raw btoa() throws InvalidCharacterError on any character
  * outside Latin-1, so a self-hosted MCP URL with an internationalized domain or
  * non-ASCII path would crash the whole page render — encode the UTF-8 bytes.
+ * Callers embedding the result in a URL must still encodeURIComponent it:
+ * base64's `+` reads as a SPACE to standard query-string parsing.
  */
 const toBase64 = (value: string) => btoa(String.fromCharCode(...new TextEncoder().encode(value)));
+
+/**
+ * POSIX shell single-quoting that survives ANY value: a literal `'` closes the
+ * quote, inserts an escaped quote, and reopens ('"'"'). Plain '${value}' broke
+ * on URLs containing a single quote — which URLs may legally carry.
+ */
+const shellQuote = (value: string) => `'${value.replace(/'/g, `'"'"'`)}'`;
 
 /** Numbered manual step line (mirrors the connector guides users already know). */
 const Step = ({ n, children }: { n: number; children: ReactNode }) => (
@@ -78,13 +87,17 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
 
   const cursorDeeplink = `cursor://anysphere.cursor-deeplink/mcp/install?name=${encodeURIComponent(
     SERVER_NAME.toLowerCase(),
-  )}&config=${toBase64(JSON.stringify({ url: serverUrl }))}`;
-  const claudeCodeCommand = `claude mcp add --transport http usertour ${serverUrl}`;
+  )}&config=${encodeURIComponent(toBase64(JSON.stringify({ url: serverUrl })))}`;
+  // shellQuote the URL in every shell command: a self-hosted MCP_SERVER_URL
+  // containing &, $, backticks or quotes must survive copy-paste verbatim
+  // (double quotes still expand $ and backticks; bare single quotes broke on
+  // URLs containing one).
+  const claudeCodeCommand = `claude mcp add --transport http usertour ${shellQuote(serverUrl)}`;
   // The plugin's bundled .mcp.json defaults to the cloud endpoint; only a
   // custom/self-hosted instance needs the env override before launch.
   const CLOUD_MCP_URL = 'https://mcp.usertour.io/mcp';
   const needsEnvOverride = serverUrl !== '' && serverUrl !== CLOUD_MCP_URL;
-  const envExportCommand = `export USERTOUR_MCP_URL="${serverUrl}"`;
+  const envExportCommand = `export USERTOUR_MCP_URL=${shellQuote(serverUrl)}`;
   const mcpServersJson = JSON.stringify(
     { mcpServers: { [SERVER_NAME]: { url: serverUrl } } },
     null,
@@ -94,7 +107,7 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
   // manual config.toml edit needed (config.toml is shared by the CLI and IDE
   // extension either way). Codex does its own OAuth handshake; `mcp login` is
   // the explicit form, offered alongside since the CLI prompts on first use.
-  const codexAddCommand = `codex mcp add ${SERVER_NAME.toLowerCase()} --url "${serverUrl}"`;
+  const codexAddCommand = `codex mcp add ${SERVER_NAME.toLowerCase()} --url ${shellQuote(serverUrl)}`;
   const codexLoginCommand = `codex mcp login ${SERVER_NAME.toLowerCase()}`;
   // Skill install is a SEPARATE mechanism from the MCP connection for Cursor and
   // Codex (unlike Claude Code's plugin, which bundles both) — optional, per the
@@ -128,7 +141,7 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
         )}
         <Step n={needsEnvOverride ? 2 : 1}>
           <span>{t('settings.mcp.clients.claudeCode.pluginStep')}</span>
-          <CopyableInput value="/plugin marketplace add usertour/skills" copiedMessage={copied} />
+          <CopyableInput value={`/plugin marketplace add ${SKILLS_REPO}`} copiedMessage={copied} />
           <CopyableInput value="/plugin install usertour@usertour" copiedMessage={copied} />
         </Step>
         <Step n={needsEnvOverride ? 3 : 2}>
@@ -224,15 +237,9 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
         <Step n={1}>
           <span>
             {t('settings.mcp.clients.claude.step1')}{' '}
-            <a
-              href="https://claude.ai/settings/connectors"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-0.5 text-primary hover:underline"
-            >
+            <ExternalLink href="https://claude.ai/settings/connectors">
               claude.ai/settings/connectors
-              <RiExternalLinkLine className="h-3.5 w-3.5" />
-            </a>
+            </ExternalLink>
           </span>
         </Step>
         <Step n={2}>

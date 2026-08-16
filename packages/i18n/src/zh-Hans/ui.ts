@@ -6,8 +6,8 @@ const translations = {
       title: '想怎么搭建引导？',
       subtitle: '工作空间已就绪——选一个起点。',
       ai: {
-        title: '用 AI 搭建',
-        blurb: '连接 Claude Code、Codex 等 AI 助手，用一句话描述就能搭建 onboarding。',
+        title: '用 AI 搭建引导',
+        blurb: '连接 Claude Code、Codex 等 AI 助手，用一句话描述就能搭建引导内容。',
       },
       builder: {
         title: '自己动手搭建',
@@ -17,11 +17,12 @@ const translations = {
     connectAi: {
       title: '用 AI 搭建引导',
       subtitle:
-        '连接 AI 助手，用一句话描述就能搭建 onboarding——助手会匹配你的应用风格，甚至替你安装 SDK。',
+        '连接 AI 助手，用一句话描述就能搭建引导内容——助手会匹配你的应用风格，甚至替你安装 SDK。',
       docsLink: '观看完整演示',
       back: '返回',
       continue: '进入控制台',
       skipNote: '之后随时可以在「设置 → MCP」中连接 AI 助手。',
+      configError: '服务器地址加载失败——请刷新页面重试。',
       connectedTitle: '已连接 {{name}}',
       connectedSubtitle: '试试第一条 prompt——粘贴到你的助手里：',
       goToDashboard: '进入控制台',

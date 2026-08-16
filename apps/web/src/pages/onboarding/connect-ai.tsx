@@ -1,20 +1,19 @@
+import { CopyableInput } from '@/components/copyable-input';
+import { ExternalLink } from '@/components/external-link';
 import { McpClientGuide } from '@/components/mcp-client-guide';
-import { useGlobalConfig } from '@/hooks/use-global-config';
-import { resolveNextPath } from '@/pages/authentication/components/use-auth-after-login';
-import { CopyableInput } from '@/pages/settings/installation/components/copyable-input';
+import { useAppContext } from '@/contexts/app-context';
 import { useOAuthConnectionsQuery } from '@usertour/hooks';
 import {
   RiArrowLeftLine,
   RiArrowRightLine,
   RiCheckboxCircleFill,
   RiDashboardLine,
-  RiExternalLinkLine,
   RiMagicLine,
 } from '@usertour/icons';
 import { Badge, Button, Label, Separator } from '@usertour/ui';
-import { useState } from 'react';
+import type { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
 
 /**
  * A copyable first prompt, deliberately generic (works against any app) and
@@ -24,6 +23,11 @@ import { useSearchParams } from 'react-router-dom';
 const STARTER_PROMPT =
   "Using Usertour, build a short onboarding flow for my app's most important feature — match my app's visual style, keep every step genuinely useful, and save it as a draft for me to review.";
 
+/** The card body shared by all three states (AuthLayout provides the backdrop). */
+const Shell = ({ children }: { children: ReactNode }) => (
+  <div className="space-y-6 rounded-lg bg-background p-6 sm:p-8">{children}</div>
+);
+
 /** One of the two starting-point cards on the choice screen. */
 const ChoiceCard = ({
   icon,
@@ -32,7 +36,7 @@ const ChoiceCard = ({
   blurb,
   onClick,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   badge?: string;
   blurb: string;
@@ -57,9 +61,11 @@ const ChoiceCard = ({
 );
 
 /**
- * Post-signup interstitial. Reached ONLY from a fresh (non-invite) signup —
- * login and invites never route here, and a signup carrying ?next= (e.g. an
- * interrupted MCP consent) bypasses it upstream.
+ * Post-signup interstitial. Reached ONLY on account creation — the email form
+ * routes here via landingPath and the social callback via the server-side
+ * isNewUser landing; logins and invites never do, so no "seen it" flag is
+ * needed. Best-effort by design: closing the tab skips it for good, and
+ * everything it offers stays reachable under Settings → MCP.
  *
  * Two states: a CHOICE first (AI assistants are a developer path — a PM must
  * not land on a wall of terminal commands), then the client guide only for
@@ -68,30 +74,45 @@ const ChoiceCard = ({
  */
 export const OnboardingConnectAi = () => {
   const { t } = useTranslation();
-  const { globalConfig } = useGlobalConfig();
-  const [searchParams] = useSearchParams();
   const [path, setPath] = useState<'choice' | 'ai'>('choice');
 
   // Same single source as Settings → MCP: the server-advertised endpoint
   // (never synthesized here — must stay byte-identical to the OAuth metadata).
+  // Read from AppContext, not a second query: AuthGuard only mounts children
+  // after the context's globalConfig resolved, and a duplicate no-cache fetch
+  // could independently fail and misreport "couldn't load" over good config.
+  const { globalConfig } = useAppContext();
   const serverUrl = globalConfig?.mcpServerUrl ?? '';
   const copied = t('settings.mcp.copied');
 
   // A fresh signup has zero connections, so the first one appearing means the
-  // user just finished the OAuth consent in their assistant.
+  // user just finished the OAuth consent in their assistant. Poll ONLY while
+  // it can matter: on the guide state, not yet connected, tab visible.
+  // (`connectionSeen` mirrors the result into state because the poll interval
+  // can't read the query's own return value.)
+  const [connectionSeen, setConnectionSeen] = useState(false);
   const { connections } = useOAuthConnectionsQuery({
-    pollInterval: 4000,
+    pollInterval: path === 'ai' && !connectionSeen ? 4000 : 0,
+    skipPollAttempt: () => document.hidden,
     fetchPolicy: 'network-only',
   });
   const connected = connections.length > 0;
+  useEffect(() => {
+    if (connected) {
+      setConnectionSeen(true);
+    }
+  }, [connected]);
 
   const continueToApp = () => {
-    window.location.assign(resolveNextPath(searchParams.get('next')));
+    // Hard load, not navigate: LandingRedirect resolves the env on a fresh
+    // boot. No ?next= handling — nothing routes here with one. `replace`
+    // drops this one-shot page from history so Back can't resurrect it.
+    window.location.replace('/');
   };
 
   if (connected) {
     return (
-      <div className="space-y-6 rounded-lg bg-background p-6 sm:p-8">
+      <Shell>
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <RiCheckboxCircleFill className="h-5 w-5 text-success" />
@@ -109,13 +130,13 @@ export const OnboardingConnectAi = () => {
             {t('onboarding.connectAi.goToDashboard')}
           </Button>
         </div>
-      </div>
+      </Shell>
     );
   }
 
   if (path === 'choice') {
     return (
-      <div className="space-y-6 rounded-lg bg-background p-6 sm:p-8">
+      <Shell>
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight">{t('onboarding.start.title')}</h1>
           <p className="text-sm text-muted-foreground">{t('onboarding.start.subtitle')}</p>
@@ -138,12 +159,12 @@ export const OnboardingConnectAi = () => {
         <p className="text-center text-xs text-muted-foreground">
           {t('onboarding.connectAi.skipNote')}
         </p>
-      </div>
+      </Shell>
     );
   }
 
   return (
-    <div className="space-y-6 rounded-lg bg-background p-6 sm:p-8">
+    <Shell>
       <div className="space-y-2">
         <div className="flex flex-row items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -155,21 +176,23 @@ export const OnboardingConnectAi = () => {
         </div>
         <p className="text-sm text-muted-foreground">
           {t('onboarding.connectAi.subtitle')}{' '}
-          <a
-            href="https://docs.usertour.io/build-onboarding-with-ai"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-0.5 text-primary hover:underline"
-          >
+          <ExternalLink href="https://docs.usertour.io/build-onboarding-with-ai">
             {t('onboarding.connectAi.docsLink')}
-            <RiExternalLinkLine className="h-3.5 w-3.5" />
-          </a>
+          </ExternalLink>
         </p>
       </div>
 
       <Separator />
 
-      <McpClientGuide serverUrl={serverUrl} />
+      {serverUrl === '' ? (
+        // Config resolved but carries no MCP URL (the context query failed or
+        // the server answered empty) — an honest note beats copyable blanks.
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          {t('onboarding.connectAi.configError')}
+        </p>
+      ) : (
+        <McpClientGuide serverUrl={serverUrl} />
+      )}
 
       {/* Wizard footer. The advance label is deliberately NEUTRAL ("Continue",
           not "Skip") — a user who just finished the setup but whose
@@ -186,7 +209,7 @@ export const OnboardingConnectAi = () => {
           <RiArrowRightLine className="ml-1.5 h-4 w-4" />
         </Button>
       </div>
-    </div>
+    </Shell>
   );
 };
 
