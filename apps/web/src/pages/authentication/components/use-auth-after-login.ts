@@ -31,17 +31,25 @@ export const resolveNextPath = (next: string | null | undefined, fallback = '/')
 // session cookie at mount time only, so the SPA needs a fresh boot for
 // AppContext to see the logged-in user and LandingRedirect to resolve the
 // env on a `/` target.
+//
+// `landingPath` lets a caller interpose a page before the normal landing
+// (the post-signup connect-AI step). An explicit ?next= always wins over
+// it — a signup that interrupted another flow (e.g. MCP consent) must
+// resume that flow, not detour. The landing rides the 2FA forwarding as
+// the next param, so it survives an enrolment step in between.
 export const useAuthAfterLogin = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   return useCallback(
-    (result: AuthMutationResult): boolean => {
+    (result: AuthMutationResult, options?: { landingPath?: string }): boolean => {
       if (!result) {
         return false;
       }
       const next = searchParams.get('next');
-      const forwardNext = next ? `&next=${encodeURIComponent(next)}` : '';
+      const landing = !next && options?.landingPath ? options.landingPath : null;
+      const forward = next ?? landing;
+      const forwardNext = forward ? `&next=${encodeURIComponent(forward)}` : '';
 
       if (result.requiresTwoFactor && result.twoFactorChallenge) {
         navigate(
@@ -59,7 +67,7 @@ export const useAuthAfterLogin = () => {
       // so any stale React state in those tabs doesn't keep writing to the
       // previous session's user record.
       broadcastAuthSwitch();
-      window.location.assign(resolveNextPath(next));
+      window.location.assign(landing ?? resolveNextPath(next));
       return true;
     },
     [navigate, searchParams],

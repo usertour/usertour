@@ -129,6 +129,20 @@ const config: RouteObject[] = [
         ],
       },
       {
+        // Post-signup connect-AI step: same auth-flow backdrop, wider card
+        // (the client guide doesn't fit the default 480px column).
+        element: <AuthLayout wide />,
+        children: [
+          {
+            path: '/onboarding/connect-ai',
+            lazy: lazyComponent(
+              () => import('@/pages/onboarding/connect-ai'),
+              'OnboardingConnectAi',
+            ),
+          },
+        ],
+      },
+      {
         element: <AdminProvidersOutlet />,
         children: [
           { index: true, element: <LandingRedirect /> },

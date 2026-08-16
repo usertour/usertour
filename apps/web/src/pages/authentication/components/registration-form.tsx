@@ -94,7 +94,9 @@ export const SignUpForm = ({ inviteCode, buttonText, className, fixedEmail }: Si
             password: formData.password,
             companyName: formData.companyName ?? '',
           });
-      handleAuthResult(result);
+      // Fresh signups detour through the connect-AI step before first landing;
+      // invited members join an existing project and go straight in.
+      handleAuthResult(result, isInvite ? undefined : { landingPath: '/onboarding/connect-ai' });
     } catch (error) {
       showError(getErrorMessage(error));
     }

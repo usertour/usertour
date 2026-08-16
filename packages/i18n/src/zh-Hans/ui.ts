@@ -1,6 +1,32 @@
 const translations = {
   language: '简体中文',
   productName: 'Usertour',
+  onboarding: {
+    start: {
+      title: '想怎么搭建引导？',
+      subtitle: '工作空间已就绪——选一个起点。',
+      ai: {
+        title: '用 AI 搭建',
+        blurb: '连接 Claude Code、Codex 等 AI 助手，用一句话描述就能搭建 onboarding。',
+      },
+      builder: {
+        title: '自己动手搭建',
+        blurb: '直接进入控制台，在可视化编辑器里创建流程、清单和调研。无需写代码。',
+      },
+    },
+    connectAi: {
+      title: '用 AI 搭建引导',
+      subtitle:
+        '连接 AI 助手，用一句话描述就能搭建 onboarding——助手会匹配你的应用风格，甚至替你安装 SDK。',
+      docsLink: '观看完整演示',
+      back: '返回',
+      continue: '进入控制台',
+      skipNote: '之后随时可以在「设置 → MCP」中连接 AI 助手。',
+      connectedTitle: '已连接 {{name}}',
+      connectedSubtitle: '试试第一条 prompt——粘贴到你的助手里：',
+      goToDashboard: '进入控制台',
+    },
+  },
   oauth: {
     consent: {
       title: '{{client}} 请求连接',

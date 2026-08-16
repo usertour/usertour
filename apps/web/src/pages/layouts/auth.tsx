@@ -37,7 +37,11 @@ const useForceLightTheme = () => {
   }, []);
 };
 
-export const AuthLayout = () => {
+// `wide` widens the card column for content-heavy steps (the post-signup
+// connect-AI page) while keeping the same backdrop language as every other
+// auth-flow screen — same gradient, grid and forced-light treatment, so the
+// signup → first-landing sequence reads as one visual family.
+export const AuthLayout = ({ wide = false }: { wide?: boolean }) => {
   useForceLightTheme();
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-700 via-indigo-800 to-indigo-950">
@@ -46,7 +50,9 @@ export const AuthLayout = () => {
         className="pointer-events-none absolute inset-0 opacity-[0.07]"
         style={{ backgroundImage: gridPattern, backgroundSize: '32px 32px' }}
       />
-      <div className="relative z-10 w-full max-w-[480px] px-4 sm:px-0">
+      <div
+        className={`relative z-10 w-full px-4 sm:px-0 ${wide ? 'my-10 max-w-2xl' : 'max-w-[480px]'}`}
+      >
         <div className="rounded-lg shadow-2xl shadow-black/50 ring-1 ring-white/10">
           <Outlet />
         </div>

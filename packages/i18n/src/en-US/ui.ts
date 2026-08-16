@@ -1,6 +1,34 @@
 const translations = {
   language: 'English',
   productName: 'Usertour',
+  onboarding: {
+    start: {
+      title: 'How do you want to build?',
+      subtitle: 'Your workspace is ready — pick a starting point.',
+      ai: {
+        title: 'Build with AI',
+        blurb:
+          'Connect an AI assistant like Claude Code or Codex and build onboarding by describing it.',
+      },
+      builder: {
+        title: 'Build it yourself',
+        blurb:
+          'Jump into the dashboard and create flows, checklists and surveys in the visual builder. No code needed.',
+      },
+    },
+    connectAi: {
+      title: 'Build with AI',
+      subtitle:
+        'Connect an AI assistant and build onboarding by describing it — the assistant matches your app’s design and even installs the SDK for you.',
+      docsLink: 'See it in action',
+      back: 'Back',
+      continue: 'Continue to dashboard',
+      skipNote: 'You can always connect an AI assistant later in Settings → MCP.',
+      connectedTitle: 'Connected to {{name}}',
+      connectedSubtitle: 'Try your first prompt — paste it into your assistant:',
+      goToDashboard: 'Go to dashboard',
+    },
+  },
   oauth: {
     consent: {
       title: '{{client}} wants to connect',
