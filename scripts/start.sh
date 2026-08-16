@@ -51,5 +51,8 @@ done
 # Seed database
 npx prisma db seed
 
-# Start Node.js server
-node dist/main
+# Start Node.js server. `exec` replaces this shell so Node becomes PID 1:
+# SIGTERM from `docker stop` reaches Nest's shutdown hooks directly (without
+# exec, the shell holds PID 1, ignores the signal by PID-1 rules, and the
+# container is SIGKILLed after the grace period).
+exec node dist/main
