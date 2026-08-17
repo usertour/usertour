@@ -43,6 +43,20 @@ function nextFromState(req: Request): string | undefined {
   return undefined;
 }
 
+/**
+ * Landing for a freshly created self-serve social signup: the post-signup
+ * onboarding step (starting-point choice), mirroring what the email channel
+ * does client-side. Fires exactly once — the creation-time `isNewUser` flag
+ * from oauthValidate — and only when no explicit `next` resumes another flow.
+ * Missing the step is deliberate best-effort: everything it offers stays
+ * reachable under Settings → MCP.
+ */
+function onboardingLanding(user: { isNewUser?: boolean }): string | undefined {
+  // NOT under /auth/: the web's Apollo error middleware treats that prefix
+  // as sessionless and would skip token refresh on this logged-in page.
+  return user.isNewUser ? '/onboarding/connect-ai' : undefined;
+}
+
 @Controller('api/auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
@@ -69,10 +83,14 @@ export class AuthController {
   @UseGuards(GithubOauthGuard)
   @Get('github/callback')
   @Public()
-  async githubAuthCallback(@UserEntity() user: User, @Req() req: Request, @Res() res: Response) {
+  async githubAuthCallback(
+    @UserEntity() user: User & { isNewUser?: boolean },
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     try {
       this.logger.log(`github oauth callback success, req.user = ${user?.email}`);
-      await this.finishOauth(user.id, res, nextFromState(req));
+      await this.finishOauth(user.id, res, nextFromState(req) ?? onboardingLanding(user));
     } catch (error) {
       this.logger.error('GitHub OAuth callback failed:', error.stack);
       throw new OAuthError();
@@ -82,10 +100,14 @@ export class AuthController {
   @UseGuards(GoogleOauthGuard)
   @Get('google/callback')
   @Public()
-  async googleAuthCallback(@UserEntity() user: User, @Req() req: Request, @Res() res: Response) {
+  async googleAuthCallback(
+    @UserEntity() user: User & { isNewUser?: boolean },
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     try {
       this.logger.log(`google oauth callback success, req.user = ${user?.email}`);
-      await this.finishOauth(user.id, res, nextFromState(req));
+      await this.finishOauth(user.id, res, nextFromState(req) ?? onboardingLanding(user));
     } catch (error) {
       this.logger.error('Google OAuth callback failed:', error.stack);
       throw new OAuthError();
