@@ -338,7 +338,7 @@ export class AuthService implements OnModuleInit {
         if (inviteCode) {
           await this.joinProject(inviteCode, user.id);
         }
-        return user;
+        return { ...user, isNewUser: false };
       }
 
       this.logger.log(
@@ -376,7 +376,7 @@ export class AuthService implements OnModuleInit {
       if (inviteCode) {
         await this.joinProject(inviteCode, user.id);
       }
-      return user;
+      return { ...user, isNewUser: false };
     }
 
     if (!inviteCode) {
@@ -406,7 +406,7 @@ export class AuthService implements OnModuleInit {
       this.logger.warn(`failed to download avatar: ${e}`);
     }
 
-    return await this.prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           name: displayName || email,
@@ -453,6 +453,11 @@ export class AuthService implements OnModuleInit {
 
       return newUser;
     });
+    // `isNewUser` marks freshly created SELF-SERVE users only: the social
+    // callback offers them the post-signup onboarding step. Invite-created
+    // users join an existing project and go straight in, matching the email
+    // channel's rule.
+    return { ...created, isNewUser: !inviteCode };
   }
 
   /**

@@ -51,14 +51,22 @@ View details in [CONTRIBUTING](./CONTRIBUTING.md).
 
 Usertour ships a built-in [MCP server](https://docs.usertour.io/api-reference-v2/mcp): connect an AI assistant like Claude Code, Cursor or Codex, describe the experience you want, and it builds production-ready onboarding directly in your project — reading your app's design system to match the styling, and even wiring up the SDK on its own if it isn't installed yet.
 
-Connecting takes two commands (Claude Code shown; every MCP client works):
+Point any MCP client at the endpoint — it discovers the authorization flow on its own:
+
+```text
+https://mcp.usertour.io/mcp
+```
+
+Using **Claude Code**? The plugin wires the MCP connection **and** the authoring skills in one:
 
 ```text
 /plugin marketplace add usertour/skills
 /plugin install usertour@usertour
 ```
 
-**Self-hosting?** Point the plugin at your own instance before connecting — your exact URL is shown in **Settings → MCP**:
+Per-client steps for Cursor, Codex, VS Code, ChatGPT and more: [MCP connection guide](https://docs.usertour.io/api-reference-v2/mcp).
+
+**Self-hosting?** Use your own instance's URL instead — it's shown in **Settings → MCP** (for the Claude Code plugin, export it before launching):
 
 ```bash
 export USERTOUR_MCP_URL="https://<your-usertour-host>/mcp"

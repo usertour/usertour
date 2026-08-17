@@ -129,6 +129,24 @@ const config: RouteObject[] = [
         ],
       },
       {
+        // Post-signup connect-AI step: same auth-flow backdrop, wider card
+        // (the client guide doesn't fit the default 480px column). NOT under
+        // /auth/ — the Apollo error middleware treats that prefix as
+        // sessionless (no token refresh, no redirects), and this is a
+        // logged-in page that polls; the index.html forced-light boot script
+        // recognizes /onboarding/ explicitly instead.
+        element: <AuthLayout wide />,
+        children: [
+          {
+            path: '/onboarding/connect-ai',
+            lazy: lazyComponent(
+              () => import('@/pages/onboarding/connect-ai'),
+              'OnboardingConnectAi',
+            ),
+          },
+        ],
+      },
+      {
         element: <AdminProvidersOutlet />,
         children: [
           { index: true, element: <LandingRedirect /> },
