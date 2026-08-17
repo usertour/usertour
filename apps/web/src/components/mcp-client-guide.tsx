@@ -10,7 +10,6 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodeBlock } from '@/components/code-block';
 import { CopyableInput } from '@/components/copyable-input';
-import { ExternalLink } from '@/components/external-link';
 
 const SERVER_NAME = 'Usertour';
 
@@ -39,6 +38,15 @@ const Step = ({ n, children }: { n: number; children: ReactNode }) => (
     </span>
     <div className="min-w-0 flex-1 space-y-2">{children}</div>
   </div>
+);
+
+/**
+ * Trailing note + command that follow the numbered steps — inset to the same
+ * left edge as Step content (20px chip + 10px gap), so every copyable input
+ * in an item shares one alignment.
+ */
+const StepAside = ({ children }: { children: ReactNode }) => (
+  <div className="space-y-2 pl-[30px]">{children}</div>
 );
 
 /** One client = one bordered card: brand icon + title + blurb, steps unfold below. */
@@ -122,6 +130,20 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
     null,
     2,
   );
+  // VS Code's official MCP install link (vscode:mcp/install?<urlencoded JSON>):
+  // opens the editor with the server pre-filled and prompts to install.
+  const vscodeDeeplink = `vscode:mcp/install?${encodeURIComponent(
+    JSON.stringify({ name: SERVER_NAME.toLowerCase(), type: 'http', url: serverUrl }),
+  )}`;
+  // Brand colors on the top per-client CTAs only (the "vendor badge" idiom —
+  // the button is that product's door, so it wears that product's color);
+  // everything else stays on our own design system.
+  const brandButton = {
+    cursor: 'bg-black text-white hover:bg-neutral-800',
+    vscode: 'bg-[#007ACC] text-white hover:bg-[#0066AB]',
+    chatgpt: 'bg-black text-white hover:bg-neutral-800',
+    claude: 'bg-[#D97757] text-white hover:bg-[#C4633F]',
+  };
 
   const iconClass = 'h-5 w-5';
 
@@ -147,10 +169,12 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
         <Step n={needsEnvOverride ? 3 : 2}>
           <span>{t('settings.mcp.clients.claudeCode.authStep')}</span>
         </Step>
-        <p className="text-sm text-muted-foreground">
-          {t('settings.mcp.clients.claudeCode.mcpOnly')}
-        </p>
-        <CopyableInput value={claudeCodeCommand} copiedMessage={copied} />
+        <StepAside>
+          <p className="text-sm text-muted-foreground">
+            {t('settings.mcp.clients.claudeCode.mcpOnly')}
+          </p>
+          <CopyableInput value={claudeCodeCommand} copiedMessage={copied} />
+        </StepAside>
       </ClientItem>
 
       <ClientItem
@@ -159,20 +183,25 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
         title={t('settings.mcp.clients.cursor.title')}
         blurb={t('settings.mcp.clients.cursor.blurb')}
       >
-        <Step n={1}>
-          <span>{t('settings.mcp.clients.cursor.step1')}</span>
-          <Button asChild className="w-fit">
-            <a href={cursorDeeplink}>{t('settings.mcp.clients.cursor.button')}</a>
-          </Button>
-        </Step>
-        <Step n={2}>
-          <span>{t('settings.mcp.clients.cursor.step2')}</span>
-          <CopyableInput value={serverUrl} copiedMessage={copied} />
-        </Step>
+        {/* Button FIRST: the deeplink is the whole happy path — one click, no
+            reading. Steps only exist for the manual fallback, so this item
+            skips numbering entirely. */}
+        <Button asChild className={`w-fit ${brandButton.cursor}`}>
+          <a href={cursorDeeplink}>{t('settings.mcp.clients.cursor.button')}</a>
+        </Button>
         <p className="text-sm text-muted-foreground">
-          {t('settings.mcp.clients.cursor.skillNote')}
+          {t('settings.mcp.clients.cursor.buttonNote')}
         </p>
-        <CopyableInput value={skillsAddCommand} copiedMessage={copied} />
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">{t('settings.mcp.clients.cursor.step2')}</p>
+          <CopyableInput value={serverUrl} copiedMessage={copied} />
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            {t('settings.mcp.clients.cursor.skillNote')}
+          </p>
+          <CopyableInput value={skillsAddCommand} copiedMessage={copied} />
+        </div>
       </ClientItem>
 
       <ClientItem
@@ -185,10 +214,18 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
           <span>{t('settings.mcp.clients.codex.step1')}</span>
           <CopyableInput value={codexAddCommand} copiedMessage={copied} />
         </Step>
-        <p className="text-sm text-muted-foreground">{t('settings.mcp.clients.codex.loginNote')}</p>
-        <CopyableInput value={codexLoginCommand} copiedMessage={copied} />
-        <p className="text-sm text-muted-foreground">{t('settings.mcp.clients.codex.skillNote')}</p>
-        <CopyableInput value={skillsAddCommand} copiedMessage={copied} />
+        <StepAside>
+          <p className="text-sm text-muted-foreground">
+            {t('settings.mcp.clients.codex.loginNote')}
+          </p>
+          <CopyableInput value={codexLoginCommand} copiedMessage={copied} />
+        </StepAside>
+        <StepAside>
+          <p className="text-sm text-muted-foreground">
+            {t('settings.mcp.clients.codex.skillNote')}
+          </p>
+          <CopyableInput value={skillsAddCommand} copiedMessage={copied} />
+        </StepAside>
       </ClientItem>
 
       <ClientItem
@@ -197,6 +234,15 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
         title={t('settings.mcp.clients.vscode.title')}
         blurb={t('settings.mcp.clients.vscode.blurb')}
       >
+        <Button asChild className={`w-fit ${brandButton.vscode}`}>
+          <a href={vscodeDeeplink}>{t('settings.mcp.clients.vscode.button')}</a>
+        </Button>
+        <p className="text-sm text-muted-foreground">
+          {t('settings.mcp.clients.vscode.buttonNote')}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t('settings.mcp.clients.vscode.manualLead')}
+        </p>
         <Step n={1}>
           <span>{t('settings.mcp.clients.vscode.step1')}</span>
         </Step>
@@ -215,6 +261,11 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
         title={t('settings.mcp.clients.chatgpt.title')}
         blurb={t('settings.mcp.clients.chatgpt.blurb')}
       >
+        <Button asChild className={`w-fit ${brandButton.chatgpt}`}>
+          <a href="https://chatgpt.com/plugins" target="_blank" rel="noreferrer">
+            {t('settings.mcp.clients.chatgpt.button')}
+          </a>
+        </Button>
         <Step n={1}>
           <span>{t('settings.mcp.clients.chatgpt.step1')}</span>
         </Step>
@@ -234,13 +285,17 @@ export const McpClientGuide = ({ serverUrl }: { serverUrl: string }) => {
         title={t('settings.mcp.clients.claude.title')}
         blurb={t('settings.mcp.clients.claude.blurb')}
       >
+        <Button asChild className={`w-fit ${brandButton.claude}`}>
+          <a
+            href="https://claude.ai/new#settings/customize-connectors"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('settings.mcp.clients.claude.button')}
+          </a>
+        </Button>
         <Step n={1}>
-          <span>
-            {t('settings.mcp.clients.claude.step1')}{' '}
-            <ExternalLink href="https://claude.ai/settings/connectors">
-              claude.ai/settings/connectors
-            </ExternalLink>
-          </span>
+          <span>{t('settings.mcp.clients.claude.step1')}</span>
         </Step>
         <Step n={2}>
           <span>{t('settings.mcp.clients.claude.step2')}</span>
