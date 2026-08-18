@@ -1384,8 +1384,16 @@ const translations = {
         failed: 'Failed to queue the test event',
         disabledHint: 'Enable the webhook to send a test event.',
       },
+      detail: {
+        title: 'Endpoint',
+        description: 'Description',
+        copyUrl: 'Copy URL',
+        urlCopied: 'URL copied to clipboard',
+      },
       deliveries: {
         title: 'Recent deliveries',
+        description:
+          'Every attempt is logged for 30 days — one row per try, with the response status and any error.',
         empty: 'No deliveries yet.',
         loadMore: 'Load more',
         columns: {

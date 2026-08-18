@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import {
+  type Webhook,
   useGetWebhookQuery,
   useQueryWebhookDeliveriesQuery,
   useRotateWebhookSecretMutation,
@@ -22,7 +23,9 @@ import {
   Button,
   DestructiveConfirmDialog,
   Input,
-  Label,
+  Separator,
+  SettingsCard,
+  SettingsCardStack,
   Table,
   TableBody,
   TableCell,
@@ -32,27 +35,110 @@ import {
   useToast,
 } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
+import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 
 const DELIVERIES_PAGE_SIZE = 20;
 
 const MASKED_SECRET = 'whsec_••••••••••••••••••••••••••••••••';
+
+/**
+ * Card header shared by the three sections: h3 title + optional right-side
+ * action, optional body copy, then a separator — the same chrome as the other
+ * settings cards (SSO, account) so the page reads as one system.
+ */
+const CardHeading = ({
+  title,
+  description,
+  actions,
+}: {
+  title: string;
+  description?: string;
+  actions?: ReactNode;
+}) => (
+  <>
+    <div className="space-y-2">
+      <div className="flex h-10 flex-row items-center justify-between gap-4">
+        <h3 className="text-xl font-medium tracking-tight">{title}</h3>
+        {actions ? <div className="flex flex-none items-center gap-2">{actions}</div> : null}
+      </div>
+      {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+    </div>
+    <Separator />
+  </>
+);
+
+/** Label / value row of the endpoint overview grid. */
+const DetailRow = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div className="grid grid-cols-[9rem_1fr] items-start gap-4 text-sm">
+    <dt className="pt-0.5 text-muted-foreground">{label}</dt>
+    <dd className="min-w-0">{children}</dd>
+  </div>
+);
+
+const OverviewSection = ({ webhook }: { webhook: Webhook }) => {
+  const { t } = useTranslation();
+  const copy = useCopyWithToast();
+
+  return (
+    <div className="space-y-6">
+      <CardHeading
+        title={t('settings.webhooks.detail.title')}
+        actions={
+          webhook.enabled ? (
+            <Badge variant="success">{t('settings.webhooks.statusEnabled')}</Badge>
+          ) : (
+            <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>
+          )
+        }
+      />
+      <dl className="space-y-4">
+        <DetailRow label={t('settings.webhooks.form.url')}>
+          <div className="flex items-start gap-2">
+            <code className="min-w-0 break-all rounded bg-muted px-2 py-1 font-mono text-xs leading-5">
+              {webhook.url}
+            </code>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              onClick={() => copy(webhook.url, t('settings.webhooks.detail.urlCopied'))}
+              title={t('settings.webhooks.detail.copyUrl')}
+            >
+              <RiFileCopyLine className="h-4 w-4" />
+            </Button>
+          </div>
+        </DetailRow>
+        {webhook.description ? (
+          <DetailRow label={t('settings.webhooks.detail.description')}>
+            {webhook.description}
+          </DetailRow>
+        ) : null}
+        <DetailRow label={t('settings.webhooks.form.topics')}>
+          <div className="flex flex-wrap gap-1.5">
+            {webhook.topics.map((topic) => (
+              <Badge key={topic} variant="secondary" className="font-mono text-xs font-normal">
+                {topic}
+              </Badge>
+            ))}
+          </div>
+        </DetailRow>
+        <DetailRow label={t('settings.webhooks.columns.createdAt')}>
+          {format(new Date(webhook.createdAt), 'PP pp')}
+        </DetailRow>
+      </dl>
+    </div>
+  );
+};
 
 const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret: string }) => {
   const [revealed, setRevealed] = useState(false);
   const [rotateOpen, setRotateOpen] = useState(false);
   const { isViewOnly } = useAppContext();
   const { invoke: rotateSecret, loading: isRotating } = useRotateWebhookSecretMutation();
+  const copy = useCopyWithToast();
   const { toast } = useToast();
   const { t } = useTranslation();
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(secret);
-      toast({ variant: 'success', title: t('settings.webhooks.secret.copied') });
-    } catch (error) {
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    }
-  };
 
   const handleRotate = async () => {
     try {
@@ -70,8 +156,11 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
   };
 
   return (
-    <div className="space-y-1.5">
-      <Label>{t('settings.webhooks.secret.label')}</Label>
+    <div className="space-y-6">
+      <CardHeading
+        title={t('settings.webhooks.secret.label')}
+        description={t('settings.webhooks.secret.hint')}
+      />
       <div className="flex items-center gap-2">
         <Input readOnly value={revealed ? secret : MASKED_SECRET} className="font-mono text-xs" />
         <Button
@@ -89,7 +178,7 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
           variant="outline"
           size="icon"
           className="shrink-0"
-          onClick={() => void handleCopy()}
+          onClick={() => copy(secret, t('settings.webhooks.secret.copied'))}
           title={t('settings.webhooks.secret.copyButton')}
         >
           <RiFileCopyLine className="h-4 w-4" />
@@ -106,7 +195,6 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
           <ArrowRightLeftIcon className="h-4 w-4" />
         </Button>
       </div>
-      <p className="text-sm text-muted-foreground">{t('settings.webhooks.secret.hint')}</p>
 
       <DestructiveConfirmDialog
         title={t('settings.webhooks.secret.rotateConfirmTitle')}
@@ -150,24 +238,27 @@ const DeliveriesSection = ({ webhookId, enabled }: { webhookId: string; enabled:
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">{t('settings.webhooks.deliveries.title')}</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={isViewOnly || !enabled || sendingTest}
-          title={enabled ? undefined : t('settings.webhooks.testEvent.disabledHint')}
-          onClick={() => void handleSendTest()}
-        >
-          {sendingTest && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-          {t('settings.webhooks.testEvent.button')}
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <CardHeading
+        title={t('settings.webhooks.deliveries.title')}
+        description={t('settings.webhooks.deliveries.description')}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isViewOnly || !enabled || sendingTest}
+            title={enabled ? undefined : t('settings.webhooks.testEvent.disabledHint')}
+            onClick={() => void handleSendTest()}
+          >
+            {sendingTest && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+            {t('settings.webhooks.testEvent.button')}
+          </Button>
+        }
+      />
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-44">{t('settings.webhooks.deliveries.columns.time')}</TableHead>
+            <TableHead className="w-48">{t('settings.webhooks.deliveries.columns.time')}</TableHead>
             <TableHead>{t('settings.webhooks.deliveries.columns.topic')}</TableHead>
             <TableHead className="w-24">
               {t('settings.webhooks.deliveries.columns.status')}
@@ -184,14 +275,16 @@ const DeliveriesSection = ({ webhookId, enabled }: { webhookId: string; enabled:
         <TableBody>
           {deliveries.length === 0 && !loading && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                 {t('settings.webhooks.deliveries.empty')}
               </TableCell>
             </TableRow>
           )}
           {deliveries.map((delivery) => (
             <TableRow key={delivery.id}>
-              <TableCell>{format(new Date(delivery.createdAt), 'PP pp')}</TableCell>
+              <TableCell className="whitespace-nowrap">
+                {format(new Date(delivery.createdAt), 'PP pp')}
+              </TableCell>
               <TableCell className="font-mono text-xs">{delivery.topic}</TableCell>
               <TableCell>
                 {delivery.success ? (
@@ -225,6 +318,19 @@ const DeliveriesSection = ({ webhookId, enabled }: { webhookId: string; enabled:
   );
 };
 
+const BackToList = ({ projectId }: { projectId: string | undefined }) => {
+  const { t } = useTranslation();
+  return (
+    <Link
+      to={`/project/${projectId}/settings/webhooks`}
+      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeftIcon className="h-4 w-4" />
+      {t('settings.webhooks.backToList')}
+    </Link>
+  );
+};
+
 export const WebhookDetail = () => {
   const { settingSubType: webhookId, projectId } = useParams();
   const { webhook, loading } = useGetWebhookQuery(webhookId ?? '');
@@ -236,39 +342,40 @@ export const WebhookDetail = () => {
 
   if (!webhook) {
     return (
-      <div className="max-w-3xl mx-auto py-8 text-muted-foreground">
-        {t('settings.webhooks.notFound')}
-      </div>
+      <SettingsCardStack>
+        <SettingsCard>
+          <div className="space-y-4">
+            <BackToList projectId={projectId} />
+            <p className="text-sm text-muted-foreground">{t('settings.webhooks.notFound')}</p>
+          </div>
+        </SettingsCard>
+      </SettingsCardStack>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col grow space-y-8 py-8">
-      <div className="space-y-2">
-        <Link
-          to={`/project/${projectId}/settings/webhooks`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          {t('settings.webhooks.backToList')}
-        </Link>
-        <div className="flex items-center gap-3">
-          <h2 className="text-xl font-semibold truncate">{webhook.url}</h2>
-          {webhook.enabled ? (
-            <Badge variant="success">{t('settings.webhooks.statusEnabled')}</Badge>
-          ) : (
-            <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>
-          )}
-        </div>
-        {webhook.description && (
-          <p className="text-sm text-muted-foreground">{webhook.description}</p>
-        )}
+    <SettingsCardStack>
+      {/* Back link sits above the stack at card width; the negative margin
+          pulls the first card up so the link reads as a breadcrumb, not a
+          block of its own. */}
+      <div className="mx-auto w-full min-w-[750px] max-w-3xl -mb-4">
+        <BackToList projectId={projectId} />
       </div>
 
-      {webhook.secret && <SigningSecretSection webhookId={webhook.id} secret={webhook.secret} />}
+      <SettingsCard>
+        <OverviewSection webhook={webhook} />
+      </SettingsCard>
 
-      <DeliveriesSection webhookId={webhook.id} enabled={webhook.enabled} />
-    </div>
+      {webhook.secret && (
+        <SettingsCard>
+          <SigningSecretSection webhookId={webhook.id} secret={webhook.secret} />
+        </SettingsCard>
+      )}
+
+      <SettingsCard>
+        <DeliveriesSection webhookId={webhook.id} enabled={webhook.enabled} />
+      </SettingsCard>
+    </SettingsCardStack>
   );
 };
 

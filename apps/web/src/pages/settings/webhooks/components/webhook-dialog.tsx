@@ -16,10 +16,10 @@ import {
   DialogTitle,
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
   Input,
   Label,
   RadioGroup,
@@ -62,7 +62,9 @@ const FIXED_TOPIC_GROUPS: { key: string; topics: { value: string; labelKey: stri
 
 const webhookFormSchema = z
   .object({
-    url: z.string().url().startsWith('https://'),
+    // Both failure modes carry the same marker; the field renders it through
+    // i18n (settings.webhooks.form.urlHint) rather than zod's default English.
+    url: z.string().url('url').startsWith('https://', 'url'),
     mode: z.enum(['all', 'selected']),
     selectedTopics: z.array(z.string()),
     includePageViewed: z.boolean(),
@@ -261,7 +263,16 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
                     <FormControl>
                       <Input placeholder="https://example.com/usertour" {...field} />
                     </FormControl>
-                    <FormMessage>{t('settings.webhooks.form.urlHint')}</FormMessage>
+                    {/* Hint stays muted; only a real validation failure turns red
+                        (FormMessage would print zod's marker, so render the copy
+                        directly — same as the topics error below). */}
+                    {form.formState.errors.url ? (
+                      <p className="text-[0.8rem] font-medium text-destructive">
+                        {t('settings.webhooks.form.urlHint')}
+                      </p>
+                    ) : (
+                      <FormDescription>{t('settings.webhooks.form.urlHint')}</FormDescription>
+                    )}
                   </FormItem>
                 )}
               />

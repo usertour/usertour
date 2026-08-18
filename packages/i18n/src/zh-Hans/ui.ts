@@ -1317,8 +1317,15 @@ const translations = {
         failed: '测试事件入队失败',
         disabledHint: '请先启用该 Webhook 再发送测试事件。',
       },
+      detail: {
+        title: '端点',
+        description: '描述',
+        copyUrl: '复制 URL',
+        urlCopied: 'URL 已复制到剪贴板',
+      },
       deliveries: {
         title: '最近投递',
+        description: '每次尝试都会记录 30 天 — 一次尝试一行,含响应状态和错误信息。',
         empty: '暂无投递记录。',
         loadMore: '加载更多',
         columns: {
