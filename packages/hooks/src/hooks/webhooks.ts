@@ -4,7 +4,8 @@ import {
   DeleteWebhook,
   GetWebhook,
   ListWebhooks,
-  QueryWebhookDeliveries,
+  QueryWebhookMessages,
+  ResendWebhookMessage,
   RotateWebhookSecret,
   SendWebhookTestEvent,
   UpdateWebhook,
@@ -24,17 +25,31 @@ export interface Webhook {
   description?: string | null;
 }
 
+/** One delivery attempt of a message. */
 export interface WebhookDelivery {
   id: string;
   createdAt: string;
-  /** Stable across retries of the same message. */
-  messageId: string;
-  topic: string;
   attempt: number;
   success: boolean;
   responseStatus?: number | null;
+  /** Response body excerpt (truncated server-side). */
+  responseBody?: string | null;
   error?: string | null;
   durationMs?: number | null;
+}
+
+export type WebhookMessageStatus = 'PENDING' | 'DELIVERED' | 'FAILED';
+
+/** A logged outbound message (payload as sent) with its attempts, oldest first. */
+export interface WebhookMessage {
+  /** Public message id — the payload `id`, stable across retries and resends. */
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  topic: string;
+  status: WebhookMessageStatus;
+  payload: Record<string, unknown>;
+  deliveries: WebhookDelivery[];
 }
 
 export interface CreateWebhookInput {
@@ -75,23 +90,23 @@ export const useGetWebhookQuery = (id: string, options?: QueryHookOptions) => {
   return { webhook, loading, error, refetch };
 };
 
-export const useQueryWebhookDeliveriesQuery = (
+export const useQueryWebhookMessagesQuery = (
   webhookId: string,
   pagination: { first?: number; after?: string },
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, error, refetch, networkStatus } = useQuery(QueryWebhookDeliveries, {
+  const { data, loading, error, refetch, networkStatus } = useQuery(QueryWebhookMessages, {
     variables: { webhookId, ...pagination },
     notifyOnNetworkStatusChange: true,
     skip: !webhookId,
     ...options,
   });
-  const connection = data?.queryWebhookDeliveries;
-  const deliveries = (connection?.edges ?? []).map(
-    (edge: { node: WebhookDelivery }) => edge.node,
-  ) as WebhookDelivery[];
+  const connection = data?.queryWebhookMessages;
+  const messages = (connection?.edges ?? []).map(
+    (edge: { node: WebhookMessage }) => edge.node,
+  ) as WebhookMessage[];
   return {
-    deliveries,
+    messages,
     totalCount: connection?.totalCount as number | undefined,
     pageInfo: connection?.pageInfo as
       | { endCursor: string | null; hasNextPage: boolean }
@@ -157,6 +172,17 @@ export const useRotateWebhookSecretMutation = () => {
   const invoke = async (id: string): Promise<string | null> => {
     const response = await mutation({ variables: { data: { id } } });
     return (response.data?.rotateWebhookSecret?.secret as string | undefined) ?? null;
+  };
+  return { invoke, loading, error };
+};
+
+export const useResendWebhookMessageMutation = () => {
+  // Re-queues the stored payload as a single attempt; the outcome lands in the
+  // message log, so consumers refetch it after a short delay.
+  const [mutation, { loading, error }] = useMutation(ResendWebhookMessage);
+  const invoke = async (webhookId: string, messageId: string): Promise<boolean> => {
+    const response = await mutation({ variables: { data: { webhookId, messageId } } });
+    return !!response.data?.resendWebhookMessage;
   };
   return { invoke, loading, error };
 };

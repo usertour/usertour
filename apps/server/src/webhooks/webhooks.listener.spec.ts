@@ -23,6 +23,7 @@ describe('WebhooksListener', () => {
     bizUser?: { findUnique: jest.Mock };
   };
   let webhooksService: { isEntitled: jest.Mock };
+  let ledger: { createMessages: jest.Mock };
   let listener: WebhooksListener;
 
   beforeEach(() => {
@@ -32,7 +33,39 @@ describe('WebhooksListener', () => {
       bizEvent: { findMany: jest.fn() },
     };
     webhooksService = { isEntitled: jest.fn().mockResolvedValue(true) };
-    listener = new WebhooksListener(queue as any, prisma as any, webhooksService as any);
+    ledger = { createMessages: jest.fn().mockResolvedValue(undefined) };
+    listener = new WebhooksListener(
+      queue as any,
+      prisma as any,
+      webhooksService as any,
+      ledger as any,
+    );
+  });
+
+  it('writes a ledger row per job before enqueueing, with the same id/topic/payload', async () => {
+    prisma.webhook.findMany.mockResolvedValue([{ id: 'wh_1', topics: ['*'], enabled: true }]);
+    prisma.bizEvent.findMany.mockResolvedValue([buildBizEvent('flow_started')]);
+    const order: string[] = [];
+    ledger.createMessages.mockImplementation(async () => {
+      order.push('ledger');
+    });
+    queue.addBulk.mockImplementation(async () => {
+      order.push('queue');
+    });
+
+    await listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_flow_started'] });
+
+    expect(order).toEqual(['ledger', 'queue']);
+    const rows = ledger.createMessages.mock.calls[0][0];
+    const jobs = queue.addBulk.mock.calls[0][0];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toEqual({
+      id: jobs[0].data.messageId,
+      environmentId: 'env_1',
+      destination: { webhookId: 'wh_1' },
+      topic: 'event.tracked.flow_started',
+      payload: jobs[0].data.payload,
+    });
   });
 
   it('enqueues nothing when the project is no longer entitled to webhooks', async () => {

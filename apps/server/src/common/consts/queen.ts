@@ -15,4 +15,4 @@ export const QUEUE_SEGMENT_EVENT = 'segment-event';
 export const QUEUE_AUDIT_LOG = 'audit-log';
 
 export const QUEUE_WEBHOOK_DELIVERY = 'webhook-delivery';
-export const QUEUE_CLEAN_WEBHOOK_DELIVERIES = 'cleanWebhookDeliveries';
+export const QUEUE_CLEAN_OUTBOUND_MESSAGES = 'cleanOutboundMessages';

@@ -19,12 +19,15 @@ const LIST_WEBHOOKS = `query ($environmentId: String!) {
   listWebhooks(environmentId: $environmentId) { id url topics enabled }
 }`;
 const GET_WEBHOOK = 'query ($id: String!) { getWebhook(id: $id) { id url secret topics } }';
-const QUERY_DELIVERIES = `query ($webhookId: String!, $first: Int) {
-  queryWebhookDeliveries(webhookId: $webhookId, first: $first) {
+const QUERY_MESSAGES = `query ($webhookId: String!, $first: Int) {
+  queryWebhookMessages(webhookId: $webhookId, first: $first) {
     totalCount
-    edges { node { id topic attempt success responseStatus } }
+    edges { node { id topic status payload deliveries { attempt success responseStatus responseBody } } }
     pageInfo { hasNextPage endCursor }
   }
+}`;
+const RESEND_MESSAGE = `mutation ($data: WebhookMessageInput!) {
+  resendWebhookMessage(data: $data) { id status }
 }`;
 
 /**
@@ -216,57 +219,114 @@ describe('GraphQL webhooks (e2e)', () => {
     });
   });
 
-  describe('deleteWebhook', () => {
-    it('deletes the endpoint and cascades its delivery log', async () => {
-      const created = await createWebhook();
-      await prisma.webhookDelivery.create({
-        data: {
-          webhookId: created.id,
-          messageId: 'whmsg_e2e',
-          topic: 'event.tracked.flow_started',
-          attempt: 1,
-          success: true,
-          responseStatus: 200,
-          durationMs: 12,
+  /** Seed a logged message (with attempts) the way the pipeline would. */
+  const seedMessage = async (
+    webhookId: string,
+    id: string,
+    options: {
+      status?: 'PENDING' | 'DELIVERED' | 'FAILED';
+      attempts?: number;
+      createdAt?: Date;
+    } = {},
+  ) => {
+    const { status = 'DELIVERED', attempts = 1, createdAt } = options;
+    return prisma.outboundMessage.create({
+      data: {
+        id,
+        environmentId,
+        webhookId,
+        topic: 'event.tracked.flow_started',
+        payload: { id, object: 'webhookMessage', type: 'event.tracked.flow_started', data: {} },
+        status,
+        ...(createdAt ? { createdAt } : {}),
+        deliveries: {
+          create: Array.from({ length: attempts }, (_, index) => ({
+            attempt: index + 1,
+            success: status === 'DELIVERED' && index === attempts - 1,
+            responseStatus: status === 'DELIVERED' && index === attempts - 1 ? 200 : 500,
+            responseBody: 'ok',
+            durationMs: 12,
+          })),
         },
-      });
+      },
+    });
+  };
+
+  describe('deleteWebhook', () => {
+    it('deletes the endpoint and cascades its message log', async () => {
+      const created = await createWebhook();
+      await seedMessage(created.id, 'whmsg_e2e_cascade', { attempts: 2 });
 
       await graphql(app, { token, query: DELETE_WEBHOOK, variables: { data: { id: created.id } } });
 
       expect(await prisma.webhook.findUnique({ where: { id: created.id } })).toBeNull();
-      expect(await prisma.webhookDelivery.count({ where: { webhookId: created.id } })).toBe(0);
+      expect(await prisma.outboundMessage.count({ where: { webhookId: created.id } })).toBe(0);
+      expect(
+        await prisma.outboundDelivery.count({ where: { messageId: 'whmsg_e2e_cascade' } }),
+      ).toBe(0);
     });
   });
 
-  describe('queryWebhookDeliveries', () => {
-    it('returns delivery rows newest-first with cursor pagination', async () => {
+  describe('queryWebhookMessages', () => {
+    it('returns messages newest-first with their attempts and cursor pagination', async () => {
       const created = await createWebhook();
       const baseTime = Date.now();
       for (let i = 0; i < 3; i++) {
-        await prisma.webhookDelivery.create({
-          data: {
-            webhookId: created.id,
-            messageId: `whmsg_page_${i}`,
-            topic: 'event.tracked.flow_started',
-            attempt: 1,
-            success: i !== 1,
-            responseStatus: i === 1 ? 500 : 200,
-            createdAt: new Date(baseTime + i * 1000),
-          },
+        await seedMessage(created.id, `whmsg_page_${i}`, {
+          status: i === 1 ? 'FAILED' : 'DELIVERED',
+          attempts: i === 1 ? 5 : 1,
+          createdAt: new Date(baseTime + i * 1000),
         });
       }
 
       const res = await graphql(app, {
         token,
-        query: QUERY_DELIVERIES,
+        query: QUERY_MESSAGES,
         variables: { webhookId: created.id, first: 2 },
       });
-      const connection = gqlData(res).queryWebhookDeliveries;
+      const connection = gqlData(res).queryWebhookMessages;
       expect(connection.totalCount).toBe(3);
       expect(connection.edges).toHaveLength(2);
       expect(connection.pageInfo.hasNextPage).toBe(true);
-      // Newest first.
-      expect(connection.edges[0].node.id).not.toBe(connection.edges[1].node.id);
+      // Newest first, attempts nested and ordered.
+      expect(connection.edges[0].node.id).toBe('whmsg_page_2');
+      expect(connection.edges[1].node.id).toBe('whmsg_page_1');
+      expect(connection.edges[1].node.status).toBe('FAILED');
+      expect(
+        connection.edges[1].node.deliveries.map((d: { attempt: number }) => d.attempt),
+      ).toEqual([1, 2, 3, 4, 5]);
+      expect(connection.edges[1].node.payload.id).toBe('whmsg_page_1');
+    });
+  });
+
+  describe('resendWebhookMessage', () => {
+    it('re-queues a logged message and resets it to PENDING', async () => {
+      const created = await createWebhook();
+      await seedMessage(created.id, 'whmsg_resend', { status: 'FAILED', attempts: 5 });
+
+      const res = await graphql(app, {
+        token,
+        query: RESEND_MESSAGE,
+        variables: { data: { webhookId: created.id, messageId: 'whmsg_resend' } },
+      });
+      expect(gqlData(res).resendWebhookMessage).toEqual({ id: 'whmsg_resend', status: 'PENDING' });
+      const row = await prisma.outboundMessage.findUnique({ where: { id: 'whmsg_resend' } });
+      expect(row?.status).toBe('PENDING');
+    });
+
+    it('refuses a message that belongs to a different endpoint', async () => {
+      const first = await createWebhook();
+      const second = await createWebhook({ url: 'https://example.com/other' });
+      await seedMessage(second.id, 'whmsg_other_owner');
+
+      const res = await graphql(app, {
+        token,
+        query: RESEND_MESSAGE,
+        variables: { data: { webhookId: first.id, messageId: 'whmsg_other_owner' } },
+      });
+      expect(res.body.errors).toBeDefined();
+      const row = await prisma.outboundMessage.findUnique({ where: { id: 'whmsg_other_owner' } });
+      expect(row?.status).toBe('DELIVERED');
     });
   });
 

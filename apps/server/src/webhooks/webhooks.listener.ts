@@ -22,6 +22,16 @@ import {
   WebhookDeliveryJobData,
 } from './webhook.types';
 import { WebhooksService } from './webhooks.service';
+import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+
+type DeliveryJob = { name: string; data: WebhookDeliveryJobData; opts: Record<string, any> };
+
+const RETRY_JOB_OPTIONS = {
+  removeOnComplete: true,
+  removeOnFail: 1000,
+  attempts: 5,
+  backoff: { type: 'exponential', delay: 1000 },
+};
 
 /**
  * Fans tracked BizEvents out to the environment's webhook endpoints: re-reads
@@ -38,7 +48,29 @@ export class WebhooksListener {
     @InjectQueue(QUEUE_WEBHOOK_DELIVERY) private readonly queue: Queue,
     private readonly prisma: PrismaService,
     private readonly webhooksService: WebhooksService,
+    private readonly ledger: OutboundLedgerService,
   ) {}
+
+  /**
+   * Persist the message rows, THEN enqueue. The ledger row is the record of
+   * intent — it exists even if the queue never runs the job — and the job
+   * carries the same payload as its working copy for the retry sequence.
+   */
+  private async dispatch(jobs: DeliveryJob[]): Promise<void> {
+    if (jobs.length === 0) {
+      return;
+    }
+    await this.ledger.createMessages(
+      jobs.map((job) => ({
+        id: job.data.messageId,
+        environmentId: job.data.payload.environmentId as string,
+        destination: { webhookId: job.data.webhookId },
+        topic: job.data.topic,
+        payload: job.data.payload,
+      })),
+    );
+    await this.queue.addBulk(jobs);
+  }
 
   /**
    * The environment's enabled endpoints, or [] when there are none OR the
@@ -73,7 +105,7 @@ export class WebhooksListener {
         include: { event: true, bizUser: true, bizCompany: true, bizSession: true },
       });
 
-      const jobs: { name: string; data: WebhookDeliveryJobData; opts: Record<string, any> }[] = [];
+      const jobs: DeliveryJob[] = [];
       for (const bizEvent of bizEvents) {
         const codeName = bizEvent.event.codeName;
         const matching = webhooks.filter((webhook) =>
@@ -102,19 +134,12 @@ export class WebhooksListener {
                 data: { event: eventObject },
               },
             },
-            opts: {
-              removeOnComplete: true,
-              removeOnFail: 1000,
-              attempts: 5,
-              backoff: { type: 'exponential', delay: 1000 },
-            },
+            opts: RETRY_JOB_OPTIONS,
           });
         }
       }
 
-      if (jobs.length > 0) {
-        await this.queue.addBulk(jobs);
-      }
+      await this.dispatch(jobs);
     } catch (error) {
       // Side-channel: a failure to enqueue must not propagate to the tracking path.
       this.logger.error('Failed to enqueue webhook deliveries', error as Error);
@@ -129,7 +154,7 @@ export class WebhooksListener {
         return;
       }
 
-      const jobs: { name: string; data: WebhookDeliveryJobData; opts: Record<string, any> }[] = [];
+      const jobs: DeliveryJob[] = [];
       for (const change of payload.changes) {
         const topic = `${change.entity}.${change.action}`;
         const matching = webhooks.filter((webhook) =>
@@ -168,19 +193,12 @@ export class WebhooksListener {
                 },
               },
             },
-            opts: {
-              removeOnComplete: true,
-              removeOnFail: 1000,
-              attempts: 5,
-              backoff: { type: 'exponential', delay: 1000 },
-            },
+            opts: RETRY_JOB_OPTIONS,
           });
         }
       }
 
-      if (jobs.length > 0) {
-        await this.queue.addBulk(jobs);
-      }
+      await this.dispatch(jobs);
     } catch (error) {
       // Side-channel: a failure to enqueue must not propagate to the write path.
       this.logger.error('Failed to enqueue entity-change webhook deliveries', error as Error);
@@ -209,7 +227,7 @@ export class WebhooksListener {
       }
 
       // Thin payload: ids resolve directly against the v2 content endpoints.
-      const jobs = matching.map((webhook) => {
+      const jobs: DeliveryJob[] = matching.map((webhook) => {
         const messageId = `whmsg_${randomBytes(16).toString('hex')}`;
         return {
           name: 'deliver',
@@ -226,15 +244,10 @@ export class WebhooksListener {
               data: { contentId: payload.contentId, versionId: payload.versionId },
             },
           },
-          opts: {
-            removeOnComplete: true,
-            removeOnFail: 1000,
-            attempts: 5,
-            backoff: { type: 'exponential', delay: 1000 },
-          },
+          opts: RETRY_JOB_OPTIONS,
         };
       });
-      await this.queue.addBulk(jobs);
+      await this.dispatch(jobs);
     } catch (error) {
       // Side-channel: a failure to enqueue must not propagate to the publish path.
       this.logger.error('Failed to enqueue content.published webhook deliveries', error as Error);

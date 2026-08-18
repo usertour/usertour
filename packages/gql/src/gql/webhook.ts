@@ -33,22 +33,29 @@ export const GetWebhook = gql`
   }
 `;
 
-export const QueryWebhookDeliveries = gql`
-  query QueryWebhookDeliveries($webhookId: String!, $first: Int, $after: String) {
-    queryWebhookDeliveries(webhookId: $webhookId, first: $first, after: $after) {
+export const QueryWebhookMessages = gql`
+  query QueryWebhookMessages($webhookId: String!, $first: Int, $after: String) {
+    queryWebhookMessages(webhookId: $webhookId, first: $first, after: $after) {
       totalCount
       edges {
         cursor
         node {
           id
           createdAt
-          messageId
+          updatedAt
           topic
-          attempt
-          success
-          responseStatus
-          error
-          durationMs
+          status
+          payload
+          deliveries {
+            id
+            createdAt
+            attempt
+            success
+            responseStatus
+            responseBody
+            error
+            durationMs
+          }
         }
       }
       pageInfo {
@@ -110,6 +117,15 @@ export const SendWebhookTestEvent = gql`
   mutation SendWebhookTestEvent($data: WebhookIdInput!) {
     sendWebhookTestEvent(data: $data) {
       id
+    }
+  }
+`;
+
+export const ResendWebhookMessage = gql`
+  mutation ResendWebhookMessage($data: WebhookMessageInput!) {
+    resendWebhookMessage(data: $data) {
+      id
+      status
     }
   }
 `;

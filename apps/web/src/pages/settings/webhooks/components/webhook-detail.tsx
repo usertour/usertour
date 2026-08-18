@@ -5,8 +5,10 @@ import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import {
   type Webhook,
+  type WebhookMessage,
   useGetWebhookQuery,
-  useQueryWebhookDeliveriesQuery,
+  useQueryWebhookMessagesQuery,
+  useResendWebhookMessageMutation,
   useRotateWebhookSecretMutation,
   useSendWebhookTestEventMutation,
 } from '@usertour/hooks';
@@ -36,8 +38,12 @@ import {
 } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
+import { WebhookMessageDialog } from './webhook-message-dialog';
+import { WebhookMessageStatusBadge } from './webhook-message-status-badge';
 
-const DELIVERIES_PAGE_SIZE = 20;
+const MESSAGES_PAGE_SIZE = 20;
+// Deliveries happen async in the worker — give it a moment before refreshing.
+const LOG_REFRESH_DELAY_MS = 1500;
 
 const MASKED_SECRET = 'whsec_••••••••••••••••••••••••••••••••';
 
@@ -210,25 +216,34 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
   );
 };
 
-const DeliveriesSection = ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) => {
+const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) => {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const { deliveries, pageInfo, loading, refetch } = useQueryWebhookDeliveriesQuery(webhookId, {
-    first: DELIVERIES_PAGE_SIZE,
+  const [selected, setSelected] = useState<WebhookMessage | null>(null);
+  const { messages, pageInfo, loading, refetch } = useQueryWebhookMessagesQuery(webhookId, {
+    first: MESSAGES_PAGE_SIZE,
     after: cursor,
   });
   const { invoke: sendTestEvent, loading: sendingTest } = useSendWebhookTestEventMutation();
+  const { invoke: resendMessage, loading: resending } = useResendWebhookMessageMutation();
   const { isViewOnly } = useAppContext();
   const { toast } = useToast();
   const { t } = useTranslation();
+
+  // Keep the open dialog in sync with refetched rows (attempts arrive async).
+  const selectedMessage = selected
+    ? (messages.find((message) => message.id === selected.id) ?? selected)
+    : null;
+
+  const refetchSoon = () => {
+    setTimeout(() => void refetch(), LOG_REFRESH_DELAY_MS);
+  };
 
   const handleSendTest = async () => {
     try {
       const sent = await sendTestEvent(webhookId);
       if (sent) {
         toast({ variant: 'success', title: t('settings.webhooks.testEvent.sent') });
-        // The delivery happens async in the worker — give it a moment before
-        // refreshing the log.
-        setTimeout(() => void refetch(), 1500);
+        refetchSoon();
       } else {
         toast({ variant: 'destructive', title: t('settings.webhooks.testEvent.failed') });
       }
@@ -236,6 +251,24 @@ const DeliveriesSection = ({ webhookId, enabled }: { webhookId: string; enabled:
       toast({ variant: 'destructive', title: getErrorMessage(error) });
     }
   };
+
+  const handleResend = async (message: WebhookMessage) => {
+    try {
+      const queued = await resendMessage(webhookId, message.id);
+      if (queued) {
+        toast({ variant: 'success', title: t('settings.webhooks.message.resendQueued') });
+        void refetch();
+        refetchSoon();
+      } else {
+        toast({ variant: 'destructive', title: t('settings.webhooks.message.resendFailed') });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
+  const lastAttempt = (message: WebhookMessage) =>
+    message.deliveries.length > 0 ? message.deliveries[message.deliveries.length - 1] : null;
 
   return (
     <div className="space-y-6">
@@ -260,48 +293,47 @@ const DeliveriesSection = ({ webhookId, enabled }: { webhookId: string; enabled:
           <TableRow>
             <TableHead className="w-48">{t('settings.webhooks.deliveries.columns.time')}</TableHead>
             <TableHead>{t('settings.webhooks.deliveries.columns.topic')}</TableHead>
-            <TableHead className="w-24">
+            <TableHead className="w-28">
               {t('settings.webhooks.deliveries.columns.status')}
             </TableHead>
-            <TableHead className="w-20">
-              {t('settings.webhooks.deliveries.columns.attempt')}
-            </TableHead>
             <TableHead className="w-24">
-              {t('settings.webhooks.deliveries.columns.duration')}
+              {t('settings.webhooks.deliveries.columns.attempts')}
             </TableHead>
-            <TableHead>{t('settings.webhooks.deliveries.columns.error')}</TableHead>
+            <TableHead className="w-28">
+              {t('settings.webhooks.deliveries.columns.lastResponse')}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {deliveries.length === 0 && !loading && (
+          {messages.length === 0 && !loading && (
             <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                 {t('settings.webhooks.deliveries.empty')}
               </TableCell>
             </TableRow>
           )}
-          {deliveries.map((delivery) => (
-            <TableRow key={delivery.id}>
-              <TableCell className="whitespace-nowrap">
-                {format(new Date(delivery.createdAt), 'PP pp')}
-              </TableCell>
-              <TableCell className="font-mono text-xs">{delivery.topic}</TableCell>
-              <TableCell>
-                {delivery.success ? (
-                  <Badge variant="success">{delivery.responseStatus ?? 'OK'}</Badge>
-                ) : (
-                  <Badge variant="destructive">{delivery.responseStatus ?? 'ERR'}</Badge>
-                )}
-              </TableCell>
-              <TableCell>{delivery.attempt}</TableCell>
-              <TableCell>
-                {delivery.durationMs != null ? `${delivery.durationMs}ms` : '—'}
-              </TableCell>
-              <TableCell className="truncate max-w-72 text-muted-foreground">
-                {delivery.error ?? ''}
-              </TableCell>
-            </TableRow>
-          ))}
+          {messages.map((message) => {
+            const last = lastAttempt(message);
+            return (
+              <TableRow
+                key={message.id}
+                className="cursor-pointer"
+                onClick={() => setSelected(message)}
+              >
+                <TableCell className="whitespace-nowrap">
+                  {format(new Date(message.createdAt), 'PP pp')}
+                </TableCell>
+                <TableCell className="font-mono text-xs">{message.topic}</TableCell>
+                <TableCell>
+                  <WebhookMessageStatusBadge status={message.status} />
+                </TableCell>
+                <TableCell>{message.deliveries.length}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {last ? (last.responseStatus ?? (last.success ? 'OK' : 'ERR')) : '—'}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
       {pageInfo?.hasNextPage && (
@@ -314,6 +346,14 @@ const DeliveriesSection = ({ webhookId, enabled }: { webhookId: string; enabled:
           {t('settings.webhooks.deliveries.loadMore')}
         </Button>
       )}
+
+      <WebhookMessageDialog
+        message={selectedMessage}
+        onClose={() => setSelected(null)}
+        onResend={(message) => void handleResend(message)}
+        resending={resending}
+        canResend={!isViewOnly && enabled}
+      />
     </div>
   );
 };
@@ -373,7 +413,7 @@ export const WebhookDetail = () => {
       )}
 
       <SettingsCard>
-        <DeliveriesSection webhookId={webhook.id} enabled={webhook.enabled} />
+        <MessagesSection webhookId={webhook.id} enabled={webhook.enabled} />
       </SettingsCard>
     </SettingsCardStack>
   );

@@ -1,15 +1,16 @@
 import { randomBytes } from 'node:crypto';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { WEBHOOK_TEST_TOPIC } from '@usertour/constants';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { ApiObjectType } from '@/api/shared/object-type';
-import { QUEUE_CLEAN_WEBHOOK_DELIVERIES, QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
+import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { assertPublicHttpUrl } from '@/common/egress/egress-guard';
 import { FeatureRequiresLicenseError, ParamsError, ValidationError } from '@/common/errors';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { CreateWebhookInput, UpdateWebhookInput } from './dto/webhook.input';
@@ -17,16 +18,17 @@ import { generateWebhookSecret } from './webhook-signature';
 import { isValidSubscription } from './webhook-topics';
 import { WebhookDeliveryJobData } from './webhook.types';
 
-@Injectable()
-export class WebhooksService implements OnModuleInit {
-  private readonly logger = new Logger(WebhooksService.name);
+/** Job options for a one-shot, user-triggered send (test event, resend). */
+const SINGLE_ATTEMPT_JOB_OPTIONS = { removeOnComplete: true, removeOnFail: 1000, attempts: 1 };
 
+@Injectable()
+export class WebhooksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly projectsService: ProjectsService,
+    private readonly ledger: OutboundLedgerService,
     @InjectQueue(QUEUE_WEBHOOK_DELIVERY) private readonly deliveryQueue: Queue,
-    @InjectQueue(QUEUE_CLEAN_WEBHOOK_DELIVERIES) private readonly cleanupQueue: Queue,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -60,35 +62,6 @@ export class WebhooksService implements OnModuleInit {
     if (!(await this.isEntitled(environmentId))) {
       throw new FeatureRequiresLicenseError();
     }
-  }
-
-  // Schedule the recurring delivery-log cleanup. Mirrors the auth/subscription
-  // cron pattern (BullMQ repeatable + fixed jobId so it fires once per cluster);
-  // scheduling failure must not block app boot.
-  async onModuleInit() {
-    try {
-      await this.setupCleanupJob();
-    } catch (error) {
-      this.logger.error(`Failed to schedule webhook delivery cleanup job: ${error}`);
-    }
-  }
-
-  private async setupCleanupJob() {
-    const existingJobs = await this.cleanupQueue.getJobSchedulers();
-    await Promise.all(existingJobs.map((job) => this.cleanupQueue.removeJobScheduler(job.id)));
-
-    await this.cleanupQueue.add(
-      'clean-webhook-deliveries',
-      {},
-      {
-        repeat: { pattern: '30 3 * * *' }, // daily at 03:30
-        jobId: 'clean-webhook-deliveries', // fixed id dedupes across instances
-        removeOnComplete: true,
-        removeOnFail: false,
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 1000 },
-      },
-    );
   }
 
   async list(environmentId: string) {
@@ -206,28 +179,52 @@ export class WebhooksService implements OnModuleInit {
         data: {},
       },
     };
-    await this.deliveryQueue.add('deliver', jobData, {
-      removeOnComplete: true,
-      removeOnFail: 1000,
-      attempts: 1,
-    });
+    await this.ledger.createMessages([
+      {
+        id: messageId,
+        environmentId: webhook.environmentId,
+        destination: { webhookId: webhook.id },
+        topic: WEBHOOK_TEST_TOPIC,
+        payload: jobData.payload,
+      },
+    ]);
+    await this.deliveryQueue.add('deliver', jobData, SINGLE_ATTEMPT_JOB_OPTIONS);
     return webhook;
   }
 
-  async listDeliveries(webhookId: string, pagination: PaginationArgs) {
+  /** The endpoint's message log (newest first), each with its attempts. */
+  async listMessages(webhookId: string, pagination: PaginationArgs) {
     const { first, last, before, after } = pagination ?? {};
-    const where = { webhookId };
-    return findManyCursorConnection(
-      (args) =>
-        this.prisma.webhookDelivery.findMany({
-          where,
-          // Secondary `id` sort: stable tiebreak for rows sharing a createdAt.
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          ...args,
-        }),
-      () => this.prisma.webhookDelivery.count({ where }),
-      { first, last, before, after },
-    );
+    return this.ledger.listMessages({ webhookId }, { first, last, before, after });
+  }
+
+  /**
+   * Re-send a logged message from its stored payload: same message id (the
+   * receiver's idempotency key), single attempt, next attempt number in the
+   * sequence. Gated like every other action; the endpoint must be enabled.
+   */
+  async resendMessage(webhookId: string, messageId: string) {
+    const webhook = await this.get(webhookId);
+    await this.assertEntitled(webhook.environmentId);
+    if (!webhook.enabled) {
+      throw new ValidationError('Enable the webhook before re-sending a message.');
+    }
+    const message = await this.ledger.getMessage(messageId);
+    if (!message || message.webhookId !== webhookId) {
+      throw new ParamsError('Webhook message not found');
+    }
+
+    await this.ledger.markPending(message.id);
+    const jobData: WebhookDeliveryJobData = {
+      webhookId,
+      messageId: message.id,
+      topic: message.topic,
+      payload: message.payload as Record<string, unknown>,
+      // Continue the attempt numbering after the logged tries.
+      attemptOffset: message.deliveries.length,
+    };
+    await this.deliveryQueue.add('deliver', jobData, SINGLE_ATTEMPT_JOB_OPTIONS);
+    return { ...message, status: 'PENDING' };
   }
 
   /** Scope-resolver lookup: webhook id -> environmentId (null when absent). */

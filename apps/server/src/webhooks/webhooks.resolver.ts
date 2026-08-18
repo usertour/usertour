@@ -11,8 +11,9 @@ import {
   QueryWebhooksInput,
   UpdateWebhookInput,
   WebhookIdInput,
+  WebhookMessageInput,
 } from './dto/webhook.input';
-import { WebhookDeliveryConnection } from './models/webhook-delivery.model';
+import { WebhookMessage, WebhookMessageConnection } from './models/webhook-delivery.model';
 import { Webhook } from './models/webhook.model';
 import { WebhooksService } from './webhooks.service';
 
@@ -33,13 +34,13 @@ export class WebhooksResolver {
     return await this.service.get(id);
   }
 
-  @Query(() => WebhookDeliveryConnection)
+  @Query(() => WebhookMessageConnection)
   @RequirePermission({ capability: Capability.WebhookRead, scope: ScopeKind.Webhook })
-  async queryWebhookDeliveries(
+  async queryWebhookMessages(
     @Args('webhookId') webhookId: string,
     @Args() pagination: PaginationArgs,
   ) {
-    return await this.service.listDeliveries(webhookId, pagination);
+    return await this.service.listMessages(webhookId, pagination);
   }
 
   @Mutation(() => Webhook)
@@ -92,5 +93,12 @@ export class WebhooksResolver {
   @RequirePermission({ capability: Capability.WebhookManage, scope: ScopeKind.Webhook })
   async sendWebhookTestEvent(@Args('data') { id }: WebhookIdInput) {
     return await this.service.sendTestEvent(id);
+  }
+
+  // Not audited for the same reason: re-sending changes no configuration.
+  @Mutation(() => WebhookMessage)
+  @RequirePermission({ capability: Capability.WebhookManage, scope: ScopeKind.Webhook })
+  async resendWebhookMessage(@Args('data') { webhookId, messageId }: WebhookMessageInput) {
+    return await this.service.resendMessage(webhookId, messageId);
   }
 }

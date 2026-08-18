@@ -293,6 +293,7 @@ model Environment {
   integrations                Integration[]
   signingSecrets              EnvironmentSigningSecret[]
   webhooks                    Webhook[]
+  outboundMessages            OutboundMessage[]
 }
 
 /// Per-environment HMAC signing secrets for SDK identity verification (ADR 0008).
@@ -1011,6 +1012,8 @@ model Integration {
   integrationLogs           IntegrationLog[]
   integrationOAuth          IntegrationOAuth?
   integrationObjectMappings IntegrationObjectMapping[]
+  /// Outbound delivery ledger (shared with webhooks) — event pushes land here
+  outboundMessages          OutboundMessage[]
 
   @@unique([environmentId, provider])
 }
@@ -1108,30 +1111,68 @@ model Webhook {
   secret        String
   description   String?
 
-  deliveries WebhookDelivery[]
+  messages OutboundMessage[]
 
   @@index([environmentId])
 }
 
-/// One row per delivery attempt (append-only). `messageId` is stable across
-/// retries of the same webhook message — it is the receiver-side idempotency
-/// key and equals the payload `id`.
-model WebhookDelivery {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
-  webhook        Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
-  webhookId      String
+/// Message lifecycle: PENDING until an attempt succeeds (DELIVERED) or the
+/// retry budget is exhausted (FAILED). A resend moves it back to PENDING.
+enum OutboundMessageStatus {
+  PENDING
+  DELIVERED
+  FAILED
+}
+
+/// Outbound delivery ledger, one row per message addressed to one destination
+/// (a webhook endpoint or an integration provider — exactly one of `webhookId`
+/// / `integrationId` is set; CHECK constraint in the migration). Holds the
+/// exact payload that was sent so the log can show it and a message can be
+/// re-sent; the queue job carries a working copy for the retry sequence.
+/// Retained 30 days (deliveries cascade).
+model OutboundMessage {
+  /// Public message id (webhook payload `id`, receiver idempotency key) — set by
+  /// the producer, not generated here.
+  id            String                @id
+  createdAt     DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime              @updatedAt @db.Timestamptz(6)
+  environment   Environment           @relation(fields: [environmentId], references: [id])
+  environmentId String
+  webhook       Webhook?              @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  webhookId     String?
+  integration   Integration?          @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integrationId String?
+  /// Topic string (webhook grammar): "event.tracked.<codeName>", "user.updated", "webhook.test", …
+  topic         String
+  /// The message body as sent (JSON)
+  payload       Json                  @db.JsonB
+  status        OutboundMessageStatus @default(PENDING)
+
+  deliveries OutboundDelivery[]
+
+  @@index([webhookId, createdAt])
+  @@index([integrationId, createdAt])
+  @@index([createdAt])
+}
+
+/// One row per delivery attempt of a message (append-only). Cascades with its
+/// message; retention is enforced on the message.
+model OutboundDelivery {
+  id             String          @id @default(cuid())
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  message        OutboundMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
   messageId      String
-  topic          String
   /// 1-based attempt number within the retry sequence
   attempt        Int
   success        Boolean
   responseStatus Int?
+  /// Response body excerpt, truncated at the application layer
+  responseBody   String?
   /// Failure reason, truncated at the application layer
   error          String?
   durationMs     Int?
 
-  @@index([webhookId, createdAt])
+  @@index([messageId, createdAt])
   @@index([createdAt])
 }
 

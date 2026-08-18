@@ -61,4 +61,9 @@ export interface WebhookDeliveryJobData {
   topic: string;
   /** The full message body to sign and POST, already assembled. */
   payload: Record<string, any>;
+  /**
+   * Attempts already logged for this message before this job (a manual resend
+   * continues the numbering after the original sequence). Absent = 0.
+   */
+  attemptOffset?: number;
 }

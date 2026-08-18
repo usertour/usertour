@@ -118,6 +118,20 @@ Enforcement lives in the domain `WebhooksService`, which REST and MCP are thin o
 
 The web settings page mirrors the gate (locked state → billing) and the pricing comparison table renders the row from the same matrix. Existing cloud projects on Hobby that created webhooks before this gate shipped keep their rows but stop receiving until they upgrade — acceptable because the feature launched behind the gate on the same branch (no grandfathering to honor).
 
+### 10. Outbound delivery ledger (added 2026-07-24)
+
+M1/M2 kept the message payload only in the BullMQ job (Redis) for the life of the retry sequence and logged per-attempt metadata (`WebhookDelivery`). That answered "did it go?" but not "what did we send?" or "what did they reply?", and made a manual re-send impossible once the job was gone. Replaced by a two-table ledger, shared with the integrations event push that follows this feature:
+
+- **`OutboundMessage`** — one row per (destination × message): public message id (= payload `id`), `environmentId`, exactly one of `webhookId` / `integrationId` (CHECK constraint), `topic`, the `payload` as sent, `status` PENDING → DELIVERED | FAILED. Written by the producer **before** enqueueing (the record of intent exists even if the queue never runs it); the job carries the same payload as its working copy for the retry sequence.
+- **`OutboundDelivery`** — one row per attempt, hanging off the message (not the destination): attempt number, status code, response-body excerpt (1 KB), error (500 chars), duration. Cascades with the message; the daily retention sweep (30 days) runs on messages only.
+- **`OutboundLedgerService`** (`outbound/`) owns writes, status transitions (DELIVERED on success, FAILED when a failure exhausts the job's budget, otherwise stays PENDING), pagination and cleanup. Ledger writes swallow their own failures — a logging problem must never cause a duplicate send.
+- **Resend** re-queues the stored payload under the same message id as a single attempt, numbering continuing after the logged tries (`attemptOffset`); the message goes back to PENDING first. Gated like the other actions and only for enabled endpoints.
+- Dashboard: the log is now per message (status, attempts, last response) with a detail dialog (payload as sent, every attempt with response/error, Resend). GraphQL `queryWebhookMessages` replaces `queryWebhookDeliveries`; `resendWebhookMessage` added.
+
+Why the payload lives on the message and not on each attempt: the payload exists before the first attempt (enqueue time), duplicating it 5× would land exactly on failing endpoints, and message-level state (Resend, folding, a future reconcile pass) needs a message identity anyway.
+
+Why generic now: integrations are the next feature on this branch and need the same bookkeeping (payload as sent, attempts, detail view, resend); transports stay per destination (webhook signer/poster vs. provider adapters), only the ledger is shared. A destination-agnostic reconcile pass (re-queue PENDING messages after Redis loss) is the natural follow-up and is deferred with the circuit breaker.
+
 ## M2 (delivered 2026-07-16, same branch)
 
 - **v2 REST management** (`/v2/projects/:projectId/environments/:environmentId/webhooks`, full CRUD + `POST :id/rotate-secret`) and **MCP tools** (`list/create/update/delete_webhook`) on the same domain service — one validation path, one secret lifecycle. `webhook:read/manage` joined the token-scope catalog and the env-targeted capability set (a webhook credential must name its environments). REST writes audit via the capability-prefix map; `POST` with a path id now derives `update`, not `create` (rotate-secret would otherwise masquerade as a create).
@@ -132,10 +146,12 @@ The web settings page mirrors the gate (locked state → billing) and the pricin
 - `companyMembership` change topics (user joins/leaves a company).
 - REST `GET /events` on the event-instance schema.
 - Failure alerting / auto-disable (delivery log + manual switch cover today's need).
+- Reconcile pass over PENDING `OutboundMessage` rows (re-queue after Redis loss); today retries rely on Redis persistence like every other queue.
+- Integrations event push should subscribe to the same domain events (`BIZ_EVENT_TRACKED` etc.) and record into the outbound ledger rather than re-adding the commented-out call site.
 
 ## Consequences
 
 - Receivers integrate against one vocabulary: webhook `event` objects, topic names, and REST resources cross-reference by id with no translation layer.
 - The topic namespace absorbs entity/config notifications later without migrating stored subscriptions.
-- Per-attempt delivery rows cost storage (bounded by 30-day retention + `page_viewed` wildcard exclusion) in exchange for first-class debuggability.
+- The ledger costs storage — payload once per message plus a row per attempt (bounded by 30-day retention + `page_viewed` wildcard exclusion) — in exchange for first-class debuggability and re-send.
 - Local-dev delivery testing requires `ALLOW_PRIVATE_NETWORK_EGRESS=true` or a public receiver — documented cost of refusing private-network egress by default.

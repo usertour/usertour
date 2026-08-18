@@ -68,3 +68,15 @@ export class WebhookIdInput {
   @IsString()
   id: string;
 }
+
+@InputType()
+export class WebhookMessageInput {
+  /** The endpoint the message belongs to — resolves the permission scope. */
+  @Field(() => String)
+  @IsString()
+  webhookId: string;
+
+  @Field(() => String)
+  @IsString()
+  messageId: string;
+}

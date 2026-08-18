@@ -1,4 +1,5 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
+import GraphQLJSON from 'graphql-type-json';
 import PaginatedResponse from '@/common/pagination/pagination';
 
 /** GraphQL projection of one delivery attempt (read side, detail page log). */
@@ -10,16 +11,6 @@ export class WebhookDelivery {
   @Field(() => Date)
   createdAt: Date;
 
-  @Field(() => String)
-  webhookId: string;
-
-  /** Stable across retries of the same message (receiver idempotency key). */
-  @Field(() => String)
-  messageId: string;
-
-  @Field(() => String)
-  topic: string;
-
   @Field(() => Int)
   attempt: number;
 
@@ -29,6 +20,10 @@ export class WebhookDelivery {
   @Field(() => Int, { nullable: true })
   responseStatus?: number | null;
 
+  /** Response body excerpt (truncated server-side). */
+  @Field(() => String, { nullable: true })
+  responseBody?: string | null;
+
   @Field(() => String, { nullable: true })
   error?: string | null;
 
@@ -36,5 +31,35 @@ export class WebhookDelivery {
   durationMs?: number | null;
 }
 
+/**
+ * GraphQL projection of an outbound message addressed to a webhook, with its
+ * attempts. `id` is the public message id (payload `id`, receiver idempotency
+ * key); `payload` is the body exactly as sent.
+ */
 @ObjectType()
-export class WebhookDeliveryConnection extends PaginatedResponse(WebhookDelivery) {}
+export class WebhookMessage {
+  @Field(() => String)
+  id: string;
+
+  @Field(() => Date)
+  createdAt: Date;
+
+  @Field(() => Date)
+  updatedAt: Date;
+
+  @Field(() => String)
+  topic: string;
+
+  /** PENDING | DELIVERED | FAILED */
+  @Field(() => String)
+  status: string;
+
+  @Field(() => GraphQLJSON)
+  payload: unknown;
+
+  @Field(() => [WebhookDelivery])
+  deliveries: WebhookDelivery[];
+}
+
+@ObjectType()
+export class WebhookMessageConnection extends PaginatedResponse(WebhookMessage) {}
