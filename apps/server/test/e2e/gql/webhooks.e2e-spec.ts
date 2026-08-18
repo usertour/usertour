@@ -137,10 +137,10 @@ describe('GraphQL webhooks (e2e)', () => {
     });
 
     it('rejects invalid topic subscriptions', async () => {
-      // `user.deleted` is a plausible-looking name that is NOT a topic (only
-      // created/updated exist for entities) — the grammar must reject it rather
-      // than accept anything under a known prefix.
-      for (const topics of [[], ['flow_started'], ['user.deleted'], ['event.tracked.']]) {
+      // `user.archived` is a plausible-looking name that is NOT a topic (only
+      // created/updated/deleted exist for entities) — the grammar must reject
+      // it rather than accept anything under a known prefix.
+      for (const topics of [[], ['flow_started'], ['user.archived'], ['event.tracked.']]) {
         const res = await graphql(app, {
           token,
           query: CREATE_WEBHOOK,

@@ -212,6 +212,39 @@ describe('WebhooksListener', () => {
       });
     });
 
+    it('maps a deletion from the captured row instead of re-reading', async () => {
+      prisma.webhook.findMany.mockResolvedValue([{ id: 'wh_1', topics: ['user'], enabled: true }]);
+      prisma.bizUser.findUnique.mockResolvedValue(null); // gone — must not be consulted
+
+      await listener.onEntityChanged({
+        environmentId: 'env_1',
+        changes: [
+          {
+            entity: 'user',
+            action: 'deleted',
+            bizId: 'bu_1',
+            deletedRow: {
+              id: 'bu_1',
+              externalId: 'user-ext-1',
+              environmentId: 'env_1',
+              data: { name: 'Ada' },
+              createdAt: new Date('2026-07-16T08:00:00.000Z'),
+              updatedAt: new Date('2026-07-16T08:00:00.000Z'),
+            } as any,
+          },
+        ],
+      });
+
+      expect(prisma.bizUser.findUnique).not.toHaveBeenCalled();
+      const jobs = queue.addBulk.mock.calls[0][0];
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0].data.topic).toBe('user.deleted');
+      expect(jobs[0].data.payload.data.user).toEqual(
+        expect.objectContaining({ id: 'user-ext-1', object: 'user' }),
+      );
+      expect(jobs[0].data.payload.data).not.toHaveProperty('previousAttributes');
+    });
+
     it('omits previousAttributes on created and skips vanished rows', async () => {
       prisma.webhook.findMany.mockResolvedValue([
         { id: 'wh_users', topics: ['user.created'], enabled: true },

@@ -13,9 +13,12 @@ const topics = z
   .array(z.string().min(1))
   .min(1)
   .describe(
-    'Topic subscriptions: "*" (everything), "event.tracked" (all behavior events), or ' +
-      '"event.tracked.<codeName>" for one event. High-volume events (page_viewed) are ' +
-      'excluded from the wildcard forms and must be subscribed explicitly.',
+    'Topic subscriptions: "*" (everything); "event.tracked" (all behavior events) or ' +
+      '"event.tracked.<codeName>" for one; "content" / "content.published"; "user" or ' +
+      '"user.created" / "user.updated" / "user.deleted"; "company" or "company.created" / ' +
+      '"company.updated" / "company.deleted". A bare family name also covers topics added ' +
+      'to it later. High-volume events (page_viewed) are excluded from the wildcard forms ' +
+      'and must be subscribed explicitly.',
   );
 
 export const listWebhooksQuery = z.object({ cursor, limit });

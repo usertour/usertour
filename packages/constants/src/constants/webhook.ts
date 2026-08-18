@@ -14,12 +14,17 @@ export const WEBHOOK_EVENT_TOPIC_PREFIX = 'event.tracked';
 /** Topic published when a content version is published to an environment. */
 export const WEBHOOK_CONTENT_PUBLISHED_TOPIC = 'content.published';
 
-/** Entity-change topics (profile sync): fired on real attribute changes only. */
+/**
+ * Entity-change topics (profile sync): created/updated fire on real attribute
+ * changes only; deleted carries the object as it was at deletion.
+ */
 export const WEBHOOK_ENTITY_TOPICS: string[] = [
   'user.created',
   'user.updated',
+  'user.deleted',
   'company.created',
   'company.updated',
+  'company.deleted',
 ];
 
 /** Non-parameterized topics subscribable by exact name. */

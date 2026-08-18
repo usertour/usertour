@@ -205,8 +205,17 @@ export class WebhooksListener {
     }
   }
 
-  /** The v2 public object for a changed row, or null if it vanished meanwhile. */
+  /**
+   * The v2 public object for a changed row, or null if it vanished meanwhile.
+   * A deletion maps the snapshot the producer captured (nothing to re-read).
+   */
   private async mapChangedEntity(change: EntityChange): Promise<Record<string, any> | null> {
+    if (change.action === 'deleted') {
+      if (!change.deletedRow) {
+        return null;
+      }
+      return change.entity === 'user' ? mapUser(change.deletedRow) : mapCompany(change.deletedRow);
+    }
     if (change.entity === 'user') {
       const bizUser = await this.prisma.bizUser.findUnique({ where: { id: change.bizId } });
       return bizUser ? mapUser(bizUser) : null;

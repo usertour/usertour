@@ -450,6 +450,11 @@ export class BizService {
     });
   }
 
+  /**
+   * Delete users (every surface — dashboard, REST, legacy API — funnels here).
+   * The rows are read in full first: `user.deleted` carries the object as it
+   * was, since there is nothing left to re-read once the transaction commits.
+   */
   async deleteBizUser(ids: string[], environmentId: string) {
     // 1. Validate input
     if (!ids?.length) {
@@ -462,7 +467,6 @@ export class BizService {
         id: { in: ids },
         environmentId,
       },
-      select: { id: true }, // Only select needed fields
     });
 
     if (!bizUsers.length) {
@@ -471,41 +475,69 @@ export class BizService {
 
     const deleteIds = bizUsers.map((bizUser) => bizUser.id);
 
-    // 3. Execute all operations in a transaction
-    return await this.prisma.$transaction(async (tx) => {
-      return await this.executeDeleteUserTransaction(tx, deleteIds);
-    });
+    // 3. Execute all operations in a transaction; the change notification is
+    //    collected inside and emitted only after commit.
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        const result = await this.executeDeleteUserTransaction(tx, deleteIds);
+        for (const bizUser of bizUsers) {
+          this.collectEntityChange({
+            entity: 'user',
+            action: 'deleted',
+            bizId: bizUser.id,
+            deletedRow: bizUser,
+          });
+        }
+        return result;
+      }),
+    );
   }
 
+  /** Delete companies — same funnel/notification shape as deleteBizUser. */
   async deleteBizCompany(ids: string[], environmentId: string) {
-    return await this.prisma.$transaction(async (tx) => {
-      // First delete related records
-      await tx.bizUserOnCompany.deleteMany({
-        where: {
-          bizCompanyId: { in: ids },
-          bizCompany: {
-            environmentId,
-          },
-        },
-      });
-
-      await tx.bizCompanyOnSegment.deleteMany({
-        where: {
-          bizCompanyId: { in: ids },
-          bizCompany: {
-            environmentId,
-          },
-        },
-      });
-
-      // Then delete the companies
-      return await tx.bizCompany.deleteMany({
-        where: {
-          id: { in: ids },
-          environmentId,
-        },
-      });
+    const bizCompanies = await this.prisma.bizCompany.findMany({
+      where: { id: { in: ids }, environmentId },
     });
+
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        // First delete related records
+        await tx.bizUserOnCompany.deleteMany({
+          where: {
+            bizCompanyId: { in: ids },
+            bizCompany: {
+              environmentId,
+            },
+          },
+        });
+
+        await tx.bizCompanyOnSegment.deleteMany({
+          where: {
+            bizCompanyId: { in: ids },
+            bizCompany: {
+              environmentId,
+            },
+          },
+        });
+
+        // Then delete the companies
+        const result = await tx.bizCompany.deleteMany({
+          where: {
+            id: { in: ids },
+            environmentId,
+          },
+        });
+        for (const bizCompany of bizCompanies) {
+          this.collectEntityChange({
+            entity: 'company',
+            action: 'deleted',
+            bizId: bizCompany.id,
+            deletedRow: bizCompany,
+          });
+        }
+        return result;
+      }),
+    );
   }
 
   private createSearchConditions(

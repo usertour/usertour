@@ -1,3 +1,5 @@
+import type { BizCompany, BizUser } from '@prisma/client';
+
 /**
  * Domain event emitted (in-process, via EventEmitter2) after a transaction
  * that created BizEvent rows has COMMITTED — never from inside the
@@ -43,10 +45,15 @@ export const BIZ_ENTITY_CHANGED = 'bizEntity.changed';
 
 export interface EntityChange {
   entity: 'user' | 'company';
-  action: 'created' | 'updated';
+  action: 'created' | 'updated' | 'deleted';
   /** Internal row id — the listener re-reads and maps to the public object. */
   bizId: string;
   previousAttributes?: Record<string, any>;
+  /**
+   * For `deleted`: the row as it was just before deletion (there is nothing to
+   * re-read afterwards) — the listener maps it to the public object.
+   */
+  deletedRow?: BizUser | BizCompany;
 }
 
 export interface BizEntityChangedPayload {

@@ -79,12 +79,14 @@ describe('isValidSubscription', () => {
     expect(isValidSubscription('content.published')).toBe(true);
     expect(isValidSubscription('user')).toBe(true);
     expect(isValidSubscription('user.updated')).toBe(true);
+    expect(isValidSubscription('user.deleted')).toBe(true);
+    expect(isValidSubscription('company.deleted')).toBe(true);
     expect(isValidSubscription('company.created')).toBe(true);
   });
 
   it('rejects unknown namespaces, bare codeNames, and empty parameters', () => {
     expect(isValidSubscription('flow_started')).toBe(false);
-    expect(isValidSubscription('user.deleted')).toBe(false);
+    expect(isValidSubscription('user.archived')).toBe(false);
     expect(isValidSubscription('content.deleted')).toBe(false);
     expect(isValidSubscription('event.tracked.')).toBe(false);
     expect(isValidSubscription('')).toBe(false);

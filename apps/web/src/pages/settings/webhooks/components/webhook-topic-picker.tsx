@@ -233,6 +233,7 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
             leaves: [
               fixedLeaf('user.created', 'userCreated'),
               fixedLeaf('user.updated', 'userUpdated'),
+              fixedLeaf('user.deleted', 'userDeleted'),
             ],
           },
         ],
@@ -248,6 +249,7 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
             leaves: [
               fixedLeaf('company.created', 'companyCreated'),
               fixedLeaf('company.updated', 'companyUpdated'),
+              fixedLeaf('company.deleted', 'companyDeleted'),
             ],
           },
         ],
