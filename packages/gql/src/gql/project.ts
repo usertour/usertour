@@ -19,6 +19,7 @@ export const getProjectConfig = gql`
       auditLogRetentionDays
       ssoOidc
       ssoSaml
+      webhooks
       planType
     }
   }

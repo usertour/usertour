@@ -802,6 +802,7 @@ const translations = {
           localization: '本地化',
           aiTranslation: 'AI 机器翻译',
           integrations: '集成(即将推出)',
+          webhooks: 'Webhook',
           alerting: '告警(即将推出)',
           sso: '单点登录（SSO）',
         },
@@ -1328,6 +1329,12 @@ const translations = {
           duration: '耗时',
           error: '错误',
         },
+      },
+      locked: {
+        title: 'Webhook 为付费套餐功能',
+        description:
+          '事件、用户和公司的每一次变更都会实时推送到你的接口 — Starter 及以上套餐可用。',
+        upgrade: '升级套餐',
       },
     },
     integrations: {

@@ -69,7 +69,13 @@ export class ApiWebhooksController {
 
   @Post()
   @RequireCapability(Capability.WebhookManage)
-  @ApiOperation({ summary: 'Create a webhook' })
+  @ApiOperation({
+    summary: 'Create a webhook',
+    description:
+      'On Usertour Cloud, webhooks need a paid plan (Starter or above) — a Hobby project ' +
+      'gets 403 E0043. Self-hosted instances are never gated. The same applies to update, ' +
+      'rotate-secret and delivery; reads and delete stay available on any plan.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiResponse({ status: 201, description: 'Webhook created', type: WebhookDto })

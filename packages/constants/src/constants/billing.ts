@@ -25,6 +25,7 @@ const HOBBY: PlanFeatures = {
   auditLogRetentionDays: 0,
   ssoSaml: false,
   ssoOidc: false,
+  webhooks: false,
   sessionsLimit: HobbySessionLimit,
   teamMemberLimit: 1,
   environmentLimit: 1,
@@ -35,6 +36,8 @@ const HOBBY: PlanFeatures = {
 const STARTER: PlanFeatures = {
   ...HOBBY,
   removeBranding: true,
+  // Outbound webhooks unlock with the first paid tier.
+  webhooks: true,
   sessionsLimit: ProSessionLimit,
   teamMemberLimit: 3,
   environmentLimit: 2,

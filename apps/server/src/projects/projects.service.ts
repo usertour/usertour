@@ -156,14 +156,16 @@ export class ProjectsService {
     return this.cache.memoize(this.cache.memoKeys.projectConfig(projectId), async () => {
       const isSelfHostedMode = this.configService.get('globalConfig.isSelfHostedMode');
       if (isSelfHostedMode) {
-        // Self-hosted doesn't gate custom CSS — like environment limits, it
-        // isn't a paywalled feature here. Self-hosted monetizes the enterprise
-        // features (removeBranding / audit logs / SSO), which the license still
-        // governs; usage and feature limits stay open. Force customCss on
-        // regardless of the license's plan tier — this single override flows
-        // to the session builder (no strip) and the web gate (no upsell).
+        // Self-hosted doesn't gate custom CSS or outbound webhooks — like
+        // environment limits, they aren't paywalled features here. Self-hosted
+        // monetizes the enterprise features (removeBranding / audit logs / SSO),
+        // which the license still governs; usage and feature limits stay open.
+        // Force both on regardless of the license's plan tier — the customCss
+        // override flows to the session builder (no strip) and the web gate (no
+        // upsell); the webhooks override to the CRUD gate, the delivery
+        // listener, and the settings page.
         const config = await this.getSelfHostedConfig(projectId);
-        return { ...config, customCss: true };
+        return { ...config, customCss: true, webhooks: true };
       }
       return this.getCloudConfig(projectId);
     });
@@ -181,6 +183,7 @@ export class ProjectsService {
       auditLogRetentionDays: 0,
       ssoOidc: false,
       ssoSaml: false,
+      webhooks: false,
       planType: PlanType.HOBBY,
     };
     const project = await this.prisma.project.findUnique({
@@ -245,6 +248,7 @@ export class ProjectsService {
         features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       ssoOidc: features.ssoOidc,
       ssoSaml: features.ssoSaml,
+      webhooks: features.webhooks,
       planType,
     };
   }
@@ -291,6 +295,7 @@ export class ProjectsService {
         features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       ssoOidc: features.ssoOidc,
       ssoSaml: features.ssoSaml,
+      webhooks: features.webhooks,
       planType,
     };
   }
@@ -308,6 +313,7 @@ export class ProjectsService {
       auditLogRetentionDays: 0,
       ssoOidc: false,
       ssoSaml: false,
+      webhooks: false,
       planType: PlanType.HOBBY,
     };
 
@@ -338,6 +344,7 @@ export class ProjectsService {
         features.auditLogRetentionDays === 'unlimited' ? -1 : features.auditLogRetentionDays,
       ssoOidc: features.ssoOidc,
       ssoSaml: features.ssoSaml,
+      webhooks: features.webhooks,
       planType: subscription.planType,
     };
   }

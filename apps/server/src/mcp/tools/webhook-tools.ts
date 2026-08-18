@@ -54,7 +54,9 @@ export function buildWebhookTools(): McpTool[] {
       title: 'Create a webhook',
       description:
         'Create an outbound webhook endpoint. Events matching the topic subscriptions are ' +
-        'POSTed to the URL, signed with the returned whsec_ secret (shown here once — store it).',
+        'POSTed to the URL, signed with the returned whsec_ secret (shown here once — store it). ' +
+        'On Usertour Cloud this needs a paid plan (Starter or above); a Hobby project gets ' +
+        '[E0043] — upgrade in Settings → Billing. Self-hosted instances are never gated.',
       capability: Capability.WebhookManage,
       inputSchema: {
         environmentId: environmentIdSchema,

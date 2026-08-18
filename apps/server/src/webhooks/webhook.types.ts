@@ -36,7 +36,8 @@ export interface ContentPublishedPayload {
  * upsert chokepoints, which already diff (`isEqual` short-circuits no-op
  * writes) — a repeated identify with unchanged attributes emits nothing.
  * `previousAttributes` carries the old values of just the keys that changed
- * (Stripe-style), captured at diff time inside the transaction.
+ * (the common payments-API convention), captured at diff time inside the
+ * transaction.
  */
 export const BIZ_ENTITY_CHANGED = 'bizEntity.changed';
 

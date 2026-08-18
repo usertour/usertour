@@ -155,9 +155,9 @@ export class BizService {
   }
 
   /**
-   * Old values of just the keys the merge changed or removed (Stripe-style
-   * `previous_attributes`) — captured here because only the diff site has both
-   * versions in hand.
+   * Old values of just the keys the merge changed or removed (the common
+   * payments-API `previous_attributes` convention) — captured here because only
+   * the diff site has both versions in hand.
    */
   private previousAttributesOf(
     currentData: Record<string, any>,

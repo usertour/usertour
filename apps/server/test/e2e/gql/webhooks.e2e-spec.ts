@@ -3,7 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { graphql, gqlData } from '../auth';
 import { createTestApp } from '../create-test-app';
-import { buildEnvironment, buildProject } from '../factories';
+import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 const CREATE_WEBHOOK = `mutation ($data: CreateWebhookInput!) {
@@ -52,6 +52,10 @@ describe('GraphQL webhooks (e2e)', () => {
 
     const project = await buildProject(prisma, { name: 'gql-webhooks' });
     projectId = project.id;
+    // Webhooks are Starter+ on cloud (see webhooks-plan-gate.e2e-spec for the
+    // gate itself). Entitle this project so the CRUD surface under test is
+    // reachable whichever deployment mode the run resolves to.
+    await buildSubscription(prisma, { projectId, planType: 'starter' });
     const environment = await buildEnvironment(prisma, { projectId });
     environmentId = environment.id;
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
@@ -130,7 +134,10 @@ describe('GraphQL webhooks (e2e)', () => {
     });
 
     it('rejects invalid topic subscriptions', async () => {
-      for (const topics of [[], ['flow_started'], ['user.updated'], ['event.tracked.']]) {
+      // `user.deleted` is a plausible-looking name that is NOT a topic (only
+      // created/updated exist for entities) — the grammar must reject it rather
+      // than accept anything under a known prefix.
+      for (const topics of [[], ['flow_started'], ['user.deleted'], ['event.tracked.']]) {
         const res = await graphql(app, {
           token,
           query: CREATE_WEBHOOK,

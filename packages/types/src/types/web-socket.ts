@@ -127,6 +127,8 @@ export type ProjectConfig = {
   auditLogRetentionDays: number;
   ssoOidc: boolean;
   ssoSaml: boolean;
+  // Outbound webhooks: cloud Starter+, self-hosted always on.
+  webhooks: boolean;
   planType: string;
 };
 

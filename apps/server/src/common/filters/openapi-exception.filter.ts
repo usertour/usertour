@@ -31,6 +31,11 @@ const DOMAIN_ERROR_STATUS: Record<string, HttpStatus> = {
   // request and retry" — a retry can never succeed.
   E0022: HttpStatus.CONFLICT, // LastEnvironmentCannotBeDeletedError
   E0023: HttpStatus.CONFLICT, // PrimaryEnvironmentCannotBeDeletedError — set another primary first
+  // Plan gate (FeatureRequiresLicenseError): the credential is valid, the
+  // project's plan just doesn't include the feature (e.g. webhooks below
+  // Starter). Same "refused" family as scope errors — an upgrade fixes it, a
+  // retry never does.
+  E0043: HttpStatus.FORBIDDEN,
 };
 
 @Catch()

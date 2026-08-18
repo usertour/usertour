@@ -845,6 +845,7 @@ const translations = {
           localization: 'Localization',
           aiTranslation: 'AI machine translation',
           integrations: 'Integrations (coming soon)',
+          webhooks: 'Webhooks',
           alerting: 'Alerting (coming soon)',
           sso: 'Single Sign-On (SSO)',
         },
@@ -1395,6 +1396,12 @@ const translations = {
           duration: 'Duration',
           error: 'Error',
         },
+      },
+      locked: {
+        title: 'Webhooks are available on paid plans',
+        description:
+          'Get every event, user and company change delivered to your own endpoint the moment it happens — starting on the Starter plan.',
+        upgrade: 'Upgrade plan',
       },
     },
     integrations: {

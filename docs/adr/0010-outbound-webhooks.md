@@ -106,6 +106,18 @@ User-controlled URLs mount the shared egress guard (`common/egress`, built for t
 
 M1 is dashboard GraphQL only (`webhooks.*` resolver family, `PermissionGuard` + `ScopeKind.Webhook` id→environment→project resolution, `@AuditWeb` on every mutation, secret auto-redacted by the audit snapshot policy). The v2 REST management endpoints + MCP tools follow in M2 on the same service layer.
 
+### 9. Plan gate (added 2026-07-24)
+
+Cloud: **Starter and above** (`PlanFeatures.webhooks`, first paid tier; overridable per subscription like the other booleans). Self-hosted: **never gated** — webhooks are a usage/feature limit, not an enterprise feature, so `getProjectConfig` forces the flag on there exactly as it does for `customCss` (self-host monetizes removeBranding / audit / SSO only).
+
+Enforcement lives in the domain `WebhooksService`, which REST and MCP are thin over, so one gate covers every surface:
+
+- **writes and actions** (`create` / `update` / `rotateSecret` / `sendTestEvent`) throw `FeatureRequiresLicenseError` (E0043 → 403 on REST, `[E0043]` on MCP);
+- **delivery** consults the same entitlement before enqueueing (only paid by environments that actually have enabled endpoints — the lookup runs after the endpoint query, and is memoized per request scope), so a lapsed plan *stops firing* instead of keeping trial-era endpoints alive forever;
+- **reads and delete stay open** so a downgraded project can still see and clean up what it configured. Rows are never deleted on downgrade; re-upgrading resumes delivery with the same endpoints and secrets.
+
+The web settings page mirrors the gate (locked state → billing) and the pricing comparison table renders the row from the same matrix. Existing cloud projects on Hobby that created webhooks before this gate shipped keep their rows but stop receiving until they upgrade — acceptable because the feature launched behind the gate on the same branch (no grandfathering to honor).
+
 ## M2 (delivered 2026-07-16, same branch)
 
 - **v2 REST management** (`/v2/projects/:projectId/environments/:environmentId/webhooks`, full CRUD + `POST :id/rotate-secret`) and **MCP tools** (`list/create/update/delete_webhook`) on the same domain service — one validation path, one secret lifecycle. `webhook:read/manage` joined the token-scope catalog and the env-targeted capability set (a webhook credential must name its environments). REST writes audit via the capability-prefix map; `POST` with a path id now derives `update`, not `create` (rotate-secret would otherwise masquerade as a create).
@@ -113,7 +125,7 @@ M1 is dashboard GraphQL only (`webhooks.*` resolver family, `PermissionGuard` + 
 - **Send-test-event**: dashboard mutation enqueues a single-attempt `webhook.test` message addressed to one endpoint (bypasses matching, not the enabled switch or egress guard); outcome lands in the delivery log.
 
 - **Entity-change topics** (`user.created/updated`, `company.created/updated`): profile-sync notifications. The BizService upsert chokepoints already diff (`isEqual` short-circuits no-op writes), so create-vs-update-vs-silent was free; the work was carrying the signal out of caller-owned transactions — a `BIZ_ENTITY_CHANGED` post-commit emit via an AsyncLocalStorage collector in BizService (`withEntityChangeEmit`), mirroring the event-tracking collector. Wrapped entry points: SDK identify/group (v1 + v2 sockets), REST users/companies upserts (wrapped inside `biz.upsertUser`/`upsertBizCompany`, so the integration cohort-sync path rides along), question-answered attribute binding (nested inside the event-tracking scope), and the socket-connect `ensureBizUser` (an empty-profile birth IS `user.created`, so the later identify reads as an update). The per-event `updateSeenAttributes` writes bypass the chokepoints entirely — no noise, no exclusion logic. Unwrapped callers are fail-safe: pushes outside a scope are no-ops (missed notification, never a premature one).
-  Payload is deliberately NOT thin — `data.user`/`data.company` is the full v2 object (this topic's consumer wants the attributes, not a pointer), plus Stripe-style `data.previousAttributes` holding the old values of just the changed/removed keys, captured at diff time inside the transaction. The object snapshot itself is re-read at delivery time (freshest state; the message marks THAT a change happened, `previousAttributes` marks WHAT).
+  Payload is deliberately NOT thin — `data.user`/`data.company` is the full v2 object (this topic's consumer wants the attributes, not a pointer), plus `data.previousAttributes` (the common payments-API convention) holding the old values of just the changed/removed keys, captured at diff time inside the transaction. The object snapshot itself is re-read at delivery time (freshest state; the message marks THAT a change happened, `previousAttributes` marks WHAT).
 
 ## Deferred (M3+)
 

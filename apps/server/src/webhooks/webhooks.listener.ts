@@ -21,6 +21,7 @@ import {
   EntityChange,
   WebhookDeliveryJobData,
 } from './webhook.types';
+import { WebhooksService } from './webhooks.service';
 
 /**
  * Fans tracked BizEvents out to the environment's webhook endpoints: re-reads
@@ -36,14 +37,33 @@ export class WebhooksListener {
   constructor(
     @InjectQueue(QUEUE_WEBHOOK_DELIVERY) private readonly queue: Queue,
     private readonly prisma: PrismaService,
+    private readonly webhooksService: WebhooksService,
   ) {}
+
+  /**
+   * The environment's enabled endpoints, or [] when there are none OR the
+   * project's plan no longer includes webhooks (a lapsed plan stops firing;
+   * see the gate note in WebhooksService). Ordered so the entitlement lookup —
+   * memoized per request scope, but still two rows — is only paid by
+   * environments that actually have endpoints.
+   */
+  private async activeWebhooksFor(environmentId: string) {
+    const webhooks = await this.prisma.webhook.findMany({
+      where: { environmentId, enabled: true },
+    });
+    if (webhooks.length === 0) {
+      return [];
+    }
+    if (!(await this.webhooksService.isEntitled(environmentId))) {
+      return [];
+    }
+    return webhooks;
+  }
 
   @OnEvent(BIZ_EVENT_TRACKED, { async: true })
   async onBizEventTracked(payload: BizEventTrackedPayload): Promise<void> {
     try {
-      const webhooks = await this.prisma.webhook.findMany({
-        where: { environmentId: payload.environmentId, enabled: true },
-      });
+      const webhooks = await this.activeWebhooksFor(payload.environmentId);
       if (webhooks.length === 0) {
         return;
       }
@@ -104,9 +124,7 @@ export class WebhooksListener {
   @OnEvent(BIZ_ENTITY_CHANGED, { async: true })
   async onEntityChanged(payload: BizEntityChangedPayload): Promise<void> {
     try {
-      const webhooks = await this.prisma.webhook.findMany({
-        where: { environmentId: payload.environmentId, enabled: true },
-      });
+      const webhooks = await this.activeWebhooksFor(payload.environmentId);
       if (webhooks.length === 0) {
         return;
       }
@@ -182,9 +200,7 @@ export class WebhooksListener {
   @OnEvent(CONTENT_PUBLISHED, { async: true })
   async onContentPublished(payload: ContentPublishedPayload): Promise<void> {
     try {
-      const webhooks = await this.prisma.webhook.findMany({
-        where: { environmentId: payload.environmentId, enabled: true },
-      });
+      const webhooks = await this.activeWebhooksFor(payload.environmentId);
       const matching = webhooks.filter((webhook) =>
         matchesTopic((webhook.topics as string[]) ?? [], WEBHOOK_CONTENT_PUBLISHED_TOPIC),
       );

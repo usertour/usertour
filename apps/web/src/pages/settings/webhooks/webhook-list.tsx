@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { type Webhook, useListWebhooksQuery } from '@usertour/hooks';
+import { type Webhook, useGetProjectConfigQuery, useListWebhooksQuery } from '@usertour/hooks';
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { WebhookDialog } from './components/webhook-dialog';
 import { WebhookRowActions } from './components/webhook-row-actions';
+import { WebhookUpsell } from './components/webhook-upsell';
 
 const EVENT_TOPIC_PREFIX = 'event.tracked';
 
@@ -24,11 +25,20 @@ const NewWebhookButton = ({ onSuccess }: { onSuccess: () => void }) => {
 
 export const SettingsWebhookList = () => {
   const { environment, project } = useAppContext();
+  const { projectConfig, loading: configLoading } = useGetProjectConfigQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
   const { webhooks, loading, refetch } = useListWebhooksQuery(
     environment?.id ?? '',
     SHARED_CACHE_QUERY_OPTIONS,
   );
   const { t } = useTranslation();
+
+  // Plan gate — the server enforces this independently; mirror it in the UI.
+  if (projectConfig && !projectConfig.webhooks) {
+    return <WebhookUpsell projectId={project?.id} environmentName={environment?.name ?? ''} />;
+  }
 
   const topicsSummary = (webhook: Webhook): string => {
     if (webhook.topics.includes('*') || webhook.topics.includes(EVENT_TOPIC_PREFIX)) {
@@ -85,7 +95,7 @@ export const SettingsWebhookList = () => {
       description={t('settings.webhooks.headerBody')}
       columns={columns}
       rows={webhooks}
-      loading={loading || !environment}
+      loading={loading || !environment || (configLoading && !projectConfig)}
       empty={t('settings.webhooks.empty')}
       getRowKey={(webhook) => webhook.id}
     />

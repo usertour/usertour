@@ -22,6 +22,7 @@ describe('WebhooksListener', () => {
     bizEvent: { findMany: jest.Mock };
     bizUser?: { findUnique: jest.Mock };
   };
+  let webhooksService: { isEntitled: jest.Mock };
   let listener: WebhooksListener;
 
   beforeEach(() => {
@@ -30,7 +31,32 @@ describe('WebhooksListener', () => {
       webhook: { findMany: jest.fn() },
       bizEvent: { findMany: jest.fn() },
     };
-    listener = new WebhooksListener(queue as any, prisma as any);
+    webhooksService = { isEntitled: jest.fn().mockResolvedValue(true) };
+    listener = new WebhooksListener(queue as any, prisma as any, webhooksService as any);
+  });
+
+  it('enqueues nothing when the project is no longer entitled to webhooks', async () => {
+    prisma.webhook.findMany.mockResolvedValue([{ id: 'wh_1', topics: ['*'], enabled: true }]);
+    webhooksService.isEntitled.mockResolvedValue(false);
+
+    await listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_flow_started'] });
+    await listener.onContentPublished({
+      environmentId: 'env_1',
+      contentId: 'c_1',
+      versionId: 'v_1',
+    });
+
+    expect(prisma.bizEvent.findMany).not.toHaveBeenCalled();
+    expect(queue.addBulk).not.toHaveBeenCalled();
+  });
+
+  it('skips the entitlement lookup when the environment has no enabled endpoints', async () => {
+    prisma.webhook.findMany.mockResolvedValue([]);
+
+    await listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_flow_started'] });
+
+    expect(webhooksService.isEntitled).not.toHaveBeenCalled();
+    expect(queue.addBulk).not.toHaveBeenCalled();
   });
 
   it('enqueues one job per matching (webhook x event) with the assembled payload', async () => {

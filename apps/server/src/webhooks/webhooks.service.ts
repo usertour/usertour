@@ -8,8 +8,9 @@ import { PrismaService } from 'nestjs-prisma';
 import { ApiObjectType } from '@/api/shared/object-type';
 import { QUEUE_CLEAN_WEBHOOK_DELIVERIES, QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { assertPublicHttpUrl } from '@/common/egress/egress-guard';
-import { ParamsError, ValidationError } from '@/common/errors';
+import { FeatureRequiresLicenseError, ParamsError, ValidationError } from '@/common/errors';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { ProjectsService } from '@/projects/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { CreateWebhookInput, UpdateWebhookInput } from './dto/webhook.input';
 import { generateWebhookSecret } from './webhook-signature';
@@ -23,9 +24,43 @@ export class WebhooksService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly projectsService: ProjectsService,
     @InjectQueue(QUEUE_WEBHOOK_DELIVERY) private readonly deliveryQueue: Queue,
     @InjectQueue(QUEUE_CLEAN_WEBHOOK_DELIVERIES) private readonly cleanupQueue: Queue,
   ) {}
+
+  // ---------------------------------------------------------------------------
+  // Plan gate
+  // ---------------------------------------------------------------------------
+  //
+  // Outbound webhooks are a paid feature on cloud (Starter+); self-hosted is
+  // never gated (getProjectConfig forces the flag on). The gate covers every
+  // surface at once because REST and MCP are thin over this service:
+  //   - writes and actions (create / update / rotateSecret / sendTestEvent)
+  //     throw FeatureRequiresLicenseError
+  //   - delivery consults isEntitled() before enqueueing, so a lapsed plan stops
+  //     firing instead of keeping trial-era endpoints alive forever
+  //   - reads and delete stay open so a downgraded project can still see and
+  //     clean up what it configured
+
+  /** Whether the project owning this environment may use webhooks right now. */
+  async isEntitled(environmentId: string): Promise<boolean> {
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+      select: { projectId: true },
+    });
+    if (!environment) {
+      return false;
+    }
+    const config = await this.projectsService.getProjectConfig(environment.projectId);
+    return config.webhooks;
+  }
+
+  private async assertEntitled(environmentId: string): Promise<void> {
+    if (!(await this.isEntitled(environmentId))) {
+      throw new FeatureRequiresLicenseError();
+    }
+  }
 
   // Schedule the recurring delivery-log cleanup. Mirrors the auth/subscription
   // cron pattern (BullMQ repeatable + fixed jobId so it fires once per cluster);
@@ -90,6 +125,7 @@ export class WebhooksService implements OnModuleInit {
   }
 
   async create(data: CreateWebhookInput) {
+    await this.assertEntitled(data.environmentId);
     this.validateUrl(data.url);
     this.validateTopics(data.topics);
 
@@ -107,7 +143,8 @@ export class WebhooksService implements OnModuleInit {
 
   async update(data: UpdateWebhookInput) {
     const { id, url, topics, enabled, description } = data;
-    await this.get(id);
+    const webhook = await this.get(id);
+    await this.assertEntitled(webhook.environmentId);
 
     if (url !== undefined) {
       this.validateUrl(url);
@@ -135,7 +172,8 @@ export class WebhooksService implements OnModuleInit {
   /** Replace the signing secret. In-flight retries pick the new one up (the
    *  processor re-reads the row at send time). */
   async rotateSecret(id: string) {
-    await this.get(id);
+    const webhook = await this.get(id);
+    await this.assertEntitled(webhook.environmentId);
     return await this.prisma.webhook.update({
       where: { id },
       data: { secret: generateWebhookSecret() },
@@ -149,6 +187,7 @@ export class WebhooksService implements OnModuleInit {
    */
   async sendTestEvent(id: string) {
     const webhook = await this.get(id);
+    await this.assertEntitled(webhook.environmentId);
     if (!webhook.enabled) {
       throw new ValidationError('Enable the webhook before sending a test event.');
     }
