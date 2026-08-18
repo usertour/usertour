@@ -20,6 +20,12 @@ import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { WebhookMessageStatusBadge } from './webhook-message-status-badge';
 
 export interface WebhookMessageDialogProps {
+  open: boolean;
+  /**
+   * The message to show. Keep it set while `open` is false so the content
+   * stays mounted through the close animation — clearing it on close would
+   * collapse the dialog to its header mid-fade.
+   */
   message: WebhookMessage | null;
   onClose: () => void;
   onResend: (message: WebhookMessage) => void;
@@ -41,21 +47,23 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
  * error. Resend re-queues the same payload under the same message id.
  */
 export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
-  const { message, onClose, onResend, resending, canResend } = props;
+  const { open, message, onClose, onResend, resending, canResend } = props;
   const { t } = useTranslation();
   const copy = useCopyWithToast();
   const payloadText = message ? JSON.stringify(message.payload, null, 2) : '';
 
   return (
     <Dialog
-      open={!!message}
-      onOpenChange={(open) => {
-        if (!open) {
+      open={open && !!message}
+      onOpenChange={(next) => {
+        if (!next) {
           onClose();
         }
       }}
     >
-      <DialogContent className="max-w-3xl" aria-describedby={undefined}>
+      {/* Bounded to the viewport; the body scrolls as one region with the
+          title pinned — payload and attempts can both grow. */}
+      <DialogContent className="flex max-h-[85vh] max-w-3xl flex-col" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {t('settings.webhooks.message.title')}
@@ -63,7 +71,7 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
           </DialogTitle>
         </DialogHeader>
         {message && (
-          <div className="flex min-w-0 flex-col gap-5">
+          <div className="flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto">
             <div className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3">
               <Field label={t('settings.webhooks.message.id')}>
                 <span className="break-all font-mono text-xs">{message.id}</span>
@@ -95,7 +103,7 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
                   {t('settings.webhooks.message.copyPayload')}
                 </Button>
               </div>
-              <pre className="max-h-64 max-w-full overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 font-mono text-xs">
+              <pre className="max-w-full whitespace-pre-wrap break-all rounded-md bg-muted p-3 font-mono text-xs">
                 {payloadText}
               </pre>
             </div>
@@ -147,7 +155,7 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
                           <div className="break-all text-xs text-destructive">{delivery.error}</div>
                         )}
                         {delivery.responseBody && (
-                          <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-all rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+                          <pre className="mt-1 whitespace-pre-wrap break-all rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
                             {delivery.responseBody}
                           </pre>
                         )}

@@ -88,7 +88,10 @@ export const AuditLogList = () => {
       skip: !entitled,
     });
   const { t } = useTranslation();
+  // `selected` is retained after close so the dialog animates out with its
+  // content still mounted; `detailOpen` alone drives visibility.
   const [selected, setSelected] = useState<AuditLog | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const isSelfHosted = !!globalConfig?.isSelfHostedMode;
 
   // The selected range starts on a day that is ENTIRELY outside the plan's read
@@ -197,7 +200,10 @@ export const AuditLogList = () => {
         // data loss. The empty-state slot carries the error line instead.
         empty={error ? t('settings.auditLog.loadError') : t('settings.auditLog.empty')}
         getRowKey={(log) => log.id}
-        onRowClick={setSelected}
+        onRowClick={(log) => {
+          setSelected(log);
+          setDetailOpen(true);
+        }}
         footer={
           <div ref={sentryRef} className="flex h-10 items-center justify-center">
             {loadingMore && <SpinnerIcon className="h-5 w-5 animate-spin text-primary" />}
@@ -222,7 +228,7 @@ export const AuditLogList = () => {
           </div>
         }
       />
-      <AuditDetailDialog log={selected} onClose={() => setSelected(null)} />
+      <AuditDetailDialog open={detailOpen} log={selected} onClose={() => setDetailOpen(false)} />
     </>
   );
 };

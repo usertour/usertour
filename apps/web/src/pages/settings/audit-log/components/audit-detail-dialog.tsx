@@ -18,37 +18,46 @@ const JsonBlock = ({ label, value }: { label: string; value: unknown }) => {
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-sm font-medium">{label}</span>
-      <pre className="max-h-64 max-w-full overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-xs">
+      <pre className="max-w-full whitespace-pre-wrap break-all rounded-md bg-muted p-3 text-xs">
         {JSON.stringify(value, null, 2)}
       </pre>
     </div>
   );
 };
 
-/** Row-detail dialog: the audit entry's metadata + before/after snapshots. */
+/**
+ * Row-detail dialog: the audit entry's metadata + before/after snapshots.
+ * `log` stays set while `open` is false so the content remains mounted through
+ * the close animation — clearing it on close collapses the dialog to its
+ * header mid-fade.
+ */
 export const AuditDetailDialog = ({
+  open,
   log,
   onClose,
 }: {
+  open: boolean;
   log: AuditLog | null;
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
   return (
     <Dialog
-      open={!!log}
-      onOpenChange={(open) => {
-        if (!open) {
+      open={open && !!log}
+      onOpenChange={(next) => {
+        if (!next) {
           onClose();
         }
       }}
     >
-      <DialogContent className="max-w-2xl">
+      {/* Bounded to the viewport; the body scrolls as one region (no nested
+          scroll windows per JSON block) with the title pinned. */}
+      <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col">
         <DialogHeader>
           <DialogTitle>{t('settings.auditLog.detail.title')}</DialogTitle>
         </DialogHeader>
         {log && (
-          <div className="flex min-w-0 flex-col gap-4">
+          <div className="flex min-h-0 min-w-0 flex-col gap-4 overflow-y-auto">
             <div className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3">
               <Field label={t('settings.auditLog.columns.action')}>{log.action}</Field>
               <Field label={t('settings.auditLog.columns.source')}>

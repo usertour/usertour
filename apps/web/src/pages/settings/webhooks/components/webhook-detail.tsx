@@ -220,7 +220,10 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
 
 const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) => {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
+  // `selected` is retained after close so the dialog can animate out with its
+  // content still mounted; `dialogOpen` alone drives visibility.
   const [selected, setSelected] = useState<WebhookMessage | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { messages, pageInfo, loading, refetch, isRefetching } = useQueryWebhookMessagesQuery(
     webhookId,
     { first: MESSAGES_PAGE_SIZE, after: cursor },
@@ -335,7 +338,10 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
               <TableRow
                 key={message.id}
                 className="cursor-pointer"
-                onClick={() => setSelected(message)}
+                onClick={() => {
+                  setSelected(message);
+                  setDialogOpen(true);
+                }}
               >
                 <TableCell className="whitespace-nowrap">
                   {format(new Date(message.createdAt), 'PP pp')}
@@ -365,8 +371,9 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
       )}
 
       <WebhookMessageDialog
+        open={dialogOpen}
         message={selectedMessage}
-        onClose={() => setSelected(null)}
+        onClose={() => setDialogOpen(false)}
         onResend={(message) => void handleResend(message)}
         resending={resending}
         canResend={!isViewOnly && enabled}
