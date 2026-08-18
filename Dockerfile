@@ -83,5 +83,10 @@ ENV NEST_SERVER_PORT=3000
 
 EXPOSE 80
 
-# Use shell form for proper stdout/stderr log flushing
-CMD /app/scripts/start.sh
+# Exec (JSON) form: no `sh -c` wrapper, so the signal chain reaches the app —
+# start.sh ends with `exec node`, making Node PID 1; Nest's shutdown hooks
+# (main.ts enableShutdownHooks) then handle SIGTERM and `docker stop` is
+# graceful instead of a 10s timeout + SIGKILL. (Shell vs exec form has no
+# effect on stdout/stderr — both inherit the same pipes; the old "log
+# flushing" rationale for shell form was a misattribution.)
+CMD ["/app/scripts/start.sh"]

@@ -20,8 +20,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
-import { CodeBlock } from './components/code-block';
-import { CopyableInput } from './components/copyable-input';
+import { CodeBlock } from '@/components/code-block';
+import { CopyableInput } from '@/components/copyable-input';
 import { VerifyInstallation } from './components/verify-installation';
 import {
   NPM_INSTALL_COMMAND,

@@ -1,6 +1,33 @@
 const translations = {
   language: '简体中文',
   productName: 'Usertour',
+  onboarding: {
+    start: {
+      title: '想怎么搭建引导？',
+      subtitle: '工作空间已就绪——选一个起点。',
+      ai: {
+        title: '用 AI 搭建引导',
+        blurb: '连接 Claude Code、Codex 等 AI 助手，用一句话描述就能搭建引导内容。',
+      },
+      builder: {
+        title: '自己动手搭建',
+        blurb: '直接进入控制台，在可视化编辑器里创建流程、清单和调研。无需写代码。',
+      },
+    },
+    connectAi: {
+      title: '用 AI 搭建引导',
+      subtitle:
+        '连接 AI 助手，用一句话描述就能搭建引导内容——助手会匹配你的应用风格，甚至替你安装 SDK。',
+      docsLink: '观看完整演示',
+      back: '返回',
+      continue: '进入控制台',
+      skipNote: '之后随时可以在「设置 → MCP」中连接 AI 助手。',
+      configError: '服务器地址加载失败——请刷新页面重试。',
+      connectedTitle: '已连接 {{name}}',
+      connectedSubtitle: '试试第一条 prompt——粘贴到你的助手里：',
+      goToDashboard: '进入控制台',
+    },
+  },
   oauth: {
     consent: {
       title: '{{client}} 请求连接',
@@ -266,7 +293,8 @@ const translations = {
         claude: {
           title: 'Claude（claude.ai）',
           blurb: '在 claude.ai 中把 Usertour 添加为自定义连接器。',
-          step1: '打开 Settings → Connectors，点击 "Add custom connector"：',
+          button: '在 Claude 中打开',
+          step1: '点击上方「在 Claude 中打开」，然后点击右上角 Add → "Add custom connector"：',
           step2: '设置连接器名称：',
           step3: '粘贴服务器地址：',
           step4: '点击 Add——Claude 会打开 Usertour 授权页。选择项目、环境和权限级别后批准。',
@@ -274,8 +302,9 @@ const translations = {
         chatgpt: {
           title: 'ChatGPT',
           blurb: '通过 ChatGPT 插件(Developer mode)接入。',
+          button: '在 ChatGPT 中打开',
           step1:
-            '打开 Settings → Plugins，开启 Developer mode，点击 "New Plugin"。（需要 ChatGPT 付费账号。）',
+            '点击上方「在 ChatGPT 中打开」进入 Plugins 页，开启 Developer mode，点击 "New Plugin"。（需要 ChatGPT 付费账号。）',
           step2: '设置名称和 MCP Server URL：',
           step3: 'Authentication 保持 OAuth 并提交——ChatGPT 会打开 Usertour 授权页，批准即连接。',
         },
@@ -283,7 +312,7 @@ const translations = {
           title: 'Cursor',
           blurb: '通过 Cursor 深链一键安装。',
           button: '添加到 Cursor',
-          step1: '点击「添加到 Cursor」——Cursor 会带着预填好的服务器打开并引导你完成授权。',
+          buttonNote: 'Cursor 会带着预填好的服务器打开并引导你完成授权。',
           step2: '想手动添加？Cursor → Settings → MCP → Add new MCP server，使用此地址：',
           skillNote: '可选：再装一下创作技能,获得完整工作流引导：',
         },
@@ -306,7 +335,10 @@ const translations = {
         },
         vscode: {
           title: 'VS Code',
-          blurb: '添加到 mcp.json,配合 GitHub Copilot Chat 的 Agent 模式使用。',
+          blurb: '一键安装,配合 GitHub Copilot Chat 的 Agent 模式使用。',
+          button: '添加到 VS Code',
+          buttonNote: 'VS Code 会弹出预填好的安装确认——批准后,首次使用时完成授权。',
+          manualLead: '想手动配置？',
           step1: '打开命令面板,运行 "MCP: Open User Configuration" 打开 mcp.json。',
           step2: '加入这段配置（根键是 `servers`,不是 `mcpServers`）：',
           step3: '保存文件——下次在 Agent 模式下和 Copilot 对话时就能用了。首次使用会提示授权。',

@@ -7,8 +7,9 @@ import cookieParser from 'cookie-parser';
  * exercises the SAME request pipeline the public API runs in production.
  *
  * Only contains transport concerns that affect the request/response contract
- * (the global ValidationPipe and cookie parsing). It deliberately excludes
- * logging/tracing/redis/swagger/listen — those belong to `main.ts` alone.
+ * (trust proxy, CORS, cookie parsing, and the global ValidationPipe). It
+ * deliberately excludes logging/tracing/redis/swagger/listen — those belong
+ * to `main.ts` alone.
  *
  * The ValidationPipe's `enableImplicitConversion` is load-bearing for the
  * OpenAPI contract: query params arrive as strings and DTOs like
@@ -29,6 +30,48 @@ import cookieParser from 'cookie-parser';
  * assets it serves from disk (responses that never reach this app).
  */
 export function configureApp(app: INestApplication): void {
+  // Express `trust proxy` for the whole pipeline (req.ip / req.protocol),
+  // configurable via TRUST_PROXY in every form Express accepts — hop count,
+  // true/false, or an address list. The default trusts ONLY loopback: the
+  // bundled nginx in the same container is the one proxy every shipped
+  // topology is guaranteed to have, and the one nothing outside the box can
+  // impersonate. Anything else — including private-range peers — is treated
+  // as the client itself, so its X-Forwarded-For claims are ignored. Do NOT
+  // widen this to linklocal/uniquelocal: on a LAN deployment that turns
+  // every internal client into a "trusted proxy", and a rotating fake XFF
+  // prefix mints a fresh per-IP rate-limit bucket per request (the exact
+  // bypass the old `true` had). Deployments with a real proxy in front
+  // (Railway, Cloudflare, an ingress) declare it explicitly via TRUST_PROXY;
+  // until then they degrade to coarse-but-safe shared buckets, never to
+  // spoofable ones. Lives here, not main.ts, so e2e runs the same trust
+  // semantics production does.
+  // Sanitize before parsing: `TRUST_PROXY=""` (the .env.example house style
+  // for "unset"), stray whitespace, wrapping quotes, or `True` would otherwise
+  // reach Express verbatim, and proxy-addr throws "invalid IP address" — which
+  // bootstrap()'s error path turns into a clean exit instead of a zombie.
+  const trustProxyRaw = (process.env.TRUST_PROXY ?? '').trim().replace(/^["']+|["']+$/g, '');
+  const trustProxy =
+    trustProxyRaw === ''
+      ? 'loopback'
+      : /^\d+$/.test(trustProxyRaw)
+        ? Number(trustProxyRaw)
+        : trustProxyRaw.toLowerCase() === 'true'
+          ? true
+          : trustProxyRaw.toLowerCase() === 'false'
+            ? false
+            : trustProxyRaw;
+  try {
+    app.getHttpAdapter().getInstance().set('trust proxy', trustProxy);
+  } catch (error) {
+    // Name the variable — Express's own "invalid IP address" says nothing
+    // about WHERE the bad value came from.
+    throw new Error(
+      `Invalid TRUST_PROXY value ${JSON.stringify(process.env.TRUST_PROXY)}: ${
+        (error as Error).message
+      }`,
+    );
+  }
+
   app.enableCors({ exposedHeaders: ['WWW-Authenticate'] });
   app.use(cookieParser());
   app.useGlobalPipes(

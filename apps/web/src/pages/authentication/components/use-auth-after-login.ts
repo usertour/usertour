@@ -31,17 +31,30 @@ export const resolveNextPath = (next: string | null | undefined, fallback = '/')
 // session cookie at mount time only, so the SPA needs a fresh boot for
 // AppContext to see the logged-in user and LandingRedirect to resolve the
 // env on a `/` target.
+//
+// `landingPath` lets a caller interpose a page before the normal landing
+// (the post-signup connect-AI step). A VALID ?next= wins over it — today no
+// signup entry point actually carries one (the magic-link email and the
+// sign-up link are bare), so this is a correctness guard for the login-shaped
+// callers, not a live signup flow. The landing rides the 2FA forwarding as
+// the next param, so it survives an enrolment step in between.
 export const useAuthAfterLogin = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   return useCallback(
-    (result: AuthMutationResult): boolean => {
+    (result: AuthMutationResult, options?: { landingPath?: string }): boolean => {
       if (!result) {
         return false;
       }
-      const next = searchParams.get('next');
-      const forwardNext = next ? `&next=${encodeURIComponent(next)}` : '';
+      // ONE normalized target drives every exit. resolveNextPath validates
+      // ?next= and falls back to the caller's landing (or '/') — deriving the
+      // 2FA forwarding AND the final assign from the same value keeps an
+      // invalid or empty ?next= from splitting behavior between branches (an
+      // invalid next used to swallow the landing entirely; an empty string
+      // kept it on the direct exit but dropped it across the 2FA hop).
+      const target = resolveNextPath(searchParams.get('next'), options?.landingPath ?? '/');
+      const forwardNext = target !== '/' ? `&next=${encodeURIComponent(target)}` : '';
 
       if (result.requiresTwoFactor && result.twoFactorChallenge) {
         navigate(
@@ -59,7 +72,7 @@ export const useAuthAfterLogin = () => {
       // so any stale React state in those tabs doesn't keep writing to the
       // previous session's user record.
       broadcastAuthSwitch();
-      window.location.assign(resolveNextPath(next));
+      window.location.assign(target);
       return true;
     },
     [navigate, searchParams],

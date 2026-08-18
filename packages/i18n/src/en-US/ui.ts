@@ -1,6 +1,35 @@
 const translations = {
   language: 'English',
   productName: 'Usertour',
+  onboarding: {
+    start: {
+      title: 'How do you want to build?',
+      subtitle: 'Your workspace is ready — pick a starting point.',
+      ai: {
+        title: 'Build with AI',
+        blurb:
+          'Connect an AI assistant like Claude Code or Codex and build onboarding by describing it.',
+      },
+      builder: {
+        title: 'Build it yourself',
+        blurb:
+          'Jump into the dashboard and create flows, checklists and surveys in the visual builder. No code needed.',
+      },
+    },
+    connectAi: {
+      title: 'Build with AI',
+      subtitle:
+        'Connect an AI assistant and build onboarding by describing it — the assistant matches your app’s design and even installs the SDK for you.',
+      docsLink: 'See it in action',
+      back: 'Back',
+      continue: 'Continue to dashboard',
+      skipNote: 'You can always connect an AI assistant later in Settings → MCP.',
+      configError: 'Couldn’t load the server address — refresh the page to try again.',
+      connectedTitle: 'Connected to {{name}}',
+      connectedSubtitle: 'Try your first prompt — paste it into your assistant:',
+      goToDashboard: 'Go to dashboard',
+    },
+  },
   oauth: {
     consent: {
       title: '{{client}} wants to connect',
@@ -274,7 +303,8 @@ const translations = {
         claude: {
           title: 'Claude (claude.ai)',
           blurb: 'Add Usertour as a custom connector inside claude.ai.',
-          step1: 'Open Settings → Connectors and click "Add custom connector":',
+          button: 'Open in Claude',
+          step1: 'Click "Open in Claude" above, then click Add → "Add custom connector":',
           step2: 'Set the connector name:',
           step3: 'Paste the Server URL:',
           step4:
@@ -283,8 +313,9 @@ const translations = {
         chatgpt: {
           title: 'ChatGPT',
           blurb: 'Connect via ChatGPT plugins (Developer mode).',
+          button: 'Open in ChatGPT',
           step1:
-            'Open Settings → Plugins, enable Developer mode, and click "New Plugin". (Requires a paid ChatGPT plan.)',
+            'Click "Open in ChatGPT" above — you land on the Plugins page. Enable Developer mode and click "New Plugin". (Requires a paid ChatGPT plan.)',
           step2: 'Set the name and MCP Server URL:',
           step3:
             'Leave Authentication on OAuth and submit — ChatGPT opens the Usertour authorization screen. Approve to connect.',
@@ -293,8 +324,8 @@ const translations = {
           title: 'Cursor',
           blurb: 'One-click install via the Cursor deeplink.',
           button: 'Add to Cursor',
-          step1:
-            'Click "Add to Cursor" — Cursor opens with the server pre-filled and walks you through authorization.',
+          buttonNote:
+            'Cursor opens with the server pre-filled and walks you through authorization.',
           step2:
             'Prefer manual setup? Cursor → Settings → MCP → Add new MCP server, with this URL:',
           skillNote: 'Optional: also install the authoring skill for workflow guidance:',
@@ -320,7 +351,11 @@ const translations = {
         },
         vscode: {
           title: 'VS Code',
-          blurb: 'Add it to mcp.json for GitHub Copilot Chat (Agent mode).',
+          blurb: 'One-click install for GitHub Copilot Chat (Agent mode).',
+          button: 'Add to VS Code',
+          buttonNote:
+            'VS Code prompts to install the server with these values pre-filled — approve, then authorize on first use.',
+          manualLead: 'Prefer manual setup?',
           step1:
             'Open the Command Palette and run "MCP: Open User Configuration" to open your mcp.json.',
           step2: 'Add this entry (the root key is `servers`, not `mcpServers`):',
