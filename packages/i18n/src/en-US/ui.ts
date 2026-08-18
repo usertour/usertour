@@ -1408,6 +1408,7 @@ const translations = {
           'Every message is kept for 30 days with the payload as sent and each delivery attempt. Click a row for details or to re-send.',
         empty: 'No messages yet.',
         loadMore: 'Load more',
+        refresh: 'Refresh',
         columns: {
           time: 'Time',
           topic: 'Topic',

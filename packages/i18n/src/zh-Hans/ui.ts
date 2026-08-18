@@ -1338,6 +1338,7 @@ const translations = {
         description: '每条消息保留 30 天,含实际发送的报文和每次投递尝试。点击一行查看详情或重发。',
         empty: '暂无消息。',
         loadMore: '加载更多',
+        refresh: '刷新',
         columns: {
           time: '时间',
           topic: '主题',

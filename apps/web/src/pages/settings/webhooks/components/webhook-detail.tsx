@@ -17,6 +17,8 @@ import {
   RiEyeLine,
   RiEyeOffLine,
   RiFileCopyLine,
+  RiRefreshLine,
+  RiSendPlaneLine,
   SpinnerIcon,
 } from '@usertour/icons';
 import {
@@ -35,6 +37,7 @@ import {
   TableRow,
   useToast,
 } from '@usertour/ui';
+import { cn } from '@usertour/tailwind';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { WebhookMessageDialog } from './webhook-message-dialog';
@@ -218,10 +221,10 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
 const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) => {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [selected, setSelected] = useState<WebhookMessage | null>(null);
-  const { messages, pageInfo, loading, refetch } = useQueryWebhookMessagesQuery(webhookId, {
-    first: MESSAGES_PAGE_SIZE,
-    after: cursor,
-  });
+  const { messages, pageInfo, loading, refetch, isRefetching } = useQueryWebhookMessagesQuery(
+    webhookId,
+    { first: MESSAGES_PAGE_SIZE, after: cursor },
+  );
   const { invoke: sendTestEvent, loading: sendingTest } = useSendWebhookTestEventMutation();
   const { invoke: resendMessage, loading: resending } = useResendWebhookMessageMutation();
   const { isViewOnly } = useAppContext();
@@ -275,16 +278,31 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
         title={t('settings.webhooks.deliveries.title')}
         description={t('settings.webhooks.deliveries.description')}
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={isViewOnly || !enabled || sendingTest}
-            title={enabled ? undefined : t('settings.webhooks.testEvent.disabledHint')}
-            onClick={() => void handleSendTest()}
-          >
-            {sendingTest && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-            {t('settings.webhooks.testEvent.button')}
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={isRefetching}
+              title={t('settings.webhooks.deliveries.refresh')}
+              aria-label={t('settings.webhooks.deliveries.refresh')}
+              onClick={() => void refetch()}
+            >
+              <RiRefreshLine className={cn('h-4 w-4', isRefetching && 'animate-spin')} />
+            </Button>
+            <Button
+              variant="outline"
+              disabled={isViewOnly || !enabled || sendingTest}
+              title={enabled ? undefined : t('settings.webhooks.testEvent.disabledHint')}
+              onClick={() => void handleSendTest()}
+            >
+              {sendingTest ? (
+                <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RiSendPlaneLine className="mr-2 h-4 w-4" />
+              )}
+              {t('settings.webhooks.testEvent.button')}
+            </Button>
+          </>
         }
       />
       <Table>
