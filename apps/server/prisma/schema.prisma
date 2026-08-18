@@ -119,29 +119,29 @@ model Register {
 }
 
 model Invite {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
-  code      String    @unique @default(cuid())
+  id                    String    @id @default(cuid())
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  code                  String    @unique @default(cuid())
   /// Environment ids the invited member may act on once they join (copied to
   /// UserOnProject on accept). null = all environments.
-  allowedEnvironmentIds Json? @db.JsonB
-  expired   Boolean   @default(false)
-  canceled  Boolean   @default(false)
-  deleted   Boolean   @default(false)
-  email     String
-  name      String
-  role      Role
+  allowedEnvironmentIds Json?     @db.JsonB
+  expired               Boolean   @default(false)
+  canceled              Boolean   @default(false)
+  deleted               Boolean   @default(false)
+  email                 String
+  name                  String
+  role                  Role
   /// When the invite link stops being accepted. Nullable so the column can
   /// roll out without a backfill; rows written by the application always set
   /// it (typically createdAt + 14 days). getValidInviteByCode treats a null
   /// value as "no recorded TTL" — legacy invites stay accepting until an
   /// admin cancels them, but every new invite is bounded.
-  expiresAt DateTime? @db.Timestamptz(6)
-  user      User      @relation(fields: [userId], references: [id])
-  userId    String
-  project   Project   @relation(fields: [projectId], references: [id])
-  projectId String
+  expiresAt             DateTime? @db.Timestamptz(6)
+  user                  User      @relation(fields: [userId], references: [id])
+  userId                String
+  project               Project   @relation(fields: [projectId], references: [id])
+  projectId             String
 }
 
 model Code {
@@ -253,46 +253,46 @@ enum SsoProviderType {
 }
 
 model UserOnProject {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
-  role      Role
-  actived   Boolean
+  id                    String   @id @default(cuid())
+  createdAt             DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(6)
+  role                  Role
+  actived               Boolean
   /// Environment ids this member may act on (the third permission dimension,
   /// mirrors ApiToken.allowedEnvironmentIds). null = all environments; ignored
   /// for OWNER. Personal API keys inherit this as a ceiling.
-  allowedEnvironmentIds Json? @db.JsonB
-  project   Project? @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  projectId String?
-  userId    String?
+  allowedEnvironmentIds Json?    @db.JsonB
+  project               Project? @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  user                  User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  projectId             String?
+  userId                String?
 
   @@unique([projectId, userId])
 }
 
 model Environment {
-  id                    String                 @id @default(cuid())
-  createdAt             DateTime               @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime               @updatedAt @db.Timestamptz(6)
-  name                  String?
-  token                 String                 @default(cuid())
-  deleted               Boolean                @default(false)
+  id                          String                     @id @default(cuid())
+  createdAt                   DateTime                   @default(now()) @db.Timestamptz(6)
+  updatedAt                   DateTime                   @updatedAt @db.Timestamptz(6)
+  name                        String?
+  token                       String                     @default(cuid())
+  deleted                     Boolean                    @default(false)
   /// Whether this is the primary environment for the project
-  isPrimary             Boolean                @default(false)
+  isPrimary                   Boolean                    @default(false)
   /// When true, SDK identity claims must carry a valid HMAC signature (ADR 0008)
-  requireIdentityVerification Boolean          @default(false)
-  project               Project                @relation(fields: [projectId], references: [id])
-  projectId             String
-  contents              Content[]
-  bizUsers              BizUser[]
-  bizCompanies          BizCompany[]
-  segments              Segment[]
-  accessTokens          AccessToken[]
-  contentOnEnvironments ContentOnEnvironment[]
-  bizSessions           BizSession[]
-  integrations          Integration[]
-  signingSecrets        EnvironmentSigningSecret[]
-  webhooks              Webhook[]
+  requireIdentityVerification Boolean                    @default(false)
+  project                     Project                    @relation(fields: [projectId], references: [id])
+  projectId                   String
+  contents                    Content[]
+  bizUsers                    BizUser[]
+  bizCompanies                BizCompany[]
+  segments                    Segment[]
+  accessTokens                AccessToken[]
+  contentOnEnvironments       ContentOnEnvironment[]
+  bizSessions                 BizSession[]
+  integrations                Integration[]
+  signingSecrets              EnvironmentSigningSecret[]
+  webhooks                    Webhook[]
 }
 
 /// Per-environment HMAC signing secrets for SDK identity verification (ADR 0008).
@@ -429,27 +429,27 @@ model OAuthAuthorizationCode {
 /// project, and the current (rotating) refresh token. Revoking it cascade-kills
 /// the access tokens (ApiToken rows) it issued, via ApiToken.oauthGrantId.
 model OAuthGrant {
-  id                    String    @id @default(cuid()) // = grantId
-  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  id                         String    @id @default(cuid()) // = grantId
+  createdAt                  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt                  DateTime  @updatedAt @db.Timestamptz(6)
   // Rolled up from the grant's short-lived access-token rows before the daily
   // expiry cleanup deletes them — the durable "last used" for Connected Apps.
-  lastUsedAt            DateTime? @db.Timestamptz(6)
-  userId                String
-  clientId              String
-  projectId             String
-  scopes                Json      @db.JsonB
+  lastUsedAt                 DateTime? @db.Timestamptz(6)
+  userId                     String
+  clientId                   String
+  projectId                  String
+  scopes                     Json      @db.JsonB
   /// Environment ids this grant's issued tokens may act on; null = all (set at consent, Phase 2).
-  allowedEnvironmentIds Json?     @db.JsonB
+  allowedEnvironmentIds      Json?     @db.JsonB
   /// SHA-256 hash of the current refresh token; rotated on each refresh.
-  hashedRefreshToken    String?   @unique
+  hashedRefreshToken         String?   @unique
   /// The PREVIOUS refresh hash, honored for a short grace window after rotation
   /// (rotatedAt) so a client whose refresh RESPONSE was lost can retry with the
   /// old token instead of bricking the grant. See OAuthModelService.
-  previousHashedRefreshToken String? @unique
-  rotatedAt             DateTime? @db.Timestamptz(6)
-  refreshExpiresAt      DateTime? @db.Timestamptz(6)
-  revokedAt             DateTime? @db.Timestamptz(6)
+  previousHashedRefreshToken String?   @unique
+  rotatedAt                  DateTime? @db.Timestamptz(6)
+  refreshExpiresAt           DateTime? @db.Timestamptz(6)
+  revokedAt                  DateTime? @db.Timestamptz(6)
 
   @@index([userId, clientId])
   @@index([clientId])
