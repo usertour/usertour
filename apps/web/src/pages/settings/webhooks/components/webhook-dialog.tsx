@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -8,7 +8,6 @@ import { type Webhook, useCreateWebhookMutation, useUpdateWebhookMutation } from
 import { SpinnerIcon } from '@usertour/icons';
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -21,138 +20,39 @@ import {
   FormItem,
   FormLabel,
   Input,
-  Label,
-  RadioGroup,
-  RadioGroupItem,
-  ScrollArea,
   Switch,
   useToast,
 } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { useEventList } from '@/hooks/use-event-list';
+import { WebhookTopicPicker } from './webhook-topic-picker';
 
-const EVENT_TOPIC_PREFIX = 'event.tracked';
-const PAGE_VIEWED_TOPIC = `${EVENT_TOPIC_PREFIX}.page_viewed`;
-const CONTENT_NAMESPACE = 'content';
-const CONTENT_PUBLISHED_TOPIC = 'content.published';
-const USER_NAMESPACE = 'user';
-const COMPANY_NAMESPACE = 'company';
-
-/** Non-event topics offered in the selected-events picker, by UI group. */
-const FIXED_TOPIC_GROUPS: { key: string; topics: { value: string; labelKey: string }[] }[] = [
-  {
-    key: 'configuration',
-    topics: [{ value: CONTENT_PUBLISHED_TOPIC, labelKey: 'contentPublished' }],
-  },
-  {
-    key: 'users',
-    topics: [
-      { value: 'user.created', labelKey: 'userCreated' },
-      { value: 'user.updated', labelKey: 'userUpdated' },
-    ],
-  },
-  {
-    key: 'companies',
-    topics: [
-      { value: 'company.created', labelKey: 'companyCreated' },
-      { value: 'company.updated', labelKey: 'companyUpdated' },
-    ],
-  },
-];
-
-const webhookFormSchema = z
-  .object({
-    // Both failure modes carry the same marker; the field renders it through
-    // i18n (settings.webhooks.form.urlHint) rather than zod's default English.
-    url: z.string().url('url').startsWith('https://', 'url'),
-    mode: z.enum(['all', 'selected']),
-    selectedTopics: z.array(z.string()),
-    includePageViewed: z.boolean(),
-    includeContentPublished: z.boolean(),
-    includeUserChanges: z.boolean(),
-    includeCompanyChanges: z.boolean(),
-    description: z.string().max(200).optional(),
-    enabled: z.boolean(),
-  })
-  .refine((values) => values.mode === 'all' || values.selectedTopics.length > 0, {
-    path: ['selectedTopics'],
-    message: 'topics',
-  });
+const webhookFormSchema = z.object({
+  // Both failure modes carry the same marker; the field renders it through
+  // i18n (settings.webhooks.form.urlHint) rather than zod's default English.
+  url: z.string().url('url').startsWith('https://', 'url'),
+  // Stored subscription strings verbatim (see WebhookTopicPicker for the
+  // grammar); the picker edits this array in place — no encode/decode layer.
+  topics: z.array(z.string()).min(1, 'topics'),
+  description: z.string().max(200).optional(),
+  enabled: z.boolean(),
+});
 
 type WebhookFormValues = z.infer<typeof webhookFormSchema>;
 
 const formDefaults: WebhookFormValues = {
   url: '',
-  mode: 'all',
-  selectedTopics: [],
-  includePageViewed: false,
-  includeContentPublished: false,
-  includeUserChanges: false,
-  includeCompanyChanges: false,
+  topics: [],
   description: '',
   enabled: true,
 };
 
-/** UI grouping of event codeNames by content family (custom events fall through). */
-const TOPIC_GROUPS: { key: string; prefixes: string[] }[] = [
-  { key: 'flows', prefixes: ['flow_', 'tooltip_'] },
-  { key: 'checklists', prefixes: ['checklist_'] },
-  { key: 'surveys', prefixes: ['question_'] },
-  { key: 'launchers', prefixes: ['launcher_'] },
-  { key: 'banners', prefixes: ['banner_'] },
-  { key: 'resourceCenters', prefixes: ['resource_center_'] },
-  { key: 'announcements', prefixes: ['announcement_'] },
-  { key: 'trackers', prefixes: ['event_tracker_'] },
-  { key: 'pages', prefixes: ['page_'] },
-];
-
-const groupForCodeName = (codeName: string): string => {
-  const group = TOPIC_GROUPS.find((candidate) =>
-    candidate.prefixes.some((prefix) => codeName.startsWith(prefix)),
-  );
-  return group?.key ?? 'custom';
-};
-
-const valuesFromWebhook = (webhook: Webhook): WebhookFormValues => {
-  const isAll = webhook.topics.includes('*') || webhook.topics.includes(EVENT_TOPIC_PREFIX);
-  const hasWildcard = webhook.topics.includes('*');
-  const coversNamespace = (namespace: string, exactTopics: string[]) =>
-    isAll &&
-    (hasWildcard ||
-      webhook.topics.includes(namespace) ||
-      exactTopics.some((topic) => webhook.topics.includes(topic)));
-  return {
-    url: webhook.url,
-    mode: isAll ? 'all' : 'selected',
-    selectedTopics: isAll ? [] : webhook.topics,
-    includePageViewed: isAll && webhook.topics.includes(PAGE_VIEWED_TOPIC),
-    includeContentPublished: coversNamespace(CONTENT_NAMESPACE, [CONTENT_PUBLISHED_TOPIC]),
-    includeUserChanges: coversNamespace(USER_NAMESPACE, ['user.created', 'user.updated']),
-    includeCompanyChanges: coversNamespace(COMPANY_NAMESPACE, [
-      'company.created',
-      'company.updated',
-    ]),
-    description: webhook.description ?? '',
-    enabled: webhook.enabled,
-  };
-};
-
-const topicsFromValues = (values: WebhookFormValues): string[] => {
-  if (values.mode === 'all') {
-    // "All events" subscribes at the namespace level so future events flow in
-    // automatically; page_viewed is excluded from it server-side and rides as
-    // an explicit topic when opted in. Content / user / company notifications
-    // are their own namespaces, opted into separately.
-    return [
-      EVENT_TOPIC_PREFIX,
-      ...(values.includePageViewed ? [PAGE_VIEWED_TOPIC] : []),
-      ...(values.includeContentPublished ? [CONTENT_NAMESPACE] : []),
-      ...(values.includeUserChanges ? [USER_NAMESPACE] : []),
-      ...(values.includeCompanyChanges ? [COMPANY_NAMESPACE] : []),
-    ];
-  }
-  return values.selectedTopics;
-};
+const valuesFromWebhook = (webhook: Webhook): WebhookFormValues => ({
+  url: webhook.url,
+  topics: webhook.topics,
+  description: webhook.description ?? '',
+  enabled: webhook.enabled,
+});
 
 export interface WebhookDialogProps {
   open: boolean;
@@ -188,28 +88,12 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
   const { invoke: updateWebhook, loading: updating } = useUpdateWebhookMutation();
   const saving = creating || updating;
 
-  const groupedEvents = useMemo(() => {
-    const groups = new Map<string, { codeName: string; displayName: string }[]>();
-    for (const event of eventList ?? []) {
-      const key = event.predefined ? groupForCodeName(event.codeName) : 'custom';
-      const bucket = groups.get(key) ?? [];
-      bucket.push({ codeName: event.codeName, displayName: event.displayName });
-      groups.set(key, bucket);
-    }
-    const orderedKeys = [...TOPIC_GROUPS.map((group) => group.key), 'custom'];
-    return orderedKeys
-      .filter((key) => groups.has(key))
-      .map((key) => ({ key, events: groups.get(key) ?? [] }));
-  }, [eventList]);
-
-  const mode = form.watch('mode');
-
   const handleSubmit = async (values: WebhookFormValues) => {
     if (!environment) {
       return;
     }
     try {
-      const topics = topicsFromValues(values);
+      const { topics } = values;
       const result = webhook
         ? await updateWebhook({
             id: webhook.id,
@@ -244,7 +128,7 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl" aria-describedby={undefined}>
+      <DialogContent className="max-w-2xl" aria-describedby={undefined}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}>
             <DialogHeader>
@@ -295,187 +179,26 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
 
               <FormField
                 control={form.control}
-                name="mode"
+                name="topics"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('settings.webhooks.form.topics')}</FormLabel>
                     <FormControl>
-                      <RadioGroup
+                      <WebhookTopicPicker
                         value={field.value}
-                        onValueChange={field.onChange}
-                        className="space-y-1"
-                      >
-                        <div className="flex items-center gap-2">
-                          <RadioGroupItem value="all" id="webhook-topics-all" />
-                          <Label htmlFor="webhook-topics-all" className="font-normal">
-                            {t('settings.webhooks.form.allEvents')}
-                          </Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <RadioGroupItem value="selected" id="webhook-topics-selected" />
-                          <Label htmlFor="webhook-topics-selected" className="font-normal">
-                            {t('settings.webhooks.form.selectedEvents')}
-                          </Label>
-                        </div>
-                      </RadioGroup>
+                        onChange={field.onChange}
+                        events={eventList ?? []}
+                        invalid={!!form.formState.errors.topics}
+                      />
                     </FormControl>
+                    {form.formState.errors.topics && (
+                      <p className="text-[0.8rem] font-medium text-destructive">
+                        {t('settings.webhooks.form.topicsRequired')}
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
-
-              {mode === 'all' && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="includePageViewed"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0 pl-6">
-                        <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel className="font-normal text-muted-foreground">
-                          {t('settings.webhooks.form.includePageViewed')}
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="includeContentPublished"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0 pl-6">
-                        <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel className="font-normal text-muted-foreground">
-                          {t('settings.webhooks.form.includeContentPublished')}
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="includeUserChanges"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0 pl-6">
-                        <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel className="font-normal text-muted-foreground">
-                          {t('settings.webhooks.form.includeUserChanges')}
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="includeCompanyChanges"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2 space-y-0 pl-6">
-                        <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel className="font-normal text-muted-foreground">
-                          {t('settings.webhooks.form.includeCompanyChanges')}
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </>
-              )}
-
-              {mode === 'selected' && (
-                <FormField
-                  control={form.control}
-                  name="selectedTopics"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <ScrollArea className="h-64 rounded-md border p-3">
-                          <div className="space-y-4">
-                            {FIXED_TOPIC_GROUPS.map((group) => (
-                              <div key={group.key} className="space-y-1.5">
-                                <div className="text-xs font-medium text-muted-foreground">
-                                  {t(`settings.webhooks.topicGroups.${group.key}`)}
-                                </div>
-                                {group.topics.map((topicItem) => {
-                                  const checked = field.value.includes(topicItem.value);
-                                  return (
-                                    <div key={topicItem.value} className="flex items-center gap-2">
-                                      <Checkbox
-                                        id={`webhook-topic-${topicItem.value}`}
-                                        checked={checked}
-                                        onCheckedChange={(next) => {
-                                          field.onChange(
-                                            next
-                                              ? [...field.value, topicItem.value]
-                                              : field.value.filter(
-                                                  (value) => value !== topicItem.value,
-                                                ),
-                                          );
-                                        }}
-                                      />
-                                      <Label
-                                        htmlFor={`webhook-topic-${topicItem.value}`}
-                                        className="font-normal"
-                                      >
-                                        {t(`settings.webhooks.form.${topicItem.labelKey}`)}
-                                        <span className="ml-1.5 text-xs text-muted-foreground">
-                                          {topicItem.value}
-                                        </span>
-                                      </Label>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ))}
-                            {groupedEvents.map((group) => (
-                              <div key={group.key} className="space-y-1.5">
-                                <div className="text-xs font-medium text-muted-foreground">
-                                  {t(`settings.webhooks.topicGroups.${group.key}`)}
-                                </div>
-                                {group.events.map((event) => {
-                                  const topic = `${EVENT_TOPIC_PREFIX}.${event.codeName}`;
-                                  const checked = field.value.includes(topic);
-                                  return (
-                                    <div key={event.codeName} className="flex items-center gap-2">
-                                      <Checkbox
-                                        id={`webhook-topic-${event.codeName}`}
-                                        checked={checked}
-                                        onCheckedChange={(next) => {
-                                          field.onChange(
-                                            next
-                                              ? [...field.value, topic]
-                                              : field.value.filter((value) => value !== topic),
-                                          );
-                                        }}
-                                      />
-                                      <Label
-                                        htmlFor={`webhook-topic-${event.codeName}`}
-                                        className="font-normal"
-                                      >
-                                        {event.displayName}
-                                        <span className="ml-1.5 text-xs text-muted-foreground">
-                                          {event.codeName}
-                                        </span>
-                                      </Label>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </FormControl>
-                      {form.formState.errors.selectedTopics && (
-                        <p className="text-sm font-medium text-destructive">
-                          {t('settings.webhooks.form.topicsRequired')}
-                        </p>
-                      )}
-                    </FormItem>
-                  )}
-                />
-              )}
 
               <FormField
                 control={form.control}

@@ -41,8 +41,14 @@ export const SettingsWebhookList = () => {
   }
 
   const topicsSummary = (webhook: Webhook): string => {
-    if (webhook.topics.includes('*') || webhook.topics.includes(EVENT_TOPIC_PREFIX)) {
+    if (webhook.topics.includes('*')) {
       return t('settings.webhooks.allEventsSummary');
+    }
+    if (webhook.topics.includes(EVENT_TOPIC_PREFIX)) {
+      const extra = webhook.topics.length - 1;
+      return extra > 0
+        ? t('settings.webhooks.allTrackedEventsPlus', { count: extra })
+        : t('settings.webhooks.allTrackedEventsSummary');
     }
     return t('settings.webhooks.topicsCount', { count: webhook.topics.length });
   };
