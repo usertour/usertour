@@ -1432,7 +1432,7 @@ const translations = {
         noAttempts: 'Not attempted yet.',
         resend: 'Resend',
         resendHint:
-          'Re-sends the same payload under the same message ID as a single attempt — your receiver should treat it as a retry.',
+          'Same payload, same message ID, sent once more — receivers should treat it as a retry.',
         resendQueued: 'Message re-queued — check its attempts in a moment.',
         resendFailed: 'Failed to re-send the message',
         status: {

@@ -1361,7 +1361,7 @@ const translations = {
         response: '响应 / 错误',
         noAttempts: '尚未尝试投递。',
         resend: '重发',
-        resendHint: '以相同的消息 ID 重新发送同一份报文,只尝试一次 — 接收端应按重试处理。',
+        resendHint: '同一报文、同一消息 ID,再发一次 — 接收端按重试处理。',
         resendQueued: '消息已重新入队,稍后查看投递结果。',
         resendFailed: '重发失败',
         status: {

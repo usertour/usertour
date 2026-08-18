@@ -168,22 +168,24 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
                 </TableBody>
               </Table>
             </div>
-
-            <div className="flex items-center justify-between gap-4 border-t pt-4">
-              <p className="text-xs text-muted-foreground">
-                {t('settings.webhooks.message.resendHint')}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!canResend || resending || message.status === 'PENDING'}
-                onClick={() => onResend(message)}
-              >
-                {resending && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-                {t('settings.webhooks.message.resend')}
-              </Button>
-            </div>
+          </div>
+        )}
+        {message && (
+          // Pinned below the scroll region so the action never scrolls away
+          // behind a long payload.
+          <div className="flex shrink-0 items-center justify-between gap-4 border-t pt-4">
+            <p className="text-xs text-muted-foreground">
+              {t('settings.webhooks.message.resendHint')}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!canResend || resending || message.status === 'PENDING'}
+              onClick={() => onResend(message)}
+            >
+              {resending && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+              {t('settings.webhooks.message.resend')}
+            </Button>
           </div>
         )}
       </DialogContent>
