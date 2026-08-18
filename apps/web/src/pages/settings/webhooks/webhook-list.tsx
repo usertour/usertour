@@ -11,6 +11,7 @@ import { WebhookRowActions } from './components/webhook-row-actions';
 import { WebhookUpsell } from './components/webhook-upsell';
 
 const EVENT_TOPIC_PREFIX = 'event.tracked';
+const WEBHOOKS_DOCS_HREF = 'https://docs.usertour.io/developers/webhooks';
 
 const NewWebhookButton = ({ onSuccess }: { onSuccess: () => void }) => {
   const { t } = useTranslation();
@@ -99,6 +100,10 @@ export const SettingsWebhookList = () => {
       title={t('settings.webhooks.title', { environment: environment?.name ?? '' })}
       actions={<NewWebhookButton onSuccess={refetch} />}
       description={t('settings.webhooks.headerBody')}
+      docs={{
+        href: WEBHOOKS_DOCS_HREF,
+        label: t('settings.common.readGuide', { topic: t('settings.nav.sections.webhooks') }),
+      }}
       columns={columns}
       rows={webhooks}
       loading={loading || !environment || (configLoading && !projectConfig)}
