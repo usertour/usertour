@@ -1263,7 +1263,6 @@ const translations = {
       createSuccess: 'Webhook 已创建',
       updateSuccess: 'Webhook 已更新',
       saveFailure: '保存 Webhook 失败',
-      backToList: '返回 Webhook 列表',
       notFound: '该 Webhook 已不存在。',
       form: {
         url: '接收端 URL',

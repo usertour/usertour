@@ -1329,7 +1329,6 @@ const translations = {
       createSuccess: 'Webhook created',
       updateSuccess: 'Webhook updated',
       saveFailure: 'Failed to save webhook',
-      backToList: 'Back to webhooks',
       notFound: 'This webhook no longer exists.',
       form: {
         url: 'Endpoint URL',

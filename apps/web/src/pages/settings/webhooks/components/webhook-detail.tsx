@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import {
@@ -13,7 +13,6 @@ import {
   useSendWebhookTestEventMutation,
 } from '@usertour/hooks';
 import {
-  ArrowLeftIcon,
   ArrowRightLeftIcon,
   RiEyeLine,
   RiEyeOffLine,
@@ -358,21 +357,8 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
   );
 };
 
-const BackToList = ({ projectId }: { projectId: string | undefined }) => {
-  const { t } = useTranslation();
-  return (
-    <Link
-      to={`/project/${projectId}/settings/webhooks`}
-      className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ArrowLeftIcon className="h-4 w-4" />
-      {t('settings.webhooks.backToList')}
-    </Link>
-  );
-};
-
 export const WebhookDetail = () => {
-  const { settingSubType: webhookId, projectId } = useParams();
+  const { settingSubType: webhookId } = useParams();
   const { webhook, loading } = useGetWebhookQuery(webhookId ?? '');
   const { t } = useTranslation();
 
@@ -384,10 +370,7 @@ export const WebhookDetail = () => {
     return (
       <SettingsCardStack>
         <SettingsCard>
-          <div className="space-y-4">
-            <BackToList projectId={projectId} />
-            <p className="text-sm text-muted-foreground">{t('settings.webhooks.notFound')}</p>
-          </div>
+          <p className="text-sm text-muted-foreground">{t('settings.webhooks.notFound')}</p>
         </SettingsCard>
       </SettingsCardStack>
     );
@@ -395,13 +378,6 @@ export const WebhookDetail = () => {
 
   return (
     <SettingsCardStack>
-      {/* Back link sits above the stack at card width; the negative margin
-          pulls the first card up so the link reads as a breadcrumb, not a
-          block of its own. */}
-      <div className="mx-auto w-full min-w-[750px] max-w-3xl -mb-4">
-        <BackToList projectId={projectId} />
-      </div>
-
       <SettingsCard>
         <OverviewSection webhook={webhook} />
       </SettingsCard>
