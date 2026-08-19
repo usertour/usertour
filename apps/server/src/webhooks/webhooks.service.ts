@@ -238,14 +238,14 @@ export class WebhooksService {
 
     // CAS claim first: only a settled message (DELIVERED/FAILED) flips to
     // PENDING, so a concurrent resend — or a still-running delivery — loses
-    // here instead of double-queueing. Then enqueue; if the queue add throws,
-    // the conditional rollback restores the prior status (and no-ops if a
-    // worker already settled it). The deterministic jobId is a second belt
-    // against duplicates within the in-flight window.
-    const claimed = await this.ledger.claimForResend(message.id, message.updatedAt);
-    if (!claimed) {
+    // here instead of double-queueing. The claim stamps its own generation
+    // into updatedAt; the jobId derives from that stamp, so it is unique per
+    // claim even when a swallowed ledger write left the attempt count stale.
+    const claimStamp = await this.ledger.claimForResend(message.id, message.updatedAt);
+    if (!claimStamp) {
       throw new ValidationError('This message is still being delivered — wait for it to settle.');
     }
+    const jobId = `resend-${message.id}-${claimStamp.getTime()}`;
     const jobData: WebhookDeliveryJobData = {
       webhookId,
       messageId: message.id,
@@ -255,15 +255,27 @@ export class WebhooksService {
       attemptOffset: message.deliveries.length,
     };
     try {
-      await this.deliveryQueue.add('deliver', jobData, {
-        ...SINGLE_ATTEMPT_JOB_OPTIONS,
-        // Keyed by the claim generation (updatedAt), not the attempt count:
-        // unique even when a swallowed ledger write left the count stale.
-        jobId: `resend-${message.id}-${message.updatedAt.getTime()}`,
-      });
+      await this.deliveryQueue.add('deliver', jobData, { ...SINGLE_ATTEMPT_JOB_OPTIONS, jobId });
     } catch (error) {
-      await this.ledger.releaseResendClaim(message.id, message.status);
-      throw error;
+      // add() throwing is AMBIGUOUS: the connection can drop after Redis
+      // persisted the job. Verify by jobId before compensating — rolling back
+      // while a phantom job exists would let a retry double-deliver (within
+      // the documented at-least-once contract, but avoidable). If the job is
+      // found, the enqueue actually succeeded: keep the claim and return
+      // normally. Only a verified miss rolls back — and only OUR claim (the
+      // stamp guard), never a successor's. If the verify itself is
+      // unreachable, Redis is down for both calls and the job almost
+      // certainly was never created: roll back and surface the error.
+      let phantom = null;
+      try {
+        phantom = await this.deliveryQueue.getJob(jobId);
+      } catch {
+        // Verification unreachable — fall through to the rollback.
+      }
+      if (!phantom) {
+        await this.ledger.releaseResendClaim(message.id, claimStamp, message.status);
+        throw error;
+      }
     }
     return { ...message, status: 'PENDING' };
   }

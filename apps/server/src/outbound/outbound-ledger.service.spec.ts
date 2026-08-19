@@ -124,26 +124,31 @@ describe('OutboundLedgerService', () => {
   });
 
   describe('resend claim (CAS)', () => {
-    it('claims only a settled, unmoved message (updatedAt CAS) and reports a lost race', async () => {
+    it('claims only a settled, unmoved message (updatedAt CAS) and stamps its generation', async () => {
       const asOf = new Date('2026-08-19T10:00:00.000Z');
       prisma.outboundMessage.updateMany = jest.fn().mockResolvedValueOnce({ count: 1 });
-      await expect(service.claimForResend('whmsg_1', asOf)).resolves.toBe(true);
+      const claimStamp = await service.claimForResend('whmsg_1', asOf);
+      expect(claimStamp).toBeInstanceOf(Date);
       expect(prisma.outboundMessage.updateMany).toHaveBeenCalledWith({
         where: { id: 'whmsg_1', updatedAt: asOf, status: { in: ['DELIVERED', 'FAILED'] } },
-        data: { status: 'PENDING' },
+        data: { status: 'PENDING', updatedAt: claimStamp },
       });
 
       // Same status but a different updatedAt (ABA: another resend cycle ran
       // in between) → the stale claim loses.
       prisma.outboundMessage.updateMany = jest.fn().mockResolvedValueOnce({ count: 0 });
-      await expect(service.claimForResend('whmsg_1', asOf)).resolves.toBe(false);
+      await expect(service.claimForResend('whmsg_1', asOf)).resolves.toBeNull();
     });
 
-    it('release restores the prior status only while still PENDING', async () => {
+    it('release restores the prior status only for its OWN still-pending claim', async () => {
+      const claimStamp = new Date('2026-08-19T10:00:01.000Z');
       prisma.outboundMessage.updateMany = jest.fn().mockResolvedValue({ count: 1 });
-      await service.releaseResendClaim('whmsg_1', 'FAILED' as never);
+      await service.releaseResendClaim('whmsg_1', claimStamp, 'FAILED' as never);
+      // The stamp guard: a delayed rollback must not undo a SUCCESSOR's claim
+      // (settle bumps updatedAt, a new claim writes its own stamp — either
+      // way this WHERE no longer matches).
       expect(prisma.outboundMessage.updateMany).toHaveBeenCalledWith({
-        where: { id: 'whmsg_1', status: 'PENDING' },
+        where: { id: 'whmsg_1', status: 'PENDING', updatedAt: claimStamp },
         data: { status: 'FAILED' },
       });
     });

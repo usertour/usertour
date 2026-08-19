@@ -150,29 +150,42 @@ export class OutboundLedgerService implements OnModuleInit {
    * message at — every attempt settlement bumps it, so matching on it closes
    * the ABA hole where the status has returned to FAILED/DELIVERED but a whole
    * other resend cycle ran in between (the stale caller would otherwise
-   * enqueue with an outdated attempt offset and a colliding jobId). Returns
-   * false when the claim is lost — already PENDING, or the message moved.
+   * enqueue with an outdated attempt offset and a colliding jobId).
+   *
+   * On success the row's updatedAt is set to the returned claim stamp — the
+   * token identifying THIS claim generation. `releaseResendClaim` must present
+   * it, so a delayed rollback can only undo its own claim, never a successor's.
+   * Returns null when the claim is lost — already PENDING, or the message moved.
    */
-  async claimForResend(id: string, asOf: Date): Promise<boolean> {
+  async claimForResend(id: string, asOf: Date): Promise<Date | null> {
+    const claimStamp = new Date();
     const { count } = await this.prisma.outboundMessage.updateMany({
       where: {
         id,
         updatedAt: asOf,
         status: { in: [OutboundMessageStatus.DELIVERED, OutboundMessageStatus.FAILED] },
       },
-      data: { status: OutboundMessageStatus.PENDING },
+      // Explicit updatedAt: overrides @updatedAt so the claim generation is a
+      // value the caller knows (rather than a DB-side timestamp it would have
+      // to read back).
+      data: { status: OutboundMessageStatus.PENDING, updatedAt: claimStamp },
     });
-    return count > 0;
+    return count > 0 ? claimStamp : null;
   }
 
   /**
-   * Roll a failed claim back (enqueue threw after claimForResend). Guarded on
-   * PENDING: if a worker already recorded the attempt and settled the status,
-   * this no-ops instead of clobbering the fresh result.
+   * Roll a failed claim back (enqueue verifiably failed after
+   * claimForResend). Guarded on PENDING *and* the claim stamp: if a worker
+   * already settled the status — or a successor claimed the message again —
+   * this no-ops instead of clobbering state that is no longer ours.
    */
-  async releaseResendClaim(id: string, previousStatus: OutboundMessageStatus): Promise<void> {
+  async releaseResendClaim(
+    id: string,
+    claimStamp: Date,
+    previousStatus: OutboundMessageStatus,
+  ): Promise<void> {
     await this.prisma.outboundMessage.updateMany({
-      where: { id, status: OutboundMessageStatus.PENDING },
+      where: { id, status: OutboundMessageStatus.PENDING, updatedAt: claimStamp },
       data: { status: previousStatus },
     });
   }
