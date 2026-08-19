@@ -159,6 +159,21 @@ describe('WebhooksProcessor', () => {
     expect(mockedPost).not.toHaveBeenCalled();
   });
 
+  it('caps the response size axios may buffer', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+    });
+    mockedPost.mockResolvedValue({ status: 200, data: '' });
+
+    await processor.process(buildJob(0));
+
+    const config = mockedPost.mock.calls[0][2];
+    expect(config.maxContentLength).toBe(256 * 1024);
+  });
+
   it('refuses a private/non-https URL when the egress switch is off (no send)', async () => {
     // configService.get returns false → default policy. A row created while
     // the switch was ON must stop delivering after it is turned off.

@@ -15,6 +15,12 @@ import { WEBHOOK_SIGNATURE_HEADER, signWebhookPayload } from './webhook-signatur
 import { WebhookDeliveryJobData } from './webhook.types';
 
 const DELIVERY_TIMEOUT_MS = 10_000;
+// Memory safety valve: the receiver's URL is arbitrary user input, and axios
+// buffers the whole response before we truncate it for the ledger — without a
+// cap a hostile endpoint returning gigabytes ooms the worker (x concurrency).
+// A webhook response is an ack; anything past 256 KB is protocol abuse and the
+// attempt is recorded as failed (axios rejects when the cap is exceeded).
+const RESPONSE_MAX_BYTES = 256 * 1024;
 // How many deliveries one worker runs concurrently. Sequential (the BullMQ
 // default) lets a single hung endpoint (10s timeout x 5 retries) head-of-line
 // block every other tenant's deliveries.
@@ -101,6 +107,7 @@ export class WebhooksProcessor extends WorkerHost {
           [WEBHOOK_SIGNATURE_HEADER]: signature,
         },
         timeout: DELIVERY_TIMEOUT_MS,
+        maxContentLength: RESPONSE_MAX_BYTES,
         // Redirects are refused rather than followed: a 3xx is recorded as a
         // failed delivery, keeping endpoint behavior predictable.
         maxRedirects: 0,
