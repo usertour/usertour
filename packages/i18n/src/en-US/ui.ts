@@ -1333,6 +1333,7 @@ const translations = {
       form: {
         url: 'Endpoint URL',
         urlHint: 'Must be a public HTTPS URL.',
+        urlHintPrivateAllowed: 'Any http(s) URL — this deployment allows private-network targets.',
         description: 'Description (optional)',
         descriptionPlaceholder: 'e.g. Sync survey answers to the data warehouse',
         topics: 'Subscribed events',

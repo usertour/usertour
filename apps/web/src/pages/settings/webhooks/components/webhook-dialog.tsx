@@ -27,18 +27,27 @@ import { useAppContext } from '@/contexts/app-context';
 import { useEventList } from '@/hooks/use-event-list';
 import { WebhookTopicPicker } from './webhook-topic-picker';
 
-const webhookFormSchema = z.object({
-  // Both failure modes carry the same marker; the field renders it through
-  // i18n (settings.webhooks.form.urlHint) rather than zod's default English.
-  url: z.string().url('url').startsWith('https://', 'url'),
-  // Stored subscription strings verbatim (see WebhookTopicPicker for the
-  // grammar); the picker edits this array in place — no encode/decode layer.
-  topics: z.array(z.string()).min(1, 'topics'),
-  description: z.string().max(200).optional(),
-  enabled: z.boolean(),
-});
+/**
+ * The URL rule mirrors the server's egress guard: public HTTPS only, unless the
+ * deployment allows private-network egress (self-hosted `ALLOW_PRIVATE_NETWORK_EGRESS`),
+ * where any well-formed http(s) URL is accepted — a receiver on the operator's
+ * own network is the whole point of that switch. Both failure modes carry the
+ * same marker; the field renders it through i18n rather than zod's default
+ * English. The server validates again either way.
+ */
+const buildWebhookFormSchema = (allowPrivateNetworkEgress: boolean) =>
+  z.object({
+    url: allowPrivateNetworkEgress
+      ? z.string().url('url')
+      : z.string().url('url').startsWith('https://', 'url'),
+    // Stored subscription strings verbatim (see WebhookTopicPicker for the
+    // grammar); the picker edits this array in place — no encode/decode layer.
+    topics: z.array(z.string()).min(1, 'topics'),
+    description: z.string().max(200).optional(),
+    enabled: z.boolean(),
+  });
 
-type WebhookFormValues = z.infer<typeof webhookFormSchema>;
+type WebhookFormValues = z.infer<ReturnType<typeof buildWebhookFormSchema>>;
 
 const formDefaults: WebhookFormValues = {
   url: '',
@@ -65,13 +74,17 @@ export interface WebhookDialogProps {
 
 export const WebhookDialog = (props: WebhookDialogProps) => {
   const { open, onOpenChange, webhook, onSubmit } = props;
-  const { environment } = useAppContext();
+  const { environment, globalConfig } = useAppContext();
   const { eventList } = useEventList();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const allowPrivateNetworkEgress = !!globalConfig?.allowPrivateNetworkEgress;
+  const urlHint = allowPrivateNetworkEgress
+    ? t('settings.webhooks.form.urlHintPrivateAllowed')
+    : t('settings.webhooks.form.urlHint');
 
   const form = useForm<WebhookFormValues>({
-    resolver: zodResolver(webhookFormSchema),
+    resolver: zodResolver(buildWebhookFormSchema(allowPrivateNetworkEgress)),
     defaultValues: formDefaults,
     mode: 'onChange',
   });
@@ -151,11 +164,9 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
                         (FormMessage would print zod's marker, so render the copy
                         directly — same as the topics error below). */}
                     {form.formState.errors.url ? (
-                      <p className="text-[0.8rem] font-medium text-destructive">
-                        {t('settings.webhooks.form.urlHint')}
-                      </p>
+                      <p className="text-[0.8rem] font-medium text-destructive">{urlHint}</p>
                     ) : (
-                      <FormDescription>{t('settings.webhooks.form.urlHint')}</FormDescription>
+                      <FormDescription>{urlHint}</FormDescription>
                     )}
                   </FormItem>
                 )}

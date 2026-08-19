@@ -61,5 +61,7 @@ export type GlobalConfig = {
   needsSystemAdminSetup: boolean;
   require2FA: boolean;
   machineTranslationEnabled: boolean;
+  /** Deployment allows private / non-HTTPS outbound targets (webhooks, SSO discovery). */
+  allowPrivateNetworkEgress: boolean;
   authProviders: string[];
 };

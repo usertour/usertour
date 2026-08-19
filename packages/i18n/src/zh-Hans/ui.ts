@@ -1267,6 +1267,7 @@ const translations = {
       form: {
         url: '接收端 URL',
         urlHint: '必须是公网可访问的 HTTPS 地址。',
+        urlHintPrivateAllowed: '任意 http(s) 地址 — 当前部署允许访问内网目标。',
         description: '描述(可选)',
         descriptionPlaceholder: '例如:把问卷回答同步到数据仓库',
         topics: '订阅事件',

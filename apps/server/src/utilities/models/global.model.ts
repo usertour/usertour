@@ -30,6 +30,14 @@ export class GlobalConfig {
   @Field(() => Boolean)
   machineTranslationEnabled: boolean;
 
+  /**
+   * ALLOW_PRIVATE_NETWORK_EGRESS: outbound targets (webhooks, SSO discovery)
+   * may be private / non-HTTPS. The web mirrors it to relax the HTTPS-only
+   * hint on webhook URLs — the server enforces either way.
+   */
+  @Field(() => Boolean)
+  allowPrivateNetworkEgress: boolean;
+
   @Field(() => [String])
   authProviders: string[];
 }
