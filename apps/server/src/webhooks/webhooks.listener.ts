@@ -81,7 +81,15 @@ export class WebhooksListener {
    */
   private async activeWebhooksFor(environmentId: string) {
     const webhooks = await this.prisma.webhook.findMany({
-      where: { environmentId, enabled: true },
+      // Cooling-down endpoints (circuit breaker) are skipped the same way
+      // disabled ones are: their messages are simply not created. Once the
+      // window passes, the next event is the half-open probe — its outcome
+      // either resets the breaker or re-arms a longer window.
+      where: {
+        environmentId,
+        enabled: true,
+        OR: [{ cooldownUntil: null }, { cooldownUntil: { lte: new Date() } }],
+      },
     });
     if (webhooks.length === 0) {
       return [];

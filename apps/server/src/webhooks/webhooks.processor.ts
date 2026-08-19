@@ -21,6 +21,13 @@ const DELIVERY_TIMEOUT_MS = 10_000;
 // A webhook response is an ack; anything past 256 KB is protocol abuse and the
 // attempt is recorded as failed (axios rejects when the cap is exceeded).
 const RESPONSE_MAX_BYTES = 256 * 1024;
+// Cooldown layer of the circuit breaker (ADR 0010): after this many messages
+// in a row exhaust their retry budget, the endpoint cools down and the
+// listener stops creating messages for it until the window passes. The window
+// doubles with each further final failure; any success resets everything.
+export const COOLDOWN_THRESHOLD = 5;
+export const COOLDOWN_BASE_MS = 60_000; // 1 minute
+export const COOLDOWN_MAX_MS = 60 * 60_000; // capped at 1 hour
 // How many deliveries one worker runs concurrently. Sequential (the BullMQ
 // default) lets a single hung endpoint (10s timeout x 5 retries) head-of-line
 // block every other tenant's deliveries.
@@ -132,6 +139,7 @@ export class WebhooksProcessor extends WorkerHost {
         durationMs: Date.now() - startedAt,
         final,
       });
+      await this.resetBreaker(webhookId);
     } catch (error) {
       const failure = error as { message?: string; response?: { status?: number; data?: unknown } };
       await this.ledger.recordAttempt(messageId, {
@@ -143,8 +151,55 @@ export class WebhooksProcessor extends WorkerHost {
         durationMs: Date.now() - startedAt,
         final,
       });
+      if (final) {
+        await this.recordFinalFailure(webhookId);
+      }
       // Rethrow so BullMQ retries with backoff.
       throw error;
+    }
+  }
+
+  /** Any delivered attempt proves the endpoint is healthy again. */
+  private async resetBreaker(webhookId: string): Promise<void> {
+    try {
+      // Guarded write: skip the UPDATE (and its updatedAt bump) on the healthy
+      // path where there is nothing to clear.
+      await this.prisma.webhook.updateMany({
+        where: { id: webhookId, consecutiveFailures: { gt: 0 } },
+        data: { consecutiveFailures: 0, cooldownUntil: null },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to reset webhook breaker for ${webhookId}`, error as Error);
+    }
+  }
+
+  /**
+   * A message exhausted its retry budget: grow the failure streak and, past
+   * the threshold, (re)arm the cooldown — 1min doubling per further failure,
+   * capped at 1h. Atomic increment; the window is computed from the returned
+   * streak, so concurrent final failures at worst re-arm a similar window.
+   * Breaker bookkeeping must never break the delivery path.
+   */
+  private async recordFinalFailure(webhookId: string): Promise<void> {
+    try {
+      const row = await this.prisma.webhook.update({
+        where: { id: webhookId },
+        data: { consecutiveFailures: { increment: 1 } },
+        select: { consecutiveFailures: true },
+      });
+      if (row.consecutiveFailures >= COOLDOWN_THRESHOLD) {
+        const exponent = row.consecutiveFailures - COOLDOWN_THRESHOLD;
+        const windowMs = Math.min(COOLDOWN_BASE_MS * 2 ** exponent, COOLDOWN_MAX_MS);
+        await this.prisma.webhook.update({
+          where: { id: webhookId },
+          data: { cooldownUntil: new Date(Date.now() + windowMs) },
+        });
+        this.logger.warn(
+          `Webhook ${webhookId} cooling down for ${Math.round(windowMs / 1000)}s after ${row.consecutiveFailures} consecutive failed messages`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to record webhook failure streak for ${webhookId}`, error as Error);
     }
   }
 }

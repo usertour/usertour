@@ -1315,6 +1315,12 @@ const translations = {
       topicsCount_one: '{{count}} topic',
       topicsCount_other: '{{count}} topics',
       statusEnabled: 'Enabled',
+      cooldown: {
+        badge: 'Cooling down',
+        badgeUntil: 'Cooling down until {{time}}',
+        tooltip:
+          '{{count}} consecutive messages failed — delivery paused until {{time}}, then a single message probes the endpoint.',
+      },
       statusDisabled: 'Disabled',
       detailsMenuItem: 'View details',
       editMenuItem: 'Edit webhook',

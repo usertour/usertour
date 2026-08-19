@@ -15,6 +15,8 @@ const badgeVariants = cva(
           'border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80',
         outline: 'text-foreground',
         success: 'border-transparent bg-success text-primary-foreground shadow hover:bg-success/80',
+        // Paired tokens (they swap in dark mode) — used together on purpose.
+        warning: 'border-transparent bg-warning text-warning-foreground shadow hover:bg-warning/80',
       },
     },
     defaultVariants: {

@@ -1249,6 +1249,11 @@ const translations = {
       allTrackedEventsPlus: '全部行为事件 +{{count}}',
       topicsCount_other: '{{count}} 个主题',
       statusEnabled: '已启用',
+      cooldown: {
+        badge: '冷却中',
+        badgeUntil: '冷却中,{{time}} 恢复',
+        tooltip: '连续 {{count}} 条消息投递失败 — 暂停投递至 {{time}},到期后放行一条消息探测。',
+      },
       statusDisabled: '已停用',
       detailsMenuItem: '查看详情',
       editMenuItem: '编辑 Webhook',

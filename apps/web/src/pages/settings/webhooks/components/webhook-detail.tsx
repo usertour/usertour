@@ -95,10 +95,16 @@ const OverviewSection = ({ webhook }: { webhook: Webhook }) => {
       <CardHeading
         title={t('settings.webhooks.detail.title')}
         actions={
-          webhook.enabled ? (
-            <Badge variant="success">{t('settings.webhooks.statusEnabled')}</Badge>
-          ) : (
+          !webhook.enabled ? (
             <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>
+          ) : webhook.cooldownUntil && new Date(webhook.cooldownUntil).getTime() > Date.now() ? (
+            <Badge variant="warning">
+              {t('settings.webhooks.cooldown.badgeUntil', {
+                time: format(new Date(webhook.cooldownUntil), 'pp'),
+              })}
+            </Badge>
+          ) : (
+            <Badge variant="success">{t('settings.webhooks.statusEnabled')}</Badge>
           )
         }
       />

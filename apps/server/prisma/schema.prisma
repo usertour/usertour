@@ -1113,6 +1113,13 @@ model Webhook {
   secret        String
   description   String?
 
+  /// Circuit-breaker state (cooldown layer, ADR 0010): messages whose retry
+  /// budget was exhausted in a row. Reset to 0 by any successful attempt.
+  consecutiveFailures Int       @default(0)
+  /// While set and in the future, the listener skips this endpoint (messages
+  /// are not created). Window grows exponentially with the failure streak.
+  cooldownUntil       DateTime? @db.Timestamptz(6)
+
   messages OutboundMessage[]
 
   @@index([environmentId])

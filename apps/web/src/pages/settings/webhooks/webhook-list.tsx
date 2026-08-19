@@ -13,6 +13,10 @@ import { WebhookUpsell } from './components/webhook-upsell';
 const EVENT_TOPIC_PREFIX = 'event.tracked';
 const WEBHOOKS_DOCS_HREF = 'https://docs.usertour.io/developers/webhooks';
 
+/** Cooling down = breaker armed with a window still in the future. */
+const isCoolingDown = (webhook: Webhook): boolean =>
+  !!webhook.cooldownUntil && new Date(webhook.cooldownUntil).getTime() > Date.now();
+
 // No onSubmit refetch: the create mutation's refetchQueries already refreshes
 // the list; a second manual refetch doubled the request.
 const NewWebhookButton = () => {
@@ -77,12 +81,25 @@ export const SettingsWebhookList = () => {
     {
       header: t('settings.webhooks.columns.status'),
       headerClassName: 'w-28',
-      cell: (webhook) =>
-        webhook.enabled ? (
-          <Badge variant="success">{t('settings.webhooks.statusEnabled')}</Badge>
-        ) : (
-          <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>
-        ),
+      cell: (webhook) => {
+        if (!webhook.enabled) {
+          return <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>;
+        }
+        if (isCoolingDown(webhook)) {
+          return (
+            <Badge
+              variant="warning"
+              title={t('settings.webhooks.cooldown.tooltip', {
+                count: webhook.consecutiveFailures,
+                time: format(new Date(webhook.cooldownUntil as string), 'pp'),
+              })}
+            >
+              {t('settings.webhooks.cooldown.badge')}
+            </Badge>
+          );
+        }
+        return <Badge variant="success">{t('settings.webhooks.statusEnabled')}</Badge>;
+      },
     },
     {
       header: t('settings.webhooks.columns.createdAt'),

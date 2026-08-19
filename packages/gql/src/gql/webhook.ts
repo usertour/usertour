@@ -13,6 +13,8 @@ export const ListWebhooks = gql`
       topics
       enabled
       description
+      consecutiveFailures
+      cooldownUntil
     }
   }
 `;
@@ -29,6 +31,8 @@ export const GetWebhook = gql`
       enabled
       secret
       description
+      consecutiveFailures
+      cooldownUntil
     }
   }
 `;

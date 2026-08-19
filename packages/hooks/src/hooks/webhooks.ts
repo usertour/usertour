@@ -23,6 +23,10 @@ export interface Webhook {
   /** Present on the detail query only — the list query doesn't select it. */
   secret?: string;
   description?: string | null;
+  /** Circuit-breaker streak: messages that exhausted their retry budget in a row. */
+  consecutiveFailures: number;
+  /** While in the future, delivery is paused for this endpoint (cooldown). */
+  cooldownUntil?: string | null;
 }
 
 /** One delivery attempt of a message. */

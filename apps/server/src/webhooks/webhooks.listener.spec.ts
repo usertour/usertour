@@ -83,6 +83,19 @@ describe('WebhooksListener', () => {
     expect(queue.addBulk).not.toHaveBeenCalled();
   });
 
+  it('excludes cooling-down endpoints at dispatch time', async () => {
+    prisma.webhook.findMany.mockResolvedValue([]);
+
+    await listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_1'] });
+
+    const where = prisma.webhook.findMany.mock.calls[0][0].where;
+    expect(where).toEqual({
+      environmentId: 'env_1',
+      enabled: true,
+      OR: [{ cooldownUntil: null }, { cooldownUntil: { lte: expect.any(Date) } }],
+    });
+  });
+
   it('skips the entitlement lookup when the environment has no enabled endpoints', async () => {
     prisma.webhook.findMany.mockResolvedValue([]);
 

@@ -21,13 +21,19 @@ const buildJob = (attemptsMade = 0, attempts = 5, data: WebhookDeliveryJobData =
   ({ data, attemptsMade, opts: { attempts } }) as any;
 
 describe('WebhooksProcessor', () => {
-  let prisma: { webhook: { findUnique: jest.Mock } };
+  let prisma: { webhook: { findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock } };
   let ledger: { recordAttempt: jest.Mock };
   let processor: WebhooksProcessor;
 
   beforeEach(() => {
     mockedPost.mockReset();
-    prisma = { webhook: { findUnique: jest.fn() } };
+    prisma = {
+      webhook: {
+        findUnique: jest.fn(),
+        update: jest.fn().mockResolvedValue({ consecutiveFailures: 1 }),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
     ledger = { recordAttempt: jest.fn().mockResolvedValue(undefined) };
     const configService = { get: jest.fn().mockReturnValue(true) }; // private egress allowed in tests
     processor = new WebhooksProcessor(prisma as any, configService as any, ledger as any);
@@ -157,6 +163,65 @@ describe('WebhooksProcessor', () => {
     );
 
     expect(mockedPost).not.toHaveBeenCalled();
+  });
+
+  it('resets the breaker on success and counts only FINAL failures', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+    });
+
+    // Non-final failure: no streak bookkeeping.
+    mockedPost.mockRejectedValue(new Error('ECONNREFUSED'));
+    await expect(processor.process(buildJob(0, 5))).rejects.toThrow();
+    expect(prisma.webhook.update).not.toHaveBeenCalled();
+
+    // Final failure: streak +1 (below the threshold -> no cooldown write).
+    await expect(processor.process(buildJob(4, 5))).rejects.toThrow();
+    expect(prisma.webhook.update).toHaveBeenCalledWith({
+      where: { id: 'wh_1' },
+      data: { consecutiveFailures: { increment: 1 } },
+      select: { consecutiveFailures: true },
+    });
+    expect(prisma.webhook.update).toHaveBeenCalledTimes(1);
+
+    // Success: guarded reset.
+    mockedPost.mockResolvedValue({ status: 200, data: '' });
+    await processor.process(buildJob(0, 5));
+    expect(prisma.webhook.updateMany).toHaveBeenCalledWith({
+      where: { id: 'wh_1', consecutiveFailures: { gt: 0 } },
+      data: { consecutiveFailures: 0, cooldownUntil: null },
+    });
+  });
+
+  it('arms an exponentially growing cooldown once the streak crosses the threshold', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+    });
+    mockedPost.mockRejectedValue(new Error('ECONNREFUSED'));
+
+    // Streak 5 (threshold) -> 1min window; streak 7 -> 4min window.
+    for (const [streak, expectedMs] of [
+      [5, 60_000],
+      [7, 240_000],
+    ] as const) {
+      prisma.webhook.update
+        .mockResolvedValueOnce({ consecutiveFailures: streak })
+        .mockResolvedValueOnce({});
+      const before = Date.now();
+      await expect(processor.process(buildJob(4, 5))).rejects.toThrow();
+      const cooldownWrite = prisma.webhook.update.mock.calls.at(-1)?.[0];
+      expect(cooldownWrite.data.cooldownUntil).toBeInstanceOf(Date);
+      const windowMs = cooldownWrite.data.cooldownUntil.getTime() - before;
+      expect(windowMs).toBeGreaterThanOrEqual(expectedMs - 1000);
+      expect(windowMs).toBeLessThanOrEqual(expectedMs + 1000);
+      prisma.webhook.update.mockClear();
+    }
   });
 
   it('caps the response size axios may buffer', async () => {

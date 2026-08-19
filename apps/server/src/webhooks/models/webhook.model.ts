@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 import GraphQLJSON from 'graphql-type-json';
 
 /**
@@ -36,4 +36,12 @@ export class Webhook {
 
   @Field(() => String, { nullable: true })
   description?: string | null;
+
+  /** Circuit-breaker streak: messages that exhausted their retry budget in a row. */
+  @Field(() => Int)
+  consecutiveFailures: number;
+
+  /** While in the future, delivery is paused for this endpoint (cooldown). */
+  @Field(() => Date, { nullable: true })
+  cooldownUntil?: Date | null;
 }
