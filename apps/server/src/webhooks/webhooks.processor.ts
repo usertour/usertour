@@ -101,6 +101,12 @@ export class WebhooksProcessor extends WorkerHost {
           error: 'Endpoint URL is not allowed by the current egress policy',
           final: true,
         });
+        // Count it toward the breaker too — otherwise a policy-refused
+        // endpoint never cools down or auto-disables, and every event keeps
+        // minting a message plus a FAILED ledger row forever. The eventual
+        // auto-disable email is also how the owner learns the URL is not
+        // allowed anymore.
+        await this.recordFinalFailure(webhookId);
         return;
       }
     }
@@ -174,9 +180,16 @@ export class WebhooksProcessor extends WorkerHost {
   private async resetBreaker(webhookId: string): Promise<void> {
     try {
       // Guarded write: skip the UPDATE (and its updatedAt bump) on the healthy
-      // path where there is nothing to clear.
+      // path where there is nothing to clear. The guard must cover EVERY field
+      // it clears — matching only the streak would strand an orphaned
+      // failingSince stamp (a reset racing a concurrent final failure can
+      // leave streak 0 with the stamp set), which would later mis-classify one
+      // transient failure as seven days of sustained ones.
       await this.prisma.webhook.updateMany({
-        where: { id: webhookId, consecutiveFailures: { gt: 0 } },
+        where: {
+          id: webhookId,
+          OR: [{ consecutiveFailures: { gt: 0 } }, { failingSince: { not: null } }],
+        },
         data: { consecutiveFailures: 0, cooldownUntil: null, failingSince: null },
       });
     } catch (error) {
@@ -206,7 +219,13 @@ export class WebhooksProcessor extends WorkerHost {
           where: { id: webhookId, failingSince: null },
           data: { failingSince: now },
         });
-      } else if (now.getTime() - row.failingSince.getTime() >= AUTO_DISABLE_AFTER_MS) {
+      } else if (
+        // Sustained = DURATION and an ACTIVE streak. The streak floor keeps a
+        // stale/orphaned failingSince stamp from letting a single transient
+        // failure disable a healthy endpoint.
+        row.consecutiveFailures >= COOLDOWN_THRESHOLD &&
+        now.getTime() - row.failingSince.getTime() >= AUTO_DISABLE_AFTER_MS
+      ) {
         await this.autoDisable(webhookId, row.environmentId, row.url, row.failingSince);
         return;
       }

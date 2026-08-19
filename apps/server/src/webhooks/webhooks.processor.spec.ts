@@ -210,7 +210,10 @@ describe('WebhooksProcessor', () => {
     mockedPost.mockResolvedValue({ status: 200, data: '' });
     await processor.process(buildJob(0, 5));
     expect(prisma.webhook.updateMany).toHaveBeenCalledWith({
-      where: { id: 'wh_1', consecutiveFailures: { gt: 0 } },
+      where: {
+        id: 'wh_1',
+        OR: [{ consecutiveFailures: { gt: 0 } }, { failingSince: { not: null } }],
+      },
       data: { consecutiveFailures: 0, cooldownUntil: null, failingSince: null },
     });
   });
@@ -246,6 +249,54 @@ describe('WebhooksProcessor', () => {
       expect(windowMs).toBeLessThanOrEqual(expectedMs + 1000);
       prisma.webhook.update.mockClear();
     }
+  });
+
+  it('does NOT auto-disable on an old failingSince stamp without an active streak', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+    });
+    mockedPost.mockRejectedValue(new Error('ECONNREFUSED'));
+    // Orphaned stamp scenario: streak reset raced, stamp survived. One
+    // transient final failure a week later must not disable the endpoint.
+    prisma.webhook.update.mockResolvedValueOnce({
+      consecutiveFailures: 1,
+      failingSince: new Date(Date.now() - 8 * 86_400_000),
+      environmentId: 'env_1',
+      url: 'https://example.com/hook',
+    });
+
+    await expect(processor.process(buildJob(4, 5))).rejects.toThrow();
+
+    expect(prisma.webhook.updateMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ enabled: false }) }),
+    );
+    expect(emailService.sendOrLog).not.toHaveBeenCalled();
+  });
+
+  it('counts an egress-policy refusal toward the breaker', async () => {
+    const configService = { get: jest.fn().mockReturnValue(false) };
+    processor = new WebhooksProcessor(
+      prisma as any,
+      configService as any,
+      ledger as any,
+      emailService as any,
+      audit as any,
+    );
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'http://127.0.0.1:4747/hook',
+      secret: 'whsec_test',
+    });
+
+    await processor.process(buildJob(0));
+
+    expect(prisma.webhook.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { consecutiveFailures: { increment: 1 } } }),
+    );
   });
 
   it('auto-disables (audit + owner email) once the streak is older than the window', async () => {
