@@ -1249,6 +1249,9 @@ const translations = {
       allTrackedEventsPlus: '全部行为事件 +{{count}}',
       topicsCount_other: '{{count}} 个主题',
       statusEnabled: '已启用',
+      downgraded: {
+        banner: '当前套餐不含 Webhook,投递已暂停。你仍可查看和删除既有端点;升级后恢复投递。',
+      },
       autoDisabled: {
         badge: '已自动停用',
         tooltip: '因持续投递失败,Usertour 已于 {{time}} 停用该端点。',

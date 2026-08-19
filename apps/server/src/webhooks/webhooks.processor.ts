@@ -106,7 +106,7 @@ export class WebhooksProcessor extends WorkerHost {
         // minting a message plus a FAILED ledger row forever. The eventual
         // auto-disable email is also how the owner learns the URL is not
         // allowed anymore.
-        await this.recordFinalFailure(webhookId);
+        await this.recordFinalFailure(webhookId, webhook.url);
         return;
       }
     }
@@ -156,7 +156,7 @@ export class WebhooksProcessor extends WorkerHost {
         durationMs: Date.now() - startedAt,
         final,
       });
-      await this.resetBreaker(webhookId);
+      await this.resetBreaker(webhookId, webhook.url);
     } catch (error) {
       const failure = error as { message?: string; response?: { status?: number; data?: unknown } };
       await this.ledger.recordAttempt(messageId, {
@@ -169,15 +169,19 @@ export class WebhooksProcessor extends WorkerHost {
         final,
       });
       if (final) {
-        await this.recordFinalFailure(webhookId);
+        await this.recordFinalFailure(webhookId, webhook.url);
       }
       // Rethrow so BullMQ retries with backoff.
       throw error;
     }
   }
 
-  /** Any delivered attempt proves the endpoint is healthy again. */
-  private async resetBreaker(webhookId: string): Promise<void> {
+  /**
+   * Any delivered attempt proves the endpoint is healthy again. Guarded on the
+   * URL this delivery actually hit: a straggler result for a since-replaced
+   * URL must not touch the new target's breaker state.
+   */
+  private async resetBreaker(webhookId: string, deliveredUrl: string): Promise<void> {
     try {
       // Guarded write: skip the UPDATE (and its updatedAt bump) on the healthy
       // path where there is nothing to clear. The guard must cover EVERY field
@@ -188,7 +192,12 @@ export class WebhooksProcessor extends WorkerHost {
       await this.prisma.webhook.updateMany({
         where: {
           id: webhookId,
-          OR: [{ consecutiveFailures: { gt: 0 } }, { failingSince: { not: null } }],
+          url: deliveredUrl,
+          OR: [
+            { consecutiveFailures: { gt: 0 } },
+            { failingSince: { not: null } },
+            { cooldownUntil: { not: null } },
+          ],
         },
         data: { consecutiveFailures: 0, cooldownUntil: null, failingSince: null },
       });
@@ -204,19 +213,36 @@ export class WebhooksProcessor extends WorkerHost {
    * streak, so concurrent final failures at worst re-arm a similar window.
    * Breaker bookkeeping must never break the delivery path.
    */
-  private async recordFinalFailure(webhookId: string): Promise<void> {
+  private async recordFinalFailure(webhookId: string, deliveredUrl: string): Promise<void> {
     try {
       const now = new Date();
-      const row = await this.prisma.webhook.update({
-        where: { id: webhookId },
+      // Guarded on the URL this delivery hit: up to concurrency-many in-flight
+      // results for a just-replaced URL would otherwise stack onto the NEW
+      // target's fresh streak (worst case ~10 strays = a 32-minute cooldown
+      // the new URL never earned — and one the listener gate then prevents
+      // traffic from clearing). updateMany can't return the row, hence the
+      // follow-up read; final failures only, so the extra query is rare.
+      const { count } = await this.prisma.webhook.updateMany({
+        where: { id: webhookId, url: deliveredUrl },
         data: { consecutiveFailures: { increment: 1 } },
+      });
+      if (count === 0) {
+        return; // URL replaced (or row deleted) since this delivery started.
+      }
+      const row = await this.prisma.webhook.findUniqueOrThrow({
+        where: { id: webhookId },
         select: { consecutiveFailures: true, failingSince: true, environmentId: true, url: true },
       });
       if (!row.failingSince) {
         // 0 -> 1 transition: stamp when this streak began. (Guarded so a
         // concurrent final failure doesn't move an existing stamp forward.)
         await this.prisma.webhook.updateMany({
-          where: { id: webhookId, failingSince: null },
+          // Both terms matter: failingSince null keeps a concurrent failure
+          // from moving an existing stamp, and the live-streak term keeps a
+          // concurrent RESET from being followed by an orphaned stamp
+          // (streak 0 + failingSince set), which would age into a false
+          // "7 days of sustained failure".
+          where: { id: webhookId, failingSince: null, consecutiveFailures: { gt: 0 } },
           data: { failingSince: now },
         });
       } else if (
@@ -232,8 +258,12 @@ export class WebhooksProcessor extends WorkerHost {
       if (row.consecutiveFailures >= COOLDOWN_THRESHOLD) {
         const exponent = row.consecutiveFailures - COOLDOWN_THRESHOLD;
         const windowMs = Math.min(COOLDOWN_BASE_MS * 2 ** exponent, COOLDOWN_MAX_MS);
-        await this.prisma.webhook.update({
-          where: { id: webhookId },
+        // Guarded on the streak the window was computed from: if a concurrent
+        // success reset it (or another failure advanced it), skip — arming a
+        // cooldown on a freshly-reset endpoint would silently skip a healthy
+        // endpoint's events for the whole window.
+        await this.prisma.webhook.updateMany({
+          where: { id: webhookId, consecutiveFailures: row.consecutiveFailures },
           data: { cooldownUntil: new Date(Date.now() + windowMs) },
         });
         this.logger.warn(
@@ -262,11 +292,14 @@ export class WebhooksProcessor extends WorkerHost {
     failingSince: Date,
   ): Promise<void> {
     const { count } = await this.prisma.webhook.updateMany({
-      where: { id: webhookId, enabled: true },
+      // CAS on the decision's evidence: if a concurrent success or a URL
+      // change reset failingSince since we read it, the "7 days of failure"
+      // conclusion no longer holds — skip rather than disable a healthy row.
+      where: { id: webhookId, enabled: true, failingSince },
       data: { enabled: false, autoDisabledAt: new Date(), cooldownUntil: null },
     });
     if (count === 0) {
-      return; // Someone else (user or a concurrent probe) already disabled it.
+      return; // State moved under us (reset, URL change, or already disabled).
     }
     const failingDays = Math.round((Date.now() - failingSince.getTime()) / 86_400_000);
     this.logger.warn(

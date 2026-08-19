@@ -6,6 +6,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import {
   type Webhook,
   type WebhookMessage,
+  useGetProjectConfigQuery,
   useGetWebhookQuery,
   useQueryWebhookMessagesQuery,
   useResendWebhookMessageMutation,
@@ -40,6 +41,7 @@ import {
 } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import type { PageInfo } from '@usertour/types';
+import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useLoadMoreAccumulator } from '@/hooks/use-load-more-accumulator';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
@@ -159,7 +161,11 @@ const OverviewSection = ({ webhook }: { webhook: Webhook }) => {
   );
 };
 
-const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret: string }) => {
+const SigningSecretSection = ({
+  webhookId,
+  secret,
+  entitled,
+}: { webhookId: string; secret: string; entitled: boolean }) => {
   const [revealed, setRevealed] = useState(false);
   const [rotateOpen, setRotateOpen] = useState(false);
   const { isViewOnly } = useAppContext();
@@ -216,7 +222,7 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
           variant="outline"
           size="icon"
           className="shrink-0"
-          disabled={isViewOnly}
+          disabled={isViewOnly || !entitled}
           onClick={() => setRotateOpen(true)}
           title={t('settings.webhooks.secret.rotateButton')}
         >
@@ -238,7 +244,11 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
   );
 };
 
-const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) => {
+const MessagesSection = ({
+  webhookId,
+  enabled,
+  entitled,
+}: { webhookId: string; enabled: boolean; entitled: boolean }) => {
   // Load-more accumulation (docs/conventions/list-pagination.md: a card on a
   // longer page gets a button, not infinite scroll). The query returns one
   // page; the accumulator appends on cursor advance and `refresh` resets to
@@ -335,7 +345,7 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
             </Button>
             <Button
               variant="outline"
-              disabled={isViewOnly || !enabled || sendingTest}
+              disabled={isViewOnly || !enabled || !entitled || sendingTest}
               title={enabled ? undefined : t('settings.webhooks.testEvent.disabledHint')}
               onClick={() => void handleSendTest()}
             >
@@ -414,7 +424,7 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
         onClose={() => setDialogOpen(false)}
         onResend={(message) => void handleResend(message)}
         resending={resending}
-        canResend={!isViewOnly && enabled}
+        canResend={!isViewOnly && enabled && entitled}
       />
     </div>
   );
@@ -422,8 +432,13 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
 
 export const WebhookDetail = () => {
   const { settingSubType: webhookId } = useParams();
+  const { project } = useAppContext();
+  const { projectConfig } = useGetProjectConfigQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
   const { webhook, loading } = useGetWebhookQuery(webhookId ?? '');
   const { t } = useTranslation();
+  // Plan gate mirror (server enforces independently): reads and delete stay
+  // open on a downgraded project; rotate / test / resend are write-shaped.
+  const entitled = !projectConfig || projectConfig.webhooks;
 
   if (loading && !webhook) {
     return null;
@@ -442,17 +457,26 @@ export const WebhookDetail = () => {
   return (
     <SettingsCardStack>
       <SettingsCard>
+        {!entitled && (
+          <div className="mb-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            {t('settings.webhooks.downgraded.banner')}
+          </div>
+        )}
         <OverviewSection webhook={webhook} />
       </SettingsCard>
 
       {webhook.secret && (
         <SettingsCard>
-          <SigningSecretSection webhookId={webhook.id} secret={webhook.secret} />
+          <SigningSecretSection
+            webhookId={webhook.id}
+            secret={webhook.secret}
+            entitled={entitled}
+          />
         </SettingsCard>
       )}
 
       <SettingsCard>
-        <MessagesSection webhookId={webhook.id} enabled={webhook.enabled} />
+        <MessagesSection webhookId={webhook.id} enabled={webhook.enabled} entitled={entitled} />
       </SettingsCard>
     </SettingsCardStack>
   );

@@ -9,10 +9,16 @@ import { WebhookDialog } from './webhook-dialog';
 
 export interface WebhookRowActionsProps {
   webhook: Webhook;
+  /**
+   * Plan entitlement. When false (downgraded project) edit is disabled —
+   * the server rejects writes with E0043 — while details and delete stay
+   * available so existing configuration can be inspected and cleaned up.
+   */
+  entitled?: boolean;
 }
 
 export const WebhookRowActions = (props: WebhookRowActionsProps) => {
-  const { webhook } = props;
+  const { webhook, entitled = true } = props;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { isViewOnly, project } = useAppContext();
@@ -49,7 +55,7 @@ export const WebhookRowActions = (props: WebhookRowActionsProps) => {
             key: 'edit',
             icon: <EditIcon className="w-4 h-4 mr-2" />,
             label: t('settings.webhooks.editMenuItem'),
-            disabled: isViewOnly,
+            disabled: isViewOnly || !entitled,
             onSelect: () => setEditOpen(true),
           },
           {

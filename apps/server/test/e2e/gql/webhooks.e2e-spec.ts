@@ -355,6 +355,20 @@ describe('GraphQL webhooks (e2e)', () => {
       expect(row?.status).toBe('PENDING');
     });
 
+    it('refuses to resend a message that is still PENDING (CAS claim loses)', async () => {
+      const created = await createWebhook();
+      await seedMessage(created.id, 'whmsg_pending', { status: 'PENDING', attempts: 1 });
+
+      const res = await graphql(app, {
+        token,
+        query: RESEND_MESSAGE,
+        variables: { data: { webhookId: created.id, messageId: 'whmsg_pending' } },
+      });
+      expect(res.body.errors).toBeDefined();
+      const row = await prisma.outboundMessage.findUnique({ where: { id: 'whmsg_pending' } });
+      expect(row?.status).toBe('PENDING');
+    });
+
     it('refuses a message that belongs to a different endpoint', async () => {
       const first = await createWebhook();
       const second = await createWebhook({ url: 'https://e2e-receiver.invalid/other' });

@@ -144,11 +144,36 @@ export class OutboundLedgerService implements OnModuleInit {
     });
   }
 
-  /** Reset a message for a manual re-send; the next attempt row continues the sequence. */
-  async markPending(id: string): Promise<void> {
-    await this.prisma.outboundMessage.update({
-      where: { id },
+  /**
+   * Atomically claim a settled message for a manual re-send (CAS: only
+   * DELIVERED/FAILED -> PENDING). `asOf` is the updatedAt the caller read the
+   * message at — every attempt settlement bumps it, so matching on it closes
+   * the ABA hole where the status has returned to FAILED/DELIVERED but a whole
+   * other resend cycle ran in between (the stale caller would otherwise
+   * enqueue with an outdated attempt offset and a colliding jobId). Returns
+   * false when the claim is lost — already PENDING, or the message moved.
+   */
+  async claimForResend(id: string, asOf: Date): Promise<boolean> {
+    const { count } = await this.prisma.outboundMessage.updateMany({
+      where: {
+        id,
+        updatedAt: asOf,
+        status: { in: [OutboundMessageStatus.DELIVERED, OutboundMessageStatus.FAILED] },
+      },
       data: { status: OutboundMessageStatus.PENDING },
+    });
+    return count > 0;
+  }
+
+  /**
+   * Roll a failed claim back (enqueue threw after claimForResend). Guarded on
+   * PENDING: if a worker already recorded the attempt and settled the status,
+   * this no-ops instead of clobbering the fresh result.
+   */
+  async releaseResendClaim(id: string, previousStatus: OutboundMessageStatus): Promise<void> {
+    await this.prisma.outboundMessage.updateMany({
+      where: { id, status: OutboundMessageStatus.PENDING },
+      data: { status: previousStatus },
     });
   }
 

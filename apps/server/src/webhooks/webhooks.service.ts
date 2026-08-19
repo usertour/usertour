@@ -236,7 +236,16 @@ export class WebhooksService {
       throw new WebhookMessageNotFoundError();
     }
 
-    await this.ledger.markPending(message.id);
+    // CAS claim first: only a settled message (DELIVERED/FAILED) flips to
+    // PENDING, so a concurrent resend — or a still-running delivery — loses
+    // here instead of double-queueing. Then enqueue; if the queue add throws,
+    // the conditional rollback restores the prior status (and no-ops if a
+    // worker already settled it). The deterministic jobId is a second belt
+    // against duplicates within the in-flight window.
+    const claimed = await this.ledger.claimForResend(message.id, message.updatedAt);
+    if (!claimed) {
+      throw new ValidationError('This message is still being delivered — wait for it to settle.');
+    }
     const jobData: WebhookDeliveryJobData = {
       webhookId,
       messageId: message.id,
@@ -245,7 +254,17 @@ export class WebhooksService {
       // Continue the attempt numbering after the logged tries.
       attemptOffset: message.deliveries.length,
     };
-    await this.deliveryQueue.add('deliver', jobData, SINGLE_ATTEMPT_JOB_OPTIONS);
+    try {
+      await this.deliveryQueue.add('deliver', jobData, {
+        ...SINGLE_ATTEMPT_JOB_OPTIONS,
+        // Keyed by the claim generation (updatedAt), not the attempt count:
+        // unique even when a swallowed ledger write left the count stale.
+        jobId: `resend-${message.id}-${message.updatedAt.getTime()}`,
+      });
+    } catch (error) {
+      await this.ledger.releaseResendClaim(message.id, message.status);
+      throw error;
+    }
     return { ...message, status: 'PENDING' };
   }
 

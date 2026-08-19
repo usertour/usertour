@@ -1315,6 +1315,10 @@ const translations = {
       topicsCount_one: '{{count}} topic',
       topicsCount_other: '{{count}} topics',
       statusEnabled: 'Enabled',
+      downgraded: {
+        banner:
+          'Webhooks are not included in your current plan — delivery is paused. You can still review and delete existing endpoints; upgrade to resume delivery.',
+      },
       autoDisabled: {
         badge: 'Auto-disabled',
         tooltip: 'Disabled by Usertour on {{time}} after continuous delivery failures.',

@@ -43,7 +43,12 @@ export const SettingsWebhookList = () => {
   const { t } = useTranslation();
 
   // Plan gate — the server enforces this independently; mirror it in the UI.
-  if (projectConfig && !projectConfig.webhooks) {
+  // A downgraded project with EXISTING endpoints keeps a degraded list (the
+  // server deliberately leaves reads and deletes open so old configuration
+  // can be inspected and cleaned up); the full-page upsell is only for
+  // projects with nothing to show.
+  const entitled = !projectConfig || projectConfig.webhooks;
+  if (!entitled && !loading && (webhooks?.length ?? 0) === 0) {
     return <WebhookUpsell projectId={project?.id} environmentName={environment?.name ?? ''} />;
   }
 
@@ -121,15 +126,21 @@ export const SettingsWebhookList = () => {
     {
       header: '',
       headerClassName: 'w-20',
-      cell: (webhook) => <WebhookRowActions webhook={webhook} />,
+      cell: (webhook) => <WebhookRowActions webhook={webhook} entitled={entitled} />,
     },
   ];
 
   return (
     <ResourceListPage<Webhook>
       title={t('settings.webhooks.title', { environment: environment?.name ?? '' })}
-      actions={<NewWebhookButton />}
-      description={t('settings.webhooks.headerBody')}
+      actions={entitled ? <NewWebhookButton /> : undefined}
+      description={
+        entitled ? (
+          t('settings.webhooks.headerBody')
+        ) : (
+          <span className="text-amber-600">{t('settings.webhooks.downgraded.banner')}</span>
+        )
+      }
       docs={{
         href: WEBHOOKS_DOCS_HREF,
         label: t('settings.common.readGuide', { topic: t('settings.nav.sections.webhooks') }),
