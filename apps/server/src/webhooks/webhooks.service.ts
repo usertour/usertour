@@ -131,6 +131,9 @@ export class WebhooksService {
       this.validateTopics(topics);
     }
 
+    // Re-enabling is a fresh start: clear the breaker state and the
+    // auto-disable marker so the endpoint gets a full streak budget again.
+    const reEnabling = enabled === true && !webhook.enabled;
     return await this.prisma.webhook.update({
       where: { id },
       data: {
@@ -138,6 +141,14 @@ export class WebhooksService {
         ...(topics !== undefined ? { topics } : {}),
         ...(enabled !== undefined ? { enabled } : {}),
         ...(description !== undefined ? { description } : {}),
+        ...(reEnabling
+          ? {
+              autoDisabledAt: null,
+              consecutiveFailures: 0,
+              cooldownUntil: null,
+              failingSince: null,
+            }
+          : {}),
       },
     });
   }

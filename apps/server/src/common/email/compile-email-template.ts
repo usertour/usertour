@@ -10,6 +10,8 @@ type Props = {
     url?: string;
     projectName?: string;
     inviterName?: string;
+    failingDays?: string;
+    settingsUrl?: string;
   };
 };
 

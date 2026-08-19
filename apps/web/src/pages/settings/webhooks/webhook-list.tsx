@@ -83,7 +83,18 @@ export const SettingsWebhookList = () => {
       headerClassName: 'w-28',
       cell: (webhook) => {
         if (!webhook.enabled) {
-          return <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>;
+          return webhook.autoDisabledAt ? (
+            <Badge
+              variant="destructive"
+              title={t('settings.webhooks.autoDisabled.tooltip', {
+                time: format(new Date(webhook.autoDisabledAt), 'PP'),
+              })}
+            >
+              {t('settings.webhooks.autoDisabled.badge')}
+            </Badge>
+          ) : (
+            <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>
+          );
         }
         if (isCoolingDown(webhook)) {
           return (

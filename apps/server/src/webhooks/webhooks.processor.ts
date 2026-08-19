@@ -10,6 +10,9 @@ import {
   createGuardedHttpsAgent,
   guardedLookup,
 } from '@/common/egress/egress-guard';
+import compileEmailTemplate from '@/common/email/compile-email-template';
+import { EmailService } from '@/shared/email.service';
+import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { WEBHOOK_SIGNATURE_HEADER, signWebhookPayload } from './webhook-signature';
 import { WebhookDeliveryJobData } from './webhook.types';
@@ -28,6 +31,12 @@ const RESPONSE_MAX_BYTES = 256 * 1024;
 export const COOLDOWN_THRESHOLD = 5;
 export const COOLDOWN_BASE_MS = 60_000; // 1 minute
 export const COOLDOWN_MAX_MS = 60 * 60_000; // capped at 1 hour
+// Layer 2: an endpoint whose failure streak has lasted this long gets disabled
+// (nothing was delivered in that whole window anyway) and the project owner is
+// notified. Re-enabling is a manual switch in the dashboard. No scheduler: the
+// check rides on final failures, and a dead-but-trafficked endpoint produces
+// at least one of those per cooldown cycle.
+export const AUTO_DISABLE_AFTER_MS = 7 * 24 * 60 * 60_000; // 7 days
 // How many deliveries one worker runs concurrently. Sequential (the BullMQ
 // default) lets a single hung endpoint (10s timeout x 5 retries) head-of-line
 // block every other tenant's deliveries.
@@ -52,6 +61,8 @@ export class WebhooksProcessor extends WorkerHost {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly ledger: OutboundLedgerService,
+    private readonly emailService: EmailService,
+    private readonly audit: AuditService,
   ) {
     super();
   }
@@ -166,7 +177,7 @@ export class WebhooksProcessor extends WorkerHost {
       // path where there is nothing to clear.
       await this.prisma.webhook.updateMany({
         where: { id: webhookId, consecutiveFailures: { gt: 0 } },
-        data: { consecutiveFailures: 0, cooldownUntil: null },
+        data: { consecutiveFailures: 0, cooldownUntil: null, failingSince: null },
       });
     } catch (error) {
       this.logger.error(`Failed to reset webhook breaker for ${webhookId}`, error as Error);
@@ -182,11 +193,23 @@ export class WebhooksProcessor extends WorkerHost {
    */
   private async recordFinalFailure(webhookId: string): Promise<void> {
     try {
+      const now = new Date();
       const row = await this.prisma.webhook.update({
         where: { id: webhookId },
         data: { consecutiveFailures: { increment: 1 } },
-        select: { consecutiveFailures: true },
+        select: { consecutiveFailures: true, failingSince: true, environmentId: true, url: true },
       });
+      if (!row.failingSince) {
+        // 0 -> 1 transition: stamp when this streak began. (Guarded so a
+        // concurrent final failure doesn't move an existing stamp forward.)
+        await this.prisma.webhook.updateMany({
+          where: { id: webhookId, failingSince: null },
+          data: { failingSince: now },
+        });
+      } else if (now.getTime() - row.failingSince.getTime() >= AUTO_DISABLE_AFTER_MS) {
+        await this.autoDisable(webhookId, row.environmentId, row.url, row.failingSince);
+        return;
+      }
       if (row.consecutiveFailures >= COOLDOWN_THRESHOLD) {
         const exponent = row.consecutiveFailures - COOLDOWN_THRESHOLD;
         const windowMs = Math.min(COOLDOWN_BASE_MS * 2 ** exponent, COOLDOWN_MAX_MS);
@@ -200,6 +223,76 @@ export class WebhooksProcessor extends WorkerHost {
       }
     } catch (error) {
       this.logger.error(`Failed to record webhook failure streak for ${webhookId}`, error as Error);
+    }
+  }
+
+  /**
+   * Layer 2: sustained failure -> the system switches the endpoint off,
+   * records an audit entry, and emails the project owner. Guarded update so a
+   * concurrent probe can't double-fire the notification.
+   */
+  private async autoDisable(
+    webhookId: string,
+    environmentId: string,
+    url: string,
+    failingSince: Date,
+  ): Promise<void> {
+    const { count } = await this.prisma.webhook.updateMany({
+      where: { id: webhookId, enabled: true },
+      data: { enabled: false, autoDisabledAt: new Date(), cooldownUntil: null },
+    });
+    if (count === 0) {
+      return; // Someone else (user or a concurrent probe) already disabled it.
+    }
+    const failingDays = Math.round((Date.now() - failingSince.getTime()) / 86_400_000);
+    this.logger.warn(
+      `Webhook ${webhookId} auto-disabled after ${failingDays} days of continuous delivery failure`,
+    );
+
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+      select: { projectId: true, project: { select: { name: true } } },
+    });
+    if (!environment) {
+      return;
+    }
+
+    this.audit.record({
+      projectId: environment.projectId,
+      environmentId,
+      source: 'system',
+      action: 'update',
+      operation: 'autoDisableWebhook',
+      resourceType: 'webhook',
+      resourceId: webhookId,
+      after: { enabled: false },
+      metadata: { reason: 'sustained_delivery_failure', failingDays, url },
+    });
+
+    // Single-owner invariant (role changes demote the previous owner);
+    // findMany defends against legacy duplicates rather than implying a crowd.
+    const owners = await this.prisma.userOnProject.findMany({
+      where: { projectId: environment.projectId, role: 'OWNER', actived: true },
+      select: { user: { select: { email: true } } },
+    });
+    const settingsUrl = `${this.configService.get('app.homepageUrl')}/project/${environment.projectId}/settings/webhooks/${webhookId}`;
+    const html = await compileEmailTemplate({
+      fileName: 'webhookAutoDisabled.mjml',
+      data: {
+        url,
+        projectName: environment.project?.name ?? 'your project',
+        failingDays: String(failingDays),
+        settingsUrl,
+      },
+    });
+    for (const owner of owners) {
+      if (owner.user?.email) {
+        await this.emailService.sendOrLog({
+          to: owner.user.email,
+          subject: 'A Usertour webhook endpoint was disabled after continuous failures',
+          html,
+        });
+      }
     }
   }
 }

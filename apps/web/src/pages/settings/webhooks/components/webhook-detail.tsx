@@ -96,7 +96,11 @@ const OverviewSection = ({ webhook }: { webhook: Webhook }) => {
         title={t('settings.webhooks.detail.title')}
         actions={
           !webhook.enabled ? (
-            <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>
+            webhook.autoDisabledAt ? (
+              <Badge variant="destructive">{t('settings.webhooks.autoDisabled.badge')}</Badge>
+            ) : (
+              <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>
+            )
           ) : webhook.cooldownUntil && new Date(webhook.cooldownUntil).getTime() > Date.now() ? (
             <Badge variant="warning">
               {t('settings.webhooks.cooldown.badgeUntil', {
@@ -108,6 +112,13 @@ const OverviewSection = ({ webhook }: { webhook: Webhook }) => {
           )
         }
       />
+      {webhook.autoDisabledAt && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {t('settings.webhooks.autoDisabled.banner', {
+            time: format(new Date(webhook.autoDisabledAt), 'PP'),
+          })}
+        </div>
+      )}
       <dl className="space-y-4">
         <DetailRow label={t('settings.webhooks.form.url')}>
           <div className="flex items-start gap-2">

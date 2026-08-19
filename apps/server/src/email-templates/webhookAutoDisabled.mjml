@@ -1,0 +1,38 @@
+<mjml>
+  <mj-body background-color="#f1f1f1" width="100%">
+    <mj-section background-color="#f3f5fb">
+      <mj-column>
+        <mj-text font-size="30px" align="center" color="#5534ff">
+          Usertour
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff">
+      <mj-column>
+        <mj-text font-size="24px" align="center">
+          A webhook endpoint was disabled
+        </mj-text>
+        <mj-text align="left" color="#555" line-height="30px">
+          Deliveries to the following webhook endpoint in {{projectName}} have been failing continuously for {{failingDays}} days, so Usertour has disabled it:
+        </mj-text>
+        <mj-text align="left" color="#333" font-family="monospace" font-size="14px" line-height="22px">
+          {{url}}
+        </mj-text>
+        <mj-text align="left" color="#555" line-height="30px">
+          No events are being delivered to it. If the endpoint is back up, re-enable the webhook and use Resend on any message you need — recent messages are kept for 30 days. If you no longer need it, you can delete it.
+        </mj-text>
+        <mj-button background-color="#5534ff" border-radius="50px" color="white" font-size="15px" href="{{settingsUrl}}">
+          Open webhook settings
+        </mj-button>
+        <mj-text align="left" color="#555" line-height="20px">
+          The Usertour Team
+        </mj-text>
+        <mj-divider border-color="#5534ff" border-width="2px"></mj-divider>
+        <mj-text font-size="12px" color="#555">
+          If you’re having trouble with the button above, copy and paste the URL below into your web browser.
+        </mj-text>
+        <mj-text font-size="12px" color="#555"> {{settingsUrl}} </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

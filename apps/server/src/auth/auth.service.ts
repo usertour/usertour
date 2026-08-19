@@ -1,4 +1,5 @@
 import compileEmailTemplate from '@/common/email/compile-email-template';
+import { EmailService } from '@/shared/email.service';
 import {
   getDefaultSegments,
   initialization,
@@ -19,7 +20,6 @@ import { CookieOptions, Response } from 'express';
 import { AuthResult, TokenData } from './dto/auth.dto';
 import { PasswordService } from './password.service';
 import { TwoFactorService } from './two-factor.service';
-import { createTransport } from 'nodemailer';
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
 import { omit } from '@/utils/typesafe';
 import ms from 'ms';
@@ -100,6 +100,7 @@ export class AuthService implements OnModuleInit {
     private readonly redisService: RedisService,
     private readonly twoFactorService: TwoFactorService,
     private readonly audit: AuditService,
+    private readonly emailService: EmailService,
     @InjectQueue(QUEUE_SEND_MAGIC_LINK_EMAIL) private emailQueue: Queue,
     @InjectQueue(QUEUE_SEND_RESET_PASSWORD_EMAIL) private resetPasswordQueue: Queue,
     @InjectQueue(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS)
@@ -1329,17 +1330,10 @@ export class AuthService implements OnModuleInit {
     return await this.prisma.user.findUnique({ where: { id: userId } });
   }
 
-  async sendEmail(data: unknown) {
-    const transporter = createTransport({
-      host: this.configService.get('email.host'),
-      port: this.configService.get('email.port'),
-      secure: true,
-      auth: {
-        user: this.configService.get('email.user'),
-        pass: this.configService.get('email.pass'),
-      },
-    });
-    return await transporter.sendMail(data);
+  async sendEmail(data: { from?: string; to: string; subject: string; html: string }) {
+    // Transport lives in the shared EmailService now (webhooks notify too);
+    // auth keeps its call sites and failure semantics unchanged.
+    return await this.emailService.send(data);
   }
 
   async sendMagicLinkEmail(code: string, email: string) {

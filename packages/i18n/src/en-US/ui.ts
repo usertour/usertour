@@ -1315,6 +1315,12 @@ const translations = {
       topicsCount_one: '{{count}} topic',
       topicsCount_other: '{{count}} topics',
       statusEnabled: 'Enabled',
+      autoDisabled: {
+        badge: 'Auto-disabled',
+        tooltip: 'Disabled by Usertour on {{time}} after continuous delivery failures.',
+        banner:
+          'Usertour disabled this endpoint on {{time}} after a week of continuous delivery failures. Fix the receiver, then re-enable it — recent messages can be re-sent from the log below.',
+      },
       cooldown: {
         badge: 'Cooling down',
         badgeUntil: 'Cooling down until {{time}}',

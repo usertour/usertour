@@ -27,6 +27,8 @@ export interface Webhook {
   consecutiveFailures: number;
   /** While in the future, delivery is paused for this endpoint (cooldown). */
   cooldownUntil?: string | null;
+  /** Set when the SYSTEM disabled the endpoint after sustained failure. */
+  autoDisabledAt?: string | null;
 }
 
 /** One delivery attempt of a message. */

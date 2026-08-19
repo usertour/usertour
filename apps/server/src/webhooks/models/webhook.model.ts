@@ -44,4 +44,8 @@ export class Webhook {
   /** While in the future, delivery is paused for this endpoint (cooldown). */
   @Field(() => Date, { nullable: true })
   cooldownUntil?: Date | null;
+
+  /** Set when the SYSTEM disabled the endpoint after sustained failure. */
+  @Field(() => Date, { nullable: true })
+  autoDisabledAt?: Date | null;
 }

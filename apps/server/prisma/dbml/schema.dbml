@@ -929,6 +929,12 @@ application layer (egress guard).']
 budget was exhausted in a row. Reset to 0 by any successful attempt.']
   cooldownUntil DateTime [note: 'While set and in the future, the listener skips this endpoint (messages
 are not created). Window grows exponentially with the failure streak.']
+  failingSince DateTime [note: 'Start of the current unbroken failure streak (set on 0->1, cleared by any
+success). Once older than the auto-disable window, the endpoint is
+disabled (layer 2 of the circuit breaker).']
+  autoDisabledAt DateTime [note: 'Set when the SYSTEM disabled this endpoint (sustained failure) — lets the
+dashboard distinguish auto-disable from a manual switch-off. Cleared when
+the user re-enables.']
   messages OutboundMessage [not null]
 
   Note: 'Outbound webhook endpoint (ADR 0010). Environment-scoped shared

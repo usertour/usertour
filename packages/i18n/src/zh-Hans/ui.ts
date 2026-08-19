@@ -1249,6 +1249,12 @@ const translations = {
       allTrackedEventsPlus: '全部行为事件 +{{count}}',
       topicsCount_other: '{{count}} 个主题',
       statusEnabled: '已启用',
+      autoDisabled: {
+        badge: '已自动停用',
+        tooltip: '因持续投递失败,Usertour 已于 {{time}} 停用该端点。',
+        banner:
+          '因连续一周投递失败,Usertour 已于 {{time}} 停用该端点。修复接收服务后重新启用即可;下方日志中的消息可以重发。',
+      },
       cooldown: {
         badge: '冷却中',
         badgeUntil: '冷却中,{{time}} 恢复',

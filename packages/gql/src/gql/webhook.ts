@@ -15,6 +15,7 @@ export const ListWebhooks = gql`
       description
       consecutiveFailures
       cooldownUntil
+      autoDisabledAt
     }
   }
 `;
@@ -33,6 +34,7 @@ export const GetWebhook = gql`
       description
       consecutiveFailures
       cooldownUntil
+      autoDisabledAt
     }
   }
 `;

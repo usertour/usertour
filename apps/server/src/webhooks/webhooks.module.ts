@@ -5,6 +5,7 @@ import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { OutboundModule } from '@/outbound/outbound.module';
 import { ProjectsModule } from '@/projects/projects.module';
+import { SharedModule } from '@/shared/shared.module';
 import { WebhooksListener } from './webhooks.listener';
 import { WebhooksProcessor } from './webhooks.processor';
 import { WebhooksResolver } from './webhooks.resolver';
@@ -22,6 +23,7 @@ import { WebhooksService } from './webhooks.service';
     BullModule.registerQueue({ name: QUEUE_WEBHOOK_DELIVERY }),
     OutboundModule,
     ProjectsModule,
+    SharedModule,
     ConfigModule,
   ],
   providers: [

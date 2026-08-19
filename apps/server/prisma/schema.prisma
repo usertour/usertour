@@ -1119,6 +1119,14 @@ model Webhook {
   /// While set and in the future, the listener skips this endpoint (messages
   /// are not created). Window grows exponentially with the failure streak.
   cooldownUntil       DateTime? @db.Timestamptz(6)
+  /// Start of the current unbroken failure streak (set on 0->1, cleared by any
+  /// success). Once older than the auto-disable window, the endpoint is
+  /// disabled (layer 2 of the circuit breaker).
+  failingSince        DateTime? @db.Timestamptz(6)
+  /// Set when the SYSTEM disabled this endpoint (sustained failure) — lets the
+  /// dashboard distinguish auto-disable from a manual switch-off. Cleared when
+  /// the user re-enables.
+  autoDisabledAt      DateTime? @db.Timestamptz(6)
 
   messages OutboundMessage[]
 

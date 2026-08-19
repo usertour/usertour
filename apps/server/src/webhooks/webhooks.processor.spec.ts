@@ -21,8 +21,14 @@ const buildJob = (attemptsMade = 0, attempts = 5, data: WebhookDeliveryJobData =
   ({ data, attemptsMade, opts: { attempts } }) as any;
 
 describe('WebhooksProcessor', () => {
-  let prisma: { webhook: { findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock } };
+  let prisma: {
+    webhook: { findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+    environment?: { findUnique: jest.Mock };
+    userOnProject?: { findMany: jest.Mock };
+  };
   let ledger: { recordAttempt: jest.Mock };
+  let emailService: { sendOrLog: jest.Mock };
+  let audit: { record: jest.Mock };
   let processor: WebhooksProcessor;
 
   beforeEach(() => {
@@ -30,13 +36,26 @@ describe('WebhooksProcessor', () => {
     prisma = {
       webhook: {
         findUnique: jest.fn(),
-        update: jest.fn().mockResolvedValue({ consecutiveFailures: 1 }),
+        update: jest.fn().mockResolvedValue({
+          consecutiveFailures: 1,
+          failingSince: new Date(),
+          environmentId: 'env_1',
+          url: 'https://example.com/hook',
+        }),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
     };
     ledger = { recordAttempt: jest.fn().mockResolvedValue(undefined) };
     const configService = { get: jest.fn().mockReturnValue(true) }; // private egress allowed in tests
-    processor = new WebhooksProcessor(prisma as any, configService as any, ledger as any);
+    emailService = { sendOrLog: jest.fn().mockResolvedValue(undefined) };
+    audit = { record: jest.fn() };
+    processor = new WebhooksProcessor(
+      prisma as any,
+      configService as any,
+      ledger as any,
+      emailService as any,
+      audit as any,
+    );
   });
 
   it('POSTs the signed body and records a successful delivery attempt', async () => {
@@ -183,7 +202,7 @@ describe('WebhooksProcessor', () => {
     expect(prisma.webhook.update).toHaveBeenCalledWith({
       where: { id: 'wh_1' },
       data: { consecutiveFailures: { increment: 1 } },
-      select: { consecutiveFailures: true },
+      select: { consecutiveFailures: true, failingSince: true, environmentId: true, url: true },
     });
     expect(prisma.webhook.update).toHaveBeenCalledTimes(1);
 
@@ -192,7 +211,7 @@ describe('WebhooksProcessor', () => {
     await processor.process(buildJob(0, 5));
     expect(prisma.webhook.updateMany).toHaveBeenCalledWith({
       where: { id: 'wh_1', consecutiveFailures: { gt: 0 } },
-      data: { consecutiveFailures: 0, cooldownUntil: null },
+      data: { consecutiveFailures: 0, cooldownUntil: null, failingSince: null },
     });
   });
 
@@ -211,7 +230,12 @@ describe('WebhooksProcessor', () => {
       [7, 240_000],
     ] as const) {
       prisma.webhook.update
-        .mockResolvedValueOnce({ consecutiveFailures: streak })
+        .mockResolvedValueOnce({
+          consecutiveFailures: streak,
+          failingSince: new Date(),
+          environmentId: 'env_1',
+          url: 'https://example.com/hook',
+        })
         .mockResolvedValueOnce({});
       const before = Date.now();
       await expect(processor.process(buildJob(4, 5))).rejects.toThrow();
@@ -222,6 +246,50 @@ describe('WebhooksProcessor', () => {
       expect(windowMs).toBeLessThanOrEqual(expectedMs + 1000);
       prisma.webhook.update.mockClear();
     }
+  });
+
+  it('auto-disables (audit + owner email) once the streak is older than the window', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+    });
+    mockedPost.mockRejectedValue(new Error('ECONNREFUSED'));
+    const eightDaysAgo = new Date(Date.now() - 8 * 86_400_000);
+    prisma.webhook.update.mockResolvedValueOnce({
+      consecutiveFailures: 40,
+      failingSince: eightDaysAgo,
+      environmentId: 'env_1',
+      url: 'https://example.com/hook',
+    });
+    prisma.webhook.updateMany.mockResolvedValueOnce({ count: 1 });
+    prisma.environment = {
+      findUnique: jest.fn().mockResolvedValue({ projectId: 'proj_1', project: { name: 'Acme' } }),
+    } as any;
+    prisma.userOnProject = {
+      findMany: jest.fn().mockResolvedValue([{ user: { email: 'owner@acme.test' } }]),
+    } as any;
+
+    await expect(processor.process(buildJob(4, 5))).rejects.toThrow();
+
+    expect(prisma.webhook.updateMany).toHaveBeenCalledWith({
+      where: { id: 'wh_1', enabled: true },
+      data: { enabled: false, autoDisabledAt: expect.any(Date), cooldownUntil: null },
+    });
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: 'system',
+        operation: 'autoDisableWebhook',
+        resourceType: 'webhook',
+        resourceId: 'wh_1',
+      }),
+    );
+    expect(emailService.sendOrLog).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'owner@acme.test' }),
+    );
+    // Disabled means no further cooldown write.
+    expect(prisma.webhook.update).toHaveBeenCalledTimes(1);
   });
 
   it('caps the response size axios may buffer', async () => {
@@ -243,7 +311,13 @@ describe('WebhooksProcessor', () => {
     // configService.get returns false → default policy. A row created while
     // the switch was ON must stop delivering after it is turned off.
     const configService = { get: jest.fn().mockReturnValue(false) };
-    processor = new WebhooksProcessor(prisma as any, configService as any, ledger as any);
+    processor = new WebhooksProcessor(
+      prisma as any,
+      configService as any,
+      ledger as any,
+      emailService as any,
+      audit as any,
+    );
     prisma.webhook.findUnique.mockResolvedValue({
       id: 'wh_1',
       enabled: true,

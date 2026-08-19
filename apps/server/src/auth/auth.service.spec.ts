@@ -15,6 +15,7 @@ import {
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
 } from '@/common/consts/queen';
 import { AuditService } from '@/audit/audit.service';
+import { EmailService } from '@/shared/email.service';
 import { RedisService } from '@/shared/redis.service';
 import { TeamService } from '@/team/team.service';
 import { ProjectsService } from '@/projects/projects.service';
@@ -116,6 +117,7 @@ describe('AuthService', () => {
         { provide: RedisService, useValue: redis },
         { provide: TwoFactorService, useValue: twoFactor },
         { provide: AuditService, useValue: { record: jest.fn() } },
+        { provide: EmailService, useValue: { send: jest.fn(), sendOrLog: jest.fn() } },
         { provide: getQueueToken(QUEUE_SEND_MAGIC_LINK_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_SEND_RESET_PASSWORD_EMAIL), useValue: noopQueue },
         { provide: getQueueToken(QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS), useValue: noopQueue },
