@@ -133,14 +133,54 @@ describe('WebhooksProcessor', () => {
     );
   });
 
-  it('silently completes when the endpoint row is gone or disabled', async () => {
+  it('records a final failed attempt (no send) when the endpoint is gone or disabled', async () => {
     prisma.webhook.findUnique.mockResolvedValue(null);
     await processor.process(buildJob(0));
+    expect(ledger.recordAttempt).toHaveBeenLastCalledWith(
+      'whmsg_1',
+      expect.objectContaining({
+        success: false,
+        final: true,
+        error: expect.stringContaining('deleted'),
+      }),
+    );
 
     prisma.webhook.findUnique.mockResolvedValue({ id: 'wh_1', enabled: false });
     await processor.process(buildJob(0));
+    expect(ledger.recordAttempt).toHaveBeenLastCalledWith(
+      'whmsg_1',
+      expect.objectContaining({
+        success: false,
+        final: true,
+        error: expect.stringContaining('disabled'),
+      }),
+    );
 
     expect(mockedPost).not.toHaveBeenCalled();
-    expect(ledger.recordAttempt).not.toHaveBeenCalled();
+  });
+
+  it('refuses a private/non-https URL when the egress switch is off (no send)', async () => {
+    // configService.get returns false → default policy. A row created while
+    // the switch was ON must stop delivering after it is turned off.
+    const configService = { get: jest.fn().mockReturnValue(false) };
+    processor = new WebhooksProcessor(prisma as any, configService as any, ledger as any);
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'http://127.0.0.1:4747/hook',
+      secret: 'whsec_test',
+    });
+
+    await processor.process(buildJob(0));
+
+    expect(mockedPost).not.toHaveBeenCalled();
+    expect(ledger.recordAttempt).toHaveBeenCalledWith(
+      'whmsg_1',
+      expect.objectContaining({
+        success: false,
+        final: true,
+        error: expect.stringContaining('egress policy'),
+      }),
+    );
   });
 });

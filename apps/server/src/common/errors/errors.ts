@@ -1013,3 +1013,21 @@ export class IdentityVerificationRequiresActiveSecretError extends BaseError {
     'zh-CN': '身份验证需要至少一个有效的签名密钥。',
   };
 }
+
+export class WebhookNotFoundError extends BaseError {
+  // E0060 is taken by MemberEnvironmentNotAllowedError (declared out of
+  // numeric order above) — codes are assigned by grep, not by file position.
+  code = 'E0061';
+  messageDict = {
+    en: 'Webhook not found.',
+    'zh-CN': 'Webhook 不存在。',
+  };
+}
+
+export class WebhookMessageNotFoundError extends BaseError {
+  code = 'E0062';
+  messageDict = {
+    en: 'Webhook message not found.',
+    'zh-CN': 'Webhook 消息不存在。',
+  };
+}

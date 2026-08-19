@@ -2,9 +2,18 @@ import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
 import { graphql, gqlData } from '../auth';
-import { createTestApp } from '../create-test-app';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
+
+// The URL-validation assertions below depend on the DEFAULT egress policy
+// (public HTTPS only). `config.ts` reads ALLOW_PRIVATE_NETWORK_EGRESS at
+// module-import time, so pin it before AppModule loads (lazy require, same
+// pattern as the sso specs) — a developer's local `.env` with the switch on
+// must not flip these tests.
+const prevPrivateEgress = process.env.ALLOW_PRIVATE_NETWORK_EGRESS;
+process.env.ALLOW_PRIVATE_NETWORK_EGRESS = 'false';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { createTestApp } = require('../create-test-app') as typeof import('../create-test-app');
 
 const CREATE_WEBHOOK = `mutation ($data: CreateWebhookInput!) {
   createWebhook(data: $data) { id environmentId url topics enabled description }
@@ -84,6 +93,7 @@ describe('GraphQL webhooks (e2e)', () => {
       }
     }
     await app?.close();
+    process.env.ALLOW_PRIVATE_NETWORK_EGRESS = prevPrivateEgress ?? '';
   });
 
   const createWebhook = async (overrides: Record<string, unknown> = {}) => {
@@ -93,7 +103,7 @@ describe('GraphQL webhooks (e2e)', () => {
       variables: {
         data: {
           environmentId,
-          url: 'https://example.com/usertour-hook',
+          url: 'https://e2e-receiver.invalid/usertour-hook',
           topics: ['event.tracked'],
           ...overrides,
         },
@@ -119,7 +129,7 @@ describe('GraphQL webhooks (e2e)', () => {
         token,
         query: CREATE_WEBHOOK,
         variables: {
-          data: { environmentId, url: 'http://example.com/hook', topics: ['*'] },
+          data: { environmentId, url: 'http://e2e-receiver.invalid/hook', topics: ['*'] },
         },
       });
       expect(res.body.errors).toBeDefined();
@@ -145,7 +155,7 @@ describe('GraphQL webhooks (e2e)', () => {
           token,
           query: CREATE_WEBHOOK,
           variables: {
-            data: { environmentId, url: 'https://example.com/hook', topics },
+            data: { environmentId, url: 'https://e2e-receiver.invalid/hook', topics },
           },
         });
         expect(res.body.errors).toBeDefined();
@@ -183,7 +193,7 @@ describe('GraphQL webhooks (e2e)', () => {
         variables: {
           data: {
             id: created.id,
-            url: 'https://example.com/next',
+            url: 'https://e2e-receiver.invalid/next',
             topics: ['event.tracked.flow_started', 'event.tracked.question_answered'],
             enabled: false,
             description: 'paused',
@@ -194,7 +204,7 @@ describe('GraphQL webhooks (e2e)', () => {
       expect(updated.enabled).toBe(false);
 
       const row = await prisma.webhook.findUnique({ where: { id: created.id } });
-      expect(row?.url).toBe('https://example.com/next');
+      expect(row?.url).toBe('https://e2e-receiver.invalid/next');
       expect(row?.topics).toEqual([
         'event.tracked.flow_started',
         'event.tracked.question_answered',
@@ -316,7 +326,7 @@ describe('GraphQL webhooks (e2e)', () => {
 
     it('refuses a message that belongs to a different endpoint', async () => {
       const first = await createWebhook();
-      const second = await createWebhook({ url: 'https://example.com/other' });
+      const second = await createWebhook({ url: 'https://e2e-receiver.invalid/other' });
       await seedMessage(second.id, 'whmsg_other_owner');
 
       const res = await graphql(app, {
@@ -348,7 +358,7 @@ describe('GraphQL webhooks (e2e)', () => {
           token: roleToken,
           query: CREATE_WEBHOOK,
           variables: {
-            data: { environmentId, url: 'https://example.com/hook', topics: ['*'] },
+            data: { environmentId, url: 'https://e2e-receiver.invalid/hook', topics: ['*'] },
           },
         });
         expect(createRes.body.errors).toBeDefined();

@@ -17,7 +17,7 @@ export interface Webhook {
   updatedAt: string;
   environmentId: string;
   url: string;
-  /** Subscribed topics: "*" | "event.tracked" | "event.tracked.<codeName>". */
+  /** Subscribed topics: "*", a family prefix ("event.tracked", "content", "user", "company"), or an exact topic. */
   topics: string[];
   enabled: boolean;
   /** Present on the detail query only — the list query doesn't select it. */

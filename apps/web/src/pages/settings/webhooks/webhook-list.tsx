@@ -13,13 +13,15 @@ import { WebhookUpsell } from './components/webhook-upsell';
 const EVENT_TOPIC_PREFIX = 'event.tracked';
 const WEBHOOKS_DOCS_HREF = 'https://docs.usertour.io/developers/webhooks';
 
-const NewWebhookButton = ({ onSuccess }: { onSuccess: () => void }) => {
+// No onSubmit refetch: the create mutation's refetchQueries already refreshes
+// the list; a second manual refetch doubled the request.
+const NewWebhookButton = () => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <>
       <NewItemButton onClick={() => setOpen(true)} label={t('settings.webhooks.newButton')} />
-      <WebhookDialog open={open} onOpenChange={setOpen} onSubmit={() => onSuccess()} />
+      <WebhookDialog open={open} onOpenChange={setOpen} />
     </>
   );
 };
@@ -30,7 +32,7 @@ export const SettingsWebhookList = () => {
     project?.id,
     SHARED_CACHE_QUERY_OPTIONS,
   );
-  const { webhooks, loading, refetch } = useListWebhooksQuery(
+  const { webhooks, loading } = useListWebhooksQuery(
     environment?.id ?? '',
     SHARED_CACHE_QUERY_OPTIONS,
   );
@@ -98,7 +100,7 @@ export const SettingsWebhookList = () => {
   return (
     <ResourceListPage<Webhook>
       title={t('settings.webhooks.title', { environment: environment?.name ?? '' })}
-      actions={<NewWebhookButton onSuccess={refetch} />}
+      actions={<NewWebhookButton />}
       description={t('settings.webhooks.headerBody')}
       docs={{
         href: WEBHOOKS_DOCS_HREF,
@@ -106,7 +108,7 @@ export const SettingsWebhookList = () => {
       }}
       columns={columns}
       rows={webhooks}
-      loading={loading || !environment || (configLoading && !projectConfig)}
+      loading={(loading && !webhooks) || !environment || (configLoading && !projectConfig)}
       empty={t('settings.webhooks.empty')}
       getRowKey={(webhook) => webhook.id}
     />

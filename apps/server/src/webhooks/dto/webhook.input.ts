@@ -14,8 +14,14 @@ export class CreateWebhookInput {
   @IsString()
   environmentId: string;
 
+  /**
+   * Shape check only (http/https, hostname allowed without a TLD — intranet
+   * hosts are legal when the deployment permits private egress). Whether
+   * non-HTTPS / private targets are ACCEPTED is decided by the service's
+   * assertPublicHttpUrl, which honors ALLOW_PRIVATE_NETWORK_EGRESS.
+   */
   @Field(() => String)
-  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
   url: string;
 
   @Field(() => [String])
@@ -40,9 +46,10 @@ export class UpdateWebhookInput {
   @IsString()
   id: string;
 
+  /** Same contract as CreateWebhookInput.url. */
   @Field(() => String, { nullable: true })
   @IsOptional()
-  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
   url?: string;
 
   @Field(() => [String], { nullable: true })

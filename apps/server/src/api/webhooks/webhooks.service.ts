@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { ParamsError } from '@/common/errors';
+import { WebhookNotFoundError } from '@/common/errors';
 import { Environment } from '@/environments/models/environment.model';
 import { WebhooksService } from '@/webhooks/webhooks.service';
 
@@ -77,7 +77,8 @@ export class ApiWebhooksService {
   private async getOwnedRow(id: string, environment: Environment) {
     const row = await this.webhooks.get(id);
     if (row.environmentId !== environment.id) {
-      throw new ParamsError('Webhook not found');
+      // Same shape as an unknown id — do not reveal that it exists elsewhere.
+      throw new WebhookNotFoundError();
     }
     return row;
   }

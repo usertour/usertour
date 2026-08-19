@@ -8,7 +8,12 @@ import { PrismaService } from 'nestjs-prisma';
 import { ApiObjectType } from '@/api/shared/object-type';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { assertPublicHttpUrl } from '@/common/egress/egress-guard';
-import { FeatureRequiresLicenseError, ParamsError, ValidationError } from '@/common/errors';
+import {
+  FeatureRequiresLicenseError,
+  ValidationError,
+  WebhookMessageNotFoundError,
+  WebhookNotFoundError,
+} from '@/common/errors';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { ProjectsService } from '@/projects/projects.service';
@@ -92,7 +97,7 @@ export class WebhooksService {
   async get(id: string) {
     const webhook = await this.prisma.webhook.findUnique({ where: { id } });
     if (!webhook) {
-      throw new ParamsError('Webhook not found');
+      throw new WebhookNotFoundError();
     }
     return webhook;
   }
@@ -211,7 +216,7 @@ export class WebhooksService {
     }
     const message = await this.ledger.getMessage(messageId);
     if (!message || message.webhookId !== webhookId) {
-      throw new ParamsError('Webhook message not found');
+      throw new WebhookMessageNotFoundError();
     }
 
     await this.ledger.markPending(message.id);
@@ -249,7 +254,7 @@ export class WebhooksService {
     const invalid = topics.find((topic) => !isValidSubscription(topic));
     if (invalid !== undefined) {
       throw new ValidationError(
-        `Invalid topic subscription "${invalid}" — expected "*", "event.tracked", or "event.tracked.<codeName>".`,
+        `Invalid topic subscription "${invalid}" — expected "*", a family name ("event.tracked", "content", "user", "company"), "event.tracked.<codeName>", or an exact topic such as "content.published" / "user.updated".`,
       );
     }
   }

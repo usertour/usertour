@@ -12,6 +12,10 @@ import { buildAuthorizedUser, teardownProject } from './_support';
 // does not leak into the self-hosted-mode webhooks CRUD spec.
 const prevSelfHosted = process.env.IS_SELF_HOSTED_MODE;
 process.env.IS_SELF_HOSTED_MODE = 'false';
+// Pin the default egress policy too — the https fixtures below must stay valid
+// regardless of the developer's local ALLOW_PRIVATE_NETWORK_EGRESS.
+const prevPrivateEgress = process.env.ALLOW_PRIVATE_NETWORK_EGRESS;
+process.env.ALLOW_PRIVATE_NETWORK_EGRESS = 'false';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { createTestApp } = require('../create-test-app') as typeof import('../create-test-app');
 
@@ -87,10 +91,15 @@ describe('GraphQL webhooks plan gate (e2e, SaaS mode)', () => {
     }
     await app?.close();
     process.env.IS_SELF_HOSTED_MODE = prevSelfHosted ?? '';
+    process.env.ALLOW_PRIVATE_NETWORK_EGRESS = prevPrivateEgress ?? '';
   });
 
   const createInput = (environmentId: string) => ({
-    data: { environmentId, url: 'https://example.com/usertour-hook', topics: ['event.tracked'] },
+    data: {
+      environmentId,
+      url: 'https://e2e-receiver.invalid/usertour-hook',
+      topics: ['event.tracked'],
+    },
   });
 
   it('lets a Starter project create a webhook', async () => {
@@ -119,7 +128,7 @@ describe('GraphQL webhooks plan gate (e2e, SaaS mode)', () => {
       const row = await prisma.webhook.create({
         data: {
           environmentId: hobbyEnvironmentId,
-          url: 'https://example.com/legacy-hook',
+          url: 'https://e2e-receiver.invalid/legacy-hook',
           topics: ['*'],
           enabled: true,
           secret: 'whsec_legacy',

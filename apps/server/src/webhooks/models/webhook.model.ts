@@ -24,7 +24,7 @@ export class Webhook {
   @Field(() => String)
   url: string;
 
-  /** Subscribed topics: "*" | "event.tracked" | "event.tracked.<codeName>". */
+  /** Subscribed topics: "*", a family prefix ("event.tracked", "content", "user", "company"), or an exact topic. */
   @Field(() => GraphQLJSON)
   topics: string[];
 

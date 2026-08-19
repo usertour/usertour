@@ -41,7 +41,11 @@ export const createWebhookBody = z.object({
   url: z
     .string()
     .url()
-    .describe('Public HTTPS endpoint events are POSTed to (SSRF-guarded server-side).'),
+    .regex(/^https?:\/\//, 'must be an http(s) URL')
+    .describe(
+      'Endpoint events are POSTed to. Public HTTPS by default; deployments with ' +
+        'ALLOW_PRIVATE_NETWORK_EGRESS may use private/http targets (SSRF-guarded server-side).',
+    ),
   topics,
   enabled: z.boolean().optional().describe('Defaults to true.'),
   description: z.string().max(200).optional(),
@@ -49,7 +53,11 @@ export const createWebhookBody = z.object({
 export class CreateWebhookBodyDto extends createZodDto(createWebhookBody) {}
 
 export const updateWebhookBody = z.object({
-  url: z.string().url().optional(),
+  url: z
+    .string()
+    .url()
+    .regex(/^https?:\/\//, 'must be an http(s) URL')
+    .optional(),
   topics: topics.optional(),
   enabled: z.boolean().optional(),
   description: z.string().max(200).optional(),

@@ -146,7 +146,7 @@ Why generic now: integrations are the next feature on this branch and need the s
 - `companyMembership` change topics (user joins/leaves a company).
 - REST `GET /events` on the event-instance schema.
 - Failure alerting / auto-disable (delivery log + manual switch cover today's need).
-- Reconcile pass over PENDING `OutboundMessage` rows (re-queue after Redis loss); today retries rely on Redis persistence like every other queue.
+- Reconcile pass over PENDING `OutboundMessage` rows (re-queue after Redis loss); today retries rely on Redis persistence like every other queue. Fold in the ledger-consistency edges from the 2026-08-19 review: `resendMessage` doesn't serialize against an in-flight retry sequence (double delivery / colliding attempt numbers when called via API while the original job is backing off — the dashboard already refuses PENDING) and can strand a PENDING row if the queue add fails after `markPending`; the listener's single `createMany` batch loses the whole (webhook × event) batch for every endpoint if one webhook row is deleted concurrently (FK violation); the listener re-queries webhooks + entitlement per emit with no cache (candidate for ProjectCacheService when volume warrants).
 - Integrations event push should subscribe to the same domain events (`BIZ_EVENT_TRACKED` etc.) and record into the outbound ledger rather than re-adding the commented-out call site.
 
 ## Consequences

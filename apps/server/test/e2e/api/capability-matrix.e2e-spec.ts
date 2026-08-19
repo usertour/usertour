@@ -149,6 +149,13 @@ const ROUTES: Row[] = [
   { method: 'get', template: `${E}/sessions/{id}`, cap: Capability.SessionRead },
   { method: 'delete', template: `${E}/sessions/{id}`, cap: Capability.SessionManage },
   { method: 'post', template: `${E}/sessions/{id}/end`, cap: Capability.SessionManage },
+  // webhooks
+  { method: 'get', template: `${E}/webhooks`, cap: Capability.WebhookRead },
+  { method: 'get', template: `${E}/webhooks/{id}`, cap: Capability.WebhookRead },
+  { method: 'post', template: `${E}/webhooks`, cap: Capability.WebhookManage },
+  { method: 'patch', template: `${E}/webhooks/{id}`, cap: Capability.WebhookManage },
+  { method: 'delete', template: `${E}/webhooks/{id}`, cap: Capability.WebhookManage },
+  { method: 'post', template: `${E}/webhooks/{id}/rotate-secret`, cap: Capability.WebhookManage },
 ];
 
 const HTTP_METHODS = new Set(['get', 'post', 'patch', 'put', 'delete', 'head', 'options']);

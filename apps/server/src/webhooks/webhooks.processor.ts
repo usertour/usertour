@@ -5,12 +5,24 @@ import axios, { AxiosRequestConfig } from 'axios';
 import { Job } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
-import { createGuardedHttpsAgent, guardedLookup } from '@/common/egress/egress-guard';
+import {
+  assertPublicHttpUrl,
+  createGuardedHttpsAgent,
+  guardedLookup,
+} from '@/common/egress/egress-guard';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { WEBHOOK_SIGNATURE_HEADER, signWebhookPayload } from './webhook-signature';
 import { WebhookDeliveryJobData } from './webhook.types';
 
 const DELIVERY_TIMEOUT_MS = 10_000;
+// How many deliveries one worker runs concurrently. Sequential (the BullMQ
+// default) lets a single hung endpoint (10s timeout x 5 retries) head-of-line
+// block every other tenant's deliveries.
+const DELIVERY_CONCURRENCY = 10;
+// One agent for all guarded deliveries — the guard is stateless, so per-attempt
+// construction only paid an allocation. (No keepAlive on purpose: holding
+// sockets open to customer endpoints would be a behavior change.)
+const guardedAgent = createGuardedHttpsAgent();
 
 /**
  * Delivers one webhook message per job. The endpoint row is re-read at send
@@ -19,7 +31,7 @@ const DELIVERY_TIMEOUT_MS = 10_000;
  * rethrown so BullMQ retries per the job's backoff policy — every attempt is
  * recorded in the outbound ledger either way.
  */
-@Processor(QUEUE_WEBHOOK_DELIVERY)
+@Processor(QUEUE_WEBHOOK_DELIVERY, { concurrency: DELIVERY_CONCURRENCY })
 export class WebhooksProcessor extends WorkerHost {
   private readonly logger = new Logger(WebhooksProcessor.name);
 
@@ -36,7 +48,37 @@ export class WebhooksProcessor extends WorkerHost {
 
     const webhook = await this.prisma.webhook.findUnique({ where: { id: webhookId } });
     if (!webhook || !webhook.enabled) {
+      // The endpoint vanished or was disabled between enqueue and delivery.
+      // Record the drop as a final failed attempt instead of returning
+      // silently — otherwise the message sits PENDING forever (and the
+      // dashboard refuses to resend a PENDING message even after re-enable).
+      await this.ledger.recordAttempt(messageId, {
+        attempt: attemptOffset + job.attemptsMade + 1,
+        success: false,
+        error: webhook ? 'Endpoint disabled at delivery time' : 'Endpoint deleted at delivery time',
+        final: true,
+      });
       return;
+    }
+
+    const allowPrivateNetwork = !!this.configService.get('globalConfig.allowPrivateNetworkEgress');
+    if (!allowPrivateNetwork) {
+      // Re-check the URL against the CURRENT egress policy. A row born while
+      // private egress was allowed (an http/intranet target) must stop
+      // delivering once the switch is off — http bypasses the https agent and
+      // an IP-literal host never consults the guarded lookup, so this
+      // fail-fast is the only gate left for such rows.
+      try {
+        assertPublicHttpUrl(webhook.url, { allowPrivateNetwork: false });
+      } catch {
+        await this.ledger.recordAttempt(messageId, {
+          attempt: attemptOffset + job.attemptsMade + 1,
+          success: false,
+          error: 'Endpoint URL is not allowed by the current egress policy',
+          final: true,
+        });
+        return;
+      }
     }
 
     // Stringify exactly once: the signature is computed over the same string
@@ -45,8 +87,6 @@ export class WebhooksProcessor extends WorkerHost {
     const body = JSON.stringify(payload);
     const timestampSec = Math.floor(Date.now() / 1000);
     const signature = signWebhookPayload(webhook.secret, timestampSec, body);
-
-    const allowPrivateNetwork = !!this.configService.get('globalConfig.allowPrivateNetworkEgress');
 
     const startedAt = Date.now();
     // Attempt numbers continue across a manual resend (attemptOffset = tries
@@ -70,7 +110,7 @@ export class WebhooksProcessor extends WorkerHost {
         ...(allowPrivateNetwork
           ? {}
           : {
-              httpsAgent: createGuardedHttpsAgent(),
+              httpsAgent: guardedAgent,
               // node:net's LookupFunction and axios's lookup signature differ only
               // in the (runtime-compatible) family type — bridge the declarations.
               lookup: guardedLookup as unknown as AxiosRequestConfig['lookup'],
