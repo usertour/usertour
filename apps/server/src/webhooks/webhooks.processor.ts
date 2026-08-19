@@ -222,6 +222,11 @@ export class WebhooksProcessor extends WorkerHost {
         );
       }
     } catch (error) {
+      if ((error as { code?: string }).code === 'P2025') {
+        // Endpoint deleted between the send and the bookkeeping — benign race.
+        this.logger.debug(`Webhook ${webhookId} deleted before its failure streak was recorded`);
+        return;
+      }
       this.logger.error(`Failed to record webhook failure streak for ${webhookId}`, error as Error);
     }
   }

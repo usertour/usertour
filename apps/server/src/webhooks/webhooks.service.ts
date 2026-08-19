@@ -134,6 +134,11 @@ export class WebhooksService {
     // Re-enabling is a fresh start: clear the breaker state and the
     // auto-disable marker so the endpoint gets a full streak budget again.
     const reEnabling = enabled === true && !webhook.enabled;
+    // A NEW target owes nothing to the old one's failure streak — without this
+    // a user who fixes a dead URL keeps serving the previous cooldown (up to
+    // an hour) with no hint beyond the badge. autoDisabledAt stays: it tracks
+    // the enabled switch, which the reEnabling branch handles.
+    const urlChanged = url !== undefined && url !== webhook.url;
     return await this.prisma.webhook.update({
       where: { id },
       data: {
@@ -149,6 +154,7 @@ export class WebhooksService {
               failingSince: null,
             }
           : {}),
+        ...(urlChanged ? { consecutiveFailures: 0, cooldownUntil: null, failingSince: null } : {}),
       },
     });
   }

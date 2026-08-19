@@ -1258,7 +1258,8 @@ const translations = {
       cooldown: {
         badge: '冷却中',
         badgeUntil: '冷却中,{{time}} 恢复',
-        tooltip: '连续 {{count}} 条消息投递失败 — 暂停投递至 {{time}},到期后放行一条消息探测。',
+        tooltip:
+          '连续 {{count}} 条消息投递失败 — 暂停投递至 {{time}};若仍持续失败,暂停时间将延长。',
       },
       statusDisabled: '已停用',
       detailsMenuItem: '查看详情',

@@ -1325,7 +1325,7 @@ const translations = {
         badge: 'Cooling down',
         badgeUntil: 'Cooling down until {{time}}',
         tooltip:
-          '{{count}} consecutive messages failed — delivery paused until {{time}}, then a single message probes the endpoint.',
+          '{{count}} consecutive messages failed — delivery is paused until {{time}}. If failures continue after that, the pause gets longer.',
       },
       statusDisabled: 'Disabled',
       detailsMenuItem: 'View details',

@@ -32,6 +32,18 @@ export const webhook = z.object({
   topics: z.array(z.string()),
   enabled: z.boolean(),
   description: z.string().nullable(),
+  consecutiveFailures: z
+    .number()
+    .int()
+    .describe('Messages in a row whose retry budget was exhausted (circuit-breaker streak).'),
+  cooldownUntil: z
+    .string()
+    .nullable()
+    .describe('While in the future, delivery is paused for this endpoint (cooldown).'),
+  autoDisabledAt: z
+    .string()
+    .nullable()
+    .describe('Set when the system disabled the endpoint after sustained delivery failure.'),
   /** Present on single-resource reads/creates/rotates; omitted from lists. */
   secret: z.string().optional(),
 });

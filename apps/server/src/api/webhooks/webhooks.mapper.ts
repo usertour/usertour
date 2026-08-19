@@ -15,6 +15,9 @@ export function mapWebhook(row: any, options?: { includeSecret?: boolean }): Web
     topics: (row.topics as string[]) ?? [],
     enabled: row.enabled,
     description: row.description ?? null,
+    consecutiveFailures: row.consecutiveFailures ?? 0,
+    cooldownUntil: row.cooldownUntil ? row.cooldownUntil.toISOString() : null,
+    autoDisabledAt: row.autoDisabledAt ? row.autoDisabledAt.toISOString() : null,
     ...(options?.includeSecret ? { secret: row.secret } : {}),
   };
 }

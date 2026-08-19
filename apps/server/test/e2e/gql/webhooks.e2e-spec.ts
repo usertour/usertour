@@ -211,6 +211,37 @@ describe('GraphQL webhooks (e2e)', () => {
       ]);
       expect(row?.description).toBe('paused');
     });
+
+    it('changing the URL resets the circuit-breaker state; other edits keep it', async () => {
+      const created = await createWebhook();
+      const breakerState = {
+        consecutiveFailures: 7,
+        cooldownUntil: new Date(Date.now() + 30 * 60_000),
+        failingSince: new Date(Date.now() - 60 * 60_000),
+      };
+      await prisma.webhook.update({ where: { id: created.id }, data: breakerState });
+
+      // A non-URL edit (and echoing the SAME url) keeps the streak.
+      await graphql(app, {
+        token,
+        query: UPDATE_WEBHOOK,
+        variables: { data: { id: created.id, url: created.url, description: 'still broken' } },
+      });
+      let row = await prisma.webhook.findUnique({ where: { id: created.id } });
+      expect(row?.consecutiveFailures).toBe(7);
+      expect(row?.cooldownUntil).not.toBeNull();
+
+      // A NEW target owes nothing to the old one's failures.
+      await graphql(app, {
+        token,
+        query: UPDATE_WEBHOOK,
+        variables: { data: { id: created.id, url: 'https://e2e-receiver.invalid/fixed' } },
+      });
+      row = await prisma.webhook.findUnique({ where: { id: created.id } });
+      expect(row?.consecutiveFailures).toBe(0);
+      expect(row?.cooldownUntil).toBeNull();
+      expect(row?.failingSince).toBeNull();
+    });
   });
 
   describe('rotateWebhookSecret', () => {
