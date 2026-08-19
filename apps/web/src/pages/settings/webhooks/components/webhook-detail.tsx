@@ -24,6 +24,7 @@ import {
 import {
   Badge,
   Button,
+  LoadingButton,
   DestructiveConfirmDialog,
   Input,
   Separator,
@@ -38,7 +39,9 @@ import {
   useToast,
 } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
+import type { PageInfo } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
+import { useLoadMoreAccumulator } from '@/hooks/use-load-more-accumulator';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { WebhookMessageDialog } from './webhook-message-dialog';
 import { WebhookMessageStatusBadge } from './webhook-message-status-badge';
@@ -219,15 +222,36 @@ const SigningSecretSection = ({ webhookId, secret }: { webhookId: string; secret
 };
 
 const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: boolean }) => {
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  // Load-more accumulation (docs/conventions/list-pagination.md: a card on a
+  // longer page gets a button, not infinite scroll). The query returns one
+  // page; the accumulator appends on cursor advance and `refresh` resets to
+  // page 1 — the earlier cursor-only wiring REPLACED the list with each page.
+  const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
   // `selected` is retained after close so the dialog can animate out with its
   // content still mounted; `dialogOpen` alone drives visibility.
   const [selected, setSelected] = useState<WebhookMessage | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { messages, pageInfo, loading, refetch, isRefetching } = useQueryWebhookMessagesQuery(
-    webhookId,
-    { first: MESSAGES_PAGE_SIZE, after: cursor },
-  );
+  const page = useQueryWebhookMessagesQuery(webhookId, {
+    first: MESSAGES_PAGE_SIZE,
+    after: afterCursor,
+  });
+  const {
+    items: messages,
+    hasMore,
+    loading,
+    loadMore,
+    refresh,
+  } = useLoadMoreAccumulator<WebhookMessage>({
+    pageItems: page.messages,
+    pageInfo: page.pageInfo as PageInfo | undefined,
+    pageTotalCount: page.totalCount ?? 0,
+    pageLoading: page.loading,
+    pageRefetch: page.refetch,
+    afterCursor,
+    setAfterCursor,
+    resetKey: webhookId,
+    getId: (message) => message.id,
+  });
   const { invoke: sendTestEvent, loading: sendingTest } = useSendWebhookTestEventMutation();
   const { invoke: resendMessage, loading: resending } = useResendWebhookMessageMutation();
   const { isViewOnly } = useAppContext();
@@ -240,7 +264,7 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
     : null;
 
   const refetchSoon = () => {
-    setTimeout(() => void refetch(), LOG_REFRESH_DELAY_MS);
+    setTimeout(() => refresh(), LOG_REFRESH_DELAY_MS);
   };
 
   const handleSendTest = async () => {
@@ -262,7 +286,7 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
       const queued = await resendMessage(webhookId, message.id);
       if (queued) {
         toast({ variant: 'success', title: t('settings.webhooks.message.resendQueued') });
-        void refetch();
+        refresh();
         refetchSoon();
       } else {
         toast({ variant: 'destructive', title: t('settings.webhooks.message.resendFailed') });
@@ -285,12 +309,12 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
             <Button
               variant="outline"
               size="icon"
-              disabled={isRefetching}
+              disabled={loading}
               title={t('settings.webhooks.deliveries.refresh')}
               aria-label={t('settings.webhooks.deliveries.refresh')}
-              onClick={() => void refetch()}
+              onClick={() => refresh()}
             >
-              <RiRefreshLine className={cn('h-4 w-4', isRefetching && 'animate-spin')} />
+              <RiRefreshLine className={cn('h-4 w-4', loading && 'animate-spin')} />
             </Button>
             <Button
               variant="outline"
@@ -359,15 +383,12 @@ const MessagesSection = ({ webhookId, enabled }: { webhookId: string; enabled: b
           })}
         </TableBody>
       </Table>
-      {pageInfo?.hasNextPage && (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={loading}
-          onClick={() => setCursor(pageInfo.endCursor ?? undefined)}
-        >
-          {t('settings.webhooks.deliveries.loadMore')}
-        </Button>
+      {hasMore && (
+        <div className="flex justify-center">
+          <LoadingButton variant="outline" loading={loading} onClick={loadMore}>
+            {t('settings.webhooks.deliveries.loadMore')}
+          </LoadingButton>
+        </div>
       )}
 
       <WebhookMessageDialog
