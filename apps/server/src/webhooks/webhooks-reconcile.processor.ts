@@ -2,6 +2,7 @@ import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
+import { WEBHOOK_TEST_TOPIC } from '@usertour/constants';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { DELIVERY_ATTEMPTS } from './webhook-backoff';
 import { WebhookDeliveryJobData } from './webhook.types';
@@ -89,14 +90,17 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
         messageId: message.id,
         topic: message.topic,
         payload: message.payload as Record<string, unknown>,
-        // Continue the attempt numbering after the logged tries.
+        // Continue the attempt numbering after the logged tries. Deliberately
+        // NOT manual — the manual flag exists because "the user IS the probe",
+        // watching in real time; an orphan swept up >=14h later has no one
+        // waiting and must respect the cooldown gate like ordinary traffic.
         attemptOffset: message.deliveries.length,
       };
       try {
         await this.deliveryQueue.add('deliver', jobData, {
           removeOnComplete: true,
           removeOnFail: 1000,
-          attempts: Math.max(1, DELIVERY_ATTEMPTS - message.deliveries.length),
+          attempts: rebuildAttemptBudget(message.topic, message.deliveries),
           backoff: { type: 'custom' },
           // Keyed by the claim generation — an ambiguous add (job created,
           // response lost) can't double-queue within this claim.
@@ -113,3 +117,25 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
     );
   }
 }
+
+/**
+ * The attempt budget a rebuilt job may spend. The ledger doesn't store the
+ * lost job's budget, but it is derivable: test events are always one-shot
+ * probes; a message with a DELIVERED attempt in its history can only be
+ * PENDING because a manual resend (single attempt by contract) was in
+ * flight; anything else is a listener-born job that continues its ladder's
+ * remaining budget. (A resend of a FAILED message also lands on 1 via the
+ * remainder — its history already holds the full ladder.)
+ */
+export const rebuildAttemptBudget = (
+  topic: string,
+  deliveries: Array<{ success: boolean }>,
+): number => {
+  if (topic === WEBHOOK_TEST_TOPIC) {
+    return 1;
+  }
+  if (deliveries.some((delivery) => delivery.success)) {
+    return 1;
+  }
+  return Math.max(1, DELIVERY_ATTEMPTS - deliveries.length);
+};

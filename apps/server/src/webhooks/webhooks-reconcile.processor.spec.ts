@@ -2,6 +2,7 @@ import {
   RECONCILE_BATCH_SIZE,
   RECONCILE_ORPHAN_AFTER_MS,
   WebhooksReconcileProcessor,
+  rebuildAttemptBudget,
 } from './webhooks-reconcile.processor';
 
 describe('WebhooksReconcileProcessor', () => {
@@ -12,7 +13,7 @@ describe('WebhooksReconcileProcessor', () => {
     topic: 'user.created',
     payload: { id: 'whmsg_orphan' },
     updatedAt: new Date('2026-08-19T00:00:00.000Z'),
-    deliveries: [{}, {}, {}],
+    deliveries: [{ success: false }, { success: false }, { success: false }],
   };
 
   let ledger: {
@@ -71,7 +72,7 @@ describe('WebhooksReconcileProcessor', () => {
 
   it('keeps at least one attempt when the logged tries already exhaust the budget', async () => {
     ledger.findOrphanedPendingWebhookMessages.mockResolvedValue([
-      { ...orphan, deliveries: new Array(9).fill({}) },
+      { ...orphan, deliveries: new Array(9).fill({ success: false }) },
     ]);
 
     await processor.process({} as never);
@@ -81,6 +82,30 @@ describe('WebhooksReconcileProcessor', () => {
       expect.anything(),
       expect.objectContaining({ attempts: 1 }),
     );
+  });
+
+  it('rebuilds a single-attempt budget for manual sends (probe semantics preserved)', async () => {
+    // Test event: always a one-shot probe, even with zero logged tries.
+    expect(rebuildAttemptBudget('webhook.test', [])).toBe(1);
+    // Resend of a DELIVERED message: PENDING can only mean a single-attempt
+    // resend was in flight — not a fresh 7-attempt ladder.
+    expect(rebuildAttemptBudget('user.created', [{ success: true }])).toBe(1);
+    // Resend of a FAILED message: the remainder already lands on 1.
+    expect(rebuildAttemptBudget('user.created', new Array(8).fill({ success: false }))).toBe(1);
+    // Listener-born orphan mid-ladder: continues its remaining budget.
+    expect(rebuildAttemptBudget('user.created', new Array(3).fill({ success: false }))).toBe(5);
+  });
+
+  it('rebuilds WITHOUT the manual flag — an hours-old orphan respects the cooldown gate', async () => {
+    ledger.findOrphanedPendingWebhookMessages.mockResolvedValue([
+      { ...orphan, topic: 'webhook.test', deliveries: [] },
+    ]);
+
+    await processor.process({} as never);
+
+    const [, jobData, opts] = deliveryQueue.add.mock.calls[0];
+    expect(jobData).not.toHaveProperty('manual');
+    expect(opts).toMatchObject({ attempts: 1 });
   });
 
   it('an enqueue failure leaves the claim alone and continues the sweep', async () => {
