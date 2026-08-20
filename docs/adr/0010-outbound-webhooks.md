@@ -100,7 +100,7 @@ bizEvent row(s) created inside a domain transaction
 
 ### 7. SSRF
 
-User-controlled URLs mount the shared egress guard (`common/egress`, built for this per its own charter): `assertPublicHttpUrl` fail-fast at create/update (HTTPS-only, no internal literals), `createGuardedHttpsAgent` + `guardedLookup` at send time (the actual boundary: DNS-rebinding pinning, IP-literal vetting). `ALLOW_PRIVATE_NETWORK_EGRESS` opts self-hosted deployments out, which is also the switch a local dev needs to test against a localhost receiver.
+User-controlled URLs mount the shared egress guard (`common/egress`, built for this per its own charter): `assertPublicHttpUrl` fail-fast at create/update (HTTPS-only, no internal literals), `createGuardedHttpsAgent` + `guardedLookup` at send time (the actual boundary: DNS-rebinding pinning, IP-literal vetting). `ALLOW_PRIVATE_NETWORK_EGRESS` opts self-hosted deployments out, which is also the switch a local dev needs to test against a localhost receiver. Guarded deliveries also pin `proxy: false` (2026-08-20): axios silently honors HTTP(S)_PROXY/ALL_PROXY env vars, which would dial the proxy (what the agent+lookup then vet) and let the proxy resolve the target — voiding the guard; opted-out deployments keep axios defaults so proxy-dependent networks still deliver.
 
 ### 8. Management surface
 

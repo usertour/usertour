@@ -413,6 +413,43 @@ describe('WebhooksProcessor', () => {
     });
   });
 
+  it('disables env-var proxying while the egress guard is active (SSRF)', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+    });
+    mockedPost.mockResolvedValue({ status: 200, data: '' });
+
+    // Guarded mode: proxy MUST be false — otherwise axios honors
+    // HTTP(S)_PROXY env vars, dials the proxy, and the guard vets the wrong
+    // host while the proxy resolves the target.
+    const guardedConfig = { get: jest.fn().mockReturnValue(false) };
+    processor = new WebhooksProcessor(
+      prisma as any,
+      guardedConfig as any,
+      ledger as any,
+      emailService as any,
+      audit as any,
+    );
+    await processor.process(buildJob(0));
+    expect(mockedPost.mock.calls[0][2]).toMatchObject({ proxy: false });
+
+    // Opted-out mode (ALLOW_PRIVATE_NETWORK_EGRESS, the suite default): axios
+    // defaults stand, so proxy-dependent self-hosted deployments keep working.
+    const allowConfig = { get: jest.fn().mockReturnValue(true) };
+    processor = new WebhooksProcessor(
+      prisma as any,
+      allowConfig as any,
+      ledger as any,
+      emailService as any,
+      audit as any,
+    );
+    await processor.process(buildJob(0));
+    expect(mockedPost.mock.calls[1][2]).not.toHaveProperty('proxy');
+  });
+
   it('caps the response size axios may buffer', async () => {
     prisma.webhook.findUnique.mockResolvedValue({
       id: 'wh_1',

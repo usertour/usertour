@@ -177,6 +177,12 @@ export class WebhooksProcessor extends WorkerHost {
               // node:net's LookupFunction and axios's lookup signature differ only
               // in the (runtime-compatible) family type — bridge the declarations.
               lookup: guardedLookup as unknown as AxiosRequestConfig['lookup'],
+              // Without this, axios silently honors HTTP(S)_PROXY/ALL_PROXY env
+              // vars: it would dial the PROXY (which the agent+lookup then vet)
+              // and let the proxy resolve the target — voiding the SSRF guard.
+              // A guarded delivery therefore never uses a proxy; deployments
+              // that trust their proxy opt out via ALLOW_PRIVATE_NETWORK_EGRESS.
+              proxy: false as const,
             }),
       });
 
