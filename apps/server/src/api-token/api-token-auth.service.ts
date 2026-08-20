@@ -35,9 +35,12 @@ export type AuthedApiToken = Prisma.ApiTokenGetPayload<{
   /**
    * The owner's live role on the authorized project, cached by `authorize`
    * (which always runs first via the guard) so response-shaping probes like
-   * `hasCapability` don't re-query the membership row.
+   * `hasCapability` don't re-query the membership row. Bound to the project
+   * it was resolved for — a probe against a DIFFERENT project must not read
+   * this cache.
    */
   memberRole?: Role;
+  memberRoleProjectId?: string;
 };
 
 /**
@@ -170,6 +173,7 @@ export class ApiTokenAuthService {
     // Cache the owner's membership-level environment ceiling for
     // allowedEnvironmentIds()/assertEnvironmentInScope — see AuthedApiToken.
     token.memberRole = membership.role as Role;
+    token.memberRoleProjectId = projectId;
     token.memberAllowedEnvironmentIds =
       membership.role === 'OWNER'
         ? null
@@ -196,9 +200,9 @@ export class ApiTokenAuthService {
     capability: Capability,
   ): Promise<boolean> {
     // `authorize` (always first, via the guard) cached the live role on the
-    // token; fall back to the membership query only for callers outside that
-    // flow.
-    let role = token.memberRole;
+    // token; use it only when it was resolved for THIS project, and fall
+    // back to the membership query otherwise.
+    let role = token.memberRoleProjectId === projectId ? token.memberRole : undefined;
     if (!role) {
       const membership = await this.prisma.userOnProject.findFirst({
         where: { userId: token.userId, projectId },

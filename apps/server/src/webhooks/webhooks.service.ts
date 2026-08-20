@@ -19,9 +19,8 @@ import { ProjectsService } from '@/projects/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { CreateWebhookInput, UpdateWebhookInput } from './dto/webhook.input';
 import { buildWebhookMessage } from './webhook-envelope';
-import { MAX_TOPIC_SUBSCRIPTIONS } from './webhook-topics';
 import { generateWebhookSecret } from './webhook-signature';
-import { isValidSubscription } from './webhook-topics';
+import { isValidSubscription, MAX_TOPIC_SUBSCRIPTIONS } from './webhook-topics';
 import { WebhookDeliveryJobData } from './webhook.types';
 
 /** Job options for a one-shot, user-triggered send (test event, resend). */

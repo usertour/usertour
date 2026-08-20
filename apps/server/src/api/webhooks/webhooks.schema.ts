@@ -50,7 +50,15 @@ export const webhook = z.object({
     .nullable()
     .describe('Set when the system disabled the endpoint after sustained delivery failure.'),
   /** Present on single-resource reads/creates/rotates; omitted from lists. */
-  secret: z.string().optional(),
+  secret: z
+    .string()
+    .optional()
+    .describe(
+      'HMAC signing secret (whsec_...). Present only for tokens holding webhook:manage, and ' +
+        'only on single-object reads, create, and rotate. An EMPTY string means the stored ' +
+        'secret can no longer be decrypted (e.g. the encryption key changed) — call ' +
+        'rotate-secret to mint a fresh one.',
+    ),
 });
 export class WebhookDto extends createZodDto(webhook) {}
 
