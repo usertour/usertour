@@ -334,6 +334,6 @@ const truncate = (value: string | null | undefined, max: number): string | null 
   // echoing one back would otherwise fail the whole recordAttempt transaction
   // — the message would sit PENDING despite a delivered attempt, and the
   // reconcile sweep would re-deliver it forever.
-  const sanitized = value.replaceAll('\u0000', '');
+  const sanitized = value.split('\u0000').join('');
   return sanitized.length > max ? sanitized.slice(0, max) : sanitized;
 };
