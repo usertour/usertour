@@ -1,4 +1,5 @@
 import {
+  buildEntityTopic,
   buildEventTopic,
   isValidSubscription,
   matchesSubscription,
@@ -90,5 +91,16 @@ describe('isValidSubscription', () => {
     expect(isValidSubscription('content.deleted')).toBe(false);
     expect(isValidSubscription('event.tracked.')).toBe(false);
     expect(isValidSubscription('')).toBe(false);
+  });
+});
+
+describe('buildEntityTopic', () => {
+  it('interpolates only topics that exist in the shared vocabulary', () => {
+    expect(buildEntityTopic('user', 'created')).toBe('user.created');
+    expect(buildEntityTopic('company', 'deleted')).toBe('company.deleted');
+    // A producer emitting an entity the vocabulary has never heard of is a
+    // dev-time error, not a silent contract fork (picker/validator would
+    // otherwise lag behind what is already on the wire).
+    expect(() => buildEntityTopic('companyMembership', 'created')).toThrow(/WEBHOOK_ENTITY_TOPICS/);
   });
 });

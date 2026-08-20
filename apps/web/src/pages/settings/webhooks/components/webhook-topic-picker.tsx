@@ -5,6 +5,7 @@ import {
   WEBHOOK_EVENT_TOPIC_PREFIX,
   WEBHOOK_NOISY_EVENTS,
   WEBHOOK_TOPIC_WILDCARD,
+  WEBHOOK_ENTITY_TOPICS,
 } from '@usertour/constants';
 import { RiArrowRightSLine, RiInformationLine, RiSearchLine } from '@usertour/icons';
 import {
@@ -222,38 +223,32 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
           },
         ],
       },
-      {
-        key: 'users',
-        prefix: 'user',
-        label: t('settings.webhooks.picker.families.users'),
+      // Entity families derive their leaves from the shared vocabulary — a
+      // topic added to WEBHOOK_ENTITY_TOPICS surfaces here without a code
+      // change (its label key is the camelCased topic, e.g. user.created ->
+      // form.userCreated). Only the family display metadata is local: a NEW
+      // entity family needs a label anyway, and that is the one human step.
+      ...[
+        { key: 'users', prefix: 'user' },
+        { key: 'companies', prefix: 'company' },
+      ].map(({ key, prefix }) => ({
+        key,
+        prefix,
+        label: t(`settings.webhooks.picker.families.${key}`),
         groups: [
           {
-            key: 'users',
+            key,
             label: '',
-            leaves: [
-              fixedLeaf('user.created', 'userCreated'),
-              fixedLeaf('user.updated', 'userUpdated'),
-              fixedLeaf('user.deleted', 'userDeleted'),
-            ],
+            leaves: WEBHOOK_ENTITY_TOPICS.filter((topic) => topic.startsWith(`${prefix}.`)).map(
+              (topic) =>
+                fixedLeaf(
+                  topic,
+                  topic.replace(/\.(\w)/g, (_match, letter: string) => letter.toUpperCase()),
+                ),
+            ),
           },
         ],
-      },
-      {
-        key: 'companies',
-        prefix: 'company',
-        label: t('settings.webhooks.picker.families.companies'),
-        groups: [
-          {
-            key: 'companies',
-            label: '',
-            leaves: [
-              fixedLeaf('company.created', 'companyCreated'),
-              fixedLeaf('company.updated', 'companyUpdated'),
-              fixedLeaf('company.deleted', 'companyDeleted'),
-            ],
-          },
-        ],
-      },
+      })),
     ];
   }, [events, t]);
 

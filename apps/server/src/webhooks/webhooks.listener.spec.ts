@@ -102,6 +102,19 @@ describe('WebhooksListener', () => {
     expect(where).toEqual({ environmentId: 'env_1', enabled: true });
   });
 
+  it('skips the bizEvent join when no endpoint subscribes to event-family topics', async () => {
+    // Entity/content-only subscribers must not pay the 4-include read just
+    // to discard every row at topic matching.
+    prisma.webhook.findMany.mockResolvedValue([
+      { id: 'wh_entity', topics: ['user.created', 'content'], enabled: true },
+    ]);
+
+    await listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_1'] });
+
+    expect(prisma.bizEvent.findMany).not.toHaveBeenCalled();
+    expect(queue.addBulk).not.toHaveBeenCalled();
+  });
+
   it('enqueues only the jobs whose ledger row was persisted (vanished webhook drops ITS rows only)', async () => {
     prisma.webhook.findMany.mockResolvedValue([
       { id: 'wh_a', topics: ['event.tracked'], enabled: true },

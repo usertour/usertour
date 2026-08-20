@@ -1,11 +1,9 @@
-import { randomBytes } from 'node:crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { WEBHOOK_TEST_TOPIC } from '@usertour/constants';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { ApiObjectType } from '@/api/shared/object-type';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { assertPublicHttpUrl } from '@/common/egress/egress-guard';
 import {
@@ -19,6 +17,7 @@ import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { CreateWebhookInput, UpdateWebhookInput } from './dto/webhook.input';
+import { buildWebhookMessage } from './webhook-envelope';
 import { generateWebhookSecret } from './webhook-signature';
 import { isValidSubscription } from './webhook-topics';
 import { WebhookDeliveryJobData } from './webhook.types';
@@ -187,20 +186,17 @@ export class WebhooksService {
       throw new ValidationError('Enable the webhook before sending a test event.');
     }
 
-    const messageId = `whmsg_${randomBytes(16).toString('hex')}`;
+    const { messageId, payload } = buildWebhookMessage(
+      WEBHOOK_TEST_TOPIC,
+      webhook.environmentId,
+      {},
+    );
     const jobData: WebhookDeliveryJobData = {
       webhookId: webhook.id,
       messageId,
       manual: true,
       topic: WEBHOOK_TEST_TOPIC,
-      payload: {
-        id: messageId,
-        object: ApiObjectType.WEBHOOK_MESSAGE,
-        type: WEBHOOK_TEST_TOPIC,
-        createdAt: new Date().toISOString(),
-        environmentId: webhook.environmentId,
-        data: {},
-      },
+      payload,
     };
     const persisted = await this.ledger.createMessages([
       {

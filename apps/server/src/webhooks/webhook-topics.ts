@@ -1,5 +1,6 @@
 import {
   WEBHOOK_CONFIG_TOPICS,
+  WEBHOOK_ENTITY_TOPICS,
   WEBHOOK_EVENT_TOPIC_PREFIX,
   WEBHOOK_NOISY_EVENTS,
   WEBHOOK_PREFIX_SUBSCRIPTIONS,
@@ -21,6 +22,22 @@ import {
  */
 
 /** Topic a behavior event is published under. */
+/**
+ * Entity-change topic, asserted against the vocabulary: the listener emits
+ * through here so "a topic is being published that the picker/validator have
+ * never heard of" is a thrown error in dev, not a silent contract fork when
+ * M3 adds a new entity.
+ */
+export function buildEntityTopic(entity: string, action: string): string {
+  const topic = `${entity}.${action}`;
+  if (!WEBHOOK_ENTITY_TOPICS.includes(topic)) {
+    throw new Error(
+      `Entity topic "${topic}" is not in WEBHOOK_ENTITY_TOPICS — add it to @usertour/constants first`,
+    );
+  }
+  return topic;
+}
+
 export function buildEventTopic(codeName: string): string {
   return `${WEBHOOK_EVENT_TOPIC_PREFIX}.${codeName}`;
 }

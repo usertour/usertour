@@ -1,17 +1,25 @@
-import { randomBytes } from 'node:crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { WEBHOOK_CONTENT_PUBLISHED_TOPIC } from '@usertour/constants';
+import {
+  WEBHOOK_CONTENT_PUBLISHED_TOPIC,
+  WEBHOOK_EVENT_TOPIC_PREFIX,
+  WEBHOOK_TOPIC_WILDCARD,
+} from '@usertour/constants';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
-import { ApiObjectType } from '@/api/shared/object-type';
 import { mapCompany } from '@/api/companies/companies.mapper';
 import { mapEvent } from '@/api/events/event.mapper';
 import { mapUser } from '@/api/users/users.mapper';
 import { DELIVERY_ATTEMPTS } from './webhook-backoff';
-import { buildEventTopic, matchesSubscription, matchesTopic } from './webhook-topics';
+import { buildWebhookMessage } from './webhook-envelope';
+import {
+  buildEntityTopic,
+  buildEventTopic,
+  matchesSubscription,
+  matchesTopic,
+} from './webhook-topics';
 import {
   BIZ_ENTITY_CHANGED,
   BIZ_EVENT_TRACKED,
@@ -116,6 +124,20 @@ export class WebhooksListener {
       if (webhooks.length === 0) {
         return;
       }
+      // Cheap in-memory prefilter before the 4-include bizEvent read: an
+      // environment whose endpoints only subscribe to entity/content topics
+      // must not pay a five-table join just to discard every row.
+      const anyEventSubscriber = webhooks.some((webhook) =>
+        ((webhook.topics as string[]) ?? []).some(
+          (topic) =>
+            topic === WEBHOOK_TOPIC_WILDCARD ||
+            topic === WEBHOOK_EVENT_TOPIC_PREFIX ||
+            topic.startsWith(`${WEBHOOK_EVENT_TOPIC_PREFIX}.`),
+        ),
+      );
+      if (!anyEventSubscriber) {
+        return;
+      }
 
       const bizEvents = await this.prisma.bizEvent.findMany({
         where: { id: { in: payload.bizEventIds } },
@@ -135,22 +157,15 @@ export class WebhooksListener {
         const topic = buildEventTopic(codeName);
         const eventObject = mapEvent(bizEvent);
         for (const webhook of matching) {
-          const messageId = `whmsg_${randomBytes(16).toString('hex')}`;
+          const { messageId, payload: body } = buildWebhookMessage(
+            topic,
+            payload.environmentId,
+            { event: eventObject },
+            bizEvent.createdAt,
+          );
           jobs.push({
             name: 'deliver',
-            data: {
-              webhookId: webhook.id,
-              messageId,
-              topic,
-              payload: {
-                id: messageId,
-                object: ApiObjectType.WEBHOOK_MESSAGE,
-                type: topic,
-                createdAt: bizEvent.createdAt.toISOString(),
-                environmentId: payload.environmentId,
-                data: { event: eventObject },
-              },
-            },
+            data: { webhookId: webhook.id, messageId, topic, payload: body },
             opts: RETRY_JOB_OPTIONS,
           });
         }
@@ -173,7 +188,7 @@ export class WebhooksListener {
 
       const jobs: DeliveryJob[] = [];
       for (const change of payload.changes) {
-        const topic = `${change.entity}.${change.action}`;
+        const topic = buildEntityTopic(change.entity, change.action);
         const matching = webhooks.filter((webhook) =>
           matchesTopic((webhook.topics as string[]) ?? [], topic),
         );
@@ -189,27 +204,13 @@ export class WebhooksListener {
         }
 
         for (const webhook of matching) {
-          const messageId = `whmsg_${randomBytes(16).toString('hex')}`;
+          const { messageId, payload: body } = buildWebhookMessage(topic, payload.environmentId, {
+            [change.entity]: entityObject,
+            ...(change.previousAttributes ? { previousAttributes: change.previousAttributes } : {}),
+          });
           jobs.push({
             name: 'deliver',
-            data: {
-              webhookId: webhook.id,
-              messageId,
-              topic,
-              payload: {
-                id: messageId,
-                object: ApiObjectType.WEBHOOK_MESSAGE,
-                type: topic,
-                createdAt: new Date().toISOString(),
-                environmentId: payload.environmentId,
-                data: {
-                  [change.entity]: entityObject,
-                  ...(change.previousAttributes
-                    ? { previousAttributes: change.previousAttributes }
-                    : {}),
-                },
-              },
-            },
+            data: { webhookId: webhook.id, messageId, topic, payload: body },
             opts: RETRY_JOB_OPTIONS,
           });
         }
@@ -254,21 +255,18 @@ export class WebhooksListener {
 
       // Thin payload: ids resolve directly against the v2 content endpoints.
       const jobs: DeliveryJob[] = matching.map((webhook) => {
-        const messageId = `whmsg_${randomBytes(16).toString('hex')}`;
+        const { messageId, payload: body } = buildWebhookMessage(
+          WEBHOOK_CONTENT_PUBLISHED_TOPIC,
+          payload.environmentId,
+          { contentId: payload.contentId, versionId: payload.versionId },
+        );
         return {
           name: 'deliver',
           data: {
             webhookId: webhook.id,
             messageId,
             topic: WEBHOOK_CONTENT_PUBLISHED_TOPIC,
-            payload: {
-              id: messageId,
-              object: ApiObjectType.WEBHOOK_MESSAGE,
-              type: WEBHOOK_CONTENT_PUBLISHED_TOPIC,
-              createdAt: new Date().toISOString(),
-              environmentId: payload.environmentId,
-              data: { contentId: payload.contentId, versionId: payload.versionId },
-            },
+            payload: body,
           },
           opts: RETRY_JOB_OPTIONS,
         };
