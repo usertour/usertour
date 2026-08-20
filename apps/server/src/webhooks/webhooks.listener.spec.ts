@@ -102,6 +102,31 @@ describe('WebhooksListener', () => {
     expect(where).toEqual({ environmentId: 'env_1', enabled: true });
   });
 
+  it('a transient DB error on one change does not sink its batch siblings', async () => {
+    prisma.webhook.findMany.mockResolvedValue([{ id: 'wh_1', topics: ['user'], enabled: true }]);
+    // First change's snapshot re-read blows up; the second succeeds.
+    prisma.bizUser = {
+      findUnique: jest.fn().mockRejectedValueOnce(new Error('db blip')).mockResolvedValue({
+        id: 'bu_2',
+        externalId: 'ext_user_2',
+        createdAt: new Date(),
+        data: {},
+      }),
+    } as never;
+
+    await listener.onEntityChanged({
+      environmentId: 'env_1',
+      changes: [
+        { entity: 'user', action: 'updated', bizId: 'bu_1' },
+        { entity: 'user', action: 'updated', bizId: 'bu_2' },
+      ],
+    });
+
+    const enqueued = queue.addBulk.mock.calls[0][0];
+    expect(enqueued).toHaveLength(1);
+    expect(enqueued[0].data.payload.data.user.id).toBe('ext_user_2');
+  });
+
   it('a change outside the topic vocabulary is skipped without sinking its batch siblings', async () => {
     prisma.webhook.findMany.mockResolvedValue([
       { id: 'wh_1', topics: ['user', 'company'], enabled: true },

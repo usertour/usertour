@@ -9,6 +9,8 @@ import {
   MaxLength,
 } from 'class-validator';
 
+import { MAX_TOPIC_SUBSCRIPTIONS } from '../webhook-topics';
+
 @ArgsType()
 export class QueryWebhooksInput {
   @Field(() => String)
@@ -34,7 +36,7 @@ export class CreateWebhookInput {
 
   @Field(() => [String])
   @IsArray()
-  @ArrayMaxSize(100)
+  @ArrayMaxSize(MAX_TOPIC_SUBSCRIPTIONS)
   @IsString({ each: true })
   topics: string[];
 
@@ -65,7 +67,7 @@ export class UpdateWebhookInput {
   @Field(() => [String], { nullable: true })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(100)
+  @ArrayMaxSize(MAX_TOPIC_SUBSCRIPTIONS)
   @IsString({ each: true })
   topics?: string[];
 

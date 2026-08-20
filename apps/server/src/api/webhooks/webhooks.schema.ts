@@ -1,5 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { MAX_TOPIC_SUBSCRIPTIONS } from '@/webhooks/webhook-topics';
+
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';
 
@@ -12,7 +14,7 @@ import { cursor, limit } from '../shared/pagination.schema';
 const topics = z
   .array(z.string().min(1))
   .min(1)
-  .max(100)
+  .max(MAX_TOPIC_SUBSCRIPTIONS)
   .describe(
     'Topic subscriptions: "*" (everything); "event.tracked" (all behavior events) or ' +
       '"event.tracked.<codeName>" for one; "content" / "content.published"; "user" or ' +

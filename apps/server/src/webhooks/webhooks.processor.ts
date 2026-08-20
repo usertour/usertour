@@ -150,19 +150,33 @@ export class WebhooksProcessor extends WorkerHost {
       }
     }
 
+    // Secret is AES-256-GCM encrypted at rest; this processor reads the row
+    // via Prisma directly, so it decrypts on its own (the domain service is
+    // the plaintext boundary for every other consumer). decrypt returns NULL
+    // on failure (wrong ENCRYPTION_KEY, legacy plaintext row) — guard it:
+    // signing with null would throw BEFORE any recordAttempt, burning the
+    // whole retry ladder with zero ledger rows and letting the reconcile
+    // sweep re-queue the ghost forever. A deterministic failure instead:
+    // final failed attempt (visible, explains itself) + breaker bookkeeping,
+    // whose eventual auto-disable email is how the owner learns to rotate.
+    const secret = this.encryption.decrypt(webhook.secret);
+    if (!secret) {
+      await this.ledger.recordAttempt(messageId, {
+        attempt: attemptOffset + job.attemptsMade + 1,
+        success: false,
+        error: 'Signing secret cannot be decrypted — rotate the endpoint secret',
+        final: true,
+      });
+      await this.recordFailedAttempt(webhookId, webhook.url);
+      return;
+    }
+
     // Stringify exactly once: the signature is computed over the same string
     // that goes on the wire — re-serialization would break receiver-side
     // verification.
     const body = JSON.stringify(payload);
     const timestampSec = Math.floor(Date.now() / 1000);
-    // Secret is AES-256-GCM encrypted at rest; this processor reads the row
-    // via Prisma directly, so it decrypts on its own (the domain service is
-    // the plaintext boundary for every other consumer).
-    const signature = signWebhookPayload(
-      this.encryption.decrypt(webhook.secret) as string,
-      timestampSec,
-      body,
-    );
+    const signature = signWebhookPayload(secret, timestampSec, body);
 
     const startedAt = Date.now();
     // Attempt numbers continue across a manual resend (attemptOffset = tries

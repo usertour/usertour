@@ -39,6 +39,13 @@ export function buildEntityTopic(entity: string, action: string): string {
 }
 
 /**
+ * Endpoint subscription-list cap. Single source: the domain chokepoint
+ * enforces it, and the REST zod schema / GraphQL ArrayMaxSize mirror it for
+ * documentation value.
+ */
+export const MAX_TOPIC_SUBSCRIPTIONS = 100;
+
+/**
  * Whether this subscription list can match ANY behavior-event topic —
  * colocated with matchesTopic so a change to the matching grammar cannot
  * silently diverge from the listener's join prefilter.

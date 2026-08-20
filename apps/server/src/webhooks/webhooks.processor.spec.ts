@@ -462,6 +462,42 @@ describe('WebhooksProcessor', () => {
     expect(mockedPost.mock.calls[1][2]).not.toHaveProperty('proxy');
   });
 
+  it('an undecryptable secret settles the message FAILED instead of looping unrecorded', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'not-decryptable',
+    });
+    const brokenEncryption = { decrypt: () => null, encrypt: (value: string) => value };
+    processor = new WebhooksProcessor(
+      prisma as any,
+      { get: jest.fn().mockReturnValue(true) } as any,
+      ledger as any,
+      emailService as any,
+      audit as any,
+      brokenEncryption as any,
+    );
+
+    await processor.process(buildJob(0, 8));
+
+    // Signing with null would throw BEFORE recordAttempt — the ladder would
+    // burn with zero ledger rows and the sweep would re-queue forever.
+    expect(mockedPost).not.toHaveBeenCalled();
+    expect(ledger.recordAttempt).toHaveBeenCalledWith(
+      'whmsg_1',
+      expect.objectContaining({
+        success: false,
+        final: true,
+        error: expect.stringContaining('rotate'),
+      }),
+    );
+    // Counts toward the breaker: auto-disable + owner email is the signal.
+    expect(prisma.webhook.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { consecutiveFailures: { increment: 1 } } }),
+    );
+  });
+
   it('caps the response size axios may buffer', async () => {
     prisma.webhook.findUnique.mockResolvedValue({
       id: 'wh_1',

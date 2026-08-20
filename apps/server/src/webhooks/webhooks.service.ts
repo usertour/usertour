@@ -19,12 +19,10 @@ import { ProjectsService } from '@/projects/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { CreateWebhookInput, UpdateWebhookInput } from './dto/webhook.input';
 import { buildWebhookMessage } from './webhook-envelope';
+import { MAX_TOPIC_SUBSCRIPTIONS } from './webhook-topics';
 import { generateWebhookSecret } from './webhook-signature';
 import { isValidSubscription } from './webhook-topics';
 import { WebhookDeliveryJobData } from './webhook.types';
-
-/** Endpoint subscription-list cap, enforced at the domain chokepoint. */
-export const MAX_TOPIC_SUBSCRIPTIONS = 100;
 
 /** Job options for a one-shot, user-triggered send (test event, resend). */
 const SINGLE_ATTEMPT_JOB_OPTIONS = { removeOnComplete: true, removeOnFail: 1000, attempts: 1 };
@@ -48,7 +46,12 @@ export class WebhooksService {
    * The processor reads via Prisma directly and decrypts on its own.
    */
   private withPlaintextSecret<T extends { secret: string }>(row: T): T {
-    return { ...row, secret: this.encryption.decrypt(row.secret) as string };
+    // decrypt returns null when the value is unrecoverable (wrong
+    // ENCRYPTION_KEY, legacy plaintext row). Degrade to '' instead of null:
+    // the GraphQL secret field is non-null, and a throwing/null read would
+    // take down the very detail page that hosts the Rotate button — the one
+    // self-heal path. Empty string = "unrecoverable, rotate me".
+    return { ...row, secret: this.encryption.decrypt(row.secret) ?? '' };
   }
 
   // ---------------------------------------------------------------------------
@@ -125,15 +128,15 @@ export class WebhooksService {
     this.validateUrl(data.url);
     // Normalize before validating/persisting: duplicates are harmless to the
     // matcher but junk in the column and the UI.
-    data.topics = [...new Set(data.topics)];
-    this.validateTopics(data.topics);
+    const normalizedTopics = [...new Set(data.topics)];
+    this.validateTopics(normalizedTopics);
 
     const secret = generateWebhookSecret();
     const row = await this.prisma.webhook.create({
       data: {
         environmentId: data.environmentId,
         url: data.url,
-        topics: data.topics,
+        topics: normalizedTopics,
         enabled: data.enabled ?? true,
         description: data.description ?? null,
         secret: this.encryption.encrypt(secret) as string,

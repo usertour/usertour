@@ -32,6 +32,12 @@ export type AuthedApiToken = Prisma.ApiTokenGetPayload<{
    * member must not escape their ceiling by minting an unrestricted key.
    */
   memberAllowedEnvironmentIds?: string[] | null;
+  /**
+   * The owner's live role on the authorized project, cached by `authorize`
+   * (which always runs first via the guard) so response-shaping probes like
+   * `hasCapability` don't re-query the membership row.
+   */
+  memberRole?: Role;
 };
 
 /**
@@ -163,6 +169,7 @@ export class ApiTokenAuthService {
     }
     // Cache the owner's membership-level environment ceiling for
     // allowedEnvironmentIds()/assertEnvironmentInScope — see AuthedApiToken.
+    token.memberRole = membership.role as Role;
     token.memberAllowedEnvironmentIds =
       membership.role === 'OWNER'
         ? null
@@ -188,13 +195,20 @@ export class ApiTokenAuthService {
     projectId: string,
     capability: Capability,
   ): Promise<boolean> {
-    const membership = await this.prisma.userOnProject.findFirst({
-      where: { userId: token.userId, projectId },
-    });
-    if (!membership) {
-      return false;
+    // `authorize` (always first, via the guard) cached the live role on the
+    // token; fall back to the membership query only for callers outside that
+    // flow.
+    let role = token.memberRole;
+    if (!role) {
+      const membership = await this.prisma.userOnProject.findFirst({
+        where: { userId: token.userId, projectId },
+      });
+      if (!membership) {
+        return false;
+      }
+      role = membership.role as Role;
     }
-    return roleCan(membership.role as Role, capability) && this.scopes(token).includes(capability);
+    return roleCan(role, capability) && this.scopes(token).includes(capability);
   }
 
   /** Load an environment and assert it belongs to `projectId`. */
