@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { WEBHOOK_TEST_TOPIC } from '@usertour/constants';
+import { WEBHOOK_PREFIX_SUBSCRIPTIONS, WEBHOOK_TEST_TOPIC } from '@usertour/constants';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
@@ -327,8 +327,10 @@ export class WebhooksService {
     }
     const invalid = topics.find((topic) => !isValidSubscription(topic));
     if (invalid !== undefined) {
+      // Family names are derived so this message cannot lag the vocabulary.
+      const familyNames = WEBHOOK_PREFIX_SUBSCRIPTIONS.map((prefix) => `"${prefix}"`).join(', ');
       throw new ValidationError(
-        `Invalid topic subscription "${invalid}" — expected "*", a family name ("event.tracked", "content", "user", "company"), "event.tracked.<codeName>", or an exact topic such as "content.published" / "user.updated".`,
+        `Invalid topic subscription "${invalid}" — expected "*", a family name (${familyNames}), "event.tracked.<codeName>", or an exact topic such as "content.published" / "user.updated".`,
       );
     }
   }

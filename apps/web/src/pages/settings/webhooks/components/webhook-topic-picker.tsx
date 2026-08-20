@@ -6,6 +6,7 @@ import {
   WEBHOOK_NOISY_EVENTS,
   WEBHOOK_TOPIC_WILDCARD,
   WEBHOOK_ENTITY_TOPICS,
+  WEBHOOK_PREFIX_SUBSCRIPTIONS,
 } from '@usertour/constants';
 import { RiArrowRightSLine, RiInformationLine, RiSearchLine } from '@usertour/icons';
 import {
@@ -430,12 +431,19 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
                 <div key={family.key}>
                   <div className="flex h-9 items-center gap-2 px-2 hover:bg-muted/40">
                     <Chevron open={open} onClick={() => toggleExpanded(family.key)} />
-                    <Checkbox
-                      id={familyId}
-                      checked={familyState(family)}
-                      disabled={hasWildcard}
-                      onCheckedChange={(next) => toggleFamily(family, next === true)}
-                    />
+                    {/* Whole-family subscription stores the bare prefix, whose
+                        legality is governed by WEBHOOK_PREFIX_SUBSCRIPTIONS —
+                        an auto-surfaced family whose prefix the server doesn't
+                        grant prefix semantics yet gets leaves only: a control
+                        that exists must work, absence is honest. */}
+                    {WEBHOOK_PREFIX_SUBSCRIPTIONS.includes(family.prefix) && (
+                      <Checkbox
+                        id={familyId}
+                        checked={familyState(family)}
+                        disabled={hasWildcard}
+                        onCheckedChange={(next) => toggleFamily(family, next === true)}
+                      />
+                    )}
                     <Label
                       htmlFor={familyId}
                       className="flex min-w-0 items-center gap-1.5 font-medium"
