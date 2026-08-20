@@ -83,17 +83,16 @@ describe('WebhooksListener', () => {
     expect(queue.addBulk).not.toHaveBeenCalled();
   });
 
-  it('excludes cooling-down endpoints at dispatch time', async () => {
+  it('does NOT gate on cooldown — cooling endpoints keep their ledger rows', async () => {
     prisma.webhook.findMany.mockResolvedValue([]);
 
     await listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_1'] });
 
+    // Availability (the breaker) is the processor's business: it defers the
+    // attempts. Gating message CREATION here would erase events instead of
+    // delaying them.
     const where = prisma.webhook.findMany.mock.calls[0][0].where;
-    expect(where).toEqual({
-      environmentId: 'env_1',
-      enabled: true,
-      OR: [{ cooldownUntil: null }, { cooldownUntil: { lte: expect.any(Date) } }],
-    });
+    expect(where).toEqual({ environmentId: 'env_1', enabled: true });
   });
 
   it('skips the entitlement lookup when the environment has no enabled endpoints', async () => {
@@ -137,7 +136,7 @@ describe('WebhooksListener', () => {
         },
       },
     });
-    expect(job.opts).toMatchObject({ attempts: 5, backoff: { type: 'exponential', delay: 1000 } });
+    expect(job.opts).toMatchObject({ attempts: 8, backoff: { type: 'custom' } });
   });
 
   it('skips events no endpoint subscribes to', async () => {

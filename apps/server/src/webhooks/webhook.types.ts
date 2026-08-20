@@ -73,4 +73,9 @@ export interface WebhookDeliveryJobData {
    * continues the numbering after the original sequence). Absent = 0.
    */
   attemptOffset?: number;
+  /**
+   * True for user-initiated sends (test event, resend): they bypass the
+   * cooldown gate — the user IS the probe, and a success resets the breaker.
+   */
+  manual?: boolean;
 }

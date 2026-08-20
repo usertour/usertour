@@ -80,10 +80,15 @@ describe('OutboundLedgerService', () => {
       expect(prisma.$transaction).toHaveBeenCalledWith(['create-op', 'update-op']);
     });
 
-    it('leaves a non-final failure PENDING (more retries to come)', async () => {
+    it('leaves a non-final failure PENDING but touches updatedAt (last-activity signal)', async () => {
       await service.recordAttempt('whmsg_1', { ...base, success: false, final: false });
-      expect(prisma.outboundMessage.update).not.toHaveBeenCalled();
-      expect(prisma.$transaction).toHaveBeenCalledWith(['create-op']);
+      // No status change — but the touch stamps last-activity so the
+      // reconcile sweep can tell a live ladder from an orphaned message.
+      expect(prisma.outboundMessage.update).toHaveBeenCalledWith({
+        where: { id: 'whmsg_1' },
+        data: { updatedAt: expect.any(Date) },
+      });
+      expect(prisma.$transaction).toHaveBeenCalledWith(['create-op', 'update-op']);
     });
 
     it('marks the message FAILED when the final attempt fails', async () => {

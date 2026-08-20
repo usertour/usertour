@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import axios from 'axios';
 import { WebhooksProcessor } from './webhooks.processor';
+import { DelayedError } from 'bullmq';
 import { WebhookDeliveryJobData } from './webhook.types';
 
 jest.mock('axios', () => ({
@@ -18,7 +19,7 @@ const jobData: WebhookDeliveryJobData = {
 };
 
 const buildJob = (attemptsMade = 0, attempts = 5, data: WebhookDeliveryJobData = jobData) =>
-  ({ data, attemptsMade, opts: { attempts } }) as any;
+  ({ data, attemptsMade, opts: { attempts }, moveToDelayed: jest.fn() }) as any;
 
 describe('WebhooksProcessor', () => {
   let prisma: {
@@ -190,7 +191,7 @@ describe('WebhooksProcessor', () => {
     expect(mockedPost).not.toHaveBeenCalled();
   });
 
-  it('resets the breaker on success and counts only FINAL failures', async () => {
+  it('resets the breaker on success and counts EVERY failed attempt', async () => {
     prisma.webhook.findUnique.mockResolvedValue({
       id: 'wh_1',
       enabled: true,
@@ -198,14 +199,11 @@ describe('WebhooksProcessor', () => {
       secret: 'whsec_test',
     });
 
-    // Non-final failure: no streak bookkeeping.
+    // A non-final failed attempt already feeds the breaker (attempt-level
+    // counting: with the ~24h ladder, waiting for FINAL failures would make
+    // the breaker a day late), bound to the URL this delivery actually hit.
     mockedPost.mockRejectedValue(new Error('ECONNREFUSED'));
-    await expect(processor.process(buildJob(0, 5))).rejects.toThrow();
-    expect(prisma.webhook.updateMany).not.toHaveBeenCalled();
-
-    // Final failure: streak +1, bound to the URL this delivery actually hit
-    // (below the threshold -> no cooldown write).
-    await expect(processor.process(buildJob(4, 5))).rejects.toThrow();
+    await expect(processor.process(buildJob(0, 8))).rejects.toThrow();
     expect(prisma.webhook.updateMany).toHaveBeenCalledWith({
       where: { id: 'wh_1', url: 'https://example.com/hook' },
       data: { consecutiveFailures: { increment: 1 } },
@@ -238,10 +236,10 @@ describe('WebhooksProcessor', () => {
     });
     mockedPost.mockRejectedValue(new Error('ECONNREFUSED'));
 
-    // Streak 5 (threshold) -> 1min window; streak 7 -> 4min window.
+    // Streak 10 (threshold) -> 1min window; streak 12 -> 4min window.
     for (const [streak, expectedMs] of [
-      [5, 60_000],
-      [7, 240_000],
+      [10, 60_000],
+      [12, 240_000],
     ] as const) {
       prisma.webhook.findUniqueOrThrow.mockResolvedValueOnce({
         consecutiveFailures: streak,
@@ -351,6 +349,68 @@ describe('WebhooksProcessor', () => {
     );
     // Disabled means no further cooldown write: increment + disable only.
     expect(prisma.webhook.updateMany).toHaveBeenCalledTimes(2);
+  });
+
+  it('defers (moveToDelayed, no attempt) while the endpoint is cooling down', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+      cooldownUntil: new Date(Date.now() + 10 * 60_000),
+    });
+    const job = buildJob(0, 8);
+
+    await expect(processor.process(job, 'worker-token')).rejects.toThrow(DelayedError);
+
+    // Deferred to after the window (plus release jitter), consuming nothing:
+    // no socket, no ledger row, no breaker write.
+    const [resumeAt, token] = job.moveToDelayed.mock.calls[0];
+    expect(resumeAt).toBeGreaterThanOrEqual(Date.now() + 10 * 60_000 - 1000);
+    expect(token).toBe('worker-token');
+    expect(mockedPost).not.toHaveBeenCalled();
+    expect(ledger.recordAttempt).not.toHaveBeenCalled();
+    expect(prisma.webhook.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('lets a manual send (test event / resend) through the cooldown gate as the probe', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+      cooldownUntil: new Date(Date.now() + 10 * 60_000),
+    });
+    mockedPost.mockResolvedValue({ status: 200, data: '' });
+    const job = buildJob(0, 1, { ...jobData, manual: true });
+
+    await processor.process(job, 'worker-token');
+
+    expect(job.moveToDelayed).not.toHaveBeenCalled();
+    expect(mockedPost).toHaveBeenCalledTimes(1);
+    // The probe's success resets the breaker for everything that is waiting.
+    expect(prisma.webhook.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { consecutiveFailures: 0, cooldownUntil: null, failingSince: null },
+      }),
+    );
+  });
+
+  it("attaches the receiver's Retry-After to the rethrown error for the backoff strategy", async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+    });
+    const rateLimited = Object.assign(new Error('Request failed with status code 429'), {
+      response: { status: 429, data: '', headers: { 'retry-after': '120' } },
+    });
+    mockedPost.mockRejectedValue(rateLimited);
+
+    await expect(processor.process(buildJob(0, 8))).rejects.toMatchObject({
+      retryAfterMs: 120_000,
+    });
   });
 
   it('caps the response size axios may buffer', async () => {

@@ -1329,7 +1329,7 @@ const translations = {
         badge: 'Cooling down',
         badgeUntil: 'Cooling down until {{time}}',
         tooltip:
-          '{{count}} consecutive messages failed — delivery is paused until {{time}}. If failures continue after that, the pause gets longer.',
+          '{{count}} consecutive delivery attempts failed — deliveries are held and will be sent after {{time}}. If failures continue, the pause gets longer.',
       },
       statusDisabled: 'Disabled',
       detailsMenuItem: 'View details',

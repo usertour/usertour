@@ -10,6 +10,7 @@ import { ApiObjectType } from '@/api/shared/object-type';
 import { mapCompany } from '@/api/companies/companies.mapper';
 import { mapEvent } from '@/api/events/event.mapper';
 import { mapUser } from '@/api/users/users.mapper';
+import { DELIVERY_ATTEMPTS } from './webhook-backoff';
 import { buildEventTopic, matchesSubscription, matchesTopic } from './webhook-topics';
 import {
   BIZ_ENTITY_CHANGED,
@@ -29,8 +30,9 @@ type DeliveryJob = { name: string; data: WebhookDeliveryJobData; opts: Record<st
 const RETRY_JOB_OPTIONS = {
   removeOnComplete: true,
   removeOnFail: 1000,
-  attempts: 5,
-  backoff: { type: 'exponential', delay: 1000 },
+  attempts: DELIVERY_ATTEMPTS,
+  // The worker's backoffStrategy applies the ~24h ladder (webhook-backoff.ts).
+  backoff: { type: 'custom' },
 };
 
 /**
@@ -80,16 +82,14 @@ export class WebhooksListener {
    * environments that actually have endpoints.
    */
   private async activeWebhooksFor(environmentId: string) {
+    // Only SUBSCRIPTION gates live here (enabled, entitlement): a disabled
+    // endpoint or a lapsed plan means "this subscription is off", so no
+    // message exists. AVAILABILITY gates (the circuit-breaker cooldown) are
+    // the processor's business: cooling endpoints still get their ledger rows
+    // and jobs — the processor defers the attempts until the window passes,
+    // so a receiver outage delays deliveries instead of erasing them.
     const webhooks = await this.prisma.webhook.findMany({
-      // Cooling-down endpoints (circuit breaker) are skipped the same way
-      // disabled ones are: their messages are simply not created. Once the
-      // window passes, the next event is the half-open probe — its outcome
-      // either resets the breaker or re-arms a longer window.
-      where: {
-        environmentId,
-        enabled: true,
-        OR: [{ cooldownUntil: null }, { cooldownUntil: { lte: new Date() } }],
-      },
+      where: { environmentId, enabled: true },
     });
     if (webhooks.length === 0) {
       return [];

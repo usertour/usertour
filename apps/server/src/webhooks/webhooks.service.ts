@@ -191,6 +191,7 @@ export class WebhooksService {
     const jobData: WebhookDeliveryJobData = {
       webhookId: webhook.id,
       messageId,
+      manual: true,
       topic: WEBHOOK_TEST_TOPIC,
       payload: {
         id: messageId,
@@ -249,6 +250,7 @@ export class WebhooksService {
     const jobData: WebhookDeliveryJobData = {
       webhookId,
       messageId: message.id,
+      manual: true,
       topic: message.topic,
       payload: message.payload as Record<string, unknown>,
       // Continue the attempt numbering after the logged tries.

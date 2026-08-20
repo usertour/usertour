@@ -2,12 +2,13 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
+import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
 import { OutboundModule } from '@/outbound/outbound.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { WebhooksListener } from './webhooks.listener';
 import { WebhooksProcessor } from './webhooks.processor';
+import { WebhooksReconcileProcessor } from './webhooks-reconcile.processor';
 import { WebhooksResolver } from './webhooks.resolver';
 import { WebhooksService } from './webhooks.service';
 
@@ -21,6 +22,7 @@ import { WebhooksService } from './webhooks.service';
 @Module({
   imports: [
     BullModule.registerQueue({ name: QUEUE_WEBHOOK_DELIVERY }),
+    BullModule.registerQueue({ name: QUEUE_WEBHOOK_RECONCILE, prefix: 'outbound_cron' }),
     OutboundModule,
     ProjectsModule,
     SharedModule,
@@ -31,6 +33,7 @@ import { WebhooksService } from './webhooks.service';
     WebhooksResolver,
     WebhooksListener,
     WebhooksProcessor,
+    WebhooksReconcileProcessor,
     PermissionGuard,
   ],
   exports: [WebhooksService],

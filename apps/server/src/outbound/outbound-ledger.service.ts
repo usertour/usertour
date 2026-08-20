@@ -106,7 +106,11 @@ export class OutboundLedgerService implements OnModuleInit {
   /**
    * Append an attempt row and advance the message status: DELIVERED on
    * success, FAILED when a failure exhausts the retry budget, otherwise the
-   * message stays PENDING for the next try. Never throws.
+   * message stays PENDING for the next try. The message row is touched on
+   * EVERY attempt (a non-settling one just bumps updatedAt) — updatedAt is
+   * the ledger's last-activity signal: the reconcile sweep treats a PENDING
+   * message whose updatedAt predates the largest ladder gap as orphaned
+   * (its job was lost with Redis). Never throws.
    */
   async recordAttempt(messageId: string, result: OutboundAttemptResult): Promise<void> {
     const status = result.success
@@ -127,13 +131,49 @@ export class OutboundLedgerService implements OnModuleInit {
             durationMs: result.durationMs ?? null,
           },
         }),
-        ...(status
-          ? [this.prisma.outboundMessage.update({ where: { id: messageId }, data: { status } })]
-          : []),
+        this.prisma.outboundMessage.update({
+          where: { id: messageId },
+          data: status ? { status } : { updatedAt: new Date() },
+        }),
       ]);
     } catch (error) {
       this.logger.error(`Failed to record outbound attempt for ${messageId}`, error as Error);
     }
+  }
+
+  /**
+   * PENDING webhook messages with no delivery activity since `olderThan` —
+   * their in-flight job is presumed lost (Redis restart/eviction mid-ladder).
+   * Oldest first so a capped sweep drains the backlog across runs.
+   * (Integrations will add their own transport filter when they arrive.)
+   */
+  async findOrphanedPendingWebhookMessages(olderThan: Date, take: number) {
+    return this.prisma.outboundMessage.findMany({
+      where: {
+        webhookId: { not: null },
+        status: OutboundMessageStatus.PENDING,
+        updatedAt: { lt: olderThan },
+      },
+      orderBy: { updatedAt: 'asc' },
+      take,
+      include: { deliveries: { orderBy: { attempt: 'asc' } } },
+    });
+  }
+
+  /**
+   * Claim an orphaned PENDING message for re-queueing (CAS on updatedAt, same
+   * discipline as the resend claim): the write is the claim, so concurrent
+   * sweeps — or a not-actually-lost job recording an attempt right now —
+   * lose at the database instead of double-queueing. Returns the new
+   * generation stamp (keys the continuation jobId), or null when lost.
+   */
+  async claimForReconcile(id: string, asOf: Date): Promise<Date | null> {
+    const claimStamp = new Date();
+    const { count } = await this.prisma.outboundMessage.updateMany({
+      where: { id, updatedAt: asOf, status: OutboundMessageStatus.PENDING },
+      data: { updatedAt: claimStamp },
+    });
+    return count > 0 ? claimStamp : null;
   }
 
   /** A message with its attempts (oldest first), or null. */

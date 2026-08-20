@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosRequestConfig } from 'axios';
-import { Job } from 'bullmq';
+import { DelayedError, Job } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import {
@@ -14,6 +14,7 @@ import compileEmailTemplate from '@/common/email/compile-email-template';
 import { EmailService } from '@/shared/email.service';
 import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { RetryAfterCarrier, computeBackoffDelay, parseRetryAfter } from './webhook-backoff';
 import { WEBHOOK_SIGNATURE_HEADER, signWebhookPayload } from './webhook-signature';
 import { WebhookDeliveryJobData } from './webhook.types';
 
@@ -24,21 +25,26 @@ const DELIVERY_TIMEOUT_MS = 10_000;
 // A webhook response is an ack; anything past 256 KB is protocol abuse and the
 // attempt is recorded as failed (axios rejects when the cap is exceeded).
 const RESPONSE_MAX_BYTES = 256 * 1024;
-// Cooldown layer of the circuit breaker (ADR 0010): after this many messages
-// in a row exhaust their retry budget, the endpoint cools down and the
-// listener stops creating messages for it until the window passes. The window
-// doubles with each further final failure; any success resets everything.
-export const COOLDOWN_THRESHOLD = 5;
+// Cooldown layer of the circuit breaker (ADR 0010): after this many FAILED
+// ATTEMPTS in a row (across messages — any delivered attempt resets), the
+// endpoint cools down. Attempt-level, not message-level: with the ~24h retry
+// ladder a message's FINAL failure arrives a day late, far too slow a signal
+// to shed load with. Cooling defers attempts (moveToDelayed) — it never drops
+// messages; the ledger is written regardless.
+export const COOLDOWN_THRESHOLD = 10;
 export const COOLDOWN_BASE_MS = 60_000; // 1 minute
 export const COOLDOWN_MAX_MS = 60 * 60_000; // capped at 1 hour
+// Spread the release of jobs parked on the same cooldown so its expiry does
+// not stampede a just-recovered receiver.
+export const COOLDOWN_RELEASE_JITTER_MS = 30_000;
 // Layer 2: an endpoint whose failure streak has lasted this long gets disabled
 // (nothing was delivered in that whole window anyway) and the project owner is
 // notified. Re-enabling is a manual switch in the dashboard. No scheduler: the
-// check rides on final failures, and a dead-but-trafficked endpoint produces
-// at least one of those per cooldown cycle.
+// check rides on failed attempts, and a dead-but-trafficked endpoint produces
+// those every cooldown cycle.
 export const AUTO_DISABLE_AFTER_MS = 7 * 24 * 60 * 60_000; // 7 days
 // How many deliveries one worker runs concurrently. Sequential (the BullMQ
-// default) lets a single hung endpoint (10s timeout x 5 retries) head-of-line
+// default) lets a single hung endpoint (10s timeout per attempt) head-of-line
 // block every other tenant's deliveries.
 const DELIVERY_CONCURRENCY = 10;
 // One agent for all guarded deliveries — the guard is stateless, so per-attempt
@@ -53,7 +59,16 @@ const guardedAgent = createGuardedHttpsAgent();
  * rethrown so BullMQ retries per the job's backoff policy — every attempt is
  * recorded in the outbound ledger either way.
  */
-@Processor(QUEUE_WEBHOOK_DELIVERY, { concurrency: DELIVERY_CONCURRENCY })
+@Processor(QUEUE_WEBHOOK_DELIVERY, {
+  concurrency: DELIVERY_CONCURRENCY,
+  settings: {
+    // The ~24h ladder (webhook-backoff.ts), raised to a 429's Retry-After
+    // when the receiver asked for a longer pause. Jobs opt in with
+    // backoff: { type: 'custom' }.
+    backoffStrategy: (attemptsMade: number, _type, error) =>
+      computeBackoffDelay(attemptsMade, (error as RetryAfterCarrier | undefined)?.retryAfterMs),
+  },
+})
 export class WebhooksProcessor extends WorkerHost {
   private readonly logger = new Logger(WebhooksProcessor.name);
 
@@ -67,7 +82,7 @@ export class WebhooksProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<WebhookDeliveryJobData>): Promise<void> {
+  async process(job: Job<WebhookDeliveryJobData>, token?: string): Promise<void> {
     const { webhookId, messageId, payload, attemptOffset = 0 } = job.data;
 
     const webhook = await this.prisma.webhook.findUnique({ where: { id: webhookId } });
@@ -83,6 +98,23 @@ export class WebhooksProcessor extends WorkerHost {
         final: true,
       });
       return;
+    }
+
+    if (
+      job.data.manual !== true &&
+      webhook.cooldownUntil &&
+      webhook.cooldownUntil.getTime() > Date.now()
+    ) {
+      // Circuit breaker, layer 1: the endpoint is cooling down. Defer — never
+      // drop: the job goes back to the delayed set until the window passes
+      // (plus jitter so the release doesn't stampede), consuming no attempt,
+      // no socket, and no ledger row. Manual sends (test event, resend) pass
+      // through: the user IS the half-open probe, and their success resets
+      // the breaker for everything that is waiting.
+      const resumeAt =
+        webhook.cooldownUntil.getTime() + Math.floor(Math.random() * COOLDOWN_RELEASE_JITTER_MS);
+      await job.moveToDelayed(resumeAt, token);
+      throw new DelayedError();
     }
 
     const allowPrivateNetwork = !!this.configService.get('globalConfig.allowPrivateNetworkEgress');
@@ -106,7 +138,7 @@ export class WebhooksProcessor extends WorkerHost {
         // minting a message plus a FAILED ledger row forever. The eventual
         // auto-disable email is also how the owner learns the URL is not
         // allowed anymore.
-        await this.recordFinalFailure(webhookId, webhook.url);
+        await this.recordFailedAttempt(webhookId, webhook.url);
         return;
       }
     }
@@ -158,7 +190,10 @@ export class WebhooksProcessor extends WorkerHost {
       });
       await this.resetBreaker(webhookId, webhook.url);
     } catch (error) {
-      const failure = error as { message?: string; response?: { status?: number; data?: unknown } };
+      const failure = error as {
+        message?: string;
+        response?: { status?: number; data?: unknown; headers?: Record<string, unknown> };
+      };
       await this.ledger.recordAttempt(messageId, {
         attempt,
         success: false,
@@ -168,8 +203,12 @@ export class WebhooksProcessor extends WorkerHost {
         durationMs: Date.now() - startedAt,
         final,
       });
-      if (final) {
-        await this.recordFinalFailure(webhookId, webhook.url);
+      // Every failed attempt feeds the breaker (attempt-level counting).
+      await this.recordFailedAttempt(webhookId, webhook.url);
+      // Hand the receiver's Retry-After to the backoff strategy via the error.
+      const retryAfterMs = parseRetryAfter(failure.response?.headers?.['retry-after']);
+      if (retryAfterMs) {
+        (error as RetryAfterCarrier).retryAfterMs = retryAfterMs;
       }
       // Rethrow so BullMQ retries with backoff.
       throw error;
@@ -207,21 +246,20 @@ export class WebhooksProcessor extends WorkerHost {
   }
 
   /**
-   * A message exhausted its retry budget: grow the failure streak and, past
-   * the threshold, (re)arm the cooldown — 1min doubling per further failure,
-   * capped at 1h. Atomic increment; the window is computed from the returned
-   * streak, so concurrent final failures at worst re-arm a similar window.
-   * Breaker bookkeeping must never break the delivery path.
+   * An attempt failed: grow the failure streak and, past the threshold,
+   * (re)arm the cooldown — 1min doubling per further failed attempt, capped
+   * at 1h. Atomic increment; the window is computed from the returned streak,
+   * so concurrent failures at worst re-arm a similar window. Breaker
+   * bookkeeping must never break the delivery path.
    */
-  private async recordFinalFailure(webhookId: string, deliveredUrl: string): Promise<void> {
+  private async recordFailedAttempt(webhookId: string, deliveredUrl: string): Promise<void> {
     try {
       const now = new Date();
       // Guarded on the URL this delivery hit: up to concurrency-many in-flight
       // results for a just-replaced URL would otherwise stack onto the NEW
       // target's fresh streak (worst case ~10 strays = a 32-minute cooldown
-      // the new URL never earned — and one the listener gate then prevents
-      // traffic from clearing). updateMany can't return the row, hence the
-      // follow-up read; final failures only, so the extra query is rare.
+      // the new URL never earned). updateMany can't return the row, hence the
+      // follow-up read; both ride the failure path only.
       const { count } = await this.prisma.webhook.updateMany({
         where: { id: webhookId, url: deliveredUrl },
         data: { consecutiveFailures: { increment: 1 } },
@@ -267,7 +305,7 @@ export class WebhooksProcessor extends WorkerHost {
           data: { cooldownUntil: new Date(Date.now() + windowMs) },
         });
         this.logger.warn(
-          `Webhook ${webhookId} cooling down for ${Math.round(windowMs / 1000)}s after ${row.consecutiveFailures} consecutive failed messages`,
+          `Webhook ${webhookId} cooling down for ${Math.round(windowMs / 1000)}s after ${row.consecutiveFailures} consecutive failed attempts`,
         );
       }
     } catch (error) {

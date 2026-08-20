@@ -16,3 +16,4 @@ export const QUEUE_AUDIT_LOG = 'audit-log';
 
 export const QUEUE_WEBHOOK_DELIVERY = 'webhook-delivery';
 export const QUEUE_CLEAN_OUTBOUND_MESSAGES = 'cleanOutboundMessages';
+export const QUEUE_WEBHOOK_RECONCILE = 'webhookReconcile';

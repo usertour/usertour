@@ -1262,7 +1262,7 @@ const translations = {
         badge: '冷却中',
         badgeUntil: '冷却中,{{time}} 恢复',
         tooltip:
-          '连续 {{count}} 条消息投递失败 — 暂停投递至 {{time}};若仍持续失败,暂停时间将延长。',
+          '连续 {{count}} 次投递尝试失败 — 投递已暂缓,将于 {{time}} 后继续发送;若仍持续失败,暂缓时间将延长。',
       },
       statusDisabled: '已停用',
       detailsMenuItem: '查看详情',
