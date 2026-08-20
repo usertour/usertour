@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { EncryptionService } from '@/shared/encryption.service';
 
 import { graphql, gqlData } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
@@ -120,7 +121,11 @@ describe('GraphQL webhooks (e2e)', () => {
       expect(created.topics).toEqual(['event.tracked']);
 
       const row = await prisma.webhook.findUnique({ where: { id: created.id } });
-      expect(row?.secret).toMatch(/^whsec_[0-9a-f]{64}$/);
+      // At rest the secret is AES-256-GCM ciphertext — never plaintext; the
+      // decrypted value is the server-generated whsec_ the API hands out.
+      expect(row?.secret).not.toMatch(/^whsec_/);
+      const encryption = app.get(EncryptionService);
+      expect(encryption.decrypt(row?.secret ?? '')).toMatch(/^whsec_[0-9a-f]{64}$/);
       expect(row?.description).toBe('warehouse sync');
     });
 

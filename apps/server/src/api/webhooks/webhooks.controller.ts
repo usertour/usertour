@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseFilters,
   UseGuards,
   UsePipes,
@@ -15,6 +16,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
+import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
 import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
@@ -41,7 +43,10 @@ import {
 @ApiBearerAuth()
 @ApiStandardErrorResponses()
 export class ApiWebhooksController {
-  constructor(private readonly service: ApiWebhooksService) {}
+  constructor(
+    private readonly service: ApiWebhooksService,
+    private readonly auth: ApiTokenAuthService,
+  ) {}
 
   @Get()
   @RequireCapability(Capability.WebhookRead)
@@ -59,14 +64,29 @@ export class ApiWebhooksController {
 
   @Get(':id')
   @RequireCapability(Capability.WebhookRead)
-  @ApiOperation({ summary: 'Get a webhook (includes the signing secret)' })
+  @ApiOperation({
+    summary: 'Get a webhook (includes the signing secret for webhook:manage tokens)',
+    description:
+      'The signing secret is the ability to forge signed deliveries, so it rides only on ' +
+      'tokens holding webhook:manage — a read-only token gets every other field.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Webhook ID' })
   @ApiResponse({ status: 200, description: 'Webhook found', type: WebhookDto })
   @ApiResponse({ status: 404, description: 'Webhook not found' })
-  async get(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
-    return this.service.get(id, environment);
+  async get(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @EnvironmentDecorator() environment: Environment,
+    @Req() request: { apiToken: AuthedApiToken },
+  ) {
+    const includeSecret = await this.auth.hasCapability(
+      request.apiToken,
+      projectId,
+      Capability.WebhookManage,
+    );
+    return this.service.get(id, environment, { includeSecret });
   }
 
   @Post()

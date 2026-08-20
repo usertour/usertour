@@ -37,9 +37,15 @@ export class ApiWebhooksService {
     });
   }
 
-  async get(id: string, environment: Environment): Promise<Webhook> {
+  async get(
+    id: string,
+    environment: Environment,
+    options?: { includeSecret?: boolean },
+  ): Promise<Webhook> {
     const row = await this.getOwnedRow(id, environment);
-    return mapWebhook(row, { includeSecret: true });
+    // The secret is the ability to forge signed deliveries: it rides only on
+    // manage-capable tokens (the controller decides), never on read-only ones.
+    return mapWebhook(row, { includeSecret: options?.includeSecret === true });
   }
 
   async create(environment: Environment, body: CreateWebhookBody): Promise<Webhook> {

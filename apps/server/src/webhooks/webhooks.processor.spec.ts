@@ -35,6 +35,8 @@ describe('WebhooksProcessor', () => {
   let ledger: { recordAttempt: jest.Mock; touch: jest.Mock };
   let emailService: { sendOrLog: jest.Mock };
   let audit: { record: jest.Mock };
+  // Pass-through: at-rest encryption is EncryptionService's own concern.
+  const encryption = { decrypt: (value: string) => value, encrypt: (value: string) => value };
   let processor: WebhooksProcessor;
 
   beforeEach(() => {
@@ -65,6 +67,7 @@ describe('WebhooksProcessor', () => {
       ledger as any,
       emailService as any,
       audit as any,
+      encryption as any,
     );
   });
 
@@ -296,6 +299,7 @@ describe('WebhooksProcessor', () => {
       ledger as any,
       emailService as any,
       audit as any,
+      encryption as any,
     );
     prisma.webhook.findUnique.mockResolvedValue({
       id: 'wh_1',
@@ -438,6 +442,7 @@ describe('WebhooksProcessor', () => {
       ledger as any,
       emailService as any,
       audit as any,
+      encryption as any,
     );
     await processor.process(buildJob(0));
     expect(mockedPost.mock.calls[0][2]).toMatchObject({ proxy: false });
@@ -451,6 +456,7 @@ describe('WebhooksProcessor', () => {
       ledger as any,
       emailService as any,
       audit as any,
+      encryption as any,
     );
     await processor.process(buildJob(0));
     expect(mockedPost.mock.calls[1][2]).not.toHaveProperty('proxy');
@@ -481,6 +487,7 @@ describe('WebhooksProcessor', () => {
       ledger as any,
       emailService as any,
       audit as any,
+      encryption as any,
     );
     prisma.webhook.findUnique.mockResolvedValue({
       id: 'wh_1',

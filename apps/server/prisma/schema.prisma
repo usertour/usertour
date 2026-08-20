@@ -1109,7 +1109,9 @@ model Webhook {
   /// ("event.tracked.<codeName>", "content.published", "user.updated", ...)
   topics        Json        @db.JsonB
   enabled       Boolean     @default(true)
-  /// HMAC-SHA256 signing secret ("whsec_" + 32-byte hex), generated server-side
+  /// HMAC-SHA256 signing secret ("whsec_" + 32-byte hex), generated server-side.
+  /// AES-256-GCM encrypted at rest (EncryptionService) — same treatment as
+  /// EnvironmentSigningSecret / twoFactorSecret.
   secret        String
   description   String?
 

@@ -178,6 +178,25 @@ export class ApiTokenAuthService {
     }
   }
 
+  /**
+   * Non-throwing capability probe for RESPONSE SHAPING (e.g. whether a GET
+   * may include the signing secret): same rule as `authorize`'s capability
+   * branch — live role allows it AND the token's scopes carry it.
+   */
+  async hasCapability(
+    token: AuthedApiToken,
+    projectId: string,
+    capability: Capability,
+  ): Promise<boolean> {
+    const membership = await this.prisma.userOnProject.findFirst({
+      where: { userId: token.userId, projectId },
+    });
+    if (!membership) {
+      return false;
+    }
+    return roleCan(membership.role as Role, capability) && this.scopes(token).includes(capability);
+  }
+
   /** Load an environment and assert it belongs to `projectId`. */
   async resolveEnvironment(projectId: string, environmentId: string): Promise<Environment> {
     const environment = await this.prisma.environment.findUnique({

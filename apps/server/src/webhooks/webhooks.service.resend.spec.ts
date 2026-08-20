@@ -62,6 +62,7 @@ describe('WebhooksService.resendMessage — ambiguous enqueue compensation', () 
       { get: jest.fn() } as never,
       projectsService as never,
       ledger as never,
+      { decrypt: (value: string) => value, encrypt: (value: string) => value } as never,
       deliveryQueue as never,
     );
   });

@@ -90,6 +90,35 @@ describe('API v2 /webhooks error contract (e2e)', () => {
     expect(res.body.error.code).toBe('E0061');
   });
 
+  it('omits the secret for a read-only token (secret = forgery capability)', async () => {
+    const created = await authed('post', base(environmentId)).send({
+      url: 'https://e2e-readonly-secret.invalid/hook',
+      topics: ['event.tracked'],
+    });
+    expect(created.status).toBe(201);
+
+    const readonlyRes = await graphql(app, {
+      query: CREATE,
+      variables: {
+        input: {
+          name: 'wh-readonly',
+          scopes: [Capability.WebhookRead],
+          projectIds: [projectId],
+          environmentIds: [environmentId],
+        },
+      },
+      token: (await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' })).token,
+    });
+    const readonlyToken = gqlData(readonlyRes).createApiToken.token;
+
+    const res = await request(app.getHttpServer())
+      .get(`${base(environmentId)}/${created.body.id}`)
+      .set('Authorization', `Bearer ${readonlyToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.url).toBeDefined();
+    expect(res.body).not.toHaveProperty('secret');
+  });
+
   it('exposes the secret on get/create but NOT on update (exposure hygiene)', async () => {
     const created = await authed('post', base(environmentId)).send({
       url: 'https://e2e-secret-check.invalid/hook',

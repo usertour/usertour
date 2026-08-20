@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { EncryptionService } from '@/shared/encryption.service';
 
 import { graphql, gqlData, gqlErrorCode } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
@@ -123,15 +124,20 @@ describe('GraphQL webhooks plan gate (e2e, SaaS mode)', () => {
 
   describe('a Hobby project holding a webhook from before its plan lapsed', () => {
     let webhookId: string;
+    let seededCiphertext: string;
 
     beforeAll(async () => {
+      // Secrets are encrypted at rest; a direct seed must encrypt like the
+      // domain service does, or every read path would fail decryption.
+      const encryption = app.get(EncryptionService);
+      seededCiphertext = encryption.encrypt('whsec_legacy') as string;
       const row = await prisma.webhook.create({
         data: {
           environmentId: hobbyEnvironmentId,
           url: 'https://e2e-receiver.invalid/legacy-hook',
           topics: ['*'],
           enabled: true,
-          secret: 'whsec_legacy',
+          secret: seededCiphertext,
         },
       });
       webhookId = row.id;
@@ -172,7 +178,8 @@ describe('GraphQL webhooks plan gate (e2e, SaaS mode)', () => {
 
       const row = await prisma.webhook.findUnique({ where: { id: webhookId } });
       expect(row?.enabled).toBe(true);
-      expect(row?.secret).toBe('whsec_legacy');
+      // Byte-identical ciphertext = the E0043-refused rotate never wrote.
+      expect(row?.secret).toBe(seededCiphertext);
     });
 
     it('can still delete it', async () => {

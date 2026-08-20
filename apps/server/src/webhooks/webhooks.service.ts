@@ -14,6 +14,7 @@ import {
 } from '@/common/errors';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { EncryptionService } from '@/shared/encryption.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { CreateWebhookInput, UpdateWebhookInput } from './dto/webhook.input';
@@ -35,8 +36,20 @@ export class WebhooksService {
     private readonly configService: ConfigService,
     private readonly projectsService: ProjectsService,
     private readonly ledger: OutboundLedgerService,
+    private readonly encryption: EncryptionService,
     @InjectQueue(QUEUE_WEBHOOK_DELIVERY) private readonly deliveryQueue: Queue,
   ) {}
+
+  /**
+   * Rows leave this service with the secret in PLAINTEXT; at rest it is
+   * AES-256-GCM encrypted (EncryptionService — same treatment as
+   * EnvironmentSigningSecret / twoFactorSecret: HMAC needs the original
+   * value, so hashing is impossible and encryption bounds a DB-only leak).
+   * The processor reads via Prisma directly and decrypts on its own.
+   */
+  private withPlaintextSecret<T extends { secret: string }>(row: T): T {
+    return { ...row, secret: this.encryption.decrypt(row.secret) as string };
+  }
 
   // ---------------------------------------------------------------------------
   // Plan gate
@@ -72,10 +85,11 @@ export class WebhooksService {
   }
 
   async list(environmentId: string) {
-    return await this.prisma.webhook.findMany({
+    const rows = await this.prisma.webhook.findMany({
       where: { environmentId },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
+    return rows.map((row) => this.withPlaintextSecret(row));
   }
 
   /** Relay-connection list for the v2 REST surface (shared/pagination.paginate). */
@@ -85,12 +99,14 @@ export class WebhooksService {
   ) {
     const where = { environmentId };
     return findManyCursorConnection(
-      (args) =>
-        this.prisma.webhook.findMany({
+      async (args) => {
+        const rows = await this.prisma.webhook.findMany({
           where,
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
           ...args,
-        }),
+        });
+        return rows.map((row) => this.withPlaintextSecret(row));
+      },
       () => this.prisma.webhook.count({ where }),
       paginationArgs,
     );
@@ -101,7 +117,7 @@ export class WebhooksService {
     if (!webhook) {
       throw new WebhookNotFoundError();
     }
-    return webhook;
+    return this.withPlaintextSecret(webhook);
   }
 
   async create(data: CreateWebhookInput) {
@@ -112,16 +128,18 @@ export class WebhooksService {
     data.topics = [...new Set(data.topics)];
     this.validateTopics(data.topics);
 
-    return await this.prisma.webhook.create({
+    const secret = generateWebhookSecret();
+    const row = await this.prisma.webhook.create({
       data: {
         environmentId: data.environmentId,
         url: data.url,
         topics: data.topics,
         enabled: data.enabled ?? true,
         description: data.description ?? null,
-        secret: generateWebhookSecret(),
+        secret: this.encryption.encrypt(secret) as string,
       },
     });
+    return { ...row, secret };
   }
 
   async update(data: UpdateWebhookInput) {
@@ -146,7 +164,7 @@ export class WebhooksService {
     // an hour) with no hint beyond the badge. autoDisabledAt stays: it tracks
     // the enabled switch, which the reEnabling branch handles.
     const urlChanged = url !== undefined && url !== webhook.url;
-    return await this.prisma.webhook.update({
+    const row = await this.prisma.webhook.update({
       where: { id },
       data: {
         ...(url !== undefined ? { url } : {}),
@@ -164,6 +182,7 @@ export class WebhooksService {
         ...(urlChanged ? { consecutiveFailures: 0, cooldownUntil: null, failingSince: null } : {}),
       },
     });
+    return this.withPlaintextSecret(row);
   }
 
   async delete(id: string) {
@@ -176,10 +195,12 @@ export class WebhooksService {
   async rotateSecret(id: string) {
     const webhook = await this.get(id);
     await this.assertEntitled(webhook.environmentId);
-    return await this.prisma.webhook.update({
+    const secret = generateWebhookSecret();
+    const row = await this.prisma.webhook.update({
       where: { id },
-      data: { secret: generateWebhookSecret() },
+      data: { secret: this.encryption.encrypt(secret) as string },
     });
+    return { ...row, secret };
   }
 
   /**

@@ -12,6 +12,7 @@ import {
 } from '@/common/egress/egress-guard';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { EmailService } from '@/shared/email.service';
+import { EncryptionService } from '@/shared/encryption.service';
 import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { RetryAfterCarrier, deliveryBackoffStrategy, parseRetryAfter } from './webhook-backoff';
@@ -78,6 +79,7 @@ export class WebhooksProcessor extends WorkerHost {
     private readonly ledger: OutboundLedgerService,
     private readonly emailService: EmailService,
     private readonly audit: AuditService,
+    private readonly encryption: EncryptionService,
   ) {
     super();
   }
@@ -153,7 +155,14 @@ export class WebhooksProcessor extends WorkerHost {
     // verification.
     const body = JSON.stringify(payload);
     const timestampSec = Math.floor(Date.now() / 1000);
-    const signature = signWebhookPayload(webhook.secret, timestampSec, body);
+    // Secret is AES-256-GCM encrypted at rest; this processor reads the row
+    // via Prisma directly, so it decrypts on its own (the domain service is
+    // the plaintext boundary for every other consumer).
+    const signature = signWebhookPayload(
+      this.encryption.decrypt(webhook.secret) as string,
+      timestampSec,
+      body,
+    );
 
     const startedAt = Date.now();
     // Attempt numbers continue across a manual resend (attemptOffset = tries
