@@ -12,6 +12,7 @@ import { cursor, limit } from '../shared/pagination.schema';
 const topics = z
   .array(z.string().min(1))
   .min(1)
+  .max(100)
   .describe(
     'Topic subscriptions: "*" (everything); "event.tracked" (all behavior events) or ' +
       '"event.tracked.<codeName>" for one; "content" / "content.published"; "user" or ' +

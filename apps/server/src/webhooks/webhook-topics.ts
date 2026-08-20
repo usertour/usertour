@@ -38,6 +38,20 @@ export function buildEntityTopic(entity: string, action: string): string {
   return topic;
 }
 
+/**
+ * Whether this subscription list can match ANY behavior-event topic —
+ * colocated with matchesTopic so a change to the matching grammar cannot
+ * silently diverge from the listener's join prefilter.
+ */
+export function subscribesToEventTopics(subscriptions: string[]): boolean {
+  return subscriptions.some(
+    (subscription) =>
+      subscription === WEBHOOK_TOPIC_WILDCARD ||
+      subscription === WEBHOOK_EVENT_TOPIC_PREFIX ||
+      subscription.startsWith(`${WEBHOOK_EVENT_TOPIC_PREFIX}.`),
+  );
+}
+
 export function buildEventTopic(codeName: string): string {
   return `${WEBHOOK_EVENT_TOPIC_PREFIX}.${codeName}`;
 }

@@ -3,11 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import {
-  WEBHOOK_CONTENT_PUBLISHED_TOPIC,
-  WEBHOOK_EVENT_TOPIC_PREFIX,
-  WEBHOOK_TOPIC_WILDCARD,
-} from '@usertour/constants';
+import { WEBHOOK_CONTENT_PUBLISHED_TOPIC } from '@usertour/constants';
 import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { mapCompany } from '@/api/companies/companies.mapper';
 import { mapEvent } from '@/api/events/event.mapper';
@@ -19,6 +15,7 @@ import {
   buildEventTopic,
   matchesSubscription,
   matchesTopic,
+  subscribesToEventTopics,
 } from './webhook-topics';
 import {
   BIZ_ENTITY_CHANGED,
@@ -128,12 +125,7 @@ export class WebhooksListener {
       // environment whose endpoints only subscribe to entity/content topics
       // must not pay a five-table join just to discard every row.
       const anyEventSubscriber = webhooks.some((webhook) =>
-        ((webhook.topics as string[]) ?? []).some(
-          (topic) =>
-            topic === WEBHOOK_TOPIC_WILDCARD ||
-            topic === WEBHOOK_EVENT_TOPIC_PREFIX ||
-            topic.startsWith(`${WEBHOOK_EVENT_TOPIC_PREFIX}.`),
-        ),
+        subscribesToEventTopics((webhook.topics as string[]) ?? []),
       );
       if (!anyEventSubscriber) {
         return;
@@ -188,41 +180,42 @@ export class WebhooksListener {
 
       const jobs: DeliveryJob[] = [];
       for (const change of payload.changes) {
-        // Vocabulary tripwire, contained to THIS change: buildEntityTopic
-        // throws on an entity missing from WEBHOOK_ENTITY_TOPICS (a dev-time
-        // signal for M3 additions), but a bad change must not take its batch
-        // siblings' deliveries down with it.
-        let topic: string;
+        // Everything per-change is contained to THIS change — the vocabulary
+        // tripwire (buildEntityTopic throws on an entity missing from
+        // WEBHOOK_ENTITY_TOPICS) AND the snapshot re-read: a transient DB
+        // error on one change must not take its batch siblings' deliveries
+        // down through the handler-level catch.
         try {
-          topic = buildEntityTopic(change.entity, change.action);
+          const topic = buildEntityTopic(change.entity, change.action);
+          const matching = webhooks.filter((webhook) =>
+            matchesTopic((webhook.topics as string[]) ?? [], topic),
+          );
+          if (matching.length === 0) {
+            continue;
+          }
+
+          // Re-read for the freshest public snapshot (previousAttributes was
+          // captured at diff time inside the transaction).
+          const entityObject = await this.mapChangedEntity(change);
+          if (!entityObject) {
+            continue;
+          }
+
+          for (const webhook of matching) {
+            const { messageId, payload: body } = buildWebhookMessage(topic, payload.environmentId, {
+              [change.entity]: entityObject,
+              ...(change.previousAttributes
+                ? { previousAttributes: change.previousAttributes }
+                : {}),
+            });
+            jobs.push({
+              name: 'deliver',
+              data: { webhookId: webhook.id, messageId, topic, payload: body },
+              opts: RETRY_JOB_OPTIONS,
+            });
+          }
         } catch (error) {
           this.logger.error(`Skipping entity change ${change.entity}.${change.action}: ${error}`);
-          continue;
-        }
-        const matching = webhooks.filter((webhook) =>
-          matchesTopic((webhook.topics as string[]) ?? [], topic),
-        );
-        if (matching.length === 0) {
-          continue;
-        }
-
-        // Re-read for the freshest public snapshot (previousAttributes was
-        // captured at diff time inside the transaction).
-        const entityObject = await this.mapChangedEntity(change);
-        if (!entityObject) {
-          continue;
-        }
-
-        for (const webhook of matching) {
-          const { messageId, payload: body } = buildWebhookMessage(topic, payload.environmentId, {
-            [change.entity]: entityObject,
-            ...(change.previousAttributes ? { previousAttributes: change.previousAttributes } : {}),
-          });
-          jobs.push({
-            name: 'deliver',
-            data: { webhookId: webhook.id, messageId, topic, payload: body },
-            opts: RETRY_JOB_OPTIONS,
-          });
         }
       }
 

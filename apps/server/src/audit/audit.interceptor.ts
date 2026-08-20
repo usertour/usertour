@@ -370,10 +370,13 @@ export function deriveAudit(
     case 'manage':
       // A POST with a path id is an action on an EXISTING resource
       // (POST /:id/rotate-secret, POST /:id/end) — an update, not a create.
+      // hasPathId fully generalizes the old resourceType-specific carve-outs:
+      // every action-shaped POST carries a path id, and no resource has an
+      // id-less POST that isn't a create.
       action =
         httpMethod === 'DELETE'
           ? 'delete'
-          : httpMethod === 'POST' && resourceType !== 'session' && !hasPathId
+          : httpMethod === 'POST' && !hasPathId
             ? 'create'
             : 'update';
       break;

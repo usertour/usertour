@@ -22,6 +22,9 @@ import { generateWebhookSecret } from './webhook-signature';
 import { isValidSubscription } from './webhook-topics';
 import { WebhookDeliveryJobData } from './webhook.types';
 
+/** Endpoint subscription-list cap, enforced at the domain chokepoint. */
+export const MAX_TOPIC_SUBSCRIPTIONS = 100;
+
 /** Job options for a one-shot, user-triggered send (test event, resend). */
 const SINGLE_ATTEMPT_JOB_OPTIONS = { removeOnComplete: true, removeOnFail: 1000, attempts: 1 };
 
@@ -104,6 +107,9 @@ export class WebhooksService {
   async create(data: CreateWebhookInput) {
     await this.assertEntitled(data.environmentId);
     this.validateUrl(data.url);
+    // Normalize before validating/persisting: duplicates are harmless to the
+    // matcher but junk in the column and the UI.
+    data.topics = [...new Set(data.topics)];
     this.validateTopics(data.topics);
 
     return await this.prisma.webhook.create({
@@ -126,8 +132,10 @@ export class WebhooksService {
     if (url !== undefined) {
       this.validateUrl(url);
     }
-    if (topics !== undefined) {
-      this.validateTopics(topics);
+    let normalizedTopics = topics;
+    if (normalizedTopics !== undefined) {
+      normalizedTopics = [...new Set(normalizedTopics)];
+      this.validateTopics(normalizedTopics);
     }
 
     // Re-enabling is a fresh start: clear the breaker state and the
@@ -142,7 +150,7 @@ export class WebhooksService {
       where: { id },
       data: {
         ...(url !== undefined ? { url } : {}),
-        ...(topics !== undefined ? { topics } : {}),
+        ...(normalizedTopics !== undefined ? { topics: normalizedTopics } : {}),
         ...(enabled !== undefined ? { enabled } : {}),
         ...(description !== undefined ? { description } : {}),
         ...(reEnabling
@@ -324,6 +332,14 @@ export class WebhooksService {
   private validateTopics(topics: string[]): void {
     if (!Array.isArray(topics) || topics.length === 0) {
       throw new ValidationError('At least one topic subscription is required.');
+    }
+    // Chokepoint cap (all surfaces are thin over this service): the column is
+    // JSONB and the matcher walks the array per delivery — an unbounded or
+    // duplicated list is at best waste, at worst a payload-size lever.
+    if (topics.length > MAX_TOPIC_SUBSCRIPTIONS) {
+      throw new ValidationError(
+        `At most ${MAX_TOPIC_SUBSCRIPTIONS} topic subscriptions per endpoint.`,
+      );
     }
     const invalid = topics.find((topic) => !isValidSubscription(topic));
     if (invalid !== undefined) {

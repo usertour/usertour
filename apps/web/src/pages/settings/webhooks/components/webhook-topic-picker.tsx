@@ -309,9 +309,13 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
     if (next) {
       // Keep explicit noisy leaves: "*" doesn't cover them, so they'd silently
       // vanish otherwise. Everything else collapses into the wildcard.
-      const noisyTopics = new Set(
-        allLeaves.filter(({ leaf }) => leaf.noisy).map(({ leaf }) => leaf.topic),
-      );
+      // Derived from the CONSTANT, not only the loaded event list: before the
+      // events query settles, allLeaves is empty and a load-time "Select all"
+      // would silently drop an existing page_viewed subscription.
+      const noisyTopics = new Set([
+        ...WEBHOOK_NOISY_EVENTS.map((codeName) => `${WEBHOOK_EVENT_TOPIC_PREFIX}.${codeName}`),
+        ...allLeaves.filter(({ leaf }) => leaf.noisy).map(({ leaf }) => leaf.topic),
+      ]);
       onChange([WEBHOOK_TOPIC_WILDCARD, ...value.filter((topic) => noisyTopics.has(topic))]);
     } else {
       onChange([]);
@@ -445,7 +449,11 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
                       />
                     )}
                     <Label
-                      htmlFor={familyId}
+                      // No dangling reference when the family checkbox is not
+                      // rendered (prefix without server-side prefix semantics).
+                      htmlFor={
+                        WEBHOOK_PREFIX_SUBSCRIPTIONS.includes(family.prefix) ? familyId : undefined
+                      }
                       className="flex min-w-0 items-center gap-1.5 font-medium"
                     >
                       {family.label}

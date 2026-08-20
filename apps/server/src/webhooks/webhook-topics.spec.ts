@@ -1,5 +1,6 @@
 import {
   buildEntityTopic,
+  subscribesToEventTopics,
   buildEventTopic,
   isValidSubscription,
   matchesSubscription,
@@ -91,6 +92,16 @@ describe('isValidSubscription', () => {
     expect(isValidSubscription('content.deleted')).toBe(false);
     expect(isValidSubscription('event.tracked.')).toBe(false);
     expect(isValidSubscription('')).toBe(false);
+  });
+});
+
+describe('subscribesToEventTopics', () => {
+  it('detects any subscription able to match a behavior-event topic', () => {
+    expect(subscribesToEventTopics(['*'])).toBe(true);
+    expect(subscribesToEventTopics(['event.tracked'])).toBe(true);
+    expect(subscribesToEventTopics(['event.tracked.flow_started'])).toBe(true);
+    expect(subscribesToEventTopics(['user.created', 'content'])).toBe(false);
+    expect(subscribesToEventTopics([])).toBe(false);
   });
 });
 

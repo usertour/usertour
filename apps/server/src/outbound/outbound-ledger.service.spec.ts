@@ -142,6 +142,21 @@ describe('OutboundLedgerService', () => {
       });
     });
 
+    it('strips NUL bytes before storing (Postgres text rejects them wholesale)', async () => {
+      await service.recordAttempt('whmsg_1', {
+        ...base,
+        success: false,
+        final: false,
+        responseBody: 'ok\u0000bad\u0000',
+        error: '\u0000boom',
+      });
+      const row = prisma.outboundDelivery.create.mock.calls[0][0].data;
+      // Without this, the INSERT fails, the whole transaction rolls back, and
+      // a DELIVERED message would sit PENDING for the sweep to re-deliver.
+      expect(row.responseBody).toBe('okbad');
+      expect(row.error).toBe('boom');
+    });
+
     it('truncates stored excerpts and normalizes empties to null', async () => {
       await service.recordAttempt('whmsg_1', {
         ...base,

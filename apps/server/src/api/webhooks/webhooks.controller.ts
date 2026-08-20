@@ -118,12 +118,13 @@ export class ApiWebhooksController {
   }
 
   @Post(':id/rotate-secret')
+  @HttpCode(200)
   @RequireCapability(Capability.WebhookManage)
   @ApiOperation({ summary: 'Rotate the signing secret' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'environmentId', description: 'Environment ID' })
   @ApiParam({ name: 'id', description: 'Webhook ID' })
-  @ApiResponse({ status: 201, description: 'Secret rotated', type: WebhookDto })
+  @ApiResponse({ status: 200, description: 'Secret rotated', type: WebhookDto })
   @ApiResponse({ status: 404, description: 'Webhook not found' })
   async rotateSecret(@Param('id') id: string, @EnvironmentDecorator() environment: Environment) {
     return this.service.rotateSecret(id, environment);

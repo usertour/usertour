@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -290,8 +290,22 @@ const MessagesSection = ({
     ? (messages.find((message) => message.id === selected.id) ?? selected)
     : null;
 
+  // Timer is tracked so unmount cancels the pending refresh (a fire-and-
+  // forget setTimeout would refetch into an unmounted accumulator).
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    },
+    [],
+  );
   const refetchSoon = () => {
-    setTimeout(() => refresh(), LOG_REFRESH_DELAY_MS);
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+    refreshTimerRef.current = setTimeout(() => refresh(), LOG_REFRESH_DELAY_MS);
   };
 
   const handleSendTest = async () => {
@@ -439,7 +453,11 @@ export const WebhookDetail = () => {
   const { settingSubType: webhookId } = useParams();
   const { project } = useAppContext();
   const { projectConfig } = useGetProjectConfigQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
-  const { webhook, loading } = useGetWebhookQuery(webhookId ?? '');
+  // Cache-connected (repo default is no-cache with per-query opt-in): rotate
+  // and update merge their returned fields into Webhook:<id>, and this watch
+  // query must be ON the cache to see them — without this, the new secret
+  // only appeared after a full page reload.
+  const { webhook, loading } = useGetWebhookQuery(webhookId ?? '', SHARED_CACHE_QUERY_OPTIONS);
   const { t } = useTranslation();
   // Plan gate mirror (server enforces independently): reads and delete stay
   // open on a downgraded project; rotate / test / resend are write-shaped.

@@ -330,5 +330,10 @@ const truncate = (value: string | null | undefined, max: number): string | null 
   if (value == null || value === '') {
     return null;
   }
-  return value.length > max ? value.slice(0, max) : value;
+  // Strip NUL bytes: Postgres text columns reject \u0000, and a receiver
+  // echoing one back would otherwise fail the whole recordAttempt transaction
+  // — the message would sit PENDING despite a delivered attempt, and the
+  // reconcile sweep would re-deliver it forever.
+  const sanitized = value.replaceAll('\u0000', '');
+  return sanitized.length > max ? sanitized.slice(0, max) : sanitized;
 };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { WEBHOOK_EVENT_TOPIC_PREFIX, WEBHOOK_TOPIC_WILDCARD } from '@usertour/constants';
 import { type Webhook, useGetProjectConfigQuery, useListWebhooksQuery } from '@usertour/hooks';
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
@@ -10,7 +11,6 @@ import { WebhookDialog } from './components/webhook-dialog';
 import { WebhookRowActions } from './components/webhook-row-actions';
 import { WebhookUpsell } from './components/webhook-upsell';
 
-const EVENT_TOPIC_PREFIX = 'event.tracked';
 const WEBHOOKS_DOCS_HREF = 'https://docs.usertour.io/developers/webhooks';
 
 /** Cooling down = breaker armed with a window still in the future. */
@@ -53,10 +53,10 @@ export const SettingsWebhookList = () => {
   }
 
   const topicsSummary = (webhook: Webhook): string => {
-    if (webhook.topics.includes('*')) {
+    if (webhook.topics.includes(WEBHOOK_TOPIC_WILDCARD)) {
       return t('settings.webhooks.allEventsSummary');
     }
-    if (webhook.topics.includes(EVENT_TOPIC_PREFIX)) {
+    if (webhook.topics.includes(WEBHOOK_EVENT_TOPIC_PREFIX)) {
       const extra = webhook.topics.length - 1;
       return extra > 0
         ? t('settings.webhooks.allTrackedEventsPlus', { count: extra })
