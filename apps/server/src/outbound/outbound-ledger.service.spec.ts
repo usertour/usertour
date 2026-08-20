@@ -26,7 +26,7 @@ describe('OutboundLedgerService', () => {
         createMany: jest.fn().mockResolvedValue({ count: 0 }),
         create: jest.fn().mockResolvedValue({}),
         update: jest.fn().mockReturnValue('update-op'),
-        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        updateMany: jest.fn().mockReturnValue('update-op' as never),
         deleteMany: jest.fn().mockResolvedValue({ count: 3 }),
         findUnique: jest.fn(),
       },
@@ -110,10 +110,13 @@ describe('OutboundLedgerService', () => {
   describe('recordAttempt', () => {
     const base = { attempt: 1, responseStatus: 200, durationMs: 12 };
 
-    it('marks the message DELIVERED on success', async () => {
+    it('marks the message DELIVERED on success — sticky over FAILED (settle CAS)', async () => {
       await service.recordAttempt('whmsg_1', { ...base, success: true, final: false });
-      expect(prisma.outboundMessage.update).toHaveBeenCalledWith({
-        where: { id: 'whmsg_1' },
+      // DELIVERED may overwrite FAILED (a late success from a stalled twin
+      // job proves the message WAS delivered) but a settled DELIVERED row is
+      // never re-written.
+      expect(prisma.outboundMessage.updateMany).toHaveBeenCalledWith({
+        where: { id: 'whmsg_1', status: { in: ['PENDING', 'FAILED'] } },
         data: { status: 'DELIVERED' },
       });
       expect(prisma.$transaction).toHaveBeenCalledWith(['create-op', 'update-op']);
@@ -123,17 +126,18 @@ describe('OutboundLedgerService', () => {
       await service.recordAttempt('whmsg_1', { ...base, success: false, final: false });
       // No status change — but the touch stamps last-activity so the
       // reconcile sweep can tell a live ladder from an orphaned message.
-      expect(prisma.outboundMessage.update).toHaveBeenCalledWith({
-        where: { id: 'whmsg_1' },
+      // PENDING-guarded: a stale twin's touch must not disturb a settled row.
+      expect(prisma.outboundMessage.updateMany).toHaveBeenCalledWith({
+        where: { id: 'whmsg_1', status: 'PENDING' },
         data: { updatedAt: expect.any(Date) },
       });
       expect(prisma.$transaction).toHaveBeenCalledWith(['create-op', 'update-op']);
     });
 
-    it('marks the message FAILED when the final attempt fails', async () => {
+    it('marks the message FAILED only from PENDING (a stale twin cannot downgrade DELIVERED)', async () => {
       await service.recordAttempt('whmsg_1', { ...base, success: false, final: true });
-      expect(prisma.outboundMessage.update).toHaveBeenCalledWith({
-        where: { id: 'whmsg_1' },
+      expect(prisma.outboundMessage.updateMany).toHaveBeenCalledWith({
+        where: { id: 'whmsg_1', status: 'PENDING' },
         data: { status: 'FAILED' },
       });
     });

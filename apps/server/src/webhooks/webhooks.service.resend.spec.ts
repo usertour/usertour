@@ -17,7 +17,13 @@ describe('WebhooksService.resendMessage — ambiguous enqueue compensation', () 
     environment: { findUnique: jest.Mock };
   };
   let projectsService: { getProjectConfig: jest.Mock };
-  let ledger: { getMessage: jest.Mock; claimForResend: jest.Mock; releaseResendClaim: jest.Mock };
+  let ledger: {
+    getMessage: jest.Mock;
+    claimForResend: jest.Mock;
+    releaseResendClaim: jest.Mock;
+    createMessages: jest.Mock;
+    recordAttempt: jest.Mock;
+  };
   let deliveryQueue: { add: jest.Mock; getJob: jest.Mock };
   let service: WebhooksService;
 
@@ -43,6 +49,12 @@ describe('WebhooksService.resendMessage — ambiguous enqueue compensation', () 
       }),
       claimForResend: jest.fn().mockResolvedValue(claimStamp),
       releaseResendClaim: jest.fn().mockResolvedValue(undefined),
+      createMessages: jest
+        .fn()
+        .mockImplementation(async (inputs: Array<{ id: string }>) =>
+          inputs.map((input) => input.id),
+        ),
+      recordAttempt: jest.fn().mockResolvedValue(undefined),
     };
     deliveryQueue = { add: jest.fn().mockResolvedValue({}), getJob: jest.fn() };
     service = new WebhooksService(
@@ -90,5 +102,28 @@ describe('WebhooksService.resendMessage — ambiguous enqueue compensation', () 
 
     await expect(service.resendMessage('wh_1', 'whmsg_1')).rejects.toThrow('queue down');
     expect(ledger.releaseResendClaim).toHaveBeenCalledWith('whmsg_1', claimStamp, 'FAILED');
+  });
+
+  describe('sendTestEvent — same ambiguous-enqueue discipline', () => {
+    it('settles the message FAILED on a verified enqueue miss (no 14h-late ghost test event)', async () => {
+      deliveryQueue.add.mockRejectedValue(new Error('queue down'));
+      deliveryQueue.getJob.mockResolvedValue(null);
+
+      await expect(service.sendTestEvent('wh_1')).rejects.toThrow('queue down');
+      // The user just watched this fail — the row must not sit PENDING for
+      // the reconcile sweep to deliver hours later.
+      expect(ledger.recordAttempt).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ success: false, final: true }),
+      );
+    });
+
+    it('keeps the message PENDING when the job actually exists (phantom)', async () => {
+      deliveryQueue.add.mockRejectedValue(new Error('connection reset'));
+      deliveryQueue.getJob.mockResolvedValue({ id: 'test-whmsg_x' });
+
+      await expect(service.sendTestEvent('wh_1')).resolves.toBeDefined();
+      expect(ledger.recordAttempt).not.toHaveBeenCalled();
+    });
   });
 });

@@ -87,6 +87,9 @@ export const CreateWebhook = gql`
   }
 `;
 
+// Returns every field the server may change — including the breaker state a
+// URL change or re-enable resets — so the normalized cache updates list AND
+// detail without a refetch (docs/conventions/apollo-cache-mutations.md).
 export const UpdateWebhook = gql`
   mutation UpdateWebhook($data: UpdateWebhookInput!) {
     updateWebhook(data: $data) {
@@ -98,6 +101,9 @@ export const UpdateWebhook = gql`
       topics
       enabled
       description
+      consecutiveFailures
+      cooldownUntil
+      autoDisabledAt
     }
   }
 `;
@@ -114,6 +120,7 @@ export const RotateWebhookSecret = gql`
   mutation RotateWebhookSecret($data: WebhookIdInput!) {
     rotateWebhookSecret(data: $data) {
       id
+      updatedAt
       secret
     }
   }

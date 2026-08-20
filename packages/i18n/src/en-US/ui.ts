@@ -1332,6 +1332,8 @@ const translations = {
           '{{count}} consecutive delivery attempts failed — deliveries are held and will be sent after {{time}}. If failures continue, the pause gets longer.',
       },
       statusDisabled: 'Disabled',
+      responseOk: 'OK',
+      responseError: 'Error',
       detailsMenuItem: 'View details',
       editMenuItem: 'Edit webhook',
       deleteMenuItem: 'Delete webhook',

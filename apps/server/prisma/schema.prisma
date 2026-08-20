@@ -1113,11 +1113,12 @@ model Webhook {
   secret        String
   description   String?
 
-  /// Circuit-breaker state (cooldown layer, ADR 0010): messages whose retry
-  /// budget was exhausted in a row. Reset to 0 by any successful attempt.
+  /// Circuit-breaker state (cooldown layer, ADR 0010): consecutive FAILED
+  /// delivery attempts, across messages. Reset to 0 by any successful attempt.
   consecutiveFailures Int       @default(0)
-  /// While set and in the future, the listener skips this endpoint (messages
-  /// are not created). Window grows exponentially with the failure streak.
+  /// While set and in the future, the PROCESSOR defers this endpoint's jobs
+  /// (moveToDelayed) — messages are still created and delivered after the
+  /// window. Grows exponentially with the failure streak.
   cooldownUntil       DateTime? @db.Timestamptz(6)
   /// Start of the current unbroken failure streak (set on 0->1, cleared by any
   /// success). Once older than the auto-disable window, the endpoint is
@@ -1170,6 +1171,10 @@ model OutboundMessage {
   @@index([webhookId, createdAt])
   @@index([integrationId, createdAt])
   @@index([createdAt])
+  // Reconcile sweep: PENDING rows silent past the orphan threshold. PENDING
+  // is a sliver of the ledger, so (status, updatedAt) keeps the hourly scan
+  // off the 30-day table.
+  @@index([status, updatedAt])
 }
 
 /// One row per delivery attempt of a message (append-only). Cascades with its

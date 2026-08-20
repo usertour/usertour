@@ -1,5 +1,5 @@
 import { ArgsType, Field, InputType } from '@nestjs/graphql';
-import { IsArray, IsBoolean, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
 
 @ArgsType()
 export class QueryWebhooksInput {
@@ -37,6 +37,7 @@ export class CreateWebhookInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   description?: string;
 }
 
@@ -66,6 +67,7 @@ export class UpdateWebhookInput {
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   description?: string;
 }
 

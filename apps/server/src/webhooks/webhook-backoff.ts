@@ -62,6 +62,24 @@ export const parseRetryAfter = (header: unknown): number | null => {
  * a longer pause (never shortened below the ladder — Retry-After is a floor
  * from the receiver, not permission to hammer), capped at RETRY_AFTER_MAX_MS.
  */
+/**
+ * The worker's backoffStrategy. Ladder position is the MESSAGE-lifecycle
+ * attempt count: a continuation job (reconcile rebuild) carries the tries
+ * already logged as `attemptOffset` — without adding it, a job resumed at
+ * message-attempt 6 would restart from the 5s rung and burn its remaining
+ * budget in about a minute, exactly the outage the 24h ladder exists for.
+ */
+export const deliveryBackoffStrategy = (
+  attemptsMade: number,
+  _type: string | undefined,
+  error: Error | undefined,
+  job: { data?: { attemptOffset?: number } } | undefined,
+): number =>
+  computeBackoffDelay(
+    attemptsMade + (Number(job?.data?.attemptOffset) || 0),
+    (error as RetryAfterCarrier | undefined)?.retryAfterMs,
+  );
+
 export const computeBackoffDelay = (attemptsMade: number, retryAfterMs?: number | null): number => {
   const index = Math.min(Math.max(attemptsMade, 1), RETRY_DELAYS_MS.length) - 1;
   const ladder = RETRY_DELAYS_MS[index];

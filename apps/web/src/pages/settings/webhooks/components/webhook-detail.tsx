@@ -403,7 +403,12 @@ const MessagesSection = ({
                 </TableCell>
                 <TableCell>{message.deliveries.length}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  {last ? (last.responseStatus ?? (last.success ? 'OK' : 'ERR')) : '—'}
+                  {last
+                    ? (last.responseStatus ??
+                      (last.success
+                        ? t('settings.webhooks.responseOk')
+                        : t('settings.webhooks.responseError')))
+                    : '—'}
                 </TableCell>
               </TableRow>
             );

@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   CreateWebhook,
@@ -128,21 +129,27 @@ export const useCreateWebhookMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateWebhook, {
     refetchQueries: ['ListWebhooks'],
   });
-  const invoke = async (input: CreateWebhookInput): Promise<Webhook | null> => {
-    const response = await mutation({ variables: { data: input } });
-    return (response.data?.createWebhook as Webhook | undefined) ?? null;
-  };
+  const invoke = useCallback(
+    async (input: CreateWebhookInput): Promise<Webhook | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (response.data?.createWebhook as Webhook | undefined) ?? null;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useUpdateWebhookMutation = () => {
-  const [mutation, { loading, error }] = useMutation(UpdateWebhook, {
-    refetchQueries: ['ListWebhooks', 'GetWebhook'],
-  });
-  const invoke = async (input: UpdateWebhookInput): Promise<Webhook | null> => {
-    const response = await mutation({ variables: { data: input } });
-    return (response.data?.updateWebhook as Webhook | undefined) ?? null;
-  };
+  // No refetch: the mutation returns every field the server may change (incl.
+  // the breaker reset), so the normalized cache propagates it.
+  const [mutation, { loading, error }] = useMutation(UpdateWebhook);
+  const invoke = useCallback(
+    async (input: UpdateWebhookInput): Promise<Webhook | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (response.data?.updateWebhook as Webhook | undefined) ?? null;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -151,10 +158,13 @@ export const useDeleteWebhookMutation = () => {
   const [mutation, { loading, error }] = useMutation(DeleteWebhook, {
     refetchQueries: ['ListWebhooks'],
   });
-  const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { data: { id } } });
-    return !!response.data?.deleteWebhook;
-  };
+  const invoke = useCallback(
+    async (id: string): Promise<boolean> => {
+      const response = await mutation({ variables: { data: { id } } });
+      return !!response.data?.deleteWebhook;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -162,23 +172,29 @@ export const useSendWebhookTestEventMutation = () => {
   // Enqueues a single-attempt test message; the outcome lands in the delivery
   // log, so consumers refetch it after a short delay rather than via cache.
   const [mutation, { loading, error }] = useMutation(SendWebhookTestEvent);
-  const invoke = async (id: string): Promise<boolean> => {
-    const response = await mutation({ variables: { data: { id } } });
-    return !!response.data?.sendWebhookTestEvent;
-  };
+  const invoke = useCallback(
+    async (id: string): Promise<boolean> => {
+      const response = await mutation({ variables: { data: { id } } });
+      return !!response.data?.sendWebhookTestEvent;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useRotateWebhookSecretMutation = () => {
   // Mints a new signing secret on the same record; in-flight retries pick it
-  // up server-side. Refetch so the detail page shows the new value.
-  const [mutation, { loading, error }] = useMutation(RotateWebhookSecret, {
-    refetchQueries: ['GetWebhook'],
-  });
-  const invoke = async (id: string): Promise<string | null> => {
-    const response = await mutation({ variables: { data: { id } } });
-    return (response.data?.rotateWebhookSecret?.secret as string | undefined) ?? null;
-  };
+  // up server-side.
+  // No refetch: the mutation returns id + secret + updatedAt, which is the
+  // full set of fields rotation changes — the cache merges them in place.
+  const [mutation, { loading, error }] = useMutation(RotateWebhookSecret);
+  const invoke = useCallback(
+    async (id: string): Promise<string | null> => {
+      const response = await mutation({ variables: { data: { id } } });
+      return (response.data?.rotateWebhookSecret?.secret as string | undefined) ?? null;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
@@ -186,9 +202,12 @@ export const useResendWebhookMessageMutation = () => {
   // Re-queues the stored payload as a single attempt; the outcome lands in the
   // message log, so consumers refetch it after a short delay.
   const [mutation, { loading, error }] = useMutation(ResendWebhookMessage);
-  const invoke = async (webhookId: string, messageId: string): Promise<boolean> => {
-    const response = await mutation({ variables: { data: { webhookId, messageId } } });
-    return !!response.data?.resendWebhookMessage;
-  };
+  const invoke = useCallback(
+    async (webhookId: string, messageId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { data: { webhookId, messageId } } });
+      return !!response.data?.resendWebhookMessage;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };

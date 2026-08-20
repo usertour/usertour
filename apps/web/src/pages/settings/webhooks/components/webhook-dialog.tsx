@@ -90,12 +90,16 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
   });
 
   // The dialog stays mounted, so reset on each open — a cancelled draft must
-  // not reappear, and edit mode must re-seed from the current row.
+  // not reappear, and edit mode must re-seed from the current row. Keyed on
+  // the row's ID, not its identity: the list is cache-and-network and selects
+  // fields that drift with delivery outcomes (consecutiveFailures, updatedAt),
+  // so a background cache settle would otherwise wipe in-progress edits.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: webhook identity intentionally excluded (see above)
   useEffect(() => {
     if (open) {
       form.reset(webhook ? valuesFromWebhook(webhook) : formDefaults);
     }
-  }, [open, webhook, form]);
+  }, [open, webhook?.id, form]);
 
   const { invoke: createWebhook, loading: creating } = useCreateWebhookMutation();
   const { invoke: updateWebhook, loading: updating } = useUpdateWebhookMutation();

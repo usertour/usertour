@@ -14,7 +14,7 @@ import compileEmailTemplate from '@/common/email/compile-email-template';
 import { EmailService } from '@/shared/email.service';
 import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
-import { RetryAfterCarrier, computeBackoffDelay, parseRetryAfter } from './webhook-backoff';
+import { RetryAfterCarrier, deliveryBackoffStrategy, parseRetryAfter } from './webhook-backoff';
 import { WEBHOOK_SIGNATURE_HEADER, signWebhookPayload } from './webhook-signature';
 import { WebhookDeliveryJobData } from './webhook.types';
 
@@ -31,18 +31,18 @@ const RESPONSE_MAX_BYTES = 256 * 1024;
 // ladder a message's FINAL failure arrives a day late, far too slow a signal
 // to shed load with. Cooling defers attempts (moveToDelayed) — it never drops
 // messages; the ledger is written regardless.
-export const COOLDOWN_THRESHOLD = 10;
-export const COOLDOWN_BASE_MS = 60_000; // 1 minute
-export const COOLDOWN_MAX_MS = 60 * 60_000; // capped at 1 hour
+const COOLDOWN_THRESHOLD = 10;
+const COOLDOWN_BASE_MS = 60_000; // 1 minute
+const COOLDOWN_MAX_MS = 60 * 60_000; // capped at 1 hour
 // Spread the release of jobs parked on the same cooldown so its expiry does
 // not stampede a just-recovered receiver.
-export const COOLDOWN_RELEASE_JITTER_MS = 30_000;
+const COOLDOWN_RELEASE_JITTER_MS = 30_000;
 // Layer 2: an endpoint whose failure streak has lasted this long gets disabled
 // (nothing was delivered in that whole window anyway) and the project owner is
 // notified. Re-enabling is a manual switch in the dashboard. No scheduler: the
 // check rides on failed attempts, and a dead-but-trafficked endpoint produces
 // those every cooldown cycle.
-export const AUTO_DISABLE_AFTER_MS = 7 * 24 * 60 * 60_000; // 7 days
+const AUTO_DISABLE_AFTER_MS = 7 * 24 * 60 * 60_000; // 7 days
 // How many deliveries one worker runs concurrently. Sequential (the BullMQ
 // default) lets a single hung endpoint (10s timeout per attempt) head-of-line
 // block every other tenant's deliveries.
@@ -63,10 +63,10 @@ const guardedAgent = createGuardedHttpsAgent();
   concurrency: DELIVERY_CONCURRENCY,
   settings: {
     // The ~24h ladder (webhook-backoff.ts), raised to a 429's Retry-After
-    // when the receiver asked for a longer pause. Jobs opt in with
-    // backoff: { type: 'custom' }.
-    backoffStrategy: (attemptsMade: number, _type, error) =>
-      computeBackoffDelay(attemptsMade, (error as RetryAfterCarrier | undefined)?.retryAfterMs),
+    // when the receiver asked for a longer pause, positioned by the
+    // message-lifecycle attempt count (job.data.attemptOffset included).
+    // Jobs opt in with backoff: { type: 'custom' }.
+    backoffStrategy: deliveryBackoffStrategy,
   },
 })
 export class WebhooksProcessor extends WorkerHost {

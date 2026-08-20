@@ -3,6 +3,7 @@ import {
   RETRY_AFTER_MAX_MS,
   RETRY_DELAYS_MS,
   computeBackoffDelay,
+  deliveryBackoffStrategy,
   parseRetryAfter,
 } from './webhook-backoff';
 
@@ -40,6 +41,20 @@ describe('webhook-backoff', () => {
     // orphan threshold silently under-covers legitimate silences and starts
     // double-queueing parked messages. Raise the orphan threshold with it.
     expect(RETRY_AFTER_MAX_MS).toBeLessThanOrEqual(Math.max(...RETRY_DELAYS_MS));
+  });
+
+  it('deliveryBackoffStrategy positions by MESSAGE-lifecycle attempts (offset included)', () => {
+    // A reconcile continuation resuming at message-attempt 6 must wait the
+    // 8h rung, not restart from 5s and burn its budget in a minute.
+    expect(deliveryBackoffStrategy(1, undefined, undefined, { data: { attemptOffset: 5 } })).toBe(
+      RETRY_DELAYS_MS[5],
+    );
+    // Fresh listener job: offset absent -> plain ladder.
+    expect(deliveryBackoffStrategy(1, undefined, undefined, { data: {} })).toBe(5_000);
+    expect(deliveryBackoffStrategy(2, undefined, undefined, undefined)).toBe(60_000);
+    // Retry-After still rides through the error.
+    const rateLimited = Object.assign(new Error('429'), { retryAfterMs: 120_000 });
+    expect(deliveryBackoffStrategy(1, undefined, rateLimited, { data: {} })).toBe(120_000);
   });
 
   it('parseRetryAfter handles delta-seconds, HTTP-dates, and junk', () => {

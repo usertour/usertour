@@ -1265,6 +1265,8 @@ const translations = {
           '连续 {{count}} 次投递尝试失败 — 投递已暂缓,将于 {{time}} 后继续发送;若仍持续失败,暂缓时间将延长。',
       },
       statusDisabled: '已停用',
+      responseOk: '成功',
+      responseError: '失败',
       detailsMenuItem: '查看详情',
       editMenuItem: '编辑 Webhook',
       deleteMenuItem: '删除 Webhook',

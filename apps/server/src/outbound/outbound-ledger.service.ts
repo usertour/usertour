@@ -154,6 +154,14 @@ export class OutboundLedgerService implements OnModuleInit {
    * the ledger's last-activity signal: the reconcile sweep treats a PENDING
    * message whose updatedAt predates the largest ladder gap as orphaned
    * (its job was lost with Redis). Never throws.
+   *
+   * Settling is CAS-guarded like every other transition in this file (a
+   * stalled-and-reclaimed job can produce two writers for one message):
+   * FAILED only lands on a PENDING row, while DELIVERED is STICKY — it may
+   * overwrite FAILED, because a late success proves the message WAS
+   * delivered, but nothing may overwrite DELIVERED. updateMany on purpose:
+   * losing the settle race must keep the attempt row, not throw P2025 and
+   * roll the transaction back.
    */
   async recordAttempt(messageId: string, result: OutboundAttemptResult): Promise<void> {
     const status = result.success
@@ -174,8 +182,14 @@ export class OutboundLedgerService implements OnModuleInit {
             durationMs: result.durationMs ?? null,
           },
         }),
-        this.prisma.outboundMessage.update({
-          where: { id: messageId },
+        this.prisma.outboundMessage.updateMany({
+          where: {
+            id: messageId,
+            status:
+              status === OutboundMessageStatus.DELIVERED
+                ? { in: [OutboundMessageStatus.PENDING, OutboundMessageStatus.FAILED] }
+                : OutboundMessageStatus.PENDING,
+          },
           data: status ? { status } : { updatedAt: new Date() },
         }),
       ]);

@@ -35,11 +35,13 @@ export const webhook = z.object({
   consecutiveFailures: z
     .number()
     .int()
-    .describe('Messages in a row whose retry budget was exhausted (circuit-breaker streak).'),
+    .describe('Consecutive failed delivery attempts (circuit-breaker streak; any success resets).'),
   cooldownUntil: z
     .string()
     .nullable()
-    .describe('While in the future, delivery is paused for this endpoint (cooldown).'),
+    .describe(
+      'While in the future, deliveries to this endpoint are held and sent after the window (cooldown).',
+    ),
   autoDisabledAt: z
     .string()
     .nullable()
@@ -52,6 +54,7 @@ export class WebhookDto extends createZodDto(webhook) {}
 export const createWebhookBody = z.object({
   url: z
     .string()
+    .max(2083)
     .url()
     .regex(/^https?:\/\//, 'must be an http(s) URL')
     .describe(
@@ -67,6 +70,7 @@ export class CreateWebhookBodyDto extends createZodDto(createWebhookBody) {}
 export const updateWebhookBody = z.object({
   url: z
     .string()
+    .max(2083)
     .url()
     .regex(/^https?:\/\//, 'must be an http(s) URL')
     .optional(),

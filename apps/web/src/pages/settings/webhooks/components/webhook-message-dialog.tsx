@@ -142,9 +142,13 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
                       </TableCell>
                       <TableCell>
                         {delivery.success ? (
-                          <Badge variant="success">{delivery.responseStatus ?? 'OK'}</Badge>
+                          <Badge variant="success">
+                            {delivery.responseStatus ?? t('settings.webhooks.responseOk')}
+                          </Badge>
                         ) : (
-                          <Badge variant="destructive">{delivery.responseStatus ?? 'ERR'}</Badge>
+                          <Badge variant="destructive">
+                            {delivery.responseStatus ?? t('settings.webhooks.responseError')}
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell>

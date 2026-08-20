@@ -215,7 +215,31 @@ export class WebhooksService {
       // Only realistic cause: this webhook was deleted concurrently.
       throw new WebhookNotFoundError();
     }
-    await this.deliveryQueue.add('deliver', jobData, SINGLE_ATTEMPT_JOB_OPTIONS);
+    const jobId = `test-${messageId}`;
+    try {
+      await this.deliveryQueue.add('deliver', jobData, { ...SINGLE_ATTEMPT_JOB_OPTIONS, jobId });
+    } catch (error) {
+      // Same ambiguous-outcome discipline as resendMessage: verify before
+      // compensating. A verified miss must not leave the row PENDING — the
+      // user just saw this fail, and 14h later the reconcile sweep would
+      // deliver a test event nobody is waiting for. Settle it FAILED instead
+      // (visible in the log, honest).
+      let phantom = null;
+      try {
+        phantom = await this.deliveryQueue.getJob(jobId);
+      } catch {
+        // Verification unreachable — fall through to the settle.
+      }
+      if (!phantom) {
+        await this.ledger.recordAttempt(messageId, {
+          attempt: 1,
+          success: false,
+          error: 'Failed to enqueue the delivery job',
+          final: true,
+        });
+        throw error;
+      }
+    }
     return webhook;
   }
 
