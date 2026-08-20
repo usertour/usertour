@@ -9,6 +9,7 @@ describe('OutboundLedgerService', () => {
   let prisma: {
     outboundMessage: {
       createMany: jest.Mock;
+      create: jest.Mock;
       update: jest.Mock;
       updateMany: jest.Mock;
       deleteMany: jest.Mock;
@@ -23,6 +24,7 @@ describe('OutboundLedgerService', () => {
     prisma = {
       outboundMessage: {
         createMany: jest.fn().mockResolvedValue({ count: 0 }),
+        create: jest.fn().mockResolvedValue({}),
         update: jest.fn().mockReturnValue('update-op'),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         deleteMany: jest.fn().mockResolvedValue({ count: 3 }),
@@ -64,8 +66,45 @@ describe('OutboundLedgerService', () => {
   });
 
   it('skips the write entirely for an empty batch', async () => {
-    await service.createMessages([]);
+    await expect(service.createMessages([])).resolves.toEqual([]);
     expect(prisma.outboundMessage.createMany).not.toHaveBeenCalled();
+  });
+
+  it('degrades a failed batch insert to per-row writes and returns the survivors', async () => {
+    const inputs = ['whmsg_a', 'whmsg_b', 'whmsg_c'].map((id) => ({
+      id,
+      environmentId: 'env_1',
+      destination: { webhookId: `wh_${id.slice(-1)}` },
+      topic: 'event.tracked.flow_started',
+      payload: { id },
+    }));
+    // The single INSERT fails on whmsg_b's FK (its webhook was deleted
+    // between the caller's read and this write) — one vanished destination
+    // must not erase A's and C's record of intent.
+    prisma.outboundMessage.createMany.mockRejectedValueOnce(new Error('FK violation'));
+    prisma.outboundMessage.create = jest
+      .fn()
+      .mockImplementation(async ({ data }: { data: { id: string } }) => {
+        if (data.id === 'whmsg_b') {
+          throw new Error('FK violation');
+        }
+        return data;
+      });
+
+    await expect(service.createMessages(inputs)).resolves.toEqual(['whmsg_a', 'whmsg_c']);
+    expect(prisma.outboundMessage.create).toHaveBeenCalledTimes(3);
+  });
+
+  it('touch bumps updatedAt only while PENDING and never throws', async () => {
+    prisma.outboundMessage.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+    await service.touch('whmsg_1');
+    expect(prisma.outboundMessage.updateMany).toHaveBeenCalledWith({
+      where: { id: 'whmsg_1', status: 'PENDING' },
+      data: { updatedAt: expect.any(Date) },
+    });
+
+    prisma.outboundMessage.updateMany = jest.fn().mockRejectedValue(new Error('db blip'));
+    await expect(service.touch('whmsg_1')).resolves.toBeUndefined();
   });
 
   describe('recordAttempt', () => {

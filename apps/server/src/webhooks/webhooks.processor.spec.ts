@@ -32,7 +32,7 @@ describe('WebhooksProcessor', () => {
     environment?: { findUnique: jest.Mock };
     userOnProject?: { findMany: jest.Mock };
   };
-  let ledger: { recordAttempt: jest.Mock };
+  let ledger: { recordAttempt: jest.Mock; touch: jest.Mock };
   let emailService: { sendOrLog: jest.Mock };
   let audit: { record: jest.Mock };
   let processor: WebhooksProcessor;
@@ -52,7 +52,10 @@ describe('WebhooksProcessor', () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     };
-    ledger = { recordAttempt: jest.fn().mockResolvedValue(undefined) };
+    ledger = {
+      recordAttempt: jest.fn().mockResolvedValue(undefined),
+      touch: jest.fn().mockResolvedValue(undefined),
+    };
     const configService = { get: jest.fn().mockReturnValue(true) }; // private egress allowed in tests
     emailService = { sendOrLog: jest.fn().mockResolvedValue(undefined) };
     audit = { record: jest.fn() };
@@ -371,6 +374,9 @@ describe('WebhooksProcessor', () => {
     expect(mockedPost).not.toHaveBeenCalled();
     expect(ledger.recordAttempt).not.toHaveBeenCalled();
     expect(prisma.webhook.updateMany).not.toHaveBeenCalled();
+    // ...except the heartbeat: the parked message must stay visible to the
+    // reconcile sweep as alive, or a long defer chain reads as an orphan.
+    expect(ledger.touch).toHaveBeenCalledWith('whmsg_1');
   });
 
   it('lets a manual send (test event / resend) through the cooldown gate as the probe', async () => {

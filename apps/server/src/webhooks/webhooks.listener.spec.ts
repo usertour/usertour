@@ -33,7 +33,13 @@ describe('WebhooksListener', () => {
       bizEvent: { findMany: jest.fn() },
     };
     webhooksService = { isEntitled: jest.fn().mockResolvedValue(true) };
-    ledger = { createMessages: jest.fn().mockResolvedValue(undefined) };
+    ledger = {
+      createMessages: jest
+        .fn()
+        .mockImplementation(async (inputs: Array<{ id: string }>) =>
+          inputs.map((input) => input.id),
+        ),
+    };
     listener = new WebhooksListener(
       queue as any,
       prisma as any,
@@ -46,8 +52,9 @@ describe('WebhooksListener', () => {
     prisma.webhook.findMany.mockResolvedValue([{ id: 'wh_1', topics: ['*'], enabled: true }]);
     prisma.bizEvent.findMany.mockResolvedValue([buildBizEvent('flow_started')]);
     const order: string[] = [];
-    ledger.createMessages.mockImplementation(async () => {
+    ledger.createMessages.mockImplementation(async (inputs: Array<{ id: string }>) => {
       order.push('ledger');
+      return inputs.map((input) => input.id);
     });
     queue.addBulk.mockImplementation(async () => {
       order.push('queue');
@@ -93,6 +100,26 @@ describe('WebhooksListener', () => {
     // delaying them.
     const where = prisma.webhook.findMany.mock.calls[0][0].where;
     expect(where).toEqual({ environmentId: 'env_1', enabled: true });
+  });
+
+  it('enqueues only the jobs whose ledger row was persisted (vanished webhook drops ITS rows only)', async () => {
+    prisma.webhook.findMany.mockResolvedValue([
+      { id: 'wh_a', topics: ['event.tracked'], enabled: true },
+      { id: 'wh_b', topics: ['event.tracked'], enabled: true },
+    ]);
+    prisma.bizEvent.findMany.mockResolvedValue([buildBizEvent('flow_started')]);
+    // wh_b was deleted between the read and the write: the ledger's per-row
+    // fallback persists only wh_a's message.
+    ledger.createMessages.mockImplementation(
+      async (inputs: Array<{ id: string; destination: { webhookId: string } }>) =>
+        inputs.filter((input) => input.destination.webhookId === 'wh_a').map((input) => input.id),
+    );
+
+    await listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_1'] });
+
+    const enqueued = queue.addBulk.mock.calls[0][0];
+    expect(enqueued).toHaveLength(1);
+    expect(enqueued[0].data.webhookId).toBe('wh_a');
   });
 
   it('skips the entitlement lookup when the environment has no enabled endpoints', async () => {

@@ -22,10 +22,14 @@ export const RETRY_DELAYS_MS: readonly number[] = [
 ];
 
 /**
- * Ceiling for honoring a 429's Retry-After: a receiver may ask us to slow
- * down, not to park the message beyond the ladder's own horizon.
+ * Ceiling for honoring a 429's Retry-After — the LADDER's maximum gap, on
+ * purpose: every legitimate backoff delay must stay under the reconcile
+ * sweep's orphan threshold (largest gap + slack), or a message parked on a
+ * long Retry-After would be mistaken for one whose job died with Redis and
+ * get double-queued. A receiver may ask us to slow down, not to park the
+ * message beyond the ladder's own horizon.
  */
-export const RETRY_AFTER_MAX_MS = 24 * 60 * 60_000;
+export const RETRY_AFTER_MAX_MS = 12 * 60 * 60_000;
 
 /** Attached to the thrown delivery error so the backoff strategy can read it. */
 export interface RetryAfterCarrier {

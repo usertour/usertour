@@ -202,7 +202,7 @@ export class WebhooksService {
         data: {},
       },
     };
-    await this.ledger.createMessages([
+    const persisted = await this.ledger.createMessages([
       {
         id: messageId,
         environmentId: webhook.environmentId,
@@ -211,6 +211,10 @@ export class WebhooksService {
         payload: jobData.payload,
       },
     ]);
+    if (!persisted.includes(messageId)) {
+      // Only realistic cause: this webhook was deleted concurrently.
+      throw new WebhookNotFoundError();
+    }
     await this.deliveryQueue.add('deliver', jobData, SINGLE_ATTEMPT_JOB_OPTIONS);
     return webhook;
   }

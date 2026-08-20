@@ -35,6 +35,13 @@ describe('webhook-backoff', () => {
     expect(computeBackoffDelay(2, 0)).toBe(60_000);
   });
 
+  it('the Retry-After cap never exceeds the ladder max (reconcile orphan-line invariant)', () => {
+    // If this grows past the largest ladder gap, the reconcile sweep's
+    // orphan threshold silently under-covers legitimate silences and starts
+    // double-queueing parked messages. Raise the orphan threshold with it.
+    expect(RETRY_AFTER_MAX_MS).toBeLessThanOrEqual(Math.max(...RETRY_DELAYS_MS));
+  });
+
   it('parseRetryAfter handles delta-seconds, HTTP-dates, and junk', () => {
     expect(parseRetryAfter('120')).toBe(120_000);
     expect(parseRetryAfter('0')).toBeNull();

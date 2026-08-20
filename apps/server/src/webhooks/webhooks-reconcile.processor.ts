@@ -8,9 +8,11 @@ import { WebhookDeliveryJobData } from './webhook.types';
 
 /**
  * A PENDING message is orphaned when nothing touched it for longer than the
- * ladder's largest gap (12h) plus slack: a live job MUST have recorded an
- * attempt (which bumps updatedAt) within that window, so silence means the
- * job was lost with Redis.
+ * ladder's largest gap (12h) plus slack. Every legitimate silence is shorter:
+ * backoff delays are capped at 12h (RETRY_AFTER_MAX_MS deliberately equals
+ * the ladder max), attempts bump updatedAt when they settle into the ledger,
+ * and a cooldown defer touches the row (gaps <= the 1h cooldown cap). So
+ * silence past this threshold genuinely means the job was lost with Redis.
  */
 export const RECONCILE_ORPHAN_AFTER_MS = 14 * 60 * 60_000; // 12h max gap + 2h slack
 /** Per-sweep cap; the hourly cadence drains any realistic backlog. */

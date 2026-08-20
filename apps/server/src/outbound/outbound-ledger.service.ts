@@ -85,22 +85,65 @@ export class OutboundLedgerService implements OnModuleInit {
     );
   }
 
-  /** Persist message rows (status PENDING). Call before enqueueing their jobs. */
-  async createMessages(inputs: OutboundMessageInput[]): Promise<void> {
+  /**
+   * Persist message rows (status PENDING). Call before enqueueing their jobs;
+   * enqueue only for the RETURNED ids. Batch-first (one INSERT); if that
+   * single statement fails — typically an FK violation because a destination
+   * row was deleted between the caller's read and this write — degrade to
+   * per-row inserts so one vanished destination cannot erase the whole
+   * batch's record of intent. Rows that still fail individually are logged
+   * and dropped: their destination is gone, there is nothing to deliver to.
+   */
+  async createMessages(inputs: OutboundMessageInput[]): Promise<string[]> {
     if (inputs.length === 0) {
-      return;
+      return [];
     }
-    await this.prisma.outboundMessage.createMany({
-      data: inputs.map((input) => ({
-        id: input.id,
-        environmentId: input.environmentId,
-        topic: input.topic,
-        payload: input.payload,
-        ...('webhookId' in input.destination
-          ? { webhookId: input.destination.webhookId }
-          : { integrationId: input.destination.integrationId }),
-      })),
-    });
+    const rows = inputs.map((input) => ({
+      id: input.id,
+      environmentId: input.environmentId,
+      topic: input.topic,
+      payload: input.payload,
+      ...('webhookId' in input.destination
+        ? { webhookId: input.destination.webhookId }
+        : { integrationId: input.destination.integrationId }),
+    }));
+    try {
+      await this.prisma.outboundMessage.createMany({ data: rows });
+      return rows.map((row) => row.id);
+    } catch (batchError) {
+      this.logger.warn(
+        `Batch insert of ${rows.length} outbound messages failed (${batchError}); retrying per row`,
+      );
+      const persisted: string[] = [];
+      for (const row of rows) {
+        try {
+          await this.prisma.outboundMessage.create({ data: row });
+          persisted.push(row.id);
+        } catch (rowError) {
+          this.logger.warn(
+            `Dropping outbound message ${row.id} for a vanished destination: ${rowError}`,
+          );
+        }
+      }
+      return persisted;
+    }
+  }
+
+  /**
+   * Bump a PENDING message's last-activity stamp without recording an
+   * attempt — the cooldown defer path calls this so a job parked (repeatedly)
+   * behind a breaker window stays visible to the reconcile sweep as alive.
+   * Guarded on PENDING and never throws: pure bookkeeping.
+   */
+  async touch(id: string): Promise<void> {
+    try {
+      await this.prisma.outboundMessage.updateMany({
+        where: { id, status: OutboundMessageStatus.PENDING },
+        data: { updatedAt: new Date() },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to touch outbound message ${id}`, error as Error);
+    }
   }
 
   /**

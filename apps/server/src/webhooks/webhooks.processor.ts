@@ -113,6 +113,11 @@ export class WebhooksProcessor extends WorkerHost {
       // the breaker for everything that is waiting.
       const resumeAt =
         webhook.cooldownUntil.getTime() + Math.floor(Math.random() * COOLDOWN_RELEASE_JITTER_MS);
+      // Heartbeat for the reconcile sweep: a defer records no attempt, so
+      // without this touch a job bouncing across re-armed cooldown windows
+      // looks identical to one whose job died with Redis — and would get
+      // double-queued once its silence outlasts the orphan threshold.
+      await this.ledger.touch(messageId);
       await job.moveToDelayed(resumeAt, token);
       throw new DelayedError();
     }

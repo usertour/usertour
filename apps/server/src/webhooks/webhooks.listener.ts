@@ -62,16 +62,25 @@ export class WebhooksListener {
     if (jobs.length === 0) {
       return;
     }
-    await this.ledger.createMessages(
-      jobs.map((job) => ({
-        id: job.data.messageId,
-        environmentId: job.data.payload.environmentId as string,
-        destination: { webhookId: job.data.webhookId },
-        topic: job.data.topic,
-        payload: job.data.payload,
-      })),
+    const persisted = new Set(
+      await this.ledger.createMessages(
+        jobs.map((job) => ({
+          id: job.data.messageId,
+          environmentId: job.data.payload.environmentId as string,
+          destination: { webhookId: job.data.webhookId },
+          topic: job.data.topic,
+          payload: job.data.payload,
+        })),
+      ),
     );
-    await this.queue.addBulk(jobs);
+    // Only jobs whose ledger row exists get enqueued: a webhook deleted
+    // between the read and the write drops ITS rows (logged in the ledger
+    // service), never the other endpoints' — and a job without a row would
+    // only produce unrecordable attempts anyway.
+    const enqueueable = jobs.filter((job) => persisted.has(job.data.messageId));
+    if (enqueueable.length > 0) {
+      await this.queue.addBulk(enqueueable);
+    }
   }
 
   /**
