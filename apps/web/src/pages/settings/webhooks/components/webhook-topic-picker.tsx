@@ -226,29 +226,45 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
       // Entity families derive their leaves from the shared vocabulary — a
       // topic added to WEBHOOK_ENTITY_TOPICS surfaces here without a code
       // change (its label key is the camelCased topic, e.g. user.created ->
-      // form.userCreated). Only the family display metadata is local: a NEW
-      // entity family needs a label anyway, and that is the one human step.
-      ...[
-        { key: 'users', prefix: 'user' },
-        { key: 'companies', prefix: 'company' },
-      ].map(({ key, prefix }) => ({
-        key,
-        prefix,
-        label: t(`settings.webhooks.picker.families.${key}`),
-        groups: [
-          {
-            key,
-            label: '',
-            leaves: WEBHOOK_ENTITY_TOPICS.filter((topic) => topic.startsWith(`${prefix}.`)).map(
-              (topic) =>
-                fixedLeaf(
-                  topic,
-                  topic.replace(/\.(\w)/g, (_match, letter: string) => letter.toUpperCase()),
-                ),
-            ),
-          },
-        ],
-      })),
+      // form.userCreated). Known families keep local display metadata (their
+      // plural i18n keys); a vocabulary prefix the metadata does NOT cover
+      // still auto-appears as its own family — with the raw i18n key as its
+      // label until someone adds one. A visible ugly label beats a topic the
+      // server loudly emits but the picker silently hides (the server-side
+      // counterpart is buildEntityTopic's vocabulary assertion).
+      ...(() => {
+        const knownFamilies = [
+          { key: 'users', prefix: 'user' },
+          { key: 'companies', prefix: 'company' },
+        ];
+        const vocabularyPrefixes = [
+          ...new Set(WEBHOOK_ENTITY_TOPICS.map((topic) => topic.split('.')[0])),
+        ];
+        const familyMeta = [
+          ...knownFamilies,
+          ...vocabularyPrefixes
+            .filter((prefix) => !knownFamilies.some((family) => family.prefix === prefix))
+            .map((prefix) => ({ key: prefix, prefix })),
+        ];
+        return familyMeta.map(({ key, prefix }) => ({
+          key,
+          prefix,
+          label: t(`settings.webhooks.picker.families.${key}`),
+          groups: [
+            {
+              key,
+              label: '',
+              leaves: WEBHOOK_ENTITY_TOPICS.filter((topic) => topic.startsWith(`${prefix}.`)).map(
+                (topic) =>
+                  fixedLeaf(
+                    topic,
+                    topic.replace(/\.(\w)/g, (_match, letter: string) => letter.toUpperCase()),
+                  ),
+              ),
+            },
+          ],
+        }));
+      })(),
     ];
   }, [events, t]);
 

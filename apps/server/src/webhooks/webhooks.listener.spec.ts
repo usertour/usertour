@@ -102,6 +102,35 @@ describe('WebhooksListener', () => {
     expect(where).toEqual({ environmentId: 'env_1', enabled: true });
   });
 
+  it('a change outside the topic vocabulary is skipped without sinking its batch siblings', async () => {
+    prisma.webhook.findMany.mockResolvedValue([
+      { id: 'wh_1', topics: ['user', 'company'], enabled: true },
+    ]);
+    prisma.bizUser = {
+      findUnique: jest.fn().mockResolvedValue({
+        id: 'bu_1',
+        externalId: 'ext_user_1',
+        createdAt: new Date(),
+        data: {},
+      }),
+    } as never;
+
+    await listener.onEntityChanged({
+      environmentId: 'env_1',
+      changes: [
+        // Future-entity change the vocabulary has never heard of (only
+        // reachable once the EntityChange union widens) ...
+        { entity: 'companyMembership' as never, action: 'created', bizId: 'bm_1' },
+        // ... must not stop the valid sibling from delivering.
+        { entity: 'user', action: 'updated', bizId: 'bu_1' },
+      ],
+    });
+
+    const enqueued = queue.addBulk.mock.calls[0][0];
+    expect(enqueued).toHaveLength(1);
+    expect(enqueued[0].data.topic).toBe('user.updated');
+  });
+
   it('skips the bizEvent join when no endpoint subscribes to event-family topics', async () => {
     // Entity/content-only subscribers must not pay the 4-include read just
     // to discard every row at topic matching.

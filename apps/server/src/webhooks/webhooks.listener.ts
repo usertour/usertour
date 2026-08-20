@@ -188,7 +188,17 @@ export class WebhooksListener {
 
       const jobs: DeliveryJob[] = [];
       for (const change of payload.changes) {
-        const topic = buildEntityTopic(change.entity, change.action);
+        // Vocabulary tripwire, contained to THIS change: buildEntityTopic
+        // throws on an entity missing from WEBHOOK_ENTITY_TOPICS (a dev-time
+        // signal for M3 additions), but a bad change must not take its batch
+        // siblings' deliveries down with it.
+        let topic: string;
+        try {
+          topic = buildEntityTopic(change.entity, change.action);
+        } catch (error) {
+          this.logger.error(`Skipping entity change ${change.entity}.${change.action}: ${error}`);
+          continue;
+        }
         const matching = webhooks.filter((webhook) =>
           matchesTopic((webhook.topics as string[]) ?? [], topic),
         );
