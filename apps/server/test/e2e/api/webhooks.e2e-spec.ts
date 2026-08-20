@@ -70,7 +70,7 @@ describe('API v2 /webhooks error contract (e2e)', () => {
   });
 
   const base = (envId: string) => `/v2/projects/${projectId}/environments/${envId}/webhooks`;
-  const authed = (method: 'get' | 'post', path: string) =>
+  const authed = (method: 'get' | 'post' | 'patch', path: string) =>
     request(app.getHttpServer())[method](path).set('Authorization', `Bearer ${token}`);
 
   it('refuses a private / non-HTTPS URL with 400 E0054', async () => {
@@ -88,6 +88,27 @@ describe('API v2 /webhooks error contract (e2e)', () => {
     const res = await authed('get', `${base(environmentId)}/cmsy00000000000000000000`);
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('E0061');
+  });
+
+  it('exposes the secret on get/create but NOT on update (exposure hygiene)', async () => {
+    const created = await authed('post', base(environmentId)).send({
+      url: 'https://e2e-secret-check.invalid/hook',
+      topics: ['event.tracked'],
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.secret).toMatch(/^whsec_/); // one-time handoff
+
+    const read = await authed('get', `${base(environmentId)}/${created.body.id}`);
+    expect(read.body.secret).toMatch(/^whsec_/); // single-object read: for wiring
+
+    // A PATCH response needs no secret — carrying it would land the key in
+    // HTTP logs and MCP agent context (update_webhook returns this object).
+    const updated = await authed('patch', `${base(environmentId)}/${created.body.id}`).send({
+      description: 'renamed',
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body.description).toBe('renamed');
+    expect(updated.body).not.toHaveProperty('secret');
   });
 
   it("returns the same 404 for another environment's webhook (no existence leak)", async () => {

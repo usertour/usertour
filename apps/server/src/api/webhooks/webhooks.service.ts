@@ -56,7 +56,11 @@ export class ApiWebhooksService {
   async update(id: string, environment: Environment, body: UpdateWebhookBody): Promise<Webhook> {
     await this.getOwnedRow(id, environment);
     const row = await this.webhooks.update({ id, ...body });
-    return mapWebhook(row, { includeSecret: true });
+    // No secret: exposure is limited to the surfaces that NEED it (get for
+    // wiring, create/rotate for the one-time handoff) — an update response
+    // carrying it would land the key in HTTP logs and MCP agent context for
+    // nothing (the mapper's stated convention).
+    return mapWebhook(row);
   }
 
   async delete(id: string, environment: Environment): Promise<void> {
