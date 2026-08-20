@@ -213,7 +213,16 @@ export class OutboundLedgerService implements OnModuleInit {
       },
       orderBy: { updatedAt: 'asc' },
       take,
-      include: { deliveries: { orderBy: { attempt: 'asc' } } },
+      // The sweep only needs the continuation inputs — count and success
+      // flags — not full attempt rows with response/error text.
+      select: {
+        id: true,
+        webhookId: true,
+        topic: true,
+        payload: true,
+        updatedAt: true,
+        deliveries: { select: { success: true } },
+      },
     });
   }
 
