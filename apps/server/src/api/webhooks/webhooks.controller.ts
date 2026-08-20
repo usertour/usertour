@@ -22,6 +22,7 @@ import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { Environment } from '@/environments/models/environment.model';
 
+import { ApiStandardErrorResponses } from '../shared/error-response';
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiWebhooksService } from './webhooks.service';
 import {
@@ -38,6 +39,7 @@ import {
 @UseFilters(OpenAPIExceptionFilter)
 @UsePipes(ApiValidationPipe)
 @ApiBearerAuth()
+@ApiStandardErrorResponses()
 export class ApiWebhooksController {
   constructor(private readonly service: ApiWebhooksService) {}
 
