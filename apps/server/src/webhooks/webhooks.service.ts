@@ -57,9 +57,18 @@ export class WebhooksService {
     return { ...row, secret: this.encryption.decrypt(row.secret) ?? '' };
   }
 
-  /** See the exposure rule above: surfaces that never need the secret get ''. */
-  private withMaskedSecret<T extends { secret: string }>(row: T): T {
-    return { ...row, secret: '' };
+  /**
+   * See the exposure rule above: surfaces that never need the secret get
+   * NULL — distinct from '', which only the decrypt path produces and means
+   * "stored value is no longer decryptable". One value per meaning, so no
+   * consumer has to know which query a row came from.
+   */
+  private withMaskedSecret<T extends { secret: string }>(
+    row: T,
+  ): Omit<T, 'secret'> & {
+    secret: string | null;
+  } {
+    return { ...row, secret: null };
   }
 
   // ---------------------------------------------------------------------------

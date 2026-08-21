@@ -31,13 +31,16 @@ export class Webhook {
   @Field(() => Boolean)
   enabled: boolean;
 
-  @Field(() => String)
-  secret: string;
+  // Nullable: list/delete rows carry NULL (masked — those surfaces never
+  // need the secret). '' only ever comes from the decrypt path and means
+  // "stored value is no longer decryptable". Two meanings, two values.
+  @Field(() => String, { nullable: true })
+  secret: string | null;
 
   @Field(() => String, { nullable: true })
   description?: string | null;
 
-  /** Circuit-breaker streak: messages that exhausted their retry budget in a row. */
+  /** Circuit-breaker streak: consecutive failed delivery attempts (any success resets). */
   @Field(() => Int)
   consecutiveFailures: number;
 

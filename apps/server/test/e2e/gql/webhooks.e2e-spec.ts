@@ -181,15 +181,16 @@ describe('GraphQL webhooks (e2e)', () => {
       expect(listed).toContain(created.id);
 
       // Exposure rule locked at the surface: a list SELECTING the secret gets
-      // the mask, never plaintext — only get/create/rotate carry it.
+      // NULL (masked), never plaintext — only get/create/rotate carry it,
+      // and '' is reserved for "stored value no longer decryptable".
       const listSecretRes = await graphql(app, {
         token,
         query:
           'query ($environmentId: String!) { listWebhooks(environmentId: $environmentId) { id secret } }',
         variables: { environmentId },
       });
-      for (const row of gqlData(listSecretRes).listWebhooks as { secret: string }[]) {
-        expect(row.secret).toBe('');
+      for (const row of gqlData(listSecretRes).listWebhooks as { secret: string | null }[]) {
+        expect(row.secret).toBeNull();
       }
 
       const getRes = await graphql(app, {

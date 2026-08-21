@@ -22,7 +22,8 @@ export interface Webhook {
   topics: string[];
   enabled: boolean;
   /** Present on the detail query only — the list query doesn't select it. */
-  secret?: string;
+  /** Plaintext on get/create/rotate; NULL on list/delete (masked); '' = stored value undecryptable. */
+  secret?: string | null;
   description?: string | null;
   /** Circuit-breaker streak: messages that exhausted their retry budget in a row. */
   consecutiveFailures: number;

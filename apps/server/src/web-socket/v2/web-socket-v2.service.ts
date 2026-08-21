@@ -257,6 +257,12 @@ export class WebSocketV2Service {
       return false;
     }
 
+    // No transaction ON PURPOSE (contrast the company path below):
+    // upsertBizUsers' only ENTITY write is its final statement — a failure
+    // before it leaves no committed entity change for the emit contract to
+    // lose, and the earlier attribute-definition inserts are idempotent
+    // scaffolding outside that contract. The company path needs atomicity
+    // because it makes TWO entity-relevant writes (company, then membership).
     const bizUser = await this.bizService.withEntityChangeEmit(environment.id, () =>
       this.bizService.upsertBizUsers(this.prisma, externalUserId, attributes, environment.id),
     );
