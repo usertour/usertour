@@ -4,7 +4,13 @@ import { EncryptionService } from '@/shared/encryption.service';
 
 import { BizService } from '@/biz/biz.service';
 import { graphql, gqlData } from '../auth';
-import { buildBizUser, buildEnvironment, buildProject, buildSubscription } from '../factories';
+import {
+  buildBizCompany,
+  buildBizUser,
+  buildEnvironment,
+  buildProject,
+  buildSubscription,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 // The URL-validation assertions below depend on the DEFAULT egress policy
@@ -407,6 +413,33 @@ describe('GraphQL webhooks (e2e)', () => {
       };
       expect(payload.data.user.id).toBe(bizUser.externalId);
       expect(new Date(payload.data.user.createdAt).toISOString()).toBe(payload.data.user.createdAt);
+    });
+
+    it('company deletes get the same guard — the RETURNING statements are symmetric but independent', async () => {
+      const endpoint = await createWebhook({
+        url: 'https://e2e-receiver.invalid/company-delete-probe',
+        topics: ['company'],
+      });
+      const bizCompany = await buildBizCompany(prisma, { environmentId });
+      const bizService = app.get(BizService);
+
+      await Promise.allSettled([
+        bizService.deleteBizCompany([bizCompany.id], environmentId),
+        bizService.deleteBizCompany([bizCompany.id], environmentId),
+      ]);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const messages = await prisma.outboundMessage.findMany({
+        where: { webhookId: endpoint.id, topic: 'company.deleted' },
+      });
+      expect(messages).toHaveLength(1);
+      const payload = messages[0].payload as {
+        data: { company: { id: string; createdAt: string } };
+      };
+      expect(payload.data.company.id).toBe(bizCompany.externalId);
+      expect(new Date(payload.data.company.createdAt).toISOString()).toBe(
+        payload.data.company.createdAt,
+      );
     });
   });
 
