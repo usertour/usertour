@@ -35,8 +35,12 @@ export const useCooldownTick = (timestamps: Array<string | null | undefined>) =>
     if (soonest === null) {
       return;
     }
-    // +1s margin so the re-render lands after the comparison flips.
-    const timer = setTimeout(force, soonest - now + 1000);
+    // +1s margin so the re-render lands after the comparison flips. Clamped
+    // to setTimeout's int32 ceiling (~24.8 days): an overflowing delay fires
+    // IMMEDIATELY, and with `tick` in the deps that would be a render loop —
+    // clamping turns a far-future deadline into a harmless re-arm instead,
+    // so the hook carries no hidden "timestamps must be near" precondition.
+    const timer = setTimeout(force, Math.min(soonest - now + 1000, 2_147_483_647));
     return () => clearTimeout(timer);
   }, [key, tick]);
 };
