@@ -11,6 +11,8 @@ export const OUTBOUND_MESSAGE_RETENTION_DAYS = 30;
 /** Stored excerpt limits — the ledger is a debugging aid, not an archive. */
 export const OUTBOUND_ERROR_MAX_LENGTH = 500;
 export const OUTBOUND_RESPONSE_BODY_MAX_LENGTH = 1_000;
+/** Brief retries before a settle write is swallowed (see the class doc). */
+const RECORD_ATTEMPT_WRITE_RETRIES = 2;
 
 /** Exactly one destination: a webhook endpoint or an integration provider. */
 export type OutboundDestination = { webhookId: string } | { integrationId: string };
@@ -45,7 +47,11 @@ export interface OutboundAttemptResult {
  * attempts and can re-send from the stored payload.
  *
  * Ledger writes are observability, not delivery: `recordAttempt` swallows its
- * own failures so a logging problem can never trigger a duplicate send.
+ * own failures so a logging problem can never FAIL a delivery (a throw here
+ * would make BullMQ retry an attempt that already reached the receiver). The
+ * swallow is not free on the success path — a lost DELIVERED settle leaves
+ * the message PENDING for the reconcile sweep to re-deliver (at-least-once
+ * legal, but gratuitous) — so the write retries briefly before giving up.
  */
 @Injectable()
 export class OutboundLedgerService implements OnModuleInit {
@@ -169,8 +175,9 @@ export class OutboundLedgerService implements OnModuleInit {
       : result.final
         ? OutboundMessageStatus.FAILED
         : null;
-    try {
-      await this.prisma.$transaction([
+    // Prisma promises are single-shot: build fresh operations per try.
+    const runSettleTransaction = () =>
+      this.prisma.$transaction([
         this.prisma.outboundDelivery.create({
           data: {
             messageId,
@@ -193,8 +200,18 @@ export class OutboundLedgerService implements OnModuleInit {
           data: status ? { status } : { updatedAt: new Date() },
         }),
       ]);
-    } catch (error) {
-      this.logger.error(`Failed to record outbound attempt for ${messageId}`, error as Error);
+    for (let attemptIndex = 0; ; attemptIndex++) {
+      try {
+        await runSettleTransaction();
+        return;
+      } catch (error) {
+        if (attemptIndex < RECORD_ATTEMPT_WRITE_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, 50 * (attemptIndex + 1)));
+          continue;
+        }
+        this.logger.error(`Failed to record outbound attempt for ${messageId}`, error as Error);
+        return;
+      }
     }
   }
 
@@ -335,5 +352,8 @@ const truncate = (value: string | null | undefined, max: number): string | null 
   // — the message would sit PENDING despite a delivered attempt, and the
   // reconcile sweep would re-deliver it forever.
   const sanitized = value.split('\u0000').join('');
+  if (sanitized === '') {
+    return null; // The column's documented empty representation is NULL.
+  }
   return sanitized.length > max ? sanitized.slice(0, max) : sanitized;
 };

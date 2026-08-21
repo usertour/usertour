@@ -157,6 +157,17 @@ describe('OutboundLedgerService', () => {
       expect(row.error).toBe('boom');
     });
 
+    it('a value that NUL-stripping empties stores as NULL, the column convention', async () => {
+      await service.recordAttempt('whmsg_1', {
+        ...base,
+        success: false,
+        final: false,
+        responseBody: '\u0000\u0000',
+      });
+      const row = prisma.outboundDelivery.create.mock.calls[0][0].data;
+      expect(row.responseBody).toBeNull();
+    });
+
     it('truncates stored excerpts and normalizes empties to null', async () => {
       await service.recordAttempt('whmsg_1', {
         ...base,

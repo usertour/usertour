@@ -1298,6 +1298,7 @@ const translations = {
         companyUpdated: '公司已更新',
         companyDeleted: '公司已删除',
         topicsRequired: '请至少选择一个事件。',
+        urlTooLong: 'URL 过长——最多 2083 个字符。',
         topicsTooMany: '每个端点最多订阅 {{max}} 个 topic——勾选族名一条即可覆盖整组。',
         enabled: '启用',
       },

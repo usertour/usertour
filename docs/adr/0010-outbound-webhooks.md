@@ -158,7 +158,8 @@ The first shipped breaker (2026-08-19) counted MESSAGES whose retry budget was e
 - `companyMembership` change topics (user joins/leaves a company).
 - REST `GET /events` on the event-instance schema.
 - ~~Circuit breaker / reconcile~~ → **shipped; see §11.**
-- The listener re-queries webhooks + entitlement per emit with no cache (candidate for ProjectCacheService when volume warrants). (The other 2026-08-19 ledger edge — one concurrently-deleted webhook failing the whole `createMany` batch by FK — is fixed: `createMessages` degrades a failed batch to per-row inserts and returns the persisted ids; the listener enqueues only those.)
+- The listener re-queries webhooks + entitlement per emit with no cache (candidate for ProjectCacheService when volume warrants; the per-emit `environment.findUnique` inside `isEntitled` rides the same fix).
+- Known-accepted small edges from the 2026-08-21 close-out review: `update()`'s breaker resets are read-decide-write (a user edit racing the worker in the same second can clear the evidence fields behind an auto-disable banner — cosmetic, the enabled/autoDisabledAt state machine itself stays guarded); a `moveToDelayed` rejection on the defer path burns one ladder attempt unrecorded (theoretical, no repro); polish deferred: per-attempt full-row webhook read in the processor, a redundant decrypt on mutating v2 paths, and the resend button's doubled log refresh. (The other 2026-08-19 ledger edge — one concurrently-deleted webhook failing the whole `createMany` batch by FK — is fixed: `createMessages` degrades a failed batch to per-row inserts and returns the persisted ids; the listener enqueues only those.)
 - Integrations event push should subscribe to the same domain events (`BIZ_EVENT_TRACKED` etc.) and record into the outbound ledger rather than re-adding the commented-out call site.
 
 ## Consequences

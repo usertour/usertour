@@ -23,7 +23,6 @@ import {
 import { BizCompany, BizUser, BizUserOnCompany, Prisma } from '@prisma/client';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
-import { CreateBizInput } from './dto/biz.input';
 import {
   BizCompanyOnSegmentInput,
   BizUserOnSegmentInput,
@@ -175,24 +174,6 @@ export class BizService {
       }
     }
     return previous;
-  }
-
-  async createBizUser(data: CreateBizInput) {
-    return await this.prisma.bizUser.create({
-      data: {
-        ...data,
-        data: seedSeenAttributes(filterNullAttributes((data.data as Record<string, any>) ?? {})),
-      },
-    });
-  }
-
-  async createBizCompany(data: CreateBizInput) {
-    return await this.prisma.bizCompany.create({
-      data: {
-        ...data,
-        data: seedSeenAttributes(filterNullAttributes((data.data as Record<string, any>) ?? {})),
-      },
-    });
   }
 
   async creatSegment(data: CreatSegment) {
@@ -417,7 +398,10 @@ export class BizService {
     });
   }
 
-  private async executeDeleteUserTransaction(tx: Prisma.TransactionClient, deleteIds: string[]) {
+  private async executeDeleteUserRelationsTransaction(
+    tx: Prisma.TransactionClient,
+    deleteIds: string[],
+  ) {
     // Delete user-company relationships
     await tx.bizUserOnCompany.deleteMany({
       where: { bizUserId: { in: deleteIds } },
@@ -449,11 +433,6 @@ export class BizService {
     await tx.bizAnnouncementSeen.deleteMany({
       where: { bizUserId: { in: deleteIds } },
     });
-
-    // Delete users
-    return await tx.bizUser.deleteMany({
-      where: { id: { in: deleteIds } },
-    });
   }
 
   /**
@@ -462,31 +441,32 @@ export class BizService {
    * was, since there is nothing left to re-read once the transaction commits.
    */
   async deleteBizUser(ids: string[], environmentId: string) {
-    // 1. Validate input
     if (!ids?.length) {
-      throw new ParamsError('User IDs are required');
-    }
-
-    // 2. Find users to delete
-    const bizUsers = await this.prisma.bizUser.findMany({
-      where: {
-        id: { in: ids },
-        environmentId,
-      },
-    });
-
-    if (!bizUsers.length) {
       throw new ParamsError('No users found to delete');
     }
 
-    const deleteIds = bizUsers.map((bizUser) => bizUser.id);
-
-    // 3. Execute all operations in a transaction; the change notification is
-    //    collected inside and emitted only after commit.
     return await this.withEntityChangeEmit(environmentId, () =>
       this.prisma.$transaction(async (tx) => {
-        const result = await this.executeDeleteUserTransaction(tx, deleteIds);
-        for (const bizUser of bizUsers) {
+        // Snapshot INSIDE the transaction, and emit only for rows the final
+        // DELETE actually returned: a pre-read snapshot would emit
+        // `user.deleted` for every row it saw regardless of what this
+        // transaction removed — a double-click or REST retry would then
+        // produce two logically-duplicate events with DIFFERENT message ids,
+        // which receivers cannot deduplicate.
+        const bizUsers = await tx.bizUser.findMany({
+          where: { id: { in: ids }, environmentId },
+        });
+        if (!bizUsers.length) {
+          throw new ParamsError('No users found to delete');
+        }
+        const deleteIds = bizUsers.map((bizUser) => bizUser.id);
+        await this.executeDeleteUserRelationsTransaction(tx, deleteIds);
+        // RETURNING is the per-row attribution deleteMany cannot give: under
+        // a concurrent overlapping delete, only the rows THIS statement
+        // removed come back, so each event is emitted exactly once cluster-wide.
+        const deletedRows = await tx.$queryRaw<BizUser[]>`
+          DELETE FROM "BizUser" WHERE id = ANY(${deleteIds}) RETURNING *`;
+        for (const bizUser of deletedRows) {
           this.collectEntityChange({
             entity: 'user',
             action: 'deleted',
@@ -494,46 +474,32 @@ export class BizService {
             deletedRow: bizUser,
           });
         }
-        return result;
+        return { count: deletedRows.length };
       }),
     );
   }
 
   /** Delete companies — same funnel/notification shape as deleteBizUser. */
   async deleteBizCompany(ids: string[], environmentId: string) {
-    const bizCompanies = await this.prisma.bizCompany.findMany({
-      where: { id: { in: ids }, environmentId },
-    });
-
     return await this.withEntityChangeEmit(environmentId, () =>
       this.prisma.$transaction(async (tx) => {
-        // First delete related records
+        // See deleteBizUser: snapshot in-transaction, emit from RETURNING.
+        const bizCompanies = await tx.bizCompany.findMany({
+          where: { id: { in: ids }, environmentId },
+        });
+        if (!bizCompanies.length) {
+          return { count: 0 };
+        }
+        const deleteIds = bizCompanies.map((bizCompany) => bizCompany.id);
         await tx.bizUserOnCompany.deleteMany({
-          where: {
-            bizCompanyId: { in: ids },
-            bizCompany: {
-              environmentId,
-            },
-          },
+          where: { bizCompanyId: { in: deleteIds } },
         });
-
         await tx.bizCompanyOnSegment.deleteMany({
-          where: {
-            bizCompanyId: { in: ids },
-            bizCompany: {
-              environmentId,
-            },
-          },
+          where: { bizCompanyId: { in: deleteIds } },
         });
-
-        // Then delete the companies
-        const result = await tx.bizCompany.deleteMany({
-          where: {
-            id: { in: ids },
-            environmentId,
-          },
-        });
-        for (const bizCompany of bizCompanies) {
+        const deletedRows = await tx.$queryRaw<BizCompany[]>`
+          DELETE FROM "BizCompany" WHERE id = ANY(${deleteIds}) RETURNING *`;
+        for (const bizCompany of deletedRows) {
           this.collectEntityChange({
             entity: 'company',
             action: 'deleted',
@@ -541,7 +507,7 @@ export class BizService {
             deletedRow: bizCompany,
           });
         }
-        return result;
+        return { count: deletedRows.length };
       }),
     );
   }

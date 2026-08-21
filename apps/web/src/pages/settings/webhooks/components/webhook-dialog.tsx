@@ -39,8 +39,8 @@ import { WebhookTopicPicker } from './webhook-topic-picker';
 const buildWebhookFormSchema = (allowPrivateNetworkEgress: boolean) =>
   z.object({
     url: allowPrivateNetworkEgress
-      ? z.string().url('url')
-      : z.string().url('url').startsWith('https://', 'url'),
+      ? z.string().max(2083, 'urlTooLong').url('url')
+      : z.string().max(2083, 'urlTooLong').url('url').startsWith('https://', 'url'),
     // Stored subscription strings verbatim (see WebhookTopicPicker for the
     // grammar); the picker edits this array in place — no encode/decode layer.
     topics: z.array(z.string()).min(1, 'topics').max(MAX_TOPIC_SUBSCRIPTIONS, 'topicsMax'),
@@ -169,7 +169,11 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
                         (FormMessage would print zod's marker, so render the copy
                         directly — same as the topics error below). */}
                     {form.formState.errors.url ? (
-                      <p className="text-[0.8rem] font-medium text-destructive">{urlHint}</p>
+                      <p className="text-[0.8rem] font-medium text-destructive">
+                        {form.formState.errors.url.message === 'urlTooLong'
+                          ? t('settings.webhooks.form.urlTooLong')
+                          : urlHint}
+                      </p>
                     ) : (
                       <FormDescription>{urlHint}</FormDescription>
                     )}

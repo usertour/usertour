@@ -193,6 +193,14 @@ describe('GraphQL webhooks (e2e)', () => {
         expect(row.secret).toBeNull();
       }
 
+      // Update responses are masked too — an update is not a secret handoff.
+      const updateSecretRes = await graphql(app, {
+        token,
+        query: 'mutation ($data: UpdateWebhookInput!) { updateWebhook(data: $data) { id secret } }',
+        variables: { data: { id: created.id, description: 'masked-check' } },
+      });
+      expect(gqlData(updateSecretRes).updateWebhook.secret).toBeNull();
+
       const getRes = await graphql(app, {
         token,
         query: GET_WEBHOOK,

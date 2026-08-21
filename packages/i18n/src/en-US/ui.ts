@@ -1365,6 +1365,7 @@ const translations = {
         companyUpdated: 'Company updated',
         companyDeleted: 'Company deleted',
         topicsRequired: 'Select at least one event.',
+        urlTooLong: 'URL is too long — 2083 characters at most.',
         topicsTooMany:
           'At most {{max}} topic subscriptions per endpoint — a family name covers its whole group in one entry.',
         enabled: 'Enabled',

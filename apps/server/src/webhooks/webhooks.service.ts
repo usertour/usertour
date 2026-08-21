@@ -58,10 +58,11 @@ export class WebhooksService {
   }
 
   /**
-   * See the exposure rule above: surfaces that never need the secret get
-   * NULL — distinct from '', which only the decrypt path produces and means
-   * "stored value is no longer decryptable". One value per meaning, so no
-   * consumer has to know which query a row came from.
+   * See the exposure rule above: surfaces that never need the secret —
+   * list, delete, update, and the test-event return — get NULL, distinct
+   * from '', which only the decrypt path produces and means "stored value is
+   * no longer decryptable". One value per meaning, so no consumer has to
+   * know which query a row came from.
    */
   private withMaskedSecret<T extends { secret: string }>(
     row: T,
@@ -202,7 +203,10 @@ export class WebhooksService {
         ...(urlChanged ? { consecutiveFailures: 0, cooldownUntil: null, failingSince: null } : {}),
       },
     });
-    return this.withPlaintextSecret(row);
+    // Masked: nothing consumes a secret from an update response, and the
+    // GraphQL surface would otherwise hand the plaintext to any owner-client
+    // selecting the field (the REST mapper already strips it).
+    return this.withMaskedSecret(row);
   }
 
   async delete(id: string) {
@@ -295,7 +299,9 @@ export class WebhooksService {
         throw error;
       }
     }
-    return webhook;
+    // Masked for the same reason as update(): the test-event response is an
+    // ack, not a secret handoff.
+    return this.withMaskedSecret(webhook);
   }
 
   /** The endpoint's message log (newest first), each with its attempts. */
