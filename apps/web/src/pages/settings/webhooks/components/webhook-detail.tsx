@@ -406,15 +406,20 @@ const MessagesSection = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-48">{t('settings.webhooks.deliveries.columns.time')}</TableHead>
+            {/* whitespace-nowrap: multi-word headers ("Last response") wrap
+                inside their fixed widths otherwise — same class of fix as
+                the status badges. */}
+            <TableHead className="w-48 whitespace-nowrap">
+              {t('settings.webhooks.deliveries.columns.time')}
+            </TableHead>
             <TableHead>{t('settings.webhooks.deliveries.columns.topic')}</TableHead>
-            <TableHead className="w-28">
+            <TableHead className="w-28 whitespace-nowrap">
               {t('settings.webhooks.deliveries.columns.status')}
             </TableHead>
-            <TableHead className="w-24">
+            <TableHead className="w-24 whitespace-nowrap">
               {t('settings.webhooks.deliveries.columns.attempts')}
             </TableHead>
-            <TableHead className="w-28">
+            <TableHead className="w-28 whitespace-nowrap">
               {t('settings.webhooks.deliveries.columns.lastResponse')}
             </TableHead>
           </TableRow>

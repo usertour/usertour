@@ -71,6 +71,7 @@ export const SettingsWebhookList = () => {
   const columns: ResourceTableColumn<Webhook>[] = [
     {
       header: t('settings.webhooks.columns.url'),
+      headerClassName: 'whitespace-nowrap',
       className: 'truncate max-w-96',
       cell: (webhook) => (
         <Link
@@ -125,7 +126,7 @@ export const SettingsWebhookList = () => {
     },
     {
       header: t('settings.webhooks.columns.createdAt'),
-      headerClassName: 'w-48 hidden lg:table-cell',
+      headerClassName: 'w-48 hidden lg:table-cell whitespace-nowrap',
       className: 'hidden lg:table-cell',
       cell: (webhook) => format(new Date(webhook.createdAt), 'PPpp'),
     },
