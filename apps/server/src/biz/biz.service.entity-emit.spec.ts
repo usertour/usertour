@@ -24,24 +24,33 @@ describe('BizService.withEntityChangeEmit', () => {
       bizId,
     });
 
-  it('a nested scope joins the outer one — single emission, at the outer boundary', async () => {
-    await service.withEntityChangeEmit('env_1', async () => {
-      collect('bu_outer');
-      await service.withEntityChangeEmit('env_1', async () => {
-        collect('bu_inner');
-      });
-      // The inner call returned, but nothing may have emitted yet: the outer
-      // operation (imagine a transaction) is still in flight.
-      expect(emitter.emit).not.toHaveBeenCalled();
-    });
+  it('a nested scope throws — nesting would emit early or mislabel the tenant', async () => {
+    // A nested scope of its own emits before the outer transaction commits;
+    // silently joining inherits the OUTER environmentId and would tag one
+    // tenant's changes with another's. Until a real caller needs
+    // composition, the honest contract is: fail loudly at the first dev run.
+    await expect(
+      service.withEntityChangeEmit('env_1', async () => {
+        collect('bu_outer');
+        await service.withEntityChangeEmit('env_2', async () => collect('bu_inner'));
+      }),
+    ).rejects.toThrow(/must not nest/);
+    // And the failed outer operation emits nothing at all.
+    expect(emitter.emit).not.toHaveBeenCalled();
+  });
 
+  it('a top-level scope emits once at its boundary with the collected changes', async () => {
+    await service.withEntityChangeEmit('env_1', async () => {
+      collect('bu_1');
+      expect(emitter.emit).not.toHaveBeenCalled(); // not before the boundary
+    });
     expect(emitter.emit).toHaveBeenCalledTimes(1);
     const [event, payload] = emitter.emit.mock.calls[0];
     expect(event).toBe(BIZ_ENTITY_CHANGED);
-    expect(payload.changes.map((change: { bizId: string }) => change.bizId)).toEqual([
-      'bu_outer',
-      'bu_inner',
-    ]);
+    expect(payload).toEqual({
+      environmentId: 'env_1',
+      changes: [{ entity: 'user', action: 'updated', bizId: 'bu_1' }],
+    });
   });
 
   it('a throwing operation emits nothing (all committed or all thrown)', async () => {

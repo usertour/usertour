@@ -137,14 +137,15 @@ export class BizService {
    * propagates before the emit).
    */
   async withEntityChangeEmit<T>(environmentId: string, operation: () => Promise<T>): Promise<T> {
-    // Reentrant by JOINING: a nested call inside an active scope must not
-    // open its own — it would emit the inner changes while the OUTER
-    // operation (possibly a transaction) is still uncommitted, violating the
-    // fail-safe direction ("missed, never premature"). Joining routes the
-    // inner pushes to the outer collector, which emits once at the outermost
-    // boundary. No caller nests today; this makes it safe when one does.
+    // Nesting is a programming error, not a supported composition: an inner
+    // scope of its own would emit while the outer transaction is still
+    // uncommitted ("premature"), and silently joining the outer scope would
+    // inherit ITS environmentId — tagging one tenant's changes with
+    // another's. No caller nests today (all entry points are top-level);
+    // whoever first needs it should design the composition then, driven by
+    // the actual requirement.
     if (this.entityChanges.getStore()) {
-      return await operation();
+      throw new Error('withEntityChangeEmit must not nest — collect inside the outer scope');
     }
     const changes: EntityChange[] = [];
     const result = await this.entityChanges.run(changes, operation);
