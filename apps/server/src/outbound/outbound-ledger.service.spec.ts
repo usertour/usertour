@@ -16,6 +16,7 @@ describe('OutboundLedgerService', () => {
       findUnique: jest.Mock;
     };
     outboundDelivery: { create: jest.Mock };
+    webhook?: { findUnique: jest.Mock };
     $transaction: jest.Mock;
   };
   let service: OutboundLedgerService;
@@ -70,7 +71,7 @@ describe('OutboundLedgerService', () => {
     expect(prisma.outboundMessage.createMany).not.toHaveBeenCalled();
   });
 
-  it('degrades a failed batch insert to per-row writes and returns the survivors', async () => {
+  describe('per-row fallback after a failed batch insert', () => {
     const inputs = ['whmsg_a', 'whmsg_b', 'whmsg_c'].map((id) => ({
       id,
       environmentId: 'env_1',
@@ -78,23 +79,57 @@ describe('OutboundLedgerService', () => {
       topic: 'event.tracked.flow_started',
       payload: { id },
     }));
-    // The single INSERT fails on whmsg_b's FK (its webhook was deleted
-    // between the caller's read and this write) — one vanished destination
-    // must not erase A's and C's record of intent.
-    prisma.outboundMessage.createMany.mockRejectedValueOnce(new Error('FK violation'));
-    prisma.outboundMessage.create = jest
-      .fn()
-      .mockImplementation(async ({ data }: { data: { id: string } }) => {
-        if (data.id === 'whmsg_b') {
-          throw new Error('FK violation');
-        }
-        return data;
-      });
+    const failOnlyB = () => {
+      prisma.outboundMessage.createMany.mockRejectedValueOnce(new Error('insert failed'));
+      prisma.outboundMessage.create = jest
+        .fn()
+        .mockImplementation(async ({ data }: { data: { id: string } }) => {
+          if (data.id === 'whmsg_b') {
+            throw new Error('insert failed');
+          }
+          return data;
+        });
+      prisma.outboundMessage.findUnique = jest.fn().mockResolvedValue(null);
+    };
 
-    await expect(service.createMessages(inputs)).resolves.toEqual(['whmsg_a', 'whmsg_c']);
-    // a, b, b-retry (a persistent failure earns one more try before the
-    // loud diagnosis), c — the batch is never sunk by one bad row.
-    expect(prisma.outboundMessage.create).toHaveBeenCalledTimes(4);
+    it('a deleted destination drops ITS row quietly and never sinks the batch', async () => {
+      failOnlyB();
+      prisma.webhook = { findUnique: jest.fn().mockResolvedValue(null) };
+
+      await expect(service.createMessages(inputs)).resolves.toEqual(['whmsg_a', 'whmsg_c']);
+      // a, b, b-retry (one paced retry before diagnosing), c.
+      expect(prisma.outboundMessage.create).toHaveBeenCalledTimes(4);
+      // The quiet branch really ran: the destination WAS consulted and gone.
+      expect(prisma.webhook?.findUnique).toHaveBeenCalledWith({
+        where: { id: 'wh_b' },
+        select: { id: true },
+      });
+    });
+
+    it('a still-present destination is a LOUD loss, not a "vanished" excuse', async () => {
+      failOnlyB();
+      prisma.webhook = { findUnique: jest.fn().mockResolvedValue({ id: 'wh_b' }) };
+
+      await expect(service.createMessages(inputs)).resolves.toEqual(['whmsg_a', 'whmsg_c']);
+      expect(prisma.outboundMessage.create).toHaveBeenCalledTimes(4);
+    });
+
+    it('a committed-but-unacknowledged first insert counts as persisted (no false LOST)', async () => {
+      failOnlyB();
+      // The retry hit the id unique constraint because the FIRST insert
+      // actually committed: the row exists — report it persisted so the
+      // caller enqueues instead of parking it for the sweep's 14h detour.
+      prisma.outboundMessage.findUnique = jest.fn().mockResolvedValue({ id: 'whmsg_b' });
+      prisma.webhook = { findUnique: jest.fn() };
+
+      await expect(service.createMessages(inputs)).resolves.toEqual([
+        'whmsg_a',
+        'whmsg_b',
+        'whmsg_c',
+      ]);
+      // Diagnosis never reached the destination check.
+      expect(prisma.webhook?.findUnique).not.toHaveBeenCalled();
+    });
   });
 
   it('touch bumps updatedAt only while PENDING and never throws', async () => {

@@ -46,7 +46,9 @@ describe('WebhooksService.resendMessage — ambiguous enqueue compensation', () 
         topic: 'user.created',
         payload: { id: 'whmsg_1' },
         updatedAt: messageUpdatedAt,
-        deliveries: [{}, {}],
+        // Three rows, max attempt 2 (a settle retry duplicated attempt 2):
+        // the offset must follow max(attempt), not the row count.
+        deliveries: [{ attempt: 1 }, { attempt: 2 }, { attempt: 2 }],
       }),
       claimForResend: jest.fn().mockResolvedValue(claimStamp),
       releaseResendClaim: jest.fn().mockResolvedValue(undefined),

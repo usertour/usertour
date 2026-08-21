@@ -102,8 +102,11 @@ export class OutboundLedgerService implements OnModuleInit {
    * single statement fails — typically an FK violation because a destination
    * row was deleted between the caller's read and this write — degrade to
    * per-row inserts so one vanished destination cannot erase the whole
-   * batch's record of intent. Rows that still fail individually are logged
-   * and dropped: their destination is gone, there is nothing to deliver to.
+   * batch's record of intent. A row that still fails gets one paced retry
+   * and an honest diagnosis: destination deleted -> quiet drop; row already
+   * committed (lost acknowledgement) -> counted as persisted; anything else
+   * -> a loud LOST error, because a message without a ledger row is beyond
+   * the reconcile sweep's reach.
    */
   async createMessages(inputs: OutboundMessageInput[]): Promise<string[]> {
     if (inputs.length === 0) {
@@ -138,11 +141,25 @@ export class OutboundLedgerService implements OnModuleInit {
         // fault here silently loses the delivery (no ledger row = nothing
         // for the reconcile sweep to recover), so it deserves one more try
         // and an ERROR that names the real cause — the same discipline
-        // sendTestEvent applies.
+        // sendTestEvent applies. Paced like the settle retry: an immediate
+        // retry mostly rides the same broken connection.
+        await new Promise((resolve) => setTimeout(resolve, 50));
         try {
           await this.prisma.outboundMessage.create({ data: row });
           persisted.push(row.id);
         } catch (rowError) {
+          // The FIRST insert may have committed with a lost acknowledgement
+          // (the recordAttempt doc describes exactly this): the retry then
+          // hits the id unique constraint. A row that exists IS persisted —
+          // reporting it LOST would be a false alarm, and skipping the
+          // enqueue would park it for the sweep's 14h detour.
+          const alreadyPersisted = await this.prisma.outboundMessage
+            .findUnique({ where: { id: row.id }, select: { id: true } })
+            .catch(() => null);
+          if (alreadyPersisted) {
+            persisted.push(row.id);
+            continue;
+          }
           const destinationGone = !(await this.destinationExists(row));
           if (destinationGone) {
             this.logger.debug(`Dropping outbound message ${row.id}: destination deleted`);
@@ -175,7 +192,9 @@ export class OutboundLedgerService implements OnModuleInit {
           select: { id: true },
         }));
       }
-      return false;
+      // No FK at all is impossible under the CHECK constraint; if it ever
+      // happens, err toward the LOUD path like the catch below.
+      return true;
     } catch {
       return true; // Can't tell — keep the loud error path.
     }

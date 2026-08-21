@@ -341,8 +341,14 @@ export class WebhooksService {
       manual: true,
       topic: message.topic,
       payload: message.payload as Record<string, unknown>,
-      // Continue the attempt numbering after the logged tries.
-      attemptOffset: message.deliveries.length,
+      // Continue the numbering from max(attempt), NOT the row count —
+      // settle-write retries and stalled twins insert duplicate rows, and a
+      // count would make the user-visible attempt numbers skip (and shift
+      // the backoff ladder position). Same rule as the reconcile sweep.
+      attemptOffset: message.deliveries.reduce(
+        (highest, delivery) => Math.max(highest, delivery.attempt),
+        0,
+      ),
     };
     try {
       await this.deliveryQueue.add('deliver', jobData, { ...SINGLE_ATTEMPT_JOB_OPTIONS, jobId });
