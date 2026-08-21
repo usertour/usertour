@@ -2,8 +2,9 @@ import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { EncryptionService } from '@/shared/encryption.service';
 
+import { BizService } from '@/biz/biz.service';
 import { graphql, gqlData } from '../auth';
-import { buildEnvironment, buildProject, buildSubscription } from '../factories';
+import { buildBizUser, buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 // The URL-validation assertions below depend on the DEFAULT egress policy
@@ -363,6 +364,47 @@ describe('GraphQL webhooks (e2e)', () => {
         connection.edges[1].node.deliveries.map((d: { attempt: number }) => d.attempt),
       ).toEqual([1, 2, 3, 4, 5]);
       expect(connection.edges[1].node.payload.id).toBe('whmsg_page_1');
+    });
+  });
+
+  describe('entity-delete emission (exact-once, native RETURNING rows)', () => {
+    it('a repeated delete emits ZERO additional user.deleted messages, and the payload maps the native row', async () => {
+      // A webhook subscribed to the user family so the listener records the
+      // emission into the outbound ledger.
+      const endpoint = await createWebhook({
+        url: 'https://e2e-receiver.invalid/delete-probe',
+        topics: ['user'],
+      });
+      const bizUser = await buildBizUser(prisma, { environmentId });
+      const bizService = app.get(BizService);
+
+      await bizService.deleteBizUser([bizUser.id], environmentId);
+      // The emit is post-commit and async — give the listener a beat.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const afterFirst = await prisma.outboundMessage.findMany({
+        where: { webhookId: endpoint.id, topic: 'user.deleted' },
+      });
+      // Guards the RETURNING refactor: swap it back to deleteMany and no
+      // deletedRow reaches the payload with real column types.
+      expect(afterFirst).toHaveLength(1);
+      const payload = afterFirst[0].payload as {
+        data: { user: { id: string; createdAt: string } };
+      };
+      expect(payload.data.user.id).toBe(bizUser.externalId);
+      // Native-SQL rows must round-trip Date columns: an ISO string here
+      // proves the pg driver's Date reached mapUser intact.
+      expect(new Date(payload.data.user.createdAt).toISOString()).toBe(payload.data.user.createdAt);
+
+      // Second delete of the same id: the in-transaction snapshot sees no
+      // rows — it must throw AND emit nothing (the old pre-read snapshot
+      // emitted a second, differently-id'd duplicate here).
+      await expect(bizService.deleteBizUser([bizUser.id], environmentId)).rejects.toThrow();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const afterSecond = await prisma.outboundMessage.count({
+        where: { webhookId: endpoint.id, topic: 'user.deleted' },
+      });
+      expect(afterSecond).toBe(1);
     });
   });
 

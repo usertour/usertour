@@ -442,7 +442,7 @@ export class BizService {
    */
   async deleteBizUser(ids: string[], environmentId: string) {
     if (!ids?.length) {
-      throw new ParamsError('No users found to delete');
+      throw new ParamsError('User IDs are required');
     }
 
     return await this.withEntityChangeEmit(environmentId, () =>

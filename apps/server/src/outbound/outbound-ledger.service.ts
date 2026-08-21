@@ -52,6 +52,11 @@ export interface OutboundAttemptResult {
  * swallow is not free on the success path — a lost DELIVERED settle leaves
  * the message PENDING for the reconcile sweep to re-deliver (at-least-once
  * legal, but gratuitous) — so the write retries briefly before giving up.
+ * The retry has its own honest cost: OutboundDelivery has no
+ * (messageId, attempt) unique constraint (stalled twin jobs already produce
+ * legitimate attempt collisions), so a commit whose acknowledgement was lost
+ * can be re-inserted — the log then shows the same attempt twice. Cosmetic;
+ * the status update itself is idempotent.
  */
 @Injectable()
 export class OutboundLedgerService implements OnModuleInit {
@@ -205,7 +210,13 @@ export class OutboundLedgerService implements OnModuleInit {
         await runSettleTransaction();
         return;
       } catch (error) {
-        if (attemptIndex < RECORD_ATTEMPT_WRITE_RETRIES) {
+        // Deterministic failures don't heal by waiting: FK gone (the message
+        // aged out of retention), unique conflict, row vanished. Only
+        // transient faults earn the retries.
+        const prismaCode = (error as { code?: string }).code;
+        const deterministic =
+          prismaCode === 'P2002' || prismaCode === 'P2003' || prismaCode === 'P2025';
+        if (!deterministic && attemptIndex < RECORD_ATTEMPT_WRITE_RETRIES) {
           await new Promise((resolve) => setTimeout(resolve, 50 * (attemptIndex + 1)));
           continue;
         }

@@ -58,6 +58,12 @@ const { count } = await this.prisma.webhook.updateMany({
 });
 ```
 
+Known accepted exception: `WebhooksService.update()`'s breaker resets are
+read-decide-write on purpose — the race window is a user edit in the same
+second as a worker write, and the worst case is cosmetic (evidence fields
+cleared behind a banner; the enabled/autoDisabledAt machine stays guarded).
+Recorded in ADR 0010's close-out edges — do not re-report it as a bug.
+
 In Prisma this means `updateMany` + a `count` check: `update`'s WHERE only
 accepts unique keys, so any conditional write is an `updateMany` even for one
 row (and a follow-up `findUnique` when you need the post-write row — accept
