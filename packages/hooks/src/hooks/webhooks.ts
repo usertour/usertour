@@ -21,13 +21,12 @@ export interface Webhook {
   /** Subscribed topics: "*", a family prefix ("event.tracked", "content", "user", "company"), or an exact topic. */
   topics: string[];
   enabled: boolean;
-  /** Present on the detail query only — the list query doesn't select it. */
   /** Plaintext on get/create/rotate; NULL on list/delete (masked); '' = stored value undecryptable. */
   secret?: string | null;
   description?: string | null;
-  /** Circuit-breaker streak: messages that exhausted their retry budget in a row. */
+  /** Circuit-breaker streak: consecutive failed delivery attempts (any success resets). */
   consecutiveFailures: number;
-  /** While in the future, delivery is paused for this endpoint (cooldown). */
+  /** While in the future, deliveries are held and sent after the window (cooldown). */
   cooldownUntil?: string | null;
   /** Set when the SYSTEM disabled the endpoint after sustained failure. */
   autoDisabledAt?: string | null;

@@ -165,7 +165,12 @@ const SigningSecretSection = ({
   webhookId,
   secret,
   entitled,
-}: { webhookId: string; secret: string; entitled: boolean }) => {
+}: {
+  webhookId: string;
+  /** Plaintext, or '' = stored value undecryptable; null/undefined = not provided (masked row). */
+  secret: string | null | undefined;
+  entitled: boolean;
+}) => {
   const [revealed, setRevealed] = useState(false);
   const [rotateOpen, setRotateOpen] = useState(false);
   const { isViewOnly } = useAppContext();
@@ -203,7 +208,7 @@ const SigningSecretSection = ({
       <div className="flex items-center gap-2">
         <Input
           readOnly
-          value={secret === '' ? '—' : revealed ? secret : MASKED_SECRET}
+          value={secret ? (revealed ? secret : MASKED_SECRET) : '—'}
           className="font-mono text-xs"
         />
         <Button
@@ -211,7 +216,7 @@ const SigningSecretSection = ({
           variant="outline"
           size="icon"
           className="shrink-0"
-          disabled={secret === ''}
+          disabled={!secret}
           onClick={() => setRevealed((current) => !current)}
           title={t('settings.webhooks.secret.revealButton')}
         >
@@ -222,8 +227,8 @@ const SigningSecretSection = ({
           variant="outline"
           size="icon"
           className="shrink-0"
-          disabled={secret === ''}
-          onClick={() => copy(secret, t('settings.webhooks.secret.copied'))}
+          disabled={!secret}
+          onClick={() => copy(secret ?? '', t('settings.webhooks.secret.copied'))}
           title={t('settings.webhooks.secret.copyButton')}
         >
           <RiFileCopyLine className="h-4 w-4" />
@@ -503,11 +508,7 @@ export const WebhookDetail = () => {
           decrypted" (encryption key changed), and hiding this card would
           hide the Rotate button, the one self-heal path. */}
       <SettingsCard>
-        <SigningSecretSection
-          webhookId={webhook.id}
-          secret={webhook.secret ?? ''}
-          entitled={entitled}
-        />
+        <SigningSecretSection webhookId={webhook.id} secret={webhook.secret} entitled={entitled} />
       </SettingsCard>
 
       <SettingsCard>
