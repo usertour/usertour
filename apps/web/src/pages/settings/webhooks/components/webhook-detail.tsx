@@ -489,7 +489,10 @@ const MessagesSection = ({
 export const WebhookDetail = () => {
   const { settingSubType: webhookId } = useParams();
   const { project } = useAppContext();
-  const { projectConfig } = useGetProjectConfigQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
+  const { projectConfig, loading: configLoading } = useGetProjectConfigQuery(
+    project?.id,
+    SHARED_CACHE_QUERY_OPTIONS,
+  );
   // Cache-connected (repo default is no-cache with per-query opt-in): rotate
   // and update merge their returned fields into Webhook:<id>, and this watch
   // query must be ON the cache to see them — without this, the new secret
@@ -500,7 +503,10 @@ export const WebhookDetail = () => {
   const { t } = useTranslation();
   // Plan gate mirror (server enforces independently): reads and delete stay
   // open on a downgraded project; rotate / test / resend are write-shaped.
-  const entitled = !projectConfig || projectConfig.webhooks;
+  // Optimistic while settling — see webhook-list: the transiently-actived
+  // wrong project's config must not flash the downgraded banner here.
+  const rawEntitled = !projectConfig || projectConfig.webhooks;
+  const entitled = (loading && !webhook) || (configLoading && !projectConfig) ? true : rawEntitled;
 
   if (loading && !webhook) {
     return null;
