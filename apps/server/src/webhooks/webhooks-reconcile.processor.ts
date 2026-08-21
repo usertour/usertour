@@ -3,7 +3,7 @@ import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
 import { WEBHOOK_TEST_TOPIC } from '@usertour/constants';
-import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { OutboundLedgerService, maxLoggedAttempt } from '@/outbound/outbound-ledger.service';
 import { DELIVERY_ATTEMPTS, RETRY_AFTER_MAX_MS, RETRY_DELAYS_MS } from './webhook-backoff';
 import { WebhookDeliveryJobData } from './webhook.types';
 
@@ -90,13 +90,9 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
       if (!claimStamp) {
         continue; // Moved under us: job alive after all, or another sweep won.
       }
-      // max(attempt), not the row count: settle-write retries and stalled
-      // twins can insert duplicate delivery rows, and a count would then
-      // skip ladder rungs and shrink the remaining budget.
-      const attemptsLogged = message.deliveries.reduce(
-        (highest, delivery) => Math.max(highest, delivery.attempt),
-        0,
-      );
+      // max(attempt), not the row count — the rule lives in ONE place
+      // (maxLoggedAttempt) so a third call site can't get it wrong.
+      const attemptsLogged = maxLoggedAttempt(message.deliveries);
       const jobData: WebhookDeliveryJobData = {
         webhookId: message.webhookId as string,
         messageId: message.id,

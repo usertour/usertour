@@ -1,8 +1,10 @@
+import { Logger } from '@nestjs/common';
 import {
   OUTBOUND_ERROR_MAX_LENGTH,
   OUTBOUND_MESSAGE_RETENTION_DAYS,
   OUTBOUND_RESPONSE_BODY_MAX_LENGTH,
   OutboundLedgerService,
+  maxLoggedAttempt,
 } from './outbound-ledger.service';
 
 describe('OutboundLedgerService', () => {
@@ -95,23 +97,31 @@ describe('OutboundLedgerService', () => {
     it('a deleted destination drops ITS row quietly and never sinks the batch', async () => {
       failOnlyB();
       prisma.webhook = { findUnique: jest.fn().mockResolvedValue(null) };
+      // The log LEVEL is the invariant this whole fix is about — spy on it.
+      const errorSpy = jest.spyOn((service as never as { logger: Logger }).logger, 'error');
 
       await expect(service.createMessages(inputs)).resolves.toEqual(['whmsg_a', 'whmsg_c']);
       // a, b, b-retry (one paced retry before diagnosing), c.
       expect(prisma.outboundMessage.create).toHaveBeenCalledTimes(4);
-      // The quiet branch really ran: the destination WAS consulted and gone.
+      // The quiet branch really ran: the destination WAS consulted and gone,
+      // and nothing screamed.
       expect(prisma.webhook?.findUnique).toHaveBeenCalledWith({
         where: { id: 'wh_b' },
         select: { id: true },
       });
+      expect(errorSpy).not.toHaveBeenCalled();
     });
 
     it('a still-present destination is a LOUD loss, not a "vanished" excuse', async () => {
       failOnlyB();
       prisma.webhook = { findUnique: jest.fn().mockResolvedValue({ id: 'wh_b' }) };
+      const errorSpy = jest.spyOn((service as never as { logger: Logger }).logger, 'error');
 
       await expect(service.createMessages(inputs)).resolves.toEqual(['whmsg_a', 'whmsg_c']);
       expect(prisma.outboundMessage.create).toHaveBeenCalledTimes(4);
+      // Downgrade this to debug and the test goes red — the label IS the fix.
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      expect(errorSpy.mock.calls[0][0]).toContain('LOST outbound message whmsg_b');
     });
 
     it('a committed-but-unacknowledged first insert counts as persisted (no false LOST)', async () => {
@@ -277,6 +287,14 @@ describe('OutboundLedgerService', () => {
         data: { status: 'FAILED' },
       });
     });
+  });
+
+  it('maxLoggedAttempt follows the highest attempt, never the row count', () => {
+    // Duplicate rows are legitimate (settle retries, stalled twins).
+    expect(maxLoggedAttempt([{ attempt: 1 }, { attempt: 2 }, { attempt: 2 }, { attempt: 3 }])).toBe(
+      3,
+    );
+    expect(maxLoggedAttempt([])).toBe(0);
   });
 
   it('deletes messages older than the retention window', async () => {

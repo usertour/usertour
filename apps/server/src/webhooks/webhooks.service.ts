@@ -13,7 +13,7 @@ import {
   WebhookNotFoundError,
 } from '@/common/errors';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { OutboundLedgerService, maxLoggedAttempt } from '@/outbound/outbound-ledger.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -341,14 +341,9 @@ export class WebhooksService {
       manual: true,
       topic: message.topic,
       payload: message.payload as Record<string, unknown>,
-      // Continue the numbering from max(attempt), NOT the row count —
-      // settle-write retries and stalled twins insert duplicate rows, and a
-      // count would make the user-visible attempt numbers skip (and shift
-      // the backoff ladder position). Same rule as the reconcile sweep.
-      attemptOffset: message.deliveries.reduce(
-        (highest, delivery) => Math.max(highest, delivery.attempt),
-        0,
-      ),
+      // Continue the numbering from max(attempt), NOT the row count (see
+      // maxLoggedAttempt's doc) — same rule as the reconcile sweep.
+      attemptOffset: maxLoggedAttempt(message.deliveries),
     };
     try {
       await this.deliveryQueue.add('deliver', jobData, { ...SINGLE_ATTEMPT_JOB_OPTIONS, jobId });

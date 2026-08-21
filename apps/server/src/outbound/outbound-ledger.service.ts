@@ -14,6 +14,15 @@ export const OUTBOUND_RESPONSE_BODY_MAX_LENGTH = 1_000;
 /** Brief retries before a settle write is swallowed (see the class doc). */
 const RECORD_ATTEMPT_WRITE_RETRIES = 2;
 
+/**
+ * The highest attempt number a set of delivery rows records — the ONLY
+ * correct way to resume numbering or budgets. Never use the row COUNT:
+ * settle-write retries and stalled twin jobs insert duplicate rows (see the
+ * recordAttempt doc), which inflate a count but not the max.
+ */
+export const maxLoggedAttempt = (deliveries: Array<{ attempt: number }>): number =>
+  deliveries.reduce((highest, delivery) => Math.max(highest, delivery.attempt), 0);
+
 /** Exactly one destination: a webhook endpoint or an integration provider. */
 export type OutboundDestination = { webhookId: string } | { integrationId: string };
 
