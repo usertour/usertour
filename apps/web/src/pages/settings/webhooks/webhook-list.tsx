@@ -50,8 +50,17 @@ export const SettingsWebhookList = () => {
   // server deliberately leaves reads and deletes open so old configuration
   // can be inspected and cleaned up); the full-page upsell is only for
   // projects with nothing to show.
+  //
+  // OPTIMISTIC while settling: on a hard refresh the account-level actived
+  // project can transiently be a DIFFERENT (un-entitled) project before the
+  // route syncs it — its webhooks:false config arrives first and the
+  // downgraded banner flashes over the skeletons. An assertive plan claim
+  // must only render once this page's queries have settled; until then we
+  // present as entitled (the server still enforces every mutation).
   const entitled = !projectConfig || projectConfig.webhooks;
-  if (!entitled && !loading && (webhooks?.length ?? 0) === 0) {
+  const settled = !!environment && !(loading && !webhooks) && !(configLoading && !projectConfig);
+  const entitledView = settled ? entitled : true;
+  if (!entitledView && !loading && (webhooks?.length ?? 0) === 0) {
     return <WebhookUpsell projectId={project?.id} environmentName={environment?.name ?? ''} />;
   }
 
@@ -133,16 +142,16 @@ export const SettingsWebhookList = () => {
     {
       header: '',
       headerClassName: 'w-20',
-      cell: (webhook) => <WebhookRowActions webhook={webhook} entitled={entitled} />,
+      cell: (webhook) => <WebhookRowActions webhook={webhook} entitled={entitledView} />,
     },
   ];
 
   return (
     <ResourceListPage<Webhook>
       title={t('settings.webhooks.title', { environment: environment?.name ?? '' })}
-      actions={entitled ? <NewWebhookButton /> : undefined}
+      actions={entitledView ? <NewWebhookButton /> : undefined}
       description={
-        entitled ? (
+        entitledView ? (
           t('settings.webhooks.headerBody')
         ) : (
           <span className="text-amber-600">{t('settings.webhooks.downgraded.banner')}</span>
