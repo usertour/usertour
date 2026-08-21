@@ -458,14 +458,13 @@ export class BizService {
 
     return await this.withEntityChangeEmit(environmentId, () =>
       this.prisma.$transaction(async (tx) => {
-        // Snapshot INSIDE the transaction, and emit only for rows the final
-        // DELETE actually returned: a pre-read snapshot would emit
-        // `user.deleted` for every row it saw regardless of what this
-        // transaction removed — a double-click or REST retry would then
-        // produce two logically-duplicate events with DIFFERENT message ids,
-        // which receivers cannot deduplicate.
-        // ids only: the deleted-row snapshot comes from RETURNING below —
-        // full rows here would be read and immediately discarded.
+        // Resolve the target ids INSIDE the transaction and emit only for
+        // rows the final DELETE actually returned: a pre-transaction read
+        // would emit `user.deleted` for rows this transaction never removed
+        // — a double-click or REST retry would then produce two logically-
+        // duplicate events with DIFFERENT message ids, which receivers
+        // cannot deduplicate. ids only: the deleted-row data comes from
+        // RETURNING below — full rows here would be read and discarded.
         const bizUsers = await tx.bizUser.findMany({
           where: { id: { in: ids }, environmentId },
           select: { id: true },
@@ -497,7 +496,7 @@ export class BizService {
   async deleteBizCompany(ids: string[], environmentId: string) {
     return await this.withEntityChangeEmit(environmentId, () =>
       this.prisma.$transaction(async (tx) => {
-        // See deleteBizUser: snapshot in-transaction, emit from RETURNING.
+        // See deleteBizUser: resolve ids in-transaction, emit from RETURNING.
         const bizCompanies = await tx.bizCompany.findMany({
           where: { id: { in: ids }, environmentId },
           select: { id: true },

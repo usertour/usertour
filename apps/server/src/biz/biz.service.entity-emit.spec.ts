@@ -32,7 +32,10 @@ describe('BizService.withEntityChangeEmit', () => {
     await expect(
       service.withEntityChangeEmit('env_1', async () => {
         collect('bu_outer');
-        await service.withEntityChangeEmit('env_2', async () => collect('bu_inner'));
+        // Same environment on purpose: the guard is unconditional — when the
+        // tenant-mislabel rationale doesn't apply, the premature-emit one
+        // still does, and THAT is the stricter half to pin.
+        await service.withEntityChangeEmit('env_1', async () => collect('bu_inner'));
       }),
     ).rejects.toThrow(/must not nest/);
     // And the failed outer operation emits nothing at all.
