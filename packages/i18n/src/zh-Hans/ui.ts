@@ -1142,6 +1142,8 @@ const translations = {
         '将为 <strong>{{name}}</strong> 生成新的密钥,当前密钥会立即失效,使用它的集成需要同步更新。',
       rotateConfirmButton: '轮换密钥',
       rotateSuccess: '密钥已轮换 —— 请立即复制新密钥',
+      undecryptable:
+        '存储的签名密钥已无法解密(加密钥匙已更换)。请轮换生成新密钥——在此之前投递将持续失败。',
       rotateFailure: '轮换密钥失败',
       deleteMenuItem: '删除',
       deleteResource: 'API 密钥',

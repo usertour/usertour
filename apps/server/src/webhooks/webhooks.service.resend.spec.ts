@@ -1,3 +1,4 @@
+import { ValidationError, WebhookNotFoundError } from '@/common/errors';
 import { WebhooksService } from './webhooks.service';
 
 /**
@@ -117,6 +118,19 @@ describe('WebhooksService.resendMessage — ambiguous enqueue compensation', () 
         expect.any(String),
         expect.objectContaining({ success: false, final: true }),
       );
+    });
+
+    it('labels a persisted-write failure honestly: 404 only when the webhook is gone', async () => {
+      ledger.createMessages.mockResolvedValue([]); // ledger swallowed the cause
+      // Recheck finds the webhook still there -> NOT a 404 (ValidationError's
+      // message lives in messageDict, so match on the class).
+      await expect(service.sendTestEvent('wh_1')).rejects.toBeInstanceOf(ValidationError);
+
+      // Recheck finds it deleted -> the concurrent-delete 404.
+      prisma.webhook.findUnique
+        .mockResolvedValueOnce({ id: 'wh_1', enabled: true, environmentId: 'env_1' })
+        .mockResolvedValueOnce(null);
+      await expect(service.sendTestEvent('wh_1')).rejects.toThrow(WebhookNotFoundError);
     });
 
     it('keeps the message PENDING when the job actually exists (phantom)', async () => {

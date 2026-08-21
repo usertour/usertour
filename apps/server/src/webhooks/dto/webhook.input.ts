@@ -31,12 +31,14 @@ export class CreateWebhookInput {
    * assertPublicHttpUrl, which honors ALLOW_PRIVATE_NETWORK_EGRESS.
    */
   @Field(() => String)
+  @MaxLength(2083)
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
   url: string;
 
   @Field(() => [String])
   @IsArray()
   @ArrayMaxSize(MAX_TOPIC_SUBSCRIPTIONS)
+  @MaxLength(200, { each: true })
   @IsString({ each: true })
   topics: string[];
 
@@ -61,6 +63,7 @@ export class UpdateWebhookInput {
   /** Same contract as CreateWebhookInput.url. */
   @Field(() => String, { nullable: true })
   @IsOptional()
+  @MaxLength(2083)
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false })
   url?: string;
 
@@ -68,6 +71,7 @@ export class UpdateWebhookInput {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(MAX_TOPIC_SUBSCRIPTIONS)
+  @MaxLength(200, { each: true })
   @IsString({ each: true })
   topics?: string[];
 

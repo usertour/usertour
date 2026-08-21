@@ -180,6 +180,18 @@ describe('GraphQL webhooks (e2e)', () => {
       const listed = gqlData(listRes).listWebhooks.map((row: { id: string }) => row.id);
       expect(listed).toContain(created.id);
 
+      // Exposure rule locked at the surface: a list SELECTING the secret gets
+      // the mask, never plaintext — only get/create/rotate carry it.
+      const listSecretRes = await graphql(app, {
+        token,
+        query:
+          'query ($environmentId: String!) { listWebhooks(environmentId: $environmentId) { id secret } }',
+        variables: { environmentId },
+      });
+      for (const row of gqlData(listSecretRes).listWebhooks as { secret: string }[]) {
+        expect(row.secret).toBe('');
+      }
+
       const getRes = await graphql(app, {
         token,
         query: GET_WEBHOOK,

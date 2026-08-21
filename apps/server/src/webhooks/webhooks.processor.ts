@@ -414,15 +414,19 @@ export class WebhooksProcessor extends WorkerHost {
         settingsUrl,
       },
     });
-    for (const owner of owners) {
-      if (owner.user?.email) {
-        await this.emailService.sendOrLog({
-          to: owner.user.email,
-          subject: 'A Usertour webhook endpoint was disabled after continuous failures',
-          html,
-        });
-      }
-    }
+    // Concurrent sends (sendOrLog never throws): a hung SMTP server must not
+    // serialize inside a delivery-worker slot. Usually one owner anyway.
+    await Promise.all(
+      owners
+        .filter((owner) => owner.user?.email)
+        .map((owner) =>
+          this.emailService.sendOrLog({
+            to: owner.user?.email as string,
+            subject: 'A Usertour webhook endpoint was disabled after continuous failures',
+            html,
+          }),
+        ),
+    );
   }
 }
 

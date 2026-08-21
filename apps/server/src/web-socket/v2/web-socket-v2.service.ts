@@ -305,13 +305,21 @@ export class WebSocketV2Service {
     }
 
     const bizCompany = await this.bizService.withEntityChangeEmit(environment.id, () =>
-      this.bizService.upsertBizCompanies(
-        this.prisma,
-        externalCompanyId,
-        externalUserId,
-        attributes,
-        environment.id,
-        membership,
+      // A REAL transaction, not this.prisma: upsertBizCompanies is
+      // multi-statement (company upsert + membership upsert), and the
+      // post-commit emit contract ("all committed or all thrown") only holds
+      // when the statements share one transaction — otherwise a failure
+      // after the company write leaves a committed change that never emits
+      // company.updated.
+      this.prisma.$transaction((tx) =>
+        this.bizService.upsertBizCompanies(
+          tx,
+          externalCompanyId,
+          externalUserId,
+          attributes,
+          environment.id,
+          membership,
+        ),
       ),
     );
 

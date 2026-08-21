@@ -195,13 +195,23 @@ const SigningSecretSection = ({
         title={t('settings.webhooks.secret.label')}
         description={t('settings.webhooks.secret.hint')}
       />
+      {secret === '' && (
+        <div className="rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          {t('settings.webhooks.secret.undecryptable')}
+        </div>
+      )}
       <div className="flex items-center gap-2">
-        <Input readOnly value={revealed ? secret : MASKED_SECRET} className="font-mono text-xs" />
+        <Input
+          readOnly
+          value={secret === '' ? '—' : revealed ? secret : MASKED_SECRET}
+          className="font-mono text-xs"
+        />
         <Button
           type="button"
           variant="outline"
           size="icon"
           className="shrink-0"
+          disabled={secret === ''}
           onClick={() => setRevealed((current) => !current)}
           title={t('settings.webhooks.secret.revealButton')}
         >
@@ -212,6 +222,7 @@ const SigningSecretSection = ({
           variant="outline"
           size="icon"
           className="shrink-0"
+          disabled={secret === ''}
           onClick={() => copy(secret, t('settings.webhooks.secret.copied'))}
           title={t('settings.webhooks.secret.copyButton')}
         >
@@ -488,15 +499,16 @@ export const WebhookDetail = () => {
         <OverviewSection webhook={webhook} />
       </SettingsCard>
 
-      {webhook.secret && (
-        <SettingsCard>
-          <SigningSecretSection
-            webhookId={webhook.id}
-            secret={webhook.secret}
-            entitled={entitled}
-          />
-        </SettingsCard>
-      )}
+      {/* Always rendered — '' means "stored secret can no longer be
+          decrypted" (encryption key changed), and hiding this card would
+          hide the Rotate button, the one self-heal path. */}
+      <SettingsCard>
+        <SigningSecretSection
+          webhookId={webhook.id}
+          secret={webhook.secret ?? ''}
+          entitled={entitled}
+        />
+      </SettingsCard>
 
       <SettingsCard>
         <MessagesSection webhookId={webhook.id} enabled={webhook.enabled} entitled={entitled} />

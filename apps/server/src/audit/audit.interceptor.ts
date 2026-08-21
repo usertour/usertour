@@ -176,11 +176,14 @@ export class AuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((result) => {
+        // Second evaluation, now with the result: update/delete/rotate args
+        // only carry an id, but the returned row knows its environment.
+        const resolvedEnvironmentId = meta.environmentId?.(args, result) ?? environmentId;
         for (const projectId of projectIds) {
           this.audit.record(
             buildWebAuditEntry(req, args, result, meta, {
               projectId,
-              environmentId,
+              environmentId: resolvedEnvironmentId,
               operation,
               before,
             }),

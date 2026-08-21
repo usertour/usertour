@@ -61,6 +61,7 @@ export class WebhooksResolver {
     action: 'update',
     resourceType: 'webhook',
     resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
   })
   async updateWebhook(@Args('data') data: UpdateWebhookInput) {
     return await this.service.update(data);
@@ -72,6 +73,7 @@ export class WebhooksResolver {
     action: 'delete',
     resourceType: 'webhook',
     resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
   })
   async deleteWebhook(@Args('data') { id }: WebhookIdInput) {
     return await this.service.delete(id);
@@ -83,6 +85,7 @@ export class WebhooksResolver {
     action: 'update',
     resourceType: 'webhook',
     resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
   })
   async rotateWebhookSecret(@Args('data') { id }: WebhookIdInput) {
     return await this.service.rotateSecret(id);

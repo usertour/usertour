@@ -1204,6 +1204,8 @@ const translations = {
         'A new secret will be generated for <strong>{{name}}</strong>. The current key stops working immediately, so any integration using it must be updated.',
       rotateConfirmButton: 'Rotate key',
       rotateSuccess: 'Key rotated — copy the new secret now',
+      undecryptable:
+        'The stored secret can no longer be decrypted (the encryption key changed). Rotate to mint a new one — deliveries fail until you do.',
       rotateFailure: 'Failed to rotate key',
       deleteMenuItem: 'Delete',
       deleteResource: 'API key',

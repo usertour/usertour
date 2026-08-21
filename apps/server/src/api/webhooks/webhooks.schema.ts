@@ -12,7 +12,7 @@ import { cursor, limit } from '../shared/pagination.schema';
  */
 
 const topics = z
-  .array(z.string().min(1))
+  .array(z.string().min(1).max(200))
   .min(1)
   .max(MAX_TOPIC_SUBSCRIPTIONS)
   .describe(

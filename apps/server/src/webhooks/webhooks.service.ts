@@ -38,11 +38,15 @@ export class WebhooksService {
   ) {}
 
   /**
-   * Rows leave this service with the secret in PLAINTEXT; at rest it is
-   * AES-256-GCM encrypted (EncryptionService — same treatment as
-   * EnvironmentSigningSecret / twoFactorSecret: HMAC needs the original
-   * value, so hashing is impossible and encryption bounds a DB-only leak).
-   * The processor reads via Prisma directly and decrypts on its own.
+   * Exposure rule: PLAINTEXT only where a consumer needs it — get (wiring),
+   * create/rotate (one-time handoff). List and delete responses mask the
+   * secret to '' instead: no caller reads it there, decrypting N rows per
+   * list render is waste, and the GraphQL model would otherwise hand the
+   * plaintext to anything selecting the field. At rest it is AES-256-GCM
+   * encrypted (EncryptionService — the EnvironmentSigningSecret /
+   * twoFactorSecret treatment: HMAC needs the original value, so hashing is
+   * impossible and encryption bounds a DB-only leak). The processor reads
+   * via Prisma directly and decrypts on its own.
    */
   private withPlaintextSecret<T extends { secret: string }>(row: T): T {
     // decrypt returns null when the value is unrecoverable (wrong
@@ -51,6 +55,11 @@ export class WebhooksService {
     // take down the very detail page that hosts the Rotate button — the one
     // self-heal path. Empty string = "unrecoverable, rotate me".
     return { ...row, secret: this.encryption.decrypt(row.secret) ?? '' };
+  }
+
+  /** See the exposure rule above: surfaces that never need the secret get ''. */
+  private withMaskedSecret<T extends { secret: string }>(row: T): T {
+    return { ...row, secret: '' };
   }
 
   // ---------------------------------------------------------------------------
@@ -91,7 +100,7 @@ export class WebhooksService {
       where: { environmentId },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
-    return rows.map((row) => this.withPlaintextSecret(row));
+    return rows.map((row) => this.withMaskedSecret(row));
   }
 
   /** Relay-connection list for the v2 REST surface (shared/pagination.paginate). */
@@ -107,7 +116,7 @@ export class WebhooksService {
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
           ...args,
         });
-        return rows.map((row) => this.withPlaintextSecret(row));
+        return rows.map((row) => this.withMaskedSecret(row));
       },
       () => this.prisma.webhook.count({ where }),
       paginationArgs,
@@ -189,7 +198,8 @@ export class WebhooksService {
 
   async delete(id: string) {
     await this.get(id);
-    return await this.prisma.webhook.delete({ where: { id } });
+    const row = await this.prisma.webhook.delete({ where: { id } });
+    return this.withMaskedSecret(row);
   }
 
   /** Replace the signing secret. In-flight retries pick the new one up (the
@@ -239,8 +249,17 @@ export class WebhooksService {
       },
     ]);
     if (!persisted.includes(messageId)) {
-      // Only realistic cause: this webhook was deleted concurrently.
-      throw new WebhookNotFoundError();
+      // The ledger's per-row fallback swallowed the cause; recheck the FK to
+      // label honestly — a concurrent delete is a 404, anything else
+      // (connection blip, JSONB error) must not masquerade as one.
+      const stillExists = await this.prisma.webhook.findUnique({
+        where: { id: webhook.id },
+        select: { id: true },
+      });
+      if (!stillExists) {
+        throw new WebhookNotFoundError();
+      }
+      throw new ValidationError('Failed to record the test message — try again.');
     }
     const jobId = `test-${messageId}`;
     try {

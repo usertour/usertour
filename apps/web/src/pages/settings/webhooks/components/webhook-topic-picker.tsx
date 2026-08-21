@@ -318,6 +318,10 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
       ]);
       onChange([WEBHOOK_TOPIC_WILDCARD, ...value.filter((topic) => noisyTopics.has(topic))]);
     } else {
+      // Deliberate full clear — including subscriptions with no rendered
+      // leaf (topics of since-deleted event definitions): "deselect all" is
+      // the one gesture that lets a user shed those orphans, and keeping
+      // invisible entries alive would make the picker lie about emptiness.
       onChange([]);
     }
   };

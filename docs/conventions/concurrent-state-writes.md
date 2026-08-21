@@ -31,6 +31,17 @@ and prove every writer again. Races come in families; fixing the reported
 instance and waiting for the next report is how one design issue turns into
 four fix rounds.
 
+### 0. New value, new state, new sentinel → enumerate its consumers first.
+
+Not a concurrency rule but the same failure shape one layer up: whenever a
+change introduces a new value into an existing field's domain (a sentinel
+like `''`), a new state, or tightens one side of a symmetric pair (one
+surface's validation, one toggle direction), sweep everyone who reads the
+old contract before shipping. The webhook rounds paid for this twice: a
+`''`-sentinel secret met a truthiness-gated render and hid the one
+self-heal button; a mutation stopped refetching without checking that its
+consumer query was even ON the cache.
+
 ## Rules
 
 ### 1. Never read → decide → write. The decision inputs go into the WHERE.
@@ -88,7 +99,7 @@ Some guards are semantic, not just anti-lost-update: a result computed against
 one configuration must not be booked against another. Breaker increments and
 resets carry `WHERE url = <the url this delivery actually hit>`, so up to
 concurrency-many stragglers for a just-replaced URL can't stack a cooldown
-onto the new target (`recordFinalFailure` / `resetBreaker`). Ask of every
+onto the new target (`recordFailedAttempt` / `resetBreaker`). Ask of every
 write: *which inputs was this decision computed from, and are they still
 true?* — then assert them.
 
@@ -125,7 +136,7 @@ benign race, not an error.
 ## Reference implementations
 
 - `apps/server/src/webhooks/webhooks.processor.ts` — `resetBreaker` (rules 2,
-  5, 7), `recordFinalFailure` (rules 1, 5), `autoDisable` (rule 3).
+  5, 7), `recordFailedAttempt` (rules 1, 5), `autoDisable` (rule 3).
 - `apps/server/src/outbound/outbound-ledger.service.ts` — `claimForResend`
   (rules 3, 4), `releaseResendClaim` (rule 6).
 - `apps/server/src/webhooks/webhooks.service.ts` — `resendMessage` (rule 4's

@@ -9,7 +9,7 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { createTransport } from 'nodemailer';
+import { EmailService } from '@/shared/email.service';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { ConfigService } from '@nestjs/config';
 import { ProjectsService } from '@/projects/projects.service';
@@ -24,6 +24,7 @@ export class TeamService {
     private prisma: PrismaService,
     private configService: ConfigService,
     private readonly projectsService: ProjectsService,
+    private readonly emailService: EmailService,
   ) {}
 
   async getTeamMembers(projectId: string) {
@@ -247,17 +248,11 @@ export class TeamService {
     }
   }
 
-  async sendEmail(data: unknown) {
-    const transporter = createTransport({
-      host: this.configService.get('email.host'),
-      port: this.configService.get('email.port'),
-      secure: true,
-      auth: {
-        user: this.configService.get('email.user'),
-        pass: this.configService.get('email.pass'),
-      },
-    });
-    return await transporter.sendMail(data);
+  async sendEmail(data: { to: string; subject: string; html: string; from?: string }) {
+    // Shared transport (shared/EmailService) — the module-local createTransport
+    // copy predated the extraction. Throwing variant on purpose: an invite the
+    // user just asked for must fail loudly, not skip silently.
+    return await this.emailService.send(data);
   }
 
   async sendInviteEmail(
