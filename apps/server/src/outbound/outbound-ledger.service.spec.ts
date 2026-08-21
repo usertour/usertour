@@ -92,7 +92,9 @@ describe('OutboundLedgerService', () => {
       });
 
     await expect(service.createMessages(inputs)).resolves.toEqual(['whmsg_a', 'whmsg_c']);
-    expect(prisma.outboundMessage.create).toHaveBeenCalledTimes(3);
+    // a, b, b-retry (a persistent failure earns one more try before the
+    // loud diagnosis), c — the batch is never sunk by one bad row.
+    expect(prisma.outboundMessage.create).toHaveBeenCalledTimes(4);
   });
 
   it('touch bumps updatedAt only while PENDING and never throws', async () => {

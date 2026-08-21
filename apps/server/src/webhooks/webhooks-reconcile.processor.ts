@@ -90,6 +90,13 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
       if (!claimStamp) {
         continue; // Moved under us: job alive after all, or another sweep won.
       }
+      // max(attempt), not the row count: settle-write retries and stalled
+      // twins can insert duplicate delivery rows, and a count would then
+      // skip ladder rungs and shrink the remaining budget.
+      const attemptsLogged = message.deliveries.reduce(
+        (highest, delivery) => Math.max(highest, delivery.attempt),
+        0,
+      );
       const jobData: WebhookDeliveryJobData = {
         webhookId: message.webhookId as string,
         messageId: message.id,
@@ -99,13 +106,13 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
         // NOT manual — the manual flag exists because "the user IS the probe",
         // watching in real time; an orphan swept up >=14h later has no one
         // waiting and must respect the cooldown gate like ordinary traffic.
-        attemptOffset: message.deliveries.length,
+        attemptOffset: attemptsLogged,
       };
       try {
         await this.deliveryQueue.add('deliver', jobData, {
           removeOnComplete: true,
           removeOnFail: 1000,
-          attempts: rebuildAttemptBudget(message.topic, message.deliveries),
+          attempts: rebuildAttemptBudget(message.topic, message.deliveries, attemptsLogged),
           backoff: { type: 'custom' },
           // Keyed by the claim generation — an ambiguous add (job created,
           // response lost) can't double-queue within this claim.
@@ -135,6 +142,7 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
 export const rebuildAttemptBudget = (
   topic: string,
   deliveries: Array<{ success: boolean }>,
+  attemptsLogged: number,
 ): number => {
   if (topic === WEBHOOK_TEST_TOPIC) {
     return 1;
@@ -142,5 +150,5 @@ export const rebuildAttemptBudget = (
   if (deliveries.some((delivery) => delivery.success)) {
     return 1;
   }
-  return Math.max(1, DELIVERY_ATTEMPTS - deliveries.length);
+  return Math.max(1, DELIVERY_ATTEMPTS - attemptsLogged);
 };

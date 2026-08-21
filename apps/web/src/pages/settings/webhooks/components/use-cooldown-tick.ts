@@ -24,14 +24,17 @@ export const nextFutureDeadline = (
  */
 export const useCooldownTick = (timestamps: Array<string | null | undefined>) => {
   const [tick, force] = useReducer((count: number) => count + 1, 0);
+  // Content key for the deps only — the computation reads the array itself
+  // (no join/split round-trip).
   const key = timestamps.filter(Boolean).sort().join('|');
   // `tick` is a deliberate dependency: the timestamps (and so `key`) don't
   // change when a deadline PASSES — without re-running on our own firing,
   // only the first of several pending deadlines would ever get a timer (two
   // cooling endpoints: A expires, B's badge then lingers forever).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `key` IS `timestamps`' content hash — depending on the array identity would re-arm every render
   useEffect(() => {
     const now = Date.now();
-    const soonest = nextFutureDeadline(key.split('|'), now);
+    const soonest = nextFutureDeadline(timestamps, now);
     if (soonest === null) {
       return;
     }

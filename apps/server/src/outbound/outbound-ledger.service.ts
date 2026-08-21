@@ -130,13 +130,54 @@ export class OutboundLedgerService implements OnModuleInit {
         try {
           await this.prisma.outboundMessage.create({ data: row });
           persisted.push(row.id);
+          continue;
+        } catch {
+          // Fall through to the diagnose-and-retry below.
+        }
+        // Do NOT blame a vanished destination without evidence: a transient
+        // fault here silently loses the delivery (no ledger row = nothing
+        // for the reconcile sweep to recover), so it deserves one more try
+        // and an ERROR that names the real cause — the same discipline
+        // sendTestEvent applies.
+        try {
+          await this.prisma.outboundMessage.create({ data: row });
+          persisted.push(row.id);
         } catch (rowError) {
-          this.logger.warn(
-            `Dropping outbound message ${row.id} for a vanished destination: ${rowError}`,
-          );
+          const destinationGone = !(await this.destinationExists(row));
+          if (destinationGone) {
+            this.logger.debug(`Dropping outbound message ${row.id}: destination deleted`);
+          } else {
+            this.logger.error(
+              `LOST outbound message ${row.id} — insert failed twice with the destination still present: ${rowError}`,
+            );
+          }
         }
       }
       return persisted;
+    }
+  }
+
+  /** Whether the row's destination still exists (fallback diagnosis only). */
+  private async destinationExists(row: {
+    webhookId?: string | null;
+    integrationId?: string | null;
+  }): Promise<boolean> {
+    try {
+      if (row.webhookId) {
+        return !!(await this.prisma.webhook.findUnique({
+          where: { id: row.webhookId },
+          select: { id: true },
+        }));
+      }
+      if (row.integrationId) {
+        return !!(await this.prisma.integration.findUnique({
+          where: { id: row.integrationId },
+          select: { id: true },
+        }));
+      }
+      return false;
+    } catch {
+      return true; // Can't tell — keep the loud error path.
     }
   }
 
@@ -249,7 +290,10 @@ export class OutboundLedgerService implements OnModuleInit {
         topic: true,
         payload: true,
         updatedAt: true,
-        deliveries: { select: { success: true } },
+        // `attempt` too: the continuation must resume from max(attempt), not
+        // the ROW COUNT — settle-write retries and stalled twins can insert
+        // duplicate rows (documented above), which would inflate a count.
+        deliveries: { select: { success: true, attempt: true } },
       },
     });
   }

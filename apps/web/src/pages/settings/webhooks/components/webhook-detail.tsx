@@ -344,7 +344,8 @@ const MessagesSection = ({
       const queued = await resendMessage(webhookId, message.id);
       if (queued) {
         toast({ variant: 'success', title: t('settings.webhooks.message.resendQueued') });
-        refresh();
+        // Only the DELAYED refresh: an immediate one is guaranteed to see the
+        // pre-resend state, and it folds any loaded pages back to page one.
         refetchSoon();
       } else {
         toast({ variant: 'destructive', title: t('settings.webhooks.message.resendFailed') });

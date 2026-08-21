@@ -156,7 +156,8 @@ export class WebhooksService {
         url: data.url,
         topics: normalizedTopics,
         enabled: data.enabled ?? true,
-        description: data.description ?? null,
+        // '' and null must not coexist as two spellings of "no description".
+        description: data.description || null,
         secret: this.encryption.encrypt(secret) as string,
       },
     });
@@ -191,16 +192,14 @@ export class WebhooksService {
         ...(url !== undefined ? { url } : {}),
         ...(normalizedTopics !== undefined ? { topics: normalizedTopics } : {}),
         ...(enabled !== undefined ? { enabled } : {}),
-        ...(description !== undefined ? { description } : {}),
-        ...(reEnabling
-          ? {
-              autoDisabledAt: null,
-              consecutiveFailures: 0,
-              cooldownUntil: null,
-              failingSince: null,
-            }
+        ...(description !== undefined ? { description: description || null } : {}),
+        // One spread for the shared breaker reset (both branches used to
+        // repeat these three fields); autoDisabledAt tracks the enabled
+        // switch, so only re-enabling clears it.
+        ...(reEnabling || urlChanged
+          ? { consecutiveFailures: 0, cooldownUntil: null, failingSince: null }
           : {}),
-        ...(urlChanged ? { consecutiveFailures: 0, cooldownUntil: null, failingSince: null } : {}),
+        ...(reEnabling ? { autoDisabledAt: null } : {}),
       },
     });
     // Masked: nothing consumes a secret from an update response, and the

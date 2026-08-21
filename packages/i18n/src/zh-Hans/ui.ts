@@ -1249,6 +1249,7 @@ const translations = {
       allEventsSummary: '全部事件',
       allTrackedEventsSummary: '全部行为事件',
       allTrackedEventsPlus: '全部行为事件 +{{count}}',
+      topicsCount_one: '{{count}} 个主题',
       topicsCount_other: '{{count}} 个主题',
       statusEnabled: '已启用',
       downgraded: {

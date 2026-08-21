@@ -248,6 +248,35 @@ export class AnalyticsService {
     private eventEmitter: EventEmitter2,
   ) {}
 
+  /**
+   * The shared tail of both end-session paths: create the ending BizEvent,
+   * close the session, and emit post-commit — extracted so the two callers
+   * (which differ only in how they validate/build `data`) cannot drift.
+   */
+  private async createSessionEndEventAndClose(
+    bizSession: BizSession,
+    sessionId: string,
+    eventId: string,
+    data: Record<string, any>,
+  ): Promise<void> {
+    const createdBizEvent = await this.prisma.$transaction(async (tx) => {
+      const bizEvent = await tx.bizEvent.create({
+        data: {
+          bizSessionId: sessionId,
+          eventId,
+          bizUserId: bizSession.bizUserId,
+          data,
+        },
+      });
+      await tx.bizSession.update({
+        where: { id: sessionId },
+        data: { state: 1 },
+      });
+      return bizEvent;
+    });
+    this.emitSessionEndEvent(bizSession, createdBizEvent.id);
+  }
+
   /** Emit BIZ_EVENT_TRACKED for an admin-created session-ending event. */
   private emitSessionEndEvent(bizSession: BizSession, bizEventId: string): void {
     if (!bizSession.environmentId) {
@@ -1722,23 +1751,7 @@ export class AnalyticsService {
       }
     }
 
-    const createdBizEvent = await this.prisma.$transaction(async (tx) => {
-      const bizEvent = await tx.bizEvent.create({
-        data: {
-          bizSessionId: sessionId,
-          eventId: endEvent.id,
-          bizUserId: bizSession.bizUserId,
-          data,
-        },
-      });
-      await tx.bizSession.update({
-        where: { id: sessionId },
-        data: { state: 1 },
-      });
-      return bizEvent;
-    });
-
-    this.emitSessionEndEvent(bizSession, createdBizEvent.id);
+    await this.createSessionEndEventAndClose(bizSession, sessionId, endEvent.id, data);
     return true;
   }
 
@@ -1785,23 +1798,7 @@ export class AnalyticsService {
       }
     }
 
-    const createdBizEvent = await this.prisma.$transaction(async (tx) => {
-      const bizEvent = await tx.bizEvent.create({
-        data: {
-          bizSessionId: sessionId,
-          eventId: endEvent.id,
-          bizUserId: bizSession.bizUserId,
-          data,
-        },
-      });
-      await tx.bizSession.update({
-        where: { id: sessionId },
-        data: { state: 1 },
-      });
-      return bizEvent;
-    });
-
-    this.emitSessionEndEvent(bizSession, createdBizEvent.id);
+    await this.createSessionEndEventAndClose(bizSession, sessionId, endEvent.id, data);
     return true;
   }
 

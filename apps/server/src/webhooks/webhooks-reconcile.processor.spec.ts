@@ -13,7 +13,14 @@ describe('WebhooksReconcileProcessor', () => {
     topic: 'user.created',
     payload: { id: 'whmsg_orphan' },
     updatedAt: new Date('2026-08-19T00:00:00.000Z'),
-    deliveries: [{ success: false }, { success: false }, { success: false }],
+    // Four ROWS but max attempt 3: a settle-retry duplicated attempt 2 —
+    // continuation math must follow max(attempt), not the row count.
+    deliveries: [
+      { success: false, attempt: 1 },
+      { success: false, attempt: 2 },
+      { success: false, attempt: 2 },
+      { success: false, attempt: 3 },
+    ],
   };
 
   let ledger: {
@@ -50,7 +57,7 @@ describe('WebhooksReconcileProcessor', () => {
       expect.objectContaining({
         webhookId: 'wh_1',
         messageId: 'whmsg_orphan',
-        // Numbering continues after the 3 logged tries.
+        // max(attempt)=3 despite 4 rows (duplicate attempt 2 in the fixture).
         attemptOffset: 3,
       }),
       expect.objectContaining({
@@ -72,7 +79,12 @@ describe('WebhooksReconcileProcessor', () => {
 
   it('keeps at least one attempt when the logged tries already exhaust the budget', async () => {
     ledger.findOrphanedPendingWebhookMessages.mockResolvedValue([
-      { ...orphan, deliveries: new Array(9).fill({ success: false }) },
+      {
+        ...orphan,
+        deliveries: new Array(9)
+          .fill(null)
+          .map((_, index) => ({ success: false, attempt: index + 1 })),
+      },
     ]);
 
     await processor.process({} as never);
@@ -86,14 +98,14 @@ describe('WebhooksReconcileProcessor', () => {
 
   it('rebuilds a single-attempt budget for manual sends (probe semantics preserved)', async () => {
     // Test event: always a one-shot probe, even with zero logged tries.
-    expect(rebuildAttemptBudget('webhook.test', [])).toBe(1);
+    expect(rebuildAttemptBudget('webhook.test', [], 0)).toBe(1);
     // Resend of a DELIVERED message: PENDING can only mean a single-attempt
     // resend was in flight — not a fresh 7-attempt ladder.
-    expect(rebuildAttemptBudget('user.created', [{ success: true }])).toBe(1);
+    expect(rebuildAttemptBudget('user.created', [{ success: true }], 1)).toBe(1);
     // Resend of a FAILED message: the remainder already lands on 1.
-    expect(rebuildAttemptBudget('user.created', new Array(8).fill({ success: false }))).toBe(1);
+    expect(rebuildAttemptBudget('user.created', new Array(8).fill({ success: false }), 8)).toBe(1);
     // Listener-born orphan mid-ladder: continues its remaining budget.
-    expect(rebuildAttemptBudget('user.created', new Array(3).fill({ success: false }))).toBe(5);
+    expect(rebuildAttemptBudget('user.created', new Array(3).fill({ success: false }), 3)).toBe(5);
   });
 
   it('rebuilds WITHOUT the manual flag — an hours-old orphan respects the cooldown gate', async () => {
