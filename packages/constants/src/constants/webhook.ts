@@ -46,6 +46,12 @@ export const WEBHOOK_PREFIX_SUBSCRIPTIONS: string[] = [
   'company',
 ];
 
+/**
+ * Endpoint subscription-list cap. Enforced at the server's domain chokepoint;
+ * REST zod / GraphQL ArrayMaxSize / the dashboard form mirror it.
+ */
+export const MAX_TOPIC_SUBSCRIPTIONS = 100;
+
 /** Subscription string that matches every topic (noisy events excepted). */
 export const WEBHOOK_TOPIC_WILDCARD = '*';
 

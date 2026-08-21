@@ -60,7 +60,7 @@ export class ApiWebhooksService {
   }
 
   async update(id: string, environment: Environment, body: UpdateWebhookBody): Promise<Webhook> {
-    await this.getOwnedRow(id, environment);
+    await this.assertOwned(id, environment);
     const row = await this.webhooks.update({ id, ...body });
     // No secret: exposure is limited to the surfaces that NEED it (get for
     // wiring, create/rotate for the one-time handoff) — an update response
@@ -70,12 +70,12 @@ export class ApiWebhooksService {
   }
 
   async delete(id: string, environment: Environment): Promise<void> {
-    await this.getOwnedRow(id, environment);
+    await this.assertOwned(id, environment);
     await this.webhooks.delete(id);
   }
 
   async rotateSecret(id: string, environment: Environment): Promise<Webhook> {
-    await this.getOwnedRow(id, environment);
+    await this.assertOwned(id, environment);
     const row = await this.webhooks.rotateSecret(id);
     return mapWebhook(row, { includeSecret: true });
   }
@@ -91,5 +91,18 @@ export class ApiWebhooksService {
       throw new WebhookNotFoundError();
     }
     return row;
+  }
+
+  /**
+   * Ownership check for mutating routes, which re-read the row inside the
+   * domain call anyway: a full getOwnedRow here would decrypt the secret
+   * twice per request for a value nobody reads.
+   */
+  private async assertOwned(id: string, environment: Environment): Promise<void> {
+    const environmentId = await this.webhooks.getEnvironmentId(id);
+    if (environmentId !== environment.id) {
+      // Same shape as an unknown id — do not reveal that it exists elsewhere.
+      throw new WebhookNotFoundError();
+    }
   }
 }

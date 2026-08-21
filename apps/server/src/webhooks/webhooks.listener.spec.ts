@@ -98,8 +98,11 @@ describe('WebhooksListener', () => {
     // Availability (the breaker) is the processor's business: it defers the
     // attempts. Gating message CREATION here would erase events instead of
     // delaying them.
-    const where = prisma.webhook.findMany.mock.calls[0][0].where;
-    expect(where).toEqual({ environmentId: 'env_1', enabled: true });
+    const query = prisma.webhook.findMany.mock.calls[0][0];
+    expect(query.where).toEqual({ environmentId: 'env_1', enabled: true });
+    // Hot path pulls only what matching needs — not the encrypted secret or
+    // the breaker columns.
+    expect(query.select).toEqual({ id: true, topics: true });
   });
 
   it('a transient DB error on one change does not sink its batch siblings', async () => {

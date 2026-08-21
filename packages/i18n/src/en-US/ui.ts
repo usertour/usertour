@@ -1365,6 +1365,8 @@ const translations = {
         companyUpdated: 'Company updated',
         companyDeleted: 'Company deleted',
         topicsRequired: 'Select at least one event.',
+        topicsTooMany:
+          'At most {{max}} topic subscriptions per endpoint — a family name covers its whole group in one entry.',
         enabled: 'Enabled',
       },
       picker: {

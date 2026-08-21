@@ -88,15 +88,22 @@ export class WebhooksProcessor extends WorkerHost {
     const { webhookId, messageId, payload, attemptOffset = 0 } = job.data;
 
     const webhook = await this.prisma.webhook.findUnique({ where: { id: webhookId } });
-    if (!webhook || !webhook.enabled) {
-      // The endpoint vanished or was disabled between enqueue and delivery.
-      // Record the drop as a final failed attempt instead of returning
-      // silently — otherwise the message sits PENDING forever (and the
-      // dashboard refuses to resend a PENDING message even after re-enable).
+    if (!webhook) {
+      // Deleted between enqueue and delivery: the message and its attempt
+      // rows are already gone with it (OutboundMessage.webhookId cascades),
+      // so there is no ledger left to write to — recording here would only
+      // fail the FK and log noise. Silent return is the honest move.
+      return;
+    }
+    if (!webhook.enabled) {
+      // Disabled between enqueue and delivery. Record the drop as a final
+      // failed attempt instead of returning silently — otherwise the message
+      // sits PENDING forever (and the dashboard refuses to resend a PENDING
+      // message even after re-enable).
       await this.ledger.recordAttempt(messageId, {
         attempt: attemptOffset + job.attemptsMade + 1,
         success: false,
-        error: webhook ? 'Endpoint disabled at delivery time' : 'Endpoint deleted at delivery time',
+        error: 'Endpoint disabled at delivery time',
         final: true,
       });
       return;
@@ -239,10 +246,16 @@ export class WebhooksProcessor extends WorkerHost {
       });
       // Every failed attempt feeds the breaker (attempt-level counting).
       await this.recordFailedAttempt(webhookId, webhook.url);
-      // Hand the receiver's Retry-After to the backoff strategy via the error.
-      const retryAfterMs = parseRetryAfter(failure.response?.headers?.['retry-after']);
-      if (retryAfterMs) {
-        (error as RetryAfterCarrier).retryAfterMs = retryAfterMs;
+      // Hand the receiver's Retry-After to the backoff strategy — but only
+      // from 429/503, the statuses RFC 9110 defines it for. An intermediary
+      // stamping Retry-After: 86400 on every error would otherwise stretch
+      // each ladder rung to the 12h cap (~84h total vs the designed ~25h).
+      const failureStatus = failure.response?.status;
+      if (failureStatus === 429 || failureStatus === 503) {
+        const retryAfterMs = parseRetryAfter(failure.response?.headers?.['retry-after']);
+        if (retryAfterMs) {
+          (error as RetryAfterCarrier).retryAfterMs = retryAfterMs;
+        }
       }
       // Rethrow so BullMQ retries with backoff.
       throw error;
@@ -324,8 +337,13 @@ export class WebhooksProcessor extends WorkerHost {
         row.consecutiveFailures >= COOLDOWN_THRESHOLD &&
         now.getTime() - row.failingSince.getTime() >= AUTO_DISABLE_AFTER_MS
       ) {
-        await this.autoDisable(webhookId, row.environmentId, row.url, row.failingSince);
-        return;
+        if (await this.autoDisable(webhookId, row.environmentId, row.url, row.failingSince)) {
+          return;
+        }
+        // Lost the guarded flip (state moved under us): fall through to the
+        // cooldown arm below — it carries its own streak guard, so if a
+        // concurrent reset explains the miss it no-ops; if the endpoint is
+        // still failing, this round still slows it down.
       }
       if (row.consecutiveFailures >= COOLDOWN_THRESHOLD) {
         const exponent = row.consecutiveFailures - COOLDOWN_THRESHOLD;
@@ -362,7 +380,7 @@ export class WebhooksProcessor extends WorkerHost {
     environmentId: string,
     url: string,
     failingSince: Date,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const { count } = await this.prisma.webhook.updateMany({
       // CAS on the decision's evidence: if a concurrent success or a URL
       // change reset failingSince since we read it, the "7 days of failure"
@@ -371,7 +389,7 @@ export class WebhooksProcessor extends WorkerHost {
       data: { enabled: false, autoDisabledAt: new Date(), cooldownUntil: null },
     });
     if (count === 0) {
-      return; // State moved under us (reset, URL change, or already disabled).
+      return false; // State moved under us (reset, URL change, or already disabled).
     }
     const failingDays = Math.round((Date.now() - failingSince.getTime()) / 86_400_000);
     this.logger.warn(
@@ -383,7 +401,7 @@ export class WebhooksProcessor extends WorkerHost {
       select: { projectId: true, project: { select: { name: true } } },
     });
     if (!environment) {
-      return;
+      return true; // Disabled fine; only the notification lost its addressee.
     }
 
     this.audit.record({
@@ -427,6 +445,7 @@ export class WebhooksProcessor extends WorkerHost {
           }),
         ),
     );
+    return true;
   }
 }
 

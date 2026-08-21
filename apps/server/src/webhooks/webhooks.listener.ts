@@ -104,6 +104,9 @@ export class WebhooksListener {
     // so a receiver outage delays deliveries instead of erasing them.
     const webhooks = await this.prisma.webhook.findMany({
       where: { environmentId, enabled: true },
+      // Hot path: id + topics is all matching/enqueueing needs — no point
+      // hauling the encrypted secret and breaker columns per tracked event.
+      select: { id: true, topics: true },
     });
     if (webhooks.length === 0) {
       return [];

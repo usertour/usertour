@@ -7,6 +7,7 @@ import { type Webhook, useGetProjectConfigQuery, useListWebhooksQuery } from '@u
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
+import { useCooldownTick } from './components/use-cooldown-tick';
 import { WebhookDialog } from './components/webhook-dialog';
 import { WebhookRowActions } from './components/webhook-row-actions';
 import { WebhookUpsell } from './components/webhook-upsell';
@@ -41,6 +42,8 @@ export const SettingsWebhookList = () => {
     SHARED_CACHE_QUERY_OPTIONS,
   );
   const { t } = useTranslation();
+  // Drop the "Cooling down" badge on schedule, not on the next refetch.
+  useCooldownTick((webhooks ?? []).map((webhook) => webhook.cooldownUntil));
 
   // Plan gate — the server enforces this independently; mirror it in the UI.
   // A downgraded project with EXISTING endpoints keeps a degraded list (the

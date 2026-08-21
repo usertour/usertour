@@ -45,6 +45,7 @@ import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useLoadMoreAccumulator } from '@/hooks/use-load-more-accumulator';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
+import { useCooldownTick } from './use-cooldown-tick';
 import { WebhookMessageDialog } from './webhook-message-dialog';
 import { WebhookMessageStatusBadge } from './webhook-message-status-badge';
 
@@ -474,6 +475,8 @@ export const WebhookDetail = () => {
   // query must be ON the cache to see them — without this, the new secret
   // only appeared after a full page reload.
   const { webhook, loading } = useGetWebhookQuery(webhookId ?? '', SHARED_CACHE_QUERY_OPTIONS);
+  // Drop the "Cooling down" badge on schedule, not on the next refetch.
+  useCooldownTick([webhook?.cooldownUntil]);
   const { t } = useTranslation();
   // Plan gate mirror (server enforces independently): reads and delete stay
   // open on a downgraded project; rotate / test / resend are write-shaped.

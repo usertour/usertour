@@ -171,18 +171,15 @@ describe('WebhooksProcessor', () => {
     );
   });
 
-  it('records a final failed attempt (no send) when the endpoint is gone or disabled', async () => {
+  it('returns silently for a DELETED endpoint (its ledger rows cascaded away)', async () => {
     prisma.webhook.findUnique.mockResolvedValue(null);
     await processor.process(buildJob(0));
-    expect(ledger.recordAttempt).toHaveBeenLastCalledWith(
-      'whmsg_1',
-      expect.objectContaining({
-        success: false,
-        final: true,
-        error: expect.stringContaining('deleted'),
-      }),
-    );
+    // Recording would only fail the FK: the message row died with the webhook.
+    expect(ledger.recordAttempt).not.toHaveBeenCalled();
+    expect(mockedPost).not.toHaveBeenCalled();
+  });
 
+  it('records a final failed attempt (no send) when the endpoint is disabled', async () => {
     prisma.webhook.findUnique.mockResolvedValue({ id: 'wh_1', enabled: false });
     await processor.process(buildJob(0));
     expect(ledger.recordAttempt).toHaveBeenLastCalledWith(
@@ -358,6 +355,36 @@ describe('WebhooksProcessor', () => {
     expect(prisma.webhook.updateMany).toHaveBeenCalledTimes(2);
   });
 
+  it('a lost auto-disable race still arms the (self-guarded) cooldown', async () => {
+    prisma.webhook.findUnique.mockResolvedValue({
+      id: 'wh_1',
+      enabled: true,
+      url: 'https://example.com/hook',
+      secret: 'whsec_test',
+    });
+    mockedPost.mockRejectedValue(new Error('ECONNREFUSED'));
+    prisma.webhook.findUniqueOrThrow.mockResolvedValueOnce({
+      consecutiveFailures: 40,
+      failingSince: new Date(Date.now() - 8 * 86_400_000),
+      environmentId: 'env_1',
+      url: 'https://example.com/hook',
+    });
+    // increment succeeds; the guarded auto-disable flip loses (state moved);
+    // the cooldown arm then still runs (its own streak guard decides).
+    prisma.webhook.updateMany
+      .mockResolvedValueOnce({ count: 1 }) // increment
+      .mockResolvedValueOnce({ count: 0 }) // auto-disable CAS miss
+      .mockResolvedValueOnce({ count: 1 }); // cooldown arm
+
+    await expect(processor.process(buildJob(4, 5))).rejects.toThrow();
+
+    const cooldownWrite = prisma.webhook.updateMany.mock.calls.at(-1)?.[0];
+    expect(cooldownWrite.where).toEqual({ id: 'wh_1', consecutiveFailures: 40 });
+    expect(cooldownWrite.data.cooldownUntil).toBeInstanceOf(Date);
+    // The endpoint was NOT left at full speed with nothing armed.
+    expect(emailService.sendOrLog).not.toHaveBeenCalled();
+  });
+
   it('defers (moveToDelayed, no attempt) while the endpoint is cooling down', async () => {
     prisma.webhook.findUnique.mockResolvedValue({
       id: 'wh_1',
@@ -406,21 +433,30 @@ describe('WebhooksProcessor', () => {
     );
   });
 
-  it("attaches the receiver's Retry-After to the rethrown error for the backoff strategy", async () => {
+  it('honors Retry-After only from 429/503 — the statuses RFC 9110 defines it for', async () => {
     prisma.webhook.findUnique.mockResolvedValue({
       id: 'wh_1',
       enabled: true,
       url: 'https://example.com/hook',
       secret: 'whsec_test',
     });
-    const rateLimited = Object.assign(new Error('Request failed with status code 429'), {
-      response: { status: 429, data: '', headers: { 'retry-after': '120' } },
+    for (const status of [429, 503]) {
+      const failure = Object.assign(new Error(`status ${status}`), {
+        response: { status, data: '', headers: { 'retry-after': '120' } },
+      });
+      mockedPost.mockRejectedValueOnce(failure);
+      await expect(processor.process(buildJob(0, 8))).rejects.toMatchObject({
+        retryAfterMs: 120_000,
+      });
+    }
+    // A misbehaving intermediary stamping Retry-After on every 5xx must not
+    // stretch each ladder rung to the 12h cap.
+    const serverError = Object.assign(new Error('status 500'), {
+      response: { status: 500, data: '', headers: { 'retry-after': '86400' } },
     });
-    mockedPost.mockRejectedValue(rateLimited);
-
-    await expect(processor.process(buildJob(0, 8))).rejects.toMatchObject({
-      retryAfterMs: 120_000,
-    });
+    mockedPost.mockRejectedValueOnce(serverError);
+    const thrown = await processor.process(buildJob(0, 8)).catch((error) => error);
+    expect(thrown.retryAfterMs).toBeUndefined();
   });
 
   it('disables env-var proxying while the egress guard is active (SSRF)', async () => {

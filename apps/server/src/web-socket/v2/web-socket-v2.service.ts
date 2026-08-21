@@ -547,10 +547,6 @@ export class WebSocketV2Service {
       });
     });
 
-    if (!createdBizEvent) {
-      return false;
-    }
-
     const trackedPayload: BizEventTrackedPayload = {
       environmentId: environment.id,
       bizEventIds: [createdBizEvent.id],

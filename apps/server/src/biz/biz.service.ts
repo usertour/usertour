@@ -179,13 +179,19 @@ export class BizService {
 
   async createBizUser(data: CreateBizInput) {
     return await this.prisma.bizUser.create({
-      data: { ...data, data: seedSeenAttributes((data.data as Record<string, any>) ?? {}) },
+      data: {
+        ...data,
+        data: seedSeenAttributes(filterNullAttributes((data.data as Record<string, any>) ?? {})),
+      },
     });
   }
 
   async createBizCompany(data: CreateBizInput) {
     return await this.prisma.bizCompany.create({
-      data: { ...data, data: seedSeenAttributes((data.data as Record<string, any>) ?? {}) },
+      data: {
+        ...data,
+        data: seedSeenAttributes(filterNullAttributes((data.data as Record<string, any>) ?? {})),
+      },
     });
   }
 
@@ -797,7 +803,9 @@ export class BizService {
         data: {
           externalId: String(externalUserId),
           environmentId,
-          data: seedSeenAttributes(insertAttribute),
+          // Null attributes filtered at birth: seeding them only manufactures a
+          // spurious `<entity>.updated` diff on the next identify.
+          data: seedSeenAttributes(filterNullAttributes(insertAttribute)),
         },
       });
       this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
@@ -930,7 +938,9 @@ export class BizService {
       data: {
         externalId: String(externalCompanyId),
         environmentId,
-        data: seedSeenAttributes(insertAttribute),
+        // Null attributes filtered at birth: seeding them only manufactures a
+        // spurious `<entity>.updated` diff on the next identify.
+        data: seedSeenAttributes(filterNullAttributes(insertAttribute)),
       },
     });
     this.collectEntityChange({ entity: 'company', action: 'created', bizId: created.id });

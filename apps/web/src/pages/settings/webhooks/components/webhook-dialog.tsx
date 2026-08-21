@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
+import { MAX_TOPIC_SUBSCRIPTIONS } from '@usertour/constants';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -42,7 +43,7 @@ const buildWebhookFormSchema = (allowPrivateNetworkEgress: boolean) =>
       : z.string().url('url').startsWith('https://', 'url'),
     // Stored subscription strings verbatim (see WebhookTopicPicker for the
     // grammar); the picker edits this array in place — no encode/decode layer.
-    topics: z.array(z.string()).min(1, 'topics'),
+    topics: z.array(z.string()).min(1, 'topics').max(MAX_TOPIC_SUBSCRIPTIONS, 'topicsMax'),
     description: z.string().max(200).optional(),
     enabled: z.boolean(),
   });
@@ -208,7 +209,11 @@ export const WebhookDialog = (props: WebhookDialogProps) => {
                     </FormControl>
                     {form.formState.errors.topics && (
                       <p className="text-[0.8rem] font-medium text-destructive">
-                        {t('settings.webhooks.form.topicsRequired')}
+                        {form.formState.errors.topics.message === 'topicsMax'
+                          ? t('settings.webhooks.form.topicsTooMany', {
+                              max: MAX_TOPIC_SUBSCRIPTIONS,
+                            })
+                          : t('settings.webhooks.form.topicsRequired')}
                       </p>
                     )}
                   </FormItem>

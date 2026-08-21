@@ -1,3 +1,4 @@
+export { MAX_TOPIC_SUBSCRIPTIONS } from '@usertour/constants';
 import {
   WEBHOOK_CONFIG_TOPICS,
   WEBHOOK_ENTITY_TOPICS,
@@ -37,13 +38,6 @@ export function buildEntityTopic(entity: string, action: string): string {
   }
   return topic;
 }
-
-/**
- * Endpoint subscription-list cap. Single source: the domain chokepoint
- * enforces it, and the REST zod schema / GraphQL ArrayMaxSize mirror it for
- * documentation value.
- */
-export const MAX_TOPIC_SUBSCRIPTIONS = 100;
 
 /**
  * Whether this subscription list can match ANY behavior-event topic —

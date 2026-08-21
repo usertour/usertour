@@ -143,7 +143,9 @@ interface LeafRowProps {
 
 const LeafRow = (props: LeafRowProps) => {
   const { leaf, depth, checked, disabled, onToggle, highVolumeLabel, highVolumeHint } = props;
-  const id = `webhook-topic-${leaf.topic}`;
+  // codeNames are user-authored with no charset guarantee; whitespace in an
+  // id breaks the htmlFor association.
+  const id = `webhook-topic-${leaf.topic.replace(/\s/g, '_')}`;
   return (
     <div
       className="flex h-8 items-center gap-2 pr-3 hover:bg-muted/40"
@@ -284,8 +286,10 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
   const triState = (covered: number, total: number): TriState =>
     covered === 0 ? false : covered === total ? true : 'indeterminate';
 
-  const groupState = (family: Family, group: Group): TriState =>
-    triState(group.leaves.filter((leaf) => leafCovered(family, leaf)).length, group.leaves.length);
+  // Scoped to the VISIBLE leaves (the search filter): a group header must
+  // never act on — or claim the state of — rows the user cannot see.
+  const groupState = (family: Family, leaves: Leaf[]): TriState =>
+    triState(leaves.filter((leaf) => leafCovered(family, leaf)).length, leaves.length);
   const familyState = (family: Family): TriState => {
     if (familyCovered(family)) {
       return true;
@@ -343,8 +347,8 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
     }
   };
 
-  const toggleGroup = (family: Family, group: Group, next: boolean) => {
-    const toggleable = group.leaves.filter((leaf) => leafToggleable(family, leaf));
+  const toggleGroup = (family: Family, leaves: Leaf[], next: boolean) => {
+    const toggleable = leaves.filter((leaf) => leafToggleable(family, leaf));
     const topics = new Set(toggleable.map((leaf) => leaf.topic));
     if (next) {
       onChange([...without(value, topics), ...toggleable.map((leaf) => leaf.topic)]);
@@ -412,6 +416,8 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
           <Checkbox
             id="webhook-topic-all"
             checked={rootState}
+            // '*' is inherently global — see the family checkbox note.
+            disabled={searching}
             onCheckedChange={(next) => toggleRoot(next === true)}
           />
           <Label htmlFor="webhook-topic-all" className="flex items-center gap-1.5 font-medium">
@@ -448,7 +454,10 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
                       <Checkbox
                         id={familyId}
                         checked={familyState(family)}
-                        disabled={hasWildcard}
+                        // Disabled while searching: the family checkbox stores
+                        // a bare PREFIX (covers hidden and future topics), so
+                        // it cannot honestly scope to the filtered rows.
+                        disabled={hasWildcard || searching}
                         onCheckedChange={(next) => toggleFamily(family, next === true)}
                       />
                     )}
@@ -485,9 +494,7 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
                           const groupKey = `${family.key}:${group.key}`;
                           const groupOpen = isExpanded(groupKey);
                           const groupId = `webhook-group-${groupKey}`;
-                          const disabled = group.leaves.every(
-                            (leaf) => !leafToggleable(family, leaf),
-                          );
+                          const disabled = leaves.every((leaf) => !leafToggleable(family, leaf));
                           return (
                             <div key={group.key}>
                               <div className="flex h-8 items-center gap-2 pl-8 pr-2 hover:bg-muted/40">
@@ -497,10 +504,10 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
                                 />
                                 <Checkbox
                                   id={groupId}
-                                  checked={groupState(family, group)}
+                                  checked={groupState(family, leaves)}
                                   disabled={disabled}
                                   onCheckedChange={(next) =>
-                                    toggleGroup(family, group, next === true)
+                                    toggleGroup(family, leaves, next === true)
                                   }
                                 />
                                 <Label htmlFor={groupId} className="min-w-0 truncate font-normal">
@@ -508,7 +515,7 @@ export const WebhookTopicPicker = (props: WebhookTopicPickerProps) => {
                                 </Label>
                                 <span className="ml-auto shrink-0 text-xs text-muted-foreground">
                                   {t('settings.webhooks.picker.eventsCount', {
-                                    count: group.leaves.length,
+                                    count: leaves.length,
                                   })}
                                 </span>
                               </div>
