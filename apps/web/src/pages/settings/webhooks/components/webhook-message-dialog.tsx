@@ -77,7 +77,7 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
                 <span className="break-all font-mono text-xs">{message.id}</span>
               </Field>
               <Field label={t('settings.webhooks.deliveries.columns.topic')}>
-                <span className="font-mono text-xs">{message.topic}</span>
+                <span className="break-all font-mono text-xs">{message.topic}</span>
               </Field>
               <Field label={t('settings.webhooks.message.createdAt')}>
                 {format(new Date(message.createdAt), 'PP pp')}

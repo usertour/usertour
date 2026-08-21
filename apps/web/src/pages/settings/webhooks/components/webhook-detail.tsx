@@ -85,7 +85,10 @@ const CardHeading = ({
 const DetailRow = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="grid grid-cols-[9rem_1fr] items-start gap-4 text-sm">
     <dt className="pt-0.5 text-muted-foreground">{label}</dt>
-    <dd className="min-w-0">{children}</dd>
+    {/* break-words: description (and any future value) can be one unbroken
+        200-char token; rows with their own handling (url break-all, topic
+        badges) are unaffected. */}
+    <dd className="min-w-0 break-words">{children}</dd>
   </div>
 );
 
@@ -100,12 +103,14 @@ const OverviewSection = ({ webhook }: { webhook: Webhook }) => {
         actions={
           !webhook.enabled ? (
             webhook.autoDisabledAt ? (
-              <Badge variant="destructive">{t('settings.webhooks.autoDisabled.badge')}</Badge>
+              <Badge variant="destructive" className="whitespace-nowrap">
+                {t('settings.webhooks.autoDisabled.badge')}
+              </Badge>
             ) : (
               <Badge variant="secondary">{t('settings.webhooks.statusDisabled')}</Badge>
             )
           ) : webhook.cooldownUntil && new Date(webhook.cooldownUntil).getTime() > Date.now() ? (
-            <Badge variant="warning">
+            <Badge variant="warning" className="whitespace-nowrap">
               {t('settings.webhooks.cooldown.badgeUntil', {
                 time: format(new Date(webhook.cooldownUntil), 'pp'),
               })}
@@ -148,7 +153,13 @@ const OverviewSection = ({ webhook }: { webhook: Webhook }) => {
         <DetailRow label={t('settings.webhooks.form.topics')}>
           <div className="flex flex-wrap gap-1.5">
             {webhook.topics.map((topic) => (
-              <Badge key={topic} variant="secondary" className="font-mono text-xs font-normal">
+              <Badge
+                key={topic}
+                variant="secondary"
+                // Topics run up to 200 chars as one unbroken token — without
+                // break-all a long one punches through the card horizontally.
+                className="max-w-full break-all font-mono text-xs font-normal"
+              >
                 {topic}
               </Badge>
             ))}
@@ -430,7 +441,9 @@ const MessagesSection = ({
                 <TableCell className="whitespace-nowrap">
                   {format(new Date(message.createdAt), 'PP pp')}
                 </TableCell>
-                <TableCell className="font-mono text-xs">{message.topic}</TableCell>
+                <TableCell className="max-w-56 truncate font-mono text-xs" title={message.topic}>
+                  {message.topic}
+                </TableCell>
                 <TableCell>
                   <WebhookMessageStatusBadge status={message.status} />
                 </TableCell>

@@ -76,6 +76,7 @@ export const SettingsWebhookList = () => {
         <Link
           to={`/project/${project?.id}/settings/webhooks/${webhook.id}`}
           className="text-primary hover:underline"
+          title={webhook.url}
         >
           {webhook.url}
         </Link>
@@ -94,6 +95,7 @@ export const SettingsWebhookList = () => {
           return webhook.autoDisabledAt ? (
             <Badge
               variant="destructive"
+              className="whitespace-nowrap"
               title={t('settings.webhooks.autoDisabled.tooltip', {
                 time: format(new Date(webhook.autoDisabledAt), 'PP'),
               })}
@@ -108,6 +110,7 @@ export const SettingsWebhookList = () => {
           return (
             <Badge
               variant="warning"
+              className="whitespace-nowrap"
               title={t('settings.webhooks.cooldown.tooltip', {
                 count: webhook.consecutiveFailures,
                 time: format(new Date(webhook.cooldownUntil as string), 'pp'),
