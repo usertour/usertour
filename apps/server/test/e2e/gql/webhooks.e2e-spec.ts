@@ -368,9 +368,7 @@ describe('GraphQL webhooks (e2e)', () => {
   });
 
   describe('entity-delete emission (exact-once, native RETURNING rows)', () => {
-    it('a repeated delete emits ZERO additional user.deleted messages, and the payload maps the native row', async () => {
-      // A webhook subscribed to the user family so the listener records the
-      // emission into the outbound ledger.
+    it('CONCURRENT duplicate deletes emit exactly one user.deleted, whose payload maps the native row', async () => {
       const endpoint = await createWebhook({
         url: 'https://e2e-receiver.invalid/delete-probe',
         topics: ['user'],
@@ -378,33 +376,37 @@ describe('GraphQL webhooks (e2e)', () => {
       const bizUser = await buildBizUser(prisma, { environmentId });
       const bizService = app.get(BizService);
 
-      await bizService.deleteBizUser([bizUser.id], environmentId);
+      // Concurrency is the point: a SERIAL repeat throws on the empty
+      // snapshot before any emission — in the old pre-read code too, so a
+      // serial test cannot distinguish the versions. The original defect
+      // needed both calls to read BEFORE either wrote; only a concurrent
+      // pair reproduces that. Old code: both pre-reads see the row -> two
+      // differently-id'd user.deleted messages. New code: the loser's
+      // RETURNING (or its in-transaction snapshot) comes back empty ->
+      // exactly one, under every interleaving.
+      await Promise.allSettled([
+        bizService.deleteBizUser([bizUser.id], environmentId),
+        bizService.deleteBizUser([bizUser.id], environmentId),
+      ]);
       // The emit is post-commit and async — give the listener a beat.
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const afterFirst = await prisma.outboundMessage.findMany({
+      const messages = await prisma.outboundMessage.findMany({
         where: { webhookId: endpoint.id, topic: 'user.deleted' },
       });
-      // Guards the RETURNING refactor: swap it back to deleteMany and no
-      // deletedRow reaches the payload with real column types.
-      expect(afterFirst).toHaveLength(1);
-      const payload = afterFirst[0].payload as {
+      expect(messages).toHaveLength(1);
+
+      // Second guard, distinct from the first: the payload is built from a
+      // NATIVE $queryRaw row, so these assertions pin the type assumptions
+      // (e.g. a Prisma upgrade changing timestamptz deserialization). The
+      // toHaveLength(1) above already proves the Date survived — mapUser
+      // throws on .toISOString() otherwise and no message lands; the ISO
+      // round-trip is the explicit second line.
+      const payload = messages[0].payload as {
         data: { user: { id: string; createdAt: string } };
       };
       expect(payload.data.user.id).toBe(bizUser.externalId);
-      // Native-SQL rows must round-trip Date columns: an ISO string here
-      // proves the pg driver's Date reached mapUser intact.
       expect(new Date(payload.data.user.createdAt).toISOString()).toBe(payload.data.user.createdAt);
-
-      // Second delete of the same id: the in-transaction snapshot sees no
-      // rows — it must throw AND emit nothing (the old pre-read snapshot
-      // emitted a second, differently-id'd duplicate here).
-      await expect(bizService.deleteBizUser([bizUser.id], environmentId)).rejects.toThrow();
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      const afterSecond = await prisma.outboundMessage.count({
-        where: { webhookId: endpoint.id, topic: 'user.deleted' },
-      });
-      expect(afterSecond).toBe(1);
     });
   });
 

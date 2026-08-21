@@ -194,6 +194,20 @@ describe('OutboundLedgerService', () => {
       await expect(
         service.recordAttempt('whmsg_1', { ...base, success: true, final: true }),
       ).resolves.toBeUndefined();
+      // Transient fault: the settle is worth brief retries — a swallowed
+      // DELIVERED settle leaves PENDING for the sweep to re-deliver.
+      expect(prisma.$transaction).toHaveBeenCalledTimes(3); // initial + 2 retries
+    });
+
+    it('does not retry deterministic failures (FK gone, unique conflict, row vanished)', async () => {
+      prisma.$transaction.mockRejectedValue(
+        Object.assign(new Error('FK violation'), { code: 'P2003' }),
+      );
+      await expect(
+        service.recordAttempt('whmsg_1', { ...base, success: false, final: true }),
+      ).resolves.toBeUndefined();
+      // A message aged out of retention does not heal by waiting 150ms.
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     });
   });
 
