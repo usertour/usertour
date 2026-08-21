@@ -12,7 +12,14 @@ export function parseOverridePlan(raw: unknown): Partial<PlanFeatures> {
   const input = raw as Record<string, unknown>;
   const out: Partial<PlanFeatures> = {};
 
-  for (const key of ['removeBranding', 'customCss', 'auditLogs', 'ssoSaml', 'ssoOidc'] as const) {
+  for (const key of [
+    'removeBranding',
+    'customCss',
+    'auditLogs',
+    'ssoSaml',
+    'ssoOidc',
+    'webhooks',
+  ] as const) {
     if (typeof input[key] === 'boolean') {
       out[key] = input[key] as boolean;
     }

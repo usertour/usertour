@@ -17,6 +17,7 @@ import {
   RiTeamLine,
   RiTerminalBoxLine,
   RiTranslate2,
+  RiWebhookLine,
 } from '@usertour/icons';
 import { Capability, type GlobalConfig } from '@usertour/types';
 
@@ -48,6 +49,7 @@ export type SettingsSectionKey =
   | 'personal-api-keys'
   | 'connected-apps'
   | 'api'
+  | 'webhooks'
   | 'mcp'
   | 'identity-verification'
   | 'integrations'
@@ -302,6 +304,22 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
     component: lazy(() => import('./api').then((module) => ({ default: module.SettingsApiList }))),
+  },
+  {
+    key: 'webhooks',
+    title: 'Webhooks',
+    icon: <RiWebhookLine className={ICON_CLASS} />,
+    capability: Capability.WebhookRead,
+    group: 'general',
+    mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
+    component: lazy(() =>
+      import('./webhooks').then((module) => ({ default: module.SettingsWebhookList })),
+    ),
+    detail: {
+      component: lazy(() =>
+        import('./webhooks').then((module) => ({ default: module.WebhookDetail })),
+      ),
+    },
   },
   {
     key: 'mcp',

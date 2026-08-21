@@ -232,6 +232,8 @@ Table Environment {
   bizSessions BizSession [not null]
   integrations Integration [not null]
   signingSecrets EnvironmentSigningSecret [not null]
+  webhooks Webhook [not null]
+  outboundMessages OutboundMessage [not null]
 }
 
 Table EnvironmentSigningSecret {
@@ -859,6 +861,7 @@ Table Integration {
   integrationLogs IntegrationLog [not null, note: 'integration logs']
   integrationOAuth IntegrationOAuth
   integrationObjectMappings IntegrationObjectMapping [not null]
+  outboundMessages OutboundMessage [not null, note: 'Outbound delivery ledger (shared with webhooks) — event pushes land here']
 
   indexes {
     (environmentId, provider) [unique]
@@ -908,6 +911,77 @@ Table IntegrationLog {
   data Json [note: 'data of integration log']
 }
 
+Table Webhook {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  url String [not null, note: 'Target URL events are POSTed to. HTTPS + public address enforced at the
+application layer (egress guard).']
+  topics Json [not null, note: 'Subscribed topics (string[]): "*", a family prefix ("event.tracked",
+"content", "user", "company"), or an exact topic
+("event.tracked.<codeName>", "content.published", "user.updated", ...)']
+  enabled Boolean [not null, default: true]
+  secret String [not null, note: 'HMAC-SHA256 signing secret ("whsec_" + 32-byte hex), generated server-side']
+  description String
+  consecutiveFailures Int [not null, default: 0, note: 'Circuit-breaker state (cooldown layer, ADR 0010): messages whose retry
+budget was exhausted in a row. Reset to 0 by any successful attempt.']
+  cooldownUntil DateTime [note: 'While set and in the future, the listener skips this endpoint (messages
+are not created). Window grows exponentially with the failure streak.']
+  failingSince DateTime [note: 'Start of the current unbroken failure streak (set on 0->1, cleared by any
+success). Once older than the auto-disable window, the endpoint is
+disabled (layer 2 of the circuit breaker).']
+  autoDisabledAt DateTime [note: 'Set when the SYSTEM disabled this endpoint (sustained failure) — lets the
+dashboard distinguish auto-disable from a manual switch-off. Cleared when
+the user re-enables.']
+  messages OutboundMessage [not null]
+
+  Note: 'Outbound webhook endpoint (ADR 0010). Environment-scoped shared
+infrastructure — deliberately not owned by a user: the data pipeline must
+survive its creator leaving the project.'
+}
+
+Table OutboundMessage {
+  id String [pk, note: 'Public message id (webhook payload `id`, receiver idempotency key) — set by
+the producer, not generated here.']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  environment Environment [not null]
+  environmentId String [not null]
+  webhook Webhook
+  webhookId String
+  integration Integration
+  integrationId String
+  topic String [not null, note: 'Topic string (webhook grammar): "event.tracked.<codeName>", "user.updated", "webhook.test", …']
+  payload Json [not null, note: 'The message body as sent (JSON)']
+  status OutboundMessageStatus [not null, default: 'PENDING']
+  deliveries OutboundDelivery [not null]
+
+  Note: 'Outbound delivery ledger, one row per message addressed to one destination
+(a webhook endpoint or an integration provider — exactly one of `webhookId`
+/ `integrationId` is set; CHECK constraint in the migration). Holds the
+exact payload that was sent so the log can show it and a message can be
+re-sent; the queue job carries a working copy for the retry sequence.
+Retained 30 days (deliveries cascade).'
+}
+
+Table OutboundDelivery {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  message OutboundMessage [not null]
+  messageId String [not null]
+  attempt Int [not null, note: '1-based attempt number within the retry sequence']
+  success Boolean [not null]
+  responseStatus Int
+  responseBody String [note: 'Response body excerpt, truncated at the application layer']
+  error String [note: 'Failure reason, truncated at the application layer']
+  durationMs Int
+
+  Note: 'One row per delivery attempt of a message (append-only). Cascades with its
+message; retention is enforced on the message.'
+}
+
 Table AuditLog {
   id String [pk, note: 'Primary key']
   createdAt DateTime [default: `now()`, not null, note: 'Create timestamp']
@@ -942,6 +1016,12 @@ Enum Role {
   VIEWER
   USER
   OWNER
+}
+
+Enum OutboundMessageStatus {
+  PENDING
+  DELIVERED
+  FAILED
 }
 
 Ref: Account.userId > User.id
@@ -1065,3 +1145,13 @@ Ref: IntegrationOAuth.integrationId - Integration.id
 Ref: IntegrationObjectMapping.integrationId > Integration.id
 
 Ref: IntegrationLog.integrationId > Integration.id
+
+Ref: Webhook.environmentId > Environment.id
+
+Ref: OutboundMessage.environmentId > Environment.id
+
+Ref: OutboundMessage.webhookId > Webhook.id [delete: Cascade]
+
+Ref: OutboundMessage.integrationId > Integration.id [delete: Cascade]
+
+Ref: OutboundDelivery.messageId > OutboundMessage.id [delete: Cascade]

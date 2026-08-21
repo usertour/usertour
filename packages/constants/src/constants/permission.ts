@@ -65,6 +65,8 @@ const OWNER_ONLY: Capability[] = [
   Capability.TeamManage,
   Capability.IntegrationRead,
   Capability.IntegrationManage,
+  Capability.WebhookRead,
+  Capability.WebhookManage,
   Capability.AccessTokenRead,
   Capability.AccessTokenManage,
   Capability.SsoRead,

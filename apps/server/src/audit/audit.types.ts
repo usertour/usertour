@@ -79,8 +79,13 @@ export interface WebAuditMeta {
   resourceType: string;
   /** id from the mutation args / result. Default: args.id ?? args.contentId ?? result.id. */
   resourceId?: (args: Record<string, unknown>, result: unknown) => string;
-  /** env-scoped resources: extract environmentId from args (default: none → null). */
-  environmentId?: (args: Record<string, unknown>) => string | undefined | null;
+  /**
+   * env-scoped resources: extract environmentId from args, or — for
+   * mutations whose args only carry an id (update/delete/rotate) — from the
+   * RESULT row. Called twice: pre-execution with (args, undefined) for the
+   * before-snapshot, and post-execution with (args, result) for the entry.
+   */
+  environmentId?: (args: Record<string, unknown>, result?: unknown) => string | undefined | null;
   /**
    * ACCOUNT-level mutations (no `@RequirePermission` project context — personal
    * API keys, connected-app grants): resolve the project(s) to attribute the

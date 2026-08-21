@@ -119,29 +119,29 @@ model Register {
 }
 
 model Invite {
-  id        String    @id @default(cuid())
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime  @updatedAt @db.Timestamptz(6)
-  code      String    @unique @default(cuid())
+  id                    String    @id @default(cuid())
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  code                  String    @unique @default(cuid())
   /// Environment ids the invited member may act on once they join (copied to
   /// UserOnProject on accept). null = all environments.
-  allowedEnvironmentIds Json? @db.JsonB
-  expired   Boolean   @default(false)
-  canceled  Boolean   @default(false)
-  deleted   Boolean   @default(false)
-  email     String
-  name      String
-  role      Role
+  allowedEnvironmentIds Json?     @db.JsonB
+  expired               Boolean   @default(false)
+  canceled              Boolean   @default(false)
+  deleted               Boolean   @default(false)
+  email                 String
+  name                  String
+  role                  Role
   /// When the invite link stops being accepted. Nullable so the column can
   /// roll out without a backfill; rows written by the application always set
   /// it (typically createdAt + 14 days). getValidInviteByCode treats a null
   /// value as "no recorded TTL" — legacy invites stay accepting until an
   /// admin cancels them, but every new invite is bounded.
-  expiresAt DateTime? @db.Timestamptz(6)
-  user      User      @relation(fields: [userId], references: [id])
-  userId    String
-  project   Project   @relation(fields: [projectId], references: [id])
-  projectId String
+  expiresAt             DateTime? @db.Timestamptz(6)
+  user                  User      @relation(fields: [userId], references: [id])
+  userId                String
+  project               Project   @relation(fields: [projectId], references: [id])
+  projectId             String
 }
 
 model Code {
@@ -253,45 +253,47 @@ enum SsoProviderType {
 }
 
 model UserOnProject {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
-  role      Role
-  actived   Boolean
+  id                    String   @id @default(cuid())
+  createdAt             DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(6)
+  role                  Role
+  actived               Boolean
   /// Environment ids this member may act on (the third permission dimension,
   /// mirrors ApiToken.allowedEnvironmentIds). null = all environments; ignored
   /// for OWNER. Personal API keys inherit this as a ceiling.
-  allowedEnvironmentIds Json? @db.JsonB
-  project   Project? @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
-  projectId String?
-  userId    String?
+  allowedEnvironmentIds Json?    @db.JsonB
+  project               Project? @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  user                  User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  projectId             String?
+  userId                String?
 
   @@unique([projectId, userId])
 }
 
 model Environment {
-  id                    String                 @id @default(cuid())
-  createdAt             DateTime               @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime               @updatedAt @db.Timestamptz(6)
-  name                  String?
-  token                 String                 @default(cuid())
-  deleted               Boolean                @default(false)
+  id                          String                     @id @default(cuid())
+  createdAt                   DateTime                   @default(now()) @db.Timestamptz(6)
+  updatedAt                   DateTime                   @updatedAt @db.Timestamptz(6)
+  name                        String?
+  token                       String                     @default(cuid())
+  deleted                     Boolean                    @default(false)
   /// Whether this is the primary environment for the project
-  isPrimary             Boolean                @default(false)
+  isPrimary                   Boolean                    @default(false)
   /// When true, SDK identity claims must carry a valid HMAC signature (ADR 0008)
-  requireIdentityVerification Boolean          @default(false)
-  project               Project                @relation(fields: [projectId], references: [id])
-  projectId             String
-  contents              Content[]
-  bizUsers              BizUser[]
-  bizCompanies          BizCompany[]
-  segments              Segment[]
-  accessTokens          AccessToken[]
-  contentOnEnvironments ContentOnEnvironment[]
-  bizSessions           BizSession[]
-  integrations          Integration[]
-  signingSecrets        EnvironmentSigningSecret[]
+  requireIdentityVerification Boolean                    @default(false)
+  project                     Project                    @relation(fields: [projectId], references: [id])
+  projectId                   String
+  contents                    Content[]
+  bizUsers                    BizUser[]
+  bizCompanies                BizCompany[]
+  segments                    Segment[]
+  accessTokens                AccessToken[]
+  contentOnEnvironments       ContentOnEnvironment[]
+  bizSessions                 BizSession[]
+  integrations                Integration[]
+  signingSecrets              EnvironmentSigningSecret[]
+  webhooks                    Webhook[]
+  outboundMessages            OutboundMessage[]
 }
 
 /// Per-environment HMAC signing secrets for SDK identity verification (ADR 0008).
@@ -428,27 +430,27 @@ model OAuthAuthorizationCode {
 /// project, and the current (rotating) refresh token. Revoking it cascade-kills
 /// the access tokens (ApiToken rows) it issued, via ApiToken.oauthGrantId.
 model OAuthGrant {
-  id                    String    @id @default(cuid()) // = grantId
-  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
+  id                         String    @id @default(cuid()) // = grantId
+  createdAt                  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt                  DateTime  @updatedAt @db.Timestamptz(6)
   // Rolled up from the grant's short-lived access-token rows before the daily
   // expiry cleanup deletes them — the durable "last used" for Connected Apps.
-  lastUsedAt            DateTime? @db.Timestamptz(6)
-  userId                String
-  clientId              String
-  projectId             String
-  scopes                Json      @db.JsonB
+  lastUsedAt                 DateTime? @db.Timestamptz(6)
+  userId                     String
+  clientId                   String
+  projectId                  String
+  scopes                     Json      @db.JsonB
   /// Environment ids this grant's issued tokens may act on; null = all (set at consent, Phase 2).
-  allowedEnvironmentIds Json?     @db.JsonB
+  allowedEnvironmentIds      Json?     @db.JsonB
   /// SHA-256 hash of the current refresh token; rotated on each refresh.
-  hashedRefreshToken    String?   @unique
+  hashedRefreshToken         String?   @unique
   /// The PREVIOUS refresh hash, honored for a short grace window after rotation
   /// (rotatedAt) so a client whose refresh RESPONSE was lost can retry with the
   /// old token instead of bricking the grant. See OAuthModelService.
-  previousHashedRefreshToken String? @unique
-  rotatedAt             DateTime? @db.Timestamptz(6)
-  refreshExpiresAt      DateTime? @db.Timestamptz(6)
-  revokedAt             DateTime? @db.Timestamptz(6)
+  previousHashedRefreshToken String?   @unique
+  rotatedAt                  DateTime? @db.Timestamptz(6)
+  refreshExpiresAt           DateTime? @db.Timestamptz(6)
+  revokedAt                  DateTime? @db.Timestamptz(6)
 
   @@index([userId, clientId])
   @@index([clientId])
@@ -1010,6 +1012,8 @@ model Integration {
   integrationLogs           IntegrationLog[]
   integrationOAuth          IntegrationOAuth?
   integrationObjectMappings IntegrationObjectMapping[]
+  /// Outbound delivery ledger (shared with webhooks) — event pushes land here
+  outboundMessages          OutboundMessage[]
 
   @@unique([environmentId, provider])
 }
@@ -1086,6 +1090,114 @@ model IntegrationLog {
   data          Json?       @db.JsonB
 
   @@index([integrationId, status])
+}
+
+/// Outbound webhook endpoint (ADR 0010). Environment-scoped shared
+/// infrastructure — deliberately not owned by a user: the data pipeline must
+/// survive its creator leaving the project.
+model Webhook {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime    @updatedAt @db.Timestamptz(6)
+  environment   Environment @relation(fields: [environmentId], references: [id])
+  environmentId String
+  /// Target URL events are POSTed to. HTTPS + public address enforced at the
+  /// application layer (egress guard).
+  url           String
+  /// Subscribed topics (string[]): "*", a family prefix ("event.tracked",
+  /// "content", "user", "company"), or an exact topic
+  /// ("event.tracked.<codeName>", "content.published", "user.updated", ...)
+  topics        Json        @db.JsonB
+  enabled       Boolean     @default(true)
+  /// HMAC-SHA256 signing secret ("whsec_" + 32-byte hex), generated server-side.
+  /// AES-256-GCM encrypted at rest (EncryptionService) — same treatment as
+  /// EnvironmentSigningSecret / twoFactorSecret.
+  secret        String
+  description   String?
+
+  /// Circuit-breaker state (cooldown layer, ADR 0010): consecutive FAILED
+  /// delivery attempts, across messages. Reset to 0 by any successful attempt.
+  consecutiveFailures Int       @default(0)
+  /// While set and in the future, the PROCESSOR defers this endpoint's jobs
+  /// (moveToDelayed) — messages are still created and delivered after the
+  /// window. Grows exponentially with the failure streak.
+  cooldownUntil       DateTime? @db.Timestamptz(6)
+  /// Start of the current unbroken failure streak (set on 0->1, cleared by any
+  /// success). Once older than the auto-disable window, the endpoint is
+  /// disabled (layer 2 of the circuit breaker).
+  failingSince        DateTime? @db.Timestamptz(6)
+  /// Set when the SYSTEM disabled this endpoint (sustained failure) — lets the
+  /// dashboard distinguish auto-disable from a manual switch-off. Cleared when
+  /// the user re-enables.
+  autoDisabledAt      DateTime? @db.Timestamptz(6)
+
+  messages OutboundMessage[]
+
+  @@index([environmentId])
+}
+
+/// Message lifecycle: PENDING until an attempt succeeds (DELIVERED) or the
+/// retry budget is exhausted (FAILED). A resend moves it back to PENDING.
+enum OutboundMessageStatus {
+  PENDING
+  DELIVERED
+  FAILED
+}
+
+/// Outbound delivery ledger, one row per message addressed to one destination
+/// (a webhook endpoint or an integration provider — exactly one of `webhookId`
+/// / `integrationId` is set; CHECK constraint in the migration). Holds the
+/// exact payload that was sent so the log can show it and a message can be
+/// re-sent; the queue job carries a working copy for the retry sequence.
+/// Retained 30 days (deliveries cascade).
+model OutboundMessage {
+  /// Public message id (webhook payload `id`, receiver idempotency key) — set by
+  /// the producer, not generated here.
+  id            String                @id
+  createdAt     DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime              @updatedAt @db.Timestamptz(6)
+  environment   Environment           @relation(fields: [environmentId], references: [id])
+  environmentId String
+  webhook       Webhook?              @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  webhookId     String?
+  integration   Integration?          @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integrationId String?
+  /// Topic string (webhook grammar): "event.tracked.<codeName>", "user.updated", "webhook.test", …
+  topic         String
+  /// The message body as sent (JSON)
+  payload       Json                  @db.JsonB
+  status        OutboundMessageStatus @default(PENDING)
+
+  deliveries OutboundDelivery[]
+
+  @@index([webhookId, createdAt])
+  @@index([integrationId, createdAt])
+  @@index([createdAt])
+  // Reconcile sweep: PENDING rows silent past the orphan threshold. PENDING
+  // is a sliver of the ledger, so (status, updatedAt) keeps the hourly scan
+  // off the 30-day table.
+  @@index([status, updatedAt])
+}
+
+/// One row per delivery attempt of a message (append-only). Cascades with its
+/// message; retention is enforced on the message.
+model OutboundDelivery {
+  id             String          @id @default(cuid())
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  message        OutboundMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId      String
+  /// 1-based attempt number within the retry sequence
+  attempt        Int
+  success        Boolean
+  responseStatus Int?
+  /// Response body excerpt, truncated at the application layer
+  responseBody   String?
+  /// Failure reason, truncated at the application layer
+  error          String?
+  durationMs     Int?
+
+  @@index([messageId, createdAt])
+  @@index([createdAt])
 }
 
 /// Append-only audit trail for the open write surface (v2 API + MCP).

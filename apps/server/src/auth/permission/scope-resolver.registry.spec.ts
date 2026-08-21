@@ -22,6 +22,7 @@ describe('scope resolvers', () => {
     getIntegrationEnvironmentId: async (integrationId) =>
       integrationId === 'int-1' ? 'env-1' : null,
     getMappingEnvironmentId: async (mappingId) => (mappingId === 'map-1' ? 'env-1' : null),
+    getWebhookEnvironmentId: async (webhookId) => (webhookId === 'wh-1' ? 'env-1' : null),
   };
   const resolvers = createScopeResolvers(services);
 
@@ -162,6 +163,38 @@ describe('scope resolvers', () => {
     it('returns null when neither integration nor mapping id resolves', async () => {
       expect(await resolvers[ScopeKind.Integration]({})).toBeNull();
       expect(await resolvers[ScopeKind.Integration]({ integrationId: 'nope' })).toBeNull();
+    });
+  });
+
+  describe('Webhook', () => {
+    it('derives project from the webhook id → environment, env riding along', async () => {
+      expect(await resolvers[ScopeKind.Webhook]({ data: { id: 'wh-1' } })).toEqual({
+        projectId: 'proj-1',
+        environmentIds: ['env-1'],
+      });
+      expect(await resolvers[ScopeKind.Webhook]({ webhookId: 'wh-1' })).toEqual({
+        projectId: 'proj-1',
+        environmentIds: ['env-1'],
+      });
+    });
+    it('falls back to explicit environmentId (create/list)', async () => {
+      expect(await resolvers[ScopeKind.Webhook]({ data: { environmentId: 'env-1' } })).toEqual({
+        projectId: 'proj-1',
+        environmentIds: ['env-1'],
+      });
+      expect(await resolvers[ScopeKind.Webhook]({ environmentId: 'env-2' })).toEqual({
+        projectId: 'proj-2',
+        environmentIds: ['env-2'],
+      });
+    });
+    it('returns null for an unknown webhook id or missing environment', async () => {
+      expect(await resolvers[ScopeKind.Webhook]({ data: { id: 'nope' } })).toBeNull();
+      expect(await resolvers[ScopeKind.Webhook]({})).toBeNull();
+    });
+    it('throws when a client-supplied projectId disagrees (cross-project IDOR)', async () => {
+      await expect(
+        resolvers[ScopeKind.Webhook]({ data: { id: 'wh-1' }, projectId: 'proj-2' }),
+      ).rejects.toBeInstanceOf(NoPermissionError);
     });
   });
 });

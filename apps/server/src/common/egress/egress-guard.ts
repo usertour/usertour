@@ -26,6 +26,14 @@ import { EgressUrlNotAllowedError } from '@/common/errors';
  * Whether the guard is active is a deployment policy — `allowPrivateNetwork`,
  * decoupled from cloud/self-host (config `globalConfig.allowPrivateNetworkEgress`).
  * Each consumer mounts the lookup + agent onto its own HTTP client.
+ *
+ * PROXY TRAP for consumers: axios-style clients silently honor
+ * HTTP(S)_PROXY/ALL_PROXY env vars — the connection then targets the proxy
+ * (which is what lookup+agent end up vetting) while the PROXY resolves the
+ * real hostname, voiding this guard entirely. Every axios-based consumer MUST
+ * pass `proxy: false` alongside the agent+lookup (webhooks.processor does).
+ * Node-core clients (http/https.request — e.g. openid-client v5) are immune:
+ * Node never reads proxy env vars natively.
  */
 
 /**

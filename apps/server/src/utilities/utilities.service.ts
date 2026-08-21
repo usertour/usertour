@@ -155,6 +155,7 @@ export class UtilitiesService {
       needsSystemAdminSetup,
       require2FA,
       machineTranslationEnabled: this.aiService.isConfigured(),
+      allowPrivateNetworkEgress: !!this.configService.get('globalConfig.allowPrivateNetworkEgress'),
       authProviders: this.getAuthProviders(),
     };
   }

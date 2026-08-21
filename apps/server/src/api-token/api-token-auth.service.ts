@@ -32,6 +32,15 @@ export type AuthedApiToken = Prisma.ApiTokenGetPayload<{
    * member must not escape their ceiling by minting an unrestricted key.
    */
   memberAllowedEnvironmentIds?: string[] | null;
+  /**
+   * The owner's live role on the authorized project, cached by `authorize`
+   * (which always runs first via the guard) so response-shaping probes like
+   * `hasCapability` don't re-query the membership row. Bound to the project
+   * it was resolved for — a probe against a DIFFERENT project must not read
+   * this cache.
+   */
+  memberRole?: Role;
+  memberRoleProjectId?: string;
 };
 
 /**
@@ -163,6 +172,8 @@ export class ApiTokenAuthService {
     }
     // Cache the owner's membership-level environment ceiling for
     // allowedEnvironmentIds()/assertEnvironmentInScope — see AuthedApiToken.
+    token.memberRole = membership.role as Role;
+    token.memberRoleProjectId = projectId;
     token.memberAllowedEnvironmentIds =
       membership.role === 'OWNER'
         ? null
@@ -176,6 +187,32 @@ export class ApiTokenAuthService {
         throw new InsufficientScopeError();
       }
     }
+  }
+
+  /**
+   * Non-throwing capability probe for RESPONSE SHAPING (e.g. whether a GET
+   * may include the signing secret): same rule as `authorize`'s capability
+   * branch — live role allows it AND the token's scopes carry it.
+   */
+  async hasCapability(
+    token: AuthedApiToken,
+    projectId: string,
+    capability: Capability,
+  ): Promise<boolean> {
+    // `authorize` (always first, via the guard) cached the live role on the
+    // token; use it only when it was resolved for THIS project, and fall
+    // back to the membership query otherwise.
+    let role = token.memberRoleProjectId === projectId ? token.memberRole : undefined;
+    if (!role) {
+      const membership = await this.prisma.userOnProject.findFirst({
+        where: { userId: token.userId, projectId },
+      });
+      if (!membership) {
+        return false;
+      }
+      role = membership.role as Role;
+    }
+    return roleCan(role, capability) && this.scopes(token).includes(capability);
   }
 
   /** Load an environment and assert it belongs to `projectId`. */

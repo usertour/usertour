@@ -85,7 +85,8 @@ export function ApiStandardErrorResponses() {
         'Refused — E1000 invalid key, E1011 project not in token scope, E1012 insufficient ' +
         'scope, E1029 environment not in token scope, E1032 environment creation needs a token ' +
         'without env-targeted capabilities (its allowlist cannot cover a not-yet-existing ' +
-        'environment).',
+        "environment), E0043 the project's plan does not include the feature (e.g. webhooks " +
+        'require a paid plan on cloud).',
       type: ErrorResponseDto,
     }),
   );

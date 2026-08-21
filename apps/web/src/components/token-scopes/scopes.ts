@@ -87,6 +87,12 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
     read: [Capability.EnvironmentRead],
     write: [Capability.EnvironmentManage],
   },
+  {
+    key: 'webhook',
+    labelKey: 'settings.personalApiKeys.scopeResources.webhook',
+    read: [Capability.WebhookRead],
+    write: [Capability.WebhookManage],
+  },
 ];
 
 /** The access level a flat scope list grants for a single resource. */

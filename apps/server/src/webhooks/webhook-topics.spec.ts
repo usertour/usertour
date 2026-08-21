@@ -1,0 +1,117 @@
+import {
+  buildEntityTopic,
+  subscribesToEventTopics,
+  buildEventTopic,
+  isValidSubscription,
+  matchesSubscription,
+  matchesTopic,
+} from './webhook-topics';
+
+describe('buildEventTopic', () => {
+  it('prefixes the codeName with the event namespace', () => {
+    expect(buildEventTopic('flow_started')).toBe('event.tracked.flow_started');
+  });
+});
+
+describe('matchesSubscription', () => {
+  it('matches an exact topic subscription', () => {
+    expect(matchesSubscription(['event.tracked.flow_started'], 'flow_started')).toBe(true);
+    expect(matchesSubscription(['event.tracked.flow_started'], 'flow_completed')).toBe(false);
+  });
+
+  it('matches any behavior event via the wildcard and namespace subscriptions', () => {
+    expect(matchesSubscription(['*'], 'flow_started')).toBe(true);
+    expect(matchesSubscription(['event.tracked'], 'checklist_completed')).toBe(true);
+  });
+
+  it('excludes noisy events from wildcard and namespace subscriptions', () => {
+    expect(matchesSubscription(['*'], 'page_viewed')).toBe(false);
+    expect(matchesSubscription(['event.tracked'], 'page_viewed')).toBe(false);
+  });
+
+  it('delivers noisy events only on an explicit topic subscription', () => {
+    expect(matchesSubscription(['event.tracked.page_viewed'], 'page_viewed')).toBe(true);
+  });
+
+  it('never segment-prefix matches: dotted codeNames require the full topic', () => {
+    expect(matchesSubscription(['event.tracked.my'], 'my.custom.event')).toBe(false);
+    expect(matchesSubscription(['event.tracked.my.custom.event'], 'my.custom.event')).toBe(true);
+  });
+
+  it('returns false for an empty subscription list', () => {
+    expect(matchesSubscription([], 'flow_started')).toBe(false);
+  });
+});
+
+describe('matchesTopic (config topics)', () => {
+  it('matches content.published exactly and via the content namespace and wildcard', () => {
+    expect(matchesTopic(['content.published'], 'content.published')).toBe(true);
+    expect(matchesTopic(['content'], 'content.published')).toBe(true);
+    expect(matchesTopic(['*'], 'content.published')).toBe(true);
+  });
+
+  it('does not leak config topics into the behavior-event namespace (and vice versa)', () => {
+    expect(matchesTopic(['event.tracked'], 'content.published')).toBe(false);
+    expect(matchesTopic(['content'], 'event.tracked.flow_started')).toBe(false);
+  });
+});
+
+describe('matchesTopic (entity topics)', () => {
+  it('matches entity topics exactly and via their namespaces', () => {
+    expect(matchesTopic(['user.updated'], 'user.updated')).toBe(true);
+    expect(matchesTopic(['user'], 'user.created')).toBe(true);
+    expect(matchesTopic(['company'], 'company.updated')).toBe(true);
+    expect(matchesTopic(['*'], 'user.updated')).toBe(true);
+  });
+
+  it('keeps entity namespaces separate from each other and from events', () => {
+    expect(matchesTopic(['user'], 'company.updated')).toBe(false);
+    expect(matchesTopic(['user'], 'event.tracked.flow_started')).toBe(false);
+    expect(matchesTopic(['event.tracked'], 'user.updated')).toBe(false);
+  });
+});
+
+describe('isValidSubscription', () => {
+  it('accepts the wildcard, the namespaces, and explicit topics', () => {
+    expect(isValidSubscription('*')).toBe(true);
+    expect(isValidSubscription('event.tracked')).toBe(true);
+    expect(isValidSubscription('event.tracked.flow_started')).toBe(true);
+    expect(isValidSubscription('event.tracked.my.custom.event')).toBe(true);
+    expect(isValidSubscription('content')).toBe(true);
+    expect(isValidSubscription('content.published')).toBe(true);
+    expect(isValidSubscription('user')).toBe(true);
+    expect(isValidSubscription('user.updated')).toBe(true);
+    expect(isValidSubscription('user.deleted')).toBe(true);
+    expect(isValidSubscription('company.deleted')).toBe(true);
+    expect(isValidSubscription('company.created')).toBe(true);
+  });
+
+  it('rejects unknown namespaces, bare codeNames, and empty parameters', () => {
+    expect(isValidSubscription('flow_started')).toBe(false);
+    expect(isValidSubscription('user.archived')).toBe(false);
+    expect(isValidSubscription('content.deleted')).toBe(false);
+    expect(isValidSubscription('event.tracked.')).toBe(false);
+    expect(isValidSubscription('')).toBe(false);
+  });
+});
+
+describe('subscribesToEventTopics', () => {
+  it('detects any subscription able to match a behavior-event topic', () => {
+    expect(subscribesToEventTopics(['*'])).toBe(true);
+    expect(subscribesToEventTopics(['event.tracked'])).toBe(true);
+    expect(subscribesToEventTopics(['event.tracked.flow_started'])).toBe(true);
+    expect(subscribesToEventTopics(['user.created', 'content'])).toBe(false);
+    expect(subscribesToEventTopics([])).toBe(false);
+  });
+});
+
+describe('buildEntityTopic', () => {
+  it('interpolates only topics that exist in the shared vocabulary', () => {
+    expect(buildEntityTopic('user', 'created')).toBe('user.created');
+    expect(buildEntityTopic('company', 'deleted')).toBe('company.deleted');
+    // A producer emitting an entity the vocabulary has never heard of is a
+    // dev-time error, not a silent contract fork (picker/validator would
+    // otherwise lag behind what is already on the wire).
+    expect(() => buildEntityTopic('companyMembership', 'created')).toThrow(/WEBHOOK_ENTITY_TOPICS/);
+  });
+});

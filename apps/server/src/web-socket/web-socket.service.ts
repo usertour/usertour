@@ -10,6 +10,8 @@ import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@u
 import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
 import {
   BizUser,
   Content,
@@ -72,6 +74,7 @@ export class WebSocketService {
     private bizService: BizService,
     private integrationService: IntegrationService,
     private projectsService: ProjectsService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -1011,7 +1014,9 @@ export class WebSocketService {
     environment: Environment,
   ): Promise<UpsertUserResponse> {
     const { userId, attributes } = data;
-    return await this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id);
+    return await this.bizService.withEntityChangeEmit(environment.id, () =>
+      this.bizService.upsertBizUsers(this.prisma, userId, attributes, environment.id),
+    );
   }
 
   /**
@@ -1024,13 +1029,15 @@ export class WebSocketService {
     environment: Environment,
   ): Promise<UpsertCompanyResponse> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
-    return await this.bizService.upsertBizCompanies(
-      this.prisma,
-      externalCompanyId,
-      externalUserId,
-      attributes,
-      environment.id,
-      membership,
+    return await this.bizService.withEntityChangeEmit(environment.id, () =>
+      this.bizService.upsertBizCompanies(
+        this.prisma,
+        externalCompanyId,
+        externalUserId,
+        attributes,
+        environment.id,
+        membership,
+      ),
     );
   }
 
@@ -1356,6 +1363,14 @@ export class WebSocketService {
     }
 
     // this.integrationService.trackEvent(trackEventData);
+
+    if (result) {
+      const trackedPayload: BizEventTrackedPayload = {
+        environmentId,
+        bizEventIds: [result.id],
+      };
+      this.eventEmitter.emit(BIZ_EVENT_TRACKED, trackedPayload);
+    }
 
     return result;
   }

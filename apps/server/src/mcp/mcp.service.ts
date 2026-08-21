@@ -21,6 +21,7 @@ import { ApiEventDefinitionsService } from '@/api/event-definitions/event-defini
 import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
+import { ApiWebhooksService } from '@/api/webhooks/webhooks.service';
 import { BaseError } from '@/common/errors/base';
 import { AuditService } from '@/audit/audit.service';
 import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
@@ -29,6 +30,7 @@ import { McpServices, McpTool, McpToolContext } from './mcp.types';
 import { SERVER_INSTRUCTIONS } from './server-instructions';
 import { buildMcpAuditEntry } from './tools/audit-meta';
 import { buildReadTools, resolveEnvironment } from './tools/read-tools';
+import { buildWebhookTools } from './tools/webhook-tools';
 import { buildWriteTools } from './tools/write-tools';
 
 /**
@@ -83,6 +85,7 @@ export class McpService {
     analyticsService: ApiAnalyticsService,
     usageOverviewService: ApiUsageOverviewService,
     referencesService: ApiReferencesService,
+    webhooksService: ApiWebhooksService,
   ) {
     this.services = {
       content: contentService,
@@ -98,8 +101,9 @@ export class McpService {
       analytics: analyticsService,
       usageOverview: usageOverviewService,
       references: referencesService,
+      webhooks: webhooksService,
     };
-    this.tools = [...buildReadTools(), ...buildWriteTools()];
+    this.tools = [...buildReadTools(), ...buildWriteTools(), ...buildWebhookTools()];
   }
 
   /**
