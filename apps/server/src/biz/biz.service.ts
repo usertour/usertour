@@ -137,6 +137,15 @@ export class BizService {
    * propagates before the emit).
    */
   async withEntityChangeEmit<T>(environmentId: string, operation: () => Promise<T>): Promise<T> {
+    // Reentrant by JOINING: a nested call inside an active scope must not
+    // open its own — it would emit the inner changes while the OUTER
+    // operation (possibly a transaction) is still uncommitted, violating the
+    // fail-safe direction ("missed, never premature"). Joining routes the
+    // inner pushes to the outer collector, which emits once at the outermost
+    // boundary. No caller nests today; this makes it safe when one does.
+    if (this.entityChanges.getStore()) {
+      return await operation();
+    }
     const changes: EntityChange[] = [];
     const result = await this.entityChanges.run(changes, operation);
 
@@ -437,8 +446,9 @@ export class BizService {
 
   /**
    * Delete users (every surface — dashboard, REST, legacy API — funnels here).
-   * The rows are read in full first: `user.deleted` carries the object as it
-   * was, since there is nothing left to re-read once the transaction commits.
+   * `user.deleted` carries the object as it was — sourced from the DELETE's
+   * RETURNING rows, the last state before removal and the only per-row
+   * attribution under concurrent deletes.
    */
   async deleteBizUser(ids: string[], environmentId: string) {
     if (!ids?.length) {
@@ -453,8 +463,11 @@ export class BizService {
         // transaction removed — a double-click or REST retry would then
         // produce two logically-duplicate events with DIFFERENT message ids,
         // which receivers cannot deduplicate.
+        // ids only: the deleted-row snapshot comes from RETURNING below —
+        // full rows here would be read and immediately discarded.
         const bizUsers = await tx.bizUser.findMany({
           where: { id: { in: ids }, environmentId },
+          select: { id: true },
         });
         if (!bizUsers.length) {
           throw new ParamsError('No users found to delete');
@@ -486,6 +499,7 @@ export class BizService {
         // See deleteBizUser: snapshot in-transaction, emit from RETURNING.
         const bizCompanies = await tx.bizCompany.findMany({
           where: { id: { in: ids }, environmentId },
+          select: { id: true },
         });
         if (!bizCompanies.length) {
           return { count: 0 };
