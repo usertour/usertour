@@ -51,16 +51,22 @@ export const SettingsWebhookList = () => {
   // can be inspected and cleaned up); the full-page upsell is only for
   // projects with nothing to show.
   //
-  // OPTIMISTIC while settling: on a hard refresh the account-level actived
-  // project can transiently be a DIFFERENT (un-entitled) project before the
-  // route syncs it — its webhooks:false config arrives first and the
-  // downgraded banner flashes over the skeletons. An assertive plan claim
-  // must only render once this page's queries have settled; until then we
-  // present as entitled (the server still enforces every mutation).
+  // OPTIMISTIC while settling, with ONE settled flag shared by every branch
+  // below. Two reasons an assertive plan claim must wait:
+  //   - hard refresh: the account-level actived project can transiently be a
+  //     DIFFERENT (un-entitled) project before the route syncs it;
+  //   - navigating in from another settings page: projectConfig is already
+  //     cached (webhooks:false available on frame one) while this page's own
+  //     list is still in flight.
+  // The second case is why the flag is shared: when the banner and the upsell
+  // branch used different readiness tests, an un-entitled project with no
+  // endpoints rendered "banner + empty table" — telling the user to review
+  // endpoints that don't exist, with no way to create one — until the list
+  // arrived. Display only; the server enforces every mutation regardless.
   const entitled = !projectConfig || projectConfig.webhooks;
-  const settled = !!environment && !(loading && !webhooks) && !(configLoading && !projectConfig);
+  const settled = !!environment && !!webhooks && !!projectConfig;
   const entitledView = settled ? entitled : true;
-  if (!entitledView && !loading && (webhooks?.length ?? 0) === 0) {
+  if (!entitledView && webhooks?.length === 0) {
     return <WebhookUpsell projectId={project?.id} environmentName={environment?.name ?? ''} />;
   }
 
