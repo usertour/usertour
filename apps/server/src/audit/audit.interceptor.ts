@@ -70,7 +70,7 @@ export class AuditInterceptor implements NestInterceptor {
         resourceId = explicit.resourceId;
       }
     } else if (capability) {
-      const derived = deriveAudit(String(capability), req.method);
+      const derived = deriveAudit(String(capability), req.method, !!req.params?.id);
       if (!derived) {
         return next.handle();
       }
@@ -176,11 +176,14 @@ export class AuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((result) => {
+        // Second evaluation, now with the result: update/delete/rotate args
+        // only carry an id, but the returned row knows its environment.
+        const resolvedEnvironmentId = meta.environmentId?.(args, result) ?? environmentId;
         for (const projectId of projectIds) {
           this.audit.record(
             buildWebAuditEntry(req, args, result, meta, {
               projectId,
-              environmentId,
+              environmentId: resolvedEnvironmentId,
               operation,
               before,
             }),
@@ -289,6 +292,7 @@ const RESOURCE_BY_PREFIX: Record<string, string> = {
   company: 'company',
   session: 'session',
   environment: 'environment',
+  webhook: 'webhook',
 };
 
 /** A resolveProjectId result (single / array / absent) normalized to a clean id list. */
@@ -346,6 +350,7 @@ export async function resolveWebAuditProjectIds(
 export function deriveAudit(
   capability: string,
   httpMethod: string,
+  hasPathId = false,
 ): { resourceType: string; action: AuditAction } | null {
   const [prefix, verb] = capability.split(':');
   const resourceType = RESOURCE_BY_PREFIX[prefix];
@@ -366,10 +371,15 @@ export function deriveAudit(
       action = 'delete';
       break;
     case 'manage':
+      // A POST with a path id is an action on an EXISTING resource
+      // (POST /:id/rotate-secret, POST /:id/end) — an update, not a create.
+      // hasPathId fully generalizes the old resourceType-specific carve-outs:
+      // every action-shaped POST carries a path id, and no resource has an
+      // id-less POST that isn't a create.
       action =
         httpMethod === 'DELETE'
           ? 'delete'
-          : httpMethod === 'POST' && resourceType !== 'session'
+          : httpMethod === 'POST' && !hasPathId
             ? 'create'
             : 'update';
       break;
@@ -457,6 +467,8 @@ export async function fetchBefore(
       return prisma.oAuthGrant.findUnique({ where: { id: String(id) } });
     case 'sso_provider':
       return prisma.projectSSOIdentityProvider.findUnique({ where: { id: String(id) } });
+    case 'webhook':
+      return prisma.webhook.findUnique({ where: { id: String(id) } });
     case 'environment':
       return prisma.environment.findUnique({ where: { id: String(id) } });
     case 'project':

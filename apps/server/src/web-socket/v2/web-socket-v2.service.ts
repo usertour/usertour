@@ -1,7 +1,9 @@
 import { BizService } from '@/biz/biz.service';
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Environment } from '@/common/types/schema';
 import { PrismaService } from 'nestjs-prisma';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
 import {
   UpsertUserDto,
   UpsertCompanyDto,
@@ -70,6 +72,7 @@ export class WebSocketV2Service {
     private readonly socketDataService: SocketDataService,
     private readonly cache: ProjectCacheService,
     private readonly identityVerificationService: IdentityVerificationService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // ============================================================================
@@ -254,11 +257,14 @@ export class WebSocketV2Service {
       return false;
     }
 
-    const bizUser = await this.bizService.upsertBizUsers(
-      this.prisma,
-      externalUserId,
-      attributes,
-      environment.id,
+    // No transaction ON PURPOSE (contrast the company path below):
+    // upsertBizUsers' only ENTITY write is its final statement — a failure
+    // before it leaves no committed entity change for the emit contract to
+    // lose, and the earlier attribute-definition inserts are idempotent
+    // scaffolding outside that contract. The company path needs atomicity
+    // because it makes TWO entity-relevant writes (company, then membership).
+    const bizUser = await this.bizService.withEntityChangeEmit(environment.id, () =>
+      this.bizService.upsertBizUsers(this.prisma, externalUserId, attributes, environment.id),
     );
     if (!bizUser) {
       await this.socketDataService.delete(socket);
@@ -304,13 +310,23 @@ export class WebSocketV2Service {
       return false;
     }
 
-    const bizCompany = await this.bizService.upsertBizCompanies(
-      this.prisma,
-      externalCompanyId,
-      externalUserId,
-      attributes,
-      environment.id,
-      membership,
+    const bizCompany = await this.bizService.withEntityChangeEmit(environment.id, () =>
+      // A REAL transaction, not this.prisma: upsertBizCompanies is
+      // multi-statement (company upsert + membership upsert), and the
+      // post-commit emit contract ("all committed or all thrown") only holds
+      // when the statements share one transaction — otherwise a failure
+      // after the company write leaves a committed change that never emits
+      // company.updated.
+      this.prisma.$transaction((tx) =>
+        this.bizService.upsertBizCompanies(
+          tx,
+          externalCompanyId,
+          externalUserId,
+          attributes,
+          environment.id,
+          membership,
+        ),
+      ),
     );
 
     if (!bizCompany) {
@@ -488,7 +504,7 @@ export class WebSocketV2Service {
 
     const { name, attributes, userOnly } = trackEventDto;
 
-    const success = await this.prisma.$transaction(async (tx) => {
+    const createdBizEvent = await this.prisma.$transaction(async (tx) => {
       // 1. Find or create Event by codeName + projectId
       let event = await tx.event.findFirst({
         where: { codeName: name, projectId },
@@ -518,7 +534,7 @@ export class WebSocketV2Service {
       );
 
       // 3. Create BizEvent
-      await tx.bizEvent.create({
+      return await tx.bizEvent.create({
         data: {
           bizUserId,
           eventId: event.id,
@@ -529,13 +545,13 @@ export class WebSocketV2Service {
           bizCompanyId: userOnly === true ? null : (bizCompanyId ?? null),
         },
       });
-
-      return true;
     });
 
-    if (!success) {
-      return false;
-    }
+    const trackedPayload: BizEventTrackedPayload = {
+      environmentId: environment.id,
+      bizEventIds: [createdBizEvent.id],
+    };
+    this.eventEmitter.emit(BIZ_EVENT_TRACKED, trackedPayload);
 
     await this.contentOrchestratorService.toggleContents(context);
     return true;

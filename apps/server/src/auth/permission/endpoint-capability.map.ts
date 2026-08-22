@@ -90,6 +90,17 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'integration.deleteIntegrationObjectMapping': Capability.IntegrationManage,
   'integration.disconnectIntegration': Capability.IntegrationManage,
 
+  // webhooks (all O)
+  'webhooks.listWebhooks': Capability.WebhookRead,
+  'webhooks.getWebhook': Capability.WebhookRead,
+  'webhooks.queryWebhookMessages': Capability.WebhookRead,
+  'webhooks.createWebhook': Capability.WebhookManage,
+  'webhooks.updateWebhook': Capability.WebhookManage,
+  'webhooks.deleteWebhook': Capability.WebhookManage,
+  'webhooks.rotateWebhookSecret': Capability.WebhookManage,
+  'webhooks.sendWebhookTestEvent': Capability.WebhookManage,
+  'webhooks.resendWebhookMessage': Capability.WebhookManage,
+
   // localizations
   'localizations.createLocalization': Capability.LocalizationCreate, // W
   'localizations.updateLocalization': Capability.LocalizationUpdate, // W

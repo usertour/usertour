@@ -541,6 +541,10 @@ const ComparisonTable = ({
           name: t('settings.billing.comparison.rows.integrations'),
           values: [true, true, true, true],
         },
+        {
+          name: t('settings.billing.comparison.rows.webhooks'),
+          values: matrixRow('webhooks', currentPlanType, overridePlan),
+        },
         { name: t('settings.billing.comparison.rows.alerting'), values: [true, true, true, true] },
       ],
     },

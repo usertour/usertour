@@ -44,6 +44,9 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": ["biome check --write"],
-    "*.json": ["biome format --write"]
+    "*.json": ["biome format --write"],
+    "apps/server/prisma/schema.prisma": [
+      "pnpm --filter @usertour/server exec prisma format --schema"
+    ]
   }
 }

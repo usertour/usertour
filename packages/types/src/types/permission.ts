@@ -81,6 +81,9 @@ export enum Capability {
   // integration
   IntegrationRead = 'integration:read',
   IntegrationManage = 'integration:manage',
+  // outbound webhooks
+  WebhookRead = 'webhook:read',
+  WebhookManage = 'webhook:manage',
   // project
   ProjectRead = 'project:read',
   ProjectActivate = 'project:activate',

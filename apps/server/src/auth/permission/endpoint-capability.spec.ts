@@ -88,6 +88,15 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'integration.updateIntegrationObjectMapping': O,
   'integration.deleteIntegrationObjectMapping': O,
   'integration.disconnectIntegration': O,
+  'webhooks.listWebhooks': O,
+  'webhooks.getWebhook': O,
+  'webhooks.queryWebhookMessages': O,
+  'webhooks.createWebhook': O,
+  'webhooks.updateWebhook': O,
+  'webhooks.deleteWebhook': O,
+  'webhooks.rotateWebhookSecret': O,
+  'webhooks.sendWebhookTestEvent': O,
+  'webhooks.resendWebhookMessage': O,
   // localizations
   'localizations.createLocalization': W,
   'localizations.updateLocalization': W,
@@ -137,8 +146,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same 102 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(102);
+  it('snapshot covers exactly the same 111 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(111);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 

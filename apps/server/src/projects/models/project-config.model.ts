@@ -21,6 +21,10 @@ export class ProjectConfigModel {
   @Field()
   ssoSaml: boolean;
 
+  /** Outbound webhooks: cloud Starter+, self-hosted always on. */
+  @Field()
+  webhooks: boolean;
+
   @Field()
   planType: string;
 }

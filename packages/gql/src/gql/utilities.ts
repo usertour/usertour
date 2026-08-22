@@ -22,6 +22,7 @@ export const globalConfig = gql`
       needsSystemAdminSetup
       require2FA
       machineTranslationEnabled
+      allowPrivateNetworkEgress
       authProviders
     }
   }

@@ -1,6 +1,9 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { trackerSystemReservedEventAttributes } from '@usertour/constants';
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
 import {
   getCurrentStepId,
   getEventState,
@@ -68,11 +71,49 @@ export class EventTrackingService {
   private readonly logger = new Logger(EventTrackingService.name);
   private eventHandlers = new Map<BizEvents, EventHandler>();
 
+  /**
+   * Collects the BizEvent ids created inside the current tracking call so the
+   * post-commit BIZ_EVENT_TRACKED emit can reference them. AsyncLocalStorage
+   * (same pattern as shared/request-context) instead of a params field: the
+   * handler chain rebuilds its params objects in several places, which would
+   * silently drop a threaded collector.
+   */
+  private readonly createdBizEventIds = new AsyncLocalStorage<string[]>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly bizService: BizService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.registerEventHandlers();
+  }
+
+  /**
+   * Run a tracking operation with BizEvent collection, and emit
+   * BIZ_EVENT_TRACKED after it returns. The operation contains the full
+   * transaction, so by the time we emit, either every collected row is
+   * committed or the transaction threw (which propagates before the emit).
+   */
+  private async trackWithEmit<T>(environmentId: string, operation: () => Promise<T>): Promise<T> {
+    const collected: string[] = [];
+    // Nested entity-change scope: question_answered's bind-to-attribute writes
+    // user attributes inside the same transaction — those changes emit their
+    // own BIZ_ENTITY_CHANGED alongside this scope's BIZ_EVENT_TRACKED.
+    const result = await this.createdBizEventIds.run(collected, () =>
+      this.bizService.withEntityChangeEmit(environmentId, operation),
+    );
+
+    if (collected.length > 0) {
+      const payload: BizEventTrackedPayload = { environmentId, bizEventIds: collected };
+      this.eventEmitter.emit(BIZ_EVENT_TRACKED, payload);
+    }
+
+    return result;
+  }
+
+  /** Record a created BizEvent id into the active collection scope (if any). */
+  private collectBizEvent(bizEventId: string): void {
+    this.createdBizEventIds.getStore()?.push(bizEventId);
   }
 
   // ============================================================================
@@ -140,6 +181,12 @@ export class EventTrackingService {
       return false;
     }
 
+    return await this.trackWithEmit(events[0].params.environment.id, () =>
+      this.trackEventsByTypeInTransaction(events),
+    );
+  }
+
+  private async trackEventsByTypeInTransaction(events: EventTrackingItem[]): Promise<boolean> {
     return await this.prisma.$transaction(async (tx) => {
       for (const { eventType, params: eventParams } of events) {
         const handler = this.eventHandlers.get(eventType);
@@ -175,9 +222,11 @@ export class EventTrackingService {
    * @returns True if the event was tracked successfully
    */
   async trackCustomEvent(params: EventTransactionParams): Promise<boolean> {
-    return await this.prisma.$transaction(async (tx) => {
-      return await this.executeEventTransaction(tx, params);
-    });
+    return await this.trackWithEmit(params.environment.id, () =>
+      this.prisma.$transaction(async (tx) => {
+        return await this.executeEventTransaction(tx, params);
+      }),
+    );
   }
 
   /**
@@ -222,108 +271,111 @@ export class EventTrackingService {
       return false;
     };
 
-    return await this.prisma.$transaction(async (tx) => {
-      const [bizUser, content, version, contentOnEnvironment, event] = await Promise.all([
-        tx.bizUser.findFirst({
-          where: { externalId: externalUserId, environmentId },
-        }),
-        tx.content.findUnique({
-          where: { id: contentId },
-          select: { id: true, name: true },
-        }),
-        tx.version.findUnique({
-          where: { id: versionId },
-          select: { id: true, sequence: true },
-        }),
-        tx.contentOnEnvironment.findFirst({
-          where: { environmentId, contentId, published: true, content: { deleted: false } },
-          select: { contentId: true },
-        }),
-        tx.event.findUnique({
-          where: { id: eventId },
-        }),
-      ]);
+    return await this.trackWithEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        const [bizUser, content, version, contentOnEnvironment, event] = await Promise.all([
+          tx.bizUser.findFirst({
+            where: { externalId: externalUserId, environmentId },
+          }),
+          tx.content.findUnique({
+            where: { id: contentId },
+            select: { id: true, name: true },
+          }),
+          tx.version.findUnique({
+            where: { id: versionId },
+            select: { id: true, sequence: true },
+          }),
+          tx.contentOnEnvironment.findFirst({
+            where: { environmentId, contentId, published: true, content: { deleted: false } },
+            select: { contentId: true },
+          }),
+          tx.event.findUnique({
+            where: { id: eventId },
+          }),
+        ]);
 
-      if (!contentOnEnvironment) {
-        return reject('content not published in environment', { environmentId });
-      }
+        if (!contentOnEnvironment) {
+          return reject('content not published in environment', { environmentId });
+        }
 
-      if (!bizUser || !content || !version) {
-        return reject('missing entities', {
-          hasBizUser: !!bizUser,
-          hasContent: !!content,
-          hasVersion: !!version,
+        if (!bizUser || !content || !version) {
+          return reject('missing entities', {
+            hasBizUser: !!bizUser,
+            hasContent: !!content,
+            hasVersion: !!version,
+          });
+        }
+
+        if (!event) {
+          return reject('target event not found', { targetEventId: eventId });
+        }
+
+        // Dedup: check for recent BizEvent with same key within 3-second window
+        const DEDUP_WINDOW_MS = 3000;
+        const dedupWindow = new Date(Date.now() - DEDUP_WINDOW_MS);
+        const recentEvent = await tx.bizEvent.findFirst({
+          where: {
+            bizUserId: bizUser.id,
+            eventId: event.id,
+            contentId,
+            versionId,
+            createdAt: { gte: dedupWindow },
+          },
         });
-      }
 
-      if (!event) {
-        return reject('target event not found', { targetEventId: eventId });
-      }
+        if (recentEvent) {
+          this.logger.log({
+            message: 'Tracker event deduplicated',
+            contentId,
+            versionId,
+            eventId: event.id,
+            userId: bizUser.id,
+          });
+          return true; // Deduped, return success
+        }
 
-      // Dedup: check for recent BizEvent with same key within 3-second window
-      const DEDUP_WINDOW_MS = 3000;
-      const dedupWindow = new Date(Date.now() - DEDUP_WINDOW_MS);
-      const recentEvent = await tx.bizEvent.findFirst({
-        where: {
-          bizUserId: bizUser.id,
-          eventId: event.id,
-          contentId,
-          versionId,
-          createdAt: { gte: dedupWindow },
-        },
-      });
+        // Build event data with tracker attributes and client context
+        const trackerData = buildTrackerCompletedEventData(content, version);
+        const eventData = assignClientContext(trackerData, clientContext);
 
-      if (recentEvent) {
+        // Filter event data by allowed attributes
+        const filteredData = await this.filterEventDataByAttributes(
+          event.id,
+          eventData,
+          trackerSystemReservedEventAttributes,
+          tx,
+        );
+        if (!filteredData) {
+          return false;
+        }
+
+        // Create BizEvent directly (no BizSession for tracker)
+        const bizEvent = await tx.bizEvent.create({
+          data: {
+            bizUserId: bizUser.id,
+            eventId: event.id,
+            data: filteredData,
+            contentId,
+            versionId,
+            bizCompanyId: bizCompanyId ?? null,
+          },
+        });
+        this.collectBizEvent(bizEvent.id);
+
         this.logger.log({
-          message: 'Tracker event deduplicated',
+          message: 'Tracker event created',
           contentId,
           versionId,
           eventId: event.id,
           userId: bizUser.id,
         });
-        return true; // Deduped, return success
-      }
 
-      // Build event data with tracker attributes and client context
-      const trackerData = buildTrackerCompletedEventData(content, version);
-      const eventData = assignClientContext(trackerData, clientContext);
+        // Update seen attributes
+        await this.updateSeenAttributes(tx, bizUser, undefined);
 
-      // Filter event data by allowed attributes
-      const filteredData = await this.filterEventDataByAttributes(
-        event.id,
-        eventData,
-        trackerSystemReservedEventAttributes,
-        tx,
-      );
-      if (!filteredData) {
-        return false;
-      }
-
-      // Create BizEvent directly (no BizSession for tracker)
-      await tx.bizEvent.create({
-        data: {
-          bizUserId: bizUser.id,
-          eventId: event.id,
-          data: filteredData,
-          contentId,
-          versionId,
-          bizCompanyId: bizCompanyId ?? null,
-        },
-      });
-
-      this.logger.log({
-        message: 'Tracker event created',
-        contentId,
-        versionId,
-        eventId: event.id,
-        userId: bizUser.id,
-      });
-
-      // Update seen attributes
-      await this.updateSeenAttributes(tx, bizUser, undefined);
-
-      return true;
-    });
+        return true;
+      }),
+    );
   }
 
   /**
@@ -358,76 +410,79 @@ export class EventTrackingService {
     } = params;
     const { id: environmentId } = environment;
 
-    return await this.prisma.$transaction(async (tx) => {
-      const [bizUser, content, version, event] = await Promise.all([
-        tx.bizUser.findFirst({
-          where: { externalId: externalUserId, environmentId },
-        }),
-        tx.content.findUnique({
-          where: { id: contentId },
-          select: { id: true, name: true },
-        }),
-        tx.version.findUnique({
-          where: { id: versionId },
-          select: {
-            id: true,
-            sequence: true,
-            data: true,
-            versionOnLocalization: {
-              where: { enabled: true },
-              select: { localization: { select: { code: true } } },
+    return await this.trackWithEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        const [bizUser, content, version, event] = await Promise.all([
+          tx.bizUser.findFirst({
+            where: { externalId: externalUserId, environmentId },
+          }),
+          tx.content.findUnique({
+            where: { id: contentId },
+            select: { id: true, name: true },
+          }),
+          tx.version.findUnique({
+            where: { id: versionId },
+            select: {
+              id: true,
+              sequence: true,
+              data: true,
+              versionOnLocalization: {
+                where: { enabled: true },
+                select: { localization: { select: { code: true } } },
+              },
             },
-          },
-        }),
-        tx.event.findFirst({
-          where: { codeName: eventCodeName, projectId: environment.projectId },
-        }),
-      ]);
+          }),
+          tx.event.findFirst({
+            where: { codeName: eventCodeName, projectId: environment.projectId },
+          }),
+        ]);
 
-      if (!event) {
-        // The project is missing the event DEFINITION (seed/backfill gap, not a
-        // client error) — the announcement rollout shipped without a backfill
-        // and every existing project silently dropped ALL its seen events
-        // (announcement A+B round). Losing analytics silently is the worst
-        // outcome; make the gap observable.
-        this.logger.warn(
-          `Dropping ${eventCodeName} for project ${environment.projectId}: no event definition (run the project-defaults backfill to seed missing events/attributes).`,
+        if (!event) {
+          // The project is missing the event DEFINITION (seed/backfill gap, not a
+          // client error) — the announcement rollout shipped without a backfill
+          // and every existing project silently dropped ALL its seen events
+          // (announcement A+B round). Losing analytics silently is the worst
+          // outcome; make the gap observable.
+          this.logger.warn(
+            `Dropping ${eventCodeName} for project ${environment.projectId}: no event definition (run the project-defaults backfill to seed missing events/attributes).`,
+          );
+          return false;
+        }
+        if (!bizUser || !content || !version) {
+          return false;
+        }
+
+        const rawData = buildEventData(content, version);
+        const eventData = assignClientContext(
+          assignDeliveredLocale(rawData, bizUser.data, version.versionOnLocalization),
+          clientContext,
         );
-        return false;
-      }
-      if (!bizUser || !content || !version) {
-        return false;
-      }
 
-      const rawData = buildEventData(content, version);
-      const eventData = assignClientContext(
-        assignDeliveredLocale(rawData, bizUser.data, version.versionOnLocalization),
-        clientContext,
-      );
+        const filteredData = await this.filterEventDataByAttributes(
+          event.id,
+          eventData,
+          extraAllowedAttributes,
+          tx,
+        );
+        if (!filteredData) {
+          return false;
+        }
 
-      const filteredData = await this.filterEventDataByAttributes(
-        event.id,
-        eventData,
-        extraAllowedAttributes,
-        tx,
-      );
-      if (!filteredData) {
-        return false;
-      }
+        const bizEvent = await tx.bizEvent.create({
+          data: {
+            bizUserId: bizUser.id,
+            eventId: event.id,
+            data: filteredData,
+            contentId,
+            versionId,
+            bizCompanyId: bizCompanyId ?? null,
+          },
+        });
+        this.collectBizEvent(bizEvent.id);
 
-      await tx.bizEvent.create({
-        data: {
-          bizUserId: bizUser.id,
-          eventId: event.id,
-          data: filteredData,
-          contentId,
-          versionId,
-          bizCompanyId: bizCompanyId ?? null,
-        },
-      });
-
-      return true;
-    });
+        return true;
+      }),
+    );
   }
 
   // ============================================================================
@@ -635,6 +690,7 @@ export class EventTrackingService {
         bizCompanyId: bizSession.bizCompanyId ?? null,
       },
     });
+    this.collectBizEvent(bizEvent.id);
 
     // Handle question answered event
     if (eventCodeName === BizEvents.QUESTION_ANSWERED) {

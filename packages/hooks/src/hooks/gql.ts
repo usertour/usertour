@@ -1190,6 +1190,7 @@ export const useGetProjectConfigQuery = (
       auditLogRetentionDays: number;
       ssoOidc: boolean;
       ssoSaml: boolean;
+      webhooks: boolean;
       planType: string;
     } | null,
     loading,

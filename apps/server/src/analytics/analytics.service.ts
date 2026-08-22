@@ -12,6 +12,8 @@ import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/content/models/content.model';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
 import { BizSession, Event } from '@prisma/client';
 import { isBefore } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
@@ -241,7 +243,51 @@ type TrackerUserAggregateRow = {
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
+
+  /**
+   * The shared tail of both end-session paths: create the ending BizEvent,
+   * close the session, and emit post-commit — extracted so the two callers
+   * (which differ only in how they validate/build `data`) cannot drift.
+   */
+  private async createSessionEndEventAndClose(
+    bizSession: BizSession,
+    sessionId: string,
+    eventId: string,
+    data: Record<string, any>,
+  ): Promise<void> {
+    const createdBizEvent = await this.prisma.$transaction(async (tx) => {
+      const bizEvent = await tx.bizEvent.create({
+        data: {
+          bizSessionId: sessionId,
+          eventId,
+          bizUserId: bizSession.bizUserId,
+          data,
+        },
+      });
+      await tx.bizSession.update({
+        where: { id: sessionId },
+        data: { state: 1 },
+      });
+      return bizEvent;
+    });
+    this.emitSessionEndEvent(bizSession, createdBizEvent.id);
+  }
+
+  /** Emit BIZ_EVENT_TRACKED for an admin-created session-ending event. */
+  private emitSessionEndEvent(bizSession: BizSession, bizEventId: string): void {
+    if (!bizSession.environmentId) {
+      return;
+    }
+    const trackedPayload: BizEventTrackedPayload = {
+      environmentId: bizSession.environmentId,
+      bizEventIds: [bizEventId],
+    };
+    this.eventEmitter.emit(BIZ_EVENT_TRACKED, trackedPayload);
+  }
 
   private buildEmptyAnalytics() {
     return {
@@ -1705,21 +1751,8 @@ export class AnalyticsService {
       }
     }
 
-    return await this.prisma.$transaction(async (tx) => {
-      await tx.bizEvent.create({
-        data: {
-          bizSessionId: sessionId,
-          eventId: endEvent.id,
-          bizUserId: bizSession.bizUserId,
-          data,
-        },
-      });
-      await tx.bizSession.update({
-        where: { id: sessionId },
-        data: { state: 1 },
-      });
-      return true;
-    });
+    await this.createSessionEndEventAndClose(bizSession, sessionId, endEvent.id, data);
+    return true;
   }
 
   /**
@@ -1765,21 +1798,8 @@ export class AnalyticsService {
       }
     }
 
-    return await this.prisma.$transaction(async (tx) => {
-      await tx.bizEvent.create({
-        data: {
-          bizSessionId: sessionId,
-          eventId: endEvent.id,
-          bizUserId: bizSession.bizUserId,
-          data,
-        },
-      });
-      await tx.bizSession.update({
-        where: { id: sessionId },
-        data: { state: 1 },
-      });
-      return true;
-    });
+    await this.createSessionEndEventAndClose(bizSession, sessionId, endEvent.id, data);
+    return true;
   }
 
   async deleteSession(sessionId: string) {

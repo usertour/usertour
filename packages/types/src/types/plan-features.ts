@@ -24,6 +24,11 @@ export type PlanFeatures = {
   ssoSaml: boolean;
   ssoOidc: boolean;
 
+  // Outbound webhooks (ADR 0010). Cloud: paid tiers only (Starter+). Self-hosted
+  // is never gated — it is a usage/feature limit, not an enterprise feature, so
+  // getProjectConfig forces it on there (same treatment as customCss).
+  webhooks: boolean;
+
   // Quotas. 'unlimited' is the explicit unbounded marker; we deliberately
   // avoid Infinity / null so it survives JSON round-trips and reads
   // cleanly at call sites.

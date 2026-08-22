@@ -41,6 +41,9 @@ import { ApiThemesController } from './themes/themes.controller';
 import { ApiThemesService } from './themes/themes.service';
 import { ApiUsersController } from './users/users.controller';
 import { ApiUsersService } from './users/users.service';
+import { ApiWebhooksController } from './webhooks/webhooks.controller';
+import { ApiWebhooksService } from './webhooks/webhooks.service';
+import { WebhooksModule } from '@/webhooks/webhooks.module';
 
 /**
  * The contract-first v2 public API. A peer of (not nested in) the legacy
@@ -83,6 +86,7 @@ import { ApiUsersService } from './users/users.service';
     EnvironmentsModule,
     ProjectsModule,
     UtilitiesModule,
+    WebhooksModule,
   ],
   // Order here drives the OpenAPI tag order (NestJS emits operations per controller),
   // which is what the docs sidebar renders: core content first, audience next,
@@ -99,6 +103,7 @@ import { ApiUsersService } from './users/users.service';
     ApiContentSessionsController,
     ApiAttributeDefinitionsController,
     ApiEventDefinitionsController,
+    ApiWebhooksController,
     ApiEnvironmentsController,
   ],
   providers: [
@@ -115,6 +120,7 @@ import { ApiUsersService } from './users/users.service';
     ApiThemesService,
     ApiSegmentsService,
     ApiEnvironmentsService,
+    ApiWebhooksService,
     OpenAPIExceptionFilter,
     // Global fallback: keeps the v2 error envelope for exceptions thrown BEFORE
     // any route handler (body-parser JSON failures, unknown /v2 routes) that the
@@ -139,6 +145,7 @@ import { ApiUsersService } from './users/users.service';
     ApiSegmentsService,
     ApiContentSessionsService,
     ApiEnvironmentsService,
+    ApiWebhooksService,
   ],
 })
 export class ApiModule {}

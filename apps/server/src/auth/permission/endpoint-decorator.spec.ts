@@ -12,6 +12,7 @@ import { LocalizationsResolver } from '@/localizations/localizations.resolver';
 import { ProjectsResolver } from '@/projects/projects.resolver';
 import { TeamResolver } from '@/team/team.resolver';
 import { ThemesResolver } from '@/themes/themes.resolver';
+import { WebhooksResolver } from '@/webhooks/webhooks.resolver';
 
 import { ENDPOINT_CAPABILITY } from './endpoint-capability.map';
 import { RequirePermission } from './require-permission.decorator';
@@ -37,6 +38,7 @@ const RESOLVERS: Record<string, new (...args: any[]) => any> = {
   projects: ProjectsResolver,
   team: TeamResolver,
   themes: ThemesResolver,
+  webhooks: WebhooksResolver,
 };
 
 const reflector = new Reflector();

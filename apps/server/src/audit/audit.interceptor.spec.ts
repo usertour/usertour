@@ -60,10 +60,21 @@ describe('deriveAudit (v2 REST capability → audit descriptor)', () => {
       resourceType: 'environment',
       action: 'delete',
     });
-    // sessions are never "created" via the API; manage+POST (e.g. /:id/end) is an update.
-    expect(deriveAudit('session:manage', 'POST')).toEqual({
+    // Sessions are never "created" via the API; their only POST is the
+    // action-shaped /:id/end, which the interceptor calls with hasPathId=true
+    // (derived from req.params.id) — an update, not a create.
+    expect(deriveAudit('session:manage', 'POST', true)).toEqual({
       resourceType: 'session',
       action: 'update',
+    });
+    // Same rule generalized: any id-carrying POST is an action, id-less is a create.
+    expect(deriveAudit('webhook:manage', 'POST', true)).toEqual({
+      resourceType: 'webhook',
+      action: 'update',
+    });
+    expect(deriveAudit('webhook:manage', 'POST')).toEqual({
+      resourceType: 'webhook',
+      action: 'create',
     });
     expect(deriveAudit('session:manage', 'DELETE')).toEqual({
       resourceType: 'session',

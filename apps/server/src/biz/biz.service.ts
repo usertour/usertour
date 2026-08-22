@@ -10,13 +10,19 @@ import {
   createBizUserConditionsFilter,
 } from '@/common/attribute/filter';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
+import {
+  BIZ_ENTITY_CHANGED,
+  BizEntityChangedPayload,
+  EntityChange,
+} from '@/webhooks/webhook.types';
 import { BizCompany, BizUser, BizUserOnCompany, Prisma } from '@prisma/client';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';
-import { CreateBizInput } from './dto/biz.input';
 import {
   BizCompanyOnSegmentInput,
   BizUserOnSegmentInput,
@@ -108,21 +114,76 @@ const seedSeenAttributes = (attributes: Record<string, any>): Record<string, any
 export class BizService {
   private readonly logger = new Logger(BizService.name);
 
+  /**
+   * Collects entity creations/changes made inside the current call so the
+   * post-commit BIZ_ENTITY_CHANGED emit can reference them. AsyncLocalStorage
+   * (same pattern as EventTrackingService's bizEvent collector): the upsert
+   * chokepoints run inside caller-owned transactions, so they can't emit
+   * themselves. Pushes are no-ops outside a collection scope — an unwrapped
+   * caller silently doesn't notify (fail-safe: missed, never premature).
+   */
+  private readonly entityChanges = new AsyncLocalStorage<EntityChange[]>();
+
   constructor(
     private prisma: PrismaService,
     private readonly cache: ProjectCacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createBizUser(data: CreateBizInput) {
-    return await this.prisma.bizUser.create({
-      data: { ...data, data: seedSeenAttributes((data.data as Record<string, any>) ?? {}) },
-    });
+  /**
+   * Run an operation (containing its writes/transaction) with entity-change
+   * collection, and emit BIZ_ENTITY_CHANGED after it returns — by then either
+   * every collected change is committed or the operation threw (which
+   * propagates before the emit).
+   */
+  async withEntityChangeEmit<T>(environmentId: string, operation: () => Promise<T>): Promise<T> {
+    // Nesting is a programming error, not a supported composition: an inner
+    // scope of its own would emit while the outer transaction is still
+    // uncommitted ("premature"), and silently joining the outer scope would
+    // inherit ITS environmentId — tagging one tenant's changes with
+    // another's. No caller nests today (all entry points are top-level);
+    // whoever first needs it should design the composition then, driven by
+    // the actual requirement.
+    if (this.entityChanges.getStore()) {
+      throw new Error('withEntityChangeEmit must not nest — collect inside the outer scope');
+    }
+    const changes: EntityChange[] = [];
+    const result = await this.entityChanges.run(changes, operation);
+
+    if (changes.length > 0) {
+      const payload: BizEntityChangedPayload = { environmentId, changes };
+      this.eventEmitter.emit(BIZ_ENTITY_CHANGED, payload);
+    }
+
+    return result;
   }
 
-  async createBizCompany(data: CreateBizInput) {
-    return await this.prisma.bizCompany.create({
-      data: { ...data, data: seedSeenAttributes((data.data as Record<string, any>) ?? {}) },
-    });
+  /** Record an entity change into the active collection scope (if any). */
+  private collectEntityChange(change: EntityChange): void {
+    this.entityChanges.getStore()?.push(change);
+  }
+
+  /**
+   * Old values of just the keys the merge changed or removed (the common
+   * payments-API `previous_attributes` convention) — captured here because only
+   * the diff site has both versions in hand.
+   */
+  private previousAttributesOf(
+    currentData: Record<string, any>,
+    mergedData: Record<string, any>,
+  ): Record<string, any> {
+    const previous: Record<string, any> = {};
+    for (const key of Object.keys(mergedData)) {
+      if (!isEqual(currentData[key], mergedData[key])) {
+        previous[key] = key in currentData ? currentData[key] : null;
+      }
+    }
+    for (const key of Object.keys(currentData)) {
+      if (!(key in mergedData)) {
+        previous[key] = currentData[key];
+      }
+    }
+    return previous;
   }
 
   async creatSegment(data: CreatSegment) {
@@ -347,7 +408,10 @@ export class BizService {
     });
   }
 
-  private async executeDeleteUserTransaction(tx: Prisma.TransactionClient, deleteIds: string[]) {
+  private async executeDeleteUserRelationsTransaction(
+    tx: Prisma.TransactionClient,
+    deleteIds: string[],
+  ) {
     // Delete user-company relationships
     await tx.bizUserOnCompany.deleteMany({
       where: { bizUserId: { in: deleteIds } },
@@ -379,69 +443,87 @@ export class BizService {
     await tx.bizAnnouncementSeen.deleteMany({
       where: { bizUserId: { in: deleteIds } },
     });
-
-    // Delete users
-    return await tx.bizUser.deleteMany({
-      where: { id: { in: deleteIds } },
-    });
   }
 
+  /**
+   * Delete users (every surface — dashboard, REST, legacy API — funnels here).
+   * `user.deleted` carries the object as it was — sourced from the DELETE's
+   * RETURNING rows, the last state before removal and the only per-row
+   * attribution under concurrent deletes.
+   */
   async deleteBizUser(ids: string[], environmentId: string) {
-    // 1. Validate input
     if (!ids?.length) {
       throw new ParamsError('User IDs are required');
     }
 
-    // 2. Find users to delete
-    const bizUsers = await this.prisma.bizUser.findMany({
-      where: {
-        id: { in: ids },
-        environmentId,
-      },
-      select: { id: true }, // Only select needed fields
-    });
-
-    if (!bizUsers.length) {
-      throw new ParamsError('No users found to delete');
-    }
-
-    const deleteIds = bizUsers.map((bizUser) => bizUser.id);
-
-    // 3. Execute all operations in a transaction
-    return await this.prisma.$transaction(async (tx) => {
-      return await this.executeDeleteUserTransaction(tx, deleteIds);
-    });
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        // Resolve the target ids INSIDE the transaction and emit only for
+        // rows the final DELETE actually returned: a pre-transaction read
+        // would emit `user.deleted` for rows this transaction never removed
+        // — a double-click or REST retry would then produce two logically-
+        // duplicate events with DIFFERENT message ids, which receivers
+        // cannot deduplicate. ids only: the deleted-row data comes from
+        // RETURNING below — full rows here would be read and discarded.
+        const bizUsers = await tx.bizUser.findMany({
+          where: { id: { in: ids }, environmentId },
+          select: { id: true },
+        });
+        if (!bizUsers.length) {
+          throw new ParamsError('No users found to delete');
+        }
+        const deleteIds = bizUsers.map((bizUser) => bizUser.id);
+        await this.executeDeleteUserRelationsTransaction(tx, deleteIds);
+        // RETURNING is the per-row attribution deleteMany cannot give: under
+        // a concurrent overlapping delete, only the rows THIS statement
+        // removed come back, so each event is emitted exactly once cluster-wide.
+        const deletedRows = await tx.$queryRaw<BizUser[]>`
+          DELETE FROM "BizUser" WHERE id = ANY(${deleteIds}) RETURNING *`;
+        for (const bizUser of deletedRows) {
+          this.collectEntityChange({
+            entity: 'user',
+            action: 'deleted',
+            bizId: bizUser.id,
+            deletedRow: bizUser,
+          });
+        }
+        return { count: deletedRows.length };
+      }),
+    );
   }
 
+  /** Delete companies — same funnel/notification shape as deleteBizUser. */
   async deleteBizCompany(ids: string[], environmentId: string) {
-    return await this.prisma.$transaction(async (tx) => {
-      // First delete related records
-      await tx.bizUserOnCompany.deleteMany({
-        where: {
-          bizCompanyId: { in: ids },
-          bizCompany: {
-            environmentId,
-          },
-        },
-      });
-
-      await tx.bizCompanyOnSegment.deleteMany({
-        where: {
-          bizCompanyId: { in: ids },
-          bizCompany: {
-            environmentId,
-          },
-        },
-      });
-
-      // Then delete the companies
-      return await tx.bizCompany.deleteMany({
-        where: {
-          id: { in: ids },
-          environmentId,
-        },
-      });
-    });
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        // See deleteBizUser: resolve ids in-transaction, emit from RETURNING.
+        const bizCompanies = await tx.bizCompany.findMany({
+          where: { id: { in: ids }, environmentId },
+          select: { id: true },
+        });
+        if (!bizCompanies.length) {
+          return { count: 0 };
+        }
+        const deleteIds = bizCompanies.map((bizCompany) => bizCompany.id);
+        await tx.bizUserOnCompany.deleteMany({
+          where: { bizCompanyId: { in: deleteIds } },
+        });
+        await tx.bizCompanyOnSegment.deleteMany({
+          where: { bizCompanyId: { in: deleteIds } },
+        });
+        const deletedRows = await tx.$queryRaw<BizCompany[]>`
+          DELETE FROM "BizCompany" WHERE id = ANY(${deleteIds}) RETURNING *`;
+        for (const bizCompany of deletedRows) {
+          this.collectEntityChange({
+            entity: 'company',
+            action: 'deleted',
+            bizId: bizCompany.id,
+            deletedRow: bizCompany,
+          });
+        }
+        return { count: deletedRows.length };
+      }),
+    );
   }
 
   private createSearchConditions(
@@ -697,13 +779,17 @@ export class BizService {
       where: { externalId: String(externalUserId), environmentId },
     });
     if (!user) {
-      return await tx.bizUser.create({
+      const created = await tx.bizUser.create({
         data: {
           externalId: String(externalUserId),
           environmentId,
-          data: seedSeenAttributes(insertAttribute),
+          // Null attributes filtered at birth: seeding them only manufactures a
+          // spurious `<entity>.updated` diff on the next identify.
+          data: seedSeenAttributes(filterNullAttributes(insertAttribute)),
         },
       });
+      this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
+      return created;
     }
     const currentData = (user.data as Record<string, any>) || {};
     const insertData = filterNullAttributes({
@@ -716,7 +802,7 @@ export class BizService {
       return user;
     }
 
-    return await tx.bizUser.update({
+    const updated = await tx.bizUser.update({
       where: {
         id: user.id,
       },
@@ -724,6 +810,13 @@ export class BizService {
         data: insertData,
       },
     });
+    this.collectEntityChange({
+      entity: 'user',
+      action: 'updated',
+      bizId: user.id,
+      previousAttributes: this.previousAttributesOf(currentData, insertData),
+    });
+    return updated;
   }
 
   async upsertBizCompanies(
@@ -769,12 +862,8 @@ export class BizService {
     companyId: string,
     attributes: Record<string, any>,
   ): Promise<BizCompany | null> {
-    return await this.upsertBizCompanyAttributes(
-      this.prisma,
-      projectId,
-      environmentId,
-      companyId,
-      attributes,
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.upsertBizCompanyAttributes(this.prisma, projectId, environmentId, companyId, attributes),
     );
   }
 
@@ -808,7 +897,7 @@ export class BizService {
         return company;
       }
 
-      return await tx.bizCompany.update({
+      const updated = await tx.bizCompany.update({
         where: {
           id: company.id,
         },
@@ -816,15 +905,26 @@ export class BizService {
           data: mergedData,
         },
       });
+      this.collectEntityChange({
+        entity: 'company',
+        action: 'updated',
+        bizId: company.id,
+        previousAttributes: this.previousAttributesOf(currentData, mergedData),
+      });
+      return updated;
     }
 
-    return await tx.bizCompany.create({
+    const created = await tx.bizCompany.create({
       data: {
         externalId: String(externalCompanyId),
         environmentId,
-        data: seedSeenAttributes(insertAttribute),
+        // Null attributes filtered at birth: seeding them only manufactures a
+        // spurious `<entity>.updated` diff on the next identify.
+        data: seedSeenAttributes(filterNullAttributes(insertAttribute)),
       },
     });
+    this.collectEntityChange({ entity: 'company', action: 'created', bizId: created.id });
+    return created;
   }
 
   async upsertBizMembership(
@@ -1160,12 +1260,18 @@ export class BizService {
     });
     if (existing) return existing;
 
-    return await this.prisma.bizUser.create({
-      data: {
-        externalId: String(externalUserId),
-        environmentId,
-        data: seedSeenAttributes({}),
-      },
+    // The socket-connect creation IS the user's birth — notify user.created
+    // here (empty attributes) so the later identify upsert reads as an update.
+    return await this.withEntityChangeEmit(environmentId, async () => {
+      const created = await this.prisma.bizUser.create({
+        data: {
+          externalId: String(externalUserId),
+          environmentId,
+          data: seedSeenAttributes({}),
+        },
+      });
+      this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
+      return created;
     });
   }
 
@@ -1189,43 +1295,45 @@ export class BizService {
     // exist yet), so an `attrs` cache slice missing this row produces no
     // observable effect on toggleContents output. The 5-minute TTL self-
     // heals before any new admin-configured rule could reference it.
-    return await this.prisma.$transaction(async (tx) => {
-      // First upsert the user with attributes
-      const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.prisma.$transaction(async (tx) => {
+        // First upsert the user with attributes
+        const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
 
-      if (!user) {
-        throw new UnknownError('Failed to upsert user');
-      }
-
-      // Handle companies/companies and memberships
-      if (companies) {
-        for (const company of companies) {
-          await this.upsertBizCompanies(
-            tx,
-            company.id,
-            externalUserId,
-            company.attributes || {},
-            environmentId,
-            {},
-          );
+        if (!user) {
+          throw new UnknownError('Failed to upsert user');
         }
-      }
 
-      if (memberships) {
-        for (const membership of memberships) {
-          await this.upsertBizCompanies(
-            tx,
-            membership.company.id,
-            externalUserId,
-            membership.company.attributes || {},
-            environmentId,
-            membership.attributes || {},
-          );
+        // Handle companies/companies and memberships
+        if (companies) {
+          for (const company of companies) {
+            await this.upsertBizCompanies(
+              tx,
+              company.id,
+              externalUserId,
+              company.attributes || {},
+              environmentId,
+              {},
+            );
+          }
         }
-      }
 
-      return user;
-    });
+        if (memberships) {
+          for (const membership of memberships) {
+            await this.upsertBizCompanies(
+              tx,
+              membership.company.id,
+              externalUserId,
+              membership.company.attributes || {},
+              environmentId,
+              membership.attributes || {},
+            );
+          }
+        }
+
+        return user;
+      }),
+    );
   }
 
   async getBizCompany(
