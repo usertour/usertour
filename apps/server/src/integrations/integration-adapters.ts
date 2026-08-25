@@ -1,3 +1,4 @@
+import { EventAttributes } from '@usertour/types';
 import type { IntegrationConfig, IntegrationProvider } from '@usertour/types';
 import {
   AMPLITUDE_API_ENDPOINT,
@@ -31,6 +32,42 @@ import { IntegrationMessageEnvelope, ProviderAdapter, ProviderRequest } from './
 const regionEndpoint = (config: IntegrationConfig, us: string, eu: string): string =>
   config.region === 'EU' ? eu : us;
 
+/**
+ * Session attribute name per content type, keyed by the content-id attribute
+ * the event already carries (each build*BaseEventData writes exactly one of
+ * these — no event mixes types; survey answers carry flow_id and correctly
+ * land on flow_session_id). Inside the product the canonical link is the
+ * BizEvent.bizSessionId column; these names exist for the integration wire.
+ */
+const SESSION_ATTRIBUTE_BY_CONTENT_ID: ReadonlyArray<[string, string]> = [
+  [EventAttributes.FLOW_ID, EventAttributes.FLOW_SESSION_ID],
+  [EventAttributes.CHECKLIST_ID, EventAttributes.CHECKLIST_SESSION_ID],
+  [EventAttributes.LAUNCHER_ID, EventAttributes.LAUNCHER_SESSION_ID],
+  [EventAttributes.BANNER_ID, EventAttributes.BANNER_SESSION_ID],
+  [EventAttributes.RESOURCE_CENTER_ID, EventAttributes.RESOURCE_CENTER_SESSION_ID],
+];
+
+const sessionAttributeName = (attributes: Record<string, unknown>): string => {
+  const match = SESSION_ATTRIBUTE_BY_CONTENT_ID.find(
+    ([contentIdKey]) => contentIdKey in attributes,
+  );
+  return match ? match[1] : 'session_id';
+};
+
+/**
+ * The properties every provider receives: the analytics attributes plus the
+ * Usertour session id — top-level on the envelope, absent from the attribute
+ * blob — so a user's runs through the same content group into sessions on
+ * the destination side. Named per content type (flow_session_id, ...) to
+ * match the event-attribute vocabulary.
+ */
+const eventProperties = (
+  event: IntegrationMessageEnvelope['data']['event'],
+): Record<string, unknown> => ({
+  ...event.attributes,
+  ...(event.sessionId ? { [sessionAttributeName(event.attributes)]: event.sessionId } : {}),
+});
+
 const amplitude: ProviderAdapter = (envelope, key, config) => {
   const { event } = envelope.data;
   return {
@@ -43,7 +80,7 @@ const amplitude: ProviderAdapter = (envelope, key, config) => {
           user_id: event.userId,
           time: Date.parse(envelope.createdAt),
           insert_id: envelope.id,
-          event_properties: event.attributes,
+          event_properties: eventProperties(event),
         },
       ],
     },
@@ -59,7 +96,7 @@ const heap: ProviderAdapter = (envelope, key) => {
       identity: event.userId,
       event: event.codeName,
       timestamp: envelope.createdAt,
-      properties: event.attributes,
+      properties: eventProperties(event),
     },
   };
 };
@@ -72,7 +109,7 @@ const mixpanel: ProviderAdapter = (envelope, key, config) => {
       {
         event: event.codeName,
         properties: {
-          ...event.attributes,
+          ...eventProperties(event),
           distinct_id: event.userId,
           token: key,
           time: Math.floor(Date.parse(envelope.createdAt) / 1000),
@@ -92,7 +129,7 @@ const posthog: ProviderAdapter = (envelope, key, config) => {
       event: event.codeName,
       distinct_id: event.userId,
       timestamp: envelope.createdAt,
-      properties: event.attributes,
+      properties: eventProperties(event),
     },
   };
 };
@@ -107,7 +144,7 @@ const segment: ProviderAdapter = (envelope, key, config) => {
     body: {
       event: event.codeName,
       userId: event.userId,
-      properties: event.attributes,
+      properties: eventProperties(event),
       timestamp: envelope.createdAt,
       messageId: envelope.id,
     },

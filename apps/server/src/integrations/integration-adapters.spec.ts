@@ -27,6 +27,13 @@ const envelope: IntegrationMessageEnvelope = {
 
 const EVENT_TIME_MS = Date.parse('2026-07-16T08:00:00.000Z');
 
+/** What every provider should receive as properties: attributes + the
+ *  per-type session attribute (flow_id in the fixture -> flow_session_id). */
+const expectedProperties = {
+  ...envelope.data.event.attributes,
+  flow_session_id: 'sess_1',
+};
+
 describe('integration adapters', () => {
   it('covers every provider in INTEGRATION_PROVIDERS (registry completeness)', () => {
     expect(Object.keys(INTEGRATION_ADAPTERS).sort()).toEqual([...INTEGRATION_PROVIDERS].sort());
@@ -51,7 +58,7 @@ describe('integration adapters', () => {
             user_id: 'user-ext-1',
             time: EVENT_TIME_MS,
             insert_id: 'imsg_abc123',
-            event_properties: envelope.data.event.attributes,
+            event_properties: expectedProperties,
           },
         ],
       });
@@ -72,7 +79,7 @@ describe('integration adapters', () => {
         identity: 'user-ext-1',
         event: 'flow_started',
         timestamp: '2026-07-16T08:00:00.000Z',
-        properties: envelope.data.event.attributes,
+        properties: expectedProperties,
       });
     });
   });
@@ -85,7 +92,7 @@ describe('integration adapters', () => {
         {
           event: 'flow_started',
           properties: {
-            ...envelope.data.event.attributes,
+            ...expectedProperties,
             distinct_id: 'user-ext-1',
             token: 'mp-token',
             time: Math.floor(EVENT_TIME_MS / 1000),
@@ -116,7 +123,7 @@ describe('integration adapters', () => {
         event: 'flow_started',
         distinct_id: 'user-ext-1',
         timestamp: '2026-07-16T08:00:00.000Z',
-        properties: envelope.data.event.attributes,
+        properties: expectedProperties,
       });
     });
 
@@ -124,6 +131,55 @@ describe('integration adapters', () => {
       const request = INTEGRATION_ADAPTERS.posthog(envelope, 'ph-key', { region: 'EU' });
       expect(request.url).toBe('https://eu.i.posthog.com/i/v0/e/');
     });
+  });
+
+  const propertiesOf = (body: Record<string, any>) =>
+    Array.isArray(body)
+      ? body[0].properties
+      : (body.events?.[0]?.event_properties ?? body.properties);
+
+  it('omits the session attribute for sessionless events on every provider', () => {
+    const sessionless: IntegrationMessageEnvelope = {
+      ...envelope,
+      data: { event: { ...envelope.data.event, sessionId: null } },
+    };
+    for (const provider of INTEGRATION_PROVIDERS) {
+      const properties = propertiesOf(
+        INTEGRATION_ADAPTERS[provider](sessionless, 'key', {}).body as Record<string, any>,
+      );
+      expect(properties).not.toHaveProperty('session_id');
+      expect(properties).not.toHaveProperty('flow_session_id');
+    }
+  });
+
+  it('derives the session attribute name from the content type', () => {
+    const checklistEvent: IntegrationMessageEnvelope = {
+      ...envelope,
+      data: {
+        event: {
+          ...envelope.data.event,
+          codeName: 'checklist_task_clicked',
+          attributes: { checklist_id: 'cl1', checklist_name: 'Onboarding' },
+        },
+      },
+    };
+    const checklistProperties = propertiesOf(
+      INTEGRATION_ADAPTERS.mixpanel(checklistEvent, 'k', {}).body as Record<string, any>,
+    );
+    expect(checklistProperties.checklist_session_id).toBe('sess_1');
+    expect(checklistProperties).not.toHaveProperty('flow_session_id');
+
+    // No content-id attribute at all -> the bare fallback name.
+    const bareEvent: IntegrationMessageEnvelope = {
+      ...envelope,
+      data: {
+        event: { ...envelope.data.event, codeName: 'custom_event', attributes: { foo: 'bar' } },
+      },
+    };
+    const bareProperties = propertiesOf(
+      INTEGRATION_ADAPTERS.segment(bareEvent, 'k', {}).body as Record<string, any>,
+    );
+    expect(bareProperties.session_id).toBe('sess_1');
   });
 
   describe('segment', () => {
@@ -136,7 +192,7 @@ describe('integration adapters', () => {
       expect(request.body).toEqual({
         event: 'flow_started',
         userId: 'user-ext-1',
-        properties: envelope.data.event.attributes,
+        properties: expectedProperties,
         timestamp: '2026-07-16T08:00:00.000Z',
         messageId: 'imsg_abc123',
       });
