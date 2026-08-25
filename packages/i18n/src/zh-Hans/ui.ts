@@ -1452,8 +1452,9 @@ const translations = {
       outbound: {
         toggle: '将 Usertour 事件推送到 {{name}}',
         toggleConfigureFirst: '先在下方保存配置,才能开启推送。',
-        toggleTooltip: '开启后,Usertour 产生的事件会持续推送到你的 {{name}} 项目。',
+        toggleDescription: '所有跟踪到的事件都会实时送达你的 {{name}} 项目。',
         toggleFailed: '更新事件推送状态失败',
+        settingsTitle: '事件推送设置',
         enabledToast: '事件推送已开启',
         disabledToast: '事件推送已关闭',
       },

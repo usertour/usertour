@@ -28,7 +28,6 @@ import {
   FormLabel,
   Input,
   LoadingButton,
-  QuestionTooltip,
   Select,
   SelectContent,
   SelectItem,
@@ -107,9 +106,13 @@ const valuesFromIntegration = (integration: Integration | undefined): ConfigForm
 const IdentitySection = ({
   entry,
   integration,
+  environmentId,
+  entitled,
 }: {
   entry: IntegrationCatalogEntry;
   integration: Integration | undefined;
+  environmentId: string;
+  entitled: boolean;
 }) => {
   const { isViewOnly, project } = useAppContext();
   const navigate = useNavigate();
@@ -117,6 +120,43 @@ const IdentitySection = ({
   const { t } = useTranslation();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { invoke: deleteIntegration, loading: deleting } = useDeleteIntegrationMutation();
+  const { invoke: toggleIntegration, loading: toggling } = useUpsertIntegrationMutation();
+  const isConfigured = !!integration;
+  const canWrite = !isViewOnly && entitled;
+  // The switch owns the normal on/off display, so the badge narrows to the
+  // states the switch cannot express: never configured, cooling down, or
+  // switched off BY THE SYSTEM. Plain enabled/disabled shows no badge here
+  // (the list page keeps the full vocabulary — it has no switch).
+  const showStatusBadge =
+    !integration ||
+    !!integration.autoDisabledAt ||
+    (!!integration.cooldownUntil && new Date(integration.cooldownUntil).getTime() > Date.now());
+
+  // The switch commits immediately (one field, one write) — the identity
+  // card is the provider's control panel; the cards below only hold forms.
+  const handleToggle = async (next: boolean) => {
+    try {
+      const saved = await toggleIntegration({
+        environmentId,
+        provider: entry.provider,
+        enabled: next,
+      });
+      if (saved) {
+        // The switch commits without a Save click — say so, or the Save
+        // button in the card below teaches users to doubt the flip stuck.
+        toast({
+          variant: 'success',
+          title: next
+            ? t('settings.integrations.outbound.enabledToast')
+            : t('settings.integrations.outbound.disabledToast'),
+        });
+      } else {
+        toast({ variant: 'destructive', title: t('settings.integrations.outbound.toggleFailed') });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
 
   const handleDelete = async () => {
     if (!integration) {
@@ -136,36 +176,67 @@ const IdentitySection = ({
   };
 
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex items-start gap-4">
-        <img
-          className="h-12 w-12 rounded-lg border border-accent-light object-cover"
-          src={entry.imagePath}
-          alt={t('settings.integrations.catalog.logoAlt', { name: entry.name })}
-        />
-        <div>
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <img
+            className="h-12 w-12 rounded-lg border border-accent-light object-cover"
+            src={entry.imagePath}
+            alt={t('settings.integrations.catalog.logoAlt', { name: entry.name })}
+          />
           <div className="flex items-center gap-3">
             <h3 className="text-xl font-medium tracking-tight">{entry.name}</h3>
-            <IntegrationStatusBadge integration={integration} />
+            {showStatusBadge && <IntegrationStatusBadge integration={integration} />}
           </div>
+        </div>
+        {integration && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive"
+            disabled={isViewOnly || deleting}
+            title={t('settings.integrations.delete.button')}
+            aria-label={t('settings.integrations.delete.button')}
+            onClick={() => setDeleteOpen(true)}
+          >
+            <RiDeleteBinLine className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Text block left, switch at the row's end — the same shape as the
+          identity-verification enforcement row. */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <p className={cn('text-sm font-medium', !isConfigured && 'text-muted-foreground')}>
+            {t('settings.integrations.outbound.toggle', { name: entry.name })}
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {t(`settings.integrations.catalog.descriptions.${entry.provider}`)}
+            {t('settings.integrations.outbound.toggleDescription', { name: entry.name })}
           </p>
         </div>
+        <div className="shrink-0">
+          <Switch
+            // bg-input track — same treatment as the identity-verification
+            // enforcement switch (the default variant's unchecked track is
+            // bg-background, invisible on this white page).
+            className="shrink-0 data-[state=unchecked]:bg-input"
+            checked={integration?.enabled ?? false}
+            disabled={!canWrite || !isConfigured || toggling}
+            title={
+              isConfigured ? undefined : t('settings.integrations.outbound.toggleConfigureFirst')
+            }
+            onCheckedChange={(next) => void handleToggle(next)}
+          />
+        </div>
       </div>
-      {integration && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-destructive"
-          disabled={isViewOnly || deleting}
-          title={t('settings.integrations.delete.button')}
-          aria-label={t('settings.integrations.delete.button')}
-          onClick={() => setDeleteOpen(true)}
-        >
-          <RiDeleteBinLine className="h-4 w-4" />
-        </Button>
+      {integration?.autoDisabledAt && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {t('settings.integrations.autoDisabled.banner', {
+            time: format(new Date(integration.autoDisabledAt), 'PP'),
+          })}
+        </div>
       )}
 
       <DestructiveConfirmDialog
@@ -202,9 +273,6 @@ const OutboundSection = ({
   const { toast } = useToast();
   const { t } = useTranslation();
   const { invoke: upsertIntegration, loading: saving } = useUpsertIntegrationMutation();
-  // Separate mutation instance so the toggle's pending state doesn't put the
-  // Save button into a spinner (and vice versa).
-  const { invoke: toggleIntegration, loading: toggling } = useUpsertIntegrationMutation();
   const isConfigured = !!integration;
   const canWrite = !isViewOnly && entitled;
 
@@ -250,61 +318,9 @@ const OutboundSection = ({
     }
   };
 
-  // The switch commits immediately (one field, one write) — the capability
-  // card's own control, independent of the form below.
-  const handleToggle = async (next: boolean) => {
-    try {
-      const saved = await toggleIntegration({
-        environmentId,
-        provider: entry.provider,
-        enabled: next,
-      });
-      if (saved) {
-        // The switch commits without a Save click — say so, or the Save
-        // button below teaches users to doubt whether the flip stuck.
-        toast({
-          variant: 'success',
-          title: next
-            ? t('settings.integrations.outbound.enabledToast')
-            : t('settings.integrations.outbound.disabledToast'),
-        });
-      } else {
-        toast({ variant: 'destructive', title: t('settings.integrations.outbound.toggleFailed') });
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    }
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Switch
-          // bg-input track — same treatment as the identity-verification
-          // enforcement switch (the default variant's unchecked track is
-          // bg-background, invisible on this white page).
-          className="shrink-0 data-[state=unchecked]:bg-input"
-          checked={integration?.enabled ?? false}
-          disabled={!canWrite || !isConfigured || toggling}
-          title={
-            isConfigured ? undefined : t('settings.integrations.outbound.toggleConfigureFirst')
-          }
-          onCheckedChange={(next) => void handleToggle(next)}
-        />
-        <span className={cn('text-base font-medium', !isConfigured && 'text-muted-foreground')}>
-          {t('settings.integrations.outbound.toggle', { name: entry.name })}
-        </span>
-        <QuestionTooltip>
-          {t('settings.integrations.outbound.toggleTooltip', { name: entry.name })}
-        </QuestionTooltip>
-      </div>
-      {integration?.autoDisabledAt && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {t('settings.integrations.autoDisabled.banner', {
-            time: format(new Date(integration.autoDisabledAt), 'PP'),
-          })}
-        </div>
-      )}
+      <CardHeading title={t('settings.integrations.outbound.settingsTitle')} />
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="max-w-xl space-y-4">
           <FormField
@@ -609,7 +625,12 @@ export const IntegrationDetail = () => {
             {t('settings.integrations.downgraded.banner')}
           </div>
         )}
-        <IdentitySection entry={entry} integration={integration} />
+        <IdentitySection
+          entry={entry}
+          integration={integration}
+          environmentId={environment?.id ?? ''}
+          entitled={entitled}
+        />
       </SettingsCard>
 
       <SettingsCard>

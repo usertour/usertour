@@ -1525,9 +1525,10 @@ const translations = {
       outbound: {
         toggle: 'Stream events from Usertour to {{name}}',
         toggleConfigureFirst: 'Save the configuration below first to enable streaming.',
-        toggleTooltip:
-          'When enabled, Usertour-generated events are continuously streamed into your {{name}} project.',
+        toggleDescription:
+          'All tracked events are delivered to your {{name}} project as they happen.',
         toggleFailed: 'Failed to update event streaming',
+        settingsTitle: 'Event streaming settings',
         enabledToast: 'Event streaming enabled',
         disabledToast: 'Event streaming disabled',
       },
