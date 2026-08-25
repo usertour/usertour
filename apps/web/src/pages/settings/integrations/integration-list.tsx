@@ -51,7 +51,9 @@ export const SettingsIntegrationList = () => {
           return (
             <li
               key={entry.provider}
-              className="rounded-lg bg-background px-4 py-6 text-sm shadow-sm dark:bg-card"
+              // The standard settings card face (see SettingsCard): soft
+              // shadow + hairline ring, no visible border.
+              className="rounded-xl bg-card px-4 py-6 text-sm shadow-sm shadow-foreground/[0.06] ring-1 ring-foreground/[0.03] dark:shadow-none"
             >
               <div className="flex items-center justify-between">
                 <img
