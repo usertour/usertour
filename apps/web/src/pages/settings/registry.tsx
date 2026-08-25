@@ -338,9 +338,6 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     capability: Capability.IntegrationRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
-    // Card-grid layout on the muted surface, so the provider cards read as
-    // cards — and the list matches the detail routes, which are muted anyway.
-    surface: 'muted',
     component: lazy(() =>
       import('./integrations').then((module) => ({ default: module.SettingsIntegrationList })),
     ),

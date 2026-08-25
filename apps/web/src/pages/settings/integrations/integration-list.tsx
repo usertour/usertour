@@ -51,9 +51,10 @@ export const SettingsIntegrationList = () => {
           return (
             <li
               key={entry.provider}
-              // The standard settings card face (see SettingsCard): soft
-              // shadow + hairline ring, no visible border.
-              className="rounded-xl bg-card px-4 py-6 text-sm shadow-sm shadow-foreground/[0.06] ring-1 ring-foreground/[0.03] dark:shadow-none"
+              // Bordered card by explicit decision for this catalog grid —
+              // shadows read too faint on the white page; dark additionally
+              // lifts on raised-surface lightness.
+              className="rounded-xl border bg-card px-4 py-6 text-sm dark:bg-surface-raised"
             >
               <div className="flex items-center justify-between">
                 <img
