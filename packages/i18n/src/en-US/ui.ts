@@ -1443,6 +1443,8 @@ const translations = {
         rotateConfirmDescription:
           'The current secret stops working immediately — update your receiver to verify with the new secret.',
         rotateConfirmButton: 'Rotate secret',
+        undecryptable:
+          'The stored secret can no longer be decrypted (the encryption key changed). Rotate to mint a new one.',
       },
       testEvent: {
         button: 'Send test event',
@@ -1520,6 +1522,11 @@ const translations = {
         tooltip:
           '{{count}} consecutive delivery attempts failed — deliveries are held and will be sent after {{time}}. If failures continue, the pause gets longer.',
       },
+      outbound: {
+        toggle: 'Stream events from Usertour to {{name}}',
+        toggleConfigureFirst: 'Save the configuration below first to enable streaming.',
+        toggleFailed: 'Failed to update event streaming',
+      },
       form: {
         // Per-provider credential naming — a generic "API key" would let
         // users paste the wrong credential and silently fail server-side.
@@ -1543,7 +1550,6 @@ const translations = {
         regionLabel: 'Data residency',
         regionUS: 'US (default)',
         regionEU: 'EU',
-        enabled: 'Enabled',
         save: 'Save',
         saved: 'Integration saved',
         saveFailed: 'Failed to save the integration',

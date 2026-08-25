@@ -89,7 +89,6 @@ const buildConfigFormSchema = (isConfigured: boolean) =>
   z.object({
     key: isConfigured ? z.string().max(500) : z.string().trim().min(1, 'keyRequired').max(500),
     region: z.enum(['US', 'EU']),
-    enabled: z.boolean(),
   });
 
 type ConfigFormValues = z.infer<ReturnType<typeof buildConfigFormSchema>>;
@@ -97,7 +96,6 @@ type ConfigFormValues = z.infer<ReturnType<typeof buildConfigFormSchema>>;
 const valuesFromIntegration = (integration: Integration | undefined): ConfigFormValues => ({
   key: '',
   region: integration?.config?.region === 'EU' ? 'EU' : 'US',
-  enabled: integration?.enabled ?? true,
 });
 
 const ConfigSection = ({
@@ -117,6 +115,9 @@ const ConfigSection = ({
   const { t } = useTranslation();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { invoke: upsertIntegration, loading: saving } = useUpsertIntegrationMutation();
+  // Separate mutation instance so the toggle's pending state doesn't put the
+  // Save button into a spinner (and vice versa).
+  const { invoke: toggleIntegration, loading: toggling } = useUpsertIntegrationMutation();
   const { invoke: deleteIntegration, loading: deleting } = useDeleteIntegrationMutation();
   const isConfigured = !!integration;
   const canWrite = !isViewOnly && entitled;
@@ -151,13 +152,29 @@ const ConfigSection = ({
         ...(entry.hasRegion && regionChanged
           ? { config: { region: values.region as IntegrationRegion } }
           : {}),
-        enabled: values.enabled,
       });
       if (saved) {
         form.setValue('key', '');
         toast({ variant: 'success', title: t('settings.integrations.form.saved') });
       } else {
         toast({ variant: 'destructive', title: t('settings.integrations.form.saveFailed') });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
+  // The switch commits immediately (one field, one write) — the capability
+  // model's own control, independent of the key/region form below.
+  const handleToggle = async (next: boolean) => {
+    try {
+      const saved = await toggleIntegration({
+        environmentId,
+        provider: entry.provider,
+        enabled: next,
+      });
+      if (!saved) {
+        toast({ variant: 'destructive', title: t('settings.integrations.outbound.toggleFailed') });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -217,6 +234,23 @@ const ConfigSection = ({
           })}
         </div>
       )}
+      <div className="flex items-center gap-3">
+        <Switch
+          // bg-input track — same treatment as the identity-verification
+          // enforcement switch (the default variant's unchecked track is
+          // bg-background, invisible on this white page).
+          className="shrink-0 data-[state=unchecked]:bg-input"
+          checked={integration?.enabled ?? false}
+          disabled={!canWrite || !isConfigured || toggling}
+          title={
+            isConfigured ? undefined : t('settings.integrations.outbound.toggleConfigureFirst')
+          }
+          onCheckedChange={(next) => void handleToggle(next)}
+        />
+        <span className={cn('text-sm font-medium', !isConfigured && 'text-muted-foreground')}>
+          {t('settings.integrations.outbound.toggle', { name: entry.name })}
+        </span>
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="max-w-xl space-y-4">
           <FormField
@@ -277,25 +311,6 @@ const ConfigSection = ({
               )}
             />
           )}
-
-          <FormField
-            control={form.control}
-            name="enabled"
-            render={({ field }) => (
-              <FormItem className="flex items-center justify-between space-y-0 rounded-md border px-3 py-2.5">
-                <FormLabel className="font-normal">
-                  {t('settings.integrations.form.enabled')}
-                </FormLabel>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    disabled={!canWrite}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
 
           <Button type="submit" disabled={!canWrite || saving}>
             {saving && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}

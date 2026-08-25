@@ -1373,6 +1373,7 @@ const translations = {
         rotateConfirmTitle: '确认轮换签名密钥?',
         rotateConfirmDescription: '当前密钥将立即失效 —— 请同步更新您接收端的校验密钥。',
         rotateConfirmButton: '轮换密钥',
+        undecryptable: '已存密钥无法解密(加密密钥已更换)。请轮换生成新密钥。',
       },
       testEvent: {
         button: '发送测试事件',
@@ -1448,6 +1449,11 @@ const translations = {
         tooltip:
           '连续 {{count}} 次投递失败 — 投递已暂缓,将在 {{time}} 后继续。若持续失败,暂停时间会变长。',
       },
+      outbound: {
+        toggle: '将 Usertour 事件推送到 {{name}}',
+        toggleConfigureFirst: '先在下方保存配置,才能开启推送。',
+        toggleFailed: '更新事件推送状态失败',
+      },
       form: {
         keyLabels: {
           amplitude: 'API key',
@@ -1469,7 +1475,6 @@ const translations = {
         regionLabel: '数据驻留区域',
         regionUS: 'US(默认)',
         regionEU: 'EU',
-        enabled: '启用',
         save: '保存',
         saved: '集成已保存',
         saveFailed: '保存集成失败',
