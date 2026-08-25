@@ -1525,7 +1525,11 @@ const translations = {
       outbound: {
         toggle: 'Stream events from Usertour to {{name}}',
         toggleConfigureFirst: 'Save the configuration below first to enable streaming.',
+        toggleTooltip:
+          'When enabled, Usertour-generated events are continuously streamed into your {{name}} project.',
         toggleFailed: 'Failed to update event streaming',
+        enabledToast: 'Event streaming enabled',
+        disabledToast: 'Event streaming disabled',
       },
       form: {
         // Per-provider credential naming — a generic "API key" would let
@@ -1544,8 +1548,7 @@ const translations = {
           posthog: 'Paste your PostHog project API key',
           segment: 'Paste your Segment write key',
         },
-        keyConfiguredHint:
-          'A key ending in "{{tail}}" is configured. Enter a new value to replace it — the stored key is never shown.',
+        keyConfiguredHint: 'Leave blank to keep the stored key.',
         keyRequired: 'Enter the key to connect this integration.',
         regionLabel: 'Data residency',
         regionUS: 'US (default)',

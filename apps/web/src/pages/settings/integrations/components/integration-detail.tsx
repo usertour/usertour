@@ -28,6 +28,7 @@ import {
   FormLabel,
   Input,
   LoadingButton,
+  QuestionTooltip,
   Select,
   SelectContent,
   SelectItem,
@@ -98,7 +99,92 @@ const valuesFromIntegration = (integration: Integration | undefined): ConfigForm
   region: integration?.config?.region === 'EU' ? 'EU' : 'US',
 });
 
-const ConfigSection = ({
+/**
+ * Identity card: who this provider is — logo, name, live status, the removal
+ * action, and (once the docs exist) the provider guide link. Mirrors the
+ * capability-card layout: identity up top, one card per capability below.
+ */
+const IdentitySection = ({
+  entry,
+  integration,
+}: {
+  entry: IntegrationCatalogEntry;
+  integration: Integration | undefined;
+}) => {
+  const { isViewOnly, project } = useAppContext();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const { invoke: deleteIntegration, loading: deleting } = useDeleteIntegrationMutation();
+
+  const handleDelete = async () => {
+    if (!integration) {
+      return;
+    }
+    try {
+      const removed = await deleteIntegration(integration.id);
+      if (removed) {
+        toast({ variant: 'success', title: t('settings.integrations.delete.success') });
+        navigate(`/project/${project?.id}/settings/integrations`);
+      } else {
+        toast({ variant: 'destructive', title: t('settings.integrations.delete.failure') });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-4">
+        <img
+          className="h-12 w-12 rounded-lg border border-accent-light object-cover"
+          src={entry.imagePath}
+          alt={t('settings.integrations.catalog.logoAlt', { name: entry.name })}
+        />
+        <div>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-medium tracking-tight">{entry.name}</h3>
+            <IntegrationStatusBadge integration={integration} />
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t(`settings.integrations.catalog.descriptions.${entry.provider}`)}
+          </p>
+        </div>
+      </div>
+      {integration && (
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-destructive hover:text-destructive"
+          disabled={isViewOnly || deleting}
+          onClick={() => setDeleteOpen(true)}
+        >
+          {t('settings.integrations.delete.button')}
+        </Button>
+      )}
+
+      <DestructiveConfirmDialog
+        title={t('settings.integrations.delete.confirmTitle')}
+        description={t('settings.integrations.delete.confirmDescription', { name: entry.name })}
+        confirmLabel={t('settings.integrations.delete.confirmButton')}
+        cancelLabel={t('settings.common.cancel')}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
+    </div>
+  );
+};
+
+/**
+ * Outbound capability card: the streaming switch (commits immediately) and
+ * the credential/region form (explicit Save). The inbound cohort-sync card
+ * will sit beside this one as a sibling capability.
+ */
+const OutboundSection = ({
   entry,
   integration,
   environmentId,
@@ -109,16 +195,13 @@ const ConfigSection = ({
   environmentId: string;
   entitled: boolean;
 }) => {
-  const { isViewOnly, project } = useAppContext();
-  const navigate = useNavigate();
+  const { isViewOnly } = useAppContext();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const { invoke: upsertIntegration, loading: saving } = useUpsertIntegrationMutation();
   // Separate mutation instance so the toggle's pending state doesn't put the
   // Save button into a spinner (and vice versa).
   const { invoke: toggleIntegration, loading: toggling } = useUpsertIntegrationMutation();
-  const { invoke: deleteIntegration, loading: deleting } = useDeleteIntegrationMutation();
   const isConfigured = !!integration;
   const canWrite = !isViewOnly && entitled;
 
@@ -165,7 +248,7 @@ const ConfigSection = ({
   };
 
   // The switch commits immediately (one field, one write) — the capability
-  // model's own control, independent of the key/region form below.
+  // card's own control, independent of the form below.
   const handleToggle = async (next: boolean) => {
     try {
       const saved = await toggleIntegration({
@@ -173,25 +256,17 @@ const ConfigSection = ({
         provider: entry.provider,
         enabled: next,
       });
-      if (!saved) {
-        toast({ variant: 'destructive', title: t('settings.integrations.outbound.toggleFailed') });
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: getErrorMessage(error) });
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!integration) {
-      return;
-    }
-    try {
-      const removed = await deleteIntegration(integration.id);
-      if (removed) {
-        toast({ variant: 'success', title: t('settings.integrations.delete.success') });
-        navigate(`/project/${project?.id}/settings/integrations`);
+      if (saved) {
+        // The switch commits without a Save click — say so, or the Save
+        // button below teaches users to doubt whether the flip stuck.
+        toast({
+          variant: 'success',
+          title: next
+            ? t('settings.integrations.outbound.enabledToast')
+            : t('settings.integrations.outbound.disabledToast'),
+        });
       } else {
-        toast({ variant: 'destructive', title: t('settings.integrations.delete.failure') });
+        toast({ variant: 'destructive', title: t('settings.integrations.outbound.toggleFailed') });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -200,40 +275,6 @@ const ConfigSection = ({
 
   return (
     <div className="space-y-6">
-      <CardHeading
-        title={
-          <>
-            <img
-              className="h-8 w-8 rounded-lg border border-accent-light object-cover"
-              src={entry.imagePath}
-              alt={t('settings.integrations.catalog.logoAlt', { name: entry.name })}
-            />
-            {entry.name}
-            <IntegrationStatusBadge integration={integration} />
-          </>
-        }
-        description={t(`settings.integrations.catalog.descriptions.${entry.provider}`)}
-        actions={
-          isConfigured ? (
-            <Button
-              type="button"
-              variant="ghost"
-              className="text-destructive hover:text-destructive"
-              disabled={isViewOnly || deleting}
-              onClick={() => setDeleteOpen(true)}
-            >
-              {t('settings.integrations.delete.button')}
-            </Button>
-          ) : undefined
-        }
-      />
-      {integration?.autoDisabledAt && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {t('settings.integrations.autoDisabled.banner', {
-            time: format(new Date(integration.autoDisabledAt), 'PP'),
-          })}
-        </div>
-      )}
       <div className="flex items-center gap-3">
         <Switch
           // bg-input track — same treatment as the identity-verification
@@ -247,10 +288,20 @@ const ConfigSection = ({
           }
           onCheckedChange={(next) => void handleToggle(next)}
         />
-        <span className={cn('text-sm font-medium', !isConfigured && 'text-muted-foreground')}>
+        <span className={cn('text-base font-medium', !isConfigured && 'text-muted-foreground')}>
           {t('settings.integrations.outbound.toggle', { name: entry.name })}
         </span>
+        <QuestionTooltip>
+          {t('settings.integrations.outbound.toggleTooltip', { name: entry.name })}
+        </QuestionTooltip>
       </div>
+      {integration?.autoDisabledAt && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {t('settings.integrations.autoDisabled.banner', {
+            time: format(new Date(integration.autoDisabledAt), 'PP'),
+          })}
+        </div>
+      )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="max-w-xl space-y-4">
           <FormField
@@ -277,9 +328,7 @@ const ConfigSection = ({
                 ) : (
                   isConfigured && (
                     <FormDescription>
-                      {t('settings.integrations.form.keyConfiguredHint', {
-                        tail: integration.keyTail,
-                      })}
+                      {t('settings.integrations.form.keyConfiguredHint')}
                     </FormDescription>
                   )
                 )}
@@ -318,17 +367,6 @@ const ConfigSection = ({
           </Button>
         </form>
       </Form>
-
-      <DestructiveConfirmDialog
-        title={t('settings.integrations.delete.confirmTitle')}
-        description={t('settings.integrations.delete.confirmDescription', { name: entry.name })}
-        confirmLabel={t('settings.integrations.delete.confirmButton')}
-        cancelLabel={t('settings.common.cancel')}
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleDelete}
-        loading={deleting}
-      />
     </div>
   );
 };
@@ -568,7 +606,11 @@ export const IntegrationDetail = () => {
             {t('settings.integrations.downgraded.banner')}
           </div>
         )}
-        <ConfigSection
+        <IdentitySection entry={entry} integration={integration} />
+      </SettingsCard>
+
+      <SettingsCard>
+        <OutboundSection
           entry={entry}
           integration={integration}
           environmentId={environment?.id ?? ''}

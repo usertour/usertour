@@ -1452,7 +1452,10 @@ const translations = {
       outbound: {
         toggle: '将 Usertour 事件推送到 {{name}}',
         toggleConfigureFirst: '先在下方保存配置,才能开启推送。',
+        toggleTooltip: '开启后,Usertour 产生的事件会持续推送到你的 {{name}} 项目。',
         toggleFailed: '更新事件推送状态失败',
+        enabledToast: '事件推送已开启',
+        disabledToast: '事件推送已关闭',
       },
       form: {
         keyLabels: {
@@ -1469,8 +1472,7 @@ const translations = {
           posthog: '粘贴你的 PostHog project API key',
           segment: '粘贴你的 Segment write key',
         },
-        keyConfiguredHint:
-          '已配置一个以“{{tail}}”结尾的密钥。输入新值即可替换 — 已存密钥不再显示。',
+        keyConfiguredHint: '留空则保留现有密钥。',
         keyRequired: '请输入密钥以连接该集成。',
         regionLabel: '数据驻留区域',
         regionUS: 'US(默认)',
