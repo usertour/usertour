@@ -16,7 +16,7 @@ import {
   useSendIntegrationTestEventMutation,
   useUpsertIntegrationMutation,
 } from '@usertour/hooks';
-import { RiRefreshLine, RiSendPlaneLine, SpinnerIcon } from '@usertour/icons';
+import { RiDeleteBinLine, RiRefreshLine, RiSendPlaneLine, SpinnerIcon } from '@usertour/icons';
 import {
   Button,
   DestructiveConfirmDialog,
@@ -157,11 +157,14 @@ const IdentitySection = ({
         <Button
           type="button"
           variant="ghost"
-          className="text-destructive hover:text-destructive"
+          size="icon"
+          className="text-muted-foreground hover:text-destructive"
           disabled={isViewOnly || deleting}
+          title={t('settings.integrations.delete.button')}
+          aria-label={t('settings.integrations.delete.button')}
           onClick={() => setDeleteOpen(true)}
         >
-          {t('settings.integrations.delete.button')}
+          <RiDeleteBinLine className="h-4 w-4" />
         </Button>
       )}
 
