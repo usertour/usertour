@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import type { WebhookMessage } from '@usertour/hooks';
-import { RiFileCopyLine, SpinnerIcon } from '@usertour/icons';
+import type { OutboundMessage } from '@usertour/hooks';
+import { RiFileCopyLine } from '@usertour/icons';
 import {
   Badge,
   Button,
@@ -17,21 +17,22 @@ import {
   TableRow,
 } from '@usertour/ui';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
-import { WebhookMessageStatusBadge } from './webhook-message-status-badge';
+import { OutboundMessageStatusBadge } from './outbound-message-status-badge';
 
-export interface WebhookMessageDialogProps {
+export interface OutboundMessageDialogProps {
   open: boolean;
   /**
    * The message to show. Keep it set while `open` is false so the content
    * stays mounted through the close animation — clearing it on close would
    * collapse the dialog to its header mid-fade.
    */
-  message: WebhookMessage | null;
+  message: OutboundMessage | null;
   onClose: () => void;
-  onResend: (message: WebhookMessage) => void;
-  resending: boolean;
-  /** Resend needs an enabled endpoint and manage rights; disabled otherwise. */
-  canResend: boolean;
+  /**
+   * Transport-specific action bar pinned below the scroll region (the webhook
+   * surface mounts its Resend control here); absent = no footer.
+   */
+  footer?: React.ReactNode;
 }
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -42,12 +43,12 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 );
 
 /**
- * Row-detail dialog for one logged message: what was sent (payload as sent,
- * copyable) and every attempt with status / duration / response excerpt /
- * error. Resend re-queues the same payload under the same message id.
+ * Row-detail dialog for one logged outbound message (either transport): what
+ * was recorded (payload, copyable) and every attempt with status / duration /
+ * response excerpt / error.
  */
-export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
-  const { open, message, onClose, onResend, resending, canResend } = props;
+export const OutboundMessageDialog = (props: OutboundMessageDialogProps) => {
+  const { open, message, onClose, footer } = props;
   const { t } = useTranslation();
   const copy = useCopyWithToast();
   const payloadText = message ? JSON.stringify(message.payload, null, 2) : '';
@@ -66,23 +67,23 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
       <DialogContent className="flex max-h-[85vh] max-w-3xl flex-col" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {t('settings.webhooks.message.title')}
-            {message && <WebhookMessageStatusBadge status={message.status} />}
+            {t('settings.outbound.message.title')}
+            {message && <OutboundMessageStatusBadge status={message.status} />}
           </DialogTitle>
         </DialogHeader>
         {message && (
           <div className="flex min-h-0 min-w-0 flex-col gap-5 overflow-y-auto">
             <div className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-3">
-              <Field label={t('settings.webhooks.message.id')}>
+              <Field label={t('settings.outbound.message.id')}>
                 <span className="break-all font-mono text-xs">{message.id}</span>
               </Field>
-              <Field label={t('settings.webhooks.deliveries.columns.topic')}>
+              <Field label={t('settings.outbound.columns.topic')}>
                 <span className="break-all font-mono text-xs">{message.topic}</span>
               </Field>
-              <Field label={t('settings.webhooks.message.createdAt')}>
+              <Field label={t('settings.outbound.message.createdAt')}>
                 {format(new Date(message.createdAt), 'PP pp')}
               </Field>
-              <Field label={t('settings.webhooks.message.attempts')}>
+              <Field label={t('settings.outbound.message.attempts')}>
                 {message.deliveries.length}
               </Field>
             </div>
@@ -90,17 +91,17 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
             <div className="flex min-w-0 flex-col gap-1">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
-                  {t('settings.webhooks.message.payload')}
+                  {t('settings.outbound.message.payload')}
                 </span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="h-7 gap-1.5 px-2 text-xs"
-                  onClick={() => copy(payloadText, t('settings.webhooks.message.payloadCopied'))}
+                  onClick={() => copy(payloadText, t('settings.outbound.message.payloadCopied'))}
                 >
                   <RiFileCopyLine className="h-3.5 w-3.5" />
-                  {t('settings.webhooks.message.copyPayload')}
+                  {t('settings.outbound.message.copyPayload')}
                 </Button>
               </div>
               <pre className="max-w-full whitespace-pre-wrap break-all rounded-md bg-muted p-3 font-mono text-xs">
@@ -109,28 +110,24 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
             </div>
 
             <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-sm font-medium">{t('settings.webhooks.message.attempts')}</span>
+              <span className="text-sm font-medium">{t('settings.outbound.message.attempts')}</span>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
-                    <TableHead className="w-44">
-                      {t('settings.webhooks.deliveries.columns.time')}
-                    </TableHead>
+                    <TableHead className="w-44">{t('settings.outbound.columns.time')}</TableHead>
+                    <TableHead className="w-24">{t('settings.outbound.columns.status')}</TableHead>
                     <TableHead className="w-24">
-                      {t('settings.webhooks.deliveries.columns.status')}
+                      {t('settings.outbound.columns.duration')}
                     </TableHead>
-                    <TableHead className="w-24">
-                      {t('settings.webhooks.deliveries.columns.duration')}
-                    </TableHead>
-                    <TableHead>{t('settings.webhooks.message.response')}</TableHead>
+                    <TableHead>{t('settings.outbound.message.response')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {message.deliveries.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="h-16 text-center text-muted-foreground">
-                        {t('settings.webhooks.message.noAttempts')}
+                        {t('settings.outbound.message.noAttempts')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -143,11 +140,11 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
                       <TableCell>
                         {delivery.success ? (
                           <Badge variant="success">
-                            {delivery.responseStatus ?? t('settings.webhooks.responseOk')}
+                            {delivery.responseStatus ?? t('settings.outbound.responseOk')}
                           </Badge>
                         ) : (
                           <Badge variant="destructive">
-                            {delivery.responseStatus ?? t('settings.webhooks.responseError')}
+                            {delivery.responseStatus ?? t('settings.outbound.responseError')}
                           </Badge>
                         )}
                       </TableCell>
@@ -174,27 +171,14 @@ export const WebhookMessageDialog = (props: WebhookMessageDialogProps) => {
             </div>
           </div>
         )}
-        {message && (
+        {message && footer && (
           // Pinned below the scroll region so the action never scrolls away
           // behind a long payload.
-          <div className="flex shrink-0 items-center justify-between gap-4 border-t pt-4">
-            <p className="text-xs text-muted-foreground">
-              {t('settings.webhooks.message.resendHint')}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!canResend || resending || message.status === 'PENDING'}
-              onClick={() => onResend(message)}
-            >
-              {resending && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
-              {t('settings.webhooks.message.resend')}
-            </Button>
-          </div>
+          <div className="shrink-0 border-t pt-4">{footer}</div>
         )}
       </DialogContent>
     </Dialog>
   );
 };
 
-WebhookMessageDialog.displayName = 'WebhookMessageDialog';
+OutboundMessageDialog.displayName = 'OutboundMessageDialog';

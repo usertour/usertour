@@ -1,181 +1,91 @@
 import { gql } from '@apollo/client';
 
+// The Integration type has NO key field (the API never returns the credential);
+// `keyTail` is the display stand-in.
 export const ListIntegrations = gql`
   query ListIntegrations($environmentId: String!) {
     listIntegrations(environmentId: $environmentId) {
       id
-      provider
-      key
-      config
-      enabled
-      accessToken
-      createdAt
-      updatedAt  
-    }
-  }
-`;
-
-export const UpdateIntegration = gql`
-  mutation UpdateIntegration($environmentId: String!, $provider: String!, $input: UpdateIntegrationInput!) {
-    updateIntegration(environmentId: $environmentId, provider: $provider, input: $input) {
-      id
-      provider
-      key
-      config
-      enabled
-      accessToken
       createdAt
       updatedAt
+      environmentId
+      provider
+      keyTail
+      config
+      enabled
+      consecutiveFailures
+      cooldownUntil
+      autoDisabledAt
     }
   }
 `;
 
-export const GetSalesforceAuthUrl = gql`
-  query GetSalesforceAuthUrl($environmentId: String!, $provider: String!) {
-    getSalesforceAuthUrl(environmentId: $environmentId, provider: $provider)
-  }
-`;
-
-export const GetSalesforceObjectFields = gql`
-  query GetSalesforceObjectFields($integrationId: String!) {
-    getSalesforceObjectFields(integrationId: $integrationId) {
-      standardObjects {
-        name
-        label
-        fields {
-          name
-          label
-          type
-          required
-          unique
-          referenceTo
-          picklistValues {
-            label
-            value
+export const QueryIntegrationMessages = gql`
+  query QueryIntegrationMessages($integrationId: String!, $first: Int, $after: String) {
+    queryIntegrationMessages(integrationId: $integrationId, first: $first, after: $after) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          createdAt
+          updatedAt
+          topic
+          status
+          payload
+          deliveries {
+            id
+            createdAt
+            attempt
+            success
+            responseStatus
+            responseBody
+            error
+            durationMs
           }
         }
       }
-      customObjects {
-        name
-        label
-        fields {
-          name
-          label
-          type
-          required
-          unique
-          referenceTo
-          picklistValues {
-            label
-            value
-          }
-        }
+      pageInfo {
+        endCursor
+        hasNextPage
       }
     }
   }
 `;
 
-export const GetIntegration = gql`
-  query GetIntegration($environmentId: String!, $provider: String!) {
-    getIntegration(environmentId: $environmentId, provider: $provider) {
+// Returns every field the server may change — including the breaker state a
+// key/config change or re-enable resets — so the normalized cache updates list
+// AND detail without a refetch (docs/conventions/apollo-cache-mutations.md).
+export const UpsertIntegration = gql`
+  mutation UpsertIntegration($data: UpsertIntegrationInput!) {
+    upsertIntegration(data: $data) {
       id
+      createdAt
+      updatedAt
+      environmentId
       provider
-      key
+      keyTail
       config
       enabled
-      accessToken
-      integrationOAuth {
-        data
-      }
-      createdAt
-      updatedAt
+      consecutiveFailures
+      cooldownUntil
+      autoDisabledAt
     }
   }
 `;
 
-export const DisconnectIntegration = gql`
-  mutation DisconnectIntegration($environmentId: String!, $provider: String!) {
-    disconnectIntegration(environmentId: $environmentId, provider: $provider) {
+export const DeleteIntegration = gql`
+  mutation DeleteIntegration($data: IntegrationIdInput!) {
+    deleteIntegration(data: $data) {
       id
     }
   }
 `;
 
-export const GetIntegrationObjectMappings = gql`
-  query GetIntegrationObjectMappings($integrationId: String!) {
-    getIntegrationObjectMappings(integrationId: $integrationId) {
+export const SendIntegrationTestEvent = gql`
+  mutation SendIntegrationTestEvent($data: IntegrationIdInput!) {
+    sendIntegrationTestEvent(data: $data) {
       id
-      sourceObjectType
-      destinationObjectType
-      enabled
-      isSyncing
-      lastSyncedAt
-      settings
-      integrationId
-      createdAt
-      updatedAt
     }
-  }
-`;
-
-export const GetIntegrationObjectMapping = gql`
-  query GetIntegrationObjectMapping($id: String!) {
-    getIntegrationObjectMapping(id: $id) {
-      id
-      sourceObjectType
-      destinationObjectType
-      enabled
-      isSyncing
-      lastSyncedAt
-      settings
-      integrationId
-      integration {
-        id
-        provider
-        enabled
-      }
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const UpsertIntegrationObjectMapping = gql`
-  mutation UpsertIntegrationObjectMapping($integrationId: String!, $input: CreateIntegrationObjectMappingInput!) {
-    upsertIntegrationObjectMapping(integrationId: $integrationId, input: $input) {
-      id
-      sourceObjectType
-      destinationObjectType
-      enabled
-      isSyncing
-      lastSyncedAt
-      settings
-      integrationId
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const UpdateIntegrationObjectMapping = gql`
-  mutation UpdateIntegrationObjectMapping($id: String!, $input: UpdateIntegrationObjectMappingInput!) {
-    updateIntegrationObjectMapping(id: $id, input: $input) {
-      id
-      sourceObjectType
-      destinationObjectType
-      enabled
-      isSyncing
-      lastSyncedAt
-      settings
-      integrationId
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const DeleteIntegrationObjectMapping = gql`
-  mutation DeleteIntegrationObjectMapping($id: String!) {
-    deleteIntegrationObjectMapping(id: $id)
   }
 `;

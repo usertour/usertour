@@ -539,7 +539,7 @@ const ComparisonTable = ({
         },
         {
           name: t('settings.billing.comparison.rows.integrations'),
-          values: [true, true, true, true],
+          values: matrixRow('integrations', currentPlanType, overridePlan),
         },
         {
           name: t('settings.billing.comparison.rows.webhooks'),

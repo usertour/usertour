@@ -338,15 +338,12 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     capability: Capability.IntegrationRead,
     group: 'general',
     mode: [SettingsMode.CLOUD, SettingsMode.SELF_HOSTED],
-    hideFromSidebar: true,
     component: lazy(() =>
       import('./integrations').then((module) => ({ default: module.SettingsIntegrationList })),
     ),
     detail: {
       component: lazy(() =>
-        import('./integrations/components/integration-detail').then((module) => ({
-          default: module.IntegrationDetail,
-        })),
+        import('./integrations').then((module) => ({ default: module.IntegrationDetail })),
       ),
     },
   },

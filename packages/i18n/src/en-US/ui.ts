@@ -844,7 +844,7 @@ const translations = {
           companyProfiles: 'Company profiles and events',
           localization: 'Localization',
           aiTranslation: 'AI machine translation',
-          integrations: 'Integrations (coming soon)',
+          integrations: 'Integrations',
           webhooks: 'Webhooks',
           alerting: 'Alerting (coming soon)',
           sso: 'Single Sign-On (SSO)',
@@ -1299,6 +1299,36 @@ const translations = {
         anonymousNote: '{{count}} anonymous (exempt from signing)',
       },
     },
+    // Shared read-side vocabulary of the outbound delivery ledger — used by
+    // both the webhook and the integration message logs.
+    outbound: {
+      status: {
+        PENDING: 'Pending',
+        DELIVERED: 'Delivered',
+        FAILED: 'Failed',
+      },
+      columns: {
+        time: 'Time',
+        topic: 'Topic',
+        status: 'Status',
+        attempts: 'Attempts',
+        lastResponse: 'Last response',
+        duration: 'Duration',
+      },
+      message: {
+        title: 'Message',
+        id: 'Message ID',
+        createdAt: 'Created',
+        attempts: 'Attempts',
+        payload: 'Payload',
+        copyPayload: 'Copy',
+        payloadCopied: 'Payload copied to clipboard',
+        response: 'Response / error',
+        noAttempts: 'Not attempted yet.',
+      },
+      responseOk: 'OK',
+      responseError: 'Error',
+    },
     webhooks: {
       title: 'Webhooks for {{environment}}',
       headerBody:
@@ -1334,8 +1364,6 @@ const translations = {
           '{{count}} consecutive delivery attempts failed — deliveries are held and will be sent after {{time}}. If failures continue, the pause gets longer.',
       },
       statusDisabled: 'Disabled',
-      responseOk: 'OK',
-      responseError: 'Error',
       detailsMenuItem: 'View details',
       editMenuItem: 'Edit webhook',
       deleteMenuItem: 'Delete webhook',
@@ -1435,35 +1463,13 @@ const translations = {
         empty: 'No messages yet.',
         loadMore: 'Load more',
         refresh: 'Refresh',
-        columns: {
-          time: 'Time',
-          topic: 'Topic',
-          status: 'Status',
-          attempts: 'Attempts',
-          lastResponse: 'Last response',
-          duration: 'Duration',
-        },
       },
       message: {
-        title: 'Message',
-        id: 'Message ID',
-        createdAt: 'Created',
-        attempts: 'Attempts',
-        payload: 'Payload',
-        copyPayload: 'Copy',
-        payloadCopied: 'Payload copied to clipboard',
-        response: 'Response / error',
-        noAttempts: 'Not attempted yet.',
         resend: 'Resend',
         resendHint:
           'Same payload, same message ID, sent once more — receivers should treat it as a retry.',
         resendQueued: 'Message re-queued — check its attempts in a moment.',
         resendFailed: 'Failed to re-send the message',
-        status: {
-          PENDING: 'Pending',
-          DELIVERED: 'Delivered',
-          FAILED: 'Failed',
-        },
       },
       locked: {
         title: 'Webhooks are available on paid plans',
@@ -1474,142 +1480,96 @@ const translations = {
     },
     integrations: {
       title: 'Integrations for {{environment}}',
-      headerBody:
-        'With integrations, you can stream Usertour-generated events to other external providers.',
-      headerEnvironmentNote:
-        'Note that integrations are tied to a single environment - you are currently looking at {{environment}} environment.',
-      headerDocs: 'Read the Integrations documentation.',
-      list: {
-        connect: 'Connect',
+      headerBody: 'Stream Usertour events into your analytics tools as they happen.',
+      notFound: 'This integration does not exist.',
+      downgraded: {
+        banner:
+          'Integrations are not included in your current plan — event delivery is paused. You can still review and remove existing configurations; upgrade to resume delivery.',
+      },
+      locked: {
+        title: 'Integrations are available on paid plans',
+        description:
+          'Send every Usertour event to Amplitude, Heap, Mixpanel, PostHog, or Segment the moment it happens — starting on the Starter plan.',
+        upgrade: 'Upgrade plan',
+      },
+      catalog: {
         manage: 'Manage',
-        connected: 'Connected',
+        connect: 'Connect',
+        logoAlt: '{{name}} logo',
+        descriptions: {
+          amplitude: 'Send Usertour events to Amplitude.',
+          heap: 'Send Usertour events to Heap.',
+          mixpanel: 'Send Usertour events to Mixpanel.',
+          posthog: 'Send Usertour events to PostHog.',
+          segment: 'Send Usertour events to Segment.',
+        },
       },
-      enableFailedToast: 'Failed to enable integration',
-      disableFailedToast: 'Failed to disable integration',
-      providerCard: {
-        regionDefaultUS: 'Default (US)',
-        usertourLogoAlt: 'Usertour logo',
-        // {{provider}} resolves to the provider's display name
-        // (e.g. "Mixpanel", "Heap"). The headline is the toggle label
-        // shown next to the on/off switch.
-        headline: 'Stream events from Usertour to {{provider}}',
+      status: {
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        notConnected: 'Not connected',
+      },
+      autoDisabled: {
+        badge: 'Auto-disabled',
+        tooltip: 'Disabled by Usertour on {{time}} after continuous delivery failures.',
+        banner:
+          'Usertour disabled this integration on {{time}} after a week of continuous delivery failures. The most common cause is a revoked or rotated key — update it, then re-enable the integration.',
+      },
+      cooldown: {
+        badge: 'Cooling down',
         tooltip:
-          'When enabled, Usertour-generated events will be continuously streamed into your {{provider}} project.',
-        configureSettings: 'Configure event streaming settings',
-        apiKeyLabel: 'API Key:',
-        apiKeyPlaceholder: 'Type API Key here',
-        regionLabel: 'Region:',
+          '{{count}} consecutive delivery attempts failed — deliveries are held and will be sent after {{time}}. If failures continue, the pause gets longer.',
+      },
+      form: {
+        // Per-provider credential naming — a generic "API key" would let
+        // users paste the wrong credential and silently fail server-side.
+        keyLabels: {
+          amplitude: 'API key',
+          heap: 'App ID',
+          mixpanel: 'Project token',
+          posthog: 'Project API key',
+          segment: 'Write key',
+        },
+        keyPlaceholders: {
+          amplitude: 'Paste your Amplitude API key',
+          heap: 'Paste your Heap App ID',
+          mixpanel: 'Paste your Mixpanel project token',
+          posthog: 'Paste your PostHog project API key',
+          segment: 'Paste your Segment write key',
+        },
+        keyConfiguredHint:
+          'A key ending in "{{tail}}" is configured. Enter a new value to replace it — the stored key is never shown.',
+        keyRequired: 'Enter the key to connect this integration.',
+        regionLabel: 'Data residency',
+        regionUS: 'US (default)',
+        regionEU: 'EU',
+        enabled: 'Enabled',
         save: 'Save',
-        savedToast: 'Settings saved successfully',
-        saveFailedToast: 'Failed to save settings',
-        // Per-provider overrides for the key input label / placeholder.
-        // PostHog and HubSpot disambiguate which credential type to paste
-        // (PostHog has Personal vs Project API keys; HubSpot's private-app
-        // flow uses access tokens, not API keys); generic "API Key" here
-        // would let users paste the wrong credential and silently fail
-        // the data sync server-side.
-        heapKeyLabel: 'Heap App ID:',
-        heapKeyPlaceholder: 'Type Heap App ID here',
-        mixpanelKeyLabel: 'Project Token:',
-        mixpanelKeyPlaceholder: 'Type Project Token here',
-        segmentKeyLabel: 'Write Key:',
-        segmentKeyPlaceholder: 'Type Write Key here',
-        posthogKeyLabel: 'Personal API key:',
-        posthogKeyPlaceholder: 'Type Personal API key here',
-        hubspotKeyLabel: 'Private App access token:',
-        hubspotKeyPlaceholder: 'Type Private App access token here',
+        saved: 'Integration saved',
+        saveFailed: 'Failed to save the integration',
       },
-      providerHeaderReadGuide: 'Read the {{provider}} guide',
-      salesforce: {
-        connectTitle: 'Connect {{name}}',
-        connectBody:
-          'Connect your Salesforce account to Usertour to enable real-time synchronization. Once connected, you can sync Salesforce fields with Usertour, stream Usertour events into Salesforce as Timeline Events, and use these events to trigger automated workflows.',
-        connectButton: 'Connect to Salesforce',
-        loading: 'Loading...',
-        authUrlFailedToast: 'Failed to get Salesforce auth URL',
-        // Salesforce connection card on the integration detail page.
-        connectionTitle: '{{name}} connection',
-        connectedAs: 'Connected as <strong>{{email}}</strong> at <strong>{{organization}}</strong>',
-        reconnect: 'Reconnect',
-        disconnect: 'Disconnect',
-        disconnectSuccessToast: 'Successfully disconnected from Salesforce',
-        disconnectFailureToast: 'Failed to disconnect from Salesforce',
-        existingMappingsTitle: 'Existing Object Mappings',
-        newMappingCta: 'Set up a new mapping between Salesforce and Usertour objects',
+      delete: {
+        button: 'Remove',
+        confirmTitle: 'Remove this integration?',
+        confirmDescription:
+          'Event delivery to {{name}} stops immediately; the stored key and the message log are deleted.',
+        confirmButton: 'Remove integration',
+        success: 'Integration removed',
+        failure: 'Failed to remove the integration',
       },
-      objectMapping: {
-        // Shared section labels used by both the editable panel and the
-        // read-only summary.
-        matchBy: 'Match objects by',
-        sourceToTargetTitle: 'Fields to sync from source to target',
-        targetToSourceTitle: 'Fields to sync from target to source',
-        // Inline switch label with two highlighted spans. `<user>` slot
-        // wraps "User events" (Usertour side), `<contact>` wraps "Contact
-        // activity" (Salesforce side).
-        streamSwitch: 'Stream <user>User events</user> → <contact>Contact activity</contact>',
-        fieldPlaceholder: 'Select field',
-        addButton: 'Add',
-        newBadge: 'New',
-        searchPlaceholder: 'Search {{kind}}...',
-        selectEmpty: 'No items found.',
-        selectCreateAttribute: 'Create new attribute',
-        // Salesforce + Usertour object names rendered in the picker.
-        // Keys match the technical `name` field; missing keys fall back
-        // to the raw name (e.g. for custom objects).
-        objectLabels: {
-          salesforce: {
-            Contact: 'Contact',
-            Account: 'Account',
-            Lead: 'Lead',
-            Opportunity: 'Opportunity',
-          },
-          usertour: {
-            User: 'User',
-            Company: 'Company',
-          },
-        },
-        dialog: {
-          salesforceObjectLabel: 'Salesforce Object',
-          usertourObjectLabel: 'Usertour Object',
-          salesforceObjectPlaceholder: 'Select Salesforce object',
-          usertourObjectPlaceholder: 'Select Usertour object',
-          titleSelectObjects: 'Select objects',
-          titleEditMapping: 'Edit object mapping',
-          descriptionSelectObjects:
-            'Choose which Salesforce object to map to which Usertour object.',
-          descriptionEditMapping: 'Modify the mapping between Salesforce and Usertour objects.',
-          descriptionEditFields: 'Modify the field mappings and settings.',
-          cancelButton: 'Cancel',
-          continueButton: 'Continue',
-          backButton: 'Back',
-          saveMappingButton: 'Save mapping',
-          updateMappingButton: 'Update mapping',
-          bothObjectsRequiredToast: 'Please select both Salesforce and Usertour objects',
-          missingDataToast: 'Missing integration or mapping data',
-          saveSuccessToastCreate: 'Object mapping created successfully',
-          saveSuccessToastUpdate: 'Object mapping updated successfully',
-          saveFailureToastCreate: 'Failed to create object mapping',
-          saveFailureToastUpdate: 'Failed to update object mapping',
-        },
-        readonly: {
-          editAction: 'Edit',
-          deleteAction: 'Delete',
-          deleteDialogTitle: 'Delete Object Mapping',
-          deleteDialogDescription:
-            'Are you sure you want to delete the mapping between <strong>{{source}}</strong> and <strong>{{target}}</strong>? This action cannot be undone.',
-          deleteSuccessToast: 'Object mapping deleted successfully',
-          deleteFailureToast: 'Failed to delete object mapping',
-          lastSynced: 'Last synced: {{date}}',
-        },
+      testEvent: {
+        button: 'Send test event',
+        sent: 'Test event queued — check the message log below.',
+        failed: 'Failed to queue the test event',
+        disabledHint: 'Enable the integration to send a test event.',
       },
-      mixpanelCohorts: {
-        toggleLabel: 'Cohort sync from Mixpanel',
-        configureSettings: 'Configure cohort synchronization settings',
-        webhookUrlLabel: 'Webhook URL',
-        webhookCopiedToast: 'Webhook URL copied to clipboard',
-        userIdPropertyLabel: 'Mixpanel User ID Property (for cohort sync):',
-        userIdPropertyPlaceholder: 'Type Mixpanel User ID Property here',
-        save: 'Save',
+      messages: {
+        title: 'Recent messages',
+        description:
+          'Every event sent to this destination is kept for 30 days with each delivery attempt. Click a row for details.',
+        empty: 'No messages yet.',
+        loadMore: 'Load more',
+        refresh: 'Refresh',
       },
     },
   },

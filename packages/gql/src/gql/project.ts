@@ -20,6 +20,7 @@ export const getProjectConfig = gql`
       ssoOidc
       ssoSaml
       webhooks
+      integrations
       planType
     }
   }

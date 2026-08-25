@@ -53,17 +53,6 @@ import {
   updateProject,
   getProjectLicenseInfo,
   updateProjectLicense,
-  ListIntegrations,
-  UpdateIntegration,
-  GetSalesforceAuthUrl,
-  GetIntegration,
-  DisconnectIntegration,
-  GetIntegrationObjectMappings,
-  GetIntegrationObjectMapping,
-  UpsertIntegrationObjectMapping,
-  UpdateIntegrationObjectMapping,
-  DeleteIntegrationObjectMapping,
-  GetSalesforceObjectFields,
   getContent,
   getUserInfo,
   createContentVersion,
@@ -114,9 +103,6 @@ import type {
   Environment,
   Subscription,
   GlobalConfig,
-  UpdateIntegrationInput,
-  IntegrationModel,
-  SalesforceObjectFields,
   SessionQuery,
   ColumnSetting,
   RulesCondition,
@@ -621,28 +607,6 @@ export const useUpdateProjectMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useListIntegrationsQuery = (environmentId: string, options?: QueryHookOptions) => {
-  const { data, loading, error, refetch } = useQuery(ListIntegrations, {
-    variables: { environmentId },
-    ...options,
-  });
-  return { data: data?.listIntegrations, loading, error, refetch };
-};
-
-export const useUpdateIntegrationMutation = () => {
-  const [mutation, { loading, error }] = useMutation(UpdateIntegration);
-  const invoke = useCallback(
-    async (environmentId: string, provider: string, input: UpdateIntegrationInput) => {
-      const response = await mutation({
-        variables: { environmentId, provider, input },
-      });
-      return response.data?.updateIntegration;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
 // Builder related hooks
 export const useGetContentLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(getContent);
@@ -652,47 +616,6 @@ export const useGetContentLazyQuery = () => {
       return response.data?.getContent;
     },
     [query],
-  );
-  return { invoke, loading, error };
-};
-
-export const useGetSalesforceAuthUrlQuery = (
-  environmentId: string,
-  provider: string,
-  options?: QueryHookOptions,
-) => {
-  const { data, loading, error } = useQuery(GetSalesforceAuthUrl, {
-    variables: { environmentId, provider },
-    ...options,
-  });
-  return { data: data?.getSalesforceAuthUrl, loading, error };
-};
-
-export const useGetIntegrationQuery = (
-  environmentId: string,
-  provider: string,
-  options?: QueryHookOptions,
-) => {
-  const { data, loading, error, refetch } = useQuery(GetIntegration, {
-    variables: { environmentId, provider },
-    ...options,
-  });
-  return {
-    data: data?.getIntegration as IntegrationModel,
-    loading,
-    error,
-    refetch,
-  };
-};
-
-export const useDisconnectIntegrationMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DisconnectIntegration);
-  const invoke = useCallback(
-    async (environmentId: string, provider: string) => {
-      const response = await mutation({ variables: { environmentId, provider } });
-      return response.data?.disconnectIntegration;
-    },
-    [mutation],
   );
   return { invoke, loading, error };
 };
@@ -707,91 +630,6 @@ export const useQueryOembedInfoLazyQuery = () => {
     [query],
   );
   return { invoke, loading, error };
-};
-
-export const useGetIntegrationObjectMappingsQuery = (
-  integrationId: string,
-  options?: QueryHookOptions,
-) => {
-  const { data, loading, error, refetch } = useQuery(GetIntegrationObjectMappings, {
-    variables: { integrationId },
-    ...options,
-  });
-  return { data: data?.getIntegrationObjectMappings, loading, error, refetch };
-};
-
-export const useGetIntegrationObjectMappingQuery = (id: string, options?: QueryHookOptions) => {
-  const { data, loading, error, refetch } = useQuery(GetIntegrationObjectMapping, {
-    variables: { id },
-    ...options,
-  });
-  return { data: data?.getIntegrationObjectMapping, loading, error, refetch };
-};
-
-export const useUpsertIntegrationObjectMappingMutation = () => {
-  const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping);
-  const invoke = useCallback(
-    async (
-      integrationId: string,
-      input: {
-        sourceObjectType: string;
-        destinationObjectType: string;
-        settings?: any;
-        enabled?: boolean;
-      },
-    ) => {
-      const response = await mutation({ variables: { integrationId, input } });
-      return response.data?.upsertIntegrationObjectMapping;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useUpdateIntegrationObjectMappingMutation = () => {
-  const [mutation, { loading, error }] = useMutation(UpdateIntegrationObjectMapping);
-  const invoke = useCallback(
-    async (
-      id: string,
-      input: {
-        settings?: any;
-        enabled?: boolean;
-      },
-    ) => {
-      const response = await mutation({ variables: { id, input } });
-      return response.data?.updateIntegrationObjectMapping;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useDeleteIntegrationObjectMappingMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping);
-  const invoke = useCallback(
-    async (id: string): Promise<boolean> => {
-      const response = await mutation({ variables: { id } });
-      return !!response.data?.deleteIntegrationObjectMapping;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useGetSalesforceObjectFieldsQuery = (
-  integrationId: string,
-  options?: QueryHookOptions,
-) => {
-  const { data, loading, error, refetch } = useQuery(GetSalesforceObjectFields, {
-    variables: { integrationId },
-    ...options,
-  });
-  return {
-    data: data?.getSalesforceObjectFields as SalesforceObjectFields | undefined,
-    loading,
-    error,
-    refetch,
-  };
 };
 
 export const useCreateContentVersionMutation = () => {
@@ -1191,6 +1029,7 @@ export const useGetProjectConfigQuery = (
       ssoOidc: boolean;
       ssoSaml: boolean;
       webhooks: boolean;
+      integrations: boolean;
       planType: string;
     } | null,
     loading,
