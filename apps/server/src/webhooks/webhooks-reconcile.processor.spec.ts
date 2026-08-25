@@ -1,9 +1,9 @@
 import {
   RECONCILE_BATCH_SIZE,
   RECONCILE_ORPHAN_AFTER_MS,
-  WebhooksReconcileProcessor,
   rebuildAttemptBudget,
-} from './webhooks-reconcile.processor';
+} from '@/outbound/delivery-backoff';
+import { WebhooksReconcileProcessor } from './webhooks-reconcile.processor';
 
 describe('WebhooksReconcileProcessor', () => {
   const claimStamp = new Date('2026-08-20T10:00:00.000Z');
@@ -24,7 +24,7 @@ describe('WebhooksReconcileProcessor', () => {
   };
 
   let ledger: {
-    findOrphanedPendingWebhookMessages: jest.Mock;
+    findOrphanedPendingMessages: jest.Mock;
     claimForReconcile: jest.Mock;
   };
   let deliveryQueue: { add: jest.Mock };
@@ -32,7 +32,7 @@ describe('WebhooksReconcileProcessor', () => {
 
   beforeEach(() => {
     ledger = {
-      findOrphanedPendingWebhookMessages: jest.fn().mockResolvedValue([orphan]),
+      findOrphanedPendingMessages: jest.fn().mockResolvedValue([orphan]),
       claimForReconcile: jest.fn().mockResolvedValue(claimStamp),
     };
     deliveryQueue = { add: jest.fn().mockResolvedValue({}) };
@@ -47,7 +47,8 @@ describe('WebhooksReconcileProcessor', () => {
     await processor.process({} as never);
 
     // The sweep looks back past the largest ladder gap and claims via CAS.
-    const [cutoff, take] = ledger.findOrphanedPendingWebhookMessages.mock.calls[0];
+    const [side, cutoff, take] = ledger.findOrphanedPendingMessages.mock.calls[0];
+    expect(side).toBe('webhook');
     expect(Date.now() - cutoff.getTime()).toBeGreaterThanOrEqual(RECONCILE_ORPHAN_AFTER_MS - 1000);
     expect(take).toBe(RECONCILE_BATCH_SIZE);
     expect(ledger.claimForReconcile).toHaveBeenCalledWith('whmsg_orphan', orphan.updatedAt);
@@ -78,7 +79,7 @@ describe('WebhooksReconcileProcessor', () => {
   });
 
   it('keeps at least one attempt when the logged tries already exhaust the budget', async () => {
-    ledger.findOrphanedPendingWebhookMessages.mockResolvedValue([
+    ledger.findOrphanedPendingMessages.mockResolvedValue([
       {
         ...orphan,
         deliveries: new Array(9)
@@ -98,18 +99,32 @@ describe('WebhooksReconcileProcessor', () => {
 
   it('rebuilds a single-attempt budget for manual sends (probe semantics preserved)', async () => {
     // Test event: always a one-shot probe, even with zero logged tries.
-    expect(rebuildAttemptBudget('webhook.test', [], 0)).toBe(1);
+    expect(rebuildAttemptBudget('webhook.test', ['webhook.test'], [], 0)).toBe(1);
     // Resend of a DELIVERED message: PENDING can only mean a single-attempt
     // resend was in flight — not a fresh 7-attempt ladder.
-    expect(rebuildAttemptBudget('user.created', [{ success: true }], 1)).toBe(1);
+    expect(rebuildAttemptBudget('user.created', ['webhook.test'], [{ success: true }], 1)).toBe(1);
     // Resend of a FAILED message: the remainder already lands on 1.
-    expect(rebuildAttemptBudget('user.created', new Array(8).fill({ success: false }), 8)).toBe(1);
+    expect(
+      rebuildAttemptBudget(
+        'user.created',
+        ['webhook.test'],
+        new Array(8).fill({ success: false }),
+        8,
+      ),
+    ).toBe(1);
     // Listener-born orphan mid-ladder: continues its remaining budget.
-    expect(rebuildAttemptBudget('user.created', new Array(3).fill({ success: false }), 3)).toBe(5);
+    expect(
+      rebuildAttemptBudget(
+        'user.created',
+        ['webhook.test'],
+        new Array(3).fill({ success: false }),
+        3,
+      ),
+    ).toBe(5);
   });
 
   it('rebuilds WITHOUT the manual flag — an hours-old orphan respects the cooldown gate', async () => {
-    ledger.findOrphanedPendingWebhookMessages.mockResolvedValue([
+    ledger.findOrphanedPendingMessages.mockResolvedValue([
       { ...orphan, topic: 'webhook.test', deliveries: [] },
     ]);
 
@@ -122,7 +137,7 @@ describe('WebhooksReconcileProcessor', () => {
 
   it('an enqueue failure leaves the claim alone and continues the sweep', async () => {
     const second = { ...orphan, id: 'whmsg_second' };
-    ledger.findOrphanedPendingWebhookMessages.mockResolvedValue([orphan, second]);
+    ledger.findOrphanedPendingMessages.mockResolvedValue([orphan, second]);
     deliveryQueue.add.mockRejectedValueOnce(new Error('redis down'));
 
     await expect(processor.process({} as never)).resolves.toBeUndefined();

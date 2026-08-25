@@ -88,3 +88,48 @@ export const computeBackoffDelay = (attemptsMade: number, retryAfterMs?: number 
   }
   return Math.min(Math.max(ladder, retryAfterMs), RETRY_AFTER_MAX_MS);
 };
+
+// ---------------------------------------------------------------------------
+// Reconcile sweep parameters — shared by both transports' hourly sweeps.
+// ---------------------------------------------------------------------------
+
+/** Headroom past the longest legitimate silence before a row counts as orphaned. */
+export const RECONCILE_SLACK_MS = 2 * 60 * 60_000;
+/**
+ * A PENDING message is orphaned when nothing touched it for longer than the
+ * longest legitimate silence plus slack. Legitimate silences: a backoff delay
+ * (the ladder's largest gap, or a Retry-After capped by RETRY_AFTER_MAX_MS),
+ * between which attempts bump updatedAt; and cooldown defers, which touch the
+ * row on gaps <= the 1h cooldown cap. DERIVED, not hand-written, so raising
+ * the ladder's top rung or the Retry-After cap moves this line with it —
+ * a literal here silently under-covering the new maximum is exactly how the
+ * false-orphan double-queue bug would come back.
+ */
+export const RECONCILE_ORPHAN_AFTER_MS =
+  Math.max(...RETRY_DELAYS_MS, RETRY_AFTER_MAX_MS) + RECONCILE_SLACK_MS;
+/** Per-sweep cap; the hourly cadence drains any realistic backlog. */
+export const RECONCILE_BATCH_SIZE = 200;
+
+/**
+ * The attempt budget a rebuilt job may spend. The ledger doesn't store the
+ * lost job's budget, but it is derivable: one-shot topics (test messages) are
+ * always single probes; a message with a DELIVERED attempt in its history can
+ * only be PENDING because a manual resend (single attempt by contract) was in
+ * flight; anything else is a listener-born job that continues its ladder's
+ * remaining budget. (A resend of a FAILED message also lands on 1 via the
+ * remainder — its history already holds the full ladder.)
+ */
+export const rebuildAttemptBudget = (
+  topic: string,
+  oneShotTopics: readonly string[],
+  deliveries: Array<{ success: boolean }>,
+  attemptsLogged: number,
+): number => {
+  if (oneShotTopics.includes(topic)) {
+    return 1;
+  }
+  if (deliveries.some((delivery) => delivery.success)) {
+    return 1;
+  }
+  return Math.max(1, DELIVERY_ATTEMPTS - attemptsLogged);
+};

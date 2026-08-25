@@ -7,7 +7,7 @@ import { BizResolver } from '@/biz/biz.resolver';
 import { ContentResolver } from '@/content/content.resolver';
 import { EnvironmentsResolver } from '@/environments/environments.resolver';
 import { EventsResolver } from '@/events/events.resolver';
-import { IntegrationResolver } from '@/integration/integration.resolver';
+import { IntegrationsResolver } from '@/integrations/integrations.resolver';
 import { LocalizationsResolver } from '@/localizations/localizations.resolver';
 import { ProjectsResolver } from '@/projects/projects.resolver';
 import { TeamResolver } from '@/team/team.resolver';
@@ -33,7 +33,7 @@ const RESOLVERS: Record<string, new (...args: any[]) => any> = {
   content: ContentResolver,
   environments: EnvironmentsResolver,
   events: EventsResolver,
-  integration: IntegrationResolver,
+  integration: IntegrationsResolver,
   localizations: LocalizationsResolver,
   projects: ProjectsResolver,
   team: TeamResolver,

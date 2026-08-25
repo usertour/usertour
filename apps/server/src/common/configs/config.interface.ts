@@ -113,15 +113,6 @@ export interface Config {
     isSelfHostedMode: boolean;
     allowPrivateNetworkEgress: boolean;
   };
-  integration: {
-    salesforce: {
-      clientId: string;
-      clientSecret: string;
-      callbackUrl: string;
-      loginUrl: string;
-      sandboxLoginUrl: string;
-    };
-  };
   encryption: {
     key: string;
   };

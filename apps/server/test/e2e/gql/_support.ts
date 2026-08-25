@@ -64,7 +64,7 @@ export async function teardownProject(prisma: PrismaService, projectId: string):
   await prisma.theme.deleteMany({ where: { projectId } });
   await prisma.attribute.deleteMany({ where: { projectId } });
   await prisma.accessToken.deleteMany({ where: { environmentId } });
-  await prisma.integrationObjectMapping.deleteMany({ where: { integration: { environmentId } } });
+  // OutboundMessage rows cascade with their integration.
   await prisma.integration.deleteMany({ where: { environmentId } });
   // OutboundMessage rows (and their OutboundDelivery attempts) cascade with their webhook.
   await prisma.webhook.deleteMany({ where: { environmentId } });

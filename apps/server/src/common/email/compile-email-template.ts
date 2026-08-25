@@ -12,6 +12,7 @@ type Props = {
     inviterName?: string;
     failingDays?: string;
     settingsUrl?: string;
+    providerName?: string;
   };
 };
 

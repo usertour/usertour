@@ -8,7 +8,7 @@ import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { mapCompany } from '@/api/companies/companies.mapper';
 import { mapEvent } from '@/api/events/event.mapper';
 import { mapUser } from '@/api/users/users.mapper';
-import { DELIVERY_ATTEMPTS } from './webhook-backoff';
+import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
 import { buildWebhookMessage } from './webhook-envelope';
 import {
   buildEntityTopic,
@@ -36,7 +36,7 @@ const RETRY_JOB_OPTIONS = {
   removeOnComplete: true,
   removeOnFail: 1000,
   attempts: DELIVERY_ATTEMPTS,
-  // The worker's backoffStrategy applies the ~24h ladder (webhook-backoff.ts).
+  // The worker's backoffStrategy applies the ~24h ladder (delivery-backoff.ts).
   backoff: { type: 'custom' },
 };
 

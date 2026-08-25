@@ -4,25 +4,13 @@ import { Job, Queue } from 'bullmq';
 import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
 import { WEBHOOK_TEST_TOPIC } from '@usertour/constants';
 import { OutboundLedgerService, maxLoggedAttempt } from '@/outbound/outbound-ledger.service';
-import { DELIVERY_ATTEMPTS, RETRY_AFTER_MAX_MS, RETRY_DELAYS_MS } from './webhook-backoff';
+import {
+  RECONCILE_BATCH_SIZE,
+  RECONCILE_ORPHAN_AFTER_MS,
+  rebuildAttemptBudget,
+} from '@/outbound/delivery-backoff';
 import { WebhookDeliveryJobData } from './webhook.types';
 
-/** Headroom past the longest legitimate silence before a row counts as orphaned. */
-const RECONCILE_SLACK_MS = 2 * 60 * 60_000;
-/**
- * A PENDING message is orphaned when nothing touched it for longer than the
- * longest legitimate silence plus slack. Legitimate silences: a backoff delay
- * (the ladder's largest gap, or a Retry-After capped by RETRY_AFTER_MAX_MS),
- * between which attempts bump updatedAt; and cooldown defers, which touch the
- * row on gaps <= the 1h cooldown cap. DERIVED, not hand-written, so raising
- * the ladder's top rung or the Retry-After cap moves this line with it —
- * a literal here silently under-covering the new maximum is exactly how the
- * false-orphan double-queue bug would come back.
- */
-export const RECONCILE_ORPHAN_AFTER_MS =
-  Math.max(...RETRY_DELAYS_MS, RETRY_AFTER_MAX_MS) + RECONCILE_SLACK_MS;
-/** Per-sweep cap; the hourly cadence drains any realistic backlog. */
-export const RECONCILE_BATCH_SIZE = 200;
 export const RECONCILE_CRON_PATTERN = '20 * * * *'; // hourly at :20
 
 /**
@@ -76,7 +64,8 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
 
   async process(_job: Job): Promise<void> {
     const cutoff = new Date(Date.now() - RECONCILE_ORPHAN_AFTER_MS);
-    const orphans = await this.ledger.findOrphanedPendingWebhookMessages(
+    const orphans = await this.ledger.findOrphanedPendingMessages(
+      'webhook',
       cutoff,
       RECONCILE_BATCH_SIZE,
     );
@@ -108,7 +97,12 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
         await this.deliveryQueue.add('deliver', jobData, {
           removeOnComplete: true,
           removeOnFail: 1000,
-          attempts: rebuildAttemptBudget(message.topic, message.deliveries, attemptsLogged),
+          attempts: rebuildAttemptBudget(
+            message.topic,
+            [WEBHOOK_TEST_TOPIC],
+            message.deliveries,
+            attemptsLogged,
+          ),
           backoff: { type: 'custom' },
           // Keyed by the claim generation — an ambiguous add (job created,
           // response lost) can't double-queue within this claim.
@@ -125,26 +119,3 @@ export class WebhooksReconcileProcessor extends WorkerHost implements OnModuleIn
     );
   }
 }
-
-/**
- * The attempt budget a rebuilt job may spend. The ledger doesn't store the
- * lost job's budget, but it is derivable: test events are always one-shot
- * probes; a message with a DELIVERED attempt in its history can only be
- * PENDING because a manual resend (single attempt by contract) was in
- * flight; anything else is a listener-born job that continues its ladder's
- * remaining budget. (A resend of a FAILED message also lands on 1 via the
- * remainder — its history already holds the full ladder.)
- */
-export const rebuildAttemptBudget = (
-  topic: string,
-  deliveries: Array<{ success: boolean }>,
-  attemptsLogged: number,
-): number => {
-  if (topic === WEBHOOK_TEST_TOPIC) {
-    return 1;
-  }
-  if (deliveries.some((delivery) => delivery.success)) {
-    return 1;
-  }
-  return Math.max(1, DELIVERY_ATTEMPTS - attemptsLogged);
-};

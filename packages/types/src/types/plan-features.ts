@@ -29,6 +29,10 @@ export type PlanFeatures = {
   // getProjectConfig forces it on there (same treatment as customCss).
   webhooks: boolean;
 
+  // Outbound integrations (ADR 0011): analytics-provider event push. Same
+  // gate shape as webhooks — cloud Starter+, self-hosted never gated.
+  integrations: boolean;
+
   // Quotas. 'unlimited' is the explicit unbounded marker; we deliberately
   // avoid Infinity / null so it survives JSON round-trips and reads
   // cleanly at call sites.

@@ -62,21 +62,22 @@ const SECRET_KEYS = [
   'clientSecret',
   'secret',
   'license',
-  // IntegrationOAuth stores third-party tokens PLAINTEXT under these names —
-  // today no audited snapshot nests that relation, but stripKeys descends, so
-  // an added `include:` stays harmless instead of leaking verbatim.
+  // The sign-in `Account` rows store third-party tokens PLAINTEXT under these
+  // names — no audited snapshot nests that relation today, but stripKeys
+  // descends, so an added `include:` stays harmless instead of leaking
+  // verbatim.
   'accessToken',
   'refreshToken',
 ];
 
 /**
- * Resource-specific keys to blank in addition to SECRET_KEYS. `integration` rows
- * carry third-party credentials under names too generic for the global list
- * (`key`, `accessToken`) and inside the `config` JSONB (nested, provider-shaped) —
- * blank the whole blob rather than trying to parse it.
+ * Resource-specific keys to blank in addition to SECRET_KEYS. `integration`
+ * rows carry the provider credential under a name too generic for the global
+ * list (`key` — encrypted at rest, but the audit snapshot must not depend on
+ * that).
  */
 const REDACT_KEYS_BY_TYPE: Record<string, string[]> = {
-  integration: ['key', 'accessToken', 'config'],
+  integration: ['key'],
 };
 
 export function snapshotPolicy(resourceType: string): SnapshotPolicy {

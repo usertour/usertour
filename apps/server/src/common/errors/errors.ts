@@ -1031,3 +1031,11 @@ export class WebhookMessageNotFoundError extends BaseError {
     'zh-CN': 'Webhook 消息不存在。',
   };
 }
+
+export class IntegrationNotFoundError extends BaseError {
+  code = 'E0063';
+  messageDict = {
+    en: 'Integration not found.',
+    'zh-CN': '集成不存在。',
+  };
+}

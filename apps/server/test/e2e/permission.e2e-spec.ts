@@ -21,7 +21,6 @@ import {
   buildEnvironment,
   buildEvent,
   buildIntegration,
-  buildIntegrationObjectMapping,
   buildInvite,
   buildLocalization,
   buildMembership,
@@ -106,7 +105,6 @@ describe('Permission authorization (HTTP e2e)', () => {
     const localization = await buildLocalization(prisma, { projectId });
     const segment = await buildSegment(prisma, { projectId, environmentId });
     const integration = await buildIntegration(prisma, { environmentId });
-    const mapping = await buildIntegrationObjectMapping(prisma, { integrationId: integration.id });
     const accessToken = await buildAccessToken(prisma, { environmentId });
     const step = await buildStep(prisma, { versionId: version.id });
     const bizCompany = await buildBizCompany(prisma, { environmentId });
@@ -126,7 +124,6 @@ describe('Permission authorization (HTTP e2e)', () => {
       localizationId: localization.id,
       segmentId: segment.id,
       integrationId: integration.id,
-      mappingId: mapping.id,
       accessTokenId: accessToken.id,
       stepId: step.id,
       bizUserId: bizUser.id,
@@ -172,9 +169,6 @@ describe('Permission authorization (HTTP e2e)', () => {
       });
       await prisma.invite.deleteMany({ where: { projectId: seed.projectId } });
       await prisma.accessToken.deleteMany({ where: { environmentId: seed.environmentId } });
-      await prisma.integrationObjectMapping.deleteMany({
-        where: { integrationId: seed.integrationId },
-      });
       await prisma.integration.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.bizSession.deleteMany({ where: { contentId: seed.contentId } });
       await prisma.bizUserOnSegment.deleteMany({ where: { segmentId: seed.segmentId } });
@@ -234,7 +228,7 @@ describe('Permission authorization (HTTP e2e)', () => {
     );
 
   it('covers every role-gated endpoint', () => {
-    expect(ENDPOINTS).toHaveLength(91);
+    expect(ENDPOINTS).toHaveLength(85);
   });
 
   for (const ep of ENDPOINTS) {

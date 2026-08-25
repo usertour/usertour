@@ -1,3 +1,23 @@
+// ---------------------------------------------------------------------------
+// Outbound integrations (ADR 0011)
+// ---------------------------------------------------------------------------
+
+/** Analytics providers the outbound pipeline supports. The instantiated list
+ *  (`INTEGRATION_PROVIDERS`) lives in `@usertour/constants`. */
+export type IntegrationProvider = 'amplitude' | 'heap' | 'mixpanel' | 'posthog' | 'segment';
+
+export type IntegrationRegion = 'US' | 'EU';
+
+/** Provider extras stored in `Integration.config`. */
+export type IntegrationConfig = {
+  region?: IntegrationRegion;
+};
+
+// ---------------------------------------------------------------------------
+// Legacy shapes still referenced by the pre-rewrite settings UI — removed
+// together with that UI when the rebuilt pages land.
+// ---------------------------------------------------------------------------
+
 export type UpdateIntegrationInput = {
   enabled: boolean;
   config?: any;

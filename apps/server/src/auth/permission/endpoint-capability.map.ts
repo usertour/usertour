@@ -79,16 +79,10 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
 
   // integration (all O)
   'integration.listIntegrations': Capability.IntegrationRead,
-  'integration.getIntegration': Capability.IntegrationRead,
-  'integration.getSalesforceAuthUrl': Capability.IntegrationRead,
-  'integration.getSalesforceObjectFields': Capability.IntegrationRead,
-  'integration.getIntegrationObjectMappings': Capability.IntegrationRead,
-  'integration.getIntegrationObjectMapping': Capability.IntegrationRead,
-  'integration.updateIntegration': Capability.IntegrationManage,
-  'integration.upsertIntegrationObjectMapping': Capability.IntegrationManage,
-  'integration.updateIntegrationObjectMapping': Capability.IntegrationManage,
-  'integration.deleteIntegrationObjectMapping': Capability.IntegrationManage,
-  'integration.disconnectIntegration': Capability.IntegrationManage,
+  'integration.queryIntegrationMessages': Capability.IntegrationRead,
+  'integration.upsertIntegration': Capability.IntegrationManage,
+  'integration.deleteIntegration': Capability.IntegrationManage,
+  'integration.sendIntegrationTestEvent': Capability.IntegrationManage,
 
   // webhooks (all O)
   'webhooks.listWebhooks': Capability.WebhookRead,

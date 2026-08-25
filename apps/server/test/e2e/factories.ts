@@ -423,27 +423,13 @@ export async function buildIntegration(
   }
   return prisma.integration.create({
     data: {
-      provider: 'salesforce',
+      provider: 'amplitude',
+      // Raw factory value, not a real ciphertext — delivery-path tests that
+      // decrypt must write their own encrypted key.
+      key: 'factory-key',
+      keyTail: '-key',
       ...overrides,
       environmentId: overrides.environmentId,
-    },
-  });
-}
-
-export async function buildIntegrationObjectMapping(
-  prisma: PrismaClient,
-  overrides: Partial<Prisma.IntegrationObjectMappingUncheckedCreateInput> = {},
-) {
-  if (!overrides.integrationId) {
-    const integration = await buildIntegration(prisma);
-    overrides.integrationId = integration.id;
-  }
-  return prisma.integrationObjectMapping.create({
-    data: {
-      sourceObjectType: 'account',
-      destinationObjectType: 'company',
-      ...overrides,
-      integrationId: overrides.integrationId,
     },
   });
 }

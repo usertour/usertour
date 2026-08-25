@@ -5,9 +5,9 @@ import {
   computeBackoffDelay,
   deliveryBackoffStrategy,
   parseRetryAfter,
-} from './webhook-backoff';
+} from './delivery-backoff';
 
-describe('webhook-backoff', () => {
+describe('delivery-backoff', () => {
   it('ladder covers every retry of the attempt budget and spans ~24h', () => {
     expect(RETRY_DELAYS_MS).toHaveLength(DELIVERY_ATTEMPTS - 1);
     const totalMs = RETRY_DELAYS_MS.reduce((sum, delay) => sum + delay, 0);
