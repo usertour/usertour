@@ -109,7 +109,79 @@ const walkSlateNodes = (
           : undefined;
       walkSlateNodes(node.children as SlateNode[], partnerChildren, nodePath, visitor);
     }
+    // Inline links: the destination is per-locale content too (a localized
+    // page behind localized anchor text), so it travels as an optional unit —
+    // swappable like media urls, untranslated keeps the source destination.
+    // Dynamic destinations (user-attribute chips in the template) emit no
+    // unit: they have no single string a translator could safely replace.
+    if (node.type === 'link') {
+      const sourceUrl = getLocalizableLinkUrl(node);
+      if (sourceUrl !== undefined) {
+        const partnerLink = partnerNode?.type === 'link' ? partnerNode : undefined;
+        visitor({
+          path: `${nodePath}:link.url`,
+          sourceText: sourceUrl,
+          partnerText: partnerLink ? getLocalizableLinkUrl(partnerLink) : undefined,
+          optional: true,
+          assign: (value) => assignLocalizedLinkUrl(node, value),
+        });
+      }
+    }
   });
+};
+
+/**
+ * A link stores its destination twice: the rich-text `data` template is the
+ * authority — delivery recomputes `url` from it, substituting user-attribute
+ * chips (replaceUserAttr) — while the plain `url` field serves the paths that
+ * never run that pass (builder paste creates url-only links; the v2 codec
+ * writes both). Localization must therefore read the template when present,
+ * and write BOTH stores so every reader sees the swapped destination.
+ */
+
+/** Concatenated plain text of a link `data` template; undefined once a chip makes it dynamic. */
+const serializeLinkTemplate = (nodes: SlateNode[]): string | undefined => {
+  let text = '';
+  for (const node of nodes) {
+    if (!node || typeof node !== 'object') {
+      continue;
+    }
+    if (node.type === 'user-attribute') {
+      return undefined;
+    }
+    if (typeof node.text === 'string') {
+      text += node.text;
+      continue;
+    }
+    if (isArray(node.children)) {
+      const nested = serializeLinkTemplate(node.children as SlateNode[]);
+      if (nested === undefined) {
+        return undefined;
+      }
+      text += nested;
+    }
+  }
+  return text;
+};
+
+/**
+ * The single-string destination of a link node: its `data` template when
+ * present (matching what delivery renders), else the raw `url`. Undefined —
+ * not localizable — when the template contains user-attribute chips.
+ */
+export const getLocalizableLinkUrl = (node: unknown): string | undefined => {
+  const link = node as SlateNode;
+  if (isArray(link.data)) {
+    return serializeLinkTemplate(link.data as SlateNode[]);
+  }
+  return toText(link.url);
+};
+
+/** Writes a localized destination into both stores a reader may consult. */
+export const assignLocalizedLinkUrl = (node: unknown, value: string): void => {
+  const link = node as SlateNode;
+  link.url = value;
+  link.data = [{ type: 'paragraph', children: [{ text: value }] }];
 };
 
 type ScaleLikeData = {
@@ -365,11 +437,29 @@ export const formatElementPath = (
 
 type LocalizedTextFallback = 'source' | 'empty';
 
+/**
+ * The aligned partner value that counts as a translation. Optional (url)
+ * units additionally treat a value identical to the source as not overridden:
+ * rows saved before url units existed carry the source url verbatim (clones
+ * left unvisited fields untouched), and those must keep following the source
+ * rather than pin its old value. Deliberately NOT used by the outdated
+ * (backup) comparison — there "backup equals source" means no drift, the
+ * opposite signal.
+ */
+const resolveTranslatedText = (visit: TranslatableFieldVisit): string | undefined => {
+  const value = visit.partnerText;
+  if (value === undefined || value === '') {
+    return undefined;
+  }
+  if (visit.optional && value === visit.sourceText) {
+    return undefined;
+  }
+  return value;
+};
+
 const createApplyVisitor = (fallback: LocalizedTextFallback): TranslatableFieldVisitor => {
   return (visit) => {
-    const translated =
-      visit.partnerText !== undefined && visit.partnerText !== '' ? visit.partnerText : undefined;
-    const value = translated ?? (fallback === 'source' ? visit.sourceText : '');
+    const value = resolveTranslatedText(visit) ?? (fallback === 'source' ? visit.sourceText : '');
     if (value !== visit.sourceText) {
       visit.assign(value);
     }
@@ -390,7 +480,7 @@ const createMissingCountVisitor = (count: { missing: number }): TranslatableFiel
 /** Collects the paths whose aligned translation is non-empty. */
 const createTranslatedPathCollector = (translated: Set<string>): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.partnerText !== undefined && visit.partnerText !== '') {
+    if (resolveTranslatedText(visit) !== undefined) {
       translated.add(visit.path);
     }
   };
@@ -837,7 +927,7 @@ const createTranslationUnitCollector = (
     units.push({
       path: visit.path,
       sourceText: visit.sourceText,
-      translatedText: visit.partnerText ?? '',
+      translatedText: resolveTranslatedText(visit) ?? '',
       optional: visit.optional,
     });
   };

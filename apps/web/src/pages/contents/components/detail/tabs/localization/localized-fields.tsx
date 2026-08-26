@@ -1,5 +1,11 @@
 import { ArrowRightIcon, KeyboardIcon, ResetIcon } from '@radix-ui/react-icons';
-import { deepClone, formatElementPath, getErrorMessage } from '@usertour/helpers';
+import {
+  assignLocalizedLinkUrl,
+  deepClone,
+  formatElementPath,
+  getErrorMessage,
+  getLocalizableLinkUrl,
+} from '@usertour/helpers';
 import { useAws, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
 import { ImageEditIcon, RiSparkling2Line, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
@@ -97,6 +103,67 @@ export const setSlateLeafText = (nodes: SlateNode[], path: number[], text: strin
   }
   if (node) {
     node.text = text;
+  }
+};
+
+export interface SlateLinkPair {
+  path: number[];
+  sourceUrl: string;
+  value: string;
+}
+
+/**
+ * Inline link destinations — per-locale like media urls, '' = keep original.
+ * Reads/writes through the helpers' link accessors so the `data` template
+ * (what delivery actually renders) and the `url` field stay in agreement;
+ * dynamic destinations (user-attribute chips) yield no pair and stay
+ * source-managed.
+ */
+export const collectSlateLinkPairs = (
+  sourceNodes: SlateNode[],
+  workingNodes: SlateNode[],
+  path: number[] = [],
+): SlateLinkPair[] => {
+  const pairs: SlateLinkPair[] = [];
+  sourceNodes.forEach((sourceNode, index) => {
+    if (!sourceNode || typeof sourceNode !== 'object' || typeof sourceNode.text === 'string') {
+      return;
+    }
+    const workingNode = workingNodes?.[index];
+    const nodePath = [...path, index];
+    if (sourceNode.type === 'link') {
+      const sourceUrl = getLocalizableLinkUrl(sourceNode);
+      if (sourceUrl !== undefined && sourceUrl !== '') {
+        pairs.push({
+          path: nodePath,
+          sourceUrl,
+          value: (workingNode ? getLocalizableLinkUrl(workingNode) : undefined) ?? '',
+        });
+      }
+    }
+    if (Array.isArray(sourceNode.children)) {
+      pairs.push(
+        ...collectSlateLinkPairs(
+          sourceNode.children as SlateNode[],
+          (Array.isArray(workingNode?.children) ? workingNode.children : []) as SlateNode[],
+          nodePath,
+        ),
+      );
+    }
+  });
+  return pairs;
+};
+
+export const setSlateLinkUrl = (nodes: SlateNode[], path: number[], url: string): void => {
+  let node: SlateNode | undefined = nodes[path[0]];
+  for (const index of path.slice(1)) {
+    if (!node || !Array.isArray(node.children)) {
+      return;
+    }
+    node = (node.children as SlateNode[])[index];
+  }
+  if (node && node.type === 'link') {
+    assignLocalizedLinkUrl(node, url);
   }
 };
 
@@ -259,6 +326,85 @@ export const LocalizedFieldRow = (props: LocalizedFieldRowProps) => {
   );
 };
 
+interface MediaActionButtonProps {
+  tooltip: string;
+  disabled: boolean;
+  icon: ReactNode;
+  onClick?: () => void;
+}
+
+const MediaActionButton = (props: MediaActionButtonProps) => {
+  const { tooltip, disabled, icon, onClick } = props;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          disabled={disabled}
+          onClick={onClick}
+        >
+          {icon}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  );
+};
+
+/**
+ * Link-destination row — a URL is media-like (per-locale swap, '' = keep the
+ * original), so it skips the missing dot and machine translation that text
+ * rows carry.
+ */
+interface LocalizedLinkUrlRowProps {
+  label: string;
+  sourceUrl: string;
+  value: string;
+  disabled: boolean;
+  outdated: boolean;
+  onOutdatedResolved: () => void;
+  onValueChange: (value: string) => void;
+}
+
+const LocalizedLinkUrlRow = (props: LocalizedLinkUrlRowProps) => {
+  const { label, sourceUrl, value, disabled, outdated, onOutdatedResolved, onValueChange } = props;
+  const { t } = useTranslation();
+
+  const handleValueChange = (nextValue: string) => {
+    if (outdated) {
+      onOutdatedResolved();
+    }
+    onValueChange(nextValue);
+  };
+
+  return (
+    <div className={FIELD_GRID}>
+      <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+        {label}
+        {outdated && <OutdatedChip />}
+      </div>
+      <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">{sourceUrl}</div>
+      <div className="flex flex-row items-center gap-1.5">
+        <Input
+          value={value}
+          placeholder={t('contents.localization.image.usingOriginal')}
+          disabled={disabled}
+          onChange={(event) => handleValueChange(event.target.value)}
+        />
+        <MediaActionButton
+          tooltip={t('contents.localization.image.useOriginal')}
+          disabled={disabled || value === ''}
+          icon={<ResetIcon className="h-4 w-4" />}
+          onClick={() => handleValueChange('')}
+        />
+      </div>
+    </div>
+  );
+};
+
 export interface LocalizedElementSectionProps {
   label: string;
   outdated: boolean;
@@ -310,6 +456,7 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
     disabled,
     onElementChange,
   } = props;
+  const { t } = useTranslation();
   const { showOnlyMissing } = useLocalizationView();
   const source = sourceElement as ContentEditorTextElement;
   const working = workingElement as ContentEditorTextElement;
@@ -317,13 +464,21 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
   const workingData = Array.isArray(working.data) ? (working.data as SlateNode[]) : [];
   const allPairs = collectSlateLeafPairs(sourceData, workingData);
   const pairs = showOnlyMissing ? allPairs.filter((pair) => pair.value.trim() === '') : allPairs;
-  if (pairs.length === 0) {
+  // Link rows are never "untranslated" — keeping the original url is the norm.
+  const linkPairs = showOnlyMissing ? [] : collectSlateLinkPairs(sourceData, workingData);
+  if (pairs.length === 0 && linkPairs.length === 0) {
     return null;
   }
 
   const handleLeafChange = (path: number[], text: string) => {
     const nextData = deepClone(workingData);
     setSlateLeafText(nextData, path, text);
+    onElementChange({ ...working, data: nextData });
+  };
+
+  const handleLinkUrlChange = (path: number[], url: string) => {
+    const nextData = deepClone(workingData);
+    setSlateLinkUrl(nextData, path, url);
     onElementChange({ ...working, data: nextData });
   };
 
@@ -341,6 +496,21 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
           onValueChange={(text) => handleLeafChange(pair.path, text)}
         />
       ))}
+      {linkPairs.map((pair) => {
+        const fieldPath = `text.${pair.path.join('.')}:link.url`;
+        return (
+          <LocalizedLinkUrlRow
+            key={fieldPath}
+            label={t('contents.localization.field.linkUrl')}
+            sourceUrl={pair.sourceUrl}
+            value={pair.value}
+            disabled={disabled}
+            outdated={outdatedFields.has(fieldPath)}
+            onOutdatedResolved={() => onFieldResolved(fieldPath)}
+            onValueChange={(url) => handleLinkUrlChange(pair.path, url)}
+          />
+        );
+      })}
     </LocalizedElementSection>
   );
 };
@@ -377,34 +547,6 @@ const LocalizedButtonElement = (props: LocalizedElementEditorProps) => {
         onValueChange={(text) => onElementChange({ ...working, data: { ...working.data, text } })}
       />
     </LocalizedElementSection>
-  );
-};
-
-interface MediaActionButtonProps {
-  tooltip: string;
-  disabled: boolean;
-  icon: ReactNode;
-  onClick?: () => void;
-}
-
-const MediaActionButton = (props: MediaActionButtonProps) => {
-  const { tooltip, disabled, icon, onClick } = props;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          disabled={disabled}
-          onClick={onClick}
-        >
-          {icon}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
   );
 };
 
