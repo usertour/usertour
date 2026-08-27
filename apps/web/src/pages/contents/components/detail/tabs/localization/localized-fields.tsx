@@ -58,110 +58,99 @@ export interface SlateLeafPair {
   value: string;
 }
 
-export const collectSlateLeafPairs = (
-  sourceNodes: SlateNode[],
-  workingNodes: SlateNode[],
-  path: number[] = [],
-): SlateLeafPair[] => {
-  const pairs: SlateLeafPair[] = [];
-  sourceNodes.forEach((sourceNode, index) => {
-    if (!sourceNode || typeof sourceNode !== 'object') {
-      return;
-    }
-    const workingNode = workingNodes?.[index];
-    const nodePath = [...path, index];
-    if (typeof sourceNode.text === 'string') {
-      if (sourceNode.text !== '') {
-        pairs.push({
-          path: nodePath,
-          sourceText: sourceNode.text,
-          value: toText(workingNode?.text),
-        });
-      }
-      return;
-    }
-    if (Array.isArray(sourceNode.children)) {
-      pairs.push(
-        ...collectSlateLeafPairs(
-          sourceNode.children as SlateNode[],
-          (Array.isArray(workingNode?.children) ? workingNode.children : []) as SlateNode[],
-          nodePath,
-        ),
-      );
-    }
-  });
-  return pairs;
-};
-
-export const setSlateLeafText = (nodes: SlateNode[], path: number[], text: string): void => {
-  let node: SlateNode | undefined = nodes[path[0]];
-  for (const index of path.slice(1)) {
-    if (!node || !Array.isArray(node.children)) {
-      return;
-    }
-    node = (node.children as SlateNode[])[index];
-  }
-  if (node) {
-    node.text = text;
-  }
-};
-
 export interface SlateLinkPair {
   path: number[];
   sourceUrl: string;
   value: string;
 }
 
+export interface SlateFieldPairs {
+  leafPairs: SlateLeafPair[];
+  linkPairs: SlateLinkPair[];
+}
+
 /**
- * Inline link destinations — per-locale like media urls, '' = keep original.
- * Reads/writes through the helpers' link accessors so the `data` template
- * (what delivery actually renders) and the `url` field stay in agreement;
- * dynamic destinations (user-attribute chips) yield no pair and stay
- * source-managed.
+ * One walk collects both editable field kinds, so the positional-alignment
+ * convention (working tree = structural clone of the source tree) lives in
+ * exactly one place. Link destinations read/write through the helpers' link
+ * accessors so the `data` template (what delivery renders) and the `url`
+ * field stay in agreement; dynamic (user-attribute chip) and empty
+ * destinations yield no pair and stay source-managed.
  */
-export const collectSlateLinkPairs = (
+export const collectSlateFieldPairs = (
   sourceNodes: SlateNode[],
   workingNodes: SlateNode[],
-  path: number[] = [],
-): SlateLinkPair[] => {
-  const pairs: SlateLinkPair[] = [];
-  sourceNodes.forEach((sourceNode, index) => {
-    if (!sourceNode || typeof sourceNode !== 'object' || typeof sourceNode.text === 'string') {
-      return;
-    }
-    const workingNode = workingNodes?.[index];
-    const nodePath = [...path, index];
-    if (sourceNode.type === 'link') {
-      const sourceUrl = getLocalizableLinkUrl(sourceNode);
-      if (sourceUrl !== undefined && sourceUrl !== '') {
-        pairs.push({
-          path: nodePath,
-          sourceUrl,
-          value: (workingNode ? getLocalizableLinkUrl(workingNode) : undefined) ?? '',
-        });
+): SlateFieldPairs => {
+  const leafPairs: SlateLeafPair[] = [];
+  const linkPairs: SlateLinkPair[] = [];
+  const visit = (source: SlateNode[], working: SlateNode[], path: number[]): void => {
+    source.forEach((sourceNode, index) => {
+      if (!sourceNode || typeof sourceNode !== 'object') {
+        return;
       }
-    }
-    if (Array.isArray(sourceNode.children)) {
-      pairs.push(
-        ...collectSlateLinkPairs(
+      const workingNode = working?.[index];
+      const nodePath = [...path, index];
+      if (typeof sourceNode.text === 'string') {
+        if (sourceNode.text !== '') {
+          leafPairs.push({
+            path: nodePath,
+            sourceText: sourceNode.text,
+            value: toText(workingNode?.text),
+          });
+        }
+        return;
+      }
+      if (sourceNode.type === 'link') {
+        const sourceUrl = getLocalizableLinkUrl(sourceNode);
+        if (sourceUrl) {
+          linkPairs.push({
+            path: nodePath,
+            sourceUrl,
+            value: (workingNode ? getLocalizableLinkUrl(workingNode) : undefined) ?? '',
+          });
+        }
+      }
+      if (Array.isArray(sourceNode.children)) {
+        visit(
           sourceNode.children as SlateNode[],
           (Array.isArray(workingNode?.children) ? workingNode.children : []) as SlateNode[],
           nodePath,
-        ),
-      );
-    }
-  });
-  return pairs;
+        );
+      }
+    });
+  };
+  visit(sourceNodes, workingNodes, []);
+  return { leafPairs, linkPairs };
 };
 
-export const setSlateLinkUrl = (nodes: SlateNode[], path: number[], url: string): void => {
+/** Leaf-only view for trees that never render links (block names). */
+export const collectSlateLeafPairs = (
+  sourceNodes: SlateNode[],
+  workingNodes: SlateNode[],
+): SlateLeafPair[] => {
+  return collectSlateFieldPairs(sourceNodes, workingNodes).leafPairs;
+};
+
+const getSlateNodeAtPath = (nodes: SlateNode[], path: number[]): SlateNode | undefined => {
   let node: SlateNode | undefined = nodes[path[0]];
   for (const index of path.slice(1)) {
     if (!node || !Array.isArray(node.children)) {
-      return;
+      return undefined;
     }
     node = (node.children as SlateNode[])[index];
   }
+  return node;
+};
+
+export const setSlateLeafText = (nodes: SlateNode[], path: number[], text: string): void => {
+  const node = getSlateNodeAtPath(nodes, path);
+  if (node) {
+    node.text = text;
+  }
+};
+
+export const setSlateLinkUrl = (nodes: SlateNode[], path: number[], url: string): void => {
+  const node = getSlateNodeAtPath(nodes, path);
   if (node && node.type === 'link') {
     assignLocalizedLinkUrl(node, url);
   }
@@ -355,10 +344,32 @@ const MediaActionButton = (props: MediaActionButtonProps) => {
 };
 
 /**
- * Link-destination row — a URL is media-like (per-locale swap, '' = keep the
- * original), so it skips the missing dot and machine translation that text
- * rows carry.
+ * Shared shell for media-like url rows (link destination, embed url): label
+ * with the outdated chip, read-only source cell, and a caller-provided
+ * input/actions area. These rows skip the missing dot and machine translation
+ * that text rows carry — keeping the original is the norm.
  */
+interface UrlFieldRowProps {
+  label: ReactNode;
+  outdated: boolean;
+  sourceUrl: ReactNode;
+  children: ReactNode;
+}
+
+const UrlFieldRow = (props: UrlFieldRowProps) => {
+  const { label, outdated, sourceUrl, children } = props;
+  return (
+    <div className={FIELD_GRID}>
+      <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+        {label}
+        {outdated && <OutdatedChip />}
+      </div>
+      <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">{sourceUrl}</div>
+      <div className="flex flex-row items-center gap-1.5">{children}</div>
+    </div>
+  );
+};
+
 interface LocalizedLinkUrlRowProps {
   label: string;
   sourceUrl: string;
@@ -381,27 +392,20 @@ const LocalizedLinkUrlRow = (props: LocalizedLinkUrlRowProps) => {
   };
 
   return (
-    <div className={FIELD_GRID}>
-      <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
-        {label}
-        {outdated && <OutdatedChip />}
-      </div>
-      <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">{sourceUrl}</div>
-      <div className="flex flex-row items-center gap-1.5">
-        <Input
-          value={value}
-          placeholder={t('contents.localization.image.usingOriginal')}
-          disabled={disabled}
-          onChange={(event) => handleValueChange(event.target.value)}
-        />
-        <MediaActionButton
-          tooltip={t('contents.localization.image.useOriginal')}
-          disabled={disabled || value === ''}
-          icon={<ResetIcon className="h-4 w-4" />}
-          onClick={() => handleValueChange('')}
-        />
-      </div>
-    </div>
+    <UrlFieldRow label={label} outdated={outdated} sourceUrl={sourceUrl}>
+      <Input
+        value={value}
+        placeholder={t('contents.localization.image.usingOriginal')}
+        disabled={disabled}
+        onChange={(event) => handleValueChange(event.target.value)}
+      />
+      <MediaActionButton
+        tooltip={t('contents.localization.image.useOriginal')}
+        disabled={disabled || value === ''}
+        icon={<ResetIcon className="h-4 w-4" />}
+        onClick={() => handleValueChange('')}
+      />
+    </UrlFieldRow>
   );
 };
 
@@ -462,24 +466,26 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
   const working = workingElement as ContentEditorTextElement;
   const sourceData = Array.isArray(source.data) ? (source.data as SlateNode[]) : [];
   const workingData = Array.isArray(working.data) ? (working.data as SlateNode[]) : [];
-  const allPairs = collectSlateLeafPairs(sourceData, workingData);
-  const pairs = showOnlyMissing ? allPairs.filter((pair) => pair.value.trim() === '') : allPairs;
+  const { leafPairs, linkPairs: allLinkPairs } = collectSlateFieldPairs(sourceData, workingData);
+  const pairs = showOnlyMissing ? leafPairs.filter((pair) => pair.value.trim() === '') : leafPairs;
   // Link rows are never "untranslated" — keeping the original url is the norm.
-  const linkPairs = showOnlyMissing ? [] : collectSlateLinkPairs(sourceData, workingData);
+  const linkPairs = showOnlyMissing ? [] : allLinkPairs;
   if (pairs.length === 0 && linkPairs.length === 0) {
     return null;
   }
 
-  const handleLeafChange = (path: number[], text: string) => {
+  const applyDataEdit = (mutate: (nodes: SlateNode[]) => void) => {
     const nextData = deepClone(workingData);
-    setSlateLeafText(nextData, path, text);
+    mutate(nextData);
     onElementChange({ ...working, data: nextData });
   };
 
+  const handleLeafChange = (path: number[], text: string) => {
+    applyDataEdit((nodes) => setSlateLeafText(nodes, path, text));
+  };
+
   const handleLinkUrlChange = (path: number[], url: string) => {
-    const nextData = deepClone(workingData);
-    setSlateLinkUrl(nextData, path, url);
-    onElementChange({ ...working, data: nextData });
+    applyDataEdit((nodes) => setSlateLinkUrl(nodes, path, url));
   };
 
   return (
@@ -580,6 +586,15 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
     onElementChange({ ...working, url });
   };
 
+  // The image's click-through link localizes like an inline text link;
+  // dynamic or absent destinations show no row and stay source-managed.
+  const sourceLinkUrl = getLocalizableLinkUrl(source.link);
+  const handleLinkUrlChange = (url: string) => {
+    const nextLink = { ...(working.link ?? {}) };
+    assignLocalizedLinkUrl(nextLink, url);
+    onElementChange({ ...working, link: nextLink });
+  };
+
   const handleCustomUploadRequest = async (option: UploadRequestOption) => {
     setIsUploading(true);
     try {
@@ -673,6 +688,17 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
           </div>
         </PopoverContent>
       </Popover>
+      {sourceLinkUrl ? (
+        <LocalizedLinkUrlRow
+          label={t('contents.localization.field.linkUrl')}
+          sourceUrl={sourceLinkUrl}
+          value={(working.link ? getLocalizableLinkUrl(working.link) : undefined) ?? ''}
+          disabled={disabled}
+          outdated={outdatedFields.has('image.link.url')}
+          onOutdatedResolved={() => onFieldResolved('image.link.url')}
+          onValueChange={handleLinkUrlChange}
+        />
+      ) : null}
     </LocalizedElementSection>
   );
 };
@@ -715,41 +741,32 @@ const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
   };
 
   return (
-    <div className={FIELD_GRID}>
-      <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
-        {label}
-        {outdatedFields.size > 0 && <OutdatedChip />}
-      </div>
-      <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">
-        {source.url}
-      </div>
-      <div className="flex flex-row items-center gap-1.5">
-        <Input
-          value={draftUrl}
-          placeholder={t('contents.localization.image.usingOriginal')}
-          disabled={disabled}
-          onChange={(event) => setDraftUrl(event.target.value)}
-        />
-        <MediaActionButton
-          tooltip={t('contents.localization.image.load')}
-          disabled={disabled || resolving}
-          icon={
-            resolving ? (
-              <SpinnerIcon className="h-4 w-4 animate-spin" />
-            ) : (
-              <ArrowRightIcon className="h-4 w-4" />
-            )
-          }
-          onClick={() => void handleApplyUrl(draftUrl.trim())}
-        />
-        <MediaActionButton
-          tooltip={t('contents.localization.image.useOriginal')}
-          disabled={disabled || toText(working.url) === ''}
-          icon={<ResetIcon className="h-4 w-4" />}
-          onClick={() => void handleApplyUrl('')}
-        />
-      </div>
-    </div>
+    <UrlFieldRow label={label} outdated={outdatedFields.size > 0} sourceUrl={source.url}>
+      <Input
+        value={draftUrl}
+        placeholder={t('contents.localization.image.usingOriginal')}
+        disabled={disabled}
+        onChange={(event) => setDraftUrl(event.target.value)}
+      />
+      <MediaActionButton
+        tooltip={t('contents.localization.image.load')}
+        disabled={disabled || resolving}
+        icon={
+          resolving ? (
+            <SpinnerIcon className="h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowRightIcon className="h-4 w-4" />
+          )
+        }
+        onClick={() => void handleApplyUrl(draftUrl.trim())}
+      />
+      <MediaActionButton
+        tooltip={t('contents.localization.image.useOriginal')}
+        disabled={disabled || toText(working.url) === ''}
+        icon={<ResetIcon className="h-4 w-4" />}
+        onClick={() => void handleApplyUrl('')}
+      />
+    </UrlFieldRow>
   );
 };
 

@@ -79,11 +79,19 @@ describe('replaceUserAttr — link href derivation (B-2 regression)', () => {
     expect(linkOf(out).url).toBe('https://x.io/pro');
   });
 
-  it('a link WITHOUT data renders href="" (the contract the codec must satisfy — always store data)', () => {
+  it('a link WITHOUT data falls back to its raw url (pasted before wrapLink stored templates)', () => {
     const out = replaceUserAttr(
-      tree({ type: 'link', url: 'STALE', children: [{ text: 'go' }] }),
+      tree({ type: 'link', url: 'https://docs.example.com', children: [{ text: 'go' }] }),
       {} as never,
     );
+    // `data` stays the authority when present (writers must still store it —
+    // chips only resolve through it); the raw url is the survival path for
+    // url-only links already in stored content.
+    expect(linkOf(out).url).toBe('https://docs.example.com');
+  });
+
+  it('a link with neither data nor a string url renders href=""', () => {
+    const out = replaceUserAttr(tree({ type: 'link', children: [{ text: 'go' }] }), {} as never);
     expect(linkOf(out).url).toBe('');
   });
 
