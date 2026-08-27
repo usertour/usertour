@@ -26,6 +26,9 @@ import {
 import {
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
+  assignLocalizedLinkUrl,
+  blankLocalizedLinkDestinations,
+  getLocalizableLinkUrl,
   buildLocalizedFlowSavePayload,
   buildLocalizedVersionDataSavePayload,
   collectOutdatedUnitPaths,
@@ -314,6 +317,423 @@ describe('collectOutdatedUnitPaths', () => {
       collectOutdatedUnitPaths(source, backup, createLocalizedWorkingContents(source, undefined))
         .size,
     ).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Inline link destinations — the url travels as an optional unit like media
+// urls: swappable per locale, untranslated keeps the source url.
+// ---------------------------------------------------------------------------
+
+const createLinkTextElement = (): ContentEditorTextElement => {
+  return {
+    type: ContentEditorElementType.TEXT,
+    data: [
+      {
+        type: 'paragraph',
+        children: [
+          { text: 'See ' },
+          {
+            type: 'link',
+            url: 'https://example.com/en/post',
+            openType: 'new',
+            children: [{ text: 'the forum post' }],
+          },
+          { text: '.' },
+        ],
+      },
+    ],
+  };
+};
+
+describe('link url localization', () => {
+  it('extracts the link url as an optional unit alongside its anchor text', () => {
+    const units = extractTranslatableUnits(wrapElements([createLinkTextElement()]));
+    const byPath = new Map(units.map((unit) => [unit.path, unit]));
+    expect(byPath.get('0.0.0:text.0.1.0')?.text).toBe('the forum post');
+    expect(byPath.get('0.0.0:text.0.1:link.url')).toMatchObject({
+      text: 'https://example.com/en/post',
+      optional: true,
+    });
+  });
+
+  it('donates a translated url into both stores and keeps behavior from the source', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    const localized = createLocalizedWorkingContents(source, undefined);
+    const localizedLink = getElement<ContentEditorTextElement>(localized, 0).data[0].children[1];
+    // Untranslated working copies blank the url like any other unit.
+    expect(getLocalizableLinkUrl(localizedLink)).toBe('');
+    assignLocalizedLinkUrl(localizedLink, 'https://example.com/cs/post');
+    localizedLink.children[0].text = 'příspěvek na fóru';
+
+    const merged = mergeLocalizedEditorContents(source, localized);
+    const mergedLink = getElement<ContentEditorTextElement>(merged, 0).data[0].children[1];
+    // Both destination stores swap: the raw url and the `data` template the
+    // delivery pass (replaceUserAttr) recomputes the url from.
+    expect(mergedLink.url).toBe('https://example.com/cs/post');
+    expect(mergedLink.data).toEqual([
+      { type: 'paragraph', children: [{ text: 'https://example.com/cs/post' }] },
+    ]);
+    expect(mergedLink.children[0].text).toBe('příspěvek na fóru');
+    expect(mergedLink.openType).toBe('new');
+  });
+
+  it('reads the destination from the data template when the url field is empty', () => {
+    // Builder link-panel shape: the destination lives in `data`, url is ''.
+    const element = createLinkTextElement();
+    const link = (element.data[0] as { children: any[] }).children[1];
+    link.url = '';
+    link.data = [{ type: 'paragraph', children: [{ text: 'https://example.com/en/post' }] }];
+    const source = wrapElements([element]);
+
+    const units = extractTranslatableUnits(source);
+    expect(units.find((unit) => unit.path === '0.0.0:text.0.1:link.url')?.text).toBe(
+      'https://example.com/en/post',
+    );
+
+    const localized = createLocalizedWorkingContents(source, undefined);
+    const localizedLink = getElement<ContentEditorTextElement>(localized, 0).data[0].children[1];
+    assignLocalizedLinkUrl(localizedLink, 'https://example.com/cs/post');
+    const merged = mergeLocalizedEditorContents(source, localized);
+    const mergedLink = getElement<ContentEditorTextElement>(merged, 0).data[0].children[1];
+    expect(mergedLink.url).toBe('https://example.com/cs/post');
+    expect(mergedLink.data).toEqual([
+      { type: 'paragraph', children: [{ text: 'https://example.com/cs/post' }] },
+    ]);
+  });
+
+  it('emits no unit for a dynamic destination (user-attribute chip in the template)', () => {
+    const element = createLinkTextElement();
+    const link = (element.data[0] as { children: any[] }).children[1];
+    link.data = [
+      {
+        type: 'paragraph',
+        children: [
+          { text: 'https://example.com/user/' },
+          { type: 'user-attribute', attrCode: 'user_id', fallback: '', children: [{ text: '' }] },
+        ],
+      },
+    ];
+    const source = wrapElements([element]);
+
+    const units = extractTranslatableUnits(source);
+    expect(units.some((unit) => unit.path === '0.0.0:text.0.1:link.url')).toBe(false);
+
+    // The working copy leaves the dynamic link untouched — it stays source-managed.
+    const working = createLocalizedWorkingContents(source, undefined);
+    const workingLink = getElement<ContentEditorTextElement>(working, 0).data[0].children[1];
+    expect(workingLink.data).toEqual(link.data);
+    expect(workingLink.url).toBe('https://example.com/en/post');
+  });
+
+  it('falls back to the source url when the link is untranslated', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    const merged = mergeLocalizedEditorContents(
+      source,
+      createLocalizedWorkingContents(source, undefined),
+    );
+    expect(getElement<ContentEditorTextElement>(merged, 0).data[0].children[1].url).toBe(
+      'https://example.com/en/post',
+    );
+  });
+
+  it('never counts the url as missing but does flag drift on a swapped url', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    // Required: the two plain leaves + the anchor leaf = 3; the url is optional.
+    expect(countMissingTranslations(source, undefined)).toBe(3);
+
+    const backup = deepClone(source);
+    const localized = createLocalizedWorkingContents(source, undefined);
+    assignLocalizedLinkUrl(
+      getElement<ContentEditorTextElement>(localized, 0).data[0].children[1],
+      'https://example.com/cs/post',
+    );
+    getElement<ContentEditorTextElement>(source, 0).data[0].children[1].url =
+      'https://example.com/en/post-v2';
+    expect(collectOutdatedUnitPaths(source, backup, localized)).toEqual(
+      new Set(['0.0.0:text.0.1:link.url']),
+    );
+  });
+
+  it('keeps a stored url identical to the source as a deliberate pin (survives reload and source drift)', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    const localized = createLocalizedWorkingContents(source, undefined);
+    assignLocalizedLinkUrl(
+      getElement<ContentEditorTextElement>(localized, 0).data[0].children[1],
+      'https://example.com/en/post',
+    );
+
+    // Reload: the working copy keeps the pin instead of blanking it.
+    const working = createLocalizedWorkingContents(source, localized);
+    expect(
+      getLocalizableLinkUrl(getElement<ContentEditorTextElement>(working, 0).data[0].children[1]),
+    ).toBe('https://example.com/en/post');
+
+    // The source moves on; the pinned locale stays where it was pinned.
+    getElement<ContentEditorTextElement>(source, 0).data[0].children[1].url =
+      'https://example.com/en/post-v2';
+    const merged = mergeLocalizedEditorContents(source, localized);
+    expect(getElement<ContentEditorTextElement>(merged, 0).data[0].children[1].url).toBe(
+      'https://example.com/en/post',
+    );
+  });
+
+  it('keeps a media url pinned to the source value as an override', () => {
+    const source = wrapElements([createImageElement()]);
+    const localized = createLocalizedWorkingContents(source, undefined);
+    // Deliberate pin: the translator enters the source's exact url so this
+    // locale keeps today's image when the source later swaps.
+    getElement<ContentEditorImageElement>(localized, 0).url = 'https://example.com/en.png';
+
+    const working = createLocalizedWorkingContents(source, localized);
+    expect(getElement<ContentEditorImageElement>(working, 0).url).toBe(
+      'https://example.com/en.png',
+    );
+
+    getElement<ContentEditorImageElement>(source, 0).url = 'https://example.com/en-v2.png';
+    const merged = mergeLocalizedEditorContents(source, localized);
+    expect(getElement<ContentEditorImageElement>(merged, 0).url).toBe('https://example.com/en.png');
+  });
+
+  it('deploy backfill blanks legacy clone destinations so an edited source url never resurrects', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    // A row saved before link units existed: a structural clone whose link
+    // node still carries the source destination verbatim.
+    const legacy = deepClone(source);
+    const legacyText = getElement<ContentEditorTextElement>(legacy, 0);
+    legacyText.data[0].children[0].text = '';
+    legacyText.data[0].children[1].children[0].text = 'příspěvek na fóru';
+    legacyText.data[0].children[2].text = '';
+
+    expect(blankLocalizedLinkDestinations(legacy)).toBe(true);
+    // Idempotent: a second pass finds nothing left to blank.
+    expect(blankLocalizedLinkDestinations(legacy)).toBe(false);
+
+    const blankedLink = getElement<ContentEditorTextElement>(legacy, 0).data[0].children[1];
+    expect(getLocalizableLinkUrl(blankedLink)).toBe('');
+
+    // The author retires the old destination — the locale follows the source
+    // instead of resurrecting the clone, and the anchor translation delivers.
+    getElement<ContentEditorTextElement>(source, 0).data[0].children[1].url =
+      'https://example.com/en/post-v2';
+    const merged = mergeLocalizedEditorContents(source, legacy);
+    const mergedLink = getElement<ContentEditorTextElement>(merged, 0).data[0].children[1];
+    expect(mergedLink.url).toBe('https://example.com/en/post-v2');
+    expect(mergedLink.children[0].text).toBe('příspěvek na fóru');
+  });
+
+  it('deploy backfill blanks legacy image click-through links too', () => {
+    const image = createImageElement();
+    image.link = { url: 'https://example.com/en/pricing' };
+    const legacy = wrapElements([image]);
+    expect(blankLocalizedLinkDestinations(legacy)).toBe(true);
+    expect(getLocalizableLinkUrl(getElement<ContentEditorImageElement>(legacy, 0).link)).toBe('');
+    expect(blankLocalizedLinkDestinations(legacy)).toBe(false);
+  });
+
+  it('round-trips the url through the translation exchange', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    const units = extractContentsTranslationUnits(source, undefined);
+    expect(units.find((unit) => unit.path === '0.0.0:text.0.1:link.url')).toMatchObject({
+      sourceText: 'https://example.com/en/post',
+      translatedText: '',
+      optional: true,
+    });
+
+    const applied = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map([['0.0.0:text.0.1:link.url', 'https://example.com/cs/post']]),
+    );
+    expect(getElement<ContentEditorTextElement>(applied, 0).data[0].children[1].url).toBe(
+      'https://example.com/cs/post',
+    );
+  });
+
+  it('trims assigned destinations; a whitespace-only value collapses to the keep-original sentinel', () => {
+    const link: Record<string, unknown> = { type: 'link', children: [{ text: 'go' }] };
+    assignLocalizedLinkUrl(link, '  https://example.com/cs/post ');
+    expect(link.url).toBe('https://example.com/cs/post');
+    assignLocalizedLinkUrl(link, '   ');
+    expect(link.url).toBe('');
+    expect(getLocalizableLinkUrl(link)).toBe('');
+  });
+
+  it('preserves a stored translation when the source link goes dynamic, and revives it after', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    const stored = createLocalizedWorkingContents(source, undefined);
+    assignLocalizedLinkUrl(
+      getElement<ContentEditorTextElement>(stored, 0).data[0].children[1],
+      'https://example.com/cs/post',
+    );
+
+    // The author adds a user-attribute chip to the destination.
+    const chipTemplate = [
+      {
+        type: 'paragraph',
+        children: [
+          { text: 'https://example.com/user/' },
+          { type: 'user-attribute', attrCode: 'user_id', fallback: '', children: [{ text: '' }] },
+        ],
+      },
+    ];
+    getElement<ContentEditorTextElement>(source, 0).data[0].children[1].data = chipTemplate;
+
+    // The working copy carries the stored destination even though no unit is
+    // readable, so an unrelated save cannot erase it.
+    const working = createLocalizedWorkingContents(source, stored);
+    const workingLink = getElement<ContentEditorTextElement>(working, 0).data[0].children[1];
+    expect(workingLink.url).toBe('https://example.com/cs/post');
+
+    const payload = buildLocalizedFlowSavePayload({ 'step-1': working }, { 'step-1': stored });
+    const savedLink = getElement<ContentEditorTextElement>(payload['step-1'], 0).data[0]
+      .children[1];
+    expect(savedLink.url).toBe('https://example.com/cs/post');
+
+    // Dormant while dynamic: delivery keeps the source's chip template.
+    const merged = mergeLocalizedEditorContents(source, payload['step-1']);
+    expect(getElement<ContentEditorTextElement>(merged, 0).data[0].children[1].data).toEqual(
+      chipTemplate,
+    );
+
+    // The author removes the chip — the stored translation delivers again.
+    getElement<ContentEditorTextElement>(source, 0).data[0].children[1].data = [
+      { type: 'paragraph', children: [{ text: 'https://example.com/en/post' }] },
+    ];
+    const revived = mergeLocalizedEditorContents(source, payload['step-1']);
+    expect(getElement<ContentEditorTextElement>(revived, 0).data[0].children[1].url).toBe(
+      'https://example.com/cs/post',
+    );
+  });
+
+  it('parks a stored translation while the source destination is cleared — no ghost delivery, no loss', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    const stored = createLocalizedWorkingContents(source, undefined);
+    assignLocalizedLinkUrl(
+      getElement<ContentEditorTextElement>(stored, 0).data[0].children[1],
+      'https://example.com/cs/post',
+    );
+
+    // The author clears the destination in the link panel: the template
+    // empties, the stale url field stays behind (the panel never writes url).
+    const clearedTemplate = [{ type: 'paragraph', children: [{ text: '' }] }];
+    getElement<ContentEditorTextElement>(source, 0).data[0].children[1].data = clearedTemplate;
+
+    // No unit: the row disappears from the exchange instead of exporting a
+    // value that no longer has a source counterpart.
+    const units = extractContentsTranslationUnits(source, stored);
+    expect(units.some((unit) => unit.path === '0.0.0:text.0.1:link.url')).toBe(false);
+
+    // No ghost delivery: the merge keeps the cleared source template.
+    const merged = mergeLocalizedEditorContents(source, stored);
+    expect(getElement<ContentEditorTextElement>(merged, 0).data[0].children[1].data).toEqual(
+      clearedTemplate,
+    );
+
+    // Preserved through a save, and delivering again once the source is restored.
+    const working = createLocalizedWorkingContents(source, stored);
+    const payload = buildLocalizedFlowSavePayload({ 'step-1': working }, { 'step-1': stored });
+    getElement<ContentEditorTextElement>(source, 0).data[0].children[1].data = [
+      { type: 'paragraph', children: [{ text: 'https://example.com/en/post' }] },
+    ];
+    const revived = mergeLocalizedEditorContents(source, payload['step-1']);
+    expect(getElement<ContentEditorTextElement>(revived, 0).data[0].children[1].url).toBe(
+      'https://example.com/cs/post',
+    );
+  });
+
+  it('reads link templates with the delivery grammar (no divergence on non-canonical shapes)', () => {
+    // A top-level text leaf is ignored by delivery (it only reads each top
+    // node's immediate children) — localization must see the same nothing,
+    // not a phantom destination.
+    expect(
+      getLocalizableLinkUrl({ type: 'link', url: 'STALE', data: [{ text: 'https://x.io' }] }),
+    ).toBe('');
+    // A chip nested deeper than delivery reads is ignored, not "dynamic".
+    expect(
+      getLocalizableLinkUrl({
+        type: 'link',
+        data: [{ children: [{ children: [{ type: 'user-attribute', attrCode: 'plan' }] }] }],
+      }),
+    ).toBe('');
+    // A chip where delivery would substitute it makes the destination dynamic.
+    expect(
+      getLocalizableLinkUrl({
+        type: 'link',
+        data: [{ children: [{ type: 'user-attribute', attrCode: 'plan' }] }],
+      }),
+    ).toBeUndefined();
+  });
+
+  it('localizes the image click-through link like an inline link', () => {
+    const image = createImageElement();
+    image.link = { url: 'https://example.com/en/pricing' };
+    const source = wrapElements([image]);
+
+    const units = extractTranslatableUnits(source);
+    expect(units.find((unit) => unit.path === '0.0.0:image.link.url')).toMatchObject({
+      text: 'https://example.com/en/pricing',
+      optional: true,
+    });
+
+    const localized = createLocalizedWorkingContents(source, undefined);
+    const localizedImage = getElement<ContentEditorImageElement>(localized, 0);
+    expect(getLocalizableLinkUrl(localizedImage.link)).toBe('');
+    assignLocalizedLinkUrl(localizedImage.link, 'https://example.com/fr/pricing');
+
+    const merged = mergeLocalizedEditorContents(source, localized);
+    const mergedLink = getElement<ContentEditorImageElement>(merged, 0).link;
+    // Both stores swap — delivery recomputes the click-through url from `data`.
+    expect(mergedLink?.url).toBe('https://example.com/fr/pricing');
+    expect(mergedLink?.data).toEqual([
+      { type: 'paragraph', children: [{ text: 'https://example.com/fr/pricing' }] },
+    ]);
+  });
+
+  it('emits no image link unit for a dynamic click-through destination', () => {
+    const image = createImageElement();
+    image.link = {
+      url: 'https://example.com/en/pricing',
+      data: [{ children: [{ type: 'user-attribute', attrCode: 'plan' }] }],
+    };
+    const source = wrapElements([image]);
+    const units = extractTranslatableUnits(source);
+    expect(units.some((unit) => unit.path === '0.0.0:image.link.url')).toBe(false);
+  });
+
+  it('emits no link units inside resource-center block names (delivery never renders them)', () => {
+    const data: ResourceCenterData = {
+      tabs: [
+        {
+          id: 'tab-1',
+          name: 'Help',
+          blocks: [
+            {
+              id: 'block-1',
+              type: ResourceCenterBlockType.ACTION,
+              name: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    { text: 'Read ' },
+                    {
+                      type: 'link',
+                      url: 'https://example.com/en/post',
+                      children: [{ text: 'this' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    } as unknown as ResourceCenterData;
+
+    const units = extractVersionDataTranslationUnits(ContentDataType.RESOURCE_CENTER, data, null);
+    expect(units.some((unit) => unit.path.includes(':link.url'))).toBe(false);
+    // The name's text leaves still translate.
+    expect(units.some((unit) => unit.path.startsWith('tabs.tab-1.blocks.block-1:name'))).toBe(true);
   });
 });
 
@@ -880,6 +1300,26 @@ describe('duplicate identifier remapping', () => {
     );
     const merged = mergeLocalizedEditorContents(duplicated, remapped);
     expect(getElement<ContentEditorNPSElement>(merged, 2).data.name).toBe('Recommanderiez-vous ?');
+  });
+
+  it('link destination overrides ride through a duplicate untouched (links have no ids to remap)', () => {
+    const source = wrapElements([createLinkTextElement(), createNpsElement()]);
+    const stored = createLocalizedWorkingContents(source, undefined);
+    assignLocalizedLinkUrl(
+      getElement<ContentEditorTextElement>(stored, 0).data[0].children[1],
+      'https://example.com/cs/post',
+    );
+
+    // A duplicate keeps the shape but regenerates question cvids; links carry
+    // no identifiers, so they align purely by position.
+    const duplicated = deepClone(source);
+    getElement<ContentEditorNPSElement>(duplicated, 1).data.cvid = 'question-1-copy';
+
+    const remapped = remapContentsTranslationIdentifiers(duplicated, stored);
+    const merged = mergeLocalizedEditorContents(duplicated, remapped);
+    expect(
+      getLocalizableLinkUrl(getElement<ContentEditorTextElement>(merged, 0).data[0].children[1]),
+    ).toBe('https://example.com/cs/post');
   });
 
   it('remaps a whole flow translation map by step cvid', () => {
