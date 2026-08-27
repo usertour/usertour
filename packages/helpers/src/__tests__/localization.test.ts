@@ -1302,6 +1302,26 @@ describe('duplicate identifier remapping', () => {
     expect(getElement<ContentEditorNPSElement>(merged, 2).data.name).toBe('Recommanderiez-vous ?');
   });
 
+  it('link destination overrides ride through a duplicate untouched (links have no ids to remap)', () => {
+    const source = wrapElements([createLinkTextElement(), createNpsElement()]);
+    const stored = createLocalizedWorkingContents(source, undefined);
+    assignLocalizedLinkUrl(
+      getElement<ContentEditorTextElement>(stored, 0).data[0].children[1],
+      'https://example.com/cs/post',
+    );
+
+    // A duplicate keeps the shape but regenerates question cvids; links carry
+    // no identifiers, so they align purely by position.
+    const duplicated = deepClone(source);
+    getElement<ContentEditorNPSElement>(duplicated, 1).data.cvid = 'question-1-copy';
+
+    const remapped = remapContentsTranslationIdentifiers(duplicated, stored);
+    const merged = mergeLocalizedEditorContents(duplicated, remapped);
+    expect(
+      getLocalizableLinkUrl(getElement<ContentEditorTextElement>(merged, 0).data[0].children[1]),
+    ).toBe('https://example.com/cs/post');
+  });
+
   it('remaps a whole flow translation map by step cvid', () => {
     const source = createSourceContents();
     const stored = createLocalizedWorkingContents(source, undefined);
