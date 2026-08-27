@@ -1,5 +1,9 @@
 import { PrismaClient } from '@prisma/client';
-import { migrateConditionIds, validateConditionIds } from './migration';
+import {
+  migrateConditionIds,
+  migrateLocalizedLinkDestinations,
+  validateConditionIds,
+} from './migration';
 import { backfillProjectDefaults } from './project-defaults';
 
 // PrismaClient always connects through the datasource `url` (the pooled PgBouncer
@@ -21,6 +25,10 @@ async function main() {
   } else {
     console.log(`❌ Found ${result.invalidVersions} versions with missing IDs`);
   }
+
+  // Blank legacy link-destination clones in translation rows saved before
+  // link units existed (idempotent; stamped rows are never touched).
+  await migrateLocalizedLinkDestinations(prisma);
 
   // Backfill default events / attributes into projects created before a default
   // was added (idempotent; only touches projects actually missing one).

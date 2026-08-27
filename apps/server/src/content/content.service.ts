@@ -21,6 +21,7 @@ import {
 } from '@/common/errors';
 import { ContentConfigObject, ContentDataType } from '@usertour/types';
 import {
+  LOCALIZED_LINKS_SCHEMA_VERSION,
   duplicateConfig,
   duplicateData,
   duplicateStep,
@@ -864,6 +865,9 @@ export class ContentService {
                 versionLocalization.localized,
               ) as Prisma.InputJsonValue,
               backup: remapTranslationPayload(versionLocalization.backup) as Prisma.InputJsonValue,
+              // Remapping only rewrites identifiers, so the copy stays in the
+              // source row's link format (see copyVersionLocalizations).
+              localizedSchemaVersion: versionLocalization.localizedSchemaVersion,
             })),
           });
         }
@@ -1049,6 +1053,10 @@ export class ContentService {
     // clause, so a state-only write (the enable toggle) can never clobber
     // a translation saved from elsewhere.
     return await this.prisma.$transaction(async (tx) => {
+      // The schema-version stamp marks rows whose link destinations the new
+      // save path wrote (semantic '' sentinel / override, never a clone). An
+      // enable-only toggle must NOT stamp: it would exempt a legacy row from
+      // the deploy-time link backfill without normalizing it.
       const row = await tx.versionOnLocalization.upsert({
         where: { versionId_localizationId: { versionId, localizationId } },
         create: {
@@ -1057,8 +1065,15 @@ export class ContentService {
           localized: localized ?? {},
           backup: backup ?? {},
           enabled,
+          localizedSchemaVersion: LOCALIZED_LINKS_SCHEMA_VERSION,
         },
-        update: { localized: localized ?? undefined, backup: backup ?? undefined, enabled },
+        update: {
+          localized: localized ?? undefined,
+          backup: backup ?? undefined,
+          enabled,
+          // Stamp exactly when `localized` is written (null skips like undefined).
+          ...(localized != null ? { localizedSchemaVersion: LOCALIZED_LINKS_SCHEMA_VERSION } : {}),
+        },
       });
       // Translations belong to the draft, so saving one counts as saving the
       // draft: touch the version's updatedAt and hand the version back — the
@@ -1095,6 +1110,9 @@ export class ContentService {
         enabled: versionLocalization.enabled,
         localized: versionLocalization.localized as Prisma.InputJsonValue,
         backup: versionLocalization.backup as Prisma.InputJsonValue,
+        // A copy is byte-identical, so it stays in the source row's format —
+        // a not-yet-backfilled copy must remain visible to the backfill.
+        localizedSchemaVersion: versionLocalization.localizedSchemaVersion,
       })),
     });
   }

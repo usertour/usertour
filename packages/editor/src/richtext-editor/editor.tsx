@@ -321,7 +321,10 @@ export const PopperEditorMini = (props: PopperEditorProps) => {
     <div
       ref={setEditorRef}
       className={cn(
-        'rounded-md border border-input pl-2 relative flex flex-row items-center',
+        // min-w-0: as a flex item this must be allowed to shrink below the
+        // min-content width of an unbreakable url, or a long destination
+        // blows the popover open instead of wrapping inside the editable.
+        'rounded-md border border-input pl-2 relative flex flex-row items-center min-w-0',
         'transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
         className,
       )}

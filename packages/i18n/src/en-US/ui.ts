@@ -2557,6 +2557,7 @@ const translations = {
         buttonText: 'Button text',
         otherPlaceholder: '"Other" placeholder',
         optionLabel: 'Option {{index}}',
+        linkUrl: 'Link URL',
         headerText: 'Header text',
         title: 'Title',
         readMoreLabel: 'Read more label',

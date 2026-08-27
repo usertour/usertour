@@ -2421,6 +2421,7 @@ const translations = {
         buttonText: '按钮文本',
         otherPlaceholder: '「其他」占位文本',
         optionLabel: '选项 {{index}}',
+        linkUrl: '链接地址',
         headerText: '头部文本',
         title: '标题',
         readMoreLabel: '「阅读更多」按钮文本',

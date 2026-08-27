@@ -627,16 +627,22 @@ model Localization {
 }
 
 model VersionOnLocalization {
-  id             String       @id @default(cuid())
-  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime     @updatedAt @db.Timestamptz(6)
-  version        Version      @relation(fields: [versionId], references: [id])
-  versionId      String
-  enabled        Boolean      @default(false)
-  localization   Localization @relation(fields: [localizationId], references: [id])
-  localizationId String
-  localized      Json         @db.JsonB
-  backup         Json         @db.JsonB
+  id                     String       @id @default(cuid())
+  createdAt              DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime     @updatedAt @db.Timestamptz(6)
+  version                Version      @relation(fields: [versionId], references: [id])
+  versionId              String
+  enabled                Boolean      @default(false)
+  localization           Localization @relation(fields: [localizationId], references: [id])
+  localizationId         String
+  localized              Json         @db.JsonB
+  backup                 Json         @db.JsonB
+  /// Format version of the link destinations inside `localized`
+  /// (LOCALIZED_LINKS_SCHEMA_VERSION): 0 = pre-link-unit row whose links are
+  /// verbatim source clones — the deploy-time backfill blanks them; the app
+  /// stamps the current version on every localized write. Copies carry the
+  /// source row's value.
+  localizedSchemaVersion Int          @default(0)
 
   @@unique([versionId, localizationId])
 }

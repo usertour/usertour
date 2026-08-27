@@ -80,7 +80,16 @@ export const LinkElement = memo((props: RenderElementProps) => {
   const editor = useSlateStatic();
 
   const [open, setOpen] = useState(false);
-  const [data, setData] = useState<Descendant[]>(element.data ?? INITIAL_LINK_URL_VALUE);
+  // A url-only link (stored before wrapLink wrote templates) seeds the panel
+  // from its url — the placeholder would otherwise overwrite the real
+  // destination on close (the unconditional save below).
+  const [data, setData] = useState<Descendant[]>(
+    () =>
+      element.data ??
+      (element.url
+        ? [{ type: 'paragraph', children: [{ text: element.url }] }]
+        : INITIAL_LINK_URL_VALUE),
+  );
   const [openType, setOpenType] = useState<string>(element.openType ?? LINK_OPEN_TYPE.SAME);
 
   // Handle popover open/close and save changes on close

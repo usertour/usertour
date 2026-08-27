@@ -86,6 +86,10 @@ export const wrapLink = (editor: CustomEditor, url: string) => {
   const link: LinkElementType = {
     type: 'link',
     url,
+    // Delivery derives the href from the `data` template (user-attribute
+    // chips only resolve through it), so every link writer must store one —
+    // a url-only link survives on a fallback path alone.
+    data: [{ type: 'paragraph', children: [{ text: url }] }],
     children: isCollapsed ? [{ text: url }] : [],
   };
 
