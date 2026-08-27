@@ -25,6 +25,10 @@ export class ProjectConfigModel {
   @Field()
   webhooks: boolean;
 
+  /** Outbound integrations: same gate shape as webhooks. */
+  @Field()
+  integrations: boolean;
+
   @Field()
   planType: string;
 }

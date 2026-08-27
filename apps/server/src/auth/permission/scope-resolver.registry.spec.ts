@@ -21,7 +21,6 @@ describe('scope resolvers', () => {
       sessionId === 'session-1' ? { projectId: 'proj-1', environmentId: 'env-1' } : null,
     getIntegrationEnvironmentId: async (integrationId) =>
       integrationId === 'int-1' ? 'env-1' : null,
-    getMappingEnvironmentId: async (mappingId) => (mappingId === 'map-1' ? 'env-1' : null),
     getWebhookEnvironmentId: async (webhookId) => (webhookId === 'wh-1' ? 'env-1' : null),
   };
   const resolvers = createScopeResolvers(services);
@@ -154,13 +153,19 @@ describe('scope resolvers', () => {
         environmentIds: ['env-1'],
       });
     });
-    it('derives project from object-mapping id → integration → environment', async () => {
-      expect(await resolvers[ScopeKind.Integration]({ id: 'map-1' })).toEqual({
+    it('derives project from a bare id (delete/test/messages)', async () => {
+      expect(await resolvers[ScopeKind.Integration]({ data: { id: 'int-1' } })).toEqual({
         projectId: 'proj-1',
         environmentIds: ['env-1'],
       });
     });
-    it('returns null when neither integration nor mapping id resolves', async () => {
+    it('falls back to explicit environmentId when there is no id (list/upsert)', async () => {
+      expect(await resolvers[ScopeKind.Integration]({ environmentId: 'env-2' })).toEqual({
+        projectId: 'proj-2',
+        environmentIds: ['env-2'],
+      });
+    });
+    it('returns null when nothing resolves', async () => {
       expect(await resolvers[ScopeKind.Integration]({})).toBeNull();
       expect(await resolvers[ScopeKind.Integration]({ integrationId: 'nope' })).toBeNull();
     });

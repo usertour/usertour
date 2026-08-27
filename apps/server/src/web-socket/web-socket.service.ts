@@ -24,7 +24,6 @@ import {
   BizSession,
 } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { IntegrationService } from '@/integration/integration.service';
 import { TrackEventData } from '@/common/types/track';
 import { ProjectsService } from '@/projects/projects.service';
 import {
@@ -72,7 +71,6 @@ export class WebSocketService {
   constructor(
     private prisma: PrismaService,
     private bizService: BizService,
-    private integrationService: IntegrationService,
     private projectsService: ProjectsService,
     private eventEmitter: EventEmitter2,
   ) {}

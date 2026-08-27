@@ -78,16 +78,10 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'biz.deleteBizCompanyOnSegment': W,
   // integration
   'integration.listIntegrations': O,
-  'integration.getIntegration': O,
-  'integration.getSalesforceAuthUrl': O,
-  'integration.getSalesforceObjectFields': O,
-  'integration.getIntegrationObjectMappings': O,
-  'integration.getIntegrationObjectMapping': O,
-  'integration.updateIntegration': O,
-  'integration.upsertIntegrationObjectMapping': O,
-  'integration.updateIntegrationObjectMapping': O,
-  'integration.deleteIntegrationObjectMapping': O,
-  'integration.disconnectIntegration': O,
+  'integration.queryIntegrationMessages': O,
+  'integration.upsertIntegration': O,
+  'integration.deleteIntegration': O,
+  'integration.sendIntegrationTestEvent': O,
   'webhooks.listWebhooks': O,
   'webhooks.getWebhook': O,
   'webhooks.queryWebhookMessages': O,
@@ -147,7 +141,7 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
 
 describe('endpoint → capability compatibility baseline', () => {
   it('snapshot covers exactly the same 111 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(111);
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(105);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 

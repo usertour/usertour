@@ -148,15 +148,6 @@ const config: Config = {
     // ALLOW_PRIVATE_NETWORK_EGRESS=true.
     allowPrivateNetworkEgress: process.env.ALLOW_PRIVATE_NETWORK_EGRESS === 'true',
   },
-  integration: {
-    salesforce: {
-      clientId: process.env.SALESFORCE_CLIENT_ID || '',
-      clientSecret: process.env.SALESFORCE_CLIENT_SECRET || '',
-      callbackUrl: process.env.SALESFORCE_CALLBACK_URL || '',
-      loginUrl: process.env.SALESFORCE_LOGIN_URL || '',
-      sandboxLoginUrl: process.env.SALESFORCE_SANDBOX_LOGIN_URL || 'https://test.salesforce.com',
-    },
-  },
   encryption: {
     // 64-hex-char (32-byte) AES-256 key. Override `ENCRYPTION_KEY` in
     // production — the all-zero default is a sentinel for local dev

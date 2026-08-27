@@ -20,8 +20,7 @@ import { deriveAudit } from './audit.interceptor';
  * so only a machine check catches it.
  *
  * Out of scope on purpose: src/mcp (audited in the dispatch wrapper, pinned by
- * write-tools.spec.ts) and the public integration/webhook callbacks
- * (adjudicated separately).
+ * write-tools.spec.ts).
  */
 const WRITE_METHODS = new Set([
   RequestMethod.POST,

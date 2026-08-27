@@ -25,3 +25,4 @@ export * from './constants/builtin-launcher-icons';
 export * from './constants/content-editor-path';
 export * from './constants/resource-center';
 export * from './constants/webhook';
+export * from './constants/integration';

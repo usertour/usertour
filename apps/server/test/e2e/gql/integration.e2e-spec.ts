@@ -1,36 +1,37 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
+import { EncryptionService } from '@/shared/encryption.service';
 
 import { graphql, gqlData } from '../auth';
-import { createTestApp } from '../create-test-app';
-import {
-  buildEnvironment,
-  buildIntegration,
-  buildIntegrationObjectMapping,
-  buildProject,
-} from '../factories';
+import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
+import { createTestApp } from '../create-test-app';
+
+const UPSERT_INTEGRATION = `mutation ($data: UpsertIntegrationInput!) {
+  upsertIntegration(data: $data) { id environmentId provider keyTail config enabled autoDisabledAt }
+}`;
+const DELETE_INTEGRATION =
+  'mutation ($data: IntegrationIdInput!) { deleteIntegration(data: $data) { id } }';
+const SEND_TEST_EVENT =
+  'mutation ($data: IntegrationIdInput!) { sendIntegrationTestEvent(data: $data) { id } }';
+const LIST_INTEGRATIONS = `query ($environmentId: String!) {
+  listIntegrations(environmentId: $environmentId) { id provider keyTail enabled }
+}`;
+const QUERY_MESSAGES = `query ($integrationId: String!, $first: Int) {
+  queryIntegrationMessages(integrationId: $integrationId, first: $first) {
+    totalCount
+    edges { node { id topic status payload deliveries { attempt success responseStatus } } }
+    pageInfo { hasNextPage endCursor }
+  }
+}`;
 
 /**
- * Functional e2e for the `integration` GraphQL resolver — follows the themes
- * template: run as an authorized OWNER (auth/who-can-call is covered by
- * permission.e2e-spec) and assert each mutation's effect in the DB, not just the
- * response shape. Integration data is environment-scoped, so every fixture lives
- * under this project's environment.
- *
- * Salesforce ops:
- *  - `getSalesforceAuthUrl` is pure (builds an OAuth authorize URL via jsforce,
- *    no network). SALESFORCE_* config is present in the run environment, so the
- *    happy path is fully covered (real URL string asserted) plus the
- *    invalid-provider error path.
- *  - `getSalesforceObjectFields` makes real Salesforce network calls via jsforce
- *    against a connected integration's OAuth tokens. No connected integration
- *    (and no network) exists in the test, so it throws `Integration or OAuth
- *    configuration not found`; we assert that error and do NOT hit the network.
- *    GAP: object-fields happy path uncovered (would need a live Salesforce OAuth
- *    session / a mocked jsforce Connection).
+ * Functional e2e for the `integrations` GraphQL resolver (ADR 0011): config
+ * CRUD as an authorized OWNER with effects asserted in the DB. Delivery is
+ * unit-tested at the adapter/processor level; the plan gate has its own spec
+ * (integrations-plan-gate.e2e-spec).
  */
-describe('GraphQL integration (e2e)', () => {
+describe('GraphQL integrations (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let projectId: string;
@@ -38,22 +39,39 @@ describe('GraphQL integration (e2e)', () => {
   let token: string;
   const userIds: string[] = [];
 
+  // A second project to prove cross-project isolation.
+  let otherProjectId: string;
+  let otherOwnerToken: string;
+
   beforeAll(async () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
 
-    const project = await buildProject(prisma, { name: 'gql-integration' });
+    const project = await buildProject(prisma, { name: 'gql-integrations' });
     projectId = project.id;
+    // Integrations are Starter+ on cloud; entitle the project so the CRUD
+    // surface under test is reachable whichever mode the run resolves to.
+    await buildSubscription(prisma, { projectId, planType: 'starter' });
     const environment = await buildEnvironment(prisma, { projectId });
     environmentId = environment.id;
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     token = owner.token;
     userIds.push(owner.user.id);
+
+    const otherProject = await buildProject(prisma, { name: 'gql-integrations-other' });
+    otherProjectId = otherProject.id;
+    const otherOwner = await buildAuthorizedUser(prisma, app, {
+      projectId: otherProjectId,
+      role: 'OWNER',
+    });
+    otherOwnerToken = otherOwner.token;
+    userIds.push(otherOwner.user.id);
   }, 60000);
 
   afterAll(async () => {
     if (prisma) {
       await teardownProject(prisma, projectId);
+      await teardownProject(prisma, otherProjectId);
       if (userIds.length) {
         await prisma.user.deleteMany({ where: { id: { in: userIds } } });
       }
@@ -61,466 +79,283 @@ describe('GraphQL integration (e2e)', () => {
     await app?.close();
   });
 
-  describe('listIntegrations', () => {
-    it('lists integrations for the environment', async () => {
-      const created = await buildIntegration(prisma, { environmentId, provider: 'amplitude' });
+  afterEach(async () => {
+    // One row per (environment, provider) — clear between tests so each can
+    // exercise the create path.
+    await prisma.integration.deleteMany({ where: { environmentId } });
+  });
+
+  const upsertIntegration = async (overrides: Record<string, unknown> = {}) => {
+    const res = await graphql(app, {
+      token,
+      query: UPSERT_INTEGRATION,
+      variables: {
+        data: { environmentId, provider: 'amplitude', key: 'amp-key-8f3e21', ...overrides },
+      },
+    });
+    return gqlData(res).upsertIntegration;
+  };
+
+  describe('upsertIntegration (create)', () => {
+    it('creates an enabled row with the key encrypted at rest and only the tail exposed', async () => {
+      const created = await upsertIntegration({ config: { region: 'EU' } });
+      expect(created.environmentId).toBe(environmentId);
+      expect(created.provider).toBe('amplitude');
+      expect(created.enabled).toBe(true);
+      expect(created.keyTail).toBe('3e21');
+      expect(created.config).toEqual({ region: 'EU' });
+
+      const row = await prisma.integration.findUnique({ where: { id: created.id } });
+      // At rest the key is AES-256-GCM ciphertext, never plaintext.
+      expect(row?.key).not.toBe('amp-key-8f3e21');
+      const encryption = app.get(EncryptionService);
+      expect(encryption.decrypt(row?.key ?? '')).toBe('amp-key-8f3e21');
+    });
+
+    it('the API key is not a queryable field at all', async () => {
       const res = await graphql(app, {
         token,
-        query: `query ($environmentId: String!) {
-          listIntegrations(environmentId: $environmentId) { id provider environmentId enabled }
-        }`,
+        query:
+          'query ($environmentId: String!) { listIntegrations(environmentId: $environmentId) { id key } }',
         variables: { environmentId },
       });
-      const ids = gqlData(res).listIntegrations.map((i: { id: string }) => i.id);
-      expect(ids).toContain(created.id);
+      // GraphQL validation error: the Integration type has no `key` field.
+      expect(res.body.errors).toBeDefined();
     });
 
-    it('returns an empty list for an environment with no integrations', async () => {
-      const empty = await buildEnvironment(prisma, { projectId });
-      const res = await graphql(app, {
-        token,
-        query: `query ($environmentId: String!) {
-          listIntegrations(environmentId: $environmentId) { id }
-        }`,
-        variables: { environmentId: empty.id },
-      });
-      expect(gqlData(res).listIntegrations).toEqual([]);
-    });
-  });
-
-  describe('getIntegration', () => {
-    it('reads an integration by environment + provider', async () => {
-      const created = await buildIntegration(prisma, { environmentId, provider: 'heap' });
-      const res = await graphql(app, {
-        token,
-        query: `query ($environmentId: String!, $provider: String!) {
-          getIntegration(environmentId: $environmentId, provider: $provider) {
-            id provider environmentId enabled
-          }
-        }`,
-        variables: { environmentId, provider: 'heap' },
-      });
-      expect(gqlData(res).getIntegration).toMatchObject({
-        id: created.id,
-        provider: 'heap',
-        environmentId,
-      });
+    it('rejects an unknown provider, a missing first key, and an empty key', async () => {
+      for (const data of [
+        { environmentId, provider: 'salesforce', key: 'k' },
+        { environmentId, provider: 'amplitude' },
+        { environmentId, provider: 'amplitude', key: '  ' },
+      ]) {
+        const res = await graphql(app, { token, query: UPSERT_INTEGRATION, variables: { data } });
+        expect(res.body.errors).toBeDefined();
+      }
+      expect(await prisma.integration.count({ where: { environmentId } })).toBe(0);
     });
 
-    it('errors for an unknown provider', async () => {
+    it('whitelists the config shape (unknown region rejected)', async () => {
       const res = await graphql(app, {
         token,
-        query: `query ($environmentId: String!, $provider: String!) {
-          getIntegration(environmentId: $environmentId, provider: $provider) { id }
-        }`,
-        variables: { environmentId, provider: 'does-not-exist' },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('updateIntegration', () => {
-    it('upserts key + enabled and persists them', async () => {
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($environmentId: String!, $provider: String!, $input: UpdateIntegrationInput!) {
-          updateIntegration(environmentId: $environmentId, provider: $provider, input: $input) {
-            id provider key enabled
-          }
-        }`,
+        query: UPSERT_INTEGRATION,
         variables: {
-          environmentId,
-          provider: 'mixpanel',
-          input: { key: 'mp-key', enabled: true },
-        },
-      });
-      const updated = gqlData(res).updateIntegration;
-      expect(updated).toMatchObject({ provider: 'mixpanel', key: 'mp-key', enabled: true });
-
-      const row = await prisma.integration.findUnique({
-        where: { environmentId_provider: { environmentId, provider: 'mixpanel' } },
-      });
-      expect(row).toMatchObject({ key: 'mp-key', enabled: true });
-    });
-
-    it('updates an existing integration row in place', async () => {
-      await buildIntegration(prisma, {
-        environmentId,
-        provider: 'posthog',
-        key: 'old',
-        enabled: false,
-      });
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($environmentId: String!, $provider: String!, $input: UpdateIntegrationInput!) {
-          updateIntegration(environmentId: $environmentId, provider: $provider, input: $input) {
-            id key enabled
-          }
-        }`,
-        variables: {
-          environmentId,
-          provider: 'posthog',
-          input: { key: 'new', enabled: true },
-        },
-      });
-      expect(gqlData(res).updateIntegration).toMatchObject({ key: 'new', enabled: true });
-
-      const row = await prisma.integration.findUnique({
-        where: { environmentId_provider: { environmentId, provider: 'posthog' } },
-      });
-      expect(row).toMatchObject({ key: 'new', enabled: true });
-    });
-  });
-
-  describe('getSalesforceAuthUrl', () => {
-    // PURE op: builds an OAuth authorize URL via jsforce (no network). Requires
-    // SALESFORCE_* config; this is present in the run environment, so we assert
-    // the real URL. As a side effect the service upserts a `salesforce`
-    // integration row keyed by the URL `state`; teardownProject cleans it up.
-    it('returns an OAuth authorize URL and seeds the integration row', async () => {
-      const res = await graphql(app, {
-        token,
-        query: `query ($environmentId: String!, $provider: String!) {
-          getSalesforceAuthUrl(environmentId: $environmentId, provider: $provider)
-        }`,
-        variables: { environmentId, provider: 'salesforce' },
-      });
-      const url: string = gqlData(res).getSalesforceAuthUrl;
-      expect(typeof url).toBe('string');
-      expect(url).toMatch(/^https?:\/\//);
-      expect(url).toContain('/services/oauth2/authorize');
-
-      // state encodes the upserted integration's id.
-      const state = new URL(url).searchParams.get('state');
-      expect(state).toBeTruthy();
-      const seeded = await prisma.integration.findUnique({
-        where: { environmentId_provider: { environmentId, provider: 'salesforce' } },
-      });
-      expect(seeded?.id).toBe(state);
-    });
-
-    it('errors for an invalid provider', async () => {
-      const res = await graphql(app, {
-        token,
-        query: `query ($environmentId: String!, $provider: String!) {
-          getSalesforceAuthUrl(environmentId: $environmentId, provider: $provider)
-        }`,
-        variables: { environmentId, provider: 'not-salesforce' },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('getSalesforceObjectFields', () => {
-    // GAP: happy path is uncovered — it makes real Salesforce network calls via
-    // jsforce against a connected integration's OAuth tokens, neither of which
-    // exist in the test. We assert the no-OAuth error and do NOT hit the network.
-    it('errors when the integration has no OAuth configuration', async () => {
-      const integration = await buildIntegration(prisma, {
-        environmentId,
-        provider: 'salesforce-sandbox',
-      });
-      const res = await graphql(app, {
-        token,
-        query: `query ($integrationId: String!) {
-          getSalesforceObjectFields(integrationId: $integrationId) {
-            standardObjects { name }
-          }
-        }`,
-        variables: { integrationId: integration.id },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
-      expect(res.body.data?.getSalesforceObjectFields ?? null).toBeNull();
-    });
-  });
-
-  describe('getIntegrationObjectMappings', () => {
-    it('lists mappings for an integration', async () => {
-      const integration = await buildIntegration(prisma, {
-        environmentId,
-        provider: 'sf-map-list',
-      });
-      const mapping = await buildIntegrationObjectMapping(prisma, {
-        integrationId: integration.id,
-        sourceObjectType: 'contact',
-        destinationObjectType: 'user',
-      });
-      const res = await graphql(app, {
-        token,
-        query: `query ($integrationId: String!) {
-          getIntegrationObjectMappings(integrationId: $integrationId) {
-            id sourceObjectType destinationObjectType integrationId enabled
-          }
-        }`,
-        variables: { integrationId: integration.id },
-      });
-      const ids = gqlData(res).getIntegrationObjectMappings.map((m: { id: string }) => m.id);
-      expect(ids).toContain(mapping.id);
-    });
-
-    it('returns an empty list when an integration has no mappings', async () => {
-      const integration = await buildIntegration(prisma, {
-        environmentId,
-        provider: 'sf-map-empty',
-      });
-      const res = await graphql(app, {
-        token,
-        query: `query ($integrationId: String!) {
-          getIntegrationObjectMappings(integrationId: $integrationId) { id }
-        }`,
-        variables: { integrationId: integration.id },
-      });
-      expect(gqlData(res).getIntegrationObjectMappings).toEqual([]);
-    });
-  });
-
-  describe('getIntegrationObjectMapping', () => {
-    it('reads a mapping by id', async () => {
-      const integration = await buildIntegration(prisma, { environmentId, provider: 'sf-map-get' });
-      const mapping = await buildIntegrationObjectMapping(prisma, {
-        integrationId: integration.id,
-        sourceObjectType: 'lead',
-        destinationObjectType: 'user',
-      });
-      const res = await graphql(app, {
-        token,
-        query: `query ($id: String!) {
-          getIntegrationObjectMapping(id: $id) {
-            id sourceObjectType destinationObjectType integrationId
-          }
-        }`,
-        variables: { id: mapping.id },
-      });
-      expect(gqlData(res).getIntegrationObjectMapping).toMatchObject({
-        id: mapping.id,
-        sourceObjectType: 'lead',
-        destinationObjectType: 'user',
-        integrationId: integration.id,
-      });
-    });
-
-    it('errors for an unknown mapping id', async () => {
-      const res = await graphql(app, {
-        token,
-        query: 'query ($id: String!) { getIntegrationObjectMapping(id: $id) { id } }',
-        variables: { id: 'does-not-exist' },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('upsertIntegrationObjectMapping', () => {
-    it('creates a mapping and persists it', async () => {
-      const integration = await buildIntegration(prisma, {
-        environmentId,
-        provider: 'sf-upsert-create',
-      });
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($integrationId: String!, $input: CreateIntegrationObjectMappingInput!) {
-          upsertIntegrationObjectMapping(integrationId: $integrationId, input: $input) {
-            id sourceObjectType destinationObjectType enabled settings integrationId
-          }
-        }`,
-        variables: {
-          integrationId: integration.id,
-          input: {
-            sourceObjectType: 'account',
-            destinationObjectType: 'company',
-            settings: { fieldMap: { Name: 'name' } },
-            enabled: true,
+          data: {
+            environmentId,
+            provider: 'posthog',
+            key: 'ph-key',
+            config: { region: 'APAC' },
           },
         },
       });
-      const created = gqlData(res).upsertIntegrationObjectMapping;
-      expect(created).toMatchObject({
-        sourceObjectType: 'account',
-        destinationObjectType: 'company',
-        enabled: true,
-        integrationId: integration.id,
-      });
-      expect(created.settings).toEqual({ fieldMap: { Name: 'name' } });
+      expect(res.body.errors).toBeDefined();
+    });
+  });
 
-      const row = await prisma.integrationObjectMapping.findUnique({
+  describe('upsertIntegration (update)', () => {
+    it('updates in place (no second row) and keeps the stored key when omitted', async () => {
+      const created = await upsertIntegration();
+      const updated = await upsertIntegration({ key: undefined, enabled: false });
+      expect(updated.id).toBe(created.id);
+      expect(updated.enabled).toBe(false);
+      expect(updated.keyTail).toBe('3e21');
+      expect(await prisma.integration.count({ where: { environmentId } })).toBe(1);
+    });
+
+    it('a new key resets the circuit-breaker state; a plain enabled flip keeps it', async () => {
+      const created = await upsertIntegration();
+      const breakerState = {
+        consecutiveFailures: 7,
+        cooldownUntil: new Date(Date.now() + 30 * 60_000),
+        failingSince: new Date(Date.now() - 60 * 60_000),
+      };
+      await prisma.integration.update({ where: { id: created.id }, data: breakerState });
+
+      // Disabling (no key, no config) keeps the streak.
+      await upsertIntegration({ key: undefined, enabled: false });
+      let row = await prisma.integration.findUnique({ where: { id: created.id } });
+      expect(row?.consecutiveFailures).toBe(7);
+      expect(row?.cooldownUntil).not.toBeNull();
+
+      // A NEW credential owes nothing to the old one's failures.
+      await upsertIntegration({ key: 'amp-key-fresh' });
+      row = await prisma.integration.findUnique({ where: { id: created.id } });
+      expect(row?.consecutiveFailures).toBe(0);
+      expect(row?.cooldownUntil).toBeNull();
+      expect(row?.failingSince).toBeNull();
+      expect(row?.keyTail).toBe('resh');
+    });
+
+    it('re-enabling clears the auto-disable marker', async () => {
+      const created = await upsertIntegration();
+      await prisma.integration.update({
         where: { id: created.id },
+        data: { enabled: false, autoDisabledAt: new Date() },
       });
-      expect(row).toMatchObject({
-        sourceObjectType: 'account',
-        destinationObjectType: 'company',
-        enabled: true,
-      });
-    });
 
-    it('updates the existing mapping on conflicting source/destination', async () => {
-      const integration = await buildIntegration(prisma, {
+      const updated = await upsertIntegration({ key: undefined, enabled: true });
+      expect(updated.enabled).toBe(true);
+      expect(updated.autoDisabledAt).toBeNull();
+    });
+  });
+
+  describe('listIntegrations', () => {
+    it('lists the environment rows', async () => {
+      const amplitude = await upsertIntegration();
+      const segment = await upsertIntegration({ provider: 'segment', key: 'seg-write-key' });
+
+      const res = await graphql(app, {
+        token,
+        query: LIST_INTEGRATIONS,
+        variables: { environmentId },
+      });
+      const listed = gqlData(res).listIntegrations.map((row: { id: string }) => row.id);
+      expect(listed).toEqual(expect.arrayContaining([amplitude.id, segment.id]));
+    });
+  });
+
+  /** Seed a logged message (with attempts) the way the pipeline would. */
+  const seedMessage = async (
+    integrationId: string,
+    id: string,
+    options: {
+      status?: 'PENDING' | 'DELIVERED' | 'FAILED';
+      attempts?: number;
+      createdAt?: Date;
+    } = {},
+  ) => {
+    const { status = 'DELIVERED', attempts = 1, createdAt } = options;
+    return prisma.outboundMessage.create({
+      data: {
+        id,
         environmentId,
-        provider: 'sf-upsert-conflict',
-      });
-      const existing = await buildIntegrationObjectMapping(prisma, {
-        integrationId: integration.id,
-        sourceObjectType: 'contact',
-        destinationObjectType: 'user',
-        enabled: false,
-        settings: { v: 1 },
-      });
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($integrationId: String!, $input: CreateIntegrationObjectMappingInput!) {
-          upsertIntegrationObjectMapping(integrationId: $integrationId, input: $input) {
-            id enabled settings
-          }
-        }`,
-        variables: {
-          integrationId: integration.id,
-          input: {
-            sourceObjectType: 'contact',
-            destinationObjectType: 'user',
-            settings: { v: 2 },
-            enabled: true,
-          },
+        integrationId,
+        topic: 'event.tracked.flow_started',
+        payload: {
+          id,
+          object: 'integrationMessage',
+          type: 'event.tracked.flow_started',
+          data: {},
         },
-      });
-      const upserted = gqlData(res).upsertIntegrationObjectMapping;
-      expect(upserted.id).toBe(existing.id);
-      expect(upserted).toMatchObject({ enabled: true });
-      expect(upserted.settings).toEqual({ v: 2 });
-
-      const row = await prisma.integrationObjectMapping.findUnique({ where: { id: existing.id } });
-      expect(row).toMatchObject({ enabled: true, settings: { v: 2 } });
+        status,
+        ...(createdAt ? { createdAt } : {}),
+        deliveries: {
+          create: Array.from({ length: attempts }, (_, index) => ({
+            attempt: index + 1,
+            success: status === 'DELIVERED' && index === attempts - 1,
+            responseStatus: status === 'DELIVERED' && index === attempts - 1 ? 200 : 500,
+            responseBody: 'ok',
+            durationMs: 12,
+          })),
+        },
+      },
     });
+  };
 
-    it('errors for an unknown integration', async () => {
+  describe('queryIntegrationMessages', () => {
+    it('returns messages newest-first with their attempts and cursor pagination', async () => {
+      const created = await upsertIntegration();
+      const baseTime = Date.now();
+      for (let i = 0; i < 3; i++) {
+        await seedMessage(created.id, `imsg_page_${i}`, {
+          status: i === 1 ? 'FAILED' : 'DELIVERED',
+          attempts: i === 1 ? 5 : 1,
+          createdAt: new Date(baseTime + i * 1000),
+        });
+      }
+
       const res = await graphql(app, {
         token,
-        query: `mutation ($integrationId: String!, $input: CreateIntegrationObjectMappingInput!) {
-          upsertIntegrationObjectMapping(integrationId: $integrationId, input: $input) { id }
-        }`,
-        variables: {
-          integrationId: 'does-not-exist',
-          input: { sourceObjectType: 'account', destinationObjectType: 'company' },
-        },
+        query: QUERY_MESSAGES,
+        variables: { integrationId: created.id, first: 2 },
       });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+      const connection = gqlData(res).queryIntegrationMessages;
+      expect(connection.totalCount).toBe(3);
+      expect(connection.edges).toHaveLength(2);
+      expect(connection.pageInfo.hasNextPage).toBe(true);
+      expect(connection.edges[0].node.id).toBe('imsg_page_2');
+      expect(connection.edges[1].node.id).toBe('imsg_page_1');
+      expect(connection.edges[1].node.status).toBe('FAILED');
+      expect(
+        connection.edges[1].node.deliveries.map(
+          (delivery: { attempt: number }) => delivery.attempt,
+        ),
+      ).toEqual([1, 2, 3, 4, 5]);
     });
   });
 
-  describe('updateIntegrationObjectMapping', () => {
-    it('updates settings + enabled and persists them', async () => {
-      const integration = await buildIntegration(prisma, { environmentId, provider: 'sf-update' });
-      const mapping = await buildIntegrationObjectMapping(prisma, {
-        integrationId: integration.id,
-        enabled: false,
-        settings: { v: 1 },
-      });
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($id: String!, $input: UpdateIntegrationObjectMappingInput!) {
-          updateIntegrationObjectMapping(id: $id, input: $input) { id enabled settings }
-        }`,
-        variables: { id: mapping.id, input: { enabled: true, settings: { v: 2 } } },
-      });
-      const updated = gqlData(res).updateIntegrationObjectMapping;
-      expect(updated).toMatchObject({ id: mapping.id, enabled: true });
-      expect(updated.settings).toEqual({ v: 2 });
+  describe('deleteIntegration', () => {
+    it('deletes the row and cascades its message log', async () => {
+      const created = await upsertIntegration();
+      await seedMessage(created.id, 'imsg_e2e_cascade', { attempts: 2 });
 
-      const row = await prisma.integrationObjectMapping.findUnique({ where: { id: mapping.id } });
-      expect(row).toMatchObject({ enabled: true, settings: { v: 2 } });
-    });
-
-    it('errors for an unknown mapping id', async () => {
-      const res = await graphql(app, {
+      await graphql(app, {
         token,
-        query: `mutation ($id: String!, $input: UpdateIntegrationObjectMappingInput!) {
-          updateIntegrationObjectMapping(id: $id, input: $input) { id }
-        }`,
-        variables: { id: 'does-not-exist', input: { enabled: true } },
+        query: DELETE_INTEGRATION,
+        variables: { data: { id: created.id } },
       });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+
+      expect(await prisma.integration.findUnique({ where: { id: created.id } })).toBeNull();
+      expect(await prisma.outboundMessage.count({ where: { integrationId: created.id } })).toBe(0);
+      expect(
+        await prisma.outboundDelivery.count({ where: { messageId: 'imsg_e2e_cascade' } }),
+      ).toBe(0);
     });
   });
 
-  describe('deleteIntegrationObjectMapping', () => {
-    it('deletes a mapping and removes the row', async () => {
-      const integration = await buildIntegration(prisma, { environmentId, provider: 'sf-delete' });
-      const mapping = await buildIntegrationObjectMapping(prisma, {
-        integrationId: integration.id,
-      });
+  describe('sendIntegrationTestEvent', () => {
+    it('refuses when the integration is disabled (throws before any enqueue)', async () => {
+      const created = await upsertIntegration({ enabled: false });
       const res = await graphql(app, {
         token,
-        query: 'mutation ($id: String!) { deleteIntegrationObjectMapping(id: $id) }',
-        variables: { id: mapping.id },
+        query: SEND_TEST_EVENT,
+        variables: { data: { id: created.id } },
       });
-      expect(gqlData(res).deleteIntegrationObjectMapping).toBe(true);
-
-      const row = await prisma.integrationObjectMapping.findUnique({ where: { id: mapping.id } });
-      expect(row).toBeNull();
-    });
-
-    it('errors for an unknown mapping id', async () => {
-      const res = await graphql(app, {
-        token,
-        query: 'mutation ($id: String!) { deleteIntegrationObjectMapping(id: $id) }',
-        variables: { id: 'does-not-exist' },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+      expect(res.body.errors).toBeDefined();
+      expect(await prisma.outboundMessage.count({ where: { integrationId: created.id } })).toBe(0);
     });
   });
 
-  describe('disconnectIntegration', () => {
-    it('disables the integration, clears its key/config, and drops OAuth', async () => {
-      const integration = await buildIntegration(prisma, {
-        environmentId,
-        provider: 'sf-disconnect',
-        enabled: true,
-        key: 'secret',
-        config: { region: 'EU' },
-      });
-      await prisma.integrationOAuth.create({
-        data: {
-          integrationId: integration.id,
-          provider: 'salesforce',
-          providerAccountId: 'acct-1',
-          accessToken: 'at',
-          refreshToken: 'rt',
-          expiresAt: new Date(Date.now() + 3600 * 1000),
-          scope: 'api refresh_token',
-          data: { instanceUrl: 'https://example.my.salesforce.com' },
-        },
-      });
+  describe('authorization', () => {
+    it('denies ADMIN and VIEWER (OWNER_ONLY capabilities)', async () => {
+      const admin = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
+      const viewer = await buildAuthorizedUser(prisma, app, { projectId, role: 'VIEWER' });
+      userIds.push(admin.user.id, viewer.user.id);
 
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($environmentId: String!, $provider: String!) {
-          disconnectIntegration(environmentId: $environmentId, provider: $provider) {
-            id enabled key
-          }
-        }`,
-        variables: { environmentId, provider: 'sf-disconnect' },
-      });
-      expect(gqlData(res).disconnectIntegration).toMatchObject({
-        id: integration.id,
-        enabled: false,
-        key: '',
-      });
+      for (const roleToken of [admin.token, viewer.token]) {
+        const listRes = await graphql(app, {
+          token: roleToken,
+          query: LIST_INTEGRATIONS,
+          variables: { environmentId },
+        });
+        expect(listRes.body.errors).toBeDefined();
 
-      const [row, oauth] = await Promise.all([
-        prisma.integration.findUnique({ where: { id: integration.id } }),
-        prisma.integrationOAuth.findUnique({ where: { integrationId: integration.id } }),
-      ]);
-      expect(row).toMatchObject({ enabled: false, key: '' });
-      expect(row?.config).toEqual({});
-      expect(oauth).toBeNull();
+        const upsertRes = await graphql(app, {
+          token: roleToken,
+          query: UPSERT_INTEGRATION,
+          variables: { data: { environmentId, provider: 'amplitude', key: 'k' } },
+        });
+        expect(upsertRes.body.errors).toBeDefined();
+      }
     });
 
-    it('errors when disconnecting a missing integration', async () => {
-      const res = await graphql(app, {
-        token,
-        query: `mutation ($environmentId: String!, $provider: String!) {
-          disconnectIntegration(environmentId: $environmentId, provider: $provider) { id }
-        }`,
-        variables: { environmentId, provider: 'never-existed' },
+    it("denies another project's OWNER (cross-project isolation)", async () => {
+      const created = await upsertIntegration();
+
+      const listRes = await graphql(app, {
+        token: otherOwnerToken,
+        query: LIST_INTEGRATIONS,
+        variables: { environmentId },
       });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+      expect(listRes.body.errors).toBeDefined();
+
+      const deleteRes = await graphql(app, {
+        token: otherOwnerToken,
+        query: DELETE_INTEGRATION,
+        variables: { data: { id: created.id } },
+      });
+      expect(deleteRes.body.errors).toBeDefined();
+      expect(await prisma.integration.findUnique({ where: { id: created.id } })).not.toBeNull();
     });
   });
 });

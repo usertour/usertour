@@ -5,7 +5,6 @@ import { WebSocketGateway } from './web-socket.gateway';
 import { WebSocketService } from './web-socket.service';
 import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
 import { BizModule } from '@/biz/biz.module';
-import { IntegrationModule } from '@/integration/integration.module';
 import { LicenseModule } from '@/license/license.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
@@ -31,7 +30,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 @Module({
   imports: [
     BizModule,
-    IntegrationModule,
     LicenseModule,
     ProjectsModule,
     SharedModule,

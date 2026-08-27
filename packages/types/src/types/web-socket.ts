@@ -129,6 +129,8 @@ export type ProjectConfig = {
   ssoSaml: boolean;
   // Outbound webhooks: cloud Starter+, self-hosted always on.
   webhooks: boolean;
+  // Outbound integrations: same gate shape as webhooks.
+  integrations: boolean;
   planType: string;
 };
 

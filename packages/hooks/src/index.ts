@@ -16,6 +16,8 @@ export * from './hooks/oauth-connections';
 export * from './hooks/audit-logs';
 export * from './hooks/identity-verification';
 export * from './hooks/webhooks';
+export * from './hooks/outbound-message';
+export * from './hooks/integrations';
 export * from './hooks/content';
 export * from './hooks/segments';
 export * from './hooks/activity-feed';

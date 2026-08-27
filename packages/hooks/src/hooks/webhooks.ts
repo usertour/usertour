@@ -11,6 +11,7 @@ import {
   SendWebhookTestEvent,
   UpdateWebhook,
 } from '@usertour/gql';
+import type { OutboundDelivery, OutboundMessage, OutboundMessageStatus } from './outbound-message';
 
 export interface Webhook {
   id: string;
@@ -32,32 +33,12 @@ export interface Webhook {
   autoDisabledAt?: string | null;
 }
 
-/** One delivery attempt of a message. */
-export interface WebhookDelivery {
-  id: string;
-  createdAt: string;
-  attempt: number;
-  success: boolean;
-  responseStatus?: number | null;
-  /** Response body excerpt (truncated server-side). */
-  responseBody?: string | null;
-  error?: string | null;
-  durationMs?: number | null;
-}
-
-export type WebhookMessageStatus = 'PENDING' | 'DELIVERED' | 'FAILED';
-
-/** A logged outbound message (payload as sent) with its attempts, oldest first. */
-export interface WebhookMessage {
-  /** Public message id — the payload `id`, stable across retries and resends. */
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  topic: string;
-  status: WebhookMessageStatus;
-  payload: Record<string, unknown>;
-  deliveries: WebhookDelivery[];
-}
+// The message-log shapes are the shared outbound ledger's — identical for
+// both transports (see outbound-message.ts); these aliases keep the
+// webhook-flavored names the consumers import.
+export type WebhookDelivery = OutboundDelivery;
+export type WebhookMessageStatus = OutboundMessageStatus;
+export type WebhookMessage = OutboundMessage;
 
 export interface CreateWebhookInput {
   environmentId: string;

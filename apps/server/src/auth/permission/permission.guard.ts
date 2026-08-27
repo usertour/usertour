@@ -87,13 +87,6 @@ export class PermissionGuard implements CanActivate {
             select: { environmentId: true },
           })
         )?.environmentId ?? null,
-      getMappingEnvironmentId: async (mappingId) =>
-        (
-          await this.prisma.integrationObjectMapping.findUnique({
-            where: { id: mappingId },
-            select: { integration: { select: { environmentId: true } } },
-          })
-        )?.integration?.environmentId ?? null,
       getWebhookEnvironmentId: async (webhookId) =>
         (
           await this.prisma.webhook.findUnique({

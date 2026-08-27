@@ -104,46 +104,42 @@ describe('redactSnapshot', () => {
     });
   });
 
-  it('blanks integration credentials incl. the whole config blob (per-type keys)', () => {
+  it('blanks the integration credential (per-type keys)', () => {
     expect(
       redactSnapshot('integration', {
         id: 'i1',
         provider: 'mixpanel',
-        key: 'mp-secret',
-        accessToken: 'at',
-        config: { projectToken: 's3cr3t', region: 'eu' },
+        key: 'enc:v1:...',
+        keyTail: 'f2a1',
+        config: { region: 'EU' },
         enabled: true,
       }),
     ).toEqual({
       id: 'i1',
       provider: 'mixpanel',
       key: '[redacted]',
-      accessToken: '[redacted]',
-      config: '[redacted]',
+      keyTail: 'f2a1',
+      config: { region: 'EU' },
       enabled: true,
     });
-    // `key`/`config` are NOT stripped on other resource types (too generic globally)
-    expect(redactSnapshot('segment', { id: 's1', config: { x: 1 } })).toEqual({
+    // `key` is NOT stripped on other resource types (too generic globally)
+    expect(redactSnapshot('segment', { id: 's1', key: 'k1' })).toEqual({
       id: 's1',
-      config: { x: 1 },
+      key: 'k1',
     });
   });
 
   it('strips secret keys at ANY depth, arrays included (a nested include must not leak)', () => {
-    // The one-step-away scenario: a write handler adds `include: { integrationOAuth: true }`
-    // and the relation carries PLAINTEXT third-party tokens.
+    // The one-step-away scenario: a write handler adds an `include:` and the
+    // relation carries a credential under a global SECRET_KEY name.
     expect(
       redactSnapshot('integration', {
         id: 'i1',
-        integrationOAuth: { accessToken: 'plain-at', refreshToken: 'plain-rt', scope: 's' },
+        environment: { signingSecrets: [{ secret: 'plain', name: 'default' }] },
       }),
     ).toEqual({
       id: 'i1',
-      integrationOAuth: {
-        accessToken: '[redacted]',
-        refreshToken: '[redacted]',
-        scope: 's',
-      },
+      environment: { signingSecrets: [{ secret: '[redacted]', name: 'default' }] },
     });
     // Arrays used to bypass redaction entirely.
     expect(
