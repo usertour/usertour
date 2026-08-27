@@ -24,6 +24,10 @@ export const IntegrationUpsell = (props: IntegrationUpsellProps) => {
     <SettingsPage
       title={t('settings.integrations.title', { environment: environmentName })}
       description={t('settings.integrations.headerBody')}
+      docs={{
+        href: 'https://docs.usertour.io/how-to-guides/integrations',
+        label: t('settings.common.readGuide', { topic: t('settings.nav.sections.integrations') }),
+      }}
     >
       <div className="flex h-[450px] shrink-0 items-center justify-center rounded-md border border-dashed">
         <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">

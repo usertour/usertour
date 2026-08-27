@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useGetProjectConfigQuery, useListIntegrationsQuery } from '@usertour/hooks';
-import { Button, SettingsPage } from '@usertour/ui';
+import { Button, SettingsPage, Skeleton } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useCooldownTick } from '../components/use-cooldown-tick';
@@ -34,6 +34,38 @@ export const SettingsIntegrationList = () => {
   const entitledView = settled ? entitled : true;
   if (!entitledView && integrations?.length === 0) {
     return <IntegrationUpsell projectId={project?.id} environmentName={environment?.name ?? ''} />;
+  }
+  // While settling, show skeleton cards instead of the real catalog: an
+  // un-entitled project would otherwise flash the full five-card catalog and
+  // then flip to the upsell — a content reversal, where skeleton-to-outcome
+  // reads as loading. Entitled projects fill the same layout in place.
+  if (!settled) {
+    return (
+      <SettingsPage
+        title={t('settings.integrations.title', { environment: environment?.name ?? '' })}
+        description={t('settings.integrations.headerBody')}
+        docs={{
+          href: INTEGRATIONS_DOCS_HREF,
+          label: t('settings.common.readGuide', { topic: t('settings.nav.sections.integrations') }),
+        }}
+      >
+        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {INTEGRATION_CATALOG.map((entry) => (
+            <li
+              key={entry.provider}
+              className="rounded-xl border bg-card px-4 py-6 dark:bg-surface-raised"
+            >
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-8 w-8 rounded-lg" />
+                <Skeleton className="h-8 w-20 rounded-md" />
+              </div>
+              <Skeleton className="mt-3 h-4 w-24" />
+              <Skeleton className="mt-2 h-4 w-48" />
+            </li>
+          ))}
+        </ul>
+      </SettingsPage>
+    );
   }
 
   return (
