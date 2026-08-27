@@ -9,6 +9,8 @@ import { INTEGRATION_CATALOG } from './catalog';
 import { IntegrationStatusBadge } from './components/integration-status-badge';
 import { IntegrationUpsell } from './components/integration-upsell';
 
+const INTEGRATIONS_DOCS_HREF = 'https://docs.usertour.io/how-to-guides/integrations';
+
 export const SettingsIntegrationList = () => {
   const { environment, project } = useAppContext();
   const { projectConfig } = useGetProjectConfigQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
@@ -44,6 +46,10 @@ export const SettingsIntegrationList = () => {
           <span className="text-amber-600">{t('settings.integrations.downgraded.banner')}</span>
         )
       }
+      docs={{
+        href: INTEGRATIONS_DOCS_HREF,
+        label: t('settings.common.readGuide', { topic: t('settings.nav.sections.integrations') }),
+      }}
     >
       <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {INTEGRATION_CATALOG.map((entry) => {
