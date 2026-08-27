@@ -73,8 +73,6 @@ export interface ScopeServices {
   ) => Promise<{ projectId: string | null; environmentId: string | null } | null>;
   /** environmentId an integration belongs to. */
   getIntegrationEnvironmentId: (integrationId: string) => Promise<string | null>;
-  /** environmentId an integration object mapping belongs to (via its integration). */
-  getMappingEnvironmentId: (mappingId: string) => Promise<string | null>;
   /** environmentId a webhook belongs to. */
   getWebhookEnvironmentId: (webhookId: string) => Promise<string | null>;
 }
@@ -205,20 +203,21 @@ const fromSegment =
 const fromIntegration =
   (services: ScopeServices): ScopeResolver =>
   async (args) => {
-    // integrationId-keyed endpoints, else object-mapping id-keyed endpoints.
-    const integrationId = args.integrationId || args.data?.integrationId;
-    const mappingId = args.id || args.data?.id;
+    // integration-id-keyed endpoints (delete/test/messages) …
+    const integrationId =
+      args.integrationId || args.data?.integrationId || args.id || args.data?.id;
     let environmentId: string | null = null;
     if (integrationId) {
       environmentId = await services.getIntegrationEnvironmentId(integrationId);
-    } else if (mappingId) {
-      environmentId = await services.getMappingEnvironmentId(mappingId);
+    } else {
+      // … else list/upsert, which carry an explicit environmentId.
+      environmentId = args.environmentId || args.data?.environmentId || null;
     }
     if (!environmentId) {
       return null;
     }
     const projectId = await services.getEnvironmentProjectId(environmentId);
-    // The integration/mapping's environment rides along for the env ceiling.
+    // The integration's environment rides along for the membership env ceiling.
     return projectId ? crossCheck(args, projectId, [environmentId]) : null;
   };
 

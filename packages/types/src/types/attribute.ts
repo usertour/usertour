@@ -131,10 +131,11 @@ export enum EventAttributes {
   FLOW_ID = 'flow_id',
   FLOW_NAME = 'flow_name',
   /**
-   * @deprecated Not populated by the v2 event pipeline. Only the legacy v1
-   * web-socket service ever set this on FLOW events. Use the
-   * `BizEvent.bizSessionId` foreign key column to link an event to its
-   * session — that is the canonical source.
+   * Populated only on the integration wire: the outbound adapters derive the
+   * per-type session attribute from the event's content-id key and attach the
+   * session id under it. In-product the canonical link from an event to its
+   * session is the `BizEvent.bizSessionId` foreign key column — the stored
+   * event data does NOT carry this attribute.
    *
    * Same applies to LAUNCHER_SESSION_ID / CHECKLIST_SESSION_ID /
    * BANNER_SESSION_ID / RESOURCE_CENTER_SESSION_ID below.
@@ -152,7 +153,7 @@ export enum EventAttributes {
   // Launcher attributes
   LAUNCHER_ID = 'launcher_id',
   LAUNCHER_NAME = 'launcher_name',
-  /** @deprecated Never populated. See FLOW_SESSION_ID. */
+  /** Populated only on the integration wire (adapter-derived); in-product the canonical link is BizEvent.bizSessionId. */
   LAUNCHER_SESSION_ID = 'launcher_session_id',
   LAUNCHER_START_REASON = 'launcher_start_reason',
   LAUNCHER_END_REASON = 'launcher_end_reason',
@@ -161,7 +162,7 @@ export enum EventAttributes {
   // Checklist attributes
   CHECKLIST_ID = 'checklist_id',
   CHECKLIST_NAME = 'checklist_name',
-  /** @deprecated Never populated. See FLOW_SESSION_ID. */
+  /** Populated only on the integration wire (adapter-derived); in-product the canonical link is BizEvent.bizSessionId. */
   CHECKLIST_SESSION_ID = 'checklist_session_id',
   CHECKLIST_START_REASON = 'checklist_start_reason',
   CHECKLIST_END_REASON = 'checklist_end_reason',
@@ -173,7 +174,7 @@ export enum EventAttributes {
   // Banner attributes
   BANNER_ID = 'banner_id',
   BANNER_NAME = 'banner_name',
-  /** @deprecated Never populated. See FLOW_SESSION_ID. */
+  /** Populated only on the integration wire (adapter-derived); in-product the canonical link is BizEvent.bizSessionId. */
   BANNER_SESSION_ID = 'banner_session_id',
   BANNER_END_REASON = 'banner_end_reason',
   BANNER_VERSION_ID = 'banner_version_id',
@@ -181,7 +182,7 @@ export enum EventAttributes {
   // Resource center attributes
   RESOURCE_CENTER_ID = 'resource_center_id',
   RESOURCE_CENTER_NAME = 'resource_center_name',
-  /** @deprecated Never populated. See FLOW_SESSION_ID. */
+  /** Populated only on the integration wire (adapter-derived); in-product the canonical link is BizEvent.bizSessionId. */
   RESOURCE_CENTER_SESSION_ID = 'resource_center_session_id',
   RESOURCE_CENTER_START_REASON = 'resource_center_start_reason',
   RESOURCE_CENTER_END_REASON = 'resource_center_end_reason',

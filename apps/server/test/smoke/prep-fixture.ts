@@ -38,7 +38,6 @@ import {
   buildEnvironment,
   buildEvent,
   buildIntegration,
-  buildIntegrationObjectMapping,
   buildInvite,
   buildLocalization,
   buildMembership,
@@ -172,7 +171,6 @@ async function seedProject(suffix: string, members: { role: string; email: strin
   const segmentForOwnerDelete = await buildSegment(prisma, { projectId, environmentId });
   const segmentForAdminDelete = await buildSegment(prisma, { projectId, environmentId });
   const integration = await buildIntegration(prisma, { environmentId });
-  const mapping = await buildIntegrationObjectMapping(prisma, { integrationId: integration.id });
   const accessToken = await buildAccessToken(prisma, { environmentId });
   const step = await buildStep(prisma, { versionId: version.id });
 
@@ -229,7 +227,6 @@ async function seedProject(suffix: string, members: { role: string; email: strin
     segmentForOwnerDelete: segmentForOwnerDelete.id,
     segmentForAdminDelete: segmentForAdminDelete.id,
     integrationId: integration.id,
-    mappingId: mapping.id,
     accessTokenId: accessToken.id,
     stepId: step.id,
     bizUserId: bizUser.id,
@@ -306,7 +303,6 @@ async function seedProject(suffix: string, members: { role: string; email: strin
       `export SMOKE_SEGMENT_FOR_OWNER_DELETE_ID=${a.segmentForOwnerDelete}`,
       `export SMOKE_SEGMENT_FOR_ADMIN_DELETE_ID=${a.segmentForAdminDelete}`,
       `export SMOKE_INTEGRATION_ID=${a.integrationId}`,
-      `export SMOKE_MAPPING_ID=${a.mappingId}`,
       `export SMOKE_ACCESS_TOKEN_ID=${a.accessTokenId}`,
       `export SMOKE_STEP_ID=${a.stepId}`,
       `export SMOKE_BIZ_USER_ID=${a.bizUserId}`,
@@ -345,7 +341,6 @@ async function seedProject(suffix: string, members: { role: string; email: strin
       `export SMOKE_B_SEGMENT_FOR_OWNER_DELETE_ID=${b.segmentForOwnerDelete}`,
       `export SMOKE_B_SEGMENT_FOR_ADMIN_DELETE_ID=${b.segmentForAdminDelete}`,
       `export SMOKE_B_INTEGRATION_ID=${b.integrationId}`,
-      `export SMOKE_B_MAPPING_ID=${b.mappingId}`,
       `export SMOKE_B_ACCESS_TOKEN_ID=${b.accessTokenId}`,
       `export SMOKE_B_STEP_ID=${b.stepId}`,
       `export SMOKE_B_BIZ_USER_ID=${b.bizUserId}`,

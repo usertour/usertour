@@ -296,15 +296,23 @@ export class OutboundLedgerService implements OnModuleInit {
   }
 
   /**
-   * PENDING webhook messages with no delivery activity since `olderThan` —
-   * their in-flight job is presumed lost (Redis restart/eviction mid-ladder).
-   * Oldest first so a capped sweep drains the backlog across runs.
-   * (Integrations will add their own transport filter when they arrive.)
+   * PENDING messages on one transport side with no delivery activity since
+   * `olderThan` — their in-flight job is presumed lost (Redis
+   * restart/eviction mid-ladder). Oldest first so a capped sweep drains the
+   * backlog across runs. Each transport runs its own sweep: the continuation
+   * job it rebuilds is transport-shaped (queue, job data), only the orphan
+   * detection is shared.
    */
-  async findOrphanedPendingWebhookMessages(olderThan: Date, take: number) {
+  async findOrphanedPendingMessages(
+    destinationSide: 'webhook' | 'integration',
+    olderThan: Date,
+    take: number,
+  ) {
     return this.prisma.outboundMessage.findMany({
       where: {
-        webhookId: { not: null },
+        ...(destinationSide === 'webhook'
+          ? { webhookId: { not: null } }
+          : { integrationId: { not: null } }),
         status: OutboundMessageStatus.PENDING,
         updatedAt: { lt: olderThan },
       },
@@ -315,6 +323,7 @@ export class OutboundLedgerService implements OnModuleInit {
       select: {
         id: true,
         webhookId: true,
+        integrationId: true,
         topic: true,
         payload: true,
         updatedAt: true,

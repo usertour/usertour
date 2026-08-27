@@ -29,7 +29,6 @@
  *   SMOKE_LOCALIZATION_ID
  *   SMOKE_SEGMENT_ID
  *   SMOKE_INTEGRATION_ID
- *   SMOKE_MAPPING_ID            integration object mapping id (3 endpoints use it)
  *
  * Optional token environment variables (at least one required) — each enables
  * the checks for its role and is skipped when unset, so partial scenarios are
@@ -80,7 +79,6 @@ const REQUIRED_ENV = [
   'SMOKE_LOCALIZATION_ID',
   'SMOKE_SEGMENT_ID',
   'SMOKE_INTEGRATION_ID',
-  'SMOKE_MAPPING_ID',
 ] as const;
 
 const TOKEN_ENV: Record<Role, string> = {
@@ -126,7 +124,6 @@ const seed: Seed = {
   localizationId: process.env.SMOKE_LOCALIZATION_ID as string,
   segmentId: process.env.SMOKE_SEGMENT_ID as string,
   integrationId: process.env.SMOKE_INTEGRATION_ID as string,
-  mappingId: process.env.SMOKE_MAPPING_ID as string,
 };
 
 const printCurlOnly = process.argv.includes('--curl');

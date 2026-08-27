@@ -45,9 +45,9 @@ import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useLoadMoreAccumulator } from '@/hooks/use-load-more-accumulator';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
-import { useCooldownTick } from './use-cooldown-tick';
-import { WebhookMessageDialog } from './webhook-message-dialog';
-import { WebhookMessageStatusBadge } from './webhook-message-status-badge';
+import { OutboundMessageDialog } from '../../components/outbound-message-dialog';
+import { OutboundMessageStatusBadge } from '../../components/outbound-message-status-badge';
+import { useCooldownTick } from '../../components/use-cooldown-tick';
 
 const MESSAGES_PAGE_SIZE = 20;
 // Deliveries happen async in the worker — give it a moment before refreshing.
@@ -410,17 +410,17 @@ const MessagesSection = ({
                 inside their fixed widths otherwise — same class of fix as
                 the status badges. */}
             <TableHead className="w-48 whitespace-nowrap">
-              {t('settings.webhooks.deliveries.columns.time')}
+              {t('settings.outbound.columns.time')}
             </TableHead>
-            <TableHead>{t('settings.webhooks.deliveries.columns.topic')}</TableHead>
+            <TableHead>{t('settings.outbound.columns.topic')}</TableHead>
             <TableHead className="w-28 whitespace-nowrap">
-              {t('settings.webhooks.deliveries.columns.status')}
+              {t('settings.outbound.columns.status')}
             </TableHead>
             <TableHead className="w-24 whitespace-nowrap">
-              {t('settings.webhooks.deliveries.columns.attempts')}
+              {t('settings.outbound.columns.attempts')}
             </TableHead>
             <TableHead className="w-28 whitespace-nowrap">
-              {t('settings.webhooks.deliveries.columns.lastResponse')}
+              {t('settings.outbound.columns.lastResponse')}
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -450,15 +450,15 @@ const MessagesSection = ({
                   {message.topic}
                 </TableCell>
                 <TableCell>
-                  <WebhookMessageStatusBadge status={message.status} />
+                  <OutboundMessageStatusBadge status={message.status} />
                 </TableCell>
                 <TableCell>{message.deliveries.length}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {last
                     ? (last.responseStatus ??
                       (last.success
-                        ? t('settings.webhooks.responseOk')
-                        : t('settings.webhooks.responseError')))
+                        ? t('settings.outbound.responseOk')
+                        : t('settings.outbound.responseError')))
                     : '—'}
                 </TableCell>
               </TableRow>
@@ -474,13 +474,34 @@ const MessagesSection = ({
         </div>
       )}
 
-      <WebhookMessageDialog
+      <OutboundMessageDialog
         open={dialogOpen}
         message={selectedMessage}
         onClose={() => setDialogOpen(false)}
-        onResend={(message) => void handleResend(message)}
-        resending={resending}
-        canResend={!isViewOnly && enabled && entitled}
+        footer={
+          selectedMessage && (
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-xs text-muted-foreground">
+                {t('settings.webhooks.message.resendHint')}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={
+                  isViewOnly ||
+                  !enabled ||
+                  !entitled ||
+                  resending ||
+                  selectedMessage.status === 'PENDING'
+                }
+                onClick={() => void handleResend(selectedMessage)}
+              >
+                {resending && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+                {t('settings.webhooks.message.resend')}
+              </Button>
+            </div>
+          )
+        }
       />
     </div>
   );

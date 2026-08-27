@@ -7,7 +7,7 @@ import { type Webhook, useGetProjectConfigQuery, useListWebhooksQuery } from '@u
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
-import { useCooldownTick } from './components/use-cooldown-tick';
+import { useCooldownTick } from '../components/use-cooldown-tick';
 import { WebhookDialog } from './components/webhook-dialog';
 import { WebhookRowActions } from './components/webhook-row-actions';
 import { WebhookUpsell } from './components/webhook-upsell';

@@ -82,9 +82,6 @@ async function deleteProject(projectId: string, name: string) {
   await prisma.bizEvent.deleteMany({ where: { bizUser: { environmentId: { in: envIds } } } });
   await prisma.invite.deleteMany({ where: { projectId } });
   await prisma.accessToken.deleteMany({ where: { environmentId: { in: envIds } } });
-  await prisma.integrationObjectMapping.deleteMany({
-    where: { integration: { environmentId: { in: envIds } } },
-  });
   await prisma.integration.deleteMany({ where: { environmentId: { in: envIds } } });
   await prisma.bizSession.deleteMany({ where: { contentId: { in: contentIds } } });
   await prisma.bizUserOnSegment.deleteMany({ where: { segmentId: { in: segmentIds } } });

@@ -15,7 +15,11 @@ import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
-import { RetryAfterCarrier, deliveryBackoffStrategy, parseRetryAfter } from './webhook-backoff';
+import {
+  RetryAfterCarrier,
+  deliveryBackoffStrategy,
+  parseRetryAfter,
+} from '@/outbound/delivery-backoff';
 import { WEBHOOK_SIGNATURE_HEADER, signWebhookPayload } from './webhook-signature';
 import { WebhookDeliveryJobData } from './webhook.types';
 
@@ -63,7 +67,7 @@ const guardedAgent = createGuardedHttpsAgent();
 @Processor(QUEUE_WEBHOOK_DELIVERY, {
   concurrency: DELIVERY_CONCURRENCY,
   settings: {
-    // The ~24h ladder (webhook-backoff.ts), raised to a 429's Retry-After
+    // The ~24h ladder (delivery-backoff.ts), raised to a 429's Retry-After
     // when the receiver asked for a longer pause, positioned by the
     // message-lifecycle attempt count (job.data.attemptOffset included).
     // Jobs opt in with backoff: { type: 'custom' }.
