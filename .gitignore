@@ -54,3 +54,6 @@ stats.html
 
 # Claude Code
 .claude/
+
+# generated (prisma-dbml-generator artifact; read by nothing in-repo)
+apps/server/prisma/dbml/

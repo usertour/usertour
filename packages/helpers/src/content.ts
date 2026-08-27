@@ -236,15 +236,32 @@ const extractUserAttributeValue = (
   return attrValue ?? fallback;
 };
 
-const extractLinkUrl = (value: any[], userAttributes: UserTourTypes.Attributes): string => {
+/**
+ * THE link-template grammar, shared by delivery and localization: a template
+ * reads as each top-level node's immediate children concatenated — text leaves
+ * append verbatim, user-attribute chips go through `resolveChip`, anything
+ * else (and anything nested deeper) is ignored. Delivery substitutes chips;
+ * localization aborts on them (resolveChip returns undefined) because a
+ * destination with a chip has no single string a translator could safely
+ * replace. Keep this the only reader of the grammar — a second implementation
+ * drifts on non-canonical shapes the two consumers would then disagree about.
+ */
+export const serializeLinkTemplate = (
+  value: unknown[],
+  resolveChip: (chip: Record<string, unknown>) => string | undefined,
+): string | undefined => {
   let url = '';
   try {
-    for (const v of value) {
-      if ('children' in v && Array.isArray(v.children)) {
+    for (const v of value as any[]) {
+      if (v && 'children' in v && Array.isArray(v.children)) {
         for (const vc of v.children) {
-          if ('type' in vc && vc.type === 'user-attribute') {
-            url += String(extractUserAttributeValue(vc, userAttributes));
-          } else if ('text' in vc && typeof vc.text === 'string') {
+          if (vc && 'type' in vc && vc.type === 'user-attribute') {
+            const resolved = resolveChip(vc);
+            if (resolved === undefined) {
+              return undefined;
+            }
+            url += resolved;
+          } else if (vc && 'text' in vc && typeof vc.text === 'string') {
             url += vc.text;
           }
         }
@@ -254,6 +271,18 @@ const extractLinkUrl = (value: any[], userAttributes: UserTourTypes.Attributes):
     // Silently handle errors and return partial URL
   }
   return url;
+};
+
+const extractLinkUrl = (value: any[], userAttributes: UserTourTypes.Attributes): string => {
+  return (
+    serializeLinkTemplate(value, (chip) =>
+      String(extractUserAttributeValue(chip, userAttributes)),
+    ) ?? ''
+  );
+};
+
+const toStoredUrl = (value: unknown): string => {
+  return typeof value === 'string' ? value : '';
 };
 
 const replaceUserAttrForElement = (data: any[], userAttributes: UserTourTypes.Attributes) => {
@@ -268,7 +297,9 @@ const replaceUserAttrForElement = (data: any[], userAttributes: UserTourTypes.At
       }
     }
     if (v.type === 'link' && userAttributes) {
-      v.url = v.data ? extractLinkUrl(v.data, userAttributes) : '';
+      // `data` is the authority when present; a url-only link (pasted before
+      // wrapLink stored templates) keeps its raw url instead of a dead href.
+      v.url = v.data ? extractLinkUrl(v.data, userAttributes) : toStoredUrl(v.url);
     }
     return v;
   });
