@@ -479,7 +479,7 @@ export const ActivityFeed = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                onClick={refetch}
+                onClick={() => refetch()}
                 disabled={loading}
                 variant="outline"
                 size="sm"
