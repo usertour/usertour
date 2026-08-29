@@ -118,6 +118,14 @@ export function useLoadMoreAccumulator<T>(
   }, [isLoadingMore, latestPageInfo, setAfterCursor]);
 
   const refresh = useCallback(() => {
+    // Keep the accumulated rows on screen while the fresh page loads
+    // (stale-while-revalidate) — the accumulate effect's `!afterCursor`
+    // branch REPLACES them when the new page 1 arrives. Do NOT wipe
+    // first: repopulation would then depend on Apollo emitting a new
+    // result, and with `no-cache` Apollo suppresses the emission when
+    // the refetched data is deep-equal to the last result — the wipe
+    // would stick and the list would stay empty.
+    //
     // If we're past page 1, resetting afterCursor → undefined changes
     // the wrapper's variables, which makes Apollo's useQuery
     // auto-refetch with the correct first-page variables. An explicit
@@ -129,11 +137,12 @@ export function useLoadMoreAccumulator<T>(
     // auto-refetch, so the explicit refetch is required to force
     // network.
     const wasPastFirstPage = !!afterCursor;
-    reset();
+    setIsLoadingMore(false);
+    setAfterCursor(undefined);
     if (!wasPastFirstPage) {
       pageRefetch();
     }
-  }, [afterCursor, reset, pageRefetch]);
+  }, [afterCursor, setAfterCursor, pageRefetch]);
 
   return {
     items,

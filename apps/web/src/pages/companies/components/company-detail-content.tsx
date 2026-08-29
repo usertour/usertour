@@ -112,6 +112,9 @@ const CompanyUserList = ({ environmentId, companyId }: CompanyUserListProps) => 
   const { contents, pageInfo, totalCount, loading, refetch } = useUserListQuery({
     query: { environmentId, companyId },
     pagination: { first: PAGE_SIZE, after: afterCursor },
+    // Reload goes through `refetch()`; without this the refetch window
+    // has `loading: false`, so the reload button gets no in-flight signal.
+    options: { notifyOnNetworkStatusChange: true },
   });
 
   const { attributes: attributeList } = useListAttributesQuery(

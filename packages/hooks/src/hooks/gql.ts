@@ -422,6 +422,9 @@ export const useQuerySessionsByExternalIdQuery = (
       orderBy,
       ...pagination,
     },
+    // Reload goes through `refetch()`; without this the refetch window
+    // has `loading: false`, so the UI gets no in-flight signal.
+    notifyOnNetworkStatusChange: true,
   });
 
   const sessions =
