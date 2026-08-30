@@ -220,6 +220,58 @@ export class BizService {
     });
   }
 
+  /**
+   * Resolve external ids to this environment's BizUsers, CREATING bare users
+   * (externalId only — cohort sync never writes attributes, ADR 0012) for the
+   * ones that don't exist yet. Creation is row-at-a-time so `user.created`
+   * emits exactly once per user actually created here: a lost unique race
+   * adopts the winner's row without emitting.
+   */
+  async findOrCreateBizUsersByExternalIds(
+    environmentId: string,
+    externalIds: string[],
+  ): Promise<{ id: string; externalId: string }[]> {
+    const uniqueExternalIds = [...new Set(externalIds)];
+    if (!uniqueExternalIds.length) {
+      return [];
+    }
+    const existing = await this.prisma.bizUser.findMany({
+      where: { environmentId, externalId: { in: uniqueExternalIds } },
+      select: { id: true, externalId: true },
+    });
+    const existingByExternalId = new Set(existing.map((user) => user.externalId));
+    const missing = uniqueExternalIds.filter((externalId) => !existingByExternalId.has(externalId));
+    if (!missing.length) {
+      return existing;
+    }
+    return await this.withEntityChangeEmit(environmentId, async () => {
+      const created: { id: string; externalId: string }[] = [];
+      for (const externalId of missing) {
+        try {
+          const row = await this.prisma.bizUser.create({
+            data: { environmentId, externalId, data: {} },
+            select: { id: true, externalId: true },
+          });
+          this.collectEntityChange({ entity: 'user', action: 'created', bizId: row.id });
+          created.push(row);
+        } catch (error) {
+          if ((error as { code?: string }).code === 'P2002') {
+            const winner = await this.prisma.bizUser.findFirst({
+              where: { environmentId, externalId },
+              select: { id: true, externalId: true },
+            });
+            if (winner) {
+              created.push(winner);
+              continue;
+            }
+          }
+          throw error;
+        }
+      }
+      return [...existing, ...created];
+    });
+  }
+
   async createUserSegmentWithSource(
     projectId: string,
     name: string,
@@ -247,7 +299,29 @@ export class BizService {
     return { ...segment, columns: normalizeSegmentColumns(segment.columns) };
   }
 
+  /**
+   * Synced segments (ADR 0012) mirror a provider-side cohort: their name and
+   * membership are managed by the sync engine and are read-only here. Column
+   * layout stays editable — it is display configuration, not data.
+   */
+  private async assertSegmentNotSynced(segmentId: string, action: string): Promise<void> {
+    // Any mapping makes the segment synced — several may feed it, one per
+    // environment's integration (project-wide convergence, ADR 0012).
+    const mapping = await this.prisma.integrationSyncedSegment.findFirst({
+      where: { segmentId },
+      select: { id: true },
+    });
+    if (mapping) {
+      throw new ParamsError(
+        `This segment is synced from an integration; ${action} is managed by the sync.`,
+      );
+    }
+  }
+
   async updateSegment({ id, ...updates }: UpdateSegment) {
+    if (updates.name !== undefined || updates.data !== undefined) {
+      await this.assertSegmentNotSynced(id, 'editing it');
+    }
     const data: Record<string, unknown> = { ...updates };
     if (updates.columns !== undefined) {
       data.columns = normalizeSegmentColumns(updates.columns);
@@ -304,6 +378,7 @@ export class BizService {
 
     // Extract and validate first item
     const firstItem = data[0];
+    await this.assertSegmentNotSynced(firstItem.segmentId, 'its membership');
 
     // Validate all items have the same segmentId
     const segmentIds = new Set(data.map((item) => item.segmentId));
@@ -344,6 +419,7 @@ export class BizService {
   }
 
   async deleteBizUserOnSegment(data: DeleteBizUserOnSegment) {
+    await this.assertSegmentNotSynced(data.segmentId, 'its membership');
     return await this.prisma.bizUserOnSegment.deleteMany({
       where: {
         segmentId: data.segmentId,

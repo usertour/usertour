@@ -46,6 +46,50 @@ export class Integration {
   /** Set when the SYSTEM disabled the integration after sustained failure. */
   @Field(() => Date, { nullable: true })
   autoDisabledAt?: Date | null;
+
+  /** Inbound cohort sync switch (ADR 0012) — independent of `enabled`. */
+  @Field(() => Boolean)
+  inboundEnabled: boolean;
+
+  /** Inbound extras: { userIdProperty?: string }. */
+  @Field(() => GraphQLJSON)
+  inboundConfig: unknown;
+
+  /** The receive URL (carries the token) — null until first inbound enable. */
+  @Field(() => String, { nullable: true })
+  inboundUrl?: string | null;
+}
+
+/** One synced provider cohort and the segment mirroring it (ADR 0012). */
+@ObjectType()
+export class IntegrationSyncedSegment {
+  @Field(() => String)
+  id: string;
+
+  @Field(() => Date)
+  createdAt: Date;
+
+  @Field(() => String)
+  sourceCohortId: string;
+
+  @Field(() => String)
+  sourceCohortName: string;
+
+  @Field(() => String)
+  segmentId: string;
+
+  @Field(() => String)
+  segmentName: string;
+
+  @Field(() => Date, { nullable: true })
+  lastSyncedAt?: Date | null;
+
+  @Field(() => Int)
+  memberCount: number;
+
+  /** Members whose wire object carried no extractable user id (skipped). */
+  @Field(() => Int)
+  unresolvedCount: number;
 }
 
 /** GraphQL projection of one delivery attempt (read side, message log). */

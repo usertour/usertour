@@ -9,9 +9,14 @@ import { PaginationArgs } from '@/common/pagination/pagination.args';
 import {
   IntegrationIdInput,
   QueryIntegrationsInput,
+  UpdateIntegrationInboundInput,
   UpsertIntegrationInput,
 } from './dto/integration.input';
-import { Integration, IntegrationMessageConnection } from './models/integration.model';
+import {
+  Integration,
+  IntegrationMessageConnection,
+  IntegrationSyncedSegment,
+} from './models/integration.model';
 import { IntegrationsService } from './integrations.service';
 
 @Resolver(() => Integration)
@@ -63,5 +68,35 @@ export class IntegrationsResolver {
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
   async sendIntegrationTestEvent(@Args('data') { id }: IntegrationIdInput) {
     return await this.service.sendTestEvent(id);
+  }
+
+  @Query(() => [IntegrationSyncedSegment])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
+  async queryIntegrationSyncedSegments(@Args('integrationId') integrationId: string) {
+    return await this.service.listSyncedSegments(integrationId);
+  }
+
+  @Mutation(() => Integration)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
+  })
+  async updateIntegrationInbound(@Args('data') data: UpdateIntegrationInboundInput) {
+    return await this.service.updateInbound(data);
+  }
+
+  @Mutation(() => Integration)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
+  })
+  async rotateIntegrationInboundToken(@Args('data') { id }: IntegrationIdInput) {
+    return await this.service.rotateInboundToken(id);
   }
 }

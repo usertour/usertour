@@ -13,10 +13,19 @@ import {
   useGetProjectConfigQuery,
   useListIntegrationsQuery,
   useQueryIntegrationMessagesQuery,
+  useQueryIntegrationSyncedSegmentsQuery,
+  useRotateIntegrationInboundTokenMutation,
   useSendIntegrationTestEventMutation,
+  useUpdateIntegrationInboundMutation,
   useUpsertIntegrationMutation,
 } from '@usertour/hooks';
-import { RiDeleteBinLine, RiRefreshLine, RiSendPlaneLine, SpinnerIcon } from '@usertour/icons';
+import {
+  RiDeleteBinLine,
+  RiFileCopyLine,
+  RiRefreshLine,
+  RiSendPlaneLine,
+  SpinnerIcon,
+} from '@usertour/icons';
 import {
   Button,
   DestructiveConfirmDialog,
@@ -121,6 +130,7 @@ const IdentitySection = ({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { invoke: deleteIntegration, loading: deleting } = useDeleteIntegrationMutation();
   const { invoke: toggleIntegration, loading: toggling } = useUpsertIntegrationMutation();
+  const { invoke: updateInbound, loading: inboundToggling } = useUpdateIntegrationInboundMutation();
   const isConfigured = !!integration;
   const canWrite = !isViewOnly && entitled;
   // The switch owns the normal on/off display, so the badge narrows to the
@@ -152,6 +162,30 @@ const IdentitySection = ({
         });
       } else {
         toast({ variant: 'destructive', title: t('settings.integrations.outbound.toggleFailed') });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
+  // Same immediate-commit contract as the outbound switch. First enable also
+  // mints the receive URL server-side — the card below picks it up from the
+  // mutation response via the normalized cache.
+  const handleInboundToggle = async (next: boolean) => {
+    if (!integration) {
+      return;
+    }
+    try {
+      const saved = await updateInbound({ id: integration.id, enabled: next });
+      if (saved) {
+        toast({
+          variant: 'success',
+          title: next
+            ? t('settings.integrations.inbound.enabledToast')
+            : t('settings.integrations.inbound.disabledToast'),
+        });
+      } else {
+        toast({ variant: 'destructive', title: t('settings.integrations.inbound.toggleFailed') });
       }
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -231,6 +265,30 @@ const IdentitySection = ({
           />
         </div>
       </div>
+
+      {entry.hasInbound && (
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <p className={cn('text-sm font-medium', !isConfigured && 'text-muted-foreground')}>
+              {t('settings.integrations.inbound.toggle', { name: entry.name })}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t('settings.integrations.inbound.toggleDescription', { name: entry.name })}
+            </p>
+          </div>
+          <div className="shrink-0">
+            <Switch
+              className="shrink-0 data-[state=unchecked]:bg-input"
+              checked={integration?.inboundEnabled ?? false}
+              disabled={!canWrite || !isConfigured || inboundToggling}
+              title={
+                isConfigured ? undefined : t('settings.integrations.inbound.toggleConfigureFirst')
+              }
+              onCheckedChange={(next) => void handleInboundToggle(next)}
+            />
+          </div>
+        </div>
+      )}
       {integration?.autoDisabledAt && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
           {t('settings.integrations.autoDisabled.banner', {
@@ -386,6 +444,250 @@ const OutboundSection = ({
           </Button>
         </form>
       </Form>
+    </div>
+  );
+};
+
+/**
+ * Inbound cohort-sync card (ADR 0012): the receive URL (copy / rotate), the
+ * optional identity-bridge override, and the cohorts currently synced. The
+ * on/off switch lives on the identity card next to the outbound one.
+ */
+const InboundSection = ({
+  entry,
+  integration,
+  environmentId,
+  entitled,
+}: {
+  entry: IntegrationCatalogEntry;
+  integration: Integration;
+  environmentId: string;
+  entitled: boolean;
+}) => {
+  const { isViewOnly } = useAppContext();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const canWrite = !isViewOnly && entitled;
+  const { invoke: updateInbound, loading: saving } = useUpdateIntegrationInboundMutation();
+  const { invoke: rotateToken, loading: rotating } = useRotateIntegrationInboundTokenMutation();
+  const [rotateOpen, setRotateOpen] = useState(false);
+  const [userIdProperty, setUserIdProperty] = useState(
+    integration.inboundConfig?.userIdProperty ?? '',
+  );
+  // Re-seed when the row settles or changes identity — same pattern as the
+  // outbound form's reset. A save bumps updatedAt, so the seed then equals
+  // what was just typed; a foreign refresh mid-typing loses at most a draft
+  // property name.
+  const rowStamp = `${integration.id}:${integration.updatedAt}`;
+  useEffect(() => {
+    setUserIdProperty(integration.inboundConfig?.userIdProperty ?? '');
+  }, [rowStamp]);
+
+  const {
+    syncedSegments,
+    loading: cohortsLoading,
+    refetch: refetchCohorts,
+  } = useQueryIntegrationSyncedSegmentsQuery(integration.id);
+
+  const handleCopy = async () => {
+    if (!integration.inboundUrl) {
+      return;
+    }
+    // Native clipboard API so failure is detectable (see api-copy-button).
+    try {
+      await navigator.clipboard.writeText(integration.inboundUrl);
+      toast({ variant: 'success', title: t('settings.integrations.inbound.copied') });
+    } catch {
+      toast({ variant: 'destructive', title: t('settings.integrations.inbound.copyFailed') });
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      // An empty (or cleared) field resets the bridge to the provider's
+      // distinct id — the server treats '' as "remove the override".
+      const saved = await updateInbound({
+        id: integration.id,
+        userIdProperty: userIdProperty.trim(),
+      });
+      if (saved) {
+        toast({ variant: 'success', title: t('settings.integrations.inbound.saved') });
+      } else {
+        toast({ variant: 'destructive', title: t('settings.integrations.form.saveFailed') });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
+  const handleRotate = async () => {
+    try {
+      const rotated = await rotateToken(integration.id);
+      if (rotated) {
+        toast({
+          variant: 'success',
+          title: t('settings.integrations.inbound.rotated', { name: entry.name }),
+        });
+      } else {
+        toast({ variant: 'destructive', title: t('settings.integrations.inbound.rotateFailed') });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+    setRotateOpen(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      <CardHeading
+        title={t('settings.integrations.inbound.settingsTitle')}
+        description={t('settings.integrations.inbound.settingsDescription', { name: entry.name })}
+      />
+
+      <div className="max-w-xl space-y-6">
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{t('settings.integrations.inbound.urlLabel')}</p>
+          {integration.inboundUrl ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Input
+                  readOnly
+                  value={integration.inboundUrl}
+                  className="font-mono text-xs"
+                  onFocus={(event) => event.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  title={t('settings.integrations.inbound.copy')}
+                  aria-label={t('settings.integrations.inbound.copy')}
+                  onClick={() => void handleCopy()}
+                >
+                  <RiFileCopyLine className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0"
+                  disabled={!canWrite || rotating}
+                  onClick={() => setRotateOpen(true)}
+                >
+                  <RiRefreshLine className="mr-2 h-4 w-4" />
+                  {t('settings.integrations.inbound.rotate')}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.integrations.inbound.urlHelp', { name: entry.name })}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t('settings.integrations.inbound.urlPending')}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium">
+            {t('settings.integrations.inbound.userIdPropertyLabel', { name: entry.name })}
+          </p>
+          <Input
+            autoComplete="off"
+            value={userIdProperty}
+            placeholder={t('settings.integrations.inbound.userIdPropertyPlaceholder')}
+            disabled={!canWrite}
+            onChange={(event) => setUserIdProperty(event.target.value)}
+          />
+          <p className="text-sm text-muted-foreground">
+            {t('settings.integrations.inbound.userIdPropertyHelp', { name: entry.name })}
+          </p>
+          <Button type="button" disabled={!canWrite || saving} onClick={() => void handleSave()}>
+            {saving && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
+            {t('settings.integrations.form.save')}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">{t('settings.integrations.inbound.cohortsTitle')}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={cohortsLoading}
+            title={t('settings.integrations.messages.refresh')}
+            aria-label={t('settings.integrations.messages.refresh')}
+            onClick={() => void refetchCohorts()}
+          >
+            <RiRefreshLine className={cn('h-4 w-4', cohortsLoading && 'animate-spin')} />
+          </Button>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('settings.integrations.inbound.columns.cohort')}</TableHead>
+              <TableHead className="w-28 whitespace-nowrap">
+                {t('settings.integrations.inbound.columns.members')}
+              </TableHead>
+              <TableHead
+                className="w-28 whitespace-nowrap"
+                title={t('settings.integrations.inbound.unresolvedHint')}
+              >
+                {t('settings.integrations.inbound.columns.unresolved')}
+              </TableHead>
+              <TableHead className="w-48 whitespace-nowrap">
+                {t('settings.integrations.inbound.columns.lastSynced')}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(syncedSegments?.length ?? 0) === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                  {t('settings.integrations.inbound.cohortsEmpty', { name: entry.name })}
+                </TableCell>
+              </TableRow>
+            )}
+            {syncedSegments?.map((cohort) => (
+              <TableRow
+                key={cohort.id}
+                className="cursor-pointer"
+                onClick={() =>
+                  navigate(`/env/${environmentId}/users?segment_id=${cohort.segmentId}`)
+                }
+              >
+                <TableCell className="max-w-56 truncate" title={cohort.segmentName}>
+                  {cohort.segmentName}
+                </TableCell>
+                <TableCell>{cohort.memberCount}</TableCell>
+                <TableCell className={cn(cohort.unresolvedCount > 0 && 'text-amber-600')}>
+                  {cohort.unresolvedCount}
+                </TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">
+                  {cohort.lastSyncedAt ? format(new Date(cohort.lastSyncedAt), 'PP pp') : '—'}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <DestructiveConfirmDialog
+        title={t('settings.integrations.inbound.rotateConfirmTitle')}
+        description={t('settings.integrations.inbound.rotateConfirmDescription', {
+          name: entry.name,
+        })}
+        confirmLabel={t('settings.integrations.inbound.rotateConfirmButton')}
+        cancelLabel={t('settings.common.cancel')}
+        open={rotateOpen}
+        onOpenChange={setRotateOpen}
+        onConfirm={handleRotate}
+        loading={rotating}
+      />
     </div>
   );
 };
@@ -641,6 +943,17 @@ export const IntegrationDetail = () => {
           entitled={entitled}
         />
       </SettingsCard>
+
+      {entry.hasInbound && integration && (
+        <SettingsCard>
+          <InboundSection
+            entry={entry}
+            integration={integration}
+            environmentId={environment?.id ?? ''}
+            entitled={entitled}
+          />
+        </SettingsCard>
+      )}
 
       {integration && (
         <SettingsCard>

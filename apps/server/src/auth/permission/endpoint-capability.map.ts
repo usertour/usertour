@@ -83,6 +83,9 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'integration.upsertIntegration': Capability.IntegrationManage,
   'integration.deleteIntegration': Capability.IntegrationManage,
   'integration.sendIntegrationTestEvent': Capability.IntegrationManage,
+  'integration.queryIntegrationSyncedSegments': Capability.IntegrationRead,
+  'integration.updateIntegrationInbound': Capability.IntegrationManage,
+  'integration.rotateIntegrationInboundToken': Capability.IntegrationManage,
 
   // webhooks (all O)
   'webhooks.listWebhooks': Capability.WebhookRead,

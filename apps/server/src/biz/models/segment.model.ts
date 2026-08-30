@@ -45,6 +45,14 @@ export class Segment extends BaseModel {
 
   @Field(() => GraphQLJSON, { nullable: true })
   data?: JsonValue;
+
+  /** 'internal' for hand-made segments; a provider id when synced (ADR 0012). */
+  @Field(() => String, { nullable: true })
+  source?: string;
+
+  /** The provider-side cohort id backing a synced segment. */
+  @Field(() => String, { nullable: true })
+  sourceId?: string | null;
 }
 
 @ObjectType()

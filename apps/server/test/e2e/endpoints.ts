@@ -487,6 +487,27 @@ export const ENDPOINTS: Endpoint[] = [
     doc: 'mutation($d:IntegrationIdInput!){sendIntegrationTestEvent(data:$d){__typename}}',
     vars: (s) => ({ d: { id: s.integrationId } }),
   },
+  {
+    key: 'integration.queryIntegrationSyncedSegments',
+    tier: 'O',
+    op: 'query',
+    doc: 'query($i:String!){queryIntegrationSyncedSegments(integrationId:$i){__typename}}',
+    vars: (s) => ({ i: s.integrationId }),
+  },
+  {
+    key: 'integration.updateIntegrationInbound',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:UpdateIntegrationInboundInput!){updateIntegrationInbound(data:$d){__typename}}',
+    vars: (s) => ({ d: { id: s.integrationId, enabled: true } }),
+  },
+  {
+    key: 'integration.rotateIntegrationInboundToken',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:IntegrationIdInput!){rotateIntegrationInboundToken(data:$d){__typename}}',
+    vars: (s) => ({ d: { id: s.integrationId } }),
+  },
 
   // --- localizations (scope: localization) ---
   {

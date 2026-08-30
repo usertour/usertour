@@ -12,6 +12,7 @@ import { Segment } from '@usertour/types';
 import { Fragment, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { syncedSegmentProvider } from '@/utils/segment';
 import { SegmentSidebarSkeleton } from './segment-sidebar-skeleton';
 
 interface SegmentSidebarProps {
@@ -101,28 +102,41 @@ export function SegmentSidebar({
             <AdminSidebarBodyTitleTemplate>
               {t('segments.sidebar.segments')}
             </AdminSidebarBodyTitleTemplate>
-            {segmentList?.map((segment) => (
-              <Fragment key={`${segment.environmentId}-${segment.id}`}>
-                <AdminSidebarBodyItemTemplate
-                  variant={segment.id === currentSegment?.id ? 'secondary' : 'ghost'}
-                  className={
-                    segment.id === currentSegment?.id ? 'bg-gray-200/40 dark:bg-secondary/60  ' : ''
-                  }
-                  onClick={() => {
-                    handleOnClick(segment);
-                  }}
-                >
-                  {segment.dataType === 'CONDITION' && (
-                    <Filter2LineIcon width={16} height={16} className="mr-1 flex-none" />
-                  )}
-                  {segment.dataType === 'ALL' && finalGroupIcon}
-                  {segment.dataType === 'MANUAL' && (
-                    <Archive2LineIcon width={16} height={16} className="mr-1 flex-none" />
-                  )}
-                  <span className="flex-1 min-w-0 truncate text-left">{segment.name}</span>{' '}
-                </AdminSidebarBodyItemTemplate>
-              </Fragment>
-            ))}
+            {segmentList?.map((segment) => {
+              const syncedProvider = syncedSegmentProvider(segment);
+              return (
+                <Fragment key={`${segment.environmentId}-${segment.id}`}>
+                  <AdminSidebarBodyItemTemplate
+                    variant={segment.id === currentSegment?.id ? 'secondary' : 'ghost'}
+                    className={
+                      segment.id === currentSegment?.id
+                        ? 'bg-gray-200/40 dark:bg-secondary/60  '
+                        : ''
+                    }
+                    onClick={() => {
+                      handleOnClick(segment);
+                    }}
+                  >
+                    {segment.dataType === 'CONDITION' && (
+                      <Filter2LineIcon width={16} height={16} className="mr-1 flex-none" />
+                    )}
+                    {segment.dataType === 'ALL' && finalGroupIcon}
+                    {segment.dataType === 'MANUAL' && (
+                      <Archive2LineIcon width={16} height={16} className="mr-1 flex-none" />
+                    )}
+                    <span className="flex-1 min-w-0 truncate text-left">{segment.name}</span>{' '}
+                    {syncedProvider?.imagePath && (
+                      <img
+                        src={syncedProvider.imagePath}
+                        alt={t('segments.synced.logoAlt', { provider: syncedProvider.name })}
+                        title={t('segments.synced.badge', { provider: syncedProvider.name })}
+                        className="ml-1 h-3.5 w-3.5 flex-none rounded-[3px]"
+                      />
+                    )}
+                  </AdminSidebarBodyItemTemplate>
+                </Fragment>
+              );
+            })}
           </AdminSidebarBodyTemplate>
         )}
 
