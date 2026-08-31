@@ -160,8 +160,10 @@ describe('Inbound cohort sync (e2e)', () => {
     expect(mapping?.memberCount).toBe(4);
     expect(mapping?.unresolvedCount).toBe(0);
     expect(mapping?.lastSyncedAt).not.toBeNull();
-    // Round state is cleared after the final page of a full roster.
-    expect(mapping?.fullSyncSessionId).toBeNull();
+    // Round completion keeps the session id (retry detection) and clears
+    // only the stamp.
+    expect(mapping?.fullSyncSessionId).toBe('sess-1');
+    expect(mapping?.fullSyncStartedAt).toBeNull();
 
     const segment = await prisma.segment.findUnique({ where: { id: mapping?.segmentId } });
     expect(segment?.name).toBe('Power users');
@@ -227,14 +229,23 @@ describe('Inbound cohort sync (e2e)', () => {
     );
     expect(pageTwo.status).toBe(200);
 
-    const memberIds = await prisma.bizUserOnSegment.findMany({
-      where: { segmentId: mapping?.segmentId },
-      select: { bizUser: { select: { externalId: true } } },
-    });
-    expect(memberIds.map((row) => row.bizUser.externalId).sort()).toEqual([
-      'cs_user_1',
-      'cs_user_3',
-    ]);
+    const memberIds = async () => {
+      const rows = await prisma.bizUserOnSegment.findMany({
+        where: { segmentId: mapping?.segmentId },
+        select: { bizUser: { select: { externalId: true } } },
+      });
+      return rows.map((row) => row.bizUser.externalId).sort();
+    };
+    expect(await memberIds()).toEqual(['cs_user_1', 'cs_user_3']);
+
+    // A provider RETRY of the final page (timeout after our commit) must NOT
+    // open a fresh round and reap the other pages' members.
+    const retried = await post(
+      inboundPath,
+      mixpanelBody('members', ['cs_user_3'], { sessionId: 'sess-2', page: 2, totalPages: 2 }),
+    );
+    expect(retried.status).toBe(200);
+    expect(await memberIds()).toEqual(['cs_user_1', 'cs_user_3']);
   });
 
   it('follows a provider-side cohort rename', async () => {
@@ -262,11 +273,19 @@ describe('Inbound cohort sync (e2e)', () => {
     });
     expect(res.status).toBe(200);
     const mapping = await syncedMapping();
-    expect(mapping?.unresolvedCount).toBe((before?.unresolvedCount ?? 0) + 1);
+    expect(mapping?.unresolvedCount).toBe(1);
     expect(mapping?.memberCount).toBe(before?.memberCount);
     expect(
       await prisma.bizUser.findFirst({ where: { environmentId, externalId: 'ghost@example.com' } }),
     ).toBeNull();
+
+    // The counter reports the LAST batch: a fixed configuration reads 0 again.
+    const healthy = await post(
+      inboundPath,
+      mixpanelBody('add_members', ['cs_user_1'], { cohortName: 'Power users v2' }),
+    );
+    expect(healthy.status).toBe(200);
+    expect((await syncedMapping())?.unresolvedCount).toBe(0);
   });
 
   it('enforces read-only on the synced segment (rename, member edits) while columns stay open', async () => {

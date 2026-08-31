@@ -1506,7 +1506,7 @@ const translations = {
         cohortsTitle: '已同步的 cohort',
         cohortsEmpty: '还没有同步任何 cohort — {{name}} 发送首次导出后会显示在这里。',
         unresolvedHint:
-          '因成员数据里取不到用户 ID 而被跳过的数量 — 检查用户 ID 属性是否已勾进 Mixpanel 的导出属性。',
+          '因成员数据里取不到用户 ID 而被跳过的数量 — 检查用户 ID 属性设置,并确认该属性确实在导出数据里。',
         columns: {
           cohort: 'Cohort',
           members: '成员数',

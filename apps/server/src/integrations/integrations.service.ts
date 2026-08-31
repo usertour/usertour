@@ -2,7 +2,12 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { INTEGRATION_PROVIDERS, INTEGRATION_TEST_TOPIC } from '@usertour/constants';
+import {
+  catalogEntryForSource,
+  INTEGRATION_PROVIDERS,
+  INTEGRATION_TEST_TOPIC,
+} from '@usertour/constants';
+import type { Request } from 'express';
 import type { IntegrationConfig } from '@usertour/types';
 import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import {
@@ -58,9 +63,17 @@ export class IntegrationsService {
    */
   private withoutKey<T extends { key: string; provider: string; inboundToken: string | null }>(
     row: T,
+    request?: Request,
   ): Omit<T, 'key' | 'inboundToken'> & { inboundUrl: string | null } {
     const { key: _key, inboundToken: _inboundToken, ...rest } = row;
-    return { ...rest, inboundUrl: this.cohortSync.inboundUrlFor(row) };
+    return { ...rest, inboundUrl: this.cohortSync.inboundUrlFor(row, request) };
+  }
+
+  /** Providers whose inbound cohort-sync entry actually exists. */
+  private assertInboundProvider(provider: string): void {
+    if (!catalogEntryForSource(provider)?.hasInbound) {
+      throw new ValidationError(`Provider "${provider}" does not support cohort sync.`);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -88,12 +101,12 @@ export class IntegrationsService {
     }
   }
 
-  async list(environmentId: string) {
+  async list(environmentId: string, request?: Request) {
     const rows = await this.prisma.integration.findMany({
       where: { environmentId },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
-    return rows.map((row) => this.withoutKey(row));
+    return rows.map((row) => this.withoutKey(row, request));
   }
 
   /**
@@ -102,7 +115,7 @@ export class IntegrationsService {
    * required on first configure and optional afterwards: it is never echoed
    * back, so "keep the stored key" must be expressible as absence.
    */
-  async upsert(data: UpsertIntegrationInput) {
+  async upsert(data: UpsertIntegrationInput, request?: Request) {
     await this.assertEntitled(data.environmentId);
     if (!INTEGRATION_PROVIDERS.includes(data.provider as (typeof INTEGRATION_PROVIDERS)[number])) {
       throw new ValidationError(
@@ -143,7 +156,7 @@ export class IntegrationsService {
           enabled: data.enabled ?? true,
         },
       });
-      return this.withoutKey(row);
+      return this.withoutKey(row, request);
     }
 
     // A new credential or destination (region) owes nothing to the old one's
@@ -163,7 +176,7 @@ export class IntegrationsService {
         ...(reEnabling ? { autoDisabledAt: null } : {}),
       },
     });
-    return this.withoutKey(row);
+    return this.withoutKey(row, request);
   }
 
   /** Deliberately not entitlement-gated: downgrade cleanup stays open. */
@@ -185,28 +198,30 @@ export class IntegrationsService {
    * identity-bridge override. First enable mints the receive token. Gated
    * like every other configuration write.
    */
-  async updateInbound(data: UpdateIntegrationInboundInput) {
+  async updateInbound(data: UpdateIntegrationInboundInput, request?: Request) {
     const integration = await this.prisma.integration.findUnique({ where: { id: data.id } });
     if (!integration) {
       throw new IntegrationNotFoundError();
     }
+    this.assertInboundProvider(integration.provider);
     await this.assertEntitled(integration.environmentId);
     const row = await this.cohortSync.updateInbound(integration, {
       enabled: data.enabled,
       userIdProperty: data.userIdProperty,
     });
-    return this.withoutKey(row);
+    return this.withoutKey(row, request);
   }
 
   /** Mint a fresh receive token; the old URL 404s immediately. */
-  async rotateInboundToken(id: string) {
+  async rotateInboundToken(id: string, request?: Request) {
     const integration = await this.prisma.integration.findUnique({ where: { id } });
     if (!integration) {
       throw new IntegrationNotFoundError();
     }
+    this.assertInboundProvider(integration.provider);
     await this.assertEntitled(integration.environmentId);
     const row = await this.cohortSync.rotateInboundToken(integration);
-    return this.withoutKey(row);
+    return this.withoutKey(row, request);
   }
 
   /** The integration's synced cohorts, mapped for the GraphQL surface. */

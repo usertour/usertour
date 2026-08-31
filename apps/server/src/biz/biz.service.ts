@@ -223,9 +223,12 @@ export class BizService {
   /**
    * Resolve external ids to this environment's BizUsers, CREATING bare users
    * (externalId only — cohort sync never writes attributes, ADR 0012) for the
-   * ones that don't exist yet. Creation is row-at-a-time so `user.created`
-   * emits exactly once per user actually created here: a lost unique race
-   * adopts the winner's row without emitting.
+   * ones that don't exist yet. Creation is one createMany: providers hold
+   * the webhook to tight response deadlines (Amplitude: 1–2s), so a
+   * full-roster first sync cannot afford row-at-a-time INSERTs. Trade-off:
+   * under a concurrent duplicate batch, a user the other request created can
+   * appear in this side's post-create read and emit a second `user.created`
+   * — rare, and logically-duplicate events are already tolerated.
    */
   async findOrCreateBizUsersByExternalIds(
     environmentId: string,
@@ -245,28 +248,16 @@ export class BizService {
       return existing;
     }
     return await this.withEntityChangeEmit(environmentId, async () => {
-      const created: { id: string; externalId: string }[] = [];
-      for (const externalId of missing) {
-        try {
-          const row = await this.prisma.bizUser.create({
-            data: { environmentId, externalId, data: {} },
-            select: { id: true, externalId: true },
-          });
-          this.collectEntityChange({ entity: 'user', action: 'created', bizId: row.id });
-          created.push(row);
-        } catch (error) {
-          if ((error as { code?: string }).code === 'P2002') {
-            const winner = await this.prisma.bizUser.findFirst({
-              where: { environmentId, externalId },
-              select: { id: true, externalId: true },
-            });
-            if (winner) {
-              created.push(winner);
-              continue;
-            }
-          }
-          throw error;
-        }
+      await this.prisma.bizUser.createMany({
+        data: missing.map((externalId) => ({ environmentId, externalId, data: {} })),
+        skipDuplicates: true,
+      });
+      const created = await this.prisma.bizUser.findMany({
+        where: { environmentId, externalId: { in: missing } },
+        select: { id: true, externalId: true },
+      });
+      for (const row of created) {
+        this.collectEntityChange({ entity: 'user', action: 'created', bizId: row.id });
       }
       return [...existing, ...created];
     });

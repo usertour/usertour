@@ -88,9 +88,22 @@ describe('parseMixpanelWebhook', () => {
     expect(batch.unresolvedCount).toBe(1);
   });
 
-  it('treats the magic value mixpanel_distinct_id as the default path', () => {
-    const batch = parseMixpanelWebhook(body(), 'int_1', 'mixpanel_distinct_id');
-    expect(batch.memberExternalIds).toEqual(['u1', 'u2']);
+  it('treats every spelling of the default distinct id as the default path', () => {
+    // The UI placeholder says "distinct_id" — a literal-minded customer must
+    // not end up with 100% unresolved members.
+    for (const spelling of ['mixpanel_distinct_id', 'distinct_id', '$distinct_id']) {
+      const batch = parseMixpanelWebhook(body(), 'int_1', spelling);
+      expect(batch.memberExternalIds).toEqual(['u1', 'u2']);
+    }
+  });
+
+  it('rejects prototype-chain action names instead of treating them as adds', () => {
+    expect(() => parseMixpanelWebhook(body({ action: 'constructor' }), 'int_1')).toThrow(
+      InboundParseError,
+    );
+    expect(() => parseMixpanelWebhook(body({ action: 'toString' }), 'int_1')).toThrow(
+      InboundParseError,
+    );
   });
 
   it('tolerates top-level (unnested) keys — parameters and members alike', () => {

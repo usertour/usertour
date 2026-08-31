@@ -1582,7 +1582,7 @@ const translations = {
         cohortsTitle: 'Synced cohorts',
         cohortsEmpty: 'No cohorts synced yet — they appear after {{name}} sends the first export.',
         unresolvedHint:
-          "Members skipped because no user ID could be read from their data — check that your user ID property is included in Mixpanel's exported properties.",
+          'Members skipped because no user ID could be read from their data — check your user ID property setting and that the property is actually exported.',
         columns: {
           cohort: 'Cohort',
           members: 'Members',

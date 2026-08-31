@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Integration, Prisma } from '@prisma/client';
+import { Request } from 'express';
 import { PrismaService } from 'nestjs-prisma';
 import { BizService } from '@/biz/biz.service';
 import { IntegrationNotFoundError, ValidationError } from '@/common/errors';
+import { resolveOrigin } from '@/common/http/resolve-origin';
 import { EncryptionService } from '@/shared/encryption.service';
 import { CohortSyncBatch, CohortSyncResult } from './cohort-sync.types';
 import { buildInboundUrl, generateInboundToken, hashInboundToken } from './inbound-token';
@@ -127,9 +129,14 @@ export class CohortSyncService {
             bizUser: { environmentId: integration.environment.id },
           },
         });
+        // Completion keeps the session id and clears only the stamp: a
+        // provider RETRY of this final page (timeout after our commit) must
+        // read as "already completed" — treating it as a fresh round would
+        // re-run the cleanup against a new stamp and reap every member the
+        // other pages contributed.
         await this.prisma.integrationSyncedSegment.update({
           where: { id: mapping.id },
-          data: { fullSyncSessionId: null, fullSyncStartedAt: null },
+          data: { fullSyncStartedAt: null },
         });
       }
     }
@@ -147,7 +154,9 @@ export class CohortSyncService {
       data: {
         lastSyncedAt: now,
         memberCount,
-        ...(unresolved > 0 ? { unresolvedCount: { increment: unresolved } } : {}),
+        // The LAST batch's count, not a lifetime tally: the dashboard shows
+        // it as current state, and a fixed misconfiguration must read as 0.
+        unresolvedCount: unresolved,
         // The segment's name follows provider-side renames.
         ...(mapping.sourceCohortName !== batch.source.cohortName
           ? { sourceCohortName: batch.source.cohortName }
@@ -247,45 +256,66 @@ export class CohortSyncService {
   }
 
   /**
-   * Full-roster round bookkeeping. A new session id (or the round's first
-   * sighting) stamps the round start; later pages of the same session reuse
-   * it so the final page's cleanup line is the ROUND's start, not its own.
+   * Full-roster round bookkeeping. A new session id stamps the round start;
+   * later pages of the same session reuse it so the final page's cleanup
+   * line is the ROUND's start, not its own. A session that already COMPLETED
+   * (id retained, stamp cleared) returns null: its retried pages apply as
+   * plain adds and never re-run the cleanup.
    */
   private async beginOrContinueRound(
     mappingId: string,
     sessionId: string,
     now: Date,
-  ): Promise<Date> {
+  ): Promise<Date | null> {
+    // Conditional claim first: only a row NOT already on this session takes
+    // the new stamp, so concurrent first pages agree on a single round start
+    // instead of each overwriting it with their own clock. The null branch is
+    // spelled out — `NOT: { field: value }` never matches NULL rows.
+    await this.prisma.integrationSyncedSegment.updateMany({
+      where: {
+        id: mappingId,
+        OR: [{ fullSyncSessionId: null }, { NOT: { fullSyncSessionId: sessionId } }],
+      },
+      data: { fullSyncSessionId: sessionId, fullSyncStartedAt: now },
+    });
     const mapping = await this.prisma.integrationSyncedSegment.findUniqueOrThrow({
       where: { id: mappingId },
       select: { fullSyncSessionId: true, fullSyncStartedAt: true },
     });
-    if (mapping.fullSyncSessionId === sessionId && mapping.fullSyncStartedAt) {
+    // Stamp already cleared for this session = the round completed; null
+    // tells the caller to skip the final-page cleanup on a retry.
+    if (mapping.fullSyncSessionId === sessionId) {
       return mapping.fullSyncStartedAt;
     }
-    await this.prisma.integrationSyncedSegment.update({
-      where: { id: mappingId },
-      data: { fullSyncSessionId: sessionId, fullSyncStartedAt: now },
-    });
-    return now;
+    // A different session claimed the row between our write and read —
+    // treat this page as not being part of an active round.
+    return null;
   }
 
   // ---------------------------------------------------------------------------
   // Management (dashboard surface)
   // ---------------------------------------------------------------------------
 
-  /** The decrypted receive URL for a row that has minted a token, else null. */
-  inboundUrlFor(integration: Pick<Integration, 'provider' | 'inboundToken'>): string | null {
+  /**
+   * The decrypted receive URL for a row that has minted a token, else null.
+   * The origin prefers the configured API_URL and falls back to the calling
+   * request's host (resolveOrigin) — a default install with API_URL unset
+   * must still hand out an absolute, copyable URL.
+   */
+  inboundUrlFor(
+    integration: Pick<Integration, 'provider' | 'inboundToken'>,
+    request?: Request,
+  ): string | null {
     if (!integration.inboundToken) {
       return null;
     }
     const token = this.encryption.decrypt(integration.inboundToken);
     if (!token) {
       // Undecryptable (rotated encryption key): surface as absent — the fix
-      // is rotating the inbound token, which re-mints from scratch.
+      // is flipping the switch off/on or rotating, both of which re-mint.
       return null;
     }
-    return buildInboundUrl(this.configService.get('app.apiUrl') ?? '', integration.provider, token);
+    return buildInboundUrl(resolveOrigin(this.configService, request), integration.provider, token);
   }
 
   /**
@@ -297,7 +327,12 @@ export class CohortSyncService {
     integration: Integration,
     changes: { enabled?: boolean; userIdProperty?: string },
   ): Promise<Integration> {
-    const mintToken = changes.enabled === true && !integration.inboundToken;
+    // Mint when enabling with no token — or with one this deployment can no
+    // longer decrypt (rotated encryption key): the off/on flip is the
+    // documented recovery path, so it must actually re-mint.
+    const mintToken =
+      changes.enabled === true &&
+      (!integration.inboundToken || !this.encryption.decrypt(integration.inboundToken));
     const token = mintToken ? generateInboundToken() : null;
 
     const config = { ...((integration.inboundConfig as Record<string, unknown>) ?? {}) };
@@ -366,17 +401,31 @@ export class CohortSyncService {
     });
     for (const mapping of mappings) {
       await this.prisma.$transaction(async (tx) => {
-        await tx.integrationSyncedSegment.delete({ where: { id: mapping.id } });
-        const remaining = await tx.integrationSyncedSegment.count({
-          where: { segmentId: mapping.segmentId },
-        });
-        if (remaining === 0) {
-          await tx.segment.updateMany({
-            where: { id: mapping.segmentId },
-            data: { source: 'internal', sourceId: null },
-          });
-        }
+        await releaseSyncedSegmentMapping(tx, mapping);
       });
     }
   }
 }
+
+/**
+ * Drop one mapping and, when it was the LAST one feeding its segment, return
+ * the segment to ordinary life. Shared by integration deletion (above) and
+ * environment deletion (environments.service) — the caller owns the
+ * transaction so the release commits atomically with whatever removed the
+ * integration's reachability.
+ */
+export const releaseSyncedSegmentMapping = async (
+  tx: Prisma.TransactionClient,
+  mapping: { id: string; segmentId: string },
+): Promise<void> => {
+  await tx.integrationSyncedSegment.delete({ where: { id: mapping.id } });
+  const remaining = await tx.integrationSyncedSegment.count({
+    where: { segmentId: mapping.segmentId },
+  });
+  if (remaining === 0) {
+    await tx.segment.updateMany({
+      where: { id: mapping.segmentId },
+      data: { source: 'internal', sourceId: null },
+    });
+  }
+};

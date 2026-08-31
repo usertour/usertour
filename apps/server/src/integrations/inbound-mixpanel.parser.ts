@@ -30,6 +30,15 @@ const ACTION_MAP: Record<string, CohortSyncAction> = {
   remove_members: 'remove',
 };
 
+/**
+ * Spellings of "use the default distinct id" accepted in `userIdProperty`.
+ * The UI placeholder says "distinct_id" and the wire carries both
+ * `mixpanel_distinct_id` and (in custom-export mode) `$distinct_id` — any of
+ * them must mean the default path, or a literal-minded customer gets 100%
+ * unresolved members.
+ */
+const DEFAULT_IDENTITY_SPELLINGS = new Set(['mixpanel_distinct_id', 'distinct_id', '$distinct_id']);
+
 export class InboundParseError extends Error {}
 
 const asNonEmptyString = (value: unknown): string | null =>
@@ -54,7 +63,11 @@ export const parseMixpanelWebhook = (
   userIdProperty?: string,
 ): CohortSyncBatch => {
   const root = (body ?? {}) as Record<string, unknown>;
-  const action = ACTION_MAP[root.action as string];
+  // Own-property lookup only: a crafted action like "constructor" reaches
+  // Object.prototype through plain indexing and would slip past the guard.
+  const action = Object.prototype.hasOwnProperty.call(ACTION_MAP, root.action as string)
+    ? ACTION_MAP[root.action as string]
+    : undefined;
   if (!action) {
     throw new InboundParseError(`Unsupported action "${root.action}"`);
   }
@@ -77,7 +90,7 @@ export const parseMixpanelWebhook = (
   }
 
   const identityKey =
-    userIdProperty && userIdProperty !== 'mixpanel_distinct_id'
+    userIdProperty && !DEFAULT_IDENTITY_SPELLINGS.has(userIdProperty)
       ? userIdProperty
       : 'mixpanel_distinct_id';
   const memberExternalIds: string[] = [];
