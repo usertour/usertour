@@ -10,7 +10,7 @@ ADR 0011 rebuilt integrations as an outbound pipeline: Usertour events stream in
 The providers expose this through three different mechanisms, with very different entry costs:
 
 - **Mixpanel**: a user-configured *Custom Webhook* — Mixpanel POSTs cohort membership changes to a URL the customer pastes in. No partnership required.
-- **Amplitude**: a *destination catalog* entry — the customer selects us as a cohort destination inside Amplitude and authenticates with a secret we issue. Requires registering as an Amplitude technology partner.
+- **Amplitude**: a self-serve *Cohort Webhooks* destination — the customer adds a Webhook destination (Data → Destinations → Cohorts) pointing at our receive URL and syncs cohorts to it. No partner registration; the same URL-token model as Mixpanel.
 - **Heap**: a partner OAuth connection; the customer toggles sync per segment inside Heap. Requires registering for Heap's Integrations Partner program.
 
 The mechanisms differ only in **entry and authentication**. What happens after — mapping a source cohort to a segment, resolving member identities, applying membership changes — is identical.
@@ -19,7 +19,9 @@ The mechanisms differ only in **entry and authentication**. What happens after �
 
 ### 1. Scope
 
-This milestone ships the **provider-agnostic sync engine and the Mixpanel entry**. Amplitude and Heap plug in later as additional entry adapters once their partner registrations come through; the engine contract is designed for that from day one.
+This milestone ships the **provider-agnostic sync engine with the Mixpanel and Amplitude entries** (both self-serve webhook models). Heap plugs in later as an additional entry adapter once its partner registration comes through; the engine contract is designed for that from day one.
+
+The Amplitude wire is leaner than Mixpanel's: one flat JSON body per batch — `cohort_id`, `cohort_name`, `in_cohort` (true = entered, false = exited), and a `users` array of `{ user_id }` objects — with **no full-roster action**: membership is maintained purely through enter/exit batches, so the replace-round machinery stays unused. Amplitude retries on timeout and may re-deliver a batch; the engine's set-based writes absorb replays. The identity default is `user_id` (their identify value), with the same `userIdProperty` override; customers whose payload template diverges can also fix it Amplitude-side, since the webhook body is a customizable template.
 
 ### 2. Architecture: one engine, per-provider entries
 
@@ -192,12 +194,12 @@ Rides the existing `integrations` entitlement (cloud Starter+, self-hosted never
 
 ## Triggers to Revisit
 
-- Amplitude / Heap partner registrations landing — each adds an entry adapter (secret validation; OAuth connection + per-segment toggles) against the same engine.
+- Heap partner registration landing — an entry adapter (OAuth connection + Heap-Hash callback validation + per-segment toggles) against the same engine.
 - Batch sizes or provider timeouts outgrowing synchronous processing.
 - Demand for company-level cohort sync (current scope is user cohorts).
 - A future data-sync capability introducing provider service accounts — then cohort *selection* could move in-app (list cohorts via the API, pick them here) and the condition-type model above becomes worth its cost.
 
 ## Deferred
 
-- Amplitude and Heap entries (partner-gated, see Triggers).
+- The Heap entry (partner-gated, see Triggers).
 - Full-membership reconciliation (a periodic pull to heal drift) — requires provider read APIs and credentials beyond the webhook push model.

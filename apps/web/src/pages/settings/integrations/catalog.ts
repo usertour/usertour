@@ -22,7 +22,7 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     name: 'Amplitude',
     imagePath: '/images/integrations/amplitude.png',
     hasRegion: true,
-    hasInbound: false,
+    hasInbound: true,
   },
   {
     provider: 'heap',

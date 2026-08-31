@@ -1503,7 +1503,7 @@ const translations = {
         connect: 'Connect',
         logoAlt: '{{name}} logo',
         descriptions: {
-          amplitude: 'Send Usertour events to Amplitude.',
+          amplitude: 'Send Usertour events to Amplitude and sync Amplitude cohorts into Usertour.',
           heap: 'Send Usertour events to Heap.',
           mixpanel: 'Send Usertour events to Mixpanel and sync Mixpanel cohorts into Usertour.',
           posthog: 'Send Usertour events to PostHog.',
@@ -1548,8 +1548,14 @@ const translations = {
         settingsDescription:
           'Each synced cohort appears under Users as a segment that follows the {{name}} side — membership updates land automatically and cannot be edited here.',
         urlLabel: 'Webhook URL',
-        urlHelp:
-          "In {{name}}, open the cohort's export settings and add a custom webhook with this URL. Anyone who has the URL can push members, so treat it like a secret.",
+        // Per-provider setup paths — a generic sentence would send users
+        // hunting in the wrong part of the provider's UI.
+        urlHelps: {
+          mixpanel:
+            "In Mixpanel, open the cohort's export settings and add a custom webhook with this URL. Anyone who has the URL can push members, so treat it like a secret.",
+          amplitude:
+            'In Amplitude, add a Webhook cohort destination with this URL (Data → Destinations → Cohorts), then sync your cohort to it. Anyone who has the URL can push members, so treat it like a secret.',
+        },
         urlPending: 'Turn on cohort sync above to generate your webhook URL.',
         copy: 'Copy webhook URL',
         copied: 'Webhook URL copied',
@@ -1562,9 +1568,16 @@ const translations = {
         rotated: 'Webhook URL rotated — update it in {{name}}.',
         rotateFailed: 'Failed to rotate the webhook URL',
         userIdPropertyLabel: '{{name}} user ID property',
-        userIdPropertyPlaceholder: 'Defaults to distinct_id',
-        userIdPropertyHelp:
-          'Leave blank when your {{name}} distinct IDs are Usertour user IDs. Otherwise, enter the profile property that holds the Usertour user ID — and make sure the cohort webhook exports that property too.',
+        userIdPropertyPlaceholders: {
+          mixpanel: 'Defaults to distinct_id',
+          amplitude: 'Defaults to user_id',
+        },
+        userIdPropertyHelps: {
+          mixpanel:
+            'Leave blank when your Mixpanel distinct IDs are Usertour user IDs. Otherwise, enter the profile property that holds the Usertour user ID — and make sure the cohort webhook exports that property too.',
+          amplitude:
+            'Leave blank when your Amplitude user IDs are Usertour user IDs. Otherwise, enter the field on each webhook user object that holds the Usertour user ID — customize the webhook payload template so it includes that field.',
+        },
         saved: 'Cohort sync settings saved',
         cohortsTitle: 'Synced cohorts',
         cohortsEmpty: 'No cohorts synced yet — they appear after {{name}} sends the first export.',

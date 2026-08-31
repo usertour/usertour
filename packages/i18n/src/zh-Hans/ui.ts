@@ -1430,7 +1430,7 @@ const translations = {
         connect: '连接',
         logoAlt: '{{name}} 标志',
         descriptions: {
-          amplitude: '将 Usertour 事件发送到 Amplitude。',
+          amplitude: '将 Usertour 事件发送到 Amplitude,并把 Amplitude cohort 同步到 Usertour。',
           heap: '将 Usertour 事件发送到 Heap。',
           mixpanel: '将 Usertour 事件发送到 Mixpanel,并把 Mixpanel cohort 同步到 Usertour。',
           posthog: '将 Usertour 事件发送到 PostHog。',
@@ -1474,8 +1474,12 @@ const translations = {
         settingsDescription:
           '每个同步的 cohort 都会以分群形式出现在用户页,内容跟随 {{name}} 侧变化 — 成员自动更新,不能在这里编辑。',
         urlLabel: 'Webhook URL',
-        urlHelp:
-          '在 {{name}} 中打开该 cohort 的导出设置,添加一个使用此 URL 的自定义 webhook。任何拿到此 URL 的人都能推送成员,请像密钥一样妥善保管。',
+        urlHelps: {
+          mixpanel:
+            '在 Mixpanel 中打开该 cohort 的导出设置,添加一个使用此 URL 的自定义 webhook。任何拿到此 URL 的人都能推送成员,请像密钥一样妥善保管。',
+          amplitude:
+            '在 Amplitude 中添加一个使用此 URL 的 Webhook cohort destination(Data → Destinations → Cohorts),然后把 cohort 同步到它。任何拿到此 URL 的人都能推送成员,请像密钥一样妥善保管。',
+        },
         urlPending: '开启上方的 cohort 同步开关后,将自动生成 webhook URL。',
         copy: '复制 webhook URL',
         copied: 'Webhook URL 已复制',
@@ -1488,9 +1492,16 @@ const translations = {
         rotated: 'Webhook URL 已更换 — 请到 {{name}} 中更新。',
         rotateFailed: '更换 webhook URL 失败',
         userIdPropertyLabel: '{{name}} 用户 ID 属性',
-        userIdPropertyPlaceholder: '默认使用 distinct_id',
-        userIdPropertyHelp:
-          '如果你的 {{name}} distinct ID 就是 Usertour 用户 ID,留空即可。否则请填写存放 Usertour 用户 ID 的 profile 属性名 — 并确保 cohort webhook 同时导出该属性。',
+        userIdPropertyPlaceholders: {
+          mixpanel: '默认使用 distinct_id',
+          amplitude: '默认使用 user_id',
+        },
+        userIdPropertyHelps: {
+          mixpanel:
+            '如果你的 Mixpanel distinct ID 就是 Usertour 用户 ID,留空即可。否则请填写存放 Usertour 用户 ID 的 profile 属性名 — 并确保 cohort webhook 同时导出该属性。',
+          amplitude:
+            '如果你的 Amplitude user ID 就是 Usertour 用户 ID,留空即可。否则请填写 webhook 用户对象上存放 Usertour 用户 ID 的字段名 — 并自定义 webhook payload 模板使其包含该字段。',
+        },
         saved: 'Cohort 同步设置已保存',
         cohortsTitle: '已同步的 cohort',
         cohortsEmpty: '还没有同步任何 cohort — {{name}} 发送首次导出后会显示在这里。',

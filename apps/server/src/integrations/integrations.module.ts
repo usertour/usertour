@@ -8,7 +8,7 @@ import { OutboundModule } from '@/outbound/outbound.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { CohortSyncService } from './cohort-sync.service';
-import { InboundMixpanelController } from './inbound-mixpanel.controller';
+import { InboundController } from './inbound.controller';
 import { IntegrationsListener } from './integrations.listener';
 import { IntegrationsProcessor } from './integrations.processor';
 import { IntegrationsReconcileProcessor } from './integrations-reconcile.processor';
@@ -32,7 +32,7 @@ import { IntegrationsService } from './integrations.service';
     ConfigModule,
     BizModule,
   ],
-  controllers: [InboundMixpanelController],
+  controllers: [InboundController],
   providers: [
     CohortSyncService,
     IntegrationsService,

@@ -466,4 +466,68 @@ describe('Inbound cohort sync (e2e)', () => {
     });
     expect(rename.body.errors).toBeUndefined();
   });
+
+  it('the Amplitude entry rides the same engine: enter/exit batches, replay-safe', async () => {
+    const amplitudeBody = (inCohort: boolean, userIds: string[]) => ({
+      cohort_name: 'Champions',
+      cohort_id: 'amp-cohort-1',
+      in_cohort: inCohort,
+      computed_time: '1692206763',
+      message_id: `msg::${inCohort ? 'enter' : 'exit'}::0`,
+      users: userIds.map((userId) => ({ user_id: userId, user_properties: { plan: 'pro' } })),
+    });
+
+    const created = gqlData(
+      await graphql(app, {
+        token,
+        query: UPSERT_INTEGRATION,
+        variables: { data: { environmentId, provider: 'amplitude', key: 'amp-key' } },
+      }),
+    ).upsertIntegration;
+    const enabled = gqlData(
+      await graphql(app, {
+        token,
+        query: UPDATE_INBOUND,
+        variables: { data: { id: created.id, enabled: true } },
+      }),
+    ).updateIntegrationInbound;
+    expect(enabled.inboundUrl).toMatch(/\/inbound\/amplitude\/utin_[0-9a-f]{64}$/);
+    const amplitudePath = pathOfInboundUrl(enabled.inboundUrl);
+
+    // An enter batch materializes the cohort, creating the unseen member bare.
+    for (let i = 0; i < 2; i++) {
+      const entered = await post(amplitudePath, amplitudeBody(true, ['cs_user_1', 'amp_new']));
+      expect(entered.status).toBe(200);
+      expect(entered.body).toEqual({ status: 'success' });
+    }
+    const mapping = await prisma.integrationSyncedSegment.findUnique({
+      where: {
+        integrationId_sourceCohortId: { integrationId: created.id, sourceCohortId: 'amp-cohort-1' },
+      },
+    });
+    expect(mapping?.memberCount).toBe(2); // the replayed batch was a no-op
+    const segment = await prisma.segment.findUnique({ where: { id: mapping?.segmentId } });
+    expect(segment?.source).toBe('amplitude');
+    expect(segment?.name).toBe('Champions');
+    const ampNew = await prisma.bizUser.findFirst({
+      where: { environmentId, externalId: 'amp_new' },
+    });
+    expect(ampNew?.data).toEqual({});
+
+    // An exit batch removes without touching the other member.
+    const exited = await post(amplitudePath, amplitudeBody(false, ['cs_user_1']));
+    expect(exited.status).toBe(200);
+    const remaining = await prisma.bizUserOnSegment.findMany({
+      where: { segmentId: mapping?.segmentId },
+      select: { bizUser: { select: { externalId: true } } },
+    });
+    expect(remaining.map((row) => row.bizUser.externalId)).toEqual(['amp_new']);
+
+    // Malformed payload (no in_cohort) → 400; wrong provider's route → 404.
+    expect((await post(amplitudePath, { cohort_id: 'amp-cohort-1' })).status).toBe(400);
+    expect(
+      (await post(amplitudePath.replace('/amplitude/', '/mixpanel/'), amplitudeBody(true, ['x'])))
+        .status,
+    ).toBe(404);
+  });
 });

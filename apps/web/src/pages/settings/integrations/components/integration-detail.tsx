@@ -580,7 +580,7 @@ const InboundSection = ({
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                {t('settings.integrations.inbound.urlHelp', { name: entry.name })}
+                {t(`settings.integrations.inbound.urlHelps.${entry.provider}`)}
               </p>
             </>
           ) : (
@@ -597,12 +597,14 @@ const InboundSection = ({
           <Input
             autoComplete="off"
             value={userIdProperty}
-            placeholder={t('settings.integrations.inbound.userIdPropertyPlaceholder')}
+            placeholder={t(
+              `settings.integrations.inbound.userIdPropertyPlaceholders.${entry.provider}`,
+            )}
             disabled={!canWrite}
             onChange={(event) => setUserIdProperty(event.target.value)}
           />
           <p className="text-sm text-muted-foreground">
-            {t('settings.integrations.inbound.userIdPropertyHelp', { name: entry.name })}
+            {t(`settings.integrations.inbound.userIdPropertyHelps.${entry.provider}`)}
           </p>
           <Button type="button" disabled={!canWrite || saving} onClick={() => void handleSave()}>
             {saving && <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />}
