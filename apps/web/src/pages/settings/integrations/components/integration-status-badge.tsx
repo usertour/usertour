@@ -12,6 +12,11 @@ export interface IntegrationStatusBadgeProps {
  * One status vocabulary for the list cards and the detail header:
  * not connected / disabled / auto-disabled / cooling down / enabled — the
  * same ladder the webhook list renders, minus its table framing.
+ *
+ * Outbound faults (auto-disabled, cooling down) outrank everything — they
+ * are the actionable signals. Below that, enabled/disabled is INTEGRATION
+ * level: either capability running (event streaming or inbound cohort sync)
+ * counts as enabled — a cohort-sync-only setup is working, not "Disabled".
  */
 export const IntegrationStatusBadge = (props: IntegrationStatusBadgeProps) => {
   const { integration } = props;
@@ -20,8 +25,8 @@ export const IntegrationStatusBadge = (props: IntegrationStatusBadgeProps) => {
   if (!integration) {
     return <Badge variant="outline">{t('settings.integrations.status.notConnected')}</Badge>;
   }
-  if (!integration.enabled) {
-    return integration.autoDisabledAt ? (
+  if (integration.autoDisabledAt && !integration.enabled) {
+    return (
       <Badge
         variant="destructive"
         className="whitespace-nowrap"
@@ -31,11 +36,13 @@ export const IntegrationStatusBadge = (props: IntegrationStatusBadgeProps) => {
       >
         {t('settings.integrations.autoDisabled.badge')}
       </Badge>
-    ) : (
-      <Badge variant="secondary">{t('settings.integrations.status.disabled')}</Badge>
     );
   }
-  if (integration.cooldownUntil && new Date(integration.cooldownUntil).getTime() > Date.now()) {
+  if (
+    integration.enabled &&
+    integration.cooldownUntil &&
+    new Date(integration.cooldownUntil).getTime() > Date.now()
+  ) {
     return (
       <Badge
         variant="warning"
@@ -49,7 +56,10 @@ export const IntegrationStatusBadge = (props: IntegrationStatusBadgeProps) => {
       </Badge>
     );
   }
-  return <Badge variant="success">{t('settings.integrations.status.enabled')}</Badge>;
+  if (integration.enabled || integration.inboundEnabled) {
+    return <Badge variant="success">{t('settings.integrations.status.enabled')}</Badge>;
+  }
+  return <Badge variant="secondary">{t('settings.integrations.status.disabled')}</Badge>;
 };
 
 IntegrationStatusBadge.displayName = 'IntegrationStatusBadge';
