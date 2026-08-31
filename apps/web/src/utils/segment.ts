@@ -1,5 +1,5 @@
 import type { Segment } from '@usertour/types';
-import { catalogEntryForSource } from '@/pages/settings/integrations/catalog';
+import { catalogEntryForSource } from '@usertour/constants';
 
 /** True for a segment materialized by inbound cohort sync (ADR 0012). */
 export const isSyncedSegment = (segment: Segment): boolean =>

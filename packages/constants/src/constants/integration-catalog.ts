@@ -1,10 +1,12 @@
 import type { IntegrationProvider } from '@usertour/types';
 
 /**
- * Display metadata for the supported providers (ADR 0011: the five analytics
- * destinations). Provider ids must stay in step with INTEGRATION_PROVIDERS in
- * @usertour/constants — the list page renders THIS array so ordering and
- * assets live in one place; names are proper nouns, not translated.
+ * Display metadata for the supported integration providers (ADR 0011: the
+ * five analytics destinations). Provider ids must stay in step with
+ * INTEGRATION_PROVIDERS — the settings pages and the segment surfaces
+ * (sidebar badges, condition pickers) all render from THIS array so ordering
+ * and assets live in one place; names are proper nouns, not translated.
+ * Image paths resolve against the web app's public assets.
  */
 export interface IntegrationCatalogEntry {
   provider: IntegrationProvider;

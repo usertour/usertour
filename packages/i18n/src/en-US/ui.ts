@@ -4202,6 +4202,7 @@ const translations = {
         operatorPlaceholder: 'Select condition',
         empty: 'No segments found.',
         userHeading: 'User segment',
+        syncedFrom: 'Synced from {{provider}}',
         companyHeading: 'Company segment',
         user: 'User',
         company: 'Company',

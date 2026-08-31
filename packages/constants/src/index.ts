@@ -8,6 +8,7 @@ export * from './constants/cookie';
 export * from './constants/billing';
 export * from './constants/sdk';
 export * from './constants/license';
+export * from './constants/integration-catalog';
 export * from './constants/permission';
 // Neutral theme-settings validation constraints — the SSOT the server's
 // write-validation derives from (a parity test in the web theme builder keeps it

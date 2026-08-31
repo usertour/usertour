@@ -4011,6 +4011,7 @@ const translations = {
         operatorPlaceholder: '选择条件',
         empty: '未找到分群。',
         userHeading: '用户分群',
+        syncedFrom: '同步自 {{provider}}',
         companyHeading: '公司分群',
         user: '用户',
         company: '公司',

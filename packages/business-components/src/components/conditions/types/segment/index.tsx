@@ -1,6 +1,7 @@
-import { SegmentIcon } from '@usertour/icons';
+import { catalogEntryForSource } from '@usertour/constants';
+import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, SegmentIcon } from '@usertour/icons';
 import type { RulesCondition, Segment } from '@usertour/types';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import {
   useConditionsContext,
   useConditionsT,
@@ -35,6 +36,47 @@ const labelForBizType = (segment: Segment | undefined, t: ReturnType<typeof useC
   return t('conditions.types.segment.user');
 };
 
+/**
+ * The synced-provider mark for a segment fed by inbound cohort sync
+ * (`source` names the provider), or undefined for ordinary segments.
+ */
+const syncedMark = (
+  segment: Segment,
+  t: ReturnType<typeof useConditionsT>,
+): ReactNode | undefined => {
+  const entry = catalogEntryForSource(segment.source);
+  if (!entry) {
+    return undefined;
+  }
+  const label = t('conditions.types.segment.syncedFrom', { provider: entry.name });
+  return (
+    <img
+      src={entry.imagePath}
+      alt={label}
+      title={label}
+      className="h-3.5 w-3.5 shrink-0 rounded-[2px]"
+    />
+  );
+};
+
+// Every row carries a leading mark so the column stays aligned: the sidebar's
+// per-dataType icon vocabulary, with the provider logo taking over for synced
+// segments.
+const leadingFor = (segment: Segment, t: ReturnType<typeof useConditionsT>): ReactNode => {
+  const synced = syncedMark(segment, t);
+  if (synced) {
+    return synced;
+  }
+  const className = 'h-3.5 w-3.5 shrink-0 text-muted-foreground';
+  if (segment.dataType === 'ALL') {
+    return <GroupLineIcon className={className} />;
+  }
+  if (segment.dataType === 'CONDITION') {
+    return <Filter2LineIcon className={className} />;
+  }
+  return <Archive2LineIcon className={className} />;
+};
+
 // ---------- Summary ----------
 
 function SegmentSummary({ condition }: { condition: RulesCondition }) {
@@ -63,6 +105,7 @@ function SegmentSummary({ condition }: { condition: RulesCondition }) {
         <span className="text-muted-foreground">{operatorLabel}</span>{' '}
         <span className="font-medium">{segment.name}</span>
       </span>
+      {syncedMark(segment, t)}
     </span>
   );
 }
@@ -87,24 +130,30 @@ function SegmentEditor({ condition, onChange }: EditorProps) {
     [t],
   );
 
+  const toItem = useMemo(
+    () =>
+      (segment: Segment): ConditionComboboxItem => ({
+        value: segment.id,
+        label: segment.name,
+        leading: leadingFor(segment, t),
+      }),
+    [t],
+  );
+
   const groups = useMemo(() => {
     if (!segments) return undefined;
-    const userItems: ConditionComboboxItem[] = segments
-      .filter((s) => s.bizType === 'USER')
-      .map((s) => ({ value: s.id, label: s.name }));
-    const companyItems: ConditionComboboxItem[] = segments
-      .filter((s) => s.bizType === 'COMPANY')
-      .map((s) => ({ value: s.id, label: s.name }));
+    const userItems = segments.filter((s) => s.bizType === 'USER').map(toItem);
+    const companyItems = segments.filter((s) => s.bizType === 'COMPANY').map(toItem);
     const formatted = [
       { heading: t('conditions.types.segment.userHeading'), items: userItems },
       { heading: t('conditions.types.segment.companyHeading'), items: companyItems },
     ].filter((g) => g.items.length > 0);
     return formatted.length > 0 ? formatted : undefined;
-  }, [segments, t]);
+  }, [segments, t, toItem]);
 
   const allItems = useMemo<ConditionComboboxItem[]>(
-    () => (segments ?? []).map((s) => ({ value: s.id, label: s.name })),
-    [segments],
+    () => (segments ?? []).map(toItem),
+    [segments, toItem],
   );
 
   return (

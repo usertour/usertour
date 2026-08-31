@@ -5,7 +5,7 @@ import { Button, SettingsPage, Skeleton } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useCooldownTick } from '../components/use-cooldown-tick';
-import { INTEGRATION_CATALOG } from './catalog';
+import { INTEGRATION_CATALOG } from '@usertour/constants';
 import { IntegrationStatusBadge } from './components/integration-status-badge';
 import { IntegrationUpsell } from './components/integration-upsell';
 

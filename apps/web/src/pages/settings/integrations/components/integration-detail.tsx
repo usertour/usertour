@@ -61,7 +61,7 @@ import { useLoadMoreAccumulator } from '@/hooks/use-load-more-accumulator';
 import { OutboundMessageDialog } from '../../components/outbound-message-dialog';
 import { OutboundMessageStatusBadge } from '../../components/outbound-message-status-badge';
 import { useCooldownTick } from '../../components/use-cooldown-tick';
-import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '../catalog';
+import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
 import { IntegrationStatusBadge } from './integration-status-badge';
 
 const MESSAGES_PAGE_SIZE = 20;
