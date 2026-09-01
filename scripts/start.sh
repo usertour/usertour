@@ -48,8 +48,14 @@ for i in $(seq 1 $MAX_RETRIES); do
     sleep $RETRY_INTERVAL
 done
 
-# Seed database
-npx prisma db seed
+# Seed database (idempotent backfills). RUN_SEED=false skips it — for
+# multi-instance deployments where one designated instance (or a one-off
+# job) runs the seed and the rest boot straight to serving.
+if [ "$RUN_SEED" != "false" ]; then
+    npx prisma db seed
+else
+    echo "RUN_SEED=false — skipping database seed"
+fi
 
 # Start Node.js server. `exec` replaces this shell so Node becomes PID 1:
 # SIGTERM from `docker stop` reaches Nest's shutdown hooks directly (without
