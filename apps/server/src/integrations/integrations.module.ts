@@ -2,10 +2,13 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { BizModule } from '@/biz/biz.module';
 import { QUEUE_INTEGRATION_DELIVERY, QUEUE_INTEGRATION_RECONCILE } from '@/common/consts/queen';
 import { OutboundModule } from '@/outbound/outbound.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
+import { CohortSyncService } from './cohort-sync.service';
+import { InboundController } from './inbound.controller';
 import { IntegrationsListener } from './integrations.listener';
 import { IntegrationsProcessor } from './integrations.processor';
 import { IntegrationsReconcileProcessor } from './integrations-reconcile.processor';
@@ -27,8 +30,11 @@ import { IntegrationsService } from './integrations.service';
     ProjectsModule,
     SharedModule,
     ConfigModule,
+    BizModule,
   ],
+  controllers: [InboundController],
   providers: [
+    CohortSyncService,
     IntegrationsService,
     IntegrationsResolver,
     IntegrationsListener,

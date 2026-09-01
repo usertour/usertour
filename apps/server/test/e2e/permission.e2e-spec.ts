@@ -228,7 +228,7 @@ describe('Permission authorization (HTTP e2e)', () => {
     );
 
   it('covers every role-gated endpoint', () => {
-    expect(ENDPOINTS).toHaveLength(85);
+    expect(ENDPOINTS).toHaveLength(88);
   });
 
   for (const ep of ENDPOINTS) {

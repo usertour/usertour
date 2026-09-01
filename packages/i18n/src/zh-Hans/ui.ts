@@ -270,6 +270,10 @@ const translations = {
       new: '新建',
       segments: '分群',
     },
+    synced: {
+      badge: '同步自 {{provider}}',
+      logoAlt: '{{provider}} 标志',
+    },
   },
   settings: {
     mcp: {
@@ -1426,9 +1430,9 @@ const translations = {
         connect: '连接',
         logoAlt: '{{name}} 标志',
         descriptions: {
-          amplitude: '将 Usertour 事件发送到 Amplitude。',
+          amplitude: '将 Usertour 事件发送到 Amplitude,并把 Amplitude cohort 同步到 Usertour。',
           heap: '将 Usertour 事件发送到 Heap。',
-          mixpanel: '将 Usertour 事件发送到 Mixpanel。',
+          mixpanel: '将 Usertour 事件发送到 Mixpanel,并把 Mixpanel cohort 同步到 Usertour。',
           posthog: '将 Usertour 事件发送到 PostHog。',
           segment: '将 Usertour 事件发送到 Segment。',
         },
@@ -1457,6 +1461,58 @@ const translations = {
         settingsTitle: '事件推送设置',
         enabledToast: '事件推送已开启',
         disabledToast: '事件推送已关闭',
+      },
+      inbound: {
+        toggle: '将 {{name}} cohort 同步到 Usertour',
+        toggleDescription:
+          '{{name}} 会把 cohort 成员推送到 Usertour,并为每个 cohort 维护一个只读的用户分群。',
+        toggleConfigureFirst: '先在下方保存配置,才能开启 cohort 同步。',
+        toggleFailed: '更新 cohort 同步状态失败',
+        enabledToast: 'Cohort 同步已开启 — 请在下方配置 webhook URL。',
+        disabledToast: 'Cohort 同步已关闭',
+        settingsTitle: 'Cohort 同步设置',
+        settingsDescription:
+          '每个同步的 cohort 都会以分群形式出现在用户页,内容跟随 {{name}} 侧变化 — 成员自动更新,不能在这里编辑。',
+        urlLabel: 'Webhook URL',
+        urlHelps: {
+          mixpanel:
+            '在 Mixpanel 中打开该 cohort 的导出设置,添加一个使用此 URL 的自定义 webhook。任何拿到此 URL 的人都能推送成员,请像密钥一样妥善保管。',
+          amplitude:
+            '在 Amplitude 中添加一个使用此 URL 的 Webhook cohort destination(Data → Destinations → Cohorts),然后把 cohort 同步到它。任何拿到此 URL 的人都能推送成员,请像密钥一样妥善保管。',
+        },
+        urlPending: '开启上方的 cohort 同步开关后,将自动生成 webhook URL。',
+        copy: '复制 webhook URL',
+        copied: 'Webhook URL 已复制',
+        copyFailed: '复制失败 — 请手动选中 URL 复制。',
+        rotate: '更换',
+        rotateConfirmTitle: '更换 webhook URL?',
+        rotateConfirmDescription:
+          '当前 URL 会立即失效。请在 {{name}} 中把 webhook 更新为新 URL,否则 cohort 同步会失败。',
+        rotateConfirmButton: '更换 URL',
+        rotated: 'Webhook URL 已更换 — 请到 {{name}} 中更新。',
+        rotateFailed: '更换 webhook URL 失败',
+        userIdPropertyLabel: '{{name}} 用户 ID 属性',
+        userIdPropertyPlaceholders: {
+          mixpanel: '默认使用 distinct_id',
+          amplitude: '默认使用 user_id',
+        },
+        userIdPropertyHelps: {
+          mixpanel:
+            '如果你的 Mixpanel distinct ID 就是 Usertour 用户 ID,留空即可。否则请填写存放 Usertour 用户 ID 的 profile 属性名 — 并确保 cohort webhook 同时导出该属性。',
+          amplitude:
+            '如果你的 Amplitude user ID 就是 Usertour 用户 ID,留空即可。否则请填写 webhook 用户对象上存放 Usertour 用户 ID 的字段名 — 并自定义 webhook payload 模板使其包含该字段。',
+        },
+        saved: 'Cohort 同步设置已保存',
+        cohortsTitle: '已同步的 cohort',
+        cohortsEmpty: '还没有同步任何 cohort — {{name}} 发送首次导出后会显示在这里。',
+        unresolvedHint:
+          '因成员数据里取不到用户 ID 而被跳过的数量 — 检查用户 ID 属性设置,并确认该属性确实在导出数据里。',
+        columns: {
+          cohort: 'Cohort',
+          members: '成员数',
+          unresolved: '未识别',
+          lastSynced: '最近同步',
+        },
       },
       form: {
         keyLabels: {
@@ -3955,6 +4011,7 @@ const translations = {
         operatorPlaceholder: '选择条件',
         empty: '未找到分群。',
         userHeading: '用户分群',
+        syncedFrom: '同步自 {{provider}}',
         companyHeading: '公司分群',
         user: '用户',
         company: '公司',

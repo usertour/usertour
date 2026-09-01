@@ -1,5 +1,6 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import {
+  Badge,
   Button,
   Separator,
   Tooltip,
@@ -15,6 +16,7 @@ import { SegmentEditDialog } from '..';
 import { useAppContext } from '@/contexts/app-context';
 import { useTranslation } from 'react-i18next';
 import type { Segment } from '@usertour/types';
+import { isSyncedSegment, syncedSegmentProvider } from '@/utils/segment';
 import { EntityDataTable } from './entity-data-table';
 import { EntityEditDropdownMenu } from './entity-edit-dropdown-menu';
 import { EntitySegmentFilterSave } from './entity-segment-filter-save';
@@ -49,6 +51,11 @@ export function EntityListContent<TRow extends EntityRow>(props: EntityListConte
   const { isViewOnly } = useAppContext();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  // Synced segments are read-only mirrors of a provider cohort (ADR 0012):
+  // name and membership follow the source, so rename is off. The delete
+  // action stays — the next full sync simply recreates the segment.
+  const synced = !!currentSegment && isSyncedSegment(currentSegment);
+  const syncedProvider = currentSegment ? syncedSegmentProvider(currentSegment) : undefined;
 
   const handleOnClose = useCallback(() => {
     setOpen(false);
@@ -69,7 +76,12 @@ export function EntityListContent<TRow extends EntityRow>(props: EntityListConte
         <div className="flex items-center justify-between ">
           <div className="space-y-1 flex flex-row items-center relative">
             <h2 className="text-xl font-medium tracking-tight">{currentSegment?.name}</h2>
-            {currentSegment && currentSegment.dataType !== 'ALL' && (
+            {syncedProvider && (
+              <Badge variant="secondary" className="ml-2 whitespace-nowrap">
+                {t('segments.synced.badge', { provider: syncedProvider.name })}
+              </Badge>
+            )}
+            {currentSegment && currentSegment.dataType !== 'ALL' && !synced && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

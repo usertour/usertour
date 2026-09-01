@@ -13,6 +13,10 @@ export type Segment = {
   columns: ColumnSetting[] | null;
   createdAt: string;
   predefined: boolean;
+  /** 'internal' for hand-made segments; a provider id when synced from an integration. */
+  source?: string;
+  /** The provider-side cohort id backing a synced segment. */
+  sourceId?: string | null;
 };
 
 export enum SegmentDataTypes {

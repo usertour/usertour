@@ -53,6 +53,25 @@ export class UpsertIntegrationInput {
 }
 
 @InputType()
+export class UpdateIntegrationInboundInput {
+  @Field(() => String)
+  @IsString()
+  id: string;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  /** Empty string clears the override (back to distinct_id matching). */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  userIdProperty?: string;
+}
+
+@InputType()
 export class IntegrationIdInput {
   @Field(() => String)
   @IsString()

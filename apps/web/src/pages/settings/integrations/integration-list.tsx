@@ -5,11 +5,11 @@ import { Button, SettingsPage, Skeleton } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useCooldownTick } from '../components/use-cooldown-tick';
-import { INTEGRATION_CATALOG } from './catalog';
+import { INTEGRATION_CATALOG } from '@usertour/constants';
 import { IntegrationStatusBadge } from './components/integration-status-badge';
 import { IntegrationUpsell } from './components/integration-upsell';
 
-const INTEGRATIONS_DOCS_HREF = 'https://docs.usertour.io/how-to-guides/integrations';
+const INTEGRATIONS_DOCS_HREF = 'https://docs.usertour.io/integrations/overview';
 
 export const SettingsIntegrationList = () => {
   const { environment, project } = useAppContext();

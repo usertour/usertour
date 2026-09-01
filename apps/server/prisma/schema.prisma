@@ -729,25 +729,34 @@ model BizCompany {
 }
 
 model Segment {
-  id                    String                @id @default(cuid())
-  createdAt             DateTime              @default(now()) @db.Timestamptz(6)
-  updatedAt             DateTime              @updatedAt @db.Timestamptz(6)
-  name                  String                @default("")
-  bizType               Int                   @default(1)
-  dataType              Int                   @default(1)
+  id                    String                     @id @default(cuid())
+  createdAt             DateTime                   @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime                   @updatedAt @db.Timestamptz(6)
+  name                  String                     @default("")
+  bizType               Int                        @default(1)
+  dataType              Int                        @default(1)
   /// Source of the segment (e.g., "mixpanel", "heap", etc.)
-  source                String?               @default("internal")
+  source                String?                    @default("internal")
   /// Source ID of the segment (e.g., "mixpanel_cohort_id")
   sourceId              String?
-  environment           Environment?          @relation(fields: [environmentId], references: [id])
+  environment           Environment?               @relation(fields: [environmentId], references: [id])
   environmentId         String?
-  project               Project?              @relation(fields: [projectId], references: [id])
+  project               Project?                   @relation(fields: [projectId], references: [id])
   projectId             String?
-  columns               Json?                 @db.JsonB
-  data                  Json?                 @db.JsonB
-  deleted               Boolean               @default(false)
+  columns               Json?                      @db.JsonB
+  data                  Json?                      @db.JsonB
+  deleted               Boolean                    @default(false)
   bizUsersOnSegment     BizUserOnSegment[]
   bizCompaniesOnSegment BizCompanyOnSegment[]
+  /// Mappings feeding this segment — one per (integration, cohort) pair. A
+  /// project-wide cohort converges onto ONE segment, so every environment's
+  /// integration syncing that cohort contributes its own mapping (ADR 0012).
+  syncedMappings        IntegrationSyncedSegment[]
+
+  /// One materialized segment per provider cohort per project. NULL sourceId
+  /// rows (internal segments) never collide — Postgres treats NULLs as
+  /// distinct — so this only constrains synced segments.
+  @@unique([projectId, source, sourceId])
 }
 
 model BizUserOnSegment {
@@ -1024,9 +1033,53 @@ model Integration {
   failingSince        DateTime? @db.Timestamptz(6)
   autoDisabledAt      DateTime? @db.Timestamptz(6)
 
-  messages OutboundMessage[]
+  /// Inbound side (ADR 0012, cohort sync) — independent of the outbound
+  /// `enabled`. The receive token ("utin_" + hex) is AES-256-GCM encrypted so
+  /// the UI can re-display the receive URL; the sha256 hash column is the
+  /// lookup key (ciphertext is not queryable). Minted on first inbound enable.
+  inboundEnabled   Boolean @default(false)
+  inboundToken     String?
+  inboundTokenHash String? @unique
+  /// { userIdProperty?: string } — optional identity-bridge override.
+  inboundConfig    Json    @default("{}") @db.JsonB
+
+  messages       OutboundMessage[]
+  syncedSegments IntegrationSyncedSegment[]
 
   @@unique([environmentId, provider])
+}
+
+/// One synced cohort: maps a provider-side cohort to the Usertour segment
+/// that mirrors it (ADR 0012). The mapping row is the single source of truth
+/// for "this segment is synced" — Segment.source/sourceId carry a
+/// display-only copy for badge rendering. integrationId deliberately does
+/// NOT cascade: deleting an integration must run the service-layer release
+/// (reset Segment.source, delete the mapping) first — fail-loud beats
+/// stranding segments with a provider badge and no mapping.
+model IntegrationSyncedSegment {
+  id                String      @id @default(cuid())
+  createdAt         DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime    @updatedAt @db.Timestamptz(6)
+  integration       Integration @relation(fields: [integrationId], references: [id])
+  integrationId     String
+  /// The provider-side cohort's stable id; the name follows renames.
+  sourceCohortId    String
+  sourceCohortName  String
+  segment           Segment     @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  segmentId         String
+  lastSyncedAt      DateTime?   @db.Timestamptz(6)
+  memberCount       Int         @default(0)
+  /// Members skipped because no user id could be extracted from their wire
+  /// object (e.g. a userIdProperty that is not exported) — the bridge's
+  /// misconfiguration signal, surfaced in the dashboard.
+  unresolvedCount   Int         @default(0)
+  /// Full-roster round state ("members" action, paged): set on the round's
+  /// first page, cleared after the final page's stale-member cleanup.
+  fullSyncSessionId String?
+  fullSyncStartedAt DateTime?   @db.Timestamptz(6)
+
+  @@unique([integrationId, sourceCohortId])
+  @@index([segmentId])
 }
 
 /// Outbound webhook endpoint (ADR 0010). Environment-scoped shared

@@ -27,6 +27,8 @@ export const listSegment = gql`
       data
       columns
       createdAt
+      source
+      sourceId
     }
   }
 `;

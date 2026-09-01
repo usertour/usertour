@@ -278,6 +278,10 @@ const translations = {
       new: 'New',
       segments: 'Segments',
     },
+    synced: {
+      badge: 'Synced from {{provider}}',
+      logoAlt: '{{provider}} logo',
+    },
   },
   settings: {
     mcp: {
@@ -1499,9 +1503,9 @@ const translations = {
         connect: 'Connect',
         logoAlt: '{{name}} logo',
         descriptions: {
-          amplitude: 'Send Usertour events to Amplitude.',
+          amplitude: 'Send Usertour events to Amplitude and sync Amplitude cohorts into Usertour.',
           heap: 'Send Usertour events to Heap.',
-          mixpanel: 'Send Usertour events to Mixpanel.',
+          mixpanel: 'Send Usertour events to Mixpanel and sync Mixpanel cohorts into Usertour.',
           posthog: 'Send Usertour events to PostHog.',
           segment: 'Send Usertour events to Segment.',
         },
@@ -1531,6 +1535,60 @@ const translations = {
         settingsTitle: 'Event streaming settings',
         enabledToast: 'Event streaming enabled',
         disabledToast: 'Event streaming disabled',
+      },
+      inbound: {
+        toggle: 'Sync {{name}} cohorts to Usertour',
+        toggleDescription:
+          '{{name}} pushes cohort membership to Usertour and keeps a read-only user segment in sync for each cohort.',
+        toggleConfigureFirst: 'Save the configuration below first to enable cohort sync.',
+        toggleFailed: 'Failed to update cohort sync',
+        enabledToast: 'Cohort sync enabled — set up the webhook URL below.',
+        disabledToast: 'Cohort sync disabled',
+        settingsTitle: 'Cohort sync settings',
+        settingsDescription:
+          'Each synced cohort appears under Users as a segment that follows the {{name}} side — membership updates land automatically and cannot be edited here.',
+        urlLabel: 'Webhook URL',
+        // Per-provider setup paths — a generic sentence would send users
+        // hunting in the wrong part of the provider's UI.
+        urlHelps: {
+          mixpanel:
+            "In Mixpanel, open the cohort's export settings and add a custom webhook with this URL. Anyone who has the URL can push members, so treat it like a secret.",
+          amplitude:
+            'In Amplitude, add a Webhook cohort destination with this URL (Data → Destinations → Cohorts), then sync your cohort to it. Anyone who has the URL can push members, so treat it like a secret.',
+        },
+        urlPending: 'Turn on cohort sync above to generate your webhook URL.',
+        copy: 'Copy webhook URL',
+        copied: 'Webhook URL copied',
+        copyFailed: 'Copy failed — select the URL and copy it manually.',
+        rotate: 'Rotate',
+        rotateConfirmTitle: 'Rotate the webhook URL?',
+        rotateConfirmDescription:
+          'The current URL stops working immediately. Update the webhook in {{name}} with the new URL, or cohort syncs will fail.',
+        rotateConfirmButton: 'Rotate URL',
+        rotated: 'Webhook URL rotated — update it in {{name}}.',
+        rotateFailed: 'Failed to rotate the webhook URL',
+        userIdPropertyLabel: '{{name}} user ID property',
+        userIdPropertyPlaceholders: {
+          mixpanel: 'Defaults to distinct_id',
+          amplitude: 'Defaults to user_id',
+        },
+        userIdPropertyHelps: {
+          mixpanel:
+            'Leave blank when your Mixpanel distinct IDs are Usertour user IDs. Otherwise, enter the profile property that holds the Usertour user ID — and make sure the cohort webhook exports that property too.',
+          amplitude:
+            'Leave blank when your Amplitude user IDs are Usertour user IDs. Otherwise, enter the field on each webhook user object that holds the Usertour user ID — customize the webhook payload template so it includes that field.',
+        },
+        saved: 'Cohort sync settings saved',
+        cohortsTitle: 'Synced cohorts',
+        cohortsEmpty: 'No cohorts synced yet — they appear after {{name}} sends the first export.',
+        unresolvedHint:
+          'Members skipped because no user ID could be read from their data — check your user ID property setting and that the property is actually exported.',
+        columns: {
+          cohort: 'Cohort',
+          members: 'Members',
+          unresolved: 'Unresolved',
+          lastSynced: 'Last synced',
+        },
       },
       form: {
         // Per-provider credential naming — a generic "API key" would let
@@ -4144,6 +4202,7 @@ const translations = {
         operatorPlaceholder: 'Select condition',
         empty: 'No segments found.',
         userHeading: 'User segment',
+        syncedFrom: 'Synced from {{provider}}',
         companyHeading: 'Company segment',
         user: 'User',
         company: 'Company',
