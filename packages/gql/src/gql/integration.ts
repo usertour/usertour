@@ -16,6 +16,9 @@ export const ListIntegrations = gql`
       consecutiveFailures
       cooldownUntil
       autoDisabledAt
+      inboundEnabled
+      inboundConfig
+      inboundUrl
     }
   }
 `;
@@ -70,6 +73,50 @@ export const UpsertIntegration = gql`
       consecutiveFailures
       cooldownUntil
       autoDisabledAt
+      inboundEnabled
+      inboundConfig
+      inboundUrl
+    }
+  }
+`;
+
+// Returns the fields an inbound write can change (first enable mints the
+// receive token, so inboundUrl flips null → value) — the normalized cache
+// updates in place, no refetch (docs/conventions/apollo-cache-mutations.md).
+export const UpdateIntegrationInbound = gql`
+  mutation UpdateIntegrationInbound($data: UpdateIntegrationInboundInput!) {
+    updateIntegrationInbound(data: $data) {
+      id
+      updatedAt
+      inboundEnabled
+      inboundConfig
+      inboundUrl
+    }
+  }
+`;
+
+export const RotateIntegrationInboundToken = gql`
+  mutation RotateIntegrationInboundToken($data: IntegrationIdInput!) {
+    rotateIntegrationInboundToken(data: $data) {
+      id
+      updatedAt
+      inboundUrl
+    }
+  }
+`;
+
+export const QueryIntegrationSyncedSegments = gql`
+  query QueryIntegrationSyncedSegments($integrationId: String!) {
+    queryIntegrationSyncedSegments(integrationId: $integrationId) {
+      id
+      createdAt
+      sourceCohortId
+      sourceCohortName
+      segmentId
+      segmentName
+      lastSyncedAt
+      memberCount
+      unresolvedCount
     }
   }
 `;

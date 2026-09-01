@@ -23,7 +23,16 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
     bufferLogs: false,
+    // Parsers are registered below via useBodyParser — Express's 100kb
+    // default rejects cohort webhook batches (a full Mixpanel page nears
+    // 2MB at the 5000-member cap) before any controller runs.
+    bodyParser: false,
   });
+
+  // useBodyParser keeps the rawBody capture (Stripe signature verification
+  // reads req.rawBody) while widening the limit.
+  app.useBodyParser('json', { limit: '5mb' });
+  app.useBodyParser('urlencoded', { limit: '5mb', extended: true });
 
   app.enableShutdownHooks();
 

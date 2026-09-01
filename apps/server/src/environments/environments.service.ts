@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
+import { releaseSyncedSegmentMapping } from '@/integrations/cohort-sync.service';
 import {
   IdentityVerificationRequiresActiveSecretError,
   LastEnvironmentCannotBeDeletedError,
@@ -234,6 +235,25 @@ export class EnvironmentsService {
       }
 
       await this.dropFromAllowlists(tx, environment.projectId, id);
+
+      // Release cohort-sync mappings and drop this environment's
+      // integrations: a soft-deleted environment has no settings page left,
+      // so a surviving integration would keep receiving inbound pushes and
+      // hold segments read-only with no way to undo either. Mapping first —
+      // its integration FK is RESTRICT on purpose.
+      const integrationIds = (
+        await tx.integration.findMany({ where: { environmentId: id }, select: { id: true } })
+      ).map((integration) => integration.id);
+      if (integrationIds.length > 0) {
+        const mappings = await tx.integrationSyncedSegment.findMany({
+          where: { integrationId: { in: integrationIds } },
+          select: { id: true, segmentId: true },
+        });
+        for (const mapping of mappings) {
+          await releaseSyncedSegmentMapping(tx, mapping);
+        }
+        await tx.integration.deleteMany({ where: { environmentId: id } });
+      }
 
       // Update environment to mark as deleted
       return await tx.environment.update({

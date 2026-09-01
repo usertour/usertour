@@ -4,7 +4,10 @@ import {
   DeleteIntegration,
   ListIntegrations,
   QueryIntegrationMessages,
+  QueryIntegrationSyncedSegments,
+  RotateIntegrationInboundToken,
   SendIntegrationTestEvent,
+  UpdateIntegrationInbound,
   UpsertIntegration,
 } from '@usertour/gql';
 import type { IntegrationConfig } from '@usertour/types';
@@ -26,6 +29,31 @@ export interface Integration {
   cooldownUntil?: string | null;
   /** Set when the SYSTEM disabled the integration after sustained failure. */
   autoDisabledAt?: string | null;
+  /** Inbound cohort sync switch (ADR 0012) — independent of `enabled`. */
+  inboundEnabled: boolean;
+  inboundConfig: IntegrationInboundConfig;
+  /** The receive URL (carries the token) — null until first inbound enable. */
+  inboundUrl?: string | null;
+}
+
+export interface IntegrationInboundConfig {
+  /** Member property holding the Usertour user id; absent = the provider's distinct id. */
+  userIdProperty?: string;
+}
+
+/** One synced provider cohort and the segment mirroring it (ADR 0012). */
+export interface IntegrationSyncedSegment {
+  id: string;
+  createdAt: string;
+  sourceCohortId: string;
+  sourceCohortName: string;
+  segmentId: string;
+  segmentName: string;
+  lastSyncedAt?: string | null;
+  /** This environment's bridged members — several environments may feed one segment. */
+  memberCount: number;
+  /** Members whose wire object carried no extractable user id (skipped). */
+  unresolvedCount: number;
 }
 
 export interface UpsertIntegrationInput {
@@ -103,6 +131,62 @@ export const useDeleteIntegrationMutation = () => {
     async (id: string): Promise<boolean> => {
       const response = await mutation({ variables: { data: { id } } });
       return !!response.data?.deleteIntegration;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useQueryIntegrationSyncedSegmentsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch, networkStatus } = useQuery(
+    QueryIntegrationSyncedSegments,
+    {
+      variables: { integrationId },
+      notifyOnNetworkStatusChange: true,
+      skip: !integrationId,
+      ...options,
+    },
+  );
+  const syncedSegments = data?.queryIntegrationSyncedSegments as
+    | IntegrationSyncedSegment[]
+    | undefined;
+  return {
+    syncedSegments,
+    loading,
+    error,
+    refetch,
+    isRefetching: networkStatus === NetworkStatus.refetch,
+  };
+};
+
+export const useUpdateIntegrationInboundMutation = () => {
+  // Returns the changed fields on an EXISTING row (inbound settings only live
+  // on configured integrations), so the normalized cache merges — no refetch.
+  const [mutation, { loading, error }] = useMutation(UpdateIntegrationInbound);
+  const invoke = useCallback(
+    async (input: {
+      id: string;
+      enabled?: boolean;
+      /** Empty string clears the override (back to the provider's distinct id). */
+      userIdProperty?: string;
+    }): Promise<Integration | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (response.data?.updateIntegrationInbound as Integration | undefined) ?? null;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useRotateIntegrationInboundTokenMutation = () => {
+  const [mutation, { loading, error }] = useMutation(RotateIntegrationInboundToken);
+  const invoke = useCallback(
+    async (id: string): Promise<Integration | null> => {
+      const response = await mutation({ variables: { data: { id } } });
+      return (response.data?.rotateIntegrationInboundToken as Integration | undefined) ?? null;
     },
     [mutation],
   );

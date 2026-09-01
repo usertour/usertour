@@ -1,5 +1,6 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import type { Request } from 'express';
 import { Capability } from '@usertour/types';
 import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
@@ -9,9 +10,14 @@ import { PaginationArgs } from '@/common/pagination/pagination.args';
 import {
   IntegrationIdInput,
   QueryIntegrationsInput,
+  UpdateIntegrationInboundInput,
   UpsertIntegrationInput,
 } from './dto/integration.input';
-import { Integration, IntegrationMessageConnection } from './models/integration.model';
+import {
+  Integration,
+  IntegrationMessageConnection,
+  IntegrationSyncedSegment,
+} from './models/integration.model';
 import { IntegrationsService } from './integrations.service';
 
 @Resolver(() => Integration)
@@ -21,8 +27,13 @@ export class IntegrationsResolver {
 
   @Query(() => [Integration])
   @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
-  async listIntegrations(@Args() { environmentId }: QueryIntegrationsInput) {
-    return await this.service.list(environmentId);
+  async listIntegrations(
+    @Args() { environmentId }: QueryIntegrationsInput,
+    @Context() context: { req?: Request },
+  ) {
+    // The request threads through to inboundUrlFor: with API_URL unset the
+    // receive URL falls back to this request's origin.
+    return await this.service.list(environmentId, context.req);
   }
 
   @Query(() => IntegrationMessageConnection)
@@ -42,8 +53,11 @@ export class IntegrationsResolver {
     resourceId: (_a, r) => (r as { id: string }).id,
     environmentId: (a) => (a.data as { environmentId: string }).environmentId,
   })
-  async upsertIntegration(@Args('data') data: UpsertIntegrationInput) {
-    return await this.service.upsert(data);
+  async upsertIntegration(
+    @Args('data') data: UpsertIntegrationInput,
+    @Context() context: { req?: Request },
+  ) {
+    return await this.service.upsert(data, context.req);
   }
 
   @Mutation(() => Integration)
@@ -63,5 +77,41 @@ export class IntegrationsResolver {
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
   async sendIntegrationTestEvent(@Args('data') { id }: IntegrationIdInput) {
     return await this.service.sendTestEvent(id);
+  }
+
+  @Query(() => [IntegrationSyncedSegment])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
+  async queryIntegrationSyncedSegments(@Args('integrationId') integrationId: string) {
+    return await this.service.listSyncedSegments(integrationId);
+  }
+
+  @Mutation(() => Integration)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
+  })
+  async updateIntegrationInbound(
+    @Args('data') data: UpdateIntegrationInboundInput,
+    @Context() context: { req?: Request },
+  ) {
+    return await this.service.updateInbound(data, context.req);
+  }
+
+  @Mutation(() => Integration)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
+  })
+  async rotateIntegrationInboundToken(
+    @Args('data') { id }: IntegrationIdInput,
+    @Context() context: { req?: Request },
+  ) {
+    return await this.service.rotateInboundToken(id, context.req);
   }
 }

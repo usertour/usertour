@@ -15,6 +15,7 @@ import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useListAttributesQuery, useUpdateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTableSelection } from '@/hooks/use-table-selection';
+import { isSyncedSegment } from '@/utils/segment';
 import { Cross2Icon, PlusIcon } from '@radix-ui/react-icons';
 import type { EntityConfig } from './entity-config';
 import { EntityAddToManualSegment } from './entity-add-to-manual-segment';
@@ -179,7 +180,9 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
               </Button>
               <div className="w-px h-4 bg-border mx-1" />
               <EntityAddToManualSegment config={config} table={table} />
-              {currentSegment.dataType === 'MANUAL' && (
+              {/* Synced segments mirror a provider cohort — membership is
+                  read-only, so the remove action disappears (ADR 0012). */}
+              {currentSegment.dataType === 'MANUAL' && !isSyncedSegment(currentSegment) && (
                 <EntityRemoveFromSegment
                   config={config}
                   table={table}

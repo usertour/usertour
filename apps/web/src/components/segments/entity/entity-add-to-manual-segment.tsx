@@ -14,6 +14,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useSegmentListQuery } from '@usertour/hooks';
+import { isSyncedSegment } from '@/utils/segment';
 import type { EntityConfig } from './entity-config';
 
 interface EntityAddToManualSegmentProps {
@@ -37,8 +38,13 @@ export const EntityAddToManualSegment = (props: EntityAddToManualSegmentProps) =
     ...SHARED_CACHE_QUERY_OPTIONS,
     skip: !environment?.id,
   });
+  // Synced segments are excluded as targets: their membership mirrors a
+  // provider cohort and hand-adds are rejected server-side (ADR 0012).
   const manualSegments = useMemo(
-    () => segmentList?.filter((seg) => seg.dataType === 'MANUAL') ?? [],
+    () =>
+      segmentList?.filter(
+        (segment) => segment.dataType === 'MANUAL' && !isSyncedSegment(segment),
+      ) ?? [],
     [segmentList],
   );
   const { add, isAdding } = config.useAddToManualSegment();

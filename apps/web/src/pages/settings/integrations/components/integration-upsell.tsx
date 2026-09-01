@@ -25,7 +25,7 @@ export const IntegrationUpsell = (props: IntegrationUpsellProps) => {
       title={t('settings.integrations.title', { environment: environmentName })}
       description={t('settings.integrations.headerBody')}
       docs={{
-        href: 'https://docs.usertour.io/how-to-guides/integrations',
+        href: 'https://docs.usertour.io/integrations/overview',
         label: t('settings.common.readGuide', { topic: t('settings.nav.sections.integrations') }),
       }}
     >
