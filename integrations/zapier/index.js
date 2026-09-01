@@ -7,6 +7,10 @@ const authentication = require('./authentication');
 const triggers = require('./triggers');
 const hidden = require('./triggers/hidden');
 const upsertUser = require('./creates/upsert-user');
+const upsertCompany = require('./creates/upsert-company');
+const trackEvent = require('./creates/track-event');
+const findUser = require('./searches/find-user');
+const findCompany = require('./searches/find-company');
 
 /** Bearer auth on every request; JSON errors surface as-is. */
 const addAuthHeader = (request, z, bundle) => {
@@ -31,10 +35,20 @@ module.exports = {
     [triggers.checklistCompleted.key]: triggers.checklistCompleted,
     [triggers.questionAnswered.key]: triggers.questionAnswered,
     [triggers.userCreated.key]: triggers.userCreated,
+    [triggers.flowEnded.key]: triggers.flowEnded,
+    [triggers.launcherActivated.key]: triggers.launcherActivated,
+    [triggers.eventTracked.key]: triggers.eventTracked,
     [hidden.projectList.key]: hidden.projectList,
     [hidden.environmentList.key]: hidden.environmentList,
+    [hidden.eventDefinitionList.key]: hidden.eventDefinitionList,
   },
   creates: {
     [upsertUser.key]: upsertUser,
+    [upsertCompany.key]: upsertCompany,
+    [trackEvent.key]: trackEvent,
+  },
+  searches: {
+    [findUser.key]: findUser,
+    [findCompany.key]: findCompany,
   },
 };

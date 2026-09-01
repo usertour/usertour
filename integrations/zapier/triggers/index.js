@@ -53,4 +53,51 @@ const userCreated = hookTrigger({
   sample: samples.userCreated,
 });
 
-module.exports = { flowStarted, flowCompleted, checklistCompleted, questionAnswered, userCreated };
+const flowEnded = hookTrigger({
+  key: 'flow_ended',
+  noun: 'Flow End',
+  label: 'Flow Ended',
+  description: 'Triggers when a flow ends for a user, however it ends (completed or dismissed).',
+  topic: 'event.tracked.flow_ended',
+  sample: samples.flowEnded,
+});
+
+const launcherActivated = hookTrigger({
+  key: 'launcher_activated',
+  noun: 'Launcher Activation',
+  label: 'Launcher Activated',
+  description: 'Triggers when a user activates (clicks or hovers over) a launcher.',
+  topic: 'event.tracked.launcher_activated',
+  sample: samples.launcherActivated,
+});
+
+const eventTracked = hookTrigger({
+  key: 'event_tracked',
+  noun: 'Event',
+  label: 'Event Tracked',
+  description:
+    'Triggers when a specific event is tracked — any event definition in your project, custom events included.',
+  topic: (bundle) => `event.tracked.${bundle.inputData.eventCodeName}`,
+  extraInputFields: [
+    {
+      key: 'eventCodeName',
+      label: 'Event',
+      type: 'string',
+      required: true,
+      dynamic: 'event_definition_list.id.name',
+      helpText: 'The event that fires this Zap.',
+    },
+  ],
+  sample: samples.eventTracked,
+});
+
+module.exports = {
+  flowStarted,
+  flowCompleted,
+  checklistCompleted,
+  questionAnswered,
+  userCreated,
+  flowEnded,
+  launcherActivated,
+  eventTracked,
+};

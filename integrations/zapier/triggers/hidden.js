@@ -43,4 +43,34 @@ const environmentList = {
   },
 };
 
-module.exports = { projectList, environmentList };
+const listEventDefinitions = async (z, bundle) => {
+  const response = await z.request({
+    url:
+      `${bundle.authData.serverUrl}/v2/projects/${bundle.inputData.projectId}` +
+      '/event-definitions',
+    params: { limit: 100 },
+  });
+  // Dropdowns key on `id`; the trigger subscribes by code name, so that IS
+  // the id here. Built-in definitions are listed too — subscribing to them
+  // is fine (only the write path refuses reserved names).
+  return response.data.results.map((definition) => ({
+    id: definition.codeName,
+    name: definition.displayName || definition.codeName,
+  }));
+};
+
+const eventDefinitionList = {
+  key: 'event_definition_list',
+  noun: 'Event',
+  display: {
+    label: 'Event Definition List',
+    description: 'Event definitions of the chosen project.',
+    hidden: true,
+  },
+  operation: {
+    inputFields: [{ key: 'projectId', type: 'string', required: true }],
+    perform: listEventDefinitions,
+  },
+};
+
+module.exports = { projectList, environmentList, eventDefinitionList };

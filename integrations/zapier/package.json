@@ -1,6 +1,6 @@
 {
   "name": "usertour-zapier",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Usertour integration for Zapier: trigger Zaps from Usertour events, and create or update Usertour users from other apps.",
   "main": "index.js",
   "private": true,

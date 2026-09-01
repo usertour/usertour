@@ -32,12 +32,14 @@ import { buildAuthorizedUser, teardownProject } from '../gql/_support';
  */
 
 type Method = 'get' | 'post' | 'patch' | 'put' | 'delete';
-type Row = { method: Method; template: string; cap: Capability };
+type Row = { method: Method; template: string; cap: Capability | null };
 
 const P = '/v2/projects/{projectId}';
 const E = `${P}/environments/{environmentId}`;
 
 const ROUTES: Row[] = [
+  // discovery — authenticate-only, no capability (any valid token may call it)
+  { method: 'get', template: '/v2/me', cap: null },
   // content
   { method: 'get', template: `${P}/content`, cap: Capability.ContentRead },
   { method: 'get', template: `${P}/content/{id}`, cap: Capability.ContentRead },
@@ -128,6 +130,8 @@ const ROUTES: Row[] = [
   { method: 'get', template: `${E}/users`, cap: Capability.UserRead },
   { method: 'get', template: `${E}/users/{id}`, cap: Capability.UserRead },
   { method: 'put', template: `${E}/users/{id}`, cap: Capability.UserWrite },
+  // events (server-side track)
+  { method: 'post', template: `${E}/events`, cap: Capability.UserWrite },
   { method: 'delete', template: `${E}/users/{id}`, cap: Capability.UserDelete },
   // companies + memberships
   { method: 'get', template: `${E}/companies`, cap: Capability.CompanyRead },
@@ -222,7 +226,9 @@ describe('API v2 capability matrix (e2e)', () => {
   });
 
   for (const row of ROUTES) {
-    it(`${row.method.toUpperCase()} ${row.template} — 401 bare, 403 without ${row.cap}`, async () => {
+    const label =
+      row.cap === null ? '401 bare (authenticate-only)' : `401 bare, 403 without ${row.cap}`;
+    it(`${row.method.toUpperCase()} ${row.template} — ${label}`, async () => {
       const path = fill(row.template);
       const server = app.getHttpServer();
 
@@ -230,6 +236,9 @@ describe('API v2 capability matrix (e2e)', () => {
       expect(bare.status).toBe(401);
       expect(bare.body.error.code).toBe('E1010');
 
+      if (row.cap === null) {
+        return;
+      }
       const denied = await request(server)
         [row.method](path)
         .set('Authorization', `Bearer ${await tokenWithout(row.cap)}`);

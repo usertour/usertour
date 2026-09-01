@@ -50,7 +50,9 @@ import {
   BizSessionWithRelations,
   Tx,
 } from '@/common/types/schema';
-import { isNullish } from '@usertour/helpers';
+import { humanize, isNullish } from '@usertour/helpers';
+import { AttributeBizTypes } from '@usertour/types';
+import { ParamsError } from '@/common/errors';
 import { extractStepBindToAttribute } from '@/utils/content-question';
 import { calculateChecklistProgress } from '@/utils/content-utils';
 import { BizService } from '@/biz/biz.service';
@@ -61,6 +63,12 @@ import type {
   EventHandler,
   EventTransactionParams,
 } from '@/common/types/track';
+
+/**
+ * Code names of built-in analytics events — unforgeable through the server
+ * track path even when a project's definition rows are missing (pre-seed).
+ */
+const RESERVED_EVENT_CODE_NAMES = new Set<string>(Object.values(BizEvents));
 
 // ============================================================================
 // EventTrackingService
@@ -227,6 +235,105 @@ export class EventTrackingService {
         return await this.executeEventTransaction(tx, params);
       }),
     );
+  }
+
+  /**
+   * Server-side event ingestion (the v2 track endpoint and integration
+   * platforms behind it): no session, no client context — an integration
+   * reports something that happened elsewhere. Unseen users are created bare
+   * (same rule as cohort sync); the event definition auto-registers on first
+   * use; incoming attribute names register on the definition the way the
+   * dashboard would, so the values survive the definition's allow-list.
+   * Reserved (predefined) code names are refused — analytics events must not
+   * be forgeable through the API. Company linkage is best-effort: an unknown
+   * company id records the event without the link rather than failing it.
+   * Runs through trackWithEmit, so webhooks and integrations fan out exactly
+   * as for SDK-tracked events.
+   */
+  async trackServerEvent(params: {
+    environment: { id: string; projectId: string };
+    externalUserId: string;
+    companyExternalId?: string;
+    codeName: string;
+    attributes: Record<string, any>;
+    occurredAt?: Date;
+  }) {
+    const { environment, externalUserId, companyExternalId, codeName, attributes, occurredAt } =
+      params;
+    const { id: environmentId, projectId } = environment;
+
+    return await this.trackWithEmit(environmentId, async () => {
+      const existingEvent = await this.prisma.event.findFirst({
+        where: { codeName, projectId },
+      });
+      if (existingEvent?.predefined || RESERVED_EVENT_CODE_NAMES.has(codeName)) {
+        throw new ParamsError(
+          `"${codeName}" is a built-in Usertour event and cannot be tracked through the API.`,
+        );
+      }
+      const event =
+        existingEvent ??
+        (await this.prisma.event
+          .create({
+            data: { codeName, displayName: humanize(codeName), projectId },
+          })
+          .catch(async (error) => {
+            if ((error as { code?: string }).code === 'P2002') {
+              return await this.prisma.event.findFirstOrThrow({ where: { codeName, projectId } });
+            }
+            throw error;
+          }));
+
+      const [bizUser] = await this.bizService.findOrCreateBizUsersInScope(environmentId, [
+        externalUserId,
+      ]);
+      const bizCompany = companyExternalId
+        ? await this.prisma.bizCompany.findFirst({
+            where: { environmentId, externalId: companyExternalId },
+            select: { id: true },
+          })
+        : null;
+
+      let data: Record<string, any> = {};
+      if (Object.keys(attributes).length > 0) {
+        data = await this.bizService.insertBizAttributes(
+          this.prisma,
+          projectId,
+          AttributeBizTypes.Event as number,
+          attributes,
+        );
+        const attributeRows = await this.prisma.attribute.findMany({
+          where: {
+            projectId,
+            bizType: AttributeBizTypes.Event as number,
+            codeName: { in: Object.keys(data) },
+          },
+          select: { id: true },
+        });
+        if (attributeRows.length > 0) {
+          await this.prisma.attributeOnEvent.createMany({
+            data: attributeRows.map((attribute) => ({
+              eventId: event.id,
+              attributeId: attribute.id,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      const bizEvent = await this.prisma.bizEvent.create({
+        data: {
+          bizUserId: bizUser.id,
+          eventId: event.id,
+          ...(bizCompany ? { bizCompanyId: bizCompany.id } : {}),
+          data,
+          ...(occurredAt ? { createdAt: occurredAt } : {}),
+        },
+        include: { event: true, bizUser: true, bizCompany: true, bizSession: true },
+      });
+      this.collectBizEvent(bizEvent.id);
+      return bizEvent;
+    });
   }
 
   /**

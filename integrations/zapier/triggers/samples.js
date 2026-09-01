@@ -77,4 +77,32 @@ const userCreated = {
   },
 };
 
-module.exports = { flowStarted, flowCompleted, checklistCompleted, questionAnswered, userCreated };
+const flowEnded = eventSample('flow_ended', {
+  flow_id: 'clx0example0content0id',
+  flow_name: 'Onboarding tour',
+  flow_version_number: 3,
+  flow_end_reason: 'user_closed',
+  page_url: 'https://app.example.com/dashboard',
+});
+
+const launcherActivated = eventSample('launcher_activated', {
+  launcher_id: 'clx0example0content0id',
+  launcher_name: 'Feature hint',
+  page_url: 'https://app.example.com/dashboard',
+});
+
+const eventTracked = eventSample('subscription_activated', {
+  plan_name: 'plus',
+  plan_price: 199,
+});
+
+module.exports = {
+  flowStarted,
+  flowCompleted,
+  checklistCompleted,
+  questionAnswered,
+  userCreated,
+  flowEnded,
+  launcherActivated,
+  eventTracked,
+};

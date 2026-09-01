@@ -35,12 +35,13 @@ const webhooksUrl = (bundle) =>
   `/environments/${bundle.inputData.environmentId}/webhooks`;
 
 const subscribe = (topic) => async (z, bundle) => {
+  const resolvedTopic = typeof topic === 'function' ? topic(bundle) : topic;
   const response = await z.request({
     method: 'POST',
     url: webhooksUrl(bundle),
     body: {
       url: bundle.targetUrl,
-      topics: [topic],
+      topics: [resolvedTopic],
       description: 'Managed by Zapier — deleting this webhook breaks the Zap.',
     },
   });
@@ -66,7 +67,8 @@ const perform = (z, bundle) => {
 
 /**
  * Build one REST-hook trigger.
- * @param {object} spec { key, noun, label, description, topic, sample }
+ * @param {object} spec { key, noun, label, description, topic, sample, extraInputFields? }
+ *   `topic` may be a string or a (bundle) => string for input-driven topics.
  */
 const hookTrigger = (spec) => ({
   key: spec.key,
@@ -74,7 +76,7 @@ const hookTrigger = (spec) => ({
   display: { label: spec.label, description: spec.description },
   operation: {
     type: 'hook',
-    inputFields: scopedInputFields,
+    inputFields: [...scopedInputFields, ...(spec.extraInputFields || [])],
     performSubscribe: subscribe(spec.topic),
     performUnsubscribe: unsubscribe,
     perform,

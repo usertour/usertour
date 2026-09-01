@@ -43,6 +43,8 @@ import { ApiUsersController } from './users/users.controller';
 import { ApiUsersService } from './users/users.service';
 import { ApiWebhooksController } from './webhooks/webhooks.controller';
 import { ApiMeController } from './me/me.controller';
+import { ApiEventsController } from './events/events.controller';
+import { WebSocketModule } from '@/web-socket/web-socket.module';
 import { ApiMeService } from './me/me.service';
 import { ApiWebhooksService } from './webhooks/webhooks.service';
 import { WebhooksModule } from '@/webhooks/webhooks.module';
@@ -89,6 +91,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ProjectsModule,
     UtilitiesModule,
     WebhooksModule,
+    WebSocketModule,
   ],
   // Order here drives the OpenAPI tag order (NestJS emits operations per controller),
   // which is what the docs sidebar renders: core content first, audience next,
@@ -107,6 +110,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiEventDefinitionsController,
     ApiWebhooksController,
     ApiMeController,
+    ApiEventsController,
     ApiEnvironmentsController,
   ],
   providers: [
