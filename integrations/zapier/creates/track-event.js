@@ -5,6 +5,13 @@
  * users are created; an unknown event name registers a definition on first
  * use; built-in Usertour event names are refused server-side.
  */
+/**
+ * Drop empty-string values: an unmapped Zap field arrives as '' and would
+ * otherwise overwrite a real attribute value.
+ */
+const compactAttributes = (attributes) =>
+  Object.fromEntries(Object.entries(attributes || {}).filter(([, value]) => value !== ''));
+
 const perform = async (z, bundle) => {
   const { projectId, environmentId, userId, companyId, name, attributes, occurredAt } =
     bundle.inputData;
@@ -17,7 +24,9 @@ const perform = async (z, bundle) => {
       userId,
       name,
       ...(companyId ? { companyId } : {}),
-      ...(attributes && Object.keys(attributes).length ? { attributes } : {}),
+      ...(Object.keys(compactAttributes(attributes)).length
+        ? { attributes: compactAttributes(attributes) }
+        : {}),
       ...(occurredAt ? { occurredAt } : {}),
     },
   });

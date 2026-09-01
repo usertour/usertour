@@ -38,8 +38,11 @@ export const trackEventBody = z
   .object({
     userId: z
       .string()
-      .min(1)
       .max(200)
+      // An empty/whitespace id must never create an entity — the row would be
+      // unaddressable by every id-keyed read/delete (same hardening as the
+      // users upsert, which has field evidence).
+      .refine((value) => value.trim().length > 0, 'userId must be a non-empty string')
       .describe(
         "The user's external ID — the same value passed to usertour.identify(). Unseen users are created.",
       ),

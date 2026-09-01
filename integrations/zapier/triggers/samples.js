@@ -66,9 +66,8 @@ const userCreated = {
   createdAt: '2026-09-01T12:34:56.000Z',
   environmentId: 'clx0example0environment0id',
   user: {
-    id: 'clx0example0bizuser0id',
+    id: 'user-1234',
     object: 'user',
-    userId: 'user-1234',
     createdAt: '2026-09-01T12:34:56.000Z',
     attributes: {
       email: 'ada@example.com',

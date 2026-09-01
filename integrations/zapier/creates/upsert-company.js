@@ -4,6 +4,13 @@
  * Action: create or update a Usertour company — the mirror of the user
  * action, onto PUT /v2/.../companies/:externalId.
  */
+/**
+ * Drop empty-string values: an unmapped Zap field arrives as '' and would
+ * otherwise overwrite a real attribute value.
+ */
+const compactAttributes = (attributes) =>
+  Object.fromEntries(Object.entries(attributes || {}).filter(([, value]) => value !== ''));
+
 const perform = async (z, bundle) => {
   const { projectId, environmentId, companyId, attributes } = bundle.inputData;
   const response = await z.request({
@@ -11,7 +18,7 @@ const perform = async (z, bundle) => {
     url:
       `${bundle.authData.serverUrl}/v2/projects/${projectId}` +
       `/environments/${environmentId}/companies/${encodeURIComponent(companyId)}`,
-    body: { attributes: attributes || {} },
+    body: { attributes: compactAttributes(attributes) },
   });
   return response.data;
 };
@@ -58,9 +65,8 @@ module.exports = {
     ],
     perform,
     sample: {
-      id: 'clx0example0bizcompany0id',
+      id: 'company-42',
       object: 'company',
-      companyId: 'company-42',
       createdAt: '2026-09-01T12:34:56.000Z',
       attributes: { name: 'Example Corp', plan: 'pro' },
     },

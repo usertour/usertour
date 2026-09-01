@@ -49,13 +49,18 @@ const subscribe = (topic) => async (z, bundle) => {
 };
 
 const unsubscribe = async (z, bundle) => {
-  await z.request({
+  const response = await z.request({
     method: 'DELETE',
     url: `${webhooksUrl(bundle)}/${bundle.subscribeData.id}`,
-    // A 404 means the webhook is already gone (deleted in the dashboard) —
-    // the Zap is turning off either way.
     skipThrowForStatus: true,
   });
+  // 404 = already gone (deleted in the dashboard) — fine either way. Any
+  // OTHER failure must surface: swallowing it tells Zapier the unsubscribe
+  // succeeded while the server keeps delivering into a dead address until
+  // the circuit breaker gives up days later.
+  if (response.status !== 404) {
+    response.throwForStatus();
+  }
   return { id: bundle.subscribeData.id };
 };
 

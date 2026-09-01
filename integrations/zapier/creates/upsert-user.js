@@ -6,6 +6,13 @@
  * field and merge into the user's existing attributes; unknown attribute
  * names auto-create definitions server-side.
  */
+/**
+ * Drop empty-string values: an unmapped Zap field arrives as '' and would
+ * otherwise overwrite a real attribute value.
+ */
+const compactAttributes = (attributes) =>
+  Object.fromEntries(Object.entries(attributes || {}).filter(([, value]) => value !== ''));
+
 const perform = async (z, bundle) => {
   const { projectId, environmentId, userId, attributes } = bundle.inputData;
   const response = await z.request({
@@ -13,7 +20,7 @@ const perform = async (z, bundle) => {
     url:
       `${bundle.authData.serverUrl}/v2/projects/${projectId}` +
       `/environments/${environmentId}/users/${encodeURIComponent(userId)}`,
-    body: { attributes: attributes || {} },
+    body: { attributes: compactAttributes(attributes) },
   });
   return response.data;
 };
@@ -61,9 +68,8 @@ module.exports = {
     ],
     perform,
     sample: {
-      id: 'clx0example0bizuser0id',
+      id: 'user-1234',
       object: 'user',
-      userId: 'user-1234',
       createdAt: '2026-09-01T12:34:56.000Z',
       attributes: { email: 'ada@example.com', plan: 'pro' },
     },

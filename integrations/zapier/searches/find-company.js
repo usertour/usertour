@@ -13,7 +13,14 @@ const perform = async (z, bundle) => {
       `/environments/${environmentId}/companies/${encodeURIComponent(companyId)}`,
     skipThrowForStatus: true,
   });
-  return response.status === 200 ? [response.data] : [];
+  // Only a definite 404 means "not found" — anything else (auth failure,
+  // transient 5xx) must fail the step, or a find-or-create Zap would fall
+  // through to create and overwrite existing attributes.
+  if (response.status === 404) {
+    return [];
+  }
+  response.throwForStatus();
+  return [response.data];
 };
 
 module.exports = {
@@ -50,9 +57,8 @@ module.exports = {
     ],
     perform,
     sample: {
-      id: 'clx0example0bizcompany0id',
+      id: 'company-42',
       object: 'company',
-      companyId: 'company-42',
       createdAt: '2026-09-01T12:34:56.000Z',
       attributes: { name: 'Example Corp', plan: 'pro' },
     },

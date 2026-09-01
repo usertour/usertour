@@ -44,16 +44,21 @@ const environmentList = {
 };
 
 const listEventDefinitions = async (z, bundle) => {
-  const response = await z.request({
-    url:
-      `${bundle.authData.serverUrl}/v2/projects/${bundle.inputData.projectId}` +
-      '/event-definitions',
-    params: { limit: 100 },
-  });
+  // Walk the whole cursor-paginated collection (auto-registered definitions
+  // make >100 realistic; a truncated dropdown would silently hide events).
+  const definitions = [];
+  let url =
+    `${bundle.authData.serverUrl}/v2/projects/${bundle.inputData.projectId}` +
+    '/event-definitions?limit=100';
+  while (url && definitions.length < 1000) {
+    const response = await z.request({ url });
+    definitions.push(...response.data.results);
+    url = response.data.next;
+  }
   // Dropdowns key on `id`; the trigger subscribes by code name, so that IS
   // the id here. Built-in definitions are listed too — subscribing to them
   // is fine (only the write path refuses reserved names).
-  return response.data.results.map((definition) => ({
+  return definitions.map((definition) => ({
     id: definition.codeName,
     name: definition.displayName || definition.codeName,
   }));

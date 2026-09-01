@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AuthedApiToken } from '@/api-token/api-token-auth.service';
+import {
+  AuthedApiToken,
+  environmentAllowlistOf,
+  intersectEnvironmentAllowlists,
+} from '@/api-token/api-token-auth.service';
 import { ApiObjectType } from '../shared/object-type';
 import { MeResponseDto } from './me.schema';
 
@@ -46,9 +50,7 @@ export class ApiMeService {
       orderBy: { createdAt: 'asc' },
     });
 
-    const tokenAllowed = Array.isArray(token.allowedEnvironmentIds)
-      ? (token.allowedEnvironmentIds as string[])
-      : null;
+    const tokenAllowed = environmentAllowlistOf(token.allowedEnvironmentIds);
 
     return {
       object: ApiObjectType.ME as const,
@@ -58,10 +60,8 @@ export class ApiMeService {
         const ceiling =
           membership?.role === 'OWNER'
             ? null
-            : Array.isArray(membership?.allowedEnvironmentIds)
-              ? (membership.allowedEnvironmentIds as string[])
-              : null;
-        const allowed = intersectAllowlists(tokenAllowed, ceiling);
+            : environmentAllowlistOf(membership?.allowedEnvironmentIds);
+        const allowed = intersectEnvironmentAllowlists(tokenAllowed, ceiling);
         const environments = allowed
           ? project.environments.filter((environment) => allowed.includes(environment.id))
           : project.environments;
@@ -79,14 +79,3 @@ export class ApiMeService {
     };
   }
 }
-
-/** null = unrestricted; two lists intersect (same rule as allowedEnvironmentIds). */
-const intersectAllowlists = (own: string[] | null, ceiling: string[] | null): string[] | null => {
-  if (own === null) {
-    return ceiling;
-  }
-  if (ceiling === null) {
-    return own;
-  }
-  return own.filter((id) => ceiling.includes(id));
-};

@@ -261,12 +261,14 @@ export class BizService {
   async findOrCreateBizUsersInScope(
     environmentId: string,
     externalIds: string[],
+    client?: Prisma.TransactionClient,
   ): Promise<{ id: string; externalId: string }[]> {
+    const db = client ?? this.prisma;
     const uniqueExternalIds = [...new Set(externalIds)];
     if (!uniqueExternalIds.length) {
       return [];
     }
-    const existing = await this.prisma.bizUser.findMany({
+    const existing = await db.bizUser.findMany({
       where: { environmentId, externalId: { in: uniqueExternalIds } },
       select: { id: true, externalId: true },
     });
@@ -275,19 +277,21 @@ export class BizService {
     if (!missing.length) {
       return existing;
     }
-    return await this.createMissingBizUsers(environmentId, existing, missing);
+    return await this.createMissingBizUsers(environmentId, existing, missing, db);
   }
 
   private async createMissingBizUsers(
     environmentId: string,
     existing: { id: string; externalId: string }[],
     missing: string[],
+    client?: Prisma.TransactionClient,
   ): Promise<{ id: string; externalId: string }[]> {
-    await this.prisma.bizUser.createMany({
+    const db = client ?? this.prisma;
+    await db.bizUser.createMany({
       data: missing.map((externalId) => ({ environmentId, externalId, data: {} })),
       skipDuplicates: true,
     });
-    const created = await this.prisma.bizUser.findMany({
+    const created = await db.bizUser.findMany({
       where: { environmentId, externalId: { in: missing } },
       select: { id: true, externalId: true },
     });
