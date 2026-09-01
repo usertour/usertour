@@ -42,6 +42,8 @@ import { ApiThemesService } from './themes/themes.service';
 import { ApiUsersController } from './users/users.controller';
 import { ApiUsersService } from './users/users.service';
 import { ApiWebhooksController } from './webhooks/webhooks.controller';
+import { ApiMeController } from './me/me.controller';
+import { ApiMeService } from './me/me.service';
 import { ApiWebhooksService } from './webhooks/webhooks.service';
 import { WebhooksModule } from '@/webhooks/webhooks.module';
 
@@ -104,9 +106,11 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiAttributeDefinitionsController,
     ApiEventDefinitionsController,
     ApiWebhooksController,
+    ApiMeController,
     ApiEnvironmentsController,
   ],
   providers: [
+    ApiMeService,
     ApiAnalyticsService,
     ApiUsageOverviewService,
     ApiReferencesService,
