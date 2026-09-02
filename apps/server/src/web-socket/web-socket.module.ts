@@ -86,6 +86,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     AnnouncementService,
     WebSocketV2MessageHandler,
   ],
-  exports: [WebSocketGateway, WebSocketV2Gateway, ContentDiagnosisService],
+  exports: [WebSocketGateway, WebSocketV2Gateway, ContentDiagnosisService, EventTrackingService],
 })
 export class WebSocketModule {}

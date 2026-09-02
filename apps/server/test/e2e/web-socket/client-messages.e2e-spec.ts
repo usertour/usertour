@@ -1,5 +1,5 @@
 import { PrismaService } from 'nestjs-prisma';
-import { ClientMessageKind, ServerMessageKind } from '@usertour/types';
+import { BizEvents, ClientMessageKind, ServerMessageKind } from '@usertour/types';
 
 import { initialization } from '@/common/initialization/initialization';
 import {
@@ -174,6 +174,38 @@ describe('WebSocket v2 client messages (e2e)', () => {
       },
     });
     expect(bizEvent).not.toBeNull();
+  });
+
+  it('TrackEvent registers an unknown event definition on first use', async () => {
+    const codeName = `ws_first_use_${Date.now()}`;
+    const ack = await client.sendClientMessage(ClientMessageKind.TRACK_EVENT, {
+      name: codeName,
+      attributes: { plan: 'plus' },
+    });
+    expect(ack).toBe(true);
+
+    const definition = await prisma.event.findFirst({ where: { codeName, projectId } });
+    expect(definition?.predefined).toBe(false);
+    const bizEvent = await prisma.bizEvent.findFirst({
+      where: { eventId: definition?.id, bizUser: { externalId: externalUserId, environmentId } },
+    });
+    expect((bizEvent?.data as Record<string, unknown>)?.plan).toBe('plus');
+  });
+
+  it('TrackEvent refuses a built-in event name (same rule as the v2 track endpoint)', async () => {
+    const ack = await client.sendClientMessage(ClientMessageKind.TRACK_EVENT, {
+      name: BizEvents.FLOW_COMPLETED,
+      attributes: { flow_name: 'forged' },
+    });
+    expect(ack).toBe(false);
+
+    const forged = await prisma.bizEvent.findFirst({
+      where: {
+        event: { codeName: BizEvents.FLOW_COMPLETED, projectId },
+        bizUser: { externalId: externalUserId, environmentId },
+      },
+    });
+    expect(forged).toBeNull();
   });
 
   it('StartContent starts a flow: session row, flow_started event, SetFlowSession emit', async () => {

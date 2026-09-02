@@ -234,11 +234,30 @@ export class BizService {
     environmentId: string,
     externalIds: string[],
   ): Promise<{ id: string; externalId: string }[]> {
+    // Delegation: the emit wrapper is a no-op when nothing changes, so the
+    // early-return shape of the InScope core covers both callers.
+    return await this.withEntityChangeEmit(environmentId, () =>
+      this.findOrCreateBizUsersInScope(environmentId, externalIds),
+    );
+  }
+
+  /**
+   * The creation core of {@link findOrCreateBizUsersByExternalIds}, for
+   * callers already INSIDE an entity-change scope (event tracking wraps one
+   * around its whole operation): `user.created` collects into that scope,
+   * and outside any scope the collect is a documented no-op.
+   */
+  async findOrCreateBizUsersInScope(
+    environmentId: string,
+    externalIds: string[],
+    client?: Prisma.TransactionClient,
+  ): Promise<{ id: string; externalId: string }[]> {
+    const db = client ?? this.prisma;
     const uniqueExternalIds = [...new Set(externalIds)];
     if (!uniqueExternalIds.length) {
       return [];
     }
-    const existing = await this.prisma.bizUser.findMany({
+    const existing = await db.bizUser.findMany({
       where: { environmentId, externalId: { in: uniqueExternalIds } },
       select: { id: true, externalId: true },
     });
@@ -247,20 +266,28 @@ export class BizService {
     if (!missing.length) {
       return existing;
     }
-    return await this.withEntityChangeEmit(environmentId, async () => {
-      await this.prisma.bizUser.createMany({
-        data: missing.map((externalId) => ({ environmentId, externalId, data: {} })),
-        skipDuplicates: true,
-      });
-      const created = await this.prisma.bizUser.findMany({
-        where: { environmentId, externalId: { in: missing } },
-        select: { id: true, externalId: true },
-      });
-      for (const row of created) {
-        this.collectEntityChange({ entity: 'user', action: 'created', bizId: row.id });
-      }
-      return [...existing, ...created];
+    return await this.createMissingBizUsers(environmentId, existing, missing, db);
+  }
+
+  private async createMissingBizUsers(
+    environmentId: string,
+    existing: { id: string; externalId: string }[],
+    missing: string[],
+    client?: Prisma.TransactionClient,
+  ): Promise<{ id: string; externalId: string }[]> {
+    const db = client ?? this.prisma;
+    await db.bizUser.createMany({
+      data: missing.map((externalId) => ({ environmentId, externalId, data: {} })),
+      skipDuplicates: true,
     });
+    const created = await db.bizUser.findMany({
+      where: { environmentId, externalId: { in: missing } },
+      select: { id: true, externalId: true },
+    });
+    for (const row of created) {
+      this.collectEntityChange({ entity: 'user', action: 'created', bizId: row.id });
+    }
+    return [...existing, ...created];
   }
 
   async createUserSegmentWithSource(

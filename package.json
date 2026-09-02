@@ -43,10 +43,10 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": ["biome check --write"],
-    "*.json": ["biome format --write"],
     "apps/server/prisma/schema.prisma": [
       "pnpm --filter @usertour/server exec prisma format --schema"
-    ]
+    ],
+    "*.{js,jsx,ts,tsx}": ["biome check --write --no-errors-on-unmatched"],
+    "*.json": ["biome format --write --no-errors-on-unmatched"]
   }
 }
