@@ -247,11 +247,9 @@ export class EventTrackingService {
    * The registration core for CUSTOM event ingestion: reserved/built-in code
    * names are refused (analytics must not be forgeable), the definition
    * auto-registers on first use, and incoming attribute names register on
-   * its allow-list. Today the v2 REST track endpoint is the only caller; the
-   * SDK's custom-track channel (web-socket-v2.service.trackEvent) still
-   * carries its own near-copy WITHOUT the reserved-name guard — folding it
-   * onto this core is deliberately deferred to its own change to keep review
-   * surfaces small.
+   * its allow-list. Both custom-track channels ride it — the v2 REST track
+   * endpoint and the SDK's socket message (web-socket-v2.service.trackEvent)
+   * — so the rule set lives in exactly one place.
    * Deliberately OUTSIDE any transaction: registration is idempotent and
    * harmless when the subsequent event write fails, while a unique race
    * inside an interactive transaction would poison it — the once-retry

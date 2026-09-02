@@ -47,7 +47,10 @@ import { WebSocketContext } from './web-socket-v2.dto';
 import { Socket, Server } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
 import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
-import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
+import {
+  EventTrackingService,
+  RESERVED_EVENT_CODE_NAMES,
+} from '@/web-socket/core/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { AnnouncementService } from '@/web-socket/core/announcement.service';
 import { ContentDataService } from '@/web-socket/core/content-data.service';
@@ -56,7 +59,6 @@ import { ProjectCacheService } from '@/shared/project-cache.service';
 import { IdentityVerificationService } from '@/shared/identity-verification.service';
 import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
 import { assignClientContext, buildAnnouncementSeenEventData } from '@/utils/event-v2';
-import { humanize } from '@usertour/helpers';
 
 @Injectable()
 export class WebSocketV2Service {
@@ -491,11 +493,13 @@ export class WebSocketV2Service {
   // ============================================================================
 
   /**
-   * Track event
-   * Auto-creates Event and Attributes if they don't exist.
-   * @param context - The web socket context
-   * @param trackEventDto - The track event DTO
-   * @returns True if the event was tracked successfully
+   * Track a custom event from the SDK (`usertour.track`). Registration of the
+   * definition and its attributes is the shared ingest core, so the built-in
+   * event names are refused here exactly as on the v2 track endpoint: a page
+   * holding only the public environment token must not be able to forge a
+   * "flow_completed" (analytics, and every webhook or Zap listening on it).
+   * The socket contract has no error channel — a refusal is `false` plus a
+   * server-side log naming the event.
    */
   async trackEvent(context: WebSocketContext, trackEventDto: TrackEventDto): Promise<boolean> {
     const { socketData } = context;
@@ -504,47 +508,30 @@ export class WebSocketV2Service {
 
     const { name, attributes, userOnly } = trackEventDto;
 
-    const createdBizEvent = await this.prisma.$transaction(async (tx) => {
-      // 1. Find or create Event by codeName + projectId
-      let event = await tx.event.findFirst({
-        where: { codeName: name, projectId },
-      });
-
-      if (!event) {
-        event = await tx.event.create({
-          data: {
-            codeName: name,
-            displayName: humanize(name),
-            description: '',
-            predefined: false,
-            projectId,
-          },
-        });
-      }
-
-      // 2. Resolve attributes + link them to this Event (handled by BizService,
-      //    which also takes care of invalidating the project's Attribute cache
-      //    when a new row was auto-created).
-      const mergedAttributes = assignClientContext(attributes ?? {}, clientContext);
-      const eventData = await this.bizService.resolveAndLinkEventAttributes(
-        tx,
-        projectId,
-        event.id,
-        mergedAttributes,
+    if (RESERVED_EVENT_CODE_NAMES.has(name)) {
+      this.logger.warn(
+        `Refused SDK track of built-in event "${name}" (project ${projectId}, user ${bizUserId}).`,
       );
+      return false;
+    }
 
-      // 3. Create BizEvent
-      return await tx.bizEvent.create({
-        data: {
-          bizUserId,
-          eventId: event.id,
-          data: Object.keys(eventData).length > 0 ? eventData : undefined,
-          bizSessionId: null,
-          contentId: null,
-          versionId: null,
-          bizCompanyId: userOnly === true ? null : (bizCompanyId ?? null),
-        },
-      });
+    const mergedAttributes = assignClientContext(attributes ?? {}, clientContext);
+    const { event, data } = await this.eventTrackingService.registerCustomEvent(
+      projectId,
+      name,
+      mergedAttributes,
+    );
+
+    const createdBizEvent = await this.prisma.bizEvent.create({
+      data: {
+        bizUserId,
+        eventId: event.id,
+        data: Object.keys(data).length > 0 ? data : undefined,
+        bizSessionId: null,
+        contentId: null,
+        versionId: null,
+        bizCompanyId: userOnly === true ? null : (bizCompanyId ?? null),
+      },
     });
 
     const trackedPayload: BizEventTrackedPayload = {
