@@ -23,6 +23,8 @@ export enum ApiObjectType {
   STEP = 'step',
   BLOCK = 'block',
   THEME = 'theme',
+  ME = 'me',
+  PROJECT = 'project',
   SEGMENT = 'segment',
   ENVIRONMENT = 'environment',
   CONTENT_ANALYTICS = 'contentAnalytics',

@@ -123,18 +123,11 @@ export class ApiTokenAuthService {
    * deliberately granted every environment).
    */
   allowedEnvironmentIds(token: AuthedApiToken): string[] | null {
-    const own = Array.isArray(token.allowedEnvironmentIds)
-      ? (token.allowedEnvironmentIds as string[])
-      : null;
     // Intersect with the owner's membership ceiling (cached by authorize).
-    const ceiling = token.memberAllowedEnvironmentIds ?? null;
-    if (own === null) {
-      return ceiling;
-    }
-    if (ceiling === null) {
-      return own;
-    }
-    return own.filter((id) => ceiling.includes(id));
+    return intersectEnvironmentAllowlists(
+      environmentAllowlistOf(token.allowedEnvironmentIds),
+      token.memberAllowedEnvironmentIds ?? null,
+    );
   }
 
   /**
@@ -174,12 +167,7 @@ export class ApiTokenAuthService {
     // allowedEnvironmentIds()/assertEnvironmentInScope — see AuthedApiToken.
     token.memberRole = membership.role as Role;
     token.memberRoleProjectId = projectId;
-    token.memberAllowedEnvironmentIds =
-      membership.role === 'OWNER'
-        ? null
-        : Array.isArray(membership.allowedEnvironmentIds)
-          ? (membership.allowedEnvironmentIds as string[])
-          : null;
+    token.memberAllowedEnvironmentIds = membershipEnvironmentCeiling(membership);
     if (capability) {
       const roleOk = roleCan(membership.role as Role, capability);
       const scopeOk = this.scopes(token).includes(capability);
@@ -244,3 +232,36 @@ export class ApiTokenAuthService {
     return value ?? null;
   }
 }
+
+/**
+ * The owner-membership environment ceiling: OWNER is exempt (null =
+ * unrestricted); everyone else is bounded by their membership allowlist.
+ * Shared by `authorize` and the `/v2/me` discovery route.
+ */
+export const membershipEnvironmentCeiling = (membership: {
+  role: string;
+  allowedEnvironmentIds: unknown;
+}): string[] | null =>
+  membership.role === 'OWNER' ? null : environmentAllowlistOf(membership.allowedEnvironmentIds);
+
+/** A JSONB allowlist column as `string[]`, or null for "unrestricted". */
+export const environmentAllowlistOf = (value: unknown): string[] | null =>
+  Array.isArray(value) ? (value as string[]) : null;
+
+/**
+ * The environment-allowlist algebra shared by the guard and the `/v2/me`
+ * discovery route: null = unrestricted, two lists intersect. ONE definition,
+ * so what /v2/me lists can never drift from what the guard admits.
+ */
+export const intersectEnvironmentAllowlists = (
+  own: string[] | null,
+  ceiling: string[] | null,
+): string[] | null => {
+  if (own === null) {
+    return ceiling;
+  }
+  if (ceiling === null) {
+    return own;
+  }
+  return own.filter((id) => ceiling.includes(id));
+};
