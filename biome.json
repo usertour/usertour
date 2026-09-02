@@ -63,6 +63,12 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["**/node_modules/**", "**/dist/**", "locate.ts", "webfonts.ts", "integrations/**"]
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "locate.ts",
+      "webfonts.ts",
+      "integrations/zapier/**"
+    ]
   }
 }

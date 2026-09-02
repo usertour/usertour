@@ -1,5 +1,8 @@
 'use strict';
 
+const { environmentUrl } = require('../lib/api');
+const { scopedInputFields: sharedScopedFields } = require('../lib/fields');
+
 /**
  * Factory for the REST-hook triggers. Each trigger is one webhook topic:
  * subscribing creates an ordinary Usertour webhook aimed at Zapier's target
@@ -11,28 +14,7 @@
  * spreads `data` to the top level so Zap fields read naturally.
  */
 
-const scopedInputFields = [
-  {
-    key: 'projectId',
-    label: 'Project',
-    type: 'string',
-    required: true,
-    dynamic: 'project_list.id.name',
-    altersDynamicFields: true,
-  },
-  {
-    key: 'environmentId',
-    label: 'Environment',
-    type: 'string',
-    required: true,
-    dynamic: 'environment_list.id.name',
-    helpText: 'Events from this environment fire the Zap.',
-  },
-];
-
-const webhooksUrl = (bundle) =>
-  `${bundle.authData.serverUrl}/v2/projects/${bundle.inputData.projectId}` +
-  `/environments/${bundle.inputData.environmentId}/webhooks`;
+const webhooksUrl = (bundle) => environmentUrl(bundle, '/webhooks');
 
 const subscribe = (topic) => async (z, bundle) => {
   const resolvedTopic = typeof topic === 'function' ? topic(bundle) : topic;
@@ -81,13 +63,14 @@ const hookTrigger = (spec) => ({
   display: { label: spec.label, description: spec.description },
   operation: {
     type: 'hook',
-    inputFields: [...scopedInputFields, ...(spec.extraInputFields || [])],
+    inputFields: [...sharedScopedFields, ...(spec.extraInputFields || [])],
     performSubscribe: subscribe(spec.topic),
     performUnsubscribe: unsubscribe,
     perform,
-    // The editor's test step shows this sample; live payloads replace it the
-    // moment the first real event arrives.
-    performList: async () => [spec.sample],
+    // The editor's test step shows this sample (shaped per input when the
+    // spec provides sampleFor); live payloads replace it the moment the
+    // first real event arrives.
+    performList: async (z, bundle) => [spec.sampleFor ? spec.sampleFor(bundle) : spec.sample],
     sample: spec.sample,
   },
 });

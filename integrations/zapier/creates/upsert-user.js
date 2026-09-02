@@ -1,26 +1,19 @@
 'use strict';
 
+const { environmentUrl, coerceAttributes } = require('../lib/api');
+
 /**
  * Action: create or update a Usertour user — a straight mapping onto
  * PUT /v2/.../users/:externalId. Attributes come in as a Zapier dictionary
- * field and merge into the user's existing attributes; unknown attribute
- * names auto-create definitions server-side.
+ * field, are sent as their declared types, and merge into the user's existing
+ * attributes; unknown attribute names auto-create definitions server-side.
  */
-/**
- * Drop empty-string values: an unmapped Zap field arrives as '' and would
- * otherwise overwrite a real attribute value.
- */
-const compactAttributes = (attributes) =>
-  Object.fromEntries(Object.entries(attributes || {}).filter(([, value]) => value !== ''));
-
 const perform = async (z, bundle) => {
   const { projectId, environmentId, userId, attributes } = bundle.inputData;
   const response = await z.request({
     method: 'PUT',
-    url:
-      `${bundle.authData.serverUrl}/v2/projects/${projectId}` +
-      `/environments/${environmentId}/users/${encodeURIComponent(userId)}`,
-    body: { attributes: compactAttributes(attributes) },
+    url: environmentUrl(bundle, `/users/${encodeURIComponent(userId)}`),
+    body: { attributes: await coerceAttributes(z, bundle, 'user', attributes) },
   });
   return response.data;
 };
@@ -63,7 +56,7 @@ module.exports = {
         label: 'Attributes',
         dict: true,
         helpText:
-          'Attribute name → value pairs, merged into the user. Names must start with a letter and use only letters, digits, and underscores; unknown names create new attribute definitions.',
+          'Attribute name → value pairs, merged into the user. Values are sent as the attribute\'s declared type (number, true/false, text); names must start with a letter and use only letters, digits, and underscores. Unknown names create new text attributes. Blank values are skipped.',
       },
     ],
     perform,

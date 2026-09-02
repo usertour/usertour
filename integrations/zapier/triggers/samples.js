@@ -31,7 +31,7 @@ const flowStarted = eventSample('flow_started', {
   flow_id: 'clx0example0content0id',
   flow_name: 'Onboarding tour',
   flow_version_number: 3,
-  flow_start_reason: 'start_condition',
+  flow_start_reason: 'start_from_condition',
   page_url: 'https://app.example.com/dashboard',
 });
 
@@ -39,7 +39,6 @@ const flowCompleted = eventSample('flow_completed', {
   flow_id: 'clx0example0content0id',
   flow_name: 'Onboarding tour',
   flow_version_number: 3,
-  flow_step_count: 5,
   page_url: 'https://app.example.com/dashboard',
 });
 

@@ -6,8 +6,10 @@
  * platforms. `serverUrl` supports self-hosted instances; the default is
  * Usertour Cloud.
  */
+const { apiBase } = require('./lib/api');
+
 const test = async (z, bundle) => {
-  const response = await z.request({ url: `${bundle.authData.serverUrl}/v2/me` });
+  const response = await z.request({ url: `${apiBase(bundle)}/v2/me` });
   return response.data;
 };
 
@@ -29,7 +31,7 @@ module.exports = {
       type: 'password',
       required: true,
       helpText:
-        'Create one in Usertour under **Settings → API** (see https://docs.usertour.io/api-reference-v2/authentication). Scopes: **Webhooks: manage** for triggers, **Events: read** for the Event Tracked trigger, **Users: read/write** and **Companies: read/write** for the actions and searches you use — and include the environments you want to connect.',
+        'Create one in Usertour under **Settings → API** (see https://docs.usertour.io/api-reference-v2/authentication). Scopes: **Webhooks: manage** for triggers, **Events: read** for the Event Tracked trigger, **Users: read/write**, **Companies: read/write**, and **Attributes: read** for the actions and searches you use — and include the environments you want to connect.',
     },
   ],
   test,

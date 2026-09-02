@@ -167,12 +167,7 @@ export class ApiTokenAuthService {
     // allowedEnvironmentIds()/assertEnvironmentInScope — see AuthedApiToken.
     token.memberRole = membership.role as Role;
     token.memberRoleProjectId = projectId;
-    token.memberAllowedEnvironmentIds =
-      membership.role === 'OWNER'
-        ? null
-        : Array.isArray(membership.allowedEnvironmentIds)
-          ? (membership.allowedEnvironmentIds as string[])
-          : null;
+    token.memberAllowedEnvironmentIds = membershipEnvironmentCeiling(membership);
     if (capability) {
       const roleOk = roleCan(membership.role as Role, capability);
       const scopeOk = this.scopes(token).includes(capability);
@@ -237,6 +232,17 @@ export class ApiTokenAuthService {
     return value ?? null;
   }
 }
+
+/**
+ * The owner-membership environment ceiling: OWNER is exempt (null =
+ * unrestricted); everyone else is bounded by their membership allowlist.
+ * Shared by `authorize` and the `/v2/me` discovery route.
+ */
+export const membershipEnvironmentCeiling = (membership: {
+  role: string;
+  allowedEnvironmentIds: unknown;
+}): string[] | null =>
+  membership.role === 'OWNER' ? null : environmentAllowlistOf(membership.allowedEnvironmentIds);
 
 /** A JSONB allowlist column as `string[]`, or null for "unrestricted". */
 export const environmentAllowlistOf = (value: unknown): string[] | null =>

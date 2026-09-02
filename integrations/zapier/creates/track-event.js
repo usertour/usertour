@@ -1,32 +1,24 @@
 'use strict';
 
+const { environmentUrl, coerceAttributes } = require('../lib/api');
+
 /**
  * Action: record a behavior event for a user — POST /v2/.../events. Unseen
  * users are created; an unknown event name registers a definition on first
  * use; built-in Usertour event names are refused server-side.
  */
-/**
- * Drop empty-string values: an unmapped Zap field arrives as '' and would
- * otherwise overwrite a real attribute value.
- */
-const compactAttributes = (attributes) =>
-  Object.fromEntries(Object.entries(attributes || {}).filter(([, value]) => value !== ''));
-
 const perform = async (z, bundle) => {
   const { projectId, environmentId, userId, companyId, name, attributes, occurredAt } =
     bundle.inputData;
+  const eventAttributes = await coerceAttributes(z, bundle, 'eventDefinition', attributes);
   const response = await z.request({
     method: 'POST',
-    url:
-      `${bundle.authData.serverUrl}/v2/projects/${projectId}` +
-      `/environments/${environmentId}/events`,
+    url: environmentUrl(bundle, '/events'),
     body: {
       userId,
       name,
       ...(companyId ? { companyId } : {}),
-      ...(Object.keys(compactAttributes(attributes)).length
-        ? { attributes: compactAttributes(attributes) }
-        : {}),
+      ...(Object.keys(eventAttributes).length ? { attributes: eventAttributes } : {}),
       ...(occurredAt ? { occurredAt } : {}),
     },
   });
@@ -83,7 +75,8 @@ module.exports = {
         key: 'attributes',
         label: 'Attributes',
         dict: true,
-        helpText: 'Event attribute values; unknown names register on the event definition.',
+        helpText:
+          'Event attribute values, sent as each attribute\'s declared type; unknown names register as text attributes on the event definition. Blank values are skipped.',
       },
       {
         key: 'occurredAt',

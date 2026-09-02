@@ -1,5 +1,7 @@
 'use strict';
 
+const { environmentUrl } = require('../lib/api');
+
 /**
  * Search: find a company by its external ID. A miss returns an empty list —
  * Zapier's not-found convention, and what its "find or create" pairing with
@@ -8,9 +10,7 @@
 const perform = async (z, bundle) => {
   const { projectId, environmentId, companyId } = bundle.inputData;
   const response = await z.request({
-    url:
-      `${bundle.authData.serverUrl}/v2/projects/${projectId}` +
-      `/environments/${environmentId}/companies/${encodeURIComponent(companyId)}`,
+    url: environmentUrl(bundle, `/companies/${encodeURIComponent(companyId)}`),
     skipThrowForStatus: true,
   });
   // Only a definite 404 means "not found" — anything else (auth failure,

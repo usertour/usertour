@@ -13,20 +13,14 @@ const findUser = require('./searches/find-user');
 const findCompany = require('./searches/find-company');
 
 /**
- * Bearer auth on every request, plus URL normalization: self-hosted users
- * paste server URLs with trailing slashes, which would otherwise produce
- * `//v2/...` paths that both express and the bundled nginx 404.
+ * Bearer auth on every request. URL hygiene (trailing slashes, missing
+ * scheme) lives in lib/api.js apiBase — every URL is built through it, so
+ * no request-time rewriting is needed.
  */
 const prepareRequest = (request, z, bundle) => {
   if (bundle.authData.apiToken) {
     request.headers = request.headers || {};
     request.headers.Authorization = `Bearer ${bundle.authData.apiToken}`;
-  }
-  if (request.url) {
-    request.url = request.url.replace(
-      /^(https?:\/\/)(.*)$/,
-      (_all, scheme, rest) => scheme + rest.replace(/\/{2,}/g, '/'),
-    );
   }
   return request;
 };

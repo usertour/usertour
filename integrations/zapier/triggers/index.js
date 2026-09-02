@@ -78,6 +78,16 @@ const eventTracked = hookTrigger({
   description:
     'Triggers when a specific event is tracked — any event definition in your project, custom events included.',
   topic: (bundle) => `event.tracked.${bundle.inputData.eventCodeName}`,
+  // Shape the editor's test sample to the chosen event, so mapped fields
+  // aren't misleading placeholders from an unrelated event.
+  sampleFor: (bundle) => {
+    const codeName = bundle.inputData.eventCodeName || samples.eventTracked.event.codeName;
+    return {
+      ...samples.eventTracked,
+      type: `event.tracked.${codeName}`,
+      event: { ...samples.eventTracked.event, codeName },
+    };
+  },
   extraInputFields: [
     {
       key: 'eventCodeName',

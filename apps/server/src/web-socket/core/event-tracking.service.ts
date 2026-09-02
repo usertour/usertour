@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { trackerSystemReservedEventAttributes } from '@usertour/constants';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Event as EventDefinition } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
 import {
@@ -65,10 +66,28 @@ import type {
 } from '@/common/types/track';
 
 /**
- * Code names of built-in analytics events — unforgeable through the server
- * track path even when a project's definition rows are missing (pre-seed).
+ * Code names of built-in analytics events — unforgeable through every custom
+ * ingestion path (the v2 track endpoint AND the SDK's custom-track channel),
+ * even when a project's definition rows are missing (pre-seed).
  */
-const RESERVED_EVENT_CODE_NAMES = new Set<string>(Object.values(BizEvents));
+export const RESERVED_EVENT_CODE_NAMES = new Set<string>(Object.values(BizEvents));
+
+/**
+ * Retry an idempotent operation once when a concurrent first-use loses a
+ * unique race: Prisma's composite-key upsert is SELECT-then-INSERT (not
+ * native ON CONFLICT), and attribute auto-registration creates bare rows —
+ * the retry's SELECT then finds the winner's row.
+ */
+const retryOnceOnUniqueConflict = async <T>(operation: () => Promise<T>): Promise<T> => {
+  try {
+    return await operation();
+  } catch (error) {
+    if ((error as { code?: string }).code === 'P2002') {
+      return await operation();
+    }
+    throw error;
+  }
+};
 
 // ============================================================================
 // EventTrackingService
@@ -225,16 +244,53 @@ export class EventTrackingService {
   }
 
   /**
-   * Track a custom event
-   * @param params - Event transaction parameters
-   * @returns True if the event was tracked successfully
+   * The registration core for CUSTOM event ingestion: reserved/built-in code
+   * names are refused (analytics must not be forgeable), the definition
+   * auto-registers on first use, and incoming attribute names register on
+   * its allow-list. Today the v2 REST track endpoint is the only caller; the
+   * SDK's custom-track channel (web-socket-v2.service.trackEvent) still
+   * carries its own near-copy WITHOUT the reserved-name guard — folding it
+   * onto this core is deliberately deferred to its own change to keep review
+   * surfaces small.
+   * Deliberately OUTSIDE any transaction: registration is idempotent and
+   * harmless when the subsequent event write fails, while a unique race
+   * inside an interactive transaction would poison it — the once-retry
+   * absorbs concurrent first use instead.
    */
-  async trackCustomEvent(params: EventTransactionParams): Promise<boolean> {
-    return await this.trackWithEmit(params.environment.id, () =>
-      this.prisma.$transaction(async (tx) => {
-        return await this.executeEventTransaction(tx, params);
+  async registerCustomEvent(
+    projectId: string,
+    codeName: string,
+    attributes: Record<string, any>,
+  ): Promise<{ event: EventDefinition; data: Record<string, any> }> {
+    if (RESERVED_EVENT_CODE_NAMES.has(codeName)) {
+      throw new ValidationError(
+        `"${codeName}" is a built-in Usertour event and cannot be tracked as a custom event.`,
+      );
+    }
+    const event = await retryOnceOnUniqueConflict(() =>
+      this.prisma.event.upsert({
+        where: { codeName_projectId: { codeName, projectId } },
+        create: { codeName, displayName: humanize(codeName), projectId },
+        update: {},
       }),
     );
+    if (event.predefined) {
+      throw new ValidationError(
+        `"${codeName}" is a built-in Usertour event and cannot be tracked as a custom event.`,
+      );
+    }
+    const data =
+      Object.keys(attributes).length > 0
+        ? await retryOnceOnUniqueConflict(() =>
+            this.bizService.resolveAndLinkEventAttributes(
+              this.prisma,
+              projectId,
+              event.id,
+              attributes,
+            ),
+          )
+        : {};
+    return { event, data };
   }
 
   /**
@@ -248,14 +304,8 @@ export class EventTrackingService {
    * Reserved (predefined) code names are refused — analytics events must not
    * be forgeable through the API. Company linkage is best-effort: an unknown
    * company id records the event without the link rather than failing it.
-   *
-   * One transaction end to end: the collected `user.created` must never
-   * outlive a failed event write (a committed user with a rolled-back event
-   * would drop the webhook forever — the retry finds the user existing).
-   * Everything inside is conflict-free by construction (upsert /
-   * skipDuplicates), because a P2002 caught mid-transaction would abort it
-   * anyway. Runs through trackWithEmit, so webhooks and integrations fan
-   * out exactly as for SDK-tracked events.
+   * Runs through trackWithEmit, so webhooks and integrations fan out exactly
+   * as for SDK-tracked events.
    */
   async trackServerEvent(params: {
     environment: { id: string; projectId: string };
@@ -269,34 +319,25 @@ export class EventTrackingService {
       params;
     const { id: environmentId, projectId } = environment;
 
-    if (RESERVED_EVENT_CODE_NAMES.has(codeName)) {
-      throw new ValidationError(
-        `"${codeName}" is a built-in Usertour event and cannot be tracked through the API.`,
-      );
-    }
     if (!externalUserId.trim()) {
       throw new ValidationError('User external id must be a non-empty string.');
     }
-    // Strict v2 typing, checked before any write.
+    // Strict v2 typing, checked before any write (the SDK channel keeps its
+    // lenient drop-and-log semantics — strictness is the REST contract).
     await this.bizService.assertAttributeValueTypes(
       environmentId,
       AttributeBizType.EVENT,
       attributes,
     );
 
+    const { event, data } = await this.registerCustomEvent(projectId, codeName, attributes);
+
+    // The transaction holds only what must be atomic: the user's creation and
+    // the event row — a collected `user.created` must never outlive a failed
+    // event write (the retry would find the user existing and drop the
+    // webhook forever).
     return await this.trackWithEmit(environmentId, () =>
       this.prisma.$transaction(async (tx) => {
-        const event = await tx.event.upsert({
-          where: { codeName_projectId: { codeName, projectId } },
-          create: { codeName, displayName: humanize(codeName), projectId },
-          update: {},
-        });
-        if (event.predefined) {
-          throw new ValidationError(
-            `"${codeName}" is a built-in Usertour event and cannot be tracked through the API.`,
-          );
-        }
-
         const [bizUser] = await this.bizService.findOrCreateBizUsersInScope(
           environmentId,
           [externalUserId],
@@ -308,17 +349,6 @@ export class EventTrackingService {
               select: { id: true },
             })
           : null;
-
-        const data =
-          Object.keys(attributes).length > 0
-            ? await this.bizService.resolveAndLinkEventAttributes(
-                tx,
-                projectId,
-                event.id,
-                attributes,
-              )
-            : {};
-
         const bizEvent = await tx.bizEvent.create({
           data: {
             bizUserId: bizUser.id,

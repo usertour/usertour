@@ -234,21 +234,10 @@ export class BizService {
     environmentId: string,
     externalIds: string[],
   ): Promise<{ id: string; externalId: string }[]> {
-    const uniqueExternalIds = [...new Set(externalIds)];
-    if (!uniqueExternalIds.length) {
-      return [];
-    }
-    const existing = await this.prisma.bizUser.findMany({
-      where: { environmentId, externalId: { in: uniqueExternalIds } },
-      select: { id: true, externalId: true },
-    });
-    const existingByExternalId = new Set(existing.map((user) => user.externalId));
-    const missing = uniqueExternalIds.filter((externalId) => !existingByExternalId.has(externalId));
-    if (!missing.length) {
-      return existing;
-    }
+    // Delegation: the emit wrapper is a no-op when nothing changes, so the
+    // early-return shape of the InScope core covers both callers.
     return await this.withEntityChangeEmit(environmentId, () =>
-      this.createMissingBizUsers(environmentId, existing, missing),
+      this.findOrCreateBizUsersInScope(environmentId, externalIds),
     );
   }
 

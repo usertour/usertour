@@ -1,17 +1,19 @@
 'use strict';
 
+const { apiBase, absoluteUrl } = require('../lib/api');
+
 /**
  * Hidden triggers backing the project / environment dynamic dropdowns.
  * Both read GET /v2/me — the token's real scope — so the picker can never
  * offer something the API would later refuse.
  */
 const listProjects = async (z, bundle) => {
-  const response = await z.request({ url: `${bundle.authData.serverUrl}/v2/me` });
+  const response = await z.request({ url: `${apiBase(bundle)}/v2/me` });
   return response.data.projects;
 };
 
 const listEnvironments = async (z, bundle) => {
-  const response = await z.request({ url: `${bundle.authData.serverUrl}/v2/me` });
+  const response = await z.request({ url: `${apiBase(bundle)}/v2/me` });
   const project = response.data.projects.find(
     (candidate) => candidate.id === bundle.inputData.projectId,
   );
@@ -47,13 +49,12 @@ const listEventDefinitions = async (z, bundle) => {
   // Walk the whole cursor-paginated collection (auto-registered definitions
   // make >100 realistic; a truncated dropdown would silently hide events).
   const definitions = [];
-  let url =
-    `${bundle.authData.serverUrl}/v2/projects/${bundle.inputData.projectId}` +
-    '/event-definitions?limit=100';
+  let url = `${apiBase(bundle)}/v2/projects/${bundle.inputData.projectId}/event-definitions?limit=100`;
   while (url && definitions.length < 1000) {
     const response = await z.request({ url });
     definitions.push(...response.data.results);
-    url = response.data.next;
+    // `next` is a host-relative path — resolve it or z.request refuses it.
+    url = response.data.next ? absoluteUrl(bundle, response.data.next) : null;
   }
   // Dropdowns key on `id`; the trigger subscribes by code name, so that IS
   // the id here. Built-in definitions are listed too — subscribing to them

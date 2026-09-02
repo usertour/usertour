@@ -1,24 +1,17 @@
 'use strict';
 
+const { environmentUrl, coerceAttributes } = require('../lib/api');
+
 /**
  * Action: create or update a Usertour company — the mirror of the user
  * action, onto PUT /v2/.../companies/:externalId.
  */
-/**
- * Drop empty-string values: an unmapped Zap field arrives as '' and would
- * otherwise overwrite a real attribute value.
- */
-const compactAttributes = (attributes) =>
-  Object.fromEntries(Object.entries(attributes || {}).filter(([, value]) => value !== ''));
-
 const perform = async (z, bundle) => {
   const { projectId, environmentId, companyId, attributes } = bundle.inputData;
   const response = await z.request({
     method: 'PUT',
-    url:
-      `${bundle.authData.serverUrl}/v2/projects/${projectId}` +
-      `/environments/${environmentId}/companies/${encodeURIComponent(companyId)}`,
-    body: { attributes: compactAttributes(attributes) },
+    url: environmentUrl(bundle, `/companies/${encodeURIComponent(companyId)}`),
+    body: { attributes: await coerceAttributes(z, bundle, 'company', attributes) },
   });
   return response.data;
 };
@@ -60,7 +53,7 @@ module.exports = {
         label: 'Attributes',
         dict: true,
         helpText:
-          'Attribute name → value pairs, merged into the company. Names must start with a letter and use only letters, digits, and underscores.',
+          'Attribute name → value pairs, merged into the company. Values are sent as the attribute\'s declared type (number, true/false, text); names must start with a letter and use only letters, digits, and underscores. Unknown names create new text attributes. Blank values are skipped.',
       },
     ],
     perform,
