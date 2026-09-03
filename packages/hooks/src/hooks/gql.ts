@@ -1033,6 +1033,7 @@ export const useGetProjectConfigQuery = (
       ssoSaml: boolean;
       webhooks: boolean;
       integrations: boolean;
+      crmIntegrations: boolean;
       planType: string;
     } | null,
     loading,

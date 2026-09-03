@@ -4,6 +4,7 @@ import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import {
   catalogEntryForSource,
+  CRM_INTEGRATION_PROVIDERS,
   INTEGRATION_PROVIDERS,
   INTEGRATION_TEST_TOPIC,
 } from '@usertour/constants';
@@ -61,12 +62,40 @@ export class IntegrationsService {
    * encrypted inbound token also stays behind: consumers get the derived
    * `inboundUrl` instead.
    */
-  private withoutKey<T extends { key: string; provider: string; inboundToken: string | null }>(
+  private withoutKey<
+    T extends {
+      key: string;
+      provider: string;
+      inboundToken: string | null;
+      oauthCredentials: string | null;
+      remoteState: unknown;
+    },
+  >(
     row: T,
     request?: Request,
-  ): Omit<T, 'key' | 'inboundToken'> & { inboundUrl: string | null } {
-    const { key: _key, inboundToken: _inboundToken, ...rest } = row;
-    return { ...rest, inboundUrl: this.cohortSync.inboundUrlFor(row, request) };
+  ): Omit<T, 'key' | 'inboundToken' | 'oauthCredentials'> & {
+    inboundUrl: string | null;
+    connected: boolean;
+    remoteAccountLabel: string | null;
+  } {
+    const { key: _key, inboundToken: _inboundToken, oauthCredentials, ...rest } = row;
+    const remoteState = (row.remoteState ?? {}) as { account?: { domain?: string } };
+    return {
+      ...rest,
+      inboundUrl: this.cohortSync.inboundUrlFor(row, request),
+      // CRM rows (ADR 0013): the grant itself never leaves the service either.
+      connected: oauthCredentials != null,
+      remoteAccountLabel: remoteState.account?.domain ?? null,
+    };
+  }
+
+  /** One integration by id, projected like list(). */
+  async getById(id: string, request?: Request) {
+    const row = await this.prisma.integration.findUnique({ where: { id } });
+    if (!row) {
+      throw new ValidationError('Integration not found.');
+    }
+    return this.withoutKey(row, request);
   }
 
   /** Providers whose inbound cohort-sync entry actually exists. */
@@ -117,6 +146,14 @@ export class IntegrationsService {
    */
   async upsert(data: UpsertIntegrationInput, request?: Request) {
     await this.assertEntitled(data.environmentId);
+    if (
+      CRM_INTEGRATION_PROVIDERS.includes(
+        data.provider as (typeof CRM_INTEGRATION_PROVIDERS)[number],
+      )
+    ) {
+      // CRM rows are created by the OAuth callback (ADR 0013 §2); there is no key to paste.
+      throw new ValidationError(`"${data.provider}" connects over OAuth — use Connect instead.`);
+    }
     if (!INTEGRATION_PROVIDERS.includes(data.provider as (typeof INTEGRATION_PROVIDERS)[number])) {
       throw new ValidationError(
         `Unknown provider "${data.provider}" — expected one of ${INTEGRATION_PROVIDERS.join(', ')}.`,

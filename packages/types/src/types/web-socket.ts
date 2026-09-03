@@ -131,6 +131,8 @@ export type ProjectConfig = {
   webhooks: boolean;
   // Outbound integrations: same gate shape as webhooks.
   integrations: boolean;
+  // CRM sync (ADR 0013): cloud Growth+, self-hosted always on.
+  crmIntegrations: boolean;
   planType: string;
 };
 

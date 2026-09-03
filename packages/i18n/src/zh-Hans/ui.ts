@@ -1435,6 +1435,8 @@ const translations = {
           mixpanel: '将 Usertour 事件发送到 Mixpanel,并把 Mixpanel cohort 同步到 Usertour。',
           posthog: '将 Usertour 事件发送到 PostHog。',
           segment: '将 Usertour 事件发送到 Segment。',
+          hubspot:
+            '在 HubSpot 联系人、公司与 Usertour 用户、公司之间同步数据,并把 onboarding 里程碑写到 HubSpot 时间线。',
         },
       },
       status: {
@@ -1551,6 +1553,28 @@ const translations = {
         sent: '测试事件已入队 — 请在下方消息日志中查看。',
         failed: '测试事件入队失败',
         disabledHint: '启用集成后才能发送测试事件。',
+      },
+      crm: {
+        connect: '连接 {{name}}',
+        connectDescription:
+          '在你的 {{name}} 账号中授权 Usertour。一个 {{name}} 账号对应一个 Usertour 环境。',
+        connected: '已连接',
+        notConnected: '未连接',
+        account: '已连接账号',
+        disconnect: '断开连接',
+        disconnectConfirmTitle: '断开 {{name}}?',
+        disconnectConfirmDescription: '同步会立即停止。映射和消息日志会保留,重新连接后可继续使用。',
+        disconnectSuccess: '已断开 {{name}}',
+        disconnectFailure: '断开 {{name}} 失败',
+        connectedToast: '已连接 {{name}}',
+        deniedToast: '在 {{name}} 中取消了授权。',
+        failedToast: '连接 {{name}} 失败,请重试。',
+        licenseToast: '当前套餐不包含 CRM 集成。',
+        notConfigured:
+          '该服务器未配置 {{name}} 应用凭证,请参阅 integrations/hubspot 目录的 README 注册应用。',
+        lockedHint: 'Growth 及以上套餐可用',
+        downgradedBanner:
+          '当前套餐不包含 CRM 集成 — 同步已暂停。你仍可以查看和断开连接;升级套餐即可恢复。',
       },
       messages: {
         title: '最近消息',

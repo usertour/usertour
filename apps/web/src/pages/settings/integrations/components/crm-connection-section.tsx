@@ -1,0 +1,186 @@
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
+import { format } from 'date-fns';
+import { getErrorMessage } from '@usertour/helpers';
+import {
+  type Integration,
+  useDisconnectCrmIntegrationMutation,
+  useStartCrmOAuthMutation,
+} from '@usertour/hooks';
+import { Badge, Button, DestructiveConfirmDialog, LoadingButton, useToast } from '@usertour/ui';
+import type { IntegrationCatalogEntry } from '@usertour/constants';
+import { useAppContext } from '@/contexts/app-context';
+
+export interface CrmConnectionSectionProps {
+  entry: IntegrationCatalogEntry;
+  integration: Integration | undefined;
+  environmentId: string;
+  entitled: boolean;
+}
+
+/** Query keys the OAuth callback appends when it lands the browser back here. */
+const RETURN_PARAMS = ['connected', 'error', 'provider'] as const;
+
+/**
+ * Connection card for a CRM provider (ADR 0013 §2): the OAuth handshake is a
+ * full-page round trip — Connect asks the server for the authorize URL and
+ * navigates there; the server callback creates the row and redirects back
+ * with `?connected=1` or `?error=...`, which this card turns into a toast.
+ */
+export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
+  const { entry, integration, environmentId, entitled } = props;
+  const { isViewOnly } = useAppContext();
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [disconnectOpen, setDisconnectOpen] = useState(false);
+  const { invoke: startOAuth, loading: starting } = useStartCrmOAuthMutation();
+  const { invoke: disconnect, loading: disconnecting } = useDisconnectCrmIntegrationMutation();
+  const connected = !!integration?.connected;
+  const canWrite = !isViewOnly && entitled;
+  const name = entry.name;
+
+  useEffect(() => {
+    const returned = searchParams.get('connected');
+    const error = searchParams.get('error');
+    if (!returned && !error) {
+      return;
+    }
+    if (returned) {
+      toast({ variant: 'success', title: t('settings.integrations.crm.connectedToast', { name }) });
+    } else {
+      const key =
+        error === 'denied' ? 'deniedToast' : error === 'license' ? 'licenseToast' : 'failedToast';
+      toast({ variant: 'destructive', title: t(`settings.integrations.crm.${key}`, { name }) });
+    }
+    const next = new URLSearchParams(searchParams);
+    for (const param of RETURN_PARAMS) {
+      next.delete(param);
+    }
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams, toast, t, name]);
+
+  const handleConnect = async () => {
+    try {
+      const url = await startOAuth({ environmentId, provider: entry.provider });
+      if (url) {
+        window.location.assign(url);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: t('settings.integrations.crm.failedToast', { name }),
+        });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!integration) {
+      return;
+    }
+    try {
+      const saved = await disconnect(integration.id);
+      if (saved) {
+        toast({
+          variant: 'success',
+          title: t('settings.integrations.crm.disconnectSuccess', { name }),
+        });
+        setDisconnectOpen(false);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: t('settings.integrations.crm.disconnectFailure', { name }),
+        });
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <img
+            className="h-12 w-12 rounded-lg border border-accent-light object-cover"
+            src={entry.imagePath}
+            alt={t('settings.integrations.catalog.logoAlt', { name })}
+          />
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-medium tracking-tight">{name}</h3>
+            {connected ? (
+              <Badge variant="success">{t('settings.integrations.crm.connected')}</Badge>
+            ) : (
+              <Badge variant="secondary">{t('settings.integrations.crm.notConnected')}</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          {connected ? (
+            <>
+              <p className="text-sm font-medium">{t('settings.integrations.crm.account')}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {integration?.remoteAccountLabel ?? integration?.remoteAccountId}
+                {integration?.remoteAccountLabel && integration?.remoteAccountId && (
+                  <span className="ml-2 text-xs">#{integration.remoteAccountId}</span>
+                )}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t('settings.integrations.crm.connectDescription', { name })}
+            </p>
+          )}
+        </div>
+        <div className="shrink-0">
+          {connected ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!canWrite || disconnecting}
+              onClick={() => setDisconnectOpen(true)}
+            >
+              {t('settings.integrations.crm.disconnect')}
+            </Button>
+          ) : (
+            <LoadingButton
+              type="button"
+              loading={starting}
+              disabled={!canWrite}
+              onClick={() => void handleConnect()}
+            >
+              {t('settings.integrations.crm.connect', { name })}
+            </LoadingButton>
+          )}
+        </div>
+      </div>
+
+      {integration?.autoDisabledAt && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {t('settings.integrations.autoDisabled.banner', {
+            time: format(new Date(integration.autoDisabledAt), 'PP'),
+          })}
+        </div>
+      )}
+
+      <DestructiveConfirmDialog
+        title={t('settings.integrations.crm.disconnectConfirmTitle', { name })}
+        description={t('settings.integrations.crm.disconnectConfirmDescription')}
+        confirmLabel={t('settings.integrations.crm.disconnect')}
+        cancelLabel={t('settings.common.cancel')}
+        open={disconnectOpen}
+        onOpenChange={setDisconnectOpen}
+        onConfirm={handleDisconnect}
+        loading={disconnecting}
+      />
+    </div>
+  );
+};
+
+CrmConnectionSection.displayName = 'CrmConnectionSection';

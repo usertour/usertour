@@ -1508,6 +1508,8 @@ const translations = {
           mixpanel: 'Send Usertour events to Mixpanel and sync Mixpanel cohorts into Usertour.',
           posthog: 'Send Usertour events to PostHog.',
           segment: 'Send Usertour events to Segment.',
+          hubspot:
+            'Sync HubSpot contacts and companies with Usertour users and companies, and show onboarding milestones on the HubSpot timeline.',
         },
       },
       status: {
@@ -1630,6 +1632,29 @@ const translations = {
         sent: 'Test event queued — check the message log below.',
         failed: 'Failed to queue the test event',
         disabledHint: 'Enable the integration to send a test event.',
+      },
+      crm: {
+        connect: 'Connect with {{name}}',
+        connectDescription:
+          'Authorize Usertour in your {{name}} account. One {{name}} account connects to one Usertour environment.',
+        connected: 'Connected',
+        notConnected: 'Not connected',
+        account: 'Connected account',
+        disconnect: 'Disconnect',
+        disconnectConfirmTitle: 'Disconnect {{name}}?',
+        disconnectConfirmDescription:
+          'Syncing stops immediately. Mappings and the message log are kept, so reconnecting picks up where you left off.',
+        disconnectSuccess: '{{name}} disconnected',
+        disconnectFailure: 'Failed to disconnect {{name}}',
+        connectedToast: '{{name}} connected',
+        deniedToast: 'Authorization was cancelled in {{name}}.',
+        failedToast: 'Connecting {{name}} failed. Please try again.',
+        licenseToast: 'CRM integrations are not included in your current plan.',
+        notConfigured:
+          'This server has no {{name}} app credentials configured. See the integrations/hubspot README to register one.',
+        lockedHint: 'Available on the Growth plan and above',
+        downgradedBanner:
+          'CRM integrations are not included in your current plan — syncing is paused. You can still review and disconnect; upgrade to resume.',
       },
       messages: {
         title: 'Recent messages',

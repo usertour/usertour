@@ -19,6 +19,9 @@ export const ListIntegrations = gql`
       inboundEnabled
       inboundConfig
       inboundUrl
+      connected
+      remoteAccountId
+      remoteAccountLabel
     }
   }
 `;
@@ -76,6 +79,9 @@ export const UpsertIntegration = gql`
       inboundEnabled
       inboundConfig
       inboundUrl
+      connected
+      remoteAccountId
+      remoteAccountLabel
     }
   }
 `;
@@ -133,6 +139,35 @@ export const SendIntegrationTestEvent = gql`
   mutation SendIntegrationTestEvent($data: IntegrationIdInput!) {
     sendIntegrationTestEvent(data: $data) {
       id
+    }
+  }
+`;
+
+// CRM connections (ADR 0013). Start returns the provider authorize URL — the
+// browser navigates there and comes back through the server callback, which
+// creates the row; the detail page refetches on return.
+export const StartCrmOAuth = gql`
+  mutation StartCrmOAuth($data: StartCrmOAuthInput!) {
+    startCrmOAuth(data: $data) {
+      url
+    }
+  }
+`;
+
+// Returns every field a disconnect changes (grant dropped, switch off) plus
+// the breaker fields a reconnect would reset, so the cache updates in place.
+export const DisconnectCrmIntegration = gql`
+  mutation DisconnectCrmIntegration($data: IntegrationIdInput!) {
+    disconnectCrmIntegration(data: $data) {
+      id
+      updatedAt
+      enabled
+      connected
+      remoteAccountId
+      remoteAccountLabel
+      consecutiveFailures
+      cooldownUntil
+      autoDisabledAt
     }
   }
 `;

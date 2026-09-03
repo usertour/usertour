@@ -118,6 +118,11 @@ export const SettingsIntegrationList = () => {
               <div className="mt-1 text-muted-foreground">
                 {t(`settings.integrations.catalog.descriptions.${entry.provider}`)}
               </div>
+              {entry.kind === 'crm' && projectConfig && !projectConfig.crmIntegrations && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {t('settings.integrations.crm.lockedHint')}
+                </div>
+              )}
             </li>
           );
         })}

@@ -165,7 +165,13 @@ export class ProjectsService {
         // upsell); the webhooks override to the CRUD gate, the delivery
         // listener, and the settings page.
         const config = await this.getSelfHostedConfig(projectId);
-        return { ...config, customCss: true, webhooks: true, integrations: true };
+        return {
+          ...config,
+          customCss: true,
+          webhooks: true,
+          integrations: true,
+          crmIntegrations: true,
+        };
       }
       return this.getCloudConfig(projectId);
     });
@@ -185,6 +191,7 @@ export class ProjectsService {
       ssoSaml: false,
       webhooks: false,
       integrations: false,
+      crmIntegrations: false,
       planType: PlanType.HOBBY,
     };
     const project = await this.prisma.project.findUnique({
@@ -251,6 +258,7 @@ export class ProjectsService {
       ssoSaml: features.ssoSaml,
       webhooks: features.webhooks,
       integrations: features.integrations,
+      crmIntegrations: features.crmIntegrations,
       planType,
     };
   }
@@ -299,6 +307,7 @@ export class ProjectsService {
       ssoSaml: features.ssoSaml,
       webhooks: features.webhooks,
       integrations: features.integrations,
+      crmIntegrations: features.crmIntegrations,
       planType,
     };
   }
@@ -318,6 +327,7 @@ export class ProjectsService {
       ssoSaml: false,
       webhooks: false,
       integrations: false,
+      crmIntegrations: false,
       planType: PlanType.HOBBY,
     };
 
@@ -350,6 +360,7 @@ export class ProjectsService {
       ssoSaml: features.ssoSaml,
       webhooks: features.webhooks,
       integrations: features.integrations,
+      crmIntegrations: features.crmIntegrations,
       planType: subscription.planType,
     };
   }

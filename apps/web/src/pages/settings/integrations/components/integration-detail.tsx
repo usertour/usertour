@@ -62,6 +62,7 @@ import { OutboundMessageDialog } from '../../components/outbound-message-dialog'
 import { OutboundMessageStatusBadge } from '../../components/outbound-message-status-badge';
 import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
+import { CrmConnectionSection } from './crm-connection-section';
 import { IntegrationStatusBadge } from './integration-status-badge';
 
 const MESSAGES_PAGE_SIZE = 20;
@@ -698,10 +699,13 @@ const MessagesSection = ({
   integrationId,
   enabled,
   entitled,
+  showTestEvent = true,
 }: {
   integrationId: string;
   enabled: boolean;
   entitled: boolean;
+  /** CRM rows (ADR 0013) have no analytics adapter to send a test event through. */
+  showTestEvent?: boolean;
 }) => {
   // Load-more accumulation, same wiring as the webhook message log.
   const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
@@ -791,19 +795,21 @@ const MessagesSection = ({
             >
               <RiRefreshLine className={cn('h-4 w-4', loading && 'animate-spin')} />
             </Button>
-            <Button
-              variant="outline"
-              disabled={isViewOnly || !enabled || !entitled || sendingTest}
-              title={enabled ? undefined : t('settings.integrations.testEvent.disabledHint')}
-              onClick={() => void handleSendTest()}
-            >
-              {sendingTest ? (
-                <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RiSendPlaneLine className="mr-2 h-4 w-4" />
-              )}
-              {t('settings.integrations.testEvent.button')}
-            </Button>
+            {showTestEvent && (
+              <Button
+                variant="outline"
+                disabled={isViewOnly || !enabled || !entitled || sendingTest}
+                title={enabled ? undefined : t('settings.integrations.testEvent.disabledHint')}
+                onClick={() => void handleSendTest()}
+              >
+                {sendingTest ? (
+                  <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RiSendPlaneLine className="mr-2 h-4 w-4" />
+                )}
+                {t('settings.integrations.testEvent.button')}
+              </Button>
+            )}
           </>
         }
       />
@@ -904,7 +910,10 @@ export const IntegrationDetail = () => {
   // Plan gate mirror (server enforces independently): reads and delete stay
   // open on a downgraded project; save / test are write-shaped. Optimistic
   // while settling — see the list page.
-  const rawEntitled = !projectConfig || projectConfig.integrations;
+  // CRM providers sit one tier up (ADR 0013 §10): their own flag, same settle rule.
+  const isCrm = entry?.kind === 'crm';
+  const rawEntitled =
+    !projectConfig || (isCrm ? projectConfig.crmIntegrations : projectConfig.integrations);
   const entitled =
     (loading && !integrations) || (configLoading && !projectConfig) ? true : rawEntitled;
 
@@ -919,6 +928,37 @@ export const IntegrationDetail = () => {
   }
   if (loading && !integrations) {
     return null;
+  }
+
+  if (isCrm) {
+    return (
+      <SettingsCardStack>
+        <SettingsCard>
+          {!entitled && (
+            <div className="mb-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              {t('settings.integrations.crm.downgradedBanner')}
+            </div>
+          )}
+          <CrmConnectionSection
+            entry={entry}
+            integration={integration}
+            environmentId={environment?.id ?? ''}
+            entitled={entitled}
+          />
+        </SettingsCard>
+
+        {integration && (
+          <SettingsCard>
+            <MessagesSection
+              integrationId={integration.id}
+              enabled={integration.enabled}
+              entitled={entitled}
+              showTestEvent={false}
+            />
+          </SettingsCard>
+        )}
+      </SettingsCardStack>
+    );
   }
 
   return (

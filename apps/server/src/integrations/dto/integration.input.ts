@@ -77,3 +77,16 @@ export class IntegrationIdInput {
   @IsString()
   id: string;
 }
+
+@InputType()
+export class StartCrmOAuthInput {
+  @Field(() => String)
+  @IsString()
+  environmentId: string;
+
+  /** Validated against CRM_INTEGRATION_PROVIDERS in the service. */
+  @Field(() => String)
+  @IsString()
+  @MaxLength(50)
+  provider: string;
+}

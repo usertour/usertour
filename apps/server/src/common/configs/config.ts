@@ -139,6 +139,16 @@ const config: Config = {
     awsAccessKeyId: process.env.AI_AWS_ACCESS_KEY_ID || '',
     awsSecretAccessKey: process.env.AI_AWS_SECRET_ACCESS_KEY || '',
   },
+  // CRM providers (ADR 0013). Usertour Cloud ships its own HubSpot app; a
+  // self-hosted instance registers its own and supplies the pair here. The
+  // callback must match a redirect URL registered on the app.
+  hubspot: {
+    clientId: process.env.HUBSPOT_CLIENT_ID || '',
+    clientSecret: process.env.HUBSPOT_CLIENT_SECRET || '',
+    callbackUrl:
+      process.env.HUBSPOT_CALLBACK_URL ||
+      `${(process.env.API_URL || '').replace(/\/+$/, '')}/integrations/hubspot/oauth/callback`,
+  },
   globalConfig: {
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',
     // Whether the server may make outbound requests to private / internal

@@ -1,5 +1,5 @@
 import { EventAttributes } from '@usertour/types';
-import type { IntegrationConfig, IntegrationProvider } from '@usertour/types';
+import type { AnalyticsIntegrationProvider, IntegrationConfig } from '@usertour/types';
 import {
   AMPLITUDE_API_ENDPOINT,
   AMPLITUDE_API_ENDPOINT_EU,
@@ -151,7 +151,8 @@ const segment: ProviderAdapter = (envelope, key, config) => {
   };
 };
 
-export const INTEGRATION_ADAPTERS: Record<IntegrationProvider, ProviderAdapter> = {
+/** Analytics destinations only — CRM providers (ADR 0013) deliver through the CRM sync module. */
+export const INTEGRATION_ADAPTERS: Record<AnalyticsIntegrationProvider, ProviderAdapter> = {
   amplitude,
   heap,
   mixpanel,
@@ -162,7 +163,7 @@ export const INTEGRATION_ADAPTERS: Record<IntegrationProvider, ProviderAdapter> 
 /** The adapter for a stored provider value, or null for an unknown one. */
 export const resolveAdapter = (provider: string): ProviderAdapter | null =>
   Object.prototype.hasOwnProperty.call(INTEGRATION_ADAPTERS, provider)
-    ? INTEGRATION_ADAPTERS[provider as IntegrationProvider]
+    ? INTEGRATION_ADAPTERS[provider as AnalyticsIntegrationProvider]
     : null;
 
 /** Build the provider request for one delivery — the processor's only entry. */

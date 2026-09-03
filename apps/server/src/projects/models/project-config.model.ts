@@ -29,6 +29,10 @@ export class ProjectConfigModel {
   @Field()
   integrations: boolean;
 
+  /** CRM sync (ADR 0013): cloud Growth+, self-hosted always on. */
+  @Field()
+  crmIntegrations: boolean;
+
   @Field()
   planType: string;
 }

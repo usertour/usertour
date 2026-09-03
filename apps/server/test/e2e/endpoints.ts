@@ -488,6 +488,20 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ d: { id: s.integrationId } }),
   },
   {
+    key: 'integration.startCrmOAuth',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:StartCrmOAuthInput!){startCrmOAuth(data:$d){__typename}}',
+    vars: (s) => ({ d: { environmentId: s.environmentId, provider: 'hubspot' } }),
+  },
+  {
+    key: 'integration.disconnectCrmIntegration',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:IntegrationIdInput!){disconnectCrmIntegration(data:$d){__typename}}',
+    vars: (s) => ({ d: { id: s.integrationId } }),
+  },
+  {
     key: 'integration.queryIntegrationSyncedSegments',
     tier: 'O',
     op: 'query',

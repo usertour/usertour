@@ -2,11 +2,13 @@ import { useCallback } from 'react';
 import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   DeleteIntegration,
+  DisconnectCrmIntegration,
   ListIntegrations,
   QueryIntegrationMessages,
   QueryIntegrationSyncedSegments,
   RotateIntegrationInboundToken,
   SendIntegrationTestEvent,
+  StartCrmOAuth,
   UpdateIntegrationInbound,
   UpsertIntegration,
 } from '@usertour/gql';
@@ -34,6 +36,12 @@ export interface Integration {
   inboundConfig: IntegrationInboundConfig;
   /** The receive URL (carries the token) — null until first inbound enable. */
   inboundUrl?: string | null;
+  /** CRM providers (ADR 0013): whether an OAuth grant is stored. */
+  connected: boolean;
+  /** CRM providers: the connected provider account id (HubSpot hub id). */
+  remoteAccountId?: string | null;
+  /** CRM providers: display label for the connected account (HubSpot hub domain). */
+  remoteAccountLabel?: string | null;
 }
 
 export interface IntegrationInboundConfig {
@@ -201,6 +209,31 @@ export const useSendIntegrationTestEventMutation = () => {
     async (id: string): Promise<boolean> => {
       const response = await mutation({ variables: { data: { id } } });
       return !!response.data?.sendIntegrationTestEvent;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useStartCrmOAuthMutation = () => {
+  // Returns the provider authorize URL; the caller navigates the browser there.
+  const [mutation, { loading, error }] = useMutation(StartCrmOAuth);
+  const invoke = useCallback(
+    async (input: { environmentId: string; provider: string }): Promise<string | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (response.data?.startCrmOAuth as { url: string } | undefined)?.url ?? null;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useDisconnectCrmIntegrationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DisconnectCrmIntegration);
+  const invoke = useCallback(
+    async (id: string): Promise<Integration | null> => {
+      const response = await mutation({ variables: { data: { id } } });
+      return (response.data?.disconnectCrmIntegration as Integration | undefined) ?? null;
     },
     [mutation],
   );

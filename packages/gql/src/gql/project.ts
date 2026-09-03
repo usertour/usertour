@@ -21,6 +21,7 @@ export const getProjectConfig = gql`
       ssoSaml
       webhooks
       integrations
+      crmIntegrations
       planType
     }
   }

@@ -7,23 +7,58 @@ import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { UserEntity } from '@/common/decorators/user.decorator';
+import { User } from '@/users/models/user.model';
 import {
   IntegrationIdInput,
   QueryIntegrationsInput,
+  StartCrmOAuthInput,
   UpdateIntegrationInboundInput,
   UpsertIntegrationInput,
 } from './dto/integration.input';
 import {
+  CrmOAuthStart,
   Integration,
   IntegrationMessageConnection,
   IntegrationSyncedSegment,
 } from './models/integration.model';
+import { CrmConnectionService } from './crm/crm-connection.service';
 import { IntegrationsService } from './integrations.service';
 
 @Resolver(() => Integration)
 @UseGuards(PermissionGuard)
 export class IntegrationsResolver {
-  constructor(private service: IntegrationsService) {}
+  constructor(
+    private service: IntegrationsService,
+    private connections: CrmConnectionService,
+  ) {}
+
+  // ---------------------------------------------------------------------------
+  // CRM connections (ADR 0013)
+  // ---------------------------------------------------------------------------
+
+  /** Mint the provider authorize URL; the browser navigates there and returns via the callback. */
+  @Mutation(() => CrmOAuthStart)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  async startCrmOAuth(@Args('data') data: StartCrmOAuthInput, @UserEntity() user: User) {
+    return await this.connections.startOAuth({ ...data, userId: user.id });
+  }
+
+  @Mutation(() => Integration)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
+  })
+  async disconnectCrmIntegration(
+    @Args('data') { id }: IntegrationIdInput,
+    @Context() context: { req?: Request },
+  ) {
+    await this.connections.disconnect(id);
+    return await this.service.getById(id, context.req);
+  }
 
   @Query(() => [Integration])
   @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })

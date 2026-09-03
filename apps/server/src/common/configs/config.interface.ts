@@ -109,6 +109,11 @@ export interface Config {
     awsAccessKeyId: string;
     awsSecretAccessKey: string;
   };
+  hubspot: {
+    clientId: string;
+    clientSecret: string;
+    callbackUrl: string;
+  };
   globalConfig: {
     isSelfHostedMode: boolean;
     allowPrivateNetworkEgress: boolean;

@@ -1,6 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from '@/auth/auth.module';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { BizModule } from '@/biz/biz.module';
 import { QUEUE_INTEGRATION_DELIVERY, QUEUE_INTEGRATION_RECONCILE } from '@/common/consts/queen';
@@ -8,6 +9,8 @@ import { OutboundModule } from '@/outbound/outbound.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { CohortSyncService } from './cohort-sync.service';
+import { CrmConnectionService } from './crm/crm-connection.service';
+import { HubspotOAuthController } from './crm/hubspot-oauth.controller';
 import { InboundController } from './inbound.controller';
 import { IntegrationsListener } from './integrations.listener';
 import { IntegrationsProcessor } from './integrations.processor';
@@ -31,10 +34,13 @@ import { IntegrationsService } from './integrations.service';
     SharedModule,
     ConfigModule,
     BizModule,
+    // JwtModule (signed OAuth state for CRM connections, ADR 0013 §2).
+    AuthModule,
   ],
-  controllers: [InboundController],
+  controllers: [InboundController, HubspotOAuthController],
   providers: [
     CohortSyncService,
+    CrmConnectionService,
     IntegrationsService,
     IntegrationsResolver,
     IntegrationsListener,
@@ -42,6 +48,6 @@ import { IntegrationsService } from './integrations.service';
     IntegrationsReconcileProcessor,
     PermissionGuard,
   ],
-  exports: [IntegrationsService],
+  exports: [IntegrationsService, CrmConnectionService],
 })
 export class IntegrationsModule {}

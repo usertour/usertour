@@ -1,0 +1,39 @@
+{
+  "uid": "usertour_app",
+  "type": "app",
+  "config": {
+    "description": "Usertour is a user onboarding platform for building product tours, checklists, surveys, and announcements inside your app.",
+    "name": "Usertour",
+    "distribution": "marketplace",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": [
+        "https://api.usertour.io/integrations/hubspot/oauth/callback",
+        "https://local-3000.usertour.io/integrations/hubspot/oauth/callback"
+      ],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.schemas.contacts.read",
+        "crm.schemas.contacts.write",
+        "crm.schemas.companies.read",
+        "crm.schemas.companies.write"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": ["https://api.hubapi.com"],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "biz@usertour.io",
+      "documentationUrl": "https://docs.usertour.io/integrations/hubspot",
+      "supportUrl": "https://www.usertour.io"
+    }
+  }
+}

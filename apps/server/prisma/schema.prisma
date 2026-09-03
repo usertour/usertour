@@ -666,7 +666,11 @@ model Attribute {
   description      String             @default("")
   dataType         Int                @default(1)
   randomMax        Int                @default(1)
+  /// 'internal' or a provider id: a provider-owned attribute is synced INTO
+  /// Usertour (ADR 0013 §6) — rendered with the provider badge, refused on
+  /// SDK/API writes. `sourceId` is the provider-side field name.
   source           String             @default("internal")
+  sourceId         String?
   predefined       Boolean            @default(false)
   deleted          Boolean            @default(false)
   attributeOnEvent AttributeOnEvent[]
@@ -1042,6 +1046,16 @@ model Integration {
   inboundTokenHash String? @unique
   /// { userIdProperty?: string } — optional identity-bridge override.
   inboundConfig    Json    @default("{}") @db.JsonB
+
+  /// CRM connection (ADR 0013 §3). OAuth grant for the provider account,
+  /// AES-256-GCM encrypted JSON { accessToken, refreshToken, expiresAt }; the
+  /// `key` column stays empty for these rows. `remoteAccountId` is the
+  /// provider's account id (HubSpot hub id) — change journals and lookups key
+  /// on it. `remoteState` is system-owned bookkeeping (created remote
+  /// properties, subscription ids, event type names), never user-edited.
+  oauthCredentials String?
+  remoteAccountId  String?
+  remoteState      Json    @default("{}") @db.JsonB
 
   messages       OutboundMessage[]
   syncedSegments IntegrationSyncedSegment[]
