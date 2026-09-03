@@ -8,6 +8,7 @@ import {
   ListIntegrationObjectMappings,
   ListIntegrations,
   QueryIntegrationMessages,
+  RunIntegrationObjectMappingSync,
   QueryIntegrationSyncedSegments,
   RotateIntegrationInboundToken,
   SendIntegrationTestEvent,
@@ -360,6 +361,24 @@ export const useDeleteIntegrationObjectMappingMutation = () => {
     async (input: { integrationId: string; id: string }): Promise<boolean> => {
       const response = await mutation({ variables: { data: input } });
       return !!response.data?.deleteIntegrationObjectMapping;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useRunIntegrationObjectMappingSyncMutation = () => {
+  const [mutation, { loading, error }] = useMutation(RunIntegrationObjectMappingSync);
+  const invoke = useCallback(
+    async (input: {
+      integrationId: string;
+      id: string;
+    }): Promise<IntegrationObjectMapping | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (
+        (response.data?.runIntegrationObjectMappingSync as IntegrationObjectMapping | undefined) ??
+        null
+      );
     },
     [mutation],
   );

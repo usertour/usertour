@@ -1611,6 +1611,10 @@ const translations = {
           neverSynced: '尚未同步',
           propertiesLoadFailed: '无法加载 {{name}} 属性',
           readOnlySuffix: '(只读)',
+          syncNow: '立即同步',
+          syncQueued: '全量同步已开始,账号较大时需要几分钟。',
+          syncInProgress: '同步进行中',
+          syncFailed: '启动同步失败',
         },
         downgradedBanner:
           '当前套餐不包含 CRM 集成 — 同步已暂停。你仍可以查看和断开连接;升级套餐即可恢复。',

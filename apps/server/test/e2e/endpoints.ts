@@ -541,6 +541,13 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ d: { integrationId: s.integrationId, id: 'missing' } }),
   },
   {
+    key: 'integration.runIntegrationObjectMappingSync',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:IntegrationObjectMappingIdInput!){runIntegrationObjectMappingSync(data:$d){__typename}}',
+    vars: (s) => ({ d: { integrationId: s.integrationId, id: 'missing' } }),
+  },
+  {
     key: 'integration.queryIntegrationSyncedSegments',
     tier: 'O',
     op: 'query',

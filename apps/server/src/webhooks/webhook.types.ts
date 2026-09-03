@@ -59,6 +59,12 @@ export interface EntityChange {
 export interface BizEntityChangedPayload {
   environmentId: string;
   changes: EntityChange[];
+  /**
+   * Who wrote: absent for SDK/API/dashboard writes; a CRM provider id when the
+   * change was applied by that provider's inbound sync (ADR 0013 §9 — the
+   * outbound write-back listener must not echo it).
+   */
+  origin?: string;
 }
 
 /** Job payload for one webhook delivery (one message to one endpoint). */

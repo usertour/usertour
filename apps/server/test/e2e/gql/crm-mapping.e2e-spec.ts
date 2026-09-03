@@ -132,6 +132,8 @@ describe('GraphQL CRM object mappings (e2e)', () => {
 
   beforeEach(() => {
     jest.spyOn(hubspotCrmApi, 'listHubspotProperties').mockResolvedValue(REMOTE_CONTACT_PROPERTIES);
+    // Saving a mapping starts a full-sync round in the background; keep it off the wire.
+    jest.spyOn(hubspotCrmApi, 'listHubspotObjectsPage').mockResolvedValue({ results: [] });
   });
 
   afterEach(async () => {

@@ -1691,6 +1691,10 @@ const translations = {
           neverSynced: 'Not synced yet',
           propertiesLoadFailed: 'Could not load {{name}} properties',
           readOnlySuffix: '(read-only)',
+          syncNow: 'Sync now',
+          syncQueued: 'Full sync started — this can take a few minutes for large accounts.',
+          syncInProgress: 'Sync in progress',
+          syncFailed: 'Failed to start the sync',
         },
         downgradedBanner:
           'CRM integrations are not included in your current plan — syncing is paused. You can still review and disconnect; upgrade to resume.',

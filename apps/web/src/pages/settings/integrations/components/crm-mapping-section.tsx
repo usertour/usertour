@@ -8,9 +8,11 @@ import {
   useListAttributesQuery,
   useListCrmRemotePropertiesQuery,
   useListIntegrationObjectMappingsQuery,
+  useRunIntegrationObjectMappingSyncMutation,
   useUpsertIntegrationObjectMappingMutation,
 } from '@usertour/hooks';
 import {
+  Badge,
   Button,
   ComboboxSelect,
   DestructiveConfirmDialog,
@@ -74,6 +76,8 @@ export const CrmMappingSection = (props: CrmMappingSectionProps) => {
   });
   const { invoke: saveMapping, loading: saving } = useUpsertIntegrationObjectMappingMutation();
   const { invoke: removeMapping, loading: removing } = useDeleteIntegrationObjectMappingMutation();
+  const { invoke: runSync, loading: syncStarting } = useRunIntegrationObjectMappingSyncMutation();
+  const syncInProgress = !!mapping?.fullSyncStartedAt;
 
   // Companies have no email: the id-property rule is the only one.
   const fixedStrategy: CrmMatchStrategy | null = remoteObject === 'company' ? 'remoteField' : null;
@@ -148,6 +152,23 @@ export const CrmMappingSection = (props: CrmMappingSectionProps) => {
     }
   };
 
+  const handleSyncNow = async () => {
+    if (!mapping) {
+      return;
+    }
+    try {
+      const started = await runSync({ integrationId: integration.id, id: mapping.id });
+      toast({
+        variant: started ? 'success' : 'destructive',
+        title: started
+          ? t('settings.integrations.crm.mapping.syncQueued')
+          : t('settings.integrations.crm.mapping.syncFailed'),
+      });
+    } catch (error) {
+      toast({ variant: 'destructive', title: getErrorMessage(error) });
+    }
+  };
+
   const handleRemove = async () => {
     if (!mapping) {
       return;
@@ -171,11 +192,18 @@ export const CrmMappingSection = (props: CrmMappingSectionProps) => {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-xl font-medium tracking-tight">
-          {remoteObject === 'contact'
-            ? t('settings.integrations.crm.mapping.contactsTitle')
-            : t('settings.integrations.crm.mapping.companiesTitle')}
-        </h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-medium tracking-tight">
+            {remoteObject === 'contact'
+              ? t('settings.integrations.crm.mapping.contactsTitle')
+              : t('settings.integrations.crm.mapping.companiesTitle')}
+          </h3>
+          {syncInProgress && (
+            <Badge variant="secondary">
+              {t('settings.integrations.crm.mapping.syncInProgress')}
+            </Badge>
+          )}
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {t('settings.integrations.crm.mapping.description', { name })}
         </p>
@@ -287,15 +315,26 @@ export const CrmMappingSection = (props: CrmMappingSectionProps) => {
           {t('settings.integrations.crm.mapping.save')}
         </LoadingButton>
         {mapping && (
-          <Button
-            type="button"
-            variant="ghost"
-            className="text-muted-foreground hover:text-destructive"
-            disabled={!canWrite || removing}
-            onClick={() => setRemoveOpen(true)}
-          >
-            {t('settings.integrations.crm.mapping.remove')}
-          </Button>
+          <>
+            <LoadingButton
+              type="button"
+              variant="outline"
+              loading={syncStarting}
+              disabled={!canWrite || syncInProgress}
+              onClick={() => void handleSyncNow()}
+            >
+              {t('settings.integrations.crm.mapping.syncNow')}
+            </LoadingButton>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-muted-foreground hover:text-destructive"
+              disabled={!canWrite || removing}
+              onClick={() => setRemoveOpen(true)}
+            >
+              {t('settings.integrations.crm.mapping.remove')}
+            </Button>
+          </>
         )}
       </div>
 

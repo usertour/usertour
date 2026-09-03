@@ -24,6 +24,7 @@ import {
 } from './models/integration.model';
 import { CrmConnectionService } from './crm/crm-connection.service';
 import { CrmMappingService } from './crm/crm-mapping.service';
+import { CrmSyncService } from './crm/crm-sync.service';
 import {
   IntegrationObjectMappingIdInput,
   ListCrmRemotePropertiesArgs,
@@ -39,6 +40,7 @@ export class IntegrationsResolver {
     private service: IntegrationsService,
     private connections: CrmConnectionService,
     private mappings: CrmMappingService,
+    private crmSync: CrmSyncService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -80,6 +82,16 @@ export class IntegrationsResolver {
   })
   async deleteIntegrationObjectMapping(@Args('data') data: IntegrationObjectMappingIdInput) {
     return await this.mappings.deleteMapping(data);
+  }
+
+  /** "Sync now": claim a full-sync round for the mapping (refused while one is running). */
+  @Mutation(() => IntegrationObjectMapping)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  async runIntegrationObjectMappingSync(@Args('data') data: IntegrationObjectMappingIdInput) {
+    return await this.crmSync.startFullSync(data.id, {
+      manual: true,
+      integrationId: data.integrationId,
+    });
   }
 
   // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import type { Attribute, Integration, IntegrationObjectMapping, Prisma } from '@prisma/client';
 import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
@@ -13,6 +13,7 @@ import { codeName as codeNameSchema } from '@/api/shared/codename';
 import { ValidationError } from '@/common/errors/errors';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { CrmConnectionService } from './crm-connection.service';
+import { CrmSyncService } from './crm-sync.service';
 import {
   attributeBizTypeFor,
   hubspotObjectTypeFor,
@@ -59,10 +60,13 @@ type IntegrationWithProject = Integration & { environment: { projectId: string }
  */
 @Injectable()
 export class CrmMappingService {
+  private readonly logger = new Logger(CrmMappingService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly connections: CrmConnectionService,
     private readonly cache: ProjectCacheService,
+    private readonly sync: CrmSyncService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -192,6 +196,15 @@ export class CrmMappingService {
           });
     });
     await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
+    // A changed field list needs a backfill; a full round is the backfill.
+    // Best-effort: a queue hiccup must not fail the save.
+    try {
+      await this.sync.startFullSync(row.id, { manual: false });
+    } catch (error) {
+      this.logger.warn(
+        `Could not start the full sync after saving mapping ${row.id}: ${(error as Error).message}`,
+      );
+    }
     return row;
   }
 

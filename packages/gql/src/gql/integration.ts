@@ -224,3 +224,11 @@ export const DeleteIntegrationObjectMapping = gql`
     deleteIntegrationObjectMapping(data: $data)
   }
 `;
+
+// Manual full sync (ADR 0013 §7): returns the mapping with its round state so
+// the card can show "in progress" without a refetch.
+export const RunIntegrationObjectMappingSync = gql`
+  mutation RunIntegrationObjectMappingSync($data: IntegrationObjectMappingIdInput!) {
+    runIntegrationObjectMappingSync(data: $data) { ${MAPPING_FIELDS} }
+  }
+`;

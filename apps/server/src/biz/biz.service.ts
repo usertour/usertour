@@ -136,7 +136,11 @@ export class BizService {
    * every collected change is committed or the operation threw (which
    * propagates before the emit).
    */
-  async withEntityChangeEmit<T>(environmentId: string, operation: () => Promise<T>): Promise<T> {
+  async withEntityChangeEmit<T>(
+    environmentId: string,
+    operation: () => Promise<T>,
+    origin?: string,
+  ): Promise<T> {
     // Nesting is a programming error, not a supported composition: an inner
     // scope of its own would emit while the outer transaction is still
     // uncommitted ("premature"), and silently joining the outer scope would
@@ -151,7 +155,11 @@ export class BizService {
     const result = await this.entityChanges.run(changes, operation);
 
     if (changes.length > 0) {
-      const payload: BizEntityChangedPayload = { environmentId, changes };
+      const payload: BizEntityChangedPayload = {
+        environmentId,
+        changes,
+        ...(origin ? { origin } : {}),
+      };
       this.eventEmitter.emit(BIZ_ENTITY_CHANGED, payload);
     }
 
@@ -854,6 +862,7 @@ export class BizService {
     externalUserId: string,
     attributes: Record<string, any>,
     environmentId: string,
+    options?: { origin?: string },
   ): Promise<BizUser | null> {
     const environmenet = await tx.environment.findFirst({
       where: { id: environmentId },
@@ -867,6 +876,7 @@ export class BizService {
       projectId,
       AttributeBizType.USER,
       attributes,
+      options?.origin,
     );
 
     const user = await tx.bizUser.findFirst({
@@ -967,6 +977,7 @@ export class BizService {
     environmentId: string,
     externalCompanyId: string,
     attributes: Record<string, any>,
+    options?: { origin?: string },
   ): Promise<BizCompany | null> {
     const company = await tx.bizCompany.findFirst({
       where: { externalId: String(externalCompanyId), environmentId },
@@ -977,6 +988,7 @@ export class BizService {
       projectId,
       AttributeBizType.COMPANY,
       attributes,
+      options?.origin,
     );
 
     if (company) {
@@ -1079,12 +1091,13 @@ export class BizService {
     projectId: string,
     bizType: AttributeBizType,
     attributes: Record<string, any>,
+    origin?: string,
   ): Promise<Record<string, any>> {
     const { outputData, createdNewAttribute } = await this.resolveAttributes(
       tx,
       projectId,
       bizType,
-      attributes,
+      await this.withoutForeignOwnedAttributes(tx, projectId, bizType, attributes, origin),
     );
     if (createdNewAttribute) {
       await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
@@ -1122,6 +1135,43 @@ export class BizService {
       await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
     return outputData;
+  }
+
+  /**
+   * Provider-owned attributes (ADR 0013 §6) accept writes only from their
+   * provider's own sync: an SDK/API write to one is dropped and logged, so a
+   * stale client value can never overwrite the CRM's. `origin` is the
+   * provider id of the writer (absent for SDK/API/dashboard writes).
+   */
+  private async withoutForeignOwnedAttributes(
+    tx: Prisma.TransactionClient,
+    projectId: string,
+    bizType: AttributeBizType,
+    attributes: Record<string, any>,
+    origin: string | undefined,
+  ): Promise<Record<string, any>> {
+    const codeNames = Object.keys(attributes);
+    if (codeNames.length === 0) {
+      return attributes;
+    }
+    const owned = await tx.attribute.findMany({
+      where: { projectId, bizType, codeName: { in: codeNames }, source: { not: 'internal' } },
+      select: { codeName: true, source: true },
+    });
+    const foreign = owned.filter((attr) => attr.source !== origin);
+    if (foreign.length === 0) {
+      return attributes;
+    }
+    const result = { ...attributes };
+    for (const attr of foreign) {
+      delete result[attr.codeName];
+      this.logger.warn(
+        `Dropped write to "${attr.codeName}": the attribute is owned by ${attr.source} (writer: ${
+          origin ?? 'sdk/api'
+        }).`,
+      );
+    }
+    return result;
   }
 
   /**
@@ -1213,6 +1263,16 @@ export class BizService {
     const defined = await this.prisma.attribute.findMany({
       where: { projectId: env.projectId, bizType, codeName: { in: codeNames } },
     });
+    const owned = defined.filter((attr) => attr.source !== 'internal');
+    if (owned.length > 0) {
+      throw new ValidationError(
+        `Attribute${owned.length > 1 ? 's' : ''} ${owned
+          .map((attr) => `"${attr.codeName}" (owned by ${attr.source})`)
+          .join(
+            ', ',
+          )} ${owned.length > 1 ? 'are' : 'is'} synced from an integration and cannot be written through the API.`,
+      );
+    }
     const failures: string[] = [];
     for (const attr of defined) {
       if (!this.validateAttrValue(attr, attributes[attr.codeName]).ok) {
