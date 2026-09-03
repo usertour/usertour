@@ -1,3 +1,12 @@
+## 1.1.4
+
+Publishing review follow-ups: HTTPS-only server URLs and paired find-or-create steps.
+
+1. Update authentication: the server URL must use https://; plain http:// URLs are rejected with a clear message.
+2. New search-or-create! search/find_user paired with create/upsert_user.
+3. New search-or-create! search/find_company paired with create/upsert_company.
+4. Update trigger/user_created: description no longer mentions the integration name.
+
 ## 1.1.3
 
 Attribute values now follow each attribute's declared type, and self-hosted instances behind a path prefix paginate correctly.

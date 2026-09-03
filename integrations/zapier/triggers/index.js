@@ -48,7 +48,7 @@ const userCreated = hookTrigger({
   key: 'user_created',
   noun: 'User',
   label: 'User Created',
-  description: 'Triggers when a user is seen by Usertour for the first time.',
+  description: 'Triggers when a user is seen for the first time.',
   topic: 'user.created',
   sample: samples.userCreated,
 });
