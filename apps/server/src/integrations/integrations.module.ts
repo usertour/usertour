@@ -16,6 +16,7 @@ import { SharedModule } from '@/shared/shared.module';
 import { CohortSyncService } from './cohort-sync.service';
 import { CrmConnectionService } from './crm/crm-connection.service';
 import { CrmMappingService } from './crm/crm-mapping.service';
+import { CrmSyncListener } from './crm/crm-sync.listener';
 import { CrmSyncProcessor } from './crm/crm-sync.processor';
 import { CrmSyncScheduler } from './crm/crm-sync.scheduler';
 import { CrmSyncService } from './crm/crm-sync.service';
@@ -56,6 +57,7 @@ import { IntegrationsService } from './integrations.service';
     CrmSyncService,
     CrmSyncProcessor,
     CrmSyncScheduler,
+    CrmSyncListener,
     IntegrationsService,
     IntegrationsResolver,
     IntegrationsListener,

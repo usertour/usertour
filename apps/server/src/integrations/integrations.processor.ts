@@ -9,6 +9,11 @@ import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
+import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
+import { CrmGrantRevokedError } from './crm/crm-connection.service';
+import { CrmDeliverySkippedError, CrmSyncService } from './crm/crm-sync.service';
+import { HubspotRateLimitError } from './crm/hubspot-crm-api';
+import type { CrmMessageEnvelope, IntegrationMessageEnvelope } from './integrations.types';
 import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import {
@@ -62,6 +67,7 @@ export class IntegrationsProcessor extends WorkerHost {
     private readonly emailService: EmailService,
     private readonly audit: AuditService,
     private readonly encryption: EncryptionService,
+    private readonly crmSync: CrmSyncService,
   ) {
     super();
   }
@@ -105,6 +111,18 @@ export class IntegrationsProcessor extends WorkerHost {
       throw new DelayedError();
     }
 
+    if (
+      CRM_INTEGRATION_PROVIDERS.includes(
+        integration.provider as (typeof CRM_INTEGRATION_PROVIDERS)[number],
+      )
+    ) {
+      // CRM rows (ADR 0013): no static key, no wire adapter — the write-back
+      // resolves its OAuth token and target at delivery time. Ledger and
+      // breaker bookkeeping are shared with the analytics path below.
+      await this.deliverCrm(job, integration, attempt);
+      return;
+    }
+
     // The key is AES-256-GCM encrypted at rest; this processor decrypts on
     // its own read (the domain service is the plaintext boundary for every
     // other consumer). decrypt returns NULL on failure (wrong
@@ -125,7 +143,7 @@ export class IntegrationsProcessor extends WorkerHost {
 
     const request = buildProviderRequest(
       integration.provider,
-      payload,
+      payload as IntegrationMessageEnvelope,
       key,
       (integration.config ?? {}) as IntegrationConfig,
     );
@@ -191,6 +209,63 @@ export class IntegrationsProcessor extends WorkerHost {
         }
       }
       // Rethrow so BullMQ retries with backoff.
+      throw error;
+    }
+  }
+
+  private async deliverCrm(
+    job: Job<IntegrationDeliveryJobData>,
+    integration: { id: string; key: string },
+    attempt: number,
+  ): Promise<void> {
+    const { messageId, payload } = job.data;
+    const startedAt = Date.now();
+    const final = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
+    try {
+      const result = await this.crmSync.deliverWriteBack(payload as CrmMessageEnvelope);
+      await this.ledger.recordAttempt(messageId, {
+        attempt,
+        success: true,
+        responseStatus: result.status,
+        responseBody: asText(result.body),
+        durationMs: Date.now() - startedAt,
+        final,
+      });
+      await this.resetBreaker(integration.id, integration.key);
+    } catch (error) {
+      if (error instanceof CrmDeliverySkippedError) {
+        // Nothing left to deliver to: settle without touching the breaker.
+        await this.ledger.recordAttempt(messageId, {
+          attempt,
+          success: false,
+          error: error.message,
+          durationMs: Date.now() - startedAt,
+          final: true,
+        });
+        return;
+      }
+      const failure = error as { message?: string; response?: { status?: number; data?: unknown } };
+      await this.ledger.recordAttempt(messageId, {
+        attempt,
+        success: false,
+        responseStatus:
+          error instanceof HubspotRateLimitError
+            ? error.status
+            : (failure.response?.status ?? null),
+        responseBody: asText(failure.response?.data),
+        error: String(failure.message ?? error),
+        durationMs: Date.now() - startedAt,
+        final,
+      });
+      // A revoked grant fails every future attempt too; let the breaker disable
+      // the integration and notify — that is the reconnect prompt.
+      await this.recordFailedAttempt(integration.id, integration.key);
+      if (error instanceof HubspotRateLimitError) {
+        (error as unknown as RetryAfterCarrier).retryAfterMs = error.retryAfterMs;
+      }
+      if (error instanceof CrmGrantRevokedError) {
+        this.logger.warn(`CRM write-back ${messageId}: ${error.message}`);
+      }
       throw error;
     }
   }

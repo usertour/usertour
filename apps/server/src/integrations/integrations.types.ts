@@ -52,12 +52,37 @@ export type ProviderAdapter = (
   config: IntegrationConfig,
 ) => ProviderRequest;
 
+/** Topic of a CRM write-back message (ADR 0013 §7). */
+export const CRM_OBJECT_UPDATE_TOPIC = 'crm.object.update';
+
+/**
+ * The ledger envelope for a CRM write-back: the provider property values as
+ * computed when the change happened. Retries deliver exactly this payload;
+ * the record and mapping are re-resolved at delivery time.
+ */
+export interface CrmMessageEnvelope {
+  id: string;
+  object: 'integrationMessage';
+  type: typeof CRM_OBJECT_UPDATE_TOPIC;
+  createdAt: string;
+  environmentId: string;
+  data: {
+    mappingId: string;
+    localObject: string;
+    localId: string;
+    remoteObject: string;
+    remoteId: string;
+    /** Provider property name → serialized value ('' clears). */
+    fields: Record<string, string>;
+  };
+}
+
 /** Job payload for one integration delivery (one message to one provider). */
 export interface IntegrationDeliveryJobData {
   integrationId: string;
   messageId: string;
   topic: string;
-  payload: IntegrationMessageEnvelope;
+  payload: IntegrationMessageEnvelope | CrmMessageEnvelope;
   /**
    * Attempts already logged for this message before this job (a reconcile
    * continuation resumes the numbering). Absent = 0.

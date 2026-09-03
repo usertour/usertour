@@ -219,3 +219,40 @@ export const searchHubspotObjectsByProperty = async (
   });
   return data.results;
 };
+
+/**
+ * Update one record; returns the HTTP outcome for the delivery ledger. Rate
+ * limits surface as HubspotRateLimitError like every other call here.
+ */
+export const updateHubspotObject = async (
+  accessToken: string,
+  objectType: HubspotObjectType,
+  id: string,
+  properties: Record<string, string | null>,
+): Promise<{ status: number; body: string }> => {
+  try {
+    const response = await axios.request<unknown>({
+      baseURL: HUBSPOT_API_BASE,
+      timeout: DATA_TIMEOUT_MS,
+      method: 'PATCH',
+      url: `/crm/v3/objects/${objectType}/${encodeURIComponent(id)}`,
+      data: { properties },
+      headers: { Authorization: `Bearer ${accessToken}` },
+      responseType: 'text',
+      transformResponse: [(data) => data],
+    });
+    return { status: response.status, body: String(response.data ?? '') };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const { status } = error.response;
+      if (status === 429 || status === 502 || status === 503) {
+        const header = Number(error.response.headers?.['retry-after']);
+        throw new HubspotRateLimitError(
+          status,
+          Number.isFinite(header) && header > 0 ? header * 1000 : 10_000,
+        );
+      }
+    }
+    throw error;
+  }
+};

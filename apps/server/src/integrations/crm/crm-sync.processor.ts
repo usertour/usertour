@@ -3,7 +3,12 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { QUEUE_CRM_SYNC } from '@/common/consts/queen';
 import { deliveryBackoffStrategy, type RetryAfterCarrier } from '@/outbound/delivery-backoff';
-import { CrmSyncPageJobData, CrmSyncService } from './crm-sync.service';
+import {
+  CRM_SYNC_BACKFILL_JOB,
+  type CrmBackfillJobData,
+  type CrmSyncPageJobData,
+  CrmSyncService,
+} from './crm-sync.service';
 import { HubspotRateLimitError } from './hubspot-crm-api';
 
 /**
@@ -23,9 +28,13 @@ export class CrmSyncProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<CrmSyncPageJobData>): Promise<void> {
+  async process(job: Job<CrmSyncPageJobData | CrmBackfillJobData>): Promise<void> {
     try {
-      await this.sync.processPage(job.data);
+      if (job.name === CRM_SYNC_BACKFILL_JOB) {
+        await this.sync.backfillRecord(job.data as CrmBackfillJobData);
+      } else {
+        await this.sync.processPage(job.data as CrmSyncPageJobData);
+      }
     } catch (error) {
       if (error instanceof HubspotRateLimitError) {
         (error as unknown as RetryAfterCarrier).retryAfterMs = error.retryAfterMs;
@@ -35,18 +44,21 @@ export class CrmSyncProcessor extends WorkerHost {
   }
 
   @OnWorkerEvent('failed')
-  async onFailed(job: Job<CrmSyncPageJobData> | undefined, error: Error): Promise<void> {
+  async onFailed(
+    job: Job<CrmSyncPageJobData | CrmBackfillJobData> | undefined,
+    error: Error,
+  ): Promise<void> {
     if (!job) {
       return;
     }
     const exhausted = job.attemptsMade >= (job.opts.attempts ?? 1);
     this.logger.warn(
-      `CRM sync page failed (mapping ${job.data.mappingId}, page ${job.data.page}, attempt ${job.attemptsMade}${
+      `CRM sync ${job.name} failed (mapping ${job.data.mappingId}, attempt ${job.attemptsMade}${
         exhausted ? ', giving up' : ''
       }): ${error.message}`,
     );
-    if (exhausted) {
-      await this.sync.abandonRound(job.data);
+    if (exhausted && job.name !== CRM_SYNC_BACKFILL_JOB) {
+      await this.sync.abandonRound(job.data as CrmSyncPageJobData);
     }
   }
 }
