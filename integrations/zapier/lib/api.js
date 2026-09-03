@@ -10,11 +10,19 @@
  * Normalized API origin from auth data: trims whitespace, strips trailing
  * slashes (self-hosted users paste those constantly, and `//v2/...` 404s on
  * both express and the bundled nginx), and defaults a missing scheme to
- * https.
+ * https. Plain http is refused rather than silently upgraded: Zapier reaches
+ * a self-hosted instance over the public internet with a bearer token, so
+ * the connection must be TLS end to end, and an upgraded URL that then fails
+ * to connect would be harder to diagnose than a clear message.
  */
 const apiBase = (bundle) => {
   let url = (bundle.authData.serverUrl || '').trim().replace(/\/+$/, '');
-  if (!/^https?:\/\//i.test(url)) {
+  if (/^http:\/\//i.test(url)) {
+    throw new Error(
+      'Server URL must start with https:// — Zapier only connects to your instance over HTTPS.',
+    );
+  }
+  if (!/^https:\/\//i.test(url)) {
     url = `https://${url}`;
   }
   return url;
@@ -32,7 +40,9 @@ const environmentUrl = (bundle, path) =>
  * re-attached: plain concatenation keeps it, `new URL(link, base)` drops it.
  */
 const absoluteUrl = (bundle, link) =>
-  /^https?:\/\//i.test(link) ? link : `${apiBase(bundle)}${link}`;
+  /^https?:\/\//i.test(link)
+    ? link.replace(/^http:\/\//i, 'https://')
+    : `${apiBase(bundle)}${link}`;
 
 /**
  * Walk a cursor-paginated v2 collection to the end (capped so a runaway

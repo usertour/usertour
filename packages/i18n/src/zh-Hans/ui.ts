@@ -1422,12 +1422,13 @@ const translations = {
       locked: {
         title: '集成为付费套餐功能',
         description:
-          '将每一条 Usertour 事件实时发送到 Amplitude、Heap、Mixpanel、PostHog 或 Segment — Starter 及以上套餐可用。',
+          '将每一条 Usertour 事件实时发送到 Amplitude、Heap、Mixpanel、PostHog 或 Segment,并在 Zapier 中触发 Zap — Starter 及以上套餐可用。',
         upgrade: '升级套餐',
       },
       catalog: {
         manage: '管理',
         connect: '连接',
+        setUp: '设置',
         logoAlt: '{{name}} 标志',
         descriptions: {
           amplitude: '将 Usertour 事件发送到 Amplitude,并把 Amplitude cohort 同步到 Usertour。',
@@ -1435,12 +1436,24 @@ const translations = {
           mixpanel: '将 Usertour 事件发送到 Mixpanel,并把 Mixpanel cohort 同步到 Usertour。',
           posthog: '将 Usertour 事件发送到 PostHog。',
           segment: '将 Usertour 事件发送到 Segment。',
+          zapier: '用 Usertour 事件触发 Zap,并从数千款应用创建或更新用户、公司和事件。',
         },
       },
       status: {
         enabled: '已启用',
         disabled: '已停用',
         notConnected: '未连接',
+      },
+      zapier: {
+        open: '打开 Zapier',
+        intro: '这里无需配置 — 你在 Zapier 侧用 Usertour API token 连接。',
+        step1:
+          '在 设置 → API 创建一个 API token,按 Zap 的需要授予权限:触发器需要 Webhooks: manage(Event Tracked 触发器还需要 Events: read),动作和搜索需要 Users、Companies 和 Attributes;并勾选要连接的环境。',
+        step2: '在 Zapier 中添加 Usertour 步骤,粘贴 token,选择当前项目和环境。',
+        docs: '阅读 Zapier 指南',
+        webhooksNote:
+          '每个带 Usertour 触发器的 Zap 都会在当前环境订阅一条标注为 "Managed by Zapier" 的 webhook,交给 Zapier 管理即可;手动删除会让对应的 Zap 悄悄停掉。',
+        webhooksLink: '查看 webhooks',
       },
       autoDisabled: {
         badge: '自动停用',
