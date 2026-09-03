@@ -2,9 +2,11 @@ import { ArgsType, Field, InputType, OmitType, PartialType, PickType } from '@ne
 import { Attribute } from '../models/attribute.model';
 
 @InputType()
+// `source` / `sourceId` are ownership markers written only by the CRM mapping
+// service (ADR 0013 §6) — never through the generic attribute mutations.
 export class CreateAttributeInput extends OmitType(
   Attribute,
-  ['id', 'createdAt', 'updatedAt', 'predefined', 'description'],
+  ['id', 'createdAt', 'updatedAt', 'predefined', 'description', 'source', 'sourceId'],
   InputType,
 ) {
   // The model declares description non-null (the column defaults to ''),
@@ -15,7 +17,7 @@ export class CreateAttributeInput extends OmitType(
 
 @InputType()
 export class UpdateAttributeInput extends PartialType(
-  OmitType(Attribute, ['projectId', 'createdAt', 'updatedAt', 'predefined']),
+  OmitType(Attribute, ['projectId', 'createdAt', 'updatedAt', 'predefined', 'source', 'sourceId']),
   InputType,
 ) {
   @Field(() => String)

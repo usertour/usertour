@@ -94,7 +94,7 @@ export class CrmConnectionService {
     return config.crmIntegrations;
   }
 
-  private async assertEntitled(environmentId: string): Promise<void> {
+  async assertEntitled(environmentId: string): Promise<void> {
     if (!(await this.isEntitled(environmentId))) {
       throw new FeatureRequiresLicenseError();
     }

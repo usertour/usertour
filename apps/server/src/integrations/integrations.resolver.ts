@@ -23,6 +23,13 @@ import {
   IntegrationSyncedSegment,
 } from './models/integration.model';
 import { CrmConnectionService } from './crm/crm-connection.service';
+import { CrmMappingService } from './crm/crm-mapping.service';
+import {
+  IntegrationObjectMappingIdInput,
+  ListCrmRemotePropertiesArgs,
+  UpsertIntegrationObjectMappingInput,
+} from './dto/crm-mapping.input';
+import { CrmRemoteProperty, IntegrationObjectMapping } from './models/crm-mapping.model';
 import { IntegrationsService } from './integrations.service';
 
 @Resolver(() => Integration)
@@ -31,7 +38,49 @@ export class IntegrationsResolver {
   constructor(
     private service: IntegrationsService,
     private connections: CrmConnectionService,
+    private mappings: CrmMappingService,
   ) {}
+
+  // ---------------------------------------------------------------------------
+  // CRM object mappings (ADR 0013 §4-6)
+  // ---------------------------------------------------------------------------
+
+  @Query(() => [IntegrationObjectMapping])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
+  async listIntegrationObjectMappings(@Args('integrationId') integrationId: string) {
+    return await this.mappings.listMappings(integrationId);
+  }
+
+  /** Live provider property metadata — the editor's pickers read from here. */
+  @Query(() => [CrmRemoteProperty])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
+  async listCrmRemoteProperties(
+    @Args() { integrationId, remoteObject }: ListCrmRemotePropertiesArgs,
+  ) {
+    return await this.mappings.listRemoteProperties(integrationId, remoteObject);
+  }
+
+  @Mutation(() => IntegrationObjectMapping)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { integrationId: string }).integrationId,
+  })
+  async upsertIntegrationObjectMapping(@Args('data') data: UpsertIntegrationObjectMappingInput) {
+    return await this.mappings.upsertMapping(data);
+  }
+
+  @Mutation(() => Boolean)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { integrationId: string }).integrationId,
+  })
+  async deleteIntegrationObjectMapping(@Args('data') data: IntegrationObjectMappingIdInput) {
+    return await this.mappings.deleteMapping(data);
+  }
 
   // ---------------------------------------------------------------------------
   // CRM connections (ADR 0013)

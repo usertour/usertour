@@ -171,3 +171,56 @@ export const DisconnectCrmIntegration = gql`
     }
   }
 `;
+
+// CRM object mappings (ADR 0013 §4-6).
+const MAPPING_FIELDS = `
+  id
+  createdAt
+  updatedAt
+  integrationId
+  remoteObject
+  localObject
+  matchStrategy
+  matchRemoteField
+  inboundFields
+  outboundFields
+  enabled
+  lastFullSyncAt
+  fullSyncStartedAt
+  matchedCount
+  unresolvedCount
+`;
+
+export const ListIntegrationObjectMappings = gql`
+  query ListIntegrationObjectMappings($integrationId: String!) {
+    listIntegrationObjectMappings(integrationId: $integrationId) { ${MAPPING_FIELDS} }
+  }
+`;
+
+// Live provider metadata: no cache (network-only) — the editor should see a
+// property the customer just created in the CRM.
+export const ListCrmRemoteProperties = gql`
+  query ListCrmRemoteProperties($integrationId: String!, $remoteObject: String!) {
+    listCrmRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
+      name
+      label
+      type
+      fieldType
+      groupName
+      readOnly
+      hubspotDefined
+    }
+  }
+`;
+
+export const UpsertIntegrationObjectMapping = gql`
+  mutation UpsertIntegrationObjectMapping($data: UpsertIntegrationObjectMappingInput!) {
+    upsertIntegrationObjectMapping(data: $data) { ${MAPPING_FIELDS} }
+  }
+`;
+
+export const DeleteIntegrationObjectMapping = gql`
+  mutation DeleteIntegrationObjectMapping($data: IntegrationObjectMappingIdInput!) {
+    deleteIntegrationObjectMapping(data: $data)
+  }
+`;

@@ -29,3 +29,28 @@ export type IntegrationRegion = 'US' | 'EU';
 export type IntegrationConfig = {
   region?: IntegrationRegion;
 };
+
+// ---------------------------------------------------------------------------
+// CRM sync (ADR 0013)
+// ---------------------------------------------------------------------------
+
+/** Provider object types the mapping layer understands (provider vocabulary). */
+export type CrmRemoteObject = 'contact' | 'company';
+
+/** Usertour object types a remote object can be paired with. */
+export type CrmLocalObject = 'user' | 'company';
+
+/** How remote records are paired with local ones. */
+export type CrmMatchStrategy = 'email' | 'remoteField';
+
+/** A provider-owned attribute: remote property → local attribute code name. */
+export interface CrmInboundField {
+  remote: string;
+  local: string;
+}
+
+/** A Usertour-owned write-back: local attribute code name → remote property. */
+export interface CrmOutboundField {
+  local: string;
+  remote: string;
+}

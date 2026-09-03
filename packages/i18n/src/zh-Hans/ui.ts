@@ -1573,6 +1573,45 @@ const translations = {
         notConfigured:
           '该服务器未配置 {{name}} 应用凭证,请参阅 integrations/hubspot 目录的 README 注册应用。',
         lockedHint: 'Growth 及以上套餐可用',
+        mapping: {
+          contactsTitle: '联系人 ↔ 用户',
+          companiesTitle: '公司 ↔ 公司',
+          description:
+            '设置 {{name}} 记录与 Usertour 记录的匹配方式,以及两个方向各同步哪些字段。只有两边都存在的记录才会配对,不会创建任何记录。',
+          matchLabel: '匹配方式',
+          matchEmail: '邮箱地址',
+          matchRemoteField: '存放 Usertour ID 的 {{name}} 属性',
+          matchRemoteFieldHelp:
+            '该属性的值必须与你的应用传给 usertour.identify() 的 ID 一致,公司则对应 usertour.group()。',
+          matchFieldPlaceholder: '选择属性',
+          inboundLabel: '从 {{name}} 同步',
+          inboundHelp:
+            '选中的属性会成为由 {{name}} 拥有的 Usertour 属性,显示 {{name}} 标记,SDK 和 API 不能写入。',
+          inboundPlaceholder: '选择 {{name}} 属性',
+          outboundLabel: '写回 {{name}}',
+          outboundHelp:
+            '选中的 Usertour 属性会写入 {{name}} 的 "Usertour" 属性组,以 usertour_ 为前缀。由 {{name}} 拥有的属性不能写回。',
+          outboundPlaceholder: '选择 Usertour 属性',
+          save: '保存映射',
+          saved: '映射已保存',
+          saveFailed: '保存映射失败',
+          remove: '移除映射',
+          removeConfirmTitle: '移除这个映射?',
+          removeConfirmDescription:
+            '这些记录将停止同步。从 {{name}} 同步来的属性保留现有值,变回普通属性。',
+          removed: '映射已移除',
+          removeFailed: '移除映射失败',
+          adoptTitle: '属性已存在',
+          adoptDescription:
+            '部分选中的属性在 Usertour 里已经存在。确认后它们将由 {{name}} 拥有,SDK 和 API 将不能再写入。',
+          adoptConfirm: '接管已有属性',
+          notConfigured: '尚未配置映射',
+          stats: '已匹配 {{matched}} · 未匹配 {{unresolved}}',
+          lastSynced: '上次全量同步 {{time}}',
+          neverSynced: '尚未同步',
+          propertiesLoadFailed: '无法加载 {{name}} 属性',
+          readOnlySuffix: '(只读)',
+        },
         downgradedBanner:
           '当前套餐不包含 CRM 集成 — 同步已暂停。你仍可以查看和断开连接;升级套餐即可恢复。',
       },

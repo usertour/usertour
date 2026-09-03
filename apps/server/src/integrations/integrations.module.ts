@@ -10,6 +10,7 @@ import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { CohortSyncService } from './cohort-sync.service';
 import { CrmConnectionService } from './crm/crm-connection.service';
+import { CrmMappingService } from './crm/crm-mapping.service';
 import { HubspotOAuthController } from './crm/hubspot-oauth.controller';
 import { InboundController } from './inbound.controller';
 import { IntegrationsListener } from './integrations.listener';
@@ -41,6 +42,7 @@ import { IntegrationsService } from './integrations.service';
   providers: [
     CohortSyncService,
     CrmConnectionService,
+    CrmMappingService,
     IntegrationsService,
     IntegrationsResolver,
     IntegrationsListener,

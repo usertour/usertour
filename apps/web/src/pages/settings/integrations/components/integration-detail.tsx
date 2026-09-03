@@ -63,6 +63,7 @@ import { OutboundMessageStatusBadge } from '../../components/outbound-message-st
 import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
 import { CrmConnectionSection } from './crm-connection-section';
+import { CrmMappingSection } from './crm-mapping-section';
 import { IntegrationStatusBadge } from './integration-status-badge';
 
 const MESSAGES_PAGE_SIZE = 20;
@@ -946,6 +947,29 @@ export const IntegrationDetail = () => {
             entitled={entitled}
           />
         </SettingsCard>
+
+        {integration?.connected && (
+          <>
+            <SettingsCard>
+              <CrmMappingSection
+                entry={entry}
+                integration={integration}
+                remoteObject="contact"
+                localObject="user"
+                entitled={entitled}
+              />
+            </SettingsCard>
+            <SettingsCard>
+              <CrmMappingSection
+                entry={entry}
+                integration={integration}
+                remoteObject="company"
+                localObject="company"
+                entitled={entitled}
+              />
+            </SettingsCard>
+          </>
+        )}
 
         {integration && (
           <SettingsCard>

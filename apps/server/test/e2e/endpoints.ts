@@ -502,6 +502,45 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ d: { id: s.integrationId } }),
   },
   {
+    key: 'integration.listIntegrationObjectMappings',
+    tier: 'O',
+    op: 'query',
+    doc: 'query($i:String!){listIntegrationObjectMappings(integrationId:$i){__typename}}',
+    vars: (s) => ({ i: s.integrationId }),
+  },
+  {
+    key: 'integration.listCrmRemoteProperties',
+    tier: 'O',
+    op: 'query',
+    // Allow direction skipped: reaches the provider's API.
+    denyOnly: true,
+    doc: 'query($i:String!,$o:String!){listCrmRemoteProperties(integrationId:$i,remoteObject:$o){__typename}}',
+    vars: (s) => ({ i: s.integrationId, o: 'contact' }),
+  },
+  {
+    key: 'integration.upsertIntegrationObjectMapping',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:UpsertIntegrationObjectMappingInput!){upsertIntegrationObjectMapping(data:$d){__typename}}',
+    vars: (s) => ({
+      d: {
+        integrationId: s.integrationId,
+        remoteObject: 'contact',
+        localObject: 'user',
+        matchStrategy: 'email',
+        inboundFields: [],
+        outboundFields: [],
+      },
+    }),
+  },
+  {
+    key: 'integration.deleteIntegrationObjectMapping',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:IntegrationObjectMappingIdInput!){deleteIntegrationObjectMapping(data:$d)}',
+    vars: (s) => ({ d: { integrationId: s.integrationId, id: 'missing' } }),
+  },
+  {
     key: 'integration.queryIntegrationSyncedSegments',
     tier: 'O',
     op: 'query',

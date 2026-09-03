@@ -25,6 +25,8 @@ export const updateAttribute = gql`
       description
       createdAt
       predefined
+      source
+      sourceId
     }
   }
 `;
@@ -41,6 +43,8 @@ export const listAttributes = gql`
       description
       createdAt
       predefined
+      source
+      sourceId
     }
   }
 `;

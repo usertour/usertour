@@ -2,7 +2,10 @@ import { useCallback } from 'react';
 import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   DeleteIntegration,
+  DeleteIntegrationObjectMapping,
   DisconnectCrmIntegration,
+  ListCrmRemoteProperties,
+  ListIntegrationObjectMappings,
   ListIntegrations,
   QueryIntegrationMessages,
   QueryIntegrationSyncedSegments,
@@ -11,8 +14,16 @@ import {
   StartCrmOAuth,
   UpdateIntegrationInbound,
   UpsertIntegration,
+  UpsertIntegrationObjectMapping,
 } from '@usertour/gql';
-import type { IntegrationConfig } from '@usertour/types';
+import type {
+  CrmInboundField,
+  CrmLocalObject,
+  CrmMatchStrategy,
+  CrmOutboundField,
+  CrmRemoteObject,
+  IntegrationConfig,
+} from '@usertour/types';
 import type { OutboundMessage } from './outbound-message';
 
 export interface Integration {
@@ -234,6 +245,121 @@ export const useDisconnectCrmIntegrationMutation = () => {
     async (id: string): Promise<Integration | null> => {
       const response = await mutation({ variables: { data: { id } } });
       return (response.data?.disconnectCrmIntegration as Integration | undefined) ?? null;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+// ---------------------------------------------------------------------------
+// CRM object mappings (ADR 0013 §4-6)
+// ---------------------------------------------------------------------------
+
+export interface IntegrationObjectMapping {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  integrationId: string;
+  remoteObject: CrmRemoteObject;
+  localObject: CrmLocalObject;
+  matchStrategy: CrmMatchStrategy;
+  matchRemoteField?: string | null;
+  inboundFields: CrmInboundField[];
+  outboundFields: CrmOutboundField[];
+  enabled: boolean;
+  lastFullSyncAt?: string | null;
+  fullSyncStartedAt?: string | null;
+  matchedCount: number;
+  unresolvedCount: number;
+}
+
+export interface CrmRemoteProperty {
+  name: string;
+  label: string;
+  type: string;
+  fieldType: string;
+  groupName: string;
+  readOnly: boolean;
+  hubspotDefined: boolean;
+}
+
+export interface UpsertIntegrationObjectMappingInput {
+  integrationId: string;
+  remoteObject: CrmRemoteObject;
+  localObject: CrmLocalObject;
+  matchStrategy: CrmMatchStrategy;
+  matchRemoteField?: string | null;
+  inboundFields: CrmInboundField[];
+  outboundFields: Array<{ local: string }>;
+  enabled?: boolean;
+  adoptExisting?: boolean;
+}
+
+export const useListIntegrationObjectMappingsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(ListIntegrationObjectMappings, {
+    variables: { integrationId },
+    skip: !integrationId,
+    ...options,
+  });
+  return {
+    mappings: data?.listIntegrationObjectMappings as IntegrationObjectMapping[] | undefined,
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useListCrmRemotePropertiesQuery = (
+  integrationId: string,
+  remoteObject: CrmRemoteObject,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(ListCrmRemoteProperties, {
+    variables: { integrationId, remoteObject },
+    skip: !integrationId,
+    fetchPolicy: 'network-only',
+    ...options,
+  });
+  return {
+    properties: data?.listCrmRemoteProperties as CrmRemoteProperty[] | undefined,
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useUpsertIntegrationObjectMappingMutation = () => {
+  // A first save INSERTS a row the cache can't materialize from the response;
+  // later saves ride the returned full field set.
+  const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping, {
+    refetchQueries: ['ListIntegrationObjectMappings'],
+  });
+  const invoke = useCallback(
+    async (
+      input: UpsertIntegrationObjectMappingInput,
+    ): Promise<IntegrationObjectMapping | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (
+        (response.data?.upsertIntegrationObjectMapping as IntegrationObjectMapping | undefined) ??
+        null
+      );
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useDeleteIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping, {
+    refetchQueries: ['ListIntegrationObjectMappings'],
+  });
+  const invoke = useCallback(
+    async (input: { integrationId: string; id: string }): Promise<boolean> => {
+      const response = await mutation({ variables: { data: input } });
+      return !!response.data?.deleteIntegrationObjectMapping;
     },
     [mutation],
   );

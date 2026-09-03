@@ -1653,6 +1653,45 @@ const translations = {
         notConfigured:
           'This server has no {{name}} app credentials configured. See the integrations/hubspot README to register one.',
         lockedHint: 'Available on the Growth plan and above',
+        mapping: {
+          contactsTitle: 'Contacts ↔ Users',
+          companiesTitle: 'Companies ↔ Companies',
+          description:
+            'Choose how {{name}} records are matched to Usertour records and which fields sync in each direction. Records are only paired when they exist on both sides — nothing is created.',
+          matchLabel: 'Match records by',
+          matchEmail: 'Email address',
+          matchRemoteField: 'A {{name}} property holding the Usertour ID',
+          matchRemoteFieldHelp:
+            'The property must contain the same ID your app passes to usertour.identify() (or usertour.group() for companies).',
+          matchFieldPlaceholder: 'Choose a property',
+          inboundLabel: 'Sync from {{name}}',
+          inboundHelp:
+            'Selected properties become Usertour attributes owned by {{name}}. They show a {{name}} badge and cannot be written by the SDK or API.',
+          inboundPlaceholder: 'Choose {{name}} properties',
+          outboundLabel: 'Write back to {{name}}',
+          outboundHelp:
+            'Selected Usertour attributes are written to a "Usertour" property group in {{name}}, prefixed usertour_. Attributes owned by {{name}} cannot be written back.',
+          outboundPlaceholder: 'Choose Usertour attributes',
+          save: 'Save mapping',
+          saved: 'Mapping saved',
+          saveFailed: 'Failed to save the mapping',
+          remove: 'Remove mapping',
+          removeConfirmTitle: 'Remove this mapping?',
+          removeConfirmDescription:
+            'Syncing stops for these records. Attributes synced from {{name}} keep their values and become ordinary attributes again.',
+          removed: 'Mapping removed',
+          removeFailed: 'Failed to remove the mapping',
+          adoptTitle: 'Attributes already exist',
+          adoptDescription:
+            'Some selected properties match attributes that already exist in Usertour. Confirm to let {{name}} own them from now on — the SDK and API will no longer be able to write them.',
+          adoptConfirm: 'Adopt existing attributes',
+          notConfigured: 'No mapping yet',
+          stats: 'Matched {{matched}} · Unmatched {{unresolved}}',
+          lastSynced: 'Last full sync {{time}}',
+          neverSynced: 'Not synced yet',
+          propertiesLoadFailed: 'Could not load {{name}} properties',
+          readOnlySuffix: '(read-only)',
+        },
         downgradedBanner:
           'CRM integrations are not included in your current plan — syncing is paused. You can still review and disconnect; upgrade to resume.',
       },
