@@ -63,6 +63,7 @@ import { OutboundMessageStatusBadge } from '../../components/outbound-message-st
 import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
 import { IntegrationStatusBadge } from './integration-status-badge';
+import { AutomationIntegrationDetail } from './automation-integration-detail';
 
 const MESSAGES_PAGE_SIZE = 20;
 // Deliveries happen async in the worker — give it a moment before refreshing.
@@ -916,6 +917,9 @@ export const IntegrationDetail = () => {
         </SettingsCard>
       </SettingsCardStack>
     );
+  }
+  if (entry.kind === 'automation') {
+    return <AutomationIntegrationDetail entry={entry} entitled={entitled} />;
   }
   if (loading && !integrations) {
     return null;

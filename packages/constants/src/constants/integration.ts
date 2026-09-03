@@ -1,11 +1,11 @@
-import type { IntegrationProvider } from '@usertour/types';
+import type { AnalyticsIntegrationProvider } from '@usertour/types';
 
 /**
  * The analytics providers the outbound integrations pipeline supports
  * (ADR 0011). The server validates `Integration.provider` against this list;
  * the web catalog renders from it. Order is the catalog display order.
  */
-export const INTEGRATION_PROVIDERS: readonly IntegrationProvider[] = [
+export const INTEGRATION_PROVIDERS: readonly AnalyticsIntegrationProvider[] = [
   'amplitude',
   'heap',
   'mixpanel',
