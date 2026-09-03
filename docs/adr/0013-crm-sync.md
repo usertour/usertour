@@ -17,7 +17,7 @@ Platform facts that shape this decision, verified 2026-09-03:
 - Change notification: the project `webhooks` component subscribes to property changes **per named property, statically**; the **v4 webhooks journal API** (beta) instead lets the app create per-installed-account subscriptions with a `properties` filter and pulls changes from a journal (3-day retention). Verified reachable for this app with a client-credentials token.
 - OAuth access tokens live 1800 s; refresh uses the same token endpoint; `GET /oauth/v1/access-tokens/{token}` yields the account id.
 
-Every mature onboarding product surveyed ships the same feature shape: OAuth connection, an object mapping per HubSpot object ↔ product object with a matching rule and a selected-property list in each direction, events written to the contact timeline, and — uniformly — **no creation of objects across the boundary**.
+The feature shape this decision commits to: an OAuth connection, an object mapping per HubSpot object ↔ Usertour object with a matching rule and a selected-property list in each direction, events written to the contact timeline, and **no creation of objects across the boundary**.
 
 ## Decision
 
@@ -128,10 +128,10 @@ HubSpot allows 100–190 requests per 10 s per account. A 100k-contact account f
 
 ## Alternatives Considered
 
-- **Private-app token as the credential** (fits the analytics-provider "paste a key" model exactly): rejected — HubSpot is removing private-app creation weeks after this decision; service keys cannot authenticate webhooks; no timeline events; a worse setup than every competitor; and the Marketplace requires OAuth anyway.
+- **Private-app token as the credential** (fits the analytics-provider "paste a key" model exactly): rejected — HubSpot is removing private-app creation weeks after this decision; service keys cannot authenticate webhooks; no timeline events; a multi-step setup that asks the customer's admin to create an app and copy a secret; and the Marketplace requires OAuth anyway.
 - **Custom events as the primary events path**: rejected as primary — gated on the customer's HubSpot tier, so free and Starter accounts would receive nothing; kept as the interim path while app-event approval is pending.
 - **Push webhooks component for incremental inbound**: rejected — subscriptions are static and per named property, incompatible with customer-selected fields, and require a public target URL. The journal API needs neither.
-- **Lists → segments as the first inbound capability** (cheap via ADR 0012): rejected for M1 — property sync is what every surveyed product ships; list sync is a differentiator, not the table stake.
+- **Lists → segments as the first inbound capability** (cheap via ADR 0012): rejected for M1 — property sync is the capability CRM users expect first (lifecycle stage, plan, industry as targeting attributes); list sync builds on it later.
 - **Creating users from contacts when the match field carries the external id** (the ADR 0012 rule): rejected — CRM leads are not product users; shells would pollute the user list.
 - **A relay through Usertour Cloud for self-hosted OAuth and webhooks**: rejected — routes CRM data through us and makes self-hosting depend on our cloud.
 - **Gating the second CRM provider one tier higher**: rejected — one gate for the CRM class.
