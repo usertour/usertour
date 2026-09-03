@@ -3,11 +3,15 @@ import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { QUEUE_CRM_SYNC_CRON } from '@/common/consts/queen';
+import { CrmJournalService } from './crm-journal.service';
 import { CrmSyncService, FULL_SYNC_INTERVAL_MS } from './crm-sync.service';
 
 const SCAN_JOB = 'crm-sync-scan';
 /** Offset from the webhook (:20) and integration (:35) reconcile sweeps. */
 const SCAN_PATTERN = '50 * * * *';
+const JOURNAL_JOB = 'crm-journal-poll';
+/** Provider change journal poll cadence (ADR 0013 §7). */
+const JOURNAL_EVERY_MS = 30_000;
 
 /**
  * Hourly scan that starts the recurring full sync for every mapping whose
@@ -23,6 +27,7 @@ export class CrmSyncScheduler extends WorkerHost implements OnModuleInit {
     @InjectQueue(QUEUE_CRM_SYNC_CRON) private readonly queue: Queue,
     private readonly prisma: PrismaService,
     private readonly sync: CrmSyncService,
+    private readonly journal: CrmJournalService,
   ) {
     super();
   }
@@ -45,12 +50,30 @@ export class CrmSyncScheduler extends WorkerHost implements OnModuleInit {
           backoff: { type: 'exponential', delay: 1000 },
         },
       );
+      await this.queue.add(
+        JOURNAL_JOB,
+        {},
+        {
+          repeat: { every: JOURNAL_EVERY_MS },
+          jobId: JOURNAL_JOB,
+          removeOnComplete: true,
+          removeOnFail: 100,
+        },
+      );
     } catch (error) {
       this.logger.error(`Failed to schedule the CRM sync scan: ${(error as Error).message}`);
     }
   }
 
-  async process(_job: Job): Promise<void> {
+  async process(job: Job): Promise<void> {
+    if (job.name === JOURNAL_JOB) {
+      try {
+        await this.journal.poll();
+      } catch (error) {
+        this.logger.warn(`CRM journal poll failed: ${(error as Error).message}`);
+      }
+      return;
+    }
     const due = await this.prisma.integrationObjectMapping.findMany({
       where: {
         enabled: true,

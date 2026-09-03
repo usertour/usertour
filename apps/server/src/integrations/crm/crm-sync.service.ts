@@ -243,7 +243,7 @@ export class CrmSyncService {
   }
 
   /** Pair a batch of provider records and apply both directions; returns the pairs made. */
-  private async applyRecords(
+  async applyRecords(
     mapping: MappingWithIntegration,
     token: string,
     remotes: HubspotObject[],

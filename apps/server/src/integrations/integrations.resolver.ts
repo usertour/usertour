@@ -24,6 +24,7 @@ import {
 } from './models/integration.model';
 import { CrmConnectionService } from './crm/crm-connection.service';
 import { CrmMappingService } from './crm/crm-mapping.service';
+import { CrmJournalService } from './crm/crm-journal.service';
 import { CrmSyncService } from './crm/crm-sync.service';
 import {
   IntegrationObjectMappingIdInput,
@@ -41,6 +42,7 @@ export class IntegrationsResolver {
     private connections: CrmConnectionService,
     private mappings: CrmMappingService,
     private crmSync: CrmSyncService,
+    private journal: CrmJournalService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -117,6 +119,17 @@ export class IntegrationsResolver {
     @Args('data') { id }: IntegrationIdInput,
     @Context() context: { req?: Request },
   ) {
+    const before = await this.service.getById(id, context.req);
+    // Best-effort: the change subscriptions die with the grant.
+    try {
+      await this.journal.removeSubscriptions({
+        id,
+        provider: before.provider,
+        remoteAccountId: before.remoteAccountId,
+      });
+    } catch {
+      // Logged by the provider call site; the disconnect itself proceeds.
+    }
     await this.connections.disconnect(id);
     return await this.service.getById(id, context.req);
   }

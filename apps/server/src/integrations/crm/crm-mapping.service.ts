@@ -13,6 +13,7 @@ import { codeName as codeNameSchema } from '@/api/shared/codename';
 import { ValidationError } from '@/common/errors/errors';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { CrmConnectionService } from './crm-connection.service';
+import { CrmJournalService } from './crm-journal.service';
 import { CrmSyncService } from './crm-sync.service';
 import {
   attributeBizTypeFor,
@@ -67,6 +68,7 @@ export class CrmMappingService {
     private readonly connections: CrmConnectionService,
     private readonly cache: ProjectCacheService,
     private readonly sync: CrmSyncService,
+    private readonly journal: CrmJournalService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -230,7 +232,33 @@ export class CrmMappingService {
       await tx.integrationObjectMapping.delete({ where: { id: mapping.id } });
     });
     await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
+    await this.afterMappingChange(integration.id, null);
     return true;
+  }
+
+  /**
+   * Post-save side effects, best-effort — a queue or provider hiccup must not
+   * fail the save: the change journal subscription follows the new field
+   * lists, and a changed mapping backfills through a full round.
+   */
+  private async afterMappingChange(integrationId: string, mappingId: string | null): Promise<void> {
+    try {
+      await this.journal.syncSubscriptions(integrationId);
+    } catch (error) {
+      this.logger.warn(
+        `Could not update the change subscriptions for integration ${integrationId}: ${(error as Error).message}`,
+      );
+    }
+    if (!mappingId) {
+      return;
+    }
+    try {
+      await this.sync.startFullSync(mappingId, { manual: false });
+    } catch (error) {
+      this.logger.warn(
+        `Could not start the full sync after saving mapping ${mappingId}: ${(error as Error).message}`,
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------

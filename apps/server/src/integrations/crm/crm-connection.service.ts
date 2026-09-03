@@ -19,6 +19,7 @@ import {
   refreshHubspotToken,
   revokeHubspotRefreshToken,
 } from './hubspot-api';
+import { fetchHubspotAppToken } from './hubspot-journal-api';
 
 /** Decrypted shape of Integration.oauthCredentials. */
 export interface CrmOAuthCredentials {
@@ -41,6 +42,9 @@ interface CrmOAuthTransaction {
 export interface CrmRemoteState {
   account?: { domain?: string };
 }
+
+/** App-level (client credentials) tokens are reused until close to expiry. */
+const APP_TOKEN_MARGIN_MS = 5 * 60 * 1000;
 
 /** Refresh when the access token has less than this left (HubSpot tokens live 30 min). */
 const REFRESH_MARGIN_MS = 2 * 60 * 1000;
@@ -68,6 +72,7 @@ export class CrmGrantRevokedError extends Error {
 @Injectable()
 export class CrmConnectionService {
   private readonly logger = new Logger(CrmConnectionService.name);
+  private appToken: { accessToken: string; expiresAt: number } | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -254,6 +259,26 @@ export class CrmConnectionService {
   // ---------------------------------------------------------------------------
   // Access tokens
   // ---------------------------------------------------------------------------
+
+  /**
+   * The app's own token (client credentials) for app-level APIs such as the
+   * change journal — not tied to any installed account. Cached per process.
+   */
+  async getAppAccessToken(provider: CrmIntegrationProvider): Promise<string> {
+    if (this.appToken && this.appToken.expiresAt - Date.now() > APP_TOKEN_MARGIN_MS) {
+      return this.appToken.accessToken;
+    }
+    const app = this.appCredentials(provider);
+    if (!app.clientId || !app.clientSecret) {
+      throw new ValidationError(`${provider} is not configured on this server.`);
+    }
+    const token = await fetchHubspotAppToken(app);
+    this.appToken = {
+      accessToken: token.accessToken,
+      expiresAt: Date.now() + token.expiresIn * 1000,
+    };
+    return token.accessToken;
+  }
 
   /**
    * A valid access token for the integration, refreshing under a per-row
