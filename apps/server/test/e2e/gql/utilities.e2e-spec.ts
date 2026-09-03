@@ -77,6 +77,7 @@ describe('GraphQL utilities (e2e)', () => {
         needsSystemAdminSetup
         require2FA
         authProviders
+        configuredCrmProviders
       }
     }`;
 
@@ -101,6 +102,11 @@ describe('GraphQL utilities (e2e)', () => {
       expect(Array.isArray(config.authProviders)).toBe(true);
       for (const p of config.authProviders) {
         expect(typeof p).toBe('string');
+      }
+      // configuredCrmProviders mirrors which CRM app credentials the server holds.
+      expect(Array.isArray(config.configuredCrmProviders)).toBe(true);
+      for (const provider of config.configuredCrmProviders) {
+        expect(typeof provider).toBe('string');
       }
       // Over HTTP, apiUrl is always a string: configured API_URL or derived
       // from the request (resolveOrigin). The schema stays nullable only for

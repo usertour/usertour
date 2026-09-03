@@ -45,6 +45,7 @@ const renderItem = (option: ComboboxSelectOption, hintPlacement: 'stacked' | 'tr
             {option.hint}
           </span>
         )}
+        {option.trailing}
       </ComboboxItem>
     );
   }
@@ -57,6 +58,7 @@ const renderItem = (option: ComboboxSelectOption, hintPlacement: 'stacked' | 'tr
           <div className="truncate text-[11px] text-muted-foreground">{option.hint}</div>
         )}
       </div>
+      {option.trailing}
     </ComboboxItem>
   );
 };

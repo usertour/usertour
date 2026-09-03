@@ -11,6 +11,12 @@ import {
 import { Badge, Button, DestructiveConfirmDialog, LoadingButton, useToast } from '@usertour/ui';
 import type { IntegrationCatalogEntry } from '@usertour/constants';
 import { useAppContext } from '@/contexts/app-context';
+import { ExternalLink } from '@/components/external-link';
+
+// Where a self-hosting operator learns to register the provider app.
+const CRM_SETUP_DOCS_HREF: Partial<Record<IntegrationCatalogEntry['provider'], string>> = {
+  hubspot: 'https://docs.usertour.io/integrations/hubspot',
+};
 
 export interface CrmConnectionSectionProps {
   entry: IntegrationCatalogEntry;
@@ -30,7 +36,12 @@ const RETURN_PARAMS = ['connected', 'error', 'provider'] as const;
  */
 export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
   const { entry, integration, environmentId, entitled } = props;
-  const { isViewOnly } = useAppContext();
+  const { isViewOnly, globalConfig } = useAppContext();
+  // Until the global config arrives assume configured, so the setup note
+  // never flashes on cloud.
+  const configured = globalConfig
+    ? (globalConfig.configuredCrmProviders ?? []).includes(entry.provider)
+    : true;
   const { toast } = useToast();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -132,9 +143,21 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
                 )}
               </p>
             </>
-          ) : (
+          ) : configured ? (
             <p className="text-sm text-muted-foreground">
               {t('settings.integrations.crm.connectDescription', { name })}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t('settings.integrations.crm.notConfigured', { name })}
+              {CRM_SETUP_DOCS_HREF[entry.provider] && (
+                <>
+                  {' '}
+                  <ExternalLink href={CRM_SETUP_DOCS_HREF[entry.provider] as string}>
+                    {t('settings.integrations.crm.notConfiguredDocs')}
+                  </ExternalLink>
+                </>
+              )}
             </p>
           )}
         </div>
@@ -148,7 +171,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             >
               {t('settings.integrations.crm.disconnect')}
             </Button>
-          ) : (
+          ) : configured ? (
             <LoadingButton
               type="button"
               loading={starting}
@@ -157,7 +180,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             >
               {t('settings.integrations.crm.connect', { name })}
             </LoadingButton>
-          )}
+          ) : null}
         </div>
       </div>
 

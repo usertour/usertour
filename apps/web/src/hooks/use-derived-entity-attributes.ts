@@ -5,6 +5,8 @@ export interface DerivedAttribute {
   name: string;
   value: unknown;
   dataType: AttributeDataType;
+  /** The provider that owns the attribute, if it came from a CRM integration. */
+  source?: string | null;
 }
 
 // Project an entity row's `data` blob into the displayable {name, value,
@@ -30,6 +32,7 @@ export const useDerivedEntityAttributes = (
           name: attr.displayName || attr.codeName,
           value: entityData[key],
           dataType: attr.dataType,
+          source: attr.source,
         });
       }
     }

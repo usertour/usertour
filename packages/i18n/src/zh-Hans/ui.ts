@@ -272,7 +272,6 @@ const translations = {
     },
     synced: {
       badge: '同步自 {{provider}}',
-      logoAlt: '{{provider}} 标志',
     },
   },
   settings: {
@@ -467,6 +466,7 @@ const translations = {
         dataType: '数据类型',
       },
       systemBadge: '系统',
+      syncedBadge: '同步自 {{provider}}',
       editMenuItem: '编辑属性',
       deleteMenuItem: '删除属性',
       deleteResource: '属性',
@@ -1560,6 +1560,9 @@ const translations = {
           '在你的 {{name}} 账号中授权 Usertour。一个 {{name}} 账号对应一个 Usertour 环境。',
         connected: '已连接',
         notConnected: '未连接',
+        notConfigured:
+          '此服务器尚未配置 {{name}}。需要服务器管理员把 {{name}} 应用凭据加到服务器配置中。',
+        notConfiguredDocs: '自托管指南',
         account: '已连接账号',
         disconnect: '断开连接',
         disconnectConfirmTitle: '断开 {{name}}?',
@@ -1570,8 +1573,6 @@ const translations = {
         deniedToast: '在 {{name}} 中取消了授权。',
         failedToast: '连接 {{name}} 失败,请重试。',
         licenseToast: '当前套餐不包含 CRM 集成。',
-        notConfigured:
-          '该服务器未配置 {{name}} 应用凭证,请参阅 integrations/hubspot 目录的 README 注册应用。',
         lockedHint: 'Growth 及以上套餐可用',
         mapping: {
           contactsTitle: '联系人 ↔ 用户',
@@ -4047,6 +4048,7 @@ const translations = {
       userAttr: {
         label: '属性',
         placeholder: '选择一个属性',
+        syncedFrom: '同步自 {{provider}}',
         selectPlaceholder: '选择属性',
         searchPlaceholder: '搜索属性…',
         operatorPlaceholder: '选择条件',
@@ -4415,6 +4417,7 @@ const translations = {
     documentation: '文档',
   },
   attributes: {
+    syncedFrom: '同步自 {{provider}}',
     typeChip: {
       number: '数字',
       string: '文本',

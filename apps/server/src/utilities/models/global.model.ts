@@ -40,4 +40,12 @@ export class GlobalConfig {
 
   @Field(() => [String])
   authProviders: string[];
+
+  /**
+   * CRM providers whose OAuth app credentials are configured on this server
+   * (ADR 0013 §2). The web hides Connect and explains the setup step for the
+   * rest — relevant to self-hosted instances, which register their own app.
+   */
+  @Field(() => [String])
+  configuredCrmProviders: string[];
 }

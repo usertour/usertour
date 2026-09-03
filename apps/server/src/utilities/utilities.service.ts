@@ -11,6 +11,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 import { LicenseService } from '@/license/license.service';
 import { AiService } from '@/ai/ai.service';
+import { configuredCrmProviders } from '@/integrations/crm/crm-app-config';
 
 @Injectable()
 export class UtilitiesService {
@@ -157,6 +158,7 @@ export class UtilitiesService {
       machineTranslationEnabled: this.aiService.isConfigured(),
       allowPrivateNetworkEgress: !!this.configService.get('globalConfig.allowPrivateNetworkEgress'),
       authProviders: this.getAuthProviders(),
+      configuredCrmProviders: configuredCrmProviders(this.configService),
     };
   }
 }

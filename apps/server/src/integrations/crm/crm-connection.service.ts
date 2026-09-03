@@ -19,6 +19,7 @@ import {
   refreshHubspotToken,
   revokeHubspotRefreshToken,
 } from './hubspot-api';
+import { isCrmProviderConfigured } from './crm-app-config';
 import { fetchHubspotAppToken } from './hubspot-journal-api';
 
 /** Decrypted shape of Integration.oauthCredentials. */
@@ -107,8 +108,7 @@ export class CrmConnectionService {
 
   /** Whether this deployment has provider app credentials configured at all. */
   isProviderConfigured(provider: CrmIntegrationProvider): boolean {
-    const app = this.appCredentials(provider);
-    return !!app.clientId && !!app.clientSecret;
+    return isCrmProviderConfigured(this.configService, provider);
   }
 
   private appCredentials(provider: CrmIntegrationProvider): HubspotAppCredentials {

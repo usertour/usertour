@@ -280,7 +280,6 @@ const translations = {
     },
     synced: {
       badge: 'Synced from {{provider}}',
-      logoAlt: '{{provider}} logo',
     },
   },
   settings: {
@@ -495,6 +494,7 @@ const translations = {
         dataType: 'Data type',
       },
       systemBadge: 'System',
+      syncedBadge: 'Synced from {{provider}}',
       editMenuItem: 'Edit attribute',
       deleteMenuItem: 'Delete attribute',
       deleteResource: 'attribute',
@@ -1639,6 +1639,9 @@ const translations = {
           'Authorize Usertour in your {{name}} account. One {{name}} account connects to one Usertour environment.',
         connected: 'Connected',
         notConnected: 'Not connected',
+        notConfigured:
+          "{{name}} isn't set up on this server yet. A server administrator needs to add the {{name}} app credentials to the server configuration.",
+        notConfiguredDocs: 'Self-hosting guide',
         account: 'Connected account',
         disconnect: 'Disconnect',
         disconnectConfirmTitle: 'Disconnect {{name}}?',
@@ -1650,8 +1653,6 @@ const translations = {
         deniedToast: 'Authorization was cancelled in {{name}}.',
         failedToast: 'Connecting {{name}} failed. Please try again.',
         licenseToast: 'CRM integrations are not included in your current plan.',
-        notConfigured:
-          'This server has no {{name}} app credentials configured. See the integrations/hubspot README to register one.',
         lockedHint: 'Available on the Growth plan and above',
         mapping: {
           contactsTitle: 'Contacts ↔ Users',
@@ -4239,6 +4240,7 @@ const translations = {
       userAttr: {
         label: 'Attribute',
         placeholder: 'Pick an attribute',
+        syncedFrom: 'Synced from {{provider}}',
         selectPlaceholder: 'Select attribute',
         searchPlaceholder: 'Search attribute…',
         operatorPlaceholder: 'Select condition',
@@ -4616,6 +4618,7 @@ const translations = {
     documentation: 'Documentation',
   },
   attributes: {
+    syncedFrom: 'Synced from {{provider}}',
     typeChip: {
       number: 'NUMBER',
       string: 'STRING',
