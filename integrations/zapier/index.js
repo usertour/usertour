@@ -55,4 +55,26 @@ module.exports = {
     [findUser.key]: findUser,
     [findCompany.key]: findCompany,
   },
+  // "Find or Create": the search step grows a checkbox that runs the paired
+  // action when nothing is found. The keys must match the search keys.
+  searchOrCreates: {
+    [findUser.key]: {
+      key: findUser.key,
+      display: {
+        label: 'Find or Create User',
+        description: 'Finds a user by their user ID, or creates the user if none exists.',
+      },
+      search: findUser.key,
+      create: upsertUser.key,
+    },
+    [findCompany.key]: {
+      key: findCompany.key,
+      display: {
+        label: 'Find or Create Company',
+        description: 'Finds a company by its company ID, or creates the company if none exists.',
+      },
+      search: findCompany.key,
+      create: upsertCompany.key,
+    },
+  },
 };

@@ -14,14 +14,22 @@ export type AnalyticsIntegrationProvider =
 /** CRM providers synced through the object-mapping layer (ADR 0013). */
 export type CrmIntegrationProvider = 'hubspot';
 
-export type IntegrationProvider = AnalyticsIntegrationProvider | CrmIntegrationProvider;
+/** Automation platforms that connect from their own side — a Zap creates
+ *  ordinary webhooks here — so they have a catalog entry but no server row. */
+export type AutomationIntegrationProvider = 'zapier';
+
+export type IntegrationProvider =
+  | AnalyticsIntegrationProvider
+  | CrmIntegrationProvider
+  | AutomationIntegrationProvider;
 
 /**
  * How a provider is wired: analytics destinations take a pasted API key and
  * stream every event (ADR 0011); CRM providers connect over OAuth and sync
- * mapped objects in both directions (ADR 0013).
+ * mapped objects in both directions (ADR 0013); automation platforms are
+ * set up from their own side (link-out).
  */
-export type IntegrationKind = 'analytics' | 'crm';
+export type IntegrationKind = 'analytics' | 'crm' | 'automation';
 
 export type IntegrationRegion = 'US' | 'EU';
 

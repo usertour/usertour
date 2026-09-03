@@ -86,6 +86,8 @@ export const SettingsIntegrationList = () => {
       <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         {INTEGRATION_CATALOG.map((entry) => {
           const integration = integrations?.find((row) => row.provider === entry.provider);
+          // Link-out providers have no row and no connection state on this side.
+          const automation = entry.kind === 'automation';
           return (
             <li
               key={entry.provider}
@@ -106,9 +108,11 @@ export const SettingsIntegrationList = () => {
                   disabled={loading && !integrations}
                   onClick={() => navigate(`${location.pathname}/${entry.provider}`)}
                 >
-                  {integration
-                    ? t('settings.integrations.catalog.manage')
-                    : t('settings.integrations.catalog.connect')}
+                  {automation
+                    ? t('settings.integrations.catalog.setUp')
+                    : integration
+                      ? t('settings.integrations.catalog.manage')
+                      : t('settings.integrations.catalog.connect')}
                 </Button>
               </div>
               <div className="mt-2 flex items-center gap-2 font-medium">

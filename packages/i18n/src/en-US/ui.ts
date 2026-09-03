@@ -1495,12 +1495,13 @@ const translations = {
       locked: {
         title: 'Integrations are available on paid plans',
         description:
-          'Send every Usertour event to Amplitude, Heap, Mixpanel, PostHog, or Segment the moment it happens — starting on the Starter plan.',
+          'Send every Usertour event to Amplitude, Heap, Mixpanel, PostHog, or Segment the moment it happens, and trigger Zaps in Zapier — starting on the Starter plan.',
         upgrade: 'Upgrade plan',
       },
       catalog: {
         manage: 'Manage',
         connect: 'Connect',
+        setUp: 'Set up',
         logoAlt: '{{name}} logo',
         descriptions: {
           amplitude: 'Send Usertour events to Amplitude and sync Amplitude cohorts into Usertour.',
@@ -1510,12 +1511,26 @@ const translations = {
           segment: 'Send Usertour events to Segment.',
           hubspot:
             'Sync HubSpot contacts and companies with Usertour users and companies, and show onboarding milestones on the HubSpot timeline.',
+          zapier:
+            'Trigger Zaps from Usertour events, and create or update users, companies, and events from thousands of apps.',
         },
       },
       status: {
         enabled: 'Enabled',
         disabled: 'Disabled',
         notConnected: 'Not connected',
+      },
+      zapier: {
+        open: 'Open Zapier',
+        intro: 'Nothing to configure here — you connect from Zapier with a Usertour API token.',
+        step1:
+          'Create an API token under Settings → API with the scopes your Zaps need: Webhooks: manage for triggers (plus Events: read for Event Tracked), and Users, Companies, and Attributes for actions and searches. Include the environments you want to connect.',
+        step2:
+          'In Zapier, add a Usertour step, paste the token, and pick this project and environment.',
+        docs: 'Read the Zapier guide',
+        webhooksNote:
+          'Each Zap with a Usertour trigger subscribes a webhook in this environment, labeled "Managed by Zapier" — leave those to Zapier; deleting one by hand silently stops its Zap.',
+        webhooksLink: 'View webhooks',
       },
       autoDisabled: {
         badge: 'Auto-disabled',

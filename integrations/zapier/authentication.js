@@ -23,7 +23,7 @@ module.exports = {
       required: true,
       default: 'https://api.usertour.io',
       helpText:
-        'Usertour Cloud uses the default. Self-hosted? Enter your instance API URL (the same host your SDK talks to). See https://docs.usertour.io/api-reference-v2/introduction.',
+        'Usertour Cloud uses the default. Self-hosted? Enter your instance API URL (the same host your SDK talks to). It must use https://. See https://docs.usertour.io/api-reference-v2/introduction.',
     },
     {
       key: 'apiToken',
