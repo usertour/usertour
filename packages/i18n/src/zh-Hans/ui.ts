@@ -1577,6 +1577,8 @@ const translations = {
           '此服务器尚未配置 {{name}}。需要服务器管理员把 {{name}} 应用凭据加到服务器配置中。',
         notConfiguredDocs: '自托管指南',
         account: '已连接账号',
+        moreActions: '更多操作',
+        reconnect: '重新连接',
         disconnect: '断开连接',
         disconnectConfirmTitle: '断开 {{name}}?',
         disconnectConfirmDescription: '同步会立即停止。映射和消息日志会保留,重新连接后可继续使用。',

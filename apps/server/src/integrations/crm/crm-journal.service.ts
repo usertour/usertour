@@ -128,6 +128,12 @@ export class CrmJournalService {
     await this.rememberSubscriptions(integration, {});
   }
 
+  /** Drop every subscription of a portal we no longer serve (the account a reconnect replaced). */
+  async removePortalSubscriptions(portalId: string): Promise<void> {
+    const token = await this.connections.getAppAccessToken(PROVIDER);
+    await deletePortalJournalSubscriptions(token, Number(portalId));
+  }
+
   private sameSubscription(
     subscription: HubspotJournalSubscription,
     properties: string[],

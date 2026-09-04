@@ -57,6 +57,12 @@ const CRM_PROVIDER_KEY = ''; // OAuth rows never carry an API key; the column is
  * uninstalled the app or revoked access). Deliveries treat it as a failed
  * attempt so the breaker disables the integration and notifies.
  */
+/** Outcome of a completed handshake: the row, and the account it replaced (null on first connect). */
+export interface CrmOAuthResult {
+  integration: Integration;
+  previousAccountId: string | null;
+}
+
 export class CrmGrantRevokedError extends Error {
   constructor(provider: string) {
     super(`${provider} authorization was revoked; reconnect the integration.`);
@@ -188,11 +194,12 @@ export class CrmConnectionService {
   /**
    * Finish the handshake: exchange the code, learn which account authorized,
    * and create (or re-arm) the integration row. Re-connecting an existing row
-   * replaces the grant and resets the breaker; a different account than
-   * before is allowed — links and mappings are re-resolved by the next full
-   * sync, since remote ids no longer line up.
+   * replaces the grant and resets the breaker. The same account keeps its
+   * system state (subscription ids, created properties); a different account
+   * starts from a clean state, and the caller is told the previous account so
+   * it can drop the links that pointed into it (record ids no longer line up).
    */
-  async completeOAuth(transaction: CrmOAuthTransaction, code: string): Promise<Integration> {
+  async completeOAuth(transaction: CrmOAuthTransaction, code: string): Promise<CrmOAuthResult> {
     const { provider, environmentId } = transaction;
     await this.assertEntitled(environmentId);
     const app = this.appCredentials(provider);
@@ -201,9 +208,18 @@ export class CrmConnectionService {
     const credentials = this.toCredentials(tokens);
     const encrypted = this.encryption.encrypt(JSON.stringify(credentials));
     const remoteAccountId = String(info.hub_id);
-    const remoteState: CrmRemoteState = { account: { domain: info.hub_domain } };
+    const existing = await this.prisma.integration.findUnique({
+      where: { environmentId_provider: { environmentId, provider } },
+      select: { remoteAccountId: true, remoteState: true },
+    });
+    const previousAccountId = existing?.remoteAccountId ?? null;
+    const sameAccount = previousAccountId === remoteAccountId;
+    const remoteState: CrmRemoteState = {
+      ...(sameAccount ? ((existing?.remoteState ?? {}) as CrmRemoteState) : {}),
+      account: { domain: info.hub_domain },
+    };
 
-    return await this.prisma.integration.upsert({
+    const integration = await this.prisma.integration.upsert({
       where: { environmentId_provider: { environmentId, provider } },
       create: {
         environmentId,
@@ -226,6 +242,7 @@ export class CrmConnectionService {
         autoDisabledAt: null,
       },
     });
+    return { integration, previousAccountId };
   }
 
   /**

@@ -5,6 +5,8 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 import { EncryptionService } from '@/shared/encryption.service';
 import * as hubspotApi from '@/integrations/crm/hubspot-api';
+import { CrmJournalService } from '@/integrations/crm/crm-journal.service';
+import { CrmSyncService } from '@/integrations/crm/crm-sync.service';
 
 import { graphql, gqlData, gqlErrorCode } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
@@ -183,6 +185,96 @@ describe('GraphQL CRM connections (e2e)', () => {
         remoteAccountLabel: 'acme.hubspot.com',
       }),
     ]);
+  });
+
+  it('reconnecting to a different account drops the old links and restarts syncing', async () => {
+    withAppCredentials('client-123');
+    // Self-contained: a row already connected to account 424242.
+    const row = await prisma.integration.upsert({
+      where: { environmentId_provider: { environmentId, provider: 'hubspot' } },
+      create: {
+        environmentId,
+        provider: 'hubspot',
+        key: '',
+        keyTail: '',
+        enabled: true,
+        oauthCredentials: app
+          .get(EncryptionService)
+          .encrypt(JSON.stringify({ accessToken: 'a', refreshToken: 'r', expiresAt: 0 })),
+        remoteAccountId: '424242',
+        remoteState: { account: { domain: 'acme.hubspot.com' } },
+      },
+      update: { remoteAccountId: '424242', enabled: true },
+    });
+    const mapping = await prisma.integrationObjectMapping.create({
+      data: {
+        integrationId: row.id,
+        remoteObject: 'contact',
+        localObject: 'user',
+        matchStrategy: 'email',
+        inboundFields: [],
+        outboundFields: [],
+        matchedCount: 5,
+        unresolvedCount: 2,
+        lastFullSyncAt: new Date(),
+      },
+    });
+    await prisma.integrationObjectLink.create({
+      data: { mappingId: mapping.id, localId: 'user-1', remoteId: 'old-1', matchedBy: 'email' },
+    });
+    const removePortal = jest
+      .spyOn(CrmJournalService.prototype, 'removePortalSubscriptions')
+      .mockResolvedValue(undefined);
+    const syncSubscriptions = jest
+      .spyOn(CrmJournalService.prototype, 'syncSubscriptions')
+      .mockResolvedValue(undefined);
+    const startFullSync = jest
+      .spyOn(CrmSyncService.prototype, 'startFullSync')
+      .mockResolvedValue(null as never);
+    jest.spyOn(hubspotApi, 'exchangeHubspotCode').mockResolvedValue({
+      access_token: 'access-2',
+      refresh_token: 'refresh-2',
+      expires_in: 1800,
+    });
+    jest.spyOn(hubspotApi, 'fetchHubspotTokenInfo').mockResolvedValue({
+      hub_id: 555555,
+      hub_domain: 'other.hubspot.com',
+      app_id: 1,
+      user: 'ada@example.com',
+      user_id: 7,
+      scopes: [],
+    });
+    try {
+      const start = await graphql(app, {
+        token,
+        query: START_OAUTH,
+        variables: { data: { environmentId, provider: 'hubspot' } },
+      });
+      const state = new URL(gqlData(start).startCrmOAuth.url).searchParams.get('state') ?? '';
+      const res = await request(app.getHttpServer())
+        .get('/integrations/hubspot/oauth/callback')
+        .query({ code: 'code-2', state });
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toContain('connected=1');
+
+      const after = await prisma.integration.findUniqueOrThrow({ where: { id: row.id } });
+      expect(after.remoteAccountId).toBe('555555');
+      expect(await prisma.integrationObjectLink.count({ where: { mappingId: mapping.id } })).toBe(
+        0,
+      );
+      const reset = await prisma.integrationObjectMapping.findUniqueOrThrow({
+        where: { id: mapping.id },
+      });
+      expect(reset).toMatchObject({ matchedCount: 0, unresolvedCount: 0, lastFullSyncAt: null });
+      expect(removePortal).toHaveBeenCalledWith('424242');
+      expect(syncSubscriptions).toHaveBeenCalledWith(row.id);
+      expect(startFullSync).toHaveBeenCalledWith(mapping.id, { manual: false });
+    } finally {
+      removePortal.mockRestore();
+      syncSubscriptions.mockRestore();
+      startFullSync.mockRestore();
+      await prisma.integrationObjectMapping.delete({ where: { id: mapping.id } });
+    }
   });
 
   it('turns a declined consent and a bad state into error redirects, never a 500', async () => {

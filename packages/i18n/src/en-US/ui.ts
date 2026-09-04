@@ -1658,6 +1658,8 @@ const translations = {
           "{{name}} isn't set up on this server yet. A server administrator needs to add the {{name}} app credentials to the server configuration.",
         notConfiguredDocs: 'Self-hosting guide',
         account: 'Connected account',
+        moreActions: 'More actions',
+        reconnect: 'Reconnect',
         disconnect: 'Disconnect',
         disconnectConfirmTitle: 'Disconnect {{name}}?',
         disconnectConfirmDescription:

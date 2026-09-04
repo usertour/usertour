@@ -8,7 +8,18 @@ import {
   useDisconnectCrmIntegrationMutation,
   useStartCrmOAuthMutation,
 } from '@usertour/hooks';
-import { Badge, Button, DestructiveConfirmDialog, LoadingButton, useToast } from '@usertour/ui';
+import { RiLinkM, RiLinkUnlinkM, RiMore2Line } from '@usertour/icons';
+import {
+  Badge,
+  Button,
+  DestructiveConfirmDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  LoadingButton,
+  useToast,
+} from '@usertour/ui';
 import type { IntegrationCatalogEntry } from '@usertour/constants';
 import { useAppContext } from '@/contexts/app-context';
 import { ExternalLink } from '@/components/external-link';
@@ -129,6 +140,37 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             )}
           </div>
         </div>
+        {connected && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t('settings.integrations.crm.moreActions')}
+              >
+                <RiMore2Line className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                disabled={!canWrite || starting}
+                onSelect={() => void handleConnect()}
+              >
+                <RiLinkM className="mr-2 h-4 w-4" />
+                {t('settings.integrations.crm.reconnect')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={!canWrite || disconnecting}
+                onSelect={() => setDisconnectOpen(true)}
+              >
+                <RiLinkUnlinkM className="mr-2 h-4 w-4" />
+                {t('settings.integrations.crm.disconnect')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       <div className="flex items-start justify-between gap-4">
@@ -162,16 +204,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
           )}
         </div>
         <div className="shrink-0">
-          {connected ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!canWrite || disconnecting}
-              onClick={() => setDisconnectOpen(true)}
-            >
-              {t('settings.integrations.crm.disconnect')}
-            </Button>
-          ) : configured ? (
+          {connected ? null : configured ? (
             <LoadingButton
               type="button"
               loading={starting}

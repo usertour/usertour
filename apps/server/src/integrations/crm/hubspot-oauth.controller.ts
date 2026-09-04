@@ -4,6 +4,7 @@ import type { Response } from 'express';
 import { Public } from '@/common/decorators/public.decorator';
 import { FeatureRequiresLicenseError } from '@/common/errors/errors';
 import { CrmConnectionService } from './crm-connection.service';
+import { CrmMappingService } from './crm-mapping.service';
 
 /**
  * HubSpot OAuth callback (ADR 0013 §2). The path is registered as a redirect
@@ -17,6 +18,7 @@ export class HubspotOAuthController {
 
   constructor(
     private readonly connections: CrmConnectionService,
+    private readonly mappings: CrmMappingService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -36,7 +38,13 @@ export class HubspotOAuthController {
         // The user declined on HubSpot's consent screen (or HubSpot refused).
         return res.redirect(this.settingsUrl(projectId, { error: 'denied' }));
       }
-      await this.connections.completeOAuth(transaction, code);
+      const { integration, previousAccountId } = await this.connections.completeOAuth(
+        transaction,
+        code,
+      );
+      if (previousAccountId && previousAccountId !== integration.remoteAccountId) {
+        await this.mappings.resetAfterAccountChange(integration.id, previousAccountId);
+      }
       return res.redirect(this.settingsUrl(projectId, { connected: '1' }));
     } catch (error) {
       const reason = error instanceof FeatureRequiresLicenseError ? 'license' : 'failed';

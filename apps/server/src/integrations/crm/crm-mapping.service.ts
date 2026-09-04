@@ -241,6 +241,50 @@ export class CrmMappingService {
    * fail the save: the change journal subscription follows the new field
    * lists, and a changed mapping backfills through a full round.
    */
+  /**
+   * A reconnect landed on a different provider account: every link pointed
+   * into the old one, so drop them and the counts they fed, retire the old
+   * account's change subscriptions, and start over — subscriptions for the
+   * new account plus a full round per mapping.
+   */
+  async resetAfterAccountChange(integrationId: string, previousAccountId: string): Promise<void> {
+    const mappings = await this.prisma.integrationObjectMapping.findMany({
+      where: { integrationId },
+      select: { id: true },
+    });
+    const mappingIds = mappings.map((mapping) => mapping.id);
+    await this.prisma.$transaction([
+      this.prisma.integrationObjectLink.deleteMany({ where: { mappingId: { in: mappingIds } } }),
+      this.prisma.integrationObjectMapping.updateMany({
+        where: { integrationId },
+        data: {
+          matchedCount: 0,
+          unresolvedCount: 0,
+          lastFullSyncAt: null,
+          fullSyncSessionId: null,
+          fullSyncStartedAt: null,
+        },
+      }),
+    ]);
+    try {
+      await this.journal.removePortalSubscriptions(previousAccountId);
+    } catch (error) {
+      this.logger.warn(
+        `Could not remove the change subscriptions of the previous account ${previousAccountId}: ${(error as Error).message}`,
+      );
+    }
+    await this.afterMappingChange(integrationId, null);
+    for (const mappingId of mappingIds) {
+      try {
+        await this.sync.startFullSync(mappingId, { manual: false });
+      } catch (error) {
+        this.logger.warn(
+          `Could not start the full sync for mapping ${mappingId} after the account change: ${(error as Error).message}`,
+        );
+      }
+    }
+  }
+
   private async afterMappingChange(integrationId: string, mappingId: string | null): Promise<void> {
     try {
       await this.journal.syncSubscriptions(integrationId);
