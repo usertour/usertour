@@ -4,7 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import type { CrmInboundField, CrmRemoteObject } from '@usertour/types';
 import { RedisService } from '@/shared/redis.service';
 import { CrmConnectionService } from './crm-connection.service';
-import { hubspotObjectTypeFor } from './crm-mapping.types';
+import { hubspotObjectTypeFor, matchRemotePropertyFor } from './crm-mapping.types';
 import { CrmSyncService, type MappingWithIntegration } from './crm-sync.service';
 import { batchReadHubspotObjects } from './hubspot-crm-api';
 import {
@@ -74,7 +74,7 @@ export class CrmJournalService {
     const wanted = new Map<string, string[]>();
     for (const mapping of integration.objectMappings) {
       const objectTypeId = HUBSPOT_OBJECT_TYPE_IDS[mapping.remoteObject as CrmRemoteObject];
-      const matchField = mapping.matchStrategy === 'email' ? 'email' : mapping.matchRemoteField;
+      const matchField = matchRemotePropertyFor(mapping);
       const fields = new Set(wanted.get(objectTypeId) ?? []);
       if (matchField) {
         fields.add(matchField);
@@ -245,8 +245,7 @@ export class CrmJournalService {
 
   private async applyBucket(mapping: MappingWithIntegration, ids: string[]): Promise<number> {
     const inbound = mapping.inboundFields as unknown as CrmInboundField[];
-    const matchField =
-      mapping.matchStrategy === 'email' ? 'email' : (mapping.matchRemoteField as string);
+    const matchField = matchRemotePropertyFor(mapping);
     const properties = Array.from(new Set([matchField, ...inbound.map((field) => field.remote)]));
     const token = await this.connections.getAccessToken(mapping.integrationId);
     const objectType = hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject);

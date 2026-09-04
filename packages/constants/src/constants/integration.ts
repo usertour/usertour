@@ -1,4 +1,9 @@
-import type { AnalyticsIntegrationProvider, CrmIntegrationProvider } from '@usertour/types';
+import {
+  type AnalyticsIntegrationProvider,
+  AttributeDataType,
+  type CrmIntegrationProvider,
+  type CrmLocalObject,
+} from '@usertour/types';
 
 /**
  * The analytics providers the outbound integrations pipeline supports
@@ -24,3 +29,30 @@ export const CRM_INTEGRATION_PROVIDERS: readonly CrmIntegrationProvider[] = ['hu
  * WEBHOOK_TEST_TOPIC: addressed to one destination directly, single attempt.
  */
 export const INTEGRATION_TEST_TOPIC = 'integration.test';
+
+/** The provider-side property group every Usertour write-back property lives in (ADR 0013 §6). */
+export const CRM_REMOTE_PROPERTY_GROUP = { name: 'usertour', label: 'Usertour' } as const;
+
+/** Provider property name for a Usertour-owned attribute (provider names are lowercase). */
+export const crmRemotePropertyNameFor = (local: CrmLocalObject, codeName: string): string =>
+  `usertour_${local}_${codeName.toLowerCase()}`;
+
+/** Provider property type → Usertour attribute data type (ADR 0013 §6). */
+export const crmLocalDataTypeFor = (property: {
+  type: string;
+  fieldType: string;
+}): AttributeDataType => {
+  switch (property.type) {
+    case 'number':
+      return AttributeDataType.Number;
+    case 'bool':
+      return AttributeDataType.Boolean;
+    case 'date':
+    case 'datetime':
+      return AttributeDataType.DateTime;
+    case 'enumeration':
+      return property.fieldType === 'checkbox' ? AttributeDataType.List : AttributeDataType.String;
+    default:
+      return AttributeDataType.String;
+  }
+};

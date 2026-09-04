@@ -21,6 +21,7 @@ import {
   CRM_REMOTE_GROUP,
   hubspotObjectTypeFor,
   remotePropertyDefinitionFor,
+  matchRemotePropertyFor,
 } from './crm-mapping.types';
 import { localToRemoteValue, remoteToLocalValue, remoteTypeForDataType } from './crm-values';
 import type { CrmMessageEnvelope } from '../integrations.types';
@@ -210,8 +211,7 @@ export class CrmSyncService {
     const remoteObject = mapping.remoteObject as CrmRemoteObject;
     const localObject = mapping.localObject as CrmLocalObject;
     const inbound = mapping.inboundFields as unknown as CrmInboundField[];
-    const matchField =
-      mapping.matchStrategy === 'email' ? 'email' : (mapping.matchRemoteField as string);
+    const matchField = matchRemotePropertyFor(mapping);
     const properties = Array.from(new Set([matchField, ...inbound.map((field) => field.remote)]));
     const objectType = hubspotObjectTypeFor(remoteObject);
     const token = await this.connections.getAccessToken(mapping.integrationId);
@@ -250,8 +250,7 @@ export class CrmSyncService {
   ): Promise<PairedRecord[]> {
     const inbound = mapping.inboundFields as unknown as CrmInboundField[];
     const outbound = mapping.outboundFields as unknown as CrmOutboundField[];
-    const matchField =
-      mapping.matchStrategy === 'email' ? 'email' : (mapping.matchRemoteField as string);
+    const matchField = matchRemotePropertyFor(mapping);
     const pairs = await this.pairRecords(mapping, remotes, matchField);
     if (pairs.length === 0) {
       return pairs;
@@ -294,7 +293,7 @@ export class CrmSyncService {
       return;
     }
     const inbound = mapping.inboundFields as unknown as CrmInboundField[];
-    const matchField = byEmail ? 'email' : (mapping.matchRemoteField as string);
+    const matchField = matchRemotePropertyFor(mapping);
     const token = await this.connections.getAccessToken(mapping.integrationId);
     const remotes = await searchHubspotObjectsByProperty(
       token,

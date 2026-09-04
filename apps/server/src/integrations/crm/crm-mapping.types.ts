@@ -1,3 +1,8 @@
+import {
+  CRM_REMOTE_PROPERTY_GROUP,
+  crmLocalDataTypeFor,
+  crmRemotePropertyNameFor,
+} from '@usertour/constants';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import type { CrmLocalObject, CrmRemoteObject } from '@usertour/types';
 import type {
@@ -22,32 +27,30 @@ export const attributeBizTypeFor = (local: CrmLocalObject): AttributeBizTypes =>
   local === 'user' ? AttributeBizTypes.User : AttributeBizTypes.Company;
 
 /** Remote property type → Usertour attribute data type (ADR 0013 §6). */
-export const localDataTypeFor = (property: Pick<HubspotProperty, 'type' | 'fieldType'>): number => {
-  switch (property.type) {
-    case 'number':
-      return BizAttributeTypes.Number;
-    case 'bool':
-      return BizAttributeTypes.Boolean;
-    case 'date':
-    case 'datetime':
-      return BizAttributeTypes.DateTime;
-    case 'enumeration':
-      return property.fieldType === 'checkbox' ? BizAttributeTypes.List : BizAttributeTypes.String;
-    default:
-      return BizAttributeTypes.String;
-  }
-};
+export const localDataTypeFor = (property: Pick<HubspotProperty, 'type' | 'fieldType'>): number =>
+  crmLocalDataTypeFor(property);
+
+/**
+ * The provider property records are matched on: the chosen one, or the
+ * provider's own `email` property by default under the email rule.
+ */
+export const matchRemotePropertyFor = (mapping: {
+  matchStrategy: string;
+  matchRemoteField?: string | null;
+}): string =>
+  mapping.matchStrategy === 'email'
+    ? mapping.matchRemoteField || 'email'
+    : (mapping.matchRemoteField as string);
 
 /** Whether a remote property accepts writes (system and computed ones do not). */
 export const isRemotePropertyWritable = (property: HubspotProperty): boolean =>
   !(property.modificationMetadata?.readOnlyValue || property.calculated);
 
 /** The provider-side group every Usertour write-back property lives in. */
-export const CRM_REMOTE_GROUP = { name: 'usertour', label: 'Usertour' } as const;
+export const CRM_REMOTE_GROUP = CRM_REMOTE_PROPERTY_GROUP;
 
-/** Provider property name for a Usertour-owned attribute (HubSpot names are lowercase). */
-export const remotePropertyNameFor = (local: CrmLocalObject, codeName: string): string =>
-  `usertour_${local}_${codeName.toLowerCase()}`;
+/** Provider property name for a Usertour-owned attribute. */
+export const remotePropertyNameFor = crmRemotePropertyNameFor;
 
 /** Provider property definition for a Usertour-owned attribute (created on demand). */
 export const remotePropertyDefinitionFor = (

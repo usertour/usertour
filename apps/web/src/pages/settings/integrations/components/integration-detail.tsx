@@ -63,7 +63,7 @@ import { OutboundMessageStatusBadge } from '../../components/outbound-message-st
 import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
 import { CrmConnectionSection } from './crm-connection-section';
-import { CrmMappingSection } from './crm-mapping-section';
+import { CrmMappingCard } from './crm-mapping-card';
 import { IntegrationStatusBadge } from './integration-status-badge';
 import { AutomationIntegrationDetail } from './automation-integration-detail';
 
@@ -955,7 +955,7 @@ export const IntegrationDetail = () => {
         {integration?.connected && (
           <>
             <SettingsCard>
-              <CrmMappingSection
+              <CrmMappingCard
                 entry={entry}
                 integration={integration}
                 remoteObject="contact"
@@ -964,7 +964,7 @@ export const IntegrationDetail = () => {
               />
             </SettingsCard>
             <SettingsCard>
-              <CrmMappingSection
+              <CrmMappingCard
                 entry={entry}
                 integration={integration}
                 remoteObject="company"

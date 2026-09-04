@@ -133,7 +133,7 @@ export class CrmMappingService {
     // Every remote name the mapping references must exist on the provider.
     const referencedRemote = [
       ...inboundFields.map((field) => field.remote),
-      ...(matchStrategy === 'remoteField' ? [input.matchRemoteField as string] : []),
+      ...(input.matchRemoteField?.trim() ? [input.matchRemoteField.trim()] : []),
     ];
     const remoteProperties =
       referencedRemote.length > 0
@@ -186,7 +186,7 @@ export class CrmMappingService {
       });
       const data = {
         matchStrategy,
-        matchRemoteField: matchStrategy === 'remoteField' ? input.matchRemoteField : null,
+        matchRemoteField: input.matchRemoteField?.trim() || null,
         inboundFields: inboundFields as unknown as Prisma.InputJsonArray,
         outboundFields: outboundFields as unknown as Prisma.InputJsonArray,
         enabled: input.enabled ?? true,
