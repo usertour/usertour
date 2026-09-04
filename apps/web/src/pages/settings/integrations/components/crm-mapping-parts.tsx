@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react';
-import { HubspotSymbolIcon, RiArrowRightLine, UsertourIcon } from '@usertour/icons';
+import {
+  HubspotSymbolIcon,
+  RiArrowRightLine,
+  RiExpandHorizontalSLine,
+  UsertourIcon2,
+} from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import type { CrmLocalObject, CrmRemoteObject, IntegrationProvider } from '@usertour/types';
 
@@ -22,7 +27,7 @@ export interface CrmSideMarkProps {
 export const CrmSideMark = (props: CrmSideMarkProps) => {
   const { side, provider, className } = props;
   if (side === 'local') {
-    return <UsertourIcon className={cn('h-4 w-4 shrink-0 text-primary', className)} />;
+    return <UsertourIcon2 className={cn('h-4 w-4 shrink-0 text-primary', className)} />;
   }
   if (provider === 'hubspot') {
     return <HubspotSymbolIcon className={cn('h-4 w-4 shrink-0 text-[#ff7a59]', className)} />;
@@ -117,7 +122,9 @@ export const CrmObjectPairTitle = (props: CrmObjectPairTitleProps) => {
           <span className={nameClass}>{remoteLabel}</span>
         </span>
       </span>
-      <span className="text-muted-foreground">↔</span>
+      <RiExpandHorizontalSLine
+        className={cn('shrink-0 text-muted-foreground', size === 'lg' ? 'h-5 w-5' : 'h-4 w-4')}
+      />
       <span className="flex items-center gap-2">
         <CrmSideMark side="local" provider={provider} className="h-5 w-5" />
         <span className="flex flex-col leading-tight">
