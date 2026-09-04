@@ -215,7 +215,6 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl" aria-describedby={undefined}>
-        <div ref={setContainer} className="contents" />
         <DialogHeader>
           <DialogTitle>
             <CrmObjectPairTitle
@@ -228,134 +227,24 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-2">
-          <section className="space-y-2">
-            <p className="text-sm font-medium">
-              {t('settings.integrations.crm.mapping.matchLabel')}
-            </p>
-            <CrmPairRow
-              connector="equals"
-              left={
-                <ComboboxSelect
-                  value={matchRemote}
-                  onValueChange={setMatchRemote}
-                  options={matchOptions}
-                  placeholder={t('settings.integrations.crm.mapping.matchRemotePlaceholder', {
-                    name,
-                  })}
-                  searchPlaceholder={t('settings.integrations.crm.mapping.searchProperties')}
-                  emptyText={t('settings.integrations.crm.mapping.noMatches')}
-                  container={container}
-                  className="w-full"
-                />
-              }
-              right={
-                emailAllowed ? (
-                  <Select
-                    value={matchLocal}
-                    onValueChange={(value) => handleMatchLocalChange(value as MatchLocalField)}
-                  >
-                    <SelectTrigger className="w-full">{localMatchLabel(matchLocal)}</SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="email">{localMatchLabel('email')}</SelectItem>
-                      <SelectItem value="externalId">{localMatchLabel('externalId')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <CrmFieldChip
-                    side="local"
-                    provider={entry.provider}
-                    label={localMatchLabel('externalId')}
-                  />
-                )
-              }
-            />
-            <p className="text-sm text-muted-foreground">
-              {matchLocal === 'email'
-                ? t('settings.integrations.crm.mapping.matchEmailHelp', { name })
-                : t('settings.integrations.crm.mapping.matchRemoteFieldHelp')}
-            </p>
-          </section>
-
-          <section className="space-y-2 rounded-lg bg-muted/50 p-4">
-            <p className="text-sm font-medium">
-              {t('settings.integrations.crm.mapping.inboundTitle', { name })}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {t('settings.integrations.crm.mapping.inboundHelp', { name })}
-            </p>
-            <div className="space-y-2 pt-1">
-              {inbound.map((remote) => {
-                const property = propertyByName.get(remote);
-                const existing = attributeByCode.get(remote);
-                const adopt = !!existing && (existing.source ?? 'internal') === 'internal';
-                return (
-                  <CrmPairRow
-                    key={remote}
-                    connector="arrow"
-                    left={
-                      <CrmFieldChip
-                        side="remote"
-                        provider={entry.provider}
-                        label={property?.label ?? remote}
-                        hint={remote}
-                      />
-                    }
-                    right={
-                      <CrmFieldChip
-                        side="local"
-                        provider={entry.provider}
-                        label={property?.label ?? remote}
-                        hint={remote}
-                        trailing={
-                          property && (
-                            <AttributeTypeChip
-                              dataType={crmLocalDataTypeFor(property)}
-                              className="ml-auto"
-                            />
-                          )
-                        }
-                      />
-                    }
-                    trailing={
-                      <>
-                        {!existing && (
-                          <Badge variant="default" className="px-1.5 py-0 font-normal">
-                            {t('settings.integrations.crm.mapping.newBadge')}
-                          </Badge>
-                        )}
-                        {adopt && (
-                          <Badge
-                            variant="warning"
-                            className="px-1.5 py-0 font-normal"
-                            title={t('settings.integrations.crm.mapping.existingHint', { name })}
-                          >
-                            {t('settings.integrations.crm.mapping.existingBadge')}
-                          </Badge>
-                        )}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground"
-                          aria-label={t('settings.integrations.crm.mapping.removeRow')}
-                          onClick={() => setInbound(inbound.filter((item) => item !== remote))}
-                        >
-                          <RiCloseLine className="h-4 w-4" />
-                        </Button>
-                      </>
-                    }
-                  />
-                );
-              })}
+        {/* The popups portal into this wrapper: DialogContent is a `grid gap-4`, so
+            a portal node landing there as its own grid item would add a gap. */}
+        <div ref={setContainer} className="relative">
+          <div className="space-y-6 py-2">
+            <section className="space-y-2">
+              <p className="text-sm font-medium">
+                {t('settings.integrations.crm.mapping.matchLabel')}
+              </p>
               <CrmPairRow
-                connector="arrow"
+                connector="equals"
                 left={
                   <ComboboxSelect
-                    value=""
-                    onValueChange={(value) => setInbound([...inbound, value])}
-                    options={inboundOptions}
-                    placeholder={t('settings.integrations.crm.mapping.addInbound', { name })}
+                    value={matchRemote}
+                    onValueChange={setMatchRemote}
+                    options={matchOptions}
+                    placeholder={t('settings.integrations.crm.mapping.matchRemotePlaceholder', {
+                      name,
+                    })}
                     searchPlaceholder={t('settings.integrations.crm.mapping.searchProperties')}
                     emptyText={t('settings.integrations.crm.mapping.noMatches')}
                     container={container}
@@ -363,103 +252,221 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                   />
                 }
                 right={
-                  <CrmFieldChip side="local" provider={entry.provider} label="…" placeholder />
+                  emailAllowed ? (
+                    <Select
+                      value={matchLocal}
+                      onValueChange={(value) => handleMatchLocalChange(value as MatchLocalField)}
+                    >
+                      <SelectTrigger className="w-full">
+                        {localMatchLabel(matchLocal)}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="email">{localMatchLabel('email')}</SelectItem>
+                        <SelectItem value="externalId">{localMatchLabel('externalId')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <CrmFieldChip
+                      side="local"
+                      provider={entry.provider}
+                      label={localMatchLabel('externalId')}
+                    />
+                  )
                 }
               />
-            </div>
-          </section>
+              <p className="text-sm text-muted-foreground">
+                {matchLocal === 'email'
+                  ? t('settings.integrations.crm.mapping.matchEmailHelp', { name })
+                  : t('settings.integrations.crm.mapping.matchRemoteFieldHelp')}
+              </p>
+            </section>
 
-          <section className="space-y-2 rounded-lg bg-muted/50 p-4">
-            <p className="text-sm font-medium">
-              {t('settings.integrations.crm.mapping.outboundTitle', { name })}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {t('settings.integrations.crm.mapping.outboundHelp', { name })}
-            </p>
-            <div className="space-y-2 pt-1">
-              {outbound.map((code) => {
-                const attribute = attributeByCode.get(code);
-                const remoteName = crmRemotePropertyNameFor(localObject, code);
-                const remoteExists = propertyByName.has(remoteName);
-                const churny = CRM_HIGH_CHURN_ATTRIBUTES.has(code);
-                return (
-                  <CrmPairRow
-                    key={code}
-                    connector="arrow"
-                    left={
-                      <CrmFieldChip
-                        side="local"
-                        provider={entry.provider}
-                        label={attribute?.displayName ?? code}
-                        hint={code}
-                        trailing={
-                          churny && (
-                            <span
-                              className="ml-auto inline-flex shrink-0"
-                              title={t('settings.integrations.crm.mapping.churnWarning', { name })}
+            <section className="space-y-2 rounded-lg bg-muted/50 p-4">
+              <p className="text-sm font-medium">
+                {t('settings.integrations.crm.mapping.inboundTitle', { name })}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.integrations.crm.mapping.inboundHelp', { name })}
+              </p>
+              <div className="space-y-2 pt-1">
+                {inbound.map((remote) => {
+                  const property = propertyByName.get(remote);
+                  const existing = attributeByCode.get(remote);
+                  const adopt = !!existing && (existing.source ?? 'internal') === 'internal';
+                  return (
+                    <CrmPairRow
+                      key={remote}
+                      connector="arrow"
+                      left={
+                        <CrmFieldChip
+                          side="remote"
+                          provider={entry.provider}
+                          label={property?.label ?? remote}
+                          hint={remote}
+                        />
+                      }
+                      right={
+                        <CrmFieldChip
+                          side="local"
+                          provider={entry.provider}
+                          label={property?.label ?? remote}
+                          hint={remote}
+                          trailing={
+                            property && (
+                              <AttributeTypeChip
+                                dataType={crmLocalDataTypeFor(property)}
+                                className="ml-auto"
+                              />
+                            )
+                          }
+                        />
+                      }
+                      trailing={
+                        <>
+                          {!existing && (
+                            <Badge variant="default" className="px-1.5 py-0 font-normal">
+                              {t('settings.integrations.crm.mapping.newBadge')}
+                            </Badge>
+                          )}
+                          {adopt && (
+                            <Badge
+                              variant="warning"
+                              className="px-1.5 py-0 font-normal"
+                              title={t('settings.integrations.crm.mapping.existingHint', { name })}
                             >
-                              <RiAlertLine
-                                className="h-4 w-4 text-amber-500"
-                                role="img"
-                                aria-label={t('settings.integrations.crm.mapping.churnWarning', {
+                              {t('settings.integrations.crm.mapping.existingBadge')}
+                            </Badge>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            aria-label={t('settings.integrations.crm.mapping.removeRow')}
+                            onClick={() => setInbound(inbound.filter((item) => item !== remote))}
+                          >
+                            <RiCloseLine className="h-4 w-4" />
+                          </Button>
+                        </>
+                      }
+                    />
+                  );
+                })}
+                <CrmPairRow
+                  connector="arrow"
+                  left={
+                    <ComboboxSelect
+                      value=""
+                      onValueChange={(value) => setInbound([...inbound, value])}
+                      options={inboundOptions}
+                      placeholder={t('settings.integrations.crm.mapping.addInbound', { name })}
+                      searchPlaceholder={t('settings.integrations.crm.mapping.searchProperties')}
+                      emptyText={t('settings.integrations.crm.mapping.noMatches')}
+                      container={container}
+                      className="w-full"
+                    />
+                  }
+                  right={
+                    <CrmFieldChip side="local" provider={entry.provider} label="…" placeholder />
+                  }
+                />
+              </div>
+            </section>
+
+            <section className="space-y-2 rounded-lg bg-muted/50 p-4">
+              <p className="text-sm font-medium">
+                {t('settings.integrations.crm.mapping.outboundTitle', { name })}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.integrations.crm.mapping.outboundHelp', { name })}
+              </p>
+              <div className="space-y-2 pt-1">
+                {outbound.map((code) => {
+                  const attribute = attributeByCode.get(code);
+                  const remoteName = crmRemotePropertyNameFor(localObject, code);
+                  const remoteExists = propertyByName.has(remoteName);
+                  const churny = CRM_HIGH_CHURN_ATTRIBUTES.has(code);
+                  return (
+                    <CrmPairRow
+                      key={code}
+                      connector="arrow"
+                      left={
+                        <CrmFieldChip
+                          side="local"
+                          provider={entry.provider}
+                          label={attribute?.displayName ?? code}
+                          hint={code}
+                          trailing={
+                            churny && (
+                              <span
+                                className="ml-auto inline-flex shrink-0"
+                                title={t('settings.integrations.crm.mapping.churnWarning', {
                                   name,
                                 })}
-                              />
-                            </span>
-                          )
-                        }
-                      />
-                    }
-                    right={
-                      <CrmFieldChip
-                        side="remote"
-                        provider={entry.provider}
-                        label={`Usertour: ${attribute?.displayName ?? code}`}
-                        hint={remoteName}
-                      />
-                    }
-                    trailing={
-                      <>
-                        {!remoteExists && (
-                          <Badge variant="default" className="px-1.5 py-0 font-normal">
-                            {t('settings.integrations.crm.mapping.newBadge')}
-                          </Badge>
-                        )}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground"
-                          aria-label={t('settings.integrations.crm.mapping.removeRow')}
-                          onClick={() => setOutbound(outbound.filter((item) => item !== code))}
-                        >
-                          <RiCloseLine className="h-4 w-4" />
-                        </Button>
-                      </>
-                    }
-                  />
-                );
-              })}
-              <CrmPairRow
-                connector="arrow"
-                left={
-                  <ComboboxSelect
-                    value=""
-                    onValueChange={(value) => setOutbound([...outbound, value])}
-                    options={outboundOptions}
-                    placeholder={t('settings.integrations.crm.mapping.addOutbound')}
-                    searchPlaceholder={t('settings.integrations.crm.mapping.searchAttributes')}
-                    emptyText={t('settings.integrations.crm.mapping.noMatches')}
-                    container={container}
-                    className="w-full"
-                  />
-                }
-                right={
-                  <CrmFieldChip side="remote" provider={entry.provider} label="…" placeholder />
-                }
-              />
-            </div>
-          </section>
+                              >
+                                <RiAlertLine
+                                  className="h-4 w-4 text-amber-500"
+                                  role="img"
+                                  aria-label={t('settings.integrations.crm.mapping.churnWarning', {
+                                    name,
+                                  })}
+                                />
+                              </span>
+                            )
+                          }
+                        />
+                      }
+                      right={
+                        <CrmFieldChip
+                          side="remote"
+                          provider={entry.provider}
+                          label={`Usertour: ${attribute?.displayName ?? code}`}
+                          hint={remoteName}
+                        />
+                      }
+                      trailing={
+                        <>
+                          {!remoteExists && (
+                            <Badge variant="default" className="px-1.5 py-0 font-normal">
+                              {t('settings.integrations.crm.mapping.newBadge')}
+                            </Badge>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            aria-label={t('settings.integrations.crm.mapping.removeRow')}
+                            onClick={() => setOutbound(outbound.filter((item) => item !== code))}
+                          >
+                            <RiCloseLine className="h-4 w-4" />
+                          </Button>
+                        </>
+                      }
+                    />
+                  );
+                })}
+                <CrmPairRow
+                  connector="arrow"
+                  left={
+                    <ComboboxSelect
+                      value=""
+                      onValueChange={(value) => setOutbound([...outbound, value])}
+                      options={outboundOptions}
+                      placeholder={t('settings.integrations.crm.mapping.addOutbound')}
+                      searchPlaceholder={t('settings.integrations.crm.mapping.searchAttributes')}
+                      emptyText={t('settings.integrations.crm.mapping.noMatches')}
+                      container={container}
+                      className="w-full"
+                    />
+                  }
+                  right={
+                    <CrmFieldChip side="remote" provider={entry.provider} label="…" placeholder />
+                  }
+                />
+              </div>
+            </section>
+          </div>
         </div>
 
         <DialogFooter className="items-center sm:justify-between">
