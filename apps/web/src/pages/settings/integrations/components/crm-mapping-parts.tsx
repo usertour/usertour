@@ -55,8 +55,14 @@ export const CrmFieldChip = (props: CrmFieldChipProps) => {
       )}
     >
       <CrmSideMark side={side} provider={provider} />
-      <span className="min-w-0 truncate">{label}</span>
-      {hint && <span className="min-w-0 truncate text-[11px] text-muted-foreground">{hint}</span>}
+      <span className="min-w-0 truncate" title={label}>
+        {label}
+      </span>
+      {hint && (
+        <span className="min-w-0 truncate text-[11px] text-muted-foreground" title={hint}>
+          {hint}
+        </span>
+      )}
       {trailing}
     </span>
   );
