@@ -10,7 +10,7 @@ import {
   useListIntegrationObjectMappingsQuery,
   useRunIntegrationObjectMappingSyncMutation,
 } from '@usertour/hooks';
-import { RiDeleteBinLine, RiMore2Line, RiRefreshLine } from '@usertour/icons';
+import { RiDeleteBinLine, RiMore2Line, RiPencilLine, RiRefreshLine } from '@usertour/icons';
 import {
   Badge,
   Button,
@@ -150,14 +150,6 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
         <div className="flex shrink-0 items-center gap-2">
           {mapping ? (
             <>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!canWrite}
-                onClick={() => setEditOpen(true)}
-              >
-                {t('settings.integrations.crm.mapping.edit')}
-              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -170,6 +162,10 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem disabled={!canWrite} onSelect={() => setEditOpen(true)}>
+                    <RiPencilLine className="mr-2 h-4 w-4" />
+                    {t('settings.integrations.crm.mapping.edit')}
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={!canWrite || syncInProgress || syncStarting}
                     onSelect={() => void handleSyncNow()}

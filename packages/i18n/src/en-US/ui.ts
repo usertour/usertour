@@ -1635,7 +1635,7 @@ const translations = {
       },
       moreActions: 'More actions',
       delete: {
-        button: 'Remove',
+        button: 'Remove integration',
         confirmTitle: 'Remove this integration?',
         confirmDescription:
           'Event delivery to {{name}} stops immediately; the stored key and the message log are deleted.',
@@ -1684,7 +1684,7 @@ const translations = {
           description:
             'Choose how {{name}} records are matched to Usertour records and which fields sync in each direction. Records are only paired when they exist on both sides — nothing is created.',
           setUp: 'Set up mapping',
-          edit: 'Edit',
+          edit: 'Edit mapping',
           moreActions: 'More actions',
           matchLabel: 'Match records by',
           matchRemotePlaceholder: 'Choose a {{name}} property',
@@ -1736,7 +1736,7 @@ const translations = {
           neverSynced: 'Not synced yet',
           propertiesLoadFailed: 'Could not load {{name}} properties',
           readOnlySuffix: '(read-only)',
-          syncNow: 'Sync now',
+          syncNow: 'Run full sync',
           syncQueued: 'Full sync started — this can take a few minutes for large accounts.',
           syncInProgress: 'Sync in progress',
           syncFailed: 'Failed to start the sync',

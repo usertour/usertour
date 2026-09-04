@@ -1555,7 +1555,7 @@ const translations = {
       },
       moreActions: '更多操作',
       delete: {
-        button: '移除',
+        button: '移除集成',
         confirmTitle: '移除该集成?',
         confirmDescription: '将立即停止向 {{name}} 推送事件,并删除已存密钥和消息日志。',
         confirmButton: '移除集成',
@@ -1602,7 +1602,7 @@ const translations = {
           description:
             '设置 {{name}} 记录与 Usertour 记录的匹配方式,以及两个方向各同步哪些字段。只有两边都存在的记录才会配对,不会创建任何记录。',
           setUp: '设置映射',
-          edit: '编辑',
+          edit: '编辑映射',
           moreActions: '更多操作',
           matchLabel: '匹配方式',
           matchRemotePlaceholder: '选择一个 {{name}} 属性',
@@ -1653,7 +1653,7 @@ const translations = {
           neverSynced: '尚未同步',
           propertiesLoadFailed: '无法加载 {{name}} 属性',
           readOnlySuffix: '(只读)',
-          syncNow: '立即同步',
+          syncNow: '运行全量同步',
           syncQueued: '全量同步已开始,账号较大时需要几分钟。',
           syncInProgress: '同步进行中',
           syncFailed: '启动同步失败',
