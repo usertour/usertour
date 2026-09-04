@@ -1553,6 +1553,7 @@ const translations = {
         saved: '集成已保存',
         saveFailed: '保存集成失败',
       },
+      moreActions: '更多操作',
       delete: {
         button: '移除',
         confirmTitle: '移除该集成?',

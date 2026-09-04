@@ -140,7 +140,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             )}
           </div>
         </div>
-        {connected && (
+        {connected ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -170,7 +170,16 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
+        ) : configured ? (
+          <LoadingButton
+            type="button"
+            loading={starting}
+            disabled={!canWrite}
+            onClick={() => void handleConnect()}
+          >
+            {t('settings.integrations.crm.connect', { name })}
+          </LoadingButton>
+        ) : null}
       </div>
 
       <div className="flex items-start justify-between gap-4">
@@ -202,18 +211,6 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
               )}
             </p>
           )}
-        </div>
-        <div className="shrink-0">
-          {connected ? null : configured ? (
-            <LoadingButton
-              type="button"
-              loading={starting}
-              disabled={!canWrite}
-              onClick={() => void handleConnect()}
-            >
-              {t('settings.integrations.crm.connect', { name })}
-            </LoadingButton>
-          ) : null}
         </div>
       </div>
 

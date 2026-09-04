@@ -22,6 +22,7 @@ import {
 import {
   RiDeleteBinLine,
   RiFileCopyLine,
+  RiMore2Line,
   RiRefreshLine,
   RiSendPlaneLine,
   SpinnerIcon,
@@ -29,6 +30,10 @@ import {
 import {
   Button,
   DestructiveConfirmDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Form,
   FormControl,
   FormDescription,
@@ -227,18 +232,28 @@ const IdentitySection = ({
           </div>
         </div>
         {integration && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-destructive"
-            disabled={isViewOnly || deleting}
-            title={t('settings.integrations.delete.button')}
-            aria-label={t('settings.integrations.delete.button')}
-            onClick={() => setDeleteOpen(true)}
-          >
-            <RiDeleteBinLine className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t('settings.integrations.moreActions')}
+              >
+                <RiMore2Line className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={isViewOnly || deleting}
+                onSelect={() => setDeleteOpen(true)}
+              >
+                <RiDeleteBinLine className="mr-2 h-4 w-4" />
+                {t('settings.integrations.delete.button')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 

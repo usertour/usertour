@@ -1633,6 +1633,7 @@ const translations = {
         saved: 'Integration saved',
         saveFailed: 'Failed to save the integration',
       },
+      moreActions: 'More actions',
       delete: {
         button: 'Remove',
         confirmTitle: 'Remove this integration?',
