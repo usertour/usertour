@@ -1735,12 +1735,18 @@ const translations = {
           adoptConfirm: 'Adopt existing attributes',
           stats: 'Matched {{matched}} · Unmatched {{unresolved}}',
           lastSynced: 'Last full sync {{time}}',
-          neverSynced: 'Not synced yet',
+          neverSynced: 'Run a full sync to link the records that already exist',
+          records: {
+            contact: 'contacts and users',
+            company: 'companies',
+          },
+          syncHelp:
+            'A full sync walks every one of your {{records}}, links the ones that exist on both sides, and fills in the fields you chose. New activity syncs on its own; a full sync is for the records that were there before, after changing fields, or after correcting data in {{name}}. It also runs daily; large accounts take a few minutes.',
           propertiesLoadFailed: 'Could not load {{name}} properties',
           readOnlySuffix: '(read-only)',
           syncNow: 'Run full sync',
           syncQueued: 'Full sync started — this can take a few minutes for large accounts.',
-          syncInProgress: 'Sync in progress',
+          syncInProgress: 'Full sync in progress',
           syncFailed: 'Failed to start the sync',
         },
         downgradedBanner:

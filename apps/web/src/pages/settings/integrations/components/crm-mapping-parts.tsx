@@ -142,4 +142,6 @@ export const CRM_HIGH_CHURN_ATTRIBUTES: ReadonlySet<string> = new Set(['last_see
 export const crmObjectLabelKeys = (remoteObject: CrmRemoteObject, localObject: CrmLocalObject) => ({
   remote: `settings.integrations.crm.mapping.remoteObjects.${remoteObject}`,
   local: `settings.integrations.crm.mapping.localObjects.${localObject}`,
+  /** "contacts and users" / "companies" — the pair as a phrase, for prose. */
+  records: `settings.integrations.crm.mapping.records.${remoteObject}`,
 });

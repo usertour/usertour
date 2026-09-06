@@ -1650,12 +1650,18 @@ const translations = {
           adoptConfirm: '接管已有属性',
           stats: '已匹配 {{matched}} · 未匹配 {{unresolved}}',
           lastSynced: '上次全量同步 {{time}}',
-          neverSynced: '尚未同步',
+          neverSynced: '运行一次全量同步,关联已有的记录',
+          records: {
+            contact: '联系人和用户',
+            company: '公司',
+          },
+          syncHelp:
+            '全量同步会遍历所有{{records}},关联两边都存在的记录并填入所选字段。新的变动会自动同步;全量同步用于处理已有记录、修改字段之后,或在 {{name}} 里修正数据之后。它每天也会自动运行一次,账号较大时需要几分钟。',
           propertiesLoadFailed: '无法加载 {{name}} 属性',
           readOnlySuffix: '(只读)',
           syncNow: '运行全量同步',
           syncQueued: '全量同步已开始,账号较大时需要几分钟。',
-          syncInProgress: '同步进行中',
+          syncInProgress: '全量同步进行中',
           syncFailed: '启动同步失败',
         },
         downgradedBanner:

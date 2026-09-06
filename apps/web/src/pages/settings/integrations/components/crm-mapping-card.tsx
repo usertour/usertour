@@ -24,6 +24,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  QuestionTooltip,
   useToast,
 } from '@usertour/ui';
 import { type IntegrationCatalogEntry, crmRemotePropertyNameFor } from '@usertour/constants';
@@ -304,11 +305,14 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
             )}
           </section>
 
-          {/* Sync status and its one control live together: the line says where the
-              existing records stand, the button is how to move them. */}
+          {/* Sync status and its one control live together: one line of state
+              (phrased as the next step while nothing has run), a question mark
+              with the long form, and the button. */}
           <div className="flex items-center justify-between gap-4 border-t pt-4">
-            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-              {syncInProgress && <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin" />}
+            <div className="flex min-w-0 items-center gap-2 text-sm">
+              {syncInProgress && (
+                <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+              )}
               <span className="truncate">
                 {syncInProgress
                   ? t('settings.integrations.crm.mapping.syncInProgress')
@@ -327,6 +331,12 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                   </>
                 )}
               </span>
+              <QuestionTooltip>
+                {t('settings.integrations.crm.mapping.syncHelp', {
+                  name,
+                  records: t(labels.records),
+                })}
+              </QuestionTooltip>
             </div>
             <Button
               type="button"
