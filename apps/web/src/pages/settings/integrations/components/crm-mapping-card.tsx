@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
@@ -10,9 +10,14 @@ import {
   useListIntegrationObjectMappingsQuery,
   useRunIntegrationObjectMappingSyncMutation,
 } from '@usertour/hooks';
-import { RiDeleteBinLine, RiMore2Line, RiPencilLine, RiRefreshLine } from '@usertour/icons';
 import {
-  Badge,
+  RiDeleteBinLine,
+  RiMore2Line,
+  RiPencilLine,
+  RiRefreshLine,
+  SpinnerIcon,
+} from '@usertour/icons';
+import {
   Button,
   DestructiveConfirmDialog,
   DropdownMenu,
@@ -32,6 +37,8 @@ import {
   CrmPairRow,
   crmObjectLabelKeys,
 } from './crm-mapping-parts';
+
+const SYNC_POLL_INTERVAL_MS = 3000;
 
 export interface CrmMappingCardProps {
   entry: IntegrationCatalogEntry;
@@ -56,13 +63,23 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   const canWrite = !isViewOnly && entitled;
   const labels = crmObjectLabelKeys(remoteObject, localObject);
 
-  const { mappings } = useListIntegrationObjectMappingsQuery(
+  const { mappings, startPolling, stopPolling } = useListIntegrationObjectMappingsQuery(
     integration.id,
     SHARED_CACHE_QUERY_OPTIONS,
   );
   const mapping = mappings?.find(
     (row) => row.remoteObject === remoteObject && row.localObject === localObject,
   );
+  const syncInProgress = !!mapping?.fullSyncStartedAt;
+  // A running round updates its counts page by page and clears its stamp when
+  // it closes; poll while one is live so the card follows it to the end.
+  useEffect(() => {
+    if (!syncInProgress) {
+      return;
+    }
+    startPolling(SYNC_POLL_INTERVAL_MS);
+    return () => stopPolling();
+  }, [syncInProgress, startPolling, stopPolling]);
   const { properties, error: propertiesError } = useListCrmRemotePropertiesQuery(
     integration.id,
     remoteObject,
@@ -74,7 +91,6 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   });
   const { invoke: removeMapping, loading: removing } = useDeleteIntegrationObjectMappingMutation();
   const { invoke: runSync, loading: syncStarting } = useRunIntegrationObjectMappingSyncMutation();
-  const syncInProgress = !!mapping?.fullSyncStartedAt;
 
   const [editOpen, setEditOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
@@ -141,11 +157,6 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
             remoteLabel={t(labels.remote)}
             localLabel={t(labels.local)}
           />
-          {syncInProgress && (
-            <Badge variant="secondary">
-              {t('settings.integrations.crm.mapping.syncInProgress')}
-            </Badge>
-          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {mapping ? (
@@ -165,13 +176,6 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                   <DropdownMenuItem disabled={!canWrite} onSelect={() => setEditOpen(true)}>
                     <RiPencilLine className="mr-2 h-4 w-4" />
                     {t('settings.integrations.crm.mapping.edit')}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={!canWrite || syncInProgress || syncStarting}
-                    onSelect={() => void handleSyncNow()}
-                  >
-                    <RiRefreshLine className="mr-2 h-4 w-4" />
-                    {t('settings.integrations.crm.mapping.syncNow')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     variant="destructive"
@@ -300,18 +304,46 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
             )}
           </section>
 
-          <p className="text-sm text-muted-foreground">
-            {mapping.lastFullSyncAt
-              ? t('settings.integrations.crm.mapping.lastSynced', {
-                  time: format(new Date(mapping.lastFullSyncAt), 'PPp'),
-                })
-              : t('settings.integrations.crm.mapping.neverSynced')}
-            {' · '}
-            {t('settings.integrations.crm.mapping.stats', {
-              matched: mapping.matchedCount,
-              unresolved: mapping.unresolvedCount,
-            })}
-          </p>
+          {/* Sync status and its one control live together: the line says where the
+              existing records stand, the button is how to move them. */}
+          <div className="flex items-center justify-between gap-4 border-t pt-4">
+            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              {syncInProgress && <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin" />}
+              <span className="truncate">
+                {syncInProgress
+                  ? t('settings.integrations.crm.mapping.syncInProgress')
+                  : mapping.lastFullSyncAt
+                    ? t('settings.integrations.crm.mapping.lastSynced', {
+                        time: format(new Date(mapping.lastFullSyncAt), 'PPp'),
+                      })
+                    : t('settings.integrations.crm.mapping.neverSynced')}
+                {(syncInProgress || mapping.lastFullSyncAt) && (
+                  <>
+                    {' · '}
+                    {t('settings.integrations.crm.mapping.stats', {
+                      matched: mapping.matchedCount,
+                      unresolved: mapping.unresolvedCount,
+                    })}
+                  </>
+                )}
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              disabled={!canWrite || syncInProgress || syncStarting}
+              onClick={() => void handleSyncNow()}
+            >
+              {syncStarting ? (
+                <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RiRefreshLine className="mr-2 h-4 w-4" />
+              )}
+              {t('settings.integrations.crm.mapping.syncNow')}
+            </Button>
+          </div>
         </>
       )}
 

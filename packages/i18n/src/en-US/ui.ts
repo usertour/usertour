@@ -1717,9 +1717,11 @@ const translations = {
             'A Usertour attribute with this code name already exists; saving hands it over to {{name}}.',
           churnWarning: 'Changes on every visit — expect frequent writes to {{name}}.',
           removeRow: 'Remove',
-          dialogNote: 'Changes take effect and start syncing right after saving.',
+          dialogNote:
+            'New activity syncs with these settings right away; existing records catch up on the next full sync.',
           save: 'Save mapping',
-          saved: 'Mapping saved',
+          saved:
+            'Mapping saved. Run a full sync when you are done configuring to link the records that already exist.',
           saveFailed: 'Failed to save the mapping',
           remove: 'Remove mapping',
           removeConfirmTitle: 'Remove this mapping?',

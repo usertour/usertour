@@ -4,6 +4,8 @@ import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { initialization } from '@/common/initialization/initialization';
 import { EncryptionService } from '@/shared/encryption.service';
 import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
+import { CrmJournalService } from '@/integrations/crm/crm-journal.service';
+import { CrmSyncService } from '@/integrations/crm/crm-sync.service';
 
 import { graphql, gqlData } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
@@ -181,6 +183,10 @@ describe('GraphQL CRM object mappings (e2e)', () => {
   });
 
   it('creates a contact ↔ user mapping: inbound fields become provider-owned attributes, outbound gets remote names', async () => {
+    const syncSubscriptions = jest
+      .spyOn(CrmJournalService.prototype, 'syncSubscriptions')
+      .mockResolvedValue(undefined);
+    const startFullSync = jest.spyOn(CrmSyncService.prototype, 'startFullSync');
     const res = await upsert({
       inboundFields: [
         { remote: 'lifecyclestage', local: 'lifecycle_stage' },
@@ -188,6 +194,11 @@ describe('GraphQL CRM object mappings (e2e)', () => {
       ],
       outboundFields: [{ local: 'name' }],
     });
+    // Saving keeps the change subscriptions in step and starts no full round.
+    expect(syncSubscriptions).toHaveBeenCalledWith(integrationId);
+    expect(startFullSync).not.toHaveBeenCalled();
+    syncSubscriptions.mockRestore();
+    startFullSync.mockRestore();
     const mapping = gqlData(res).upsertIntegrationObjectMapping;
     expect(mapping).toMatchObject({
       remoteObject: 'contact',

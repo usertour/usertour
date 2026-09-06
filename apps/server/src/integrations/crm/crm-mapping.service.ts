@@ -198,15 +198,13 @@ export class CrmMappingService {
           });
     });
     await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
-    // A changed field list needs a backfill; a full round is the backfill.
-    // Best-effort: a queue hiccup must not fail the save.
-    try {
-      await this.sync.startFullSync(row.id, { manual: false });
-    } catch (error) {
-      this.logger.warn(
-        `Could not start the full sync after saving mapping ${row.id}: ${(error as Error).message}`,
-      );
-    }
+    // Saving does not start a full round: mappings are usually saved several
+    // times while being set up, and a round over every provider record is the
+    // most expensive thing this integration does. New activity follows the
+    // saved settings at once (journal, write-backs, first-identify backfill);
+    // existing records catch up when the user runs a full sync, or on the
+    // daily round at the latest.
+    await this.afterMappingChange(integration.id);
     return row;
   }
 
@@ -232,7 +230,7 @@ export class CrmMappingService {
       await tx.integrationObjectMapping.delete({ where: { id: mapping.id } });
     });
     await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
-    await this.afterMappingChange(integration.id, null);
+    await this.afterMappingChange(integration.id);
     return true;
   }
 
@@ -273,7 +271,7 @@ export class CrmMappingService {
         `Could not remove the change subscriptions of the previous account ${previousAccountId}: ${(error as Error).message}`,
       );
     }
-    await this.afterMappingChange(integrationId, null);
+    await this.afterMappingChange(integrationId);
     for (const mappingId of mappingIds) {
       try {
         await this.sync.startFullSync(mappingId, { manual: false });
@@ -285,22 +283,13 @@ export class CrmMappingService {
     }
   }
 
-  private async afterMappingChange(integrationId: string, mappingId: string | null): Promise<void> {
+  /** Keep the provider-side change subscriptions in step with the mappings; best-effort. */
+  private async afterMappingChange(integrationId: string): Promise<void> {
     try {
       await this.journal.syncSubscriptions(integrationId);
     } catch (error) {
       this.logger.warn(
         `Could not update the change subscriptions for integration ${integrationId}: ${(error as Error).message}`,
-      );
-    }
-    if (!mappingId) {
-      return;
-    }
-    try {
-      await this.sync.startFullSync(mappingId, { manual: false });
-    } catch (error) {
-      this.logger.warn(
-        `Could not start the full sync after saving mapping ${mappingId}: ${(error as Error).message}`,
       );
     }
   }

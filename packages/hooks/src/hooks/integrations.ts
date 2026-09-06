@@ -300,16 +300,21 @@ export const useListIntegrationObjectMappingsQuery = (
   integrationId: string,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, error, refetch } = useQuery(ListIntegrationObjectMappings, {
-    variables: { integrationId },
-    skip: !integrationId,
-    ...options,
-  });
+  const { data, loading, error, refetch, startPolling, stopPolling } = useQuery(
+    ListIntegrationObjectMappings,
+    {
+      variables: { integrationId },
+      skip: !integrationId,
+      ...options,
+    },
+  );
   return {
     mappings: data?.listIntegrationObjectMappings as IntegrationObjectMapping[] | undefined,
     loading,
     error,
     refetch,
+    startPolling,
+    stopPolling,
   };
 };
 
