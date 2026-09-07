@@ -1777,6 +1777,7 @@ const translations = {
         title: 'Recent messages',
         description:
           'Every event sent to this destination is kept for 30 days with each delivery attempt. Click a row for details.',
+        crmTitle: 'Write-backs',
         crmDescription:
           'Every write-back sent to {{name}} is kept for 30 days with each delivery attempt. Click a row for details.',
         empty: 'No messages yet.',

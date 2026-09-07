@@ -718,6 +718,7 @@ const MessagesSection = ({
   enabled,
   entitled,
   showTestEvent = true,
+  title,
   description,
 }: {
   integrationId: string;
@@ -725,7 +726,8 @@ const MessagesSection = ({
   entitled: boolean;
   /** CRM rows (ADR 0013) have no analytics adapter to send a test event through. */
   showTestEvent?: boolean;
-  /** Overrides the analytics wording ("every event") where the log holds something else. */
+  /** Override the analytics wording where the log holds something else (CRM: write-backs). */
+  title?: string;
   description?: string;
 }) => {
   // Load-more accumulation, same wiring as the webhook message log.
@@ -802,7 +804,7 @@ const MessagesSection = ({
   return (
     <div className="space-y-6">
       <CardHeading
-        title={t('settings.integrations.messages.title')}
+        title={title ?? t('settings.integrations.messages.title')}
         description={description ?? t('settings.integrations.messages.description')}
         actions={
           <>
@@ -1007,6 +1009,7 @@ export const IntegrationDetail = () => {
               enabled={integration.enabled}
               entitled={entitled}
               showTestEvent={false}
+              title={t('settings.integrations.messages.crmTitle')}
               description={t('settings.integrations.messages.crmDescription', { name: entry.name })}
             />
           </SettingsCard>

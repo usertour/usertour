@@ -1690,6 +1690,7 @@ const translations = {
       messages: {
         title: '最近消息',
         description: '发往该目的地的每条事件保留 30 天,含每次投递尝试。点击一行查看详情。',
+        crmTitle: '写回记录',
         crmDescription:
           '发送到 {{name}} 的每一次写回都会保留 30 天,含每次投递尝试。点击一行查看详情。',
         empty: '暂无消息。',
