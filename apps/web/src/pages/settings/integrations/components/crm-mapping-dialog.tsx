@@ -52,6 +52,8 @@ export interface CrmMappingDialogProps {
   /** The saved mapping being edited; absent when setting the pair up. */
   mapping: IntegrationObjectMapping | undefined;
   properties: CrmRemoteProperty[];
+  /** Provider metadata still loading: the provider-side pickers wait. */
+  propertiesLoading?: boolean;
   attributes: Attribute[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -79,6 +81,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
     localObject,
     mapping,
     properties,
+    propertiesLoading = false,
     attributes,
     open,
     onOpenChange,
@@ -254,6 +257,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                       emptyText={t('settings.integrations.crm.mapping.noMatches')}
                       container={container}
                       className="w-full"
+                      disabled={propertiesLoading}
                     />
                   }
                   right={
@@ -373,6 +377,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                         emptyText={t('settings.integrations.crm.mapping.noMatches')}
                         container={container}
                         className="w-full"
+                        disabled={propertiesLoading}
                       />
                     }
                     right={

@@ -81,9 +81,13 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
     startPolling(SYNC_POLL_INTERVAL_MS);
     return () => stopPolling();
   }, [syncInProgress, startPolling, stopPolling]);
+  // Labels come from the cache at once on a revisit and refresh behind them;
+  // the editor still sees a property the customer just created, after the
+  // network round trip.
   const { properties, error: propertiesError } = useListCrmRemotePropertiesQuery(
     integration.id,
     remoteObject,
+    { fetchPolicy: 'cache-and-network' },
   );
   const bizType = localObject === 'user' ? AttributeBizTypes.User : AttributeBizTypes.Company;
   const { attributes } = useListAttributesQuery(project?.id ?? '', bizType, {
@@ -98,6 +102,9 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
 
   const propertyLabel = (propertyName: string) =>
     properties?.find((property) => property.name === propertyName)?.label ?? propertyName;
+  // Provider labels are unknown until the metadata arrives (no cache on a
+  // first visit): the provider-side chips show a bar rather than raw names.
+  const propertiesPending = !properties && !propertiesError;
   const attributeLabel = (codeName: string) =>
     attributes?.find((attribute) => attribute.codeName === codeName)?.displayName ?? codeName;
   const localMatchLabel = mapping
@@ -218,6 +225,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
               left={
                 <CrmFieldChip
                   side="remote"
+                  loading={propertiesPending}
                   provider={entry.provider}
                   label={propertyLabel(remoteMatchField)}
                   hint={remoteMatchField}
@@ -246,6 +254,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                     left={
                       <CrmFieldChip
                         side="remote"
+                        loading={propertiesPending}
                         provider={entry.provider}
                         label={propertyLabel(field.remote)}
                         hint={field.remote}
@@ -293,6 +302,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                       right={
                         <CrmFieldChip
                           side="remote"
+                          loading={propertiesPending}
                           provider={entry.provider}
                           label={propertyLabel(remoteName)}
                           hint={remoteName}
@@ -364,6 +374,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
         localObject={localObject}
         mapping={mapping}
         properties={properties ?? []}
+        propertiesLoading={propertiesPending}
         attributes={attributes ?? []}
         open={editOpen}
         onOpenChange={setEditOpen}

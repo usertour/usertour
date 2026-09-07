@@ -6,6 +6,7 @@ import {
   UsertourIcon2,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
+import { Skeleton } from '@usertour/ui';
 import type { CrmLocalObject, CrmRemoteObject, IntegrationProvider } from '@usertour/types';
 
 /**
@@ -45,12 +46,14 @@ export interface CrmFieldChipProps {
   trailing?: ReactNode;
   /** Renders as a dotted placeholder — "whatever gets picked on the other side". */
   placeholder?: boolean;
+  /** The label is not known yet (provider metadata still loading): keep the frame, show a bar. */
+  loading?: boolean;
   className?: string;
 }
 
 /** One side of a pair: mark, label, optional hint. */
 export const CrmFieldChip = (props: CrmFieldChipProps) => {
-  const { side, provider, label, hint, trailing, placeholder, className } = props;
+  const { side, provider, label, hint, trailing, placeholder, loading, className } = props;
   return (
     <span
       className={cn(
@@ -60,10 +63,15 @@ export const CrmFieldChip = (props: CrmFieldChipProps) => {
       )}
     >
       <CrmSideMark side={side} provider={provider} />
-      <span className="min-w-0 truncate" title={label}>
-        {label}
-      </span>
-      {hint && (
+      {loading ? (
+        <Skeleton className="h-3.5 w-28" />
+      ) : (
+        <span className="min-w-0 truncate" title={label}>
+          {label}
+        </span>
+      )}
+      {/* No hint while the label is still the raw name (metadata not loaded yet). */}
+      {hint && hint !== label && (
         <span className="min-w-0 truncate text-[11px] text-muted-foreground" title={hint}>
           {hint}
         </span>
