@@ -4,6 +4,7 @@
   "config": {
     "description": "Usertour is a user onboarding platform for building product tours, checklists, surveys, and announcements inside your app.",
     "name": "Usertour",
+    "logo": "app/logo.png",
     "distribution": "marketplace",
     "auth": {
       "type": "oauth",

@@ -10,6 +10,7 @@ It is deployed with the [HubSpot CLI](https://developers.hubspot.com/docs/develo
 |---|---|
 | `hsproject.json` | Project name, source dir, HubSpot platform version |
 | `src/app/app-hsmeta.json` | App identity, OAuth settings (redirect URLs, scopes), distribution, support links |
+| `src/app/logo.png` | The square mark shown on HubSpot's consent screen and in the customer's connected apps (`logo` in app-hsmeta.json, path relative to `src/`) |
 | `src/app/app-events/*-hsmeta.json` | Timeline event templates: how each Usertour event renders on a contact or company record |
 
 ## Cloud vs. self-hosted
