@@ -1,0 +1,19 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.usertour/mcp",
+  "title": "Usertour MCP Server",
+  "description": "Official Usertour MCP Server for in-app onboarding: flows, checklists, surveys, and analytics.",
+  "version": "0.9.4",
+  "websiteUrl": "https://usertour.io",
+  "repository": {
+    "url": "https://github.com/usertour/usertour",
+    "source": "github",
+    "subfolder": "apps/server/src/mcp"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.usertour.io/mcp"
+    }
+  ]
+}

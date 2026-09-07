@@ -1,0 +1,45 @@
+name: Publish MCP Registry Entry
+
+# Keeps our listing on registry.modelcontextprotocol.io in sync with releases.
+# OIDC, not a personal token: it authenticates as THIS repository, which also
+# sidesteps the interactive-login bug where org namespaces are refused
+# (modelcontextprotocol/registry#1468, #1527, #1537, #1551).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish server.json to the MCP Registry
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # mint the OIDC token mcp-publisher exchanges
+      contents: read
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      # The tag is the source of truth for the published version, so a release
+      # can never ship with a stale server.json. Nothing is committed back —
+      # the in-repo value is only the fallback for a manual publish.
+      - name: Set version from the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          jq --arg v "$VERSION" '.version = $v' server.json > server.tmp && mv server.tmp server.json
+          echo "Publishing version $VERSION"
+
+      - name: Validate server.json
+        run: ./mcp-publisher validate
+
+      - name: Authenticate to the MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish
+        run: ./mcp-publisher publish
