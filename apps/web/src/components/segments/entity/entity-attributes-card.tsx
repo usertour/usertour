@@ -34,12 +34,14 @@ export const EntityAttributesCard = ({ title, attributes }: EntityAttributesCard
               key={key}
               className="group flex min-w-0 flex-row gap-2 border-b text-sm last:border-0"
             >
-              <div className="w-2/5 min-w-0 break-words p-2 leading-6 font-medium">
-                {name}
+              {/* Text wraps within the column; the provider mark is pinned to
+                  the first line's end so it never drops to a line of its own. */}
+              <div className="flex w-2/5 min-w-0 items-start gap-1.5 p-2 leading-6 font-medium">
+                <span className="min-w-0 break-words">{name}</span>
                 <IntegrationSourceMark
                   source={source}
                   labelFor={(provider) => t('attributes.syncedFrom', { provider })}
-                  className="ml-1.5 inline-block align-[-2px]"
+                  className="mt-1.5 h-3 w-3"
                 />
               </div>
               <div className="w-3/5 min-w-0 break-words p-2 leading-6">
