@@ -188,6 +188,54 @@ describe('CRM change journal (e2e)', () => {
     });
   });
 
+  it('leaves a portal alone once the grant is gone: another environment may hold it now', async () => {
+    // A disconnected row keeps its account id for bookkeeping. Whoever holds
+    // the portal now owns its subscriptions; the old row must not touch them.
+    const list = jest.spyOn(journalApi, 'listJournalSubscriptions').mockResolvedValue([]);
+    const removePortal = jest
+      .spyOn(journalApi, 'deletePortalJournalSubscriptions')
+      .mockResolvedValue();
+    const other = await buildEnvironment(prisma, { projectId });
+    const holder = await prisma.integration.create({
+      data: {
+        environmentId: other.id,
+        provider: 'hubspot',
+        key: '',
+        enabled: true,
+        oauthCredentials: app
+          .get(EncryptionService)
+          .encrypt(JSON.stringify({ accessToken: 'b', refreshToken: 's', expiresAt: 0 })),
+        remoteAccountId: '4242',
+      },
+    });
+    const before = await prisma.integration.findUniqueOrThrow({
+      where: { id: integrationId },
+      select: { oauthCredentials: true },
+    });
+    await prisma.integration.update({
+      where: { id: integrationId },
+      data: { enabled: false, oauthCredentials: null },
+    });
+    try {
+      await journal.syncSubscriptions(integrationId);
+      await journal.removeSubscriptions(integrationId);
+      await journal.removePortalSubscriptions('4242');
+      expect(list).not.toHaveBeenCalled();
+      expect(removePortal).not.toHaveBeenCalled();
+
+      // Nobody holds the portal any more: the reconnect-time sweep may proceed.
+      await prisma.integration.delete({ where: { id: holder.id } });
+      await journal.removePortalSubscriptions('4242');
+      expect(removePortal).toHaveBeenCalledWith('app-token', 4242);
+    } finally {
+      await prisma.integration.update({
+        where: { id: integrationId },
+        data: { enabled: true, oauthCredentials: before.oauthCredentials },
+      });
+      await prisma.integration.deleteMany({ where: { id: holder.id } });
+    }
+  });
+
   it('skips the tick while another poll holds the journal', async () => {
     const latest = jest.spyOn(journalApi, 'journalLatest').mockResolvedValue(null);
     const release = await redis.acquireLock(CRM_JOURNAL_POLL_LOCK_KEY);

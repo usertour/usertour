@@ -10,7 +10,7 @@
       "type": "oauth",
       "redirectUrls": [
         "https://api.usertour.io/integrations/hubspot/oauth/callback",
-        "https://local-3000.usertour.io/integrations/hubspot/oauth/callback"
+        "https://localhost:5174/integrations/hubspot/oauth/callback"
       ],
       "requiredScopes": [
         "oauth",

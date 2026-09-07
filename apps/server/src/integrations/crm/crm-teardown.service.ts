@@ -39,7 +39,7 @@ export class CrmTeardownService {
     }
     await this.mappings.releaseAllForIntegration(row.id);
     try {
-      await this.journal.removeSubscriptions(row);
+      await this.journal.removeSubscriptions(row.id);
     } catch (error) {
       this.logger.warn(
         `Could not remove the change subscriptions of integration ${row.id}: ${(error as Error).message}`,

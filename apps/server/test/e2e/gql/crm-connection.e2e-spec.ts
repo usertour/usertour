@@ -82,9 +82,8 @@ describe('GraphQL CRM connections (e2e)', () => {
   };
 
   /**
-   * Start the handshake as the browser would: mint the start URL, follow it
-   * (which sets the transaction cookie and redirects to the provider), and
-   * return the state plus the cookie the callback must carry.
+   * Start the handshake as the browser would: run the mutation and keep the
+   * state from the authorize URL plus the transaction cookie its response set.
    */
   const beginHandshake = async () => {
     const start = await graphql(app, {
@@ -92,11 +91,9 @@ describe('GraphQL CRM connections (e2e)', () => {
       query: START_OAUTH,
       variables: { data: { environmentId, provider: 'hubspot' } },
     });
-    const startUrl = new URL(gqlData(start).startCrmOAuth.url);
-    const state = startUrl.searchParams.get('state') ?? '';
-    const res = await request(app.getHttpServer()).get(startUrl.pathname).query({ state });
-    const cookie = (res.headers['set-cookie'] as unknown as string[] | undefined)?.find((c) =>
-      c.startsWith(`${CRM_TX_COOKIE}=`),
+    const state = new URL(gqlData(start).startCrmOAuth.url).searchParams.get('state') ?? '';
+    const cookie = (start.headers['set-cookie'] as unknown as string[] | undefined)?.find(
+      (header) => header.startsWith(`${CRM_TX_COOKIE}=`),
     );
     return { state, cookie: cookie?.split(';')[0] ?? '' };
   };
@@ -120,18 +117,17 @@ describe('GraphQL CRM connections (e2e)', () => {
     expect(res.body.errors?.[0]?.message).toContain('not configured');
   });
 
-  it('starts the handshake with a signed state bound to the environment', async () => {
+  it('starts the handshake: authorize URL out, transaction cookie on the authenticated response', async () => {
     withAppCredentials('client-123');
     const res = await graphql(app, {
       token,
       query: START_OAUTH,
       variables: { data: { environmentId, provider: 'hubspot' } },
     });
-    // The mutation hands out OUR start route; the browser lands on the provider from there.
     const url = new URL(gqlData(res).startCrmOAuth.url);
-    expect(url.origin + url.pathname).toBe(
-      'https://api.example.test/integrations/hubspot/oauth/start',
-    );
+    expect(url.origin + url.pathname).toBe(hubspotApi.HUBSPOT_AUTHORIZE_URL);
+    expect(url.searchParams.get('client_id')).toBe('client-123');
+    expect(url.searchParams.get('scope')).toBe(hubspotApi.HUBSPOT_OAUTH_SCOPES.join(' '));
     const state = url.searchParams.get('state') ?? '';
     const claims = await app
       .get(JwtService, { strict: false })
@@ -149,17 +145,13 @@ describe('GraphQL CRM connections (e2e)', () => {
     });
     expect(asBearer.body.data?.listIntegrations ?? null).toBeNull();
 
-    const started = await request(app.getHttpServer()).get(url.pathname).query({ state });
-    expect(started.status).toBe(302);
-    const target = new URL(started.headers.location);
-    expect(target.origin + target.pathname).toBe(hubspotApi.HUBSPOT_AUTHORIZE_URL);
-    expect(target.searchParams.get('client_id')).toBe('client-123');
-    expect(target.searchParams.get('scope')).toBe(hubspotApi.HUBSPOT_OAUTH_SCOPES.join(' '));
-    expect(target.searchParams.get('state')).toBe(state);
-    const setCookie = (started.headers['set-cookie'] as unknown as string[]).join(';');
+    // The cookie rides the mutation's own response — the one thing a forwarded
+    // link cannot carry — scoped to the callback path.
+    const setCookie = (res.headers['set-cookie'] as unknown as string[]).join(';');
     expect(setCookie).toContain(`${CRM_TX_COOKIE}=`);
     expect(setCookie).toContain('HttpOnly');
     expect(setCookie).toContain('SameSite=Lax');
+    expect(setCookie).toContain('Path=/integrations/hubspot/oauth');
   });
 
   it('gates the handshake on the plan', async () => {
@@ -374,7 +366,12 @@ describe('GraphQL CRM connections (e2e)', () => {
     expect(forged.headers.location).toContain('error=failed');
 
     // A valid state from another browser (no transaction cookie) is refused:
-    // the callback must be completed by the browser that started it.
+    // the callback must be completed by the browser that ran the mutation.
+    // And there is no public route that would hand that browser a cookie.
+    const forwarded = await request(app.getHttpServer())
+      .get('/integrations/hubspot/oauth/start')
+      .query({ state });
+    expect(forwarded.status).toBe(404);
     const exchange = jest.spyOn(hubspotApi, 'exchangeHubspotCode');
     const unbound = await request(app.getHttpServer())
       .get('/integrations/hubspot/oauth/callback')

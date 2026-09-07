@@ -1,6 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { Capability } from '@usertour/types';
 import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
@@ -9,6 +9,7 @@ import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
+import { CRM_TX_COOKIE } from '@/utils/cookie';
 import {
   IntegrationIdInput,
   QueryIntegrationsInput,
@@ -109,11 +110,22 @@ export class IntegrationsResolver {
   // CRM connections (ADR 0013)
   // ---------------------------------------------------------------------------
 
-  /** Mint the provider authorize URL; the browser navigates there and returns via the callback. */
+  /**
+   * Mint the provider authorize URL for the browser to navigate to. The
+   * transaction cookie is set on THIS response: it is the only proof the
+   * callback accepts, and unlike a link it cannot be forwarded to someone
+   * else's browser.
+   */
   @Mutation(() => CrmOAuthStart)
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
-  async startCrmOAuth(@Args('data') data: StartCrmOAuthInput, @UserEntity() user: User) {
-    return await this.connections.startOAuth({ ...data, userId: user.id });
+  async startCrmOAuth(
+    @Args('data') data: StartCrmOAuthInput,
+    @UserEntity() user: User,
+    @Context() context: { res: Response },
+  ) {
+    const { url, state } = await this.connections.startOAuth({ ...data, userId: user.id });
+    context.res.cookie(CRM_TX_COOKIE, state, this.connections.transactionCookieOptions());
+    return { url };
   }
 
   @Mutation(() => Integration)
@@ -128,14 +140,9 @@ export class IntegrationsResolver {
     @Args('data') { id }: IntegrationIdInput,
     @Context() context: { req?: Request },
   ) {
-    const before = await this.service.getById(id, context.req);
     // Best-effort: the change subscriptions die with the grant.
     try {
-      await this.journal.removeSubscriptions({
-        id,
-        provider: before.provider,
-        remoteAccountId: before.remoteAccountId,
-      });
+      await this.journal.removeSubscriptions(id);
     } catch {
       // Logged by the provider call site; the disconnect itself proceeds.
     }

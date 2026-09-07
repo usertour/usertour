@@ -286,6 +286,14 @@ export class IntegrationsService {
     if (!integration) {
       throw new IntegrationNotFoundError();
     }
+    if (
+      CRM_INTEGRATION_PROVIDERS.includes(
+        integration.provider as (typeof CRM_INTEGRATION_PROVIDERS)[number],
+      )
+    ) {
+      // CRM rows sync records, not events; a test event would only trip their breaker.
+      throw new ValidationError('Test events are only available for analytics integrations.');
+    }
     await this.assertEntitled(integration.environmentId);
     if (!integration.enabled) {
       throw new ValidationError('Enable the integration before sending a test event.');

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
 import type { Integration, Prisma } from '@prisma/client';
+import type { CookieOptions } from 'express';
 import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
 import type { CrmIntegrationProvider } from '@usertour/types';
 import { FeatureRequiresLicenseError, OAuthError, ValidationError } from '@/common/errors/errors';
@@ -56,6 +57,9 @@ const APP_TOKEN_MARGIN_MS = 5 * 60 * 1000;
 /** Refresh when the access token has less than this left (HubSpot tokens live 30 min). */
 const REFRESH_MARGIN_MS = 2 * 60 * 1000;
 const STATE_TTL = '10m';
+/** Where the transaction cookie lives: the OAuth callback route, nothing else. */
+export const CRM_TX_COOKIE_PATH = '/integrations/hubspot/oauth';
+const CRM_TX_COOKIE_MAX_AGE_MS = 10 * 60 * 1000;
 const CRM_PROVIDER_KEY = ''; // OAuth rows never carry an API key; the column is NOT NULL.
 
 /**
@@ -155,19 +159,18 @@ export class CrmConnectionService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Mint the handshake URL. The `state` is a signed, short-lived JWT binding
-   * the callback to the environment (and the user who started it). The URL
-   * points at our own start route rather than the provider: that route sets
-   * the transaction cookie on the API origin before redirecting, so the
-   * callback can require that the browser completing it is the one that
-   * began it (see HubspotOAuthController). The authorization code itself is
-   * single-use at the provider, so no nonce store is needed for replay.
+   * Mint the provider authorize URL. The `state` is a signed, short-lived JWT
+   * binding the callback to the environment (and the user who started it);
+   * the caller sets it as the transaction cookie on its own authenticated
+   * response, and the callback requires the cookie to match (see
+   * HubspotOAuthController). The authorization code itself is single-use at
+   * the provider, so no nonce store is needed for replay.
    */
   async startOAuth(input: {
     environmentId: string;
     provider: string;
     userId: string;
-  }): Promise<{ url: string }> {
+  }): Promise<{ url: string; state: string }> {
     const { environmentId, userId } = input;
     this.assertProvider(input.provider);
     const provider = input.provider;
@@ -192,17 +195,27 @@ export class CrmConnectionService {
       sub: userId,
     };
     const state = await this.jwtService.signAsync(transaction, { expiresIn: STATE_TTL });
-    return { url: `${this.startUrl(provider)}?state=${encodeURIComponent(state)}` };
+    return { url: this.authorizeUrl(transaction, state), state };
   }
 
-  /** The provider authorize URL for a verified transaction (the start route redirects here). */
-  authorizeUrl(transaction: CrmOAuthTransaction, state: string): string {
+  /**
+   * Options for the transaction cookie `startCrmOAuth` sets on its response
+   * — the only proof the callback accepts. 'lax' (not 'strict') so the cookie
+   * rides the provider's top-level GET back to the callback; scoped to the
+   * callback path; as short-lived as the state it must match.
+   */
+  transactionCookieOptions(): CookieOptions {
+    return {
+      httpOnly: true,
+      secure: !!this.configService.get('auth.cookie.secure'),
+      sameSite: 'lax',
+      maxAge: CRM_TX_COOKIE_MAX_AGE_MS,
+      path: CRM_TX_COOKIE_PATH,
+    };
+  }
+
+  private authorizeUrl(transaction: CrmOAuthTransaction, state: string): string {
     return buildHubspotAuthorizeUrl(this.appCredentials(transaction.provider), state);
-  }
-
-  /** Our start route, next to the callback route registered on the provider app. */
-  private startUrl(provider: CrmIntegrationProvider): string {
-    return this.appCredentials(provider).redirectUri.replace(/\/callback$/, '/start');
   }
 
   /** Verify the signed state; throws OAuthError on anything but a fresh, valid one. */

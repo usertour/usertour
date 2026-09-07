@@ -71,7 +71,7 @@ export class CrmJournalService {
       where: { id: integrationId },
       include: { objectMappings: { where: { enabled: true } } },
     });
-    if (!integration || integration.provider !== PROVIDER || !integration.remoteAccountId) {
+    if (!integration || !this.holdsPortal(integration)) {
       return;
     }
     const portalId = Number(integration.remoteAccountId);
@@ -121,10 +121,9 @@ export class CrmJournalService {
   }
 
   /** Drop every subscription for the account (disconnect). Best-effort for callers. */
-  async removeSubscriptions(
-    integration: Pick<Integration, 'id' | 'provider' | 'remoteAccountId'>,
-  ): Promise<void> {
-    if (integration.provider !== PROVIDER || !integration.remoteAccountId) {
+  async removeSubscriptions(integrationId: string): Promise<void> {
+    const integration = await this.prisma.integration.findUnique({ where: { id: integrationId } });
+    if (!integration || !this.holdsPortal(integration)) {
       return;
     }
     const token = await this.connections.getAppAccessToken(PROVIDER);
@@ -134,8 +133,31 @@ export class CrmJournalService {
 
   /** Drop every subscription of a portal we no longer serve (the account a reconnect replaced). */
   async removePortalSubscriptions(portalId: string): Promise<void> {
+    const holder = await this.prisma.integration.findFirst({
+      where: { provider: PROVIDER, remoteAccountId: portalId, oauthCredentials: { not: null } },
+      select: { id: true },
+    });
+    if (holder) {
+      // Another environment connected this portal meanwhile; the subscriptions are theirs.
+      return;
+    }
     const token = await this.connections.getAppAccessToken(PROVIDER);
     await deletePortalJournalSubscriptions(token, Number(portalId));
+  }
+
+  /**
+   * A portal's subscriptions belong to the integration that holds its grant.
+   * A disconnected row keeps its account id for bookkeeping, and another
+   * environment may hold that portal by now — so no grant, no touching.
+   */
+  private holdsPortal(
+    integration: Pick<Integration, 'provider' | 'remoteAccountId' | 'oauthCredentials'>,
+  ): boolean {
+    return (
+      integration.provider === PROVIDER &&
+      !!integration.remoteAccountId &&
+      !!integration.oauthCredentials
+    );
   }
 
   private sameSubscription(
