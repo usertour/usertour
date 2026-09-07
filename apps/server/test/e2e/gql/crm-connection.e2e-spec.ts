@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 import { EncryptionService } from '@/shared/encryption.service';
+import { CRM_TX_COOKIE } from '@/utils/cookie';
 import * as hubspotApi from '@/integrations/crm/hubspot-api';
 import { CrmJournalService } from '@/integrations/crm/crm-journal.service';
 import { CrmSyncService } from '@/integrations/crm/crm-sync.service';
@@ -80,6 +81,26 @@ describe('GraphQL CRM connections (e2e)', () => {
     );
   };
 
+  /**
+   * Start the handshake as the browser would: mint the start URL, follow it
+   * (which sets the transaction cookie and redirects to the provider), and
+   * return the state plus the cookie the callback must carry.
+   */
+  const beginHandshake = async () => {
+    const start = await graphql(app, {
+      token,
+      query: START_OAUTH,
+      variables: { data: { environmentId, provider: 'hubspot' } },
+    });
+    const startUrl = new URL(gqlData(start).startCrmOAuth.url);
+    const state = startUrl.searchParams.get('state') ?? '';
+    const res = await request(app.getHttpServer()).get(startUrl.pathname).query({ state });
+    const cookie = (res.headers['set-cookie'] as unknown as string[] | undefined)?.find((c) =>
+      c.startsWith(`${CRM_TX_COOKIE}=`),
+    );
+    return { state, cookie: cookie?.split(';')[0] ?? '' };
+  };
+
   it('rejects the key-based upsert for a CRM provider', async () => {
     const res = await graphql(app, {
       token,
@@ -106,16 +127,39 @@ describe('GraphQL CRM connections (e2e)', () => {
       query: START_OAUTH,
       variables: { data: { environmentId, provider: 'hubspot' } },
     });
+    // The mutation hands out OUR start route; the browser lands on the provider from there.
     const url = new URL(gqlData(res).startCrmOAuth.url);
-    expect(url.origin + url.pathname).toBe(hubspotApi.HUBSPOT_AUTHORIZE_URL);
-    expect(url.searchParams.get('client_id')).toBe('client-123');
-    expect(url.searchParams.get('scope')).toBe(hubspotApi.HUBSPOT_OAUTH_SCOPES.join(' '));
+    expect(url.origin + url.pathname).toBe(
+      'https://api.example.test/integrations/hubspot/oauth/start',
+    );
+    const state = url.searchParams.get('state') ?? '';
     const claims = await app
       .get(JwtService, { strict: false })
-      .verifyAsync<{ tokenType: string; environmentId: string; projectId: string }>(
-        url.searchParams.get('state') ?? '',
+      .verifyAsync<{ tokenType: string; environmentId: string; projectId: string; sub: string }>(
+        state,
       );
     expect(claims).toMatchObject({ tokenType: 'crm-oauth-tx', environmentId, projectId });
+    // The state carries the user as `sub`, never `userId`: it must not double as a session token.
+    expect(claims).not.toHaveProperty('userId');
+    expect(claims.sub).toBeTruthy();
+    const asBearer = await graphql(app, {
+      token: state,
+      query: LIST_INTEGRATIONS,
+      variables: { environmentId },
+    });
+    expect(asBearer.body.data?.listIntegrations ?? null).toBeNull();
+
+    const started = await request(app.getHttpServer()).get(url.pathname).query({ state });
+    expect(started.status).toBe(302);
+    const target = new URL(started.headers.location);
+    expect(target.origin + target.pathname).toBe(hubspotApi.HUBSPOT_AUTHORIZE_URL);
+    expect(target.searchParams.get('client_id')).toBe('client-123');
+    expect(target.searchParams.get('scope')).toBe(hubspotApi.HUBSPOT_OAUTH_SCOPES.join(' '));
+    expect(target.searchParams.get('state')).toBe(state);
+    const setCookie = (started.headers['set-cookie'] as unknown as string[]).join(';');
+    expect(setCookie).toContain(`${CRM_TX_COOKIE}=`);
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('SameSite=Lax');
   });
 
   it('gates the handshake on the plan', async () => {
@@ -148,15 +192,11 @@ describe('GraphQL CRM connections (e2e)', () => {
       user_id: 7,
       scopes: [],
     });
-    const start = await graphql(app, {
-      token,
-      query: START_OAUTH,
-      variables: { data: { environmentId, provider: 'hubspot' } },
-    });
-    const state = new URL(gqlData(start).startCrmOAuth.url).searchParams.get('state') ?? '';
+    const { state, cookie } = await beginHandshake();
 
     const res = await request(app.getHttpServer())
       .get('/integrations/hubspot/oauth/callback')
+      .set('Cookie', cookie)
       .query({ code: 'code-1', state });
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain(`/project/${projectId}/settings/integrations/hubspot`);
@@ -245,14 +285,10 @@ describe('GraphQL CRM connections (e2e)', () => {
       scopes: [],
     });
     try {
-      const start = await graphql(app, {
-        token,
-        query: START_OAUTH,
-        variables: { data: { environmentId, provider: 'hubspot' } },
-      });
-      const state = new URL(gqlData(start).startCrmOAuth.url).searchParams.get('state') ?? '';
+      const { state, cookie } = await beginHandshake();
       const res = await request(app.getHttpServer())
         .get('/integrations/hubspot/oauth/callback')
+        .set('Cookie', cookie)
         .query({ code: 'code-2', state });
       expect(res.status).toBe(302);
       expect(res.headers.location).toContain('connected=1');
@@ -279,15 +315,11 @@ describe('GraphQL CRM connections (e2e)', () => {
 
   it('turns a declined consent and a bad state into error redirects, never a 500', async () => {
     withAppCredentials('client-123');
-    const start = await graphql(app, {
-      token,
-      query: START_OAUTH,
-      variables: { data: { environmentId, provider: 'hubspot' } },
-    });
-    const state = new URL(gqlData(start).startCrmOAuth.url).searchParams.get('state') ?? '';
+    const { state, cookie } = await beginHandshake();
 
     const denied = await request(app.getHttpServer())
       .get('/integrations/hubspot/oauth/callback')
+      .set('Cookie', cookie)
       .query({ error: 'access_denied', state });
     expect(denied.status).toBe(302);
     expect(denied.headers.location).toContain('error=denied');
@@ -297,6 +329,16 @@ describe('GraphQL CRM connections (e2e)', () => {
       .query({ code: 'code-1', state: 'not-a-jwt' });
     expect(forged.status).toBe(302);
     expect(forged.headers.location).toContain('error=failed');
+
+    // A valid state from another browser (no transaction cookie) is refused:
+    // the callback must be completed by the browser that started it.
+    const exchange = jest.spyOn(hubspotApi, 'exchangeHubspotCode');
+    const unbound = await request(app.getHttpServer())
+      .get('/integrations/hubspot/oauth/callback')
+      .query({ code: 'code-1', state });
+    expect(unbound.status).toBe(302);
+    expect(unbound.headers.location).toContain('error=failed');
+    expect(exchange).not.toHaveBeenCalled();
     expect(await prisma.integration.count({ where: { environmentId } })).toBe(0);
   });
 

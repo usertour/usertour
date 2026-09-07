@@ -36,7 +36,13 @@ interface CrmOAuthTransaction {
   provider: CrmIntegrationProvider;
   environmentId: string;
   projectId: string;
-  userId: string;
+  /**
+   * The user who started the handshake. Named `sub`, never `userId`: the
+   * state is signed with the session secret and travels through the
+   * provider, browser history and access logs, so it must not satisfy the
+   * session strategy (which reads `userId`) — same rule as the 2FA challenge.
+   */
+  sub: string;
 }
 
 /** System-owned bookkeeping in Integration.remoteState (ADR 0013 §3). */
@@ -141,10 +147,13 @@ export class CrmConnectionService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Mint the provider authorize URL. The `state` is a signed, short-lived JWT
-   * binding the callback to the environment (and the user who started it);
-   * the authorization code itself is single-use at the provider, so no nonce
-   * store is needed for replay protection.
+   * Mint the handshake URL. The `state` is a signed, short-lived JWT binding
+   * the callback to the environment (and the user who started it). The URL
+   * points at our own start route rather than the provider: that route sets
+   * the transaction cookie on the API origin before redirecting, so the
+   * callback can require that the browser completing it is the one that
+   * began it (see HubspotOAuthController). The authorization code itself is
+   * single-use at the provider, so no nonce store is needed for replay.
    */
   async startOAuth(input: {
     environmentId: string;
@@ -172,10 +181,20 @@ export class CrmConnectionService {
       provider,
       environmentId,
       projectId: environment.projectId,
-      userId,
+      sub: userId,
     };
     const state = await this.jwtService.signAsync(transaction, { expiresIn: STATE_TTL });
-    return { url: buildHubspotAuthorizeUrl(this.appCredentials(provider), state) };
+    return { url: `${this.startUrl(provider)}?state=${encodeURIComponent(state)}` };
+  }
+
+  /** The provider authorize URL for a verified transaction (the start route redirects here). */
+  authorizeUrl(transaction: CrmOAuthTransaction, state: string): string {
+    return buildHubspotAuthorizeUrl(this.appCredentials(transaction.provider), state);
+  }
+
+  /** Our start route, next to the callback route registered on the provider app. */
+  private startUrl(provider: CrmIntegrationProvider): string {
+    return this.appCredentials(provider).redirectUri.replace(/\/callback$/, '/start');
   }
 
   /** Verify the signed state; throws OAuthError on anything but a fresh, valid one. */

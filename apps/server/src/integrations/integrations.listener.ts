@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { WEBHOOK_EVENT_TOPIC_PREFIX } from '@usertour/constants';
+import { CRM_INTEGRATION_PROVIDERS, WEBHOOK_EVENT_TOPIC_PREFIX } from '@usertour/constants';
 import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import { mapEvent } from '@/api/events/event.mapper';
 import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
@@ -79,7 +79,9 @@ export class IntegrationsListener {
    */
   private async activeIntegrationsFor(environmentId: string) {
     const integrations = await this.prisma.integration.findMany({
-      where: { environmentId, enabled: true },
+      // Analytics destinations only: a CRM row is not an event sink (ADR 0013
+      // §8) and its delivery path expects CRM envelopes.
+      where: { environmentId, enabled: true, provider: { notIn: [...CRM_INTEGRATION_PROVIDERS] } },
       // Hot path: the fan-out only needs ids — key/config are read at
       // delivery time so credential/region fixes apply to retries.
       select: { id: true },
