@@ -185,14 +185,15 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return Number(result);
   }
 
-  async acquireLock(key: string): Promise<LockReleaseFn | null> {
+  /** Take `key` for `ttlSeconds` (default 10) or return null when someone else holds it. */
+  async acquireLock(key: string, ttlSeconds = 10): Promise<LockReleaseFn | null> {
     if (!this.client) {
       throw new Error('Redis client not available');
     }
 
     try {
       const token = `${process.pid}-${Date.now()}`;
-      const success = await this.client.set(key, token, 'EX', 10, 'NX');
+      const success = await this.client.set(key, token, 'EX', ttlSeconds, 'NX');
 
       if (success) {
         return async () => await this.releaseLock(key, token);

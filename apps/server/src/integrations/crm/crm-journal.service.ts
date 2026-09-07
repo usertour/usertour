@@ -22,6 +22,10 @@ import {
 
 const PROVIDER = 'hubspot';
 const OFFSET_KEY = 'crm:hubspot:journal:offset';
+/** Held while a poll runs: the journal has one cursor, so it has one reader at a time. */
+export const CRM_JOURNAL_POLL_LOCK_KEY = 'crm:hubspot:journal:poll';
+/** Longer than any poll (page cap × page work); a crashed holder frees the journal after this. */
+const POLL_LOCK_TTL_SECONDS = 120;
 /** Redis TTL for the stored offset — the journal itself keeps 3 days. */
 const OFFSET_TTL_SECONDS = 3 * 24 * 60 * 60;
 /** Pages drained per poll; the rest waits for the next tick. */
@@ -175,20 +179,32 @@ export class CrmJournalService {
     if (!this.connections.isProviderConfigured(PROVIDER)) {
       return 0;
     }
-    const token = await this.connections.getAppAccessToken(PROVIDER);
-    let offset = await this.redis.get(OFFSET_KEY);
-    let applied = 0;
-    for (let pages = 0; pages < MAX_PAGES_PER_POLL; pages++) {
-      const ref = offset ? await journalNext(token, offset) : await journalLatest(token);
-      if (!ref) {
-        break;
-      }
-      const page = await fetchJournalPage(ref.url);
-      applied += await this.applyEvents(page.journalEvents ?? []);
-      offset = page.offset || ref.currentOffset;
-      await this.redis.setex(OFFSET_KEY, OFFSET_TTL_SECONDS, offset);
+    // The repeat schedule fires on a clock, not on completion: a poll that
+    // outlives the interval would otherwise overlap the next one (possibly on
+    // another instance), both reading the same cursor and the slower one
+    // writing an older cursor back. Skip the tick instead.
+    const release = await this.redis.acquireLock(CRM_JOURNAL_POLL_LOCK_KEY, POLL_LOCK_TTL_SECONDS);
+    if (!release) {
+      return 0;
     }
-    return applied;
+    try {
+      const token = await this.connections.getAppAccessToken(PROVIDER);
+      let offset = await this.redis.get(OFFSET_KEY);
+      let applied = 0;
+      for (let pages = 0; pages < MAX_PAGES_PER_POLL; pages++) {
+        const ref = offset ? await journalNext(token, offset) : await journalLatest(token);
+        if (!ref) {
+          break;
+        }
+        const page = await fetchJournalPage(ref.url);
+        applied += await this.applyEvents(page.journalEvents ?? []);
+        offset = page.offset || ref.currentOffset;
+        await this.redis.setex(OFFSET_KEY, OFFSET_TTL_SECONDS, offset);
+      }
+      return applied;
+    } finally {
+      await release();
+    }
   }
 
   /** Group events by account and object type, re-read the touched records, and pair/apply them. */

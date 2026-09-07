@@ -6,6 +6,7 @@ import { initialization } from '@/common/initialization/initialization';
 import { CrmJournalService } from '@/integrations/crm/crm-journal.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { RedisService } from '@/shared/redis.service';
+import { CRM_JOURNAL_POLL_LOCK_KEY } from '@/integrations/crm/crm-journal.service';
 import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
 import * as journalApi from '@/integrations/crm/hubspot-journal-api';
 
@@ -173,6 +174,22 @@ describe('CRM change journal (e2e)', () => {
     ).toEqual({
       subscriptions: { '0-1': 77 },
     });
+  });
+
+  it('skips the tick while another poll holds the journal', async () => {
+    const latest = jest.spyOn(journalApi, 'journalLatest').mockResolvedValue(null);
+    const release = await redis.acquireLock(CRM_JOURNAL_POLL_LOCK_KEY);
+    expect(release).not.toBeNull();
+    try {
+      expect(await journal.poll()).toBe(0);
+      expect(latest).not.toHaveBeenCalled();
+    } finally {
+      await release?.();
+    }
+    // Released: the next tick reads the journal again.
+    expect(await journal.poll()).toBe(0);
+    expect(latest).toHaveBeenCalledTimes(1);
+    latest.mockRestore();
   });
 
   it('polls from the latest page first, applies changed records, and remembers the offset', async () => {
