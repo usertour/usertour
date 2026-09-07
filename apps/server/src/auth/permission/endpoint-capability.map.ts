@@ -86,6 +86,15 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'integration.queryIntegrationSyncedSegments': Capability.IntegrationRead,
   'integration.updateIntegrationInbound': Capability.IntegrationManage,
   'integration.rotateIntegrationInboundToken': Capability.IntegrationManage,
+  // CRM (ADR 0013)
+  'integration.startCrmOAuth': Capability.IntegrationManage,
+  'integration.disconnectCrmIntegration': Capability.IntegrationManage,
+  'integration.listIntegrationObjectMappings': Capability.IntegrationRead,
+  'integration.listCrmRemoteProperties': Capability.IntegrationRead,
+  'integration.upsertIntegrationObjectMapping': Capability.IntegrationManage,
+  'integration.deleteIntegrationObjectMapping': Capability.IntegrationManage,
+  'integration.runIntegrationObjectMappingSync': Capability.IntegrationManage,
+  'integration.listIntegrationSyncRuns': Capability.IntegrationRead,
 
   // webhooks (all O)
   'webhooks.listWebhooks': Capability.WebhookRead,

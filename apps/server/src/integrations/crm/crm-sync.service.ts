@@ -5,6 +5,7 @@ import type { IntegrationObjectMapping } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
+import { CRM_ROUND_STALE_MS } from '@usertour/constants';
 import type {
   CrmInboundField,
   CrmLocalObject,
@@ -83,7 +84,7 @@ export class CrmDeliverySkippedError extends Error {
 }
 
 /** A round older than this with no completion is presumed dead and may be restarted. */
-export const ROUND_STALE_MS = 2 * 60 * 60 * 1000;
+export const ROUND_STALE_MS = CRM_ROUND_STALE_MS;
 /** Scheduler cadence target for the recurring full sync (ADR 0013 §7). */
 export const FULL_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
 

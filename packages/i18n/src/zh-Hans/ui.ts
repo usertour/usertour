@@ -467,6 +467,7 @@ const translations = {
       },
       systemBadge: '系统',
       syncedBadge: '同步自 {{provider}}',
+      syncedTooltip: '同步自 {{provider}},从集成映射中移除后才能删除。',
       editMenuItem: '编辑属性',
       deleteMenuItem: '删除属性',
       deleteResource: '属性',
@@ -1589,6 +1590,9 @@ const translations = {
         deniedToast: '在 {{name}} 中取消了授权。',
         failedToast: '连接 {{name}} 失败,请重试。',
         licenseToast: '当前套餐不包含 CRM 集成。',
+        inUseToast: '这个 {{name}} 账号已经连接到另一个环境,请先在那边断开。',
+        autoDisabledBanner:
+          'Usertour 已于 {{time}} 停用此集成:{{name}} 不再接受它的访问,可能是应用被卸载、授权用户被移除,或投递持续失败。重新连接即可恢复同步。',
         lockedHint: 'Growth 及以上套餐可用',
         mapping: {
           remoteObjects: {

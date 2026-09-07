@@ -382,7 +382,8 @@ export const useUpsertIntegrationObjectMappingMutation = () => {
   // A first save INSERTS a row the cache can't materialize from the response;
   // later saves ride the returned full field set.
   const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping, {
-    refetchQueries: ['ListIntegrationObjectMappings'],
+    // Attributes change ownership with the mapping (provider marks).
+    refetchQueries: ['ListIntegrationObjectMappings', 'listAttributes'],
   });
   const invoke = useCallback(
     async (
@@ -401,7 +402,8 @@ export const useUpsertIntegrationObjectMappingMutation = () => {
 
 export const useDeleteIntegrationObjectMappingMutation = () => {
   const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping, {
-    refetchQueries: ['ListIntegrationObjectMappings'],
+    // Attributes change ownership with the mapping (provider marks).
+    refetchQueries: ['ListIntegrationObjectMappings', 'listAttributes'],
   });
   const invoke = useCallback(
     async (input: { integrationId: string; id: string }): Promise<boolean> => {

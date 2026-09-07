@@ -27,7 +27,11 @@ import {
   QuestionTooltip,
   useToast,
 } from '@usertour/ui';
-import { type IntegrationCatalogEntry, crmRemotePropertyNameFor } from '@usertour/constants';
+import {
+  CRM_ROUND_STALE_MS,
+  type IntegrationCatalogEntry,
+  crmRemotePropertyNameFor,
+} from '@usertour/constants';
 import { AttributeBizTypes, type CrmLocalObject, type CrmRemoteObject } from '@usertour/types';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
@@ -71,7 +75,11 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   const mapping = mappings?.find(
     (row) => row.remoteObject === remoteObject && row.localObject === localObject,
   );
-  const syncInProgress = !!mapping?.fullSyncStartedAt;
+  // A round older than the stale window is presumed dead (the server takes it
+  // over on its next scan); do not keep Run full sync disabled for it.
+  const syncInProgress =
+    !!mapping?.fullSyncStartedAt &&
+    Date.now() - new Date(mapping.fullSyncStartedAt).getTime() < CRM_ROUND_STALE_MS;
   // A running round updates its counts page by page and clears its stamp when
   // it closes; poll while one is live so the card follows it to the end.
   useEffect(() => {

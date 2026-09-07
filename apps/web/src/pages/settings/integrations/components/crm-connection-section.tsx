@@ -73,7 +73,13 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
       toast({ variant: 'success', title: t('settings.integrations.crm.connectedToast', { name }) });
     } else {
       const key =
-        error === 'denied' ? 'deniedToast' : error === 'license' ? 'licenseToast' : 'failedToast';
+        error === 'denied'
+          ? 'deniedToast'
+          : error === 'license'
+            ? 'licenseToast'
+            : error === 'inUse'
+              ? 'inUseToast'
+              : 'failedToast';
       toast({ variant: 'destructive', title: t(`settings.integrations.crm.${key}`, { name }) });
     }
     const next = new URLSearchParams(searchParams);
@@ -216,7 +222,8 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
 
       {integration?.autoDisabledAt && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {t('settings.integrations.autoDisabled.banner', {
+          {t('settings.integrations.crm.autoDisabledBanner', {
+            name,
             time: format(new Date(integration.autoDisabledAt), 'PP'),
           })}
         </div>

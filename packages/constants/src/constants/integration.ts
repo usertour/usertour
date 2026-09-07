@@ -56,3 +56,10 @@ export const crmLocalDataTypeFor = (property: {
       return AttributeDataType.String;
   }
 };
+
+/**
+ * A full-sync round whose stamp is older than this is presumed dead (a lost
+ * job): the server takes it over and the dashboard stops showing it as
+ * running (ADR 0013 §7).
+ */
+export const CRM_ROUND_STALE_MS = 2 * 60 * 60 * 1000;

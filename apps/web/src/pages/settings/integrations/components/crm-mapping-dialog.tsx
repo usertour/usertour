@@ -113,7 +113,10 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
     setMatchRemote(mapping?.matchRemoteField ?? (strategy === 'email' ? 'email' : ''));
     setInbound(mapping?.inboundFields.map((field) => field.remote) ?? []);
     setOutbound(mapping?.outboundFields.map((field) => field.local) ?? []);
-  }, [open, mapping, emailAllowed]);
+    // Seed on the open transition (and when the row identity changes), not on
+    // every poll: a running round rewrites the mapping's counts every few
+    // seconds, and re-seeding on each would wipe the user's edits.
+  }, [open, mapping?.id, emailAllowed]);
 
   const propertyByName = useMemo(
     () => new Map(properties.map((property) => [property.name, property])),

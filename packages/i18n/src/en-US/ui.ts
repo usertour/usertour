@@ -495,6 +495,8 @@ const translations = {
       },
       systemBadge: 'System',
       syncedBadge: 'Synced from {{provider}}',
+      syncedTooltip:
+        'Synced from {{provider}} — remove it from the integration mapping to release it.',
       editMenuItem: 'Edit attribute',
       deleteMenuItem: 'Delete attribute',
       deleteResource: 'attribute',
@@ -1671,6 +1673,10 @@ const translations = {
         deniedToast: 'Authorization was cancelled in {{name}}.',
         failedToast: 'Connecting {{name}} failed. Please try again.',
         licenseToast: 'CRM integrations are not included in your current plan.',
+        inUseToast:
+          'That {{name}} account is already connected to another environment. Disconnect it there first.',
+        autoDisabledBanner:
+          'Usertour disabled this integration on {{time}}: {{name}} stopped accepting its access — the app was uninstalled, the authorizing user was removed, or deliveries kept failing. Reconnect to resume syncing.',
         lockedHint: 'Available on the Growth plan and above',
         mapping: {
           remoteObjects: {
