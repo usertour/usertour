@@ -255,6 +255,13 @@ describe('CRM change journal (e2e)', () => {
       expect.objectContaining({ localId: ada?.id, remoteId: '501' }),
     ]);
     expect(await redis.get(OFFSET_KEY)).toBe('off-1');
+    // One journal run per account that had changes, with the applied count.
+    const runs = await prisma.integrationSyncRun.findMany({
+      where: { integrationId, kind: 'journal' },
+    });
+    expect(runs).toEqual([
+      expect.objectContaining({ status: 'succeeded', records: 1, remoteIds: ['501', '502'] }),
+    ]);
 
     // Second poll continues from the stored offset and finds nothing new.
     expect(await journal.poll()).toBe(0);

@@ -1666,10 +1666,32 @@ const translations = {
         },
         downgradedBanner:
           '当前套餐不包含 CRM 集成 — 同步已暂停。你仍可以查看和断开连接;升级套餐即可恢复。',
+        activity: {
+          title: '同步活动',
+          description:
+            '全量同步,以及其间从 {{name}} 拉取到的变动,保留 30 天。失败的运行会显示原因。',
+          empty: '还没有同步活动。',
+          kindFull: '全量同步',
+          kindJournal: '来自 {{name}} 的变动',
+          fullRecords: '{{records}} 条记录 · 已匹配 {{matched}} · 未匹配 {{unresolved}}',
+          journalRecords: '同步了 {{count}} 条记录',
+          remoteIds: '{{name}} 记录 ID:{{ids}}',
+          statusRunning: '进行中',
+          statusSucceeded: '成功',
+          statusFailed: '失败',
+          columns: {
+            time: '时间',
+            sync: '同步',
+            result: '结果',
+            records: '记录',
+          },
+        },
       },
       messages: {
         title: '最近消息',
         description: '发往该目的地的每条事件保留 30 天,含每次投递尝试。点击一行查看详情。',
+        crmDescription:
+          '发送到 {{name}} 的每一次写回都会保留 30 天,含每次投递尝试。点击一行查看详情。',
         empty: '暂无消息。',
         loadMore: '加载更多',
         refresh: '刷新',

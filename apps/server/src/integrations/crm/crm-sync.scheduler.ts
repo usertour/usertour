@@ -9,6 +9,8 @@ import { CrmSyncService, FULL_SYNC_INTERVAL_MS } from './crm-sync.service';
 const SCAN_JOB = 'crm-sync-scan';
 /** Offset from the webhook (:20) and integration (:35) reconcile sweeps. */
 const SCAN_PATTERN = '50 * * * *';
+/** Sync activity is kept as long as the message log. */
+const SYNC_RUN_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const JOURNAL_JOB = 'crm-journal-poll';
 /** Provider change journal poll cadence (ADR 0013 §7). */
 const JOURNAL_EVERY_MS = 30_000;
@@ -85,6 +87,9 @@ export class CrmSyncScheduler extends WorkerHost implements OnModuleInit {
         integration: { enabled: true, oauthCredentials: { not: null } },
       },
       select: { id: true },
+    });
+    await this.prisma.integrationSyncRun.deleteMany({
+      where: { startedAt: { lt: new Date(Date.now() - SYNC_RUN_RETENTION_MS) } },
     });
     for (const mapping of due) {
       try {

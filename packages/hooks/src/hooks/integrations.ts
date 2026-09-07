@@ -6,6 +6,7 @@ import {
   DisconnectCrmIntegration,
   ListCrmRemoteProperties,
   ListIntegrationObjectMappings,
+  ListIntegrationSyncRuns,
   ListIntegrations,
   QueryIntegrationMessages,
   RunIntegrationObjectMappingSync,
@@ -274,6 +275,24 @@ export interface IntegrationObjectMapping {
   unresolvedCount: number;
 }
 
+/** One sync run: a full round over a mapping, or a journal poll's inbound changes. */
+export interface IntegrationSyncRun {
+  id: string;
+  kind: 'full' | 'journal';
+  status: 'running' | 'succeeded' | 'failed';
+  mappingId?: string | null;
+  remoteObject?: CrmRemoteObject | null;
+  localObject?: CrmLocalObject | null;
+  startedAt: string;
+  finishedAt?: string | null;
+  records: number;
+  matchedCount: number;
+  unresolvedCount: number;
+  error?: string | null;
+  /** Journal runs: the provider record ids touched, capped server-side. */
+  remoteIds?: string[] | null;
+}
+
 export interface CrmRemoteProperty {
   name: string;
   label: string;
@@ -310,6 +329,28 @@ export const useListIntegrationObjectMappingsQuery = (
   );
   return {
     mappings: data?.listIntegrationObjectMappings as IntegrationObjectMapping[] | undefined,
+    loading,
+    error,
+    refetch,
+    startPolling,
+    stopPolling,
+  };
+};
+
+export const useListIntegrationSyncRunsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch, startPolling, stopPolling } = useQuery(
+    ListIntegrationSyncRuns,
+    {
+      variables: { integrationId },
+      skip: !integrationId,
+      ...options,
+    },
+  );
+  return {
+    runs: data?.listIntegrationSyncRuns as IntegrationSyncRun[] | undefined,
     loading,
     error,
     refetch,

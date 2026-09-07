@@ -247,20 +247,46 @@ export class CrmJournalService {
       if (!(await this.connections.isEntitled(integration.environmentId))) {
         continue;
       }
-      for (const bucket of buckets.values()) {
-        if (String(bucket.portalId) !== integration.remoteAccountId) {
-          continue;
+      const startedAt = new Date();
+      let appliedHere = 0;
+      const touched: string[] = [];
+      try {
+        for (const bucket of buckets.values()) {
+          if (String(bucket.portalId) !== integration.remoteAccountId) {
+            continue;
+          }
+          touched.push(...bucket.ids);
+          const mappings = (
+            await this.sync.activeMappingsFor(
+              integration.environmentId,
+              bucket.remoteObject === 'contact' ? 'user' : 'company',
+            )
+          ).filter((mapping) => mapping.integrationId === integration.id);
+          for (const mapping of mappings) {
+            appliedHere += await this.applyBucket(mapping, Array.from(bucket.ids));
+          }
         }
-        const mappings = (
-          await this.sync.activeMappingsFor(
-            integration.environmentId,
-            bucket.remoteObject === 'contact' ? 'user' : 'company',
-          )
-        ).filter((mapping) => mapping.integrationId === integration.id);
-        for (const mapping of mappings) {
-          applied += await this.applyBucket(mapping, Array.from(bucket.ids));
-        }
+      } catch (error) {
+        // Leave a failed run for the operator, then let the poll fail so the
+        // cursor stays put and the page is retried next tick.
+        await this.sync.recordJournalRun({
+          integrationId: integration.id,
+          startedAt,
+          records: appliedHere,
+          remoteIds: touched,
+          error: (error as Error).message,
+        });
+        throw error;
       }
+      if (appliedHere > 0) {
+        await this.sync.recordJournalRun({
+          integrationId: integration.id,
+          startedAt,
+          records: appliedHere,
+          remoteIds: touched,
+        });
+      }
+      applied += appliedHere;
     }
     return applied;
   }

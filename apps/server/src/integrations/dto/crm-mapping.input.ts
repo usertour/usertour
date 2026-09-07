@@ -1,12 +1,15 @@
-import { ArgsType, Field, InputType } from '@nestjs/graphql';
+import { ArgsType, Field, InputType, Int } from '@nestjs/graphql';
 import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -92,6 +95,20 @@ export class IntegrationObjectMappingIdInput {
   @Field(() => String)
   @IsString()
   id: string;
+}
+
+@ArgsType()
+export class ListIntegrationSyncRunsArgs {
+  @Field(() => String)
+  @IsString()
+  integrationId: string;
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  limit?: number;
 }
 
 @ArgsType()

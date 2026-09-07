@@ -197,6 +197,26 @@ export const ListIntegrationObjectMappings = gql`
   }
 `;
 
+export const ListIntegrationSyncRuns = gql`
+  query ListIntegrationSyncRuns($integrationId: String!, $limit: Int) {
+    listIntegrationSyncRuns(integrationId: $integrationId, limit: $limit) {
+      id
+      kind
+      status
+      mappingId
+      remoteObject
+      localObject
+      startedAt
+      finishedAt
+      records
+      matchedCount
+      unresolvedCount
+      error
+      remoteIds
+    }
+  }
+`;
+
 // Live provider metadata: no cache (network-only) — the editor should see a
 // property the customer just created in the CRM.
 export const ListCrmRemoteProperties = gql`

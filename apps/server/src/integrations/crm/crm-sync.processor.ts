@@ -58,7 +58,7 @@ export class CrmSyncProcessor extends WorkerHost {
       }): ${error.message}`,
     );
     if (exhausted && job.name !== CRM_SYNC_BACKFILL_JOB) {
-      await this.sync.abandonRound(job.data as CrmSyncPageJobData);
+      await this.sync.abandonRound(job.data as CrmSyncPageJobData, error.message);
     }
   }
 }

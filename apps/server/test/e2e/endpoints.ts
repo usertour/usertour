@@ -509,6 +509,13 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ i: s.integrationId }),
   },
   {
+    key: 'integration.listIntegrationSyncRuns',
+    tier: 'O',
+    op: 'query',
+    doc: 'query($i:String!){listIntegrationSyncRuns(integrationId:$i){__typename}}',
+    vars: (s) => ({ i: s.integrationId }),
+  },
+  {
     key: 'integration.listCrmRemoteProperties',
     tier: 'O',
     op: 'query',

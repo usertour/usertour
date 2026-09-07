@@ -1751,11 +1751,34 @@ const translations = {
         },
         downgradedBanner:
           'CRM integrations are not included in your current plan — syncing is paused. You can still review and disconnect; upgrade to resume.',
+        activity: {
+          title: 'Sync activity',
+          description:
+            'Full syncs and the {{name}} changes picked up between them, kept for 30 days. Failed runs show why.',
+          empty: 'No sync activity yet.',
+          kindFull: 'Full sync',
+          kindJournal: 'Changes from {{name}}',
+          fullRecords: '{{records}} records · Matched {{matched}} · Unmatched {{unresolved}}',
+          journalRecords_one: '{{count}} record synced',
+          journalRecords_other: '{{count}} records synced',
+          remoteIds: '{{name}} record IDs: {{ids}}',
+          statusRunning: 'Running',
+          statusSucceeded: 'Succeeded',
+          statusFailed: 'Failed',
+          columns: {
+            time: 'Time',
+            sync: 'Sync',
+            result: 'Result',
+            records: 'Records',
+          },
+        },
       },
       messages: {
         title: 'Recent messages',
         description:
           'Every event sent to this destination is kept for 30 days with each delivery attempt. Click a row for details.',
+        crmDescription:
+          'Every write-back sent to {{name}} is kept for 30 days with each delivery attempt. Click a row for details.',
         empty: 'No messages yet.',
         loadMore: 'Load more',
         refresh: 'Refresh',

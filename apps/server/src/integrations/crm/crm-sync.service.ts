@@ -46,6 +46,26 @@ export interface CrmSyncPageJobData {
 export const CRM_SYNC_PAGE_JOB = 'page';
 
 /** Pair one freshly created (or newly addressable) local record with the provider (ADR 0013 §5). */
+/** GraphQL-facing projection of a sync run. */
+export interface IntegrationSyncRunView {
+  id: string;
+  kind: string;
+  status: string;
+  mappingId: string | null;
+  remoteObject: string | null;
+  localObject: string | null;
+  startedAt: Date;
+  finishedAt: Date | null;
+  records: number;
+  matchedCount: number;
+  unresolvedCount: number;
+  error: string | null;
+  remoteIds: string[] | null;
+}
+
+/** How many provider record ids a journal run keeps for "which records" — enough to trace, not a dump. */
+const SYNC_RUN_REMOTE_IDS_CAP = 50;
+
 export interface CrmBackfillJobData {
   mappingId: string;
   localId: string;
@@ -168,6 +188,16 @@ export class CrmSyncService {
     if (claimed.count === 0) {
       return refuse('A full sync is already in progress.');
     }
+    await this.prisma.integrationSyncRun.create({
+      data: {
+        integrationId: mapping.integrationId,
+        mappingId,
+        kind: 'full',
+        status: 'running',
+        sessionId,
+        startedAt: now,
+      },
+    });
     await this.enqueuePage({ mappingId, sessionId, page: 1 });
     return await this.prisma.integrationObjectMapping.findUniqueOrThrow({
       where: { id: mappingId },
@@ -175,10 +205,14 @@ export class CrmSyncService {
   }
 
   /** Release a round whose page job exhausted its attempts, so a later start is not blocked for the stale window. */
-  async abandonRound(data: CrmSyncPageJobData): Promise<void> {
+  async abandonRound(data: CrmSyncPageJobData, reason?: string): Promise<void> {
     await this.prisma.integrationObjectMapping.updateMany({
       where: { id: data.mappingId, fullSyncSessionId: data.sessionId },
       data: { fullSyncStartedAt: null },
+    });
+    await this.prisma.integrationSyncRun.updateMany({
+      where: { sessionId: data.sessionId, kind: 'full', status: 'running' },
+      data: { status: 'failed', finishedAt: new Date(), error: reason ?? null },
     });
     this.logger.warn(
       `CRM full sync abandoned: mapping ${data.mappingId} session ${data.sessionId} page ${data.page}`,
@@ -220,12 +254,17 @@ export class CrmSyncService {
     const pairs = await this.applyRecords(mapping, token, page.results);
     const { environmentId } = mapping.integration;
 
+    const counts = {
+      matchedCount: { increment: pairs.length },
+      unresolvedCount: { increment: page.results.length - pairs.length },
+    };
     await this.prisma.integrationObjectMapping.updateMany({
       where: { id: mapping.id, fullSyncSessionId: data.sessionId },
-      data: {
-        matchedCount: { increment: pairs.length },
-        unresolvedCount: { increment: page.results.length - pairs.length },
-      },
+      data: counts,
+    });
+    await this.prisma.integrationSyncRun.updateMany({
+      where: { sessionId: data.sessionId, kind: 'full' },
+      data: { ...counts, records: { increment: page.results.length } },
     });
 
     const after = page.paging?.next?.after;
@@ -233,13 +272,65 @@ export class CrmSyncService {
       await this.enqueuePage({ ...data, page: data.page + 1, after });
       return;
     }
+    const finishedAt = new Date();
     await this.prisma.integrationObjectMapping.updateMany({
       where: { id: mapping.id, fullSyncSessionId: data.sessionId },
-      data: { fullSyncStartedAt: null, lastFullSyncAt: new Date() },
+      data: { fullSyncStartedAt: null, lastFullSyncAt: finishedAt },
+    });
+    await this.prisma.integrationSyncRun.updateMany({
+      where: { sessionId: data.sessionId, kind: 'full', status: 'running' },
+      data: { status: 'succeeded', finishedAt },
     });
     this.logger.log(
       `CRM full sync complete: mapping ${mapping.id} (${remoteObject} ↔ ${localObject}), ${data.page} page(s), env ${environmentId}`,
     );
+  }
+
+  /** The integration's recent runs, newest first (ADR 0013 §11: the sync activity card). */
+  async listRuns(integrationId: string, limit = 50): Promise<IntegrationSyncRunView[]> {
+    const runs = await this.prisma.integrationSyncRun.findMany({
+      where: { integrationId },
+      orderBy: { startedAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 200),
+      include: { mapping: { select: { remoteObject: true, localObject: true } } },
+    });
+    return runs.map((run) => ({
+      id: run.id,
+      kind: run.kind,
+      status: run.status,
+      mappingId: run.mappingId,
+      remoteObject: run.mapping?.remoteObject ?? null,
+      localObject: run.mapping?.localObject ?? null,
+      startedAt: run.startedAt,
+      finishedAt: run.finishedAt,
+      records: run.records,
+      matchedCount: run.matchedCount,
+      unresolvedCount: run.unresolvedCount,
+      error: run.error,
+      remoteIds: Array.isArray(run.remoteIds) ? (run.remoteIds as string[]) : null,
+    }));
+  }
+
+  /** Record one journal poll's outcome for an account; nothing is written for an idle poll. */
+  async recordJournalRun(input: {
+    integrationId: string;
+    startedAt: Date;
+    records: number;
+    remoteIds: string[];
+    error?: string;
+  }): Promise<void> {
+    await this.prisma.integrationSyncRun.create({
+      data: {
+        integrationId: input.integrationId,
+        kind: 'journal',
+        status: input.error ? 'failed' : 'succeeded',
+        startedAt: input.startedAt,
+        finishedAt: new Date(),
+        records: input.records,
+        remoteIds: input.remoteIds.slice(0, SYNC_RUN_REMOTE_IDS_CAP),
+        error: input.error ?? null,
+      },
+    });
   }
 
   /** Pair a batch of provider records and apply both directions; returns the pairs made. */

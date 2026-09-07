@@ -69,6 +69,7 @@ import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
 import { CrmConnectionSection } from './crm-connection-section';
 import { CrmMappingCard } from './crm-mapping-card';
+import { CrmSyncActivitySection } from './crm-sync-activity-section';
 import { IntegrationStatusBadge } from './integration-status-badge';
 import { AutomationIntegrationDetail } from './automation-integration-detail';
 
@@ -717,12 +718,15 @@ const MessagesSection = ({
   enabled,
   entitled,
   showTestEvent = true,
+  description,
 }: {
   integrationId: string;
   enabled: boolean;
   entitled: boolean;
   /** CRM rows (ADR 0013) have no analytics adapter to send a test event through. */
   showTestEvent?: boolean;
+  /** Overrides the analytics wording ("every event") where the log holds something else. */
+  description?: string;
 }) => {
   // Load-more accumulation, same wiring as the webhook message log.
   const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
@@ -799,7 +803,7 @@ const MessagesSection = ({
     <div className="space-y-6">
       <CardHeading
         title={t('settings.integrations.messages.title')}
-        description={t('settings.integrations.messages.description')}
+        description={description ?? t('settings.integrations.messages.description')}
         actions={
           <>
             <Button
@@ -990,6 +994,12 @@ export const IntegrationDetail = () => {
           </>
         )}
 
+        {integration?.connected && (
+          <SettingsCard>
+            <CrmSyncActivitySection integrationId={integration.id} providerName={entry.name} />
+          </SettingsCard>
+        )}
+
         {integration && (
           <SettingsCard>
             <MessagesSection
@@ -997,6 +1007,7 @@ export const IntegrationDetail = () => {
               enabled={integration.enabled}
               entitled={entitled}
               showTestEvent={false}
+              description={t('settings.integrations.messages.crmDescription', { name: entry.name })}
             />
           </SettingsCard>
         )}

@@ -29,9 +29,11 @@ import { CrmSyncService } from './crm/crm-sync.service';
 import {
   IntegrationObjectMappingIdInput,
   ListCrmRemotePropertiesArgs,
+  ListIntegrationSyncRunsArgs,
   UpsertIntegrationObjectMappingInput,
 } from './dto/crm-mapping.input';
 import { CrmRemoteProperty, IntegrationObjectMapping } from './models/crm-mapping.model';
+import { IntegrationSyncRun } from './models/crm-sync-run.model';
 import { IntegrationsService } from './integrations.service';
 
 @Resolver(() => Integration)
@@ -53,6 +55,13 @@ export class IntegrationsResolver {
   @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
   async listIntegrationObjectMappings(@Args('integrationId') integrationId: string) {
     return await this.mappings.listMappings(integrationId);
+  }
+
+  /** Recent full rounds and journal polls — the sync activity card (ADR 0013 §11). */
+  @Query(() => [IntegrationSyncRun])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
+  async listIntegrationSyncRuns(@Args() { integrationId, limit }: ListIntegrationSyncRunsArgs) {
+    return await this.crmSync.listRuns(integrationId, limit ?? 50);
   }
 
   /** Live provider property metadata — the editor's pickers read from here. */

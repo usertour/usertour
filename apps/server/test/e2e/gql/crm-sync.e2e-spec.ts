@@ -238,6 +238,12 @@ describe('CRM full sync (e2e)', () => {
       variables: { data: { integrationId, id: mappingId } },
     });
     expect(started.body.data?.runIntegrationObjectMappingSync.fullSyncStartedAt).not.toBeNull();
+    // The round leaves a running row in the sync activity.
+    const run = await prisma.integrationSyncRun.findFirst({
+      where: { mappingId, kind: 'full' },
+      orderBy: { startedAt: 'desc' },
+    });
+    expect(run).toMatchObject({ integrationId, status: 'running', records: 0 });
     const again = await graphql(app, {
       token,
       query: RUN_SYNC,
