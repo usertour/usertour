@@ -41,6 +41,9 @@ const config: Config = {
     username: process.env.Redis_USER,
     password: process.env.Redis_PASS,
     tls: process.env.Redis_TLS === 'true',
+    // Logical database index. The e2e suite runs on its own index so its
+    // queues, locks and cursors never mix with a dev server on the same Redis.
+    db: process.env.Redis_DB ? Number.parseInt(process.env.Redis_DB) : 0,
   },
   app: {
     homepageUrl: process.env.APP_HOMEPAGE_URL || '',

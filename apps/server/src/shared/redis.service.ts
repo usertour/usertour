@@ -30,6 +30,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       port: this.configService.getOrThrow('redis.port'),
       username: this.configService.get('redis.username'),
       password: this.configService.get('redis.password'),
+      db: this.configService.get<number>('redis.db') ?? 0,
       family: 0,
       tls: this.configService.get('redis.tls') ? {} : null,
     });
