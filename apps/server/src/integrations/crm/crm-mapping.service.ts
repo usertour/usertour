@@ -284,6 +284,39 @@ export class CrmMappingService {
   }
 
   /** Keep the provider-side change subscriptions in step with the mappings; best-effort. */
+  async reconcileSubscriptions(integrationId: string): Promise<void> {
+    await this.afterMappingChange(integrationId);
+  }
+
+  /** Hand every provider-owned attribute of the integration's mappings back (integration teardown). */
+  async releaseAllForIntegration(integrationId: string): Promise<void> {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+      select: {
+        provider: true,
+        environment: { select: { projectId: true } },
+        objectMappings: { select: { localObject: true, inboundFields: true } },
+      },
+    });
+    if (!integration || integration.objectMappings.length === 0) {
+      return;
+    }
+    const projectId = integration.environment.projectId;
+    await this.prisma.$transaction(async (tx) => {
+      for (const mapping of integration.objectMappings) {
+        await this.releaseAttributes(tx, {
+          projectId,
+          bizType: attributeBizTypeFor(mapping.localObject as CrmLocalObject),
+          provider: integration.provider,
+          codeNames: (mapping.inboundFields as unknown as CrmInboundField[]).map(
+            (field) => field.local,
+          ),
+        });
+      }
+    });
+    await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
+  }
+
   private async afterMappingChange(integrationId: string): Promise<void> {
     try {
       await this.journal.syncSubscriptions(integrationId);
@@ -344,6 +377,14 @@ export class CrmMappingService {
       if (current.deleted) {
         throw new ValidationError(
           `Attribute "${field.local}" was deleted; choose another attribute name.`,
+        );
+      }
+      // System attributes stay Usertour's: `email` is the match key (a
+      // provider-owned email is dropped on identify, so new users could never
+      // be matched), and the rest are maintained by the SDK.
+      if (current.predefined) {
+        throw new ValidationError(
+          `Attribute "${field.local}" is a system attribute and cannot be owned by ${provider}.`,
         );
       }
       if (current.source !== 'internal' && current.source !== provider) {

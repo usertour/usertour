@@ -4,7 +4,7 @@ import { Job, Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { QUEUE_CRM_SYNC_CRON } from '@/common/consts/queen';
 import { CrmJournalService } from './crm-journal.service';
-import { CrmSyncService, FULL_SYNC_INTERVAL_MS } from './crm-sync.service';
+import { CrmSyncService, FULL_SYNC_INTERVAL_MS, ROUND_STALE_MS } from './crm-sync.service';
 
 const SCAN_JOB = 'crm-sync-scan';
 /** Offset from the webhook (:20) and integration (:35) reconcile sweeps. */
@@ -76,13 +76,25 @@ export class CrmSyncScheduler extends WorkerHost implements OnModuleInit {
       }
       return;
     }
+    const now = Date.now();
     const due = await this.prisma.integrationObjectMapping.findMany({
       where: {
         enabled: true,
-        fullSyncStartedAt: null,
-        OR: [
-          { lastFullSyncAt: null },
-          { lastFullSyncAt: { lt: new Date(Date.now() - FULL_SYNC_INTERVAL_MS) } },
+        AND: [
+          // Idle, or a round whose stamp is older than the stale window (a
+          // job lost without a failure event) — startFullSync takes those over.
+          {
+            OR: [
+              { fullSyncStartedAt: null },
+              { fullSyncStartedAt: { lt: new Date(now - ROUND_STALE_MS) } },
+            ],
+          },
+          {
+            OR: [
+              { lastFullSyncAt: null },
+              { lastFullSyncAt: { lt: new Date(now - FULL_SYNC_INTERVAL_MS) } },
+            ],
+          },
         ],
         integration: { enabled: true, oauthCredentials: { not: null } },
       },

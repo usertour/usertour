@@ -206,6 +206,41 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * A lock the holder renews as it works: `renew()` extends the TTL while the
+   * holder still owns the key (false if it lapsed and someone else took it),
+   * `release()` gives it up. For work bounded by items, not time.
+   */
+  async acquireLease(
+    key: string,
+    ttlSeconds: number,
+  ): Promise<{ renew: () => Promise<boolean>; release: () => Promise<void> } | null> {
+    if (!this.client) {
+      throw new Error('Redis client not available');
+    }
+    const token = `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const success = await this.client.set(key, token, 'EX', ttlSeconds, 'NX');
+    if (!success) {
+      return null;
+    }
+    const client = this.client;
+    return {
+      renew: async () => {
+        const script = `
+          if redis.call("get", KEYS[1]) == ARGV[1] then
+            return redis.call("expire", KEYS[1], ARGV[2])
+          else
+            return 0
+          end
+        `;
+        return (await client.eval(script, 1, key, token, ttlSeconds.toString())) === 1;
+      },
+      release: async () => {
+        await this.releaseLock(key, token);
+      },
+    };
+  }
+
   async releaseLock(key: string, token: string) {
     if (!this.client) {
       throw new Error('Redis client not available');

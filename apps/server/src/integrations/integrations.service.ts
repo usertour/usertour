@@ -22,6 +22,7 @@ import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { CohortSyncService } from './cohort-sync.service';
+import { CrmTeardownService } from './crm/crm-teardown.service';
 import { UpdateIntegrationInboundInput, UpsertIntegrationInput } from './dto/integration.input';
 import { buildIntegrationMessage } from './integration-envelope';
 import { IntegrationDeliveryJobData, IntegrationEventObject } from './integrations.types';
@@ -52,6 +53,7 @@ export class IntegrationsService {
     private readonly ledger: OutboundLedgerService,
     private readonly encryption: EncryptionService,
     private readonly cohortSync: CohortSyncService,
+    private readonly crmTeardown: CrmTeardownService,
     @InjectQueue(QUEUE_INTEGRATION_DELIVERY) private readonly deliveryQueue: Queue,
   ) {}
 
@@ -226,6 +228,9 @@ export class IntegrationsService {
     // mappings) — the mapping FK is RESTRICT, so a delete without the release
     // fails loudly instead of stranding badged segments (ADR 0012 §6).
     await this.cohortSync.releaseAllForIntegration(id);
+    // CRM rows own state outside the cascade (ADR 0013): provider-owned
+    // attributes, the grant, the change subscriptions.
+    await this.crmTeardown.teardown(id);
     const row = await this.prisma.integration.delete({ where: { id } });
     return this.withoutKey(row);
   }

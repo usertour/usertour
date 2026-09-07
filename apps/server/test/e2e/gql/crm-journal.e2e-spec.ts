@@ -1,4 +1,7 @@
+import { getQueueToken } from '@nestjs/bullmq';
 import { INestApplication } from '@nestjs/common';
+import type { Queue } from 'bullmq';
+import { QUEUE_CRM_SYNC_CRON } from '@/common/consts/queen';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
@@ -26,6 +29,7 @@ describe('CRM change journal (e2e)', () => {
   let prisma: PrismaService;
   let journal: CrmJournalService;
   let redis: RedisService;
+  let cron: Queue;
   let projectId: string;
   let environmentId: string;
   let integrationId: string;
@@ -37,6 +41,11 @@ describe('CRM change journal (e2e)', () => {
     prisma = app.get(PrismaService);
     journal = app.get(CrmJournalService);
     redis = app.get(RedisService);
+    // The booted app registers the real journal poll schedule; pause its
+    // queue so the app's own ticks (real HTTP, holding the poll lease) never
+    // race the polls these tests drive by hand.
+    cron = app.get<Queue>(getQueueToken(QUEUE_CRM_SYNC_CRON));
+    await cron.pause();
     const config = app.get(ConfigService);
     config.set('hubspot.clientId', 'client-123');
     config.set('hubspot.clientSecret', 'secret');
@@ -101,10 +110,13 @@ describe('CRM change journal (e2e)', () => {
       }
     }
     await redis?.del(OFFSET_KEY);
+    await redis?.del(CRM_JOURNAL_POLL_LOCK_KEY);
+    await cron?.resume();
     await app?.close();
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await redis.del(CRM_JOURNAL_POLL_LOCK_KEY);
     jest
       .spyOn(journalApi, 'fetchHubspotAppToken')
       .mockResolvedValue({ accessToken: 'app-token', expiresIn: 1800 });
@@ -266,5 +278,40 @@ describe('CRM change journal (e2e)', () => {
     // Second poll continues from the stored offset and finds nothing new.
     expect(await journal.poll()).toBe(0);
     expect(next).toHaveBeenLastCalledWith('app-token', 'off-1');
+  });
+
+  it('keeps the journal moving when one account fails: failed run recorded, cursor advanced', async () => {
+    jest.spyOn(journalApi, 'journalLatest').mockResolvedValue({
+      url: 'https://journal.test/page-2',
+      expiresAt: '',
+      currentOffset: 'off-2',
+    });
+    jest.spyOn(journalApi, 'fetchJournalPage').mockResolvedValue({
+      offset: 'off-2',
+      journalEvents: [
+        {
+          type: 'crmObject',
+          portalId: 4242,
+          occurredAt: '',
+          objectTypeId: '0-1',
+          objectId: 777,
+          action: 'UPDATE',
+          propertyChanges: { lifecyclestage: 'lead' },
+        },
+      ],
+    });
+    jest.spyOn(journalApi, 'journalNext').mockResolvedValue(null);
+    jest
+      .spyOn(hubspotCrmApi, 'batchReadHubspotObjects')
+      .mockRejectedValue(new Error('provider unreachable'));
+
+    expect(await journal.poll()).toBe(0);
+    expect(await redis.get(OFFSET_KEY)).toBe('off-2');
+    const runs = await prisma.integrationSyncRun.findMany({
+      where: { integrationId, kind: 'journal', status: 'failed' },
+    });
+    expect(runs).toEqual([
+      expect.objectContaining({ error: 'provider unreachable', remoteIds: ['777'] }),
+    ]);
   });
 });

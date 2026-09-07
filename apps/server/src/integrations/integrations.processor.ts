@@ -10,7 +10,7 @@ import compileEmailTemplate from '@/common/email/compile-email-template';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
-import { CrmGrantRevokedError } from './crm/crm-connection.service';
+import { CrmGrantRevokedError, CrmConnectionService } from './crm/crm-connection.service';
 import { CrmDeliverySkippedError, CrmSyncService } from './crm/crm-sync.service';
 import { HubspotRateLimitError } from './crm/hubspot-crm-api';
 import type { CrmMessageEnvelope, IntegrationMessageEnvelope } from './integrations.types';
@@ -68,6 +68,7 @@ export class IntegrationsProcessor extends WorkerHost {
     private readonly audit: AuditService,
     private readonly encryption: EncryptionService,
     private readonly crmSync: CrmSyncService,
+    private readonly crmConnections: CrmConnectionService,
   ) {
     super();
   }
@@ -257,14 +258,17 @@ export class IntegrationsProcessor extends WorkerHost {
         durationMs: Date.now() - startedAt,
         final,
       });
-      // A revoked grant fails every future attempt too; let the breaker disable
-      // the integration and notify — that is the reconnect prompt.
-      await this.recordFailedAttempt(integration.id, integration.key);
       if (error instanceof HubspotRateLimitError) {
+        // Throttling is backpressure, not a failing destination: honour
+        // Retry-After on the retry, but do not let it arm the breaker.
         (error as unknown as RetryAfterCarrier).retryAfterMs = error.retryAfterMs;
+        throw error;
       }
+      await this.recordFailedAttempt(integration.id, integration.key);
       if (error instanceof CrmGrantRevokedError) {
+        // Definitive: switch the integration off now rather than after the ladder.
         this.logger.warn(`CRM write-back ${messageId}: ${error.message}`);
+        await this.crmConnections.markGrantRevoked(integration.id);
       }
       throw error;
     }

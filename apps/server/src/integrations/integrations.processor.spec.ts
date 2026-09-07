@@ -98,6 +98,7 @@ describe('IntegrationsProcessor', () => {
       audit as any,
       { decrypt } as any,
       crmSync as any,
+      {} as any, // crmConnections
     );
   });
 

@@ -313,6 +313,49 @@ describe('GraphQL CRM connections (e2e)', () => {
     }
   });
 
+  it('refuses an account that another environment already holds', async () => {
+    withAppCredentials('client-123');
+    const other = await buildEnvironment(prisma, { projectId });
+    const held = await prisma.integration.create({
+      data: {
+        environmentId: other.id,
+        provider: 'hubspot',
+        key: '',
+        keyTail: '',
+        enabled: true,
+        oauthCredentials: app
+          .get(EncryptionService)
+          .encrypt(JSON.stringify({ accessToken: 'a', refreshToken: 'r', expiresAt: 0 })),
+        remoteAccountId: '424242',
+      },
+    });
+    jest.spyOn(hubspotApi, 'exchangeHubspotCode').mockResolvedValue({
+      access_token: 'access-3',
+      refresh_token: 'refresh-3',
+      expires_in: 1800,
+    });
+    jest.spyOn(hubspotApi, 'fetchHubspotTokenInfo').mockResolvedValue({
+      hub_id: 424242,
+      hub_domain: 'acme.hubspot.com',
+      app_id: 1,
+      user: 'ada@example.com',
+      user_id: 7,
+      scopes: [],
+    });
+    try {
+      const { state, cookie } = await beginHandshake();
+      const res = await request(app.getHttpServer())
+        .get('/integrations/hubspot/oauth/callback')
+        .set('Cookie', cookie)
+        .query({ code: 'code-3', state });
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toContain('error=inUse');
+      expect(await prisma.integration.count({ where: { environmentId } })).toBe(0);
+    } finally {
+      await prisma.integration.delete({ where: { id: held.id } });
+    }
+  });
+
   it('turns a declined consent and a bad state into error redirects, never a 500', async () => {
     withAppCredentials('client-123');
     const { state, cookie } = await beginHandshake();
@@ -369,11 +412,12 @@ describe('GraphQL CRM connections (e2e)', () => {
       query: DISCONNECT,
       variables: { data: { id: row.id } },
     });
+    // The account id stays (bookkeeping for the next connect); the grant is gone.
     expect(gqlData(res).disconnectCrmIntegration).toMatchObject({
       id: row.id,
       enabled: false,
       connected: false,
-      remoteAccountId: null,
+      remoteAccountId: '9',
     });
     expect(revoke).toHaveBeenCalledWith('refresh-9');
     const after = await prisma.integration.findUnique({ where: { id: row.id } });

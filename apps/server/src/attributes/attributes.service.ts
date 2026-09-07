@@ -65,6 +65,14 @@ export class AttributesService {
     if (existing?.predefined) {
       throw new ValidationError('Cannot delete a predefined attribute definition.');
     }
+    // Provider-owned attributes (CRM sync, ADR 0013 §6) are released by the
+    // mapping, never deleted underneath it — the next identify would recreate
+    // the definition as internal and the ownership guard would be gone.
+    if (existing?.source && existing.source !== 'internal') {
+      throw new ValidationError(
+        `Attribute "${existing.codeName}" is synced from ${existing.source}; remove it from the integration mapping first.`,
+      );
+    }
     // Clear AttributeOnEvent join rows before deleting the Attribute.
     // The relation has Prisma's default `onDelete: Restrict`, so a bare
     // `attribute.delete` throws P2003 the moment any event has tracked

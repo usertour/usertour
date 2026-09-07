@@ -10,6 +10,7 @@ import {
   CrmSyncService,
 } from './crm-sync.service';
 import { HubspotRateLimitError } from './hubspot-crm-api';
+import { CrmGrantRevokedError } from './crm-connection.service';
 
 /**
  * Runs one full-sync page per job (ADR 0013 §7). Concurrency stays low:
@@ -51,13 +52,23 @@ export class CrmSyncProcessor extends WorkerHost {
     if (!job) {
       return;
     }
-    const exhausted = job.attemptsMade >= (job.opts.attempts ?? 1);
+    // A job failed for stalling is not retried and does not bump attemptsMade,
+    // so it has to count as exhausted here or the round would never close.
+    const stalled = /stalled/i.test(error.message);
+    const exhausted = stalled || job.attemptsMade >= (job.opts.attempts ?? 1);
     this.logger.warn(
       `CRM sync ${job.name} failed (mapping ${job.data.mappingId}, attempt ${job.attemptsMade}${
         exhausted ? ', giving up' : ''
       }): ${error.message}`,
     );
-    if (exhausted && job.name !== CRM_SYNC_BACKFILL_JOB) {
+    if (error instanceof CrmGrantRevokedError) {
+      // Definitive: switch the integration off now rather than after the ladder.
+      await this.sync.handleGrantRevoked(job.data.mappingId);
+    }
+    if (
+      (exhausted || error instanceof CrmGrantRevokedError) &&
+      job.name !== CRM_SYNC_BACKFILL_JOB
+    ) {
       await this.sync.abandonRound(job.data as CrmSyncPageJobData, error.message);
     }
   }

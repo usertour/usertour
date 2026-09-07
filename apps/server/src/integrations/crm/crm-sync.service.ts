@@ -33,6 +33,7 @@ import {
   listHubspotObjectsPage,
   searchHubspotObjectsByProperty,
   updateHubspotObject,
+  hubspotErrorStatus,
 } from './hubspot-crm-api';
 
 /** One provider page of a full-sync round; the job enqueues its successor. */
@@ -82,7 +83,7 @@ export class CrmDeliverySkippedError extends Error {
 }
 
 /** A round older than this with no completion is presumed dead and may be restarted. */
-const ROUND_STALE_MS = 2 * 60 * 60 * 1000;
+export const ROUND_STALE_MS = 2 * 60 * 60 * 1000;
 /** Scheduler cadence target for the recurring full sync (ADR 0013 §7). */
 export const FULL_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
@@ -188,6 +189,12 @@ export class CrmSyncService {
     if (claimed.count === 0) {
       return refuse('A full sync is already in progress.');
     }
+    // A taken-over stale round leaves its run behind; close it so the
+    // activity list does not show two rounds running.
+    await this.prisma.integrationSyncRun.updateMany({
+      where: { mappingId, kind: 'full', status: 'running' },
+      data: { status: 'failed', finishedAt: now, error: 'Superseded by a new round' },
+    });
     await this.prisma.integrationSyncRun.create({
       data: {
         integrationId: mapping.integrationId,
@@ -238,7 +245,7 @@ export class CrmSyncService {
     if (!mapping || mapping.fullSyncSessionId !== data.sessionId) {
       return; // deleted, or superseded by a newer round
     }
-    if (!mapping.enabled || !mapping.integration.oauthCredentials) {
+    if (!mapping.enabled || !mapping.integration.enabled || !mapping.integration.oauthCredentials) {
       await this.abandonRound(data);
       return;
     }
@@ -369,7 +376,12 @@ export class CrmSyncService {
    */
   async backfillRecord(data: CrmBackfillJobData): Promise<void> {
     const mapping = await this.loadMapping(data.mappingId);
-    if (!mapping || !mapping.enabled || !mapping.integration.oauthCredentials) {
+    if (
+      !mapping ||
+      !mapping.enabled ||
+      !mapping.integration.enabled ||
+      !mapping.integration.oauthCredentials
+    ) {
       return;
     }
     const localObject = mapping.localObject as CrmLocalObject;
@@ -449,22 +461,57 @@ export class CrmSyncService {
     if (!link) {
       throw new CrmDeliverySkippedError('Record is no longer linked to a provider record');
     }
-    const token = await this.connections.getAccessToken(mapping.integrationId);
+    // The message names the fields; the values are read now. A message may
+    // be delivered a day after it was queued (retry ladder) or after a newer
+    // change to the same record — the record's current values must win.
+    const fresh = await this.buildWriteBack(mapping, envelope.data.localId);
+    if (!fresh) {
+      throw new CrmDeliverySkippedError('Record is no longer written back');
+    }
     const outbound = (mapping.outboundFields as unknown as CrmOutboundField[]).filter(
       (field) => field.remote in envelope.data.fields,
     );
+    const fields: Record<string, string> = {};
+    for (const field of outbound) {
+      fields[field.remote] = fresh.fields[field.remote] ?? '';
+    }
+    if (Object.keys(fields).length === 0) {
+      throw new CrmDeliverySkippedError('Fields are no longer written back');
+    }
+    const token = await this.connections.getAccessToken(mapping.integrationId);
     await this.ensureRemoteProperties(
       mapping,
       token,
       outbound,
       await this.mappingAttributes(mapping),
     );
-    return await updateHubspotObject(
-      token,
-      hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject),
-      link.remoteId,
-      envelope.data.fields,
-    );
+    try {
+      return await updateHubspotObject(
+        token,
+        hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject),
+        link.remoteId,
+        fields,
+      );
+    } catch (error) {
+      if (hubspotErrorStatus(error) === 404) {
+        // The provider record is gone (deleted or merged away). Drop the link
+        // so nothing writes to a dead id again; the next round re-pairs.
+        await this.prisma.integrationObjectLink.deleteMany({ where: { id: link.id } });
+        throw new CrmDeliverySkippedError('Provider record no longer exists; link dropped');
+      }
+      throw error;
+    }
+  }
+
+  /** A page or backfill job hit a revoked grant: switch the integration off and let the round go. */
+  async handleGrantRevoked(mappingId: string): Promise<void> {
+    const mapping = await this.prisma.integrationObjectMapping.findUnique({
+      where: { id: mappingId },
+      select: { integrationId: true },
+    });
+    if (mapping) {
+      await this.connections.markGrantRevoked(mapping.integrationId);
+    }
   }
 
   /** Enabled mappings of an environment's connected, enabled CRM integrations, for one local object type. */

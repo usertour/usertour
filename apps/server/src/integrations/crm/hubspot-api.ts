@@ -109,6 +109,17 @@ export const revokeHubspotRefreshToken = async (refreshToken: string): Promise<v
   );
 };
 
-/** Whether a token-endpoint failure means the grant itself is gone (revoked / uninstalled). */
-export const isHubspotGrantRevoked = (error: unknown): boolean =>
-  axios.isAxiosError(error) && (error.response?.status === 400 || error.response?.status === 401);
+/**
+ * Whether a token-endpoint failure means the grant itself is gone (revoked /
+ * uninstalled). HubSpot answers 400 for that (`invalid_grant`) but also for a
+ * wrong client secret (`invalid_client`) — a server misconfiguration, which
+ * must not be reported to the operator as a revoked connection.
+ */
+export const isHubspotGrantRevoked = (error: unknown): boolean => {
+  if (!axios.isAxiosError(error) || !error.response) {
+    return false;
+  }
+  const { status, data } = error.response;
+  const code = (data as { error?: string } | undefined)?.error;
+  return status === 401 || (status === 400 && code === 'invalid_grant');
+};

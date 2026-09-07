@@ -327,4 +327,26 @@ describe('GraphQL CRM object mappings (e2e)', () => {
     expect(await prisma.integrationObjectMapping.findUnique({ where: { id } })).toBeNull();
     expect((await attribute('lifecycle_stage'))?.source).toBe('internal');
   });
+
+  it('never lets a system attribute become provider-owned (email is the match key)', async () => {
+    const res = await upsert({
+      inboundFields: [{ remote: 'email', local: 'email' }],
+      adoptExisting: true,
+    });
+    expect(res.body.errors?.[0]?.message).toContain('system attribute');
+    expect((await attribute('email'))?.source ?? 'internal').toBe('internal');
+  });
+
+  it('refuses to delete a provider-owned attribute; the mapping releases it', async () => {
+    await upsert({ inboundFields: [{ remote: 'lifecyclestage', local: 'lifecycle_stage' }] });
+    const owned = await attribute('lifecycle_stage');
+    expect(owned?.source).toBe('hubspot');
+    const res = await graphql(app, {
+      token,
+      query: 'mutation($d:DeleteAttributeInput!){deleteAttribute(data:$d){id}}',
+      variables: { d: { id: owned?.id } },
+    });
+    expect(res.body.errors?.[0]?.message).toContain('synced from hubspot');
+    expect(await attribute('lifecycle_stage')).not.toBeNull();
+  });
 });

@@ -69,6 +69,14 @@ export interface CrmOAuthResult {
   previousAccountId: string | null;
 }
 
+/** The provider account is already connected to another environment (ADR 0013 §3: one account, one environment). */
+export class CrmAccountInUseError extends Error {
+  constructor(provider: string) {
+    super(`This ${provider} account is already connected to another environment.`);
+    this.name = 'CrmAccountInUseError';
+  }
+}
+
 export class CrmGrantRevokedError extends Error {
   constructor(provider: string) {
     super(`${provider} authorization was revoked; reconnect the integration.`);
@@ -227,6 +235,22 @@ export class CrmConnectionService {
     const credentials = this.toCredentials(tokens);
     const encrypted = this.encryption.encrypt(JSON.stringify(credentials));
     const remoteAccountId = String(info.hub_id);
+    // One provider account per environment, anywhere: change subscriptions
+    // are per account, so two environments on one account would overwrite
+    // each other's. A disconnected row keeps its account id for bookkeeping
+    // and does not hold the account.
+    const holder = await this.prisma.integration.findFirst({
+      where: {
+        provider,
+        remoteAccountId,
+        oauthCredentials: { not: null },
+        NOT: { environmentId },
+      },
+      select: { id: true },
+    });
+    if (holder) {
+      throw new CrmAccountInUseError(provider);
+    }
     const existing = await this.prisma.integration.findUnique({
       where: { environmentId_provider: { environmentId, provider } },
       select: { remoteAccountId: true, remoteState: true },
@@ -267,6 +291,8 @@ export class CrmConnectionService {
   /**
    * Drop the grant. The row survives (mappings and the message log stay
    * readable); syncing stops because there is no credential to sync with.
+   * The account id stays: a later connect compares it to the new account to
+   * decide whether the links still point at the right records.
    */
   async disconnect(integrationId: string): Promise<Integration> {
     const row = await this.prisma.integration.findUnique({ where: { id: integrationId } });
@@ -274,22 +300,45 @@ export class CrmConnectionService {
       throw new ValidationError('Integration not found.');
     }
     this.assertProvider(row.provider);
-    const credentials = this.readCredentials(row);
-    if (credentials) {
-      try {
-        await revokeHubspotRefreshToken(credentials.refreshToken);
-      } catch (error) {
-        this.logger.warn(
-          `Revoking ${row.provider} refresh token for integration ${row.id} failed: ${
-            (error as Error).message
-          }`,
-        );
-      }
-    }
+    await this.revokeGrant(row);
     return await this.prisma.integration.update({
       where: { id: integrationId },
-      data: { enabled: false, oauthCredentials: null, remoteAccountId: null },
+      data: { enabled: false, oauthCredentials: null },
     });
+  }
+
+  /** Tell the provider to forget the grant; best-effort, the row is the caller's business. */
+  async revokeGrant(row: Integration): Promise<void> {
+    const credentials = this.readCredentials(row);
+    if (!credentials) {
+      return;
+    }
+    try {
+      await revokeHubspotRefreshToken(credentials.refreshToken);
+    } catch (error) {
+      this.logger.warn(
+        `Revoking ${row.provider} refresh token for integration ${row.id} failed: ${
+          (error as Error).message
+        }`,
+      );
+    }
+  }
+
+  /**
+   * The provider stopped honouring the grant (app uninstalled, authorizing
+   * user removed, token revoked). That is definitive — no retry ladder will
+   * change it — so the integration is switched off at once: every sync path
+   * gates on `enabled`, the page shows the disabled banner, and Reconnect is
+   * the way back. Notification is the breaker's job and stays with it.
+   */
+  async markGrantRevoked(integrationId: string): Promise<void> {
+    const { count } = await this.prisma.integration.updateMany({
+      where: { id: integrationId, enabled: true },
+      data: { enabled: false, autoDisabledAt: new Date(), cooldownUntil: null },
+    });
+    if (count > 0) {
+      this.logger.warn(`Integration ${integrationId} disabled: the provider revoked the grant`);
+    }
   }
 
   // ---------------------------------------------------------------------------

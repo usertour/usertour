@@ -4,7 +4,7 @@ import type { Request, Response } from 'express';
 import { Public } from '@/common/decorators/public.decorator';
 import { FeatureRequiresLicenseError } from '@/common/errors/errors';
 import { CRM_TX_COOKIE } from '@/utils/cookie';
-import { CrmConnectionService } from './crm-connection.service';
+import { CrmAccountInUseError, CrmConnectionService } from './crm-connection.service';
 import { CrmMappingService } from './crm-mapping.service';
 
 const TX_COOKIE_PATH = '/integrations/hubspot/oauth';
@@ -84,10 +84,18 @@ export class HubspotOAuthController {
       );
       if (previousAccountId && previousAccountId !== integration.remoteAccountId) {
         await this.mappings.resetAfterAccountChange(integration.id, previousAccountId);
+      } else {
+        // Disconnect dropped the account's change subscriptions; put them back.
+        await this.mappings.reconcileSubscriptions(integration.id);
       }
       return res.redirect(this.settingsUrl(projectId, { connected: '1' }));
     } catch (error) {
-      const reason = error instanceof FeatureRequiresLicenseError ? 'license' : 'failed';
+      const reason =
+        error instanceof FeatureRequiresLicenseError
+          ? 'license'
+          : error instanceof CrmAccountInUseError
+            ? 'inUse'
+            : 'failed';
       this.logger.warn(`HubSpot OAuth callback failed (${reason}): ${(error as Error).message}`);
       return res.redirect(this.settingsUrl(projectId, { error: reason }));
     }

@@ -6,7 +6,12 @@ import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { BizService } from '@/biz/biz.service';
 import { initialization } from '@/common/initialization/initialization';
 import { QUEUE_CRM_SYNC } from '@/common/consts/queen';
-import { CRM_SYNC_BACKFILL_JOB, CrmSyncService } from '@/integrations/crm/crm-sync.service';
+import { AxiosError } from 'axios';
+import {
+  CRM_SYNC_BACKFILL_JOB,
+  CrmDeliverySkippedError,
+  CrmSyncService,
+} from '@/integrations/crm/crm-sync.service';
 import {
   CRM_OBJECT_UPDATE_TOPIC,
   type CrmMessageEnvelope,
@@ -160,10 +165,32 @@ describe('CRM incremental sync (e2e)', () => {
       fields: { usertour_user_nps: '8' },
     });
 
-    // Deliver the ledger payload the way the processor does.
+    // Deliver the ledger payload the way the processor does. The message
+    // names the field; the value is read at delivery, so a change made after
+    // the message was queued wins over the queued snapshot.
+    await prisma.bizUser.update({
+      where: { id: ada.id },
+      data: { data: { email: 'ada@example.com', nps: 9 } },
+    });
     const result = await sync.deliverWriteBack(envelope);
     expect(result.status).toBe(200);
-    expect(update).toHaveBeenCalledWith('a', 'contacts', '501', { usertour_user_nps: '8' });
+    expect(update).toHaveBeenCalledWith('a', 'contacts', '501', { usertour_user_nps: '9' });
+
+    // The provider record is gone: the delivery settles as skipped and the
+    // link is dropped so nothing writes to the dead id again.
+    update.mockRejectedValue(
+      new AxiosError('Not found', '404', undefined, undefined, {
+        status: 404,
+        statusText: 'Not Found',
+        data: '',
+        headers: {},
+        config: {} as never,
+      }),
+    );
+    await expect(sync.deliverWriteBack(envelope)).rejects.toBeInstanceOf(CrmDeliverySkippedError);
+    expect(
+      await prisma.integrationObjectLink.count({ where: { mappingId, localId: ada.id } }),
+    ).toBe(0);
   });
 
   it('does not echo a change that came from the provider, nor one outside the outbound fields', async () => {

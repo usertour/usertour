@@ -3,7 +3,7 @@ import type { Integration, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import type { CrmInboundField, CrmRemoteObject } from '@usertour/types';
 import { RedisService } from '@/shared/redis.service';
-import { CrmConnectionService } from './crm-connection.service';
+import { CrmConnectionService, CrmGrantRevokedError } from './crm-connection.service';
 import { hubspotObjectTypeFor, matchRemotePropertyFor } from './crm-mapping.types';
 import { CrmSyncService, type MappingWithIntegration } from './crm-sync.service';
 import { batchReadHubspotObjects } from './hubspot-crm-api';
@@ -183,8 +183,8 @@ export class CrmJournalService {
     // outlives the interval would otherwise overlap the next one (possibly on
     // another instance), both reading the same cursor and the slower one
     // writing an older cursor back. Skip the tick instead.
-    const release = await this.redis.acquireLock(CRM_JOURNAL_POLL_LOCK_KEY, POLL_LOCK_TTL_SECONDS);
-    if (!release) {
+    const lease = await this.redis.acquireLease(CRM_JOURNAL_POLL_LOCK_KEY, POLL_LOCK_TTL_SECONDS);
+    if (!lease) {
       return 0;
     }
     try {
@@ -192,6 +192,12 @@ export class CrmJournalService {
       let offset = await this.redis.get(OFFSET_KEY);
       let applied = 0;
       for (let pages = 0; pages < MAX_PAGES_PER_POLL; pages++) {
+        // Each page renews the lease: a slow page must not let the lease lapse
+        // and a second poller start on the same cursor.
+        if (!(await lease.renew())) {
+          this.logger.warn('CRM journal: lost the poll lease mid-poll; stopping this tick');
+          break;
+        }
         const ref = offset ? await journalNext(token, offset) : await journalLatest(token);
         if (!ref) {
           break;
@@ -203,7 +209,7 @@ export class CrmJournalService {
       }
       return applied;
     } finally {
-      await release();
+      await lease.release();
     }
   }
 
@@ -267,8 +273,12 @@ export class CrmJournalService {
           }
         }
       } catch (error) {
-        // Leave a failed run for the operator, then let the poll fail so the
-        // cursor stays put and the page is retried next tick.
+        // One account's failure must not hold the journal for every other
+        // account (the cursor is global): record it and move on. A revoked
+        // grant is definitive, so that account is switched off at once.
+        if (error instanceof CrmGrantRevokedError) {
+          await this.connections.markGrantRevoked(integration.id);
+        }
         await this.sync.recordJournalRun({
           integrationId: integration.id,
           startedAt,
@@ -276,7 +286,10 @@ export class CrmJournalService {
           remoteIds: touched,
           error: (error as Error).message,
         });
-        throw error;
+        this.logger.warn(
+          `CRM journal: integration ${integration.id} failed to apply changes: ${(error as Error).message}`,
+        );
+        continue;
       }
       if (appliedHere > 0) {
         await this.sync.recordJournalRun({
