@@ -808,6 +808,7 @@ const translations = {
           aiTranslation: 'AI 机器翻译',
           integrations: '集成',
           webhooks: 'Webhook',
+          crmIntegrations: 'CRM 集成',
           alerting: '告警(即将推出)',
           sso: '单点登录（SSO）',
         },

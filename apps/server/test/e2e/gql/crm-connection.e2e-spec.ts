@@ -77,7 +77,7 @@ describe('GraphQL CRM connections (e2e)', () => {
     configService.set('hubspot.clientSecret', clientId ? 'secret' : '');
     configService.set(
       'hubspot.callbackUrl',
-      'https://api.example.test/integrations/hubspot/oauth/callback',
+      'https://api.example.test/api/integrations/hubspot/oauth/callback',
     );
   };
 
@@ -151,7 +151,7 @@ describe('GraphQL CRM connections (e2e)', () => {
     expect(setCookie).toContain(`${CRM_TX_COOKIE}=`);
     expect(setCookie).toContain('HttpOnly');
     expect(setCookie).toContain('SameSite=Lax');
-    expect(setCookie).toContain('Path=/integrations/hubspot/oauth');
+    expect(setCookie).toContain('Path=/api/integrations/hubspot/oauth');
   });
 
   it('gates the handshake on the plan', async () => {
@@ -187,7 +187,7 @@ describe('GraphQL CRM connections (e2e)', () => {
     const { state, cookie } = await beginHandshake();
 
     const res = await request(app.getHttpServer())
-      .get('/integrations/hubspot/oauth/callback')
+      .get('/api/integrations/hubspot/oauth/callback')
       .set('Cookie', cookie)
       .query({ code: 'code-1', state });
     expect(res.status).toBe(302);
@@ -279,7 +279,7 @@ describe('GraphQL CRM connections (e2e)', () => {
     try {
       const { state, cookie } = await beginHandshake();
       const res = await request(app.getHttpServer())
-        .get('/integrations/hubspot/oauth/callback')
+        .get('/api/integrations/hubspot/oauth/callback')
         .set('Cookie', cookie)
         .query({ code: 'code-2', state });
       expect(res.status).toBe(302);
@@ -337,7 +337,7 @@ describe('GraphQL CRM connections (e2e)', () => {
     try {
       const { state, cookie } = await beginHandshake();
       const res = await request(app.getHttpServer())
-        .get('/integrations/hubspot/oauth/callback')
+        .get('/api/integrations/hubspot/oauth/callback')
         .set('Cookie', cookie)
         .query({ code: 'code-3', state });
       expect(res.status).toBe(302);
@@ -353,14 +353,14 @@ describe('GraphQL CRM connections (e2e)', () => {
     const { state, cookie } = await beginHandshake();
 
     const denied = await request(app.getHttpServer())
-      .get('/integrations/hubspot/oauth/callback')
+      .get('/api/integrations/hubspot/oauth/callback')
       .set('Cookie', cookie)
       .query({ error: 'access_denied', state });
     expect(denied.status).toBe(302);
     expect(denied.headers.location).toContain('error=denied');
 
     const forged = await request(app.getHttpServer())
-      .get('/integrations/hubspot/oauth/callback')
+      .get('/api/integrations/hubspot/oauth/callback')
       .query({ code: 'code-1', state: 'not-a-jwt' });
     expect(forged.status).toBe(302);
     expect(forged.headers.location).toContain('error=failed');
@@ -369,12 +369,12 @@ describe('GraphQL CRM connections (e2e)', () => {
     // the callback must be completed by the browser that ran the mutation.
     // And there is no public route that would hand that browser a cookie.
     const forwarded = await request(app.getHttpServer())
-      .get('/integrations/hubspot/oauth/start')
+      .get('/api/integrations/hubspot/oauth/start')
       .query({ state });
     expect(forwarded.status).toBe(404);
     const exchange = jest.spyOn(hubspotApi, 'exchangeHubspotCode');
     const unbound = await request(app.getHttpServer())
-      .get('/integrations/hubspot/oauth/callback')
+      .get('/api/integrations/hubspot/oauth/callback')
       .query({ code: 'code-1', state });
     expect(unbound.status).toBe(302);
     expect(unbound.headers.location).toContain('error=failed');

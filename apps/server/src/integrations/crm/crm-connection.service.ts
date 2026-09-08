@@ -60,7 +60,7 @@ const REFRESH_MARGIN_MS = 2 * 60 * 1000;
 const REFRESH_LOCK_TTL_SECONDS = 30;
 const STATE_TTL = '10m';
 /** Where the transaction cookie lives: the OAuth callback route, nothing else. */
-export const CRM_TX_COOKIE_PATH = '/integrations/hubspot/oauth';
+export const CRM_TX_COOKIE_PATH = '/api/integrations/hubspot/oauth';
 const CRM_TX_COOKIE_MAX_AGE_MS = 10 * 60 * 1000;
 const CRM_PROVIDER_KEY = ''; // OAuth rows never carry an API key; the column is NOT NULL.
 

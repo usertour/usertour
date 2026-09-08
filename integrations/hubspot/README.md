@@ -22,7 +22,7 @@ It is deployed with the [HubSpot CLI](https://developers.hubspot.com/docs/develo
 ### Self-hosted setup
 
 1. Create a free [HubSpot developer account](https://app.hubspot.com/signup-hubspot/developers) and install the CLI: `npm install -g @hubspot/cli@latest`, then `hs auth` and pick the developer account.
-2. Copy this directory and edit `src/app/app-hsmeta.json`: set `distribution` to `"private"`, and replace the redirect URL with `https://<your-api-host>/integrations/hubspot/oauth/callback`. It must be HTTPS and served by the same host your dashboard sends API requests to (`API_URL`): the OAuth transaction cookie is set by the dashboard's request and read back on the callback. It only needs to be reachable by the browser of the person connecting, not by HubSpot's servers.
+2. Copy this directory and edit `src/app/app-hsmeta.json`: set `distribution` to `"private"`, and replace the redirect URL with `https://<your-api-host>/api/integrations/hubspot/oauth/callback`. It must be HTTPS and served by the same host your dashboard sends API requests to (`API_URL`): the OAuth transaction cookie is set by the dashboard's request and read back on the callback. It only needs to be reachable by the browser of the person connecting, not by HubSpot's servers.
 3. `hs project upload`. On the first upload HubSpot creates the app in your developer account.
 4. In the developer account, open the app → **Distribution** and add your HubSpot account to the allowlist (private apps can be installed in up to 10 allowlisted accounts). Copy the **Client ID** and **Client secret** from the app's Auth settings.
 5. Set them on the Usertour server and restart:
@@ -41,6 +41,6 @@ Re-run `hs project upload` whenever you change the configuration; the app update
 - Platform version is pinned in `hsproject.json`; only the project-based platform is used — no legacy app features.
 - `distribution` is `marketplace`. Before the App Marketplace listing is approved, the app can be installed in at most 25 accounts (10 while still private); after approval, unlimited.
 - Changing scopes changes what existing installs must re-authorize; treat scope additions as a versioned change and document them in the docs site.
-- The OAuth callback route is served by `apps/server` (`/integrations/hubspot/oauth/callback`); keep this config and the server route in lockstep. The callback must be on the same host the dashboard uses for GraphQL (the transaction cookie is set by the `startCrmOAuth` mutation), which is why local development registers the web dev server (`https://localhost:5174/...`, proxied to the API) rather than an API tunnel.
+- The OAuth callback route is served by `apps/server` (`/api/integrations/hubspot/oauth/callback`); keep this config and the server route in lockstep. The callback must be on the same host the dashboard uses for GraphQL (the transaction cookie is set by the `startCrmOAuth` mutation), which is why local development registers the web dev server (`https://localhost:5174/api/...`, proxied to the API) rather than an API tunnel.
 - Incremental changes come from the webhooks journal API (app-level client-credentials token, `developer.webhooks_journal.*` scopes) — nothing to configure here.
 - Timeline events use app events (`src/app/app-events/`), which HubSpot enables per app on request; the directory is added once access is granted.

@@ -852,6 +852,7 @@ const translations = {
           aiTranslation: 'AI machine translation',
           integrations: 'Integrations',
           webhooks: 'Webhooks',
+          crmIntegrations: 'CRM integrations',
           alerting: 'Alerting (coming soon)',
           sso: 'Single Sign-On (SSO)',
         },

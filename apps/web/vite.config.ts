@@ -37,13 +37,6 @@ export default defineConfig(({ mode }) => {
           secure: false,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
-        // HubSpot OAuth callback. The transaction cookie is set by the GraphQL
-        // mutation on this origin, so the provider has to land back here too.
-        '/integrations/hubspot/oauth/': {
-          target,
-          changeOrigin: true,
-          secure: false,
-        },
         // OAuth authorization-server endpoints (consent page + token/etc.).
         // Trailing slash so the SPA route `/oauth-consent` is NOT proxied.
         '/oauth/': {

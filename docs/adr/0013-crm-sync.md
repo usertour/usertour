@@ -45,7 +45,7 @@ remoteAccountId  String?   // HubSpot account (hub) id — journal events and lo
 remoteState      Json      // system-owned: created remote properties/groups, subscription ids, event type names
 ```
 
-`remoteState` is deliberately separate from the user-editable `config`. Tokens are refreshed on demand before a delivery when within a safety margin of expiry, under a per-integration single-flight lock so concurrent workers do not race the refresh; a refresh failure counts as a delivery failure and feeds the breaker, so a revoked install auto-disables and notifies like any other dead destination.
+`remoteState` is deliberately separate from the user-editable `config`. Tokens are refreshed on demand before a delivery when within a safety margin of expiry, under a per-integration single-flight lock so concurrent workers do not race the refresh; a transient refresh failure counts as a delivery failure and feeds the breaker; a revoked grant (app uninstalled, authorizing user removed) is definitive and switches the integration off at once (`autoDisabledAt`, no retry ladder), surfaced on the settings page — routing that through the breaker's audit and email path is a follow-up alongside the breaker unification.
 
 ### 4. Generic CRM layer: mappings and links
 

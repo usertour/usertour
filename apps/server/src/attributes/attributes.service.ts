@@ -37,14 +37,25 @@ export class AttributesService {
     // attribute and splitting the data. Echoing the current value back (the
     // builder's edit form does) is allowed. v2 omits the field entirely.
     const { id, codeName, ...others } = data;
-    if (codeName !== undefined) {
-      const existing = await this.prisma.attribute.findUnique({
-        where: { id },
-        select: { codeName: true },
-      });
-      if (existing && codeName !== existing.codeName) {
+    const existing = await this.prisma.attribute.findUnique({
+      where: { id },
+      select: { codeName: true, source: true, dataType: true, bizType: true },
+    });
+    if (existing && codeName !== undefined && codeName !== existing.codeName) {
+      throw new ValidationError(
+        `codeName is immutable (it keys stored user/company data) — cannot rename "${existing.codeName}" to "${codeName}". Create a new attribute instead.`,
+      );
+    }
+    // A provider-owned attribute (CRM sync, ADR 0013 §6) takes its shape from
+    // the remote property; a type change here would break the next mapping
+    // save and the values the sync writes. Labels and descriptions stay free.
+    if (existing?.source && existing.source !== 'internal') {
+      const reshaped =
+        (others.dataType !== undefined && others.dataType !== existing.dataType) ||
+        (others.bizType !== undefined && others.bizType !== existing.bizType);
+      if (reshaped) {
         throw new ValidationError(
-          `codeName is immutable (it keys stored user/company data) — cannot rename "${existing.codeName}" to "${codeName}". Create a new attribute instead.`,
+          `Attribute "${existing.codeName}" is synced from ${existing.source}; its type is set by the integration mapping.`,
         );
       }
     }

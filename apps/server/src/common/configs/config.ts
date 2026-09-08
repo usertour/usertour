@@ -150,7 +150,7 @@ const config: Config = {
     clientSecret: process.env.HUBSPOT_CLIENT_SECRET || '',
     callbackUrl:
       process.env.HUBSPOT_CALLBACK_URL ||
-      `${(process.env.API_URL || '').replace(/\/+$/, '')}/integrations/hubspot/oauth/callback`,
+      `${(process.env.API_URL || '').replace(/\/+$/, '')}/api/integrations/hubspot/oauth/callback`,
   },
   globalConfig: {
     isSelfHostedMode: process.env.IS_SELF_HOSTED_MODE !== 'false',

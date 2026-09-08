@@ -195,6 +195,23 @@ export class EnvironmentsService {
   }
 
   async delete(id: string) {
+    // Refuse before anything irreversible happens: the teardown below revokes
+    // grants at the provider, which no rollback brings back. The transaction
+    // re-checks under its own read, so a concurrent change still cannot slip
+    // a refused delete through.
+    const target = await this.prisma.environment.findUnique({ where: { id } });
+    if (!target) {
+      throw new ParamsError();
+    }
+    if (target.isPrimary) {
+      throw new PrimaryEnvironmentCannotBeDeletedError();
+    }
+    const siblings = await this.prisma.environment.count({
+      where: { projectId: target.projectId, deleted: false },
+    });
+    if (siblings <= 1) {
+      throw new LastEnvironmentCannotBeDeletedError();
+    }
     // Let owners of external state (CRM connections: provider-owned
     // attributes, grants, change subscriptions) tear it down before the
     // rows go — awaited, so a failure surfaces instead of stranding state.

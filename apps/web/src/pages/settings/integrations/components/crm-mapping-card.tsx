@@ -25,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   QuestionTooltip,
+  Skeleton,
   useToast,
 } from '@usertour/ui';
 import {
@@ -68,13 +69,18 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   const canWrite = !isViewOnly && entitled;
   const labels = crmObjectLabelKeys(remoteObject, localObject);
 
-  const { mappings, startPolling, stopPolling } = useListIntegrationObjectMappingsQuery(
-    integration.id,
-    SHARED_CACHE_QUERY_OPTIONS,
-  );
+  const {
+    mappings,
+    loading: mappingsLoading,
+    startPolling,
+    stopPolling,
+  } = useListIntegrationObjectMappingsQuery(integration.id, SHARED_CACHE_QUERY_OPTIONS);
   const mapping = mappings?.find(
     (row) => row.remoteObject === remoteObject && row.localObject === localObject,
   );
+  // cache-and-network: a refetch flips `loading` while the data stays; only a
+  // cold load has nothing to show, and it must not flash the set-up state.
+  const mappingsPending = mappingsLoading && !mappings;
   // A round older than the stale window is presumed dead (the server takes it
   // over on its next scan); do not keep Run full sync disabled for it.
   const syncInProgress =
@@ -204,7 +210,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
-          ) : (
+          ) : mappingsPending ? null : (
             <Button type="button" disabled={!canWrite} onClick={() => setEditOpen(true)}>
               {t('settings.integrations.crm.mapping.setUp')}
             </Button>
@@ -218,7 +224,12 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
         </div>
       )}
 
-      {!mapping ? (
+      {mappingsPending ? (
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      ) : !mapping ? (
         <p className="text-sm text-muted-foreground">
           {t('settings.integrations.crm.mapping.description', { name })}
         </p>

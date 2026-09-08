@@ -14,8 +14,10 @@ import { CrmMappingService } from './crm-mapping.service';
 /**
  * HubSpot OAuth callback (ADR 0013 §2). The path is registered as a redirect
  * URL on the HubSpot app (integrations/hubspot/src/app/app-hsmeta.json) —
- * changing it means re-uploading the app. It is a top-level browser
- * navigation, so every outcome ends in a redirect to the settings page.
+ * changing it means re-uploading the app. It lives under /api like the SSO
+ * callback so every reverse proxy in front of the server (nginx in the
+ * self-host image, the web dev server) already routes it. It is a top-level
+ * browser navigation, so every outcome ends in a redirect to the settings page.
  *
  * The callback completes only for the browser that ran `startCrmOAuth`: that
  * mutation sets an httpOnly transaction cookie in its authenticated response
@@ -25,7 +27,7 @@ import { CrmMappingService } from './crm-mapping.service';
  * forwarded to a victim, whose provider account would then authorize into the
  * attacker's environment. A cookie set by an authenticated response cannot be.
  */
-@Controller('integrations/hubspot/oauth')
+@Controller('api/integrations/hubspot/oauth')
 export class HubspotOAuthController {
   private readonly logger = new Logger(HubspotOAuthController.name);
 

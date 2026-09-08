@@ -166,9 +166,12 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
                 <RiLinkM className="mr-2 h-4 w-4" />
                 {t('settings.integrations.crm.reconnect')}
               </DropdownMenuItem>
+              {/* Disconnect stays available after a downgrade (the banner
+                  says so, and the server does not gate it); only reconnecting
+                  needs the plan. */}
               <DropdownMenuItem
                 variant="destructive"
-                disabled={!canWrite || disconnecting}
+                disabled={isViewOnly || disconnecting}
                 onSelect={() => setDisconnectOpen(true)}
               >
                 <RiLinkUnlinkM className="mr-2 h-4 w-4" />

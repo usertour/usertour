@@ -9,8 +9,8 @@
     "auth": {
       "type": "oauth",
       "redirectUrls": [
-        "https://api.usertour.io/integrations/hubspot/oauth/callback",
-        "https://localhost:5174/integrations/hubspot/oauth/callback"
+        "https://api.usertour.io/api/integrations/hubspot/oauth/callback",
+        "https://localhost:5174/api/integrations/hubspot/oauth/callback"
       ],
       "requiredScopes": [
         "oauth",
