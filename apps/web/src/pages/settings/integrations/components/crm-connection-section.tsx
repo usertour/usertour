@@ -8,7 +8,7 @@ import {
   useDisconnectCrmIntegrationMutation,
   useStartCrmOAuthMutation,
 } from '@usertour/hooks';
-import { RiLinkM, RiLinkUnlinkM, RiMore2Line } from '@usertour/icons';
+import { RiHistoryLine, RiLinkM, RiLinkUnlinkM, RiMore2Line } from '@usertour/icons';
 import {
   Badge,
   Button,
@@ -23,6 +23,7 @@ import {
 import type { IntegrationCatalogEntry } from '@usertour/constants';
 import { useAppContext } from '@/contexts/app-context';
 import { ExternalLink } from '@/components/external-link';
+import { CrmSyncActivityDialog } from './crm-sync-activity-dialog';
 
 // Where a self-hosting operator learns to register the provider app.
 const CRM_SETUP_DOCS_HREF: Partial<Record<IntegrationCatalogEntry['provider'], string>> = {
@@ -57,6 +58,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [disconnectOpen, setDisconnectOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
   const { invoke: startOAuth, loading: starting } = useStartCrmOAuthMutation();
   const { invoke: disconnect, loading: disconnecting } = useDisconnectCrmIntegrationMutation();
   const connected = !!integration?.connected;
@@ -159,6 +161,10 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setActivityOpen(true)}>
+                <RiHistoryLine className="mr-2 h-4 w-4" />
+                {t('settings.integrations.crm.viewSyncActivity')}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={!canWrite || starting}
                 onSelect={() => void handleConnect()}
@@ -230,6 +236,15 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             time: format(new Date(integration.autoDisabledAt), 'PP'),
           })}
         </div>
+      )}
+
+      {integration && (
+        <CrmSyncActivityDialog
+          integrationId={integration.id}
+          providerName={name}
+          open={activityOpen}
+          onOpenChange={setActivityOpen}
+        />
       )}
 
       <DestructiveConfirmDialog

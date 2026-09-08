@@ -8,6 +8,7 @@ import {
   useListAttributesQuery,
   useListCrmRemotePropertiesQuery,
   useListIntegrationObjectMappingsQuery,
+  useListIntegrationSyncRunsQuery,
   useRunIntegrationObjectMappingSyncMutation,
 } from '@usertour/hooks';
 import {
@@ -34,6 +35,7 @@ import {
   crmRemotePropertyNameFor,
 } from '@usertour/constants';
 import { AttributeBizTypes, type CrmLocalObject, type CrmRemoteObject } from '@usertour/types';
+import { cn } from '@usertour/tailwind';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { CrmMappingDialog } from './crm-mapping-dialog';
@@ -81,6 +83,14 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   // cache-and-network: a refetch flips `loading` while the data stays; only a
   // cold load has nothing to show, and it must not flash the set-up state.
   const mappingsPending = mappingsLoading && !mappings;
+  // The mapping only records successes (`lastFullSyncAt`); the round that
+  // failed after it is in the run log. Newest first, so the first full run of
+  // this mapping is the latest outcome.
+  const { runs } = useListIntegrationSyncRunsQuery(integration.id, SHARED_CACHE_QUERY_OPTIONS);
+  const lastRun = mapping
+    ? runs?.find((run) => run.kind === 'full' && run.mappingId === mapping.id)
+    : undefined;
+  const lastRunFailed = !!lastRun && lastRun.status === 'failed';
   // A round older than the stale window is presumed dead (the server takes it
   // over on its next scan); do not keep Run full sync disabled for it.
   const syncInProgress =
@@ -342,15 +352,25 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
               {syncInProgress && (
                 <SpinnerIcon className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
               )}
-              <span className="truncate">
+              <span
+                className={cn('truncate', !syncInProgress && lastRunFailed && 'text-destructive')}
+                title={!syncInProgress && lastRunFailed ? (lastRun?.error ?? undefined) : undefined}
+              >
                 {syncInProgress
                   ? t('settings.integrations.crm.mapping.syncInProgress')
-                  : mapping.lastFullSyncAt
-                    ? t('settings.integrations.crm.mapping.lastSynced', {
-                        time: format(new Date(mapping.lastFullSyncAt), 'PPp'),
-                      })
-                    : t('settings.integrations.crm.mapping.neverSynced')}
-                {(syncInProgress || mapping.lastFullSyncAt) && (
+                  : lastRunFailed
+                    ? t('settings.integrations.crm.mapping.lastSyncFailed', {
+                        time: format(
+                          new Date(lastRun?.finishedAt ?? lastRun?.startedAt ?? 0),
+                          'PPp',
+                        ),
+                      }) + (lastRun?.error ? ` · ${lastRun.error}` : '')
+                    : mapping.lastFullSyncAt
+                      ? t('settings.integrations.crm.mapping.lastSynced', {
+                          time: format(new Date(mapping.lastFullSyncAt), 'PPp'),
+                        })
+                      : t('settings.integrations.crm.mapping.neverSynced')}
+                {(syncInProgress || (!lastRunFailed && mapping.lastFullSyncAt)) && (
                   <>
                     {' · '}
                     {t('settings.integrations.crm.mapping.stats', {

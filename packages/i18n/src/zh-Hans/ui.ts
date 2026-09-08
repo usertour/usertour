@@ -1667,10 +1667,12 @@ const translations = {
           syncNow: '运行全量同步',
           syncQueued: '全量同步已开始,账号较大时需要几分钟。',
           syncInProgress: '全量同步进行中',
+          lastSyncFailed: '上次全量同步失败 {{time}}',
           syncFailed: '启动同步失败',
         },
         downgradedBanner:
           '当前套餐不包含 CRM 集成 — 同步已暂停。你仍可以查看和断开连接;升级套餐即可恢复。',
+        viewSyncActivity: '同步活动',
         activity: {
           title: '同步活动',
           description:
@@ -1695,7 +1697,6 @@ const translations = {
       messages: {
         title: '最近消息',
         description: '发往该目的地的每条事件保留 30 天,含每次投递尝试。点击一行查看详情。',
-        crmTitle: '写回记录',
         crmDescription:
           '发送到 {{name}} 的每一次写回都会保留 30 天,含每次投递尝试。点击一行查看详情。',
         empty: '暂无消息。',

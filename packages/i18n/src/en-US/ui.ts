@@ -1754,10 +1754,12 @@ const translations = {
           syncNow: 'Run full sync',
           syncQueued: 'Full sync started — this can take a few minutes for large accounts.',
           syncInProgress: 'Full sync in progress',
+          lastSyncFailed: 'Last full sync failed {{time}}',
           syncFailed: 'Failed to start the sync',
         },
         downgradedBanner:
           'CRM integrations are not included in your current plan — syncing is paused. You can still review and disconnect; upgrade to resume.',
+        viewSyncActivity: 'Sync activity',
         activity: {
           title: 'Sync activity',
           description:
@@ -1784,7 +1786,6 @@ const translations = {
         title: 'Recent messages',
         description:
           'Every event sent to this destination is kept for 30 days with each delivery attempt. Click a row for details.',
-        crmTitle: 'Write-backs',
         crmDescription:
           'Every write-back sent to {{name}} is kept for 30 days with each delivery attempt. Click a row for details.',
         empty: 'No messages yet.',

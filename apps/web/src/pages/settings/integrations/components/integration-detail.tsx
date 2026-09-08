@@ -69,7 +69,6 @@ import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
 import { CrmConnectionSection } from './crm-connection-section';
 import { CrmMappingCard } from './crm-mapping-card';
-import { CrmSyncActivitySection } from './crm-sync-activity-section';
 import { IntegrationStatusBadge } from './integration-status-badge';
 import { AutomationIntegrationDetail } from './automation-integration-detail';
 
@@ -996,12 +995,6 @@ export const IntegrationDetail = () => {
           </>
         )}
 
-        {integration?.connected && (
-          <SettingsCard>
-            <CrmSyncActivitySection integrationId={integration.id} providerName={entry.name} />
-          </SettingsCard>
-        )}
-
         {integration && (
           <SettingsCard>
             <MessagesSection
@@ -1009,7 +1002,6 @@ export const IntegrationDetail = () => {
               enabled={integration.enabled}
               entitled={entitled}
               showTestEvent={false}
-              title={t('settings.integrations.messages.crmTitle')}
               description={t('settings.integrations.messages.crmDescription', { name: entry.name })}
             />
           </SettingsCard>
