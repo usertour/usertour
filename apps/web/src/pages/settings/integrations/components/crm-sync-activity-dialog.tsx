@@ -154,7 +154,7 @@ const CrmSyncActivityList = (props: CrmSyncActivityListProps) => {
                     <TableCell className="whitespace-nowrap text-muted-foreground">
                       {format(new Date(run.startedAt), 'PPp')}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <span className="font-medium">{kindLabel(run)}</span>
                       {pairLabel(run) && (
                         <span className="ml-2 text-muted-foreground">{pairLabel(run)}</span>
@@ -194,7 +194,14 @@ export const CrmSyncActivityDialog = (props: CrmSyncActivityDialogProps) => {
   const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl" aria-describedby={undefined}>
+      {/* No auto-focus on open: the refresh button is disabled while the list
+          loads, so focus would land on the first tooltip trigger in the table
+          and pop its tooltip. Focus stays on the dialog; Tab reaches everything. */}
+      <DialogContent
+        className="max-w-5xl"
+        aria-describedby={undefined}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{t('settings.integrations.crm.activity.title')}</DialogTitle>
         </DialogHeader>
