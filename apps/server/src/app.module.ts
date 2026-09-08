@@ -111,6 +111,7 @@ import { Logger } from '@nestjs/common';
           family: 0,
           password: configService.get('redis.password') || undefined,
           tls: configService.get('redis.tls') ? {} : undefined,
+          db: configService.get<number>('redis.db') ?? 0,
         },
       }),
       inject: [ConfigService],

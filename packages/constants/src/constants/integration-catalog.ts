@@ -2,8 +2,8 @@ import type { IntegrationKind, IntegrationProvider } from '@usertour/types';
 
 /**
  * Display metadata for the supported integration providers (ADR 0011: the
- * five analytics destinations; plus the automation platforms that connect
- * from their own side). Analytics ids must stay in step with
+ * five analytics destinations; ADR 0013: the CRM providers; plus the
+ * automation platforms that connect from their own side). Analytics ids must stay in step with
  * INTEGRATION_PROVIDERS — the settings pages and the segment surfaces
  * (sidebar badges, condition pickers) all render from THIS array so ordering
  * and assets live in one place; names are proper nouns, not translated.
@@ -13,7 +13,7 @@ export interface IntegrationCatalogEntry {
   provider: IntegrationProvider;
   name: string;
   imagePath: string;
-  /** API-key analytics destination vs. link-out automation platform. */
+  /** API-key analytics destination, OAuth CRM sync (ADR 0013), or link-out automation platform. */
   kind: IntegrationKind;
   /** Where setup happens for link-out providers (the provider's app page). */
   externalUrl?: string;
@@ -62,6 +62,14 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     name: 'Segment',
     imagePath: '/images/integrations/segment.png',
     hasRegion: true,
+    hasInbound: false,
+  },
+  {
+    provider: 'hubspot',
+    kind: 'crm',
+    name: 'HubSpot',
+    imagePath: '/images/integrations/hubspot.png',
+    hasRegion: false,
     hasInbound: false,
   },
   {

@@ -4,6 +4,7 @@ import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import {
   catalogEntryForSource,
+  CRM_INTEGRATION_PROVIDERS,
   INTEGRATION_PROVIDERS,
   INTEGRATION_TEST_TOPIC,
 } from '@usertour/constants';
@@ -21,6 +22,7 @@ import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { CohortSyncService } from './cohort-sync.service';
+import { CrmTeardownService } from './crm/crm-teardown.service';
 import { UpdateIntegrationInboundInput, UpsertIntegrationInput } from './dto/integration.input';
 import { buildIntegrationMessage } from './integration-envelope';
 import { IntegrationDeliveryJobData, IntegrationEventObject } from './integrations.types';
@@ -51,6 +53,7 @@ export class IntegrationsService {
     private readonly ledger: OutboundLedgerService,
     private readonly encryption: EncryptionService,
     private readonly cohortSync: CohortSyncService,
+    private readonly crmTeardown: CrmTeardownService,
     @InjectQueue(QUEUE_INTEGRATION_DELIVERY) private readonly deliveryQueue: Queue,
   ) {}
 
@@ -61,12 +64,40 @@ export class IntegrationsService {
    * encrypted inbound token also stays behind: consumers get the derived
    * `inboundUrl` instead.
    */
-  private withoutKey<T extends { key: string; provider: string; inboundToken: string | null }>(
+  private withoutKey<
+    T extends {
+      key: string;
+      provider: string;
+      inboundToken: string | null;
+      oauthCredentials: string | null;
+      remoteState: unknown;
+    },
+  >(
     row: T,
     request?: Request,
-  ): Omit<T, 'key' | 'inboundToken'> & { inboundUrl: string | null } {
-    const { key: _key, inboundToken: _inboundToken, ...rest } = row;
-    return { ...rest, inboundUrl: this.cohortSync.inboundUrlFor(row, request) };
+  ): Omit<T, 'key' | 'inboundToken' | 'oauthCredentials'> & {
+    inboundUrl: string | null;
+    connected: boolean;
+    remoteAccountLabel: string | null;
+  } {
+    const { key: _key, inboundToken: _inboundToken, oauthCredentials, ...rest } = row;
+    const remoteState = (row.remoteState ?? {}) as { account?: { domain?: string } };
+    return {
+      ...rest,
+      inboundUrl: this.cohortSync.inboundUrlFor(row, request),
+      // CRM rows (ADR 0013): the grant itself never leaves the service either.
+      connected: oauthCredentials != null,
+      remoteAccountLabel: remoteState.account?.domain ?? null,
+    };
+  }
+
+  /** One integration by id, projected like list(). */
+  async getById(id: string, request?: Request) {
+    const row = await this.prisma.integration.findUnique({ where: { id } });
+    if (!row) {
+      throw new ValidationError('Integration not found.');
+    }
+    return this.withoutKey(row, request);
   }
 
   /** Providers whose inbound cohort-sync entry actually exists. */
@@ -117,6 +148,14 @@ export class IntegrationsService {
    */
   async upsert(data: UpsertIntegrationInput, request?: Request) {
     await this.assertEntitled(data.environmentId);
+    if (
+      CRM_INTEGRATION_PROVIDERS.includes(
+        data.provider as (typeof CRM_INTEGRATION_PROVIDERS)[number],
+      )
+    ) {
+      // CRM rows are created by the OAuth callback (ADR 0013 §2); there is no key to paste.
+      throw new ValidationError(`"${data.provider}" connects over OAuth — use Connect instead.`);
+    }
     if (!INTEGRATION_PROVIDERS.includes(data.provider as (typeof INTEGRATION_PROVIDERS)[number])) {
       throw new ValidationError(
         `Unknown provider "${data.provider}" — expected one of ${INTEGRATION_PROVIDERS.join(', ')}.`,
@@ -189,6 +228,9 @@ export class IntegrationsService {
     // mappings) — the mapping FK is RESTRICT, so a delete without the release
     // fails loudly instead of stranding badged segments (ADR 0012 §6).
     await this.cohortSync.releaseAllForIntegration(id);
+    // CRM rows own state outside the cascade (ADR 0013): provider-owned
+    // attributes, the grant, the change subscriptions.
+    await this.crmTeardown.teardown(id);
     const row = await this.prisma.integration.delete({ where: { id } });
     return this.withoutKey(row);
   }
@@ -243,6 +285,14 @@ export class IntegrationsService {
     const integration = await this.prisma.integration.findUnique({ where: { id } });
     if (!integration) {
       throw new IntegrationNotFoundError();
+    }
+    if (
+      CRM_INTEGRATION_PROVIDERS.includes(
+        integration.provider as (typeof CRM_INTEGRATION_PROVIDERS)[number],
+      )
+    ) {
+      // CRM rows sync records, not events; a test event would only trip their breaker.
+      throw new ValidationError('Test events are only available for analytics integrations.');
     }
     await this.assertEntitled(integration.environmentId);
     if (!integration.enabled) {

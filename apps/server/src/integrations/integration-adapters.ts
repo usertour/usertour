@@ -151,6 +151,7 @@ const segment: ProviderAdapter = (envelope, key, config) => {
   };
 };
 
+/** Analytics destinations only — CRM providers (ADR 0013) deliver through the CRM sync module. */
 export const INTEGRATION_ADAPTERS: Record<AnalyticsIntegrationProvider, ProviderAdapter> = {
   amplitude,
   heap,

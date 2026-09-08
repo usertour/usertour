@@ -22,6 +22,7 @@ import {
 import {
   RiDeleteBinLine,
   RiFileCopyLine,
+  RiMore2Line,
   RiRefreshLine,
   RiSendPlaneLine,
   SpinnerIcon,
@@ -29,6 +30,10 @@ import {
 import {
   Button,
   DestructiveConfirmDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Form,
   FormControl,
   FormDescription,
@@ -62,6 +67,8 @@ import { OutboundMessageDialog } from '../../components/outbound-message-dialog'
 import { OutboundMessageStatusBadge } from '../../components/outbound-message-status-badge';
 import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
+import { CrmConnectionSection } from './crm-connection-section';
+import { CrmMappingCard } from './crm-mapping-card';
 import { IntegrationStatusBadge } from './integration-status-badge';
 import { AutomationIntegrationDetail } from './automation-integration-detail';
 
@@ -225,18 +232,28 @@ const IdentitySection = ({
           </div>
         </div>
         {integration && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-destructive"
-            disabled={isViewOnly || deleting}
-            title={t('settings.integrations.delete.button')}
-            aria-label={t('settings.integrations.delete.button')}
-            onClick={() => setDeleteOpen(true)}
-          >
-            <RiDeleteBinLine className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t('settings.integrations.moreActions')}
+              >
+                <RiMore2Line className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={isViewOnly || deleting}
+                onSelect={() => setDeleteOpen(true)}
+              >
+                <RiDeleteBinLine className="mr-2 h-4 w-4" />
+                {t('settings.integrations.delete.button')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
@@ -699,10 +716,18 @@ const MessagesSection = ({
   integrationId,
   enabled,
   entitled,
+  showTestEvent = true,
+  title,
+  description,
 }: {
   integrationId: string;
   enabled: boolean;
   entitled: boolean;
+  /** CRM rows (ADR 0013) have no analytics adapter to send a test event through. */
+  showTestEvent?: boolean;
+  /** Override the analytics wording where the log holds something else (CRM: write-backs). */
+  title?: string;
+  description?: string;
 }) => {
   // Load-more accumulation, same wiring as the webhook message log.
   const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
@@ -778,8 +803,8 @@ const MessagesSection = ({
   return (
     <div className="space-y-6">
       <CardHeading
-        title={t('settings.integrations.messages.title')}
-        description={t('settings.integrations.messages.description')}
+        title={title ?? t('settings.integrations.messages.title')}
+        description={description ?? t('settings.integrations.messages.description')}
         actions={
           <>
             <Button
@@ -792,19 +817,21 @@ const MessagesSection = ({
             >
               <RiRefreshLine className={cn('h-4 w-4', loading && 'animate-spin')} />
             </Button>
-            <Button
-              variant="outline"
-              disabled={isViewOnly || !enabled || !entitled || sendingTest}
-              title={enabled ? undefined : t('settings.integrations.testEvent.disabledHint')}
-              onClick={() => void handleSendTest()}
-            >
-              {sendingTest ? (
-                <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RiSendPlaneLine className="mr-2 h-4 w-4" />
-              )}
-              {t('settings.integrations.testEvent.button')}
-            </Button>
+            {showTestEvent && (
+              <Button
+                variant="outline"
+                disabled={isViewOnly || !enabled || !entitled || sendingTest}
+                title={enabled ? undefined : t('settings.integrations.testEvent.disabledHint')}
+                onClick={() => void handleSendTest()}
+              >
+                {sendingTest ? (
+                  <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RiSendPlaneLine className="mr-2 h-4 w-4" />
+                )}
+                {t('settings.integrations.testEvent.button')}
+              </Button>
+            )}
           </>
         }
       />
@@ -905,7 +932,10 @@ export const IntegrationDetail = () => {
   // Plan gate mirror (server enforces independently): reads and delete stay
   // open on a downgraded project; save / test are write-shaped. Optimistic
   // while settling — see the list page.
-  const rawEntitled = !projectConfig || projectConfig.integrations;
+  // CRM providers sit one tier up (ADR 0013 §10): their own flag, same settle rule.
+  const isCrm = entry?.kind === 'crm';
+  const rawEntitled =
+    !projectConfig || (isCrm ? projectConfig.crmIntegrations : projectConfig.integrations);
   const entitled =
     (loading && !integrations) || (configLoading && !projectConfig) ? true : rawEntitled;
 
@@ -923,6 +953,61 @@ export const IntegrationDetail = () => {
   }
   if (loading && !integrations) {
     return null;
+  }
+
+  if (isCrm) {
+    return (
+      <SettingsCardStack>
+        <SettingsCard>
+          {!entitled && (
+            <div className="mb-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              {t('settings.integrations.crm.downgradedBanner')}
+            </div>
+          )}
+          <CrmConnectionSection
+            entry={entry}
+            integration={integration}
+            environmentId={environment?.id ?? ''}
+            entitled={entitled}
+          />
+        </SettingsCard>
+
+        {integration?.connected && (
+          <>
+            <SettingsCard>
+              <CrmMappingCard
+                entry={entry}
+                integration={integration}
+                remoteObject="contact"
+                localObject="user"
+                entitled={entitled}
+              />
+            </SettingsCard>
+            <SettingsCard>
+              <CrmMappingCard
+                entry={entry}
+                integration={integration}
+                remoteObject="company"
+                localObject="company"
+                entitled={entitled}
+              />
+            </SettingsCard>
+          </>
+        )}
+
+        {integration && (
+          <SettingsCard>
+            <MessagesSection
+              integrationId={integration.id}
+              enabled={integration.enabled}
+              entitled={entitled}
+              showTestEvent={false}
+              description={t('settings.integrations.messages.crmDescription', { name: entry.name })}
+            />
+          </SettingsCard>
+        )}
+      </SettingsCardStack>
+    );
   }
 
   return (

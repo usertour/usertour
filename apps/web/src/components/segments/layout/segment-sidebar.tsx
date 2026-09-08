@@ -8,6 +8,7 @@ import {
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, PLUSIcon } from '@usertour/icons';
+import { IntegrationSourceMark } from '@usertour/business-components';
 import { Segment } from '@usertour/types';
 import { Fragment, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -125,12 +126,11 @@ export function SegmentSidebar({
                       <Archive2LineIcon width={16} height={16} className="mr-1 flex-none" />
                     )}
                     <span className="flex-1 min-w-0 truncate text-left">{segment.name}</span>{' '}
-                    {syncedProvider?.imagePath && (
-                      <img
-                        src={syncedProvider.imagePath}
-                        alt={t('segments.synced.logoAlt', { provider: syncedProvider.name })}
-                        title={t('segments.synced.badge', { provider: syncedProvider.name })}
-                        className="ml-1 h-3.5 w-3.5 flex-none rounded-[3px]"
+                    {syncedProvider && (
+                      <IntegrationSourceMark
+                        source={segment.source}
+                        labelFor={(provider) => t('segments.synced.badge', { provider })}
+                        className="ml-1 flex-none"
                       />
                     )}
                   </AdminSidebarBodyItemTemplate>

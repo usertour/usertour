@@ -58,6 +58,25 @@ export class Integration {
   /** The receive URL (carries the token) — null until first inbound enable. */
   @Field(() => String, { nullable: true })
   inboundUrl?: string | null;
+
+  /** CRM providers (ADR 0013): whether an OAuth grant is stored. */
+  @Field(() => Boolean)
+  connected: boolean;
+
+  /** CRM providers: the connected provider account id (HubSpot hub id). */
+  @Field(() => String, { nullable: true })
+  remoteAccountId?: string | null;
+
+  /** CRM providers: a display label for the connected account (HubSpot hub domain). */
+  @Field(() => String, { nullable: true })
+  remoteAccountLabel?: string | null;
+}
+
+/** Result of starting a CRM OAuth handshake: where to send the browser. */
+@ObjectType()
+export class CrmOAuthStart {
+  @Field(() => String)
+  url: string;
 }
 
 /** One synced provider cohort and the segment mirroring it (ADR 0012). */

@@ -64,4 +64,6 @@ export type GlobalConfig = {
   /** Deployment allows private / non-HTTPS outbound targets (webhooks, SSO discovery). */
   allowPrivateNetworkEgress: boolean;
   authProviders: string[];
+  /** CRM providers whose OAuth app credentials this server holds (ADR 0013 §2). */
+  configuredCrmProviders: string[];
 };

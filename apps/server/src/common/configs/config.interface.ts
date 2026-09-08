@@ -39,6 +39,8 @@ export interface Config {
     username: string;
     password: string;
     tls: boolean;
+    /** Logical database index (0-15). */
+    db: number;
   };
   app: {
     homepageUrl: string;
@@ -108,6 +110,11 @@ export interface Config {
     awsRegion: string;
     awsAccessKeyId: string;
     awsSecretAccessKey: string;
+  };
+  hubspot: {
+    clientId: string;
+    clientSecret: string;
+    callbackUrl: string;
   };
   globalConfig: {
     isSelfHostedMode: boolean;

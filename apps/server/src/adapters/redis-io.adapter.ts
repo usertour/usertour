@@ -21,6 +21,7 @@ export class RedisIoAdapter extends IoAdapter {
 
     const pubClient = createClient({
       url,
+      database: this.configService.get<number>('redis.db') ?? 0,
       ...(username && { username }),
       ...(password && { password }),
     });

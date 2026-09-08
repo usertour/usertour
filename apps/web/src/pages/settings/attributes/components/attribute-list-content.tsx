@@ -5,8 +5,9 @@ import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { Attribute, AttributeBizTypes } from '@usertour/types';
 import { Badge, ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
-import { AttributeDataTypeIcon } from '@usertour/business-components';
+import { AttributeDataTypeIcon, IntegrationSourceMark } from '@usertour/business-components';
 import { RiShieldCheckFill } from '@usertour/icons';
+import { catalogEntryForSource } from '@usertour/constants';
 import { AttributeRowActions } from './attribute-row-actions';
 
 interface AttributeListContentProps {
@@ -51,25 +52,44 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
     {
       header: t('settings.attributes.columns.displayName'),
       className: 'truncate',
-      cell: (attribute) => (
-        <div className="flex flex-col">
-          <span className="flex items-center gap-1.5 truncate">
-            {attribute.displayName}
-            {attribute.predefined ? (
-              <Badge
-                variant="secondary"
-                className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
-              >
-                <RiShieldCheckFill className="h-3 w-3 text-foreground" />
-                {t('settings.attributes.systemBadge')}
-              </Badge>
+      cell: (attribute) => {
+        const sourceEntry = catalogEntryForSource(attribute.source);
+        return (
+          <div className="flex flex-col">
+            <span className="flex items-center gap-1.5 truncate">
+              {attribute.displayName}
+              {attribute.predefined ? (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
+                >
+                  <RiShieldCheckFill className="h-3 w-3 text-foreground" />
+                  {t('settings.attributes.systemBadge')}
+                </Badge>
+              ) : null}
+              {sourceEntry ? (
+                <Badge
+                  variant="secondary"
+                  className="gap-1 px-1.5 py-0 font-normal text-muted-foreground"
+                  title={t('settings.attributes.syncedBadge', { provider: sourceEntry.name })}
+                >
+                  <IntegrationSourceMark
+                    source={attribute.source}
+                    labelFor={(provider) => t('settings.attributes.syncedBadge', { provider })}
+                    className="h-3 w-3"
+                  />
+                  {sourceEntry.name}
+                </Badge>
+              ) : null}
+            </span>
+            {attribute.description ? (
+              <span className="text-xs text-muted-foreground truncate">
+                {attribute.description}
+              </span>
             ) : null}
-          </span>
-          {attribute.description ? (
-            <span className="text-xs text-muted-foreground truncate">{attribute.description}</span>
-          ) : null}
-        </div>
-      ),
+          </div>
+        );
+      },
     },
     {
       header: t('settings.attributes.columns.codeName'),

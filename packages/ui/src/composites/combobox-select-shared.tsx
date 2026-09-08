@@ -18,6 +18,8 @@ export interface ComboboxSelectOption {
   leading?: ReactNode;
   /** Optional secondary text (e.g. a codeName); also participates in search. */
   hint?: string;
+  /** Optional trailing decoration (e.g. a provenance mark); display only. */
+  trailing?: ReactNode;
   disabled?: boolean;
   /**
    * Optional group key. In the virtualized list a divider is drawn between two

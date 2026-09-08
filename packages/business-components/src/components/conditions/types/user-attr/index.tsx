@@ -19,6 +19,7 @@ import { validateUserAttr } from '../../validators';
 import { format } from 'date-fns';
 import { DateTimePicker, Input } from '@usertour/ui';
 import { AttributeDataTypeIcon } from '../../../attributes/attribute-data-type-icon';
+import { IntegrationSourceMark } from '../../../integrations/integration-source-mark';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import {
   DATE_PICKER_OPERATORS,
@@ -145,6 +146,7 @@ function UserAttrSummary({ condition }: { condition: RulesCondition }) {
           </>
         )}
       </span>
+      {attributeSourceMark(attribute, t)}
     </span>
   );
 }
@@ -173,6 +175,18 @@ const attributeDataTypeIcon = (dataType: number): ReactNode => (
   <AttributeDataTypeIcon dataType={dataType} className={ITEM_ICON_CLASS} />
 );
 
+// The provider mark for attributes owned by a CRM integration; nothing for
+// the rest, so plain rows keep their layout.
+const attributeSourceMark = (
+  attribute: Attribute,
+  t: ReturnType<typeof useConditionsT>,
+): ReactNode => (
+  <IntegrationSourceMark
+    source={attribute.source}
+    labelFor={(provider) => t('conditions.types.userAttr.syncedFrom', { provider })}
+  />
+);
+
 function UserAttrEditor({ condition, onChange }: EditorProps) {
   const t = useConditionsT();
   const { attributes } = useConditionsContext();
@@ -198,6 +212,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
           label: a.displayName || a.codeName,
           hint: a.codeName,
           leading: attributeDataTypeIcon(a.dataType),
+          trailing: attributeSourceMark(a, t),
         })),
     })).filter((g) => g.items.length > 0);
     return formatted.length > 0 ? formatted : undefined;
@@ -209,8 +224,9 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
       label: a.displayName || a.codeName,
       hint: a.codeName,
       leading: attributeDataTypeIcon(a.dataType),
+      trailing: attributeSourceMark(a, t),
     }));
-  }, [attributes]);
+  }, [attributes, t]);
 
   const handleAttributeChange = (attrId: string) => {
     // Reset value-shaped fields when the attribute (and so the datatype)

@@ -2,15 +2,30 @@ import { useCallback } from 'react';
 import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
 import {
   DeleteIntegration,
+  DeleteIntegrationObjectMapping,
+  DisconnectCrmIntegration,
+  ListCrmRemoteProperties,
+  ListIntegrationObjectMappings,
+  ListIntegrationSyncRuns,
   ListIntegrations,
   QueryIntegrationMessages,
+  RunIntegrationObjectMappingSync,
   QueryIntegrationSyncedSegments,
   RotateIntegrationInboundToken,
   SendIntegrationTestEvent,
+  StartCrmOAuth,
   UpdateIntegrationInbound,
   UpsertIntegration,
+  UpsertIntegrationObjectMapping,
 } from '@usertour/gql';
-import type { IntegrationConfig } from '@usertour/types';
+import type {
+  CrmInboundField,
+  CrmLocalObject,
+  CrmMatchStrategy,
+  CrmOutboundField,
+  CrmRemoteObject,
+  IntegrationConfig,
+} from '@usertour/types';
 import type { OutboundMessage } from './outbound-message';
 
 export interface Integration {
@@ -34,6 +49,12 @@ export interface Integration {
   inboundConfig: IntegrationInboundConfig;
   /** The receive URL (carries the token) — null until first inbound enable. */
   inboundUrl?: string | null;
+  /** CRM providers (ADR 0013): whether an OAuth grant is stored. */
+  connected: boolean;
+  /** CRM providers: the connected provider account id (HubSpot hub id). */
+  remoteAccountId?: string | null;
+  /** CRM providers: display label for the connected account (HubSpot hub domain). */
+  remoteAccountLabel?: string | null;
 }
 
 export interface IntegrationInboundConfig {
@@ -201,6 +222,211 @@ export const useSendIntegrationTestEventMutation = () => {
     async (id: string): Promise<boolean> => {
       const response = await mutation({ variables: { data: { id } } });
       return !!response.data?.sendIntegrationTestEvent;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useStartCrmOAuthMutation = () => {
+  // Returns the provider authorize URL; the caller navigates the browser there.
+  const [mutation, { loading, error }] = useMutation(StartCrmOAuth);
+  const invoke = useCallback(
+    async (input: { environmentId: string; provider: string }): Promise<string | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (response.data?.startCrmOAuth as { url: string } | undefined)?.url ?? null;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useDisconnectCrmIntegrationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DisconnectCrmIntegration);
+  const invoke = useCallback(
+    async (id: string): Promise<Integration | null> => {
+      const response = await mutation({ variables: { data: { id } } });
+      return (response.data?.disconnectCrmIntegration as Integration | undefined) ?? null;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+// ---------------------------------------------------------------------------
+// CRM object mappings (ADR 0013 §4-6)
+// ---------------------------------------------------------------------------
+
+export interface IntegrationObjectMapping {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  integrationId: string;
+  remoteObject: CrmRemoteObject;
+  localObject: CrmLocalObject;
+  matchStrategy: CrmMatchStrategy;
+  matchRemoteField?: string | null;
+  inboundFields: CrmInboundField[];
+  outboundFields: CrmOutboundField[];
+  enabled: boolean;
+  lastFullSyncAt?: string | null;
+  fullSyncStartedAt?: string | null;
+  matchedCount: number;
+  unresolvedCount: number;
+}
+
+/** One sync run: a full round over a mapping, or a journal poll's inbound changes. */
+export interface IntegrationSyncRun {
+  id: string;
+  kind: 'full' | 'journal';
+  status: 'running' | 'succeeded' | 'failed';
+  mappingId?: string | null;
+  remoteObject?: CrmRemoteObject | null;
+  localObject?: CrmLocalObject | null;
+  startedAt: string;
+  finishedAt?: string | null;
+  records: number;
+  matchedCount: number;
+  unresolvedCount: number;
+  error?: string | null;
+  /** Journal runs: the provider record ids touched, capped server-side. */
+  remoteIds?: string[] | null;
+}
+
+export interface CrmRemoteProperty {
+  name: string;
+  label: string;
+  type: string;
+  fieldType: string;
+  groupName: string;
+  readOnly: boolean;
+  hubspotDefined: boolean;
+}
+
+export interface UpsertIntegrationObjectMappingInput {
+  integrationId: string;
+  remoteObject: CrmRemoteObject;
+  localObject: CrmLocalObject;
+  matchStrategy: CrmMatchStrategy;
+  matchRemoteField?: string | null;
+  inboundFields: CrmInboundField[];
+  outboundFields: Array<{ local: string }>;
+  enabled?: boolean;
+  adoptExisting?: boolean;
+}
+
+export const useListIntegrationObjectMappingsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch, startPolling, stopPolling } = useQuery(
+    ListIntegrationObjectMappings,
+    {
+      variables: { integrationId },
+      skip: !integrationId,
+      ...options,
+    },
+  );
+  return {
+    mappings: data?.listIntegrationObjectMappings as IntegrationObjectMapping[] | undefined,
+    loading,
+    error,
+    refetch,
+    startPolling,
+    stopPolling,
+  };
+};
+
+export const useListIntegrationSyncRunsQuery = (
+  integrationId: string,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch, startPolling, stopPolling } = useQuery(
+    ListIntegrationSyncRuns,
+    {
+      variables: { integrationId },
+      skip: !integrationId,
+      ...options,
+    },
+  );
+  return {
+    runs: data?.listIntegrationSyncRuns as IntegrationSyncRun[] | undefined,
+    loading,
+    error,
+    refetch,
+    startPolling,
+    stopPolling,
+  };
+};
+
+export const useListCrmRemotePropertiesQuery = (
+  integrationId: string,
+  remoteObject: CrmRemoteObject,
+  options?: QueryHookOptions,
+) => {
+  const { data, loading, error, refetch } = useQuery(ListCrmRemoteProperties, {
+    variables: { integrationId, remoteObject },
+    skip: !integrationId,
+    fetchPolicy: 'network-only',
+    ...options,
+  });
+  return {
+    properties: data?.listCrmRemoteProperties as CrmRemoteProperty[] | undefined,
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useUpsertIntegrationObjectMappingMutation = () => {
+  // A first save INSERTS a row the cache can't materialize from the response;
+  // later saves ride the returned full field set.
+  const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping, {
+    // Attributes change ownership with the mapping (provider marks).
+    refetchQueries: ['ListIntegrationObjectMappings', 'listAttributes'],
+  });
+  const invoke = useCallback(
+    async (
+      input: UpsertIntegrationObjectMappingInput,
+    ): Promise<IntegrationObjectMapping | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (
+        (response.data?.upsertIntegrationObjectMapping as IntegrationObjectMapping | undefined) ??
+        null
+      );
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useDeleteIntegrationObjectMappingMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping, {
+    // Attributes change ownership with the mapping (provider marks).
+    refetchQueries: ['ListIntegrationObjectMappings', 'listAttributes'],
+  });
+  const invoke = useCallback(
+    async (input: { integrationId: string; id: string }): Promise<boolean> => {
+      const response = await mutation({ variables: { data: input } });
+      return !!response.data?.deleteIntegrationObjectMapping;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useRunIntegrationObjectMappingSyncMutation = () => {
+  const [mutation, { loading, error }] = useMutation(RunIntegrationObjectMappingSync);
+  const invoke = useCallback(
+    async (input: {
+      integrationId: string;
+      id: string;
+    }): Promise<IntegrationObjectMapping | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (
+        (response.data?.runIntegrationObjectMappingSync as IntegrationObjectMapping | undefined) ??
+        null
+      );
     },
     [mutation],
   );

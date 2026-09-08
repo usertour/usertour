@@ -280,7 +280,6 @@ const translations = {
     },
     synced: {
       badge: 'Synced from {{provider}}',
-      logoAlt: '{{provider}} logo',
     },
   },
   settings: {
@@ -495,6 +494,9 @@ const translations = {
         dataType: 'Data type',
       },
       systemBadge: 'System',
+      syncedBadge: 'Synced from {{provider}}',
+      syncedTooltip:
+        'Synced from {{provider}} — remove it from the integration mapping to release it.',
       editMenuItem: 'Edit attribute',
       deleteMenuItem: 'Delete attribute',
       deleteResource: 'attribute',
@@ -850,6 +852,7 @@ const translations = {
           aiTranslation: 'AI machine translation',
           integrations: 'Integrations',
           webhooks: 'Webhooks',
+          crmIntegrations: 'CRM integrations',
           alerting: 'Alerting (coming soon)',
           sso: 'Single Sign-On (SSO)',
         },
@@ -1509,6 +1512,8 @@ const translations = {
           mixpanel: 'Send Usertour events to Mixpanel and sync Mixpanel cohorts into Usertour.',
           posthog: 'Send Usertour events to PostHog.',
           segment: 'Send Usertour events to Segment.',
+          hubspot:
+            'Sync HubSpot contacts and companies with Usertour users and companies, and show onboarding milestones on the HubSpot timeline.',
           zapier:
             'Trigger Zaps from Usertour events, and create or update users, companies, and events from thousands of apps.',
         },
@@ -1631,8 +1636,9 @@ const translations = {
         saved: 'Integration saved',
         saveFailed: 'Failed to save the integration',
       },
+      moreActions: 'More actions',
       delete: {
-        button: 'Remove',
+        button: 'Remove integration',
         confirmTitle: 'Remove this integration?',
         confirmDescription:
           'Event delivery to {{name}} stops immediately; the stored key and the message log are deleted.',
@@ -1646,10 +1652,142 @@ const translations = {
         failed: 'Failed to queue the test event',
         disabledHint: 'Enable the integration to send a test event.',
       },
+      crm: {
+        connect: 'Connect with {{name}}',
+        connectDescription:
+          'Authorize Usertour in your {{name}} account. One {{name}} account connects to one Usertour environment.',
+        connected: 'Connected',
+        notConnected: 'Not connected',
+        notConfigured:
+          "{{name}} isn't set up on this server yet. A server administrator needs to add the {{name}} app credentials to the server configuration.",
+        notConfiguredDocs: 'Self-hosting guide',
+        account: 'Connected account',
+        moreActions: 'More actions',
+        reconnect: 'Reconnect',
+        disconnect: 'Disconnect',
+        disconnectConfirmTitle: 'Disconnect {{name}}?',
+        disconnectConfirmDescription:
+          'Syncing stops immediately. Mappings and the message log are kept, so reconnecting picks up where you left off.',
+        disconnectSuccess: '{{name}} disconnected',
+        disconnectFailure: 'Failed to disconnect {{name}}',
+        connectedToast: '{{name}} connected',
+        deniedToast: 'Authorization was cancelled in {{name}}.',
+        failedToast: 'Connecting {{name}} failed. Please try again.',
+        licenseToast: 'CRM integrations are not included in your current plan.',
+        inUseToast:
+          'That {{name}} account is already connected to another environment. Disconnect it there first.',
+        autoDisabledBanner:
+          'Usertour disabled this integration on {{time}}: {{name}} stopped accepting its access — the app was uninstalled, the authorizing user was removed, or deliveries kept failing. Reconnect to resume syncing.',
+        lockedHint: 'Available on the Growth plan and above',
+        mapping: {
+          remoteObjects: {
+            contact: 'Contacts',
+            company: 'Companies',
+          },
+          localObjects: {
+            user: 'Users',
+            company: 'Companies',
+          },
+          description:
+            'Choose how {{name}} records are matched to Usertour records and which fields sync in each direction. Records are only paired when they exist on both sides — nothing is created.',
+          setUp: 'Set up mapping',
+          edit: 'Edit mapping',
+          moreActions: 'More actions',
+          matchLabel: 'Match records by',
+          matchRemotePlaceholder: 'Choose a {{name}} property',
+          matchRemoteRequired: 'Choose the {{name}} property to match on.',
+          matchLocalEmail: 'Email',
+          matchLocalUserId: 'User ID (identify() identifier)',
+          matchLocalCompanyId: 'Company ID (group() identifier)',
+          matchEmailHelp:
+            'A record is linked when the {{name}} property equals the Usertour email attribute, case-insensitively.',
+          matchRemoteFieldHelp:
+            'The property must contain the same ID your app passes to usertour.identify() (or usertour.group() for companies).',
+          inboundTitle: 'Fields to sync from {{name}}',
+          inboundSyncing: 'Syncing from {{name}}',
+          inboundHelp:
+            'Each property becomes a Usertour attribute of the same name, owned by {{name}}: it shows a {{name}} mark and cannot be written by the SDK or API.',
+          addInbound: 'Select a {{name}} property to sync',
+          emptyInbound: 'No fields synced from {{name}}.',
+          outboundTitle: 'Fields to write back to {{name}}',
+          outboundSyncing: 'Writing back to {{name}}',
+          outboundHelp:
+            'Each attribute is written to a property in the "Usertour" group in {{name}}, created on first sync. Attributes owned by {{name}} cannot be written back.',
+          addOutbound: 'Select a Usertour attribute to write back',
+          emptyOutbound: 'Nothing written back to {{name}}.',
+          searchProperties: 'Search properties…',
+          searchAttributes: 'Search attributes…',
+          noMatches: 'No matches.',
+          newBadge: 'New',
+          existingBadge: 'Existing',
+          existingHint:
+            'A Usertour attribute with this code name already exists; saving hands it over to {{name}}.',
+          churnWarning: 'Changes on every visit — expect frequent writes to {{name}}.',
+          removeRow: 'Remove',
+          dialogNote:
+            'New activity syncs with these settings right away; existing records catch up on the next full sync.',
+          save: 'Save mapping',
+          saved:
+            'Mapping saved. Run a full sync when you are done configuring to link the records that already exist.',
+          saveFailed: 'Failed to save the mapping',
+          remove: 'Remove mapping',
+          removeConfirmTitle: 'Remove this mapping?',
+          removeConfirmDescription:
+            'Syncing stops for these records. Attributes synced from {{name}} keep their values and become ordinary attributes again.',
+          removed: 'Mapping removed',
+          removeFailed: 'Failed to remove the mapping',
+          adoptTitle: 'Attributes already exist',
+          adoptDescription:
+            'Some selected properties match attributes that already exist in Usertour. Confirm to let {{name}} own them from now on — the SDK and API will no longer be able to write them.',
+          adoptConfirm: 'Adopt existing attributes',
+          stats: 'Matched {{matched}} · Unmatched {{unresolved}}',
+          lastSynced: 'Last full sync {{time}}',
+          neverSynced: 'Run a full sync to link the records that already exist',
+          records: {
+            contact: 'contacts and users',
+            company: 'companies',
+          },
+          syncHelp:
+            'A full sync walks every one of your {{records}}, links the ones that exist on both sides, and fills in the fields you chose. New activity syncs on its own; a full sync is for the records that were there before, after changing fields, or after correcting data in {{name}}. It also runs daily; large accounts take a few minutes.',
+          propertiesLoadFailed: 'Could not load {{name}} properties',
+          readOnlySuffix: '(read-only)',
+          syncNow: 'Run full sync',
+          syncQueued: 'Full sync started — this can take a few minutes for large accounts.',
+          syncInProgress: 'Full sync in progress',
+          lastSyncFailed: 'Last full sync failed {{time}}',
+          syncFailed: 'Failed to start the sync',
+        },
+        downgradedBanner:
+          'CRM integrations are not included in your current plan — syncing is paused. You can still review and disconnect; upgrade to resume.',
+        viewSyncActivity: 'Sync activity',
+        activity: {
+          title: 'Sync activity',
+          description:
+            'Full syncs and the {{name}} changes picked up between them, kept for 30 days. Failed runs show why.',
+          empty: 'No sync activity yet.',
+          kindFull: 'Full sync',
+          kindJournal: 'Changes from {{name}}',
+          fullRecords: '{{records}} records · Matched {{matched}} · Unmatched {{unresolved}}',
+          journalRecords_one: '{{count}} record synced',
+          journalRecords_other: '{{count}} records synced',
+          remoteIds: '{{name}} record IDs: {{ids}}',
+          statusRunning: 'Running',
+          statusSucceeded: 'Succeeded',
+          statusFailed: 'Failed',
+          columns: {
+            time: 'Time',
+            sync: 'Sync',
+            result: 'Result',
+            records: 'Records',
+          },
+        },
+      },
       messages: {
         title: 'Recent messages',
         description:
           'Every event sent to this destination is kept for 30 days with each delivery attempt. Click a row for details.',
+        crmDescription:
+          'Every write-back sent to {{name}} is kept for 30 days with each delivery attempt. Click a row for details.',
         empty: 'No messages yet.',
         loadMore: 'Load more',
         refresh: 'Refresh',
@@ -4186,6 +4324,7 @@ const translations = {
       userAttr: {
         label: 'Attribute',
         placeholder: 'Pick an attribute',
+        syncedFrom: 'Synced from {{provider}}',
         selectPlaceholder: 'Select attribute',
         searchPlaceholder: 'Search attribute…',
         operatorPlaceholder: 'Select condition',
@@ -4563,6 +4702,7 @@ const translations = {
     documentation: 'Documentation',
   },
   attributes: {
+    syncedFrom: 'Synced from {{provider}}',
     typeChip: {
       number: 'NUMBER',
       string: 'STRING',

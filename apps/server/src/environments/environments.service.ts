@@ -1,8 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
+import { ENVIRONMENT_DELETING, type EnvironmentDeletingPayload } from './environment.events';
 import { releaseSyncedSegmentMapping } from '@/integrations/cohort-sync.service';
 import {
   IdentityVerificationRequiresActiveSecretError,
@@ -52,6 +54,7 @@ export class EnvironmentsService {
     private readonly projectsService: ProjectsService,
     private readonly identityVerificationService: IdentityVerificationService,
     private readonly encryptionService: EncryptionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -192,6 +195,29 @@ export class EnvironmentsService {
   }
 
   async delete(id: string) {
+    // Refuse before anything irreversible happens: the teardown below revokes
+    // grants at the provider, which no rollback brings back. The transaction
+    // re-checks under its own read, so a concurrent change still cannot slip
+    // a refused delete through.
+    const target = await this.prisma.environment.findUnique({ where: { id } });
+    if (!target) {
+      throw new ParamsError();
+    }
+    if (target.isPrimary) {
+      throw new PrimaryEnvironmentCannotBeDeletedError();
+    }
+    const siblings = await this.prisma.environment.count({
+      where: { projectId: target.projectId, deleted: false },
+    });
+    if (siblings <= 1) {
+      throw new LastEnvironmentCannotBeDeletedError();
+    }
+    // Let owners of external state (CRM connections: provider-owned
+    // attributes, grants, change subscriptions) tear it down before the
+    // rows go — awaited, so a failure surfaces instead of stranding state.
+    await this.eventEmitter.emitAsync(ENVIRONMENT_DELETING, {
+      environmentId: id,
+    } satisfies EnvironmentDeletingPayload);
     // Fetch contentIds before the tx so we can sweep per-content pubver
     // cache keys after the COE rows are gone — same shape as deleteContent.
     const coeContentIds = (

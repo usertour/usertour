@@ -24,7 +24,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtDto): Promise<User | null> {
+  async validate(payload: JwtDto & { tokenType?: string; purpose?: string }): Promise<User | null> {
+    // Session tokens carry only userId/iat/exp. Every other token this server
+    // signs with the same secret (2FA challenge, SSO and CRM transactions)
+    // declares what it is, and none of them is a session.
+    if (payload.tokenType || payload.purpose) {
+      return null;
+    }
     return await this.authService.validateUser(payload.userId);
   }
 

@@ -60,4 +60,12 @@ export class Attribute extends BaseModel {
 
   @Field(() => Boolean)
   predefined: boolean;
+
+  /** 'internal' or the owning integration provider (ADR 0013 §6). */
+  @Field(() => String)
+  source: string;
+
+  /** Provider-side field name when provider-owned. */
+  @Field(() => String, { nullable: true })
+  sourceId?: string | null;
 }

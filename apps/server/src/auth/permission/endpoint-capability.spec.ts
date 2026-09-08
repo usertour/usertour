@@ -85,6 +85,14 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'integration.queryIntegrationSyncedSegments': O,
   'integration.updateIntegrationInbound': O,
   'integration.rotateIntegrationInboundToken': O,
+  'integration.startCrmOAuth': O,
+  'integration.disconnectCrmIntegration': O,
+  'integration.listIntegrationObjectMappings': O,
+  'integration.listCrmRemoteProperties': O,
+  'integration.upsertIntegrationObjectMapping': O,
+  'integration.deleteIntegrationObjectMapping': O,
+  'integration.runIntegrationObjectMappingSync': O,
+  'integration.listIntegrationSyncRuns': O,
   'webhooks.listWebhooks': O,
   'webhooks.getWebhook': O,
   'webhooks.queryWebhookMessages': O,
@@ -143,8 +151,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same 111 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(108);
+  it('snapshot covers exactly the same 116 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(116);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 

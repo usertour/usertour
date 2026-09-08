@@ -19,6 +19,9 @@ export const ListIntegrations = gql`
       inboundEnabled
       inboundConfig
       inboundUrl
+      connected
+      remoteAccountId
+      remoteAccountLabel
     }
   }
 `;
@@ -76,6 +79,9 @@ export const UpsertIntegration = gql`
       inboundEnabled
       inboundConfig
       inboundUrl
+      connected
+      remoteAccountId
+      remoteAccountLabel
     }
   }
 `;
@@ -134,5 +140,115 @@ export const SendIntegrationTestEvent = gql`
     sendIntegrationTestEvent(data: $data) {
       id
     }
+  }
+`;
+
+// CRM connections (ADR 0013). Start returns the provider authorize URL — the
+// browser navigates there and comes back through the server callback, which
+// creates the row; the detail page refetches on return.
+export const StartCrmOAuth = gql`
+  mutation StartCrmOAuth($data: StartCrmOAuthInput!) {
+    startCrmOAuth(data: $data) {
+      url
+    }
+  }
+`;
+
+// Returns every field a disconnect changes (grant dropped, switch off) plus
+// the breaker fields a reconnect would reset, so the cache updates in place.
+export const DisconnectCrmIntegration = gql`
+  mutation DisconnectCrmIntegration($data: IntegrationIdInput!) {
+    disconnectCrmIntegration(data: $data) {
+      id
+      updatedAt
+      enabled
+      connected
+      remoteAccountId
+      remoteAccountLabel
+      consecutiveFailures
+      cooldownUntil
+      autoDisabledAt
+    }
+  }
+`;
+
+// CRM object mappings (ADR 0013 §4-6).
+const MAPPING_FIELDS = `
+  id
+  createdAt
+  updatedAt
+  integrationId
+  remoteObject
+  localObject
+  matchStrategy
+  matchRemoteField
+  inboundFields
+  outboundFields
+  enabled
+  lastFullSyncAt
+  fullSyncStartedAt
+  matchedCount
+  unresolvedCount
+`;
+
+export const ListIntegrationObjectMappings = gql`
+  query ListIntegrationObjectMappings($integrationId: String!) {
+    listIntegrationObjectMappings(integrationId: $integrationId) { ${MAPPING_FIELDS} }
+  }
+`;
+
+export const ListIntegrationSyncRuns = gql`
+  query ListIntegrationSyncRuns($integrationId: String!, $limit: Int) {
+    listIntegrationSyncRuns(integrationId: $integrationId, limit: $limit) {
+      id
+      kind
+      status
+      mappingId
+      remoteObject
+      localObject
+      startedAt
+      finishedAt
+      records
+      matchedCount
+      unresolvedCount
+      error
+      remoteIds
+    }
+  }
+`;
+
+// Live provider metadata: no cache (network-only) — the editor should see a
+// property the customer just created in the CRM.
+export const ListCrmRemoteProperties = gql`
+  query ListCrmRemoteProperties($integrationId: String!, $remoteObject: String!) {
+    listCrmRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
+      name
+      label
+      type
+      fieldType
+      groupName
+      readOnly
+      hubspotDefined
+    }
+  }
+`;
+
+export const UpsertIntegrationObjectMapping = gql`
+  mutation UpsertIntegrationObjectMapping($data: UpsertIntegrationObjectMappingInput!) {
+    upsertIntegrationObjectMapping(data: $data) { ${MAPPING_FIELDS} }
+  }
+`;
+
+export const DeleteIntegrationObjectMapping = gql`
+  mutation DeleteIntegrationObjectMapping($data: IntegrationObjectMappingIdInput!) {
+    deleteIntegrationObjectMapping(data: $data)
+  }
+`;
+
+// Manual full sync (ADR 0013 §7): returns the mapping with its round state so
+// the card can show "in progress" without a refetch.
+export const RunIntegrationObjectMappingSync = gql`
+  mutation RunIntegrationObjectMappingSync($data: IntegrationObjectMappingIdInput!) {
+    runIntegrationObjectMappingSync(data: $data) { ${MAPPING_FIELDS} }
   }
 `;

@@ -8,6 +8,9 @@ export type Attribute = {
   dataType: number;
   createdAt: string;
   predefined: boolean;
+  /** 'internal' or the owning integration provider (ADR 0013 §6). */
+  source?: string;
+  sourceId?: string | null;
 };
 
 export type BizUserInfo = {

@@ -33,6 +33,12 @@ export type PlanFeatures = {
   // gate shape as webhooks — cloud Starter+, self-hosted never gated.
   integrations: boolean;
 
+  // CRM sync (ADR 0013): OAuth-connected CRM providers with bidirectional
+  // object mapping. Cloud Growth+; self-hosted never gated — a self-hosted
+  // operator registers and uploads their own provider app, so the feature is
+  // not double-charged (getProjectConfig forces it on there).
+  crmIntegrations: boolean;
+
   // Quotas. 'unlimited' is the explicit unbounded marker; we deliberately
   // avoid Infinity / null so it survives JSON round-trips and reads
   // cleanly at call sites.

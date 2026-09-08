@@ -50,6 +50,10 @@ export {
   AttributeDataTypeIcon,
   type AttributeDataTypeIconProps,
 } from './components/attributes/attribute-data-type-icon';
+export {
+  IntegrationSourceMark,
+  type IntegrationSourceMarkProps,
+} from './components/integrations/integration-source-mark';
 // Generic composition UI primitives live in @usertour/ui —
 // import them from there directly. Examples: ComboboxSelect, DateTimePicker,
 // ErrorTooltip, ScaledPreviewContainer, LoadingContainer, LocateSelect.
