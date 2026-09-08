@@ -866,7 +866,7 @@ model BizEvent {
 
   @@index([bizUserId])
   @@index([bizSessionId])
-  @@index([bizCompanyId, createdAt])
+  @@index([bizCompanyId])
   @@index([contentId])
 }
 
