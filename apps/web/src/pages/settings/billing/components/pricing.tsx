@@ -2,6 +2,7 @@ import {
   RiBarChartLine,
   RiCalendarLine,
   RiCheckLine,
+  RiCloseLine,
   RiHeadphoneLine,
   RiInboxLine,
   RiLockLine,
@@ -9,6 +10,7 @@ import {
   RiMessageLine,
   RiNewspaperLine,
   RiPaintBrushLine,
+  RiPlugLine,
   RiRouteLine,
   RiSendPlaneLine,
   RiShieldKeyholeLine,
@@ -21,7 +23,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@usertour/tailwind';
 import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/hooks';
-import { PLAN_FEATURES } from '@usertour/constants';
+import { INTEGRATION_CATALOG, PLAN_FEATURES } from '@usertour/constants';
 import { resolvePlanFeatures } from '@usertour/helpers';
 import { PlanType, type PlanFeatures } from '@usertour/types';
 import { useSubscription } from '@/hooks/use-subscription';
@@ -537,19 +539,28 @@ const ComparisonTable = ({
           name: t('settings.billing.comparison.rows.aiTranslation'),
           values: [false, true, true, true],
         },
-        {
-          name: t('settings.billing.comparison.rows.integrations'),
-          values: matrixRow('integrations', currentPlanType, overridePlan),
-        },
+        { name: t('settings.billing.comparison.rows.alerting'), values: [true, true, true, true] },
+      ],
+    },
+    {
+      // One row per provider, straight from the catalog: the names are what a
+      // reader looks for, and a provider's tier follows its kind in the same
+      // matrix the server enforces, so the table cannot drift from the gate.
+      icon: RiPlugLine,
+      title: t('settings.billing.comparison.sections.integrations'),
+      features: [
+        ...INTEGRATION_CATALOG.map((entry) => ({
+          name: entry.name,
+          values: matrixRow(
+            entry.kind === 'crm' ? 'crmIntegrations' : 'integrations',
+            currentPlanType,
+            overridePlan,
+          ),
+        })),
         {
           name: t('settings.billing.comparison.rows.webhooks'),
           values: matrixRow('webhooks', currentPlanType, overridePlan),
         },
-        {
-          name: t('settings.billing.comparison.rows.crmIntegrations'),
-          values: matrixRow('crmIntegrations', currentPlanType, overridePlan),
-        },
-        { name: t('settings.billing.comparison.rows.alerting'), values: [true, true, true, true] },
       ],
     },
     {
@@ -616,7 +627,12 @@ const ComparisonTable = ({
                       <div className="pt-1">
                         <RiCheckLine className="size-4" />
                       </div>
-                    ) : null
+                    ) : (
+                      // An explicit "no": a blank cell reads as missing data.
+                      <div className="pt-1">
+                        <RiCloseLine className="size-4 text-zinc-950/30 dark:text-white/30" />
+                      </div>
+                    )
                   ) : (
                     <div className="flex flex-col">
                       <p className="text-zinc-950/60 dark:text-white/60">
