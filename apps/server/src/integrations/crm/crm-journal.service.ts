@@ -342,19 +342,21 @@ export class CrmJournalService {
     const inbound = mapping.inboundFields as unknown as CrmInboundField[];
     const matchField = matchRemotePropertyFor(mapping);
     const properties = Array.from(new Set([matchField, ...inbound.map((field) => field.remote)]));
-    const token = await this.connections.getAccessToken(mapping.integrationId);
     const objectType = hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject);
-    let applied = 0;
-    for (let start = 0; start < ids.length; start += 100) {
-      const remotes = await batchReadHubspotObjects(
-        token,
-        objectType,
-        ids.slice(start, start + 100),
-        properties,
-      );
-      const pairs = await this.sync.applyRecords(mapping, token, remotes);
-      applied += pairs.length;
-    }
+    const applied = await this.connections.withAccessToken(mapping.integrationId, async (token) => {
+      let count = 0;
+      for (let start = 0; start < ids.length; start += 100) {
+        const remotes = await batchReadHubspotObjects(
+          token,
+          objectType,
+          ids.slice(start, start + 100),
+          properties,
+        );
+        const pairs = await this.sync.applyRecords(mapping, token, remotes);
+        count += pairs.length;
+      }
+      return count;
+    });
     this.logger.debug(
       `Journal: mapping ${mapping.id} applied ${applied}/${ids.length} changed records`,
     );

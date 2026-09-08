@@ -265,10 +265,17 @@ export class CrmSyncService {
     const matchField = matchRemotePropertyFor(mapping);
     const properties = Array.from(new Set([matchField, ...inbound.map((field) => field.remote)]));
     const objectType = hubspotObjectTypeFor(remoteObject);
-    const token = await this.connections.getAccessToken(mapping.integrationId);
-
-    const page = await listHubspotObjectsPage(token, objectType, { properties, after: data.after });
-    const pairs = await this.applyRecords(mapping, token, page.results);
+    const { page, pairs } = await this.connections.withAccessToken(
+      mapping.integrationId,
+      async (token) => {
+        const page = await listHubspotObjectsPage(token, objectType, {
+          properties,
+          after: data.after,
+        });
+        const pairs = await this.applyRecords(mapping, token, page.results);
+        return { page, pairs };
+      },
+    );
     const { environmentId } = mapping.integration;
 
     const counts = {
@@ -409,17 +416,18 @@ export class CrmSyncService {
     }
     const inbound = mapping.inboundFields as unknown as CrmInboundField[];
     const matchField = matchRemotePropertyFor(mapping);
-    const token = await this.connections.getAccessToken(mapping.integrationId);
-    const remotes = await searchHubspotObjectsByProperty(
-      token,
-      hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject),
-      {
-        propertyName: matchField,
-        values: [byEmail ? key.toLowerCase() : key],
-        properties: Array.from(new Set([matchField, ...inbound.map((field) => field.remote)])),
-      },
-    );
-    await this.applyRecords(mapping, token, remotes);
+    await this.connections.withAccessToken(mapping.integrationId, async (token) => {
+      const remotes = await searchHubspotObjectsByProperty(
+        token,
+        hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject),
+        {
+          propertyName: matchField,
+          values: [byEmail ? key.toLowerCase() : key],
+          properties: Array.from(new Set([matchField, ...inbound.map((field) => field.remote)])),
+        },
+      );
+      await this.applyRecords(mapping, token, remotes);
+    });
   }
 
   /** The write-back envelope data for a local record, or null when it has no link or nothing to send. */
@@ -490,29 +498,26 @@ export class CrmSyncService {
     if (Object.keys(fields).length === 0) {
       throw new CrmDeliverySkippedError('Fields are no longer written back');
     }
-    const token = await this.connections.getAccessToken(mapping.integrationId);
-    await this.ensureRemoteProperties(
-      mapping,
-      token,
-      outbound,
-      await this.mappingAttributes(mapping),
-    );
-    try {
-      return await updateHubspotObject(
-        token,
-        hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject),
-        link.remoteId,
-        fields,
-      );
-    } catch (error) {
-      if (hubspotErrorStatus(error) === 404) {
-        // The provider record is gone (deleted or merged away). Drop the link
-        // so nothing writes to a dead id again; the next round re-pairs.
-        await this.prisma.integrationObjectLink.deleteMany({ where: { id: link.id } });
-        throw new CrmDeliverySkippedError('Provider record no longer exists; link dropped');
+    const attributes = await this.mappingAttributes(mapping);
+    return await this.connections.withAccessToken(mapping.integrationId, async (token) => {
+      await this.ensureRemoteProperties(mapping, token, outbound, attributes);
+      try {
+        return await updateHubspotObject(
+          token,
+          hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject),
+          link.remoteId,
+          fields,
+        );
+      } catch (error) {
+        if (hubspotErrorStatus(error) === 404) {
+          // The provider record is gone (deleted or merged away). Drop the link
+          // so nothing writes to a dead id again; the next round re-pairs.
+          await this.prisma.integrationObjectLink.deleteMany({ where: { id: link.id } });
+          throw new CrmDeliverySkippedError('Provider record no longer exists; link dropped');
+        }
+        throw error;
       }
-      throw error;
-    }
+    });
   }
 
   /** A page or backfill job hit a revoked grant: switch the integration off and let the round go. */

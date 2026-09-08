@@ -1676,7 +1676,7 @@ const translations = {
         inUseToast:
           'That {{name}} account is already connected to another environment. Disconnect it there first.',
         autoDisabledBanner:
-          'Usertour disabled this integration on {{time}}: {{name}} stopped accepting its access — the app was uninstalled, the authorizing user was removed, or deliveries kept failing. Reconnect to resume syncing.',
+          "{{name}} stopped accepting Usertour's access on {{time}} — the app was uninstalled or the authorization was revoked. Syncing is paused; reconnect to resume.",
         lockedHint: 'Available on the Growth plan and above',
         mapping: {
           remoteObjects: {

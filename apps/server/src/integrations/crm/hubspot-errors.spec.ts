@@ -36,10 +36,23 @@ describe('hubspotCall', () => {
     expect(error).toMatchObject({ status: 503, retryAfterMs: 10_000 });
   });
 
-  it('passes every other failure through untouched, so grant checks still see it', async () => {
+  it('passes every other failure through, so grant checks still see the response', async () => {
     const revoked = axiosFailure(400);
     await expect(failWith(revoked)).rejects.toBe(revoked);
+    expect(revoked.response?.status).toBe(400);
     const plain = new Error('boom');
     await expect(failWith(plain)).rejects.toBe(plain);
+  });
+
+  it('strips the request from a failed call: secrets never ride an error into a log', async () => {
+    const failure = axiosFailure(400);
+    failure.config = {
+      headers: new AxiosHeaders(),
+      data: 'client_secret=shh&refresh_token=shh',
+    } as never;
+    await expect(failWith(failure)).rejects.toBe(failure);
+    expect(failure.config).toBeUndefined();
+    expect(failure.request).toBeUndefined();
+    expect(JSON.stringify(failure)).not.toContain('shh');
   });
 });

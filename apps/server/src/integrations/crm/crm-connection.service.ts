@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
@@ -21,6 +22,7 @@ import {
   revokeHubspotRefreshToken,
 } from './hubspot-api';
 import { isCrmProviderConfigured } from './crm-app-config';
+import { hubspotErrorStatus } from './hubspot-crm-api';
 import { fetchHubspotAppToken } from './hubspot-journal-api';
 
 /** Decrypted shape of Integration.oauthCredentials. */
@@ -386,13 +388,20 @@ export class CrmConnectionService {
    * worker that loses the lock waits for the winner's write instead of
    * racing a second refresh (HubSpot rotates refresh tokens on use).
    */
-  async getAccessToken(integrationId: string): Promise<string> {
+  async getAccessToken(
+    integrationId: string,
+    options: { rejected?: string } = {},
+  ): Promise<string> {
+    // A token the provider just rejected is stale whatever its expiry says;
+    // one another worker has already replaced it is not.
+    const stale = (candidate: CrmOAuthCredentials) =>
+      this.needsRefresh(candidate) || candidate.accessToken === options.rejected;
     const row = await this.loadConnected(integrationId);
     const credentials = this.readCredentials(row);
     if (!credentials) {
       throw new CrmGrantRevokedError(row.provider);
     }
-    if (!this.needsRefresh(credentials)) {
+    if (!stale(credentials)) {
       return credentials.accessToken;
     }
     const release = await this.redis.acquireLock(
@@ -411,12 +420,58 @@ export class CrmConnectionService {
       if (!fresh) {
         throw new CrmGrantRevokedError(row.provider);
       }
-      if (!this.needsRefresh(fresh)) {
+      if (!stale(fresh)) {
         return fresh.accessToken;
       }
       return await this.refresh(current, fresh);
     } finally {
       await release();
+    }
+  }
+
+  /**
+   * Run a provider data call with a valid access token. The provider answers
+   * 401 to a token it no longer honours — the grant was revoked out from
+   * under us (app uninstalled, authorization revoked elsewhere), which does
+   * not wait for the token's expiry. So a 401 refreshes once and retries:
+   * a refused refresh is already CrmGrantRevokedError, and a second 401 on a
+   * fresh token is treated the same. Callers keep their existing handling
+   * of that error (immediate auto-disable, round abandoned).
+   */
+  async withAccessToken<T>(
+    integrationId: string,
+    call: (accessToken: string) => Promise<T>,
+  ): Promise<T> {
+    const token = await this.getAccessToken(integrationId);
+    try {
+      return await call(token);
+    } catch (error) {
+      if (hubspotErrorStatus(error) !== 401) {
+        throw error;
+      }
+      // Worth a trace even when the retry succeeds: a token rejected before
+      // its expiry says something happened to the grant on the provider side.
+      this.logger.warn(
+        `Provider rejected the access token of integration ${integrationId} before its expiry; refreshing once`,
+      );
+    }
+    const renewed = await this.getAccessToken(integrationId, { rejected: token });
+    if (renewed === token) {
+      // Another worker holds the refresh lock and has not finished: not a
+      // verdict on the grant. Let the caller retry later.
+      throw new Error('Provider rejected the access token; a refresh is in progress elsewhere');
+    }
+    try {
+      return await call(renewed);
+    } catch (error) {
+      if (hubspotErrorStatus(error) === 401) {
+        const row = await this.loadConnected(integrationId);
+        this.logger.warn(
+          `${row.provider} rejects a freshly refreshed token for integration ${integrationId}: treating the grant as revoked`,
+        );
+        throw new CrmGrantRevokedError(row.provider);
+      }
+      throw error;
     }
   }
 
@@ -433,6 +488,14 @@ export class CrmConnectionService {
         this.logger.warn(`${row.provider} grant revoked for integration ${row.id}`);
         throw new CrmGrantRevokedError(row.provider);
       }
+      // Not a revoked grant as far as we can tell: say what the provider
+      // answered (status and body carry no secrets), so a new shape is
+      // recognisable from the log rather than a mystery.
+      this.logger.warn(
+        `${row.provider} token refresh failed for integration ${row.id}: status ${
+          hubspotErrorStatus(error) ?? 'n/a'
+        } body ${JSON.stringify(axios.isAxiosError(error) ? error.response?.data : undefined)}`,
+      );
       throw error;
     }
     const next = this.toCredentials(tokens);

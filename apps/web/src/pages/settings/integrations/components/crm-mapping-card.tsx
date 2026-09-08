@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useApolloClient } from '@apollo/client';
 import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import {
@@ -108,11 +109,20 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   // Labels come from the cache at once on a revisit and refresh behind them;
   // the editor still sees a property the customer just created, after the
   // network round trip.
+  const client = useApolloClient();
   const { properties, error: propertiesError } = useListCrmRemotePropertiesQuery(
     integration.id,
     remoteObject,
     { fetchPolicy: 'cache-and-network' },
   );
+  // A property load can be the first thing to learn the provider revoked the
+  // grant; the server switches the integration off, so re-read the connection
+  // and let its banner say what to do.
+  useEffect(() => {
+    if (propertiesError) {
+      void client.refetchQueries({ include: ['ListIntegrations'] });
+    }
+  }, [propertiesError, client]);
   const bizType = localObject === 'user' ? AttributeBizTypes.User : AttributeBizTypes.Company;
   const { attributes } = useListAttributesQuery(project?.id ?? '', bizType, {
     ...SHARED_CACHE_QUERY_OPTIONS,

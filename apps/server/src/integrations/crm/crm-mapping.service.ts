@@ -12,7 +12,7 @@ import type {
 import { codeName as codeNameSchema } from '@/api/shared/codename';
 import { ValidationError } from '@/common/errors/errors';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-import { CrmConnectionService } from './crm-connection.service';
+import { CrmConnectionService, CrmGrantRevokedError } from './crm-connection.service';
 import { CrmJournalService } from './crm-journal.service';
 import { CrmSyncService } from './crm-sync.service';
 import {
@@ -91,7 +91,21 @@ export class CrmMappingService {
     const integration = await this.loadCrmIntegration(integrationId);
     this.assertConnected(integration);
     const remote = this.assertRemoteObject(remoteObject);
-    const properties = await this.fetchRemoteProperties(integration, remote);
+    let properties: HubspotProperty[];
+    try {
+      properties = await this.fetchRemoteProperties(integration, remote);
+    } catch (error) {
+      if (error instanceof CrmGrantRevokedError) {
+        // The dashboard is the first to notice a grant revoked out of band
+        // (app uninstalled in the provider): switch the integration off now,
+        // exactly as a sync job would, and say what to do about it.
+        await this.connections.markGrantRevoked(integration.id);
+        throw new ValidationError(
+          `${integration.provider} no longer accepts Usertour's access to this account; reconnect the integration.`,
+        );
+      }
+      throw error;
+    }
     return properties
       .map((property) => ({
         name: property.name,
@@ -601,7 +615,8 @@ export class CrmMappingService {
     integration: Integration,
     remoteObject: CrmRemoteObject,
   ): Promise<HubspotProperty[]> {
-    const token = await this.connections.getAccessToken(integration.id);
-    return await listHubspotProperties(token, hubspotObjectTypeFor(remoteObject));
+    return await this.connections.withAccessToken(integration.id, (token) =>
+      listHubspotProperties(token, hubspotObjectTypeFor(remoteObject)),
+    );
   }
 }
