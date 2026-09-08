@@ -6,7 +6,8 @@ import { RedisService } from '@/shared/redis.service';
 import { CrmConnectionService, CrmGrantRevokedError } from './crm-connection.service';
 import { hubspotObjectTypeFor, matchRemotePropertyFor } from './crm-mapping.types';
 import { CrmSyncService, type MappingWithIntegration } from './crm-sync.service';
-import { batchReadHubspotObjects, HubspotRateLimitError } from './hubspot-crm-api';
+import { batchReadHubspotObjects } from './hubspot-crm-api';
+import { HubspotRateLimitError } from './hubspot-errors';
 import {
   createJournalSubscription,
   deleteJournalSubscription,

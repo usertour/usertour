@@ -11,6 +11,7 @@ import { EncryptionService } from '@/shared/encryption.service';
 import { RedisService } from '@/shared/redis.service';
 import { CRM_JOURNAL_POLL_LOCK_KEY } from '@/integrations/crm/crm-journal.service';
 import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
+import { HubspotRateLimitError } from '@/integrations/crm/hubspot-errors';
 import * as journalApi from '@/integrations/crm/hubspot-journal-api';
 
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
@@ -386,7 +387,7 @@ describe('CRM change journal (e2e)', () => {
     const next = jest.spyOn(journalApi, 'journalNext').mockResolvedValue(null);
     jest
       .spyOn(hubspotCrmApi, 'batchReadHubspotObjects')
-      .mockRejectedValue(new hubspotCrmApi.HubspotRateLimitError(429, 10_000));
+      .mockRejectedValue(new HubspotRateLimitError(429, 10_000));
 
     expect(await journal.poll()).toBe(0);
     // No cursor, no failed run: the next tick re-reads the same page.

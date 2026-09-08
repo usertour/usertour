@@ -9,7 +9,7 @@ import {
   type CrmSyncPageJobData,
   CrmSyncService,
 } from './crm-sync.service';
-import { HubspotRateLimitError } from './hubspot-crm-api';
+import { HubspotRateLimitError } from './hubspot-errors';
 import { CrmGrantRevokedError } from './crm-connection.service';
 
 /**

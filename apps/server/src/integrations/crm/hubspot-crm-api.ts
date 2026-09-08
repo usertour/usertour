@@ -1,4 +1,5 @@
 import axios, { AxiosRequestConfig } from 'axios';
+import { hubspotCall } from './hubspot-errors';
 import { HUBSPOT_API_BASE } from './hubspot-api';
 
 /**
@@ -38,25 +39,14 @@ export interface HubspotObjectPage {
   paging?: { next?: { after: string } };
 }
 
-/** Signals a 429 (or 5xx) with the pause HubSpot asked for, for the queue to honour. */
-export class HubspotRateLimitError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly retryAfterMs: number,
-  ) {
-    super(`HubSpot asked to retry after ${retryAfterMs}ms (status ${status})`);
-    this.name = 'HubspotRateLimitError';
-  }
-}
-
 const DATA_TIMEOUT_MS = 20_000;
 /** HubSpot's per-page maximum for object reads. */
 export const HUBSPOT_PAGE_SIZE = 100;
 /** Batch endpoints accept at most 100 inputs per call. */
 export const HUBSPOT_BATCH_SIZE = 100;
 
-const request = async <T>(accessToken: string, config: AxiosRequestConfig): Promise<T> => {
-  try {
+const request = <T>(accessToken: string, config: AxiosRequestConfig): Promise<T> =>
+  hubspotCall(async () => {
     const response = await axios.request<T>({
       baseURL: HUBSPOT_API_BASE,
       timeout: DATA_TIMEOUT_MS,
@@ -64,20 +54,7 @@ const request = async <T>(accessToken: string, config: AxiosRequestConfig): Prom
       headers: { Authorization: `Bearer ${accessToken}`, ...(config.headers ?? {}) },
     });
     return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      const { status } = error.response;
-      if (status === 429 || status === 502 || status === 503) {
-        const header = Number(error.response.headers?.['retry-after']);
-        throw new HubspotRateLimitError(
-          status,
-          Number.isFinite(header) && header > 0 ? header * 1000 : 10_000,
-        );
-      }
-    }
-    throw error;
-  }
-};
+  });
 
 /** Status of a failed HubSpot call, or undefined for non-HTTP failures. */
 export const hubspotErrorStatus = (error: unknown): number | undefined =>
@@ -221,16 +198,15 @@ export const searchHubspotObjectsByProperty = async (
 };
 
 /**
- * Update one record; returns the HTTP outcome for the delivery ledger. Rate
- * limits surface as HubspotRateLimitError like every other call here.
+ * Update one record; returns the HTTP outcome for the delivery ledger.
  */
-export const updateHubspotObject = async (
+export const updateHubspotObject = (
   accessToken: string,
   objectType: HubspotObjectType,
   id: string,
   properties: Record<string, string | null>,
-): Promise<{ status: number; body: string }> => {
-  try {
+): Promise<{ status: number; body: string }> =>
+  hubspotCall(async () => {
     const response = await axios.request<unknown>({
       baseURL: HUBSPOT_API_BASE,
       timeout: DATA_TIMEOUT_MS,
@@ -242,17 +218,4 @@ export const updateHubspotObject = async (
       transformResponse: [(data) => data],
     });
     return { status: response.status, body: String(response.data ?? '') };
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      const { status } = error.response;
-      if (status === 429 || status === 502 || status === 503) {
-        const header = Number(error.response.headers?.['retry-after']);
-        throw new HubspotRateLimitError(
-          status,
-          Number.isFinite(header) && header > 0 ? header * 1000 : 10_000,
-        );
-      }
-    }
-    throw error;
-  }
-};
+  });

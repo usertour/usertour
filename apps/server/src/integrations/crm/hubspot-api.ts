@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { hubspotCall } from './hubspot-errors';
 
 /**
  * HubSpot OAuth + account endpoints (ADR 0013 §2-3). Fixed public hosts, so
@@ -58,17 +59,18 @@ export const buildHubspotAuthorizeUrl = (app: HubspotAppCredentials, state: stri
   return `${HUBSPOT_AUTHORIZE_URL}?${params.toString()}`;
 };
 
-const postTokenForm = async (form: Record<string, string>): Promise<HubspotTokenResponse> => {
-  const response = await axios.post<HubspotTokenResponse>(
-    `${HUBSPOT_API_BASE}/oauth/v1/token`,
-    new URLSearchParams(form).toString(),
-    {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      timeout: TOKEN_TIMEOUT_MS,
-    },
-  );
-  return response.data;
-};
+const postTokenForm = (form: Record<string, string>): Promise<HubspotTokenResponse> =>
+  hubspotCall(async () => {
+    const response = await axios.post<HubspotTokenResponse>(
+      `${HUBSPOT_API_BASE}/oauth/v1/token`,
+      new URLSearchParams(form).toString(),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: TOKEN_TIMEOUT_MS,
+      },
+    );
+    return response.data;
+  });
 
 export const exchangeHubspotCode = (app: HubspotAppCredentials, code: string) =>
   postTokenForm({
@@ -89,25 +91,27 @@ export const refreshHubspotToken = (app: HubspotAppCredentials, refreshToken: st
   });
 
 /** Metadata for an access token: the HubSpot account (hub) it belongs to. */
-export const fetchHubspotTokenInfo = async (accessToken: string): Promise<HubspotTokenInfo> => {
-  const response = await axios.get<HubspotTokenInfo>(
-    `${HUBSPOT_API_BASE}/oauth/v1/access-tokens/${encodeURIComponent(accessToken)}`,
-    { timeout: TOKEN_TIMEOUT_MS },
-  );
-  return response.data;
-};
+export const fetchHubspotTokenInfo = (accessToken: string): Promise<HubspotTokenInfo> =>
+  hubspotCall(async () => {
+    const response = await axios.get<HubspotTokenInfo>(
+      `${HUBSPOT_API_BASE}/oauth/v1/access-tokens/${encodeURIComponent(accessToken)}`,
+      { timeout: TOKEN_TIMEOUT_MS },
+    );
+    return response.data;
+  });
 
 /**
  * Best-effort revocation on disconnect. HubSpot only invalidates the refresh
  * token (outstanding access tokens live out their 30 minutes) and does not
  * uninstall the app from the account — the customer does that in HubSpot.
  */
-export const revokeHubspotRefreshToken = async (refreshToken: string): Promise<void> => {
-  await axios.delete(
-    `${HUBSPOT_API_BASE}/oauth/v1/refresh-tokens/${encodeURIComponent(refreshToken)}`,
-    { timeout: TOKEN_TIMEOUT_MS },
-  );
-};
+export const revokeHubspotRefreshToken = (refreshToken: string): Promise<void> =>
+  hubspotCall(async () => {
+    await axios.delete(
+      `${HUBSPOT_API_BASE}/oauth/v1/refresh-tokens/${encodeURIComponent(refreshToken)}`,
+      { timeout: TOKEN_TIMEOUT_MS },
+    );
+  });
 
 /**
  * Whether a token-endpoint failure means the grant itself is gone (revoked /

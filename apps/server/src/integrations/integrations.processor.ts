@@ -12,7 +12,7 @@ import { EncryptionService } from '@/shared/encryption.service';
 import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
 import { CrmGrantRevokedError, CrmConnectionService } from './crm/crm-connection.service';
 import { CrmDeliverySkippedError, CrmSyncService } from './crm/crm-sync.service';
-import { HubspotRateLimitError } from './crm/hubspot-crm-api';
+import { HubspotRateLimitError } from './crm/hubspot-errors';
 import type { CrmMessageEnvelope, IntegrationMessageEnvelope } from './integrations.types';
 import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
