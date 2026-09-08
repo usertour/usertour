@@ -58,8 +58,12 @@ export const crmLocalDataTypeFor = (property: {
 };
 
 /**
- * A full-sync round whose stamp is older than this is presumed dead (a lost
- * job): the server takes it over and the dashboard stops showing it as
- * running (ADR 0013 §7).
+ * A full-sync round whose heartbeat is older than this is presumed dead (its
+ * job was lost with the queue): the server takes it over on its next scan and
+ * the dashboard stops showing it as running (ADR 0013 §7). The heartbeat is
+ * refreshed by every page and every retry, so the window only has to outlast
+ * the longest single wait a page job can take — the delivery ladder's top
+ * rung and the Retry-After cap are both 12h (apps/server delivery-backoff;
+ * a unit test pins the relation).
  */
-export const CRM_ROUND_STALE_MS = 2 * 60 * 60 * 1000;
+export const CRM_ROUND_STALE_MS = 13 * 60 * 60 * 1000;

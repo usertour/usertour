@@ -56,6 +56,8 @@ const APP_TOKEN_MARGIN_MS = 5 * 60 * 1000;
 
 /** Refresh when the access token has less than this left (HubSpot tokens live 30 min). */
 const REFRESH_MARGIN_MS = 2 * 60 * 1000;
+/** Longer than the token request timeout, so a slow refresh cannot outlive its own lock. */
+const REFRESH_LOCK_TTL_SECONDS = 30;
 const STATE_TTL = '10m';
 /** Where the transaction cookie lives: the OAuth callback route, nothing else. */
 export const CRM_TX_COOKIE_PATH = '/integrations/hubspot/oauth';
@@ -393,17 +395,26 @@ export class CrmConnectionService {
     if (!this.needsRefresh(credentials)) {
       return credentials.accessToken;
     }
-    const release = await this.redis.acquireLock(`crm:refresh:${integrationId}`);
+    const release = await this.redis.acquireLock(
+      `crm:refresh:${integrationId}`,
+      REFRESH_LOCK_TTL_SECONDS,
+    );
     if (!release) {
       return await this.awaitRefreshedToken(integrationId, credentials);
     }
     try {
-      // Re-read under the lock: the previous holder may have refreshed already.
-      const fresh = this.readCredentials(await this.loadConnected(integrationId));
-      if (fresh && !this.needsRefresh(fresh)) {
+      // Re-read under the lock: the previous holder may have refreshed
+      // already — or a disconnect may have cleared the grant, in which case
+      // there is nothing to refresh with.
+      const current = await this.loadConnected(integrationId);
+      const fresh = this.readCredentials(current);
+      if (!fresh) {
+        throw new CrmGrantRevokedError(row.provider);
+      }
+      if (!this.needsRefresh(fresh)) {
         return fresh.accessToken;
       }
-      return await this.refresh(row, fresh ?? credentials);
+      return await this.refresh(current, fresh);
     } finally {
       await release();
     }
@@ -425,11 +436,53 @@ export class CrmConnectionService {
       throw error;
     }
     const next = this.toCredentials(tokens);
-    await this.prisma.integration.update({
-      where: { id: row.id },
+    // Compare-and-set on the ciphertext we refreshed from: a disconnect or a
+    // reconnect that landed meanwhile must not be overwritten by a token of
+    // the grant it replaced. The caller retries and reads whatever is current.
+    const written = await this.prisma.integration.updateMany({
+      where: { id: row.id, oauthCredentials: row.oauthCredentials },
       data: { oauthCredentials: this.encryption.encrypt(JSON.stringify(next)) },
     });
+    if (written.count === 0) {
+      throw new Error(
+        `${row.provider} credentials changed during refresh; retry with the current grant`,
+      );
+    }
     return next.accessToken;
+  }
+
+  /**
+   * Write one key of `remoteState` without disturbing the others, and only
+   * while the row still belongs to the account the caller read it for: the
+   * property cache and the journal subscription ids are per portal, and a
+   * reconnect to another account must not inherit them from an in-flight job.
+   * `merge` folds an object into the key; `replace` sets it.
+   */
+  async patchRemoteState(
+    integrationId: string,
+    remoteAccountId: string | null,
+    key: string,
+    value: Record<string, unknown>,
+    mode: 'merge' | 'replace',
+  ): Promise<void> {
+    const json = JSON.stringify(value);
+    if (mode === 'merge') {
+      await this.prisma.$executeRaw`
+        UPDATE "Integration"
+        SET "remoteState" = jsonb_set(
+              COALESCE("remoteState", '{}'::jsonb),
+              ARRAY[${key}]::text[],
+              COALESCE("remoteState" -> ${key}, '{}'::jsonb) || ${json}::jsonb
+            ),
+            "updatedAt" = NOW()
+        WHERE "id" = ${integrationId} AND "remoteAccountId" = ${remoteAccountId}`;
+      return;
+    }
+    await this.prisma.$executeRaw`
+      UPDATE "Integration"
+      SET "remoteState" = jsonb_set(COALESCE("remoteState", '{}'::jsonb), ARRAY[${key}]::text[], ${json}::jsonb),
+          "updatedAt" = NOW()
+      WHERE "id" = ${integrationId} AND "remoteAccountId" = ${remoteAccountId}`;
   }
 
   /** Poll briefly for the lock holder's refreshed credentials; fall back to using what we have. */

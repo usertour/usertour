@@ -362,4 +362,40 @@ describe('CRM change journal (e2e)', () => {
       expect.objectContaining({ error: 'provider unreachable', remoteIds: ['777'] }),
     ]);
   });
+
+  it('keeps the cursor when the provider rate limits the tick: nothing is skipped', async () => {
+    jest.spyOn(journalApi, 'journalLatest').mockResolvedValue({
+      url: 'https://journal.test/page-3',
+      expiresAt: '',
+      currentOffset: 'off-3',
+    });
+    jest.spyOn(journalApi, 'fetchJournalPage').mockResolvedValue({
+      offset: 'off-3',
+      journalEvents: [
+        {
+          type: 'crmObject',
+          portalId: 4242,
+          occurredAt: '',
+          objectTypeId: '0-1',
+          objectId: 778,
+          action: 'UPDATE',
+          propertyChanges: { lifecyclestage: 'lead' },
+        },
+      ],
+    });
+    const next = jest.spyOn(journalApi, 'journalNext').mockResolvedValue(null);
+    jest
+      .spyOn(hubspotCrmApi, 'batchReadHubspotObjects')
+      .mockRejectedValue(new hubspotCrmApi.HubspotRateLimitError(429, 10_000));
+
+    expect(await journal.poll()).toBe(0);
+    // No cursor, no failed run: the next tick re-reads the same page.
+    expect(await redis.get(OFFSET_KEY)).toBeNull();
+    expect(next).not.toHaveBeenCalled();
+    expect(
+      await prisma.integrationSyncRun.count({
+        where: { integrationId, kind: 'journal', status: 'failed', remoteIds: { equals: ['778'] } },
+      }),
+    ).toBe(0);
+  });
 });

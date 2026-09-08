@@ -106,6 +106,7 @@ export type MappingWithIntegration = IntegrationObjectMapping & {
     enabled: boolean;
     environmentId: string;
     oauthCredentials: string | null;
+    remoteAccountId: string | null;
     remoteState: Prisma.JsonValue;
     environment: { projectId: string };
   };
@@ -212,6 +213,14 @@ export class CrmSyncService {
     });
   }
 
+  /** A page job failed and is waiting to retry: the round is alive, keep its heartbeat fresh. */
+  async touchRound(data: CrmSyncPageJobData): Promise<void> {
+    await this.prisma.integrationObjectMapping.updateMany({
+      where: { id: data.mappingId, fullSyncSessionId: data.sessionId },
+      data: { fullSyncStartedAt: new Date() },
+    });
+  }
+
   /** Release a round whose page job exhausted its attempts, so a later start is not blocked for the stale window. */
   async abandonRound(data: CrmSyncPageJobData, reason?: string): Promise<void> {
     await this.prisma.integrationObjectMapping.updateMany({
@@ -266,9 +275,11 @@ export class CrmSyncService {
       matchedCount: { increment: pairs.length },
       unresolvedCount: { increment: page.results.length - pairs.length },
     };
+    // Every page refreshes the round's heartbeat; a round is only presumed
+    // dead when it has been silent for longer than any wait a job can take.
     await this.prisma.integrationObjectMapping.updateMany({
       where: { id: mapping.id, fullSyncSessionId: data.sessionId },
-      data: counts,
+      data: { ...counts, fullSyncStartedAt: new Date() },
     });
     await this.prisma.integrationSyncRun.updateMany({
       where: { sessionId: data.sessionId, kind: 'full' },
@@ -534,6 +545,7 @@ export class CrmSyncService {
             enabled: true,
             environmentId: true,
             oauthCredentials: true,
+            remoteAccountId: true,
             remoteState: true,
             environment: { select: { projectId: true } },
           },
@@ -813,6 +825,7 @@ export class CrmSyncService {
     }
     const objectType = hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject);
     await ensureHubspotPropertyGroup(token, objectType, CRM_REMOTE_GROUP);
+    const created: Record<string, true> = {};
     for (const field of missing) {
       const attribute = attributeByCode.get(field.local) as {
         codeName: string;
@@ -824,13 +837,19 @@ export class CrmSyncService {
         objectType,
         remotePropertyDefinitionFor(mapping.localObject as CrmLocalObject, attribute),
       );
-      known[field.remote] = true;
+      created[field.remote] = true;
     }
-    const nextState: CrmRemoteStateShape = { ...state, properties: known };
-    await this.prisma.integration.update({
-      where: { id: mapping.integrationId },
-      data: { remoteState: nextState as Prisma.InputJsonObject },
-    });
+    // Merge only what this job created, bound to the portal it created it
+    // on: concurrent jobs and the journal's own bookkeeping never clobber
+    // each other, and a reconnect to another account is never polluted.
+    await this.connections.patchRemoteState(
+      mapping.integrationId,
+      mapping.integration.remoteAccountId,
+      'properties',
+      created,
+      'merge',
+    );
+    const nextState: CrmRemoteStateShape = { ...state, properties: { ...known, ...created } };
     mapping.integration.remoteState = nextState as Prisma.JsonValue;
   }
 
@@ -849,6 +868,7 @@ export class CrmSyncService {
             enabled: true,
             environmentId: true,
             oauthCredentials: true,
+            remoteAccountId: true,
             remoteState: true,
             environment: { select: { projectId: true } },
           },

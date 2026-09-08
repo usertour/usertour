@@ -328,6 +328,58 @@ describe('GraphQL CRM object mappings (e2e)', () => {
     expect((await attribute('lifecycle_stage'))?.source).toBe('internal');
   });
 
+  it('keeps an attribute owned while another environment of the project still syncs it', async () => {
+    // Attributes are project-wide; production and staging both connected to
+    // the provider share them. Removing one mapping must not strip the write
+    // guard from under the other.
+    const other = await buildEnvironment(prisma, { projectId });
+    const encryption = app.get(EncryptionService);
+    const otherIntegration = await prisma.integration.create({
+      data: {
+        environmentId: other.id,
+        provider: 'hubspot',
+        key: '',
+        enabled: true,
+        oauthCredentials: encryption.encrypt(
+          JSON.stringify({
+            accessToken: 'b',
+            refreshToken: 's',
+            expiresAt: Date.now() + 3_600_000,
+          }),
+        ),
+        remoteAccountId: '2',
+      },
+    });
+    try {
+      const mine = await upsert({
+        inboundFields: [
+          { remote: 'lifecyclestage', local: 'lifecycle_stage' },
+          { remote: 'industry', local: 'industry' },
+        ],
+      });
+      const theirs = await upsert({
+        integrationId: otherIntegration.id,
+        inboundFields: [{ remote: 'lifecyclestage', local: 'lifecycle_stage' }],
+      });
+      expect(gqlData(theirs).upsertIntegrationObjectMapping.id).toBeTruthy();
+
+      const res = await graphql(app, {
+        token,
+        query: DELETE,
+        variables: { data: { integrationId, id: gqlData(mine).upsertIntegrationObjectMapping.id } },
+      });
+      expect(gqlData(res).deleteIntegrationObjectMapping).toBe(true);
+      // Still synced by the other environment: stays owned. No longer synced anywhere: released.
+      expect((await attribute('lifecycle_stage'))?.source).toBe('hubspot');
+      expect((await attribute('industry'))?.source).toBe('internal');
+    } finally {
+      await prisma.integrationObjectMapping.deleteMany({
+        where: { integrationId: otherIntegration.id },
+      });
+      await prisma.integration.delete({ where: { id: otherIntegration.id } });
+    }
+  });
+
   it('never lets a system attribute become provider-owned (email is the match key)', async () => {
     const res = await upsert({
       inboundFields: [{ remote: 'email', local: 'email' }],

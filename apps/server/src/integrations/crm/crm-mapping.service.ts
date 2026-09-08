@@ -172,8 +172,9 @@ export class CrmMappingService {
       });
       await this.releaseAttributes(tx, {
         projectId,
-        bizType,
+        localObject,
         provider: integration.provider,
+        exceptMappingIds: existing ? [existing.id] : [],
         codeNames: previousInbound
           .map((field) => field.local)
           .filter((local) => !inboundFields.some((field) => field.local === local)),
@@ -221,11 +222,18 @@ export class CrmMappingService {
     await this.prisma.$transaction(async (tx) => {
       await this.releaseAttributes(tx, {
         projectId,
-        bizType: attributeBizTypeFor(mapping.localObject as CrmLocalObject),
+        localObject: mapping.localObject as CrmLocalObject,
         provider: integration.provider,
+        exceptMappingIds: [mapping.id],
         codeNames: (mapping.inboundFields as unknown as CrmInboundField[]).map(
           (field) => field.local,
         ),
+      });
+      // A round in flight has nowhere to report to any more; close its run so
+      // the activity list does not show it running until retention sweeps it.
+      await tx.integrationSyncRun.updateMany({
+        where: { mappingId: mapping.id, status: 'running' },
+        data: { status: 'failed', finishedAt: new Date(), error: 'Mapping removed' },
       });
       await tx.integrationObjectMapping.delete({ where: { id: mapping.id } });
     });
@@ -295,19 +303,21 @@ export class CrmMappingService {
       select: {
         provider: true,
         environment: { select: { projectId: true } },
-        objectMappings: { select: { localObject: true, inboundFields: true } },
+        objectMappings: { select: { id: true, localObject: true, inboundFields: true } },
       },
     });
     if (!integration || integration.objectMappings.length === 0) {
       return;
     }
     const projectId = integration.environment.projectId;
+    const exceptMappingIds = integration.objectMappings.map((mapping) => mapping.id);
     await this.prisma.$transaction(async (tx) => {
       for (const mapping of integration.objectMappings) {
         await this.releaseAttributes(tx, {
           projectId,
-          bizType: attributeBizTypeFor(mapping.localObject as CrmLocalObject),
+          localObject: mapping.localObject as CrmLocalObject,
           provider: integration.provider,
+          exceptMappingIds,
           codeNames: (mapping.inboundFields as unknown as CrmInboundField[]).map(
             (field) => field.local,
           ),
@@ -411,20 +421,52 @@ export class CrmMappingService {
     }
   }
 
-  /** Hand provider-owned attributes back: they keep their values, lose the badge and the write guard. */
+  /**
+   * Hand provider-owned attributes back: they keep their values, lose the
+   * badge and the write guard. Attributes are project-wide while mappings are
+   * per environment, so an attribute another mapping of the same provider in
+   * this project still syncs (production and staging both connected, say)
+   * stays owned — releasing it would drop the write guard under that sync.
+   */
   private async releaseAttributes(
     tx: Prisma.TransactionClient,
-    params: { projectId: string; bizType: number; provider: string; codeNames: string[] },
+    params: {
+      projectId: string;
+      localObject: CrmLocalObject;
+      provider: string;
+      exceptMappingIds: string[];
+      codeNames: string[];
+    },
   ): Promise<void> {
     if (params.codeNames.length === 0) {
+      return;
+    }
+    const others = await tx.integrationObjectMapping.findMany({
+      where: {
+        id: { notIn: params.exceptMappingIds },
+        localObject: params.localObject,
+        integration: {
+          provider: params.provider,
+          environment: { projectId: params.projectId },
+        },
+      },
+      select: { inboundFields: true },
+    });
+    const stillSynced = new Set(
+      others.flatMap((mapping) =>
+        (mapping.inboundFields as unknown as CrmInboundField[]).map((field) => field.local),
+      ),
+    );
+    const codeNames = params.codeNames.filter((codeName) => !stillSynced.has(codeName));
+    if (codeNames.length === 0) {
       return;
     }
     await tx.attribute.updateMany({
       where: {
         projectId: params.projectId,
-        bizType: params.bizType,
+        bizType: attributeBizTypeFor(params.localObject),
         source: params.provider,
-        codeName: { in: params.codeNames },
+        codeName: { in: codeNames },
       },
       data: { source: 'internal', sourceId: null },
     });

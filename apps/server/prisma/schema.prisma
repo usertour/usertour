@@ -1092,6 +1092,7 @@ model IntegrationObjectMapping {
   enabled          Boolean     @default(true)
 
   fullSyncSessionId String?
+  /// Heartbeat of the running round: set on claim, refreshed by every page and every retry, cleared when the round closes.
   fullSyncStartedAt DateTime? @db.Timestamptz(6)
   lastFullSyncAt    DateTime? @db.Timestamptz(6)
   matchedCount      Int       @default(0)

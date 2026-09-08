@@ -65,11 +65,15 @@ export class CrmSyncProcessor extends WorkerHost {
       // Definitive: switch the integration off now rather than after the ladder.
       await this.sync.handleGrantRevoked(job.data.mappingId);
     }
-    if (
-      (exhausted || error instanceof CrmGrantRevokedError) &&
-      job.name !== CRM_SYNC_BACKFILL_JOB
-    ) {
-      await this.sync.abandonRound(job.data as CrmSyncPageJobData, error.message);
+    if (job.name === CRM_SYNC_BACKFILL_JOB) {
+      return;
     }
+    if (exhausted || error instanceof CrmGrantRevokedError) {
+      await this.sync.abandonRound(job.data as CrmSyncPageJobData, error.message);
+      return;
+    }
+    // Waiting on the ladder is not silence: keep the round's heartbeat fresh
+    // so the stale sweep does not take it over mid-retry.
+    await this.sync.touchRound(job.data as CrmSyncPageJobData);
   }
 }

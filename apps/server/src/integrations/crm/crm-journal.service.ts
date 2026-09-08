@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { Integration, Prisma } from '@prisma/client';
+import type { Integration } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import type { CrmInboundField, CrmRemoteObject } from '@usertour/types';
 import { RedisService } from '@/shared/redis.service';
 import { CrmConnectionService, CrmGrantRevokedError } from './crm-connection.service';
 import { hubspotObjectTypeFor, matchRemotePropertyFor } from './crm-mapping.types';
 import { CrmSyncService, type MappingWithIntegration } from './crm-sync.service';
-import { batchReadHubspotObjects } from './hubspot-crm-api';
+import { batchReadHubspotObjects, HubspotRateLimitError } from './hubspot-crm-api';
 import {
   createJournalSubscription,
   deleteJournalSubscription,
@@ -36,10 +36,6 @@ const OBJECT_TYPE_FOR_ID: Record<string, CrmRemoteObject> = {
   [HUBSPOT_OBJECT_TYPE_IDS.contact]: 'contact',
   [HUBSPOT_OBJECT_TYPE_IDS.company]: 'company',
 };
-
-interface JournalRemoteState {
-  journal?: { subscriptions?: Record<string, number> };
-}
 
 /**
  * Inbound incremental sync over the provider's change journal (ADR 0013 §7).
@@ -173,19 +169,16 @@ export class CrmJournalService {
   }
 
   private async rememberSubscriptions(
-    integration: Pick<Integration, 'id'>,
+    integration: Pick<Integration, 'id' | 'remoteAccountId'>,
     subscriptions: Record<string, number>,
   ): Promise<void> {
-    const row = await this.prisma.integration.findUnique({
-      where: { id: integration.id },
-      select: { remoteState: true },
-    });
-    const state = ((row?.remoteState as JournalRemoteState | null) ?? {}) as JournalRemoteState &
-      Record<string, unknown>;
-    await this.prisma.integration.update({
-      where: { id: integration.id },
-      data: { remoteState: { ...state, journal: { subscriptions } } as Prisma.InputJsonObject },
-    });
+    await this.connections.patchRemoteState(
+      integration.id,
+      integration.remoteAccountId,
+      'journal',
+      { subscriptions },
+      'replace',
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -225,7 +218,18 @@ export class CrmJournalService {
           break;
         }
         const page = await fetchJournalPage(ref.url);
-        applied += await this.applyEvents(page.journalEvents ?? []);
+        const result = await this.applyEvents(page.journalEvents ?? []);
+        applied += result.applied;
+        if (result.throttled) {
+          // The provider is rate limiting us: the events of this page are not
+          // all applied, so the cursor stays put and the next tick re-reads
+          // the page (applying a record twice is idempotent; skipping it is
+          // not — the next full round is up to a day away).
+          this.logger.warn(
+            'CRM journal: provider rate limit; leaving the cursor for the next tick',
+          );
+          break;
+        }
         offset = page.offset || ref.currentOffset;
         await this.redis.setex(OFFSET_KEY, OFFSET_TTL_SECONDS, offset);
       }
@@ -236,7 +240,9 @@ export class CrmJournalService {
   }
 
   /** Group events by account and object type, re-read the touched records, and pair/apply them. */
-  private async applyEvents(events: HubspotJournalEvent[]): Promise<number> {
+  private async applyEvents(
+    events: HubspotJournalEvent[],
+  ): Promise<{ applied: number; throttled: boolean }> {
     const buckets = new Map<
       string,
       { portalId: number; remoteObject: CrmRemoteObject; ids: Set<string> }
@@ -256,7 +262,7 @@ export class CrmJournalService {
       buckets.set(key, bucket);
     }
     if (buckets.size === 0) {
-      return 0;
+      return { applied: 0, throttled: false };
     }
     const portalIds = Array.from(
       new Set(Array.from(buckets.values()).map((b) => String(b.portalId))),
@@ -295,6 +301,11 @@ export class CrmJournalService {
           }
         }
       } catch (error) {
+        if (error instanceof HubspotRateLimitError) {
+          // Not this account's fault and not final: stop the tick here and
+          // let the caller keep the cursor, rather than record a failure.
+          return { applied, throttled: true };
+        }
         // One account's failure must not hold the journal for every other
         // account (the cursor is global): record it and move on. A revoked
         // grant is definitive, so that account is switched off at once.
@@ -323,7 +334,7 @@ export class CrmJournalService {
       }
       applied += appliedHere;
     }
-    return applied;
+    return { applied, throttled: false };
   }
 
   private async applyBucket(mapping: MappingWithIntegration, ids: string[]): Promise<number> {
