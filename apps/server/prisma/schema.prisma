@@ -845,6 +845,7 @@ model BizSession {
 
   @@index([bizUserId])
   @@index([contentId])
+  @@index([bizCompanyId])
 }
 
 model BizEvent {

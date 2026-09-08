@@ -1754,20 +1754,33 @@ export class BizService {
     const { first, last, before, after } = pagination;
     const { environmentId, companyId } = query;
     try {
-      const where: Prisma.BizEventWhereInput = {
-        OR: [
-          {
-            bizCompanyId: companyId,
-            bizCompany: { environmentId },
-          },
-          {
-            bizSession: {
-              bizCompanyId: companyId,
-              environmentId,
-            },
-          },
-        ],
-      };
+      // Events reach a company two ways: stamped with its id at creation, or
+      // (rows from before stamping) through a session that belongs to it.
+      // Both branches must be plain column conditions: an OR over a relation
+      // subquery cannot use either index and sequentially scans BizEvent —
+      // hundreds of milliseconds per page and per count on a large table. So
+      // the environment check and the session lookup happen once, up front,
+      // each on its own index, and the planner bitmap-ORs the two branches.
+      const company = await this.prisma.bizCompany.findFirst({
+        where: { id: companyId, environmentId },
+        select: { id: true },
+      });
+      const sessions = company
+        ? await this.prisma.bizSession.findMany({
+            where: { bizCompanyId: companyId, environmentId },
+            select: { id: true },
+          })
+        : [];
+      const where: Prisma.BizEventWhereInput = company
+        ? {
+            OR: [
+              { bizCompanyId: companyId },
+              ...(sessions.length > 0
+                ? [{ bizSessionId: { in: sessions.map((session) => session.id) } }]
+                : []),
+            ],
+          }
+        : { id: { in: [] } }; // not this environment's company: nothing to show
 
       return await findManyCursorConnection(
         (args) =>
