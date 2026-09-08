@@ -49,6 +49,7 @@ import {
   Separator,
   SettingsCard,
   SettingsCardStack,
+  Skeleton,
   Switch,
   Table,
   TableBody,
@@ -912,6 +913,35 @@ const MessagesSection = ({
   );
 };
 
+interface IntegrationDetailPendingProps {
+  entry: IntegrationCatalogEntry;
+}
+
+/** The detail page before its environment and integration row are known: stable parts real, state as skeletons. */
+const IntegrationDetailPending = (props: IntegrationDetailPendingProps) => {
+  const { entry } = props;
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <img
+            className="h-12 w-12 rounded-lg border border-accent-light object-cover"
+            src={entry.imagePath}
+            alt={t('settings.integrations.catalog.logoAlt', { name: entry.name })}
+          />
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-medium tracking-tight">{entry.name}</h3>
+            <Skeleton className="h-5 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-9 w-40" />
+      </div>
+      <Skeleton className="h-4 w-2/3" />
+    </div>
+  );
+};
+
 export const IntegrationDetail = () => {
   const { settingSubType: provider } = useParams();
   const { environment, project } = useAppContext();
@@ -919,7 +949,7 @@ export const IntegrationDetail = () => {
     project?.id,
     SHARED_CACHE_QUERY_OPTIONS,
   );
-  const { integrations, loading } = useListIntegrationsQuery(
+  const { integrations, loading, error } = useListIntegrationsQuery(
     environment?.id ?? '',
     SHARED_CACHE_QUERY_OPTIONS,
   );
@@ -951,8 +981,21 @@ export const IntegrationDetail = () => {
   if (entry.kind === 'automation') {
     return <AutomationIntegrationDetail entry={entry} entitled={entitled} />;
   }
-  if (loading && !integrations) {
-    return null;
+  // Settled = the environment is known AND its integrations have arrived. A
+  // query skipped for a missing environment is not "loading", so the loading
+  // flag alone shows the not-connected state for the frame before the
+  // environment resolves. Until then, render what never changes (logo, name)
+  // with skeletons where the state goes. A failed query settles too: the
+  // branches below then show the unconfigured state, as before.
+  const settled = !!environment && (!!integrations || !!error);
+  if (!settled) {
+    return (
+      <SettingsCardStack>
+        <SettingsCard>
+          <IntegrationDetailPending entry={entry} />
+        </SettingsCard>
+      </SettingsCardStack>
+    );
   }
 
   if (isCrm) {
