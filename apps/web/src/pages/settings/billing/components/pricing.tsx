@@ -2,6 +2,7 @@ import {
   RiBarChartLine,
   RiCalendarLine,
   RiCheckLine,
+  RiCloseLine,
   RiHeadphoneLine,
   RiInboxLine,
   RiLockLine,
@@ -626,7 +627,12 @@ const ComparisonTable = ({
                       <div className="pt-1">
                         <RiCheckLine className="size-4" />
                       </div>
-                    ) : null
+                    ) : (
+                      // An explicit "no": a blank cell reads as missing data.
+                      <div className="pt-1">
+                        <RiCloseLine className="size-4 text-zinc-950/30 dark:text-white/30" />
+                      </div>
+                    )
                   ) : (
                     <div className="flex flex-col">
                       <p className="text-zinc-950/60 dark:text-white/60">
