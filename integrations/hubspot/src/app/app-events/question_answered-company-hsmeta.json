@@ -4,7 +4,7 @@
   "config": {
     "name": "Question answered",
     "description": "A user answered a survey question in Usertour (NPS, scale, text or choice).",
-    "headerTemplate": "Question answered: **{{question_name}}**{{#if answer}} \u00b7 {{answer}}{{/if}}",
+    "headerTemplate": "Question answered: **{{question_name}}** \u00b7 {{answer}}",
     "objectType": "COMPANY",
     "properties": [
       {
