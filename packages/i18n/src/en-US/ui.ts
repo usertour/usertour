@@ -1807,7 +1807,7 @@ const translations = {
         description:
           'Every event sent to this destination is kept for 30 days with each delivery attempt. Click a row for details.',
         syncDescription:
-          'Every write-back sent to {{name}} is kept for 30 days with each delivery attempt. Click a row for details.',
+          'Every write-back and timeline event sent to {{name}} is kept for 30 days with each delivery attempt. Click a row for details.',
         empty: 'No messages yet.',
         loadMore: 'Load more',
         refresh: 'Refresh',
