@@ -4,8 +4,13 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { randomBytes } from 'node:crypto';
 import { Queue } from 'bullmq';
 import type { Prisma } from '@prisma/client';
-import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
-import type { SyncLocalObject, SyncOutboundField, IntegrationProvider } from '@usertour/types';
+import { SYNC_INTEGRATION_PROVIDERS, WEBHOOK_EVENT_TOPIC_PREFIX } from '@usertour/constants';
+import type {
+  SyncLocalObject,
+  SyncOutboundField,
+  IntegrationProvider,
+  IntegrationConfig,
+} from '@usertour/types';
 import { QUEUE_OBJECT_SYNC, QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
@@ -13,6 +18,8 @@ import {
   BIZ_ENTITY_CHANGED,
   type BizEntityChangedPayload,
   type EntityChange,
+  BIZ_EVENT_TRACKED,
+  type BizEventTrackedPayload,
 } from '@/webhooks/webhook.types';
 import {
   SYNC_OBJECT_UPDATE_TOPIC,
@@ -25,6 +32,9 @@ import {
   ObjectSyncService,
   type MappingWithIntegration,
 } from './object-sync.service';
+import { PrismaService } from 'nestjs-prisma';
+import { mapEvent } from '@/api/events/event.mapper';
+import { buildIntegrationMessage } from '../integration-envelope';
 
 const RETRY_JOB_OPTIONS = {
   removeOnComplete: true,
@@ -51,6 +61,7 @@ export class ObjectSyncListener {
     private readonly ledger: OutboundLedgerService,
     private readonly connections: ProviderConnectionService,
     private readonly sync: ObjectSyncService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @OnEvent(BIZ_ENTITY_CHANGED, { async: true })
@@ -165,5 +176,101 @@ export class ObjectSyncListener {
       payload: envelope,
     };
     await this.deliveryQueue.add('deliver', job, RETRY_JOB_OPTIONS);
+  }
+
+  /**
+   * Events out (ADR 0013 §8): the third subscriber of BIZ_EVENT_TRACKED. A
+   * tracked event in an integration's selected set, for a user linked to a
+   * provider record, becomes a ledger message under the event's own topic —
+   * the same envelope the analytics deliveries carry — and the delivery
+   * processor writes it to the record timeline. Unlinked users produce no
+   * message: there is nowhere to write to, and the daily round may link them
+   * later.
+   */
+  @OnEvent(BIZ_EVENT_TRACKED, { async: true })
+  async onBizEventTracked(payload: BizEventTrackedPayload): Promise<void> {
+    try {
+      const integrations = (
+        await this.prisma.integration.findMany({
+          where: {
+            environmentId: payload.environmentId,
+            enabled: true,
+            provider: { in: [...SYNC_INTEGRATION_PROVIDERS] },
+            oauthCredentials: { not: null },
+          },
+          select: { id: true, config: true },
+        })
+      )
+        .map((row) => ({ id: row.id, events: (row.config as IntegrationConfig | null)?.events }))
+        .filter((row) => row.events?.enabled && row.events.codeNames.length > 0);
+      if (integrations.length === 0) {
+        return;
+      }
+      if (!(await this.connections.isEntitled(payload.environmentId))) {
+        return;
+      }
+      const bizEvents = await this.prisma.bizEvent.findMany({
+        where: { id: { in: payload.bizEventIds } },
+        include: { event: true, bizUser: true, bizCompany: true, bizSession: true },
+      });
+      const contactMappings = await this.sync.activeMappingsFor(payload.environmentId, 'user');
+      const rows: Parameters<OutboundLedgerService['createMessages']>[0] = [];
+      const jobs: {
+        name: string;
+        data: IntegrationDeliveryJobData;
+        opts: typeof RETRY_JOB_OPTIONS;
+      }[] = [];
+      for (const bizEvent of bizEvents) {
+        const codeName = bizEvent.event.codeName;
+        for (const integration of integrations) {
+          if (!integration.events?.codeNames.includes(codeName)) {
+            continue;
+          }
+          const mapping = contactMappings.find(
+            (candidate) => candidate.integrationId === integration.id,
+          );
+          if (!mapping) {
+            continue;
+          }
+          const link = await this.prisma.integrationObjectLink.findUnique({
+            where: { mappingId_localId: { mappingId: mapping.id, localId: bizEvent.bizUserId } },
+            select: { id: true },
+          });
+          if (!link) {
+            continue;
+          }
+          const topic = `${WEBHOOK_EVENT_TOPIC_PREFIX}.${codeName}`;
+          const { messageId, payload: envelope } = buildIntegrationMessage(
+            topic,
+            payload.environmentId,
+            mapEvent(bizEvent),
+            bizEvent.createdAt,
+          );
+          rows.push({
+            id: messageId,
+            environmentId: payload.environmentId,
+            destination: { integrationId: integration.id },
+            topic,
+            payload: envelope as unknown as Prisma.InputJsonObject,
+          });
+          jobs.push({
+            name: 'deliver',
+            data: { integrationId: integration.id, messageId, topic, payload: envelope },
+            opts: RETRY_JOB_OPTIONS,
+          });
+        }
+      }
+      if (rows.length === 0) {
+        return;
+      }
+      const persisted = new Set(await this.ledger.createMessages(rows));
+      const enqueueable = jobs.filter((job) => persisted.has(job.data.messageId));
+      if (enqueueable.length > 0) {
+        await this.deliveryQueue.addBulk(enqueueable);
+      }
+    } catch (error) {
+      // Side-channel: never let a timeline failure reach the tracking path.
+      this.logger.error(`Timeline events failed to enqueue: ${(error as Error).message}`);
+    }
   }
 }

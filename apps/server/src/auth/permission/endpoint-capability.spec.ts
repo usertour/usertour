@@ -85,6 +85,7 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'integration.queryIntegrationSyncedSegments': O,
   'integration.updateIntegrationInbound': O,
   'integration.rotateIntegrationInboundToken': O,
+  'integration.updateIntegrationEvents': O,
   'integration.startIntegrationOAuth': O,
   'integration.disconnectIntegrationOAuth': O,
   'integration.listIntegrationObjectMappings': O,
@@ -151,8 +152,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same 116 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(116);
+  it('snapshot covers exactly the same 117 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(117);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 

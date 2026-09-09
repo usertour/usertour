@@ -9,7 +9,7 @@ import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
-import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
+import { SYNC_INTEGRATION_PROVIDERS, WEBHOOK_EVENT_TOPIC_PREFIX } from '@usertour/constants';
 import { GrantRevokedError, ProviderConnectionService } from './sync/provider-connection.service';
 import { DeliverySkippedError, ObjectSyncService } from './sync/object-sync.service';
 import { HubspotRateLimitError } from './sync/hubspot-errors';
@@ -219,7 +219,14 @@ export class IntegrationsProcessor extends WorkerHost {
     const startedAt = Date.now();
     const final = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
     try {
-      const result = await this.objectSync.deliverWriteBack(payload as SyncObjectUpdateEnvelope);
+      // Two message kinds reach a sync provider: a write-back from the object
+      // sync engine, and a tracked event bound for the record timeline.
+      const result = payload.type.startsWith(`${WEBHOOK_EVENT_TOPIC_PREFIX}.`)
+        ? await this.objectSync.deliverTimelineEvent(
+            integration.id,
+            payload as IntegrationMessageEnvelope,
+          )
+        : await this.objectSync.deliverWriteBack(payload as SyncObjectUpdateEnvelope);
       await this.ledger.recordAttempt(messageId, {
         attempt,
         success: true,

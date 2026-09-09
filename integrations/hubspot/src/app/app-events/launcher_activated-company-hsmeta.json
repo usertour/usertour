@@ -1,0 +1,32 @@
+{
+  "uid": "launcher_activated_company",
+  "type": "app-event",
+  "config": {
+    "name": "Launcher activated",
+    "description": "A user activated (clicked or hovered over) a launcher in Usertour.",
+    "headerTemplate": "Launcher activated: **{{launcher_name}}**",
+    "objectType": "COMPANY",
+    "properties": [
+      {
+        "name": "launcher_name",
+        "label": "Launcher name",
+        "type": "string"
+      },
+      {
+        "name": "launcher_version",
+        "label": "Launcher version",
+        "type": "number"
+      },
+      {
+        "name": "usertour_user_id",
+        "label": "Usertour user ID",
+        "type": "string"
+      },
+      {
+        "name": "page_url",
+        "label": "Page URL",
+        "type": "string"
+      }
+    ]
+  }
+}

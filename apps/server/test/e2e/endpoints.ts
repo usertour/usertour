@@ -525,6 +525,15 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ i: s.integrationId, o: 'contact' }),
   },
   {
+    key: 'integration.updateIntegrationEvents',
+    tier: 'O',
+    op: 'mutation',
+    // Allow direction skipped: the fixture is an analytics row, which the setting refuses.
+    denyOnly: true,
+    doc: 'mutation($d:UpdateIntegrationEventsInput!){updateIntegrationEvents(data:$d){__typename}}',
+    vars: (s) => ({ d: { id: s.integrationId, enabled: true } }),
+  },
+  {
     key: 'integration.upsertIntegrationObjectMapping',
     tier: 'O',
     op: 'mutation',

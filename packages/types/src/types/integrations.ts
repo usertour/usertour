@@ -38,6 +38,12 @@ export type IntegrationRegion = 'US' | 'EU';
 /** Provider extras stored in `Integration.config`. */
 export type IntegrationConfig = {
   region?: IntegrationRegion;
+  /** Sync providers: milestone events written to the provider's record timeline (ADR 0013 §8). */
+  events?: {
+    enabled: boolean;
+    /** Subset of SYNC_TIMELINE_EVENTS (codeNames). */
+    codeNames: string[];
+  };
 };
 
 // ---------------------------------------------------------------------------

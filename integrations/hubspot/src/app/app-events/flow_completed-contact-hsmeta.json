@@ -1,0 +1,32 @@
+{
+  "uid": "flow_completed_contact",
+  "type": "app-event",
+  "config": {
+    "name": "Flow completed",
+    "description": "A user reached the end of a flow in Usertour.",
+    "headerTemplate": "Flow completed: **{{flow_name}}**",
+    "objectType": "CONTACT",
+    "properties": [
+      {
+        "name": "flow_name",
+        "label": "Flow name",
+        "type": "string"
+      },
+      {
+        "name": "flow_version",
+        "label": "Flow version",
+        "type": "number"
+      },
+      {
+        "name": "usertour_user_id",
+        "label": "Usertour user ID",
+        "type": "string"
+      },
+      {
+        "name": "page_url",
+        "label": "Page URL",
+        "type": "string"
+      }
+    ]
+  }
+}

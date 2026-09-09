@@ -1755,6 +1755,25 @@ const translations = {
           syncFailed: 'Failed to start the sync',
         },
         viewSyncActivity: 'Sync activity',
+        events: {
+          title: 'Timeline events',
+          description:
+            'Milestones written to the {{name}} timeline of linked contacts — and of linked companies when the company mapping is set up. Use them in workflows, lists and reports.',
+          toggle: 'Send events to {{name}}',
+          needsMapping:
+            'Set up the Contacts ↔ Users mapping first: events are written to linked contacts only.',
+          saved: 'Timeline events updated',
+          names: {
+            flow_started: 'Flow started',
+            flow_completed: 'Flow completed',
+            flow_ended: 'Flow ended',
+            checklist_started: 'Checklist started',
+            checklist_completed: 'Checklist completed',
+            checklist_task_completed: 'Checklist task completed',
+            question_answered: 'Question answered',
+            launcher_activated: 'Launcher activated',
+          },
+        },
         activity: {
           title: 'Sync activity',
           description:

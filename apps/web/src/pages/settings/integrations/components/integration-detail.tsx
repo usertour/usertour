@@ -70,6 +70,7 @@ import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
 import { OAuthConnectionSection } from './oauth-connection-section';
 import { ObjectMappingCard } from './object-mapping-card';
+import { SyncEventsCard } from './sync-events-card';
 import { IntegrationStatusBadge } from './integration-status-badge';
 import { AutomationIntegrationDetail } from './automation-integration-detail';
 
@@ -1036,6 +1037,9 @@ export const IntegrationDetail = () => {
                 localObject="company"
                 entitled={entitled}
               />
+            </SettingsCard>
+            <SettingsCard>
+              <SyncEventsCard entry={entry} integration={integration} entitled={entitled} />
             </SettingsCard>
           </>
         )}

@@ -17,6 +17,7 @@ import {
   UpdateIntegrationInbound,
   UpsertIntegration,
   UpsertIntegrationObjectMapping,
+  UpdateIntegrationEvents,
 } from '@usertour/gql';
 import type {
   SyncInboundField,
@@ -181,6 +182,24 @@ export const useQueryIntegrationSyncedSegmentsQuery = (
     refetch,
     isRefetching: networkStatus === NetworkStatus.refetch,
   };
+};
+
+/** Timeline events of a sync provider (ADR 0013 §8): the switch and the selected milestone set. */
+export const useUpdateIntegrationEventsMutation = () => {
+  // Returns the changed fields on an existing row, so the normalized cache merges — no refetch.
+  const [mutation, { loading, error }] = useMutation(UpdateIntegrationEvents);
+  const invoke = useCallback(
+    async (input: {
+      id: string;
+      enabled?: boolean;
+      codeNames?: string[];
+    }): Promise<Integration | null> => {
+      const response = await mutation({ variables: { data: input } });
+      return (response.data?.updateIntegrationEvents as Integration | undefined) ?? null;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
 };
 
 export const useUpdateIntegrationInboundMutation = () => {

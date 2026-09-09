@@ -1,0 +1,32 @@
+{
+  "uid": "checklist_started_company",
+  "type": "app-event",
+  "config": {
+    "name": "Checklist started",
+    "description": "A user started a checklist in Usertour.",
+    "headerTemplate": "Checklist started: **{{checklist_name}}**",
+    "objectType": "COMPANY",
+    "properties": [
+      {
+        "name": "checklist_name",
+        "label": "Checklist name",
+        "type": "string"
+      },
+      {
+        "name": "checklist_version",
+        "label": "Checklist version",
+        "type": "number"
+      },
+      {
+        "name": "usertour_user_id",
+        "label": "Usertour user ID",
+        "type": "string"
+      },
+      {
+        "name": "page_url",
+        "label": "Page URL",
+        "type": "string"
+      }
+    ]
+  }
+}

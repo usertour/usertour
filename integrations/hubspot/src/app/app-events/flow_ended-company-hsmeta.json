@@ -1,0 +1,47 @@
+{
+  "uid": "flow_ended_company",
+  "type": "app-event",
+  "config": {
+    "name": "Flow ended",
+    "description": "A flow ended for a user, whether completed or dismissed.",
+    "headerTemplate": "Flow ended: **{{flow_name}}**{{#if flow_end_reason}} \u00b7 {{flow_end_reason}}{{/if}}{{#if flow_step_name}} at **{{flow_step_name}}**{{/if}}",
+    "objectType": "COMPANY",
+    "properties": [
+      {
+        "name": "flow_name",
+        "label": "Flow name",
+        "type": "string"
+      },
+      {
+        "name": "flow_version",
+        "label": "Flow version",
+        "type": "number"
+      },
+      {
+        "name": "flow_end_reason",
+        "label": "End reason",
+        "type": "string"
+      },
+      {
+        "name": "flow_step_name",
+        "label": "Step name",
+        "type": "string"
+      },
+      {
+        "name": "flow_step_number",
+        "label": "Step number",
+        "type": "number"
+      },
+      {
+        "name": "usertour_user_id",
+        "label": "Usertour user ID",
+        "type": "string"
+      },
+      {
+        "name": "page_url",
+        "label": "Page URL",
+        "type": "string"
+      }
+    ]
+  }
+}

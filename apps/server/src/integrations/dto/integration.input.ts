@@ -1,5 +1,13 @@
 import { ArgsType, Field, InputType } from '@nestjs/graphql';
-import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+  IsArray,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 @ArgsType()
@@ -89,4 +97,24 @@ export class StartIntegrationOAuthInput {
   @IsString()
   @MaxLength(50)
   provider: string;
+}
+
+/** Timeline events of a sync provider (ADR 0013 §8): the switch and the selected milestone set. */
+@InputType()
+export class UpdateIntegrationEventsInput {
+  @Field(() => String)
+  @IsString()
+  id: string;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  /** Event codeNames to send; validated against SYNC_TIMELINE_EVENTS in the service. */
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  codeNames?: string[];
 }

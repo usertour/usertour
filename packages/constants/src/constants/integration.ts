@@ -4,6 +4,7 @@ import {
   type CrmIntegrationProvider,
   type SyncLocalObject,
 } from '@usertour/types';
+import { BizEvents } from '@usertour/types';
 
 /**
  * The analytics providers the outbound integrations pipeline supports
@@ -67,3 +68,21 @@ export const localDataTypeFor = (property: {
  * a unit test pins the relation).
  */
 export const SYNC_ROUND_STALE_MS = 13 * 60 * 60 * 1000;
+
+/**
+ * The milestone events a sync provider's record timeline receives (ADR 0013
+ * §8), in display order. A curated set on purpose: a CRM record is not an
+ * analytics sink, so page views and step-level events never leave. Each
+ * entry is declared as an app event type on the provider side under the
+ * same name.
+ */
+export const SYNC_TIMELINE_EVENTS: readonly string[] = [
+  BizEvents.FLOW_STARTED,
+  BizEvents.FLOW_COMPLETED,
+  BizEvents.FLOW_ENDED,
+  BizEvents.CHECKLIST_STARTED,
+  BizEvents.CHECKLIST_COMPLETED,
+  BizEvents.CHECKLIST_TASK_COMPLETED,
+  BizEvents.QUESTION_ANSWERED,
+  BizEvents.LAUNCHER_ACTIVATED,
+];

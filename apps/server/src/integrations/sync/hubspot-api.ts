@@ -23,6 +23,8 @@ export const HUBSPOT_OAUTH_SCOPES = [
   'crm.schemas.contacts.write',
   'crm.schemas.companies.read',
   'crm.schemas.companies.write',
+  // App events (timeline): occurrences on contact and company records (ADR 0013 §8).
+  'timeline.write',
 ] as const;
 
 export interface HubspotAppCredentials {
