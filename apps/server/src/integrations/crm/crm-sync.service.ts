@@ -25,7 +25,7 @@ import {
   matchRemotePropertyFor,
 } from './crm-mapping.types';
 import { localToRemoteValue, remoteToLocalValue, remoteTypeForDataType } from './crm-values';
-import type { CrmMessageEnvelope } from '../integrations.types';
+import type { SyncObjectUpdateEnvelope } from '../integrations.types';
 import {
   batchUpdateHubspotObjects,
   ensureHubspotProperty,
@@ -434,7 +434,7 @@ export class CrmSyncService {
   async buildWriteBack(
     mapping: MappingWithIntegration,
     localId: string,
-  ): Promise<CrmMessageEnvelope['data'] | null> {
+  ): Promise<SyncObjectUpdateEnvelope['data'] | null> {
     const outbound = mapping.outboundFields as unknown as CrmOutboundField[];
     if (outbound.length === 0) {
       return null;
@@ -467,7 +467,9 @@ export class CrmSyncService {
   }
 
   /** Deliver one ledger write-back; the processor records the outcome. */
-  async deliverWriteBack(envelope: CrmMessageEnvelope): Promise<{ status: number; body: string }> {
+  async deliverWriteBack(
+    envelope: SyncObjectUpdateEnvelope,
+  ): Promise<{ status: number; body: string }> {
     const mapping = await this.loadMapping(envelope.data.mappingId);
     if (!mapping || !mapping.enabled) {
       throw new CrmDeliverySkippedError('Mapping removed or disabled before delivery');

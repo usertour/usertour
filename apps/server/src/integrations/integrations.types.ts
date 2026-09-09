@@ -52,18 +52,24 @@ export type ProviderAdapter = (
   config: IntegrationConfig,
 ) => ProviderRequest;
 
-/** Topic of a CRM write-back message (ADR 0013 §7). */
-export const CRM_OBJECT_UPDATE_TOPIC = 'crm.object.update';
+/**
+ * Topic of an object-sync write-back message (ADR 0013 §7, §13): the sync
+ * engine asking an adapter to update the remote record linked to a local
+ * one. Named for what the message is, not for who receives it — a webhook's
+ * `user.updated` carries a different payload (the user snapshot), so it is a
+ * different message; a second sync provider reuses this one unchanged.
+ */
+export const SYNC_OBJECT_UPDATE_TOPIC = 'sync.object.update';
 
 /**
- * The ledger envelope for a CRM write-back: the provider property values as
- * computed when the change happened. Retries deliver exactly this payload;
- * the record and mapping are re-resolved at delivery time.
+ * The ledger envelope for a write-back: which mapping, which record, which
+ * fields. Values are not carried — they are read at delivery time, so a
+ * retry never overwrites a newer value with an older one.
  */
-export interface CrmMessageEnvelope {
+export interface SyncObjectUpdateEnvelope {
   id: string;
   object: 'integrationMessage';
-  type: typeof CRM_OBJECT_UPDATE_TOPIC;
+  type: typeof SYNC_OBJECT_UPDATE_TOPIC;
   createdAt: string;
   environmentId: string;
   data: {
@@ -82,7 +88,7 @@ export interface IntegrationDeliveryJobData {
   integrationId: string;
   messageId: string;
   topic: string;
-  payload: IntegrationMessageEnvelope | CrmMessageEnvelope;
+  payload: IntegrationMessageEnvelope | SyncObjectUpdateEnvelope;
   /**
    * Attempts already logged for this message before this job (a reconcile
    * continuation resumes the numbering). Absent = 0.

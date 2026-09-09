@@ -13,7 +13,7 @@ import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
 import { CrmGrantRevokedError, CrmConnectionService } from './crm/crm-connection.service';
 import { CrmDeliverySkippedError, CrmSyncService } from './crm/crm-sync.service';
 import { HubspotRateLimitError } from './crm/hubspot-errors';
-import type { CrmMessageEnvelope, IntegrationMessageEnvelope } from './integrations.types';
+import type { SyncObjectUpdateEnvelope, IntegrationMessageEnvelope } from './integrations.types';
 import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import {
@@ -223,7 +223,7 @@ export class IntegrationsProcessor extends WorkerHost {
     const startedAt = Date.now();
     const final = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
     try {
-      const result = await this.crmSync.deliverWriteBack(payload as CrmMessageEnvelope);
+      const result = await this.crmSync.deliverWriteBack(payload as SyncObjectUpdateEnvelope);
       await this.ledger.recordAttempt(messageId, {
         attempt,
         success: true,

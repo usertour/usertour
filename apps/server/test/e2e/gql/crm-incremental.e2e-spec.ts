@@ -13,8 +13,8 @@ import {
   CrmSyncService,
 } from '@/integrations/crm/crm-sync.service';
 import {
-  CRM_OBJECT_UPDATE_TOPIC,
-  type CrmMessageEnvelope,
+  SYNC_OBJECT_UPDATE_TOPIC,
+  type SyncObjectUpdateEnvelope,
 } from '@/integrations/integrations.types';
 import { EncryptionService } from '@/shared/encryption.service';
 import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
@@ -154,10 +154,10 @@ describe('CRM incremental sync (e2e)', () => {
 
     const message = await waitFor(() =>
       prisma.outboundMessage.findFirst({
-        where: { integrationId, topic: CRM_OBJECT_UPDATE_TOPIC },
+        where: { integrationId, topic: SYNC_OBJECT_UPDATE_TOPIC },
       }),
     );
-    const envelope = message.payload as unknown as CrmMessageEnvelope;
+    const envelope = message.payload as unknown as SyncObjectUpdateEnvelope;
     expect(envelope.data).toMatchObject({
       mappingId,
       localId: ada.id,

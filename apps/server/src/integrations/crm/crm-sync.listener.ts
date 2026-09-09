@@ -15,8 +15,8 @@ import {
   type EntityChange,
 } from '@/webhooks/webhook.types';
 import {
-  CRM_OBJECT_UPDATE_TOPIC,
-  type CrmMessageEnvelope,
+  SYNC_OBJECT_UPDATE_TOPIC,
+  type SyncObjectUpdateEnvelope,
   type IntegrationDeliveryJobData,
 } from '../integrations.types';
 import { CrmConnectionService } from './crm-connection.service';
@@ -137,13 +137,13 @@ export class CrmSyncListener {
   private async dispatchWriteBack(
     environmentId: string,
     integrationId: string,
-    data: CrmMessageEnvelope['data'],
+    data: SyncObjectUpdateEnvelope['data'],
   ): Promise<void> {
     const messageId = `imsg_${randomBytes(12).toString('hex')}`;
-    const envelope: CrmMessageEnvelope = {
+    const envelope: SyncObjectUpdateEnvelope = {
       id: messageId,
       object: 'integrationMessage',
-      type: CRM_OBJECT_UPDATE_TOPIC,
+      type: SYNC_OBJECT_UPDATE_TOPIC,
       createdAt: new Date().toISOString(),
       environmentId,
       data,
@@ -153,7 +153,7 @@ export class CrmSyncListener {
         id: messageId,
         environmentId,
         destination: { integrationId },
-        topic: CRM_OBJECT_UPDATE_TOPIC,
+        topic: SYNC_OBJECT_UPDATE_TOPIC,
         payload: envelope as unknown as Prisma.InputJsonObject,
       },
     ]);
@@ -163,7 +163,7 @@ export class CrmSyncListener {
     const job: IntegrationDeliveryJobData = {
       integrationId,
       messageId,
-      topic: CRM_OBJECT_UPDATE_TOPIC,
+      topic: SYNC_OBJECT_UPDATE_TOPIC,
       payload: envelope,
     };
     await this.deliveryQueue.add('deliver', job, RETRY_JOB_OPTIONS);
