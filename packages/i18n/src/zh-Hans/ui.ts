@@ -1668,6 +1668,24 @@ const translations = {
           syncFailed: '启动同步失败',
         },
         viewSyncActivity: '同步活动',
+        events: {
+          title: '时间线事件',
+          description:
+            '把里程碑事件写入已关联联系人在 {{name}} 中的时间线;配置了公司映射时,也写入已关联的公司。可以在 workflow、列表和报表中使用。',
+          toggle: '向 {{name}} 发送事件',
+          needsMapping: '先配置 Contacts ↔ Users 映射:事件只写入已关联的联系人。',
+          saved: '时间线事件已更新',
+          names: {
+            flow_started: '流程开始',
+            flow_completed: '流程完成',
+            flow_ended: '流程结束',
+            checklist_started: '清单开始',
+            checklist_completed: '清单完成',
+            checklist_task_completed: '清单任务完成',
+            question_answered: '问题已回答',
+            launcher_activated: '启动器已激活',
+          },
+        },
         activity: {
           title: '同步活动',
           description:
@@ -1699,7 +1717,7 @@ const translations = {
         title: '最近消息',
         description: '发往该目的地的每条事件保留 30 天,含每次投递尝试。点击一行查看详情。',
         syncDescription:
-          '发送到 {{name}} 的每一次写回都会保留 30 天,含每次投递尝试。点击一行查看详情。',
+          '发送到 {{name}} 的每一次写回和时间线事件都会保留 30 天,含每次投递尝试。点击一行查看详情。',
         empty: '暂无消息。',
         loadMore: '加载更多',
         refresh: '刷新',

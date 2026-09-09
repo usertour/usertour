@@ -252,3 +252,13 @@ export const RunIntegrationObjectMappingSync = gql`
     runIntegrationObjectMappingSync(data: $data) { ${MAPPING_FIELDS} }
   }
 `;
+
+export const UpdateIntegrationEvents = gql`
+  mutation UpdateIntegrationEvents($data: UpdateIntegrationEventsInput!) {
+    updateIntegrationEvents(data: $data) {
+      id
+      updatedAt
+      config
+    }
+  }
+`;

@@ -11,6 +11,7 @@ import type {
   SyncLocalObject,
   SyncOutboundField,
   SyncRemoteObject,
+  IntegrationConfig,
 } from '@usertour/types';
 import { BizService } from '@/biz/biz.service';
 import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
@@ -25,7 +26,7 @@ import {
   matchRemotePropertyFor,
 } from './object-mapping.types';
 import { localToRemoteValue, remoteToLocalValue, remoteTypeForDataType } from './sync-values';
-import type { SyncObjectUpdateEnvelope } from '../integrations.types';
+import type { SyncObjectUpdateEnvelope, IntegrationMessageEnvelope } from '../integrations.types';
 import {
   batchUpdateHubspotObjects,
   ensureHubspotProperty,
@@ -36,6 +37,8 @@ import {
   updateHubspotObject,
   hubspotErrorStatus,
 } from './hubspot-crm-api';
+import { type HubspotTimelineOccurrence, sendHubspotTimelineEvents } from './hubspot-timeline-api';
+import { timelineEventTypeName, timelinePropertiesFor } from './sync-timeline';
 
 /** One provider page of a full-sync round; the job enqueues its successor. */
 export interface SyncPageJobData {
@@ -310,6 +313,118 @@ export class ObjectSyncService {
     this.logger.log(
       `Full sync complete: mapping ${mapping.id} (${remoteObject} ↔ ${localObject}), ${data.page} page(s), env ${environmentId}`,
     );
+  }
+
+  /**
+   * Write one tracked event to the provider's record timelines (ADR 0013
+   * §8): the linked contact always, the linked company when the event
+   * carries one and a company mapping exists — one atomic batch. The
+   * selection is re-read at delivery, so deselecting an event stops queued
+   * deliveries too; an unlinked user is not an error, just nothing to write to.
+   */
+  async deliverTimelineEvent(
+    integrationId: string,
+    envelope: IntegrationMessageEnvelope,
+  ): Promise<{ status: number; body: string }> {
+    const integration = await this.prisma.integration.findUnique({
+      where: { id: integrationId },
+      select: {
+        id: true,
+        environmentId: true,
+        enabled: true,
+        oauthCredentials: true,
+        config: true,
+      },
+    });
+    if (!integration || !integration.enabled || !integration.oauthCredentials) {
+      throw new DeliverySkippedError('Integration is no longer connected');
+    }
+    const events = (integration.config as IntegrationConfig | null)?.events;
+    const { event } = envelope.data;
+    if (!events?.enabled || !events.codeNames.includes(event.codeName)) {
+      throw new DeliverySkippedError('Event is no longer selected for the timeline');
+    }
+    const contactId = await this.linkedRemoteId(
+      integration.id,
+      integration.environmentId,
+      'user',
+      event.userId,
+    );
+    if (!contactId) {
+      throw new DeliverySkippedError('User is not linked to a provider record');
+    }
+    const properties = timelinePropertiesFor(event.codeName, event.attributes, event.userId);
+    const inputs: HubspotTimelineOccurrence[] = [
+      {
+        eventTypeName: timelineEventTypeName(event.codeName, 'contact'),
+        objectId: contactId,
+        id: envelope.id,
+        timestamp: envelope.createdAt,
+        properties,
+      },
+    ];
+    if (event.companyId) {
+      const companyId = await this.linkedRemoteId(
+        integration.id,
+        integration.environmentId,
+        'company',
+        event.companyId,
+      );
+      if (companyId) {
+        inputs.push({
+          eventTypeName: timelineEventTypeName(event.codeName, 'company'),
+          objectId: companyId,
+          id: `${envelope.id}-company`,
+          timestamp: envelope.createdAt,
+          properties,
+        });
+      }
+    }
+    try {
+      return await this.connections.withAccessToken(integration.id, (token) =>
+        sendHubspotTimelineEvents(token, inputs),
+      );
+    } catch (error) {
+      if (hubspotErrorStatus(error) === 409) {
+        // The occurrence ids are already on the timeline: a retry after a
+        // delivery whose response was lost. Done, not failed.
+        return { status: 409, body: 'Occurrences already recorded' };
+      }
+      throw error;
+    }
+  }
+
+  /** The provider record id linked to a local record, through this integration's mapping for the object. */
+  private async linkedRemoteId(
+    integrationId: string,
+    environmentId: string,
+    localObject: SyncLocalObject,
+    externalId: string,
+  ): Promise<string | null> {
+    const mapping = (await this.activeMappingsFor(environmentId, localObject)).find(
+      (candidate) => candidate.integrationId === integrationId,
+    );
+    if (!mapping) {
+      return null;
+    }
+    const select = { id: true };
+    const local =
+      localObject === 'user'
+        ? await this.prisma.bizUser.findFirst({
+            where: { environmentId, externalId, deleted: false },
+            select,
+          })
+        : await this.prisma.bizCompany.findFirst({
+            where: { environmentId, externalId, deleted: false },
+            select,
+          });
+    if (!local) {
+      return null;
+    }
+    const link = await this.prisma.integrationObjectLink.findUnique({
+      where: { mappingId_localId: { mappingId: mapping.id, localId: local.id } },
+    });
+    return link?.remoteId ?? null;
   }
 
   /** The integration's recent runs, newest first (ADR 0013 §11: the sync activity card). */

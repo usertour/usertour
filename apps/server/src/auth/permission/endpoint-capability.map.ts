@@ -86,6 +86,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'integration.queryIntegrationSyncedSegments': Capability.IntegrationRead,
   'integration.updateIntegrationInbound': Capability.IntegrationManage,
   'integration.rotateIntegrationInboundToken': Capability.IntegrationManage,
+  'integration.updateIntegrationEvents': Capability.IntegrationManage,
   // CRM (ADR 0013)
   'integration.startIntegrationOAuth': Capability.IntegrationManage,
   'integration.disconnectIntegrationOAuth': Capability.IntegrationManage,

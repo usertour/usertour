@@ -7,6 +7,7 @@ import {
   SYNC_INTEGRATION_PROVIDERS,
   INTEGRATION_PROVIDERS,
   INTEGRATION_TEST_TOPIC,
+  SYNC_TIMELINE_EVENTS,
 } from '@usertour/constants';
 import type { Request } from 'express';
 import type { IntegrationConfig, IntegrationProvider } from '@usertour/types';
@@ -23,9 +24,14 @@ import { EncryptionService } from '@/shared/encryption.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { CohortSyncService } from './cohort-sync.service';
 import { SyncTeardownService } from './sync/sync-teardown.service';
-import { UpdateIntegrationInboundInput, UpsertIntegrationInput } from './dto/integration.input';
+import {
+  UpdateIntegrationInboundInput,
+  UpsertIntegrationInput,
+  UpdateIntegrationEventsInput,
+} from './dto/integration.input';
 import { buildIntegrationMessage } from './integration-envelope';
 import { IntegrationDeliveryJobData, IntegrationEventObject } from './integrations.types';
+import type { Prisma } from '@prisma/client';
 
 /** Job options for a one-shot, user-triggered send (test event). */
 const SINGLE_ATTEMPT_JOB_OPTIONS = { removeOnComplete: true, removeOnFail: 1000, attempts: 1 };
@@ -246,6 +252,39 @@ export class IntegrationsService {
     const row = await this.cohortSync.updateInbound(integration, {
       enabled: data.enabled,
       userIdProperty: data.userIdProperty,
+    });
+    return this.withoutKey(row, request);
+  }
+
+  /**
+   * Timeline events of a sync provider (ADR 0013 §8): the switch and the
+   * selected milestone set live in the row's config. Turning the switch on
+   * without a selection selects every milestone; a code name outside the
+   * curated set is refused — the provider only knows the declared types.
+   */
+  async updateSyncEvents(data: UpdateIntegrationEventsInput, request?: Request) {
+    const integration = await this.prisma.integration.findUnique({ where: { id: data.id } });
+    if (!integration) {
+      throw new IntegrationNotFoundError();
+    }
+    if (!SYNC_INTEGRATION_PROVIDERS.includes(integration.provider as IntegrationProvider)) {
+      throw new ValidationError('Timeline events are a setting of sync providers only.');
+    }
+    await this.assertEntitled(integration.environmentId);
+    const current = (integration.config as IntegrationConfig | null) ?? {};
+    const previous = current.events ?? { enabled: false, codeNames: [...SYNC_TIMELINE_EVENTS] };
+    const codeNames = data.codeNames ? Array.from(new Set(data.codeNames)) : previous.codeNames;
+    const unknown = codeNames.filter((codeName) => !SYNC_TIMELINE_EVENTS.includes(codeName));
+    if (unknown.length > 0) {
+      throw new ValidationError(`Not a timeline event: ${unknown.join(', ')}.`);
+    }
+    const next: IntegrationConfig = {
+      ...current,
+      events: { enabled: data.enabled ?? previous.enabled, codeNames },
+    };
+    const row = await this.prisma.integration.update({
+      where: { id: data.id },
+      data: { config: next as Prisma.InputJsonObject },
     });
     return this.withoutKey(row, request);
   }

@@ -16,6 +16,7 @@ import {
   StartIntegrationOAuthInput,
   UpdateIntegrationInboundInput,
   UpsertIntegrationInput,
+  UpdateIntegrationEventsInput,
 } from './dto/integration.input';
 import {
   IntegrationOAuthStart,
@@ -223,6 +224,22 @@ export class IntegrationsResolver {
     @Context() context: { req?: Request },
   ) {
     return await this.service.updateInbound(data, context.req);
+  }
+
+  /** Which milestone events a sync provider's record timeline receives (ADR 0013 §8). */
+  @Mutation(() => Integration)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
+  })
+  async updateIntegrationEvents(
+    @Args('data') data: UpdateIntegrationEventsInput,
+    @Context() context: { req?: Request },
+  ) {
+    return await this.service.updateSyncEvents(data, context.req);
   }
 
   @Mutation(() => Integration)

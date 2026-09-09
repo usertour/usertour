@@ -22,7 +22,8 @@
         "crm.schemas.contacts.read",
         "crm.schemas.contacts.write",
         "crm.schemas.companies.read",
-        "crm.schemas.companies.write"
+        "crm.schemas.companies.write",
+        "timeline.write"
       ],
       "optionalScopes": [],
       "conditionallyRequiredScopes": []
