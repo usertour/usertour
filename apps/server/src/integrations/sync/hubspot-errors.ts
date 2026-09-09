@@ -34,15 +34,19 @@ export const hubspotCall = async <T>(call: () => Promise<T>): Promise<T> => {
   try {
     return await call();
   } catch (error) {
-    if (
-      axios.isAxiosError(error) &&
-      error.response &&
-      BACKOFF_STATUSES.has(error.response.status)
-    ) {
-      throw new HubspotRateLimitError(
-        error.response.status,
-        parseRetryAfter(error.response.headers?.['retry-after']) ?? DEFAULT_RETRY_AFTER_MS,
-      );
+    if (axios.isAxiosError(error)) {
+      if (error.response && BACKOFF_STATUSES.has(error.response.status)) {
+        throw new HubspotRateLimitError(
+          error.response.status,
+          parseRetryAfter(error.response.headers?.['retry-after']) ?? DEFAULT_RETRY_AFTER_MS,
+        );
+      }
+      // The request carries the app secret and the refresh token in its body
+      // (token endpoint) or a bearer token in its headers; an error that
+      // reaches a logger must not carry them along. The response — status,
+      // headers, body — is what callers classify on, and stays.
+      error.config = undefined;
+      error.request = undefined;
     }
     throw error;
   }

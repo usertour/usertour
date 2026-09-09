@@ -24,7 +24,7 @@ export const globalConfig = gql`
       machineTranslationEnabled
       allowPrivateNetworkEgress
       authProviders
-      configuredCrmProviders
+      configuredOAuthProviders
     }
   }
 `;

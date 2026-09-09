@@ -2,7 +2,7 @@ import {
   type AnalyticsIntegrationProvider,
   AttributeDataType,
   type CrmIntegrationProvider,
-  type CrmLocalObject,
+  type SyncLocalObject,
 } from '@usertour/types';
 
 /**
@@ -31,14 +31,14 @@ export const CRM_INTEGRATION_PROVIDERS: readonly CrmIntegrationProvider[] = ['hu
 export const INTEGRATION_TEST_TOPIC = 'integration.test';
 
 /** The provider-side property group every Usertour write-back property lives in (ADR 0013 §6). */
-export const CRM_REMOTE_PROPERTY_GROUP = { name: 'usertour', label: 'Usertour' } as const;
+export const SYNC_REMOTE_PROPERTY_GROUP = { name: 'usertour', label: 'Usertour' } as const;
 
 /** Provider property name for a Usertour-owned attribute (provider names are lowercase). */
-export const crmRemotePropertyNameFor = (local: CrmLocalObject, codeName: string): string =>
+export const remotePropertyNameFor = (local: SyncLocalObject, codeName: string): string =>
   `usertour_${local}_${codeName.toLowerCase()}`;
 
 /** Provider property type → Usertour attribute data type (ADR 0013 §6). */
-export const crmLocalDataTypeFor = (property: {
+export const localDataTypeFor = (property: {
   type: string;
   fieldType: string;
 }): AttributeDataType => {
@@ -66,4 +66,4 @@ export const crmLocalDataTypeFor = (property: {
  * rung and the Retry-After cap are both 12h (apps/server delivery-backoff;
  * a unit test pins the relation).
  */
-export const CRM_ROUND_STALE_MS = 13 * 60 * 60 * 1000;
+export const SYNC_ROUND_STALE_MS = 13 * 60 * 60 * 1000;

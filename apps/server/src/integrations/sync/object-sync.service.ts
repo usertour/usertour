@@ -5,27 +5,27 @@ import type { IntegrationObjectMapping } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { CRM_ROUND_STALE_MS } from '@usertour/constants';
+import { SYNC_ROUND_STALE_MS } from '@usertour/constants';
 import type {
-  CrmInboundField,
-  CrmLocalObject,
-  CrmOutboundField,
-  CrmRemoteObject,
+  SyncInboundField,
+  SyncLocalObject,
+  SyncOutboundField,
+  SyncRemoteObject,
 } from '@usertour/types';
 import { BizService } from '@/biz/biz.service';
-import { QUEUE_CRM_SYNC } from '@/common/consts/queen';
+import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
 import { FeatureRequiresLicenseError, ValidationError } from '@/common/errors/errors';
 import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
-import { CrmConnectionService } from './crm-connection.service';
+import { ProviderConnectionService } from './provider-connection.service';
 import {
   attributeBizTypeFor,
-  CRM_REMOTE_GROUP,
+  SYNC_REMOTE_GROUP,
   hubspotObjectTypeFor,
   remotePropertyDefinitionFor,
   matchRemotePropertyFor,
-} from './crm-mapping.types';
-import { localToRemoteValue, remoteToLocalValue, remoteTypeForDataType } from './crm-values';
-import type { CrmMessageEnvelope } from '../integrations.types';
+} from './object-mapping.types';
+import { localToRemoteValue, remoteToLocalValue, remoteTypeForDataType } from './sync-values';
+import type { SyncObjectUpdateEnvelope } from '../integrations.types';
 import {
   batchUpdateHubspotObjects,
   ensureHubspotProperty,
@@ -38,14 +38,14 @@ import {
 } from './hubspot-crm-api';
 
 /** One provider page of a full-sync round; the job enqueues its successor. */
-export interface CrmSyncPageJobData {
+export interface SyncPageJobData {
   mappingId: string;
   sessionId: string;
   page: number;
   after?: string;
 }
 
-export const CRM_SYNC_PAGE_JOB = 'page';
+export const SYNC_PAGE_JOB = 'page';
 
 /** Pair one freshly created (or newly addressable) local record with the provider (ADR 0013 §5). */
 /** GraphQL-facing projection of a sync run. */
@@ -68,23 +68,23 @@ export interface IntegrationSyncRunView {
 /** How many provider record ids a journal run keeps for "which records" — enough to trace, not a dump. */
 const SYNC_RUN_REMOTE_IDS_CAP = 50;
 
-export interface CrmBackfillJobData {
+export interface SyncBackfillJobData {
   mappingId: string;
   localId: string;
 }
 
-export const CRM_SYNC_BACKFILL_JOB = 'backfill';
+export const SYNC_BACKFILL_JOB = 'backfill';
 
 /** A write-back whose target vanished between enqueue and delivery: settle, never retry. */
-export class CrmDeliverySkippedError extends Error {
+export class DeliverySkippedError extends Error {
   constructor(reason: string) {
     super(reason);
-    this.name = 'CrmDeliverySkippedError';
+    this.name = 'DeliverySkippedError';
   }
 }
 
 /** A round older than this with no completion is presumed dead and may be restarted. */
-export const ROUND_STALE_MS = CRM_ROUND_STALE_MS;
+export const ROUND_STALE_MS = SYNC_ROUND_STALE_MS;
 /** Scheduler cadence target for the recurring full sync (ADR 0013 §7). */
 export const FULL_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
@@ -112,7 +112,7 @@ export type MappingWithIntegration = IntegrationObjectMapping & {
   };
 };
 
-interface CrmRemoteStateShape {
+interface SyncRemoteStateShape {
   account?: { domain?: string };
   /** Provider properties already created for write-back, keyed by remote name. */
   properties?: Record<string, true>;
@@ -126,14 +126,14 @@ interface CrmRemoteStateShape {
  * a rate-limited page backs off without holding a worker.
  */
 @Injectable()
-export class CrmSyncService {
-  private readonly logger = new Logger(CrmSyncService.name);
+export class ObjectSyncService {
+  private readonly logger = new Logger(ObjectSyncService.name);
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly connections: CrmConnectionService,
+    private readonly connections: ProviderConnectionService,
     private readonly biz: BizService,
-    @InjectQueue(QUEUE_CRM_SYNC) private readonly queue: Queue,
+    @InjectQueue(QUEUE_OBJECT_SYNC) private readonly queue: Queue,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -214,7 +214,7 @@ export class CrmSyncService {
   }
 
   /** A page job failed and is waiting to retry: the round is alive, keep its heartbeat fresh. */
-  async touchRound(data: CrmSyncPageJobData): Promise<void> {
+  async touchRound(data: SyncPageJobData): Promise<void> {
     await this.prisma.integrationObjectMapping.updateMany({
       where: { id: data.mappingId, fullSyncSessionId: data.sessionId },
       data: { fullSyncStartedAt: new Date() },
@@ -222,7 +222,7 @@ export class CrmSyncService {
   }
 
   /** Release a round whose page job exhausted its attempts, so a later start is not blocked for the stale window. */
-  async abandonRound(data: CrmSyncPageJobData, reason?: string): Promise<void> {
+  async abandonRound(data: SyncPageJobData, reason?: string): Promise<void> {
     await this.prisma.integrationObjectMapping.updateMany({
       where: { id: data.mappingId, fullSyncSessionId: data.sessionId },
       data: { fullSyncStartedAt: null },
@@ -232,13 +232,13 @@ export class CrmSyncService {
       data: { status: 'failed', finishedAt: new Date(), error: reason ?? null },
     });
     this.logger.warn(
-      `CRM full sync abandoned: mapping ${data.mappingId} session ${data.sessionId} page ${data.page}`,
+      `Full sync abandoned: mapping ${data.mappingId} session ${data.sessionId} page ${data.page}`,
     );
   }
 
-  private async enqueuePage(data: CrmSyncPageJobData): Promise<void> {
-    await this.queue.add(CRM_SYNC_PAGE_JOB, data, {
-      jobId: `crm-${data.mappingId}-${data.sessionId}-${data.page}`,
+  private async enqueuePage(data: SyncPageJobData): Promise<void> {
+    await this.queue.add(SYNC_PAGE_JOB, data, {
+      jobId: `sync-${data.mappingId}-${data.sessionId}-${data.page}`,
       attempts: DELIVERY_ATTEMPTS,
       backoff: { type: 'custom' },
       removeOnComplete: true,
@@ -250,7 +250,7 @@ export class CrmSyncService {
   // One page
   // ---------------------------------------------------------------------------
 
-  async processPage(data: CrmSyncPageJobData): Promise<void> {
+  async processPage(data: SyncPageJobData): Promise<void> {
     const mapping = await this.loadMapping(data.mappingId);
     if (!mapping || mapping.fullSyncSessionId !== data.sessionId) {
       return; // deleted, or superseded by a newer round
@@ -259,16 +259,23 @@ export class CrmSyncService {
       await this.abandonRound(data);
       return;
     }
-    const remoteObject = mapping.remoteObject as CrmRemoteObject;
-    const localObject = mapping.localObject as CrmLocalObject;
-    const inbound = mapping.inboundFields as unknown as CrmInboundField[];
+    const remoteObject = mapping.remoteObject as SyncRemoteObject;
+    const localObject = mapping.localObject as SyncLocalObject;
+    const inbound = mapping.inboundFields as unknown as SyncInboundField[];
     const matchField = matchRemotePropertyFor(mapping);
     const properties = Array.from(new Set([matchField, ...inbound.map((field) => field.remote)]));
     const objectType = hubspotObjectTypeFor(remoteObject);
-    const token = await this.connections.getAccessToken(mapping.integrationId);
-
-    const page = await listHubspotObjectsPage(token, objectType, { properties, after: data.after });
-    const pairs = await this.applyRecords(mapping, token, page.results);
+    const { page, pairs } = await this.connections.withAccessToken(
+      mapping.integrationId,
+      async (token) => {
+        const page = await listHubspotObjectsPage(token, objectType, {
+          properties,
+          after: data.after,
+        });
+        const pairs = await this.applyRecords(mapping, token, page.results);
+        return { page, pairs };
+      },
+    );
     const { environmentId } = mapping.integration;
 
     const counts = {
@@ -301,7 +308,7 @@ export class CrmSyncService {
       data: { status: 'succeeded', finishedAt },
     });
     this.logger.log(
-      `CRM full sync complete: mapping ${mapping.id} (${remoteObject} ↔ ${localObject}), ${data.page} page(s), env ${environmentId}`,
+      `Full sync complete: mapping ${mapping.id} (${remoteObject} ↔ ${localObject}), ${data.page} page(s), env ${environmentId}`,
     );
   }
 
@@ -358,8 +365,8 @@ export class CrmSyncService {
     token: string,
     remotes: HubspotObject[],
   ): Promise<PairedRecord[]> {
-    const inbound = mapping.inboundFields as unknown as CrmInboundField[];
-    const outbound = mapping.outboundFields as unknown as CrmOutboundField[];
+    const inbound = mapping.inboundFields as unknown as SyncInboundField[];
+    const outbound = mapping.outboundFields as unknown as SyncOutboundField[];
     const matchField = matchRemotePropertyFor(mapping);
     const pairs = await this.pairRecords(mapping, remotes, matchField);
     if (pairs.length === 0) {
@@ -384,9 +391,9 @@ export class CrmSyncService {
    * First-identify backfill: a local record that just appeared (or just
    * gained its match key) is looked up on the provider once and, if found,
    * paired and synced both ways — so a new user does not wait for the next
-   * full round to carry its CRM fields.
+   * full round to carry its synced fields.
    */
-  async backfillRecord(data: CrmBackfillJobData): Promise<void> {
+  async backfillRecord(data: SyncBackfillJobData): Promise<void> {
     const mapping = await this.loadMapping(data.mappingId);
     if (
       !mapping ||
@@ -396,7 +403,7 @@ export class CrmSyncService {
     ) {
       return;
     }
-    const localObject = mapping.localObject as CrmLocalObject;
+    const localObject = mapping.localObject as SyncLocalObject;
     const local = await this.loadLocal(localObject, data.localId);
     if (!local) {
       return;
@@ -407,27 +414,28 @@ export class CrmSyncService {
     if (!key) {
       return;
     }
-    const inbound = mapping.inboundFields as unknown as CrmInboundField[];
+    const inbound = mapping.inboundFields as unknown as SyncInboundField[];
     const matchField = matchRemotePropertyFor(mapping);
-    const token = await this.connections.getAccessToken(mapping.integrationId);
-    const remotes = await searchHubspotObjectsByProperty(
-      token,
-      hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject),
-      {
-        propertyName: matchField,
-        values: [byEmail ? key.toLowerCase() : key],
-        properties: Array.from(new Set([matchField, ...inbound.map((field) => field.remote)])),
-      },
-    );
-    await this.applyRecords(mapping, token, remotes);
+    await this.connections.withAccessToken(mapping.integrationId, async (token) => {
+      const remotes = await searchHubspotObjectsByProperty(
+        token,
+        hubspotObjectTypeFor(mapping.remoteObject as SyncRemoteObject),
+        {
+          propertyName: matchField,
+          values: [byEmail ? key.toLowerCase() : key],
+          properties: Array.from(new Set([matchField, ...inbound.map((field) => field.remote)])),
+        },
+      );
+      await this.applyRecords(mapping, token, remotes);
+    });
   }
 
   /** The write-back envelope data for a local record, or null when it has no link or nothing to send. */
   async buildWriteBack(
     mapping: MappingWithIntegration,
     localId: string,
-  ): Promise<CrmMessageEnvelope['data'] | null> {
-    const outbound = mapping.outboundFields as unknown as CrmOutboundField[];
+  ): Promise<SyncObjectUpdateEnvelope['data'] | null> {
+    const outbound = mapping.outboundFields as unknown as SyncOutboundField[];
     if (outbound.length === 0) {
       return null;
     }
@@ -437,7 +445,7 @@ export class CrmSyncService {
     if (!link) {
       return null;
     }
-    const local = await this.loadLocal(mapping.localObject as CrmLocalObject, localId);
+    const local = await this.loadLocal(mapping.localObject as SyncLocalObject, localId);
     if (!local) {
       return null;
     }
@@ -459,28 +467,30 @@ export class CrmSyncService {
   }
 
   /** Deliver one ledger write-back; the processor records the outcome. */
-  async deliverWriteBack(envelope: CrmMessageEnvelope): Promise<{ status: number; body: string }> {
+  async deliverWriteBack(
+    envelope: SyncObjectUpdateEnvelope,
+  ): Promise<{ status: number; body: string }> {
     const mapping = await this.loadMapping(envelope.data.mappingId);
     if (!mapping || !mapping.enabled) {
-      throw new CrmDeliverySkippedError('Mapping removed or disabled before delivery');
+      throw new DeliverySkippedError('Mapping removed or disabled before delivery');
     }
     if (!mapping.integration.oauthCredentials) {
-      throw new CrmDeliverySkippedError('Integration disconnected before delivery');
+      throw new DeliverySkippedError('Integration disconnected before delivery');
     }
     const link = await this.prisma.integrationObjectLink.findUnique({
       where: { mappingId_localId: { mappingId: mapping.id, localId: envelope.data.localId } },
     });
     if (!link) {
-      throw new CrmDeliverySkippedError('Record is no longer linked to a provider record');
+      throw new DeliverySkippedError('Record is no longer linked to a provider record');
     }
     // The message names the fields; the values are read now. A message may
     // be delivered a day after it was queued (retry ladder) or after a newer
     // change to the same record — the record's current values must win.
     const fresh = await this.buildWriteBack(mapping, envelope.data.localId);
     if (!fresh) {
-      throw new CrmDeliverySkippedError('Record is no longer written back');
+      throw new DeliverySkippedError('Record is no longer written back');
     }
-    const outbound = (mapping.outboundFields as unknown as CrmOutboundField[]).filter(
+    const outbound = (mapping.outboundFields as unknown as SyncOutboundField[]).filter(
       (field) => field.remote in envelope.data.fields,
     );
     const fields: Record<string, string> = {};
@@ -488,31 +498,28 @@ export class CrmSyncService {
       fields[field.remote] = fresh.fields[field.remote] ?? '';
     }
     if (Object.keys(fields).length === 0) {
-      throw new CrmDeliverySkippedError('Fields are no longer written back');
+      throw new DeliverySkippedError('Fields are no longer written back');
     }
-    const token = await this.connections.getAccessToken(mapping.integrationId);
-    await this.ensureRemoteProperties(
-      mapping,
-      token,
-      outbound,
-      await this.mappingAttributes(mapping),
-    );
-    try {
-      return await updateHubspotObject(
-        token,
-        hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject),
-        link.remoteId,
-        fields,
-      );
-    } catch (error) {
-      if (hubspotErrorStatus(error) === 404) {
-        // The provider record is gone (deleted or merged away). Drop the link
-        // so nothing writes to a dead id again; the next round re-pairs.
-        await this.prisma.integrationObjectLink.deleteMany({ where: { id: link.id } });
-        throw new CrmDeliverySkippedError('Provider record no longer exists; link dropped');
+    const attributes = await this.mappingAttributes(mapping);
+    return await this.connections.withAccessToken(mapping.integrationId, async (token) => {
+      await this.ensureRemoteProperties(mapping, token, outbound, attributes);
+      try {
+        return await updateHubspotObject(
+          token,
+          hubspotObjectTypeFor(mapping.remoteObject as SyncRemoteObject),
+          link.remoteId,
+          fields,
+        );
+      } catch (error) {
+        if (hubspotErrorStatus(error) === 404) {
+          // The provider record is gone (deleted or merged away). Drop the link
+          // so nothing writes to a dead id again; the next round re-pairs.
+          await this.prisma.integrationObjectLink.deleteMany({ where: { id: link.id } });
+          throw new DeliverySkippedError('Provider record no longer exists; link dropped');
+        }
+        throw error;
       }
-      throw error;
-    }
+    });
   }
 
   /** A page or backfill job hit a revoked grant: switch the integration off and let the round go. */
@@ -526,10 +533,10 @@ export class CrmSyncService {
     }
   }
 
-  /** Enabled mappings of an environment's connected, enabled CRM integrations, for one local object type. */
+  /** Enabled mappings of an environment's connected, enabled sync integrations, for one local object type. */
   async activeMappingsFor(
     environmentId: string,
-    localObject: CrmLocalObject,
+    localObject: SyncLocalObject,
   ): Promise<MappingWithIntegration[]> {
     return (await this.prisma.integrationObjectMapping.findMany({
       where: {
@@ -555,8 +562,8 @@ export class CrmSyncService {
   }
 
   private async mappingAttributes(mapping: MappingWithIntegration) {
-    const inbound = mapping.inboundFields as unknown as CrmInboundField[];
-    const outbound = mapping.outboundFields as unknown as CrmOutboundField[];
+    const inbound = mapping.inboundFields as unknown as SyncInboundField[];
+    const outbound = mapping.outboundFields as unknown as SyncOutboundField[];
     const codeNames = [
       ...inbound.map((field) => field.local),
       ...outbound.map((field) => field.local),
@@ -567,7 +574,7 @@ export class CrmSyncService {
     const rows = await this.prisma.attribute.findMany({
       where: {
         projectId: mapping.integration.environment.projectId,
-        bizType: attributeBizTypeFor(mapping.localObject as CrmLocalObject),
+        bizType: attributeBizTypeFor(mapping.localObject as SyncLocalObject),
         codeName: { in: codeNames },
       },
     });
@@ -575,7 +582,7 @@ export class CrmSyncService {
   }
 
   private async loadLocal(
-    localObject: CrmLocalObject,
+    localObject: SyncLocalObject,
     localId: string,
   ): Promise<LocalRecord | null> {
     const select = { id: true, externalId: true, data: true, deleted: true };
@@ -622,7 +629,7 @@ export class CrmSyncService {
     const locals = byEmail
       ? await this.findUsersByEmail(mapping.integration.environmentId, keys)
       : await this.findByExternalId(
-          mapping.localObject as CrmLocalObject,
+          mapping.localObject as SyncLocalObject,
           mapping.integration.environmentId,
           keys,
         );
@@ -669,7 +676,7 @@ export class CrmSyncService {
   }
 
   private async findByExternalId(
-    localObject: CrmLocalObject,
+    localObject: SyncLocalObject,
     environmentId: string,
     externalIds: string[],
   ): Promise<Array<{ key: string; local: LocalRecord }>> {
@@ -732,7 +739,7 @@ export class CrmSyncService {
   private async applyInbound(
     mapping: MappingWithIntegration,
     pairs: PairedRecord[],
-    inbound: CrmInboundField[],
+    inbound: SyncInboundField[],
     attributeByCode: Map<string, { dataType: number }>,
   ): Promise<void> {
     const { provider, environmentId } = mapping.integration;
@@ -786,10 +793,10 @@ export class CrmSyncService {
     mapping: MappingWithIntegration,
     token: string,
     pairs: PairedRecord[],
-    outbound: CrmOutboundField[],
+    outbound: SyncOutboundField[],
     attributeByCode: Map<string, { codeName: string; displayName: string; dataType: number }>,
   ): Promise<void> {
-    const objectType = hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject);
+    const objectType = hubspotObjectTypeFor(mapping.remoteObject as SyncRemoteObject);
     await this.ensureRemoteProperties(mapping, token, outbound, attributeByCode);
     const inputs = pairs.map((pair) => ({
       id: pair.remote.id,
@@ -811,11 +818,11 @@ export class CrmSyncService {
   async ensureRemoteProperties(
     mapping: MappingWithIntegration,
     token: string,
-    outbound: CrmOutboundField[],
+    outbound: SyncOutboundField[],
     attributeByCode: Map<string, { codeName: string; displayName: string; dataType: number }>,
   ): Promise<void> {
-    const state = ((mapping.integration.remoteState as CrmRemoteStateShape | null) ??
-      {}) as CrmRemoteStateShape;
+    const state = ((mapping.integration.remoteState as SyncRemoteStateShape | null) ??
+      {}) as SyncRemoteStateShape;
     const known = state.properties ?? {};
     const missing = outbound.filter(
       (field) => !known[field.remote] && attributeByCode.has(field.local),
@@ -823,8 +830,8 @@ export class CrmSyncService {
     if (missing.length === 0) {
       return;
     }
-    const objectType = hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject);
-    await ensureHubspotPropertyGroup(token, objectType, CRM_REMOTE_GROUP);
+    const objectType = hubspotObjectTypeFor(mapping.remoteObject as SyncRemoteObject);
+    await ensureHubspotPropertyGroup(token, objectType, SYNC_REMOTE_GROUP);
     const created: Record<string, true> = {};
     for (const field of missing) {
       const attribute = attributeByCode.get(field.local) as {
@@ -835,7 +842,7 @@ export class CrmSyncService {
       await ensureHubspotProperty(
         token,
         objectType,
-        remotePropertyDefinitionFor(mapping.localObject as CrmLocalObject, attribute),
+        remotePropertyDefinitionFor(mapping.localObject as SyncLocalObject, attribute),
       );
       created[field.remote] = true;
     }
@@ -849,7 +856,7 @@ export class CrmSyncService {
       created,
       'merge',
     );
-    const nextState: CrmRemoteStateShape = { ...state, properties: { ...known, ...created } };
+    const nextState: SyncRemoteStateShape = { ...state, properties: { ...known, ...created } };
     mapping.integration.remoteState = nextState as Prisma.JsonValue;
   }
 

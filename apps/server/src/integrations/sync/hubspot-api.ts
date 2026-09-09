@@ -101,9 +101,12 @@ export const fetchHubspotTokenInfo = (accessToken: string): Promise<HubspotToken
   });
 
 /**
- * Best-effort revocation on disconnect. HubSpot only invalidates the refresh
- * token (outstanding access tokens live out their 30 minutes) and does not
- * uninstall the app from the account — the customer does that in HubSpot.
+ * Best-effort revocation on disconnect. HubSpot invalidates the refresh token;
+ * the app stays listed in the account until the customer uninstalls it there.
+ * Whether other authorizations of the same app in the same account survive
+ * is not something to rely on either way: a 401 on a data call is handled
+ * as "refresh once, then treat as revoked" (ProviderConnectionService), so a
+ * revocation from anywhere surfaces as a reconnect prompt, never as retries.
  */
 export const revokeHubspotRefreshToken = (refreshToken: string): Promise<void> =>
   hubspotCall(async () => {
@@ -124,6 +127,14 @@ export const isHubspotGrantRevoked = (error: unknown): boolean => {
     return false;
   }
   const { status, data } = error.response;
-  const code = (data as { error?: string } | undefined)?.error;
-  return status === 401 || (status === 400 && code === 'invalid_grant');
+  if (status === 401) {
+    return true;
+  }
+  if (status !== 400) {
+    return false;
+  }
+  // Documented body: { error: 'invalid_grant', status: 'BAD_REFRESH_TOKEN', ... };
+  // either marker alone is enough, and a body that arrived as text still counts.
+  const body = typeof data === 'string' ? data : JSON.stringify(data ?? {});
+  return body.includes('invalid_grant') || body.includes('BAD_REFRESH_TOKEN');
 };

@@ -9,32 +9,32 @@ import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
-import { CRM_TX_COOKIE } from '@/utils/cookie';
+import { INTEGRATION_TX_COOKIE } from '@/utils/cookie';
 import {
   IntegrationIdInput,
   QueryIntegrationsInput,
-  StartCrmOAuthInput,
+  StartIntegrationOAuthInput,
   UpdateIntegrationInboundInput,
   UpsertIntegrationInput,
 } from './dto/integration.input';
 import {
-  CrmOAuthStart,
+  IntegrationOAuthStart,
   Integration,
   IntegrationMessageConnection,
   IntegrationSyncedSegment,
 } from './models/integration.model';
-import { CrmConnectionService } from './crm/crm-connection.service';
-import { CrmMappingService } from './crm/crm-mapping.service';
-import { CrmJournalService } from './crm/crm-journal.service';
-import { CrmSyncService } from './crm/crm-sync.service';
+import { ProviderConnectionService } from './sync/provider-connection.service';
+import { ObjectMappingService } from './sync/object-mapping.service';
+import { HubspotJournalService } from './sync/hubspot-journal.service';
+import { ObjectSyncService } from './sync/object-sync.service';
 import {
   IntegrationObjectMappingIdInput,
-  ListCrmRemotePropertiesArgs,
+  ListIntegrationRemotePropertiesArgs,
   ListIntegrationSyncRunsArgs,
   UpsertIntegrationObjectMappingInput,
-} from './dto/crm-mapping.input';
-import { CrmRemoteProperty, IntegrationObjectMapping } from './models/crm-mapping.model';
-import { IntegrationSyncRun } from './models/crm-sync-run.model';
+} from './dto/object-mapping.input';
+import { IntegrationRemoteProperty, IntegrationObjectMapping } from './models/object-mapping.model';
+import { IntegrationSyncRun } from './models/sync-run.model';
 import { IntegrationsService } from './integrations.service';
 
 @Resolver(() => Integration)
@@ -42,14 +42,14 @@ import { IntegrationsService } from './integrations.service';
 export class IntegrationsResolver {
   constructor(
     private service: IntegrationsService,
-    private connections: CrmConnectionService,
-    private mappings: CrmMappingService,
-    private crmSync: CrmSyncService,
-    private journal: CrmJournalService,
+    private connections: ProviderConnectionService,
+    private mappings: ObjectMappingService,
+    private objectSync: ObjectSyncService,
+    private journal: HubspotJournalService,
   ) {}
 
   // ---------------------------------------------------------------------------
-  // CRM object mappings (ADR 0013 §4-6)
+  // Object mappings (ADR 0013 §4-6)
   // ---------------------------------------------------------------------------
 
   @Query(() => [IntegrationObjectMapping])
@@ -62,14 +62,14 @@ export class IntegrationsResolver {
   @Query(() => [IntegrationSyncRun])
   @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
   async listIntegrationSyncRuns(@Args() { integrationId, limit }: ListIntegrationSyncRunsArgs) {
-    return await this.crmSync.listRuns(integrationId, limit ?? 50);
+    return await this.objectSync.listRuns(integrationId, limit ?? 50);
   }
 
   /** Live provider property metadata — the editor's pickers read from here. */
-  @Query(() => [CrmRemoteProperty])
+  @Query(() => [IntegrationRemoteProperty])
   @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
-  async listCrmRemoteProperties(
-    @Args() { integrationId, remoteObject }: ListCrmRemotePropertiesArgs,
+  async listIntegrationRemoteProperties(
+    @Args() { integrationId, remoteObject }: ListIntegrationRemotePropertiesArgs,
   ) {
     return await this.mappings.listRemoteProperties(integrationId, remoteObject);
   }
@@ -100,14 +100,14 @@ export class IntegrationsResolver {
   @Mutation(() => IntegrationObjectMapping)
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
   async runIntegrationObjectMappingSync(@Args('data') data: IntegrationObjectMappingIdInput) {
-    return await this.crmSync.startFullSync(data.id, {
+    return await this.objectSync.startFullSync(data.id, {
       manual: true,
       integrationId: data.integrationId,
     });
   }
 
   // ---------------------------------------------------------------------------
-  // CRM connections (ADR 0013)
+  // Provider connections (ADR 0013)
   // ---------------------------------------------------------------------------
 
   /**
@@ -116,15 +116,15 @@ export class IntegrationsResolver {
    * callback accepts, and unlike a link it cannot be forwarded to someone
    * else's browser.
    */
-  @Mutation(() => CrmOAuthStart)
+  @Mutation(() => IntegrationOAuthStart)
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
-  async startCrmOAuth(
-    @Args('data') data: StartCrmOAuthInput,
+  async startIntegrationOAuth(
+    @Args('data') data: StartIntegrationOAuthInput,
     @UserEntity() user: User,
     @Context() context: { res: Response },
   ) {
     const { url, state } = await this.connections.startOAuth({ ...data, userId: user.id });
-    context.res.cookie(CRM_TX_COOKIE, state, this.connections.transactionCookieOptions());
+    context.res.cookie(INTEGRATION_TX_COOKIE, state, this.connections.transactionCookieOptions());
     return { url };
   }
 
@@ -136,7 +136,7 @@ export class IntegrationsResolver {
     resourceId: (a) => (a.data as { id: string }).id,
     environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
   })
-  async disconnectCrmIntegration(
+  async disconnectIntegrationOAuth(
     @Args('data') { id }: IntegrationIdInput,
     @Context() context: { req?: Request },
   ) {

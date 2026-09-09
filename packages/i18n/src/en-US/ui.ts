@@ -1651,7 +1651,7 @@ const translations = {
         failed: 'Failed to queue the test event',
         disabledHint: 'Enable the integration to send a test event.',
       },
-      crm: {
+      sync: {
         connect: 'Connect with {{name}}',
         connectDescription:
           'Authorize Usertour in your {{name}} account. One {{name}} account connects to one Usertour environment.',
@@ -1672,12 +1672,10 @@ const translations = {
         connectedToast: '{{name}} connected',
         deniedToast: 'Authorization was cancelled in {{name}}.',
         failedToast: 'Connecting {{name}} failed. Please try again.',
-        licenseToast: 'CRM integrations are not included in your current plan.',
         inUseToast:
           'That {{name}} account is already connected to another environment. Disconnect it there first.',
         autoDisabledBanner:
-          'Usertour disabled this integration on {{time}}: {{name}} stopped accepting its access — the app was uninstalled, the authorizing user was removed, or deliveries kept failing. Reconnect to resume syncing.',
-        lockedHint: 'Available on the Growth plan and above',
+          "{{name}} stopped accepting Usertour's access on {{time}} — the app was uninstalled or the authorization was revoked. Syncing is paused; reconnect to resume.",
         mapping: {
           remoteObjects: {
             contact: 'Contacts',
@@ -1756,8 +1754,6 @@ const translations = {
           lastSyncFailed: 'Last full sync failed {{time}}',
           syncFailed: 'Failed to start the sync',
         },
-        downgradedBanner:
-          'CRM integrations are not included in your current plan — syncing is paused. You can still review and disconnect; upgrade to resume.',
         viewSyncActivity: 'Sync activity',
         activity: {
           title: 'Sync activity',
@@ -1781,11 +1777,17 @@ const translations = {
           },
         },
       },
+      crm: {
+        licenseToast: 'CRM integrations are not included in your current plan.',
+        lockedHint: 'Available on the Growth plan and above',
+        downgradedBanner:
+          'CRM integrations are not included in your current plan — syncing is paused. You can still review and disconnect; upgrade to resume.',
+      },
       messages: {
         title: 'Recent messages',
         description:
           'Every event sent to this destination is kept for 30 days with each delivery attempt. Click a row for details.',
-        crmDescription:
+        syncDescription:
           'Every write-back sent to {{name}} is kept for 30 days with each delivery attempt. Click a row for details.',
         empty: 'No messages yet.',
         loadMore: 'Load more',

@@ -146,9 +146,9 @@ export const SendIntegrationTestEvent = gql`
 // CRM connections (ADR 0013). Start returns the provider authorize URL — the
 // browser navigates there and comes back through the server callback, which
 // creates the row; the detail page refetches on return.
-export const StartCrmOAuth = gql`
-  mutation StartCrmOAuth($data: StartCrmOAuthInput!) {
-    startCrmOAuth(data: $data) {
+export const StartIntegrationOAuth = gql`
+  mutation StartIntegrationOAuth($data: StartIntegrationOAuthInput!) {
+    startIntegrationOAuth(data: $data) {
       url
     }
   }
@@ -156,9 +156,9 @@ export const StartCrmOAuth = gql`
 
 // Returns every field a disconnect changes (grant dropped, switch off) plus
 // the breaker fields a reconnect would reset, so the cache updates in place.
-export const DisconnectCrmIntegration = gql`
-  mutation DisconnectCrmIntegration($data: IntegrationIdInput!) {
-    disconnectCrmIntegration(data: $data) {
+export const DisconnectIntegrationOAuth = gql`
+  mutation DisconnectIntegrationOAuth($data: IntegrationIdInput!) {
+    disconnectIntegrationOAuth(data: $data) {
       id
       updatedAt
       enabled
@@ -219,9 +219,9 @@ export const ListIntegrationSyncRuns = gql`
 
 // Live provider metadata: no cache (network-only) — the editor should see a
 // property the customer just created in the CRM.
-export const ListCrmRemoteProperties = gql`
-  query ListCrmRemoteProperties($integrationId: String!, $remoteObject: String!) {
-    listCrmRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
+export const ListIntegrationRemoteProperties = gql`
+  query ListIntegrationRemoteProperties($integrationId: String!, $remoteObject: String!) {
+    listIntegrationRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
       name
       label
       type

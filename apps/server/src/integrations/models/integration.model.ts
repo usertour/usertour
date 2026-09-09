@@ -74,7 +74,7 @@ export class Integration {
 
 /** Result of starting a CRM OAuth handshake: where to send the browser. */
 @ObjectType()
-export class CrmOAuthStart {
+export class IntegrationOAuthStart {
   @Field(() => String)
   url: string;
 }

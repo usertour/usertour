@@ -1,7 +1,7 @@
 import { BizAttributeTypes } from '@usertour/types';
-import { localToRemoteValue, remoteToLocalValue } from './crm-values';
+import { localToRemoteValue, remoteToLocalValue } from './sync-values';
 
-describe('crm-values', () => {
+describe('sync-values', () => {
   describe('remoteToLocalValue', () => {
     it('clears on empty input', () => {
       expect(remoteToLocalValue('', BizAttributeTypes.String)).toBeNull();

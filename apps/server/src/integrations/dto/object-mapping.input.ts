@@ -14,7 +14,7 @@ import {
 } from 'class-validator';
 
 @InputType()
-export class CrmInboundFieldInput {
+export class SyncInboundFieldInput {
   /** Provider property name. */
   @Field(() => String)
   @IsString()
@@ -29,7 +29,7 @@ export class CrmInboundFieldInput {
 }
 
 @InputType()
-export class CrmOutboundFieldInput {
+export class SyncOutboundFieldInput {
   /** Usertour attribute code name; the provider property name is assigned server-side. */
   @Field(() => String)
   @IsString()
@@ -61,17 +61,17 @@ export class UpsertIntegrationObjectMappingInput {
   @MaxLength(200)
   matchRemoteField?: string | null;
 
-  @Field(() => [CrmInboundFieldInput])
+  @Field(() => [SyncInboundFieldInput])
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CrmInboundFieldInput)
-  inboundFields: CrmInboundFieldInput[];
+  @Type(() => SyncInboundFieldInput)
+  inboundFields: SyncInboundFieldInput[];
 
-  @Field(() => [CrmOutboundFieldInput])
+  @Field(() => [SyncOutboundFieldInput])
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CrmOutboundFieldInput)
-  outboundFields: CrmOutboundFieldInput[];
+  @Type(() => SyncOutboundFieldInput)
+  outboundFields: SyncOutboundFieldInput[];
 
   @Field(() => Boolean, { nullable: true })
   @IsOptional()
@@ -112,7 +112,7 @@ export class ListIntegrationSyncRunsArgs {
 }
 
 @ArgsType()
-export class ListCrmRemotePropertiesArgs {
+export class ListIntegrationRemotePropertiesArgs {
   @Field(() => String)
   @IsString()
   integrationId: string;

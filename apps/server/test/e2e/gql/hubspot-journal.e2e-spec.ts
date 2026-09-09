@@ -1,24 +1,24 @@
 import { getQueueToken } from '@nestjs/bullmq';
 import { INestApplication } from '@nestjs/common';
 import type { Queue } from 'bullmq';
-import { QUEUE_CRM_SYNC_CRON } from '@/common/consts/queen';
+import { QUEUE_OBJECT_SYNC_CRON } from '@/common/consts/queen';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { initialization } from '@/common/initialization/initialization';
-import { CrmJournalService } from '@/integrations/crm/crm-journal.service';
+import { HubspotJournalService } from '@/integrations/sync/hubspot-journal.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { RedisService } from '@/shared/redis.service';
-import { CRM_JOURNAL_POLL_LOCK_KEY } from '@/integrations/crm/crm-journal.service';
-import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
-import { HubspotRateLimitError } from '@/integrations/crm/hubspot-errors';
-import * as journalApi from '@/integrations/crm/hubspot-journal-api';
+import { HUBSPOT_JOURNAL_POLL_LOCK_KEY } from '@/integrations/sync/hubspot-journal.service';
+import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
+import { HubspotRateLimitError } from '@/integrations/sync/hubspot-errors';
+import * as journalApi from '@/integrations/sync/hubspot-journal-api';
 
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 import { createTestApp } from '../create-test-app';
 
-const OFFSET_KEY = 'crm:hubspot:journal:offset';
+const OFFSET_KEY = 'hubspot:journal:offset';
 
 /**
  * Journal-driven inbound sync (ADR 0013 §7): subscription reconciliation
@@ -28,7 +28,7 @@ const OFFSET_KEY = 'crm:hubspot:journal:offset';
 describe('CRM change journal (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let journal: CrmJournalService;
+  let journal: HubspotJournalService;
   let redis: RedisService;
   let cron: Queue;
   let projectId: string;
@@ -40,17 +40,17 @@ describe('CRM change journal (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
-    journal = app.get(CrmJournalService);
+    journal = app.get(HubspotJournalService);
     redis = app.get(RedisService);
     // The booted app registers the real journal poll schedule; pause its
     // queue so the app's own ticks (real HTTP, holding the poll lease) never
     // race the polls these tests drive by hand.
-    cron = app.get<Queue>(getQueueToken(QUEUE_CRM_SYNC_CRON));
+    cron = app.get<Queue>(getQueueToken(QUEUE_OBJECT_SYNC_CRON));
     await cron.pause();
     const config = app.get(ConfigService);
     config.set('hubspot.clientId', 'client-123');
     config.set('hubspot.clientSecret', 'secret');
-    const project = await buildProject(prisma, { name: 'gql-crm-journal' });
+    const project = await buildProject(prisma, { name: 'gql-hubspot-journal' });
     projectId = project.id;
     await initialization(prisma, projectId);
     await buildSubscription(prisma, { projectId, planType: 'growth' });
@@ -111,13 +111,13 @@ describe('CRM change journal (e2e)', () => {
       }
     }
     await redis?.del(OFFSET_KEY);
-    await redis?.del(CRM_JOURNAL_POLL_LOCK_KEY);
+    await redis?.del(HUBSPOT_JOURNAL_POLL_LOCK_KEY);
     await cron?.resume();
     await app?.close();
   });
 
   beforeEach(async () => {
-    await redis.del(CRM_JOURNAL_POLL_LOCK_KEY);
+    await redis.del(HUBSPOT_JOURNAL_POLL_LOCK_KEY);
     jest
       .spyOn(journalApi, 'fetchHubspotAppToken')
       .mockResolvedValue({ accessToken: 'app-token', expiresIn: 1800 });
@@ -239,7 +239,7 @@ describe('CRM change journal (e2e)', () => {
 
   it('skips the tick while another poll holds the journal', async () => {
     const latest = jest.spyOn(journalApi, 'journalLatest').mockResolvedValue(null);
-    const release = await redis.acquireLock(CRM_JOURNAL_POLL_LOCK_KEY);
+    const release = await redis.acquireLock(HUBSPOT_JOURNAL_POLL_LOCK_KEY);
     expect(release).not.toBeNull();
     try {
       expect(await journal.poll()).toBe(0);

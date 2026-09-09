@@ -58,7 +58,7 @@ export class IntegrationObjectMapping {
 
 /** A provider property, as offered by the mapping editor's pickers. */
 @ObjectType()
-export class CrmRemoteProperty {
+export class IntegrationRemoteProperty {
   @Field(() => String)
   name: string;
 

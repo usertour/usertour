@@ -488,17 +488,17 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ d: { id: s.integrationId } }),
   },
   {
-    key: 'integration.startCrmOAuth',
+    key: 'integration.startIntegrationOAuth',
     tier: 'O',
     op: 'mutation',
-    doc: 'mutation($d:StartCrmOAuthInput!){startCrmOAuth(data:$d){__typename}}',
+    doc: 'mutation($d:StartIntegrationOAuthInput!){startIntegrationOAuth(data:$d){__typename}}',
     vars: (s) => ({ d: { environmentId: s.environmentId, provider: 'hubspot' } }),
   },
   {
-    key: 'integration.disconnectCrmIntegration',
+    key: 'integration.disconnectIntegrationOAuth',
     tier: 'O',
     op: 'mutation',
-    doc: 'mutation($d:IntegrationIdInput!){disconnectCrmIntegration(data:$d){__typename}}',
+    doc: 'mutation($d:IntegrationIdInput!){disconnectIntegrationOAuth(data:$d){__typename}}',
     vars: (s) => ({ d: { id: s.integrationId } }),
   },
   {
@@ -516,12 +516,12 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ i: s.integrationId }),
   },
   {
-    key: 'integration.listCrmRemoteProperties',
+    key: 'integration.listIntegrationRemoteProperties',
     tier: 'O',
     op: 'query',
     // Allow direction skipped: reaches the provider's API.
     denyOnly: true,
-    doc: 'query($i:String!,$o:String!){listCrmRemoteProperties(integrationId:$i,remoteObject:$o){__typename}}',
+    doc: 'query($i:String!,$o:String!){listIntegrationRemoteProperties(integrationId:$i,remoteObject:$o){__typename}}',
     vars: (s) => ({ i: s.integrationId, o: 'contact' }),
   },
   {

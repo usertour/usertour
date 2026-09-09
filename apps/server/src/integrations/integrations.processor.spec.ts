@@ -49,7 +49,7 @@ const integrationRow = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const crmSync = { deliverWriteBack: jest.fn() };
+const objectSync = { deliverWriteBack: jest.fn() };
 
 describe('IntegrationsProcessor', () => {
   let prisma: {
@@ -97,8 +97,8 @@ describe('IntegrationsProcessor', () => {
       emailService as any,
       audit as any,
       { decrypt } as any,
-      crmSync as any,
-      {} as any, // crmConnections
+      objectSync as any,
+      {} as any, // connections
     );
   });
 

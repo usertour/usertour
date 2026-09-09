@@ -7,7 +7,7 @@ import {
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { Skeleton } from '@usertour/ui';
-import type { CrmLocalObject, CrmRemoteObject, IntegrationProvider } from '@usertour/types';
+import type { SyncLocalObject, SyncRemoteObject, IntegrationProvider } from '@usertour/types';
 
 /**
  * Presentational pieces shared by the mapping card (read-only) and the
@@ -16,16 +16,16 @@ import type { CrmLocalObject, CrmRemoteObject, IntegrationProvider } from '@user
  * being reviewed.
  */
 
-export type CrmPairSide = 'remote' | 'local';
+export type MappingPairSide = 'remote' | 'local';
 
-export interface CrmSideMarkProps {
-  side: CrmPairSide;
+export interface MappingSideMarkProps {
+  side: MappingPairSide;
   provider: IntegrationProvider;
   className?: string;
 }
 
 /** The brand mark that tells the two sides of a pair apart. */
-export const CrmSideMark = (props: CrmSideMarkProps) => {
+export const MappingSideMark = (props: MappingSideMarkProps) => {
   const { side, provider, className } = props;
   if (side === 'local') {
     return <UsertourIcon2 className={cn('h-4 w-4 shrink-0 text-primary', className)} />;
@@ -36,8 +36,8 @@ export const CrmSideMark = (props: CrmSideMarkProps) => {
   return null;
 };
 
-export interface CrmFieldChipProps {
-  side: CrmPairSide;
+export interface MappingFieldChipProps {
+  side: MappingPairSide;
   provider: IntegrationProvider;
   label: string;
   /** Secondary text after the label (a code name, a property name). */
@@ -52,7 +52,7 @@ export interface CrmFieldChipProps {
 }
 
 /** One side of a pair: mark, label, optional hint. */
-export const CrmFieldChip = (props: CrmFieldChipProps) => {
+export const MappingFieldChip = (props: MappingFieldChipProps) => {
   const { side, provider, label, hint, trailing, placeholder, loading, className } = props;
   return (
     <span
@@ -62,7 +62,7 @@ export const CrmFieldChip = (props: CrmFieldChipProps) => {
         className,
       )}
     >
-      <CrmSideMark side={side} provider={provider} />
+      <MappingSideMark side={side} provider={provider} />
       {loading ? (
         <Skeleton className="h-3.5 w-28" />
       ) : (
@@ -81,7 +81,7 @@ export const CrmFieldChip = (props: CrmFieldChipProps) => {
   );
 };
 
-export interface CrmPairRowProps {
+export interface MappingPairRowProps {
   left: ReactNode;
   right: ReactNode;
   /** `arrow` for a sync direction, `equals` for the match rule. */
@@ -92,7 +92,7 @@ export interface CrmPairRowProps {
 }
 
 /** `left → right` (or `left = right`) on one line, trailing slot at the end. */
-export const CrmPairRow = (props: CrmPairRowProps) => {
+export const MappingPairRow = (props: MappingPairRowProps) => {
   const { left, right, connector, trailing, className } = props;
   return (
     <div className={cn('grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2', className)}>
@@ -108,7 +108,7 @@ export const CrmPairRow = (props: CrmPairRowProps) => {
   );
 };
 
-export interface CrmObjectPairTitleProps {
+export interface ObjectPairTitleProps {
   provider: IntegrationProvider;
   providerName: string;
   remoteLabel: string;
@@ -118,13 +118,13 @@ export interface CrmObjectPairTitleProps {
 }
 
 /** "HubSpot Contacts ↔ Usertour Users", each side captioned with its system. */
-export const CrmObjectPairTitle = (props: CrmObjectPairTitleProps) => {
+export const ObjectPairTitle = (props: ObjectPairTitleProps) => {
   const { provider, providerName, remoteLabel, localLabel, size = 'lg' } = props;
   const nameClass = size === 'lg' ? 'text-xl font-medium tracking-tight' : 'text-base font-medium';
   return (
     <div className="flex items-center gap-3">
       <span className="flex items-center gap-2">
-        <CrmSideMark side="remote" provider={provider} className="h-5 w-5" />
+        <MappingSideMark side="remote" provider={provider} className="h-5 w-5" />
         <span className="flex flex-col leading-tight">
           <span className="text-[11px] text-muted-foreground">{providerName}</span>
           <span className={nameClass}>{remoteLabel}</span>
@@ -134,7 +134,7 @@ export const CrmObjectPairTitle = (props: CrmObjectPairTitleProps) => {
         className={cn('shrink-0 text-muted-foreground', size === 'lg' ? 'h-5 w-5' : 'h-4 w-4')}
       />
       <span className="flex items-center gap-2">
-        <CrmSideMark side="local" provider={provider} className="h-5 w-5" />
+        <MappingSideMark side="local" provider={provider} className="h-5 w-5" />
         <span className="flex flex-col leading-tight">
           <span className="text-[11px] text-muted-foreground">Usertour</span>
           <span className={nameClass}>{localLabel}</span>
@@ -145,11 +145,11 @@ export const CrmObjectPairTitle = (props: CrmObjectPairTitleProps) => {
 };
 
 /** Attributes the SDK rewrites on every visit — a write-back of one is a firehose. */
-export const CRM_HIGH_CHURN_ATTRIBUTES: ReadonlySet<string> = new Set(['last_seen_at']);
+export const SYNC_HIGH_CHURN_ATTRIBUTES: ReadonlySet<string> = new Set(['last_seen_at']);
 
-export const crmObjectLabelKeys = (remoteObject: CrmRemoteObject, localObject: CrmLocalObject) => ({
-  remote: `settings.integrations.crm.mapping.remoteObjects.${remoteObject}`,
-  local: `settings.integrations.crm.mapping.localObjects.${localObject}`,
+export const objectLabelKeys = (remoteObject: SyncRemoteObject, localObject: SyncLocalObject) => ({
+  remote: `settings.integrations.sync.mapping.remoteObjects.${remoteObject}`,
+  local: `settings.integrations.sync.mapping.localObjects.${localObject}`,
   /** "contacts and users" / "companies" — the pair as a phrase, for prose. */
-  records: `settings.integrations.crm.mapping.records.${remoteObject}`,
+  records: `settings.integrations.sync.mapping.records.${remoteObject}`,
 });

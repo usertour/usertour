@@ -65,5 +65,5 @@ export type GlobalConfig = {
   allowPrivateNetworkEgress: boolean;
   authProviders: string[];
   /** CRM providers whose OAuth app credentials this server holds (ADR 0013 §2). */
-  configuredCrmProviders: string[];
+  configuredOAuthProviders: string[];
 };

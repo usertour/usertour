@@ -1,7 +1,7 @@
 import { BizAttributeTypes } from '@usertour/types';
 
 /**
- * Value conversion at the CRM boundary (ADR 0013 §6). Provider values arrive
+ * Value conversion at the provider boundary (ADR 0013 §6). Provider values arrive
  * as strings (HubSpot serializes every property as text); Usertour attribute
  * values are typed JSON. Conversions are total: anything unparseable becomes
  * null, so a bad remote value clears rather than poisons the local one.

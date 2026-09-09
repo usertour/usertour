@@ -1569,7 +1569,7 @@ const translations = {
         failed: '测试事件入队失败',
         disabledHint: '启用集成后才能发送测试事件。',
       },
-      crm: {
+      sync: {
         connect: '连接 {{name}}',
         connectDescription:
           '在你的 {{name}} 账号中授权 Usertour。一个 {{name}} 账号对应一个 Usertour 环境。',
@@ -1589,11 +1589,9 @@ const translations = {
         connectedToast: '已连接 {{name}}',
         deniedToast: '在 {{name}} 中取消了授权。',
         failedToast: '连接 {{name}} 失败,请重试。',
-        licenseToast: '当前套餐不包含 CRM 集成。',
         inUseToast: '这个 {{name}} 账号已经连接到另一个环境,请先在那边断开。',
         autoDisabledBanner:
-          'Usertour 已于 {{time}} 停用此集成:{{name}} 不再接受它的访问,可能是应用被卸载、授权用户被移除,或投递持续失败。重新连接即可恢复同步。',
-        lockedHint: 'Growth 及以上套餐可用',
+          '{{name}} 已于 {{time}} 不再接受 Usertour 的访问,可能是应用被卸载或授权被撤销。同步已暂停,重新连接即可恢复。',
         mapping: {
           remoteObjects: {
             contact: '联系人',
@@ -1669,8 +1667,6 @@ const translations = {
           lastSyncFailed: '上次全量同步失败 {{time}}',
           syncFailed: '启动同步失败',
         },
-        downgradedBanner:
-          '当前套餐不包含 CRM 集成 — 同步已暂停。你仍可以查看和断开连接;升级套餐即可恢复。',
         viewSyncActivity: '同步活动',
         activity: {
           title: '同步活动',
@@ -1693,10 +1689,16 @@ const translations = {
           },
         },
       },
+      crm: {
+        licenseToast: '当前套餐不包含 CRM 集成。',
+        lockedHint: 'Growth 及以上套餐可用',
+        downgradedBanner:
+          '当前套餐不包含 CRM 集成 — 同步已暂停。你仍可以查看和断开连接;升级套餐即可恢复。',
+      },
       messages: {
         title: '最近消息',
         description: '发往该目的地的每条事件保留 30 天,含每次投递尝试。点击一行查看详情。',
-        crmDescription:
+        syncDescription:
           '发送到 {{name}} 的每一次写回都会保留 30 天,含每次投递尝试。点击一行查看详情。',
         empty: '暂无消息。',
         loadMore: '加载更多',

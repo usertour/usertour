@@ -1,20 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import type { Attribute, Integration, IntegrationObjectMapping, Prisma } from '@prisma/client';
-import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
+import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
 import type {
-  CrmInboundField,
-  CrmLocalObject,
-  CrmMatchStrategy,
-  CrmOutboundField,
-  CrmRemoteObject,
+  SyncInboundField,
+  SyncLocalObject,
+  SyncMatchStrategy,
+  SyncOutboundField,
+  SyncRemoteObject,
+  IntegrationProvider,
 } from '@usertour/types';
 import { codeName as codeNameSchema } from '@/api/shared/codename';
 import { ValidationError } from '@/common/errors/errors';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-import { CrmConnectionService } from './crm-connection.service';
-import { CrmJournalService } from './crm-journal.service';
-import { CrmSyncService } from './crm-sync.service';
+import { ProviderConnectionService, GrantRevokedError } from './provider-connection.service';
+import { HubspotJournalService } from './hubspot-journal.service';
+import { ObjectSyncService } from './object-sync.service';
 import {
   attributeBizTypeFor,
   hubspotObjectTypeFor,
@@ -22,11 +23,11 @@ import {
   isSupportedObjectPair,
   localDataTypeFor,
   remotePropertyNameFor,
-} from './crm-mapping.types';
+} from './object-mapping.types';
 import { type HubspotProperty, listHubspotProperties } from './hubspot-crm-api';
 
 /** GraphQL projection of a provider property (metadata for the mapping editor). */
-export interface CrmRemotePropertyView {
+export interface RemotePropertyView {
   name: string;
   label: string;
   type: string;
@@ -42,7 +43,7 @@ export interface UpsertMappingInput {
   localObject: string;
   matchStrategy: string;
   matchRemoteField?: string | null;
-  inboundFields: CrmInboundField[];
+  inboundFields: SyncInboundField[];
   outboundFields: Array<{ local: string }>;
   enabled?: boolean;
   /** Take over existing internal attributes named in inboundFields (ADR 0013 §6). */
@@ -60,15 +61,15 @@ type IntegrationWithProject = Integration & { environment: { projectId: string }
  * sync service; this one only shapes the configuration.
  */
 @Injectable()
-export class CrmMappingService {
-  private readonly logger = new Logger(CrmMappingService.name);
+export class ObjectMappingService {
+  private readonly logger = new Logger(ObjectMappingService.name);
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly connections: CrmConnectionService,
+    private readonly connections: ProviderConnectionService,
     private readonly cache: ProjectCacheService,
-    private readonly sync: CrmSyncService,
-    private readonly journal: CrmJournalService,
+    private readonly sync: ObjectSyncService,
+    private readonly journal: HubspotJournalService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -76,7 +77,7 @@ export class CrmMappingService {
   // ---------------------------------------------------------------------------
 
   async listMappings(integrationId: string): Promise<IntegrationObjectMapping[]> {
-    await this.loadCrmIntegration(integrationId);
+    await this.loadSyncIntegration(integrationId);
     return await this.prisma.integrationObjectMapping.findMany({
       where: { integrationId },
       orderBy: { createdAt: 'asc' },
@@ -87,11 +88,25 @@ export class CrmMappingService {
   async listRemoteProperties(
     integrationId: string,
     remoteObject: string,
-  ): Promise<CrmRemotePropertyView[]> {
-    const integration = await this.loadCrmIntegration(integrationId);
+  ): Promise<RemotePropertyView[]> {
+    const integration = await this.loadSyncIntegration(integrationId);
     this.assertConnected(integration);
     const remote = this.assertRemoteObject(remoteObject);
-    const properties = await this.fetchRemoteProperties(integration, remote);
+    let properties: HubspotProperty[];
+    try {
+      properties = await this.fetchRemoteProperties(integration, remote);
+    } catch (error) {
+      if (error instanceof GrantRevokedError) {
+        // The dashboard is the first to notice a grant revoked out of band
+        // (app uninstalled in the provider): switch the integration off now,
+        // exactly as a sync job would, and say what to do about it.
+        await this.connections.markGrantRevoked(integration.id);
+        throw new ValidationError(
+          `${integration.provider} no longer accepts Usertour's access to this account; reconnect the integration.`,
+        );
+      }
+      throw error;
+    }
     return properties
       .map((property) => ({
         name: property.name,
@@ -110,11 +125,11 @@ export class CrmMappingService {
   // ---------------------------------------------------------------------------
 
   async upsertMapping(input: UpsertMappingInput): Promise<IntegrationObjectMapping> {
-    const integration = await this.loadCrmIntegration(input.integrationId);
+    const integration = await this.loadSyncIntegration(input.integrationId);
     await this.connections.assertEntitled(integration.environmentId);
     this.assertConnected(integration);
     const remoteObject = this.assertRemoteObject(input.remoteObject);
-    const localObject = input.localObject as CrmLocalObject;
+    const localObject = input.localObject as SyncLocalObject;
     if (!isSupportedObjectPair(remoteObject, localObject)) {
       throw new ValidationError(
         `"${remoteObject}" cannot be mapped to "${input.localObject}" — supported pairs: contact ↔ user, company ↔ company.`,
@@ -158,7 +173,7 @@ export class CrmMappingService {
       },
     });
     const previousInbound = existing
-      ? (existing.inboundFields as unknown as CrmInboundField[])
+      ? (existing.inboundFields as unknown as SyncInboundField[])
       : [];
 
     const row = await this.prisma.$transaction(async (tx) => {
@@ -211,7 +226,7 @@ export class CrmMappingService {
 
   /** Remove a mapping (links cascade); its provider-owned attributes become ordinary again. */
   async deleteMapping(input: { integrationId: string; id: string }): Promise<boolean> {
-    const integration = await this.loadCrmIntegration(input.integrationId);
+    const integration = await this.loadSyncIntegration(input.integrationId);
     const mapping = await this.prisma.integrationObjectMapping.findUnique({
       where: { id: input.id },
     });
@@ -222,10 +237,10 @@ export class CrmMappingService {
     await this.prisma.$transaction(async (tx) => {
       await this.releaseAttributes(tx, {
         projectId,
-        localObject: mapping.localObject as CrmLocalObject,
+        localObject: mapping.localObject as SyncLocalObject,
         provider: integration.provider,
         exceptMappingIds: [mapping.id],
-        codeNames: (mapping.inboundFields as unknown as CrmInboundField[]).map(
+        codeNames: (mapping.inboundFields as unknown as SyncInboundField[]).map(
           (field) => field.local,
         ),
       });
@@ -315,10 +330,10 @@ export class CrmMappingService {
       for (const mapping of integration.objectMappings) {
         await this.releaseAttributes(tx, {
           projectId,
-          localObject: mapping.localObject as CrmLocalObject,
+          localObject: mapping.localObject as SyncLocalObject,
           provider: integration.provider,
           exceptMappingIds,
-          codeNames: (mapping.inboundFields as unknown as CrmInboundField[]).map(
+          codeNames: (mapping.inboundFields as unknown as SyncInboundField[]).map(
             (field) => field.local,
           ),
         });
@@ -353,7 +368,7 @@ export class CrmMappingService {
       projectId: string;
       bizType: number;
       provider: string;
-      fields: CrmInboundField[];
+      fields: SyncInboundField[];
       remoteByName: Map<string, HubspotProperty>;
       adoptExisting: boolean;
     },
@@ -432,7 +447,7 @@ export class CrmMappingService {
     tx: Prisma.TransactionClient,
     params: {
       projectId: string;
-      localObject: CrmLocalObject;
+      localObject: SyncLocalObject;
       provider: string;
       exceptMappingIds: string[];
       codeNames: string[];
@@ -454,7 +469,7 @@ export class CrmMappingService {
     });
     const stillSynced = new Set(
       others.flatMap((mapping) =>
-        (mapping.inboundFields as unknown as CrmInboundField[]).map((field) => field.local),
+        (mapping.inboundFields as unknown as SyncInboundField[]).map((field) => field.local),
       ),
     );
     const codeNames = params.codeNames.filter((codeName) => !stillSynced.has(codeName));
@@ -475,8 +490,8 @@ export class CrmMappingService {
   /** Outbound fields must name Usertour-owned attributes; the remote name is assigned here. */
   private async resolveOutbound(
     tx: Prisma.TransactionClient,
-    params: { projectId: string; bizType: number; localObject: CrmLocalObject; locals: string[] },
-  ): Promise<CrmOutboundField[]> {
+    params: { projectId: string; bizType: number; localObject: SyncLocalObject; locals: string[] },
+  ): Promise<SyncOutboundField[]> {
     if (params.locals.length === 0) {
       return [];
     }
@@ -507,7 +522,7 @@ export class CrmMappingService {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  private async loadCrmIntegration(integrationId: string): Promise<IntegrationWithProject> {
+  private async loadSyncIntegration(integrationId: string): Promise<IntegrationWithProject> {
     const row = await this.prisma.integration.findUnique({
       where: { id: integrationId },
       include: { environment: { select: { projectId: true } } },
@@ -515,12 +530,8 @@ export class CrmMappingService {
     if (!row) {
       throw new ValidationError('Integration not found.');
     }
-    if (
-      !CRM_INTEGRATION_PROVIDERS.includes(
-        row.provider as (typeof CRM_INTEGRATION_PROVIDERS)[number],
-      )
-    ) {
-      throw new ValidationError(`"${row.provider}" is not a CRM integration.`);
+    if (!SYNC_INTEGRATION_PROVIDERS.includes(row.provider as IntegrationProvider)) {
+      throw new ValidationError(`"${row.provider}" is not a sync-engine integration.`);
     }
     return row;
   }
@@ -531,7 +542,7 @@ export class CrmMappingService {
     }
   }
 
-  private assertRemoteObject(value: string): CrmRemoteObject {
+  private assertRemoteObject(value: string): SyncRemoteObject {
     if (value !== 'contact' && value !== 'company') {
       throw new ValidationError(`Unknown provider object "${value}".`);
     }
@@ -540,9 +551,9 @@ export class CrmMappingService {
 
   private assertMatchStrategy(
     input: UpsertMappingInput,
-    remoteObject: CrmRemoteObject,
-  ): CrmMatchStrategy {
-    const strategy = input.matchStrategy as CrmMatchStrategy;
+    remoteObject: SyncRemoteObject,
+  ): SyncMatchStrategy {
+    const strategy = input.matchStrategy as SyncMatchStrategy;
     if (strategy !== 'email' && strategy !== 'remoteField') {
       throw new ValidationError(`Unknown match strategy "${input.matchStrategy}".`);
     }
@@ -557,9 +568,9 @@ export class CrmMappingService {
     return strategy;
   }
 
-  private normalizeInbound(fields: CrmInboundField[]): CrmInboundField[] {
+  private normalizeInbound(fields: SyncInboundField[]): SyncInboundField[] {
     const seen = new Set<string>();
-    const result: CrmInboundField[] = [];
+    const result: SyncInboundField[] = [];
     for (const field of fields) {
       const remote = field.remote?.trim();
       const local = field.local?.trim();
@@ -599,9 +610,10 @@ export class CrmMappingService {
 
   private async fetchRemoteProperties(
     integration: Integration,
-    remoteObject: CrmRemoteObject,
+    remoteObject: SyncRemoteObject,
   ): Promise<HubspotProperty[]> {
-    const token = await this.connections.getAccessToken(integration.id);
-    return await listHubspotProperties(token, hubspotObjectTypeFor(remoteObject));
+    return await this.connections.withAccessToken(integration.id, (token) =>
+      listHubspotProperties(token, hubspotObjectTypeFor(remoteObject)),
+    );
   }
 }

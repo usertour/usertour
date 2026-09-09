@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { Integration } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import type { CrmInboundField, CrmRemoteObject } from '@usertour/types';
+import type { SyncInboundField, SyncRemoteObject } from '@usertour/types';
 import { RedisService } from '@/shared/redis.service';
-import { CrmConnectionService, CrmGrantRevokedError } from './crm-connection.service';
-import { hubspotObjectTypeFor, matchRemotePropertyFor } from './crm-mapping.types';
-import { CrmSyncService, type MappingWithIntegration } from './crm-sync.service';
+import { ProviderConnectionService, GrantRevokedError } from './provider-connection.service';
+import { hubspotObjectTypeFor, matchRemotePropertyFor } from './object-mapping.types';
+import { ObjectSyncService, type MappingWithIntegration } from './object-sync.service';
 import { batchReadHubspotObjects } from './hubspot-crm-api';
 import { HubspotRateLimitError } from './hubspot-errors';
 import {
@@ -22,9 +22,9 @@ import {
 } from './hubspot-journal-api';
 
 const PROVIDER = 'hubspot';
-const OFFSET_KEY = 'crm:hubspot:journal:offset';
+const OFFSET_KEY = 'hubspot:journal:offset';
 /** Held while a poll runs: the journal has one cursor, so it has one reader at a time. */
-export const CRM_JOURNAL_POLL_LOCK_KEY = 'crm:hubspot:journal:poll';
+export const HUBSPOT_JOURNAL_POLL_LOCK_KEY = 'hubspot:journal:poll';
 /** Longer than any poll (page cap × page work); a crashed holder frees the journal after this. */
 const POLL_LOCK_TTL_SECONDS = 120;
 /** Redis TTL for the stored offset — the journal itself keeps 3 days. */
@@ -33,7 +33,7 @@ const OFFSET_TTL_SECONDS = 3 * 24 * 60 * 60;
 const MAX_PAGES_PER_POLL = 20;
 const SUBSCRIBED_ACTIONS = ['CREATE', 'UPDATE', 'MERGE'];
 
-const OBJECT_TYPE_FOR_ID: Record<string, CrmRemoteObject> = {
+const OBJECT_TYPE_FOR_ID: Record<string, SyncRemoteObject> = {
   [HUBSPOT_OBJECT_TYPE_IDS.contact]: 'contact',
   [HUBSPOT_OBJECT_TYPE_IDS.company]: 'company',
 };
@@ -48,14 +48,14 @@ const OBJECT_TYPE_FOR_ID: Record<string, CrmRemoteObject> = {
  * sync incrementally too.
  */
 @Injectable()
-export class CrmJournalService {
-  private readonly logger = new Logger(CrmJournalService.name);
+export class HubspotJournalService {
+  private readonly logger = new Logger(HubspotJournalService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-    private readonly connections: CrmConnectionService,
-    private readonly sync: CrmSyncService,
+    private readonly connections: ProviderConnectionService,
+    private readonly sync: ObjectSyncService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -74,13 +74,13 @@ export class CrmJournalService {
     const portalId = Number(integration.remoteAccountId);
     const wanted = new Map<string, string[]>();
     for (const mapping of integration.objectMappings) {
-      const objectTypeId = HUBSPOT_OBJECT_TYPE_IDS[mapping.remoteObject as CrmRemoteObject];
+      const objectTypeId = HUBSPOT_OBJECT_TYPE_IDS[mapping.remoteObject as SyncRemoteObject];
       const matchField = matchRemotePropertyFor(mapping);
       const fields = new Set(wanted.get(objectTypeId) ?? []);
       if (matchField) {
         fields.add(matchField);
       }
-      for (const field of mapping.inboundFields as unknown as CrmInboundField[]) {
+      for (const field of mapping.inboundFields as unknown as SyncInboundField[]) {
         fields.add(field.remote);
       }
       wanted.set(objectTypeId, Array.from(fields).sort());
@@ -199,7 +199,10 @@ export class CrmJournalService {
     // outlives the interval would otherwise overlap the next one (possibly on
     // another instance), both reading the same cursor and the slower one
     // writing an older cursor back. Skip the tick instead.
-    const lease = await this.redis.acquireLease(CRM_JOURNAL_POLL_LOCK_KEY, POLL_LOCK_TTL_SECONDS);
+    const lease = await this.redis.acquireLease(
+      HUBSPOT_JOURNAL_POLL_LOCK_KEY,
+      POLL_LOCK_TTL_SECONDS,
+    );
     if (!lease) {
       return 0;
     }
@@ -211,7 +214,7 @@ export class CrmJournalService {
         // Each page renews the lease: a slow page must not let the lease lapse
         // and a second poller start on the same cursor.
         if (!(await lease.renew())) {
-          this.logger.warn('CRM journal: lost the poll lease mid-poll; stopping this tick');
+          this.logger.warn('HubSpot journal: lost the poll lease mid-poll; stopping this tick');
           break;
         }
         const ref = offset ? await journalNext(token, offset) : await journalLatest(token);
@@ -227,7 +230,7 @@ export class CrmJournalService {
           // the page (applying a record twice is idempotent; skipping it is
           // not — the next full round is up to a day away).
           this.logger.warn(
-            'CRM journal: provider rate limit; leaving the cursor for the next tick',
+            'HubSpot journal: provider rate limit; leaving the cursor for the next tick',
           );
           break;
         }
@@ -246,7 +249,7 @@ export class CrmJournalService {
   ): Promise<{ applied: number; throttled: boolean }> {
     const buckets = new Map<
       string,
-      { portalId: number; remoteObject: CrmRemoteObject; ids: Set<string> }
+      { portalId: number; remoteObject: SyncRemoteObject; ids: Set<string> }
     >();
     for (const event of events) {
       const remoteObject = OBJECT_TYPE_FOR_ID[event.objectTypeId];
@@ -310,7 +313,7 @@ export class CrmJournalService {
         // One account's failure must not hold the journal for every other
         // account (the cursor is global): record it and move on. A revoked
         // grant is definitive, so that account is switched off at once.
-        if (error instanceof CrmGrantRevokedError) {
+        if (error instanceof GrantRevokedError) {
           await this.connections.markGrantRevoked(integration.id);
         }
         await this.sync.recordJournalRun({
@@ -321,7 +324,7 @@ export class CrmJournalService {
           error: (error as Error).message,
         });
         this.logger.warn(
-          `CRM journal: integration ${integration.id} failed to apply changes: ${(error as Error).message}`,
+          `HubSpot journal: integration ${integration.id} failed to apply changes: ${(error as Error).message}`,
         );
         continue;
       }
@@ -339,22 +342,24 @@ export class CrmJournalService {
   }
 
   private async applyBucket(mapping: MappingWithIntegration, ids: string[]): Promise<number> {
-    const inbound = mapping.inboundFields as unknown as CrmInboundField[];
+    const inbound = mapping.inboundFields as unknown as SyncInboundField[];
     const matchField = matchRemotePropertyFor(mapping);
     const properties = Array.from(new Set([matchField, ...inbound.map((field) => field.remote)]));
-    const token = await this.connections.getAccessToken(mapping.integrationId);
-    const objectType = hubspotObjectTypeFor(mapping.remoteObject as CrmRemoteObject);
-    let applied = 0;
-    for (let start = 0; start < ids.length; start += 100) {
-      const remotes = await batchReadHubspotObjects(
-        token,
-        objectType,
-        ids.slice(start, start + 100),
-        properties,
-      );
-      const pairs = await this.sync.applyRecords(mapping, token, remotes);
-      applied += pairs.length;
-    }
+    const objectType = hubspotObjectTypeFor(mapping.remoteObject as SyncRemoteObject);
+    const applied = await this.connections.withAccessToken(mapping.integrationId, async (token) => {
+      let count = 0;
+      for (let start = 0; start < ids.length; start += 100) {
+        const remotes = await batchReadHubspotObjects(
+          token,
+          objectType,
+          ids.slice(start, start + 100),
+          properties,
+        );
+        const pairs = await this.sync.applyRecords(mapping, token, remotes);
+        count += pairs.length;
+      }
+      return count;
+    });
     this.logger.debug(
       `Journal: mapping ${mapping.id} applied ${applied}/${ids.length} changed records`,
     );

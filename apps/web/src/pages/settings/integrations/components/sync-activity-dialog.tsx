@@ -26,14 +26,14 @@ import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
 const RUNNING_POLL_INTERVAL_MS = 5000;
 
-export interface CrmSyncActivityDialogProps {
+export interface SyncActivityDialogProps {
   integrationId: string;
   providerName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-interface CrmSyncActivityListProps {
+interface SyncActivityListProps {
   integrationId: string;
   providerName: string;
 }
@@ -45,7 +45,7 @@ interface CrmSyncActivityListProps {
  * a dialog off the connection card's menu: it is read when something looks
  * wrong, not watched.
  */
-const CrmSyncActivityList = (props: CrmSyncActivityListProps) => {
+const SyncActivityList = (props: SyncActivityListProps) => {
   const { integrationId, providerName } = props;
   const { t } = useTranslation();
   const { runs, loading, refetch, startPolling, stopPolling } = useListIntegrationSyncRunsQuery(
@@ -66,33 +66,33 @@ const CrmSyncActivityList = (props: CrmSyncActivityListProps) => {
     if (!run.remoteObject || !run.localObject) {
       return '';
     }
-    return `${t(`settings.integrations.crm.mapping.remoteObjects.${run.remoteObject}`)} ↔ ${t(
-      `settings.integrations.crm.mapping.localObjects.${run.localObject}`,
+    return `${t(`settings.integrations.sync.mapping.remoteObjects.${run.remoteObject}`)} ↔ ${t(
+      `settings.integrations.sync.mapping.localObjects.${run.localObject}`,
     )}`;
   };
   const kindLabel = (run: IntegrationSyncRun) =>
     run.kind === 'full'
-      ? t('settings.integrations.crm.activity.kindFull')
-      : t('settings.integrations.crm.activity.kindJournal', { name: providerName });
+      ? t('settings.integrations.sync.activity.kindFull')
+      : t('settings.integrations.sync.activity.kindJournal', { name: providerName });
   const recordsLabel = (run: IntegrationSyncRun) =>
     run.kind === 'full'
-      ? t('settings.integrations.crm.activity.fullRecords', {
+      ? t('settings.integrations.sync.activity.fullRecords', {
           records: run.records,
           matched: run.matchedCount,
           unresolved: run.unresolvedCount,
         })
-      : t('settings.integrations.crm.activity.journalRecords', { count: run.records });
+      : t('settings.integrations.sync.activity.journalRecords', { count: run.records });
 
   const statusBadge = (run: IntegrationSyncRun) => {
     if (run.status === 'running') {
       return (
-        <Badge variant="secondary">{t('settings.integrations.crm.activity.statusRunning')}</Badge>
+        <Badge variant="secondary">{t('settings.integrations.sync.activity.statusRunning')}</Badge>
       );
     }
     if (run.status === 'failed') {
       const badge = (
         <Badge variant="destructive" className={cn(run.error && 'cursor-help')}>
-          {t('settings.integrations.crm.activity.statusFailed')}
+          {t('settings.integrations.sync.activity.statusFailed')}
         </Badge>
       );
       if (!run.error) {
@@ -106,7 +106,7 @@ const CrmSyncActivityList = (props: CrmSyncActivityListProps) => {
       );
     }
     return (
-      <Badge variant="success">{t('settings.integrations.crm.activity.statusSucceeded')}</Badge>
+      <Badge variant="success">{t('settings.integrations.sync.activity.statusSucceeded')}</Badge>
     );
   };
 
@@ -115,7 +115,7 @@ const CrmSyncActivityList = (props: CrmSyncActivityListProps) => {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            {t('settings.integrations.crm.activity.description', { name: providerName })}
+            {t('settings.integrations.sync.activity.description', { name: providerName })}
           </p>
           <Button
             variant="outline"
@@ -132,20 +132,20 @@ const CrmSyncActivityList = (props: CrmSyncActivityListProps) => {
         <div className="max-h-[60vh] overflow-y-auto">
           {runs && runs.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              {t('settings.integrations.crm.activity.empty')}
+              {t('settings.integrations.sync.activity.empty')}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-44">
-                    {t('settings.integrations.crm.activity.columns.time')}
+                    {t('settings.integrations.sync.activity.columns.time')}
                   </TableHead>
-                  <TableHead>{t('settings.integrations.crm.activity.columns.sync')}</TableHead>
+                  <TableHead>{t('settings.integrations.sync.activity.columns.sync')}</TableHead>
                   <TableHead className="w-28">
-                    {t('settings.integrations.crm.activity.columns.result')}
+                    {t('settings.integrations.sync.activity.columns.result')}
                   </TableHead>
-                  <TableHead>{t('settings.integrations.crm.activity.columns.records')}</TableHead>
+                  <TableHead>{t('settings.integrations.sync.activity.columns.records')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,7 +168,7 @@ const CrmSyncActivityList = (props: CrmSyncActivityListProps) => {
                             {recordsLabel(run)}
                           </TooltipTrigger>
                           <TooltipContent className="max-w-sm break-words">
-                            {t('settings.integrations.crm.activity.remoteIds', {
+                            {t('settings.integrations.sync.activity.remoteIds', {
                               name: providerName,
                               ids: run.remoteIds.join(', '),
                             })}
@@ -189,7 +189,7 @@ const CrmSyncActivityList = (props: CrmSyncActivityListProps) => {
   );
 };
 
-export const CrmSyncActivityDialog = (props: CrmSyncActivityDialogProps) => {
+export const SyncActivityDialog = (props: SyncActivityDialogProps) => {
   const { integrationId, providerName, open, onOpenChange } = props;
   const { t } = useTranslation();
   return (
@@ -203,12 +203,12 @@ export const CrmSyncActivityDialog = (props: CrmSyncActivityDialogProps) => {
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{t('settings.integrations.crm.activity.title')}</DialogTitle>
+          <DialogTitle>{t('settings.integrations.sync.activity.title')}</DialogTitle>
         </DialogHeader>
-        <CrmSyncActivityList integrationId={integrationId} providerName={providerName} />
+        <SyncActivityList integrationId={integrationId} providerName={providerName} />
       </DialogContent>
     </Dialog>
   );
 };
 
-CrmSyncActivityDialog.displayName = 'CrmSyncActivityDialog';
+SyncActivityDialog.displayName = 'SyncActivityDialog';

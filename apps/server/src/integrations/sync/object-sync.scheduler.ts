@@ -2,16 +2,16 @@ import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { QUEUE_CRM_SYNC_CRON } from '@/common/consts/queen';
-import { CrmJournalService } from './crm-journal.service';
-import { CrmSyncService, FULL_SYNC_INTERVAL_MS, ROUND_STALE_MS } from './crm-sync.service';
+import { QUEUE_OBJECT_SYNC_CRON } from '@/common/consts/queen';
+import { HubspotJournalService } from './hubspot-journal.service';
+import { ObjectSyncService, FULL_SYNC_INTERVAL_MS, ROUND_STALE_MS } from './object-sync.service';
 
-const SCAN_JOB = 'crm-sync-scan';
+const SCAN_JOB = 'object-sync-scan';
 /** Offset from the webhook (:20) and integration (:35) reconcile sweeps. */
 const SCAN_PATTERN = '50 * * * *';
 /** Sync activity is kept as long as the message log. */
 const SYNC_RUN_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
-const JOURNAL_JOB = 'crm-journal-poll';
+const JOURNAL_JOB = 'hubspot-journal-poll';
 /** Provider change journal poll cadence (ADR 0013 §7). */
 const JOURNAL_EVERY_MS = 30_000;
 
@@ -21,15 +21,15 @@ const JOURNAL_EVERY_MS = 30_000;
  * for the whole deployment: mapping churn never touches the scheduler, and
  * load spreads naturally as mappings finish at different times.
  */
-@Processor(QUEUE_CRM_SYNC_CRON)
-export class CrmSyncScheduler extends WorkerHost implements OnModuleInit {
-  private readonly logger = new Logger(CrmSyncScheduler.name);
+@Processor(QUEUE_OBJECT_SYNC_CRON)
+export class ObjectSyncScheduler extends WorkerHost implements OnModuleInit {
+  private readonly logger = new Logger(ObjectSyncScheduler.name);
 
   constructor(
-    @InjectQueue(QUEUE_CRM_SYNC_CRON) private readonly queue: Queue,
+    @InjectQueue(QUEUE_OBJECT_SYNC_CRON) private readonly queue: Queue,
     private readonly prisma: PrismaService,
-    private readonly sync: CrmSyncService,
-    private readonly journal: CrmJournalService,
+    private readonly sync: ObjectSyncService,
+    private readonly journal: HubspotJournalService,
   ) {
     super();
   }
@@ -63,7 +63,7 @@ export class CrmSyncScheduler extends WorkerHost implements OnModuleInit {
         },
       );
     } catch (error) {
-      this.logger.error(`Failed to schedule the CRM sync scan: ${(error as Error).message}`);
+      this.logger.error(`Failed to schedule the object sync scan: ${(error as Error).message}`);
     }
   }
 
@@ -72,7 +72,7 @@ export class CrmSyncScheduler extends WorkerHost implements OnModuleInit {
       try {
         await this.journal.poll();
       } catch (error) {
-        this.logger.warn(`CRM journal poll failed: ${(error as Error).message}`);
+        this.logger.warn(`HubSpot journal poll failed: ${(error as Error).message}`);
       }
       return;
     }
@@ -108,7 +108,7 @@ export class CrmSyncScheduler extends WorkerHost implements OnModuleInit {
         await this.sync.startFullSync(mapping.id, { manual: false });
       } catch (error) {
         this.logger.warn(
-          `CRM sync scan could not start mapping ${mapping.id}: ${(error as Error).message}`,
+          `Object sync scan could not start mapping ${mapping.id}: ${(error as Error).message}`,
         );
       }
     }

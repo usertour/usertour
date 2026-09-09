@@ -3,8 +3,8 @@ import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@ap
 import {
   DeleteIntegration,
   DeleteIntegrationObjectMapping,
-  DisconnectCrmIntegration,
-  ListCrmRemoteProperties,
+  DisconnectIntegrationOAuth,
+  ListIntegrationRemoteProperties,
   ListIntegrationObjectMappings,
   ListIntegrationSyncRuns,
   ListIntegrations,
@@ -13,17 +13,17 @@ import {
   QueryIntegrationSyncedSegments,
   RotateIntegrationInboundToken,
   SendIntegrationTestEvent,
-  StartCrmOAuth,
+  StartIntegrationOAuth,
   UpdateIntegrationInbound,
   UpsertIntegration,
   UpsertIntegrationObjectMapping,
 } from '@usertour/gql';
 import type {
-  CrmInboundField,
-  CrmLocalObject,
-  CrmMatchStrategy,
-  CrmOutboundField,
-  CrmRemoteObject,
+  SyncInboundField,
+  SyncLocalObject,
+  SyncMatchStrategy,
+  SyncOutboundField,
+  SyncRemoteObject,
   IntegrationConfig,
 } from '@usertour/types';
 import type { OutboundMessage } from './outbound-message';
@@ -228,25 +228,25 @@ export const useSendIntegrationTestEventMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useStartCrmOAuthMutation = () => {
+export const useStartIntegrationOAuthMutation = () => {
   // Returns the provider authorize URL; the caller navigates the browser there.
-  const [mutation, { loading, error }] = useMutation(StartCrmOAuth);
+  const [mutation, { loading, error }] = useMutation(StartIntegrationOAuth);
   const invoke = useCallback(
     async (input: { environmentId: string; provider: string }): Promise<string | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (response.data?.startCrmOAuth as { url: string } | undefined)?.url ?? null;
+      return (response.data?.startIntegrationOAuth as { url: string } | undefined)?.url ?? null;
     },
     [mutation],
   );
   return { invoke, loading, error };
 };
 
-export const useDisconnectCrmIntegrationMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DisconnectCrmIntegration);
+export const useDisconnectIntegrationOAuthMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DisconnectIntegrationOAuth);
   const invoke = useCallback(
     async (id: string): Promise<Integration | null> => {
       const response = await mutation({ variables: { data: { id } } });
-      return (response.data?.disconnectCrmIntegration as Integration | undefined) ?? null;
+      return (response.data?.disconnectIntegrationOAuth as Integration | undefined) ?? null;
     },
     [mutation],
   );
@@ -262,12 +262,12 @@ export interface IntegrationObjectMapping {
   createdAt: string;
   updatedAt: string;
   integrationId: string;
-  remoteObject: CrmRemoteObject;
-  localObject: CrmLocalObject;
-  matchStrategy: CrmMatchStrategy;
+  remoteObject: SyncRemoteObject;
+  localObject: SyncLocalObject;
+  matchStrategy: SyncMatchStrategy;
   matchRemoteField?: string | null;
-  inboundFields: CrmInboundField[];
-  outboundFields: CrmOutboundField[];
+  inboundFields: SyncInboundField[];
+  outboundFields: SyncOutboundField[];
   enabled: boolean;
   lastFullSyncAt?: string | null;
   fullSyncStartedAt?: string | null;
@@ -281,8 +281,8 @@ export interface IntegrationSyncRun {
   kind: 'full' | 'journal';
   status: 'running' | 'succeeded' | 'failed';
   mappingId?: string | null;
-  remoteObject?: CrmRemoteObject | null;
-  localObject?: CrmLocalObject | null;
+  remoteObject?: SyncRemoteObject | null;
+  localObject?: SyncLocalObject | null;
   startedAt: string;
   finishedAt?: string | null;
   records: number;
@@ -293,7 +293,7 @@ export interface IntegrationSyncRun {
   remoteIds?: string[] | null;
 }
 
-export interface CrmRemoteProperty {
+export interface IntegrationRemoteProperty {
   name: string;
   label: string;
   type: string;
@@ -305,11 +305,11 @@ export interface CrmRemoteProperty {
 
 export interface UpsertIntegrationObjectMappingInput {
   integrationId: string;
-  remoteObject: CrmRemoteObject;
-  localObject: CrmLocalObject;
-  matchStrategy: CrmMatchStrategy;
+  remoteObject: SyncRemoteObject;
+  localObject: SyncLocalObject;
+  matchStrategy: SyncMatchStrategy;
   matchRemoteField?: string | null;
-  inboundFields: CrmInboundField[];
+  inboundFields: SyncInboundField[];
   outboundFields: Array<{ local: string }>;
   enabled?: boolean;
   adoptExisting?: boolean;
@@ -359,19 +359,19 @@ export const useListIntegrationSyncRunsQuery = (
   };
 };
 
-export const useListCrmRemotePropertiesQuery = (
+export const useListIntegrationRemotePropertiesQuery = (
   integrationId: string,
-  remoteObject: CrmRemoteObject,
+  remoteObject: SyncRemoteObject,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, error, refetch } = useQuery(ListCrmRemoteProperties, {
+  const { data, loading, error, refetch } = useQuery(ListIntegrationRemoteProperties, {
     variables: { integrationId, remoteObject },
     skip: !integrationId,
     fetchPolicy: 'network-only',
     ...options,
   });
   return {
-    properties: data?.listCrmRemoteProperties as CrmRemoteProperty[] | undefined,
+    properties: data?.listIntegrationRemoteProperties as IntegrationRemoteProperty[] | undefined,
     loading,
     error,
     refetch,

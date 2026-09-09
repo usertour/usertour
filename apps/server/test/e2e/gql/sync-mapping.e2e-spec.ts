@@ -3,9 +3,11 @@ import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { initialization } from '@/common/initialization/initialization';
 import { EncryptionService } from '@/shared/encryption.service';
-import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
-import { CrmJournalService } from '@/integrations/crm/crm-journal.service';
-import { CrmSyncService } from '@/integrations/crm/crm-sync.service';
+import { AxiosError, AxiosHeaders } from 'axios';
+import * as hubspotApi from '@/integrations/sync/hubspot-api';
+import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
+import { HubspotJournalService } from '@/integrations/sync/hubspot-journal.service';
+import { ObjectSyncService } from '@/integrations/sync/object-sync.service';
 
 import { graphql, gqlData } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
@@ -18,7 +20,7 @@ const LIST_MAPPINGS = `query ($integrationId: String!) {
   }
 }`;
 const LIST_REMOTE = `query ($integrationId: String!, $remoteObject: String!) {
-  listCrmRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
+  listIntegrationRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
     name label type fieldType readOnly hubspotDefined
   }
 }`;
@@ -92,7 +94,7 @@ describe('GraphQL CRM object mappings (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
-    const project = await buildProject(prisma, { name: 'gql-crm-mapping' });
+    const project = await buildProject(prisma, { name: 'gql-sync-mapping' });
     projectId = project.id;
     await initialization(prisma, projectId); // predefined attributes (email, name, ...)
     await buildSubscription(prisma, { projectId, planType: 'growth' });
@@ -168,13 +170,67 @@ describe('GraphQL CRM object mappings (e2e)', () => {
       },
     });
 
+  const providerRejects = (status: number, code?: string) =>
+    new AxiosError('request failed', 'ERR_BAD_REQUEST', undefined, undefined, {
+      status,
+      statusText: '',
+      headers: new AxiosHeaders(),
+      config: { headers: new AxiosHeaders() },
+      data: code ? { error: code } : {},
+    });
+
+  it('recovers from a rejected access token by refreshing once', async () => {
+    // The provider rejects the stored token (not expired by our clock); one
+    // refresh and the same call goes through.
+    jest
+      .spyOn(hubspotCrmApi, 'listHubspotProperties')
+      .mockRejectedValueOnce(providerRejects(401))
+      .mockResolvedValueOnce(REMOTE_CONTACT_PROPERTIES);
+    const refresh = jest.spyOn(hubspotApi, 'refreshHubspotToken').mockResolvedValue({
+      access_token: 'renewed',
+      refresh_token: 'renewed-refresh',
+      expires_in: 1800,
+    });
+    const res = await graphql(app, {
+      token,
+      query: LIST_REMOTE,
+      variables: { integrationId, remoteObject: 'contact' },
+    });
+    expect(gqlData(res).listIntegrationRemoteProperties.length).toBeGreaterThan(0);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(hubspotCrmApi.listHubspotProperties).toHaveBeenLastCalledWith('renewed', 'contacts');
+  });
+
+  it('treats a refused refresh after a rejected token as a revoked grant: off at once, told to reconnect', async () => {
+    jest.spyOn(hubspotCrmApi, 'listHubspotProperties').mockRejectedValue(providerRejects(401));
+    jest
+      .spyOn(hubspotApi, 'refreshHubspotToken')
+      .mockRejectedValue(providerRejects(400, 'invalid_grant'));
+    try {
+      const res = await graphql(app, {
+        token,
+        query: LIST_REMOTE,
+        variables: { integrationId, remoteObject: 'contact' },
+      });
+      expect(res.body.errors?.[0]?.message).toContain('reconnect');
+      const row = await prisma.integration.findUniqueOrThrow({ where: { id: integrationId } });
+      expect(row.enabled).toBe(false);
+      expect(row.autoDisabledAt).not.toBeNull();
+    } finally {
+      await prisma.integration.update({
+        where: { id: integrationId },
+        data: { enabled: true, autoDisabledAt: null },
+      });
+    }
+  });
+
   it('lists provider properties with the read-only flag', async () => {
     const res = await graphql(app, {
       token,
       query: LIST_REMOTE,
       variables: { integrationId, remoteObject: 'contact' },
     });
-    const rows = gqlData(res).listCrmRemoteProperties;
+    const rows = gqlData(res).listIntegrationRemoteProperties;
     expect(rows.map((row: { name: string }) => row.name)).toContain('lifecyclestage');
     expect(
       rows.find((row: { name: string }) => row.name === 'hs_analytics_num_visits').readOnly,
@@ -184,9 +240,9 @@ describe('GraphQL CRM object mappings (e2e)', () => {
 
   it('creates a contact ↔ user mapping: inbound fields become provider-owned attributes, outbound gets remote names', async () => {
     const syncSubscriptions = jest
-      .spyOn(CrmJournalService.prototype, 'syncSubscriptions')
+      .spyOn(HubspotJournalService.prototype, 'syncSubscriptions')
       .mockResolvedValue(undefined);
-    const startFullSync = jest.spyOn(CrmSyncService.prototype, 'startFullSync');
+    const startFullSync = jest.spyOn(ObjectSyncService.prototype, 'startFullSync');
     const res = await upsert({
       inboundFields: [
         { remote: 'lifecyclestage', local: 'lifecycle_stage' },
