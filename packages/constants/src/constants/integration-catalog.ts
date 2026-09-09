@@ -21,6 +21,8 @@ export interface IntegrationCatalogEntry {
   hasRegion: boolean;
   /** Whether the provider can push cohorts INTO Usertour (ADR 0012). */
   hasInbound: boolean;
+  /** Whether records are linked and fields synced both ways by the object-sync engine (ADR 0013). */
+  hasObjectSync: boolean;
 }
 
 export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
@@ -31,6 +33,7 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     imagePath: '/images/integrations/amplitude.png',
     hasRegion: true,
     hasInbound: true,
+    hasObjectSync: false,
   },
   {
     provider: 'heap',
@@ -39,6 +42,7 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     imagePath: '/images/integrations/heap.png',
     hasRegion: false,
     hasInbound: false,
+    hasObjectSync: false,
   },
   {
     provider: 'mixpanel',
@@ -47,6 +51,7 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     imagePath: '/images/integrations/mixpanel.png',
     hasRegion: true,
     hasInbound: true,
+    hasObjectSync: false,
   },
   {
     provider: 'posthog',
@@ -55,6 +60,7 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     imagePath: '/images/integrations/posthog.png',
     hasRegion: true,
     hasInbound: false,
+    hasObjectSync: false,
   },
   {
     provider: 'segment',
@@ -63,6 +69,7 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     imagePath: '/images/integrations/segment.png',
     hasRegion: true,
     hasInbound: false,
+    hasObjectSync: false,
   },
   {
     provider: 'hubspot',
@@ -71,6 +78,7 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     imagePath: '/images/integrations/hubspot.png',
     hasRegion: false,
     hasInbound: false,
+    hasObjectSync: true,
   },
   {
     provider: 'zapier',
@@ -80,9 +88,14 @@ export const INTEGRATION_CATALOG: IntegrationCatalogEntry[] = [
     externalUrl: 'https://zapier.com/apps/usertour/integrations',
     hasRegion: false,
     hasInbound: false,
+    hasObjectSync: false,
   },
 ];
 
 /** Catalog entry for a synced segment's `source` value, if it names a provider. */
 export const catalogEntryForSource = (source: string | undefined | null) =>
   source ? INTEGRATION_CATALOG.find((entry) => entry.provider === source) : undefined;
+
+/** Providers the object-sync engine serves — routing, teardown and loop gates key on this, not on `kind`. */
+export const SYNC_INTEGRATION_PROVIDERS: readonly IntegrationProvider[] =
+  INTEGRATION_CATALOG.filter((entry) => entry.hasObjectSync).map((entry) => entry.provider);

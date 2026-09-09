@@ -4,10 +4,10 @@ import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { initialization } from '@/common/initialization/initialization';
 import { EncryptionService } from '@/shared/encryption.service';
 import { AxiosError, AxiosHeaders } from 'axios';
-import * as hubspotApi from '@/integrations/crm/hubspot-api';
-import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
-import { CrmJournalService } from '@/integrations/crm/crm-journal.service';
-import { CrmSyncService } from '@/integrations/crm/crm-sync.service';
+import * as hubspotApi from '@/integrations/sync/hubspot-api';
+import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
+import { HubspotJournalService } from '@/integrations/sync/hubspot-journal.service';
+import { ObjectSyncService } from '@/integrations/sync/object-sync.service';
 
 import { graphql, gqlData } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
@@ -20,7 +20,7 @@ const LIST_MAPPINGS = `query ($integrationId: String!) {
   }
 }`;
 const LIST_REMOTE = `query ($integrationId: String!, $remoteObject: String!) {
-  listCrmRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
+  listIntegrationRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
     name label type fieldType readOnly hubspotDefined
   }
 }`;
@@ -94,7 +94,7 @@ describe('GraphQL CRM object mappings (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
-    const project = await buildProject(prisma, { name: 'gql-crm-mapping' });
+    const project = await buildProject(prisma, { name: 'gql-sync-mapping' });
     projectId = project.id;
     await initialization(prisma, projectId); // predefined attributes (email, name, ...)
     await buildSubscription(prisma, { projectId, planType: 'growth' });
@@ -196,7 +196,7 @@ describe('GraphQL CRM object mappings (e2e)', () => {
       query: LIST_REMOTE,
       variables: { integrationId, remoteObject: 'contact' },
     });
-    expect(gqlData(res).listCrmRemoteProperties.length).toBeGreaterThan(0);
+    expect(gqlData(res).listIntegrationRemoteProperties.length).toBeGreaterThan(0);
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(hubspotCrmApi.listHubspotProperties).toHaveBeenLastCalledWith('renewed', 'contacts');
   });
@@ -230,7 +230,7 @@ describe('GraphQL CRM object mappings (e2e)', () => {
       query: LIST_REMOTE,
       variables: { integrationId, remoteObject: 'contact' },
     });
-    const rows = gqlData(res).listCrmRemoteProperties;
+    const rows = gqlData(res).listIntegrationRemoteProperties;
     expect(rows.map((row: { name: string }) => row.name)).toContain('lifecyclestage');
     expect(
       rows.find((row: { name: string }) => row.name === 'hs_analytics_num_visits').readOnly,
@@ -240,9 +240,9 @@ describe('GraphQL CRM object mappings (e2e)', () => {
 
   it('creates a contact ↔ user mapping: inbound fields become provider-owned attributes, outbound gets remote names', async () => {
     const syncSubscriptions = jest
-      .spyOn(CrmJournalService.prototype, 'syncSubscriptions')
+      .spyOn(HubspotJournalService.prototype, 'syncSubscriptions')
       .mockResolvedValue(undefined);
-    const startFullSync = jest.spyOn(CrmSyncService.prototype, 'startFullSync');
+    const startFullSync = jest.spyOn(ObjectSyncService.prototype, 'startFullSync');
     const res = await upsert({
       inboundFields: [
         { remote: 'lifecyclestage', local: 'lifecycle_stage' },

@@ -3,13 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { Public } from '@/common/decorators/public.decorator';
 import { FeatureRequiresLicenseError } from '@/common/errors/errors';
-import { CRM_TX_COOKIE } from '@/utils/cookie';
+import { INTEGRATION_TX_COOKIE } from '@/utils/cookie';
 import {
-  CRM_TX_COOKIE_PATH,
-  CrmAccountInUseError,
-  CrmConnectionService,
-} from './crm-connection.service';
-import { CrmMappingService } from './crm-mapping.service';
+  INTEGRATION_TX_COOKIE_PATH,
+  AccountInUseError,
+  ProviderConnectionService,
+} from './provider-connection.service';
+import { ObjectMappingService } from './object-mapping.service';
 
 /**
  * HubSpot OAuth callback (ADR 0013 §2). The path is registered as a redirect
@@ -19,7 +19,7 @@ import { CrmMappingService } from './crm-mapping.service';
  * self-host image, the web dev server) already routes it. It is a top-level
  * browser navigation, so every outcome ends in a redirect to the settings page.
  *
- * The callback completes only for the browser that ran `startCrmOAuth`: that
+ * The callback completes only for the browser that ran `startIntegrationOAuth`: that
  * mutation sets an httpOnly transaction cookie in its authenticated response
  * (the session cookie is `strict` and would not survive the provider's
  * cross-site redirect), and the cookie must match the state received here.
@@ -32,8 +32,8 @@ export class HubspotOAuthController {
   private readonly logger = new Logger(HubspotOAuthController.name);
 
   constructor(
-    private readonly connections: CrmConnectionService,
-    private readonly mappings: CrmMappingService,
+    private readonly connections: ProviderConnectionService,
+    private readonly mappings: ObjectMappingService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -47,11 +47,11 @@ export class HubspotOAuthController {
     @Res() res: Response,
   ) {
     let projectId: string | undefined;
-    res.clearCookie(CRM_TX_COOKIE, { path: CRM_TX_COOKIE_PATH });
+    res.clearCookie(INTEGRATION_TX_COOKIE, { path: INTEGRATION_TX_COOKIE_PATH });
     try {
       const transaction = await this.connections.verifyState(state ?? '');
       projectId = transaction.projectId;
-      const cookie = req.cookies?.[CRM_TX_COOKIE];
+      const cookie = req.cookies?.[INTEGRATION_TX_COOKIE];
       if (!cookie || cookie !== state) {
         // Not the browser that started this handshake.
         return res.redirect(this.settingsUrl(projectId, { error: 'failed' }));
@@ -75,7 +75,7 @@ export class HubspotOAuthController {
       const reason =
         error instanceof FeatureRequiresLicenseError
           ? 'license'
-          : error instanceof CrmAccountInUseError
+          : error instanceof AccountInUseError
             ? 'inUse'
             : 'failed';
       this.logger.warn(`HubSpot OAuth callback failed (${reason}): ${(error as Error).message}`);

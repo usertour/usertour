@@ -4,9 +4,9 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { randomBytes } from 'node:crypto';
 import { Queue } from 'bullmq';
 import type { Prisma } from '@prisma/client';
-import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
-import type { CrmLocalObject, CrmOutboundField } from '@usertour/types';
-import { QUEUE_CRM_SYNC, QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
+import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
+import type { SyncLocalObject, SyncOutboundField, IntegrationProvider } from '@usertour/types';
+import { QUEUE_OBJECT_SYNC, QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import {
@@ -19,12 +19,12 @@ import {
   type SyncObjectUpdateEnvelope,
   type IntegrationDeliveryJobData,
 } from '../integrations.types';
-import { CrmConnectionService } from './crm-connection.service';
+import { ProviderConnectionService } from './provider-connection.service';
 import {
-  CRM_SYNC_BACKFILL_JOB,
-  CrmSyncService,
+  SYNC_BACKFILL_JOB,
+  ObjectSyncService,
   type MappingWithIntegration,
-} from './crm-sync.service';
+} from './object-sync.service';
 
 const RETRY_JOB_OPTIONS = {
   removeOnComplete: true,
@@ -35,22 +35,22 @@ const RETRY_JOB_OPTIONS = {
 
 /**
  * Outbound incremental sync (ADR 0013 §7, §9): turns a user/company attribute
- * change into a write-back message for every CRM mapping whose outbound
+ * change into a write-back message for every object mapping whose outbound
  * fields it touched — through the shared ledger, so the integration's message
  * log shows it and retries ride the same ladder as every other delivery. A
  * change that came FROM a provider (payload.origin) never goes back out; a
  * record with no link yet is handed to the backfill instead.
  */
 @Injectable()
-export class CrmSyncListener {
-  private readonly logger = new Logger(CrmSyncListener.name);
+export class ObjectSyncListener {
+  private readonly logger = new Logger(ObjectSyncListener.name);
 
   constructor(
     @InjectQueue(QUEUE_INTEGRATION_DELIVERY) private readonly deliveryQueue: Queue,
-    @InjectQueue(QUEUE_CRM_SYNC) private readonly syncQueue: Queue,
+    @InjectQueue(QUEUE_OBJECT_SYNC) private readonly syncQueue: Queue,
     private readonly ledger: OutboundLedgerService,
-    private readonly connections: CrmConnectionService,
-    private readonly sync: CrmSyncService,
+    private readonly connections: ProviderConnectionService,
+    private readonly sync: ObjectSyncService,
   ) {}
 
   @OnEvent(BIZ_ENTITY_CHANGED, { async: true })
@@ -58,19 +58,17 @@ export class CrmSyncListener {
     try {
       if (
         payload.origin &&
-        CRM_INTEGRATION_PROVIDERS.includes(
-          payload.origin as (typeof CRM_INTEGRATION_PROVIDERS)[number],
-        )
+        SYNC_INTEGRATION_PROVIDERS.includes(payload.origin as IntegrationProvider)
       ) {
         return; // the provider's own inbound write — loop gate
       }
-      const byObject = new Map<CrmLocalObject, MappingWithIntegration[]>();
+      const byObject = new Map<SyncLocalObject, MappingWithIntegration[]>();
       let entitled: boolean | null = null;
       for (const change of payload.changes) {
         if (change.action === 'deleted') {
           continue;
         }
-        const localObject: CrmLocalObject = change.entity === 'user' ? 'user' : 'company';
+        const localObject: SyncLocalObject = change.entity === 'user' ? 'user' : 'company';
         if (!byObject.has(localObject)) {
           byObject.set(
             localObject,
@@ -93,7 +91,7 @@ export class CrmSyncListener {
       }
     } catch (error) {
       // Side-channel: never propagate into the write path.
-      this.logger.error(`CRM incremental sync failed: ${(error as Error).message}`);
+      this.logger.error(`Object sync (incremental) failed: ${(error as Error).message}`);
     }
   }
 
@@ -103,7 +101,7 @@ export class CrmSyncListener {
     change: EntityChange,
   ): Promise<void> {
     const changedKeys = Object.keys(change.previousAttributes ?? {});
-    const outbound = mapping.outboundFields as unknown as CrmOutboundField[];
+    const outbound = mapping.outboundFields as unknown as SyncOutboundField[];
     const touchesOutbound = outbound.some((field) => changedKeys.includes(field.local));
     const matchKey = mapping.matchStrategy === 'email' ? 'email' : null;
 
@@ -127,9 +125,9 @@ export class CrmSyncListener {
 
   private async enqueueBackfill(mappingId: string, localId: string): Promise<void> {
     await this.syncQueue.add(
-      CRM_SYNC_BACKFILL_JOB,
+      SYNC_BACKFILL_JOB,
       { mappingId, localId },
-      { ...RETRY_JOB_OPTIONS, jobId: `crm-backfill-${mappingId}-${localId}-${Date.now()}` },
+      { ...RETRY_JOB_OPTIONS, jobId: `sync-backfill-${mappingId}-${localId}-${Date.now()}` },
     );
   }
 

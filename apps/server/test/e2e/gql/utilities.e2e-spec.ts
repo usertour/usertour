@@ -77,7 +77,7 @@ describe('GraphQL utilities (e2e)', () => {
         needsSystemAdminSetup
         require2FA
         authProviders
-        configuredCrmProviders
+        configuredOAuthProviders
       }
     }`;
 
@@ -103,9 +103,9 @@ describe('GraphQL utilities (e2e)', () => {
       for (const p of config.authProviders) {
         expect(typeof p).toBe('string');
       }
-      // configuredCrmProviders mirrors which CRM app credentials the server holds.
-      expect(Array.isArray(config.configuredCrmProviders)).toBe(true);
-      for (const provider of config.configuredCrmProviders) {
+      // configuredOAuthProviders mirrors which CRM app credentials the server holds.
+      expect(Array.isArray(config.configuredOAuthProviders)).toBe(true);
+      for (const provider of config.configuredOAuthProviders) {
         expect(typeof provider).toBe('string');
       }
       // Over HTTP, apiUrl is always a string: configured API_URL or derived

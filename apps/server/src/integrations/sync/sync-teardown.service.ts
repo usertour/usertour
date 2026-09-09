@@ -1,40 +1,40 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
-import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
+import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
 import {
   ENVIRONMENT_DELETING,
   type EnvironmentDeletingPayload,
 } from '@/environments/environment.events';
-import { CrmConnectionService } from './crm-connection.service';
-import { CrmJournalService } from './crm-journal.service';
-import { CrmMappingService } from './crm-mapping.service';
+import { ProviderConnectionService } from './provider-connection.service';
+import { HubspotJournalService } from './hubspot-journal.service';
+import { ObjectMappingService } from './object-mapping.service';
 
 /**
- * What a CRM integration owns beyond its own rows (ADR 0013): provider-owned
+ * What a sync-engine integration owns beyond its own rows (ADR 0013): provider-owned
  * attributes on the project, the grant at the provider, and the account's
  * change subscriptions. Rows cascade on delete; these do not, so every path
- * that removes a CRM integration runs this first.
+ * that removes such an integration runs this first.
  */
 @Injectable()
-export class CrmTeardownService {
-  private readonly logger = new Logger(CrmTeardownService.name);
+export class SyncTeardownService {
+  private readonly logger = new Logger(SyncTeardownService.name);
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mappings: CrmMappingService,
-    private readonly journal: CrmJournalService,
-    private readonly connections: CrmConnectionService,
+    private readonly mappings: ObjectMappingService,
+    private readonly journal: HubspotJournalService,
+    private readonly connections: ProviderConnectionService,
   ) {}
 
-  static isCrm(provider: string): boolean {
-    return (CRM_INTEGRATION_PROVIDERS as readonly string[]).includes(provider);
+  static isSyncProvider(provider: string): boolean {
+    return (SYNC_INTEGRATION_PROVIDERS as readonly string[]).includes(provider);
   }
 
   /** Release attributes, drop subscriptions, revoke the grant; the row itself is the caller's. */
   async teardown(integrationId: string): Promise<void> {
     const row = await this.prisma.integration.findUnique({ where: { id: integrationId } });
-    if (!row || !CrmTeardownService.isCrm(row.provider)) {
+    if (!row || !SyncTeardownService.isSyncProvider(row.provider)) {
       return;
     }
     await this.mappings.releaseAllForIntegration(row.id);
@@ -53,7 +53,7 @@ export class CrmTeardownService {
     const rows = await this.prisma.integration.findMany({
       where: {
         environmentId: payload.environmentId,
-        provider: { in: [...CRM_INTEGRATION_PROVIDERS] },
+        provider: { in: [...SYNC_INTEGRATION_PROVIDERS] },
       },
       select: { id: true },
     });

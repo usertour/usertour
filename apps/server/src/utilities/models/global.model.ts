@@ -47,5 +47,5 @@ export class GlobalConfig {
    * rest — relevant to self-hosted instances, which register their own app.
    */
   @Field(() => [String])
-  configuredCrmProviders: string[];
+  configuredOAuthProviders: string[];
 }

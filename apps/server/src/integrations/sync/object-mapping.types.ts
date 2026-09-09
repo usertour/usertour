@@ -1,10 +1,10 @@
 import {
-  CRM_REMOTE_PROPERTY_GROUP,
-  crmLocalDataTypeFor,
-  crmRemotePropertyNameFor,
+  SYNC_REMOTE_PROPERTY_GROUP,
+  localDataTypeFor,
+  remotePropertyNameFor,
 } from '@usertour/constants';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import type { CrmLocalObject, CrmRemoteObject } from '@usertour/types';
+import type { SyncLocalObject, SyncRemoteObject } from '@usertour/types';
 import type {
   HubspotObjectType,
   HubspotProperty,
@@ -12,23 +12,25 @@ import type {
 } from './hubspot-crm-api';
 
 /** The object pairs the mapping layer supports in this milestone (ADR 0013 §1). */
-export const CRM_OBJECT_PAIRS: ReadonlyArray<{ remote: CrmRemoteObject; local: CrmLocalObject }> = [
+export const SYNC_OBJECT_PAIRS: ReadonlyArray<{
+  remote: SyncRemoteObject;
+  local: SyncLocalObject;
+}> = [
   { remote: 'contact', local: 'user' },
   { remote: 'company', local: 'company' },
 ];
 
 export const isSupportedObjectPair = (remote: string, local: string): boolean =>
-  CRM_OBJECT_PAIRS.some((pair) => pair.remote === remote && pair.local === local);
+  SYNC_OBJECT_PAIRS.some((pair) => pair.remote === remote && pair.local === local);
 
-export const hubspotObjectTypeFor = (remote: CrmRemoteObject): HubspotObjectType =>
+export const hubspotObjectTypeFor = (remote: SyncRemoteObject): HubspotObjectType =>
   remote === 'contact' ? 'contacts' : 'companies';
 
-export const attributeBizTypeFor = (local: CrmLocalObject): AttributeBizTypes =>
+export const attributeBizTypeFor = (local: SyncLocalObject): AttributeBizTypes =>
   local === 'user' ? AttributeBizTypes.User : AttributeBizTypes.Company;
 
-/** Remote property type → Usertour attribute data type (ADR 0013 §6). */
-export const localDataTypeFor = (property: Pick<HubspotProperty, 'type' | 'fieldType'>): number =>
-  crmLocalDataTypeFor(property);
+/** Remote property type → Usertour attribute data type (ADR 0013 §6); shared with the dashboard. */
+export { localDataTypeFor };
 
 /**
  * The provider property records are matched on: the chosen one, or the
@@ -47,20 +49,20 @@ export const isRemotePropertyWritable = (property: HubspotProperty): boolean =>
   !(property.modificationMetadata?.readOnlyValue || property.calculated);
 
 /** The provider-side group every Usertour write-back property lives in. */
-export const CRM_REMOTE_GROUP = CRM_REMOTE_PROPERTY_GROUP;
+export const SYNC_REMOTE_GROUP = SYNC_REMOTE_PROPERTY_GROUP;
 
 /** Provider property name for a Usertour-owned attribute. */
-export const remotePropertyNameFor = crmRemotePropertyNameFor;
+export { remotePropertyNameFor };
 
 /** Provider property definition for a Usertour-owned attribute (created on demand). */
 export const remotePropertyDefinitionFor = (
-  local: CrmLocalObject,
+  local: SyncLocalObject,
   attribute: { codeName: string; displayName: string; dataType: number },
 ): HubspotPropertyDefinition => {
   const base = {
     name: remotePropertyNameFor(local, attribute.codeName),
     label: `Usertour: ${attribute.displayName || attribute.codeName}`,
-    groupName: CRM_REMOTE_GROUP.name,
+    groupName: SYNC_REMOTE_GROUP.name,
   };
   switch (attribute.dataType) {
     case BizAttributeTypes.Number:

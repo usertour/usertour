@@ -4,21 +4,21 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 import { EncryptionService } from '@/shared/encryption.service';
-import { CRM_TX_COOKIE } from '@/utils/cookie';
-import * as hubspotApi from '@/integrations/crm/hubspot-api';
-import { CrmJournalService } from '@/integrations/crm/crm-journal.service';
-import { CrmSyncService } from '@/integrations/crm/crm-sync.service';
+import { INTEGRATION_TX_COOKIE } from '@/utils/cookie';
+import * as hubspotApi from '@/integrations/sync/hubspot-api';
+import { HubspotJournalService } from '@/integrations/sync/hubspot-journal.service';
+import { ObjectSyncService } from '@/integrations/sync/object-sync.service';
 
 import { graphql, gqlData, gqlErrorCode } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 import { createTestApp } from '../create-test-app';
 
-const START_OAUTH = `mutation ($data: StartCrmOAuthInput!) {
-  startCrmOAuth(data: $data) { url }
+const START_OAUTH = `mutation ($data: StartIntegrationOAuthInput!) {
+  startIntegrationOAuth(data: $data) { url }
 }`;
 const DISCONNECT = `mutation ($data: IntegrationIdInput!) {
-  disconnectCrmIntegration(data: $data) { id enabled connected remoteAccountId remoteAccountLabel }
+  disconnectIntegrationOAuth(data: $data) { id enabled connected remoteAccountId remoteAccountLabel }
 }`;
 const UPSERT_INTEGRATION = `mutation ($data: UpsertIntegrationInput!) {
   upsertIntegration(data: $data) { id }
@@ -46,7 +46,7 @@ describe('GraphQL CRM connections (e2e)', () => {
     prisma = app.get(PrismaService);
     configService = app.get(ConfigService);
 
-    const project = await buildProject(prisma, { name: 'gql-crm-connection' });
+    const project = await buildProject(prisma, { name: 'gql-sync-connection' });
     projectId = project.id;
     // CRM integrations are Growth+ on cloud (ADR 0013 §10).
     await buildSubscription(prisma, { projectId, planType: 'growth' });
@@ -91,9 +91,9 @@ describe('GraphQL CRM connections (e2e)', () => {
       query: START_OAUTH,
       variables: { data: { environmentId, provider: 'hubspot' } },
     });
-    const state = new URL(gqlData(start).startCrmOAuth.url).searchParams.get('state') ?? '';
+    const state = new URL(gqlData(start).startIntegrationOAuth.url).searchParams.get('state') ?? '';
     const cookie = (start.headers['set-cookie'] as unknown as string[] | undefined)?.find(
-      (header) => header.startsWith(`${CRM_TX_COOKIE}=`),
+      (header) => header.startsWith(`${INTEGRATION_TX_COOKIE}=`),
     );
     return { state, cookie: cookie?.split(';')[0] ?? '' };
   };
@@ -124,7 +124,7 @@ describe('GraphQL CRM connections (e2e)', () => {
       query: START_OAUTH,
       variables: { data: { environmentId, provider: 'hubspot' } },
     });
-    const url = new URL(gqlData(res).startCrmOAuth.url);
+    const url = new URL(gqlData(res).startIntegrationOAuth.url);
     expect(url.origin + url.pathname).toBe(hubspotApi.HUBSPOT_AUTHORIZE_URL);
     expect(url.searchParams.get('client_id')).toBe('client-123');
     expect(url.searchParams.get('scope')).toBe(hubspotApi.HUBSPOT_OAUTH_SCOPES.join(' '));
@@ -134,7 +134,7 @@ describe('GraphQL CRM connections (e2e)', () => {
       .verifyAsync<{ tokenType: string; environmentId: string; projectId: string; sub: string }>(
         state,
       );
-    expect(claims).toMatchObject({ tokenType: 'crm-oauth-tx', environmentId, projectId });
+    expect(claims).toMatchObject({ tokenType: 'integration-oauth-tx', environmentId, projectId });
     // The state carries the user as `sub`, never `userId`: it must not double as a session token.
     expect(claims).not.toHaveProperty('userId');
     expect(claims.sub).toBeTruthy();
@@ -148,7 +148,7 @@ describe('GraphQL CRM connections (e2e)', () => {
     // The cookie rides the mutation's own response — the one thing a forwarded
     // link cannot carry — scoped to the callback path.
     const setCookie = (res.headers['set-cookie'] as unknown as string[]).join(';');
-    expect(setCookie).toContain(`${CRM_TX_COOKIE}=`);
+    expect(setCookie).toContain(`${INTEGRATION_TX_COOKIE}=`);
     expect(setCookie).toContain('HttpOnly');
     expect(setCookie).toContain('SameSite=Lax');
     expect(setCookie).toContain('Path=/api/integrations/hubspot/oauth');
@@ -255,13 +255,13 @@ describe('GraphQL CRM connections (e2e)', () => {
       data: { mappingId: mapping.id, localId: 'user-1', remoteId: 'old-1', matchedBy: 'email' },
     });
     const removePortal = jest
-      .spyOn(CrmJournalService.prototype, 'removePortalSubscriptions')
+      .spyOn(HubspotJournalService.prototype, 'removePortalSubscriptions')
       .mockResolvedValue(undefined);
     const syncSubscriptions = jest
-      .spyOn(CrmJournalService.prototype, 'syncSubscriptions')
+      .spyOn(HubspotJournalService.prototype, 'syncSubscriptions')
       .mockResolvedValue(undefined);
     const startFullSync = jest
-      .spyOn(CrmSyncService.prototype, 'startFullSync')
+      .spyOn(ObjectSyncService.prototype, 'startFullSync')
       .mockResolvedValue(null as never);
     jest.spyOn(hubspotApi, 'exchangeHubspotCode').mockResolvedValue({
       access_token: 'access-2',
@@ -410,7 +410,7 @@ describe('GraphQL CRM connections (e2e)', () => {
       variables: { data: { id: row.id } },
     });
     // The account id stays (bookkeeping for the next connect); the grant is gone.
-    expect(gqlData(res).disconnectCrmIntegration).toMatchObject({
+    expect(gqlData(res).disconnectIntegrationOAuth).toMatchObject({
       id: row.id,
       enabled: false,
       connected: false,

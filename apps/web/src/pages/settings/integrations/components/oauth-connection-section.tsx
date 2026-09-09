@@ -5,8 +5,8 @@ import { format } from 'date-fns';
 import { getErrorMessage } from '@usertour/helpers';
 import {
   type Integration,
-  useDisconnectCrmIntegrationMutation,
-  useStartCrmOAuthMutation,
+  useDisconnectIntegrationOAuthMutation,
+  useStartIntegrationOAuthMutation,
 } from '@usertour/hooks';
 import { RiHistoryLine, RiLinkM, RiLinkUnlinkM, RiMore2Line } from '@usertour/icons';
 import {
@@ -23,14 +23,14 @@ import {
 import type { IntegrationCatalogEntry } from '@usertour/constants';
 import { useAppContext } from '@/contexts/app-context';
 import { ExternalLink } from '@/components/external-link';
-import { CrmSyncActivityDialog } from './crm-sync-activity-dialog';
+import { SyncActivityDialog } from './sync-activity-dialog';
 
 // Where a self-hosting operator learns to register the provider app.
-const CRM_SETUP_DOCS_HREF: Partial<Record<IntegrationCatalogEntry['provider'], string>> = {
+const SYNC_SETUP_DOCS_HREF: Partial<Record<IntegrationCatalogEntry['provider'], string>> = {
   hubspot: 'https://docs.usertour.io/integrations/hubspot',
 };
 
-export interface CrmConnectionSectionProps {
+export interface OAuthConnectionSectionProps {
   entry: IntegrationCatalogEntry;
   integration: Integration | undefined;
   environmentId: string;
@@ -41,26 +41,26 @@ export interface CrmConnectionSectionProps {
 const RETURN_PARAMS = ['connected', 'error', 'provider'] as const;
 
 /**
- * Connection card for a CRM provider (ADR 0013 §2): the OAuth handshake is a
+ * Connection card for an OAuth-connected provider (ADR 0013 §2): the OAuth handshake is a
  * full-page round trip — Connect asks the server for the authorize URL and
  * navigates there; the server callback creates the row and redirects back
  * with `?connected=1` or `?error=...`, which this card turns into a toast.
  */
-export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
+export const OAuthConnectionSection = (props: OAuthConnectionSectionProps) => {
   const { entry, integration, environmentId, entitled } = props;
   const { isViewOnly, globalConfig } = useAppContext();
   // Until the global config arrives assume configured, so the setup note
   // never flashes on cloud.
   const configured = globalConfig
-    ? (globalConfig.configuredCrmProviders ?? []).includes(entry.provider)
+    ? (globalConfig.configuredOAuthProviders ?? []).includes(entry.provider)
     : true;
   const { toast } = useToast();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
-  const { invoke: startOAuth, loading: starting } = useStartCrmOAuthMutation();
-  const { invoke: disconnect, loading: disconnecting } = useDisconnectCrmIntegrationMutation();
+  const { invoke: startOAuth, loading: starting } = useStartIntegrationOAuthMutation();
+  const { invoke: disconnect, loading: disconnecting } = useDisconnectIntegrationOAuthMutation();
   const connected = !!integration?.connected;
   const canWrite = !isViewOnly && entitled;
   const name = entry.name;
@@ -72,7 +72,10 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
       return;
     }
     if (returned) {
-      toast({ variant: 'success', title: t('settings.integrations.crm.connectedToast', { name }) });
+      toast({
+        variant: 'success',
+        title: t('settings.integrations.sync.connectedToast', { name }),
+      });
     } else {
       const key =
         error === 'denied'
@@ -82,7 +85,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             : error === 'inUse'
               ? 'inUseToast'
               : 'failedToast';
-      toast({ variant: 'destructive', title: t(`settings.integrations.crm.${key}`, { name }) });
+      toast({ variant: 'destructive', title: t(`settings.integrations.sync.${key}`, { name }) });
     }
     const next = new URLSearchParams(searchParams);
     for (const param of RETURN_PARAMS) {
@@ -99,7 +102,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
       } else {
         toast({
           variant: 'destructive',
-          title: t('settings.integrations.crm.failedToast', { name }),
+          title: t('settings.integrations.sync.failedToast', { name }),
         });
       }
     } catch (error) {
@@ -116,13 +119,13 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
       if (saved) {
         toast({
           variant: 'success',
-          title: t('settings.integrations.crm.disconnectSuccess', { name }),
+          title: t('settings.integrations.sync.disconnectSuccess', { name }),
         });
         setDisconnectOpen(false);
       } else {
         toast({
           variant: 'destructive',
-          title: t('settings.integrations.crm.disconnectFailure', { name }),
+          title: t('settings.integrations.sync.disconnectFailure', { name }),
         });
       }
     } catch (error) {
@@ -142,9 +145,9 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
           <div className="flex items-center gap-3">
             <h3 className="text-xl font-medium tracking-tight">{name}</h3>
             {connected ? (
-              <Badge variant="success">{t('settings.integrations.crm.connected')}</Badge>
+              <Badge variant="success">{t('settings.integrations.sync.connected')}</Badge>
             ) : (
-              <Badge variant="secondary">{t('settings.integrations.crm.notConnected')}</Badge>
+              <Badge variant="secondary">{t('settings.integrations.sync.notConnected')}</Badge>
             )}
           </div>
         </div>
@@ -155,7 +158,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
                 type="button"
                 variant="ghost"
                 size="icon"
-                aria-label={t('settings.integrations.crm.moreActions')}
+                aria-label={t('settings.integrations.sync.moreActions')}
               >
                 <RiMore2Line className="h-4 w-4" />
               </Button>
@@ -163,14 +166,14 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => setActivityOpen(true)}>
                 <RiHistoryLine className="mr-2 h-4 w-4" />
-                {t('settings.integrations.crm.viewSyncActivity')}
+                {t('settings.integrations.sync.viewSyncActivity')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 disabled={!canWrite || starting}
                 onSelect={() => void handleConnect()}
               >
                 <RiLinkM className="mr-2 h-4 w-4" />
-                {t('settings.integrations.crm.reconnect')}
+                {t('settings.integrations.sync.reconnect')}
               </DropdownMenuItem>
               {/* Disconnect stays available after a downgrade (the banner
                   says so, and the server does not gate it); only reconnecting
@@ -181,7 +184,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
                 onSelect={() => setDisconnectOpen(true)}
               >
                 <RiLinkUnlinkM className="mr-2 h-4 w-4" />
-                {t('settings.integrations.crm.disconnect')}
+                {t('settings.integrations.sync.disconnect')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -192,7 +195,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             disabled={!canWrite}
             onClick={() => void handleConnect()}
           >
-            {t('settings.integrations.crm.connect', { name })}
+            {t('settings.integrations.sync.connect', { name })}
           </LoadingButton>
         ) : null}
       </div>
@@ -201,7 +204,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
         <div className="flex-1">
           {connected ? (
             <>
-              <p className="text-sm font-medium">{t('settings.integrations.crm.account')}</p>
+              <p className="text-sm font-medium">{t('settings.integrations.sync.account')}</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {integration?.remoteAccountLabel ?? integration?.remoteAccountId}
                 {integration?.remoteAccountLabel && integration?.remoteAccountId && (
@@ -211,16 +214,16 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
             </>
           ) : configured ? (
             <p className="text-sm text-muted-foreground">
-              {t('settings.integrations.crm.connectDescription', { name })}
+              {t('settings.integrations.sync.connectDescription', { name })}
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              {t('settings.integrations.crm.notConfigured', { name })}
-              {CRM_SETUP_DOCS_HREF[entry.provider] && (
+              {t('settings.integrations.sync.notConfigured', { name })}
+              {SYNC_SETUP_DOCS_HREF[entry.provider] && (
                 <>
                   {' '}
-                  <ExternalLink href={CRM_SETUP_DOCS_HREF[entry.provider] as string}>
-                    {t('settings.integrations.crm.notConfiguredDocs')}
+                  <ExternalLink href={SYNC_SETUP_DOCS_HREF[entry.provider] as string}>
+                    {t('settings.integrations.sync.notConfiguredDocs')}
                   </ExternalLink>
                 </>
               )}
@@ -231,7 +234,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
 
       {integration?.autoDisabledAt && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {t('settings.integrations.crm.autoDisabledBanner', {
+          {t('settings.integrations.sync.autoDisabledBanner', {
             name,
             time: format(new Date(integration.autoDisabledAt), 'PP'),
           })}
@@ -239,7 +242,7 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
       )}
 
       {integration && (
-        <CrmSyncActivityDialog
+        <SyncActivityDialog
           integrationId={integration.id}
           providerName={name}
           open={activityOpen}
@@ -248,9 +251,9 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
       )}
 
       <DestructiveConfirmDialog
-        title={t('settings.integrations.crm.disconnectConfirmTitle', { name })}
-        description={t('settings.integrations.crm.disconnectConfirmDescription')}
-        confirmLabel={t('settings.integrations.crm.disconnect')}
+        title={t('settings.integrations.sync.disconnectConfirmTitle', { name })}
+        description={t('settings.integrations.sync.disconnectConfirmDescription')}
+        confirmLabel={t('settings.integrations.sync.disconnect')}
         cancelLabel={t('settings.common.cancel')}
         open={disconnectOpen}
         onOpenChange={setDisconnectOpen}
@@ -261,4 +264,4 @@ export const CrmConnectionSection = (props: CrmConnectionSectionProps) => {
   );
 };
 
-CrmConnectionSection.displayName = 'CrmConnectionSection';
+OAuthConnectionSection.displayName = 'OAuthConnectionSection';

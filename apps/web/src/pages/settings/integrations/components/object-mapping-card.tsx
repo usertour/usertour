@@ -7,7 +7,7 @@ import {
   type Integration,
   useDeleteIntegrationObjectMappingMutation,
   useListAttributesQuery,
-  useListCrmRemotePropertiesQuery,
+  useListIntegrationRemotePropertiesQuery,
   useListIntegrationObjectMappingsQuery,
   useListIntegrationSyncRunsQuery,
   useRunIntegrationObjectMappingSyncMutation,
@@ -31,29 +31,29 @@ import {
   useToast,
 } from '@usertour/ui';
 import {
-  CRM_ROUND_STALE_MS,
+  SYNC_ROUND_STALE_MS,
   type IntegrationCatalogEntry,
-  crmRemotePropertyNameFor,
+  remotePropertyNameFor,
 } from '@usertour/constants';
-import { AttributeBizTypes, type CrmLocalObject, type CrmRemoteObject } from '@usertour/types';
+import { AttributeBizTypes, type SyncLocalObject, type SyncRemoteObject } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
-import { CrmMappingDialog } from './crm-mapping-dialog';
+import { ObjectMappingDialog } from './object-mapping-dialog';
 import {
-  CrmFieldChip,
-  CrmObjectPairTitle,
-  CrmPairRow,
-  crmObjectLabelKeys,
-} from './crm-mapping-parts';
+  MappingFieldChip,
+  ObjectPairTitle,
+  MappingPairRow,
+  objectLabelKeys,
+} from './object-mapping-parts';
 
 const SYNC_POLL_INTERVAL_MS = 3000;
 
-export interface CrmMappingCardProps {
+export interface ObjectMappingCardProps {
   entry: IntegrationCatalogEntry;
   integration: Integration;
-  remoteObject: CrmRemoteObject;
-  localObject: CrmLocalObject;
+  remoteObject: SyncRemoteObject;
+  localObject: SyncLocalObject;
   entitled: boolean;
 }
 
@@ -61,16 +61,16 @@ export interface CrmMappingCardProps {
  * One object pair on the provider page: the saved mapping laid out read-only
  * (match rule, fields in, fields out, sync status) with Edit / Sync now /
  * Remove, or a set-up prompt while there is none. Editing happens in
- * CrmMappingDialog so a half-finished change never sits on the page.
+ * ObjectMappingDialog so a half-finished change never sits on the page.
  */
-export const CrmMappingCard = (props: CrmMappingCardProps) => {
+export const ObjectMappingCard = (props: ObjectMappingCardProps) => {
   const { entry, integration, remoteObject, localObject, entitled } = props;
   const { t } = useTranslation();
   const { toast } = useToast();
   const { isViewOnly, project } = useAppContext();
   const name = entry.name;
   const canWrite = !isViewOnly && entitled;
-  const labels = crmObjectLabelKeys(remoteObject, localObject);
+  const labels = objectLabelKeys(remoteObject, localObject);
 
   const {
     mappings,
@@ -96,7 +96,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   // over on its next scan); do not keep Run full sync disabled for it.
   const syncInProgress =
     !!mapping?.fullSyncStartedAt &&
-    Date.now() - new Date(mapping.fullSyncStartedAt).getTime() < CRM_ROUND_STALE_MS;
+    Date.now() - new Date(mapping.fullSyncStartedAt).getTime() < SYNC_ROUND_STALE_MS;
   // A running round updates its counts page by page and clears its stamp when
   // it closes; poll while one is live so the card follows it to the end.
   useEffect(() => {
@@ -110,7 +110,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   // the editor still sees a property the customer just created, after the
   // network round trip.
   const client = useApolloClient();
-  const { properties, error: propertiesError } = useListCrmRemotePropertiesQuery(
+  const { properties, error: propertiesError } = useListIntegrationRemotePropertiesQuery(
     integration.id,
     remoteObject,
     { fetchPolicy: 'cache-and-network' },
@@ -143,10 +143,10 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
     attributes?.find((attribute) => attribute.codeName === codeName)?.displayName ?? codeName;
   const localMatchLabel = mapping
     ? mapping.matchStrategy === 'email'
-      ? t('settings.integrations.crm.mapping.matchLocalEmail')
+      ? t('settings.integrations.sync.mapping.matchLocalEmail')
       : localObject === 'user'
-        ? t('settings.integrations.crm.mapping.matchLocalUserId')
-        : t('settings.integrations.crm.mapping.matchLocalCompanyId')
+        ? t('settings.integrations.sync.mapping.matchLocalUserId')
+        : t('settings.integrations.sync.mapping.matchLocalCompanyId')
     : '';
   const remoteMatchField = mapping
     ? (mapping.matchRemoteField ?? (mapping.matchStrategy === 'email' ? 'email' : ''))
@@ -161,8 +161,8 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
       toast({
         variant: started ? 'success' : 'destructive',
         title: started
-          ? t('settings.integrations.crm.mapping.syncQueued')
-          : t('settings.integrations.crm.mapping.syncFailed'),
+          ? t('settings.integrations.sync.mapping.syncQueued')
+          : t('settings.integrations.sync.mapping.syncFailed'),
       });
     } catch (error) {
       toast({ variant: 'destructive', title: getErrorMessage(error) });
@@ -177,11 +177,11 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
       const removed = await removeMapping({ integrationId: integration.id, id: mapping.id });
       if (removed) {
         setRemoveOpen(false);
-        toast({ variant: 'success', title: t('settings.integrations.crm.mapping.removed') });
+        toast({ variant: 'success', title: t('settings.integrations.sync.mapping.removed') });
       } else {
         toast({
           variant: 'destructive',
-          title: t('settings.integrations.crm.mapping.removeFailed'),
+          title: t('settings.integrations.sync.mapping.removeFailed'),
         });
       }
     } catch (error) {
@@ -193,7 +193,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <CrmObjectPairTitle
+          <ObjectPairTitle
             provider={entry.provider}
             providerName={name}
             remoteLabel={t(labels.remote)}
@@ -209,7 +209,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label={t('settings.integrations.crm.mapping.moreActions')}
+                    aria-label={t('settings.integrations.sync.mapping.moreActions')}
                   >
                     <RiMore2Line className="h-4 w-4" />
                   </Button>
@@ -217,7 +217,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem disabled={!canWrite} onSelect={() => setEditOpen(true)}>
                     <RiPencilLine className="mr-2 h-4 w-4" />
-                    {t('settings.integrations.crm.mapping.edit')}
+                    {t('settings.integrations.sync.mapping.edit')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     variant="destructive"
@@ -225,14 +225,14 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                     onSelect={() => setRemoveOpen(true)}
                   >
                     <RiDeleteBinLine className="mr-2 h-4 w-4" />
-                    {t('settings.integrations.crm.mapping.remove')}
+                    {t('settings.integrations.sync.mapping.remove')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : mappingsPending ? null : (
             <Button type="button" disabled={!canWrite} onClick={() => setEditOpen(true)}>
-              {t('settings.integrations.crm.mapping.setUp')}
+              {t('settings.integrations.sync.mapping.setUp')}
             </Button>
           )}
         </div>
@@ -240,7 +240,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
 
       {propertiesError && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-          {t('settings.integrations.crm.mapping.propertiesLoadFailed', { name })}
+          {t('settings.integrations.sync.mapping.propertiesLoadFailed', { name })}
         </div>
       )}
 
@@ -251,18 +251,18 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
         </div>
       ) : !mapping ? (
         <p className="text-sm text-muted-foreground">
-          {t('settings.integrations.crm.mapping.description', { name })}
+          {t('settings.integrations.sync.mapping.description', { name })}
         </p>
       ) : (
         <>
           <section className="space-y-2">
             <p className="text-sm font-medium">
-              {t('settings.integrations.crm.mapping.matchLabel')}
+              {t('settings.integrations.sync.mapping.matchLabel')}
             </p>
-            <CrmPairRow
+            <MappingPairRow
               connector="equals"
               left={
-                <CrmFieldChip
+                <MappingFieldChip
                   side="remote"
                   loading={propertiesPending}
                   provider={entry.provider}
@@ -271,27 +271,27 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                 />
               }
               right={
-                <CrmFieldChip side="local" provider={entry.provider} label={localMatchLabel} />
+                <MappingFieldChip side="local" provider={entry.provider} label={localMatchLabel} />
               }
             />
           </section>
 
           <section className="space-y-2 rounded-lg bg-muted/50 p-4">
             <p className="text-sm font-medium">
-              {t('settings.integrations.crm.mapping.inboundSyncing', { name })}
+              {t('settings.integrations.sync.mapping.inboundSyncing', { name })}
             </p>
             {mapping.inboundFields.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t('settings.integrations.crm.mapping.emptyInbound', { name })}
+                {t('settings.integrations.sync.mapping.emptyInbound', { name })}
               </p>
             ) : (
               <div className="space-y-2">
                 {mapping.inboundFields.map((field) => (
-                  <CrmPairRow
+                  <MappingPairRow
                     key={field.remote}
                     connector="arrow"
                     left={
-                      <CrmFieldChip
+                      <MappingFieldChip
                         side="remote"
                         loading={propertiesPending}
                         provider={entry.provider}
@@ -300,7 +300,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                       />
                     }
                     right={
-                      <CrmFieldChip
+                      <MappingFieldChip
                         side="local"
                         provider={entry.provider}
                         label={attributeLabel(field.local)}
@@ -315,23 +315,23 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
 
           <section className="space-y-2 rounded-lg bg-muted/50 p-4">
             <p className="text-sm font-medium">
-              {t('settings.integrations.crm.mapping.outboundSyncing', { name })}
+              {t('settings.integrations.sync.mapping.outboundSyncing', { name })}
             </p>
             {mapping.outboundFields.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t('settings.integrations.crm.mapping.emptyOutbound', { name })}
+                {t('settings.integrations.sync.mapping.emptyOutbound', { name })}
               </p>
             ) : (
               <div className="space-y-2">
                 {mapping.outboundFields.map((field) => {
                   const remoteName =
-                    field.remote ?? crmRemotePropertyNameFor(localObject, field.local);
+                    field.remote ?? remotePropertyNameFor(localObject, field.local);
                   return (
-                    <CrmPairRow
+                    <MappingPairRow
                       key={field.local}
                       connector="arrow"
                       left={
-                        <CrmFieldChip
+                        <MappingFieldChip
                           side="local"
                           provider={entry.provider}
                           label={attributeLabel(field.local)}
@@ -339,7 +339,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                         />
                       }
                       right={
-                        <CrmFieldChip
+                        <MappingFieldChip
                           side="remote"
                           loading={propertiesPending}
                           provider={entry.provider}
@@ -367,23 +367,23 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                 title={!syncInProgress && lastRunFailed ? (lastRun?.error ?? undefined) : undefined}
               >
                 {syncInProgress
-                  ? t('settings.integrations.crm.mapping.syncInProgress')
+                  ? t('settings.integrations.sync.mapping.syncInProgress')
                   : lastRunFailed
-                    ? t('settings.integrations.crm.mapping.lastSyncFailed', {
+                    ? t('settings.integrations.sync.mapping.lastSyncFailed', {
                         time: format(
                           new Date(lastRun?.finishedAt ?? lastRun?.startedAt ?? 0),
                           'PPp',
                         ),
                       }) + (lastRun?.error ? ` · ${lastRun.error}` : '')
                     : mapping.lastFullSyncAt
-                      ? t('settings.integrations.crm.mapping.lastSynced', {
+                      ? t('settings.integrations.sync.mapping.lastSynced', {
                           time: format(new Date(mapping.lastFullSyncAt), 'PPp'),
                         })
-                      : t('settings.integrations.crm.mapping.neverSynced')}
+                      : t('settings.integrations.sync.mapping.neverSynced')}
                 {(syncInProgress || (!lastRunFailed && mapping.lastFullSyncAt)) && (
                   <>
                     {' · '}
-                    {t('settings.integrations.crm.mapping.stats', {
+                    {t('settings.integrations.sync.mapping.stats', {
                       matched: mapping.matchedCount,
                       unresolved: mapping.unresolvedCount,
                     })}
@@ -391,7 +391,7 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
                 )}
               </span>
               <QuestionTooltip>
-                {t('settings.integrations.crm.mapping.syncHelp', {
+                {t('settings.integrations.sync.mapping.syncHelp', {
                   name,
                   records: t(labels.records),
                 })}
@@ -410,13 +410,13 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
               ) : (
                 <RiRefreshLine className="mr-2 h-4 w-4" />
               )}
-              {t('settings.integrations.crm.mapping.syncNow')}
+              {t('settings.integrations.sync.mapping.syncNow')}
             </Button>
           </div>
         </>
       )}
 
-      <CrmMappingDialog
+      <ObjectMappingDialog
         entry={entry}
         integration={integration}
         remoteObject={remoteObject}
@@ -429,9 +429,9 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
         onOpenChange={setEditOpen}
       />
       <DestructiveConfirmDialog
-        title={t('settings.integrations.crm.mapping.removeConfirmTitle')}
-        description={t('settings.integrations.crm.mapping.removeConfirmDescription', { name })}
-        confirmLabel={t('settings.integrations.crm.mapping.remove')}
+        title={t('settings.integrations.sync.mapping.removeConfirmTitle')}
+        description={t('settings.integrations.sync.mapping.removeConfirmDescription', { name })}
+        confirmLabel={t('settings.integrations.sync.mapping.remove')}
         cancelLabel={t('settings.common.cancel')}
         open={removeOpen}
         onOpenChange={setRemoveOpen}
@@ -442,4 +442,4 @@ export const CrmMappingCard = (props: CrmMappingCardProps) => {
   );
 };
 
-CrmMappingCard.displayName = 'CrmMappingCard';
+ObjectMappingCard.displayName = 'ObjectMappingCard';

@@ -5,19 +5,19 @@ import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { BizService } from '@/biz/biz.service';
 import { initialization } from '@/common/initialization/initialization';
-import { QUEUE_CRM_SYNC } from '@/common/consts/queen';
+import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
 import { AxiosError } from 'axios';
 import {
-  CRM_SYNC_BACKFILL_JOB,
-  CrmDeliverySkippedError,
-  CrmSyncService,
-} from '@/integrations/crm/crm-sync.service';
+  SYNC_BACKFILL_JOB,
+  DeliverySkippedError,
+  ObjectSyncService,
+} from '@/integrations/sync/object-sync.service';
 import {
   SYNC_OBJECT_UPDATE_TOPIC,
   type SyncObjectUpdateEnvelope,
 } from '@/integrations/integrations.types';
 import { EncryptionService } from '@/shared/encryption.service';
-import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
+import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
 
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
@@ -50,7 +50,7 @@ describe('CRM incremental sync (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let biz: BizService;
-  let sync: CrmSyncService;
+  let sync: ObjectSyncService;
   let projectId: string;
   let environmentId: string;
   let integrationId: string;
@@ -61,8 +61,8 @@ describe('CRM incremental sync (e2e)', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
     biz = app.get(BizService);
-    sync = app.get(CrmSyncService);
-    const project = await buildProject(prisma, { name: 'gql-crm-incremental' });
+    sync = app.get(ObjectSyncService);
+    const project = await buildProject(prisma, { name: 'gql-sync-incremental' });
     projectId = project.id;
     await initialization(prisma, projectId);
     await buildSubscription(prisma, { projectId, planType: 'growth' });
@@ -187,7 +187,7 @@ describe('CRM incremental sync (e2e)', () => {
         config: {} as never,
       }),
     );
-    await expect(sync.deliverWriteBack(envelope)).rejects.toBeInstanceOf(CrmDeliverySkippedError);
+    await expect(sync.deliverWriteBack(envelope)).rejects.toBeInstanceOf(DeliverySkippedError);
     expect(
       await prisma.integrationObjectLink.count({ where: { mappingId, localId: ada.id } }),
     ).toBe(0);
@@ -208,7 +208,7 @@ describe('CRM incremental sync (e2e)', () => {
   });
 
   it('hands a new user to the backfill, which pairs and syncs it from the provider', async () => {
-    const syncQueue = app.get<Queue>(getQueueToken(QUEUE_CRM_SYNC));
+    const syncQueue = app.get<Queue>(getQueueToken(QUEUE_OBJECT_SYNC));
     const enqueue = jest.spyOn(syncQueue, 'add').mockResolvedValue(undefined as never);
     const search = jest.spyOn(hubspotCrmApi, 'searchHubspotObjectsByProperty').mockResolvedValue([
       {
@@ -226,7 +226,7 @@ describe('CRM incremental sync (e2e)', () => {
     );
     await waitFor(async () => enqueue.mock.calls.length > 0);
     expect(enqueue).toHaveBeenCalledWith(
-      CRM_SYNC_BACKFILL_JOB,
+      SYNC_BACKFILL_JOB,
       { mappingId, localId: grace?.id },
       expect.objectContaining({ attempts: expect.any(Number) }),
     );

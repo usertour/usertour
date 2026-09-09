@@ -4,9 +4,9 @@ import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { BizService } from '@/biz/biz.service';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { initialization } from '@/common/initialization/initialization';
-import { CrmSyncService } from '@/integrations/crm/crm-sync.service';
+import { ObjectSyncService } from '@/integrations/sync/object-sync.service';
 import { EncryptionService } from '@/shared/encryption.service';
-import * as hubspotCrmApi from '@/integrations/crm/hubspot-crm-api';
+import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
 
 import { graphql, gqlErrorCode } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
@@ -26,7 +26,7 @@ const RUN_SYNC = `mutation ($data: IntegrationObjectMappingIdInput!) {
 describe('CRM full sync (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let sync: CrmSyncService;
+  let sync: ObjectSyncService;
   let biz: BizService;
   let projectId: string;
   let environmentId: string;
@@ -38,9 +38,9 @@ describe('CRM full sync (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
-    sync = app.get(CrmSyncService);
+    sync = app.get(ObjectSyncService);
     biz = app.get(BizService);
-    const project = await buildProject(prisma, { name: 'gql-crm-sync' });
+    const project = await buildProject(prisma, { name: 'gql-sync-rounds' });
     projectId = project.id;
     await initialization(prisma, projectId);
     await buildSubscription(prisma, { projectId, planType: 'growth' });

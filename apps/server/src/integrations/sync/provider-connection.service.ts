@@ -5,8 +5,8 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
 import type { Integration, Prisma } from '@prisma/client';
 import type { CookieOptions } from 'express';
-import { CRM_INTEGRATION_PROVIDERS } from '@usertour/constants';
-import type { CrmIntegrationProvider } from '@usertour/types';
+import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
+import type { SyncIntegrationProvider, IntegrationProvider } from '@usertour/types';
 import { FeatureRequiresLicenseError, OAuthError, ValidationError } from '@/common/errors/errors';
 import { ProjectsService } from '@/projects/projects.service';
 import { EncryptionService } from '@/shared/encryption.service';
@@ -21,12 +21,12 @@ import {
   refreshHubspotToken,
   revokeHubspotRefreshToken,
 } from './hubspot-api';
-import { isCrmProviderConfigured } from './crm-app-config';
+import { isOAuthProviderConfigured } from './oauth-app-config';
 import { hubspotErrorStatus } from './hubspot-crm-api';
 import { fetchHubspotAppToken } from './hubspot-journal-api';
 
 /** Decrypted shape of Integration.oauthCredentials. */
-export interface CrmOAuthCredentials {
+export interface ProviderOAuthCredentials {
   accessToken: string;
   refreshToken: string;
   /** Epoch milliseconds. */
@@ -34,9 +34,9 @@ export interface CrmOAuthCredentials {
 }
 
 /** Claims carried by the signed OAuth `state` (ADR 0013 §2). */
-interface CrmOAuthTransaction {
-  tokenType: 'crm-oauth-tx';
-  provider: CrmIntegrationProvider;
+interface ProviderOAuthTransaction {
+  tokenType: 'integration-oauth-tx';
+  provider: SyncIntegrationProvider;
   environmentId: string;
   projectId: string;
   /**
@@ -49,7 +49,7 @@ interface CrmOAuthTransaction {
 }
 
 /** System-owned bookkeeping in Integration.remoteState (ADR 0013 §3). */
-export interface CrmRemoteState {
+export interface ProviderRemoteState {
   account?: { domain?: string };
 }
 
@@ -62,9 +62,9 @@ const REFRESH_MARGIN_MS = 2 * 60 * 1000;
 const REFRESH_LOCK_TTL_SECONDS = 30;
 const STATE_TTL = '10m';
 /** Where the transaction cookie lives: the OAuth callback route, nothing else. */
-export const CRM_TX_COOKIE_PATH = '/api/integrations/hubspot/oauth';
-const CRM_TX_COOKIE_MAX_AGE_MS = 10 * 60 * 1000;
-const CRM_PROVIDER_KEY = ''; // OAuth rows never carry an API key; the column is NOT NULL.
+export const INTEGRATION_TX_COOKIE_PATH = '/api/integrations/hubspot/oauth';
+const INTEGRATION_TX_COOKIE_MAX_AGE_MS = 10 * 60 * 1000;
+const OAUTH_PROVIDER_KEY = ''; // OAuth rows never carry an API key; the column is NOT NULL.
 
 /**
  * Thrown when the provider says the grant no longer exists (the customer
@@ -72,35 +72,35 @@ const CRM_PROVIDER_KEY = ''; // OAuth rows never carry an API key; the column is
  * attempt so the breaker disables the integration and notifies.
  */
 /** Outcome of a completed handshake: the row, and the account it replaced (null on first connect). */
-export interface CrmOAuthResult {
+export interface ProviderOAuthResult {
   integration: Integration;
   previousAccountId: string | null;
 }
 
 /** The provider account is already connected to another environment (ADR 0013 §3: one account, one environment). */
-export class CrmAccountInUseError extends Error {
+export class AccountInUseError extends Error {
   constructor(provider: string) {
     super(`This ${provider} account is already connected to another environment.`);
-    this.name = 'CrmAccountInUseError';
+    this.name = 'AccountInUseError';
   }
 }
 
-export class CrmGrantRevokedError extends Error {
+export class GrantRevokedError extends Error {
   constructor(provider: string) {
     super(`${provider} authorization was revoked; reconnect the integration.`);
-    this.name = 'CrmGrantRevokedError';
+    this.name = 'GrantRevokedError';
   }
 }
 
 /**
- * CRM connection lifecycle (ADR 0013 §2-3): the OAuth handshake that creates
+ * Provider connection lifecycle (ADR 0013 §2-3): the OAuth handshake that creates
  * the integration row, on-demand access-token refresh under a single-flight
  * lock, and disconnect. Provider-specific wire calls live in hubspot-api.ts;
  * this service is the only writer of `oauthCredentials`.
  */
 @Injectable()
-export class CrmConnectionService {
-  private readonly logger = new Logger(CrmConnectionService.name);
+export class ProviderConnectionService {
+  private readonly logger = new Logger(ProviderConnectionService.name);
   private appToken: { accessToken: string; expiresAt: number } | null = null;
 
   constructor(
@@ -135,13 +135,13 @@ export class CrmConnectionService {
   }
 
   /** Whether this deployment has provider app credentials configured at all. */
-  isProviderConfigured(provider: CrmIntegrationProvider): boolean {
-    return isCrmProviderConfigured(this.configService, provider);
+  isProviderConfigured(provider: SyncIntegrationProvider): boolean {
+    return isOAuthProviderConfigured(this.configService, provider);
   }
 
-  private appCredentials(provider: CrmIntegrationProvider): HubspotAppCredentials {
+  private appCredentials(provider: SyncIntegrationProvider): HubspotAppCredentials {
     if (provider !== 'hubspot') {
-      throw new ValidationError(`Unknown CRM provider "${provider}".`);
+      throw new ValidationError(`Unknown sync provider "${provider}".`);
     }
     return {
       clientId: this.configService.get<string>('hubspot.clientId') || '',
@@ -150,10 +150,10 @@ export class CrmConnectionService {
     };
   }
 
-  private assertProvider(provider: string): asserts provider is CrmIntegrationProvider {
-    if (!CRM_INTEGRATION_PROVIDERS.includes(provider as CrmIntegrationProvider)) {
+  private assertProvider(provider: string): asserts provider is SyncIntegrationProvider {
+    if (!SYNC_INTEGRATION_PROVIDERS.includes(provider as IntegrationProvider)) {
       throw new ValidationError(
-        `Unknown CRM provider "${provider}" — expected one of ${CRM_INTEGRATION_PROVIDERS.join(', ')}.`,
+        `Unknown sync provider "${provider}" — expected one of ${SYNC_INTEGRATION_PROVIDERS.join(', ')}.`,
       );
     }
   }
@@ -191,8 +191,8 @@ export class CrmConnectionService {
     if (!environment) {
       throw new ValidationError('Environment not found.');
     }
-    const transaction: CrmOAuthTransaction = {
-      tokenType: 'crm-oauth-tx',
+    const transaction: ProviderOAuthTransaction = {
+      tokenType: 'integration-oauth-tx',
       provider,
       environmentId,
       projectId: environment.projectId,
@@ -203,7 +203,7 @@ export class CrmConnectionService {
   }
 
   /**
-   * Options for the transaction cookie `startCrmOAuth` sets on its response
+   * Options for the transaction cookie `startIntegrationOAuth` sets on its response
    * — the only proof the callback accepts. 'lax' (not 'strict') so the cookie
    * rides the provider's top-level GET back to the callback; scoped to the
    * callback path; as short-lived as the state it must match.
@@ -213,20 +213,20 @@ export class CrmConnectionService {
       httpOnly: true,
       secure: !!this.configService.get('auth.cookie.secure'),
       sameSite: 'lax',
-      maxAge: CRM_TX_COOKIE_MAX_AGE_MS,
-      path: CRM_TX_COOKIE_PATH,
+      maxAge: INTEGRATION_TX_COOKIE_MAX_AGE_MS,
+      path: INTEGRATION_TX_COOKIE_PATH,
     };
   }
 
-  private authorizeUrl(transaction: CrmOAuthTransaction, state: string): string {
+  private authorizeUrl(transaction: ProviderOAuthTransaction, state: string): string {
     return buildHubspotAuthorizeUrl(this.appCredentials(transaction.provider), state);
   }
 
   /** Verify the signed state; throws OAuthError on anything but a fresh, valid one. */
-  async verifyState(state: string): Promise<CrmOAuthTransaction> {
+  async verifyState(state: string): Promise<ProviderOAuthTransaction> {
     try {
-      const claims = await this.jwtService.verifyAsync<CrmOAuthTransaction>(state);
-      if (claims.tokenType !== 'crm-oauth-tx') {
+      const claims = await this.jwtService.verifyAsync<ProviderOAuthTransaction>(state);
+      if (claims.tokenType !== 'integration-oauth-tx') {
         throw new OAuthError();
       }
       return claims;
@@ -243,7 +243,10 @@ export class CrmConnectionService {
    * starts from a clean state, and the caller is told the previous account so
    * it can drop the links that pointed into it (record ids no longer line up).
    */
-  async completeOAuth(transaction: CrmOAuthTransaction, code: string): Promise<CrmOAuthResult> {
+  async completeOAuth(
+    transaction: ProviderOAuthTransaction,
+    code: string,
+  ): Promise<ProviderOAuthResult> {
     const { provider, environmentId } = transaction;
     await this.assertEntitled(environmentId);
     const app = this.appCredentials(provider);
@@ -266,7 +269,7 @@ export class CrmConnectionService {
       select: { id: true },
     });
     if (holder) {
-      throw new CrmAccountInUseError(provider);
+      throw new AccountInUseError(provider);
     }
     const existing = await this.prisma.integration.findUnique({
       where: { environmentId_provider: { environmentId, provider } },
@@ -274,8 +277,8 @@ export class CrmConnectionService {
     });
     const previousAccountId = existing?.remoteAccountId ?? null;
     const sameAccount = previousAccountId === remoteAccountId;
-    const remoteState: CrmRemoteState = {
-      ...(sameAccount ? ((existing?.remoteState ?? {}) as CrmRemoteState) : {}),
+    const remoteState: ProviderRemoteState = {
+      ...(sameAccount ? ((existing?.remoteState ?? {}) as ProviderRemoteState) : {}),
       account: { domain: info.hub_domain },
     };
 
@@ -284,7 +287,7 @@ export class CrmConnectionService {
       create: {
         environmentId,
         provider,
-        key: CRM_PROVIDER_KEY,
+        key: OAUTH_PROVIDER_KEY,
         keyTail: '',
         enabled: true,
         oauthCredentials: encrypted,
@@ -366,7 +369,7 @@ export class CrmConnectionService {
    * The app's own token (client credentials) for app-level APIs such as the
    * change journal — not tied to any installed account. Cached per process.
    */
-  async getAppAccessToken(provider: CrmIntegrationProvider): Promise<string> {
+  async getAppAccessToken(provider: SyncIntegrationProvider): Promise<string> {
     if (this.appToken && this.appToken.expiresAt - Date.now() > APP_TOKEN_MARGIN_MS) {
       return this.appToken.accessToken;
     }
@@ -394,18 +397,18 @@ export class CrmConnectionService {
   ): Promise<string> {
     // A token the provider just rejected is stale whatever its expiry says;
     // one another worker has already replaced it is not.
-    const stale = (candidate: CrmOAuthCredentials) =>
+    const stale = (candidate: ProviderOAuthCredentials) =>
       this.needsRefresh(candidate) || candidate.accessToken === options.rejected;
     const row = await this.loadConnected(integrationId);
     const credentials = this.readCredentials(row);
     if (!credentials) {
-      throw new CrmGrantRevokedError(row.provider);
+      throw new GrantRevokedError(row.provider);
     }
     if (!stale(credentials)) {
       return credentials.accessToken;
     }
     const release = await this.redis.acquireLock(
-      `crm:refresh:${integrationId}`,
+      `sync:refresh:${integrationId}`,
       REFRESH_LOCK_TTL_SECONDS,
     );
     if (!release) {
@@ -418,7 +421,7 @@ export class CrmConnectionService {
       const current = await this.loadConnected(integrationId);
       const fresh = this.readCredentials(current);
       if (!fresh) {
-        throw new CrmGrantRevokedError(row.provider);
+        throw new GrantRevokedError(row.provider);
       }
       if (!stale(fresh)) {
         return fresh.accessToken;
@@ -434,7 +437,7 @@ export class CrmConnectionService {
    * 401 to a token it no longer honours — the grant was revoked out from
    * under us (app uninstalled, authorization revoked elsewhere), which does
    * not wait for the token's expiry. So a 401 refreshes once and retries:
-   * a refused refresh is already CrmGrantRevokedError, and a second 401 on a
+   * a refused refresh is already GrantRevokedError, and a second 401 on a
    * fresh token is treated the same. Callers keep their existing handling
    * of that error (immediate auto-disable, round abandoned).
    */
@@ -469,13 +472,13 @@ export class CrmConnectionService {
         this.logger.warn(
           `${row.provider} rejects a freshly refreshed token for integration ${integrationId}: treating the grant as revoked`,
         );
-        throw new CrmGrantRevokedError(row.provider);
+        throw new GrantRevokedError(row.provider);
       }
       throw error;
     }
   }
 
-  private async refresh(row: Integration, credentials: CrmOAuthCredentials): Promise<string> {
+  private async refresh(row: Integration, credentials: ProviderOAuthCredentials): Promise<string> {
     this.assertProvider(row.provider);
     let tokens: HubspotTokenResponse;
     try {
@@ -486,7 +489,7 @@ export class CrmConnectionService {
     } catch (error) {
       if (isHubspotGrantRevoked(error)) {
         this.logger.warn(`${row.provider} grant revoked for integration ${row.id}`);
-        throw new CrmGrantRevokedError(row.provider);
+        throw new GrantRevokedError(row.provider);
       }
       // Not a revoked grant as far as we can tell: say what the provider
       // answered (status and body carry no secrets), so a new shape is
@@ -551,7 +554,7 @@ export class CrmConnectionService {
   /** Poll briefly for the lock holder's refreshed credentials; fall back to using what we have. */
   private async awaitRefreshedToken(
     integrationId: string,
-    stale: CrmOAuthCredentials,
+    stale: ProviderOAuthCredentials,
   ): Promise<string> {
     for (let attempt = 0; attempt < 10; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 300));
@@ -572,11 +575,11 @@ export class CrmConnectionService {
     return row;
   }
 
-  private needsRefresh(credentials: CrmOAuthCredentials): boolean {
+  private needsRefresh(credentials: ProviderOAuthCredentials): boolean {
     return credentials.expiresAt - Date.now() < REFRESH_MARGIN_MS;
   }
 
-  private toCredentials(tokens: HubspotTokenResponse): CrmOAuthCredentials {
+  private toCredentials(tokens: HubspotTokenResponse): ProviderOAuthCredentials {
     return {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
@@ -585,10 +588,10 @@ export class CrmConnectionService {
   }
 
   /** Decrypt the stored grant; null when the row is disconnected. */
-  readCredentials(row: Pick<Integration, 'oauthCredentials'>): CrmOAuthCredentials | null {
+  readCredentials(row: Pick<Integration, 'oauthCredentials'>): ProviderOAuthCredentials | null {
     if (!row.oauthCredentials) {
       return null;
     }
-    return JSON.parse(this.encryption.decrypt(row.oauthCredentials)) as CrmOAuthCredentials;
+    return JSON.parse(this.encryption.decrypt(row.oauthCredentials)) as ProviderOAuthCredentials;
   }
 }

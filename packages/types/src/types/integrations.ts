@@ -13,6 +13,8 @@ export type AnalyticsIntegrationProvider =
 
 /** CRM providers synced through the object-mapping layer (ADR 0013). */
 export type CrmIntegrationProvider = 'hubspot';
+/** Providers connected over OAuth and synced by the object-sync engine (ADR 0013 §4); a capability, not a kind. */
+export type SyncIntegrationProvider = 'hubspot';
 
 /** Automation platforms that connect from their own side — a Zap creates
  *  ordinary webhooks here — so they have a catalog entry but no server row. */
@@ -43,22 +45,22 @@ export type IntegrationConfig = {
 // ---------------------------------------------------------------------------
 
 /** Provider object types the mapping layer understands (provider vocabulary). */
-export type CrmRemoteObject = 'contact' | 'company';
+export type SyncRemoteObject = 'contact' | 'company';
 
 /** Usertour object types a remote object can be paired with. */
-export type CrmLocalObject = 'user' | 'company';
+export type SyncLocalObject = 'user' | 'company';
 
 /** How remote records are paired with local ones. */
-export type CrmMatchStrategy = 'email' | 'remoteField';
+export type SyncMatchStrategy = 'email' | 'remoteField';
 
 /** A provider-owned attribute: remote property → local attribute code name. */
-export interface CrmInboundField {
+export interface SyncInboundField {
   remote: string;
   local: string;
 }
 
 /** A Usertour-owned write-back: local attribute code name → remote property. */
-export interface CrmOutboundField {
+export interface SyncOutboundField {
   local: string;
   remote: string;
 }

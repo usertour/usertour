@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getErrorMessage } from '@usertour/helpers';
 import {
-  type CrmRemoteProperty,
+  type IntegrationRemoteProperty,
   type Integration,
   type IntegrationObjectMapping,
   useUpsertIntegrationObjectMappingMutation,
@@ -31,27 +31,32 @@ import {
 } from '@usertour/ui';
 import {
   type IntegrationCatalogEntry,
-  crmLocalDataTypeFor,
-  crmRemotePropertyNameFor,
+  localDataTypeFor,
+  remotePropertyNameFor,
 } from '@usertour/constants';
-import type { Attribute, CrmLocalObject, CrmMatchStrategy, CrmRemoteObject } from '@usertour/types';
+import type {
+  Attribute,
+  SyncLocalObject,
+  SyncMatchStrategy,
+  SyncRemoteObject,
+} from '@usertour/types';
 import { AttributeTypeChip } from '@/components/attribute-type-chip';
 import {
-  CRM_HIGH_CHURN_ATTRIBUTES,
-  CrmFieldChip,
-  CrmObjectPairTitle,
-  CrmPairRow,
-  crmObjectLabelKeys,
-} from './crm-mapping-parts';
+  SYNC_HIGH_CHURN_ATTRIBUTES,
+  MappingFieldChip,
+  ObjectPairTitle,
+  MappingPairRow,
+  objectLabelKeys,
+} from './object-mapping-parts';
 
-export interface CrmMappingDialogProps {
+export interface ObjectMappingDialogProps {
   entry: IntegrationCatalogEntry;
   integration: Integration;
-  remoteObject: CrmRemoteObject;
-  localObject: CrmLocalObject;
+  remoteObject: SyncRemoteObject;
+  localObject: SyncLocalObject;
   /** The saved mapping being edited; absent when setting the pair up. */
   mapping: IntegrationObjectMapping | undefined;
-  properties: CrmRemoteProperty[];
+  properties: IntegrationRemoteProperty[];
   /** Provider metadata still loading: the provider-side pickers wait. */
   propertiesLoading?: boolean;
   attributes: Attribute[];
@@ -62,7 +67,7 @@ export interface CrmMappingDialogProps {
 /** The Usertour side of the match rule: the email attribute or the identify()/group() id. */
 type MatchLocalField = 'email' | 'externalId';
 
-const localFieldFor = (strategy: CrmMatchStrategy): MatchLocalField =>
+const localFieldFor = (strategy: SyncMatchStrategy): MatchLocalField =>
   strategy === 'email' ? 'email' : 'externalId';
 
 /**
@@ -73,7 +78,7 @@ const localFieldFor = (strategy: CrmMatchStrategy): MatchLocalField =>
  * group. The rows show that derived side so the rule is visible while
  * picking, and a badge says whether saving creates it or takes it over.
  */
-export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
+export const ObjectMappingDialog = (props: ObjectMappingDialogProps) => {
   const {
     entry,
     integration,
@@ -89,7 +94,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const name = entry.name;
-  const labels = crmObjectLabelKeys(remoteObject, localObject);
+  const labels = objectLabelKeys(remoteObject, localObject);
   const { invoke: saveMapping, loading: saving } = useUpsertIntegrationObjectMappingMutation();
 
   // Companies have no email, so their only rule is the id property.
@@ -143,7 +148,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
         .map((property) => ({
           value: property.name,
           label: property.readOnly
-            ? `${property.label} ${t('settings.integrations.crm.mapping.readOnlySuffix')}`
+            ? `${property.label} ${t('settings.integrations.sync.mapping.readOnlySuffix')}`
             : property.label,
           hint: property.name,
         })),
@@ -175,11 +180,11 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
   };
 
   const submit = async (adoptExisting: boolean) => {
-    const matchStrategy: CrmMatchStrategy = matchLocal === 'email' ? 'email' : 'remoteField';
+    const matchStrategy: SyncMatchStrategy = matchLocal === 'email' ? 'email' : 'remoteField';
     if (!matchRemote) {
       toast({
         variant: 'destructive',
-        title: t('settings.integrations.crm.mapping.matchRemoteRequired', { name }),
+        title: t('settings.integrations.sync.mapping.matchRemoteRequired', { name }),
       });
       return;
     }
@@ -198,9 +203,12 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
       if (saved) {
         setAdoptOpen(false);
         onOpenChange(false);
-        toast({ variant: 'success', title: t('settings.integrations.crm.mapping.saved') });
+        toast({ variant: 'success', title: t('settings.integrations.sync.mapping.saved') });
       } else {
-        toast({ variant: 'destructive', title: t('settings.integrations.crm.mapping.saveFailed') });
+        toast({
+          variant: 'destructive',
+          title: t('settings.integrations.sync.mapping.saveFailed'),
+        });
       }
     } catch (error) {
       const message = getErrorMessage(error);
@@ -215,11 +223,11 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
 
   const localMatchLabel = (field: MatchLocalField) => {
     if (field === 'email') {
-      return t('settings.integrations.crm.mapping.matchLocalEmail');
+      return t('settings.integrations.sync.mapping.matchLocalEmail');
     }
     return localObject === 'user'
-      ? t('settings.integrations.crm.mapping.matchLocalUserId')
-      : t('settings.integrations.crm.mapping.matchLocalCompanyId');
+      ? t('settings.integrations.sync.mapping.matchLocalUserId')
+      : t('settings.integrations.sync.mapping.matchLocalCompanyId');
   };
 
   return (
@@ -227,7 +235,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
       <DialogContent className="max-w-5xl" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>
-            <CrmObjectPairTitle
+            <ObjectPairTitle
               provider={entry.provider}
               providerName={name}
               remoteLabel={t(labels.remote)}
@@ -244,20 +252,20 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
             <div className="space-y-6 py-2">
               <section className="space-y-2">
                 <p className="text-sm font-medium">
-                  {t('settings.integrations.crm.mapping.matchLabel')}
+                  {t('settings.integrations.sync.mapping.matchLabel')}
                 </p>
-                <CrmPairRow
+                <MappingPairRow
                   connector="equals"
                   left={
                     <ComboboxSelect
                       value={matchRemote}
                       onValueChange={setMatchRemote}
                       options={matchOptions}
-                      placeholder={t('settings.integrations.crm.mapping.matchRemotePlaceholder', {
+                      placeholder={t('settings.integrations.sync.mapping.matchRemotePlaceholder', {
                         name,
                       })}
-                      searchPlaceholder={t('settings.integrations.crm.mapping.searchProperties')}
-                      emptyText={t('settings.integrations.crm.mapping.noMatches')}
+                      searchPlaceholder={t('settings.integrations.sync.mapping.searchProperties')}
+                      emptyText={t('settings.integrations.sync.mapping.noMatches')}
                       container={container}
                       className="w-full"
                       disabled={propertiesLoading}
@@ -280,7 +288,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                         </SelectContent>
                       </Select>
                     ) : (
-                      <CrmFieldChip
+                      <MappingFieldChip
                         side="local"
                         provider={entry.provider}
                         label={localMatchLabel('externalId')}
@@ -290,17 +298,17 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                 />
                 <p className="text-sm text-muted-foreground">
                   {matchLocal === 'email'
-                    ? t('settings.integrations.crm.mapping.matchEmailHelp', { name })
-                    : t('settings.integrations.crm.mapping.matchRemoteFieldHelp')}
+                    ? t('settings.integrations.sync.mapping.matchEmailHelp', { name })
+                    : t('settings.integrations.sync.mapping.matchRemoteFieldHelp')}
                 </p>
               </section>
 
               <section className="space-y-2 rounded-lg bg-muted/50 p-4">
                 <p className="text-sm font-medium">
-                  {t('settings.integrations.crm.mapping.inboundTitle', { name })}
+                  {t('settings.integrations.sync.mapping.inboundTitle', { name })}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {t('settings.integrations.crm.mapping.inboundHelp', { name })}
+                  {t('settings.integrations.sync.mapping.inboundHelp', { name })}
                 </p>
                 <div className="space-y-2 pt-1">
                   {inbound.map((remote) => {
@@ -308,11 +316,11 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                     const existing = attributeByCode.get(remote);
                     const adopt = !!existing && (existing.source ?? 'internal') === 'internal';
                     return (
-                      <CrmPairRow
+                      <MappingPairRow
                         key={remote}
                         connector="arrow"
                         left={
-                          <CrmFieldChip
+                          <MappingFieldChip
                             side="remote"
                             provider={entry.provider}
                             label={property?.label ?? remote}
@@ -320,14 +328,14 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                           />
                         }
                         right={
-                          <CrmFieldChip
+                          <MappingFieldChip
                             side="local"
                             provider={entry.provider}
                             label={property?.label ?? remote}
                             trailing={
                               property && (
                                 <AttributeTypeChip
-                                  dataType={crmLocalDataTypeFor(property)}
+                                  dataType={localDataTypeFor(property)}
                                   className="ml-auto"
                                 />
                               )
@@ -338,18 +346,18 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                           <>
                             {!existing && (
                               <Badge variant="default" className="px-1.5 py-0 font-normal">
-                                {t('settings.integrations.crm.mapping.newBadge')}
+                                {t('settings.integrations.sync.mapping.newBadge')}
                               </Badge>
                             )}
                             {adopt && (
                               <Tooltip>
                                 <TooltipTrigger type="button" className="cursor-help">
                                   <Badge variant="warning" className="px-1.5 py-0 font-normal">
-                                    {t('settings.integrations.crm.mapping.existingBadge')}
+                                    {t('settings.integrations.sync.mapping.existingBadge')}
                                   </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-xs">
-                                  {t('settings.integrations.crm.mapping.existingHint', { name })}
+                                  {t('settings.integrations.sync.mapping.existingHint', { name })}
                                 </TooltipContent>
                               </Tooltip>
                             )}
@@ -358,7 +366,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-muted-foreground"
-                              aria-label={t('settings.integrations.crm.mapping.removeRow')}
+                              aria-label={t('settings.integrations.sync.mapping.removeRow')}
                               onClick={() => setInbound(inbound.filter((item) => item !== remote))}
                             >
                               <RiCloseLine className="h-4 w-4" />
@@ -368,23 +376,28 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                       />
                     );
                   })}
-                  <CrmPairRow
+                  <MappingPairRow
                     connector="arrow"
                     left={
                       <ComboboxSelect
                         value=""
                         onValueChange={(value) => setInbound([...inbound, value])}
                         options={inboundOptions}
-                        placeholder={t('settings.integrations.crm.mapping.addInbound', { name })}
-                        searchPlaceholder={t('settings.integrations.crm.mapping.searchProperties')}
-                        emptyText={t('settings.integrations.crm.mapping.noMatches')}
+                        placeholder={t('settings.integrations.sync.mapping.addInbound', { name })}
+                        searchPlaceholder={t('settings.integrations.sync.mapping.searchProperties')}
+                        emptyText={t('settings.integrations.sync.mapping.noMatches')}
                         container={container}
                         className="w-full"
                         disabled={propertiesLoading}
                       />
                     }
                     right={
-                      <CrmFieldChip side="local" provider={entry.provider} label="…" placeholder />
+                      <MappingFieldChip
+                        side="local"
+                        provider={entry.provider}
+                        label="…"
+                        placeholder
+                      />
                     }
                   />
                 </div>
@@ -392,23 +405,23 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
 
               <section className="space-y-2 rounded-lg bg-muted/50 p-4">
                 <p className="text-sm font-medium">
-                  {t('settings.integrations.crm.mapping.outboundTitle', { name })}
+                  {t('settings.integrations.sync.mapping.outboundTitle', { name })}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {t('settings.integrations.crm.mapping.outboundHelp', { name })}
+                  {t('settings.integrations.sync.mapping.outboundHelp', { name })}
                 </p>
                 <div className="space-y-2 pt-1">
                   {outbound.map((code) => {
                     const attribute = attributeByCode.get(code);
-                    const remoteName = crmRemotePropertyNameFor(localObject, code);
+                    const remoteName = remotePropertyNameFor(localObject, code);
                     const remoteExists = propertyByName.has(remoteName);
-                    const churny = CRM_HIGH_CHURN_ATTRIBUTES.has(code);
+                    const churny = SYNC_HIGH_CHURN_ATTRIBUTES.has(code);
                     return (
-                      <CrmPairRow
+                      <MappingPairRow
                         key={code}
                         connector="arrow"
                         left={
-                          <CrmFieldChip
+                          <MappingFieldChip
                             side="local"
                             provider={entry.provider}
                             label={attribute?.displayName ?? code}
@@ -423,7 +436,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                                     <RiAlertLine className="h-4 w-4 text-amber-500" />
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-xs">
-                                    {t('settings.integrations.crm.mapping.churnWarning', { name })}
+                                    {t('settings.integrations.sync.mapping.churnWarning', { name })}
                                   </TooltipContent>
                                 </Tooltip>
                               )
@@ -431,7 +444,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                           />
                         }
                         right={
-                          <CrmFieldChip
+                          <MappingFieldChip
                             side="remote"
                             provider={entry.provider}
                             label={remoteName}
@@ -441,7 +454,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                           <>
                             {!remoteExists && (
                               <Badge variant="default" className="px-1.5 py-0 font-normal">
-                                {t('settings.integrations.crm.mapping.newBadge')}
+                                {t('settings.integrations.sync.mapping.newBadge')}
                               </Badge>
                             )}
                             <Button
@@ -449,7 +462,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 text-muted-foreground"
-                              aria-label={t('settings.integrations.crm.mapping.removeRow')}
+                              aria-label={t('settings.integrations.sync.mapping.removeRow')}
                               onClick={() => setOutbound(outbound.filter((item) => item !== code))}
                             >
                               <RiCloseLine className="h-4 w-4" />
@@ -459,22 +472,27 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
                       />
                     );
                   })}
-                  <CrmPairRow
+                  <MappingPairRow
                     connector="arrow"
                     left={
                       <ComboboxSelect
                         value=""
                         onValueChange={(value) => setOutbound([...outbound, value])}
                         options={outboundOptions}
-                        placeholder={t('settings.integrations.crm.mapping.addOutbound')}
-                        searchPlaceholder={t('settings.integrations.crm.mapping.searchAttributes')}
-                        emptyText={t('settings.integrations.crm.mapping.noMatches')}
+                        placeholder={t('settings.integrations.sync.mapping.addOutbound')}
+                        searchPlaceholder={t('settings.integrations.sync.mapping.searchAttributes')}
+                        emptyText={t('settings.integrations.sync.mapping.noMatches')}
                         container={container}
                         className="w-full"
                       />
                     }
                     right={
-                      <CrmFieldChip side="remote" provider={entry.provider} label="…" placeholder />
+                      <MappingFieldChip
+                        side="remote"
+                        provider={entry.provider}
+                        label="…"
+                        placeholder
+                      />
                     }
                   />
                 </div>
@@ -485,7 +503,7 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
 
         <DialogFooter className="items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            {t('settings.integrations.crm.mapping.dialogNote')}
+            {t('settings.integrations.sync.mapping.dialogNote')}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -497,15 +515,15 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
               {t('settings.common.cancel')}
             </Button>
             <LoadingButton type="button" loading={saving} onClick={() => void submit(false)}>
-              {t('settings.integrations.crm.mapping.save')}
+              {t('settings.integrations.sync.mapping.save')}
             </LoadingButton>
           </div>
         </DialogFooter>
 
         <DestructiveConfirmDialog
-          title={t('settings.integrations.crm.mapping.adoptTitle')}
-          description={t('settings.integrations.crm.mapping.adoptDescription', { name })}
-          confirmLabel={t('settings.integrations.crm.mapping.adoptConfirm')}
+          title={t('settings.integrations.sync.mapping.adoptTitle')}
+          description={t('settings.integrations.sync.mapping.adoptDescription', { name })}
+          confirmLabel={t('settings.integrations.sync.mapping.adoptConfirm')}
           cancelLabel={t('settings.common.cancel')}
           open={adoptOpen}
           onOpenChange={setAdoptOpen}
@@ -517,4 +535,4 @@ export const CrmMappingDialog = (props: CrmMappingDialogProps) => {
   );
 };
 
-CrmMappingDialog.displayName = 'CrmMappingDialog';
+ObjectMappingDialog.displayName = 'ObjectMappingDialog';

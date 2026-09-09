@@ -68,8 +68,8 @@ import { OutboundMessageDialog } from '../../components/outbound-message-dialog'
 import { OutboundMessageStatusBadge } from '../../components/outbound-message-status-badge';
 import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
-import { CrmConnectionSection } from './crm-connection-section';
-import { CrmMappingCard } from './crm-mapping-card';
+import { OAuthConnectionSection } from './oauth-connection-section';
+import { ObjectMappingCard } from './object-mapping-card';
 import { IntegrationStatusBadge } from './integration-status-badge';
 import { AutomationIntegrationDetail } from './automation-integration-detail';
 
@@ -964,6 +964,8 @@ export const IntegrationDetail = () => {
   // while settling — see the list page.
   // CRM providers sit one tier up (ADR 0013 §10): their own flag, same settle rule.
   const isCrm = entry?.kind === 'crm';
+  // The connection + mapping page is the sync engine's UI; the plan flag is the CRM kind's.
+  const hasObjectSync = !!entry?.hasObjectSync;
   const rawEntitled =
     !projectConfig || (isCrm ? projectConfig.crmIntegrations : projectConfig.integrations);
   const entitled =
@@ -998,7 +1000,7 @@ export const IntegrationDetail = () => {
     );
   }
 
-  if (isCrm) {
+  if (hasObjectSync) {
     return (
       <SettingsCardStack>
         <SettingsCard>
@@ -1007,7 +1009,7 @@ export const IntegrationDetail = () => {
               {t('settings.integrations.crm.downgradedBanner')}
             </div>
           )}
-          <CrmConnectionSection
+          <OAuthConnectionSection
             entry={entry}
             integration={integration}
             environmentId={environment?.id ?? ''}
@@ -1018,7 +1020,7 @@ export const IntegrationDetail = () => {
         {integration?.connected && (
           <>
             <SettingsCard>
-              <CrmMappingCard
+              <ObjectMappingCard
                 entry={entry}
                 integration={integration}
                 remoteObject="contact"
@@ -1027,7 +1029,7 @@ export const IntegrationDetail = () => {
               />
             </SettingsCard>
             <SettingsCard>
-              <CrmMappingCard
+              <ObjectMappingCard
                 entry={entry}
                 integration={integration}
                 remoteObject="company"
@@ -1045,7 +1047,9 @@ export const IntegrationDetail = () => {
               enabled={integration.enabled}
               entitled={entitled}
               showTestEvent={false}
-              description={t('settings.integrations.messages.crmDescription', { name: entry.name })}
+              description={t('settings.integrations.messages.syncDescription', {
+                name: entry.name,
+              })}
             />
           </SettingsCard>
         )}
