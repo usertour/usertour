@@ -31,6 +31,7 @@ import {
 } from '@usertour/ui';
 import {
   type IntegrationCatalogEntry,
+  SYNC_REMOTE_PROPERTY_GROUP,
   localDataTypeFor,
   remotePropertyNameFor,
 } from '@usertour/constants';
@@ -141,10 +142,16 @@ export const ObjectMappingDialog = (props: ObjectMappingDialogProps) => {
         .map((property) => ({ value: property.name, label: property.label, hint: property.name })),
     [properties],
   );
+  // The provider's Usertour group holds our own write-backs: syncing one of
+  // those in would only echo a value Usertour already has, under a second name.
   const inboundOptions = useMemo(
     () =>
       properties
-        .filter((property) => !inboundSet.has(property.name))
+        .filter(
+          (property) =>
+            !inboundSet.has(property.name) &&
+            property.groupName !== SYNC_REMOTE_PROPERTY_GROUP.name,
+        )
         .map((property) => ({
           value: property.name,
           label: property.readOnly
