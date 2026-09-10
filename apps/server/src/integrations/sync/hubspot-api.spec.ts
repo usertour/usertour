@@ -4,8 +4,10 @@ import {
   exchangeHubspotCode,
   fetchHubspotTokenInfo,
   isHubspotGrantRevoked,
+  isHubspotReturnUrl,
   refreshHubspotToken,
   revokeHubspotRefreshToken,
+  withHubspotState,
 } from './hubspot-api';
 
 const tokenFailure = (status: number, data: unknown) =>
@@ -110,5 +112,26 @@ describe('OAuth endpoints', () => {
         token_type_hint: 'refresh_token',
       },
     });
+  });
+});
+
+describe('marketplace returnUrl', () => {
+  it('accepts HubSpot app hosts (any hublet) over https and nothing else', () => {
+    expect(isHubspotReturnUrl('https://app.hubspot.com/oauth/finish?portalId=1')).toBe(true);
+    expect(isHubspotReturnUrl('https://app-eu1.hubspot.com/x')).toBe(true);
+    expect(isHubspotReturnUrl('http://app.hubspot.com/x')).toBe(false);
+    expect(isHubspotReturnUrl('https://app.hubspot.com.evil.example/x')).toBe(false);
+    expect(isHubspotReturnUrl('https://evil.example/?u=app.hubspot.com')).toBe(false);
+    expect(isHubspotReturnUrl('not a url')).toBe(false);
+    expect(isHubspotReturnUrl(undefined)).toBe(false);
+  });
+
+  it('appends the state to whatever query the returnUrl already carries', () => {
+    expect(withHubspotState('https://app.hubspot.com/finish?portalId=1', 'st')).toBe(
+      'https://app.hubspot.com/finish?portalId=1&state=st',
+    );
+    expect(withHubspotState('https://app.hubspot.com/finish', 'a b')).toBe(
+      'https://app.hubspot.com/finish?state=a+b',
+    );
   });
 });

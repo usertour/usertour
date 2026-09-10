@@ -126,6 +126,14 @@ const config: RouteObject[] = [
             path: '/oauth-consent',
             lazy: lazyComponent(() => import('@/pages/oauth-consent'), 'OAuthConsent'),
           },
+          {
+            // Provider-initiated integration install (a marketplace "Install"
+            // button): sign in, pick the environment, hand the state back to
+            // the provider. Above the admin providers on purpose — it must
+            // not depend on an active project.
+            path: '/integrations/:provider/install',
+            lazy: lazyComponent(() => import('@/pages/integration-install'), 'IntegrationInstall'),
+          },
         ],
       },
       {

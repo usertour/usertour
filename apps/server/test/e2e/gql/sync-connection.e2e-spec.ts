@@ -85,11 +85,13 @@ describe('GraphQL CRM connections (e2e)', () => {
    * Start the handshake as the browser would: run the mutation and keep the
    * state from the authorize URL plus the transaction cookie its response set.
    */
-  const beginHandshake = async () => {
+  const beginHandshake = async (returnUrl?: string) => {
     const start = await graphql(app, {
       token,
       query: START_OAUTH,
-      variables: { data: { environmentId, provider: 'hubspot' } },
+      variables: {
+        data: { environmentId, provider: 'hubspot', ...(returnUrl ? { returnUrl } : {}) },
+      },
     });
     const state = new URL(gqlData(start).startIntegrationOAuth.url).searchParams.get('state') ?? '';
     const cookie = (start.headers['set-cookie'] as unknown as string[] | undefined)?.find(
@@ -380,6 +382,120 @@ describe('GraphQL CRM connections (e2e)', () => {
     expect(unbound.headers.location).toContain('error=failed');
     expect(exchange).not.toHaveBeenCalled();
     expect(await prisma.integration.count({ where: { environmentId } })).toBe(0);
+  });
+
+  describe('marketplace-initiated install', () => {
+    const RETURN_URL = 'https://app.hubspot.com/oauth/authorize/finish?portalId=424242';
+    const INSTALL_PAGE = '/integrations/hubspot/install';
+    const CALLBACK = '/api/integrations/hubspot/oauth/callback';
+
+    const mockProvider = () => {
+      withAppCredentials('client-123');
+      jest.spyOn(hubspotApi, 'exchangeHubspotCode').mockResolvedValue({
+        access_token: 'access-1',
+        refresh_token: 'refresh-1',
+        expires_in: 1800,
+      });
+      jest.spyOn(hubspotApi, 'fetchHubspotTokenInfo').mockResolvedValue({
+        hub_id: 424242,
+        hub_domain: 'acme.hubspot.com',
+        app_id: 1,
+        user: 'ada@example.com',
+        user_id: 7,
+        scopes: [],
+      });
+    };
+
+    it('first leg: sends the browser to the install page with the returnUrl, dropping a foreign one', async () => {
+      const res = await request(app.getHttpServer())
+        .get(CALLBACK)
+        .query({ step: 'authorize', returnUrl: RETURN_URL });
+      expect(res.status).toBe(302);
+      const location = new URL(res.headers.location);
+      expect(location.pathname).toBe(INSTALL_PAGE);
+      expect(location.searchParams.get('returnUrl')).toBe(RETURN_URL);
+
+      const foreign = await request(app.getHttpServer())
+        .get(CALLBACK)
+        .query({ step: 'authorize', returnUrl: 'https://evil.example/hubspot' });
+      const dropped = new URL(foreign.headers.location);
+      expect(dropped.pathname).toBe(INSTALL_PAGE);
+      expect(dropped.searchParams.get('returnUrl')).toBeNull();
+      expect(dropped.searchParams.get('error')).toBe('failed');
+    });
+
+    it('the mutation hands the state to HubSpot on its returnUrl — and only to HubSpot', async () => {
+      withAppCredentials('client-123');
+      const start = await graphql(app, {
+        token,
+        query: START_OAUTH,
+        variables: { data: { environmentId, provider: 'hubspot', returnUrl: RETURN_URL } },
+      });
+      const url = new URL(gqlData(start).startIntegrationOAuth.url);
+      expect(`${url.origin}${url.pathname}`).toBe('https://app.hubspot.com/oauth/authorize/finish');
+      expect(url.searchParams.get('portalId')).toBe('424242');
+      const state = url.searchParams.get('state') ?? '';
+      await expect(
+        app.get(JwtService, { strict: false }).verifyAsync(state),
+      ).resolves.toMatchObject({ environmentId, projectId });
+      const cookie = (start.headers['set-cookie'] as unknown as string[] | undefined)?.find(
+        (header) => header.startsWith(`${INTEGRATION_TX_COOKIE}=`),
+      );
+      expect(cookie).toContain(state);
+
+      const foreign = await graphql(app, {
+        token,
+        query: START_OAUTH,
+        variables: {
+          data: { environmentId, provider: 'hubspot', returnUrl: 'https://evil.example/x' },
+        },
+      });
+      expect(foreign.body.errors?.[0]?.message).toContain('not a HubSpot address');
+    });
+
+    it('last leg: finalize completes the connection and lands back on HubSpot', async () => {
+      mockProvider();
+      const { state, cookie } = await beginHandshake(RETURN_URL);
+      const res = await request(app.getHttpServer())
+        .get(CALLBACK)
+        .set('Cookie', cookie)
+        .query({ step: 'finalize', code: 'code-1', state, returnUrl: RETURN_URL });
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe(RETURN_URL);
+      const row = await prisma.integration.findUnique({
+        where: { environmentId_provider: { environmentId, provider: 'hubspot' } },
+      });
+      expect(row?.enabled).toBe(true);
+      expect(row?.remoteAccountId).toBe('424242');
+
+      // A returnUrl that is not HubSpot's is ignored: the connection completes
+      // and the browser lands on the settings page instead.
+      const second = await beginHandshake(RETURN_URL);
+      const settled = await request(app.getHttpServer())
+        .get(CALLBACK)
+        .set('Cookie', second.cookie)
+        .query({
+          step: 'finalize',
+          code: 'code-2',
+          state: second.state,
+          returnUrl: 'https://evil.example/after',
+        });
+      expect(settled.headers.location).toContain(
+        `/project/${projectId}/settings/integrations/hubspot`,
+      );
+      expect(settled.headers.location).toContain('connected=1');
+    });
+
+    it('a finalize without our state cannot complete and says so on the install page', async () => {
+      const res = await request(app.getHttpServer())
+        .get(CALLBACK)
+        .query({ step: 'finalize', code: 'code-x', returnUrl: RETURN_URL });
+      expect(res.status).toBe(302);
+      const location = new URL(res.headers.location);
+      expect(location.pathname).toBe(INSTALL_PAGE);
+      expect(location.searchParams.get('error')).toBe('failed');
+      expect(location.searchParams.get('returnUrl')).toBeNull();
+    });
   });
 
   it('disconnects: revokes the grant, drops the credentials, keeps the row', async () => {

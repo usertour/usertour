@@ -51,6 +51,25 @@ const translations = {
       twoFactorRequired:
         'This instance requires two-factor authentication. Enable 2FA in your account security settings, then start the connection again from your app.',
     },
+    install: {
+      title: 'Connect {{name}} to Usertour',
+      subtitle:
+        'Choose the Usertour environment this {{name}} account will sync with. You will return to {{name}} to approve the connection.',
+      projectLabel: 'Project',
+      environmentLabel: 'Environment',
+      environmentPlaceholder: 'Select an environment',
+      continue: 'Continue to {{name}}',
+      noProjects:
+        'You are not a member of any Usertour project yet. Create a project in Usertour, then install again from {{name}}.',
+      notAllowed:
+        'Your role in this project cannot manage integrations. Ask a project owner or admin to install {{name}}.',
+      noEnvironments: 'There is no environment you can act on in this project.',
+      errorTitle: 'Installation could not be completed',
+      failed:
+        'The install from {{name}} did not reach Usertour with a valid request. Connect from Usertour instead: Settings → Integrations → {{name}}.',
+      invalid: 'This install request is invalid or has expired. Start again from {{name}}.',
+      openUsertour: 'Open Usertour',
+    },
   },
   admin: {
     common: {
