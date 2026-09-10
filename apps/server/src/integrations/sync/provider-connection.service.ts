@@ -251,7 +251,7 @@ export class ProviderConnectionService {
     await this.assertEntitled(environmentId);
     const app = this.appCredentials(provider);
     const tokens = await exchangeHubspotCode(app, code);
-    const info = await fetchHubspotTokenInfo(tokens.access_token);
+    const info = await fetchHubspotTokenInfo(app, tokens.access_token);
     const credentials = this.toCredentials(tokens);
     const encrypted = this.encryption.encrypt(JSON.stringify(credentials));
     const remoteAccountId = String(info.hub_id);
@@ -333,8 +333,9 @@ export class ProviderConnectionService {
     if (!credentials) {
       return;
     }
+    this.assertProvider(row.provider);
     try {
-      await revokeHubspotRefreshToken(credentials.refreshToken);
+      await revokeHubspotRefreshToken(this.appCredentials(row.provider), credentials.refreshToken);
     } catch (error) {
       this.logger.warn(
         `Revoking ${row.provider} refresh token for integration ${row.id} failed: ${
