@@ -232,7 +232,7 @@ export const ObjectMappingDialog = (props: ObjectMappingDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl" aria-describedby={undefined}>
+      <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>
             <ObjectPairTitle
@@ -245,145 +245,33 @@ export const ObjectMappingDialog = (props: ObjectMappingDialogProps) => {
           </DialogTitle>
         </DialogHeader>
 
-        {/* The popups portal into this wrapper: DialogContent is a `grid gap-4`, so
-            a portal node landing there as its own grid item would add a gap. */}
-        <div ref={setContainer} className="relative">
+        {/* The popups portal into this wrapper: DialogContent lays its children
+            out with a gap, so a portal node landing there as its own item would
+            add one. The wrapper itself must not scroll — the popups are
+            positioned absolutely inside it and an overflow here would clip
+            them — so the field list scrolls in the div below, and the header
+            and footer stay put however many fields are mapped. */}
+        <div ref={setContainer} className="relative flex min-h-0 flex-1 flex-col">
           <TooltipProvider>
-            <div className="space-y-6 py-2">
-              <section className="space-y-2">
-                <p className="text-sm font-medium">
-                  {t('settings.integrations.sync.mapping.matchLabel')}
-                </p>
-                <MappingPairRow
-                  connector="equals"
-                  left={
-                    <ComboboxSelect
-                      value={matchRemote}
-                      onValueChange={setMatchRemote}
-                      options={matchOptions}
-                      placeholder={t('settings.integrations.sync.mapping.matchRemotePlaceholder', {
-                        name,
-                      })}
-                      searchPlaceholder={t('settings.integrations.sync.mapping.searchProperties')}
-                      emptyText={t('settings.integrations.sync.mapping.noMatches')}
-                      container={container}
-                      className="w-full"
-                      disabled={propertiesLoading}
-                    />
-                  }
-                  right={
-                    emailAllowed ? (
-                      <Select
-                        value={matchLocal}
-                        onValueChange={(value) => handleMatchLocalChange(value as MatchLocalField)}
-                      >
-                        <SelectTrigger className="w-full">
-                          {localMatchLabel(matchLocal)}
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="email">{localMatchLabel('email')}</SelectItem>
-                          <SelectItem value="externalId">
-                            {localMatchLabel('externalId')}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <MappingFieldChip
-                        side="local"
-                        provider={entry.provider}
-                        label={localMatchLabel('externalId')}
-                      />
-                    )
-                  }
-                />
-                <p className="text-sm text-muted-foreground">
-                  {matchLocal === 'email'
-                    ? t('settings.integrations.sync.mapping.matchEmailHelp', { name })
-                    : t('settings.integrations.sync.mapping.matchRemoteFieldHelp')}
-                </p>
-              </section>
-
-              <section className="space-y-2 rounded-lg bg-muted/50 p-4">
-                <p className="text-sm font-medium">
-                  {t('settings.integrations.sync.mapping.inboundTitle', { name })}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {t('settings.integrations.sync.mapping.inboundHelp', { name })}
-                </p>
-                <div className="space-y-2 pt-1">
-                  {inbound.map((remote) => {
-                    const property = propertyByName.get(remote);
-                    const existing = attributeByCode.get(remote);
-                    const adopt = !!existing && (existing.source ?? 'internal') === 'internal';
-                    return (
-                      <MappingPairRow
-                        key={remote}
-                        connector="arrow"
-                        left={
-                          <MappingFieldChip
-                            side="remote"
-                            provider={entry.provider}
-                            label={property?.label ?? remote}
-                            hint={remote}
-                          />
-                        }
-                        right={
-                          <MappingFieldChip
-                            side="local"
-                            provider={entry.provider}
-                            label={property?.label ?? remote}
-                            trailing={
-                              property && (
-                                <AttributeTypeChip
-                                  dataType={localDataTypeFor(property)}
-                                  className="ml-auto"
-                                />
-                              )
-                            }
-                          />
-                        }
-                        trailing={
-                          <>
-                            {!existing && (
-                              <Badge variant="default" className="px-1.5 py-0 font-normal">
-                                {t('settings.integrations.sync.mapping.newBadge')}
-                              </Badge>
-                            )}
-                            {adopt && (
-                              <Tooltip>
-                                <TooltipTrigger type="button" className="cursor-help">
-                                  <Badge variant="warning" className="px-1.5 py-0 font-normal">
-                                    {t('settings.integrations.sync.mapping.existingBadge')}
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs">
-                                  {t('settings.integrations.sync.mapping.existingHint', { name })}
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground"
-                              aria-label={t('settings.integrations.sync.mapping.removeRow')}
-                              onClick={() => setInbound(inbound.filter((item) => item !== remote))}
-                            >
-                              <RiCloseLine className="h-4 w-4" />
-                            </Button>
-                          </>
-                        }
-                      />
-                    );
-                  })}
+            <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+              <div className="space-y-6 py-2">
+                <section className="space-y-2">
+                  <p className="text-sm font-medium">
+                    {t('settings.integrations.sync.mapping.matchLabel')}
+                  </p>
                   <MappingPairRow
-                    connector="arrow"
+                    connector="equals"
                     left={
                       <ComboboxSelect
-                        value=""
-                        onValueChange={(value) => setInbound([...inbound, value])}
-                        options={inboundOptions}
-                        placeholder={t('settings.integrations.sync.mapping.addInbound', { name })}
+                        value={matchRemote}
+                        onValueChange={setMatchRemote}
+                        options={matchOptions}
+                        placeholder={t(
+                          'settings.integrations.sync.mapping.matchRemotePlaceholder',
+                          {
+                            name,
+                          },
+                        )}
                         searchPlaceholder={t('settings.integrations.sync.mapping.searchProperties')}
                         emptyText={t('settings.integrations.sync.mapping.noMatches')}
                         container={container}
@@ -392,111 +280,244 @@ export const ObjectMappingDialog = (props: ObjectMappingDialogProps) => {
                       />
                     }
                     right={
-                      <MappingFieldChip
-                        side="local"
-                        provider={entry.provider}
-                        label="…"
-                        placeholder
-                      />
+                      emailAllowed ? (
+                        <Select
+                          value={matchLocal}
+                          onValueChange={(value) =>
+                            handleMatchLocalChange(value as MatchLocalField)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            {localMatchLabel(matchLocal)}
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="email">{localMatchLabel('email')}</SelectItem>
+                            <SelectItem value="externalId">
+                              {localMatchLabel('externalId')}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <MappingFieldChip
+                          side="local"
+                          provider={entry.provider}
+                          label={localMatchLabel('externalId')}
+                        />
+                      )
                     }
                   />
-                </div>
-              </section>
+                  <p className="text-sm text-muted-foreground">
+                    {matchLocal === 'email'
+                      ? t('settings.integrations.sync.mapping.matchEmailHelp', { name })
+                      : t('settings.integrations.sync.mapping.matchRemoteFieldHelp')}
+                  </p>
+                </section>
 
-              <section className="space-y-2 rounded-lg bg-muted/50 p-4">
-                <p className="text-sm font-medium">
-                  {t('settings.integrations.sync.mapping.outboundTitle', { name })}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {t('settings.integrations.sync.mapping.outboundHelp', { name })}
-                </p>
-                <div className="space-y-2 pt-1">
-                  {outbound.map((code) => {
-                    const attribute = attributeByCode.get(code);
-                    const remoteName = remotePropertyNameFor(localObject, code);
-                    const remoteExists = propertyByName.has(remoteName);
-                    const churny = SYNC_HIGH_CHURN_ATTRIBUTES.has(code);
-                    return (
-                      <MappingPairRow
-                        key={code}
-                        connector="arrow"
-                        left={
-                          <MappingFieldChip
-                            side="local"
-                            provider={entry.provider}
-                            label={attribute?.displayName ?? code}
-                            hint={code}
-                            trailing={
-                              churny && (
+                <section className="space-y-2 rounded-lg bg-muted/50 p-4">
+                  <p className="text-sm font-medium">
+                    {t('settings.integrations.sync.mapping.inboundTitle', { name })}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings.integrations.sync.mapping.inboundHelp', { name })}
+                  </p>
+                  <div className="space-y-2 pt-1">
+                    {inbound.map((remote) => {
+                      const property = propertyByName.get(remote);
+                      const existing = attributeByCode.get(remote);
+                      const adopt = !!existing && (existing.source ?? 'internal') === 'internal';
+                      return (
+                        <MappingPairRow
+                          key={remote}
+                          connector="arrow"
+                          left={
+                            <MappingFieldChip
+                              side="remote"
+                              provider={entry.provider}
+                              label={property?.label ?? remote}
+                              hint={remote}
+                            />
+                          }
+                          right={
+                            <MappingFieldChip
+                              side="local"
+                              provider={entry.provider}
+                              label={property?.label ?? remote}
+                              trailing={
+                                property && (
+                                  <AttributeTypeChip
+                                    dataType={localDataTypeFor(property)}
+                                    className="ml-auto"
+                                  />
+                                )
+                              }
+                            />
+                          }
+                          trailing={
+                            <>
+                              {!existing && (
+                                <Badge variant="default" className="px-1.5 py-0 font-normal">
+                                  {t('settings.integrations.sync.mapping.newBadge')}
+                                </Badge>
+                              )}
+                              {adopt && (
                                 <Tooltip>
-                                  <TooltipTrigger
-                                    type="button"
-                                    className="ml-auto inline-flex shrink-0 cursor-help"
-                                  >
-                                    <RiAlertLine className="h-4 w-4 text-amber-500" />
+                                  <TooltipTrigger type="button" className="cursor-help">
+                                    <Badge variant="warning" className="px-1.5 py-0 font-normal">
+                                      {t('settings.integrations.sync.mapping.existingBadge')}
+                                    </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent className="max-w-xs">
-                                    {t('settings.integrations.sync.mapping.churnWarning', { name })}
+                                    {t('settings.integrations.sync.mapping.existingHint', { name })}
                                   </TooltipContent>
                                 </Tooltip>
-                              )
-                            }
-                          />
-                        }
-                        right={
-                          <MappingFieldChip
-                            side="remote"
-                            provider={entry.provider}
-                            label={remoteName}
-                          />
-                        }
-                        trailing={
-                          <>
-                            {!remoteExists && (
-                              <Badge variant="default" className="px-1.5 py-0 font-normal">
-                                {t('settings.integrations.sync.mapping.newBadge')}
-                              </Badge>
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground"
-                              aria-label={t('settings.integrations.sync.mapping.removeRow')}
-                              onClick={() => setOutbound(outbound.filter((item) => item !== code))}
-                            >
-                              <RiCloseLine className="h-4 w-4" />
-                            </Button>
-                          </>
-                        }
-                      />
-                    );
-                  })}
-                  <MappingPairRow
-                    connector="arrow"
-                    left={
-                      <ComboboxSelect
-                        value=""
-                        onValueChange={(value) => setOutbound([...outbound, value])}
-                        options={outboundOptions}
-                        placeholder={t('settings.integrations.sync.mapping.addOutbound')}
-                        searchPlaceholder={t('settings.integrations.sync.mapping.searchAttributes')}
-                        emptyText={t('settings.integrations.sync.mapping.noMatches')}
-                        container={container}
-                        className="w-full"
-                      />
-                    }
-                    right={
-                      <MappingFieldChip
-                        side="remote"
-                        provider={entry.provider}
-                        label="…"
-                        placeholder
-                      />
-                    }
-                  />
-                </div>
-              </section>
+                              )}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground"
+                                aria-label={t('settings.integrations.sync.mapping.removeRow')}
+                                onClick={() =>
+                                  setInbound(inbound.filter((item) => item !== remote))
+                                }
+                              >
+                                <RiCloseLine className="h-4 w-4" />
+                              </Button>
+                            </>
+                          }
+                        />
+                      );
+                    })}
+                    <MappingPairRow
+                      connector="arrow"
+                      left={
+                        <ComboboxSelect
+                          value=""
+                          onValueChange={(value) => setInbound([...inbound, value])}
+                          options={inboundOptions}
+                          placeholder={t('settings.integrations.sync.mapping.addInbound', { name })}
+                          searchPlaceholder={t(
+                            'settings.integrations.sync.mapping.searchProperties',
+                          )}
+                          emptyText={t('settings.integrations.sync.mapping.noMatches')}
+                          container={container}
+                          className="w-full"
+                          disabled={propertiesLoading}
+                        />
+                      }
+                      right={
+                        <MappingFieldChip
+                          side="local"
+                          provider={entry.provider}
+                          label="…"
+                          placeholder
+                        />
+                      }
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-2 rounded-lg bg-muted/50 p-4">
+                  <p className="text-sm font-medium">
+                    {t('settings.integrations.sync.mapping.outboundTitle', { name })}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t('settings.integrations.sync.mapping.outboundHelp', { name })}
+                  </p>
+                  <div className="space-y-2 pt-1">
+                    {outbound.map((code) => {
+                      const attribute = attributeByCode.get(code);
+                      const remoteName = remotePropertyNameFor(localObject, code);
+                      const remoteExists = propertyByName.has(remoteName);
+                      const churny = SYNC_HIGH_CHURN_ATTRIBUTES.has(code);
+                      return (
+                        <MappingPairRow
+                          key={code}
+                          connector="arrow"
+                          left={
+                            <MappingFieldChip
+                              side="local"
+                              provider={entry.provider}
+                              label={attribute?.displayName ?? code}
+                              hint={code}
+                              trailing={
+                                churny && (
+                                  <Tooltip>
+                                    <TooltipTrigger
+                                      type="button"
+                                      className="ml-auto inline-flex shrink-0 cursor-help"
+                                    >
+                                      <RiAlertLine className="h-4 w-4 text-amber-500" />
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      {t('settings.integrations.sync.mapping.churnWarning', {
+                                        name,
+                                      })}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )
+                              }
+                            />
+                          }
+                          right={
+                            <MappingFieldChip
+                              side="remote"
+                              provider={entry.provider}
+                              label={remoteName}
+                            />
+                          }
+                          trailing={
+                            <>
+                              {!remoteExists && (
+                                <Badge variant="default" className="px-1.5 py-0 font-normal">
+                                  {t('settings.integrations.sync.mapping.newBadge')}
+                                </Badge>
+                              )}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground"
+                                aria-label={t('settings.integrations.sync.mapping.removeRow')}
+                                onClick={() =>
+                                  setOutbound(outbound.filter((item) => item !== code))
+                                }
+                              >
+                                <RiCloseLine className="h-4 w-4" />
+                              </Button>
+                            </>
+                          }
+                        />
+                      );
+                    })}
+                    <MappingPairRow
+                      connector="arrow"
+                      left={
+                        <ComboboxSelect
+                          value=""
+                          onValueChange={(value) => setOutbound([...outbound, value])}
+                          options={outboundOptions}
+                          placeholder={t('settings.integrations.sync.mapping.addOutbound')}
+                          searchPlaceholder={t(
+                            'settings.integrations.sync.mapping.searchAttributes',
+                          )}
+                          emptyText={t('settings.integrations.sync.mapping.noMatches')}
+                          container={container}
+                          className="w-full"
+                        />
+                      }
+                      right={
+                        <MappingFieldChip
+                          side="remote"
+                          provider={entry.provider}
+                          label="…"
+                          placeholder
+                        />
+                      }
+                    />
+                  </div>
+                </section>
+              </div>
             </div>
           </TooltipProvider>
         </div>

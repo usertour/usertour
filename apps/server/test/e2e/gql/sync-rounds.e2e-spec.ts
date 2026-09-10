@@ -4,7 +4,14 @@ import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { BizService } from '@/biz/biz.service';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { initialization } from '@/common/initialization/initialization';
-import { ObjectSyncService } from '@/integrations/sync/object-sync.service';
+import { AxiosError, AxiosHeaders } from 'axios';
+import { type Job, UnrecoverableError } from 'bullmq';
+import { ObjectSyncProcessor } from '@/integrations/sync/object-sync.processor';
+import {
+  ObjectSyncService,
+  SYNC_PAGE_JOB,
+  type SyncPageJobData,
+} from '@/integrations/sync/object-sync.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
 
@@ -223,6 +230,76 @@ describe('CRM full sync (e2e)', () => {
     const links = await prisma.integrationObjectLink.findMany({ where: { mappingId } });
     expect(links).toEqual([expect.objectContaining({ localId: bob?.id, remoteId: '101' })]);
     expect((bob?.data as Record<string, unknown>).lifecycle_stage).toBe('lead');
+  });
+
+  it("a refused provider request fails the round at once, with the provider's reason", async () => {
+    const processor = app.get(ObjectSyncProcessor);
+    jest.spyOn(hubspotCrmApi, 'listHubspotObjectsPage').mockResolvedValue({
+      results: [
+        {
+          id: '101',
+          properties: { email: 'ada@example.com', lifecyclestage: 'customer' },
+          createdAt: '',
+          updatedAt: '',
+          archived: false,
+        },
+      ],
+    });
+    jest.spyOn(hubspotCrmApi, 'ensureHubspotPropertyGroup').mockResolvedValue();
+    jest.spyOn(hubspotCrmApi, 'ensureHubspotProperty').mockResolvedValue();
+    jest.spyOn(hubspotCrmApi, 'batchUpdateHubspotObjects').mockRejectedValue(
+      new AxiosError(
+        'Request failed with status code 400',
+        'ERR_BAD_REQUEST',
+        undefined,
+        undefined,
+        {
+          status: 400,
+          statusText: '',
+          headers: new AxiosHeaders(),
+          config: { headers: new AxiosHeaders() },
+          data: {
+            status: 'error',
+            category: 'VALIDATION_ERROR',
+            message: 'Property values were not valid',
+            errors: [{ message: 'Property "usertour_user_nps" does not exist' }],
+          },
+        },
+      ),
+    );
+    await prisma.integrationObjectMapping.update({
+      where: { id: mappingId },
+      data: { fullSyncSessionId: 's-refused', fullSyncStartedAt: new Date() },
+    });
+    const run = await prisma.integrationSyncRun.create({
+      data: {
+        integrationId,
+        mappingId,
+        kind: 'full',
+        status: 'running',
+        sessionId: 's-refused',
+        startedAt: new Date(),
+      },
+    });
+    const job = {
+      name: SYNC_PAGE_JOB,
+      data: { mappingId, sessionId: 's-refused', page: 1 },
+      attemptsMade: 1,
+      opts: { attempts: 8 },
+    } as unknown as Job<SyncPageJobData>;
+
+    // The worker: a 4xx is not handed to the retry ladder.
+    const error = await processor.process(job).catch((thrown) => thrown);
+    expect(error).toBeInstanceOf(UnrecoverableError);
+    expect(error.message).toBe(
+      'HubSpot 400 VALIDATION_ERROR: Property values were not valid: Property "usertour_user_nps" does not exist',
+    );
+    // The failed hook: the round closes now, carrying that reason.
+    await processor.onFailed(job, error);
+    const mapping = await prisma.integrationObjectMapping.findUnique({ where: { id: mappingId } });
+    expect(mapping?.fullSyncStartedAt).toBeNull();
+    const closed = await prisma.integrationSyncRun.findUnique({ where: { id: run.id } });
+    expect(closed).toMatchObject({ status: 'failed', error: error.message });
   });
 
   it('ignores a page from a superseded round', async () => {

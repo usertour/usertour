@@ -1,5 +1,10 @@
 import { AxiosError, AxiosHeaders } from 'axios';
-import { HubspotRateLimitError, hubspotCall } from './hubspot-errors';
+import {
+  HubspotRateLimitError,
+  describeHubspotError,
+  hubspotCall,
+  isDefinitiveHubspotError,
+} from './hubspot-errors';
 
 const axiosFailure = (status: number, headers: Record<string, string> = {}) =>
   new AxiosError('request failed', 'ERR_BAD_RESPONSE', undefined, undefined, {
@@ -54,5 +59,63 @@ describe('hubspotCall', () => {
     expect(failure.config).toBeUndefined();
     expect(failure.request).toBeUndefined();
     expect(JSON.stringify(failure)).not.toContain('shh');
+  });
+});
+
+const responseFailure = (status: number, data: unknown) =>
+  new AxiosError(
+    `Request failed with status code ${status}`,
+    'ERR_BAD_REQUEST',
+    undefined,
+    undefined,
+    {
+      status,
+      statusText: '',
+      headers: new AxiosHeaders(),
+      config: { headers: new AxiosHeaders() },
+      data,
+    },
+  );
+
+describe('describeHubspotError', () => {
+  it("reads HubSpot's category, message and the first field-level error", () => {
+    expect(
+      describeHubspotError(
+        responseFailure(400, {
+          status: 'error',
+          category: 'VALIDATION_ERROR',
+          message: 'Property values were not valid',
+          errors: [{ message: 'Property "usertour_user_plan" does not exist', in: 'properties' }],
+        }),
+      ),
+    ).toBe(
+      'HubSpot 400 VALIDATION_ERROR: Property values were not valid: Property "usertour_user_plan" does not exist',
+    );
+    expect(
+      describeHubspotError(responseFailure(403, { message: 'This action requires a paid tier' })),
+    ).toBe('HubSpot 403: This action requires a paid tier');
+    expect(describeHubspotError(responseFailure(502, 'Bad Gateway'))).toBe(
+      'HubSpot 502: Bad Gateway',
+    );
+  });
+
+  it('caps the text and keeps non-HTTP failures as they are', () => {
+    const long = describeHubspotError(responseFailure(400, { message: 'x'.repeat(1000) }));
+    expect(long.length).toBeLessThanOrEqual(300);
+    expect(long.endsWith('…')).toBe(true);
+    expect(describeHubspotError(new Error('socket hang up'))).toBe('socket hang up');
+    expect(describeHubspotError('boom')).toBe('boom');
+  });
+});
+
+describe('isDefinitiveHubspotError', () => {
+  it('is any 4xx except a timeout or a rate limit', () => {
+    expect(isDefinitiveHubspotError(responseFailure(400, {}))).toBe(true);
+    expect(isDefinitiveHubspotError(responseFailure(403, {}))).toBe(true);
+    expect(isDefinitiveHubspotError(responseFailure(404, {}))).toBe(true);
+    expect(isDefinitiveHubspotError(responseFailure(408, {}))).toBe(false);
+    expect(isDefinitiveHubspotError(responseFailure(429, {}))).toBe(false);
+    expect(isDefinitiveHubspotError(responseFailure(500, {}))).toBe(false);
+    expect(isDefinitiveHubspotError(new Error('socket hang up'))).toBe(false);
   });
 });
