@@ -416,7 +416,10 @@ describe('GraphQL CRM connections (e2e)', () => {
       connected: false,
       remoteAccountId: '9',
     });
-    expect(revoke).toHaveBeenCalledWith('refresh-9');
+    expect(revoke).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId: expect.any(String) }),
+      'refresh-9',
+    );
     const after = await prisma.integration.findUnique({ where: { id: row.id } });
     expect(after?.oauthCredentials).toBeNull();
   });

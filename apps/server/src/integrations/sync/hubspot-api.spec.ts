@@ -1,5 +1,12 @@
-import { AxiosError, AxiosHeaders } from 'axios';
-import { isHubspotGrantRevoked } from './hubspot-api';
+import axios, { AxiosError, AxiosHeaders } from 'axios';
+import {
+  HUBSPOT_OAUTH_TOKEN_URL,
+  exchangeHubspotCode,
+  fetchHubspotTokenInfo,
+  isHubspotGrantRevoked,
+  refreshHubspotToken,
+  revokeHubspotRefreshToken,
+} from './hubspot-api';
 
 const tokenFailure = (status: number, data: unknown) =>
   new AxiosError('request failed', 'ERR_BAD_REQUEST', undefined, undefined, {
@@ -30,5 +37,78 @@ describe('isHubspotGrantRevoked', () => {
     ).toBe(false);
     expect(isHubspotGrantRevoked(tokenFailure(500, {}))).toBe(false);
     expect(isHubspotGrantRevoked(new Error('boom'))).toBe(false);
+  });
+});
+
+describe('OAuth endpoints', () => {
+  const app = { clientId: 'client-1', clientSecret: 'secret-1', redirectUri: 'https://x/cb' };
+  const post = jest.spyOn(axios, 'post');
+  const answer = (data: unknown) => post.mockResolvedValueOnce({ data } as never);
+  const requestOf = (call: number) => ({
+    url: post.mock.calls[call][0],
+    body: Object.fromEntries(new URLSearchParams(String(post.mock.calls[call][1]))),
+  });
+
+  afterEach(() => {
+    post.mockReset();
+  });
+
+  it('uses a date-versioned token endpoint and posts the secret in the body', async () => {
+    const tokens = { access_token: 'a', refresh_token: 'r', expires_in: 1800 };
+    answer(tokens);
+    answer(tokens);
+    await exchangeHubspotCode(app, 'code-1');
+    await refreshHubspotToken(app, 'refresh-1');
+    expect(HUBSPOT_OAUTH_TOKEN_URL).toMatch(/\/oauth\/\d{4}-\d{2}\/token$/);
+    expect(requestOf(0)).toEqual({
+      url: HUBSPOT_OAUTH_TOKEN_URL,
+      body: {
+        grant_type: 'authorization_code',
+        client_id: 'client-1',
+        client_secret: 'secret-1',
+        redirect_uri: 'https://x/cb',
+        code: 'code-1',
+      },
+    });
+    expect(requestOf(1)).toEqual({
+      url: HUBSPOT_OAUTH_TOKEN_URL,
+      body: {
+        grant_type: 'refresh_token',
+        client_id: 'client-1',
+        client_secret: 'secret-1',
+        refresh_token: 'refresh-1',
+      },
+    });
+  });
+
+  it('introspects with the client credentials and refuses an inactive token', async () => {
+    answer({ active: true, hub_id: 42, hub_domain: 'acme.hubspot.com' });
+    await expect(fetchHubspotTokenInfo(app, 'access-1')).resolves.toMatchObject({ hub_id: 42 });
+    expect(requestOf(0)).toEqual({
+      url: `${HUBSPOT_OAUTH_TOKEN_URL}/introspect`,
+      body: {
+        client_id: 'client-1',
+        client_secret: 'secret-1',
+        token: 'access-1',
+        token_type_hint: 'access_token',
+      },
+    });
+    // HubSpot answers 200 for an unknown token; only `active` tells.
+    answer({ active: false });
+    await expect(fetchHubspotTokenInfo(app, 'access-2')).rejects.toThrow(/recognise/);
+  });
+
+  it('revokes by posting the refresh token, never in the path', async () => {
+    answer('');
+    await revokeHubspotRefreshToken(app, 'refresh-1');
+    expect(requestOf(0)).toEqual({
+      url: `${HUBSPOT_OAUTH_TOKEN_URL}/revoke`,
+      body: {
+        client_id: 'client-1',
+        client_secret: 'secret-1',
+        token: 'refresh-1',
+        token_type_hint: 'refresh_token',
+      },
+    });
   });
 });

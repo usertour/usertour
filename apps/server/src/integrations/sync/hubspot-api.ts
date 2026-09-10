@@ -10,6 +10,16 @@ export const HUBSPOT_AUTHORIZE_URL = 'https://app.hubspot.com/oauth/authorize';
 export const HUBSPOT_API_BASE = 'https://api.hubapi.com';
 
 /**
+ * OAuth API version (HubSpot's date-based versioning). Token exchange,
+ * introspection and revocation all live under it — and so does the app-level
+ * token for the change journal (hubspot-journal-api.ts) — so a bump is one
+ * edit. The unversioned `/oauth/v1/*` endpoints put secrets in the URL, are
+ * refused for new marketplace listings and are sunset on 2027-02-16.
+ */
+export const HUBSPOT_OAUTH_API_VERSION = '2026-09';
+export const HUBSPOT_OAUTH_TOKEN_URL = `${HUBSPOT_API_BASE}/oauth/${HUBSPOT_OAUTH_API_VERSION}/token`;
+
+/**
  * Must equal `requiredScopes` in integrations/hubspot/src/app/app-hsmeta.json —
  * HubSpot refuses an authorize request whose scope set differs from the app's.
  */
@@ -40,6 +50,7 @@ export interface HubspotTokenResponse {
   expires_in: number;
 }
 
+/** Introspection of an access token: the HubSpot account (hub) it belongs to. */
 export interface HubspotTokenInfo {
   hub_id: number;
   hub_domain: string;
@@ -61,21 +72,18 @@ export const buildHubspotAuthorizeUrl = (app: HubspotAppCredentials, state: stri
   return `${HUBSPOT_AUTHORIZE_URL}?${params.toString()}`;
 };
 
-const postTokenForm = (form: Record<string, string>): Promise<HubspotTokenResponse> =>
+/** Every OAuth endpoint takes a form body — the app secret and tokens never appear in a URL. */
+const postOAuthForm = <T>(url: string, form: Record<string, string>): Promise<T> =>
   hubspotCall(async () => {
-    const response = await axios.post<HubspotTokenResponse>(
-      `${HUBSPOT_API_BASE}/oauth/v1/token`,
-      new URLSearchParams(form).toString(),
-      {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        timeout: TOKEN_TIMEOUT_MS,
-      },
-    );
+    const response = await axios.post<T>(url, new URLSearchParams(form).toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      timeout: TOKEN_TIMEOUT_MS,
+    });
     return response.data;
   });
 
 export const exchangeHubspotCode = (app: HubspotAppCredentials, code: string) =>
-  postTokenForm({
+  postOAuthForm<HubspotTokenResponse>(HUBSPOT_OAUTH_TOKEN_URL, {
     grant_type: 'authorization_code',
     client_id: app.clientId,
     client_secret: app.clientSecret,
@@ -84,39 +92,57 @@ export const exchangeHubspotCode = (app: HubspotAppCredentials, code: string) =>
   });
 
 export const refreshHubspotToken = (app: HubspotAppCredentials, refreshToken: string) =>
-  postTokenForm({
+  postOAuthForm<HubspotTokenResponse>(HUBSPOT_OAUTH_TOKEN_URL, {
     grant_type: 'refresh_token',
     client_id: app.clientId,
     client_secret: app.clientSecret,
-    redirect_uri: app.redirectUri,
     refresh_token: refreshToken,
   });
 
-/** Metadata for an access token: the HubSpot account (hub) it belongs to. */
-export const fetchHubspotTokenInfo = (accessToken: string): Promise<HubspotTokenInfo> =>
-  hubspotCall(async () => {
-    const response = await axios.get<HubspotTokenInfo>(
-      `${HUBSPOT_API_BASE}/oauth/v1/access-tokens/${encodeURIComponent(accessToken)}`,
-      { timeout: TOKEN_TIMEOUT_MS },
-    );
-    return response.data;
-  });
+/**
+ * Introspect an access token for the account it belongs to. HubSpot answers
+ * 200 with `active: false` for a token it does not know, so that case becomes
+ * an error here rather than a missing hub id at the caller.
+ */
+export const fetchHubspotTokenInfo = async (
+  app: HubspotAppCredentials,
+  accessToken: string,
+): Promise<HubspotTokenInfo> => {
+  const info = await postOAuthForm<HubspotTokenInfo & { active: boolean }>(
+    `${HUBSPOT_OAUTH_TOKEN_URL}/introspect`,
+    {
+      client_id: app.clientId,
+      client_secret: app.clientSecret,
+      token: accessToken,
+      token_type_hint: 'access_token',
+    },
+  );
+  if (!info.active) {
+    throw new Error('HubSpot does not recognise the access token it just issued');
+  }
+  return info;
+};
 
 /**
- * Best-effort revocation on disconnect. HubSpot invalidates the refresh token;
- * the app stays listed in the account until the customer uninstalls it there.
+ * Best-effort revocation on disconnect. HubSpot invalidates the refresh token
+ * (answering 200 whether or not it knew the token, per RFC 7009); the app
+ * stays listed in the account until the customer uninstalls it there.
  * Whether other authorizations of the same app in the same account survive
  * is not something to rely on either way: a 401 on a data call is handled
  * as "refresh once, then treat as revoked" (ProviderConnectionService), so a
  * revocation from anywhere surfaces as a reconnect prompt, never as retries.
  */
-export const revokeHubspotRefreshToken = (refreshToken: string): Promise<void> =>
-  hubspotCall(async () => {
-    await axios.delete(
-      `${HUBSPOT_API_BASE}/oauth/v1/refresh-tokens/${encodeURIComponent(refreshToken)}`,
-      { timeout: TOKEN_TIMEOUT_MS },
-    );
+export const revokeHubspotRefreshToken = async (
+  app: HubspotAppCredentials,
+  refreshToken: string,
+): Promise<void> => {
+  await postOAuthForm<unknown>(`${HUBSPOT_OAUTH_TOKEN_URL}/revoke`, {
+    client_id: app.clientId,
+    client_secret: app.clientSecret,
+    token: refreshToken,
+    token_type_hint: 'refresh_token',
   });
+};
 
 /**
  * Whether a token-endpoint failure means the grant itself is gone (revoked /

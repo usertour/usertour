@@ -1,6 +1,10 @@
 import axios from 'axios';
 import { hubspotCall } from './hubspot-errors';
-import { HUBSPOT_API_BASE, type HubspotAppCredentials } from './hubspot-api';
+import {
+  HUBSPOT_API_BASE,
+  HUBSPOT_OAUTH_TOKEN_URL,
+  type HubspotAppCredentials,
+} from './hubspot-api';
 
 /**
  * HubSpot webhooks journal (v4): app-level, pull-based change feed (ADR 0013
@@ -58,7 +62,7 @@ export const fetchHubspotAppToken = (
 ): Promise<{ accessToken: string; expiresIn: number }> =>
   hubspotCall(async () => {
     const response = await axios.post<{ access_token: string; expires_in: number }>(
-      `${HUBSPOT_API_BASE}/oauth/2026-03/token`,
+      HUBSPOT_OAUTH_TOKEN_URL,
       new URLSearchParams({
         grant_type: 'client_credentials',
         client_id: app.clientId,
