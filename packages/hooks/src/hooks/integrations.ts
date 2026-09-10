@@ -248,10 +248,16 @@ export const useSendIntegrationTestEventMutation = () => {
 };
 
 export const useStartIntegrationOAuthMutation = () => {
-  // Returns the provider authorize URL; the caller navigates the browser there.
+  // Returns the URL the browser must navigate to next: the provider's authorize
+  // URL, or — for a provider-initiated install — the provider's returnUrl
+  // carrying our state.
   const [mutation, { loading, error }] = useMutation(StartIntegrationOAuth);
   const invoke = useCallback(
-    async (input: { environmentId: string; provider: string }): Promise<string | null> => {
+    async (input: {
+      environmentId: string;
+      provider: string;
+      returnUrl?: string;
+    }): Promise<string | null> => {
       const response = await mutation({ variables: { data: input } });
       return (response.data?.startIntegrationOAuth as { url: string } | undefined)?.url ?? null;
     },

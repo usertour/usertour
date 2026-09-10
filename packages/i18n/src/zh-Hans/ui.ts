@@ -48,6 +48,23 @@ const translations = {
       twoFactorRequired:
         '当前实例要求开启二步验证。请先在账号安全设置中启用 2FA,然后从您的应用重新发起连接。',
     },
+    install: {
+      title: '将 {{name}} 连接到 Usertour',
+      subtitle: '选择这个 {{name}} 账号要同步的 Usertour 环境。之后会回到 {{name}} 确认授权。',
+      projectLabel: '项目',
+      environmentLabel: '环境',
+      environmentPlaceholder: '选择环境',
+      continue: '继续前往 {{name}}',
+      noProjects:
+        '你还不是任何 Usertour 项目的成员。先在 Usertour 创建项目,再从 {{name}} 重新安装。',
+      notAllowed: '你在该项目的角色无法管理集成。请项目所有者或管理员来安装 {{name}}。',
+      noEnvironments: '该项目中没有你可操作的环境。',
+      errorTitle: '安装未能完成',
+      failed:
+        '来自 {{name}} 的安装请求未能有效到达 Usertour。请改从 Usertour 连接:设置 → 集成 → {{name}}。',
+      invalid: '此安装请求无效或已过期。请从 {{name}} 重新发起。',
+      openUsertour: '打开 Usertour',
+    },
   },
   admin: {
     common: {

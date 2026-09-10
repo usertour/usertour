@@ -37,6 +37,31 @@ export const HUBSPOT_OAUTH_SCOPES = [
   'timeline.write',
 ] as const;
 
+/**
+ * Where HubSpot may send the browser back after a marketplace-initiated
+ * install: the `returnUrl` it passes to the redirect URL on both legs. The
+ * callback redirects there, so anything but a HubSpot address is an open
+ * redirect and is dropped. Hublets are `app-<region>.hubspot.com`.
+ */
+export const isHubspotReturnUrl = (value: string | undefined): value is string => {
+  if (!value) {
+    return false;
+  }
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && /^app(-[a-z0-9]+)?\.hubspot\.com$/.test(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
+/** The install's first leg ends by handing HubSpot the state on its own returnUrl. */
+export const withHubspotState = (returnUrl: string, state: string): string => {
+  const url = new URL(returnUrl);
+  url.searchParams.set('state', state);
+  return url.toString();
+};
+
 export interface HubspotAppCredentials {
   clientId: string;
   clientSecret: string;

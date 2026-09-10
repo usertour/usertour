@@ -18,8 +18,10 @@ import {
   HubspotAppCredentials,
   HubspotTokenResponse,
   isHubspotGrantRevoked,
+  isHubspotReturnUrl,
   refreshHubspotToken,
   revokeHubspotRefreshToken,
+  withHubspotState,
 } from './hubspot-api';
 import { isOAuthProviderConfigured } from './oauth-app-config';
 import { hubspotErrorStatus } from './hubspot-crm-api';
@@ -169,15 +171,24 @@ export class ProviderConnectionService {
    * response, and the callback requires the cookie to match (see
    * HubspotOAuthController). The authorization code itself is single-use at
    * the provider, so no nonce store is needed for replay.
+   *
+   * A marketplace-initiated install (HubSpot's "Install app") passes the
+   * `returnUrl` HubSpot gave the callback: the state then travels back to
+   * HubSpot on that URL instead of to our authorize URL — HubSpot shows the
+   * consent screen itself and returns to the callback with code and state.
    */
   async startOAuth(input: {
     environmentId: string;
     provider: string;
     userId: string;
+    returnUrl?: string | null;
   }): Promise<{ url: string; state: string }> {
-    const { environmentId, userId } = input;
+    const { environmentId, userId, returnUrl } = input;
     this.assertProvider(input.provider);
     const provider = input.provider;
+    if (returnUrl && !isHubspotReturnUrl(returnUrl)) {
+      throw new ValidationError('The install return URL is not a HubSpot address.');
+    }
     await this.assertEntitled(environmentId);
     if (!this.isProviderConfigured(provider)) {
       throw new ValidationError(
@@ -199,7 +210,10 @@ export class ProviderConnectionService {
       sub: userId,
     };
     const state = await this.jwtService.signAsync(transaction, { expiresIn: STATE_TTL });
-    return { url: this.authorizeUrl(transaction, state), state };
+    return {
+      url: returnUrl ? withHubspotState(returnUrl, state) : this.authorizeUrl(transaction, state),
+      state,
+    };
   }
 
   /**
