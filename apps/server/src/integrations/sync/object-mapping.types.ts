@@ -68,7 +68,19 @@ export const remotePropertyDefinitionFor = (
     case BizAttributeTypes.Number:
       return { ...base, type: 'number', fieldType: 'number' };
     case BizAttributeTypes.Boolean:
-      return { ...base, type: 'bool', fieldType: 'booleancheckbox' };
+      // A bool property is an enumeration of two: HubSpot refuses to create
+      // one without options ("Boolean properties must have exactly two
+      // options; one with a value of 'true', the other with a value of
+      // 'false'"), and answers 400 — which used to stall a round.
+      return {
+        ...base,
+        type: 'bool',
+        fieldType: 'booleancheckbox',
+        options: [
+          { label: 'True', value: 'true' },
+          { label: 'False', value: 'false' },
+        ],
+      };
     case BizAttributeTypes.DateTime:
       return { ...base, type: 'datetime', fieldType: 'date' };
     default:
