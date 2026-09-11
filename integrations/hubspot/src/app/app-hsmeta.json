@@ -9,7 +9,7 @@
     "auth": {
       "type": "oauth",
       "redirectUrls": [
-        "https://api.usertour.io/api/integrations/hubspot/oauth/callback",
+        "https://app.usertour.io/api/integrations/hubspot/oauth/callback",
         "https://staging.usertour.io/api/integrations/hubspot/oauth/callback",
         "http://localhost:5174/api/integrations/hubspot/oauth/callback"
       ],
