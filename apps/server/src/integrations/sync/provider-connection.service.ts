@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
@@ -48,6 +49,12 @@ interface ProviderOAuthTransaction {
    * session strategy (which reads `userId`) — same rule as the 2FA challenge.
    */
   sub: string;
+  /**
+   * Set when the provider's marketplace started the install: its finalize
+   * leg arrives inside the provider's frame, without our transaction cookie,
+   * and is verified by spending the state instead (see consumeState).
+   */
+  marketplace?: true;
 }
 
 /** System-owned bookkeeping in Integration.remoteState (ADR 0013 §3). */
@@ -63,6 +70,7 @@ const REFRESH_MARGIN_MS = 2 * 60 * 1000;
 /** Longer than the token request timeout, so a slow refresh cannot outlive its own lock. */
 const REFRESH_LOCK_TTL_SECONDS = 30;
 const STATE_TTL = '10m';
+const STATE_TTL_SECONDS = 10 * 60;
 /** Where the transaction cookie lives: the OAuth callback route, nothing else. */
 export const INTEGRATION_TX_COOKIE_PATH = '/api/integrations/hubspot/oauth';
 const INTEGRATION_TX_COOKIE_MAX_AGE_MS = 10 * 60 * 1000;
@@ -208,6 +216,7 @@ export class ProviderConnectionService {
       environmentId,
       projectId: environment.projectId,
       sub: userId,
+      ...(returnUrl ? { marketplace: true as const } : {}),
     };
     const state = await this.jwtService.signAsync(transaction, { expiresIn: STATE_TTL });
     return {
@@ -234,6 +243,24 @@ export class ProviderConnectionService {
 
   private authorizeUrl(transaction: ProviderOAuthTransaction, state: string): string {
     return buildHubspotAuthorizeUrl(this.appCredentials(transaction.provider), state);
+  }
+
+  /**
+   * Spend a marketplace state: true the first time, false on any later call
+   * within its lifetime. The provider drives that leg inside its own frame,
+   * where our transaction cookie cannot travel (a cross-site request), so
+   * the signed state is the whole proof — and a proof that can be presented
+   * twice is not one: a captured callback URL must not connect a second time.
+   * Redis being unavailable reads as "already spent": the install fails
+   * closed and the user retries.
+   */
+  async consumeState(state: string): Promise<boolean> {
+    const digest = createHash('sha256').update(state).digest('hex');
+    const release = await this.redis.acquireLock(
+      `integration:oauth:tx:${digest}`,
+      STATE_TTL_SECONDS,
+    );
+    return release !== null;
   }
 
   /** Verify the signed state; throws OAuthError on anything but a fresh, valid one. */
