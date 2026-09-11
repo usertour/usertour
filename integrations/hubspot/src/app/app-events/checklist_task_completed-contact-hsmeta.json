@@ -1,0 +1,37 @@
+{
+  "uid": "checklist_task_completed_contact",
+  "type": "app-event",
+  "config": {
+    "name": "Checklist task completed",
+    "description": "A user completed one task of a checklist in Usertour.",
+    "headerTemplate": "Checklist task completed: **{{checklist_task_name}}** in **{{checklist_name}}**",
+    "objectType": "CONTACT",
+    "properties": [
+      {
+        "name": "checklist_name",
+        "label": "Checklist name",
+        "type": "string"
+      },
+      {
+        "name": "checklist_version",
+        "label": "Checklist version",
+        "type": "number"
+      },
+      {
+        "name": "checklist_task_name",
+        "label": "Task name",
+        "type": "string"
+      },
+      {
+        "name": "usertour_user_id",
+        "label": "Usertour user ID",
+        "type": "string"
+      },
+      {
+        "name": "page_url",
+        "label": "Page URL",
+        "type": "string"
+      }
+    ]
+  }
+}

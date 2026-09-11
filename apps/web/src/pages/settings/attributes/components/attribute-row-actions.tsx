@@ -1,3 +1,4 @@
+import { catalogEntryForSource } from '@usertour/constants';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
@@ -17,16 +18,24 @@ export const AttributeRowActions = (props: AttributeRowActionsProps) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { isViewOnly } = useAppContext();
   const { t } = useTranslation();
+  // Provider-owned attributes are released by their integration mapping.
+  const synced = !!attribute.source && attribute.source !== 'internal';
 
   return (
     <>
       <ResourceRowActions
-        disabled={attribute.predefined || isViewOnly}
+        disabled={attribute.predefined || synced || isViewOnly}
         disabledHint={
           attribute.predefined ? (
             <p>
               {t('settings.common.predefinedTooltip', {
                 resource: t('settings.attributes.predefinedResource'),
+              })}
+            </p>
+          ) : synced ? (
+            <p>
+              {t('settings.attributes.syncedTooltip', {
+                provider: catalogEntryForSource(attribute.source)?.name ?? attribute.source,
               })}
             </p>
           ) : undefined

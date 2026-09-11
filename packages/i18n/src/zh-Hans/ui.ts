@@ -48,6 +48,23 @@ const translations = {
       twoFactorRequired:
         '当前实例要求开启二步验证。请先在账号安全设置中启用 2FA,然后从您的应用重新发起连接。',
     },
+    install: {
+      title: '将 {{name}} 连接到 Usertour',
+      subtitle: '选择这个 {{name}} 账号要同步的 Usertour 环境。之后会回到 {{name}} 确认授权。',
+      projectLabel: '项目',
+      environmentLabel: '环境',
+      environmentPlaceholder: '选择环境',
+      continue: '继续前往 {{name}}',
+      noProjects:
+        '你还不是任何 Usertour 项目的成员。先在 Usertour 创建项目,再从 {{name}} 重新安装。',
+      notAllowed: '你在该项目的角色无法管理集成。请项目所有者或管理员来安装 {{name}}。',
+      noEnvironments: '该项目中没有你可操作的环境。',
+      errorTitle: '安装未能完成',
+      failed:
+        '来自 {{name}} 的安装请求未能有效到达 Usertour。请改从 Usertour 连接:设置 → 集成 → {{name}}。',
+      invalid: '此安装请求无效或已过期。请从 {{name}} 重新发起。',
+      openUsertour: '打开 Usertour',
+    },
   },
   admin: {
     common: {
@@ -272,7 +289,6 @@ const translations = {
     },
     synced: {
       badge: '同步自 {{provider}}',
-      logoAlt: '{{provider}} 标志',
     },
   },
   settings: {
@@ -467,6 +483,8 @@ const translations = {
         dataType: '数据类型',
       },
       systemBadge: '系统',
+      syncedBadge: '同步自 {{provider}}',
+      syncedTooltip: '同步自 {{provider}},从集成映射中移除后才能删除。',
       editMenuItem: '编辑属性',
       deleteMenuItem: '删除属性',
       deleteResource: '属性',
@@ -776,6 +794,7 @@ const translations = {
           content: '内容',
           team: '团队',
           features: '功能',
+          integrations: '集成',
           security: '安全',
           support: '支持与服务',
         },
@@ -805,7 +824,6 @@ const translations = {
           companyProfiles: '公司资料与事件',
           localization: '本地化',
           aiTranslation: 'AI 机器翻译',
-          integrations: '集成',
           webhooks: 'Webhook',
           alerting: '告警(即将推出)',
           sso: '单点登录（SSO）',
@@ -1436,6 +1454,8 @@ const translations = {
           mixpanel: '将 Usertour 事件发送到 Mixpanel,并把 Mixpanel cohort 同步到 Usertour。',
           posthog: '将 Usertour 事件发送到 PostHog。',
           segment: '将 Usertour 事件发送到 Segment。',
+          hubspot:
+            '在 HubSpot 联系人、公司与 Usertour 用户、公司之间同步数据,并把 onboarding 里程碑写到 HubSpot 时间线。',
           zapier: '用 Usertour 事件触发 Zap,并从数千款应用创建或更新用户、公司和事件。',
         },
       },
@@ -1551,8 +1571,9 @@ const translations = {
         saved: '集成已保存',
         saveFailed: '保存集成失败',
       },
+      moreActions: '更多操作',
       delete: {
-        button: '移除',
+        button: '移除集成',
         confirmTitle: '移除该集成?',
         confirmDescription: '将立即停止向 {{name}} 推送事件,并删除已存密钥和消息日志。',
         confirmButton: '移除集成',
@@ -1565,9 +1586,155 @@ const translations = {
         failed: '测试事件入队失败',
         disabledHint: '启用集成后才能发送测试事件。',
       },
+      sync: {
+        connect: '连接 {{name}}',
+        connectDescription:
+          '在你的 {{name}} 账号中授权 Usertour。一个 {{name}} 账号对应一个 Usertour 环境。',
+        connected: '已连接',
+        notConnected: '未连接',
+        notConfigured:
+          '此服务器尚未配置 {{name}}。需要服务器管理员把 {{name}} 应用凭据加到服务器配置中。',
+        notConfiguredDocs: '自托管指南',
+        account: '已连接账号',
+        moreActions: '更多操作',
+        reconnect: '重新连接',
+        disconnect: '断开连接',
+        disconnectConfirmTitle: '断开 {{name}}?',
+        disconnectConfirmDescription: '同步会立即停止。映射和消息日志会保留,重新连接后可继续使用。',
+        disconnectSuccess: '已断开 {{name}}',
+        disconnectFailure: '断开 {{name}} 失败',
+        connectedToast: '已连接 {{name}}',
+        deniedToast: '在 {{name}} 中取消了授权。',
+        failedToast: '连接 {{name}} 失败,请重试。',
+        inUseToast: '这个 {{name}} 账号已经连接到另一个环境,请先在那边断开。',
+        autoDisabledBanner:
+          '{{name}} 已于 {{time}} 不再接受 Usertour 的访问,可能是应用被卸载或授权被撤销。同步已暂停,重新连接即可恢复。',
+        mapping: {
+          remoteObjects: {
+            contact: '联系人',
+            company: '公司',
+          },
+          localObjects: {
+            user: '用户',
+            company: '公司',
+          },
+          description:
+            '设置 {{name}} 记录与 Usertour 记录的匹配方式,以及两个方向各同步哪些字段。只有两边都存在的记录才会配对,不会创建任何记录。',
+          setUp: '设置映射',
+          edit: '编辑映射',
+          moreActions: '更多操作',
+          matchLabel: '匹配方式',
+          matchRemotePlaceholder: '选择一个 {{name}} 属性',
+          matchRemoteRequired: '请选择用于匹配的 {{name}} 属性。',
+          matchLocalEmail: '邮箱',
+          matchLocalUserId: '用户 ID(identify() 标识)',
+          matchLocalCompanyId: '公司 ID(group() 标识)',
+          matchEmailHelp:
+            '当 {{name}} 属性与 Usertour 的邮箱属性相同(不区分大小写)时,记录会被关联。',
+          matchRemoteFieldHelp:
+            '该属性的值必须与你的应用传给 usertour.identify() 的 ID 一致,公司则对应 usertour.group()。',
+          inboundTitle: '从 {{name}} 同步的字段',
+          inboundSyncing: '从 {{name}} 同步',
+          inboundHelp:
+            '每个属性会成为同名的 Usertour 属性,由 {{name}} 拥有:显示 {{name}} 标记,SDK 和 API 不能写入。',
+          addInbound: '选择要同步的 {{name}} 属性',
+          emptyInbound: '没有从 {{name}} 同步的字段。',
+          outboundTitle: '写回 {{name}} 的字段',
+          outboundSyncing: '写回 {{name}}',
+          outboundHelp:
+            '每个属性会写入 {{name}} 中 "Usertour" 属性组里的一个属性,首次同步时创建。由 {{name}} 拥有的属性不能写回。',
+          addOutbound: '选择要写回的 Usertour 属性',
+          emptyOutbound: '没有写回 {{name}} 的字段。',
+          searchProperties: '搜索属性…',
+          searchAttributes: '搜索属性…',
+          noMatches: '没有匹配项。',
+          newBadge: '新建',
+          existingBadge: '已存在',
+          existingHint: 'Usertour 里已有同代码名的属性;保存后将交由 {{name}} 拥有。',
+          churnWarning: '每次访问都会变化,会频繁写入 {{name}}。',
+          removeRow: '移除',
+          dialogNote: '新的变动会立即按这些设置同步;已有记录在下一次全量同步时补齐。',
+          save: '保存映射',
+          saved: '映射已保存。配置完成后运行一次全量同步,关联已有的记录。',
+          saveFailed: '保存映射失败',
+          remove: '移除映射',
+          removeConfirmTitle: '移除这个映射?',
+          removeConfirmDescription:
+            '这些记录将停止同步。从 {{name}} 同步来的属性保留现有值,变回普通属性。',
+          removed: '映射已移除',
+          removeFailed: '移除映射失败',
+          adoptTitle: '属性已存在',
+          adoptDescription:
+            '部分选中的属性在 Usertour 里已经存在。确认后它们将由 {{name}} 拥有,SDK 和 API 将不能再写入。',
+          adoptConfirm: '接管已有属性',
+          stats: '已匹配 {{matched}} · 未匹配 {{unresolved}}',
+          lastSynced: '上次全量同步 {{time}}',
+          neverSynced: '运行一次全量同步,关联已有的记录',
+          records: {
+            contact: '联系人和用户',
+            company: '公司',
+          },
+          syncHelp:
+            '全量同步会遍历所有{{records}},关联两边都存在的记录并填入所选字段。新的变动会自动同步;全量同步用于处理已有记录、修改字段之后,或在 {{name}} 里修正数据之后。它每天也会自动运行一次,账号较大时需要几分钟。',
+          propertiesLoadFailed: '无法加载 {{name}} 属性',
+          readOnlySuffix: '(只读)',
+          syncNow: '运行全量同步',
+          syncQueued: '全量同步已开始,账号较大时需要几分钟。',
+          syncInProgress: '全量同步进行中',
+          lastSyncFailed: '上次全量同步失败 {{time}}',
+          syncFailed: '启动同步失败',
+        },
+        viewSyncActivity: '同步活动',
+        events: {
+          title: '时间线事件',
+          description:
+            '把里程碑事件写入已关联联系人在 {{name}} 中的时间线;配置了公司映射时,也写入已关联的公司。可以在 workflow、列表和报表中使用。',
+          toggle: '向 {{name}} 发送事件',
+          needsMapping: '先配置 Contacts ↔ Users 映射:事件只写入已关联的联系人。',
+          saved: '时间线事件已更新',
+          names: {
+            flow_started: '流程开始',
+            flow_completed: '流程完成',
+            flow_ended: '流程结束',
+            checklist_started: '清单开始',
+            checklist_completed: '清单完成',
+            checklist_task_completed: '清单任务完成',
+            question_answered: '问题已回答',
+            launcher_activated: '启动器已激活',
+          },
+        },
+        activity: {
+          title: '同步活动',
+          description:
+            '全量同步,以及其间从 {{name}} 拉取到的变动,保留 30 天。失败的运行会显示原因。',
+          empty: '还没有同步活动。',
+          kindFull: '全量同步',
+          kindJournal: '来自 {{name}} 的变动',
+          fullRecords: '{{records}} 条记录 · 已匹配 {{matched}} · 未匹配 {{unresolved}}',
+          journalRecords: '同步了 {{count}} 条记录',
+          remoteIds: '{{name}} 记录 ID:{{ids}}',
+          statusRunning: '进行中',
+          statusSucceeded: '成功',
+          statusFailed: '失败',
+          columns: {
+            time: '时间',
+            sync: '同步',
+            result: '结果',
+            records: '记录',
+          },
+        },
+      },
+      crm: {
+        licenseToast: '当前套餐不包含 CRM 集成。',
+        lockedHint: 'Growth 及以上套餐可用',
+        downgradedBanner:
+          '当前套餐不包含 CRM 集成 — 同步已暂停。你仍可以查看和断开连接;升级套餐即可恢复。',
+      },
       messages: {
         title: '最近消息',
         description: '发往该目的地的每条事件保留 30 天,含每次投递尝试。点击一行查看详情。',
+        syncDescription:
+          '发送到 {{name}} 的每一次写回和时间线事件都会保留 30 天,含每次投递尝试。点击一行查看详情。',
         empty: '暂无消息。',
         loadMore: '加载更多',
         refresh: '刷新',
@@ -3993,6 +4160,7 @@ const translations = {
       userAttr: {
         label: '属性',
         placeholder: '选择一个属性',
+        syncedFrom: '同步自 {{provider}}',
         selectPlaceholder: '选择属性',
         searchPlaceholder: '搜索属性…',
         operatorPlaceholder: '选择条件',
@@ -4361,6 +4529,7 @@ const translations = {
     documentation: '文档',
   },
   attributes: {
+    syncedFrom: '同步自 {{provider}}',
     typeChip: {
       number: '数字',
       string: '文本',

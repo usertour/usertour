@@ -139,4 +139,16 @@ describe('IntegrationsListener', () => {
       listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_x'] }),
     ).resolves.toBeUndefined();
   });
+
+  it('never targets CRM rows: the fan-out query excludes the CRM providers', async () => {
+    prisma.integration.findMany.mockResolvedValue([]);
+    await listener.onBizEventTracked({ environmentId: 'env_1', bizEventIds: ['be_flow_started'] });
+    expect(prisma.integration.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          provider: { notIn: expect.arrayContaining(['hubspot']) },
+        }),
+      }),
+    );
+  });
 });

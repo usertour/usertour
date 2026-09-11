@@ -11,6 +11,7 @@ import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateSegment } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
+import { IntegrationSourceMark } from '../../../integrations/integration-source-mark';
 
 export interface SegmentData {
   logic?: string;
@@ -44,17 +45,13 @@ const syncedMark = (
   segment: Segment,
   t: ReturnType<typeof useConditionsT>,
 ): ReactNode | undefined => {
-  const entry = catalogEntryForSource(segment.source);
-  if (!entry) {
+  if (!catalogEntryForSource(segment.source)) {
     return undefined;
   }
-  const label = t('conditions.types.segment.syncedFrom', { provider: entry.name });
   return (
-    <img
-      src={entry.imagePath}
-      alt={label}
-      title={label}
-      className="h-3.5 w-3.5 shrink-0 rounded-[2px]"
+    <IntegrationSourceMark
+      source={segment.source}
+      labelFor={(provider) => t('conditions.types.segment.syncedFrom', { provider })}
     />
   );
 };

@@ -1,0 +1,32 @@
+{
+  "uid": "flow_started_contact",
+  "type": "app-event",
+  "config": {
+    "name": "Flow started",
+    "description": "A user started a flow in Usertour.",
+    "headerTemplate": "Flow started: **{{flow_name}}**",
+    "objectType": "CONTACT",
+    "properties": [
+      {
+        "name": "flow_name",
+        "label": "Flow name",
+        "type": "string"
+      },
+      {
+        "name": "flow_version",
+        "label": "Flow version",
+        "type": "number"
+      },
+      {
+        "name": "usertour_user_id",
+        "label": "Usertour user ID",
+        "type": "string"
+      },
+      {
+        "name": "page_url",
+        "label": "Page URL",
+        "type": "string"
+      }
+    ]
+  }
+}

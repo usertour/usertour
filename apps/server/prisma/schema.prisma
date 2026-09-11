@@ -666,7 +666,11 @@ model Attribute {
   description      String             @default("")
   dataType         Int                @default(1)
   randomMax        Int                @default(1)
+  /// 'internal' or a provider id: a provider-owned attribute is synced INTO
+  /// Usertour (ADR 0013 §6) — rendered with the provider badge, refused on
+  /// SDK/API writes. `sourceId` is the provider-side field name.
   source           String             @default("internal")
+  sourceId         String?
   predefined       Boolean            @default(false)
   deleted          Boolean            @default(false)
   attributeOnEvent AttributeOnEvent[]
@@ -841,6 +845,7 @@ model BizSession {
 
   @@index([bizUserId])
   @@index([contentId])
+  @@index([bizCompanyId])
 }
 
 model BizEvent {
@@ -1043,10 +1048,114 @@ model Integration {
   /// { userIdProperty?: string } — optional identity-bridge override.
   inboundConfig    Json    @default("{}") @db.JsonB
 
+  /// CRM connection (ADR 0013 §3). OAuth grant for the provider account,
+  /// AES-256-GCM encrypted JSON { accessToken, refreshToken, expiresAt }; the
+  /// `key` column stays empty for these rows. `remoteAccountId` is the
+  /// provider's account id (HubSpot hub id) — change journals and lookups key
+  /// on it. `remoteState` is system-owned bookkeeping (created remote
+  /// properties, subscription ids, event type names), never user-edited.
+  oauthCredentials String?
+  remoteAccountId  String?
+  remoteState      Json    @default("{}") @db.JsonB
+
   messages       OutboundMessage[]
   syncedSegments IntegrationSyncedSegment[]
+  objectMappings IntegrationObjectMapping[]
+  syncRuns       IntegrationSyncRun[]
 
   @@unique([environmentId, provider])
+}
+
+/// One CRM object pair kept in sync (ADR 0013 §4): a provider object type
+/// (contact, company) against a Usertour object type (user, company), with
+/// the match rule and the selected fields in each direction. Provider
+/// vocabulary is stored as-is; the CRM layer itself is provider-agnostic.
+/// Full-sync round state mirrors IntegrationSyncedSegment (one round at a
+/// time per mapping).
+model IntegrationObjectMapping {
+  id               String      @id @default(cuid())
+  createdAt        DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime    @updatedAt @db.Timestamptz(6)
+  integration      Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integrationId    String
+  /// Provider object type: 'contact' | 'company'.
+  remoteObject     String
+  /// Usertour object type: 'user' | 'company'.
+  localObject      String
+  /// 'email' | 'remoteField' — how remote records are paired with local ones.
+  matchStrategy    String      @default("email")
+  /// For 'remoteField': the remote property holding the Usertour external id.
+  matchRemoteField String?
+  /// [{ remote: string, local: string }] — provider-owned attributes.
+  inboundFields    Json        @default("[]") @db.JsonB
+  /// [{ local: string, remote: string }] — Usertour-owned write-back properties.
+  outboundFields   Json        @default("[]") @db.JsonB
+  enabled          Boolean     @default(true)
+
+  fullSyncSessionId String?
+  /// Heartbeat of the running round: set on claim, refreshed by every page and every retry, cleared when the round closes.
+  fullSyncStartedAt DateTime? @db.Timestamptz(6)
+  lastFullSyncAt    DateTime? @db.Timestamptz(6)
+  matchedCount      Int       @default(0)
+  unresolvedCount   Int       @default(0)
+
+  links    IntegrationObjectLink[]
+  syncRuns IntegrationSyncRun[]
+
+  @@unique([integrationId, remoteObject, localObject])
+}
+
+/// One sync run of a CRM integration (ADR 0013 §7): a full round over a
+/// mapping, or one journal poll's worth of inbound changes for the account.
+/// The operator's answer to "what did the sync do lately, did anything fail".
+/// Append-only: rows are written as runs start and finish, trimmed after 30 days.
+model IntegrationSyncRun {
+  id              String                    @id @default(cuid())
+  createdAt       DateTime                  @default(now()) @db.Timestamptz(6)
+  integration     Integration               @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integrationId   String
+  mapping         IntegrationObjectMapping? @relation(fields: [mappingId], references: [id], onDelete: SetNull)
+  mappingId       String?
+  /// 'full' | 'journal'
+  kind            String
+  /// 'running' | 'succeeded' | 'failed'
+  status          String
+  /// Full rounds: the round's session id, so page jobs find their run.
+  sessionId       String?
+  startedAt       DateTime                  @db.Timestamptz(6)
+  finishedAt      DateTime?                 @db.Timestamptz(6)
+  /// Provider records read (full round) or applied (journal poll).
+  records         Int                       @default(0)
+  matchedCount    Int                       @default(0)
+  unresolvedCount Int                       @default(0)
+  error           String?
+  /// Journal runs: the provider record ids the poll touched (string[], capped) — "which records".
+  remoteIds       Json?
+
+  @@index([integrationId, startedAt])
+  @@index([sessionId])
+}
+
+/// A paired record: which provider record a Usertour user/company IS (ADR
+/// 0013 §5). Links exist only when both sides exist — sync never creates
+/// records across the boundary. Both ids are unique per mapping so a remote
+/// merge or a re-identify can be detected rather than silently doubled.
+model IntegrationObjectLink {
+  id           String                   @id @default(cuid())
+  createdAt    DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime                 @updatedAt @db.Timestamptz(6)
+  mapping      IntegrationObjectMapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+  mappingId    String
+  /// BizUser.id or BizCompany.id, per the mapping's localObject.
+  localId      String
+  /// Provider record id (HubSpot object id).
+  remoteId     String
+  /// 'email' | 'remoteField' — which rule paired them.
+  matchedBy    String
+  lastSyncedAt DateTime?                @db.Timestamptz(6)
+
+  @@unique([mappingId, localId])
+  @@unique([mappingId, remoteId])
 }
 
 /// One synced cohort: maps a provider-side cohort to the Usertour segment

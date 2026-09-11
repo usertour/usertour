@@ -52,12 +52,43 @@ export type ProviderAdapter = (
   config: IntegrationConfig,
 ) => ProviderRequest;
 
+/**
+ * Topic of an object-sync write-back message (ADR 0013 §7, §13): the sync
+ * engine asking an adapter to update the remote record linked to a local
+ * one. Named for what the message is, not for who receives it — a webhook's
+ * `user.updated` carries a different payload (the user snapshot), so it is a
+ * different message; a second sync provider reuses this one unchanged.
+ */
+export const SYNC_OBJECT_UPDATE_TOPIC = 'sync.object.update';
+
+/**
+ * The ledger envelope for a write-back: which mapping, which record, which
+ * fields. Values are not carried — they are read at delivery time, so a
+ * retry never overwrites a newer value with an older one.
+ */
+export interface SyncObjectUpdateEnvelope {
+  id: string;
+  object: 'integrationMessage';
+  type: typeof SYNC_OBJECT_UPDATE_TOPIC;
+  createdAt: string;
+  environmentId: string;
+  data: {
+    mappingId: string;
+    localObject: string;
+    localId: string;
+    remoteObject: string;
+    remoteId: string;
+    /** Provider property name → serialized value ('' clears). */
+    fields: Record<string, string>;
+  };
+}
+
 /** Job payload for one integration delivery (one message to one provider). */
 export interface IntegrationDeliveryJobData {
   integrationId: string;
   messageId: string;
   topic: string;
-  payload: IntegrationMessageEnvelope;
+  payload: IntegrationMessageEnvelope | SyncObjectUpdateEnvelope;
   /**
    * Attempts already logged for this message before this job (a reconcile
    * continuation resumes the numbering). Absent = 0.

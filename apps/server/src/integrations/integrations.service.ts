@@ -4,11 +4,13 @@ import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import {
   catalogEntryForSource,
+  SYNC_INTEGRATION_PROVIDERS,
   INTEGRATION_PROVIDERS,
   INTEGRATION_TEST_TOPIC,
+  SYNC_TIMELINE_EVENTS,
 } from '@usertour/constants';
 import type { Request } from 'express';
-import type { IntegrationConfig } from '@usertour/types';
+import type { IntegrationConfig, IntegrationProvider } from '@usertour/types';
 import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import {
   FeatureRequiresLicenseError,
@@ -21,9 +23,15 @@ import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { CohortSyncService } from './cohort-sync.service';
-import { UpdateIntegrationInboundInput, UpsertIntegrationInput } from './dto/integration.input';
+import { SyncTeardownService } from './sync/sync-teardown.service';
+import {
+  UpdateIntegrationInboundInput,
+  UpsertIntegrationInput,
+  UpdateIntegrationEventsInput,
+} from './dto/integration.input';
 import { buildIntegrationMessage } from './integration-envelope';
 import { IntegrationDeliveryJobData, IntegrationEventObject } from './integrations.types';
+import type { Prisma } from '@prisma/client';
 
 /** Job options for a one-shot, user-triggered send (test event). */
 const SINGLE_ATTEMPT_JOB_OPTIONS = { removeOnComplete: true, removeOnFail: 1000, attempts: 1 };
@@ -51,6 +59,7 @@ export class IntegrationsService {
     private readonly ledger: OutboundLedgerService,
     private readonly encryption: EncryptionService,
     private readonly cohortSync: CohortSyncService,
+    private readonly syncTeardown: SyncTeardownService,
     @InjectQueue(QUEUE_INTEGRATION_DELIVERY) private readonly deliveryQueue: Queue,
   ) {}
 
@@ -61,12 +70,40 @@ export class IntegrationsService {
    * encrypted inbound token also stays behind: consumers get the derived
    * `inboundUrl` instead.
    */
-  private withoutKey<T extends { key: string; provider: string; inboundToken: string | null }>(
+  private withoutKey<
+    T extends {
+      key: string;
+      provider: string;
+      inboundToken: string | null;
+      oauthCredentials: string | null;
+      remoteState: unknown;
+    },
+  >(
     row: T,
     request?: Request,
-  ): Omit<T, 'key' | 'inboundToken'> & { inboundUrl: string | null } {
-    const { key: _key, inboundToken: _inboundToken, ...rest } = row;
-    return { ...rest, inboundUrl: this.cohortSync.inboundUrlFor(row, request) };
+  ): Omit<T, 'key' | 'inboundToken' | 'oauthCredentials'> & {
+    inboundUrl: string | null;
+    connected: boolean;
+    remoteAccountLabel: string | null;
+  } {
+    const { key: _key, inboundToken: _inboundToken, oauthCredentials, ...rest } = row;
+    const remoteState = (row.remoteState ?? {}) as { account?: { domain?: string } };
+    return {
+      ...rest,
+      inboundUrl: this.cohortSync.inboundUrlFor(row, request),
+      // OAuth-connected rows (ADR 0013): the grant itself never leaves the service either.
+      connected: oauthCredentials != null,
+      remoteAccountLabel: remoteState.account?.domain ?? null,
+    };
+  }
+
+  /** One integration by id, projected like list(). */
+  async getById(id: string, request?: Request) {
+    const row = await this.prisma.integration.findUnique({ where: { id } });
+    if (!row) {
+      throw new ValidationError('Integration not found.');
+    }
+    return this.withoutKey(row, request);
   }
 
   /** Providers whose inbound cohort-sync entry actually exists. */
@@ -117,6 +154,10 @@ export class IntegrationsService {
    */
   async upsert(data: UpsertIntegrationInput, request?: Request) {
     await this.assertEntitled(data.environmentId);
+    if (SYNC_INTEGRATION_PROVIDERS.includes(data.provider as IntegrationProvider)) {
+      // OAuth-connected rows are created by the OAuth callback (ADR 0013 §2); there is no key to paste.
+      throw new ValidationError(`"${data.provider}" connects over OAuth — use Connect instead.`);
+    }
     if (!INTEGRATION_PROVIDERS.includes(data.provider as (typeof INTEGRATION_PROVIDERS)[number])) {
       throw new ValidationError(
         `Unknown provider "${data.provider}" — expected one of ${INTEGRATION_PROVIDERS.join(', ')}.`,
@@ -189,6 +230,9 @@ export class IntegrationsService {
     // mappings) — the mapping FK is RESTRICT, so a delete without the release
     // fails loudly instead of stranding badged segments (ADR 0012 §6).
     await this.cohortSync.releaseAllForIntegration(id);
+    // Sync-engine rows own state outside the cascade (ADR 0013): provider-owned
+    // attributes, the grant, the change subscriptions.
+    await this.syncTeardown.teardown(id);
     const row = await this.prisma.integration.delete({ where: { id } });
     return this.withoutKey(row);
   }
@@ -208,6 +252,39 @@ export class IntegrationsService {
     const row = await this.cohortSync.updateInbound(integration, {
       enabled: data.enabled,
       userIdProperty: data.userIdProperty,
+    });
+    return this.withoutKey(row, request);
+  }
+
+  /**
+   * Timeline events of a sync provider (ADR 0013 §8): the switch and the
+   * selected milestone set live in the row's config. Turning the switch on
+   * without a selection selects every milestone; a code name outside the
+   * curated set is refused — the provider only knows the declared types.
+   */
+  async updateSyncEvents(data: UpdateIntegrationEventsInput, request?: Request) {
+    const integration = await this.prisma.integration.findUnique({ where: { id: data.id } });
+    if (!integration) {
+      throw new IntegrationNotFoundError();
+    }
+    if (!SYNC_INTEGRATION_PROVIDERS.includes(integration.provider as IntegrationProvider)) {
+      throw new ValidationError('Timeline events are a setting of sync providers only.');
+    }
+    await this.assertEntitled(integration.environmentId);
+    const current = (integration.config as IntegrationConfig | null) ?? {};
+    const previous = current.events ?? { enabled: false, codeNames: [...SYNC_TIMELINE_EVENTS] };
+    const codeNames = data.codeNames ? Array.from(new Set(data.codeNames)) : previous.codeNames;
+    const unknown = codeNames.filter((codeName) => !SYNC_TIMELINE_EVENTS.includes(codeName));
+    if (unknown.length > 0) {
+      throw new ValidationError(`Not a timeline event: ${unknown.join(', ')}.`);
+    }
+    const next: IntegrationConfig = {
+      ...current,
+      events: { enabled: data.enabled ?? previous.enabled, codeNames },
+    };
+    const row = await this.prisma.integration.update({
+      where: { id: data.id },
+      data: { config: next as Prisma.InputJsonObject },
     });
     return this.withoutKey(row, request);
   }
@@ -243,6 +320,10 @@ export class IntegrationsService {
     const integration = await this.prisma.integration.findUnique({ where: { id } });
     if (!integration) {
       throw new IntegrationNotFoundError();
+    }
+    if (SYNC_INTEGRATION_PROVIDERS.includes(integration.provider as IntegrationProvider)) {
+      // Sync-engine rows sync records, not events; a test event would only trip their breaker.
+      throw new ValidationError('Test events are only available for analytics integrations.');
     }
     await this.assertEntitled(integration.environmentId);
     if (!integration.enabled) {

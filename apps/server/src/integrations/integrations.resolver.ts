@@ -1,29 +1,155 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { Capability } from '@usertour/types';
 import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { UserEntity } from '@/common/decorators/user.decorator';
+import { User } from '@/users/models/user.model';
+import { INTEGRATION_TX_COOKIE } from '@/utils/cookie';
 import {
   IntegrationIdInput,
   QueryIntegrationsInput,
+  StartIntegrationOAuthInput,
   UpdateIntegrationInboundInput,
   UpsertIntegrationInput,
+  UpdateIntegrationEventsInput,
 } from './dto/integration.input';
 import {
+  IntegrationOAuthStart,
   Integration,
   IntegrationMessageConnection,
   IntegrationSyncedSegment,
 } from './models/integration.model';
+import { ProviderConnectionService } from './sync/provider-connection.service';
+import { ObjectMappingService } from './sync/object-mapping.service';
+import { HubspotJournalService } from './sync/hubspot-journal.service';
+import { ObjectSyncService } from './sync/object-sync.service';
+import {
+  IntegrationObjectMappingIdInput,
+  ListIntegrationRemotePropertiesArgs,
+  ListIntegrationSyncRunsArgs,
+  UpsertIntegrationObjectMappingInput,
+} from './dto/object-mapping.input';
+import { IntegrationRemoteProperty, IntegrationObjectMapping } from './models/object-mapping.model';
+import { IntegrationSyncRun } from './models/sync-run.model';
 import { IntegrationsService } from './integrations.service';
 
 @Resolver(() => Integration)
 @UseGuards(PermissionGuard)
 export class IntegrationsResolver {
-  constructor(private service: IntegrationsService) {}
+  constructor(
+    private service: IntegrationsService,
+    private connections: ProviderConnectionService,
+    private mappings: ObjectMappingService,
+    private objectSync: ObjectSyncService,
+    private journal: HubspotJournalService,
+  ) {}
+
+  // ---------------------------------------------------------------------------
+  // Object mappings (ADR 0013 §4-6)
+  // ---------------------------------------------------------------------------
+
+  @Query(() => [IntegrationObjectMapping])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
+  async listIntegrationObjectMappings(@Args('integrationId') integrationId: string) {
+    return await this.mappings.listMappings(integrationId);
+  }
+
+  /** Recent full rounds and journal polls — the sync activity card (ADR 0013 §11). */
+  @Query(() => [IntegrationSyncRun])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
+  async listIntegrationSyncRuns(@Args() { integrationId, limit }: ListIntegrationSyncRunsArgs) {
+    return await this.objectSync.listRuns(integrationId, limit ?? 50);
+  }
+
+  /** Live provider property metadata — the editor's pickers read from here. */
+  @Query(() => [IntegrationRemoteProperty])
+  @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
+  async listIntegrationRemoteProperties(
+    @Args() { integrationId, remoteObject }: ListIntegrationRemotePropertiesArgs,
+  ) {
+    return await this.mappings.listRemoteProperties(integrationId, remoteObject);
+  }
+
+  @Mutation(() => IntegrationObjectMapping)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { integrationId: string }).integrationId,
+  })
+  async upsertIntegrationObjectMapping(@Args('data') data: UpsertIntegrationObjectMappingInput) {
+    return await this.mappings.upsertMapping(data);
+  }
+
+  @Mutation(() => Boolean)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { integrationId: string }).integrationId,
+  })
+  async deleteIntegrationObjectMapping(@Args('data') data: IntegrationObjectMappingIdInput) {
+    return await this.mappings.deleteMapping(data);
+  }
+
+  /** "Sync now": claim a full-sync round for the mapping (refused while one is running). */
+  @Mutation(() => IntegrationObjectMapping)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  async runIntegrationObjectMappingSync(@Args('data') data: IntegrationObjectMappingIdInput) {
+    return await this.objectSync.startFullSync(data.id, {
+      manual: true,
+      integrationId: data.integrationId,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Provider connections (ADR 0013)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Mint the provider authorize URL for the browser to navigate to. The
+   * transaction cookie is set on THIS response: it is the only proof the
+   * callback accepts, and unlike a link it cannot be forwarded to someone
+   * else's browser.
+   */
+  @Mutation(() => IntegrationOAuthStart)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  async startIntegrationOAuth(
+    @Args('data') data: StartIntegrationOAuthInput,
+    @UserEntity() user: User,
+    @Context() context: { res: Response },
+  ) {
+    const { url, state } = await this.connections.startOAuth({ ...data, userId: user.id });
+    context.res.cookie(INTEGRATION_TX_COOKIE, state, this.connections.transactionCookieOptions());
+    return { url };
+  }
+
+  @Mutation(() => Integration)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
+  })
+  async disconnectIntegrationOAuth(
+    @Args('data') { id }: IntegrationIdInput,
+    @Context() context: { req?: Request },
+  ) {
+    // Best-effort: the change subscriptions die with the grant.
+    try {
+      await this.journal.removeSubscriptions(id);
+    } catch {
+      // Logged by the provider call site; the disconnect itself proceeds.
+    }
+    await this.connections.disconnect(id);
+    return await this.service.getById(id, context.req);
+  }
 
   @Query(() => [Integration])
   @RequirePermission({ capability: Capability.IntegrationRead, scope: ScopeKind.Integration })
@@ -98,6 +224,22 @@ export class IntegrationsResolver {
     @Context() context: { req?: Request },
   ) {
     return await this.service.updateInbound(data, context.req);
+  }
+
+  /** Which milestone events a sync provider's record timeline receives (ADR 0013 §8). */
+  @Mutation(() => Integration)
+  @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'integration',
+    resourceId: (a) => (a.data as { id: string }).id,
+    environmentId: (_a, r) => (r as { environmentId: string } | undefined)?.environmentId,
+  })
+  async updateIntegrationEvents(
+    @Args('data') data: UpdateIntegrationEventsInput,
+    @Context() context: { req?: Request },
+  ) {
+    return await this.service.updateSyncEvents(data, context.req);
   }
 
   @Mutation(() => Integration)

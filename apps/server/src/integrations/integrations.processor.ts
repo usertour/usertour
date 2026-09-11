@@ -4,11 +4,16 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { DelayedError, Job } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import type { IntegrationConfig } from '@usertour/types';
+import type { IntegrationConfig, IntegrationProvider } from '@usertour/types';
 import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import compileEmailTemplate from '@/common/email/compile-email-template';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
+import { SYNC_INTEGRATION_PROVIDERS, WEBHOOK_EVENT_TOPIC_PREFIX } from '@usertour/constants';
+import { GrantRevokedError, ProviderConnectionService } from './sync/provider-connection.service';
+import { DeliverySkippedError, ObjectSyncService } from './sync/object-sync.service';
+import { HubspotRateLimitError } from './sync/hubspot-errors';
+import type { SyncObjectUpdateEnvelope, IntegrationMessageEnvelope } from './integrations.types';
 import { AuditService } from '@/audit/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import {
@@ -62,6 +67,8 @@ export class IntegrationsProcessor extends WorkerHost {
     private readonly emailService: EmailService,
     private readonly audit: AuditService,
     private readonly encryption: EncryptionService,
+    private readonly objectSync: ObjectSyncService,
+    private readonly connections: ProviderConnectionService,
   ) {
     super();
   }
@@ -105,6 +112,14 @@ export class IntegrationsProcessor extends WorkerHost {
       throw new DelayedError();
     }
 
+    if (SYNC_INTEGRATION_PROVIDERS.includes(integration.provider as IntegrationProvider)) {
+      // Sync-engine rows (ADR 0013): no static key, no wire adapter — the write-back
+      // resolves its OAuth token and target at delivery time. Ledger and
+      // breaker bookkeeping are shared with the analytics path below.
+      await this.deliverSync(job, integration, attempt);
+      return;
+    }
+
     // The key is AES-256-GCM encrypted at rest; this processor decrypts on
     // its own read (the domain service is the plaintext boundary for every
     // other consumer). decrypt returns NULL on failure (wrong
@@ -125,7 +140,7 @@ export class IntegrationsProcessor extends WorkerHost {
 
     const request = buildProviderRequest(
       integration.provider,
-      payload,
+      payload as IntegrationMessageEnvelope,
       key,
       (integration.config ?? {}) as IntegrationConfig,
     );
@@ -191,6 +206,73 @@ export class IntegrationsProcessor extends WorkerHost {
         }
       }
       // Rethrow so BullMQ retries with backoff.
+      throw error;
+    }
+  }
+
+  private async deliverSync(
+    job: Job<IntegrationDeliveryJobData>,
+    integration: { id: string; key: string },
+    attempt: number,
+  ): Promise<void> {
+    const { messageId, payload } = job.data;
+    const startedAt = Date.now();
+    const final = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
+    try {
+      // Two message kinds reach a sync provider: a write-back from the object
+      // sync engine, and a tracked event bound for the record timeline.
+      const result = payload.type.startsWith(`${WEBHOOK_EVENT_TOPIC_PREFIX}.`)
+        ? await this.objectSync.deliverTimelineEvent(
+            integration.id,
+            payload as IntegrationMessageEnvelope,
+          )
+        : await this.objectSync.deliverWriteBack(payload as SyncObjectUpdateEnvelope);
+      await this.ledger.recordAttempt(messageId, {
+        attempt,
+        success: true,
+        responseStatus: result.status,
+        responseBody: asText(result.body),
+        durationMs: Date.now() - startedAt,
+        final,
+      });
+      await this.resetBreaker(integration.id, integration.key);
+    } catch (error) {
+      if (error instanceof DeliverySkippedError) {
+        // Nothing left to deliver to: settle without touching the breaker.
+        await this.ledger.recordAttempt(messageId, {
+          attempt,
+          success: false,
+          error: error.message,
+          durationMs: Date.now() - startedAt,
+          final: true,
+        });
+        return;
+      }
+      const failure = error as { message?: string; response?: { status?: number; data?: unknown } };
+      await this.ledger.recordAttempt(messageId, {
+        attempt,
+        success: false,
+        responseStatus:
+          error instanceof HubspotRateLimitError
+            ? error.status
+            : (failure.response?.status ?? null),
+        responseBody: asText(failure.response?.data),
+        error: String(failure.message ?? error),
+        durationMs: Date.now() - startedAt,
+        final,
+      });
+      if (error instanceof HubspotRateLimitError) {
+        // Throttling is backpressure, not a failing destination: honour
+        // Retry-After on the retry, but do not let it arm the breaker.
+        (error as unknown as RetryAfterCarrier).retryAfterMs = error.retryAfterMs;
+        throw error;
+      }
+      await this.recordFailedAttempt(integration.id, integration.key);
+      if (error instanceof GrantRevokedError) {
+        // Definitive: switch the integration off now rather than after the ladder.
+        this.logger.warn(`Write-back ${messageId}: ${error.message}`);
+        await this.connections.markGrantRevoked(integration.id);
+      }
       throw error;
     }
   }

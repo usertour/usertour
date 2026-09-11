@@ -22,6 +22,7 @@ import {
 import {
   RiDeleteBinLine,
   RiFileCopyLine,
+  RiMore2Line,
   RiRefreshLine,
   RiSendPlaneLine,
   SpinnerIcon,
@@ -29,6 +30,10 @@ import {
 import {
   Button,
   DestructiveConfirmDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Form,
   FormControl,
   FormDescription,
@@ -44,6 +49,7 @@ import {
   Separator,
   SettingsCard,
   SettingsCardStack,
+  Skeleton,
   Switch,
   Table,
   TableBody,
@@ -62,6 +68,9 @@ import { OutboundMessageDialog } from '../../components/outbound-message-dialog'
 import { OutboundMessageStatusBadge } from '../../components/outbound-message-status-badge';
 import { useCooldownTick } from '../../components/use-cooldown-tick';
 import { type IntegrationCatalogEntry, INTEGRATION_CATALOG } from '@usertour/constants';
+import { OAuthConnectionSection } from './oauth-connection-section';
+import { ObjectMappingCard } from './object-mapping-card';
+import { SyncEventsCard } from './sync-events-card';
 import { IntegrationStatusBadge } from './integration-status-badge';
 import { AutomationIntegrationDetail } from './automation-integration-detail';
 
@@ -225,18 +234,28 @@ const IdentitySection = ({
           </div>
         </div>
         {integration && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-destructive"
-            disabled={isViewOnly || deleting}
-            title={t('settings.integrations.delete.button')}
-            aria-label={t('settings.integrations.delete.button')}
-            onClick={() => setDeleteOpen(true)}
-          >
-            <RiDeleteBinLine className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t('settings.integrations.moreActions')}
+              >
+                <RiMore2Line className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={isViewOnly || deleting}
+                onSelect={() => setDeleteOpen(true)}
+              >
+                <RiDeleteBinLine className="mr-2 h-4 w-4" />
+                {t('settings.integrations.delete.button')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
@@ -699,10 +718,18 @@ const MessagesSection = ({
   integrationId,
   enabled,
   entitled,
+  showTestEvent = true,
+  title,
+  description,
 }: {
   integrationId: string;
   enabled: boolean;
   entitled: boolean;
+  /** CRM rows (ADR 0013) have no analytics adapter to send a test event through. */
+  showTestEvent?: boolean;
+  /** Override the analytics wording where the log holds something else (CRM: write-backs). */
+  title?: string;
+  description?: string;
 }) => {
   // Load-more accumulation, same wiring as the webhook message log.
   const [afterCursor, setAfterCursor] = useState<string | undefined>(undefined);
@@ -778,8 +805,8 @@ const MessagesSection = ({
   return (
     <div className="space-y-6">
       <CardHeading
-        title={t('settings.integrations.messages.title')}
-        description={t('settings.integrations.messages.description')}
+        title={title ?? t('settings.integrations.messages.title')}
+        description={description ?? t('settings.integrations.messages.description')}
         actions={
           <>
             <Button
@@ -792,19 +819,21 @@ const MessagesSection = ({
             >
               <RiRefreshLine className={cn('h-4 w-4', loading && 'animate-spin')} />
             </Button>
-            <Button
-              variant="outline"
-              disabled={isViewOnly || !enabled || !entitled || sendingTest}
-              title={enabled ? undefined : t('settings.integrations.testEvent.disabledHint')}
-              onClick={() => void handleSendTest()}
-            >
-              {sendingTest ? (
-                <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RiSendPlaneLine className="mr-2 h-4 w-4" />
-              )}
-              {t('settings.integrations.testEvent.button')}
-            </Button>
+            {showTestEvent && (
+              <Button
+                variant="outline"
+                disabled={isViewOnly || !enabled || !entitled || sendingTest}
+                title={enabled ? undefined : t('settings.integrations.testEvent.disabledHint')}
+                onClick={() => void handleSendTest()}
+              >
+                {sendingTest ? (
+                  <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RiSendPlaneLine className="mr-2 h-4 w-4" />
+                )}
+                {t('settings.integrations.testEvent.button')}
+              </Button>
+            )}
           </>
         }
       />
@@ -885,6 +914,35 @@ const MessagesSection = ({
   );
 };
 
+interface IntegrationDetailPendingProps {
+  entry: IntegrationCatalogEntry;
+}
+
+/** The detail page before its environment and integration row are known: stable parts real, state as skeletons. */
+const IntegrationDetailPending = (props: IntegrationDetailPendingProps) => {
+  const { entry } = props;
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <img
+            className="h-12 w-12 rounded-lg border border-accent-light object-cover"
+            src={entry.imagePath}
+            alt={t('settings.integrations.catalog.logoAlt', { name: entry.name })}
+          />
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-medium tracking-tight">{entry.name}</h3>
+            <Skeleton className="h-5 w-24" />
+          </div>
+        </div>
+        <Skeleton className="h-9 w-40" />
+      </div>
+      <Skeleton className="h-4 w-2/3" />
+    </div>
+  );
+};
+
 export const IntegrationDetail = () => {
   const { settingSubType: provider } = useParams();
   const { environment, project } = useAppContext();
@@ -892,7 +950,7 @@ export const IntegrationDetail = () => {
     project?.id,
     SHARED_CACHE_QUERY_OPTIONS,
   );
-  const { integrations, loading } = useListIntegrationsQuery(
+  const { integrations, loading, error } = useListIntegrationsQuery(
     environment?.id ?? '',
     SHARED_CACHE_QUERY_OPTIONS,
   );
@@ -905,7 +963,12 @@ export const IntegrationDetail = () => {
   // Plan gate mirror (server enforces independently): reads and delete stay
   // open on a downgraded project; save / test are write-shaped. Optimistic
   // while settling — see the list page.
-  const rawEntitled = !projectConfig || projectConfig.integrations;
+  // CRM providers sit one tier up (ADR 0013 §10): their own flag, same settle rule.
+  const isCrm = entry?.kind === 'crm';
+  // The connection + mapping page is the sync engine's UI; the plan flag is the CRM kind's.
+  const hasObjectSync = !!entry?.hasObjectSync;
+  const rawEntitled =
+    !projectConfig || (isCrm ? projectConfig.crmIntegrations : projectConfig.integrations);
   const entitled =
     (loading && !integrations) || (configLoading && !projectConfig) ? true : rawEntitled;
 
@@ -921,8 +984,81 @@ export const IntegrationDetail = () => {
   if (entry.kind === 'automation') {
     return <AutomationIntegrationDetail entry={entry} entitled={entitled} />;
   }
-  if (loading && !integrations) {
-    return null;
+  // Settled = the environment is known AND its integrations have arrived. A
+  // query skipped for a missing environment is not "loading", so the loading
+  // flag alone shows the not-connected state for the frame before the
+  // environment resolves. Until then, render what never changes (logo, name)
+  // with skeletons where the state goes. A failed query settles too: the
+  // branches below then show the unconfigured state, as before.
+  const settled = !!environment && (!!integrations || !!error);
+  if (!settled) {
+    return (
+      <SettingsCardStack>
+        <SettingsCard>
+          <IntegrationDetailPending entry={entry} />
+        </SettingsCard>
+      </SettingsCardStack>
+    );
+  }
+
+  if (hasObjectSync) {
+    return (
+      <SettingsCardStack>
+        <SettingsCard>
+          {!entitled && (
+            <div className="mb-4 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              {t('settings.integrations.crm.downgradedBanner')}
+            </div>
+          )}
+          <OAuthConnectionSection
+            entry={entry}
+            integration={integration}
+            environmentId={environment?.id ?? ''}
+            entitled={entitled}
+          />
+        </SettingsCard>
+
+        {integration?.connected && (
+          <>
+            <SettingsCard>
+              <ObjectMappingCard
+                entry={entry}
+                integration={integration}
+                remoteObject="contact"
+                localObject="user"
+                entitled={entitled}
+              />
+            </SettingsCard>
+            <SettingsCard>
+              <ObjectMappingCard
+                entry={entry}
+                integration={integration}
+                remoteObject="company"
+                localObject="company"
+                entitled={entitled}
+              />
+            </SettingsCard>
+            <SettingsCard>
+              <SyncEventsCard entry={entry} integration={integration} entitled={entitled} />
+            </SettingsCard>
+          </>
+        )}
+
+        {integration && (
+          <SettingsCard>
+            <MessagesSection
+              integrationId={integration.id}
+              enabled={integration.enabled}
+              entitled={entitled}
+              showTestEvent={false}
+              description={t('settings.integrations.messages.syncDescription', {
+                name: entry.name,
+              })}
+            />
+          </SettingsCard>
+        )}
+      </SettingsCardStack>
+    );
   }
 
   return (

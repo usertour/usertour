@@ -1,4 +1,6 @@
 import { INestApplication } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ENVIRONMENT_DELETING } from '@/environments/environment.events';
 import { PrismaService } from 'nestjs-prisma';
 
 import { graphql, gqlData } from '../auth';
@@ -190,14 +192,22 @@ describe('GraphQL environments (e2e)', () => {
       expect(row?.deleted).toBe(true);
     });
 
-    it('errors deleting the primary environment', async () => {
-      const res = await graphql(app, {
-        token,
-        query:
-          'mutation ($data: DeleteEnvironmentInput!) { deleteEnvironments(data: $data) { id } }',
-        variables: { data: { id: primaryEnvId } },
-      });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+    it('errors deleting the primary environment, before any teardown runs', async () => {
+      // The teardown listeners revoke grants at external providers — nothing
+      // a rollback brings back — so a refused delete must never reach them.
+      const emitAsync = jest.spyOn(EventEmitter2.prototype, 'emitAsync');
+      try {
+        const res = await graphql(app, {
+          token,
+          query:
+            'mutation ($data: DeleteEnvironmentInput!) { deleteEnvironments(data: $data) { id } }',
+          variables: { data: { id: primaryEnvId } },
+        });
+        expect(res.body.errors?.length).toBeGreaterThan(0);
+        expect(emitAsync).not.toHaveBeenCalledWith(ENVIRONMENT_DELETING, expect.anything());
+      } finally {
+        emitAsync.mockRestore();
+      }
 
       const row = await prisma.environment.findUnique({ where: { id: primaryEnvId } });
       expect(row?.deleted).toBe(false);

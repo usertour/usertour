@@ -1,5 +1,13 @@
 import { ArgsType, Field, InputType } from '@nestjs/graphql';
-import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateNested,
+  IsArray,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 @ArgsType()
@@ -76,4 +84,47 @@ export class IntegrationIdInput {
   @Field(() => String)
   @IsString()
   id: string;
+}
+
+@InputType()
+export class StartIntegrationOAuthInput {
+  @Field(() => String)
+  @IsString()
+  environmentId: string;
+
+  /** Validated against SYNC_INTEGRATION_PROVIDERS in the service. */
+  @Field(() => String)
+  @IsString()
+  @MaxLength(50)
+  provider: string;
+
+  /**
+   * Marketplace-initiated install only: the returnUrl the provider handed the
+   * callback. Must be a provider address; the state is handed back on it.
+   */
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  returnUrl?: string;
+}
+
+/** Timeline events of a sync provider (ADR 0013 §8): the switch and the selected milestone set. */
+@InputType()
+export class UpdateIntegrationEventsInput {
+  @Field(() => String)
+  @IsString()
+  id: string;
+
+  @Field(() => Boolean, { nullable: true })
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  /** Event codeNames to send; validated against SYNC_TIMELINE_EVENTS in the service. */
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  codeNames?: string[];
 }

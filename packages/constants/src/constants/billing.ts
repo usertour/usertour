@@ -27,6 +27,7 @@ const HOBBY: PlanFeatures = {
   ssoOidc: false,
   webhooks: false,
   integrations: false,
+  crmIntegrations: false,
   sessionsLimit: HobbySessionLimit,
   teamMemberLimit: 1,
   environmentLimit: 1,
@@ -54,6 +55,8 @@ const GROWTH: PlanFeatures = {
   // Growth can view the audit log, but only a recent window; Business is full.
   auditLogs: true,
   auditLogRetentionDays: 7,
+  // CRM sync (ADR 0013) unlocks one tier above the analytics providers.
+  crmIntegrations: true,
   sessionsLimit: GrowthSessionLimit,
   teamMemberLimit: 10,
   environmentLimit: 3,
