@@ -453,12 +453,13 @@ describe('GraphQL CRM connections (e2e)', () => {
       expect(foreign.body.errors?.[0]?.message).toContain('not a HubSpot address');
     });
 
-    it('last leg: finalize completes the connection and lands back on HubSpot', async () => {
+    it("last leg: finalize arrives in HubSpot's frame without our cookie, completes once, lands back on HubSpot", async () => {
       mockProvider();
-      const { state, cookie } = await beginHandshake(RETURN_URL);
+      const { state } = await beginHandshake(RETURN_URL);
+      // HubSpot's frame: a cross-site navigation, so no transaction cookie.
       const res = await request(app.getHttpServer())
         .get(CALLBACK)
-        .set('Cookie', cookie)
+        .set('Sec-Fetch-Dest', 'iframe')
         .query({ step: 'finalize', code: 'code-1', state, returnUrl: RETURN_URL });
       expect(res.status).toBe(302);
       expect(res.headers.location).toBe(RETURN_URL);
@@ -467,6 +468,12 @@ describe('GraphQL CRM connections (e2e)', () => {
       });
       expect(row?.enabled).toBe(true);
       expect(row?.remoteAccountId).toBe('424242');
+
+      // The state is spent: a captured callback URL does not connect again.
+      const replay = await request(app.getHttpServer())
+        .get(CALLBACK)
+        .query({ step: 'finalize', code: 'code-1b', state, returnUrl: RETURN_URL });
+      expect(replay.headers.location).toContain('error=failed');
 
       // A returnUrl that is not HubSpot's is ignored: the connection completes
       // and the browser lands on the settings page instead.

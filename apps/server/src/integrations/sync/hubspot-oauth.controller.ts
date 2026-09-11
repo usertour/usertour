@@ -35,7 +35,13 @@ import { ObjectMappingService } from './object-mapping.service';
  * sign in and pick an environment, runs the same mutation with that returnUrl
  * so the state travels back to HubSpot, HubSpot shows consent and returns
  * with `step=finalize`, the code, the state and the returnUrl — where the
- * install ends. Both legs verify the same way; only the destinations differ.
+ * install ends. HubSpot's wizard opens the install page in a new tab but runs
+ * consent and the finalize leg inside its own frame, so that request is
+ * cross-site and the transaction cookie never arrives; a marketplace state
+ * (marked as such when minted) is verified by being spent instead — signed,
+ * ten minutes, single use — which is the flow HubSpot's install
+ * documentation prescribes. A Usertour-started handshake keeps the cookie
+ * binding.
  */
 @Controller('api/integrations/hubspot/oauth')
 export class HubspotOAuthController {
@@ -60,23 +66,47 @@ export class HubspotOAuthController {
   ) {
     // Only a HubSpot address may receive the browser; anything else is dropped.
     const returnUrl = isHubspotReturnUrl(returnUrlParam) ? returnUrlParam : undefined;
+    const framed = req.headers['sec-fetch-dest'] === 'iframe';
     if (step === 'authorize') {
+      this.logger.log(
+        `HubSpot marketplace authorize: framed=${framed} returnUrl=${
+          returnUrl ? new URL(returnUrl).host : 'dropped'
+        }`,
+      );
       return res.redirect(this.installUrl(returnUrl ? { returnUrl } : { error: 'failed' }));
     }
-    const marketplace = step === 'finalize';
+    const fromMarketplace = step === 'finalize';
     let projectId: string | undefined;
     res.clearCookie(INTEGRATION_TX_COOKIE, { path: INTEGRATION_TX_COOKIE_PATH });
     try {
       const transaction = await this.connections.verifyState(state ?? '');
       projectId = transaction.projectId;
       const cookie = req.cookies?.[INTEGRATION_TX_COOKIE];
-      if (!cookie || cookie !== state) {
+      if (transaction.marketplace) {
+        this.logger.log(
+          `HubSpot marketplace finalize: framed=${framed} cookie=${
+            cookie ? 'present' : 'absent'
+          } returnUrl=${returnUrl ? new URL(returnUrl).host : 'dropped'}`,
+        );
+        if (cookie !== undefined && cookie !== state) {
+          // This browser is mid-way through a different handshake.
+          this.logger.warn('HubSpot marketplace finalize refused: another handshake is in flight');
+          return res.redirect(this.failureUrl(projectId, fromMarketplace, 'failed'));
+        }
+        if (!(await this.connections.consumeState(state ?? ''))) {
+          this.logger.warn('HubSpot marketplace finalize refused: state already spent');
+          return res.redirect(this.failureUrl(projectId, fromMarketplace, 'failed'));
+        }
+      } else if (!cookie || cookie !== state) {
         // Not the browser that started this handshake.
-        return res.redirect(this.failureUrl(projectId, marketplace, 'failed'));
+        this.logger.warn(
+          `HubSpot OAuth callback refused: cookie ${cookie ? 'differs' : 'absent'} (framed=${framed})`,
+        );
+        return res.redirect(this.failureUrl(projectId, fromMarketplace, 'failed'));
       }
       if (providerError || !code) {
         // The user declined on HubSpot's consent screen (or HubSpot refused).
-        return res.redirect(this.failureUrl(projectId, marketplace, 'denied'));
+        return res.redirect(this.failureUrl(projectId, fromMarketplace, 'denied'));
       }
       const { integration, previousAccountId } = await this.connections.completeOAuth(
         transaction,
@@ -99,7 +129,7 @@ export class HubspotOAuthController {
             ? 'inUse'
             : 'failed';
       this.logger.warn(`HubSpot OAuth callback failed (${reason}): ${(error as Error).message}`);
-      return res.redirect(this.failureUrl(projectId, marketplace, reason));
+      return res.redirect(this.failureUrl(projectId, fromMarketplace, reason));
     }
   }
 
