@@ -88,7 +88,7 @@ bizEvent row(s) created inside a domain transaction
 ```
 
 - **Post-commit emit is a hard rule** — subscribers must never observe rolled-back events. Prisma middleware was rejected outright (documented in `app.module`: middleware cannot intercept transactional operations).
-- The emit fans out through the same in-process domain-event pattern the audit module established (`RESOURCE_CHANGED_EVENT`); future consumers subscribe without touching producers. Emit sites: `EventTrackingService` (all four public entrypoints, collecting created ids via `AsyncLocalStorage` — the handler chain rebuilds params objects in several places, so a threaded collector would silently drop), the v2 custom-event path, the legacy v1 `trackEvent`, and the two admin session-ending paths in `AnalyticsService`.
+- The emit fans out through the same in-process domain-event pattern the audit module established (`RESOURCE_CHANGED_EVENT`); future consumers subscribe without touching producers. Emit sites: `EventTrackingService` (all four public entrypoints, collecting created ids via `AsyncLocalStorage` — the handler chain rebuilds params objects in several places, so a threaded collector would silently drop), the v2 custom-event path, and the two admin session-ending paths in `AnalyticsService`.
 - **Ids, not rows, in the domain event**: the listener re-reads with the relations the payload needs; producers stay dumb.
 
 ### 6. Delivery semantics

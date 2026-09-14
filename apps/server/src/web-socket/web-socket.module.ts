@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { WebSocketGateway } from './web-socket.gateway';
-import { WebSocketService } from './web-socket.service';
-import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
 import { BizModule } from '@/biz/biz.module';
 import { LicenseModule } from '@/license/license.module';
 import { ProjectsModule } from '@/projects/projects.module';
@@ -64,9 +61,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     }),
   ],
   providers: [
-    WebSocketGateway,
-    WebSocketService,
-    WebSocketPerformanceInterceptor,
     WebSocketV2Gateway,
     WebSocketV2Service,
     WebSocketV2Guard,
@@ -86,6 +80,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     AnnouncementService,
     WebSocketV2MessageHandler,
   ],
-  exports: [WebSocketGateway, WebSocketV2Gateway, ContentDiagnosisService, EventTrackingService],
+  exports: [WebSocketV2Gateway, ContentDiagnosisService, EventTrackingService],
 })
 export class WebSocketModule {}

@@ -7,7 +7,6 @@ import { UpdateContentInput } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
 import { VersionUpdateInput } from './dto/version-update.input';
 import { VersionUpdateLocalizationInput } from './dto/version.input';
-import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
@@ -70,7 +69,6 @@ type PublishActorNames = {
 export class ContentService {
   constructor(
     private prisma: PrismaService,
-    private webSocketGateway: WebSocketGateway,
     private webSocketV2Gateway: WebSocketV2Gateway,
     private readonly cache: ProjectCacheService,
     private readonly eventEmitter: EventEmitter2,
