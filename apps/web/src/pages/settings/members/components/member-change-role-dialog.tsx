@@ -55,8 +55,6 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
       onOpenChange(false);
     },
   });
-  const role = state.form.watch('role');
-
   useEffect(() => {
     if (open) {
       state.form.reset(valuesOf(data));
@@ -75,8 +73,6 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
     >
       <div className="space-y-4">
         <MemberRoleFields
-          control={state.form.control}
-          role={role}
           roleLabel={t('settings.team.changeRole.roleLabel')}
           rolePlaceholder={t('settings.team.changeRole.rolePlaceholder')}
         />

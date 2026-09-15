@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import type { Control, FieldValues, Path, PathValue } from 'react-hook-form';
-import { CaretSortIcon } from '@radix-ui/react-icons';
+import { useFormContext } from 'react-hook-form';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
+import { RiExpandUpDownLine } from '@usertour/icons';
 import {
   Button,
   Checkbox,
@@ -45,28 +45,29 @@ export const memberRoleFieldsSchema = z.object({
 
 export type MemberRoleFieldsValues = z.infer<typeof memberRoleFieldsSchema>;
 
-export interface MemberRoleFieldsProps<TValues extends MemberRoleFieldsValues & FieldValues> {
-  control: Control<TValues>;
-  role: string;
+export interface MemberRoleFieldsProps {
   roleLabel: string;
   rolePlaceholder: string;
 }
 
-export function MemberRoleFields<TValues extends MemberRoleFieldsValues & FieldValues>(
-  props: MemberRoleFieldsProps<TValues>,
-) {
-  const { control, role, roleLabel, rolePlaceholder } = props;
+/**
+ * Renders inside the dialog's FormProvider (SettingsDialogForm) and reads the
+ * form through context, so a host form only needs to extend
+ * memberRoleFieldsSchema — same pattern as the personal API key token form.
+ */
+export const MemberRoleFields = (props: MemberRoleFieldsProps) => {
+  const { roleLabel, rolePlaceholder } = props;
   const { t } = useTranslation();
+  const { control, watch } = useFormContext<MemberRoleFieldsValues>();
   const { environmentList } = useEnvironmentList();
-  const roleField = 'role' as Path<TValues>;
-  const environmentsField = 'allowedEnvironmentIds' as Path<TValues>;
+  const role = watch('role');
   const descriptionKey = ROLE_DESCRIPTION_KEYS[role];
 
   return (
     <>
       <FormField
         control={control}
-        name={roleField}
+        name="role"
         render={({ field }) => {
           const selected = INVITABLE_ROLE_OPTIONS.find((option) => option.value === field.value);
           return (
@@ -84,7 +85,7 @@ export function MemberRoleFields<TValues extends MemberRoleFieldsValues & FieldV
                       className="w-full justify-between font-normal"
                     >
                       {selected ? t(selected.i18nKey) : rolePlaceholder}
-                      <CaretSortIcon className="h-4 w-4 opacity-50" />
+                      <RiExpandUpDownLine className="h-4 w-4 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
                 </FormControl>
@@ -95,9 +96,7 @@ export function MemberRoleFields<TValues extends MemberRoleFieldsValues & FieldV
                   {INVITABLE_ROLE_OPTIONS.map((option) => (
                     <DropdownMenuItem
                       key={option.value}
-                      onSelect={() =>
-                        field.onChange(option.value as PathValue<TValues, Path<TValues>>)
-                      }
+                      onSelect={() => field.onChange(option.value)}
                     >
                       {t(option.i18nKey)}
                     </DropdownMenuItem>
@@ -113,14 +112,15 @@ export function MemberRoleFields<TValues extends MemberRoleFieldsValues & FieldV
       {role === TeamMemberRole.EDITOR ? (
         <FormField
           control={control}
-          name={environmentsField}
+          name="allowedEnvironmentIds"
           render={({ field }) => {
-            const selectedIds: string[] = Array.isArray(field.value) ? field.value : [];
+            const selectedIds = field.value ?? [];
             const toggle = (environmentId: string, checked: boolean) => {
-              const next = checked
-                ? [...new Set([...selectedIds, environmentId])]
-                : selectedIds.filter((id) => id !== environmentId);
-              field.onChange(next as PathValue<TValues, Path<TValues>>);
+              field.onChange(
+                checked
+                  ? [...new Set([...selectedIds, environmentId])]
+                  : selectedIds.filter((id) => id !== environmentId),
+              );
             };
             return (
               <FormItem>
@@ -154,6 +154,6 @@ export function MemberRoleFields<TValues extends MemberRoleFieldsValues & FieldV
       ) : null}
     </>
   );
-}
+};
 
 MemberRoleFields.displayName = 'MemberRoleFields';

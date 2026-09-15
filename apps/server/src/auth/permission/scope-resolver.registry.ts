@@ -37,16 +37,13 @@ export enum ScopeKind {
 }
 
 /**
- * What a resolver derives from the request: the owning project, plus any
- * environment(s) the request implicitly ACTS ON that were resolved as a
- * byproduct of the same row lookup (integration/mapping/session). The guard's
- * membership environment-ceiling check consumes `environmentIds` directly, so
- * the env is never re-queried — and a new arg shape added to a resolver can't
- * silently skip the ceiling.
+ * What a resolver derives from the request: the owning project. Authorization
+ * is project × capability; the one environment-level rule (the EDITOR publish
+ * whitelist) reads the publish target straight from the arguments in the
+ * guard, so resolvers never carry environments.
  */
 export interface ScopeResolution {
   projectId: string;
-  environmentIds?: string[];
 }
 
 /** A resolver returns the request's scope resolution, or null if unresolvable. */
@@ -67,10 +64,8 @@ export interface ScopeServices {
   getVersionProjectId: (versionId: string) => Promise<string | null>;
   /** projectId the content owning a step belongs to (via version → content). */
   getStepProjectId: (stepId: string) => Promise<string | null>;
-  /** project (via content) + environment a session belongs to, in ONE lookup. */
-  getSessionScope: (
-    sessionId: string,
-  ) => Promise<{ projectId: string | null; environmentId: string | null } | null>;
+  /** projectId a session belongs to (via its content). */
+  getSessionProjectId: (sessionId: string) => Promise<string | null>;
   /** environmentId an integration belongs to. */
   getIntegrationEnvironmentId: (integrationId: string) => Promise<string | null>;
   /** environmentId a webhook belongs to. */
@@ -84,16 +79,12 @@ const argEnvironmentId = (args: Record<string, any>): string | undefined =>
   args.environmentId || args.data?.environmentId || args.query?.environmentId || args.data?.id;
 
 /** Verify any client-supplied projectId matches the derived one (cross-project-IDOR guard). */
-const crossCheck = (
-  args: Record<string, any>,
-  projectId: string,
-  environmentIds?: string[],
-): ScopeResolution => {
+const crossCheck = (args: Record<string, any>, projectId: string): ScopeResolution => {
   const claimed = argProjectId(args);
   if (claimed && claimed !== projectId) {
     throw new NoPermissionError();
   }
-  return { projectId, ...(environmentIds?.length ? { environmentIds } : {}) };
+  return { projectId };
 };
 
 /**
@@ -177,12 +168,8 @@ const fromSession =
     if (!sessionId) {
       return null;
     }
-    const scope = await services.getSessionScope(sessionId);
-    if (!scope?.projectId) {
-      return null;
-    }
-    // The session's own environment rides along for the membership env ceiling.
-    return crossCheck(args, scope.projectId, scope.environmentId ? [scope.environmentId] : []);
+    const projectId = await services.getSessionProjectId(sessionId);
+    return projectId ? crossCheck(args, projectId) : null;
   };
 
 const fromSegment =
@@ -217,8 +204,7 @@ const fromIntegration =
       return null;
     }
     const projectId = await services.getEnvironmentProjectId(environmentId);
-    // The integration's environment rides along for the membership env ceiling.
-    return projectId ? crossCheck(args, projectId, [environmentId]) : null;
+    return projectId ? crossCheck(args, projectId) : null;
   };
 
 const fromWebhook =
@@ -237,8 +223,7 @@ const fromWebhook =
       return null;
     }
     const projectId = await services.getEnvironmentProjectId(environmentId);
-    // The webhook's environment rides along for the membership env ceiling.
-    return projectId ? crossCheck(args, projectId, [environmentId]) : null;
+    return projectId ? crossCheck(args, projectId) : null;
   };
 
 export const createScopeResolvers = (

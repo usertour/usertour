@@ -70,17 +70,13 @@ export class PermissionGuard implements CanActivate {
             select: { version: { select: { content: { select: { projectId: true } } } } },
           })
         )?.version?.content?.projectId ?? null,
-      getSessionScope: async (sessionId) => {
-        // ONE lookup yields both the owning project (via content) and the
-        // session's environment (for the membership env ceiling).
-        const session = await this.prisma.bizSession.findUnique({
-          where: { id: sessionId },
-          select: { environmentId: true, content: { select: { projectId: true } } },
-        });
-        return session
-          ? { projectId: session.content?.projectId ?? null, environmentId: session.environmentId }
-          : null;
-      },
+      getSessionProjectId: async (sessionId) =>
+        (
+          await this.prisma.bizSession.findUnique({
+            where: { id: sessionId },
+            select: { content: { select: { projectId: true } } },
+          })
+        )?.content?.projectId ?? null,
       getIntegrationEnvironmentId: async (integrationId) =>
         (
           await this.prisma.integration.findUnique({

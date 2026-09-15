@@ -77,8 +77,6 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
       onOpenChange(false);
     },
   });
-  const role = state.form.watch('role');
-
   useEffect(() => {
     if (open) {
       state.form.reset(defaultValues);
@@ -164,8 +162,6 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
           )}
         />
         <MemberRoleFields
-          control={state.form.control}
-          role={role}
           roleLabel={t('settings.team.invite.roleLabel')}
           rolePlaceholder={t('settings.team.invite.rolePlaceholder')}
         />
