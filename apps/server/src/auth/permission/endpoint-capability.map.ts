@@ -160,4 +160,20 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
 
   // audit (owner-only)
   'audit.auditLogs': Capability.AuditRead, // O
+
+  // sso (owner-only)
+  'sso.createOidcSsoProvider': Capability.SsoManage,
+  'sso.updateSsoProvider': Capability.SsoManage,
+  'sso.deleteSsoProvider': Capability.SsoManage,
+  'sso.listProjectSsoProviders': Capability.SsoRead,
+  'sso.getProjectSsoSettings': Capability.SsoRead,
+  'sso.updateProjectSsoSettings': Capability.SsoManage,
+
+  // subscription — added after the migration (these endpoints carried no
+  // @Roles at all). Checkout/portal act on the project's billing (owner);
+  // the subscription/usage reads feed plan gates for every member.
+  'subscription.createCheckoutSession': Capability.BillingManage,
+  'subscription.createPortalSession': Capability.BillingManage,
+  'subscription.getSubscriptionByProjectId': Capability.ProjectRead,
+  'subscription.getSubscriptionUsage': Capability.ProjectRead,
 };
