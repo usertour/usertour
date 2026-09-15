@@ -17,7 +17,11 @@ export class UserOnProject extends BaseModel {
   @Field()
   actived: boolean;
 
-  /** Environments this member may act on; null = all. */
+  /**
+   * EDITOR publish whitelist: environments this member may publish to. Not
+   * consulted for other roles (ADMIN / OWNER publish anywhere); null is
+   * treated as empty — may publish nowhere.
+   */
   @Field(() => [String], { nullable: true })
   allowedEnvironmentIds?: string[] | null;
 

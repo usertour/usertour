@@ -169,9 +169,8 @@ describe('editor publish whitelist (gql e2e)', () => {
     expect((await rowOf())?.allowedEnvironmentIds).toEqual([allowedEnvId, blockedEnvId]);
 
     // An environment that is not the project's is refused outright.
-    const foreign = await buildEnvironment(prisma, {
-      projectId: (await buildProject(prisma, { name: 'other' })).id,
-    });
+    const foreignProject = await buildProject(prisma, { name: 'other' });
+    const foreign = await buildEnvironment(prisma, { projectId: foreignProject.id });
     const rejected = await graphql(app, {
       token: ownerToken,
       query: CHANGE,
@@ -186,6 +185,7 @@ describe('editor publish whitelist (gql e2e)', () => {
     });
     expect(rejected.body.errors?.length).toBeGreaterThan(0);
     expect((await rowOf())?.allowedEnvironmentIds).toEqual([allowedEnvId, blockedEnvId]);
+    await teardownProject(prisma, foreignProject.id);
 
     // EDITOR without a list = may publish nowhere (explicit empty, never null).
     const emptied = await graphql(app, {

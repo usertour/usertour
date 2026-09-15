@@ -81,6 +81,33 @@ describe('ApiTokenAuthService — environment scope', () => {
       }
     });
 
+    it('publishableEnvironmentIds = key scope ∩ whitelist for an editor, key scope otherwise', () => {
+      const editor = (scope: string[] | null, whitelist: string[]) =>
+        ({
+          allowedEnvironmentIds: scope,
+          memberRole: Role.EDITOR,
+          memberPublishEnvironmentIds: whitelist,
+        }) as unknown as AuthedApiToken;
+      expect(svc.publishableEnvironmentIds(editor(null, ['e1', 'e2']))).toEqual(['e1', 'e2']);
+      expect(svc.publishableEnvironmentIds(editor(['e2', 'e3'], ['e1', 'e2']))).toEqual(['e2']);
+      expect(svc.publishableEnvironmentIds(editor(['e3'], ['e1']))).toEqual([]);
+      const admin = {
+        allowedEnvironmentIds: ['e9'],
+        memberRole: Role.ADMIN,
+        memberPublishEnvironmentIds: [],
+      } as unknown as AuthedApiToken;
+      expect(svc.publishableEnvironmentIds(admin)).toEqual(['e9']);
+    });
+
+    it('names the publishable environments when the caller passes them', () => {
+      expect(
+        new MemberCannotPublishToEnvironmentError([{ id: 'e1', name: 'Staging' }]).messageDict.en,
+      ).toContain('Staging (e1)');
+      expect(new MemberCannotPublishToEnvironmentError([]).messageDict.en).toContain(
+        'any environment',
+      );
+    });
+
     it('fails closed when authorize has not cached the role', () => {
       expect(() => svc.assertMayPublishTo(tok(null), 'e1')).toThrow(
         MemberCannotPublishToEnvironmentError,

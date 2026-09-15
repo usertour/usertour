@@ -386,11 +386,11 @@ export class TeamService {
       }
       throw error;
     }
-    // The invite's environment restriction was validated at CREATION, and invites
-    // live for days — an environment deleted in between must not ride into the
-    // new membership as a dead id. Filter to the project's live environments; a
-    // restriction that empties out stays [] (member can act on nothing,
-    // fail-closed) rather than silently widening to all environments.
+    // The invite's publish whitelist was validated at CREATION, and invites live
+    // for days — an environment deleted in between must not ride into the new
+    // membership as a dead id. Filter to the project's live environments; a
+    // whitelist that empties out stays [] (the editor can publish nowhere)
+    // rather than silently widening to null.
     let liveAllowed = allowedEnvironmentIds ?? null;
     if (liveAllowed?.length) {
       const live = await tx.environment.findMany({

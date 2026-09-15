@@ -373,7 +373,7 @@ export class IntegrationsProcessor extends WorkerHost {
 
   /**
    * Layer 2: sustained failure -> the system switches the integration off,
-   * records an audit entry, and emails the project owner. Guarded update so a
+   * records an audit entry, and emails the project owner and admins. Guarded update so a
    * concurrent probe can't double-fire the notification.
    */
   private async autoDisable(

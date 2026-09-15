@@ -547,10 +547,11 @@ export class AuthService implements OnModuleInit {
         await this.teamService.deleteInvite(tx, invite.code);
       }
       // assignUserToProject re-checks the seat limit inside the transaction.
-      // Carry the invite's environment restriction onto the membership (as every
-      // non-SSO accept path does) — else an env-scoped invite accepted via SSO
-      // yields an ALL-environments membership. Auto-provision has no invite, so
-      // it legitimately stays unrestricted (null).
+      // Carry the invite's publish whitelist onto the membership (as every
+      // non-SSO accept path does) — else an editor invite accepted via SSO
+      // loses its whitelist. Auto-provision has no invite, so a JIT-created
+      // editor starts with none (null = may publish nowhere until an admin
+      // extends it).
       await this.teamService.assignUserToProject(
         tx,
         newUser.id,
@@ -598,8 +599,8 @@ export class AuthService implements OnModuleInit {
       // the others, so clear any prior active project first — otherwise an
       // existing user ends up with multiple active rows and lands unpredictably.
       await this.teamService.cancelActiveProject(tx, user.id);
-      // Carry the invite's environment restriction onto the membership (see the
-      // brand-new-email path); auto-provision (no invite) stays unrestricted.
+      // Carry the invite's publish whitelist onto the membership (see the
+      // brand-new-email path); auto-provision (no invite) starts with none.
       await this.teamService.assignUserToProject(
         tx,
         user.id,

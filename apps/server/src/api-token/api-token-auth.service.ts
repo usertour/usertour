@@ -132,6 +132,22 @@ export class ApiTokenAuthService {
   }
 
   /**
+   * The environments this key may PUBLISH to: its environment scope
+   * (`allowedEnvironmentIds`, null = all) narrowed by the owner's publish
+   * whitelist when the owner's role lacks ContentPublishAnyEnvironment. Null
+   * means "every environment in scope" (ADMIN / OWNER with an unrestricted
+   * key); an empty list means nowhere. Call after `authorize`.
+   */
+  publishableEnvironmentIds(token: AuthedApiToken): string[] | null {
+    const scope = this.allowedEnvironmentIds(token);
+    if (!token.memberRole || roleCan(token.memberRole, Capability.ContentPublishAnyEnvironment)) {
+      return scope;
+    }
+    const whitelist = token.memberPublishEnvironmentIds ?? [];
+    return scope ? whitelist.filter((id) => scope.includes(id)) : whitelist;
+  }
+
+  /**
    * Assert the key's OWNER may publish to `environmentId`: a role without
    * ContentPublishAnyEnvironment (EDITOR) is limited to its membership publish
    * whitelist whatever the key itself is scoped to. Call after `authorize`

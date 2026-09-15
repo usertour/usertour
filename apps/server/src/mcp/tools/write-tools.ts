@@ -21,7 +21,7 @@ import {
 } from '@/api/content/content.schema';
 import { updateVersionBody } from '@/api/content-versions/content-versions.schema';
 import { zodIssuesToValidationIssues } from '@/api/shared/zod-issues';
-import { ValidationError } from '@/common/errors/errors';
+import { MemberCannotPublishToEnvironmentError, ValidationError } from '@/common/errors/errors';
 import { isoDateTime } from '@/common/filters';
 import {
   createEnvironmentBody,
@@ -50,7 +50,7 @@ import {
 } from '@/api/themes/themes.schema';
 import { upsertUserBody, type UpsertUserBody } from '@/api/users/users.schema';
 
-import { McpTool } from '../mcp.types';
+import { McpTool, McpToolContext } from '../mcp.types';
 import { writeAnnotationsFor } from './annotations';
 import { environmentIdSchema, resolveEnvironment } from './read-tools';
 import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
@@ -94,6 +94,34 @@ const themeSettingsMcpField = z
  * (compile + field-level merge + domain delegation); `run_javascript` is
  * rejected by the compiler, and version writes only touch editable drafts.
  */
+
+/**
+ * The publish-whitelist check for the publish / unpublish tools. On refusal
+ * the error names the environments the key MAY publish to (scope ∩ the
+ * owner's whitelist) so an agent can self-correct instead of dead-ending —
+ * the same courtesy resolveEnvironment extends for a scope miss (E1029).
+ */
+async function assertPublishable(ctx: McpToolContext, environmentId: string): Promise<void> {
+  try {
+    ctx.auth.assertMayPublishTo(ctx.token, environmentId);
+  } catch (error) {
+    if (!(error instanceof MemberCannotPublishToEnvironmentError)) {
+      throw error;
+    }
+    const ids = ctx.auth.publishableEnvironmentIds(ctx.token) ?? [];
+    const usable = ids.length
+      ? await ctx.prisma.environment.findMany({
+          where: { id: { in: ids }, projectId: ctx.projectId, deleted: false },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, name: true },
+        })
+      : [];
+    throw new MemberCannotPublishToEnvironmentError(
+      usable.map((environment) => ({ id: environment.id, name: environment.name ?? '' })),
+    );
+  }
+}
+
 export function buildWriteTools(): McpTool[] {
   const tools: McpTool[] = [
     {
@@ -404,7 +432,7 @@ export function buildWriteTools(): McpTool[] {
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
-        ctx.auth.assertMayPublishTo(ctx.token, environment.id);
+        await assertPublishable(ctx, environment.id);
         const content = await ctx.services.content.publish(
           String(args.contentId),
           ctx.projectId,
@@ -438,7 +466,7 @@ export function buildWriteTools(): McpTool[] {
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
-        ctx.auth.assertMayPublishTo(ctx.token, environment.id);
+        await assertPublishable(ctx, environment.id);
         return ctx.services.content.unpublish(
           String(args.contentId),
           ctx.projectId,

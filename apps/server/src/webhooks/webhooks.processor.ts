@@ -376,7 +376,7 @@ export class WebhooksProcessor extends WorkerHost {
 
   /**
    * Layer 2: sustained failure -> the system switches the endpoint off,
-   * records an audit entry, and emails the project owner. Guarded update so a
+   * records an audit entry, and emails the project owner and admins. Guarded update so a
    * concurrent probe can't double-fire the notification.
    */
   private async autoDisable(
@@ -437,7 +437,7 @@ export class WebhooksProcessor extends WorkerHost {
       },
     });
     // Concurrent sends (sendOrLog never throws): a hung SMTP server must not
-    // serialize inside a delivery-worker slot. Usually one owner anyway.
+    // serialize inside a delivery-worker slot. Usually a handful of recipients anyway.
     await Promise.all(
       owners
         .filter((owner) => owner.user?.email)

@@ -74,9 +74,11 @@ export class NoPermissionError extends BaseError {
 }
 
 /**
- * The member's project membership restricts which environments they may act on
- * (UserOnProject.allowedEnvironmentIds), and this request targets one outside
- * that set — e.g. publishing to Production with a Development-only membership.
+ * The member is an EDITOR whose publish whitelist (UserOnProject
+ * .allowedEnvironmentIds) does not include the environment this publish /
+ * unpublish targets — e.g. shipping to Production with a Staging-only
+ * whitelist. Only publishing is bounded this way; reads and other writes are
+ * never environment-restricted by membership.
  */
 export class MemberEnvironmentNotAllowedError extends BaseError {
   code = 'E0060';
@@ -296,6 +298,29 @@ export class MemberCannotPublishToEnvironmentError extends OpenAPIError {
       '该 API key 的所有者不能发布到此环境:其项目角色(Editor)只能发布到已授权的环境。' +
       '请项目管理员扩展授权,或发布到已授权的环境。',
   };
+
+  /**
+   * Optionally name the environments the key MAY publish to (its scope ∩ the
+   * owner's whitelist), turning a dead-end into a redirect — the MCP publish
+   * tools pass them so an agent can self-correct, as E1029 does for scope.
+   * An empty list is named too: "nowhere" is the actionable fact.
+   */
+  constructor(publishable?: { name: string; id: string }[]) {
+    super();
+    if (publishable) {
+      const list = publishable.length
+        ? publishable.map((e) => `${e.name} (${e.id})`).join(', ')
+        : null;
+      this.messageDict = {
+        en: list
+          ? `The API key's owner may not publish to this environment. Their publish whitelist allows only: ${list}.`
+          : "The API key's owner may not publish to any environment: their publish whitelist is empty. Ask a project admin to extend it.",
+        'zh-CN': list
+          ? `该 API key 的所有者不能发布到此环境。其发布授权仅包含:${list}。`
+          : '该 API key 的所有者不能发布到任何环境:其发布授权为空。请项目管理员扩展授权。',
+      };
+    }
+  }
 }
 
 export class SystemThemeCannotBeChangedError extends OpenAPIError {
