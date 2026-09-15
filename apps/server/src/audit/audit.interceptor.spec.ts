@@ -108,7 +108,10 @@ describe('capability coverage tripwire — every write capability derives or is 
   ]);
   // `activate` = switching the active project in the UI — the adjudicated
   // unaudited activeUserProject, not a durable write.
-  const NON_WRITE_VERBS = new Set(['read', 'activate']);
+  // `publish-any-environment` is a modifier on content:publish (it lifts the
+  // editor publish whitelist) with no endpoint of its own; the publish itself
+  // is what gets audited.
+  const NON_WRITE_VERBS = new Set(['read', 'activate', 'publish-any-environment']);
 
   it('derives a descriptor for every non-exempt write capability', () => {
     for (const cap of Object.values(Capability)) {

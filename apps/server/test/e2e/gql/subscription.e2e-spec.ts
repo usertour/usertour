@@ -4,7 +4,13 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { graphql, gqlData } from '../auth';
 import { createTestApp } from '../create-test-app';
-import { buildEnvironment, buildProject, buildSession, buildSubscription } from '../factories';
+import {
+  buildEnvironment,
+  buildMembership,
+  buildProject,
+  buildSession,
+  buildSubscription,
+} from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 /**
@@ -213,17 +219,31 @@ describe('GraphQL subscription (e2e)', () => {
       expect(usage).toBeGreaterThanOrEqual(2);
     });
 
-    it('returns 0 for a project with no sessions', async () => {
+    it('returns 0 for a project with no sessions — and only to a member of it', async () => {
+      const USAGE = `query ($projectId: String!) {
+        getSubscriptionUsage(projectId: $projectId)
+      }`;
       const other = await buildProject(prisma, { name: 'no-usage' });
+
+      // Not a member of `other` yet: the read is refused (E0013). The
+      // subscription resolver once carried no guard at all, so any signed-in
+      // user could read any project's usage — this pins the fix.
+      const denied = await graphql(app, {
+        token,
+        query: USAGE,
+        variables: { projectId: other.id },
+      });
+      expect(denied.body.errors?.[0]?.extensions?.code).toBe('E0013');
+
+      await buildMembership(prisma, { userId: userIds[0], projectId: other.id, role: 'VIEWER' });
       const res = await graphql(app, {
         token,
-        query: `query ($projectId: String!) {
-          getSubscriptionUsage(projectId: $projectId)
-        }`,
+        query: USAGE,
         variables: { projectId: other.id },
       });
       expect(gqlData(res).getSubscriptionUsage).toBe(0);
 
+      await prisma.userOnProject.deleteMany({ where: { projectId: other.id } });
       await prisma.project.delete({ where: { id: other.id } });
     });
   });

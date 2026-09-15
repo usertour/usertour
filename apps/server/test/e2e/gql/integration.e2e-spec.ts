@@ -317,26 +317,33 @@ describe('GraphQL integrations (e2e)', () => {
   });
 
   describe('authorization', () => {
-    it('denies ADMIN and VIEWER (OWNER_ONLY capabilities)', async () => {
-      const admin = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
+    it('is a WRITE-tier surface: EDITOR reads it, VIEWER is denied', async () => {
+      // ADR 0014: integrations, webhooks and access tokens are project-internal
+      // operations a builder needs, so the editor tier holds them.
+      const editor = await buildAuthorizedUser(prisma, app, { projectId, role: 'EDITOR' });
       const viewer = await buildAuthorizedUser(prisma, app, { projectId, role: 'VIEWER' });
-      userIds.push(admin.user.id, viewer.user.id);
+      userIds.push(editor.user.id, viewer.user.id);
 
-      for (const roleToken of [admin.token, viewer.token]) {
-        const listRes = await graphql(app, {
-          token: roleToken,
-          query: LIST_INTEGRATIONS,
-          variables: { environmentId },
-        });
-        expect(listRes.body.errors).toBeDefined();
+      const editorList = await graphql(app, {
+        token: editor.token,
+        query: LIST_INTEGRATIONS,
+        variables: { environmentId },
+      });
+      expect(editorList.body.errors).toBeUndefined();
 
-        const upsertRes = await graphql(app, {
-          token: roleToken,
-          query: UPSERT_INTEGRATION,
-          variables: { data: { environmentId, provider: 'amplitude', key: 'k' } },
-        });
-        expect(upsertRes.body.errors).toBeDefined();
-      }
+      const viewerList = await graphql(app, {
+        token: viewer.token,
+        query: LIST_INTEGRATIONS,
+        variables: { environmentId },
+      });
+      expect(viewerList.body.errors).toBeDefined();
+
+      const viewerWrite = await graphql(app, {
+        token: viewer.token,
+        query: UPSERT_INTEGRATION,
+        variables: { data: { environmentId, provider: 'amplitude', key: 'k' } },
+      });
+      expect(viewerWrite.body.errors).toBeDefined();
     });
 
     it("denies another project's OWNER (cross-project isolation)", async () => {
