@@ -207,7 +207,7 @@ export class ApiContentController {
     @Req() req: { apiToken: AuthedApiToken },
   ) {
     this.requireEnvironmentInScope(req, body.environmentId);
-    this.auth.assertMayPublishTo(req.apiToken, body.environmentId);
+    this.auth.assertMayPublishTo(req.apiToken, projectId, body.environmentId);
     return this.service.publish(id, projectId, body.environmentId, body.versionId, {
       userId: req.apiToken.userId,
       tokenId: req.apiToken.id,
@@ -232,7 +232,7 @@ export class ApiContentController {
     @Req() req: { apiToken: AuthedApiToken },
   ) {
     this.requireEnvironmentInScope(req, body.environmentId);
-    this.auth.assertMayPublishTo(req.apiToken, body.environmentId);
+    this.auth.assertMayPublishTo(req.apiToken, projectId, body.environmentId);
     return this.service.unpublish(id, projectId, body.environmentId, {
       userId: req.apiToken.userId,
       tokenId: req.apiToken.id,

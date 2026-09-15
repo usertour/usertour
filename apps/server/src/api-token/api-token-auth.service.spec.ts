@@ -47,19 +47,20 @@ describe('ApiTokenAuthService — environment scope', () => {
       ({
         allowedEnvironmentIds: null,
         memberRole: Role.EDITOR,
+        memberRoleProjectId: 'p1',
         memberPublishEnvironmentIds: whitelist,
       }) as unknown as AuthedApiToken;
 
     it('EDITOR may publish only to whitelisted environments', () => {
-      expect(() => svc.assertMayPublishTo(editorToken(['e1']), 'e1')).not.toThrow();
-      expect(() => svc.assertMayPublishTo(editorToken(['e1']), 'e2')).toThrow(
+      expect(() => svc.assertMayPublishTo(editorToken(['e1']), 'p1', 'e1')).not.toThrow();
+      expect(() => svc.assertMayPublishTo(editorToken(['e1']), 'p1', 'e2')).toThrow(
         MemberCannotPublishToEnvironmentError,
       );
       // No / empty whitelist = may publish nowhere (never "everywhere").
-      expect(() => svc.assertMayPublishTo(editorToken(undefined), 'e1')).toThrow(
+      expect(() => svc.assertMayPublishTo(editorToken(undefined), 'p1', 'e1')).toThrow(
         MemberCannotPublishToEnvironmentError,
       );
-      expect(() => svc.assertMayPublishTo(editorToken([]), 'e1')).toThrow(
+      expect(() => svc.assertMayPublishTo(editorToken([]), 'p1', 'e1')).toThrow(
         MemberCannotPublishToEnvironmentError,
       );
     });
@@ -75,9 +76,10 @@ describe('ApiTokenAuthService — environment scope', () => {
         const token = {
           allowedEnvironmentIds: null,
           memberRole: role,
+          memberRoleProjectId: 'p1',
           memberPublishEnvironmentIds: [],
         } as unknown as AuthedApiToken;
-        expect(() => svc.assertMayPublishTo(token, 'anywhere')).not.toThrow();
+        expect(() => svc.assertMayPublishTo(token, 'p1', 'anywhere')).not.toThrow();
       }
     });
 
@@ -86,19 +88,37 @@ describe('ApiTokenAuthService — environment scope', () => {
         ({
           allowedEnvironmentIds: scope,
           memberRole: Role.EDITOR,
+          memberRoleProjectId: 'p1',
           memberPublishEnvironmentIds: whitelist,
         }) as unknown as AuthedApiToken;
-      expect(svc.publishableEnvironmentIds(editor(null, ['e1', 'e2']))).toEqual(['e1', 'e2']);
-      expect(svc.publishableEnvironmentIds(editor(['e2', 'e3'], ['e1', 'e2']))).toEqual(['e2']);
-      expect(svc.publishableEnvironmentIds(editor(['e3'], ['e1']))).toEqual([]);
+      expect(svc.publishableEnvironmentIds(editor(null, ['e1', 'e2']), 'p1')).toEqual(['e1', 'e2']);
+      expect(svc.publishableEnvironmentIds(editor(['e2', 'e3'], ['e1', 'e2']), 'p1')).toEqual([
+        'e2',
+      ]);
+      expect(svc.publishableEnvironmentIds(editor(['e3'], ['e1']), 'p1')).toEqual([]);
       const admin = {
         allowedEnvironmentIds: ['e9'],
         memberRole: Role.ADMIN,
+        memberRoleProjectId: 'p1',
         memberPublishEnvironmentIds: [],
       } as unknown as AuthedApiToken;
-      expect(svc.publishableEnvironmentIds(admin)).toEqual(['e9']);
+      expect(svc.publishableEnvironmentIds(admin, 'p1')).toEqual(['e9']);
       // No cached role (authorize did not run): nowhere, matching assertMayPublishTo.
-      expect(svc.publishableEnvironmentIds(tok(null))).toEqual([]);
+      expect(svc.publishableEnvironmentIds(tok(null), 'p1')).toEqual([]);
+    });
+
+    it('a verdict cached for another project never decides this one (multi-project key)', () => {
+      const cachedForP1 = {
+        allowedEnvironmentIds: null,
+        memberRole: Role.OWNER,
+        memberRoleProjectId: 'p1',
+        memberPublishEnvironmentIds: [],
+      } as unknown as AuthedApiToken;
+      expect(() => svc.assertMayPublishTo(cachedForP1, 'p1', 'e1')).not.toThrow();
+      expect(() => svc.assertMayPublishTo(cachedForP1, 'p2', 'e1')).toThrow(
+        MemberCannotPublishToEnvironmentError,
+      );
+      expect(svc.publishableEnvironmentIds(cachedForP1, 'p2')).toEqual([]);
     });
 
     it('names the publishable environments when the caller passes them', () => {
@@ -111,7 +131,7 @@ describe('ApiTokenAuthService — environment scope', () => {
     });
 
     it('fails closed when authorize has not cached the role', () => {
-      expect(() => svc.assertMayPublishTo(tok(null), 'e1')).toThrow(
+      expect(() => svc.assertMayPublishTo(tok(null), 'p1', 'e1')).toThrow(
         MemberCannotPublishToEnvironmentError,
       );
     });

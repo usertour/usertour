@@ -147,8 +147,15 @@ export class TeamService {
     }
     const userOnProject = await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
+      include: { user: { select: { disabled: true } } },
     });
     if (!userOnProject || userOnProject.role === Role.OWNER) {
+      throw new ParamsError();
+    }
+    // A disabled account cannot sign in, and the demoted owner (now ADMIN)
+    // cannot transfer again — the project would be stranded until an instance
+    // admin intervenes. Same gate as adding a member.
+    if (userOnProject.user?.disabled) {
       throw new ParamsError();
     }
     return await this.prisma.$transaction(async (tx) => {

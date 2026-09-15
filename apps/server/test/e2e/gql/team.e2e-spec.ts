@@ -328,6 +328,28 @@ describe('GraphQL team (e2e)', () => {
       expect(res.body.errors?.[0]?.extensions?.code).toBe('E0013');
     });
 
+    it('refuses a disabled account as the new owner (the project would be stranded)', async () => {
+      const project = await buildProject(prisma, { name: 'gql-team-transfer-disabled' });
+      const owner = await buildAuthorizedUser(prisma, app, {
+        projectId: project.id,
+        role: 'OWNER',
+      });
+      const disabled = await buildUser(prisma, { disabled: true });
+      await buildMembership(prisma, { userId: disabled.id, projectId: project.id, role: 'ADMIN' });
+      userIds.push(owner.user.id, disabled.id);
+
+      const res = await graphql(app, {
+        token: owner.token,
+        query: TRANSFER,
+        variables: { data: { userId: disabled.id, projectId: project.id } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+      const rows = await prisma.userOnProject.findMany({ where: { projectId: project.id } });
+      expect(rows.find((row) => row.userId === owner.user.id)?.role).toBe('OWNER');
+      expect(rows.find((row) => row.userId === disabled.id)?.role).toBe('ADMIN');
+      await teardownProject(prisma, project.id);
+    });
+
     it('makes the target OWNER and demotes the previous OWNER to ADMIN, whitelists cleared', async () => {
       // A fresh project so the shared OWNER token keeps working for later tests.
       const project = await buildProject(prisma, { name: 'gql-team-transfer' });

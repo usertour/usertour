@@ -10,12 +10,12 @@ import { McpToolContext } from '../mcp.types';
  */
 export async function assertPublishable(ctx: McpToolContext, environmentId: string): Promise<void> {
   try {
-    ctx.auth.assertMayPublishTo(ctx.token, environmentId);
+    ctx.auth.assertMayPublishTo(ctx.token, ctx.projectId, environmentId);
   } catch (error) {
     if (!(error instanceof MemberCannotPublishToEnvironmentError)) {
       throw error;
     }
-    const ids = ctx.auth.publishableEnvironmentIds(ctx.token) ?? [];
+    const ids = ctx.auth.publishableEnvironmentIds(ctx.token, ctx.projectId) ?? [];
     const usable = ids.length
       ? await ctx.prisma.environment.findMany({
           where: { id: { in: ids }, projectId: ctx.projectId, deleted: false },

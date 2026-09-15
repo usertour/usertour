@@ -136,11 +136,13 @@ export class ApiTokenAuthService {
    * (`allowedEnvironmentIds`, null = all) narrowed by the owner's publish
    * whitelist when the owner's role lacks ContentPublishAnyEnvironment. Null
    * means "every environment in scope" (ADMIN / OWNER with an unrestricted
-   * key); an empty list means nowhere. Call after `authorize` — without the
-   * cached role this fails closed to nowhere, as assertMayPublishTo does.
+   * key); an empty list means nowhere. Call after `authorize` for the SAME
+   * project — the cached role and whitelist belong to the project authorize
+   * resolved, so any other project fails closed to nowhere (as
+   * assertMayPublishTo does), never to a neighbouring project's verdict.
    */
-  publishableEnvironmentIds(token: AuthedApiToken): string[] | null {
-    if (!token.memberRole) {
+  publishableEnvironmentIds(token: AuthedApiToken, projectId: string): string[] | null {
+    if (!token.memberRole || token.memberRoleProjectId !== projectId) {
       return [];
     }
     const scope = this.allowedEnvironmentIds(token);
@@ -154,13 +156,16 @@ export class ApiTokenAuthService {
   /**
    * Assert the key's OWNER may publish to `environmentId`: a role without
    * ContentPublishAnyEnvironment (EDITOR) is limited to its membership publish
-   * whitelist whatever the key itself is scoped to. Call after `authorize`
-   * (which caches the role and whitelist) and after `assertEnvironmentInScope`.
+   * whitelist whatever the key itself is scoped to. Call after `authorize` for
+   * the SAME `projectId` (which caches the role and whitelist for that project)
+   * and after `assertEnvironmentInScope`.
    */
-  assertMayPublishTo(token: AuthedApiToken, environmentId: string): void {
-    // `authorize` always runs first (guard); a missing role means it did not,
-    // so fail closed rather than let an un-authorized token publish.
-    if (!token.memberRole) {
+  assertMayPublishTo(token: AuthedApiToken, projectId: string, environmentId: string): void {
+    // `authorize` always runs first (guard) and caches the verdict for ONE
+    // project. A missing role, or a cache from another project (a multi-project
+    // key), must fail closed rather than let a neighbouring project's role or
+    // whitelist decide this publish.
+    if (!token.memberRole || token.memberRoleProjectId !== projectId) {
       throw new MemberCannotPublishToEnvironmentError();
     }
     if (roleCan(token.memberRole, Capability.ContentPublishAnyEnvironment)) {
