@@ -21,11 +21,12 @@ export class UpdateProjectSsoSettingsInput {
   @IsBoolean()
   autoProvision?: boolean;
 
-  // Role assigned to JIT-provisioned users. Restricted to ADMIN (editor) or
-  // VIEWER (read-only) — OWNER/USER are rejected. See plan & permission matrix.
+  // Role assigned to JIT-provisioned users. Restricted to EDITOR or VIEWER —
+  // ADMIN (team management) is never granted automatically, OWNER is
+  // transfer-only. See ADR 0014.
   @Field(() => Role, { nullable: true })
   @IsOptional()
-  @IsIn([Role.ADMIN, Role.VIEWER])
+  @IsIn([Role.EDITOR, Role.VIEWER])
   defaultRole?: Role;
 
   // Optional unverified email-domain allow-list for JIT. Empty = trust the IdP.

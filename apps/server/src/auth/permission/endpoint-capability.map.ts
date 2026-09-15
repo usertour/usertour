@@ -48,18 +48,18 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'environments.deleteEnvironments': Capability.EnvironmentManage, // W
   'environments.userEnvironments': Capability.EnvironmentRead, // R
   'environments.verifyInstallation': Capability.EnvironmentRead, // R
-  'environments.projectHasEnvironmentAccessTokens': Capability.AccessTokenRead, // O
-  'environments.listAccessTokens': Capability.AccessTokenRead, // O
-  'environments.getAccessToken': Capability.AccessTokenRead, // O
-  'environments.createAccessToken': Capability.AccessTokenManage, // O
-  'environments.deleteAccessToken': Capability.AccessTokenManage, // O
-  'environments.listSigningSecrets': Capability.AccessTokenRead, // O
-  'environments.getSigningSecret': Capability.AccessTokenRead, // O
-  'environments.createSigningSecret': Capability.AccessTokenManage, // O
-  'environments.revokeSigningSecret': Capability.AccessTokenManage, // O
-  'environments.setRequireIdentityVerification': Capability.AccessTokenManage, // O
-  'environments.getIdentityVerificationStats': Capability.AccessTokenRead, // O
-  'environments.validateIdentityToken': Capability.AccessTokenRead, // O
+  'environments.projectHasEnvironmentAccessTokens': Capability.AccessTokenRead, // W
+  'environments.listAccessTokens': Capability.AccessTokenRead, // W
+  'environments.getAccessToken': Capability.AccessTokenRead, // W
+  'environments.createAccessToken': Capability.AccessTokenManage, // W
+  'environments.deleteAccessToken': Capability.AccessTokenManage, // W
+  'environments.listSigningSecrets': Capability.AccessTokenRead, // W
+  'environments.getSigningSecret': Capability.AccessTokenRead, // W
+  'environments.createSigningSecret': Capability.AccessTokenManage, // W
+  'environments.revokeSigningSecret': Capability.AccessTokenManage, // W
+  'environments.setRequireIdentityVerification': Capability.AccessTokenManage, // W
+  'environments.getIdentityVerificationStats': Capability.AccessTokenRead, // W
+  'environments.validateIdentityToken': Capability.AccessTokenRead, // W
 
   // biz
   'biz.queryBizUser': Capability.UserRead, // R
@@ -161,7 +161,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   // audit (owner-only)
   'audit.auditLogs': Capability.AuditRead, // O
 
-  // sso (owner-only)
+  // sso (owner-only until the ADMIN tier lands — ADR 0014)
   'sso.createOidcSsoProvider': Capability.SsoManage,
   'sso.updateSsoProvider': Capability.SsoManage,
   'sso.deleteSsoProvider': Capability.SsoManage,

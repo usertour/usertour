@@ -32,7 +32,7 @@ export interface ResolvedSsoSettings {
 const DEFAULT_SETTINGS: Omit<ResolvedSsoSettings, 'projectId'> = {
   requireSso: false,
   autoProvision: false,
-  defaultRole: Role.ADMIN,
+  defaultRole: Role.EDITOR,
   allowedDomains: [],
 };
 
@@ -52,9 +52,11 @@ export class SsoService {
     }
   }
 
+  // Auto-provisioning never hands out team management (ADMIN) or ownership;
+  // a JIT-created EDITOR starts with an empty publish whitelist.
   private assertJitRole(role: Role): void {
-    if (role !== Role.ADMIN && role !== Role.VIEWER) {
-      throw new ParamsError('SSO default role must be ADMIN or VIEWER');
+    if (role !== Role.EDITOR && role !== Role.VIEWER) {
+      throw new ParamsError('SSO default role must be EDITOR or VIEWER');
     }
   }
 

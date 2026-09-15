@@ -1,5 +1,5 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { IsArray, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Role } from '@prisma/client';
 import { registerEnumType } from '@nestjs/graphql';
 
@@ -25,6 +25,13 @@ export class InviteTeamMemberInput {
   @Field(() => String, { nullable: false })
   @IsNotEmpty()
   projectId: string;
+
+  /** EDITOR only: environments the member may publish to (omitted = none). */
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  allowedEnvironmentIds?: string[];
 }
 
 @InputType()
@@ -51,6 +58,13 @@ export class ChangeTeamMemberRoleInput {
   @Field(() => Role, { nullable: false })
   @IsNotEmpty()
   role: Role;
+
+  /** EDITOR only: environments the member may publish to (omitted = none). */
+  @Field(() => [String], { nullable: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  allowedEnvironmentIds?: string[];
 }
 
 @InputType()

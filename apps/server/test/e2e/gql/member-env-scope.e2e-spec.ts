@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
+import { EmailService } from '@/shared/email.service';
 import { TeamService } from '@/team/team.service';
 
 import { gqlData, graphql } from '../auth';
@@ -19,20 +20,22 @@ import {
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 /**
- * Membership environment scope (UserOnProject.allowedEnvironmentIds) on the web
- * GraphQL surface: a restricted member may only act on their environments —
- * publish targeting an out-of-scope environment is refused (E0060), in-scope
- * succeeds, and OWNER is exempt by design.
+ * EDITOR publish whitelist (UserOnProject.allowedEnvironmentIds) on the web
+ * GraphQL surface: an editor may publish only to whitelisted environments
+ * (E0060 otherwise) while reads and every other write stay unrestricted by
+ * membership; ADMIN and OWNER publish anywhere by capability. Also pins the
+ * whitelist's write paths (invite / change role) and its maintenance
+ * (environment deletion, invite acceptance).
  */
-describe('member environment scope (gql e2e)', () => {
+describe('editor publish whitelist (gql e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let projectId: string;
   let allowedEnvId: string;
   let blockedEnvId: string;
-  let adminToken: string;
+  let editorToken: string;
   let ownerToken: string;
-  let adminUserId: string;
+  let editorUserId: string;
   let ownerUserId: string;
 
   const PUBLISH = `mutation ($data: VersionIdInput!) {
@@ -50,7 +53,11 @@ describe('member environment scope (gql e2e)', () => {
   }
 
   beforeAll(async () => {
-    app = await createTestApp();
+    // Invite delivery is stubbed: the subject is the whitelist persisted on the
+    // invite row, not SMTP (which the sandbox has no route to).
+    app = await createTestApp((builder) =>
+      builder.overrideProvider(EmailService).useValue({ send: async () => undefined }),
+    );
     prisma = app.get(PrismaService);
 
     projectId = (await buildProject(prisma, { name: 'member-env-scope' })).id;
@@ -60,11 +67,11 @@ describe('member environment scope (gql e2e)', () => {
     const owner = await buildAuthorizedUser(prisma, app, { projectId, role: 'OWNER' });
     ownerToken = owner.token;
     ownerUserId = owner.user.id;
-    const admin = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
-    adminToken = admin.token;
-    adminUserId = admin.user.id;
+    const editor = await buildAuthorizedUser(prisma, app, { projectId, role: 'EDITOR' });
+    editorToken = editor.token;
+    editorUserId = editor.user.id;
     await prisma.userOnProject.updateMany({
-      where: { userId: adminUserId, projectId },
+      where: { userId: editorUserId, projectId },
       data: { allowedEnvironmentIds: [allowedEnvId] },
     });
   }, 60000);
@@ -73,71 +80,62 @@ describe('member environment scope (gql e2e)', () => {
     if (prisma) {
       await prisma.userOnProject.deleteMany({ where: { projectId } });
       await teardownProject(prisma, projectId);
-      await prisma.user.deleteMany({ where: { id: { in: [ownerUserId, adminUserId] } } });
+      await prisma.user.deleteMany({ where: { id: { in: [ownerUserId, editorUserId] } } });
     }
     await app?.close();
   });
 
-  it('refuses publish to an environment outside the membership scope (E0060)', async () => {
+  it('refuses publish to an environment outside the editor whitelist (E0060)', async () => {
     const versionId = await seedPublishableVersion();
     const res = await graphql(app, {
-      token: adminToken,
+      token: editorToken,
       query: PUBLISH,
       variables: { data: { versionId, environmentId: blockedEnvId } },
     });
     expect(res.body.errors?.[0]?.extensions?.code).toBe('E0060');
   });
 
-  it('allows publish within the membership scope', async () => {
+  it('allows publish within the editor whitelist', async () => {
     const versionId = await seedPublishableVersion();
     const res = await graphql(app, {
-      token: adminToken,
+      token: editorToken,
       query: PUBLISH,
       variables: { data: { versionId, environmentId: allowedEnvId } },
     });
     expect(gqlData(res).publishedContentVersion?.id).toBeTruthy();
   });
 
-  it('refuses environment-scoped reads outside the membership scope (E0060)', async () => {
+  it('does NOT restrict environment-scoped reads: the whitelist bounds publishing only', async () => {
     const USERS = `query ($query: BizQuery!, $orderBy: BizOrder!, $first: Int) {
       queryBizUser(query: $query, orderBy: $orderBy, first: $first) { totalCount }
     }`;
-    const denied = await graphql(app, {
-      token: adminToken,
-      query: USERS,
-      variables: {
-        query: { environmentId: blockedEnvId },
-        orderBy: { field: 'createdAt', direction: 'desc' },
-        first: 10,
-      },
-    });
-    expect(denied.body.errors?.[0]?.extensions?.code).toBe('E0060');
-
-    const allowed = await graphql(app, {
-      token: adminToken,
-      query: USERS,
-      variables: {
-        query: { environmentId: allowedEnvId },
-        orderBy: { field: 'createdAt', direction: 'desc' },
-        first: 10,
-      },
-    });
-    expect(gqlData(allowed).queryBizUser.totalCount).toBe(0);
+    for (const environmentId of [blockedEnvId, allowedEnvId]) {
+      const res = await graphql(app, {
+        token: editorToken,
+        query: USERS,
+        variables: {
+          query: { environmentId },
+          orderBy: { field: 'createdAt', direction: 'desc' },
+          first: 10,
+        },
+      });
+      expect(res.body.errors).toBeUndefined();
+      expect(gqlData(res).queryBizUser.totalCount).toBe(0);
+    }
   });
 
-  it("refuses adding an OUT-OF-SCOPE environment's user to a segment (E0060)", async () => {
-    // Segment membership is env-scoped (the bizUser belongs to an environment).
-    // The membership mutation carries only internal ids, so the guard resolves the
-    // env from the bizUser — an env-restricted member must not touch a blocked-env
-    // user's segment membership.
+  it('does NOT restrict segment membership writes in a non-whitelisted environment', async () => {
+    // Segment membership is env-scoped (the bizUser belongs to an environment),
+    // but the editor whitelist is about PUBLISHING — other writes go through
+    // in every environment of the project.
     const segment = await buildSegment(prisma, {
       projectId,
-      environmentId: allowedEnvId,
+      environmentId: blockedEnvId,
       dataType: 3, // MANUAL
     });
     const blockedUser = await buildBizUser(prisma, { environmentId: blockedEnvId });
     const res = await graphql(app, {
-      token: adminToken,
+      token: editorToken,
       query: `mutation ($data: CreateBizUserOnSegment!) {
         createBizUserOnSegment(data: $data) { success }
       }`,
@@ -145,56 +143,127 @@ describe('member environment scope (gql e2e)', () => {
         data: { userOnSegment: [{ segmentId: segment.id, bizUserId: blockedUser.id, data: {} }] },
       },
     });
-    expect(res.body.errors?.[0]?.extensions?.code).toBe('E0060');
-  });
-
-  it("allows adding an IN-SCOPE environment's user to a segment", async () => {
-    const segment = await buildSegment(prisma, {
-      projectId,
-      environmentId: allowedEnvId,
-      dataType: 3, // MANUAL
-    });
-    const allowedUser = await buildBizUser(prisma, { environmentId: allowedEnvId });
-    const res = await graphql(app, {
-      token: adminToken,
-      query: `mutation ($data: CreateBizUserOnSegment!) {
-        createBizUserOnSegment(data: $data) { success }
-      }`,
-      variables: {
-        data: { userOnSegment: [{ segmentId: segment.id, bizUserId: allowedUser.id, data: {} }] },
-      },
-    });
     expect(gqlData(res).createBizUserOnSegment?.success).toBe(true);
   });
 
-  it('changeTeamMemberRole no longer accepts an environment restriction (write gate closed)', async () => {
-    // The member environment allowlist has NO write path until the member-
-    // permission (RBAC) design lands — the enforcement above stays dormant
-    // machinery, seeded here via prisma only. The mutation must reject the
-    // old field outright rather than silently ignore it.
+  it('changeTeamMemberRole writes the whitelist for EDITOR and clears it for other roles', async () => {
     const CHANGE =
       'mutation ($data: ChangeTeamMemberRoleInput!) { changeTeamMemberRole(data: $data) }';
+    const rowOf = () =>
+      prisma.userOnProject.findFirst({ where: { userId: editorUserId, projectId } });
+
+    // Widen the editor to both environments.
+    const widened = await graphql(app, {
+      token: ownerToken,
+      query: CHANGE,
+      variables: {
+        data: {
+          projectId,
+          userId: editorUserId,
+          role: 'EDITOR',
+          allowedEnvironmentIds: [allowedEnvId, blockedEnvId],
+        },
+      },
+    });
+    expect(gqlData(widened).changeTeamMemberRole).toBe(true);
+    expect((await rowOf())?.allowedEnvironmentIds).toEqual([allowedEnvId, blockedEnvId]);
+
+    // An environment that is not the project's is refused outright.
+    const foreign = await buildEnvironment(prisma, {
+      projectId: (await buildProject(prisma, { name: 'other' })).id,
+    });
     const rejected = await graphql(app, {
       token: ownerToken,
       query: CHANGE,
       variables: {
-        data: { projectId, userId: adminUserId, role: 'ADMIN', environmentIds: [blockedEnvId] },
+        data: {
+          projectId,
+          userId: editorUserId,
+          role: 'EDITOR',
+          allowedEnvironmentIds: [foreign.id],
+        },
       },
     });
-    expect(rejected.body.errors?.length).toBeGreaterThan(0); // unknown input field
+    expect(rejected.body.errors?.length).toBeGreaterThan(0);
+    expect((await rowOf())?.allowedEnvironmentIds).toEqual([allowedEnvId, blockedEnvId]);
 
-    // A plain role change still works and leaves the seeded restriction alone.
-    const ok = await graphql(app, {
+    // EDITOR without a list = may publish nowhere (explicit empty, never null).
+    const emptied = await graphql(app, {
       token: ownerToken,
       query: CHANGE,
-      variables: { data: { projectId, userId: adminUserId, role: 'ADMIN' } },
+      variables: { data: { projectId, userId: editorUserId, role: 'EDITOR' } },
     });
-    expect(gqlData(ok).changeTeamMemberRole).toBe(true);
-    const row = await prisma.userOnProject.findFirst({ where: { userId: adminUserId, projectId } });
-    expect(row?.allowedEnvironmentIds).toEqual([allowedEnvId]);
+    expect(gqlData(emptied).changeTeamMemberRole).toBe(true);
+    expect((await rowOf())?.allowedEnvironmentIds).toEqual([]);
+
+    // Promoting out of EDITOR drops the list — ADMIN publishes anywhere by capability.
+    const promoted = await graphql(app, {
+      token: ownerToken,
+      query: CHANGE,
+      variables: {
+        data: {
+          projectId,
+          userId: editorUserId,
+          role: 'ADMIN',
+          allowedEnvironmentIds: [allowedEnvId],
+        },
+      },
+    });
+    expect(gqlData(promoted).changeTeamMemberRole).toBe(true);
+    expect((await rowOf())?.allowedEnvironmentIds).toBeNull();
+    const versionId = await seedPublishableVersion();
+    const asAdmin = await graphql(app, {
+      token: editorToken,
+      query: PUBLISH,
+      variables: { data: { versionId, environmentId: blockedEnvId } },
+    });
+    expect(gqlData(asAdmin).publishedContentVersion?.id).toBeTruthy();
+
+    // Back to the fixture state for the tests below.
+    await graphql(app, {
+      token: ownerToken,
+      query: CHANGE,
+      variables: {
+        data: {
+          projectId,
+          userId: editorUserId,
+          role: 'EDITOR',
+          allowedEnvironmentIds: [allowedEnvId],
+        },
+      },
+    });
+    expect((await rowOf())?.allowedEnvironmentIds).toEqual([allowedEnvId]);
   });
 
-  it('OWNER is exempt even with a restriction row present', async () => {
+  it('inviteTeamMember stores the whitelist on the invite for EDITOR only', async () => {
+    await buildSubscription(prisma, { projectId }); // BUSINESS: unlimited seats
+    const INVITE = 'mutation ($data: InviteTeamMemberInput!) { inviteTeamMember(data: $data) }';
+    const invite = async (email: string, role: string, allowedEnvironmentIds?: string[]) =>
+      graphql(app, {
+        token: ownerToken,
+        query: INVITE,
+        variables: { data: { projectId, email, name: 'x', role, allowedEnvironmentIds } },
+      });
+
+    const editorRes = await invite('whitelist-editor@example.com', 'EDITOR', [allowedEnvId]);
+    expect(gqlData(editorRes).inviteTeamMember).toBe(true);
+    const editorInvite = await prisma.invite.findFirst({
+      where: { projectId, email: 'whitelist-editor@example.com' },
+    });
+    expect(editorInvite?.allowedEnvironmentIds).toEqual([allowedEnvId]);
+
+    const viewerRes = await invite('whitelist-viewer@example.com', 'VIEWER', [allowedEnvId]);
+    expect(gqlData(viewerRes).inviteTeamMember).toBe(true);
+    const viewerInvite = await prisma.invite.findFirst({
+      where: { projectId, email: 'whitelist-viewer@example.com' },
+    });
+    expect(viewerInvite?.allowedEnvironmentIds).toBeNull();
+
+    const ownerRes = await invite('whitelist-owner@example.com', 'OWNER');
+    expect(ownerRes.body.errors?.length).toBeGreaterThan(0);
+  });
+
+  it('OWNER publishes anywhere even with a whitelist row present', async () => {
     await prisma.userOnProject.updateMany({
       where: { userId: ownerUserId, projectId },
       data: { allowedEnvironmentIds: [allowedEnvId] },
@@ -208,10 +277,7 @@ describe('member environment scope (gql e2e)', () => {
     expect(gqlData(res).publishedContentVersion?.id).toBeTruthy();
   });
 
-  it('refuses session mutations on an OUT-OF-SCOPE session (env rides the scope resolver)', async () => {
-    // endSession carries only a sessionId — the guard learns the environment
-    // from the SAME row lookup that resolves the project (ScopeResolution
-    // .environmentIds), not a separate query. Pin both directions.
+  it('does NOT restrict session mutations by environment', async () => {
     const seedSession = async (environmentId: string, state = 0) => {
       const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
       const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
@@ -227,35 +293,27 @@ describe('member environment scope (gql e2e)', () => {
     };
     const END = 'mutation ($sessionId: String!) { endSession(sessionId: $sessionId) }';
 
-    const blockedSession = await seedSession(blockedEnvId);
-    const denied = await graphql(app, {
-      token: adminToken,
+    // The guard lets the call THROUGH (no E0060) in the non-whitelisted
+    // environment too. The session is seeded already-ended (state 1) so the
+    // domain declines with a plain `false` — the subject here is the guard.
+    const blockedSession = await seedSession(blockedEnvId, 1);
+    const res = await graphql(app, {
+      token: editorToken,
       query: END,
       variables: { sessionId: blockedSession.id },
     });
-    expect(denied.body.errors?.[0]?.extensions?.code).toBe('E0060');
-
-    // In-scope: the guard lets the call THROUGH (no E0060). The session is
-    // seeded already-ended (state 1) so the domain declines with a plain
-    // `false` — no event plumbing needed; the subject here is the guard.
-    const allowedSession = await seedSession(allowedEnvId, 1);
-    const ok = await graphql(app, {
-      token: adminToken,
-      query: END,
-      variables: { sessionId: allowedSession.id },
-    });
-    expect(ok.body.errors).toBeUndefined();
-    expect(gqlData(ok).endSession).toBe(false);
+    expect(res.body.errors).toBeUndefined();
+    expect(gqlData(res).endSession).toBe(false);
   });
 
-  it('deleting an environment strips it from member allowlists (empty stays [], fail-closed)', async () => {
+  it('deleting an environment strips it from editor whitelists (empty stays [])', async () => {
     const doomed = await buildEnvironment(prisma, { projectId });
-    // admin: restriction survives minus the dead id; solo: restriction empties out.
+    // editor: whitelist survives minus the dead id; solo: whitelist empties out.
     await prisma.userOnProject.updateMany({
-      where: { userId: adminUserId, projectId },
+      where: { userId: editorUserId, projectId },
       data: { allowedEnvironmentIds: [allowedEnvId, doomed.id] },
     });
-    const solo = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
+    const solo = await buildAuthorizedUser(prisma, app, { projectId, role: 'EDITOR' });
     await prisma.userOnProject.updateMany({
       where: { userId: solo.user.id, projectId },
       data: { allowedEnvironmentIds: [doomed.id] },
@@ -268,11 +326,11 @@ describe('member environment scope (gql e2e)', () => {
     });
     expect(gqlData(res).deleteEnvironments?.id).toBe(doomed.id);
 
-    const adminRow = await prisma.userOnProject.findFirst({
-      where: { userId: adminUserId, projectId },
+    const editorRow = await prisma.userOnProject.findFirst({
+      where: { userId: editorUserId, projectId },
     });
-    expect(adminRow?.allowedEnvironmentIds).toEqual([allowedEnvId]);
-    // The emptied restriction must NOT widen to null (all environments).
+    expect(editorRow?.allowedEnvironmentIds).toEqual([allowedEnvId]);
+    // The emptied whitelist stays an explicit [] rather than null.
     const soloRow = await prisma.userOnProject.findFirst({
       where: { userId: solo.user.id, projectId },
     });
@@ -292,14 +350,14 @@ describe('member environment scope (gql e2e)', () => {
 
     const invitee = await buildUser(prisma);
     const row = await prisma.$transaction((tx) =>
-      team.assignUserToProject(tx, invitee.id, projectId, 'ADMIN', [doomed.id, allowedEnvId]),
+      team.assignUserToProject(tx, invitee.id, projectId, 'EDITOR', [doomed.id, allowedEnvId]),
     );
     expect(row.allowedEnvironmentIds).toEqual([allowedEnvId]);
 
-    // All envs dead → the restriction stays [] (fail-closed), never null.
+    // All envs dead → the whitelist stays [] (may publish nowhere), never null.
     const invitee2 = await buildUser(prisma);
     const row2 = await prisma.$transaction((tx) =>
-      team.assignUserToProject(tx, invitee2.id, projectId, 'ADMIN', [doomed.id]),
+      team.assignUserToProject(tx, invitee2.id, projectId, 'EDITOR', [doomed.id]),
     );
     expect(row2.allowedEnvironmentIds).toEqual([]);
 

@@ -219,7 +219,7 @@ const AddProjectMemberDialog = ({
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedUserDisplay, setSelectedUserDisplay] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedRole, setSelectedRole] = useState('ADMIN');
+  const [selectedRole, setSelectedRole] = useState('EDITOR');
   const { data: usersData, loading: usersLoading } = useAdminUsersQuery(
     userSearchQuery.trim() || undefined,
     1,
@@ -245,7 +245,7 @@ const AddProjectMemberDialog = ({
     setUserSearchQuery('');
     setSelectedUserDisplay('');
     setSelectedUserId('');
-    setSelectedRole('ADMIN');
+    setSelectedRole('EDITOR');
   };
 
   const handleClose = () => {
@@ -383,6 +383,7 @@ const AddProjectMemberDialog = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ADMIN">{t('admin.common.roleAdmin')}</SelectItem>
+                <SelectItem value="EDITOR">{t('admin.common.roleEditor')}</SelectItem>
                 <SelectItem value="VIEWER">{t('admin.common.roleViewer')}</SelectItem>
               </SelectContent>
             </Select>
@@ -507,6 +508,7 @@ const MemberAction = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ADMIN">{t('admin.common.roleAdmin')}</SelectItem>
+                  <SelectItem value="EDITOR">{t('admin.common.roleEditor')}</SelectItem>
                   <SelectItem value="VIEWER">{t('admin.common.roleViewer')}</SelectItem>
                 </SelectContent>
               </Select>

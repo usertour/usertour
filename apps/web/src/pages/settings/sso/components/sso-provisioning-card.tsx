@@ -20,8 +20,10 @@ import {
 import { type ProjectSsoSettings, useUpdateProjectSsoSettingsMutation } from '@usertour/hooks';
 import * as z from 'zod';
 
+// Auto-provisioning never hands out ADMIN (team management); a JIT-created
+// editor starts with an empty publish whitelist.
 const ROLE_OPTIONS = [
-  { value: 'ADMIN', i18nKey: 'settings.sso.roles.admin' },
+  { value: 'EDITOR', i18nKey: 'settings.sso.roles.editor' },
   { value: 'VIEWER', i18nKey: 'settings.sso.roles.viewer' },
 ] as const;
 
@@ -33,7 +35,7 @@ const parseDomains = (value: string | undefined): string[] =>
 
 const schema = z.object({
   autoProvision: z.boolean(),
-  defaultRole: z.enum(['ADMIN', 'VIEWER']),
+  defaultRole: z.enum(['EDITOR', 'VIEWER']),
   // Comma / whitespace separated; empty = trust the IdP.
   allowedDomains: z.string().optional(),
 });

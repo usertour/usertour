@@ -4,19 +4,19 @@ import { Role } from '@usertour/types';
 import { ENDPOINT_CAPABILITY } from './endpoint-capability.map';
 
 /**
- * Compatibility baseline. `ENDPOINT_ROLES` is a frozen snapshot of every
- * role-gated endpoint's current `@Roles` set, captured from the resolvers
- * before any migration. The test asserts that migrating each endpoint to
- * its mapped capability grants EXACTLY the same roles it grants today.
+ * Authorization baseline. `ENDPOINT_ROLES` is a frozen snapshot of the role
+ * set every endpoint grants. The test asserts that each endpoint's mapped
+ * capability (via ROLE_CAPABILITIES) grants EXACTLY that set, so any change
+ * to the map or the matrix surfaces here as an explicit decision rather
+ * than a silent authorization shift.
  *
- * If a capability assignment (endpoint-capability.map.ts) or the matrix
- * (ROLE_CAPABILITIES) ever diverges from this snapshot, the test fails —
- * surfacing the change as an explicit decision rather than a silent
- * authorization shift. Pre-existing `@Roles` inconsistencies, if any,
- * show up here too.
+ * History: captured from the pre-migration `@Roles` lists, then deliberately
+ * re-anchored for the roles redesign (ADR 0014): EDITOR joined every read /
+ * write set, and integrations / webhooks / access tokens moved from owner-only
+ * to the write tier.
  */
-const R: Role[] = [Role.VIEWER, Role.ADMIN, Role.OWNER];
-const W: Role[] = [Role.ADMIN, Role.OWNER];
+const R: Role[] = [Role.VIEWER, Role.EDITOR, Role.ADMIN, Role.OWNER];
+const W: Role[] = [Role.EDITOR, Role.ADMIN, Role.OWNER];
 const O: Role[] = [Role.OWNER];
 
 const ENDPOINT_ROLES: Record<string, Role[]> = {
@@ -49,18 +49,18 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'environments.deleteEnvironments': W,
   'environments.userEnvironments': R,
   'environments.verifyInstallation': R,
-  'environments.projectHasEnvironmentAccessTokens': O,
-  'environments.listAccessTokens': O,
-  'environments.getAccessToken': O,
-  'environments.createAccessToken': O,
-  'environments.deleteAccessToken': O,
-  'environments.listSigningSecrets': O,
-  'environments.getSigningSecret': O,
-  'environments.createSigningSecret': O,
-  'environments.revokeSigningSecret': O,
-  'environments.setRequireIdentityVerification': O,
-  'environments.getIdentityVerificationStats': O,
-  'environments.validateIdentityToken': O,
+  'environments.projectHasEnvironmentAccessTokens': W,
+  'environments.listAccessTokens': W,
+  'environments.getAccessToken': W,
+  'environments.createAccessToken': W,
+  'environments.deleteAccessToken': W,
+  'environments.listSigningSecrets': W,
+  'environments.getSigningSecret': W,
+  'environments.createSigningSecret': W,
+  'environments.revokeSigningSecret': W,
+  'environments.setRequireIdentityVerification': W,
+  'environments.getIdentityVerificationStats': W,
+  'environments.validateIdentityToken': W,
   // biz
   'biz.queryBizUser': R,
   'biz.queryBizCompany': R,
@@ -77,32 +77,32 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'biz.createBizCompanyOnSegment': W,
   'biz.deleteBizCompanyOnSegment': W,
   // integration
-  'integration.listIntegrations': O,
-  'integration.queryIntegrationMessages': O,
-  'integration.upsertIntegration': O,
-  'integration.deleteIntegration': O,
-  'integration.sendIntegrationTestEvent': O,
-  'integration.queryIntegrationSyncedSegments': O,
-  'integration.updateIntegrationInbound': O,
-  'integration.rotateIntegrationInboundToken': O,
-  'integration.updateIntegrationEvents': O,
-  'integration.startIntegrationOAuth': O,
-  'integration.disconnectIntegrationOAuth': O,
-  'integration.listIntegrationObjectMappings': O,
-  'integration.listIntegrationRemoteProperties': O,
-  'integration.upsertIntegrationObjectMapping': O,
-  'integration.deleteIntegrationObjectMapping': O,
-  'integration.runIntegrationObjectMappingSync': O,
-  'integration.listIntegrationSyncRuns': O,
-  'webhooks.listWebhooks': O,
-  'webhooks.getWebhook': O,
-  'webhooks.queryWebhookMessages': O,
-  'webhooks.createWebhook': O,
-  'webhooks.updateWebhook': O,
-  'webhooks.deleteWebhook': O,
-  'webhooks.rotateWebhookSecret': O,
-  'webhooks.sendWebhookTestEvent': O,
-  'webhooks.resendWebhookMessage': O,
+  'integration.listIntegrations': W,
+  'integration.queryIntegrationMessages': W,
+  'integration.upsertIntegration': W,
+  'integration.deleteIntegration': W,
+  'integration.sendIntegrationTestEvent': W,
+  'integration.queryIntegrationSyncedSegments': W,
+  'integration.updateIntegrationInbound': W,
+  'integration.rotateIntegrationInboundToken': W,
+  'integration.updateIntegrationEvents': W,
+  'integration.startIntegrationOAuth': W,
+  'integration.disconnectIntegrationOAuth': W,
+  'integration.listIntegrationObjectMappings': W,
+  'integration.listIntegrationRemoteProperties': W,
+  'integration.upsertIntegrationObjectMapping': W,
+  'integration.deleteIntegrationObjectMapping': W,
+  'integration.runIntegrationObjectMappingSync': W,
+  'integration.listIntegrationSyncRuns': W,
+  'webhooks.listWebhooks': W,
+  'webhooks.getWebhook': W,
+  'webhooks.queryWebhookMessages': W,
+  'webhooks.createWebhook': W,
+  'webhooks.updateWebhook': W,
+  'webhooks.deleteWebhook': W,
+  'webhooks.rotateWebhookSecret': W,
+  'webhooks.sendWebhookTestEvent': W,
+  'webhooks.resendWebhookMessage': W,
   // localizations
   'localizations.createLocalization': W,
   'localizations.updateLocalization': W,
@@ -172,7 +172,7 @@ describe('endpoint → capability compatibility baseline', () => {
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 
-  it('each endpoint capability grants exactly the roles its current @Roles grants', () => {
+  it('each endpoint capability grants exactly the roles in the baseline', () => {
     const mismatches: string[] = [];
     for (const [endpoint, roles] of Object.entries(ENDPOINT_ROLES)) {
       const capability = ENDPOINT_CAPABILITY[endpoint];

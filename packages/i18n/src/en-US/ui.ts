@@ -79,6 +79,7 @@ const translations = {
       email: 'Email',
       role: 'Role',
       roleAdmin: 'Admin',
+      roleEditor: 'Editor',
       roleViewer: 'Viewer',
       created: 'Created',
       members: 'Members',
@@ -717,8 +718,21 @@ const translations = {
       removeMenuItem: 'Remove member',
       roles: {
         admin: 'Admin',
+        editor: 'Editor',
         viewer: 'Viewer',
         owner: 'Owner',
+      },
+      roleDescriptions: {
+        admin: 'Admins can create and edit everything and publish to every environment.',
+        editor:
+          'Editors can create and edit everything, and publish only to the environments checked below. No access to team management or billing.',
+        viewer:
+          'Viewers can view and preview all content. No access to create, edit or publish anything.',
+      },
+      publishEnvironments: {
+        label: 'Can publish to these environments',
+        help: 'Leave every environment unchecked for an editor who prepares content but never ships it.',
+        none: 'This project has no environments yet.',
       },
       invite: {
         title: 'Invite team member',
@@ -928,7 +942,7 @@ const translations = {
         inactive: 'Inactive',
       },
       roles: {
-        admin: 'Member (can edit)',
+        editor: 'Editor (can edit, publishes nowhere until whitelisted)',
         viewer: 'Viewer (read-only)',
       },
       settings: {

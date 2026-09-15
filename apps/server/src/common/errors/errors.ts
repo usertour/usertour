@@ -81,8 +81,8 @@ export class NoPermissionError extends BaseError {
 export class MemberEnvironmentNotAllowedError extends BaseError {
   code = 'E0060';
   messageDict = {
-    en: 'Your project membership does not allow acting on this environment',
-    'zh-CN': '您的成员权限不包含该环境，无法在此环境执行操作',
+    en: 'Your role may only publish to the environments on your publish whitelist',
+    'zh-CN': '您的角色只能发布到已授权的环境',
   };
 }
 
@@ -275,6 +275,26 @@ export class CustomCssPlanRequiredError extends OpenAPIError {
     'zh-CN':
       '自定义 CSS 需要 Growth 及以上套餐——当前套餐下运行时会在下发前剥离 customCss,' +
       '因此写入被拒绝而非静默存储。请从 settings 中移除 customCss,或升级套餐(设置 → 账单)。',
+  };
+}
+
+/**
+ * The key's OWNER is an EDITOR whose membership publish whitelist does not
+ * include the target environment. Distinct from E1029 (the KEY's own
+ * environment allowlist): a key can be scoped to the environment and still be
+ * refused because the person who minted it may not publish there.
+ */
+export class MemberCannotPublishToEnvironmentError extends OpenAPIError {
+  code = 'E1039';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en:
+      "The API key's owner may not publish to this environment: their project role (Editor) " +
+      'is limited to the environments on their publish whitelist. Ask a project admin to ' +
+      'extend it, or publish to a whitelisted environment.',
+    'zh-CN':
+      '该 API key 的所有者不能发布到此环境:其项目角色(Editor)只能发布到已授权的环境。' +
+      '请项目管理员扩展授权,或发布到已授权的环境。',
   };
 }
 

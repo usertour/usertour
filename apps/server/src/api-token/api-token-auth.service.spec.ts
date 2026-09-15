@@ -1,18 +1,19 @@
 import type { Environment } from '@prisma/client';
+import { Role } from '@usertour/types';
 import type { PrismaService } from 'nestjs-prisma';
 
-import { EnvironmentNotInTokenScopeError } from '@/common/errors';
+import {
+  EnvironmentNotInTokenScopeError,
+  MemberCannotPublishToEnvironmentError,
+} from '@/common/errors';
 
 import { ApiTokenAuthService, type AuthedApiToken } from './api-token-auth.service';
 
 // assertEnvironmentInScope / allowedEnvironmentIds read only the token's JSON column —
 // no prisma needed, so a dummy is fine.
 const svc = new ApiTokenAuthService({} as unknown as PrismaService);
-const tok = (
-  allowedEnvironmentIds: unknown,
-  memberAllowedEnvironmentIds?: unknown,
-): AuthedApiToken =>
-  ({ allowedEnvironmentIds, memberAllowedEnvironmentIds }) as unknown as AuthedApiToken;
+const tok = (allowedEnvironmentIds: unknown): AuthedApiToken =>
+  ({ allowedEnvironmentIds }) as unknown as AuthedApiToken;
 const env = (id: string): Environment => ({ id }) as unknown as Environment;
 
 describe('ApiTokenAuthService — environment scope', () => {
@@ -38,24 +39,52 @@ describe('ApiTokenAuthService — environment scope', () => {
     );
   });
 
-  // The owner's MEMBERSHIP restriction (cached by authorize) is a ceiling: the
-  // token's effective scope = token allowlist ∩ member allowlist. A restricted
-  // member must not escape by minting an unrestricted key.
-  it('member ceiling caps an unrestricted token', () => {
-    expect(svc.allowedEnvironmentIds(tok(null, ['e1']))).toEqual(['e1']);
-    expect(() => svc.assertEnvironmentInScope(tok(null, ['e1']), env('e1'))).not.toThrow();
-    expect(() => svc.assertEnvironmentInScope(tok(null, ['e1']), env('e2'))).toThrow(
-      EnvironmentNotInTokenScopeError,
-    );
-  });
+  // The owner's MEMBERSHIP publish whitelist (cached by authorize) bounds
+  // publishing only: an EDITOR must not escape it by minting a broader key,
+  // while ADMIN / OWNER publish anywhere and reads are never restricted by it.
+  describe('assertMayPublishTo', () => {
+    const editorToken = (whitelist: string[] | undefined) =>
+      ({
+        allowedEnvironmentIds: null,
+        memberRole: Role.EDITOR,
+        memberPublishEnvironmentIds: whitelist,
+      }) as unknown as AuthedApiToken;
 
-  it('token ∩ member ceiling intersects; disjoint sets can act nowhere', () => {
-    expect(svc.allowedEnvironmentIds(tok(['e1', 'e2'], ['e2', 'e3']))).toEqual(['e2']);
-    expect(svc.allowedEnvironmentIds(tok(['e1'], ['e2']))).toEqual([]);
-    expect(() => svc.assertEnvironmentInScope(tok(['e1'], ['e2']), env('e1'))).toThrow(
-      EnvironmentNotInTokenScopeError,
-    );
-    // null ceiling (owner / unrestricted member) leaves the token's own list intact
-    expect(svc.allowedEnvironmentIds(tok(['e1'], null))).toEqual(['e1']);
+    it('EDITOR may publish only to whitelisted environments', () => {
+      expect(() => svc.assertMayPublishTo(editorToken(['e1']), 'e1')).not.toThrow();
+      expect(() => svc.assertMayPublishTo(editorToken(['e1']), 'e2')).toThrow(
+        MemberCannotPublishToEnvironmentError,
+      );
+      // No / empty whitelist = may publish nowhere (never "everywhere").
+      expect(() => svc.assertMayPublishTo(editorToken(undefined), 'e1')).toThrow(
+        MemberCannotPublishToEnvironmentError,
+      );
+      expect(() => svc.assertMayPublishTo(editorToken([]), 'e1')).toThrow(
+        MemberCannotPublishToEnvironmentError,
+      );
+    });
+
+    it("the whitelist does not narrow the key's environment scope (reads/writes)", () => {
+      const token = editorToken(['e1']);
+      expect(svc.allowedEnvironmentIds(token)).toBeNull();
+      expect(() => svc.assertEnvironmentInScope(token, env('e2'))).not.toThrow();
+    });
+
+    it('ADMIN and OWNER publish anywhere regardless of the column', () => {
+      for (const role of [Role.ADMIN, Role.OWNER]) {
+        const token = {
+          allowedEnvironmentIds: null,
+          memberRole: role,
+          memberPublishEnvironmentIds: [],
+        } as unknown as AuthedApiToken;
+        expect(() => svc.assertMayPublishTo(token, 'anywhere')).not.toThrow();
+      }
+    });
+
+    it('fails closed when authorize has not cached the role', () => {
+      expect(() => svc.assertMayPublishTo(tok(null), 'e1')).toThrow(
+        MemberCannotPublishToEnvironmentError,
+      );
+    });
   });
 });

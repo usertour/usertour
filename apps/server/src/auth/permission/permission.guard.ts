@@ -2,14 +2,15 @@ import { CanActivate, ExecutionContext, Inject } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import { roleCan } from '@usertour/constants';
-import { Role } from '@usertour/types';
+import { Capability, Role } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
 import { MemberEnvironmentNotAllowedError, NoPermissionError } from '@/common/errors';
 import { ProjectsService } from '@/projects/projects.service';
 
+import { publishWhitelistOf } from './publish-whitelist';
 import { RequirePermission } from './require-permission.decorator';
-import { ScopeKind, type ScopeResolver, createScopeResolvers } from './scope-resolver.registry';
+import { type ScopeResolver, createScopeResolvers } from './scope-resolver.registry';
 
 /**
  * Single authorization guard, capability-driven.
@@ -127,82 +128,31 @@ export class PermissionGuard implements CanActivate {
       throw new NoPermissionError();
     }
 
-    // Third permission dimension (mirrors ApiToken.allowedEnvironmentIds): a
-    // membership may be restricted to a set of environments. OWNER is exempt —
-    // the invariant that owners can never lock themselves out of their project.
-    if (userProject.role !== Role.OWNER) {
-      const allowed = Array.isArray(userProject.allowedEnvironmentIds)
-        ? (userProject.allowedEnvironmentIds as string[])
-        : null;
-      if (allowed) {
-        const targets = [
-          // Environments the scope resolver derived while resolving the project
-          // (integration/mapping/session rows) — same lookup, no re-query.
-          ...(resolution.environmentIds ?? []),
-          ...(await this.resolveTargetEnvironmentIds(required.scope, args)),
-        ];
-        if (targets.some((envId) => !allowed.includes(envId))) {
-          throw new MemberEnvironmentNotAllowedError();
-        }
+    // EDITOR publish whitelist: a role that may publish but lacks
+    // ContentPublishAnyEnvironment may only publish to the environments on its
+    // membership whitelist. Only ContentPublish consults the column — reads and
+    // every other write are never environment-restricted by membership
+    // (ApiToken.allowedEnvironmentIds is the separate, full-scope allowlist).
+    if (
+      required.capability === Capability.ContentPublish &&
+      !roleCan(userProject.role as Role, Capability.ContentPublishAnyEnvironment)
+    ) {
+      const target = publishTargetEnvironmentId(args);
+      if (!target || !publishWhitelistOf(userProject.allowedEnvironmentIds).includes(target)) {
+        throw new MemberEnvironmentNotAllowedError();
       }
     }
 
     return true;
   }
-
-  /**
-   * The environment(s) a request ACTS ON, for the membership env check — the
-   * shapes that are NOT a byproduct of scope resolution: explicit environment
-   * arguments (env-scoped endpoints, publish/unpublish `data.environmentId`)
-   * and segment-membership biz rows. Integration / mapping / session
-   * environments arrive via {@link ScopeResolution.environmentIds} instead
-   * (the resolver already had the row in hand). Project-level scopes yield
-   * nothing.
-   */
-  private async resolveTargetEnvironmentIds(
-    scope: ScopeKind,
-    args: Record<string, any>,
-  ): Promise<string[]> {
-    const explicit = [args.environmentId, args.data?.environmentId, args.query?.environmentId];
-    // Environment-scoped endpoints address the environment row itself as `data.id`.
-    if (scope === ScopeKind.Environment) {
-      explicit.push(args.data?.id);
-    }
-    // Segment DEFINITIONS are project-level (updateSegment/deleteSegment carry only
-    // a segmentId — no env dimension), but segment MEMBERSHIP is environment-scoped:
-    // a BizUser/BizCompany belongs to a specific environment. The membership writes
-    // (createBizUserOnSegment / deleteBizUserOnSegment + company equivalents) carry
-    // only the internal biz ids, so resolve their environments here — else an
-    // env-restricted member could add/remove a user from another environment,
-    // escaping their ceiling. (The v2 REST/MCP path resolves the env explicitly.)
-    if (scope === ScopeKind.Segment) {
-      const bizUserIds: string[] = [
-        ...((args.data?.userOnSegment as { bizUserId?: string }[] | undefined)?.map(
-          (u) => u.bizUserId,
-        ) ?? []),
-        ...((args.data?.bizUserIds as string[] | undefined) ?? []),
-      ].filter((id): id is string => typeof id === 'string' && id !== '');
-      const bizCompanyIds: string[] = [
-        ...((args.data?.companyOnSegment as { bizCompanyId?: string }[] | undefined)?.map(
-          (c) => c.bizCompanyId,
-        ) ?? []),
-        ...((args.data?.bizCompanyIds as string[] | undefined) ?? []),
-      ].filter((id): id is string => typeof id === 'string' && id !== '');
-      if (bizUserIds.length) {
-        const users = await this.prisma.bizUser.findMany({
-          where: { id: { in: bizUserIds } },
-          select: { environmentId: true },
-        });
-        explicit.push(...users.map((u) => u.environmentId));
-      }
-      if (bizCompanyIds.length) {
-        const companies = await this.prisma.bizCompany.findMany({
-          where: { id: { in: bizCompanyIds } },
-          select: { environmentId: true },
-        });
-        explicit.push(...companies.map((c) => c.environmentId));
-      }
-    }
-    return [...new Set(explicit.filter((v): v is string => typeof v === 'string' && v !== ''))];
-  }
 }
+
+/**
+ * The environment a publish / unpublish request targets (`data.environmentId`
+ * on VersionIdInput, or a bare `environmentId` argument). Absent → fail
+ * closed: a whitelisted editor must name where they are shipping to.
+ */
+const publishTargetEnvironmentId = (args: Record<string, any>): string | null => {
+  const explicit = args.environmentId ?? args.data?.environmentId;
+  return typeof explicit === 'string' && explicit !== '' ? explicit : null;
+};

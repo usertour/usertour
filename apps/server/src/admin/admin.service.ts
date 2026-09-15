@@ -768,7 +768,7 @@ export class AdminService implements OnModuleInit {
       throw new ParamsError('Cannot add a disabled user to project');
     }
 
-    if (role !== Role.ADMIN && role !== Role.VIEWER) {
+    if (role !== Role.ADMIN && role !== Role.EDITOR && role !== Role.VIEWER) {
       throw new ParamsError('Invalid project member role');
     }
 

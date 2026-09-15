@@ -404,6 +404,7 @@ export function buildWriteTools(): McpTool[] {
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
+        ctx.auth.assertMayPublishTo(ctx.token, environment.id);
         const content = await ctx.services.content.publish(
           String(args.contentId),
           ctx.projectId,
@@ -437,6 +438,7 @@ export function buildWriteTools(): McpTool[] {
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
+        ctx.auth.assertMayPublishTo(ctx.token, environment.id);
         return ctx.services.content.unpublish(
           String(args.contentId),
           ctx.projectId,
