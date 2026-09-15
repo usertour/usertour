@@ -460,7 +460,7 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ d: { bizCompanyIds: [s.bizCompanyId], segmentId: s.segmentId } }),
   },
 
-  // --- integration (all OWNER; scope: integration) ---
+  // --- integration (all W — editor tier; scope: integration) ---
   {
     key: 'integration.listIntegrations',
     tier: 'W',
