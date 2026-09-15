@@ -104,7 +104,10 @@ export enum Capability {
   BillingManage = 'billing:manage',
   // team
   TeamRead = 'team:read',
+  /** Invite, change the role of, remove any non-OWNER member. */
   TeamManage = 'team:manage',
+  /** Make another member the OWNER (the only way an OWNER is ever assigned). */
+  TeamTransferOwnership = 'team:transfer-ownership',
   // sso (single sign-on identity providers)
   SsoRead = 'sso:read',
   SsoManage = 'sso:manage',

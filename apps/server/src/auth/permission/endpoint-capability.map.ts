@@ -14,13 +14,13 @@ import { Capability } from '@usertour/types';
  * decorators. This map only records the intended capability per endpoint.
  *
  * The trailing comment on each group is the current `@Roles` set:
- *   R = [VIEWER, ADMIN, OWNER]   W = [ADMIN, OWNER]   O = [OWNER]
+ *   R = every role   W = EDITOR+   A = ADMIN+   O = OWNER only
  */
 export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   // projects
   'projects.getProjectConfig': Capability.ProjectRead, // R
-  'projects.getProjectLicenseInfo': Capability.BillingRead, // O
-  'projects.updateProject': Capability.ProjectManage, // O
+  'projects.getProjectLicenseInfo': Capability.BillingRead, // A
+  'projects.updateProject': Capability.ProjectManage, // A
   'projects.updateProjectLicense': Capability.BillingManage, // O
 
   // content
@@ -150,24 +150,25 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'analytics.queryTrackerUsers': Capability.AnalyticsRead, // R
 
   // team
-  'team.getInvites': Capability.TeamRead, // O
-  'team.getTeamMembers': Capability.TeamRead, // O
-  'team.inviteTeamMember': Capability.TeamManage, // O
-  'team.removeTeamMember': Capability.TeamManage, // O
-  'team.changeTeamMemberRole': Capability.TeamManage, // O
-  'team.cancelInvite': Capability.TeamManage, // O
+  'team.getInvites': Capability.TeamRead, // A
+  'team.getTeamMembers': Capability.TeamRead, // A
+  'team.inviteTeamMember': Capability.TeamManage, // A
+  'team.removeTeamMember': Capability.TeamManage, // A
+  'team.changeTeamMemberRole': Capability.TeamManage, // A
+  'team.transferProjectOwnership': Capability.TeamTransferOwnership, // O
+  'team.cancelInvite': Capability.TeamManage, // A
   'team.activeUserProject': Capability.ProjectActivate, // R
 
-  // audit (owner-only)
-  'audit.auditLogs': Capability.AuditRead, // O
+  // audit (admin tier)
+  'audit.auditLogs': Capability.AuditRead, // A
 
-  // sso (owner-only until the ADMIN tier lands — ADR 0014)
-  'sso.createOidcSsoProvider': Capability.SsoManage,
-  'sso.updateSsoProvider': Capability.SsoManage,
-  'sso.deleteSsoProvider': Capability.SsoManage,
-  'sso.listProjectSsoProviders': Capability.SsoRead,
-  'sso.getProjectSsoSettings': Capability.SsoRead,
-  'sso.updateProjectSsoSettings': Capability.SsoManage,
+  // sso (admin tier)
+  'sso.createOidcSsoProvider': Capability.SsoManage, // A
+  'sso.updateSsoProvider': Capability.SsoManage, // A
+  'sso.deleteSsoProvider': Capability.SsoManage, // A
+  'sso.listProjectSsoProviders': Capability.SsoRead, // A
+  'sso.getProjectSsoSettings': Capability.SsoRead, // A
+  'sso.updateProjectSsoSettings': Capability.SsoManage, // A
 
   // subscription — added after the migration (these endpoints carried no
   // @Roles at all). Checkout/portal act on the project's billing (owner);

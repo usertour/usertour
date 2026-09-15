@@ -68,6 +68,18 @@ export class ChangeTeamMemberRoleInput {
 }
 
 @InputType()
+export class TransferProjectOwnershipInput {
+  @Field(() => String, { nullable: false })
+  @IsNotEmpty()
+  projectId: string;
+
+  /** The member who becomes OWNER; the current OWNER is demoted to ADMIN. */
+  @Field(() => String, { nullable: false })
+  @IsNotEmpty()
+  userId: string;
+}
+
+@InputType()
 export class CancelInviteInput {
   @Field(() => String, { nullable: false })
   @IsNotEmpty()

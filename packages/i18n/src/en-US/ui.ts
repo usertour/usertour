@@ -723,7 +723,8 @@ const translations = {
         owner: 'Owner',
       },
       roleDescriptions: {
-        admin: 'Admins can create and edit everything and publish to every environment.',
+        admin:
+          'Admins can create, edit and publish everything, manage team members, SSO and project settings, and see billing. Only the owner can change the plan or transfer ownership.',
         editor:
           'Editors can create and edit everything, and publish only to the environments checked below. No access to team management or billing.',
         viewer:

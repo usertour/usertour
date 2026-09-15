@@ -114,26 +114,51 @@ export class TeamService {
     if (!userOnProject) {
       throw new ParamsError();
     }
+    // The OWNER row moves only through transferOwnership: nobody is made
+    // OWNER here, and the OWNER's own role cannot be changed here (the web
+    // hides the action; this is the server-side invariant, so a project can
+    // never end up with zero owners).
+    if (role === Role.OWNER || userOnProject.role === Role.OWNER) {
+      throw new ParamsError();
+    }
     const publishWhitelist = await this.resolvePublishWhitelist(
       projectId,
       role,
       allowedEnvironmentIds,
     );
 
+    // The publish whitelist is an EDITOR attribute: it is rewritten on every
+    // role change, so a member promoted out of EDITOR carries no stale list
+    // and one demoted into it starts from what the caller chose.
+    await this.prisma.userOnProject.update({
+      where: { id: userOnProject.id },
+      data: { role, allowedEnvironmentIds: publishWhitelist ?? Prisma.DbNull },
+    });
+  }
+
+  /**
+   * Make `userId` the project's OWNER. The single-owner invariant holds
+   * inside the transaction: every current OWNER is demoted to ADMIN first.
+   * Neither row keeps a publish whitelist (ADMIN and OWNER publish anywhere).
+   */
+  async transferOwnership(projectId: string, userId: string) {
+    if (!userId || !projectId) {
+      throw new ParamsError();
+    }
+    const userOnProject = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
+    });
+    if (!userOnProject || userOnProject.role === Role.OWNER) {
+      throw new ParamsError();
+    }
     return await this.prisma.$transaction(async (tx) => {
-      if (role === Role.OWNER) {
-        // set the owner to admin before changing the role to owner
-        await tx.userOnProject.updateMany({
-          where: { projectId, role: Role.OWNER },
-          data: { role: Role.ADMIN },
-        });
-      }
-      // The publish whitelist is an EDITOR attribute: it is rewritten on every
-      // role change, so a member promoted out of EDITOR carries no stale list
-      // and one demoted into it starts from what the caller chose.
       await tx.userOnProject.updateMany({
+        where: { projectId, role: Role.OWNER },
+        data: { role: Role.ADMIN, allowedEnvironmentIds: Prisma.DbNull },
+      });
+      await tx.userOnProject.update({
         where: { id: userOnProject.id },
-        data: { role, allowedEnvironmentIds: publishWhitelist ?? Prisma.DbNull },
+        data: { role: Role.OWNER, allowedEnvironmentIds: Prisma.DbNull },
       });
     });
   }

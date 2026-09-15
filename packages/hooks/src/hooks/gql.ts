@@ -11,6 +11,7 @@ import {
   activeUserProject,
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
+  transferProjectOwnership as transferProjectOwnershipMutation,
   createAttribute,
   createBizCompanyOnSegment,
   createBizUserOnSegment,
@@ -370,6 +371,22 @@ export const useChangeTeamMemberRoleMutation = () => {
         variables: { projectId, userId, role, allowedEnvironmentIds },
       });
       return !!response.data?.changeTeamMemberRole;
+    },
+    [mutation],
+  );
+
+  return { invoke, loading, error };
+};
+
+export const useTransferProjectOwnershipMutation = () => {
+  // Returns only a boolean; refetch the list so the owner badge moves.
+  const [mutation, { loading, error }] = useMutation(transferProjectOwnershipMutation, {
+    refetchQueries: ['getTeamMembers'],
+  });
+  const invoke = useCallback(
+    async (projectId: string, userId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, userId } });
+      return !!response.data?.transferProjectOwnership;
     },
     [mutation],
   );

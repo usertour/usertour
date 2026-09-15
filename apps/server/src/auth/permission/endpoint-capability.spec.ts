@@ -12,18 +12,20 @@ import { ENDPOINT_CAPABILITY } from './endpoint-capability.map';
  *
  * History: captured from the pre-migration `@Roles` lists, then deliberately
  * re-anchored for the roles redesign (ADR 0014): EDITOR joined every read /
- * write set, and integrations / webhooks / access tokens moved from owner-only
- * to the write tier.
+ * write set; integrations / webhooks / access tokens moved from owner-only to
+ * the write tier; team, SSO, project settings, audit and billing-read moved to
+ * the admin tier; ownership transfer became its own owner-only endpoint.
  */
 const R: Role[] = [Role.VIEWER, Role.EDITOR, Role.ADMIN, Role.OWNER];
 const W: Role[] = [Role.EDITOR, Role.ADMIN, Role.OWNER];
+const A: Role[] = [Role.ADMIN, Role.OWNER];
 const O: Role[] = [Role.OWNER];
 
 const ENDPOINT_ROLES: Record<string, Role[]> = {
   // projects
   'projects.getProjectConfig': R,
-  'projects.getProjectLicenseInfo': O,
-  'projects.updateProject': O,
+  'projects.getProjectLicenseInfo': A,
+  'projects.updateProject': A,
   'projects.updateProjectLicense': O,
   // content
   'content.createContent': W,
@@ -140,22 +142,23 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'analytics.queryTooltipTargetMissingSessions': R,
   'analytics.queryTrackerUsers': R,
   // team
-  'team.getInvites': O,
-  'team.getTeamMembers': O,
-  'team.inviteTeamMember': O,
-  'team.removeTeamMember': O,
-  'team.changeTeamMemberRole': O,
-  'team.cancelInvite': O,
+  'team.getInvites': A,
+  'team.getTeamMembers': A,
+  'team.inviteTeamMember': A,
+  'team.removeTeamMember': A,
+  'team.changeTeamMemberRole': A,
+  'team.transferProjectOwnership': O,
+  'team.cancelInvite': A,
   'team.activeUserProject': R,
   // audit
-  'audit.auditLogs': O,
-  // sso — decorated after the migration; owner-only like the other admin surfaces
-  'sso.createOidcSsoProvider': O,
-  'sso.updateSsoProvider': O,
-  'sso.deleteSsoProvider': O,
-  'sso.listProjectSsoProviders': O,
-  'sso.getProjectSsoSettings': O,
-  'sso.updateProjectSsoSettings': O,
+  'audit.auditLogs': A,
+  // sso
+  'sso.createOidcSsoProvider': A,
+  'sso.updateSsoProvider': A,
+  'sso.deleteSsoProvider': A,
+  'sso.listProjectSsoProviders': A,
+  'sso.getProjectSsoSettings': A,
+  'sso.updateProjectSsoSettings': A,
   // subscription — had NO @Roles before (any signed-in user could call them).
   // Not a pre-migration snapshot: the intended sets, recorded when the gap
   // was closed. Reads are membership-wide because every member's plan gates
@@ -167,8 +170,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same 127 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(127);
+  it('snapshot covers exactly the same 128 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(128);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeftRightIcon } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
-import { type TeamMember, TeamMemberRole } from '@usertour/types';
+import { Capability, type TeamMember, TeamMemberRole } from '@usertour/types';
 import { ResourceRowActions, type ResourceRowActionItem } from '@usertour/ui';
 import { MemberCancelInviteDialog } from './member-cancel-invite-dialog';
 import { MemberChangeRoleDialog } from './member-change-role-dialog';
@@ -16,7 +16,7 @@ interface MemberRowActionsProps {
 
 export const MemberRowActions = (props: MemberRowActionsProps) => {
   const { data } = props;
-  const { project, isViewOnly, refetch: refetchAppContext } = useAppContext();
+  const { project, can, refetch: refetchAppContext } = useAppContext();
   const { t } = useTranslation();
   const [cancelInviteOpen, setCancelInviteOpen] = useState(false);
   const [changeRoleOpen, setChangeRoleOpen] = useState(false);
@@ -25,6 +25,9 @@ export const MemberRowActions = (props: MemberRowActionsProps) => {
 
   const projectId = project?.id as string;
   const isOwner = data.role === TeamMemberRole.OWNER;
+  const canManage = can(Capability.TeamManage);
+  // Only the OWNER can hand the project on; an ADMIN never sees the entry.
+  const canTransfer = can(Capability.TeamTransferOwnership);
 
   const items: ResourceRowActionItem[] = data.isInvite
     ? [
@@ -44,13 +47,17 @@ export const MemberRowActions = (props: MemberRowActionsProps) => {
           disabled: isOwner,
           onSelect: () => setChangeRoleOpen(true),
         },
-        {
-          key: 'transferOwner',
-          icon: <ArrowLeftRightIcon className="w-4 h-4 mr-2" />,
-          label: t('settings.team.transferOwnerMenuItem'),
-          disabled: isOwner,
-          onSelect: () => setTransferOwnerOpen(true),
-        },
+        ...(canTransfer
+          ? [
+              {
+                key: 'transferOwner',
+                icon: <ArrowLeftRightIcon className="w-4 h-4 mr-2" />,
+                label: t('settings.team.transferOwnerMenuItem'),
+                disabled: isOwner,
+                onSelect: () => setTransferOwnerOpen(true),
+              },
+            ]
+          : []),
         {
           key: 'remove',
           icon: <Delete2Icon className="w-4 h-4 mr-2" />,
@@ -64,7 +71,7 @@ export const MemberRowActions = (props: MemberRowActionsProps) => {
 
   return (
     <>
-      <ResourceRowActions items={items} contentClassName="min-w-[200px]" disabled={isViewOnly} />
+      <ResourceRowActions items={items} contentClassName="min-w-[200px]" disabled={!canManage} />
       {/* The cancel/role/remove mutations carry refetchQueries
           (['getInvites'] / ['getTeamMembers']) that refresh the member list,
           so these dialogs need no onSubmit refetch. */}

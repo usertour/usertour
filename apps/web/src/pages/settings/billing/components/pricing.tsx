@@ -25,7 +25,8 @@ import { cn } from '@usertour/tailwind';
 import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/hooks';
 import { INTEGRATION_CATALOG, PLAN_FEATURES } from '@usertour/constants';
 import { resolvePlanFeatures } from '@usertour/helpers';
-import { PlanType, type PlanFeatures } from '@usertour/types';
+import { Capability, PlanType, type PlanFeatures } from '@usertour/types';
+import { useAppContext } from '@/contexts/app-context';
 import { useSubscription } from '@/hooks/use-subscription';
 
 // Define plan type
@@ -236,11 +237,13 @@ interface PlanCardProps {
   isYearly: boolean;
   projectId: string;
   currentPlanType?: string;
+  /** BillingManage: only the OWNER may start a checkout / open the portal. */
+  canManageBilling: boolean;
 }
 
 // Plan Card Component
 const PlanCard = (props: PlanCardProps) => {
-  const { plan, isYearly, projectId, currentPlanType } = props;
+  const { plan, isYearly, projectId, currentPlanType, canManageBilling } = props;
   const { invoke: createCheckout, loading: checkoutLoading } = useCreateCheckoutSessionMutation();
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { t } = useTranslation();
@@ -344,7 +347,7 @@ const PlanCard = (props: PlanCardProps) => {
             {plan.buttonText}
           </Button>
         </a>
-      ) : (
+      ) : canManageBilling ? (
         <Button
           variant={plan.buttonVariant}
           className={cn(
@@ -360,6 +363,9 @@ const PlanCard = (props: PlanCardProps) => {
               ? t('settings.billing.buttons.comingSoon')
               : getButtonText()}
         </Button>
+      ) : (
+        // Keeps the card grid aligned for members who can see but not spend.
+        <div className="h-10" />
       )}
       <div className="grid auto-rows-fr gap-3.5 text-sm text-zinc-600 dark:text-zinc-400">
         {plan.features.map((feature) => (
@@ -671,6 +677,11 @@ const Pricing = ({ projectId }: { projectId: string }) => {
   const { invoke: createPortalSession } = useCreatePortalSessionMutation();
   const { invoke: createCheckout } = useCreateCheckoutSessionMutation();
   const { t } = useTranslation();
+  const { can } = useAppContext();
+  // BillingRead lets an ADMIN see the plan and usage; checkout and portal
+  // sessions are created against the OWNER's own Stripe customer, so the
+  // actions that spend stay OWNER-only (BillingManage).
+  const canManageBilling = can(Capability.BillingManage);
 
   const isUnlimitedSessions = totalLimit === 'unlimited';
   const percent = isUnlimitedSessions ? 0 : (currentUsage / totalLimit) * 100;
@@ -817,37 +828,39 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                   )}
                 </div>
               </div>
-              <Button
-                className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
-                onClick={handleManageSubscription}
-                disabled={subscriptionLoading}
-              >
-                <div className="px-1">
-                  {subscription?.cancelAt !== undefined && subscription?.cancelAt !== null
-                    ? t('settings.billing.buttons.renewSubscription')
-                    : !subscription?.planType || subscription?.planType === PlanType.HOBBY
-                      ? t('settings.billing.buttons.upgrade')
-                      : t('settings.billing.buttons.manageSubscription')}
-                </div>
-                <div className="w-4 h-4">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="lucide lucide-arrow-up-right"
-                  >
-                    <title>{t('settings.billing.upgradeIconLabel')}</title>
-                    <path d="M7 7h10v10" />
-                    <path d="M7 17 17 7" />
-                  </svg>
-                </div>
-              </Button>
+              {canManageBilling ? (
+                <Button
+                  className="text-sm gap-0.5 inline-flex items-center justify-center rounded-[10px] disabled:pointer-events-none select-none border border-transparent bg-zinc-950/90 hover:bg-zinc-950/80 ring-zinc-950/10 dark:bg-white dark:hover:bg-white/90 text-white/90 px-2 min-w-[36px] h-9 dark:text-zinc-950 flex-none"
+                  onClick={handleManageSubscription}
+                  disabled={subscriptionLoading}
+                >
+                  <div className="px-1">
+                    {subscription?.cancelAt !== undefined && subscription?.cancelAt !== null
+                      ? t('settings.billing.buttons.renewSubscription')
+                      : !subscription?.planType || subscription?.planType === PlanType.HOBBY
+                        ? t('settings.billing.buttons.upgrade')
+                        : t('settings.billing.buttons.manageSubscription')}
+                  </div>
+                  <div className="w-4 h-4">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-arrow-up-right"
+                    >
+                      <title>{t('settings.billing.upgradeIconLabel')}</title>
+                      <path d="M7 7h10v10" />
+                      <path d="M7 17 17 7" />
+                    </svg>
+                  </div>
+                </Button>
+              ) : null}
             </div>
             {percent >= 100 && (
               <div className="flex items-center gap-1 text-red-500 text-sm font-medium">
@@ -895,6 +908,7 @@ const Pricing = ({ projectId }: { projectId: string }) => {
                 isYearly={isYearly}
                 projectId={projectId}
                 currentPlanType={planType}
+                canManageBilling={canManageBilling}
               />
             ))}
           </div>

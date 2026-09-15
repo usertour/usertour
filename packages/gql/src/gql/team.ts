@@ -80,6 +80,12 @@ export const changeTeamMemberRole = gql`
   }
 `;
 
+export const transferProjectOwnership = gql`
+  mutation transferProjectOwnership($projectId: String!, $userId: String!) {
+    transferProjectOwnership(data: { projectId: $projectId, userId: $userId })
+  }
+`;
+
 export const getInvite = gql`
   query getInvite($inviteId: String!) {
     getInvite(inviteId: $inviteId) {

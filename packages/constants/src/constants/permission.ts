@@ -74,18 +74,24 @@ const WRITE: Capability[] = [
   Capability.AccessTokenManage,
 ];
 
-const ADMIN: Capability[] = [Capability.ContentPublishAnyEnvironment];
-
-const OWNER_ONLY: Capability[] = [
-  Capability.AuditRead,
-  Capability.ProjectManage,
-  Capability.BillingRead,
-  Capability.BillingManage,
+// Who gets in, who can log in, what the project is called — plus the
+// unrestricted publish that makes an ADMIN's environment whitelist moot.
+const ADMIN: Capability[] = [
+  Capability.ContentPublishAnyEnvironment,
   Capability.TeamRead,
   Capability.TeamManage,
   Capability.SsoRead,
   Capability.SsoManage,
+  Capability.ProjectManage,
+  Capability.AuditRead,
+  // Read-only: an ADMIN can see the plan, usage and license status (and
+  // therefore why content stopped delivering) without being able to spend.
+  Capability.BillingRead,
 ];
+
+// Money and ownership itself. Checkout / portal sessions are created against
+// the OWNER's own Stripe customer, and only the OWNER may hand the project on.
+const OWNER_ONLY: Capability[] = [Capability.BillingManage, Capability.TeamTransferOwnership];
 
 export const ROLE_CAPABILITIES: Record<Role, Capability[]> = {
   [Role.VIEWER]: [...READ],

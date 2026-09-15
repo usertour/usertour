@@ -420,10 +420,10 @@ export class WebhooksProcessor extends WorkerHost {
       metadata: { reason: 'sustained_delivery_failure', failingDays, url },
     });
 
-    // Single-owner invariant (role changes demote the previous owner);
-    // findMany defends against legacy duplicates rather than implying a crowd.
+    // Everyone who can act on the disabled webhook's project settings: the
+    // OWNER and every ADMIN.
     const owners = await this.prisma.userOnProject.findMany({
-      where: { projectId: environment.projectId, role: 'OWNER', actived: true },
+      where: { projectId: environment.projectId, role: { in: ['OWNER', 'ADMIN'] }, actived: true },
       select: { user: { select: { email: true } } },
     });
     const settingsUrl = `${this.configService.get('app.homepageUrl')}/project/${environment.projectId}/settings/webhooks/${webhookId}`;
