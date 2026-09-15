@@ -136,11 +136,15 @@ export class ApiTokenAuthService {
    * (`allowedEnvironmentIds`, null = all) narrowed by the owner's publish
    * whitelist when the owner's role lacks ContentPublishAnyEnvironment. Null
    * means "every environment in scope" (ADMIN / OWNER with an unrestricted
-   * key); an empty list means nowhere. Call after `authorize`.
+   * key); an empty list means nowhere. Call after `authorize` — without the
+   * cached role this fails closed to nowhere, as assertMayPublishTo does.
    */
   publishableEnvironmentIds(token: AuthedApiToken): string[] | null {
+    if (!token.memberRole) {
+      return [];
+    }
     const scope = this.allowedEnvironmentIds(token);
-    if (!token.memberRole || roleCan(token.memberRole, Capability.ContentPublishAnyEnvironment)) {
+    if (roleCan(token.memberRole, Capability.ContentPublishAnyEnvironment)) {
       return scope;
     }
     const whitelist = token.memberPublishEnvironmentIds ?? [];

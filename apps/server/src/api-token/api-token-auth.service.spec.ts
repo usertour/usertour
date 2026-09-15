@@ -97,6 +97,8 @@ describe('ApiTokenAuthService — environment scope', () => {
         memberPublishEnvironmentIds: [],
       } as unknown as AuthedApiToken;
       expect(svc.publishableEnvironmentIds(admin)).toEqual(['e9']);
+      // No cached role (authorize did not run): nowhere, matching assertMayPublishTo.
+      expect(svc.publishableEnvironmentIds(tok(null))).toEqual([]);
     });
 
     it('names the publishable environments when the caller passes them', () => {
