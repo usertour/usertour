@@ -1,5 +1,11 @@
 import { Text } from '@react-email/components';
-import { emailColors, panelLabelStyle, panelMonoValueStyle, panelStyle } from '../common-style';
+import {
+  emailColors,
+  panelCellStyle,
+  panelLabelStyle,
+  panelMonoValueStyle,
+  panelStyle,
+} from '../common-style';
 
 export interface MonoBlockProps {
   /** Short caption, e.g. "Endpoint". */
@@ -28,11 +34,7 @@ export const MonoBlock = (props: MonoBlockProps) => {
         <tr>
           <td
             {...({ bgcolor: emailColors.panel } as Record<string, string>)}
-            style={{
-              backgroundColor: emailColors.panel,
-              borderRadius: '8px',
-              padding: '14px 18px',
-            }}
+            style={panelCellStyle}
           >
             <Text style={panelLabelStyle}>{label}</Text>
             <Text style={panelMonoValueStyle}>{value}</Text>

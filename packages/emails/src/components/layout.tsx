@@ -1,15 +1,59 @@
 import { Body, Head, Html, Img, Preview, Section, Text } from '@react-email/components';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { emailBranding } from '../branding';
 import {
   bodyStyle,
   cardStyle,
+  emailColors,
   footerStyle,
   footerTextStyle,
+  frameStyle,
   logoSectionStyle,
+  postscriptStyle,
   signOffStyle,
   wordmarkStyle,
 } from '../common-style';
+
+/** The wordmark PNG is 234×60, drawn at half size so it stays crisp on dense screens. */
+const LOGO_WIDTH = 117;
+const LOGO_HEIGHT = 30;
+
+interface FrameProps {
+  /** Padding, background and radius for the single cell. */
+  cellStyle: CSSProperties;
+  /** The background as an attribute too, for clients that ignore the CSS one on cells. */
+  bgcolor?: string;
+  children: ReactNode;
+}
+
+/**
+ * A centred, width-capped table whose one cell carries the padding and
+ * background. Outlook drops both from `<table>`, so they have to sit on the
+ * `<td>` for the card to keep its inset there.
+ */
+const Frame = (props: FrameProps) => {
+  const { cellStyle, bgcolor, children } = props;
+
+  return (
+    <table
+      role="presentation"
+      cellPadding={0}
+      cellSpacing={0}
+      border={0}
+      width="100%"
+      align="center"
+      style={frameStyle}
+    >
+      <tbody>
+        <tr>
+          <td {...({ bgcolor } as Record<string, string | undefined>)} style={cellStyle}>
+            {children}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  );
+};
 
 export interface EmailLayoutProps {
   /** Inbox preview line, shown next to the subject in most clients. */
@@ -19,6 +63,8 @@ export interface EmailLayoutProps {
    * because you're an owner or admin of Acme." Shown under the card.
    */
   reason: string;
+  /** An afterthought under the sign-off, e.g. a pointer to the docs. */
+  postscript?: ReactNode;
   children: ReactNode;
 }
 
@@ -27,7 +73,7 @@ export interface EmailLayoutProps {
  * small footer outside the card saying why the recipient got the email.
  */
 export const EmailLayout = (props: EmailLayoutProps) => {
-  const { preview, reason, children } = props;
+  const { preview, reason, postscript, children } = props;
   const { logoUrl } = emailBranding();
 
   return (
@@ -38,20 +84,27 @@ export const EmailLayout = (props: EmailLayoutProps) => {
       </Head>
       <Preview>{preview}</Preview>
       <Body style={bodyStyle}>
-        <Section style={cardStyle}>
+        <Frame cellStyle={cardStyle} bgcolor={emailColors.card}>
           <Section style={logoSectionStyle}>
             {logoUrl ? (
-              <Img src={logoUrl} alt="Usertour" height={28} style={{ display: 'block' }} />
+              <Img
+                src={logoUrl}
+                alt="Usertour"
+                width={LOGO_WIDTH}
+                height={LOGO_HEIGHT}
+                style={{ display: 'block' }}
+              />
             ) : (
               <Text style={wordmarkStyle}>Usertour</Text>
             )}
           </Section>
           {children}
           <Text style={signOffStyle}>— The Usertour team</Text>
-        </Section>
-        <Section style={footerStyle}>
+          {postscript ? <Text style={postscriptStyle}>{postscript}</Text> : null}
+        </Frame>
+        <Frame cellStyle={footerStyle}>
           <Text style={footerTextStyle}>{reason}</Text>
-        </Section>
+        </Frame>
       </Body>
     </Html>
   );

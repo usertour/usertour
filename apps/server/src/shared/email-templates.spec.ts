@@ -90,12 +90,34 @@ describe('email templates', () => {
     expect(rendered.html).toContain('&lt;b&gt;Mallory&lt;/b&gt;');
   });
 
-  it('shows the configured wordmark image', () => {
+  it('shows the configured wordmark image at a fixed width and height', () => {
     configureEmailBranding({ logoUrl: `${APP_URL}/images/email-logo.png` });
 
     const rendered = renderVerifyEmail({ url: `${APP_URL}/auth/registration/code-1` });
 
     expect(rendered.html).toContain(`src="${APP_URL}/images/email-logo.png"`);
+    expect(rendered.html).toMatch(/<img[^>]*width="117"/);
+    expect(rendered.html).toMatch(/<img[^>]*height="30"/);
+  });
+
+  it('keeps the card inset on a cell, never on a table', () => {
+    const rendered = renderVerifyEmail({ url: `${APP_URL}/auth/registration/code-1` });
+
+    expect(rendered.html).toMatch(/<td[^>]*style="[^"]*padding:40px 44px/);
+    expect(rendered.html).not.toMatch(/<table[^>]*style="[^"]*padding:/);
+  });
+
+  it('places the postscript after the sign-off', () => {
+    const rendered = renderInviteTeamMemberEmail({
+      inviterName: 'Grace',
+      name: 'Ada',
+      projectName: 'Acme',
+      url: `${APP_URL}/auth/invite/code-1`,
+    });
+
+    expect(rendered.text.indexOf('— The Usertour team')).toBeLessThan(
+      rendered.text.indexOf('P.S.'),
+    );
   });
 
   it('falls back to a text wordmark when no logo is configured', () => {

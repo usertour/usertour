@@ -1,5 +1,5 @@
 import { Heading, Link, Text } from '@react-email/components';
-import { headingStyle, linkStyle, mutedParagraphStyle, paragraphStyle } from '../common-style';
+import { headingStyle, linkStyle, paragraphStyle } from '../common-style';
 import { CallToAction } from '../components/call-to-action';
 import { EmailLayout } from '../components/layout';
 
@@ -22,6 +22,15 @@ export const InviteTeamMemberEmail = (props: InviteTeamMemberEmailProps) => {
     <EmailLayout
       preview={`${inviterName} invited you to join ${projectName} on Usertour`}
       reason={`You're receiving this because ${inviterName} invited you to ${projectName} on Usertour.`}
+      postscript={
+        <>
+          P.S. Need help getting started? Check out our{' '}
+          <Link href={DOCS_URL} style={linkStyle}>
+            help documentation
+          </Link>
+          .
+        </>
+      }
     >
       <Heading style={headingStyle}>{inviterName} invited you to Usertour</Heading>
       <Text style={paragraphStyle}>Hi {name},</Text>
@@ -32,13 +41,6 @@ export const InviteTeamMemberEmail = (props: InviteTeamMemberEmailProps) => {
       </Text>
       <CallToAction href={url} label="Set up account" />
       <Text style={paragraphStyle}>Welcome aboard,</Text>
-      <Text style={mutedParagraphStyle}>
-        P.S. Need help getting started? Check out our{' '}
-        <Link href={DOCS_URL} style={linkStyle}>
-          help documentation
-        </Link>
-        .
-      </Text>
     </EmailLayout>
   );
 };

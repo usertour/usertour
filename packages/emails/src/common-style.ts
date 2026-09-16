@@ -24,7 +24,6 @@ export const emailColors = {
   mutedText: '#697386',
   /** Small uppercase captions above a panel value. */
   label: '#8792a2',
-  border: '#e6ebf1',
 } as const;
 
 export const emailFonts = {
@@ -36,7 +35,6 @@ export const emailFontSize = {
   xs: '12px',
   sm: '13px',
   md: '15px',
-  lg: '18px',
   xl: '24px',
 } as const;
 
@@ -61,13 +59,22 @@ export const bodyStyle: CSSProperties = {
   padding: '40px 12px',
 };
 
+/**
+ * The centred, width-capped table around the card and the footer. Padding and
+ * background live on the cell inside it, not here: Outlook drops both from a
+ * `<table>` and would otherwise paint the card edge to edge with no inset.
+ */
+export const frameStyle: CSSProperties = {
+  margin: '0 auto',
+  maxWidth: emailContainerWidth,
+  width: '100%',
+};
+
+/** The card cell. */
 export const cardStyle: CSSProperties = {
   backgroundColor: emailColors.card,
   borderRadius: emailRadius.lg,
-  margin: '0 auto',
-  maxWidth: emailContainerWidth,
   padding: '40px 44px',
-  width: '100%',
 };
 
 export const logoSectionStyle: CSSProperties = {
@@ -114,6 +121,12 @@ export const signOffStyle: CSSProperties = {
   margin: '24px 0 0',
 };
 
+/** A P.S. line: after the sign-off, quieter than the body. */
+export const postscriptStyle: CSSProperties = {
+  ...mutedParagraphStyle,
+  margin: '16px 0 0',
+};
+
 export const linkStyle: CSSProperties = {
   color: emailColors.primary,
   fontWeight: 600,
@@ -133,10 +146,15 @@ export const fallbackUrlStyle: CSSProperties = {
 
 /** A single value the reader will check against: grey panel, caption, mono. */
 export const panelStyle: CSSProperties = {
-  backgroundColor: emailColors.panel,
-  borderRadius: emailRadius.md,
   margin: '0 0 24px',
   width: '100%',
+};
+
+/** The panel cell carries the fill and radius, for the same reason as `cardStyle`. */
+export const panelCellStyle: CSSProperties = {
+  backgroundColor: emailColors.panel,
+  borderRadius: emailRadius.md,
+  padding: '14px 18px',
 };
 
 export const panelLabelStyle: CSSProperties = {
@@ -160,11 +178,9 @@ export const panelMonoValueStyle: CSSProperties = {
   overflowWrap: 'break-word',
 };
 
+/** The footer cell, under the card. */
 export const footerStyle: CSSProperties = {
-  margin: '0 auto',
-  maxWidth: emailContainerWidth,
   padding: '24px 44px 0',
-  width: '100%',
 };
 
 export const footerTextStyle: CSSProperties = {
