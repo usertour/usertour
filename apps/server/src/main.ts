@@ -70,8 +70,8 @@ async function bootstrap() {
 
   // OpenAPI documentation configuration
   const config = new DocumentBuilder()
-    .setTitle('UserTour API')
-    .setDescription('The UserTour API documentation')
+    .setTitle('Usertour API')
+    .setDescription('The Usertour API documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

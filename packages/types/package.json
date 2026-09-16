@@ -2,7 +2,7 @@
   "name": "@usertour/types",
   "version": "0.0.50",
   "private": true,
-  "description": "TypeScript type definitions and enums shared across the UserTour project",
+  "description": "TypeScript type definitions and enums shared across the Usertour project",
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

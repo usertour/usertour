@@ -2,7 +2,7 @@
   "name": "@usertour/license",
   "version": "0.0.3",
   "type": "module",
-  "description": "JWT license signing and validation utilities for UserTour",
+  "description": "JWT license signing and validation utilities for Usertour",
   "homepage": "https://www.usertour.io",
   "author": "Usertour, Inc. <support@usertour.io>",
   "license": "MIT",
