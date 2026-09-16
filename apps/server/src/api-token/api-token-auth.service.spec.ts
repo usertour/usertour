@@ -122,12 +122,21 @@ describe('ApiTokenAuthService — environment scope', () => {
     });
 
     it('names the publishable environments when the caller passes them', () => {
+      const staging = { id: 'e1', name: 'Staging' };
       expect(
-        new MemberCannotPublishToEnvironmentError([{ id: 'e1', name: 'Staging' }]).messageDict.en,
+        new MemberCannotPublishToEnvironmentError({
+          publishable: [staging],
+          whitelisted: [staging],
+        }).messageDict.en,
       ).toContain('Staging (e1)');
-      expect(new MemberCannotPublishToEnvironmentError([]).messageDict.en).toContain(
-        'any environment',
-      );
+      expect(
+        new MemberCannotPublishToEnvironmentError({ publishable: [], whitelisted: [staging] })
+          .messageDict.en,
+      ).toContain('not scoped to any environment its owner may publish to');
+      expect(
+        new MemberCannotPublishToEnvironmentError({ publishable: [], whitelisted: [] }).messageDict
+          .en,
+      ).toContain('any environment');
     });
 
     it('fails closed when authorize has not cached the role', () => {

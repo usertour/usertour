@@ -300,27 +300,46 @@ export class MemberCannotPublishToEnvironmentError extends OpenAPIError {
   };
 
   /**
-   * Optionally name the environments the key MAY publish to (its scope ∩ the
-   * owner's whitelist), turning a dead-end into a redirect — the MCP publish
-   * tools pass them so an agent can self-correct, as E1029 does for scope.
-   * An empty list is named too: "nowhere" is the actionable fact.
+   * Optionally name where the key MAY publish, turning a dead-end into a
+   * redirect — the MCP publish tools pass this so an agent can self-correct,
+   * as E1029 does for scope. Two lists, because two different things can be
+   * empty: `whitelisted` is the owner's publish whitelist, `publishable` is
+   * that whitelist narrowed to the key's own environment scope. A key scoped
+   * to an environment its owner may not publish to has a non-empty whitelist
+   * and nothing publishable — the message must not call the whitelist empty.
    */
-  constructor(publishable?: { name: string; id: string }[]) {
+  constructor(detail?: { publishable: PublishTarget[]; whitelisted: PublishTarget[] }) {
     super();
-    if (publishable) {
-      const list = publishable.length
-        ? publishable.map((e) => `${e.name} (${e.id})`).join(', ')
-        : null;
+    if (!detail) {
+      return;
+    }
+    const nameList = (targets: PublishTarget[]) =>
+      targets.map((e) => `${e.name} (${e.id})`).join(', ');
+    if (detail.publishable.length) {
+      const list = nameList(detail.publishable);
       this.messageDict = {
-        en: list
-          ? `The API key's owner may not publish to this environment. Their publish whitelist allows only: ${list}.`
-          : "The API key's owner may not publish to any environment: their publish whitelist is empty. Ask a project admin to extend it.",
-        'zh-CN': list
-          ? `该 API key 的所有者不能发布到此环境。其发布授权仅包含:${list}。`
-          : '该 API key 的所有者不能发布到任何环境:其发布授权为空。请项目管理员扩展授权。',
+        en: `The API key's owner may not publish to this environment. Their publish whitelist allows only: ${list}.`,
+        'zh-CN': `该 API key 的所有者不能发布到此环境。其发布授权仅包含:${list}。`,
+      };
+    } else if (detail.whitelisted.length) {
+      const list = nameList(detail.whitelisted);
+      this.messageDict = {
+        en: `This API key is not scoped to any environment its owner may publish to. The owner's publish whitelist allows: ${list} — but the key's environment scope does not include any of them. Reconnect with a key scoped to one of those environments, or ask a project admin to add this environment to the owner's whitelist.`,
+        'zh-CN': `该 API key 的环境范围不包含任何其所有者可发布的环境。所有者的发布授权包含:${list},但 key 的范围都不在其中。请改用范围覆盖这些环境的 key,或请项目管理员把当前环境加入所有者的发布授权。`,
+      };
+    } else {
+      this.messageDict = {
+        en: "The API key's owner may not publish to any environment: their publish whitelist is empty. Ask a project admin to extend it.",
+        'zh-CN': '该 API key 的所有者不能发布到任何环境:其发布授权为空。请项目管理员扩展授权。',
       };
     }
   }
+}
+
+/** An environment named in a publish refusal. */
+export interface PublishTarget {
+  id: string;
+  name: string;
 }
 
 export class SystemThemeCannotBeChangedError extends OpenAPIError {
