@@ -97,7 +97,12 @@ export class TeamService {
     }
   }
 
-  async changeTeamMemberRole(userId: string, projectId: string, role: Role) {
+  async changeTeamMemberRole(
+    userId: string,
+    projectId: string,
+    role: Role,
+    allowedEnvironmentIds?: string[] | null,
+  ) {
     if (!userId || !projectId) {
       throw new ParamsError();
     }
@@ -109,24 +114,88 @@ export class TeamService {
     if (!userOnProject) {
       throw new ParamsError();
     }
+    // The OWNER row moves only through transferOwnership: nobody is made
+    // OWNER here, and the OWNER's own role cannot be changed here (the web
+    // hides the action; this is the server-side invariant, so a project can
+    // never end up with zero owners).
+    if (role === Role.OWNER || userOnProject.role === Role.OWNER) {
+      throw new ParamsError();
+    }
+    const publishWhitelist = await this.resolvePublishWhitelist(
+      projectId,
+      role,
+      allowedEnvironmentIds,
+    );
 
+    // The publish whitelist is an EDITOR attribute: it is rewritten on every
+    // role change, so a member promoted out of EDITOR carries no stale list
+    // and one demoted into it starts from what the caller chose.
+    await this.prisma.userOnProject.update({
+      where: { id: userOnProject.id },
+      data: { role, allowedEnvironmentIds: publishWhitelist ?? Prisma.DbNull },
+    });
+  }
+
+  /**
+   * Make `userId` the project's OWNER. The single-owner invariant holds
+   * inside the transaction: every current OWNER is demoted to ADMIN first.
+   * Neither row keeps a publish whitelist (ADMIN and OWNER publish anywhere).
+   */
+  async transferOwnership(projectId: string, userId: string) {
+    if (!userId || !projectId) {
+      throw new ParamsError();
+    }
+    const userOnProject = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
+      include: { user: { select: { disabled: true } } },
+    });
+    if (!userOnProject || userOnProject.role === Role.OWNER) {
+      throw new ParamsError();
+    }
+    // A disabled account cannot sign in, and the demoted owner (now ADMIN)
+    // cannot transfer again — the project would be stranded until an instance
+    // admin intervenes. Same gate as adding a member.
+    if (userOnProject.user?.disabled) {
+      throw new ParamsError();
+    }
     return await this.prisma.$transaction(async (tx) => {
-      if (role === Role.OWNER) {
-        // set the owner to admin before changing the role to owner
-        await tx.userOnProject.updateMany({
-          where: { projectId, role: Role.OWNER },
-          data: { role: Role.ADMIN },
-        });
-      }
-      // An OWNER is always unrestricted — promoting clears any leftover
-      // environment restriction (the dormant allowlist has no writer today,
-      // but rows may exist once member-permission design lands).
-      const envUpdate = role === Role.OWNER ? { allowedEnvironmentIds: Prisma.DbNull } : {};
       await tx.userOnProject.updateMany({
+        where: { projectId, role: Role.OWNER },
+        data: { role: Role.ADMIN, allowedEnvironmentIds: Prisma.DbNull },
+      });
+      await tx.userOnProject.update({
         where: { id: userOnProject.id },
-        data: { role, ...envUpdate },
+        data: { role: Role.OWNER, allowedEnvironmentIds: Prisma.DbNull },
       });
     });
+  }
+
+  /**
+   * The publish whitelist to persist for a role. EDITOR keeps the requested
+   * environment ids (each must be a live environment of the project; omitted
+   * = may publish nowhere). Every other role carries none: ADMIN and OWNER
+   * publish everywhere by capability, VIEWER never publishes.
+   */
+  private async resolvePublishWhitelist(
+    projectId: string,
+    role: Role,
+    requested?: string[] | null,
+  ): Promise<string[] | null> {
+    if (role !== Role.EDITOR) {
+      return null;
+    }
+    const environmentIds = [...new Set(requested ?? [])];
+    if (environmentIds.length === 0) {
+      return [];
+    }
+    const live = await this.prisma.environment.findMany({
+      where: { id: { in: environmentIds }, projectId, deleted: false },
+      select: { id: true },
+    });
+    if (live.length !== environmentIds.length) {
+      throw new ParamsError();
+    }
+    return environmentIds;
   }
 
   async removeTeamMember(userId: string, projectId: string) {
@@ -166,10 +235,16 @@ export class TeamService {
     projectId: string,
     name: string,
     role: Role,
+    allowedEnvironmentIds?: string[] | null,
   ) {
     if (role === Role.OWNER) {
       throw new ParamsError();
     }
+    const publishWhitelist = await this.resolvePublishWhitelist(
+      projectId,
+      role,
+      allowedEnvironmentIds,
+    );
     const sender = await this.prisma.user.findUnique({
       where: { id: senderUserId },
     });
@@ -221,6 +296,7 @@ export class TeamService {
           role,
           projectId,
           userId: sender.id,
+          allowedEnvironmentIds: publishWhitelist ?? undefined,
           expiresAt: new Date(Date.now() + INVITE_EXPIRY_MS),
         },
       });
@@ -317,11 +393,11 @@ export class TeamService {
       }
       throw error;
     }
-    // The invite's environment restriction was validated at CREATION, and invites
-    // live for days — an environment deleted in between must not ride into the
-    // new membership as a dead id. Filter to the project's live environments; a
-    // restriction that empties out stays [] (member can act on nothing,
-    // fail-closed) rather than silently widening to all environments.
+    // The invite's publish whitelist was validated at CREATION, and invites live
+    // for days — an environment deleted in between must not ride into the new
+    // membership as a dead id. Filter to the project's live environments; a
+    // whitelist that empties out stays [] (the editor can publish nowhere)
+    // rather than silently widening to null.
     let liveAllowed = allowedEnvironmentIds ?? null;
     if (liveAllowed?.length) {
       const live = await tx.environment.findMany({

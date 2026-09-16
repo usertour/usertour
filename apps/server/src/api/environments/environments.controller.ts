@@ -162,7 +162,7 @@ export class ApiEnvironmentsController {
     this.auth.assertEnvironmentInScope(req.apiToken, { id: environmentId });
   }
 
-  /** The credential's effective environment scope (token allowlist ∩ member ceiling). */
+  /** The credential's environment scope (its own allowlist; publishing is bounded separately by E1039). */
   private scope(req: { apiToken: AuthedApiToken }): string[] | null {
     return this.auth.allowedEnvironmentIds(req.apiToken);
   }

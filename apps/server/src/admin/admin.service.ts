@@ -19,6 +19,7 @@ import {
 } from '@/common/initialization/initialization';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { PasswordService } from '@/auth/password.service';
+import { TeamService } from '@/team/team.service';
 import { Role } from '@prisma/client';
 
 @Injectable()
@@ -31,6 +32,7 @@ export class AdminService implements OnModuleInit {
     private configService: ConfigService,
     private licenseService: LicenseService,
     private passwordService: PasswordService,
+    private teamService: TeamService,
   ) {}
 
   async onModuleInit() {
@@ -768,7 +770,7 @@ export class AdminService implements OnModuleInit {
       throw new ParamsError('Cannot add a disabled user to project');
     }
 
-    if (role !== Role.ADMIN && role !== Role.VIEWER) {
+    if (role !== Role.ADMIN && role !== Role.EDITOR && role !== Role.VIEWER) {
       throw new ParamsError('Invalid project member role');
     }
 
@@ -791,30 +793,38 @@ export class AdminService implements OnModuleInit {
     });
   }
 
+  /**
+   * Same rules as the project's own team management (TeamService): the OWNER
+   * row moves only through transfer, and the publish whitelist follows the
+   * role — an EDITOR set from here starts with an empty whitelist, any other
+   * role carries none.
+   */
   async changeProjectMemberRole(projectId: string, userId: string, role: string) {
+    if (role !== Role.ADMIN && role !== Role.EDITOR && role !== Role.VIEWER) {
+      throw new ParamsError('Invalid project member role');
+    }
     const userOnProject = await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
     });
     if (!userOnProject) {
       throw new ParamsError('Member not found in project');
     }
-
-    return this.prisma.$transaction(async (tx) => {
-      if (role === Role.OWNER) {
-        await tx.userOnProject.updateMany({
-          where: { projectId, role: Role.OWNER },
-          data: { role: Role.ADMIN },
-        });
-      }
-      return tx.userOnProject.update({
-        where: { id: userOnProject.id },
-        data: { role: role as Role },
-      });
-    });
+    if (userOnProject.role === Role.OWNER) {
+      throw new ParamsError('Use ownership transfer to change the project owner');
+    }
+    await this.teamService.changeTeamMemberRole(userId, projectId, role);
+    return this.prisma.userOnProject.findFirstOrThrow({ where: { userId, projectId } });
   }
 
   async transferProjectOwnership(projectId: string, userId: string) {
-    return this.changeProjectMemberRole(projectId, userId, Role.OWNER);
+    const userOnProject = await this.prisma.userOnProject.findFirst({
+      where: { userId, projectId },
+    });
+    if (!userOnProject) {
+      throw new ParamsError('Member not found in project');
+    }
+    await this.teamService.transferOwnership(projectId, userId);
+    return this.prisma.userOnProject.findFirstOrThrow({ where: { userId, projectId } });
   }
 
   async removeProjectMember(projectId: string, userId: string) {

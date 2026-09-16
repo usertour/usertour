@@ -1,6 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
-import { useMemberEnvScope } from '@/hooks/use-member-env-scope';
 import { storage } from '@usertour/helpers';
 import { StorageKeys } from '@usertour/constants';
 import { Environment } from '@usertour/types';
@@ -8,8 +7,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
 /**
- * Custom hook to handle environment selection with priority logic, confined to
- * the environments the current member is allowed to act on (see useMemberEnvScope):
+ * Custom hook to handle environment selection with priority logic:
  * 1. URL params (envId)
  * 2. localStorage (user's last choice)
  * 3. Primary environment (isPrimary === true)
@@ -21,18 +19,9 @@ import { useParams } from 'react-router-dom';
 export const useEnvironmentSelection = () => {
   const { envId } = useParams();
   const { setEnvironment, userInfo, environment } = useAppContext();
-  const { environmentList } = useEnvironmentList();
-  const { canActOn } = useMemberEnvScope();
-
-  // Auto-selection considers only the environments this member can act on. A
-  // member restricted to a subset (UserOnProject.allowedEnvironmentIds) must not
-  // be landed on an out-of-scope environment — the server walls every action
-  // there. Unrestricted members (OWNER / legacy) have canActOn === true for all,
-  // so this is identical to the full list for them.
-  const selectableEnvironments = useMemo(
-    () => environmentList?.filter((env) => canActOn(env.id)),
-    [environmentList, canActOn],
-  );
+  // Every member may act on every environment of the project (the editor
+  // publish whitelist bounds publishing only), so the full list is selectable.
+  const { environmentList: selectableEnvironments } = useEnvironmentList();
 
   // Memoize storage key to avoid recalculation
   const storageKey = useMemo(
@@ -52,9 +41,7 @@ export const useEnvironmentSelection = () => {
   );
 
   useEffect(() => {
-    // Early return if prerequisites are not met (nothing the member can act on
-    // included — a member with an empty allowed set selects nothing rather than
-    // landing on a walled environment).
+    // Early return if prerequisites are not met.
     if (
       !selectableEnvironments ||
       selectableEnvironments.length === 0 ||

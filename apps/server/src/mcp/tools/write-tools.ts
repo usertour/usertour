@@ -52,6 +52,7 @@ import { upsertUserBody, type UpsertUserBody } from '@/api/users/users.schema';
 
 import { McpTool } from '../mcp.types';
 import { writeAnnotationsFor } from './annotations';
+import { assertPublishable } from './assert-publishable';
 import { environmentIdSchema, resolveEnvironment } from './read-tools';
 import { auditCreate, auditDelete, auditUpdate } from './audit-meta';
 import { editorUrlFor, withEditorUrl } from './editor-url';
@@ -94,6 +95,7 @@ const themeSettingsMcpField = z
  * (compile + field-level merge + domain delegation); `run_javascript` is
  * rejected by the compiler, and version writes only touch editable drafts.
  */
+
 export function buildWriteTools(): McpTool[] {
   const tools: McpTool[] = [
     {
@@ -404,6 +406,7 @@ export function buildWriteTools(): McpTool[] {
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
+        await assertPublishable(ctx, environment.id);
         const content = await ctx.services.content.publish(
           String(args.contentId),
           ctx.projectId,
@@ -437,6 +440,7 @@ export function buildWriteTools(): McpTool[] {
       },
       handler: async (args, ctx) => {
         const environment = await resolveEnvironment(args, ctx);
+        await assertPublishable(ctx, environment.id);
         return ctx.services.content.unpublish(
           String(args.contentId),
           ctx.projectId,

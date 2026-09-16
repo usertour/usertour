@@ -1,3 +1,4 @@
+import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Reflector } from '@nestjs/core';
 import { RESOLVER_TYPE_METADATA } from '@nestjs/graphql';
 
@@ -18,6 +19,7 @@ import { ThemesResolver } from '@/themes/themes.resolver';
 import { WebhooksResolver } from '@/webhooks/webhooks.resolver';
 
 import { ENDPOINT_CAPABILITY } from './endpoint-capability.map';
+import { PermissionGuard } from './permission.guard';
 import { RequirePermission } from './require-permission.decorator';
 
 /**
@@ -127,5 +129,18 @@ describe('endpoint @RequirePermission ↔ capability map', () => {
       return !handler || !isGraphqlEndpoint(handler) || reflector.get(RequirePermission, handler);
     });
     expect(stale).toEqual([]);
+  });
+
+  it('registers PermissionGuard on every resolver class (a decorator without the guard is inert)', () => {
+    // PermissionGuard is not an APP_GUARD: it runs only where a resolver class
+    // registers it. The subscription resolver once carried @RequirePermission
+    // on every method and no class-level guard, so every check silently passed.
+    const unguarded = Object.entries(RESOLVERS)
+      .filter(([, ResolverClass]) => {
+        const guards: unknown[] = Reflect.getMetadata(GUARDS_METADATA, ResolverClass) ?? [];
+        return !guards.includes(PermissionGuard);
+      })
+      .map(([moduleName]) => moduleName);
+    expect(unguarded).toEqual([]);
   });
 });

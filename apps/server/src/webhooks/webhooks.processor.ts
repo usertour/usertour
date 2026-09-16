@@ -376,7 +376,7 @@ export class WebhooksProcessor extends WorkerHost {
 
   /**
    * Layer 2: sustained failure -> the system switches the endpoint off,
-   * records an audit entry, and emails the project owner. Guarded update so a
+   * records an audit entry, and emails the project owner and admins. Guarded update so a
    * concurrent probe can't double-fire the notification.
    */
   private async autoDisable(
@@ -420,10 +420,10 @@ export class WebhooksProcessor extends WorkerHost {
       metadata: { reason: 'sustained_delivery_failure', failingDays, url },
     });
 
-    // Single-owner invariant (role changes demote the previous owner);
-    // findMany defends against legacy duplicates rather than implying a crowd.
+    // Everyone who can act on the disabled webhook's project settings: the
+    // OWNER and every ADMIN.
     const owners = await this.prisma.userOnProject.findMany({
-      where: { projectId: environment.projectId, role: 'OWNER', actived: true },
+      where: { projectId: environment.projectId, role: { in: ['OWNER', 'ADMIN'] }, actived: true },
       select: { user: { select: { email: true } } },
     });
     const settingsUrl = `${this.configService.get('app.homepageUrl')}/project/${environment.projectId}/settings/webhooks/${webhookId}`;
@@ -437,7 +437,7 @@ export class WebhooksProcessor extends WorkerHost {
       },
     });
     // Concurrent sends (sendOrLog never throws): a hung SMTP server must not
-    // serialize inside a delivery-worker slot. Usually one owner anyway.
+    // serialize inside a delivery-worker slot. Usually a handful of recipients anyway.
     await Promise.all(
       owners
         .filter((owner) => owner.user?.email)

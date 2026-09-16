@@ -2,12 +2,16 @@
  * Canonical role for project membership. Values match the persisted
  * `Role` enum in the server's Prisma schema and the frontend
  * `TeamMemberRole`; those three definitions are consolidated onto this
- * one in a later phase. `USER` is intentionally absent — it is unused in
- * memberships and is removed during consolidation.
+ * one in a later phase.
+ *
+ * Strictly nested: VIEWER ⊂ EDITOR ⊂ ADMIN ⊂ OWNER. OWNER is unique per
+ * project and only ever assigned by ownership transfer; the other three
+ * are invitable.
  */
 export enum Role {
   OWNER = 'OWNER',
   ADMIN = 'ADMIN',
+  EDITOR = 'EDITOR',
   VIEWER = 'VIEWER',
 }
 
@@ -30,7 +34,14 @@ export enum Capability {
   ContentRead = 'content:read',
   ContentCreate = 'content:create',
   ContentUpdate = 'content:update',
+  /**
+   * Publish / unpublish. A role holding this WITHOUT
+   * `ContentPublishAnyEnvironment` may only publish to the environments on
+   * its membership's publish whitelist (`UserOnProject.allowedEnvironmentIds`).
+   */
   ContentPublish = 'content:publish',
+  /** Publish to every environment, ignoring the membership publish whitelist. */
+  ContentPublishAnyEnvironment = 'content:publish-any-environment',
   ContentDelete = 'content:delete',
   // theme
   ThemeRead = 'theme:read',
@@ -93,7 +104,10 @@ export enum Capability {
   BillingManage = 'billing:manage',
   // team
   TeamRead = 'team:read',
+  /** Invite, change the role of, remove any non-OWNER member. */
   TeamManage = 'team:manage',
+  /** Make another member the OWNER (the only way an OWNER is ever assigned). */
+  TeamTransferOwnership = 'team:transfer-ownership',
   // sso (single sign-on identity providers)
   SsoRead = 'sso:read',
   SsoManage = 'sso:manage',

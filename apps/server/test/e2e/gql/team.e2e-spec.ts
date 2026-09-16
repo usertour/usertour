@@ -56,7 +56,7 @@ describe('GraphQL team (e2e)', () => {
   });
 
   /** Build a member user on the shared project and track it for cleanup. */
-  const seedMember = async (role: 'OWNER' | 'ADMIN' | 'VIEWER', actived = true) => {
+  const seedMember = async (role: 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER', actived = true) => {
     const user = await buildUser(prisma);
     userIds.push(user.id);
     const membership = await buildMembership(prisma, {
@@ -254,6 +254,139 @@ describe('GraphQL team (e2e)', () => {
         variables: { data: { userId: stranger.id, projectId, role: 'ADMIN' } },
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+
+    it('never touches the OWNER row: cannot assign OWNER, cannot change the OWNER', async () => {
+      const CHANGE =
+        'mutation ($data: ChangeTeamMemberRoleInput!) { changeTeamMemberRole(data: $data) }';
+      const { user } = await seedMember('VIEWER');
+
+      const promote = await graphql(app, {
+        token,
+        query: CHANGE,
+        variables: { data: { userId: user.id, projectId, role: 'OWNER' } },
+      });
+      expect(promote.body.errors?.length).toBeGreaterThan(0);
+
+      const demote = await graphql(app, {
+        token,
+        query: CHANGE,
+        variables: { data: { userId: ownerUserId, projectId, role: 'ADMIN' } },
+      });
+      expect(demote.body.errors?.length).toBeGreaterThan(0);
+
+      // Neither row moved (the shared project carries other seeded owners
+      // from earlier cases, so pin the two rows rather than the owner set).
+      const ownerRow = await prisma.userOnProject.findFirst({
+        where: { userId: ownerUserId, projectId },
+      });
+      expect(ownerRow?.role).toBe('OWNER');
+      const targetRow = await prisma.userOnProject.findFirst({
+        where: { userId: user.id, projectId },
+      });
+      expect(targetRow?.role).toBe('VIEWER');
+    });
+
+    it('is open to ADMIN for non-owner rows only', async () => {
+      const CHANGE =
+        'mutation ($data: ChangeTeamMemberRoleInput!) { changeTeamMemberRole(data: $data) }';
+      const admin = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
+      userIds.push(admin.user.id);
+      const { user, membership } = await seedMember('VIEWER');
+
+      const ok = await graphql(app, {
+        token: admin.token,
+        query: CHANGE,
+        variables: { data: { userId: user.id, projectId, role: 'EDITOR' } },
+      });
+      expect(gqlData(ok).changeTeamMemberRole).toBe(true);
+      expect((await prisma.userOnProject.findUnique({ where: { id: membership.id } }))?.role).toBe(
+        'EDITOR',
+      );
+
+      const ownerRow = await graphql(app, {
+        token: admin.token,
+        query: CHANGE,
+        variables: { data: { userId: ownerUserId, projectId, role: 'VIEWER' } },
+      });
+      expect(ownerRow.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('transferProjectOwnership', () => {
+    const TRANSFER =
+      'mutation ($data: TransferProjectOwnershipInput!) { transferProjectOwnership(data: $data) }';
+
+    it('is owner-only: ADMIN is refused (E0013)', async () => {
+      const admin = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
+      userIds.push(admin.user.id);
+      const res = await graphql(app, {
+        token: admin.token,
+        query: TRANSFER,
+        variables: { data: { userId: admin.user.id, projectId } },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E0013');
+    });
+
+    it('refuses a disabled account as the new owner (the project would be stranded)', async () => {
+      const project = await buildProject(prisma, { name: 'gql-team-transfer-disabled' });
+      const owner = await buildAuthorizedUser(prisma, app, {
+        projectId: project.id,
+        role: 'OWNER',
+      });
+      const disabled = await buildUser(prisma, { disabled: true });
+      await buildMembership(prisma, { userId: disabled.id, projectId: project.id, role: 'ADMIN' });
+      userIds.push(owner.user.id, disabled.id);
+
+      const res = await graphql(app, {
+        token: owner.token,
+        query: TRANSFER,
+        variables: { data: { userId: disabled.id, projectId: project.id } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+      const rows = await prisma.userOnProject.findMany({ where: { projectId: project.id } });
+      expect(rows.find((row) => row.userId === owner.user.id)?.role).toBe('OWNER');
+      expect(rows.find((row) => row.userId === disabled.id)?.role).toBe('ADMIN');
+      await teardownProject(prisma, project.id);
+    });
+
+    it('makes the target OWNER and demotes the previous OWNER to ADMIN, whitelists cleared', async () => {
+      // A fresh project so the shared OWNER token keeps working for later tests.
+      const project = await buildProject(prisma, { name: 'gql-team-transfer' });
+      const owner = await buildAuthorizedUser(prisma, app, {
+        projectId: project.id,
+        role: 'OWNER',
+      });
+      const editor = await buildAuthorizedUser(prisma, app, {
+        projectId: project.id,
+        role: 'EDITOR',
+      });
+      userIds.push(owner.user.id, editor.user.id);
+      await prisma.userOnProject.updateMany({
+        where: { userId: editor.user.id, projectId: project.id },
+        data: { allowedEnvironmentIds: [] },
+      });
+
+      const res = await graphql(app, {
+        token: owner.token,
+        query: TRANSFER,
+        variables: { data: { userId: editor.user.id, projectId: project.id } },
+      });
+      expect(gqlData(res).transferProjectOwnership).toBe(true);
+
+      const rows = await prisma.userOnProject.findMany({ where: { projectId: project.id } });
+      const byUser = Object.fromEntries(rows.map((row) => [row.userId, row]));
+      expect(byUser[editor.user.id]).toMatchObject({ role: 'OWNER', allowedEnvironmentIds: null });
+      expect(byUser[owner.user.id]).toMatchObject({ role: 'ADMIN', allowedEnvironmentIds: null });
+
+      // The demoted owner is now an ADMIN: no longer allowed to transfer.
+      const again = await graphql(app, {
+        token: owner.token,
+        query: TRANSFER,
+        variables: { data: { userId: owner.user.id, projectId: project.id } },
+      });
+      expect(again.body.errors?.[0]?.extensions?.code).toBe('E0013');
+      await teardownProject(prisma, project.id);
     });
   });
 

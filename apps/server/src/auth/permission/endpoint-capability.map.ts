@@ -14,13 +14,13 @@ import { Capability } from '@usertour/types';
  * decorators. This map only records the intended capability per endpoint.
  *
  * The trailing comment on each group is the current `@Roles` set:
- *   R = [VIEWER, ADMIN, OWNER]   W = [ADMIN, OWNER]   O = [OWNER]
+ *   R = every role   W = EDITOR+   A = ADMIN+   O = OWNER only
  */
 export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   // projects
   'projects.getProjectConfig': Capability.ProjectRead, // R
-  'projects.getProjectLicenseInfo': Capability.BillingRead, // O
-  'projects.updateProject': Capability.ProjectManage, // O
+  'projects.getProjectLicenseInfo': Capability.BillingRead, // A
+  'projects.updateProject': Capability.ProjectManage, // A
   'projects.updateProjectLicense': Capability.BillingManage, // O
 
   // content
@@ -48,18 +48,18 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'environments.deleteEnvironments': Capability.EnvironmentManage, // W
   'environments.userEnvironments': Capability.EnvironmentRead, // R
   'environments.verifyInstallation': Capability.EnvironmentRead, // R
-  'environments.projectHasEnvironmentAccessTokens': Capability.AccessTokenRead, // O
-  'environments.listAccessTokens': Capability.AccessTokenRead, // O
-  'environments.getAccessToken': Capability.AccessTokenRead, // O
-  'environments.createAccessToken': Capability.AccessTokenManage, // O
-  'environments.deleteAccessToken': Capability.AccessTokenManage, // O
-  'environments.listSigningSecrets': Capability.AccessTokenRead, // O
-  'environments.getSigningSecret': Capability.AccessTokenRead, // O
-  'environments.createSigningSecret': Capability.AccessTokenManage, // O
-  'environments.revokeSigningSecret': Capability.AccessTokenManage, // O
-  'environments.setRequireIdentityVerification': Capability.AccessTokenManage, // O
-  'environments.getIdentityVerificationStats': Capability.AccessTokenRead, // O
-  'environments.validateIdentityToken': Capability.AccessTokenRead, // O
+  'environments.projectHasEnvironmentAccessTokens': Capability.AccessTokenRead, // W
+  'environments.listAccessTokens': Capability.AccessTokenRead, // W
+  'environments.getAccessToken': Capability.AccessTokenRead, // W
+  'environments.createAccessToken': Capability.AccessTokenManage, // W
+  'environments.deleteAccessToken': Capability.AccessTokenManage, // W
+  'environments.listSigningSecrets': Capability.AccessTokenRead, // W
+  'environments.getSigningSecret': Capability.AccessTokenRead, // W
+  'environments.createSigningSecret': Capability.AccessTokenManage, // W
+  'environments.revokeSigningSecret': Capability.AccessTokenManage, // W
+  'environments.setRequireIdentityVerification': Capability.AccessTokenManage, // W
+  'environments.getIdentityVerificationStats': Capability.AccessTokenRead, // W
+  'environments.validateIdentityToken': Capability.AccessTokenRead, // W
 
   // biz
   'biz.queryBizUser': Capability.UserRead, // R
@@ -150,24 +150,25 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'analytics.queryTrackerUsers': Capability.AnalyticsRead, // R
 
   // team
-  'team.getInvites': Capability.TeamRead, // O
-  'team.getTeamMembers': Capability.TeamRead, // O
-  'team.inviteTeamMember': Capability.TeamManage, // O
-  'team.removeTeamMember': Capability.TeamManage, // O
-  'team.changeTeamMemberRole': Capability.TeamManage, // O
-  'team.cancelInvite': Capability.TeamManage, // O
+  'team.getInvites': Capability.TeamRead, // A
+  'team.getTeamMembers': Capability.TeamRead, // A
+  'team.inviteTeamMember': Capability.TeamManage, // A
+  'team.removeTeamMember': Capability.TeamManage, // A
+  'team.changeTeamMemberRole': Capability.TeamManage, // A
+  'team.transferProjectOwnership': Capability.TeamTransferOwnership, // O
+  'team.cancelInvite': Capability.TeamManage, // A
   'team.activeUserProject': Capability.ProjectActivate, // R
 
-  // audit (owner-only)
-  'audit.auditLogs': Capability.AuditRead, // O
+  // audit (admin tier)
+  'audit.auditLogs': Capability.AuditRead, // A
 
-  // sso (owner-only)
-  'sso.createOidcSsoProvider': Capability.SsoManage,
-  'sso.updateSsoProvider': Capability.SsoManage,
-  'sso.deleteSsoProvider': Capability.SsoManage,
-  'sso.listProjectSsoProviders': Capability.SsoRead,
-  'sso.getProjectSsoSettings': Capability.SsoRead,
-  'sso.updateProjectSsoSettings': Capability.SsoManage,
+  // sso (admin tier)
+  'sso.createOidcSsoProvider': Capability.SsoManage, // A
+  'sso.updateSsoProvider': Capability.SsoManage, // A
+  'sso.deleteSsoProvider': Capability.SsoManage, // A
+  'sso.listProjectSsoProviders': Capability.SsoRead, // A
+  'sso.getProjectSsoSettings': Capability.SsoRead, // A
+  'sso.updateProjectSsoSettings': Capability.SsoManage, // A
 
   // subscription — added after the migration (these endpoints carried no
   // @Roles at all). Checkout/portal act on the project's billing (owner);

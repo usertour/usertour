@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
-import { useMemberEnvScope } from '@/hooks/use-member-env-scope';
+import { useMemberPublishScope } from '@/hooks/use-member-publish-scope';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { PlaneIcon, UnPublishIcon } from '@usertour/icons';
 import {
@@ -35,7 +35,7 @@ export const EnvironmentsCard = () => {
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
   const { environmentList } = useEnvironmentList();
-  const { canActOn } = useMemberEnvScope();
+  const { canPublishTo } = useMemberPublishScope();
   const { isViewOnly } = useAppContext();
   const [openPublish, setOpenPublish] = useState(false);
   const [openUnpublish, setOpenUnpublish] = useState(false);
@@ -58,18 +58,15 @@ export const EnvironmentsCard = () => {
   }
 
   const draftSequence = content.editedVersion?.sequence;
-  // Environments outside the member's scope are omitted entirely — same policy
-  // as the publish/unpublish dialogs this card opens ("even their publish state
-  // is out-of-scope data"); a row whose actions dead-end in a dialog that
-  // doesn't list it would contradict them anyway.
-  const rows = environmentList
-    .filter((env) => canActOn(env.id))
-    .map((env) => {
-      const coe = (content.contentOnEnvironments ?? []).find(
-        (item) => item.environmentId === env.id && item.published && item.publishedVersion,
-      );
-      return { env, coe };
-    });
+  // Every environment's publish state is visible to every member; only the
+  // publish / unpublish actions follow the member's publish whitelist (the
+  // dialogs they open list the same environments).
+  const rows = environmentList.map((env) => {
+    const coe = (content.contentOnEnvironments ?? []).find(
+      (item) => item.environmentId === env.id && item.published && item.publishedVersion,
+    );
+    return { env, coe, publishable: canPublishTo(env.id) };
+  });
 
   return (
     <Card className="flex flex-col p-4 space-y-4 w-full">
@@ -80,7 +77,7 @@ export const EnvironmentsCard = () => {
       <Separator />
 
       <div className="flex flex-col">
-        {rows.map(({ env, coe }) => {
+        {rows.map(({ env, coe, publishable }) => {
           const liveSequence = coe?.publishedVersion?.sequence;
           const behindDraft =
             liveSequence !== undefined &&
@@ -129,7 +126,7 @@ export const EnvironmentsCard = () => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       className="cursor-pointer"
-                      disabled={isViewOnly || publishDisabled}
+                      disabled={isViewOnly || publishDisabled || !publishable}
                       onClick={() => setOpenPublish(true)}
                     >
                       <PlaneIcon className="mr-2 h-4 w-4" />
@@ -137,7 +134,7 @@ export const EnvironmentsCard = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="cursor-pointer"
-                      disabled={isViewOnly || !coe}
+                      disabled={isViewOnly || !coe || !publishable}
                       onClick={() => setOpenUnpublish(true)}
                     >
                       <UnPublishIcon className="mr-2 h-4 w-4" />

@@ -4,7 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { signToken } from '../auth';
 import { buildMembership, buildUser } from '../factories';
 
-type ProjectRole = 'OWNER' | 'ADMIN' | 'VIEWER';
+type ProjectRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER';
 
 /**
  * Create a user, add them to a project with the given role, and sign a JWT.

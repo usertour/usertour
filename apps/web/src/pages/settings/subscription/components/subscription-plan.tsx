@@ -10,6 +10,8 @@ import { CopyIcon } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { getErrorMessage } from '@usertour/helpers';
 import { LicenseStatusBadge, licenseDateClass } from '@/components/license/license-status-badge';
+import { useAppContext } from '@/contexts/app-context';
+import { Capability } from '@usertour/types';
 
 const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   // License hooks
@@ -25,6 +27,10 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
   const [_, copyToClipboard] = useCopyToClipboard();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { can } = useAppContext();
+  // BillingRead shows the license status to an ADMIN; installing a new
+  // license is BillingManage (OWNER only).
+  const canManageBilling = can(Capability.BillingManage);
 
   const planType = licenseInfo?.payload?.plan || 'free';
 
@@ -147,37 +153,39 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
             </div>
           </div>
 
-          {/* License input and upload button */}
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1">
-              <div className="text-sm font-medium">
-                {t('settings.subscription.uploadLicenseLabel')}
+          {/* License input and upload button (OWNER only) */}
+          {canManageBilling ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <div className="text-sm font-medium">
+                  {t('settings.subscription.uploadLicenseLabel')}
+                </div>
+                <div className="text-zinc-950/50 dark:text-white/50 text-sm">
+                  {t('settings.subscription.uploadLicenseDescription')}
+                </div>
               </div>
-              <div className="text-zinc-950/50 dark:text-white/50 text-sm">
-                {t('settings.subscription.uploadLicenseDescription')}
+              <div className="flex flex-col gap-4">
+                <Textarea
+                  placeholder={t('settings.subscription.uploadLicensePlaceholder')}
+                  value={licenseInput}
+                  onChange={(e) => setLicenseInput(e.target.value)}
+                  className="flex-1 font-mono"
+                  rows={6}
+                />
+                <div className="flex gap-4">
+                  <Button
+                    disabled={updateLicenseLoading || !licenseInput.trim()}
+                    onClick={handleSubmitLicense}
+                    className="text-sm px-2 min-w-[36px] h-9 flex-none"
+                  >
+                    {updateLicenseLoading
+                      ? t('settings.subscription.uploadLicenseUpdating')
+                      : t('settings.subscription.uploadLicenseButton')}
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="flex flex-col gap-4">
-              <Textarea
-                placeholder={t('settings.subscription.uploadLicensePlaceholder')}
-                value={licenseInput}
-                onChange={(e) => setLicenseInput(e.target.value)}
-                className="flex-1 font-mono"
-                rows={6}
-              />
-              <div className="flex gap-4">
-                <Button
-                  disabled={updateLicenseLoading || !licenseInput.trim()}
-                  onClick={handleSubmitLicense}
-                  className="text-sm px-2 min-w-[36px] h-9 flex-none"
-                >
-                  {updateLicenseLoading
-                    ? t('settings.subscription.uploadLicenseUpdating')
-                    : t('settings.subscription.uploadLicenseButton')}
-                </Button>
-              </div>
-            </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </>
