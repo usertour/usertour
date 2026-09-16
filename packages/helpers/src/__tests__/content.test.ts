@@ -1,5 +1,11 @@
-import { ContentEditorElementType } from '@usertour/types';
-import { extractLinkUrl, replaceUserAttr, serializeBlockName } from '../content';
+import { ContentDataType, ContentEditorElementType, Frequency } from '@usertour/types';
+import {
+  DEFAULT_FREQUENCY,
+  buildConfig,
+  extractLinkUrl,
+  replaceUserAttr,
+  serializeBlockName,
+} from '../content';
 
 /**
  * Runtime link/attribute derivation — the layer BELOW rendering, where the B-2 bug
@@ -125,5 +131,40 @@ describe('serializeBlockName', () => {
         { name: 'Sam' } as never,
       ),
     ).toBe('Hi Sam');
+  });
+});
+
+describe('buildConfig — auto-start frequency normalization', () => {
+  it('fills the `every` window on a stored frequency that lacks one (v2 writes a bare once)', () => {
+    const config = buildConfig(
+      { autoStartRulesSetting: { frequency: { frequency: Frequency.ONCE } } } as never,
+      ContentDataType.FLOW,
+    );
+    expect(config.autoStartRulesSetting?.frequency).toEqual({
+      frequency: Frequency.ONCE,
+      every: DEFAULT_FREQUENCY.every,
+    });
+  });
+
+  it('leaves a complete frequency untouched', () => {
+    const frequency = {
+      frequency: Frequency.MULTIPLE,
+      every: { times: 5, duration: 2, unit: 'hours' },
+      atLeast: { duration: 1, unit: 'days' },
+    };
+    const config = buildConfig(
+      { autoStartRulesSetting: { frequency } } as never,
+      ContentDataType.FLOW,
+    );
+    expect(config.autoStartRulesSetting?.frequency).toEqual(frequency);
+  });
+
+  it('seeds the type default when no frequency is stored, and nothing for other types', () => {
+    expect(buildConfig({} as never, ContentDataType.FLOW).autoStartRulesSetting?.frequency).toEqual(
+      DEFAULT_FREQUENCY,
+    );
+    expect(
+      buildConfig({} as never, ContentDataType.LAUNCHER).autoStartRulesSetting?.frequency,
+    ).toBeUndefined();
   });
 });

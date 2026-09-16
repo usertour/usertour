@@ -56,11 +56,17 @@ export function ConditionFrequency({
   const t = resolveTranslator(tProp);
   // DEFAULT_FREQUENCY is only a display fallback for a missing defaultValue;
   // the persisted default is owned by buildConfig in @usertour/helpers.
-  const initial: RulesFrequencyValue = {
-    ...(defaultValue ?? DEFAULT_FREQUENCY),
-    atLeast: showAtLeast ? (defaultValue ?? DEFAULT_FREQUENCY).atLeast : undefined,
-  };
-  const [data, setData] = useState<RulesFrequencyValue>(initial);
+  // The `every` window is also filled when the given value lacks it (a stored
+  // `once` written without one): the Multiple / Unlimited rows dereference it,
+  // and the value emitted on that switch must be complete.
+  const normalize = (source: RulesFrequencyValue): RulesFrequencyValue => ({
+    ...source,
+    every: source.every ?? DEFAULT_FREQUENCY.every,
+    atLeast: showAtLeast ? source.atLeast : undefined,
+  });
+  const [data, setData] = useState<RulesFrequencyValue>(() =>
+    normalize(defaultValue ?? DEFAULT_FREQUENCY),
+  );
 
   // Keep the displayed frequency in sync with the prop after the initial
   // mount — without this, content/version switches, restores, or any
@@ -79,12 +85,9 @@ export function ConditionFrequency({
   // briefly re-mounts the value-bound children below the dropdown
   // (FrequencyEvery / FrequencyAtLeast), producing a visible flash.
   useEffect(() => {
-    const source = defaultValue ?? DEFAULT_FREQUENCY;
-    const next: RulesFrequencyValue = {
-      ...source,
-      atLeast: showAtLeast ? source.atLeast : undefined,
-    };
+    const next = normalize(defaultValue ?? DEFAULT_FREQUENCY);
     setData((prev) => (isEqual(prev, next) ? prev : next));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValue, showAtLeast]);
 
   const update = (patch: Partial<RulesFrequencyValue>) => {
