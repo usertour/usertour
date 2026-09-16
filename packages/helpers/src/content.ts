@@ -93,14 +93,27 @@ const defaultContentConfig: ContentConfigObject = {
 // keep it unset ("no auto-start limit"). Type-specific so launcher/banner/RC
 // stay unrestricted; also heals already-published empty-frequency configs since
 // the server's processConfig runs through buildConfig too. Only fills an absent
-// frequency — never merges into one the user already set.
+// frequency — never overrides one the user already set.
+//
+// A PRESENT frequency may still lack its `every` window: the v2 API compiles a
+// bare `{ mode: "once" }` without one (once never reads it). The type says
+// `every` is required and the builder picker dereferences it the moment the
+// user switches that content to Multiple / Unlimited (`every.times`), so a
+// missing window is filled from the canonical default here — read-time, in the
+// one place both the builder and the runtime normalize config.
 const withFrequencyDefault = (
   setting: autoStartRulesSetting,
   contentType: ContentDataType | undefined,
-): autoStartRulesSetting =>
-  setting.frequency || !contentType || !FREQUENCY_DEFAULT_TYPES.includes(contentType)
+): autoStartRulesSetting => {
+  if (setting.frequency) {
+    return setting.frequency.every
+      ? setting
+      : { ...setting, frequency: { ...setting.frequency, every: DEFAULT_FREQUENCY.every } };
+  }
+  return !contentType || !FREQUENCY_DEFAULT_TYPES.includes(contentType)
     ? setting
     : { ...setting, frequency: defaultFrequencyFor(contentType) };
+};
 
 export const buildConfig = (
   config: ContentConfigObject | undefined,
