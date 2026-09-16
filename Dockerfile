@@ -32,9 +32,6 @@ RUN pnpm build:web
 RUN pnpm build:sdk
 RUN pnpm build:sdk:iife
 
-# Copy email templates
-COPY apps/server/src/email-templates ./apps/server/dist/email-templates
-
 # Copy SDK files to a known location
 RUN SDK_VERSION=$(node -e "console.log(require('./apps/sdk/package.json').version)") && \
     mkdir -p /sdk-dist && \

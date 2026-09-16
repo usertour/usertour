@@ -6,6 +6,7 @@ packages:
   - "packages/ui"
   - "packages/frame"
   - "packages/constants"
+  - "packages/emails"
   - "packages/dom"
   - "packages/icons"
   - "packages/tailwind"

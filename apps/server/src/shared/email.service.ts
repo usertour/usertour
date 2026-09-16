@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { configureEmailBranding } from '@usertour/emails';
 import { createTransport } from 'nodemailer';
 
 export interface SendEmailInput {
   to: string;
   subject: string;
   html: string;
+  /** Plain-text alternative for clients that do not render HTML. */
+  text?: string;
   /** Overrides the configured EMAIL_SENDER. */
   from?: string;
 }
@@ -24,7 +27,15 @@ export interface SendEmailInput {
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {
+    // Every template rendered in this process shows the wordmark that ships
+    // with the web app's static images. With no origin configured the
+    // templates fall back to a text wordmark.
+    const appUrl = (this.configService.get<string>('app.homepageUrl') ?? '').replace(/\/$/, '');
+    configureEmailBranding({
+      logoUrl: appUrl ? `${appUrl}/images/email-logo.png` : undefined,
+    });
+  }
 
   get isConfigured(): boolean {
     return !!(this.configService.get('email.host') && this.configService.get('email.user'));
@@ -45,6 +56,7 @@ export class EmailService {
       to: input.to,
       subject: input.subject,
       html: input.html,
+      text: input.text,
     });
   }
 

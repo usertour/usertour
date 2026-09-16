@@ -1,0 +1,45 @@
+{
+  "name": "@usertour/emails",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Transactional email templates, rendered to HTML and plain text for the server to send",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rimraf dist .turbo",
+    "typecheck": "tsc --noEmit",
+    "build:fast": "tsup --no-dts",
+    "preview": "email dev --dir src/emails",
+    "export": "email export --dir src/emails"
+  },
+  "dependencies": {
+    "@react-email/components": "^0.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "react-email": "^6.5.0",
+    "typescript": "^5.0.2"
+  },
+  "tsup": {
+    "clean": false,
+    "target": "es2019",
+    "format": ["cjs", "esm"],
+    "entry": ["src/index.ts"],
+    "outDir": "dist",
+    "dts": true
+  }
+}
