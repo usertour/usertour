@@ -138,22 +138,22 @@ export class EnvironmentsService {
   }
 
   /**
-   * Take a deleted environment's id off every allowlist that names it — the
-   * third permission dimension, held in three places for two kinds of caller:
-   * members (`UserOnProject`) and machines (an `OAuthGrant` plus the `ApiToken`
-   * rows minted from it).
+   * Take a deleted environment's id off every environment list that names it,
+   * held in three places for two kinds of caller: members (`UserOnProject`
+   * — the EDITOR publish whitelist) and machines (an `OAuthGrant` plus the
+   * `ApiToken` rows minted from it — their full environment scope).
    *
    * A stale id is not a way in — every resolver filters `deleted: false` before
-   * matching — but leaving it costs both kinds of caller something real. A
-   * member's web session filters the live environment list by their allowlist,
-   * so a dead id silently shrinks what they can act on. A grant's id survives
-   * even harder: a refresh rebuilds the token row FROM the grant, so it comes
-   * back every time, and the connected-apps screen keeps listing a deleted
-   * environment as something the app may act on.
+   * matching — but leaving it costs both kinds of caller something real. An
+   * editor's publish dialogs list their whitelist against the live environments,
+   * so a dead id is a phantom entry. A grant's id survives even harder: a refresh
+   * rebuilds the token row FROM the grant, so it comes back every time, and the
+   * connected-apps screen keeps listing a deleted environment as something the
+   * app may act on.
    *
-   * Fail-closed in both cases: an allowlist that empties out stays `[]` — that
-   * caller can act on nothing until re-granted — and is never widened to
-   * null/all. (Pending invites are re-filtered at accept time by
+   * Fail-closed in both cases: a list that empties out stays `[]` — an editor
+   * can publish nowhere and a machine can act nowhere until re-granted — and is
+   * never widened to null. (Pending invites are re-filtered at accept time by
    * assignUserToProject.)
    */
   private async dropFromAllowlists(tx: Prisma.TransactionClient, projectId: string, envId: string) {

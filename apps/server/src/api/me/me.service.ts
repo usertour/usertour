@@ -1,23 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import {
-  AuthedApiToken,
-  environmentAllowlistOf,
-  intersectEnvironmentAllowlists,
-  membershipEnvironmentCeiling,
-} from '@/api-token/api-token-auth.service';
+import { AuthedApiToken, environmentAllowlistOf } from '@/api-token/api-token-auth.service';
 import { ApiObjectType } from '../shared/object-type';
 import { MeResponseDto } from './me.schema';
 
 /**
  * Resolves what an authenticated token may act on, mirroring the guard's
- * three-dimensional rule (project ∈ token scope AND live membership;
- * environment ∈ token.allowedEnvironmentIds ∩ the owner's membership
- * ceiling — both via the guard's own shared helpers). Errs on the side of
- * listing LESS: an environment shown here but refused by the guard would
- * strand integration setups on a 403 the user can't explain — projects
- * without a live membership are filtered, not thrown.
+ * rule (project ∈ token scope AND live membership; environment ∈
+ * token.allowedEnvironmentIds — via the guard's own shared helper). Errs on
+ * the side of listing LESS: an environment shown here but refused by the
+ * guard would strand integration setups on a 403 the user can't explain —
+ * projects without a live membership are filtered, not thrown. The owner's
+ * EDITOR publish whitelist is not an environment scope (reads and other
+ * writes are unrestricted) so it is not reflected here; publishing outside
+ * it is refused per call (E1039).
  */
 @Injectable()
 export class ApiMeService {
@@ -36,10 +33,6 @@ export class ApiMeService {
           select: {
             id: true,
             name: true,
-            users: {
-              where: { userId: token.userId },
-              select: { role: true, allowedEnvironmentIds: true },
-            },
             environments: {
               where: { deleted: false },
               select: { id: true, name: true },
@@ -56,11 +49,8 @@ export class ApiMeService {
       object: ApiObjectType.ME as const,
       tokenName: token.name,
       projects: projects.map((project) => {
-        const membership = project.users[0];
-        const ceiling = membership ? membershipEnvironmentCeiling(membership) : null;
-        const allowed = intersectEnvironmentAllowlists(tokenAllowed, ceiling);
-        const environments = allowed
-          ? project.environments.filter((environment) => allowed.includes(environment.id))
+        const environments = tokenAllowed
+          ? project.environments.filter((environment) => tokenAllowed.includes(environment.id))
           : project.environments;
         return {
           id: project.id,

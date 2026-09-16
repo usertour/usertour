@@ -11,6 +11,7 @@ import {
   activeUserProject,
   cancelInvite,
   changeTeamMemberRole as changeTeamMemberRoleMutation,
+  transferProjectOwnership as transferProjectOwnershipMutation,
   createAttribute,
   createBizCompanyOnSegment,
   createBizUserOnSegment,
@@ -266,6 +267,7 @@ export const useQueryTeamMemberListQuery = (
       name: item.user.name,
       email: item.user.email,
       role: item.role,
+      allowedEnvironmentIds: item.allowedEnvironmentIds ?? null,
       logo: item.user.logo,
       twoFactorEnabled: item.user.twoFactorEnabled === true,
       isInvite: false,
@@ -303,9 +305,15 @@ export const useInviteTeamMemberMutation = () => {
     refetchQueries: ['getInvites'],
   });
   const invoke = useCallback(
-    async (projectId: string, name: string, email: string, role: string): Promise<boolean> => {
+    async (
+      projectId: string,
+      name: string,
+      email: string,
+      role: string,
+      allowedEnvironmentIds?: string[],
+    ): Promise<boolean> => {
       const response = await inviteTeamMember({
-        variables: { projectId, name, email, role },
+        variables: { projectId, name, email, role, allowedEnvironmentIds },
       });
       return !!response.data?.inviteTeamMember;
     },
@@ -353,9 +361,32 @@ export const useChangeTeamMemberRoleMutation = () => {
     refetchQueries: ['getTeamMembers'],
   });
   const invoke = useCallback(
-    async (projectId: string, userId: string, role: string): Promise<boolean> => {
-      const response = await mutation({ variables: { projectId, userId, role } });
+    async (
+      projectId: string,
+      userId: string,
+      role: string,
+      allowedEnvironmentIds?: string[],
+    ): Promise<boolean> => {
+      const response = await mutation({
+        variables: { projectId, userId, role, allowedEnvironmentIds },
+      });
       return !!response.data?.changeTeamMemberRole;
+    },
+    [mutation],
+  );
+
+  return { invoke, loading, error };
+};
+
+export const useTransferProjectOwnershipMutation = () => {
+  // Returns only a boolean; refetch the list so the owner badge moves.
+  const [mutation, { loading, error }] = useMutation(transferProjectOwnershipMutation, {
+    refetchQueries: ['getTeamMembers'],
+  });
+  const invoke = useCallback(
+    async (projectId: string, userId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { projectId, userId } });
+      return !!response.data?.transferProjectOwnership;
     },
     [mutation],
   );
@@ -1359,14 +1390,14 @@ export interface ProjectSsoSettings {
   projectId: string;
   requireSso: boolean;
   autoProvision: boolean;
-  defaultRole: 'ADMIN' | 'VIEWER';
+  defaultRole: 'EDITOR' | 'VIEWER';
   allowedDomains: string[];
 }
 
 export type UpdateProjectSsoSettingsInput = Partial<{
   requireSso: boolean;
   autoProvision: boolean;
-  defaultRole: 'ADMIN' | 'VIEWER';
+  defaultRole: 'EDITOR' | 'VIEWER';
   allowedDomains: string[];
 }>;
 

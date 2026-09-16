@@ -204,6 +204,7 @@ function emitInProjectRow(ep: Endpoint, seed: any): string[] {
   const perRole: Record<Role, string> = {
     OWNER: bashBody(ep, seed, 'OWNER'),
     ADMIN: bashBody(ep, seed, 'ADMIN'),
+    EDITOR: bashBody(ep, seed, 'EDITOR'),
     VIEWER: bashBody(ep, seed, 'VIEWER'),
     NONE: '',
     ELSEWHERE: bashBody(ep, seed, 'ELSEWHERE'),
@@ -211,6 +212,7 @@ function emitInProjectRow(ep: Endpoint, seed: any): string[] {
   const allSame =
     perRole.OWNER === baseline &&
     perRole.ADMIN === baseline &&
+    perRole.EDITOR === baseline &&
     perRole.VIEWER === baseline &&
     perRole.ELSEWHERE === baseline;
   if (allSame) {
@@ -229,11 +231,13 @@ const groups = {
   R_query: ENDPOINTS.filter((e) => e.tier === 'R' && e.op === 'query'),
   R_mut: ENDPOINTS.filter((e) => e.tier === 'R' && e.op === 'mutation'),
   W_mut: ENDPOINTS.filter((e) => e.tier === 'W' && e.op === 'mutation'),
+  A_query: ENDPOINTS.filter((e) => e.tier === 'A' && e.op === 'query'),
+  A_mut: ENDPOINTS.filter((e) => e.tier === 'A' && e.op === 'mutation'),
   O_query: ENDPOINTS.filter((e) => e.tier === 'O' && e.op === 'query'),
   O_mut: ENDPOINTS.filter((e) => e.tier === 'O' && e.op === 'mutation'),
 };
-const allQueries = [...groups.R_query, ...groups.O_query];
-const allMutations = [...groups.R_mut, ...groups.W_mut, ...groups.O_mut];
+const allQueries = [...groups.R_query, ...groups.A_query, ...groups.O_query];
+const allMutations = [...groups.R_mut, ...groups.W_mut, ...groups.A_mut, ...groups.O_mut];
 
 const REQUIRED_ENV = [
   'SMOKE_URL',

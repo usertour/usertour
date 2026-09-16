@@ -2,7 +2,7 @@ import { Reflector } from '@nestjs/core';
 
 export enum RolesScopeEnum {
   ADMIN = 'ADMIN',
-  USER = 'USER',
+  EDITOR = 'EDITOR',
   OWNER = 'OWNER',
   VIEWER = 'VIEWER',
 }

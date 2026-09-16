@@ -2,7 +2,6 @@
 
 import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
-import { useMemberEnvScope } from '@/hooks/use-member-env-scope';
 import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { EnvironmentCreateDialog } from '@/pages/settings/environments/components/environment-create-dialog';
 import { Environment } from '@usertour/types';
@@ -33,14 +32,7 @@ export const AdminEnvSwitcher = () => {
   const { selectEnvironment } = useEnvironmentSelection();
   const { t } = useTranslation();
 
-  const { environmentList: allEnvironments } = useEnvironmentList();
-  // Members restricted to a subset of environments only see those here —
-  // switching into an out-of-scope environment would just be a wall of E0060s.
-  const { canActOn } = useMemberEnvScope();
-  const environmentList = React.useMemo(
-    () => allEnvironments?.filter((env) => canActOn(env.id)),
-    [allEnvironments, canActOn],
-  );
+  const { environmentList } = useEnvironmentList();
 
   const handleItemClick = React.useCallback(
     (env: Environment) => {

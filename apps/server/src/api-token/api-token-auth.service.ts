@@ -4,6 +4,8 @@ import { Capability, Role } from '@usertour/types';
 import { Environment, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
+import { publishWhitelistOf } from '@/auth/permission/publish-whitelist';
+
 import {
   EnvironmentNotFoundError,
   EnvironmentNotInTokenScopeError,
@@ -11,6 +13,7 @@ import {
   ExpiredApiKeyError,
   InsufficientScopeError,
   InvalidApiKeyError,
+  MemberCannotPublishToEnvironmentError,
   MissingApiKeyError,
   ProjectNotInTokenScopeError,
 } from '@/common/errors';
@@ -25,13 +28,13 @@ export type AuthedApiToken = Prisma.ApiTokenGetPayload<{
   };
 }> & {
   /**
-   * The key OWNER's membership-level environment restriction on the authorized
-   * project (UserOnProject.allowedEnvironmentIds; null/undefined = all, OWNER
-   * exempt). Cached by {@link ApiTokenAuthService.authorize} so the token's
-   * effective environment scope can never exceed its owner's — a restricted
-   * member must not escape their ceiling by minting an unrestricted key.
+   * The key owner's membership PUBLISH whitelist on the authorized project
+   * (UserOnProject.allowedEnvironmentIds), cached by
+   * {@link ApiTokenAuthService.authorize} next to `memberRole`. Consulted only
+   * by {@link ApiTokenAuthService.assertMayPublishTo}: an EDITOR must not
+   * escape their publish whitelist by minting a key scoped to more environments.
    */
-  memberAllowedEnvironmentIds?: string[] | null;
+  memberPublishEnvironmentIds?: string[];
   /**
    * The owner's live role on the authorized project, cached by `authorize`
    * (which always runs first via the guard) so response-shaping probes like
@@ -120,14 +123,57 @@ export class ApiTokenAuthService {
   /**
    * The environment ids this token may ACT ON, or `null` for "all environments"
    * (the legacy/back-compat default — a token created before env-scoping, or one
-   * deliberately granted every environment).
+   * deliberately granted every environment). The key's own allowlist only: the
+   * owner's membership never restricts reads or writes by environment, it only
+   * bounds publishing (see {@link assertMayPublishTo}).
    */
   allowedEnvironmentIds(token: AuthedApiToken): string[] | null {
-    // Intersect with the owner's membership ceiling (cached by authorize).
-    return intersectEnvironmentAllowlists(
-      environmentAllowlistOf(token.allowedEnvironmentIds),
-      token.memberAllowedEnvironmentIds ?? null,
-    );
+    return environmentAllowlistOf(token.allowedEnvironmentIds);
+  }
+
+  /**
+   * The environments this key may PUBLISH to: its environment scope
+   * (`allowedEnvironmentIds`, null = all) narrowed by the owner's publish
+   * whitelist when the owner's role lacks ContentPublishAnyEnvironment. Null
+   * means "every environment in scope" (ADMIN / OWNER with an unrestricted
+   * key); an empty list means nowhere. Call after `authorize` for the SAME
+   * project — the cached role and whitelist belong to the project authorize
+   * resolved, so any other project fails closed to nowhere (as
+   * assertMayPublishTo does), never to a neighbouring project's verdict.
+   */
+  publishableEnvironmentIds(token: AuthedApiToken, projectId: string): string[] | null {
+    if (!token.memberRole || token.memberRoleProjectId !== projectId) {
+      return [];
+    }
+    const scope = this.allowedEnvironmentIds(token);
+    if (roleCan(token.memberRole, Capability.ContentPublishAnyEnvironment)) {
+      return scope;
+    }
+    const whitelist = token.memberPublishEnvironmentIds ?? [];
+    return scope ? whitelist.filter((id) => scope.includes(id)) : whitelist;
+  }
+
+  /**
+   * Assert the key's OWNER may publish to `environmentId`: a role without
+   * ContentPublishAnyEnvironment (EDITOR) is limited to its membership publish
+   * whitelist whatever the key itself is scoped to. Call after `authorize` for
+   * the SAME `projectId` (which caches the role and whitelist for that project)
+   * and after `assertEnvironmentInScope`.
+   */
+  assertMayPublishTo(token: AuthedApiToken, projectId: string, environmentId: string): void {
+    // `authorize` always runs first (guard) and caches the verdict for ONE
+    // project. A missing role, or a cache from another project (a multi-project
+    // key), must fail closed rather than let a neighbouring project's role or
+    // whitelist decide this publish.
+    if (!token.memberRole || token.memberRoleProjectId !== projectId) {
+      throw new MemberCannotPublishToEnvironmentError();
+    }
+    if (roleCan(token.memberRole, Capability.ContentPublishAnyEnvironment)) {
+      return;
+    }
+    if (!(token.memberPublishEnvironmentIds ?? []).includes(environmentId)) {
+      throw new MemberCannotPublishToEnvironmentError();
+    }
   }
 
   /**
@@ -163,11 +209,11 @@ export class ApiTokenAuthService {
     if (!membership) {
       throw new ProjectNotInTokenScopeError();
     }
-    // Cache the owner's membership-level environment ceiling for
-    // allowedEnvironmentIds()/assertEnvironmentInScope — see AuthedApiToken.
+    // Cache the owner's live role and publish whitelist for assertMayPublishTo /
+    // hasCapability — see AuthedApiToken.
     token.memberRole = membership.role as Role;
     token.memberRoleProjectId = projectId;
-    token.memberAllowedEnvironmentIds = membershipEnvironmentCeiling(membership);
+    token.memberPublishEnvironmentIds = publishWhitelistOf(membership.allowedEnvironmentIds);
     if (capability) {
       const roleOk = roleCan(membership.role as Role, capability);
       const scopeOk = this.scopes(token).includes(capability);
@@ -234,34 +280,9 @@ export class ApiTokenAuthService {
 }
 
 /**
- * The owner-membership environment ceiling: OWNER is exempt (null =
- * unrestricted); everyone else is bounded by their membership allowlist.
- * Shared by `authorize` and the `/v2/me` discovery route.
+ * A token's JSONB environment allowlist as `string[]`, or null for
+ * "unrestricted". Shared by the guard and the `/v2/me` discovery route so what
+ * /v2/me lists can never drift from what the guard admits.
  */
-export const membershipEnvironmentCeiling = (membership: {
-  role: string;
-  allowedEnvironmentIds: unknown;
-}): string[] | null =>
-  membership.role === 'OWNER' ? null : environmentAllowlistOf(membership.allowedEnvironmentIds);
-
-/** A JSONB allowlist column as `string[]`, or null for "unrestricted". */
 export const environmentAllowlistOf = (value: unknown): string[] | null =>
   Array.isArray(value) ? (value as string[]) : null;
-
-/**
- * The environment-allowlist algebra shared by the guard and the `/v2/me`
- * discovery route: null = unrestricted, two lists intersect. ONE definition,
- * so what /v2/me lists can never drift from what the guard admits.
- */
-export const intersectEnvironmentAllowlists = (
-  own: string[] | null,
-  ceiling: string[] | null,
-): string[] | null => {
-  if (own === null) {
-    return ceiling;
-  }
-  if (ceiling === null) {
-    return own;
-  }
-  return own.filter((id) => ceiling.includes(id));
-};

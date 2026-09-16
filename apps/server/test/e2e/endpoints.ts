@@ -1,6 +1,6 @@
 /**
- * Source of truth for the 93 role-gated GraphQL endpoints, their permission
- * tier (R/W/O), and the operation + variable shape to invoke each one. Imported
+ * Source of truth for the role-gated GraphQL endpoints, their permission
+ * tier (R/W/A/O), and the operation + variable shape to invoke each one. Imported
  * by both:
  *   - permission.e2e-spec.ts (HTTP authorization contract against the test DB)
  *   - scripts in test/smoke/ (manual smoke runs against dev/staging/prod-like
@@ -15,11 +15,14 @@
  * the implementation it's checking.
  */
 
-export const ROLES = ['OWNER', 'ADMIN', 'VIEWER', 'NONE', 'ELSEWHERE'] as const;
+export const ROLES = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER', 'NONE', 'ELSEWHERE'] as const;
 export type Role = (typeof ROLES)[number];
 
-/** Permission tier: R = all members, W = ADMIN+OWNER, O = OWNER only. */
-export type Tier = 'R' | 'W' | 'O';
+/**
+ * Permission tier (ADR 0014): R = every member, W = EDITOR and above,
+ * A = ADMIN and above, O = OWNER only.
+ */
+export type Tier = 'R' | 'W' | 'A' | 'O';
 
 /**
  * Roles that must be denied at each tier. Two non-member shapes are tested at
@@ -34,11 +37,17 @@ export type Tier = 'R' | 'W' | 'O';
 export const DENY_ROLES: Record<Tier, Role[]> = {
   R: ['NONE', 'ELSEWHERE'],
   W: ['VIEWER', 'NONE', 'ELSEWHERE'],
-  O: ['VIEWER', 'ADMIN', 'NONE', 'ELSEWHERE'],
+  A: ['VIEWER', 'EDITOR', 'NONE', 'ELSEWHERE'],
+  O: ['VIEWER', 'EDITOR', 'ADMIN', 'NONE', 'ELSEWHERE'],
 };
 
 /** Lowest role allowed at each tier — used to assert the query allow direction. */
-export const ALLOW_ROLE: Record<Tier, Role> = { R: 'VIEWER', W: 'ADMIN', O: 'OWNER' };
+export const ALLOW_ROLE: Record<Tier, Role> = {
+  R: 'VIEWER',
+  W: 'EDITOR',
+  A: 'ADMIN',
+  O: 'OWNER',
+};
 
 export type Seed = Record<string, string>;
 
@@ -89,14 +98,14 @@ export const ENDPOINTS: Endpoint[] = [
   },
   {
     key: 'projects.getProjectLicenseInfo',
-    tier: 'O',
+    tier: 'A',
     op: 'query',
     doc: 'query($p:String!){getProjectLicenseInfo(projectId:$p){__typename}}',
     vars: (s) => ({ p: s.projectId }),
   },
   {
     key: 'projects.updateProject',
-    tier: 'O',
+    tier: 'A',
     op: 'mutation',
     doc: 'mutation($n:String,$p:String!){updateProject(name:$n,projectId:$p){__typename}}',
     vars: (s) => ({ n: 'e2e', p: s.projectId }),
@@ -284,28 +293,28 @@ export const ENDPOINTS: Endpoint[] = [
   },
   {
     key: 'environments.listAccessTokens',
-    tier: 'O',
+    tier: 'W',
     op: 'query',
     doc: 'query($e:String!){listAccessTokens(environmentId:$e){__typename}}',
     vars: (s) => ({ e: s.environmentId }),
   },
   {
     key: 'environments.getAccessToken',
-    tier: 'O',
+    tier: 'W',
     op: 'query',
     doc: 'query($a:String!,$e:String!){getAccessToken(accessTokenId:$a,environmentId:$e)}',
     vars: (s) => ({ a: s.accessTokenId, e: s.environmentId }),
   },
   {
     key: 'environments.createAccessToken',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($e:String!,$i:CreateAccessTokenInput!){createAccessToken(environmentId:$e,input:$i){__typename}}',
     vars: (s) => ({ e: s.environmentId, i: { name: 'e2e' } }),
   },
   {
     key: 'environments.deleteAccessToken',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($a:String!,$e:String!){deleteAccessToken(accessTokenId:$a,environmentId:$e)}',
     vars: (s) => ({ a: s.accessTokenId, e: s.environmentId }),
@@ -451,73 +460,73 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ d: { bizCompanyIds: [s.bizCompanyId], segmentId: s.segmentId } }),
   },
 
-  // --- integration (all OWNER; scope: integration) ---
+  // --- integration (all W — editor tier; scope: integration) ---
   {
     key: 'integration.listIntegrations',
-    tier: 'O',
+    tier: 'W',
     op: 'query',
     doc: 'query($e:String!){listIntegrations(environmentId:$e){__typename}}',
     vars: (s) => ({ e: s.environmentId }),
   },
   {
     key: 'integration.queryIntegrationMessages',
-    tier: 'O',
+    tier: 'W',
     op: 'query',
     doc: 'query($i:String!){queryIntegrationMessages(integrationId:$i){totalCount}}',
     vars: (s) => ({ i: s.integrationId }),
   },
   {
     key: 'integration.upsertIntegration',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:UpsertIntegrationInput!){upsertIntegration(data:$d){__typename}}',
     vars: (s) => ({ d: { environmentId: s.environmentId, provider: 'amplitude', key: 'e2e-key' } }),
   },
   {
     key: 'integration.deleteIntegration',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:IntegrationIdInput!){deleteIntegration(data:$d){__typename}}',
     vars: (s) => ({ d: { id: s.integrationId } }),
   },
   {
     key: 'integration.sendIntegrationTestEvent',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:IntegrationIdInput!){sendIntegrationTestEvent(data:$d){__typename}}',
     vars: (s) => ({ d: { id: s.integrationId } }),
   },
   {
     key: 'integration.startIntegrationOAuth',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:StartIntegrationOAuthInput!){startIntegrationOAuth(data:$d){__typename}}',
     vars: (s) => ({ d: { environmentId: s.environmentId, provider: 'hubspot' } }),
   },
   {
     key: 'integration.disconnectIntegrationOAuth',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:IntegrationIdInput!){disconnectIntegrationOAuth(data:$d){__typename}}',
     vars: (s) => ({ d: { id: s.integrationId } }),
   },
   {
     key: 'integration.listIntegrationObjectMappings',
-    tier: 'O',
+    tier: 'W',
     op: 'query',
     doc: 'query($i:String!){listIntegrationObjectMappings(integrationId:$i){__typename}}',
     vars: (s) => ({ i: s.integrationId }),
   },
   {
     key: 'integration.listIntegrationSyncRuns',
-    tier: 'O',
+    tier: 'W',
     op: 'query',
     doc: 'query($i:String!){listIntegrationSyncRuns(integrationId:$i){__typename}}',
     vars: (s) => ({ i: s.integrationId }),
   },
   {
     key: 'integration.listIntegrationRemoteProperties',
-    tier: 'O',
+    tier: 'W',
     op: 'query',
     // Allow direction skipped: reaches the provider's API.
     denyOnly: true,
@@ -526,7 +535,7 @@ export const ENDPOINTS: Endpoint[] = [
   },
   {
     key: 'integration.updateIntegrationEvents',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     // Allow direction skipped: the fixture is an analytics row, which the setting refuses.
     denyOnly: true,
@@ -535,7 +544,7 @@ export const ENDPOINTS: Endpoint[] = [
   },
   {
     key: 'integration.upsertIntegrationObjectMapping',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:UpsertIntegrationObjectMappingInput!){upsertIntegrationObjectMapping(data:$d){__typename}}',
     vars: (s) => ({
@@ -551,35 +560,35 @@ export const ENDPOINTS: Endpoint[] = [
   },
   {
     key: 'integration.deleteIntegrationObjectMapping',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:IntegrationObjectMappingIdInput!){deleteIntegrationObjectMapping(data:$d)}',
     vars: (s) => ({ d: { integrationId: s.integrationId, id: 'missing' } }),
   },
   {
     key: 'integration.runIntegrationObjectMappingSync',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:IntegrationObjectMappingIdInput!){runIntegrationObjectMappingSync(data:$d){__typename}}',
     vars: (s) => ({ d: { integrationId: s.integrationId, id: 'missing' } }),
   },
   {
     key: 'integration.queryIntegrationSyncedSegments',
-    tier: 'O',
+    tier: 'W',
     op: 'query',
     doc: 'query($i:String!){queryIntegrationSyncedSegments(integrationId:$i){__typename}}',
     vars: (s) => ({ i: s.integrationId }),
   },
   {
     key: 'integration.updateIntegrationInbound',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:UpdateIntegrationInboundInput!){updateIntegrationInbound(data:$d){__typename}}',
     vars: (s) => ({ d: { id: s.integrationId, enabled: true } }),
   },
   {
     key: 'integration.rotateIntegrationInboundToken',
-    tier: 'O',
+    tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:IntegrationIdInput!){rotateIntegrationInboundToken(data:$d){__typename}}',
     vars: (s) => ({ d: { id: s.integrationId } }),
@@ -952,24 +961,24 @@ export const ENDPOINTS: Endpoint[] = [
   // --- team (scope: project) ---
   {
     key: 'team.getInvites',
-    tier: 'O',
+    tier: 'A',
     op: 'query',
     doc: 'query($p:String!){getInvites(projectId:$p){__typename}}',
     vars: (s) => ({ p: s.projectId }),
   },
   {
     key: 'team.getTeamMembers',
-    tier: 'O',
+    tier: 'A',
     op: 'query',
     doc: 'query($p:String!){getTeamMembers(projectId:$p){__typename}}',
     vars: (s) => ({ p: s.projectId }),
   },
   {
     key: 'team.inviteTeamMember',
-    tier: 'O',
+    tier: 'A',
     op: 'mutation',
     doc: 'mutation($d:InviteTeamMemberInput!){inviteTeamMember(data:$d)}',
-    // O-tier; only OWNER reaches the resolver. The literal email used to
+    // A-tier; only ADMIN/OWNER reach the resolver. The literal email used to
     // collide with the prep-seeded invite (E0015 = TeamMemberLimit was a
     // red herring caused by HOBBY's teamMemberLimit=1 + 4 seeded members;
     // the BUSINESS subscription now keeps the count check out of the way).
@@ -987,26 +996,33 @@ export const ENDPOINTS: Endpoint[] = [
   },
   {
     key: 'team.removeTeamMember',
-    tier: 'O',
+    tier: 'A',
     op: 'mutation',
     doc: 'mutation($d:RemoveTeamMemberInput!){removeTeamMember(data:$d)}',
     vars: (s) => ({ d: { projectId: s.projectId, userId: s.removableUserId } }),
   },
   {
     key: 'team.changeTeamMemberRole',
-    tier: 'O',
+    tier: 'A',
     op: 'mutation',
     doc: 'mutation($d:ChangeTeamMemberRoleInput!){changeTeamMemberRole(data:$d)}',
     // A dedicated target — `removableUserId` is what team.removeTeamMember
-    // consumes earlier in the O block, so reusing it here would always
+    // consumes earlier in the A block, so reusing it here would always
     // resolve to "user not found" (ParamsError).
     vars: (s) => ({
       d: { projectId: s.projectId, role: 'ADMIN', userId: s.removableUserForChangeRole },
     }),
   },
   {
-    key: 'team.cancelInvite',
+    key: 'team.transferProjectOwnership',
     tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:TransferProjectOwnershipInput!){transferProjectOwnership(data:$d)}',
+    vars: (s) => ({ d: { projectId: s.projectId, userId: s.removableUserForChangeRole } }),
+  },
+  {
+    key: 'team.cancelInvite',
+    tier: 'A',
     op: 'mutation',
     doc: 'mutation($d:CancelInviteInput!){cancelInvite(data:$d)}',
     vars: (s) => ({ d: { inviteId: s.inviteId, projectId: s.projectId } }),
@@ -1017,5 +1033,37 @@ export const ENDPOINTS: Endpoint[] = [
     op: 'mutation',
     doc: 'mutation($d:ActiveUserProjectInput!){activeUserProject(data:$d)}',
     vars: (s) => ({ d: { projectId: s.projectId, userId: 'e2e' } }),
+  },
+  // --- subscription (scope: project) ---
+  // The subscription/usage reads feed every member's plan gates; checkout and
+  // portal spend against the OWNER's Stripe customer. This resolver once had
+  // no guard at all — these rows are the regression test for that.
+  {
+    key: 'subscription.getSubscriptionByProjectId',
+    tier: 'R',
+    op: 'query',
+    doc: 'query($p:String!){getSubscriptionByProjectId(projectId:$p){__typename}}',
+    vars: (s) => ({ p: s.projectId }),
+  },
+  {
+    key: 'subscription.getSubscriptionUsage',
+    tier: 'R',
+    op: 'query',
+    doc: 'query($p:String!){getSubscriptionUsage(projectId:$p)}',
+    vars: (s) => ({ p: s.projectId }),
+  },
+  {
+    key: 'subscription.createCheckoutSession',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($d:CreateCheckoutSessionRequest!){createCheckoutSession(data:$d)}',
+    vars: (s) => ({ d: { projectId: s.projectId, planType: 'starter', interval: 'monthly' } }),
+  },
+  {
+    key: 'subscription.createPortalSession',
+    tier: 'O',
+    op: 'mutation',
+    doc: 'mutation($p:String!){createPortalSession(projectId:$p)}',
+    vars: (s) => ({ p: s.projectId }),
   },
 ];

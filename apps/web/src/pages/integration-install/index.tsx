@@ -49,19 +49,11 @@ export const IntegrationInstall = () => {
       );
     }
   }, [manageable, projectId]);
-  const selectedProject = manageable.find((candidate) => candidate.id === projectId);
 
   const { environmentList, loading: environmentsLoading } = useGetUserEnvironmentsQuery(
     projectId || undefined,
   );
-  // A member restricted to some environments may only connect one of those.
-  const environments = useMemo(() => {
-    const allowed =
-      selectedProject?.role === 'OWNER' ? null : (selectedProject?.allowedEnvironmentIds ?? null);
-    return (environmentList ?? []).filter(
-      (environment) => allowed === null || allowed.includes(environment.id),
-    );
-  }, [environmentList, selectedProject]);
+  const environments = useMemo(() => environmentList ?? [], [environmentList]);
   const [environmentId, setEnvironmentId] = useState('');
   useEffect(() => {
     setEnvironmentId(

@@ -43,7 +43,11 @@ export class Invite extends BaseModel {
   @Field(() => Boolean, { nullable: false })
   requireSso: boolean;
 
-  /** Environments the invited member may act on once they join; null = all. */
+  /**
+   * EDITOR publish whitelist copied onto the membership on accept:
+   * environments the invitee may publish to. Ignored for other roles; null =
+   * none.
+   */
   @Field(() => [String], { nullable: true })
   allowedEnvironmentIds?: string[] | null;
 

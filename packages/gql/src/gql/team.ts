@@ -5,6 +5,7 @@ export const getTeamMembers = gql`
     getTeamMembers(projectId: $projectId) {
       id
       role
+      allowedEnvironmentIds
       createdAt
       user {
         id
@@ -30,8 +31,22 @@ export const getInvites = gql`
 `;
 
 export const inviteTeamMember = gql`
-  mutation inviteTeamMember($projectId: String!, $name: String!, $email: String!, $role: Role!) {
-    inviteTeamMember(data: { name: $name, projectId: $projectId, email: $email, role: $role })
+  mutation inviteTeamMember(
+    $projectId: String!
+    $name: String!
+    $email: String!
+    $role: Role!
+    $allowedEnvironmentIds: [String!]
+  ) {
+    inviteTeamMember(
+      data: {
+        name: $name
+        projectId: $projectId
+        email: $email
+        role: $role
+        allowedEnvironmentIds: $allowedEnvironmentIds
+      }
+    )
   }
 `;
 
@@ -48,8 +63,26 @@ export const removeTeamMember = gql`
 `;
 
 export const changeTeamMemberRole = gql`
-  mutation changeTeamMemberRole($projectId: String!, $userId: String!, $role: Role!) {
-    changeTeamMemberRole(data: { projectId: $projectId, userId: $userId, role: $role })
+  mutation changeTeamMemberRole(
+    $projectId: String!
+    $userId: String!
+    $role: Role!
+    $allowedEnvironmentIds: [String!]
+  ) {
+    changeTeamMemberRole(
+      data: {
+        projectId: $projectId
+        userId: $userId
+        role: $role
+        allowedEnvironmentIds: $allowedEnvironmentIds
+      }
+    )
+  }
+`;
+
+export const transferProjectOwnership = gql`
+  mutation transferProjectOwnership($projectId: String!, $userId: String!) {
+    transferProjectOwnership(data: { projectId: $projectId, userId: $userId })
   }
 `;
 

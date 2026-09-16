@@ -8,6 +8,7 @@ import {
   InviteTeamMemberInput,
   RemoveTeamMemberInput,
   ActiveUserProjectInput,
+  TransferProjectOwnershipInput,
 } from './dto/member.input';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { Role } from '@prisma/client';
@@ -62,6 +63,7 @@ export class TeamResolver {
       data.projectId,
       data.name,
       data.role as Role,
+      data.allowedEnvironmentIds,
     );
     return true;
   }
@@ -86,7 +88,24 @@ export class TeamResolver {
     resourceId: (a) => (a.data as { userId: string }).userId,
   })
   async changeTeamMemberRole(@Args('data') data: ChangeTeamMemberRoleInput) {
-    await this.teamService.changeTeamMemberRole(data.userId, data.projectId, data.role);
+    await this.teamService.changeTeamMemberRole(
+      data.userId,
+      data.projectId,
+      data.role,
+      data.allowedEnvironmentIds,
+    );
+    return true;
+  }
+
+  @Mutation(() => Boolean)
+  @RequirePermission({ capability: Capability.TeamTransferOwnership, scope: ScopeKind.Project })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'member',
+    resourceId: (a) => (a.data as { userId: string }).userId,
+  })
+  async transferProjectOwnership(@Args('data') data: TransferProjectOwnershipInput) {
+    await this.teamService.transferOwnership(data.projectId, data.userId);
     return true;
   }
 

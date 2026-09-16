@@ -484,7 +484,7 @@ type RoleBuilderOverrides = Partial<Prisma.UserUncheckedCreateInput> & { project
 
 async function buildMember(
   prisma: PrismaClient,
-  role: 'OWNER' | 'ADMIN' | 'VIEWER',
+  role: 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER',
   overrides: RoleBuilderOverrides = {},
 ) {
   const { projectId, ...userOverrides } = overrides;

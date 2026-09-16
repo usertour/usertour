@@ -1,8 +1,8 @@
 'use client';
 
-import { TeamMemberRole, type TeamMember } from '@usertour/types';
+import type { TeamMember } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
-import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
+import { useTransferProjectOwnershipMutation } from '@usertour/hooks';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface MemberTransferOwnerDialogProps {
@@ -21,7 +21,7 @@ interface MemberTransferOwnerDialogProps {
 export const MemberTransferOwnerDialog = (props: MemberTransferOwnerDialogProps) => {
   const { projectId, open, onOpenChange, data, onSubmit } = props;
   const { t } = useTranslation();
-  const { invoke: changeRole } = useChangeTeamMemberRoleMutation();
+  const { invoke: transferOwnership } = useTransferProjectOwnershipMutation();
 
   return (
     <DestructiveConfirmDialog
@@ -43,7 +43,7 @@ export const MemberTransferOwnerDialog = (props: MemberTransferOwnerDialogProps)
         if (!data.userId) {
           return Promise.reject(new Error(t('settings.team.transferOwner.failure')));
         }
-        return changeRole(projectId, data.userId, TeamMemberRole.OWNER);
+        return transferOwnership(projectId, data.userId);
       }}
       failureToast={t('settings.team.transferOwner.failure')}
       onSettled={onSubmit}

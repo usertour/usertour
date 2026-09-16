@@ -20,7 +20,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { Content } from '@usertour/types';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMemberEnvScope } from '@/hooks/use-member-env-scope';
+import { useMemberPublishScope } from '@/hooks/use-member-publish-scope';
 import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentUnpublishFormProps {
@@ -33,16 +33,16 @@ interface ContentUnpublishFormProps {
 export const ContentUnpublishForm = (props: ContentUnpublishFormProps) => {
   const { onSuccess, content, open, onOpenChange } = props;
   const { invoke: unpublishVersion } = useUnpublishContentVersionMutation();
-  const { canActOn } = useMemberEnvScope();
+  const { canPublishTo } = useMemberPublishScope();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const { t } = useTranslation();
   const { environmentList: allEnvironments } = useEnvironmentList();
-  // Same policy as the publish dialog / env switcher: out-of-scope
-  // environments are omitted, not disabled.
+  // Unpublish is a publish-capability action: same whitelist as the publish
+  // dialog.
   const environmentList = React.useMemo(
-    () => allEnvironments?.filter((env) => canActOn(env.id)),
-    [allEnvironments, canActOn],
+    () => allEnvironments?.filter((env) => canPublishTo(env.id)),
+    [allEnvironments, canPublishTo],
   );
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
   const contentTypeMeta = getContentTypeMeta(content.type);

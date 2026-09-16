@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { CaretSortIcon } from '@radix-ui/react-icons';
 import { AlertCircle } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
 import { useTeamMemberLimit } from '@/hooks/use-plan-limits';
@@ -17,10 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   FormControl,
   FormField,
   FormItem,
@@ -33,12 +28,7 @@ import {
 import { useInviteTeamMemberMutation } from '@usertour/hooks';
 import { TeamMemberRole } from '@usertour/types';
 import { z } from 'zod';
-
-// Owner can't be granted via invite — only Admin / Viewer.
-const ROLE_OPTIONS = [
-  { value: TeamMemberRole.ADMIN, i18nKey: 'settings.team.roles.admin' },
-  { value: TeamMemberRole.VIEWER, i18nKey: 'settings.team.roles.viewer' },
-] as const;
+import { MemberRoleFields, memberRoleFieldsSchema } from './member-role-fields';
 
 interface MemberInviteDialogProps {
   open: boolean;
@@ -47,10 +37,9 @@ interface MemberInviteDialogProps {
   onSubmit?: (success: boolean) => void;
 }
 
-const schema = z.object({
+const schema = memberRoleFieldsSchema.extend({
   name: z.string().max(20).min(1),
   email: z.string().email(),
-  role: z.string(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -58,7 +47,8 @@ type FormValues = z.infer<typeof schema>;
 const defaultValues: FormValues = {
   name: '',
   email: '',
-  role: TeamMemberRole.ADMIN,
+  role: TeamMemberRole.EDITOR,
+  allowedEnvironmentIds: [],
 };
 
 export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
@@ -72,8 +62,14 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
   const state = useSettingsForm<FormValues>({
     schema,
     defaultValues,
-    submit: async ({ name, email, role }) => {
-      const success = await invoke(project?.id as string, name, email, role);
+    submit: async ({ name, email, role, allowedEnvironmentIds }) => {
+      const success = await invoke(
+        project?.id as string,
+        name,
+        email,
+        role,
+        role === TeamMemberRole.EDITOR ? allowedEnvironmentIds : undefined,
+      );
       if (!success) {
         throw new Error(t('settings.team.invite.failure'));
       }
@@ -81,7 +77,6 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
       onOpenChange(false);
     },
   });
-
   useEffect(() => {
     if (open) {
       state.form.reset(defaultValues);
@@ -166,48 +161,9 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
             </FormItem>
           )}
         />
-        <FormField
-          control={state.form.control}
-          name="role"
-          render={({ field }) => {
-            const selected = ROLE_OPTIONS.find((option) => option.value === field.value);
-            return (
-              <FormItem>
-                <FormLabel>{t('settings.team.invite.roleLabel')}</FormLabel>
-                {/* modal={false}: parent Dialog already traps focus;
-                    skipping the dropdown's own trap avoids the
-                    aria-hidden conflict on the still-focused trigger. */}
-                <DropdownMenu modal={false}>
-                  <FormControl>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full justify-between font-normal"
-                      >
-                        {selected ? t(selected.i18nKey) : t('settings.team.invite.rolePlaceholder')}
-                        <CaretSortIcon className="h-4 w-4 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </FormControl>
-                  <DropdownMenuContent
-                    align="start"
-                    className="w-[--radix-dropdown-menu-trigger-width]"
-                  >
-                    {ROLE_OPTIONS.map((option) => (
-                      <DropdownMenuItem
-                        key={option.value}
-                        onSelect={() => field.onChange(option.value)}
-                      >
-                        {t(option.i18nKey)}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <FormMessage />
-              </FormItem>
-            );
-          }}
+        <MemberRoleFields
+          roleLabel={t('settings.team.invite.roleLabel')}
+          rolePlaceholder={t('settings.team.invite.rolePlaceholder')}
         />
       </div>
     </SettingsDialogForm>

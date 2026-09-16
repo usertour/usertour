@@ -171,13 +171,13 @@ describe('API v2 content publish (e2e)', () => {
     );
   });
 
-  it('member env ceiling caps the token: a restricted ADMIN cannot escape via a broader key', async () => {
-    // ADMIN member limited to `environmentId`; they mint a key NAMING both envs
-    // (env-targeted scopes must name environments now) — the membership ceiling
-    // must still cap the key to the member's own envs (E1029), else a restricted
-    // member escapes their environment scope by minting a broader key.
-    const admin = await buildAuthorizedUser(prisma, app, { projectId, role: 'ADMIN' });
-    adminUserId = admin.user.id;
+  it('editor publish whitelist bounds the key: an EDITOR cannot escape it via a broader key', async () => {
+    // EDITOR whitelisted for `environmentId` only; they mint a key NAMING both
+    // envs. The key's own scope admits the other env (no E1029) but the owner
+    // may not publish there (E1039) — else an editor escapes their whitelist
+    // by minting a broader key. Reads through the same key stay unrestricted.
+    const editor = await buildAuthorizedUser(prisma, app, { projectId, role: 'EDITOR' });
+    adminUserId = editor.user.id;
     await prisma.userOnProject.updateMany({
       where: { userId: adminUserId, projectId },
       data: { allowedEnvironmentIds: [environmentId] },
@@ -186,13 +186,13 @@ describe('API v2 content publish (e2e)', () => {
       query: CREATE,
       variables: {
         input: {
-          name: 'admin-broad',
+          name: 'editor-broad',
           scopes: [Capability.ContentRead, Capability.ContentPublish],
           projectIds: [projectId],
           environmentIds: [environmentId, otherEnvironmentId],
         },
       },
-      token: admin.token,
+      token: editor.token,
     });
     const token = gqlData(res).createApiToken.token;
 
@@ -201,7 +201,7 @@ describe('API v2 content publish (e2e)', () => {
       versionId,
     });
     expect(denied.status).toBe(403);
-    expect(denied.body.error.code).toBe('E1029');
+    expect(denied.body.error.code).toBe('E1039');
 
     const allowed = await api('post', publishPath(), token).send({ environmentId, versionId });
     expect(allowed.status).toBe(200);

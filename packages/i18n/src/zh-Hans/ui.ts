@@ -74,6 +74,7 @@ const translations = {
       email: '邮箱',
       role: '角色',
       roleAdmin: '管理员',
+      roleEditor: '编辑者',
       roleViewer: '查看者',
       created: '创建时间',
       members: '成员',
@@ -673,8 +674,20 @@ const translations = {
       removeMenuItem: '移除成员',
       roles: {
         admin: '管理员',
+        editor: '编辑者',
         viewer: '只读',
         owner: '所有者',
+      },
+      roleDescriptions: {
+        admin:
+          '管理员可以创建、编辑和发布所有内容,管理团队成员、SSO 和项目设置,可以查看账单。只有所有者能变更套餐和转让所有权。',
+        editor: '编辑者可以创建和编辑所有内容,但只能发布到下方勾选的环境。无法管理团队成员和账单。',
+        viewer: '只读成员可以查看和预览所有内容,不能创建、编辑或发布。',
+      },
+      publishEnvironments: {
+        label: '可发布到这些环境',
+        help: '如果这位编辑者只负责准备内容、不负责上线,可以一个都不勾选。',
+        none: '该项目还没有环境。',
       },
       invite: {
         title: '邀请团队成员',
@@ -880,8 +893,8 @@ const translations = {
         inactive: '已停用',
       },
       roles: {
-        admin: '成员（可编辑）',
-        viewer: '查看者（只读）',
+        editor: '编辑者(可编辑,授权前不能发布)',
+        viewer: '查看者(只读)',
       },
       settings: {
         requireTitle: '强制 SSO',

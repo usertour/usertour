@@ -20,7 +20,7 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
-import { useMemberEnvScope } from '@/hooks/use-member-env-scope';
+import { useMemberPublishScope } from '@/hooks/use-member-publish-scope';
 import { getContentTypeMeta } from './content-type-meta';
 
 interface ContentPublishFormProps {
@@ -33,17 +33,16 @@ interface ContentPublishFormProps {
 export const ContentPublishForm = (props: ContentPublishFormProps) => {
   const { versionId, onSubmit, open, onOpenChange } = props;
   const { invoke: publishVersion } = usePublishContentVersionMutation();
-  const { canActOn } = useMemberEnvScope();
+  const { canPublishTo } = useMemberPublishScope();
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { toast } = useToast();
   const { t } = useTranslation();
   const { environmentList: allEnvironments } = useEnvironmentList();
-  // Environments outside the member's scope are omitted entirely (same policy
-  // as the env switcher): they can't be published to, and even their publish
-  // state is out-of-scope data. The server guard enforces regardless.
+  // Only environments this member may publish to are offered (an editor's
+  // whitelist); the server guard enforces regardless.
   const environmentList = React.useMemo(
-    () => allEnvironments?.filter((env) => canActOn(env.id)),
-    [allEnvironments, canActOn],
+    () => allEnvironments?.filter((env) => canPublishTo(env.id)),
+    [allEnvironments, canPublishTo],
   );
   const [selectedEnvironments, setSelectedEnvironments] = React.useState<string[]>([]);
   const { contentId } = useContentDetailUI();

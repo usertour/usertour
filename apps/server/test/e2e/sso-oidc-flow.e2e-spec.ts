@@ -180,7 +180,7 @@ describe('SSO OIDC login flow (e2e)', () => {
       const membership = await prisma.userOnProject.findFirst({
         where: { projectId, userId: user!.id },
       });
-      expect(membership?.role).toBe('ADMIN'); // settings.defaultRole
+      expect(membership?.role).toBe('EDITOR'); // settings.defaultRole
       const account = await prisma.account.findUnique({
         where: {
           provider_providerAccountId: {

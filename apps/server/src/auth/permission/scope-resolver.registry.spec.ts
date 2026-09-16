@@ -17,8 +17,7 @@ describe('scope resolvers', () => {
     getContentProjectId: async (contentId) => (contentId === 'content-1' ? 'proj-1' : null),
     getVersionProjectId: async (versionId) => (versionId === 'version-1' ? 'proj-1' : null),
     getStepProjectId: async (stepId) => (stepId === 'step-1' ? 'proj-1' : null),
-    getSessionScope: async (sessionId) =>
-      sessionId === 'session-1' ? { projectId: 'proj-1', environmentId: 'env-1' } : null,
+    getSessionProjectId: async (sessionId) => (sessionId === 'session-1' ? 'proj-1' : null),
     getIntegrationEnvironmentId: async (integrationId) =>
       integrationId === 'int-1' ? 'env-1' : null,
     getWebhookEnvironmentId: async (webhookId) => (webhookId === 'wh-1' ? 'env-1' : null),
@@ -107,10 +106,9 @@ describe('scope resolvers', () => {
   });
 
   describe('Session', () => {
-    it('derives project from sessionId → content.projectId, env riding along', async () => {
+    it('derives project from sessionId → content.projectId', async () => {
       expect(await resolvers[ScopeKind.Session]({ sessionId: 'session-1' })).toEqual({
         projectId: 'proj-1',
-        environmentIds: ['env-1'],
       });
     });
     it('returns null for unknown / absent session', async () => {
@@ -147,22 +145,19 @@ describe('scope resolvers', () => {
   });
 
   describe('Integration', () => {
-    it('derives project from integrationId → environment, env riding along', async () => {
+    it('derives project from integrationId → environment', async () => {
       expect(await resolvers[ScopeKind.Integration]({ integrationId: 'int-1' })).toEqual({
         projectId: 'proj-1',
-        environmentIds: ['env-1'],
       });
     });
     it('derives project from a bare id (delete/test/messages)', async () => {
       expect(await resolvers[ScopeKind.Integration]({ data: { id: 'int-1' } })).toEqual({
         projectId: 'proj-1',
-        environmentIds: ['env-1'],
       });
     });
     it('falls back to explicit environmentId when there is no id (list/upsert)', async () => {
       expect(await resolvers[ScopeKind.Integration]({ environmentId: 'env-2' })).toEqual({
         projectId: 'proj-2',
-        environmentIds: ['env-2'],
       });
     });
     it('returns null when nothing resolves', async () => {
@@ -172,24 +167,20 @@ describe('scope resolvers', () => {
   });
 
   describe('Webhook', () => {
-    it('derives project from the webhook id → environment, env riding along', async () => {
+    it('derives project from the webhook id → environment', async () => {
       expect(await resolvers[ScopeKind.Webhook]({ data: { id: 'wh-1' } })).toEqual({
         projectId: 'proj-1',
-        environmentIds: ['env-1'],
       });
       expect(await resolvers[ScopeKind.Webhook]({ webhookId: 'wh-1' })).toEqual({
         projectId: 'proj-1',
-        environmentIds: ['env-1'],
       });
     });
     it('falls back to explicit environmentId (create/list)', async () => {
       expect(await resolvers[ScopeKind.Webhook]({ data: { environmentId: 'env-1' } })).toEqual({
         projectId: 'proj-1',
-        environmentIds: ['env-1'],
       });
       expect(await resolvers[ScopeKind.Webhook]({ environmentId: 'env-2' })).toEqual({
         projectId: 'proj-2',
-        environmentIds: ['env-2'],
       });
     });
     it('returns null for an unknown webhook id or missing environment', async () => {

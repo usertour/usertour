@@ -161,18 +161,31 @@ describe('GraphQL sso (e2e)', () => {
       expect(count).toBe(0);
     });
 
-    it('denies a non-owner (admin) — SsoManage is owner-only', async () => {
+    it('is an ADMIN-tier surface: admin creates, editor is denied', async () => {
+      const editor = await buildAuthorizedUser(prisma, app, { projectId, role: 'EDITOR' });
+      const denied = await graphql(app, {
+        token: editor.token,
+        query: CREATE,
+        variables: { projectId, input: validInput({ name: 'Editor Attempt' }) },
+      });
+      expect(isPermissionDenied(denied)).toBe(true);
+
       const res = await graphql(app, {
         token: adminToken,
         query: CREATE,
-        variables: { projectId, input: validInput() },
+        variables: { projectId, input: validInput({ name: 'Admin Made' }) },
       });
-      expect(isPermissionDenied(res)).toBe(true);
+      expect(isPermissionDenied(res)).toBe(false);
+      const created = gqlData(res).createOidcSsoProvider;
+      expect(created.name).toBe('Admin Made');
+      await prisma.projectSSOIdentityProvider.delete({ where: { id: created.id } });
+      await prisma.userOnProject.deleteMany({ where: { userId: editor.user.id } });
+      await prisma.user.delete({ where: { id: editor.user.id } });
     });
   });
 
   describe('listProjectSsoProviders', () => {
-    it('lists providers for the owner and denies a viewer (SsoRead owner-only)', async () => {
+    it('lists providers for the owner and denies a viewer (SsoRead is ADMIN-tier)', async () => {
       const provider = await prisma.projectSSOIdentityProvider.create({
         data: {
           projectId,
@@ -328,7 +341,7 @@ describe('GraphQL sso (e2e)', () => {
       expect(gqlData(res).getProjectSsoSettings).toMatchObject({
         requireSso: false,
         autoProvision: false, // invite-required by default
-        defaultRole: 'ADMIN',
+        defaultRole: 'EDITOR',
         allowedDomains: [],
       });
 
@@ -340,7 +353,7 @@ describe('GraphQL sso (e2e)', () => {
       expect(isPermissionDenied(viewerRes)).toBe(true);
     });
 
-    it('updates provisioning (owner) and denies an admin (SsoManage)', async () => {
+    it('updates provisioning (owner and admin — SsoManage is ADMIN-tier), denies an editor', async () => {
       const res = await graphql(app, {
         token: ownerToken,
         query: UPDATE_SETTINGS,
@@ -358,25 +371,39 @@ describe('GraphQL sso (e2e)', () => {
       const adminRes = await graphql(app, {
         token: adminToken,
         query: UPDATE_SETTINGS,
-        variables: { projectId, input: { defaultRole: 'ADMIN' } },
+        variables: { projectId, input: { defaultRole: 'EDITOR' } },
       });
-      expect(isPermissionDenied(adminRes)).toBe(true);
+      expect(isPermissionDenied(adminRes)).toBe(false);
+      expect(gqlData(adminRes).updateProjectSsoSettings.defaultRole).toBe('EDITOR');
+
+      const editor = await buildAuthorizedUser(prisma, app, { projectId, role: 'EDITOR' });
+      const editorRes = await graphql(app, {
+        token: editor.token,
+        query: UPDATE_SETTINGS,
+        variables: { projectId, input: { defaultRole: 'VIEWER' } },
+      });
+      expect(isPermissionDenied(editorRes)).toBe(true);
+      await prisma.userOnProject.deleteMany({ where: { userId: editor.user.id } });
+      await prisma.user.delete({ where: { id: editor.user.id } });
 
       // Reset provisioning back to defaults for the following tests.
       await graphql(app, {
         token: ownerToken,
         query: UPDATE_SETTINGS,
-        variables: { projectId, input: { defaultRole: 'ADMIN', allowedDomains: [] } },
+        variables: { projectId, input: { defaultRole: 'EDITOR', allowedDomains: [] } },
       });
     });
 
-    it('rejects an invalid default role (OWNER)', async () => {
-      const res = await graphql(app, {
-        token: ownerToken,
-        query: UPDATE_SETTINGS,
-        variables: { projectId, input: { defaultRole: 'OWNER' } },
-      });
-      expect(res.body?.errors?.length ?? 0).toBeGreaterThan(0);
+    it('rejects a default role that is not EDITOR or VIEWER (OWNER, ADMIN)', async () => {
+      // Auto-provisioning never hands out team management or ownership.
+      for (const defaultRole of ['OWNER', 'ADMIN']) {
+        const res = await graphql(app, {
+          token: ownerToken,
+          query: UPDATE_SETTINGS,
+          variables: { projectId, input: { defaultRole } },
+        });
+        expect(res.body?.errors?.length ?? 0).toBeGreaterThan(0);
+      }
     });
 
     it('refuses to require SSO without an active provider (E0052)', async () => {

@@ -74,15 +74,17 @@ export class NoPermissionError extends BaseError {
 }
 
 /**
- * The member's project membership restricts which environments they may act on
- * (UserOnProject.allowedEnvironmentIds), and this request targets one outside
- * that set — e.g. publishing to Production with a Development-only membership.
+ * The member is an EDITOR whose publish whitelist (UserOnProject
+ * .allowedEnvironmentIds) does not include the environment this publish /
+ * unpublish targets — e.g. shipping to Production with a Staging-only
+ * whitelist. Only publishing is bounded this way; reads and other writes are
+ * never environment-restricted by membership.
  */
 export class MemberEnvironmentNotAllowedError extends BaseError {
   code = 'E0060';
   messageDict = {
-    en: 'Your project membership does not allow acting on this environment',
-    'zh-CN': '您的成员权限不包含该环境，无法在此环境执行操作',
+    en: 'Your role may only publish to the environments on your publish whitelist',
+    'zh-CN': '您的角色只能发布到已授权的环境',
   };
 }
 
@@ -276,6 +278,68 @@ export class CustomCssPlanRequiredError extends OpenAPIError {
       '自定义 CSS 需要 Growth 及以上套餐——当前套餐下运行时会在下发前剥离 customCss,' +
       '因此写入被拒绝而非静默存储。请从 settings 中移除 customCss,或升级套餐(设置 → 账单)。',
   };
+}
+
+/**
+ * The key's OWNER is an EDITOR whose membership publish whitelist does not
+ * include the target environment. Distinct from E1029 (the KEY's own
+ * environment allowlist): a key can be scoped to the environment and still be
+ * refused because the person who minted it may not publish there.
+ */
+export class MemberCannotPublishToEnvironmentError extends OpenAPIError {
+  code = 'E1039';
+  statusCode = HttpStatus.FORBIDDEN;
+  messageDict = {
+    en:
+      "The API key's owner may not publish to this environment: their project role (Editor) " +
+      'is limited to the environments on their publish whitelist. Ask a project admin to ' +
+      'extend it, or publish to a whitelisted environment.',
+    'zh-CN':
+      '该 API key 的所有者不能发布到此环境:其项目角色(Editor)只能发布到已授权的环境。' +
+      '请项目管理员扩展授权,或发布到已授权的环境。',
+  };
+
+  /**
+   * Optionally name where the key MAY publish, turning a dead-end into a
+   * redirect — the MCP publish tools pass this so an agent can self-correct,
+   * as E1029 does for scope. Two lists, because two different things can be
+   * empty: `whitelisted` is the owner's publish whitelist, `publishable` is
+   * that whitelist narrowed to the key's own environment scope. A key scoped
+   * to an environment its owner may not publish to has a non-empty whitelist
+   * and nothing publishable — the message must not call the whitelist empty.
+   */
+  constructor(detail?: { publishable: PublishTarget[]; whitelisted: PublishTarget[] }) {
+    super();
+    if (!detail) {
+      return;
+    }
+    const nameList = (targets: PublishTarget[]) =>
+      targets.map((e) => `${e.name} (${e.id})`).join(', ');
+    if (detail.publishable.length) {
+      const list = nameList(detail.publishable);
+      this.messageDict = {
+        en: `The API key's owner may not publish to this environment. Their publish whitelist allows only: ${list}.`,
+        'zh-CN': `该 API key 的所有者不能发布到此环境。其发布授权仅包含:${list}。`,
+      };
+    } else if (detail.whitelisted.length) {
+      const list = nameList(detail.whitelisted);
+      this.messageDict = {
+        en: `This API key is not scoped to any environment its owner may publish to. The owner's publish whitelist allows: ${list} — but the key's environment scope does not include any of them. Reconnect with a key scoped to one of those environments, or ask a project admin to add this environment to the owner's whitelist.`,
+        'zh-CN': `该 API key 的环境范围不包含任何其所有者可发布的环境。所有者的发布授权包含:${list},但 key 的范围都不在其中。请改用范围覆盖这些环境的 key,或请项目管理员把当前环境加入所有者的发布授权。`,
+      };
+    } else {
+      this.messageDict = {
+        en: "The API key's owner may not publish to any environment: their publish whitelist is empty. Ask a project admin to extend it.",
+        'zh-CN': '该 API key 的所有者不能发布到任何环境:其发布授权为空。请项目管理员扩展授权。',
+      };
+    }
+  }
+}
+
+/** An environment named in a publish refusal. */
+export interface PublishTarget {
+  id: string;
+  name: string;
 }
 
 export class SystemThemeCannotBeChangedError extends OpenAPIError {

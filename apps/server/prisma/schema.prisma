@@ -123,8 +123,8 @@ model Invite {
   createdAt             DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime  @updatedAt @db.Timestamptz(6)
   code                  String    @unique @default(cuid())
-  /// Environment ids the invited member may act on once they join (copied to
-  /// UserOnProject on accept). null = all environments.
+  /// EDITOR publish whitelist copied to UserOnProject on accept: environment
+  /// ids the member may publish to. Ignored for other roles; null = none.
   allowedEnvironmentIds Json?     @db.JsonB
   expired               Boolean   @default(false)
   canceled              Boolean   @default(false)
@@ -191,7 +191,7 @@ model Project {
 
 /// Project-level SSO settings: enforcement (requireSso) and JIT provisioning
 /// (defaultRole, allowedDomains). One row per project, lazily created on first
-/// write; absent row means defaults (no enforcement, ADMIN, trust the IdP).
+/// write; absent row means defaults (no enforcement, EDITOR, trust the IdP).
 /// Provisioning lives here — not per-provider — because it is a project policy
 /// that should not differ between a project's connections.
 model ProjectSsoSettings {
@@ -211,8 +211,9 @@ model ProjectSsoSettings {
   /// invited users sign in regardless of this flag.
   autoProvision  Boolean  @default(false)
   /// Role assigned to auto-provisioned users (autoProvision only). Restricted to
-  /// ADMIN or VIEWER at the API layer (OWNER/USER are rejected).
-  defaultRole    Role     @default(ADMIN)
+  /// EDITOR or VIEWER at the API layer — ADMIN (team management) is never
+  /// granted automatically, OWNER is transfer-only.
+  defaultRole    Role     @default(EDITOR)
   /// Optional unverified email-domain allow-list for auto-provisioning. Empty =
   /// trust the IdP. Only consulted when autoProvision is on.
   allowedDomains String[] @default([])
@@ -258,9 +259,11 @@ model UserOnProject {
   updatedAt             DateTime @updatedAt @db.Timestamptz(6)
   role                  Role
   actived               Boolean
-  /// Environment ids this member may act on (the third permission dimension,
-  /// mirrors ApiToken.allowedEnvironmentIds). null = all environments; ignored
-  /// for OWNER. Personal API keys inherit this as a ceiling.
+  /// EDITOR publish whitelist: environment ids this member may publish to.
+  /// Only consulted for roles without ContentPublishAnyEnvironment (EDITOR);
+  /// null is treated as empty (may publish nowhere). Personal API keys minted
+  /// by the member inherit it as their publish ceiling. Unlike
+  /// ApiToken.allowedEnvironmentIds it does NOT restrict reads or other writes.
   allowedEnvironmentIds Json?    @db.JsonB
   project               Project? @relation(fields: [projectId], references: [id], onUpdate: Cascade, onDelete: Cascade)
   user                  User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
@@ -647,10 +650,13 @@ model VersionOnLocalization {
   @@unique([versionId, localizationId])
 }
 
+/// Project membership role, strictly nested VIEWER ⊂ EDITOR ⊂ ADMIN ⊂ OWNER
+/// (capabilities per role live in @usertour/constants ROLE_CAPABILITIES).
+/// OWNER is unique per project and only assigned by ownership transfer.
 enum Role {
   ADMIN
   VIEWER
-  USER
+  EDITOR
   OWNER
 }
 

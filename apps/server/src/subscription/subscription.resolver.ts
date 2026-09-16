@@ -1,14 +1,20 @@
+import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
 import { SubscriptionService } from './subscription.service';
 import { CreateCheckoutSessionRequest } from './subscription.dto';
 import { SubscriptionModel, SubscriptionPlanModel } from './subscription.model';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { User } from '@/users/models/user.model';
 
+// PermissionGuard is not global: without this class-level registration the
+// @RequirePermission decorators below are inert (a resolver-level guard is what
+// every other guarded resolver carries, and the decorator spec asserts it).
 @Resolver()
+@UseGuards(PermissionGuard)
 export class SubscriptionResolver {
   constructor(private subscriptionService: SubscriptionService) {}
 
