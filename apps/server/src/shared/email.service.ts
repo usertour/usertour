@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { configureEmailBranding } from '@usertour/emails';
-import { createTransport } from 'nodemailer';
+import { type Transporter, createTransport } from 'nodemailer';
 
 export interface SendEmailInput {
   to: string;
@@ -24,8 +24,9 @@ export interface SendEmailInput {
  * `send` and surface failures.
  */
 @Injectable()
-export class EmailService {
+export class EmailService implements OnModuleDestroy {
   private readonly logger = new Logger(EmailService.name);
+  private transporter?: Transporter;
 
   constructor(private readonly configService: ConfigService) {
     // Every template rendered in this process shows the wordmark that ships
@@ -41,8 +42,15 @@ export class EmailService {
     return !!(this.configService.get('email.host') && this.configService.get('email.user'));
   }
 
-  async send(input: SendEmailInput) {
-    const transporter = createTransport({
+  /**
+   * One pooled transport for the process: connections are reused across
+   * sends instead of a fresh TCP + TLS + AUTH handshake per message, and
+   * nodemailer queues onto at most five of them, so a notification fanned
+   * out to every owner and admin of a project never opens a burst of
+   * parallel sessions for the provider to refuse. Opened on first use.
+   */
+  private getTransporter(): Transporter {
+    this.transporter ??= createTransport({
       host: this.configService.get('email.host'),
       port: this.configService.get('email.port'),
       secure: true,
@@ -50,8 +58,17 @@ export class EmailService {
         user: this.configService.get('email.user'),
         pass: this.configService.get('email.pass'),
       },
+      pool: true,
     });
-    return await transporter.sendMail({
+    return this.transporter;
+  }
+
+  onModuleDestroy(): void {
+    this.transporter?.close();
+  }
+
+  async send(input: SendEmailInput) {
+    return await this.getTransporter().sendMail({
       from: input.from ?? this.configService.get('auth.email.sender'),
       to: input.to,
       subject: input.subject,
