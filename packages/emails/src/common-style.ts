@@ -6,8 +6,9 @@ import type { CSSProperties } from 'react';
  * grey panel for the value a reader will check against (an endpoint URL, a
  * provider name).
  *
- * Templates and components reference these constants instead of inlining
- * literal colors / sizes, so every message reads as the same brand.
+ * Colors, radii and the type scale live here so every message reads as the
+ * same brand; a size used by exactly one style (the wordmark fallback, the
+ * panel caption) stays next to that style rather than becoming a token.
  */
 export const emailColors = {
   /** Usertour brand violet, hsl(250 100% 60%). */

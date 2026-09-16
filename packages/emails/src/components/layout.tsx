@@ -4,7 +4,6 @@ import { emailBranding } from '../branding';
 import {
   bodyStyle,
   cardStyle,
-  emailColors,
   footerStyle,
   footerTextStyle,
   frameStyle,
@@ -21,18 +20,18 @@ const LOGO_HEIGHT = 30;
 interface FrameProps {
   /** Padding, background and radius for the single cell. */
   cellStyle: CSSProperties;
-  /** The background as an attribute too, for clients that ignore the CSS one on cells. */
-  bgcolor?: string;
   children: ReactNode;
 }
 
 /**
  * A centred, width-capped table whose one cell carries the padding and
  * background. Outlook drops both from `<table>`, so they have to sit on the
- * `<td>` for the card to keep its inset there.
+ * `<td>` for the card to keep its inset there. The background is repeated as
+ * the cell's `bgcolor` attribute for clients that ignore the CSS one.
  */
 const Frame = (props: FrameProps) => {
-  const { cellStyle, bgcolor, children } = props;
+  const { cellStyle, children } = props;
+  const bgcolor = cellStyle.backgroundColor as string | undefined;
 
   return (
     <table
@@ -84,7 +83,7 @@ export const EmailLayout = (props: EmailLayoutProps) => {
       </Head>
       <Preview>{preview}</Preview>
       <Body style={bodyStyle}>
-        <Frame cellStyle={cardStyle} bgcolor={emailColors.card}>
+        <Frame cellStyle={cardStyle}>
           <Section style={logoSectionStyle}>
             {logoUrl ? (
               <Img

@@ -75,6 +75,8 @@ describe('email templates', () => {
       expect(rendered.text).toContain(link);
       expect(rendered.html).toContain('You&#x27;re receiving this because');
       expect(rendered.text).toContain("You're receiving this because");
+      // Outlook drops padding from `<table>`; every inset must sit on a cell.
+      expect(rendered.html).not.toMatch(/<table[^>]*style="[^"]*padding:/);
     },
   );
 
@@ -100,11 +102,10 @@ describe('email templates', () => {
     expect(rendered.html).toMatch(/<img[^>]*height="30"/);
   });
 
-  it('keeps the card inset on a cell, never on a table', () => {
+  it('keeps the card inset on a cell', () => {
     const rendered = renderVerifyEmail({ url: `${APP_URL}/auth/registration/code-1` });
 
     expect(rendered.html).toMatch(/<td[^>]*style="[^"]*padding:40px 44px/);
-    expect(rendered.html).not.toMatch(/<table[^>]*style="[^"]*padding:/);
   });
 
   it('places the postscript after the sign-off', () => {
