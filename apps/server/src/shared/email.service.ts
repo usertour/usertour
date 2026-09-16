@@ -27,6 +27,13 @@ export interface SendEmailInput {
 export class EmailService implements OnModuleDestroy {
   private readonly logger = new Logger(EmailService.name);
   private transporter?: Transporter;
+  /**
+   * Set once the pool is closed. nodemailer's pooled transport answers a
+   * send after `close()` by returning false without ever calling back, so
+   * the promise would never settle; a job caught in that window (workers
+   * close a phase later than module destroy) would hang until SIGKILL.
+   */
+  private closed = false;
 
   constructor(private readonly configService: ConfigService) {
     // Every template rendered in this process shows the wordmark that ships
@@ -50,6 +57,9 @@ export class EmailService implements OnModuleDestroy {
    * parallel sessions for the provider to refuse. Opened on first use.
    */
   private getTransporter(): Transporter {
+    if (this.closed) {
+      throw new Error('SMTP transport closed: the server is shutting down');
+    }
     this.transporter ??= createTransport({
       host: this.configService.get('email.host'),
       port: this.configService.get('email.port'),
@@ -64,6 +74,7 @@ export class EmailService implements OnModuleDestroy {
   }
 
   onModuleDestroy(): void {
+    this.closed = true;
     this.transporter?.close();
   }
 

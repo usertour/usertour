@@ -62,14 +62,31 @@ describe('EmailService', () => {
     await expect(service.sendOrLog(message)).resolves.toBeUndefined();
   });
 
-  it('closes the pool on shutdown only if one was opened', async () => {
+  it('has nothing to close on shutdown if no email was ever sent', () => {
     const service = new EmailService(configService);
 
     service.onModuleDestroy();
-    expect(close).not.toHaveBeenCalled();
 
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('closes the pool on shutdown once one was opened', async () => {
+    const service = new EmailService(configService);
     await service.send(message);
+
     service.onModuleDestroy();
+
     expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails a send after shutdown instead of hanging on the closed pool', async () => {
+    const service = new EmailService(configService);
+    await service.send(message);
+
+    service.onModuleDestroy();
+
+    await expect(service.send(message)).rejects.toThrow('shutting down');
+    await expect(service.sendOrLog(message)).resolves.toBeUndefined();
+    expect(sendMail).toHaveBeenCalledTimes(1);
   });
 });
