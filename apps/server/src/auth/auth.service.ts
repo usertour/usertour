@@ -1,5 +1,5 @@
-import compileEmailTemplate from '@/common/email/compile-email-template';
-import { EmailService } from '@/shared/email.service';
+import { EmailService, type SendEmailInput } from '@/shared/email.service';
+import { renderResetPasswordEmail, renderVerifyEmail } from '@usertour/emails';
 import {
   getDefaultSegments,
   initialization,
@@ -1331,7 +1331,7 @@ export class AuthService implements OnModuleInit {
     return await this.prisma.user.findUnique({ where: { id: userId } });
   }
 
-  async sendEmail(data: { from?: string; to: string; subject: string; html: string }) {
+  async sendEmail(data: SendEmailInput) {
     // Transport lives in the shared EmailService now (webhooks notify too);
     // auth keeps its call sites and failure semantics unchanged.
     return await this.emailService.send(data);
@@ -1339,35 +1339,21 @@ export class AuthService implements OnModuleInit {
 
   async sendMagicLinkEmail(code: string, email: string) {
     const link = `${this.configService.get('app.homepageUrl')}/auth/registration/${code}`;
-    const template = await compileEmailTemplate({
-      fileName: 'verifyEmail.mjml',
-      data: {
-        name: 'test',
-        url: link,
-      },
-    });
+    const rendered = renderVerifyEmail({ url: link });
     return await this.sendEmail({
-      from: this.configService.get('auth.email.sender'), // sender address
-      to: email, // list of receivers
-      subject: 'Welcome to Usertour, verify your email', // Subject line
-      html: template, // html body
+      from: this.configService.get('auth.email.sender'),
+      to: email,
+      ...rendered,
     });
   }
 
   async sendResetPasswordEmail(id: string, email: string, name: string) {
     const link = `${this.configService.get('app.homepageUrl')}/auth/password-reset/${id}`;
-    const template = await compileEmailTemplate({
-      fileName: 'forgotPassword.mjml',
-      data: {
-        name,
-        url: link,
-      },
-    });
+    const rendered = renderResetPasswordEmail({ name, url: link });
     return await this.sendEmail({
-      from: this.configService.get('auth.email.sender'), // sender address
-      to: email, // list of receivers
-      subject: 'Set up a new password for Usertour', // Subject line
-      html: template, // html body
+      from: this.configService.get('auth.email.sender'),
+      to: email,
+      ...rendered,
     });
   }
 

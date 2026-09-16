@@ -1,6 +1,6 @@
 # @usertour/license
 
-JWT license signing and validation utilities for UserTour.
+JWT license signing and validation utilities for Usertour.
 
 ## Features
 

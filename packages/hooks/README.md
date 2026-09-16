@@ -1,6 +1,6 @@
 # @usertour/hooks
 
-GraphQL data-access hooks for the UserTour monorepo.
+GraphQL data-access hooks for the Usertour monorepo.
 
 > **Note**: Internal workspace package, not published to npm.
 

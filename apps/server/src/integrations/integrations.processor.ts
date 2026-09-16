@@ -6,7 +6,7 @@ import { DelayedError, Job } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import type { IntegrationConfig, IntegrationProvider } from '@usertour/types';
 import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
-import compileEmailTemplate from '@/common/email/compile-email-template';
+import { renderIntegrationAutoDisabledEmail } from '@usertour/emails';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { SYNC_INTEGRATION_PROVIDERS, WEBHOOK_EVENT_TOPIC_PREFIX } from '@usertour/constants';
@@ -421,14 +421,11 @@ export class IntegrationsProcessor extends WorkerHost {
       select: { user: { select: { email: true } } },
     });
     const settingsUrl = `${this.configService.get('app.homepageUrl')}/project/${environment.projectId}/settings/integrations/${provider}`;
-    const html = await compileEmailTemplate({
-      fileName: 'integrationAutoDisabled.mjml',
-      data: {
-        providerName: provider,
-        projectName: environment.project?.name ?? 'your project',
-        failingDays: String(failingDays),
-        settingsUrl,
-      },
+    const rendered = renderIntegrationAutoDisabledEmail({
+      providerName: provider,
+      projectName: environment.project?.name ?? 'your project',
+      failingDays,
+      settingsUrl,
     });
     await Promise.all(
       owners
@@ -436,8 +433,7 @@ export class IntegrationsProcessor extends WorkerHost {
         .map((owner) =>
           this.emailService.sendOrLog({
             to: owner.user?.email as string,
-            subject: 'A Usertour integration was disabled after continuous failures',
-            html,
+            ...rendered,
           }),
         ),
     );

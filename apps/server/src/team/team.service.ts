@@ -9,8 +9,8 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { EmailService } from '@/shared/email.service';
-import compileEmailTemplate from '@/common/email/compile-email-template';
+import { EmailService, type SendEmailInput } from '@/shared/email.service';
+import { renderInviteTeamMemberEmail } from '@usertour/emails';
 import { ConfigService } from '@nestjs/config';
 import { ProjectsService } from '@/projects/projects.service';
 import { activeInviteWhere } from './invite-filters';
@@ -324,7 +324,7 @@ export class TeamService {
     }
   }
 
-  async sendEmail(data: { to: string; subject: string; html: string; from?: string }) {
+  async sendEmail(data: SendEmailInput) {
     // Shared transport (shared/EmailService) — the module-local createTransport
     // copy predated the extraction. Throwing variant on purpose: an invite the
     // user just asked for must fail loudly, not skip silently.
@@ -339,21 +339,17 @@ export class TeamService {
     toUserName: string,
   ) {
     const url = `${this.configService.get('app.homepageUrl')}/auth/invite/${code}`;
-    const template = await compileEmailTemplate({
-      fileName: 'inviteTeamMember.mjml',
-      data: {
-        inviterName: fromUserName,
-        name: toUserName,
-        projectName,
-        url,
-      },
+    const rendered = renderInviteTeamMemberEmail({
+      inviterName: fromUserName,
+      name: toUserName,
+      projectName,
+      url,
     });
 
     return await this.sendEmail({
-      from: this.configService.get('auth.email.sender'), // sender address
-      to: email, // list of receivers
-      subject: `${fromUserName} invited you to Usertour`, // Subject line
-      html: template, // html body
+      from: this.configService.get('auth.email.sender'),
+      to: email,
+      ...rendered,
     });
   }
 
