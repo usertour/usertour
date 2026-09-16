@@ -134,15 +134,30 @@ export const linkStyle: CSSProperties = {
   textDecoration: 'none',
 };
 
-/** The URL spelled out under a button, for clients that block the button. */
-export const fallbackUrlStyle: CSSProperties = {
+/** The note above the spelled-out URL, for clients that block the button. */
+export const fallbackNoteStyle: CSSProperties = {
   color: emailColors.mutedText,
   fontFamily: emailFonts.sans,
   fontSize: emailFontSize.xs,
   lineHeight: '18px',
+  margin: '0 0 2px',
+};
+
+/**
+ * The URL itself, on its own line so it selects as one piece and only breaks
+ * when it really is longer than the card.
+ */
+export const fallbackUrlStyle: CSSProperties = {
+  ...fallbackNoteStyle,
   margin: '0 0 16px',
   wordBreak: 'break-all',
   overflowWrap: 'break-word',
+};
+
+/** The spelled-out URL as a real link: brand colour, but not bold, a whole line of it would be heavy. */
+export const fallbackLinkStyle: CSSProperties = {
+  color: emailColors.primary,
+  textDecoration: 'none',
 };
 
 /** A single value the reader will check against: grey panel, caption, mono. */

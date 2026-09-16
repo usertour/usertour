@@ -1,9 +1,11 @@
-import { Text } from '@react-email/components';
+import { Link, Text } from '@react-email/components';
 import {
   emailColors,
   emailFontSize,
   emailFonts,
   emailRadius,
+  fallbackLinkStyle,
+  fallbackNoteStyle,
   fallbackUrlStyle,
 } from '../common-style';
 
@@ -62,8 +64,13 @@ export const CallToAction = (props: CallToActionProps) => {
           </tr>
         </tbody>
       </table>
+      <Text style={fallbackNoteStyle}>
+        If the button does not work, copy this address into your browser:
+      </Text>
       <Text style={fallbackUrlStyle}>
-        If the button does not work, copy this address into your browser: {href}
+        <Link href={href} style={fallbackLinkStyle}>
+          {href}
+        </Link>
       </Text>
     </>
   );
