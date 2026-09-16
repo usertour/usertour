@@ -65,7 +65,7 @@ describe('EmailService', () => {
   it('has nothing to close on shutdown if no email was ever sent', () => {
     const service = new EmailService(configService);
 
-    service.onModuleDestroy();
+    service.onApplicationShutdown();
 
     expect(close).not.toHaveBeenCalled();
   });
@@ -74,7 +74,7 @@ describe('EmailService', () => {
     const service = new EmailService(configService);
     await service.send(message);
 
-    service.onModuleDestroy();
+    service.onApplicationShutdown();
 
     expect(close).toHaveBeenCalledTimes(1);
   });
@@ -83,7 +83,7 @@ describe('EmailService', () => {
     const service = new EmailService(configService);
     await service.send(message);
 
-    service.onModuleDestroy();
+    service.onApplicationShutdown();
 
     await expect(service.send(message)).rejects.toThrow('shutting down');
     await expect(service.sendOrLog(message)).resolves.toBeUndefined();

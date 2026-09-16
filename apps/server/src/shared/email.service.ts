@@ -1,4 +1,4 @@
-import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, type OnApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { configureEmailBranding } from '@usertour/emails';
 import { type Transporter, createTransport } from 'nodemailer';
@@ -24,14 +24,17 @@ export interface SendEmailInput {
  * `send` and surface failures.
  */
 @Injectable()
-export class EmailService implements OnModuleDestroy {
+export class EmailService implements OnApplicationShutdown {
   private readonly logger = new Logger(EmailService.name);
   private transporter?: Transporter;
   /**
    * Set once the pool is closed. nodemailer's pooled transport answers a
    * send after `close()` by returning false without ever calling back, so
-   * the promise would never settle; a job caught in that window (workers
-   * close a phase later than module destroy) would hang until SIGKILL.
+   * the promise would never settle and a job caught mid-send would hang
+   * until SIGKILL. The pool closes in onApplicationShutdown, the phase in
+   * which the queue workers drain their active jobs, so in the usual order
+   * those jobs finish first; if Nest closes the pool first, this flag turns
+   * their sends into errors instead.
    */
   private closed = false;
 
@@ -73,7 +76,7 @@ export class EmailService implements OnModuleDestroy {
     return this.transporter;
   }
 
-  onModuleDestroy(): void {
+  onApplicationShutdown(): void {
     this.closed = true;
     this.transporter?.close();
   }
