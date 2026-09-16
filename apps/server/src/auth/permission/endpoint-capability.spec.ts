@@ -149,11 +149,26 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'team.activeUserProject': R,
   // audit
   'audit.auditLogs': O,
+  // sso — decorated after the migration; owner-only like the other admin surfaces
+  'sso.createOidcSsoProvider': O,
+  'sso.updateSsoProvider': O,
+  'sso.deleteSsoProvider': O,
+  'sso.listProjectSsoProviders': O,
+  'sso.getProjectSsoSettings': O,
+  'sso.updateProjectSsoSettings': O,
+  // subscription — had NO @Roles before (any signed-in user could call them).
+  // Not a pre-migration snapshot: the intended sets, recorded when the gap
+  // was closed. Reads are membership-wide because every member's plan gates
+  // depend on them; checkout/portal act on the owner's billing.
+  'subscription.createCheckoutSession': O,
+  'subscription.createPortalSession': O,
+  'subscription.getSubscriptionByProjectId': R,
+  'subscription.getSubscriptionUsage': R,
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same 117 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(117);
+  it('snapshot covers exactly the same 127 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(127);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 
