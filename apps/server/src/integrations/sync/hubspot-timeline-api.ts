@@ -21,6 +21,11 @@ export interface HubspotTimelineOccurrence {
  * Write occurrences to record timelines in one batch (up to 500): the batch
  * is atomic on the provider side, so an event mirrored to a contact and its
  * company lands on both or on neither, and a retry replays one unit.
+ *
+ * Still on `/v4`: as of 2026-09-17 the app events reference documents no
+ * date-versioned path, and HubSpot's legacy-API notice promises the remaining
+ * replacement paths before `/v4` goes unsupported on 2027-03-30. Move it to
+ * `HUBSPOT_API_VERSION` once one is published.
  */
 export const sendHubspotTimelineEvents = (
   accessToken: string,

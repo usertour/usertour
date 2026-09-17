@@ -10,14 +10,19 @@ export const HUBSPOT_AUTHORIZE_URL = 'https://app.hubspot.com/oauth/authorize';
 export const HUBSPOT_API_BASE = 'https://api.hubapi.com';
 
 /**
- * OAuth API version (HubSpot's date-based versioning). Token exchange,
- * introspection and revocation all live under it — and so does the app-level
- * token for the change journal (hubspot-journal-api.ts) — so a bump is one
- * edit. The unversioned `/oauth/v1/*` endpoints put secrets in the URL, are
- * refused for new marketplace listings and are sunset on 2027-02-16.
+ * HubSpot's date-based API version (`YYYY-MM`), shared by every dated path
+ * this integration calls: OAuth (token exchange, introspection, revocation and
+ * the app-level token for the change journal), CRM objects and properties
+ * (hubspot-crm-api.ts) and the webhooks journal (hubspot-journal-api.ts).
+ * HubSpot ships one date version across API families each March and September
+ * and supports it for 18 months, so a bump is one edit. The legacy paths go
+ * unsupported on 2027-03-30 (`/v4`) and in 2027-09 (`/v1`–`/v3`); the
+ * unversioned `/oauth/v1/*` endpoints also put secrets in the URL and are
+ * sunset on 2027-02-16. App events (hubspot-timeline-api.ts) have no dated
+ * path yet and stay on `/v4`.
  */
-export const HUBSPOT_OAUTH_API_VERSION = '2026-09';
-export const HUBSPOT_OAUTH_TOKEN_URL = `${HUBSPOT_API_BASE}/oauth/${HUBSPOT_OAUTH_API_VERSION}/token`;
+export const HUBSPOT_API_VERSION = '2026-09';
+export const HUBSPOT_OAUTH_TOKEN_URL = `${HUBSPOT_API_BASE}/oauth/${HUBSPOT_API_VERSION}/token`;
 
 /**
  * Must equal `requiredScopes` in integrations/hubspot/src/app/app-hsmeta.json —
