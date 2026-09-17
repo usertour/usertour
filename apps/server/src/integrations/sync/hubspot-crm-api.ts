@@ -1,14 +1,21 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import { hubspotCall } from './hubspot-errors';
-import { HUBSPOT_API_BASE } from './hubspot-api';
+import { HUBSPOT_API_BASE, HUBSPOT_API_VERSION } from './hubspot-api';
 
 /**
  * HubSpot CRM data endpoints used by the sync engine (ADR 0013 §7): property
  * metadata, paged reads, batch reads/updates, search, and property creation.
- * Thin typed wrappers over the v3 object APIs; callers own pacing and retry.
- * `objectType` is HubSpot's path segment ('contacts' | 'companies').
+ * Thin typed wrappers over the date-versioned object and property APIs;
+ * callers own pacing and retry. `objectType` is HubSpot's path segment
+ * ('contacts' | 'companies').
  */
 export type HubspotObjectType = 'contacts' | 'companies';
+
+const objectsPath = (objectType: HubspotObjectType): string =>
+  `/crm/objects/${HUBSPOT_API_VERSION}/${objectType}`;
+
+const propertiesPath = (objectType: HubspotObjectType): string =>
+  `/crm/properties/${HUBSPOT_API_VERSION}/${objectType}`;
 
 export interface HubspotProperty {
   name: string;
@@ -70,7 +77,7 @@ export const listHubspotProperties = async (
 ): Promise<HubspotProperty[]> => {
   const data = await request<{ results: HubspotProperty[] }>(accessToken, {
     method: 'GET',
-    url: `/crm/v3/properties/${objectType}`,
+    url: propertiesPath(objectType),
   });
   return data.results;
 };
@@ -84,7 +91,7 @@ export const ensureHubspotPropertyGroup = async (
   try {
     await request(accessToken, {
       method: 'POST',
-      url: `/crm/v3/properties/${objectType}/groups`,
+      url: `${propertiesPath(objectType)}/groups`,
       data: group,
     });
   } catch (error) {
@@ -113,7 +120,7 @@ export const ensureHubspotProperty = async (
   try {
     await request(accessToken, {
       method: 'POST',
-      url: `/crm/v3/properties/${objectType}`,
+      url: propertiesPath(objectType),
       data: definition,
     });
   } catch (error) {
@@ -134,7 +141,7 @@ export const listHubspotObjectsPage = (
 ): Promise<HubspotObjectPage> =>
   request<HubspotObjectPage>(accessToken, {
     method: 'GET',
-    url: `/crm/v3/objects/${objectType}`,
+    url: objectsPath(objectType),
     params: {
       limit: options.limit ?? HUBSPOT_PAGE_SIZE,
       properties: options.properties.join(','),
@@ -153,7 +160,7 @@ export const batchReadHubspotObjects = async (
   }
   const data = await request<{ results: HubspotObject[] }>(accessToken, {
     method: 'POST',
-    url: `/crm/v3/objects/${objectType}/batch/read`,
+    url: `${objectsPath(objectType)}/batch/read`,
     data: { properties, inputs: ids.map((id) => ({ id })) },
   });
   return data.results;
@@ -169,7 +176,7 @@ export const batchUpdateHubspotObjects = async (
   }
   await request(accessToken, {
     method: 'POST',
-    url: `/crm/v3/objects/${objectType}/batch/update`,
+    url: `${objectsPath(objectType)}/batch/update`,
     data: { inputs },
   });
 };
@@ -185,7 +192,7 @@ export const searchHubspotObjectsByProperty = async (
   }
   const data = await request<{ results: HubspotObject[] }>(accessToken, {
     method: 'POST',
-    url: `/crm/v3/objects/${objectType}/search`,
+    url: `${objectsPath(objectType)}/search`,
     data: {
       filterGroups: [
         { filters: [{ propertyName: query.propertyName, operator: 'IN', values: query.values }] },
@@ -211,7 +218,7 @@ export const updateHubspotObject = (
       baseURL: HUBSPOT_API_BASE,
       timeout: DATA_TIMEOUT_MS,
       method: 'PATCH',
-      url: `/crm/v3/objects/${objectType}/${encodeURIComponent(id)}`,
+      url: `${objectsPath(objectType)}/${encodeURIComponent(id)}`,
       data: { properties },
       headers: { Authorization: `Bearer ${accessToken}` },
       responseType: 'text',
