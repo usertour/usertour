@@ -2,19 +2,24 @@ import axios from 'axios';
 import { hubspotCall } from './hubspot-errors';
 import {
   HUBSPOT_API_BASE,
+  HUBSPOT_API_VERSION,
   HUBSPOT_OAUTH_TOKEN_URL,
   type HubspotAppCredentials,
 } from './hubspot-api';
 
 /**
- * HubSpot webhooks journal (v4): app-level, pull-based change feed (ADR 0013
- * §7). Subscriptions are per installed account; the journal itself is one
- * stream per app whose pages live behind short-lived presigned URLs.
- * Verified against the live API on 2026-09-03: `earliest` / `latest` /
+ * HubSpot webhooks journal: app-level, pull-based change feed (ADR 0013 §7).
+ * Subscriptions are per installed account; the journal itself is one stream
+ * per app whose pages live behind short-lived presigned URLs. Verified
+ * against the live API on 2026-09-03: `earliest` / `latest` /
  * `offset/{offset}/next` answer `{ url, expiresAt, currentOffset }` (204 when
  * there is nothing), and the page at `url` is
- * `{ offset, journalEvents: [...], publishedAt }`.
+ * `{ offset, journalEvents: [...], publishedAt }`. The date-versioned paths
+ * keep those shapes; the `/v4` ones they replace go unsupported on 2027-03-30.
  */
+const SUBSCRIPTIONS_URL = `${HUBSPOT_API_BASE}/webhooks-journal/subscriptions/${HUBSPOT_API_VERSION}`;
+const JOURNAL_URL = `${HUBSPOT_API_BASE}/webhooks-journal/journal/${HUBSPOT_API_VERSION}`;
+
 export const HUBSPOT_JOURNAL_SCOPES =
   'developer.webhooks_journal.read developer.webhooks_journal.subscriptions.read developer.webhooks_journal.subscriptions.write';
 
@@ -82,7 +87,7 @@ const auth = (token: string) => ({
 export const listJournalSubscriptions = (token: string): Promise<HubspotJournalSubscription[]> =>
   hubspotCall(async () => {
     const response = await axios.get<{ results: HubspotJournalSubscription[] }>(
-      `${HUBSPOT_API_BASE}/webhooks-journal/subscriptions/v4`,
+      SUBSCRIPTIONS_URL,
       auth(token),
     );
     return response.data.results ?? [];
@@ -94,7 +99,7 @@ export const createJournalSubscription = (
 ): Promise<HubspotJournalSubscription> =>
   hubspotCall(async () => {
     const response = await axios.post<HubspotJournalSubscription>(
-      `${HUBSPOT_API_BASE}/webhooks-journal/subscriptions/v4`,
+      SUBSCRIPTIONS_URL,
       { subscriptionType: 'OBJECT', ...input },
       auth(token),
     );
@@ -103,23 +108,20 @@ export const createJournalSubscription = (
 
 export const deleteJournalSubscription = (token: string, id: number): Promise<void> =>
   hubspotCall(async () => {
-    await axios.delete(`${HUBSPOT_API_BASE}/webhooks-journal/subscriptions/v4/${id}`, auth(token));
+    await axios.delete(`${SUBSCRIPTIONS_URL}/${id}`, auth(token));
   });
 
 export const deletePortalJournalSubscriptions = (token: string, portalId: number): Promise<void> =>
   hubspotCall(async () => {
-    await axios.delete(
-      `${HUBSPOT_API_BASE}/webhooks-journal/subscriptions/v4/portals/${portalId}`,
-      auth(token),
-    );
+    await axios.delete(`${SUBSCRIPTIONS_URL}/portals/${portalId}`, auth(token));
   });
 
 const pageRef = (token: string, path: string): Promise<HubspotJournalPageRef | null> =>
   hubspotCall(async () => {
-    const response = await axios.get<HubspotJournalPageRef | ''>(
-      `${HUBSPOT_API_BASE}/webhooks-journal/journal/v4/${path}`,
-      { ...auth(token), validateStatus: (status) => status === 200 || status === 204 },
-    );
+    const response = await axios.get<HubspotJournalPageRef | ''>(`${JOURNAL_URL}/${path}`, {
+      ...auth(token),
+      validateStatus: (status) => status === 200 || status === 204,
+    });
     return response.status === 204 || !response.data
       ? null
       : (response.data as HubspotJournalPageRef);
