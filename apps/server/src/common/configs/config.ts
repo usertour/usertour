@@ -97,7 +97,7 @@ const config: Config = {
     },
     email: {
       enabled: process.env.EMAIL_AUTH_ENABLED === 'true',
-      sender: process.env.EMAIL_SENDER || 'UserTour <support@usertour.io>',
+      sender: process.env.EMAIL_SENDER || 'Usertour <support@usertour.io>',
       resendApiKey: process.env.RESEND_API_KEY || 'test',
     },
     jwt: {

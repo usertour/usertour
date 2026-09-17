@@ -1,5 +1,5 @@
 /**
- * Button type system for UserTour widget
+ * Button type system for Usertour widget
  * Separates semantic button types (what the editor sends) from rendering variants (how it looks)
  */
 

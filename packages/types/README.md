@@ -1,6 +1,6 @@
 # @usertour/types
 
-TypeScript type definitions and enums shared across the UserTour project.
+TypeScript type definitions and enums shared across the Usertour project.
 
 > **Note**: This is an internal workspace package and is not published to npm.
 
@@ -27,7 +27,7 @@ const tourConfig: UserTourTypes.TourConfig = {
 
 ## Available Types
 
-This package exports various TypeScript types for the UserTour project:
+This package exports various TypeScript types for the Usertour project:
 
 - **Content Types**: Tour content, steps, modals, and flow configurations
 - **Theme Types**: UI themes, colors, and styling configurations  

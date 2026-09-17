@@ -10,7 +10,7 @@ import {
   createGuardedHttpsAgent,
   guardedLookup,
 } from '@/common/egress/egress-guard';
-import compileEmailTemplate from '@/common/email/compile-email-template';
+import { renderWebhookAutoDisabledEmail } from '@usertour/emails';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { AuditService } from '@/audit/audit.service';
@@ -427,14 +427,11 @@ export class WebhooksProcessor extends WorkerHost {
       select: { user: { select: { email: true } } },
     });
     const settingsUrl = `${this.configService.get('app.homepageUrl')}/project/${environment.projectId}/settings/webhooks/${webhookId}`;
-    const html = await compileEmailTemplate({
-      fileName: 'webhookAutoDisabled.mjml',
-      data: {
-        url,
-        projectName: environment.project?.name ?? 'your project',
-        failingDays: String(failingDays),
-        settingsUrl,
-      },
+    const rendered = renderWebhookAutoDisabledEmail({
+      url,
+      projectName: environment.project?.name ?? 'your project',
+      failingDays,
+      settingsUrl,
     });
     // Concurrent sends (sendOrLog never throws): a hung SMTP server must not
     // serialize inside a delivery-worker slot. Usually a handful of recipients anyway.
@@ -444,8 +441,7 @@ export class WebhooksProcessor extends WorkerHost {
         .map((owner) =>
           this.emailService.sendOrLog({
             to: owner.user?.email as string,
-            subject: 'A Usertour webhook endpoint was disabled after continuous failures',
-            html,
+            ...rendered,
           }),
         ),
     );

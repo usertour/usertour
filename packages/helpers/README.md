@@ -1,6 +1,6 @@
 # @usertour/helpers
 
-Utility functions and helpers shared across the UserTour project.
+Utility functions and helpers shared across the Usertour project.
 
 > **Note**: This is an internal workspace package and is not published to npm.
 
@@ -31,7 +31,7 @@ const formattedColor = formatColor('#ff0000');
 
 ## Available Utilities
 
-This package provides various utility functions for the UserTour project:
+This package provides various utility functions for the Usertour project:
 
 - **ID Generation**: Unique ID generation with cuid2
 - **Object Utilities**: Deep merging, equality checking
