@@ -36,7 +36,8 @@ export class ApiLocalizationsController {
     summary: 'List localizations',
     description:
       'The locales this project translates content into. The `isDefault` one is the source ' +
-      'language; every other `code` can carry a translation on each content version.',
+      'language; every other `code` can carry a translation on each content version — read ' +
+      "and write those with the version's translation endpoints under Content versions.",
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
@@ -49,7 +50,13 @@ export class ApiLocalizationsController {
   }
 }
 
-@ApiTags('Localizations')
+/**
+ * A version's translations. Grouped with the content-version endpoints on
+ * purpose: a translation is part of the version — it forks, restores and ships
+ * with it, and follows the same editable-draft rule — like member routes sit
+ * with their parent resource.
+ */
+@ApiTags('Content versions')
 @ApiStandardErrorResponses()
 @Controller('v2/projects/:projectId/content/:contentId/versions/:versionId/localizations')
 @UseGuards(ApiTokenGuard)
@@ -62,11 +69,12 @@ export class ApiVersionLocalizationsController {
   @Get(':code')
   @RequireCapability(Capability.ContentRead)
   @ApiOperation({
-    summary: "Get a version's translation",
+    summary: 'Get a translation',
     description:
       'Every translatable unit of the version for one locale: source text, current ' +
       'translation, and whether the source changed since it was translated (`outdated`). ' +
-      'A locale that was never translated returns all units with empty translations.',
+      'A locale that was never translated returns all units with empty translations. The ' +
+      "`code` is one of the project's non-default locales — see List localizations.",
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'contentId', description: 'Content ID' })
@@ -90,12 +98,13 @@ export class ApiVersionLocalizationsController {
   @Put(':code')
   @RequireCapability(Capability.ContentUpdate)
   @ApiOperation({
-    summary: "Update a version's translation",
+    summary: 'Update a translation',
     description:
       'Write translations by unit path and/or switch delivery on or off. Only an editable ' +
       'draft accepts translations — fork a published version first (the fork carries every ' +
       'translation with it). Translations merge onto the stored ones server-side; the ' +
-      'response is the full translation as now stored.',
+      "response is the full translation as now stored. The `code` is one of the project's " +
+      'non-default locales — see List localizations.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'contentId', description: 'Content ID' })
