@@ -1046,13 +1046,16 @@ export class ContentService {
 
   async upsertVersionLocalization(input: VersionUpdateLocalizationInput) {
     const { versionId, localizationId, localized, backup, enabled } = input;
-    if (!(await this.contentVersionIsEditable(versionId))) {
-      throw new ParamsError();
-    }
     // localized/backup are optional: undefined is skipped by the update
     // clause, so a state-only write (the enable toggle) can never clobber
     // a translation saved from elsewhere.
     return await this.prisma.$transaction(async (tx) => {
+      // Same serialization as updateContentVersion: checking editability before
+      // the transaction let a publish/restore land between check and write, so a
+      // translation could be saved onto a version that had just gone live. The
+      // Content-row lock makes the two queue up — either this save sees the
+      // publish and is refused, or the publish ships this save.
+      await this.assertVersionEditableLocked(tx, versionId);
       // The schema-version stamp marks rows whose link destinations the new
       // save path wrote (semantic '' sentinel / override, never a clone). An
       // enable-only toggle must NOT stamp: it would exempt a legacy row from
@@ -1079,7 +1082,7 @@ export class ContentService {
       // draft: touch the version's updatedAt and hand the version back — the
       // client's normalized cache then moves the header's "Autosaved"
       // timestamp without a refetch. Only editable drafts reach this point
-      // (gate above), so no delivered version is ever touched.
+      // (locked gate above), so no delivered version is ever touched.
       const version = await tx.version.update({
         where: { id: versionId },
         data: { updatedAt: new Date() },
