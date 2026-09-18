@@ -279,6 +279,21 @@ Before you call the build done, walk every flow you created and confirm it has a
 - Announcements create **no sessions**; the analytics signal is the SEEN event (feed opened / popup shown) — \`get_content_analytics\` reports \`uniqueSeen\` (seen fires once per user; repeat views never add).`,
   },
   {
+    name: 'localization',
+    title: 'Localization (translating content)',
+    summary:
+      'Reading and writing per-locale translations, what makes one outdated, how a user gets a locale.',
+    appliesTo: ['flow', 'checklist', 'launcher', 'banner', 'announcement', 'resource-center'],
+    body: `Content is authored in ONE source language (the project's default locale). Every other project locale can carry a translation **per content version**. A tracker has no UI text, so it has nothing to translate.
+- **The loop**: \`list_localizations\` (which locales exist — they are created in the dashboard, not here) → \`get_version_localization\` (every translatable unit of the version for one locale: \`path\`, \`source\`, \`translation\`, \`optional\`, \`outdated\`) → \`update_version_localization\` with \`translations: { "<path>": "<text>" }\` and \`enabled: true\`. Paths are opaque — copy them verbatim from the read; an unknown path rejects the whole write.
+- **Translate the source last.** Translations hang off stable identities (a step's \`cvid\`, a checklist item's \`id\`), so editing the source text does not detach them — it makes them **\`outdated\`**: still delivered, but written against older text. Newly added text is **\`missing\`**. So after ANY \`update_content_version\` that touches text, read \`get_content_version\` with \`expand: ["localizations"]\` (per-locale \`enabled\` / \`missing\` / \`outdated\`) and bring every enabled locale back to zero **before** \`publish_content\` — otherwise users of that locale keep reading the previous wording, or a mix of languages. Nothing blocks the publish; this check is yours to run.
+- **One call per locale.** Saving re-bases drift tracking for the WHOLE translation on the current source, so send every unit you are fixing for a locale in one \`update_version_localization\` call — \`outdated\` flags on units you leave out of that call are cleared along with the ones you fixed. A blank value keeps the existing translation (there is no "clear" here).
+- **\`optional\` units are URLs** (image, embed, link destinations). Leave them empty to keep the source URL; set one only to swap in locale-specific media. Image / embed URLs must be absolute http(s).
+- **Same draft rule as the source**: translations can only be written to an editable draft (\`E0049\` otherwise). \`create_content_version\` forks one and **carries every translation with it**, as do \`restore_content_version\` and \`duplicate_content\`. Reading works on any version.
+- **Delivery**: a translation reaches users only when it is \`enabled\` AND that version is published. Which locale a user gets is decided solely by their \`locale_code\` attribute matching a locale's \`code\` (set it with \`upsert_user\` / the SDK's identify) — the browser language is never detected. No match, a disabled translation, or an untranslated unit all fall back to the source text, unit by unit.
+- Writes are last-writer-wins on the whole translation: a person editing the same locale in the dashboard at the same moment can overwrite your write with their next autosave.`,
+  },
+  {
     name: 'publish-requirements',
     title: 'What each type needs to be usable (else publish is rejected)',
     summary: 'What each content type must have or publish is rejected.',

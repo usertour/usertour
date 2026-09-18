@@ -14,6 +14,7 @@ import { ApiReferencesService } from '@/api/references/references.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
 import type { Environment } from '@prisma/client';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
+import { ApiLocalizationsService } from '@/api/localizations/localizations.service';
 import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
@@ -38,6 +39,7 @@ export interface McpServices {
   segments: ApiSegmentsService;
   sessions: ApiContentSessionsService;
   environments: ApiEnvironmentsService;
+  localizations: ApiLocalizationsService;
   analytics: ApiAnalyticsService;
   usageOverview: ApiUsageOverviewService;
   references: ApiReferencesService;

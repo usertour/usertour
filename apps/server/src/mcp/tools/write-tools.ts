@@ -20,6 +20,7 @@ import {
   updateContentBody,
 } from '@/api/content/content.schema';
 import { updateVersionBody } from '@/api/content-versions/content-versions.schema';
+import { updateVersionLocalizationBody } from '@/api/localizations/localizations.schema';
 import { zodIssuesToValidationIssues } from '@/api/shared/zod-issues';
 import { ValidationError } from '@/common/errors/errors';
 import { isoDateTime } from '@/common/filters';
@@ -347,6 +348,56 @@ export function buildWriteTools(): McpTool[] {
           ctx.projectId,
           { userId: ctx.token.userId, tokenId: ctx.token.id },
         ),
+    },
+    {
+      name: 'update_version_localization',
+      audit: auditUpdate('content', undefined, { idArg: 'contentId' }),
+      title: "Update a version's translation",
+      capability: Capability.ContentUpdate,
+      description:
+        'Write translations for ONE locale of a content version, and/or switch its delivery on ' +
+        'or off. `translations` maps a unit `path` (from `get_version_localization`, verbatim) ' +
+        'to the translated text; only listed units change and a blank value keeps the existing ' +
+        'translation. Unknown paths reject the whole write — re-read the units if the source ' +
+        'changed. **Send every unit you are fixing for this locale in ONE call**: a save ' +
+        're-bases drift tracking for the whole translation on the current source, so `outdated` ' +
+        'flags on units you left out are cleared too. A translation only reaches users when ' +
+        '`enabled` is true AND the version is published; `enabled` alone flips the switch ' +
+        'without touching the text. Requires an editable draft, like `update_content_version` — ' +
+        'call `create_content_version` first when the version is or was live (the fork carries ' +
+        'every translation with it). Writes replace the stored translation last-writer-wins: ' +
+        'someone editing the same locale in the dashboard at the same moment can overwrite ' +
+        'this write with their next autosave. Returns the full translation as now stored.',
+      inputSchema: {
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        versionId: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
+        code: z.string().describe('The locale `code` from `list_localizations` (not the default).'),
+        translations: updateVersionLocalizationBody.shape.translations,
+        enabled: updateVersionLocalizationBody.shape.enabled,
+      },
+      handler: (args, ctx) => {
+        if (args.translations === undefined && args.enabled === undefined) {
+          throw new ValidationError('Provide `translations`, `enabled`, or both.');
+        }
+        return ctx.services.localizations.updateVersionLocalization(
+          String(args.versionId),
+          String(args.contentId),
+          ctx.projectId,
+          String(args.code),
+          {
+            translations: args.translations as Record<string, string> | undefined,
+            enabled: args.enabled as boolean | undefined,
+          },
+        );
+      },
     },
     {
       name: 'duplicate_content',
