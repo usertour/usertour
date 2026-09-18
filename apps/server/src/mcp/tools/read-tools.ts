@@ -1350,7 +1350,8 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ContentRead,
       description:
         'Get a content version by id. `expand: ["steps"]` inlines the decompiled steps — read ' +
-        'these before calling `update_content_version`. Also supports "data" and "questions".',
+        'these before calling `update_content_version`. Also supports "data", "questions" and ' +
+        '"localizations" (per-locale translation status: enabled / missing / outdated).',
       inputSchema: {
         contentId: z
           .string()

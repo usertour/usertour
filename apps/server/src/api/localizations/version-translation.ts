@@ -10,7 +10,6 @@
  */
 import {
   type LocalizationTranslationUnit,
-  type LocalizedEmbedResolutions,
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
   buildLocalizedFlowBackup,
@@ -64,8 +63,6 @@ const MEDIA_URL_PATH_SUFFIXES = [':image.url', ':embed.url', ':image.link.url'];
 
 export const isMediaUrlUnitPath = (path: string): boolean =>
   MEDIA_URL_PATH_SUFFIXES.some((suffix) => path.endsWith(suffix));
-
-export const isEmbedUrlUnitPath = (path: string): boolean => path.endsWith(':embed.url');
 
 /** Whether the content type has any translatable text at all (a tracker has no UI). */
 export const isContentTypeLocalizable = (contentType: string): boolean =>
@@ -144,13 +141,14 @@ export const summarizeTranslationUnits = (units: TranslationUnitView[]): Transla
  * of the stored row, the save payload grafts back every stored fragment that
  * copy could not read (removed steps, drifted subtrees), and the source
  * snapshot is refreshed to the current source. Blank values keep the existing
- * translation; callers reject unknown paths beforehand.
+ * translation; callers reject unknown paths beforehand. A swapped embed url
+ * loses its resolution data here (it belonged to the previous url) — callers
+ * resolve the stale embeds of the returned payload before persisting it.
  */
 export const applyTranslationUnits = (
   source: TranslationSource,
   stored: StoredTranslation | undefined,
   translations: ReadonlyMap<string, string>,
-  embedResolutions: LocalizedEmbedResolutions,
 ): { localized: unknown; backup: unknown } => {
   if (source.contentType === ContentDataType.FLOW) {
     const storedLocalized = (stored?.localized ?? undefined) as LocalizedFlowContent | undefined;
@@ -169,12 +167,7 @@ export const applyTranslationUnits = (
       const stepWorking = createLocalizedWorkingContents(step.data, storedLocalized?.[step.cvid]);
       working[step.cvid] =
         stepTranslations.size > 0
-          ? applyContentsTranslationUnits(
-              step.data,
-              stepWorking,
-              stepTranslations,
-              embedResolutions,
-            )
+          ? applyContentsTranslationUnits(step.data, stepWorking, stepTranslations)
           : stepWorking;
     }
     return {
@@ -195,7 +188,6 @@ export const applyTranslationUnits = (
     sourceData,
     working,
     translations,
-    embedResolutions,
   );
   return {
     localized: buildLocalizedVersionDataSavePayload(source.contentType, next, storedLocalized),

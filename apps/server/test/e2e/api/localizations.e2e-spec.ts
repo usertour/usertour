@@ -14,6 +14,7 @@ import {
   publishVersion,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
+import { UtilitiesService } from '@/utilities/utilities.service';
 import { createTestApp } from '../create-test-app';
 
 /**
@@ -295,6 +296,52 @@ describe('API v2 localizations (e2e)', () => {
       expect((await writeTranslation(flow, 'fr', { localized: {} })).status).toBe(400);
     });
 
+    it('treats empty / all-blank translations as no translation write — outdated flags survive', async () => {
+      const flow = await newFlow('Welcome aboard');
+      const units: Unit[] = (await readTranslation(flow, 'fr')).body.units;
+      const textPath = unitBySource(units, 'Welcome aboard').path;
+      await writeTranslation(flow, 'fr', { translations: { [textPath]: 'Bienvenue à bord' } });
+      const steps = (await api('get', `${versionPath(flow)}?expand=steps`, readToken)).body.steps;
+      await writeSource(flow, {
+        steps: [
+          {
+            ...steps[0],
+            content: [
+              { type: 'text', markdown: 'Welcome back' },
+              { type: 'button', text: 'Continue', actions: [{ type: 'dismiss' }] },
+            ],
+          },
+        ],
+      });
+      expect((await readTranslation(flow, 'fr')).body.stats.outdated).toBe(1);
+      const where = {
+        versionId_localizationId: { versionId: flow.id, localizationId: frenchId },
+      };
+      const before = await prisma.versionOnLocalization.findUniqueOrThrow({ where });
+
+      // An agent flipping delivery on, with an empty / blank map riding along.
+      const empty = await writeTranslation(flow, 'fr', { translations: {}, enabled: true });
+      expect(empty.status).toBe(200);
+      expect(empty.body).toMatchObject({ enabled: true, stats: { outdated: 1 } });
+      const blank = await writeTranslation(flow, 'fr', { translations: { [textPath]: '  ' } });
+      expect(blank.status).toBe(200);
+      expect(blank.body.stats.outdated).toBe(1);
+
+      const after = await prisma.versionOnLocalization.findUniqueOrThrow({ where });
+      expect(after.backup).toEqual(before.backup);
+      expect(after.localized).toEqual(before.localized);
+    });
+
+    it('writes nothing at all for an empty map with no enabled flag', async () => {
+      const flow = await newFlow();
+      const res = await writeTranslation(flow, 'fr', { translations: {} });
+      expect(res.status).toBe(200);
+      const row = await prisma.versionOnLocalization.findUnique({
+        where: { versionId_localizationId: { versionId: flow.id, localizationId: frenchId } },
+      });
+      expect(row).toBeNull();
+    });
+
     it('needs content:update', async () => {
       const flow = await newFlow();
       const res = await writeTranslation(flow, 'fr', { enabled: true }, readToken);
@@ -442,6 +489,56 @@ describe('API v2 localizations (e2e)', () => {
       expect(JSON.stringify(row.localized)).toContain(
         '"parsedUrl":"https://intranet.example.com/demo-fr"',
       );
+    });
+  });
+
+  describe('embed resolution', () => {
+    // A provider-claimed url, so the lookup path is actually exercised.
+    const SOURCE = 'https://www.youtube.com/watch?v=source00000';
+    const FRENCH = 'https://www.youtube.com/watch?v=french00000';
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('keeps the stored oembed when an unchanged url is echoed back during a provider outage', async () => {
+      const lookup = jest.spyOn(app.get(UtilitiesService), 'queryOembedInfo').mockResolvedValue({
+        html: '<iframe src="ok"></iframe>',
+        width: 640,
+        height: 360,
+      } as never);
+      const flow = await newVersion('flow');
+      const authored = await writeSource(flow, {
+        steps: [{ name: 'Media', type: 'modal', content: [{ type: 'embed', url: SOURCE }] }],
+      });
+      expect(authored.status).toBe(200);
+      const [embed]: Unit[] = (await readTranslation(flow, 'fr')).body.units;
+
+      // Surrounding whitespace is dropped before the url is stored.
+      const first = await writeTranslation(flow, 'fr', {
+        translations: { [embed.path]: `  ${FRENCH} ` },
+      });
+      expect(first.status).toBe(200);
+      expect(first.body.units[0].translation).toBe(FRENCH);
+      const where = {
+        versionId_localizationId: { versionId: flow.id, localizationId: frenchId },
+      };
+      const stored = JSON.stringify(
+        (await prisma.versionOnLocalization.findUniqueOrThrow({ where })).localized,
+      );
+      expect(stored).toContain(`"parsedUrl":"${FRENCH}"`);
+      expect(stored).toContain('<iframe src=\\"ok\\"></iframe>');
+
+      lookup.mockClear();
+      lookup.mockRejectedValue(new Error('provider down'));
+      const echoed = await writeTranslation(flow, 'fr', { translations: { [embed.path]: FRENCH } });
+      expect(echoed.status).toBe(200);
+      // Unchanged url → no lookup at all, so the outage cannot touch it.
+      expect(lookup).not.toHaveBeenCalled();
+      const kept = JSON.stringify(
+        (await prisma.versionOnLocalization.findUniqueOrThrow({ where })).localized,
+      );
+      expect(kept).toContain('<iframe src=\\"ok\\"></iframe>');
     });
   });
 

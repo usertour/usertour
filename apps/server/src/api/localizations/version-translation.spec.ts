@@ -5,7 +5,6 @@ import {
   type TranslationSource,
   applyTranslationUnits,
   isContentTypeLocalizable,
-  isEmbedUrlUnitPath,
   isMediaUrlUnitPath,
   readTranslationUnits,
   summarizeTranslationUnits,
@@ -42,8 +41,6 @@ const flowSource = (steps: Record<string, ContentEditorRoot[]>): TranslationSour
   data: undefined,
 });
 
-const NO_EMBEDS = new Map();
-
 describe('version translation units', () => {
   it('addresses flow units as steps/<cvid>/<unit path> and reports them untranslated', () => {
     const units = readTranslationUnits(flowSource({ 'step-a': textStep('Welcome') }), undefined);
@@ -61,7 +58,6 @@ describe('version translation units', () => {
       source,
       undefined,
       new Map([[textUnit.path, 'Bienvenue']]),
-      NO_EMBEDS,
     );
     const units = readTranslationUnits(source, stored);
     expect(units.map((unit) => unit.translation)).toEqual(['Bienvenue', '']);
@@ -71,18 +67,8 @@ describe('version translation units', () => {
   it('merges onto the stored translation — a later partial write keeps earlier units', () => {
     const source = flowSource({ 'step-a': textStep('Welcome') });
     const [textUnit, buttonUnit] = readTranslationUnits(source, undefined);
-    const first = applyTranslationUnits(
-      source,
-      undefined,
-      new Map([[textUnit.path, 'Bienvenue']]),
-      NO_EMBEDS,
-    );
-    const second = applyTranslationUnits(
-      source,
-      first,
-      new Map([[buttonUnit.path, 'Suivant']]),
-      NO_EMBEDS,
-    );
+    const first = applyTranslationUnits(source, undefined, new Map([[textUnit.path, 'Bienvenue']]));
+    const second = applyTranslationUnits(source, first, new Map([[buttonUnit.path, 'Suivant']]));
     expect(readTranslationUnits(source, second).map((unit) => unit.translation)).toEqual([
       'Bienvenue',
       'Suivant',
@@ -92,18 +78,8 @@ describe('version translation units', () => {
   it('keeps the existing translation when a blank value is sent', () => {
     const source = flowSource({ 'step-a': textStep('Welcome') });
     const [textUnit] = readTranslationUnits(source, undefined);
-    const first = applyTranslationUnits(
-      source,
-      undefined,
-      new Map([[textUnit.path, 'Bienvenue']]),
-      NO_EMBEDS,
-    );
-    const second = applyTranslationUnits(
-      source,
-      first,
-      new Map([[textUnit.path, '  ']]),
-      NO_EMBEDS,
-    );
+    const first = applyTranslationUnits(source, undefined, new Map([[textUnit.path, 'Bienvenue']]));
+    const second = applyTranslationUnits(source, first, new Map([[textUnit.path, '  ']]));
     expect(readTranslationUnits(source, second)[0].translation).toBe('Bienvenue');
   });
 
@@ -114,7 +90,6 @@ describe('version translation units', () => {
       original,
       undefined,
       new Map([[textUnit.path, 'Bienvenue']]),
-      NO_EMBEDS,
     );
 
     const edited = flowSource({ 'step-a': textStep('Welcome back') });
@@ -127,12 +102,7 @@ describe('version translation units', () => {
     // The untranslated button is "missing", never "outdated".
     expect(drifted[1].outdated).toBe(false);
 
-    const resaved = applyTranslationUnits(
-      edited,
-      stored,
-      new Map([[textUnit.path, 'Bon retour']]),
-      NO_EMBEDS,
-    );
+    const resaved = applyTranslationUnits(edited, stored, new Map([[textUnit.path, 'Bon retour']]));
     expect(readTranslationUnits(edited, resaved)[0]).toMatchObject({
       translation: 'Bon retour',
       outdated: false,
@@ -147,7 +117,6 @@ describe('version translation units', () => {
       both,
       undefined,
       new Map([[stepBText?.path ?? '', 'Au revoir']]),
-      NO_EMBEDS,
     );
 
     const onlyA = flowSource({ 'step-a': textStep('Welcome') });
@@ -156,7 +125,6 @@ describe('version translation units', () => {
       onlyA,
       stored,
       new Map([[stepAText.path, 'Bienvenue']]),
-      NO_EMBEDS,
     ) as { localized: Record<string, unknown>; backup: Record<string, unknown> };
     expect(Object.keys(resaved.localized).sort()).toEqual(['step-a', 'step-b']);
     expect(Object.keys(resaved.backup).sort()).toEqual(['step-a', 'step-b']);
@@ -180,7 +148,6 @@ describe('version translation units', () => {
       source,
       undefined,
       new Map([[units[0].path, 'Maintenance ce soir']]),
-      NO_EMBEDS,
     );
     expect(stored.backup).toEqual(source.data);
     expect(readTranslationUnits(source, stored)[0].translation).toBe('Maintenance ce soir');
@@ -193,7 +160,6 @@ describe('version translation units', () => {
     expect(isMediaUrlUnitPath('steps/x/0.0.0:image.url')).toBe(true);
     expect(isMediaUrlUnitPath('steps/x/0.0.0:image.link.url')).toBe(true);
     expect(isMediaUrlUnitPath('steps/x/0.0.0:text.0.0:link.url')).toBe(false);
-    expect(isEmbedUrlUnitPath('steps/x/0.0.0:embed.url')).toBe(true);
-    expect(isEmbedUrlUnitPath('steps/x/0.0.0:image.url')).toBe(false);
+    expect(isMediaUrlUnitPath('steps/x/0.0.0:embed.url')).toBe(true);
   });
 });

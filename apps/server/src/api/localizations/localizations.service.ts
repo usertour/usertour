@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { LocalizedEmbedResolutions } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -14,6 +13,7 @@ import { isHttpUrl } from '@/common/url';
 import { ContentService } from '@/content/content.service';
 import { UtilitiesService } from '@/utilities/utilities.service';
 
+import { resolveStaleEmbeds } from '../content-representation/embed-resolve';
 import { ApiObjectType } from '../shared/object-type';
 import type {
   UpdateVersionLocalizationBody,
@@ -24,7 +24,6 @@ import {
   type TranslationSource,
   applyTranslationUnits,
   isContentTypeLocalizable,
-  isEmbedUrlUnitPath,
   isMediaUrlUnitPath,
   readTranslationUnits,
   summarizeTranslationUnits,
@@ -106,18 +105,30 @@ export class ApiLocalizationsService {
     const stored = toStored(row);
     const enabled = body.enabled ?? row?.enabled ?? false;
 
-    if (body.translations === undefined) {
-      // State-only write: omitting localized/backup keeps the stored translation.
-      await this.content.upsertVersionLocalization({
-        versionId,
-        localizationId: localization.id,
-        enabled,
-      });
+    const submitted = new Map(Object.entries(body.translations ?? {}));
+    this.assertTranslationsValid(submitted, source, stored);
+    const translations = this.effectiveTranslations(submitted);
+
+    if (translations.size === 0) {
+      // Nothing to translate — `translations` omitted, empty, or all blank
+      // (blank keeps the existing text). This must NOT take the save path:
+      // saving re-bases the source snapshot, which would clear every outdated
+      // flag without a single unit having been re-translated. At most it is a
+      // state-only write, which leaves localized/backup untouched.
+      if (body.enabled !== undefined) {
+        await this.content.upsertVersionLocalization({
+          versionId,
+          localizationId: localization.id,
+          enabled,
+        });
+      }
     } else {
-      const translations = new Map(Object.entries(body.translations));
-      this.assertTranslationsValid(translations, source, stored);
-      const embedResolutions = await this.resolveEmbeds(translations);
-      const payload = applyTranslationUnits(source, stored, translations, embedResolutions);
+      const payload = applyTranslationUnits(source, stored, translations);
+      // The widget renders an embed from parsedUrl/oembed, not the raw url.
+      // Only embeds whose url actually changed are looked up — an embed echoed
+      // back unchanged keeps its stored resolution, so a provider hiccup can
+      // never erase it.
+      await resolveStaleEmbeds(payload.localized, (url) => this.fetchOembed(url));
       await this.content.upsertVersionLocalization({
         versionId,
         localizationId: localization.id,
@@ -130,9 +141,19 @@ export class ApiLocalizationsService {
     return this.getVersionLocalization(versionId, contentId, projectId, code);
   }
 
-  /** Per-locale translation status of a version (the `localizations` expand). */
+  /** The locales a version can be translated into — every project locale but the default. */
+  async listTargetLocalizations(projectId: string): Promise<LocalizationRow[]> {
+    const localizations = await this.listProjectLocalizations(projectId);
+    return localizations.filter((localization) => !localization.isDefault);
+  }
+
+  /**
+   * Per-locale translation status of a version (the `localizations` expand).
+   * `targets` comes from listTargetLocalizations, loaded ONCE per request — a
+   * version list would otherwise re-read the project's locales for every row.
+   */
   async summarizeVersion(
-    projectId: string,
+    targets: LocalizationRow[],
     version: {
       id: string;
       data?: unknown;
@@ -141,27 +162,22 @@ export class ApiLocalizationsService {
     },
   ): Promise<VersionLocalizationSummary[]> {
     const contentType = version.content?.type ?? '';
-    if (!isContentTypeLocalizable(contentType)) {
+    if (!isContentTypeLocalizable(contentType) || targets.length === 0) {
       return [];
     }
-    const [localizations, rows] = await Promise.all([
-      this.listProjectLocalizations(projectId),
-      this.content.listVersionLocalizations(version.id),
-    ]);
+    const rows = await this.content.listVersionLocalizations(version.id);
     const source = this.toSource(contentType, version.steps ?? [], version.data);
-    return localizations
-      .filter((localization) => !localization.isDefault)
-      .map((localization) => {
-        const row = rows.find((item) => item.localizationId === localization.id);
-        const stats = summarizeTranslationUnits(readTranslationUnits(source, toStored(row)));
-        return {
-          code: localization.code,
-          name: localization.name,
-          enabled: row?.enabled ?? false,
-          missing: stats.missing,
-          outdated: stats.outdated,
-        };
-      });
+    return targets.map((localization) => {
+      const row = rows.find((item) => item.localizationId === localization.id);
+      const stats = summarizeTranslationUnits(readTranslationUnits(source, toStored(row)));
+      return {
+        code: localization.code,
+        name: localization.name,
+        enabled: row?.enabled ?? false,
+        missing: stats.missing,
+        outdated: stats.outdated,
+      };
+    });
   }
 
   private async listProjectLocalizations(projectId: string): Promise<LocalizationRow[]> {
@@ -297,7 +313,8 @@ export class ApiLocalizationsService {
         url !== '' &&
         isMediaUrlUnitPath(path) &&
         !isHttpUrl(url) &&
-        currentByPath.get(path) !== value
+        currentByPath.get(path) !== value &&
+        currentByPath.get(path) !== url
       ) {
         issues.push({
           rule: 'media_url',
@@ -312,38 +329,29 @@ export class ApiLocalizationsService {
   }
 
   /**
-   * The widget renders an embed from parsedUrl/oembed, not the raw url, so every
-   * translated embed URL is resolved the way the dashboard's import does. A
-   * provider failure degrades to a plain iframe on the url — never fails the write.
+   * The translations that actually change something. A blank value keeps the
+   * existing translation, so it is not a write. Media URLs are trimmed — the SDK
+   * renders them verbatim into src/href; translated TEXT is kept as sent, since
+   * leading/trailing spaces are meaningful between adjacent text runs.
    */
-  private async resolveEmbeds(
-    translations: ReadonlyMap<string, string>,
-  ): Promise<LocalizedEmbedResolutions> {
-    const urls = new Set<string>();
-    translations.forEach((value, path) => {
-      const url = value.trim();
-      if (isEmbedUrlUnitPath(path) && url !== '') {
-        urls.add(url);
+  private effectiveTranslations(submitted: ReadonlyMap<string, string>): Map<string, string> {
+    const effective = new Map<string, string>();
+    submitted.forEach((value, path) => {
+      if (value.trim() === '') {
+        return;
       }
+      effective.set(path, isMediaUrlUnitPath(path) ? value.trim() : value);
     });
-    const entries = await Promise.all(
-      [...urls].map(async (url) => {
-        try {
-          const info = await Promise.race([
-            this.utilities.queryOembedInfo(url),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('oembed timeout')), OEMBED_TIMEOUT_MS),
-            ),
-          ]);
-          const oembed = info?.html
-            ? { html: info.html, width: info.width, height: info.height }
-            : undefined;
-          return [url, { parsedUrl: url, oembed }] as const;
-        } catch {
-          return [url, { parsedUrl: url, oembed: undefined }] as const;
-        }
-      }),
-    );
-    return new Map(entries) as LocalizedEmbedResolutions;
+    return effective;
+  }
+
+  /** One oEmbed lookup, capped — the same budget as the version write path. */
+  private fetchOembed(url: string) {
+    return Promise.race([
+      this.utilities.queryOembedInfo(url),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('oembed timeout')), OEMBED_TIMEOUT_MS),
+      ),
+    ]);
   }
 }

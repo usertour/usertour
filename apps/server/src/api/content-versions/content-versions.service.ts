@@ -89,6 +89,8 @@ type VersionNode = {
   createdAt: Date;
 };
 
+type TargetLocales = Awaited<ReturnType<ApiLocalizationsService['listTargetLocalizations']>>;
+
 /**
  * Whether the response needs the version's step rows: `steps` and `questions`
  * derive from them, and a flow's translation status is counted over them.
@@ -133,7 +135,13 @@ export class ApiContentVersionsService {
       throw new ContentNotFoundError();
     }
     const resolvers = preloadedResolvers ?? (await loadDecompileResolvers(this.prisma, projectId));
-    return this.toVersion(version, projectId, expand, resolvers);
+    return this.toVersion(
+      version,
+      projectId,
+      expand,
+      resolvers,
+      await this.loadLocales(projectId, expand),
+    );
   }
 
   async list(
@@ -153,6 +161,8 @@ export class ApiContentVersionsService {
       throw new ContentNotFoundError();
     }
     const resolvers = await loadDecompileResolvers(this.prisma, projectId);
+    // Once per request, not once per row (see summarizeVersion).
+    const locales = await this.loadLocales(projectId, expand);
 
     return paginate({
       requestUrl,
@@ -167,7 +177,7 @@ export class ApiContentVersionsService {
           { content: true, ...(needsSteps(expand) ? { steps: true } : {}) },
           orderBy,
         ),
-      map: (node) => this.toVersion(node, projectId, expand, resolvers),
+      map: (node) => this.toVersion(node, projectId, expand, resolvers, locales),
     });
   }
 
@@ -181,6 +191,7 @@ export class ApiContentVersionsService {
     projectId: string,
     expand: string[],
     resolvers: DecompileResolvers,
+    locales: TargetLocales,
   ): Promise<ContentVersion> {
     const startRules = decompileStartRules(version.config, resolvers);
     const hideRules = decompileHideRules(version.config, resolvers);
@@ -206,9 +217,16 @@ export class ApiContentVersionsService {
     const questions = wantsQuestions ? mapQuestions(steps) : null;
     const decompiled = wantsSteps ? steps.map((s) => decompileStep(s, resolvers)) : undefined;
     const localizations = wantsLocalizations
-      ? await this.localizations.summarizeVersion(projectId, { ...version, steps })
+      ? await this.localizations.summarizeVersion(locales, { ...version, steps })
       : undefined;
     return mapVersion(version, questions, decompiled, rules, data, localizations);
+  }
+
+  /** The project's translation targets, read only when the expand asks for them. */
+  private async loadLocales(projectId: string, expand: string[]): Promise<TargetLocales> {
+    return expand.includes('localizations')
+      ? this.localizations.listTargetLocalizations(projectId)
+      : [];
   }
 
   private async loadSteps(versionId: string, projectId: string) {
