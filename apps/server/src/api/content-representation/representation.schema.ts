@@ -1346,7 +1346,14 @@ export const contentVersion = z.object({
    * expand is requested. One entry per non-default project locale, including
    * locales this version was never translated into.
    */
-  localizations: z.array(versionLocalizationSummary).optional(),
+  localizations: z
+    .array(versionLocalizationSummary)
+    .optional()
+    .describe(
+      'Per-locale translation status — present only when the `localizations` expand is ' +
+        'requested on the content-versions endpoints. One entry per non-default project ' +
+        'locale, including locales this version was never translated into.',
+    ),
   /**
    * Announcement versions: the "announcement time" gating feed visibility and
    * ordering. Present only when set (publish stamps it when the author left it
