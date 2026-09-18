@@ -29,7 +29,9 @@ import {
   assignLocalizedLinkUrl,
   blankLocalizedLinkDestinations,
   getLocalizableLinkUrl,
+  buildLocalizedFlowBackup,
   buildLocalizedFlowSavePayload,
+  buildLocalizedVersionDataBackup,
   buildLocalizedVersionDataSavePayload,
   collectOutdatedUnitPaths,
   collectOutdatedVersionDataPaths,
@@ -1225,6 +1227,41 @@ describe('save payloads (a session may only overwrite what it was able to read)'
     const merged = mergeLocalizedVersionData(ContentDataType.RESOURCE_CENTER, source, payload);
     const revived = merged.tabs[0].blocks.find((block) => block.id === 'block-2');
     expect((revived?.name as { text: string }[])[0].text).toBe('Guides FR');
+  });
+});
+
+describe('source snapshots (the backup saved alongside a translation)', () => {
+  it('snapshots every current step', () => {
+    const first = wrapElements([createTextElement()]);
+    const second = wrapElements([createButtonElement()]);
+    expect(
+      buildLocalizedFlowBackup(
+        [
+          { cvid: 'step-1', data: first },
+          { cvid: 'step-2', data: second },
+        ],
+        undefined,
+      ),
+    ).toEqual({ 'step-1': first, 'step-2': second });
+  });
+
+  it('re-snapshots current steps and keeps the stored snapshot of removed ones', () => {
+    const current = wrapElements([createTextElement()]);
+    const staleSnapshot = wrapElements([createButtonElement()]);
+    const removedSnapshot = wrapElements([createNpsElement()]);
+    expect(
+      buildLocalizedFlowBackup([{ cvid: 'step-1', data: current }], {
+        'step-1': staleSnapshot,
+        'step-removed': removedSnapshot,
+      }),
+    ).toEqual({ 'step-1': current, 'step-removed': removedSnapshot });
+  });
+
+  it('snapshots version data, defaulting an absent body to an empty object', () => {
+    const data = { buttonText: 'Get started' };
+    expect(buildLocalizedVersionDataBackup(data)).toBe(data);
+    expect(buildLocalizedVersionDataBackup(undefined)).toEqual({});
+    expect(buildLocalizedVersionDataBackup(null)).toEqual({});
   });
 });
 

@@ -18,6 +18,7 @@ import {
   type ValidationIssue,
 } from '@/common/errors/errors';
 import { ContentService, type WriteActor } from '@/content/content.service';
+import { ApiLocalizationsService } from '../localizations/localizations.service';
 import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
@@ -88,9 +89,12 @@ type VersionNode = {
   createdAt: Date;
 };
 
-/** Whether the response needs the version's step rows (either expand pulls them). */
+/**
+ * Whether the response needs the version's step rows: `steps` and `questions`
+ * derive from them, and a flow's translation status is counted over them.
+ */
 const needsSteps = (expand: string[]): boolean =>
-  expand.includes('steps') || expand.includes('questions');
+  expand.includes('steps') || expand.includes('questions') || expand.includes('localizations');
 
 /**
  * v2 content-versions handler. Depends on the domain {@link ContentService}; the
@@ -106,6 +110,7 @@ export class ApiContentVersionsService {
     private readonly prisma: PrismaService,
     private readonly themes: ApiThemesService,
     private readonly utilities: UtilitiesService,
+    private readonly localizations: ApiLocalizationsService,
   ) {}
 
   async get(
@@ -191,7 +196,8 @@ export class ApiContentVersionsService {
 
     const wantsQuestions = expand.includes('questions');
     const wantsSteps = expand.includes('steps');
-    if (!wantsQuestions && !wantsSteps) {
+    const wantsLocalizations = expand.includes('localizations');
+    if (!wantsQuestions && !wantsSteps && !wantsLocalizations) {
       return mapVersion(version, null, undefined, rules, data);
     }
     // Steps were loaded in the list/get query (needsSteps === true here). Fall back
@@ -199,7 +205,10 @@ export class ApiContentVersionsService {
     const steps = version.steps ?? (await this.loadSteps(version.id, projectId));
     const questions = wantsQuestions ? mapQuestions(steps) : null;
     const decompiled = wantsSteps ? steps.map((s) => decompileStep(s, resolvers)) : undefined;
-    return mapVersion(version, questions, decompiled, rules, data);
+    const localizations = wantsLocalizations
+      ? await this.localizations.summarizeVersion(projectId, { ...version, steps })
+      : undefined;
+    return mapVersion(version, questions, decompiled, rules, data, localizations);
   }
 
   private async loadSteps(versionId: string, projectId: string) {

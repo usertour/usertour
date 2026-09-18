@@ -20,11 +20,12 @@ import {
   representationTracker,
 } from '../content-representation/version-data.schema';
 
-export const versionExpand = z.enum(['questions', 'steps', 'data']);
+export const versionExpand = z.enum(['questions', 'steps', 'data', 'localizations']);
 
 export const getContentVersionQuery = z.object({
   expand: singleOrArray(versionExpand).describe(
-    'Inline: questions, steps (the full step tree — how you read a flow body), data.',
+    'Inline: questions, steps (the full step tree — how you read a flow body), data, ' +
+      'localizations (per-locale translation status: enabled / missing / outdated).',
   ),
 });
 export class GetContentVersionQueryDto extends createZodDto(getContentVersionQuery) {}
@@ -34,7 +35,8 @@ export const listContentVersionsQuery = z.object({
   cursor,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
   expand: singleOrArray(versionExpand).describe(
-    'Inline: questions, steps (the full step tree — how you read a flow body), data.',
+    'Inline: questions, steps (the full step tree — how you read a flow body), data, ' +
+      'localizations (per-locale translation status: enabled / missing / outdated).',
   ),
 });
 export class ListContentVersionsQueryDto extends createZodDto(listContentVersionsQuery) {}

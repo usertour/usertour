@@ -7,6 +7,7 @@ import {
   RepresentationStartRules,
   RepresentationStep,
 } from '../content-representation/representation.schema';
+import type { VersionLocalizationSummary } from '../localizations/localizations.schema';
 import { ApiObjectType } from '../shared/object-type';
 
 type VersionNode = {
@@ -49,6 +50,7 @@ export function mapVersion(
   steps?: RepresentationStep[],
   rules?: { startRules?: RepresentationStartRules; hideRules?: RepresentationHideRules },
   data?: unknown,
+  localizations?: VersionLocalizationSummary[],
 ): ContentVersion {
   return {
     id: version.id,
@@ -63,6 +65,7 @@ export function mapVersion(
     ...(rules?.startRules ? { startRules: rules.startRules } : {}),
     ...(rules?.hideRules ? { hideRules: rules.hideRules } : {}),
     ...(data !== undefined ? { data } : {}),
+    ...(localizations ? { localizations } : {}),
     // Announcement "announcement time" — omitted while unset (other types never set it).
     ...(version.scheduledAt ? { scheduledAt: version.scheduledAt.toISOString() } : {}),
     updatedAt: version.updatedAt.toISOString(),

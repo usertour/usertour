@@ -73,6 +73,20 @@ const ROUTES: Row[] = [
     template: `${P}/content/{contentId}/versions/{id}`,
     cap: Capability.ContentUpdate,
   },
+  // localizations — content-scoped on purpose: the locale list and a version's
+  // translation are read/written as part of authoring content, so they ride the
+  // content capabilities every existing credential already holds.
+  { method: 'get', template: `${P}/localizations`, cap: Capability.ContentRead },
+  {
+    method: 'get',
+    template: `${P}/content/{contentId}/versions/{versionId}/localizations/{code}`,
+    cap: Capability.ContentRead,
+  },
+  {
+    method: 'put',
+    template: `${P}/content/{contentId}/versions/{versionId}/localizations/{code}`,
+    cap: Capability.ContentUpdate,
+  },
   // analytics
   { method: 'get', template: `${P}/content/{id}/analytics`, cap: Capability.AnalyticsRead },
   {

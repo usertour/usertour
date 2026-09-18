@@ -1367,6 +1367,31 @@ export const buildLocalizedFlowSavePayload = (
   return payload;
 };
 
+/**
+ * Source snapshot saved alongside a flow translation map — what later reads
+ * diff against the live source to flag drifted translations. Every current
+ * step is re-snapshotted; steps the version no longer has keep their stored
+ * snapshot, so drift detection still works if they revive.
+ */
+export const buildLocalizedFlowBackup = (
+  steps: ReadonlyArray<{ cvid: string; data?: unknown }>,
+  storedBackup: LocalizedFlowContent | undefined,
+): LocalizedFlowContent => {
+  const current = Object.fromEntries(
+    steps.map((step) => [step.cvid, step.data]),
+  ) as LocalizedFlowContent;
+  if (!storedBackup) {
+    return current;
+  }
+  const preserved = Object.entries(storedBackup).filter(([cvid]) => !(cvid in current));
+  return { ...Object.fromEntries(preserved), ...current };
+};
+
+/** Source snapshot saved alongside a version-data translation. */
+export const buildLocalizedVersionDataBackup = (sourceData: unknown): unknown => {
+  return sourceData ?? {};
+};
+
 const graftEmbeddedContents = (
   container: Record<string, unknown>,
   key: string,

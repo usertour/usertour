@@ -10,7 +10,9 @@ import {
   type LocalizedEmbedResolutions,
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
+  buildLocalizedFlowBackup,
   buildLocalizedFlowSavePayload,
+  buildLocalizedVersionDataBackup,
   buildLocalizedVersionDataSavePayload,
   collectOutdatedUnitPaths,
   collectOutdatedVersionDataPaths,
@@ -316,16 +318,7 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     resolveTargetVersionId,
     localizationId: localization.id,
     enabled: contentLocalization?.enabled ?? false,
-    buildBackup: () => {
-      const current = Object.fromEntries(stepsRef.current.map((step) => [step.cvid, step.data]));
-      if (!storedBackup) {
-        return current;
-      }
-      // Steps the payload preserves but the version no longer has keep their
-      // old source snapshot, so drift detection still works if they revive.
-      const preserved = Object.entries(storedBackup).filter(([cvid]) => !(cvid in current));
-      return { ...Object.fromEntries(preserved), ...current };
-    },
+    buildBackup: () => buildLocalizedFlowBackup(stepsRef.current, storedBackup),
   });
 
   const handleStepContentsChange = useCallback(
@@ -537,7 +530,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     resolveTargetVersionId,
     localizationId: localization.id,
     enabled: contentLocalization?.enabled ?? false,
-    buildBackup: () => version.data ?? {},
+    buildBackup: () => buildLocalizedVersionDataBackup(version.data),
   });
 
   const handleDataChange = useCallback(

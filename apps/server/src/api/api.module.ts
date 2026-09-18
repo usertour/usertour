@@ -35,6 +35,11 @@ import { ApiEnvironmentsController } from './environments/environments.controlle
 import { ApiEnvironmentsService } from './environments/environments.service';
 import { ApiEventDefinitionsController } from './event-definitions/event-definitions.controller';
 import { ApiEventDefinitionsService } from './event-definitions/event-definitions.service';
+import {
+  ApiLocalizationsController,
+  ApiVersionLocalizationsController,
+} from './localizations/localizations.controller';
+import { ApiLocalizationsService } from './localizations/localizations.service';
 import { ApiSegmentMembersController, ApiSegmentsController } from './segments/segments.controller';
 import { ApiSegmentsService } from './segments/segments.service';
 import { ApiThemesController } from './themes/themes.controller';
@@ -112,6 +117,8 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiMeController,
     ApiEventsController,
     ApiEnvironmentsController,
+    ApiLocalizationsController,
+    ApiVersionLocalizationsController,
   ],
   providers: [
     ApiMeService,
@@ -128,6 +135,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiThemesService,
     ApiSegmentsService,
     ApiEnvironmentsService,
+    ApiLocalizationsService,
     ApiWebhooksService,
     OpenAPIExceptionFilter,
     // Global fallback: keeps the v2 error envelope for exceptions thrown BEFORE
@@ -153,6 +161,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiSegmentsService,
     ApiContentSessionsService,
     ApiEnvironmentsService,
+    ApiLocalizationsService,
     ApiWebhooksService,
   ],
 })

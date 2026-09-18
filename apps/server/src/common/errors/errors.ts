@@ -485,6 +485,15 @@ export class EnvironmentNotFoundError extends OpenAPIError {
   };
 }
 
+export class LocalizationNotFoundError extends OpenAPIError {
+  code = 'E1040';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict = {
+    en: 'Localization not found — no locale with this code exists in the project',
+    'zh-CN': '本地化语言未找到——项目中不存在该 code 的语言',
+  };
+}
+
 /**
  * The content version is structurally valid but not usable — it would not
  * render or function in the SDK (e.g. a tooltip step with no target, an empty
