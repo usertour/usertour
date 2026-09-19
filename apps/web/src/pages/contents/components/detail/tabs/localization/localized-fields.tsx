@@ -37,6 +37,7 @@ import { ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useLocalizationView } from './localization-view';
+import { isUnusableMediaUrl } from './translation-unit-changes';
 
 export const toText = (value: unknown): string => {
   return typeof value === 'string' ? value : '';
@@ -381,10 +382,25 @@ interface LocalizedLinkUrlRowProps {
   outdated: boolean;
   onOutdatedResolved: () => void;
   onValueChange: (value: string) => void;
+  /**
+   * The destination is rendered verbatim into an href (an image's
+   * click-through), so only a full http(s) url is saved — anything else is
+   * flagged here and held back until it is one.
+   */
+  requireHttpUrl?: boolean;
 }
 
 const LocalizedLinkUrlRow = (props: LocalizedLinkUrlRowProps) => {
-  const { label, sourceUrl, value, disabled, outdated, onOutdatedResolved, onValueChange } = props;
+  const {
+    label,
+    sourceUrl,
+    value,
+    disabled,
+    outdated,
+    onOutdatedResolved,
+    onValueChange,
+    requireHttpUrl,
+  } = props;
   const { t } = useTranslation();
 
   const handleValueChange = (nextValue: string) => {
@@ -400,6 +416,7 @@ const LocalizedLinkUrlRow = (props: LocalizedLinkUrlRowProps) => {
         value={value}
         placeholder={t('contents.localization.image.usingOriginal')}
         disabled={disabled}
+        aria-invalid={requireHttpUrl === true && isUnusableMediaUrl(value)}
         onChange={(event) => handleValueChange(event.target.value)}
       />
       <MediaActionButton
@@ -677,13 +694,15 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
             <Input
               placeholder={t('contents.localization.image.enterUrl')}
               value={remoteImageUrl}
+              aria-invalid={isUnusableMediaUrl(remoteImageUrl)}
               onChange={(event) => setRemoteImageUrl(event.target.value)}
               className="w-80 bg-background dark:bg-card"
             />
             <Button
               className="h-9 flex-none py-1"
               variant="ghost"
-              onClick={() => handleImageUrlChange(remoteImageUrl)}
+              disabled={isUnusableMediaUrl(remoteImageUrl)}
+              onClick={() => handleImageUrlChange(remoteImageUrl.trim())}
             >
               <ArrowRightIcon className="mr-1" />
               {t('contents.localization.image.load')}
@@ -700,6 +719,7 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
           outdated={outdatedFields.has('image.link.url')}
           onOutdatedResolved={() => onFieldResolved('image.link.url')}
           onValueChange={handleLinkUrlChange}
+          requireHttpUrl
         />
       ) : null}
     </LocalizedElementSection>
@@ -728,8 +748,9 @@ const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
     return null;
   }
 
-  // The widget renders embeds from parsedUrl/oembed, so a translated URL has
-  // to be resolved the same way the builder does before it can ship.
+  // The widget renders embeds from parsedUrl/oembed. Resolving here feeds this
+  // session's preview; a save sends only the url, and the server resolves what
+  // it stores.
   const handleApplyUrl = async (url: string) => {
     if (outdatedFields.has('embed.url')) {
       onFieldResolved('embed.url');
@@ -749,11 +770,12 @@ const LocalizedEmbedElement = (props: LocalizedElementEditorProps) => {
         value={draftUrl}
         placeholder={t('contents.localization.image.usingOriginal')}
         disabled={disabled}
+        aria-invalid={isUnusableMediaUrl(draftUrl)}
         onChange={(event) => setDraftUrl(event.target.value)}
       />
       <MediaActionButton
         tooltip={t('contents.localization.image.load')}
-        disabled={disabled || resolving}
+        disabled={disabled || resolving || isUnusableMediaUrl(draftUrl)}
         icon={
           resolving ? (
             <SpinnerIcon className="h-4 w-4 animate-spin" />

@@ -50,6 +50,7 @@ import {
   buildUser,
   buildVersion,
 } from '../e2e/factories';
+import { TRANSLATION_TARGET_CODE } from '../e2e/endpoints';
 
 // ── tiny dotenv-with-${VAR}-expansion loader (no extra dep) ──────
 function loadDotEnv(path: string) {
@@ -161,7 +162,10 @@ async function seedProject(suffix: string, members: { role: string; email: strin
   // W block (which marks it as default). The two victims below are kept
   // non-default so deleteLocalization can succeed for OWNER and ADMIN
   // without hitting the "can't delete default" rule.
-  const localization = await buildLocalization(prisma, { projectId });
+  const localization = await buildLocalization(prisma, {
+    projectId,
+    code: TRANSLATION_TARGET_CODE,
+  });
   const localizationForOwnerDelete = await buildLocalization(prisma, { projectId });
   const localizationForAdminDelete = await buildLocalization(prisma, { projectId });
   // `segment` stays alive throughout the W block as the target for the four

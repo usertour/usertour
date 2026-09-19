@@ -30,7 +30,7 @@ import { buildAuthorizedUser, teardownProject } from './_support';
  *  - getContent: nullable — soft-deleted (`deleted=true`) content resolves to
  *    null rather than erroring.
  *  - "editable" gate (addContentStep[s] / updateContentStep / updateContentVersion
- *    / upsertVersionLocalization): the target version must be the content's
+ *    / updateVersionLocalization): the target version must be the content's
  *    `editedVersionId` AND must not be the currently-published version. Publishing
  *    the edited version therefore makes it non-editable.
  *  - createContentVersion / restoreContentVersion: clone the source/edited
@@ -41,9 +41,10 @@ import { buildAuthorizedUser, teardownProject } from './_support';
  *  - deleteContent: soft-delete (`deleted=true`) and drops ContentOnEnvironment.
  *  - duplicateContent: deep-copies content + edited version + steps into a new
  *    Content row.
- *  - upsertVersionLocalization: creates the VersionOnLocalization row on first
- *    save, updates it in place afterwards; listVersionLocalizations is a pure
- *    read (locales without a row are simply untranslated).
+ *  - updateVersionLocalization: a unit-level save — the listed units merge into
+ *    the stored row (created on first save), the server builds the payload and
+ *    the source snapshot; listVersionLocalizations is a pure read (locales
+ *    without a row are simply untranslated).
  *  - queryContent / listContentVersions: relay-style cursor pagination.
  */
 describe('GraphQL content (e2e)', () => {
@@ -893,65 +894,229 @@ describe('GraphQL content (e2e)', () => {
     });
   });
 
-  // ── upsertVersionLocalization ────────────────────────────────────
+  // ── updateVersionLocalization ────────────────────────────────────
 
-  describe('upsertVersionLocalization', () => {
-    const upsertMutation = `mutation ($data: VersionUpdateLocalizationInput!) {
-      upsertVersionLocalization(data: $data) {
+  describe('updateVersionLocalization', () => {
+    const updateMutation = `mutation ($data: UpdateVersionLocalizationInput!) {
+      updateVersionLocalization(data: $data) {
         id versionId localizationId enabled localized backup
+        version { id updatedAt }
       }
     }`;
-
-    it('creates the row on first save and updates it in place afterwards', async () => {
-      const { version } = await seedContent();
-      const loc = await buildLocalization(prisma, { projectId });
-
-      const createRes = await graphql(app, {
-        token,
-        query: upsertMutation,
-        variables: {
-          data: {
-            versionId: version.id,
-            localizationId: loc.id,
-            enabled: false,
-            localized: { greeting: 'hola' },
-            backup: { greeting: 'hello' },
+    const stepData = [
+      {
+        children: [
+          {
+            children: [
+              {
+                element: {
+                  type: 'text',
+                  data: [{ type: 'paragraph', children: [{ text: 'Welcome' }] }],
+                },
+              },
+              { element: { type: 'button', data: { text: 'Next' } } },
+            ],
           },
+        ],
+      },
+    ];
+    const TEXT = 'steps/step-a/0.0.0:text.0.0';
+    const BUTTON = 'steps/step-a/0.0.1:button.text';
+
+    const seedTranslatable = async () => {
+      const { content, version } = await seedContent();
+      await buildStep(prisma, {
+        versionId: version.id,
+        cvid: 'step-a',
+        sequence: 0,
+        data: stepData as never,
+      });
+      const loc = await buildLocalization(prisma, { projectId });
+      return { content, version, loc };
+    };
+
+    const save = (
+      content: { id: string },
+      version: { id: string },
+      code: string,
+      change: Record<string, unknown>,
+    ) =>
+      graphql(app, {
+        token,
+        query: updateMutation,
+        variables: {
+          data: { contentId: content.id, versionId: version.id, code, ...change },
         },
       });
-      const created = gqlData(createRes).upsertVersionLocalization;
-      expect(created).toMatchObject({
+
+    const storedText = (localized: unknown): { text: string; button: string } => {
+      const elements = (localized as Record<string, typeof stepData>)['step-a'][0].children[0]
+        .children;
+      return {
+        text: (elements[0].element.data as { children: { text: string }[] }[])[0].children[0].text,
+        button: (elements[1].element.data as { text: string }).text,
+      };
+    };
+
+    it('writes only the listed units, merging into the stored row and re-basing the snapshot', async () => {
+      const { content, version, loc } = await seedTranslatable();
+
+      const first = gqlData(
+        await save(content, version, loc.code, {
+          translations: [{ path: TEXT, translation: 'Bienvenue' }],
+        }),
+      ).updateVersionLocalization;
+      expect(first).toMatchObject({
         versionId: version.id,
         localizationId: loc.id,
         enabled: false,
       });
-      expect(created.localized).toEqual({ greeting: 'hola' });
+      expect(first.version.id).toBe(version.id);
+      expect(storedText(first.localized)).toEqual({ text: 'Bienvenue', button: '' });
+      // The source snapshot is built by the server, never sent by the client.
+      expect(first.backup['step-a']).toEqual(stepData);
 
-      const updateRes = await graphql(app, {
-        token,
-        query: upsertMutation,
-        variables: {
-          data: {
-            versionId: version.id,
-            localizationId: loc.id,
-            enabled: true,
-            localized: { greeting: 'bonjour' },
-            backup: { greeting: 'hello' },
-          },
-        },
+      const second = gqlData(
+        await save(content, version, loc.code, {
+          translations: [{ path: BUTTON, translation: 'Suivant' }],
+        }),
+      ).updateVersionLocalization;
+      expect(second.id).toBe(first.id);
+      expect(storedText(second.localized)).toEqual({ text: 'Bienvenue', button: 'Suivant' });
+    });
+
+    it('clears a unit on null and keeps it on a blank string', async () => {
+      const { content, version, loc } = await seedTranslatable();
+      await save(content, version, loc.code, {
+        translations: [
+          { path: TEXT, translation: 'Bienvenue' },
+          { path: BUTTON, translation: 'Suivant' },
+        ],
       });
-      const updated = gqlData(updateRes).upsertVersionLocalization;
-      // Same row updated in place, not a second one created.
-      expect(updated.id).toBe(created.id);
-      expect(updated.enabled).toBe(true);
-      expect(updated.localized).toEqual({ greeting: 'bonjour' });
 
-      const rows = await prisma.versionOnLocalization.findMany({
+      const saved = gqlData(
+        await save(content, version, loc.code, {
+          translations: [
+            { path: TEXT, translation: null },
+            { path: BUTTON, translation: '  ' },
+          ],
+        }),
+      ).updateVersionLocalization;
+      expect(storedText(saved.localized)).toEqual({ text: '', button: 'Suivant' });
+    });
+
+    it('keeps both of two concurrent saves to different units', async () => {
+      const { content, version, loc } = await seedTranslatable();
+      const [textRes, buttonRes] = await Promise.all([
+        save(content, version, loc.code, {
+          translations: [{ path: TEXT, translation: 'Bienvenue' }],
+        }),
+        save(content, version, loc.code, {
+          translations: [{ path: BUTTON, translation: 'Suivant' }],
+        }),
+      ]);
+      gqlData(textRes);
+      gqlData(buttonRes);
+
+      const row = await prisma.versionOnLocalization.findFirst({
         where: { versionId: version.id, localizationId: loc.id },
       });
-      expect(rows).toHaveLength(1);
-      expect(rows[0].localized).toEqual({ greeting: 'bonjour' });
-      expect(rows[0].backup).toEqual({ greeting: 'hello' });
+      expect(storedText(row?.localized)).toEqual({ text: 'Bienvenue', button: 'Suivant' });
+    });
+
+    it('toggles enabled without touching the translation or its snapshot', async () => {
+      const { content, version, loc } = await seedTranslatable();
+      const translated = gqlData(
+        await save(content, version, loc.code, {
+          translations: [{ path: TEXT, translation: 'Bienvenue' }],
+        }),
+      ).updateVersionLocalization;
+
+      const toggled = gqlData(
+        await save(content, version, loc.code, { enabled: true }),
+      ).updateVersionLocalization;
+      expect(toggled.enabled).toBe(true);
+      expect(toggled.localized).toEqual(translated.localized);
+      expect(toggled.backup).toEqual(translated.backup);
+
+      // A later translation save leaves the state alone.
+      const again = gqlData(
+        await save(content, version, loc.code, {
+          translations: [{ path: BUTTON, translation: 'Suivant' }],
+        }),
+      ).updateVersionLocalization;
+      expect(again.enabled).toBe(true);
+    });
+
+    it('answers null and writes nothing when the change is empty', async () => {
+      const { content, version, loc } = await seedTranslatable();
+      const res = await save(content, version, loc.code, { translations: [] });
+      expect(gqlData(res).updateVersionLocalization).toBeNull();
+      const rows = await prisma.versionOnLocalization.findMany({
+        where: { versionId: version.id },
+      });
+      expect(rows).toEqual([]);
+    });
+
+    it('rejects an unknown unit path without writing anything', async () => {
+      const { content, version, loc } = await seedTranslatable();
+      const res = await save(content, version, loc.code, {
+        translations: [
+          { path: TEXT, translation: 'Bienvenue' },
+          { path: 'steps/step-a/9.9.9:button.text', translation: 'stale' },
+        ],
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+      const rows = await prisma.versionOnLocalization.findMany({
+        where: { versionId: version.id },
+      });
+      expect(rows).toEqual([]);
+    });
+
+    it('refuses a published version', async () => {
+      const { content, version, loc } = await seedTranslatable();
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: content.id,
+        versionId: version.id,
+      });
+      const res = await save(content, version, loc.code, {
+        translations: [{ path: TEXT, translation: 'Bienvenue' }],
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+      const rows = await prisma.versionOnLocalization.findMany({
+        where: { versionId: version.id },
+      });
+      expect(rows).toEqual([]);
+    });
+
+    it("refuses another project's content, and a version that is not the content's", async () => {
+      const { content, version, loc } = await seedTranslatable();
+      const otherProject = await buildProject(prisma, { name: 'gql-content-foreign-translate' });
+      const foreignEnv = await buildEnvironment(prisma, { projectId: otherProject.id });
+      const foreignContent = await buildContent(prisma, {
+        projectId: otherProject.id,
+        environmentId: foreignEnv.id,
+        type: 'flow',
+      });
+
+      const foreign = await save(foreignContent, version, loc.code, {
+        translations: [{ path: TEXT, translation: 'Bienvenue' }],
+      });
+      expect(foreign.body.errors?.length).toBeGreaterThan(0);
+
+      const { content: sibling } = await seedContent();
+      const mismatched = await save(sibling, version, loc.code, {
+        translations: [{ path: TEXT, translation: 'Bienvenue' }],
+      });
+      expect(mismatched.body.errors?.length).toBeGreaterThan(0);
+
+      const rows = await prisma.versionOnLocalization.findMany({
+        where: { versionId: version.id },
+      });
+      expect(rows).toEqual([]);
+      expect(content.id).not.toBe(sibling.id);
+      await teardownProject(prisma, otherProject.id);
     });
   });
 

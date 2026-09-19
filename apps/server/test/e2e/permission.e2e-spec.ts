@@ -8,6 +8,7 @@ import {
   DENY_ROLES,
   ENDPOINTS,
   ROLES,
+  TRANSLATION_TARGET_CODE,
   type Endpoint,
   type Role,
   type Seed,
@@ -102,7 +103,10 @@ describe('Permission authorization (HTTP e2e)', () => {
     const attribute = await buildAttribute(prisma, { projectId });
     const theme = await buildTheme(prisma, { projectId });
     const event = await buildEvent(prisma, { projectId });
-    const localization = await buildLocalization(prisma, { projectId });
+    const localization = await buildLocalization(prisma, {
+      projectId,
+      code: TRANSLATION_TARGET_CODE,
+    });
     const segment = await buildSegment(prisma, { projectId, environmentId });
     const integration = await buildIntegration(prisma, { environmentId });
     const accessToken = await buildAccessToken(prisma, { environmentId });
@@ -179,7 +183,7 @@ describe('Permission authorization (HTTP e2e)', () => {
       await prisma.bizCompany.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.bizUser.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.step.deleteMany({ where: { versionId: seed.versionId } });
-      // upsertVersionLocalization (allow direction) materializes these rows.
+      // updateVersionLocalization (allow direction) materializes these rows.
       await prisma.versionOnLocalization.deleteMany({ where: { versionId: seed.versionId } });
       await prisma.contentOnEnvironment.deleteMany({ where: { contentId: seed.contentId } });
       await prisma.version.deleteMany({ where: { contentId: seed.contentId } });

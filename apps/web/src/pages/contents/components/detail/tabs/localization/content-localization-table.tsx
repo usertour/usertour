@@ -17,7 +17,7 @@ import { useLocalizationList } from '@/hooks/use-localization-list';
 import { resolveEditableVersionId } from '@/utils/content';
 import {
   useCreateContentVersionMutation,
-  useUpsertVersionLocalizationMutation,
+  useUpdateVersionLocalizationMutation,
 } from '@usertour/hooks';
 import { countMissingTranslations, countMissingVersionDataTranslations } from '@usertour/helpers';
 import {
@@ -66,7 +66,7 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
   const { content, refetch: refetchContent } = useContentDetail(contentId);
   const { contentLocalizationList, loading } = useContentLocalizations(version.id);
   const { localizationList, loading: localizationsLoading } = useLocalizationList();
-  const { invoke: upsertVersionLocalization } = useUpsertVersionLocalizationMutation();
+  const { invoke: updateVersionLocalization } = useUpdateVersionLocalizationMutation();
   const { invoke: createContentVersion } = useCreateContentVersionMutation();
   const { toast } = useToast();
   const location = useLocation();
@@ -109,12 +109,12 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
       // "Edit in builder"); the fork copies every translation row. The refetch
       // repoints the page at the draft.
       const editableVersionId = await resolveEditableVersionId(version.id, createContentVersion);
-      // State-only write: omitting localized/backup keeps the stored
-      // translation untouched — echoing this tab's cached copy back would
-      // overwrite whatever a translator saved since the tab loaded.
-      const success = await upsertVersionLocalization({
-        localizationId: localization.id,
+      // State-only write: no units are sent, so the stored translation and
+      // its source snapshot stay exactly as they are.
+      const success = await updateVersionLocalization({
+        contentId: content.id,
         versionId: editableVersionId,
+        code: localization.code,
         enabled,
       });
       if (editableVersionId !== version.id) {

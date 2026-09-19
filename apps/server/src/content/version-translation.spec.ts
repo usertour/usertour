@@ -83,6 +83,24 @@ describe('version translation units', () => {
     expect(readTranslationUnits(source, second)[0].translation).toBe('Bienvenue');
   });
 
+  it('clears a unit on null, leaving the others translated', () => {
+    const source = flowSource({ 'step-a': textStep('Welcome') });
+    const [textUnit, buttonUnit] = readTranslationUnits(source, undefined);
+    const first = applyTranslationUnits(
+      source,
+      undefined,
+      new Map([
+        [textUnit.path, 'Bienvenue'],
+        [buttonUnit.path, 'Suivant'],
+      ]),
+    );
+    const second = applyTranslationUnits(source, first, new Map([[textUnit.path, null]]));
+    const units = readTranslationUnits(source, second);
+    expect(units[0].translation).toBe('');
+    expect(units[1].translation).toBe('Suivant');
+    expect(summarizeTranslationUnits(units).missing).toBe(1);
+  });
+
   it('flags a translated unit outdated once the source text changes, and a save clears it', () => {
     const original = flowSource({ 'step-a': textStep('Welcome') });
     const [textUnit] = readTranslationUnits(original, undefined);

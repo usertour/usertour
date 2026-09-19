@@ -23,7 +23,7 @@ export class VersionOnLocalization extends BaseModel {
   localizationId: string;
 
   /**
-   * The owning version, populated by upsertVersionLocalization: a
+   * The owning version, populated by updateVersionLocalization: a
    * translation save touches the version's updatedAt, and returning the
    * version lets the client's normalized cache move "Autosaved" without a
    * refetch. List reads leave it null.

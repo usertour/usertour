@@ -9,7 +9,11 @@ import {
   ValidationError,
   type ValidationIssue,
 } from '@/common/errors/errors';
-import { resolveStaleEmbeds } from '@/common/ombed/embed-resolve';
+import {
+  collectStaleEmbedUrls,
+  fetchEmbedResolutions,
+  installEmbedResolutions,
+} from '@/common/ombed/embed-resolve';
 import { isHttpUrl } from '@/common/url';
 import { UtilitiesService } from '@/utilities/utilities.service';
 
@@ -54,10 +58,20 @@ export interface VersionTranslationStatus {
 }
 
 export interface VersionTranslationChange {
-  /** Unit path → translated text. A blank value keeps the existing translation. */
-  translations?: Record<string, string>;
+  /**
+   * Unit path → translated text. `null` clears the unit (text reads as
+   * untranslated again; a media or link url falls back to the source's); a
+   * blank string keeps the existing translation, so a caller echoing units back
+   * can never erase one by accident.
+   */
+  translations?: Record<string, string | null>;
   enabled?: boolean;
 }
+
+/** The translation row a save left behind, with the draft it touched. */
+export type SavedVersionLocalization = Awaited<
+  ReturnType<ContentService['saveVersionLocalization']>
+>;
 
 interface VersionLocalizationRow {
   localizationId: string;
@@ -74,17 +88,19 @@ interface TranslatableVersion {
   content?: { type?: string | null } | null;
 }
 
-const toStored = (row: VersionLocalizationRow | undefined): StoredTranslation | undefined =>
+const toStored = (
+  row: { localized: unknown; backup: unknown } | undefined,
+): StoredTranslation | undefined =>
   row ? { localized: row.localized, backup: row.backup } : undefined;
 
 /**
  * Reading and writing a version's translation as translation units — the
  * business rules of translating, independent of who asks: which versions and
  * locales can be translated, what a unit is, what a write may change, and what
- * it must leave alone. Protocol surfaces (REST, MCP, and eventually the
- * dashboard's GraphQL) only adapt their input and output around it.
+ * it must leave alone. Protocol surfaces (REST, MCP, the dashboard's GraphQL)
+ * only adapt their input and output around it.
  *
- * Persistence goes through ContentService.upsertVersionLocalization, the single
+ * Persistence goes through ContentService.saveVersionLocalization, the single
  * write entry for translations, so the editable-draft gate, the link schema
  * stamp and the version touch apply to every caller alike.
  */
@@ -108,6 +124,7 @@ export class VersionTranslationService {
     return this.toTranslation(versionId, target, source, row);
   }
 
+  /** Save a change and read the locale back as units. */
   async write(
     versionId: string,
     contentId: string,
@@ -115,15 +132,28 @@ export class VersionTranslationService {
     code: string,
     change: VersionTranslationChange,
   ): Promise<VersionTranslation> {
+    await this.save(versionId, contentId, projectId, code, change);
+    return this.read(versionId, contentId, projectId, code);
+  }
+
+  /**
+   * Save a change: the listed units are merged into the stored translation,
+   * every other unit is left as it is. Returns the saved row, or undefined when
+   * the change held nothing to write.
+   */
+  async save(
+    versionId: string,
+    contentId: string,
+    projectId: string,
+    code: string,
+    change: VersionTranslationChange,
+  ): Promise<SavedVersionLocalization | undefined> {
     const source = await this.loadSource(versionId, contentId, projectId);
     const target = await this.requireTarget(projectId, code);
     // Fail before any provider lookup: a frozen version refuses the write anyway.
     await this.content.contentVersionIsEditable(versionId);
 
-    const row = await this.findRow(versionId, target.id);
-    const stored = toStored(row);
-    const enabled = change.enabled ?? row?.enabled ?? false;
-
+    const stored = toStored(await this.findRow(versionId, target.id));
     const submitted = new Map(Object.entries(change.translations ?? {}));
     this.assertTranslationsValid(submitted, source, stored);
     const translations = this.effectiveTranslations(submitted);
@@ -134,30 +164,31 @@ export class VersionTranslationService {
       // saving re-bases the source snapshot, which would clear every outdated
       // flag without a single unit having been re-translated. At most it is a
       // state-only write, which leaves localized/backup untouched.
-      if (change.enabled !== undefined) {
-        await this.content.upsertVersionLocalization({
-          versionId,
-          localizationId: target.id,
-          enabled,
-        });
+      if (change.enabled === undefined) {
+        return undefined;
       }
-    } else {
-      const payload = applyTranslationUnits(source, stored, translations);
-      // The widget renders an embed from parsedUrl/oembed, not the raw url.
-      // Only embeds whose url actually changed are looked up — an embed echoed
-      // back unchanged keeps its stored resolution, so a provider hiccup can
-      // never erase it.
-      await resolveStaleEmbeds(payload.localized, (url) => this.utilities.queryOembedInfo(url));
-      await this.content.upsertVersionLocalization({
-        versionId,
-        localizationId: target.id,
-        enabled,
-        localized: payload.localized as never,
-        backup: payload.backup as never,
-      });
+      return this.content.saveVersionLocalization(versionId, target.id, () => ({
+        enabled: change.enabled,
+      }));
     }
 
-    return this.read(versionId, contentId, projectId, code);
+    // The widget renders an embed from parsedUrl/oembed, not the raw url, so a
+    // changed embed url needs a provider lookup — network, which cannot run
+    // while the save holds its lock. Apply once against the row as read here to
+    // learn which urls need one (an embed echoed back unchanged keeps its stored
+    // resolution, so a provider hiccup can never erase it), look them up, then
+    // let the locked save re-apply onto the row as it stands by then and settle
+    // its embeds from the answers.
+    const preview = applyTranslationUnits(source, stored, translations);
+    const resolutions = await fetchEmbedResolutions(
+      collectStaleEmbedUrls(preview.localized),
+      (url) => this.utilities.queryOembedInfo(url),
+    );
+    return this.content.saveVersionLocalization(versionId, target.id, (current) => {
+      const payload = applyTranslationUnits(source, toStored(current), translations);
+      installEmbedResolutions(payload.localized, resolutions);
+      return { enabled: change.enabled, localized: payload.localized, backup: payload.backup };
+    });
   }
 
   /** The locales a version can be translated into — every live project locale but the default. */
@@ -291,7 +322,7 @@ export class VersionTranslationService {
    * that cannot see the difference.
    */
   private assertTranslationsValid(
-    translations: ReadonlyMap<string, string>,
+    translations: ReadonlyMap<string, string | null>,
     source: TranslationSource,
     stored: StoredTranslation | undefined,
   ): void {
@@ -307,6 +338,9 @@ export class VersionTranslationService {
           message:
             'unknown unit path — it is not part of this version (the source may have changed since you read it). Re-read the units and use their `path` values verbatim.',
         });
+        return;
+      }
+      if (value === null) {
         return;
       }
       const url = value.trim();
@@ -333,13 +367,20 @@ export class VersionTranslationService {
 
   /**
    * The translations that actually change something. A blank value keeps the
-   * existing translation, so it is not a write. Media URLs are trimmed — the SDK
-   * renders them verbatim into src/href; translated TEXT is kept as sent, since
-   * leading/trailing spaces are meaningful between adjacent text runs.
+   * existing translation, so it is not a write; `null` is — it clears. Media
+   * URLs are trimmed — the SDK renders them verbatim into src/href; translated
+   * TEXT is kept as sent, since leading/trailing spaces are meaningful between
+   * adjacent text runs.
    */
-  private effectiveTranslations(submitted: ReadonlyMap<string, string>): Map<string, string> {
-    const effective = new Map<string, string>();
+  private effectiveTranslations(
+    submitted: ReadonlyMap<string, string | null>,
+  ): Map<string, string | null> {
+    const effective = new Map<string, string | null>();
     submitted.forEach((value, path) => {
+      if (value === null) {
+        effective.set(path, null);
+        return;
+      }
       if (value.trim() === '') {
         return;
       }

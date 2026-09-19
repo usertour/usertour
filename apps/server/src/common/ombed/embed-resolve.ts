@@ -73,32 +73,69 @@ const collectStale = (node: unknown, out: EmbedElementNode[]): void => {
   for (const value of Object.values(obj)) collectStale(value, out);
 };
 
+/** A provider's answer per url; `undefined` when it had none (error, timeout, no html). */
+export type EmbedResolutions = ReadonlyMap<
+  string,
+  { html: string; width?: unknown; height?: unknown } | undefined
+>;
+
+/** The urls of every embed in the payload whose resolution is missing or belongs to a previous url. */
+export const collectStaleEmbedUrls = (payload: unknown): string[] => {
+  const stale: EmbedElementNode[] = [];
+  collectStale(payload, stale);
+  return [...new Set(stale.map((el) => el.url as string))];
+};
+
+/**
+ * Look the urls up. Fetch failures — a provider error, or a lookup past the
+ * time cap — resolve to `undefined`, never reject: a write must not fail over a
+ * provider hiccup.
+ */
+export const fetchEmbedResolutions = async (
+  urls: readonly string[],
+  fetch: OembedFetcher,
+): Promise<EmbedResolutions> => {
+  const entries = await Promise.all(
+    urls.map(async (url) => {
+      try {
+        const info = await withLookupTimeout(fetch(url));
+        return [
+          url,
+          info?.html ? { html: info.html, width: info.width, height: info.height } : undefined,
+        ] as const;
+      } catch {
+        return [url, undefined] as const;
+      }
+    }),
+  );
+  return new Map(entries);
+};
+
+/**
+ * Settle every stale embed of the payload from already-fetched resolutions.
+ * Mutates in place, no network — safe inside a transaction. A url without an
+ * answer (a failed lookup, or one that was never looked up) degrades to
+ * parsedUrl-only: the same state the builder leaves when the oEmbed call fails
+ * (the widget iframes the url directly), and a known provider's url retries on
+ * the next write.
+ */
+export const installEmbedResolutions = (payload: unknown, resolutions: EmbedResolutions): void => {
+  const stale: EmbedElementNode[] = [];
+  collectStale(payload, stale);
+  for (const el of stale) {
+    const url = el.url as string;
+    el.parsedUrl = url;
+    // The url changed (or is new): the old payload no longer describes it.
+    el.oembed = resolutions.get(url);
+  }
+};
+
 /**
  * Walk any compiled payload (flow steps content trees, banner/checklist/
  * announcement/resource-center block lists) and resolve every embed whose
  * `parsedUrl` is missing or belongs to a previous url. Mutates in place.
- * Fetch failures — a provider error, or a lookup past the time cap — degrade to
- * parsedUrl-only: the same state the builder leaves when the oEmbed call fails
- * (the widget iframes the url directly).
  */
 export async function resolveStaleEmbeds(payload: unknown, fetch: OembedFetcher): Promise<void> {
-  const stale: EmbedElementNode[] = [];
-  collectStale(payload, stale);
-  await Promise.all(
-    stale.map(async (el) => {
-      const url = el.url as string;
-      el.parsedUrl = url;
-      // The url changed (or is new): the old payload no longer describes it.
-      el.oembed = undefined;
-      try {
-        const info = await withLookupTimeout(fetch(url));
-        if (info?.html) {
-          el.oembed = { html: info.html, width: info.width, height: info.height };
-        }
-      } catch {
-        // Degraded but consistent: iframe on parsedUrl, like the builder's
-        // failure path. Never fail the write over a provider hiccup.
-      }
-    }),
-  );
+  const resolutions = await fetchEmbedResolutions(collectStaleEmbedUrls(payload), fetch);
+  installEmbedResolutions(payload, resolutions);
 }

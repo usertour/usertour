@@ -51,6 +51,9 @@ export const ALLOW_ROLE: Record<Tier, Role> = {
 
 export type Seed = Record<string, string>;
 
+/** Code of the seeded localization (`seed.localizationId`) — version translations are addressed by code. */
+export const TRANSLATION_TARGET_CODE = 'e2e-target';
+
 export interface Endpoint {
   /** `<module>.<method>` — matches the server's capability map for traceability. */
   key: string;
@@ -148,17 +151,16 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ c: s.contentId }),
   },
   {
-    key: 'content.upsertVersionLocalization',
+    key: 'content.updateVersionLocalization',
     tier: 'W',
     op: 'mutation',
-    doc: 'mutation($d:VersionUpdateLocalizationInput!){upsertVersionLocalization(data:$d){__typename}}',
+    doc: 'mutation($d:UpdateVersionLocalizationInput!){updateVersionLocalization(data:$d){__typename}}',
     vars: (s) => ({
       d: {
-        backup: {},
-        enabled: true,
-        localizationId: s.localizationId,
-        localized: {},
+        contentId: s.contentId,
         versionId: s.versionId,
+        code: TRANSLATION_TARGET_CODE,
+        enabled: true,
       },
     }),
   },

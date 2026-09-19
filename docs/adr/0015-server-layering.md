@@ -9,7 +9,7 @@
 
 GraphQL, REST and MCP are protocols; the business rules behind them should exist once. Two things show they do not:
 
-- **Rules live in one surface.** The rules of writing a version translation were first written into the REST v2 service; the dashboard keeps its own copy in the browser; the shared service layer had none (moved into `VersionTranslationService` since). Publish-time usability validation, write guards and per-type auto-start checks live under `api/content-representation/` and run only on the API path — the dashboard's GraphQL path goes straight to `ContentService` and skips them. Nothing in the directory layout signalled that `api/` should hold adaptation only.
+- **Rules live in one surface.** The rules of writing a version translation were first written into the REST v2 service; the dashboard kept its own copy in the browser, building the stored payload and its source snapshot client-side; the shared service layer had none. (Since moved: `VersionTranslationService` holds them, and REST, MCP and the dashboard's GraphQL all save translation units through it.) Publish-time usability validation, write guards and per-type auto-start checks live under `api/content-representation/` and run only on the API path — the dashboard's GraphQL path goes straight to `ContentService` and skips them. Nothing in the directory layout signalled that `api/` should hold adaptation only.
 - **Services depend on the GraphQL surface.** In 10 of the 12 business directories, services take `@nestjs/graphql` input classes as parameters, so REST and MCP build GraphQL-shaped inputs to call them and the dependency points from the service to the protocol.
 
 Measured at decision time, 12 imports point from a module into an entrypoint (listed under Known debt).
@@ -92,7 +92,7 @@ src/
 
 **Rules in an entrypoint** (invisible to the test — they are imports in the allowed direction):
 
-3. Publish-time usability validation, write guards and auto-start capability checks under `api/content-representation/`, and the dashboard's browser-side translation save. Moving them is its own piece of work; it starts by running the usability validator read-only over existing published versions, to learn how much of what the builder produced it would reject.
+3. Publish-time usability validation, write guards and auto-start capability checks under `api/content-representation/`. Moving them is its own piece of work; it starts by running the usability validator read-only over existing published versions, to learn how much of what the builder produced it would reject.
 
 **Filing** (not a dependency problem; for review): `common/` holds business code — project initialization defaults, the attribute filter, REST v1 types, the environment decorator. It belongs in the modules and the v1 entrypoint it serves.
 

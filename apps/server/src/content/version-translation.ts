@@ -1,16 +1,17 @@
 /**
- * Translation-unit view over a version's stored translation row — the same
- * model the dashboard's export/import moves as a file, exposed as JSON. Pure:
- * no DB, no network (VersionTranslationService adds both). Every walk/graft rule
- * lives in @usertour/helpers, so the dashboard's editor and the server can never
- * disagree on which text is translatable, how a unit is addressed, or what a
- * save preserves.
+ * Translation-unit view over a version's stored translation row — the model
+ * every surface reads and writes translations in (the dashboard's editor and
+ * its export/import, REST, MCP). Pure: no DB, no network
+ * (VersionTranslationService adds both). Every walk/graft rule lives in
+ * @usertour/helpers, so the dashboard's editor and the server can never disagree
+ * on which text is translatable or how a unit is addressed.
  *
  * Addressing: a flow unit is `steps/<step cvid>/<unit path>`; every other type
  * uses the walker's unit path as-is.
  */
 import {
   type LocalizationTranslationUnit,
+  type TranslationUnitChanges,
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
   buildLocalizedFlowBackup,
@@ -25,6 +26,7 @@ import {
   extractVersionDataTranslationUnits,
   isVersionDataLocalizable,
 } from '@usertour/helpers';
+export { isMediaUrlUnitPath } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot, LocalizedFlowContent } from '@usertour/types';
 
@@ -58,12 +60,6 @@ export interface TranslationStats {
 }
 
 const FLOW_PATH_PREFIX = 'steps/';
-
-/** Unit paths whose value is a media URL the SDK renders verbatim into src/href. */
-const MEDIA_URL_PATH_SUFFIXES = [':image.url', ':embed.url', ':image.link.url'];
-
-export const isMediaUrlUnitPath = (path: string): boolean =>
-  MEDIA_URL_PATH_SUFFIXES.some((suffix) => path.endsWith(suffix));
 
 /** Whether the content type has any translatable text at all (a tracker has no UI). */
 export const isContentTypeLocalizable = (contentType: string): boolean =>
@@ -137,19 +133,19 @@ export const summarizeTranslationUnits = (units: TranslationUnitView[]): Transla
 });
 
 /**
- * The payload pair to persist after applying `translations` (unit path → text).
- * Same pipeline as the dashboard's import: translations land on a working copy
- * of the stored row, the save payload grafts back every stored fragment that
- * copy could not read (removed steps, drifted subtrees), and the source
- * snapshot is refreshed to the current source. Blank values keep the existing
- * translation; callers reject unknown paths beforehand. A swapped embed url
- * loses its resolution data here (it belonged to the previous url) — callers
- * resolve the stale embeds of the returned payload before persisting it.
+ * The payload pair to persist after applying `translations` (unit path → text,
+ * or null to clear). Translations land on a working copy of the stored row, the
+ * save payload grafts back every stored fragment that copy could not read
+ * (removed steps, drifted subtrees), and the source snapshot is refreshed to
+ * the current source. Blank values keep the existing translation; callers
+ * reject unknown paths beforehand. A swapped embed url loses its resolution
+ * data here (it belonged to the previous url) — callers settle the stale embeds
+ * of the returned payload before persisting it.
  */
 export const applyTranslationUnits = (
   source: TranslationSource,
   stored: StoredTranslation | undefined,
-  translations: ReadonlyMap<string, string>,
+  translations: TranslationUnitChanges,
 ): { localized: unknown; backup: unknown } => {
   if (source.contentType === ContentDataType.FLOW) {
     const storedLocalized = (stored?.localized ?? undefined) as LocalizedFlowContent | undefined;
@@ -159,7 +155,7 @@ export const applyTranslationUnits = (
     const working: LocalizedFlowContent = {};
     for (const step of source.steps) {
       const prefix = flowStepPath(step.cvid, '');
-      const stepTranslations = new Map<string, string>();
+      const stepTranslations = new Map<string, string | null>();
       translations.forEach((value, path) => {
         if (path.startsWith(prefix)) {
           stepTranslations.set(path.slice(prefix.length), value);

@@ -1074,6 +1074,29 @@ export const collectOutdatedVersionDataPaths = (
 // rows whose path no longer matches simply don't apply.
 // ---------------------------------------------------------------------------
 
+/** Unit paths whose value is a media URL the SDK renders verbatim into src/href. */
+const MEDIA_URL_PATH_SUFFIXES = [':image.url', ':embed.url', ':image.link.url'];
+
+export const isMediaUrlUnitPath = (path: string): boolean => {
+  return MEDIA_URL_PATH_SUFFIXES.some((suffix) => path.endsWith(suffix));
+};
+
+/**
+ * True iff the value parses as an absolute http(s) URL. The bar every
+ * user-supplied media/link URL must clear before it is stored: the SDK and the
+ * builder render these verbatim into src/href on customers' pages, so a bare
+ * word or a relative path becomes a silently broken image/iframe the author
+ * only discovers in the browser.
+ */
+export const isHttpUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 export interface LocalizationTranslationUnit {
   path: string;
   sourceText: string;
@@ -1109,17 +1132,28 @@ export type LocalizedEmbedResolutions = ReadonlyMap<
 >;
 
 /**
- * Imported cells only ever add or replace a translation: empty cells keep
- * the existing value, unknown paths are ignored. An imported embed URL drops
- * the previous URL's resolution data and installs the caller-provided one —
- * without it the embed renders empty until resolved from its editor row.
+ * Unit path → what to do with it: a non-blank string adds or replaces the
+ * translation, `null` clears it (text falls back to untranslated; a media or
+ * link url falls back to the source's), and a blank string keeps whatever is
+ * stored — a caller echoing a unit back empty must not erase it.
+ */
+export type TranslationUnitChanges = ReadonlyMap<string, string | null>;
+
+/**
+ * Unknown paths are ignored. A changed embed URL drops the previous URL's
+ * resolution data and installs the caller-provided one — without it the embed
+ * renders empty until resolved from its editor row.
  */
 const createTranslationApplier = (
-  translations: ReadonlyMap<string, string>,
+  translations: TranslationUnitChanges,
   embedResolutions?: LocalizedEmbedResolutions,
 ): TranslatableFieldVisitor => {
   return (visit) => {
     const value = translations.get(visit.path);
+    if (value === null) {
+      visit.assign('');
+      return;
+    }
     if (typeof value === 'string' && value.trim() !== '') {
       visit.assign(value);
       const resolution = embedResolutions?.get(value.trim());
@@ -1152,7 +1186,7 @@ export const extractVersionDataTranslationUnits = (
 export const applyContentsTranslationUnits = (
   source: ContentEditorRoot[] | undefined,
   localized: ContentEditorRoot[] | undefined,
-  translations: ReadonlyMap<string, string>,
+  translations: TranslationUnitChanges,
   embedResolutions?: LocalizedEmbedResolutions,
 ): ContentEditorRoot[] => {
   const working = applyLocalizedText(source, localized, 'empty');
@@ -1169,7 +1203,7 @@ export const applyVersionDataTranslationUnits = <T>(
   contentType: string,
   source: T,
   localized: unknown,
-  translations: ReadonlyMap<string, string>,
+  translations: TranslationUnitChanges,
   embedResolutions?: LocalizedEmbedResolutions,
 ): T => {
   const working = createLocalizedWorkingVersionData(contentType, source, localized);
