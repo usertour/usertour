@@ -24,7 +24,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { PrismaModule } from 'nestjs-prisma';
 import { AppResolver } from './app.resolver';
-import { LocalizationsModule } from './localizations/localizations.module';
+import { LocalizationsModule } from './domain/localizations/localizations.module';
 import { TeamModule } from './team/team.module';
 import { BullModule } from '@nestjs/bullmq';
 import { StripeModule } from '@golevelup/nestjs-stripe';

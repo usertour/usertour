@@ -10,7 +10,7 @@ import { ContentResolver } from '@/content/content.resolver';
 import { EnvironmentsResolver } from '@/environments/environments.resolver';
 import { EventsResolver } from '@/events/events.resolver';
 import { IntegrationsResolver } from '@/integrations/integrations.resolver';
-import { LocalizationsResolver } from '@/localizations/localizations.resolver';
+import { LocalizationsResolver } from '@/domain/localizations/localizations.resolver';
 import { ProjectsResolver } from '@/projects/projects.resolver';
 import { SsoResolver } from '@/sso/sso.resolver';
 import { SubscriptionResolver } from '@/subscription/subscription.resolver';

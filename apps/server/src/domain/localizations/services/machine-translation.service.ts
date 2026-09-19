@@ -13,7 +13,7 @@ import {
   ParamsError,
 } from '@/common/errors';
 
-import type { TranslateLocalizationUnitsInput } from './dto/localization.input';
+import type { MachineTranslationRequest } from '../types/machine-translation-request.type';
 
 /**
  * Hard cap per mutation, defensive only: the editor batches by
@@ -69,7 +69,7 @@ export class MachineTranslationService {
   }
 
   async translateUnits(
-    input: TranslateLocalizationUnitsInput,
+    input: MachineTranslationRequest,
   ): Promise<{ path: string; translatedText: string }[]> {
     const { versionId, localizationId, units } = input;
     if (!this.isEnabled()) {

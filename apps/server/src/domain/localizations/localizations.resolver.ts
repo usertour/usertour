@@ -5,17 +5,15 @@ import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
-import {
-  CreateLocalizationInput,
-  DeleteLocalizationInput,
-  QueryLocalizationInput,
-  TranslateLocalizationUnitsInput,
-  UpdateLocalizationInput,
-} from './dto/localization.input';
-import { LocalizationsService } from './localizations.service';
-import { MachineTranslationService } from './machine-translation.service';
-import { Localization } from './models/localization.model';
-import { TranslatedUnit } from './models/translated-unit.model';
+import { CreateLocalizationInput } from './dtos/create-localization.input';
+import { DeleteLocalizationInput } from './dtos/delete-localization.input';
+import { Localization } from './dtos/localization.dto';
+import { QueryLocalizationInput } from './dtos/query-localization.input';
+import { TranslateLocalizationUnitsInput } from './dtos/translate-localization-units.input';
+import { TranslatedUnit } from './dtos/translated-unit.dto';
+import { UpdateLocalizationInput } from './dtos/update-localization.input';
+import { LocalizationsService } from './services/localizations.service';
+import { MachineTranslationService } from './services/machine-translation.service';
 
 @Resolver(() => Localization)
 @UseGuards(PermissionGuard)

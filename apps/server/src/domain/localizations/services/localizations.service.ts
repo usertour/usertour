@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Prisma } from '@prisma/client';
-import { CreateLocalizationInput, UpdateLocalizationInput } from './dto/localization.input';
+import type { LocalizationChanges } from '../types/localization-changes.type';
+import type { NewLocalization } from '../types/new-localization.type';
 import {
   DefaultLocalizationCannotBeDeletedError,
   ParamsError,
@@ -20,7 +21,7 @@ export class LocalizationsService {
     private cache: ProjectCacheService,
   ) {}
 
-  async create(data: CreateLocalizationInput) {
+  async create(data: NewLocalization) {
     return (await this.createOrRestore(data)).localization;
   }
 
@@ -30,7 +31,7 @@ export class LocalizationsService {
    * instead of failing on the unique constraint. `restored` tells a caller that
    * needs to say so which of the two happened.
    */
-  async createOrRestore(data: CreateLocalizationInput) {
+  async createOrRestore(data: NewLocalization) {
     const existing = await this.prisma.localization.findUnique({
       where: { projectId_code: { projectId: data.projectId, code: data.code } },
     });
@@ -67,7 +68,7 @@ export class LocalizationsService {
     });
   }
 
-  async update(data: UpdateLocalizationInput) {
+  async update(data: LocalizationChanges) {
     const { id, ...others } = data;
     const item = await this.prisma.localization.findFirst({ where: { id, deleted: false } });
     if (!item) {

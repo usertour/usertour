@@ -29,6 +29,7 @@ const LAYERS: Record<string, Layer> = {
   'web-socket': 'entrypoints', // the gateways; core/ is classified below
 
   // ── domain: business modules, each with its thin GraphQL adapter ──
+  domain: 'domain', // the target layout
   'web-socket/core': 'domain', // delivery runtime (also holds socket plumbing — split on next change)
   admin: 'domain',
   analytics: 'domain',
@@ -41,7 +42,6 @@ const LAYERS: Record<string, Layer> = {
   environments: 'domain',
   events: 'domain',
   integrations: 'domain',
-  localizations: 'domain',
   oauth: 'domain',
   projects: 'domain',
   sso: 'domain',

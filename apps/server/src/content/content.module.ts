@@ -1,5 +1,5 @@
 import { EnvironmentsModule } from '@/environments/environments.module';
-import { LocalizationsModule } from '@/localizations/localizations.module';
+import { LocalizationsModule } from '@/domain/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { UtilitiesModule } from '@/utilities/utilities.module';
