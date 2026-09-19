@@ -1860,50 +1860,73 @@ describe('MCP endpoint (e2e)', () => {
         (await call('list_localizations', deleted ? { deleted: true } : {})).items.map(
           (item: { code: string }) => item.code,
         );
+      // Audit rows are written by a queue worker after each call returns, so
+      // wait for all of them — and compare contents, not the order they landed.
+      const auditedOperations = async (localizationId: string, expected: number) => {
+        for (let attempt = 0; attempt < 50; attempt += 1) {
+          const rows = await prisma.auditLog.findMany({
+            where: {
+              projectId: projectA,
+              resourceType: 'localization',
+              resourceId: localizationId,
+            },
+            select: { operation: true },
+          });
+          if (rows.length >= expected) {
+            return rows.map((row) => row.operation).sort();
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        throw new Error(`fewer than ${expected} audit rows for ${localizationId}`);
+      };
 
-      const created = await call('create_localization', {
-        code: 'ja',
-        name: 'Japanese',
-        locale: 'ja-JP',
-      });
-      expect(created).toMatchObject({ code: 'ja', restored: false, deleted: false });
+      try {
+        const created = await call('create_localization', {
+          code: 'ja',
+          name: 'Japanese',
+          locale: 'ja-JP',
+        });
+        expect(created).toMatchObject({ code: 'ja', restored: false, deleted: false });
 
-      const updated = await call('update_localization', { id: created.id, name: '日本語' });
-      expect(updated).toMatchObject({ id: created.id, name: '日本語', code: 'ja' });
-      const empty = await callTool('update_localization', { id: created.id }, token);
-      expect(empty.isError).toBe(true);
+        const updated = await call('update_localization', { id: created.id, name: '日本語' });
+        expect(updated).toMatchObject({ id: created.id, name: '日本語', code: 'ja' });
+        const empty = await callTool('update_localization', { id: created.id }, token);
+        expect(empty.isError).toBe(true);
 
-      expect(await call('delete_localization', { id: created.id })).toEqual({ success: true });
-      expect(await liveCodes()).not.toContain('ja');
-      expect(await liveCodes(true)).toContain('ja');
+        expect(await call('delete_localization', { id: created.id })).toEqual({ success: true });
+        expect(await liveCodes()).not.toContain('ja');
+        expect(await liveCodes(true)).toContain('ja');
 
-      const restored = await call('restore_localization', { id: created.id });
-      expect(restored).toMatchObject({ id: created.id, deleted: false });
-      expect(await liveCodes()).toContain('ja');
+        const restored = await call('restore_localization', { id: created.id });
+        expect(restored).toMatchObject({ id: created.id, deleted: false });
+        expect(await liveCodes()).toContain('ja');
 
-      await call('delete_localization', { id: created.id });
-      const recreated = await call('create_localization', {
-        code: 'ja',
-        name: 'Japanese',
-        locale: 'ja-JP',
-      });
-      expect(recreated).toMatchObject({ id: created.id, restored: true });
+        await call('delete_localization', { id: created.id });
+        const recreated = await call('create_localization', {
+          code: 'ja',
+          name: 'Japanese',
+          locale: 'ja-JP',
+        });
+        expect(recreated).toMatchObject({ id: created.id, restored: true });
 
-      const audited = await prisma.auditLog.findMany({
-        where: { projectId: projectA, resourceType: 'localization', resourceId: created.id },
-        orderBy: { createdAt: 'asc' },
-      });
-      expect(audited.map((entry) => entry.operation)).toEqual([
-        'create_localization',
-        'update_localization',
-        'delete_localization',
-        'restore_localization',
-        'delete_localization',
-        'create_localization',
-      ]);
-
-      // Leave the project with its two seeded locales for the cases below.
-      await call('delete_localization', { id: created.id });
+        expect(await auditedOperations(created.id, 6)).toEqual(
+          [
+            'create_localization',
+            'update_localization',
+            'delete_localization',
+            'restore_localization',
+            'delete_localization',
+            'create_localization',
+          ].sort(),
+        );
+      } finally {
+        // Leave the project with its two seeded locales for the cases below,
+        // whatever happened above.
+        await prisma.localization.updateMany({
+          where: { projectId: projectA, code: 'ja' },
+          data: { deleted: true },
+        });
+      }
     });
 
     it('list → read → write → status round-trip', async () => {
