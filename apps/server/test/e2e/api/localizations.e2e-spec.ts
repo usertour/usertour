@@ -570,6 +570,21 @@ describe('API v2 localizations (e2e)', () => {
       expect(row).toBeNull();
     });
 
+    it('never asks for a whitespace-only run: a formatted sentence translates to zero missing', async () => {
+      // "**Save** *now*" compiles to three text runs; the middle one is a lone space.
+      const flow = await newFlow('**Save** *now*');
+      const units: Unit[] = (await readTranslation(flow, 'fr')).body.units;
+      const textUnits = units.filter((unit) => unit.source !== 'Continue');
+      expect(textUnits.map((unit) => unit.source)).toEqual(['Save', 'now']);
+      expect(units.some((unit) => unit.source.trim() === '')).toBe(false);
+
+      const res = await writeTranslation(flow, 'fr', {
+        translations: Object.fromEntries(units.map((unit) => [unit.path, `${unit.source}-fr`])),
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.stats).toEqual({ total: 3, missing: 0, outdated: 0 });
+    });
+
     it('needs content:update', async () => {
       const flow = await newFlow();
       const res = await writeTranslation(flow, 'fr', { enabled: true }, readToken);

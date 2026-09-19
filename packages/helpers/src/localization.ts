@@ -63,6 +63,17 @@ const toText = (value: unknown): string => {
   return typeof value === 'string' ? value : '';
 };
 
+/**
+ * Whether a source text is something to translate. Whitespace-only text is not:
+ * rich text splits "**Save** *now*" into three runs, the middle one a lone
+ * space. A translation cannot BE whitespace-only either (blank means "keep the
+ * source"), so counting such a run as a unit left it permanently "missing".
+ * Delivery falls back to the source for it, so the space still renders.
+ */
+export const isTranslatableText = (sourceText: string): boolean => {
+  return sourceText.trim() !== '';
+};
+
 const toPartnerText = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value : undefined;
 };
@@ -584,7 +595,7 @@ const applyWalkOptions = (fallback: LocalizedTextFallback): WalkOptions => {
 
 const createMissingCountVisitor = (count: { missing: number }): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.optional || visit.sourceText === '') {
+    if (visit.optional || !isTranslatableText(visit.sourceText)) {
       return;
     }
     if (visit.partnerText === undefined || visit.partnerText === '') {
@@ -607,7 +618,7 @@ const createOutdatedVisitor = (
   translated: ReadonlySet<string>,
 ): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.sourceText === '' || !translated.has(visit.path)) {
+    if (!isTranslatableText(visit.sourceText) || !translated.has(visit.path)) {
       return;
     }
     if (visit.partnerText !== visit.sourceText) {
@@ -655,13 +666,13 @@ export const createLocalizedWorkingContents = (
   return applyLocalizedText(source, localized, 'empty');
 };
 
-/** All non-empty translatable texts of a tree, in walk order. */
+/** All translatable texts of a tree (see isTranslatableText), in walk order. */
 export const extractTranslatableUnits = (
   contents: ContentEditorRoot[] | undefined,
 ): TranslatableUnit[] => {
   const units: TranslatableUnit[] = [];
   walkTranslatableFields(contents ?? [], undefined, (visit) => {
-    if (visit.sourceText !== '') {
+    if (isTranslatableText(visit.sourceText)) {
       units.push({ path: visit.path, text: visit.sourceText, optional: visit.optional });
     }
   });
@@ -1079,7 +1090,7 @@ const createTranslationUnitCollector = (
   units: LocalizationTranslationUnit[],
 ): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.sourceText === '') {
+    if (!isTranslatableText(visit.sourceText)) {
       return;
     }
     units.push({

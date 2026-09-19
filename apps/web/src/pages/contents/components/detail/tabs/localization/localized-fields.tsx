@@ -5,6 +5,7 @@ import {
   formatElementPath,
   getErrorMessage,
   getLocalizableLinkUrl,
+  isTranslatableText,
 } from '@usertour/helpers';
 import { useAws, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
 import { ImageEditIcon, RiSparkling2Line, SpinnerIcon } from '@usertour/icons';
@@ -91,7 +92,9 @@ export const collectSlateFieldPairs = (
       const workingNode = working?.[index];
       const nodePath = [...path, index];
       if (typeof sourceNode.text === 'string') {
-        if (sourceNode.text !== '') {
+        // Same line as the unit walkers draw, so the rows shown here are
+        // exactly the units the missing count is taken over.
+        if (isTranslatableText(sourceNode.text)) {
           leafPairs.push({
             path: nodePath,
             sourceText: sourceNode.text,

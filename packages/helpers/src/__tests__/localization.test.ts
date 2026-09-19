@@ -29,6 +29,7 @@ import {
   assignLocalizedLinkUrl,
   blankLocalizedLinkDestinations,
   getLocalizableLinkUrl,
+  isTranslatableText,
   buildLocalizedFlowBackup,
   buildLocalizedFlowSavePayload,
   buildLocalizedVersionDataBackup,
@@ -1227,6 +1228,58 @@ describe('save payloads (a session may only overwrite what it was able to read)'
     const merged = mergeLocalizedVersionData(ContentDataType.RESOURCE_CENTER, source, payload);
     const revived = merged.tabs[0].blocks.find((block) => block.id === 'block-2');
     expect((revived?.name as { text: string }[])[0].text).toBe('Guides FR');
+  });
+});
+
+describe('whitespace-only text runs (formatting splits "**Save** *now*" around a lone space)', () => {
+  const formatted = (): ContentEditorRoot[] =>
+    wrapElements([
+      {
+        type: ContentEditorElementType.TEXT,
+        data: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'Save', bold: true }, { text: ' ' }, { text: 'now', italic: true }],
+          },
+        ],
+      } as ContentEditorTextElement,
+    ]);
+
+  it('are not units, so a fully translated sentence is not left "missing"', () => {
+    const source = formatted();
+    const units = extractContentsTranslationUnits(source, undefined);
+    expect(units.map((unit) => unit.sourceText)).toEqual(['Save', 'now']);
+    expect(extractTranslatableUnits(source).map((unit) => unit.text)).toEqual(['Save', 'now']);
+
+    const localized = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map(units.map((unit) => [unit.path, `${unit.sourceText}-fr`])),
+    );
+    expect(countMissingTranslations(source, localized)).toBe(0);
+    // Their paths are positional, so skipping the space renumbers nothing.
+    expect(units.map((unit) => unit.path)).toEqual(['0.0.0:text.0.0', '0.0.0:text.0.2']);
+  });
+
+  it('still render: delivery keeps the source space between the translated runs', () => {
+    const source = formatted();
+    const units = extractContentsTranslationUnits(source, undefined);
+    const localized = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map(units.map((unit) => [unit.path, `${unit.sourceText}-fr`])),
+    );
+    const delivered = mergeLocalizedEditorContents(source, localized);
+    const runs = (delivered[0].children[0].children[0].element as ContentEditorTextElement).data[0]
+      .children as { text: string }[];
+    expect(runs.map((run) => run.text)).toEqual(['Save-fr', ' ', 'now-fr']);
+  });
+
+  it('isTranslatableText draws the line', () => {
+    expect(isTranslatableText('Save')).toBe(true);
+    expect(isTranslatableText(' Save ')).toBe(true);
+    expect(isTranslatableText('')).toBe(false);
+    expect(isTranslatableText(' \n\u00a0')).toBe(false);
   });
 });
 
