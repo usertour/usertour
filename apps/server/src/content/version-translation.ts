@@ -1,9 +1,10 @@
 /**
  * Translation-unit view over a version's stored translation row — the same
  * model the dashboard's export/import moves as a file, exposed as JSON. Pure:
- * no DB, no network. Every walk/graft rule lives in @usertour/helpers, so the
- * dashboard and this surface can never disagree on which text is translatable,
- * how a unit is addressed, or what a save preserves.
+ * no DB, no network (VersionTranslationService adds both). Every walk/graft rule
+ * lives in @usertour/helpers, so the dashboard's editor and the server can never
+ * disagree on which text is translatable, how a unit is addressed, or what a
+ * save preserves.
  *
  * Addressing: a flow unit is `steps/<step cvid>/<unit path>`; every other type
  * uses the walker's unit path as-is.

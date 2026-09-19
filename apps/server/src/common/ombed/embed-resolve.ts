@@ -17,7 +17,7 @@
  * retry, no wasted lookup (validate warns about its framing requirement).
  */
 
-import { oEmbedProviders } from '@/common/ombed/ombed';
+import { oEmbedProviders } from './ombed';
 import { isMatchUrlPattern } from '@usertour/helpers';
 
 interface EmbedElementNode {

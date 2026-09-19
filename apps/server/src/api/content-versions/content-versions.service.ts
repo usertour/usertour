@@ -18,11 +18,14 @@ import {
   type ValidationIssue,
 } from '@/common/errors/errors';
 import { ContentService, type WriteActor } from '@/content/content.service';
-import { ApiLocalizationsService } from '../localizations/localizations.service';
+import {
+  type TranslationTarget,
+  VersionTranslationService,
+} from '@/content/version-translation.service';
 import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
-import { resolveStaleEmbeds } from '../content-representation/embed-resolve';
+import { resolveStaleEmbeds } from '@/common/ombed/embed-resolve';
 import { UtilitiesService } from '@/utilities/utilities.service';
 import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
 import {
@@ -89,8 +92,6 @@ type VersionNode = {
   createdAt: Date;
 };
 
-type TargetLocales = Awaited<ReturnType<ApiLocalizationsService['listTargetLocalizations']>>;
-
 /**
  * Whether the response needs the version's step rows: `steps` and `questions`
  * derive from them, and a flow's translation status is counted over them.
@@ -112,7 +113,7 @@ export class ApiContentVersionsService {
     private readonly prisma: PrismaService,
     private readonly themes: ApiThemesService,
     private readonly utilities: UtilitiesService,
-    private readonly localizations: ApiLocalizationsService,
+    private readonly translations: VersionTranslationService,
   ) {}
 
   async get(
@@ -191,7 +192,7 @@ export class ApiContentVersionsService {
     projectId: string,
     expand: string[],
     resolvers: DecompileResolvers,
-    locales: TargetLocales,
+    locales: TranslationTarget[],
   ): Promise<ContentVersion> {
     const startRules = decompileStartRules(version.config, resolvers);
     const hideRules = decompileHideRules(version.config, resolvers);
@@ -217,16 +218,14 @@ export class ApiContentVersionsService {
     const questions = wantsQuestions ? mapQuestions(steps) : null;
     const decompiled = wantsSteps ? steps.map((s) => decompileStep(s, resolvers)) : undefined;
     const localizations = wantsLocalizations
-      ? await this.localizations.summarizeVersion(locales, { ...version, steps })
+      ? await this.translations.summarize(locales, { ...version, steps })
       : undefined;
     return mapVersion(version, questions, decompiled, rules, data, localizations);
   }
 
   /** The project's translation targets, read only when the expand asks for them. */
-  private async loadLocales(projectId: string, expand: string[]): Promise<TargetLocales> {
-    return expand.includes('localizations')
-      ? this.localizations.listTargetLocalizations(projectId)
-      : [];
+  private async loadLocales(projectId: string, expand: string[]): Promise<TranslationTarget[]> {
+    return expand.includes('localizations') ? this.translations.listTargets(projectId) : [];
   }
 
   private async loadSteps(versionId: string, projectId: string) {

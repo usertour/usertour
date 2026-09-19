@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Prisma } from '@prisma/client';
 import { CreateLocalizationInput, UpdateLocalizationInput } from './dto/localization.input';
-import { ParamsError, ResourceAlreadyExistsError } from '@/common/errors';
+import {
+  DefaultLocalizationCannotBeDeletedError,
+  ParamsError,
+  ResourceAlreadyExistsError,
+} from '@/common/errors';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
 /** Localization has a unique (projectId, code); surface a clash as a typed error, not a raw 500. */
@@ -98,8 +102,12 @@ export class LocalizationsService {
    */
   async delete(id: string) {
     const item = await this.prisma.localization.findFirst({ where: { id, deleted: false } });
-    if (!item || item.isDefault) {
+    if (!item) {
       throw new ParamsError();
+    }
+    // The default locale is the source language content is authored in.
+    if (item.isDefault) {
+      throw new DefaultLocalizationCannotBeDeletedError();
     }
     const localization = await this.prisma.localization.update({
       where: { id },
