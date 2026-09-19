@@ -494,13 +494,35 @@ export class DefaultLocalizationCannotBeDeletedError extends OpenAPIError {
   };
 }
 
+/**
+ * One code, three lookups — each says what was actually looked for, since the
+ * bare "not found" sends a caller the wrong way (restoring a localization that
+ * is live is not a bad id, and a deleted one is "missing" only until restored).
+ */
+const LOCALIZATION_NOT_FOUND_MESSAGES = {
+  code: {
+    en: 'Localization not found — the project has no live localization with this code (a deleted one must be restored first)',
+    'zh-CN': '本地化语言未找到——项目中没有该 code 的可用语言(已删除的需先恢复)',
+  },
+  live: {
+    en: 'Localization not found — the project has no live localization with this id',
+    'zh-CN': '本地化语言未找到——项目中没有该 id 的可用语言',
+  },
+  deleted: {
+    en: 'Localization not found — the project has no DELETED localization with this id; it may already be live',
+    'zh-CN': '本地化语言未找到——项目中没有该 id 的已删除语言,它可能本来就是可用状态',
+  },
+} as const;
+
 export class LocalizationNotFoundError extends OpenAPIError {
   code = 'E1040';
   statusCode = HttpStatus.NOT_FOUND;
-  messageDict = {
-    en: 'Localization not found — no locale with this code exists in the project',
-    'zh-CN': '本地化语言未找到——项目中不存在该 code 的语言',
-  };
+  messageDict: { en: string; 'zh-CN': string };
+
+  constructor(lookedFor: keyof typeof LOCALIZATION_NOT_FOUND_MESSAGES) {
+    super();
+    this.messageDict = { ...LOCALIZATION_NOT_FOUND_MESSAGES[lookedFor] };
+  }
 }
 
 /**

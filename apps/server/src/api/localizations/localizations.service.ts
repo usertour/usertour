@@ -237,7 +237,7 @@ export class ApiLocalizationsService {
       where: { id, projectId, deleted: state.deleted },
     });
     if (!localization) {
-      throw new LocalizationNotFoundError();
+      throw new LocalizationNotFoundError(state.deleted ? 'deleted' : 'live');
     }
     return localization;
   }
@@ -337,7 +337,7 @@ export class ApiLocalizationsService {
     });
     // A soft-deleted locale is not a translation target until it is restored.
     if (!localization || localization.deleted) {
-      throw new LocalizationNotFoundError();
+      throw new LocalizationNotFoundError('code');
     }
     if (localization.isDefault) {
       throw new ValidationError(

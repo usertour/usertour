@@ -273,7 +273,9 @@ describe('API v2 localizations (e2e)', () => {
         'it',
       ]);
       // Not a translation target, and gone from the version's status, while deleted…
-      expect((await readTranslation(flow, 'it')).status).toBe(404);
+      const dormant = await readTranslation(flow, 'it');
+      expect(dormant.status).toBe(404);
+      expect(dormant.body.error.message).toMatch(/with this code.*restored first/);
       const summary = await api('get', `${versionPath(flow)}?expand=localizations`, readToken);
       expect(summary.body.localizations.map((item: { code: string }) => item.code)).not.toContain(
         'it',
@@ -307,10 +309,15 @@ describe('API v2 localizations (e2e)', () => {
       const back = await readTranslation(flow, 'it');
       expect(back.body.enabled).toBe(true);
       expect(unitBySource(back.body.units, 'Welcome aboard').translation).toBe('Benvenuti a bordo');
-      // Restoring a live locale is a 404 — there is no deleted one with that id.
-      expect(
-        (await api('post', `${localesPath()}/${italian.id}/restore`, localeWriteToken)).status,
-      ).toBe(404);
+      // Restoring a live locale is a 404 that says why — not a bare "not found".
+      const alreadyLive = await api(
+        'post',
+        `${localesPath()}/${italian.id}/restore`,
+        localeWriteToken,
+      );
+      expect(alreadyLive.status).toBe(404);
+      expect(alreadyLive.body.error.code).toBe('E1040');
+      expect(alreadyLive.body.error.message).toMatch(/no DELETED localization.*already be live/);
 
       // Same again, restored by creating the code a second time.
       await api('delete', `${localesPath()}/${italian.id}`, localeWriteToken);
