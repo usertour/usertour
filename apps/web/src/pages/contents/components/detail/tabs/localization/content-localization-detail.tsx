@@ -42,7 +42,7 @@ import { ContentDataType } from '@usertour/types';
 import { Badge, Checkbox, TooltipProvider } from '@usertour/ui';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { LocalizedEditorContents } from './localized-fields';
 import { LocalizationPreviewDialog } from './localization-preview-dialog';
@@ -53,6 +53,7 @@ import {
   LocalizationViewProvider,
   countMissingUnits,
 } from './localization-view';
+import { findLocalizationByRouteSegment } from './localization-route';
 import { type LocalizationSaveState, useLocalizationAutosave } from './use-localization-autosave';
 import {
   AnnouncementLocalizationSections,
@@ -94,7 +95,6 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
   } = props;
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const [showOnlyMissing, setShowOnlyMissing] = useState(false);
 
   const viewValue = useMemo(
@@ -115,7 +115,8 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
               <RiArrowLeftLine
                 className="h-4 w-4 flex-none cursor-pointer"
                 onClick={() => {
-                  navigate(location.pathname.replace(`/${localization.locale}`, ''));
+                  // Up one segment, back to the content's localization list.
+                  navigate('..', { relative: 'path' });
                 }}
               />
               <h3 className="min-w-0 truncate text-lg font-medium" title={localization.name}>
@@ -755,7 +756,7 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
   const { contentLocalizationList, loading } = useContentLocalizations(version?.id);
   const resolveTargetVersionId = useLocalizationSaveTarget(content, version?.id, refetchContent);
 
-  const localization = localizationList?.find((item) => item.locale === locateCode);
+  const localization = findLocalizationByRouteSegment(localizationList, locateCode);
   const defaultLocalization = localizationList?.find((item) => item.isDefault);
 
   // First-load gating only — a background refetch flips `loading` while the

@@ -32,6 +32,7 @@ import { format } from 'date-fns';
 import { useMemo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
+import { localizationRouteSegment } from './localization-route';
 
 interface ContentLocalizationTableProps {
   contentType: string;
@@ -157,7 +158,7 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
               <TableRow key={localization.id}>
                 <TableCell>
                   <Link
-                    to={`${location.pathname}/${localization.locale}`}
+                    to={`${location.pathname}/${localizationRouteSegment(localization)}`}
                     className={cn('hover:text-primary hover:underline underline-offset-4')}
                   >
                     {localization.name}
