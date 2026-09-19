@@ -1,7 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
-@ObjectType()
-export class TranslatedUnit {
+@ObjectType('TranslatedUnit')
+export class TranslatedUnitDTO {
   @Field(() => String)
   path: string;
 

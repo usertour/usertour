@@ -49,7 +49,11 @@ domain/<module>/
   constants/                *.constant.ts
 ```
 
-One export per file, the file named after it in kebab-case (`create-localization.input.ts`, `localization-audit-snapshot.util.ts`). Only the module and its main resolver sit at the module root. This is the layout of the product studied, where it holds for nine files in ten. Moving a module into it renames files, not classes: GraphQL type names come from class names, so the schema and every consumer stay as they are.
+One export per file, the file named after it in kebab-case (`create-localization.input.ts`, `localization-audit-snapshot.util.ts`). Only the module and its main resolver sit at the module root. This is the layout of the product studied, where it holds for nine files in ten.
+
+Object types carry a `DTO` class suffix and name their GraphQL type explicitly — `@ObjectType('Localization') class LocalizationDTO`. The suffix shows the layer at every import, and keeps the GraphQL class apart from the Prisma model of the same name that domain services work with; the explicit name means renaming a class can never rename a public GraphQL type. Inputs keep the `…Input` names they already have and no explicit name. The product studied does the same for four object types in five.
+
+Moving a module into this layout leaves the generated schema byte-identical: files are renamed, input classes keep their names, and object types that gain the suffix pin their existing name.
 
 ### 4. Enforcement
 

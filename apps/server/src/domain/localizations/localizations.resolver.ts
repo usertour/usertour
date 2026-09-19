@@ -7,15 +7,15 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
 import { CreateLocalizationInput } from './dtos/create-localization.input';
 import { DeleteLocalizationInput } from './dtos/delete-localization.input';
-import { Localization } from './dtos/localization.dto';
+import { LocalizationDTO } from './dtos/localization.dto';
 import { QueryLocalizationInput } from './dtos/query-localization.input';
 import { TranslateLocalizationUnitsInput } from './dtos/translate-localization-units.input';
-import { TranslatedUnit } from './dtos/translated-unit.dto';
+import { TranslatedUnitDTO } from './dtos/translated-unit.dto';
 import { UpdateLocalizationInput } from './dtos/update-localization.input';
 import { LocalizationsService } from './services/localizations.service';
 import { MachineTranslationService } from './services/machine-translation.service';
 
-@Resolver(() => Localization)
+@Resolver(() => LocalizationDTO)
 @UseGuards(PermissionGuard)
 export class LocalizationsResolver {
   constructor(
@@ -23,7 +23,7 @@ export class LocalizationsResolver {
     private machineTranslationService: MachineTranslationService,
   ) {}
 
-  @Mutation(() => Localization)
+  @Mutation(() => LocalizationDTO)
   @RequirePermission({ capability: Capability.LocalizationCreate, scope: ScopeKind.Localization })
   @AuditWeb({
     action: 'create',
@@ -34,7 +34,7 @@ export class LocalizationsResolver {
     return this.service.create(data);
   }
 
-  @Mutation(() => Localization)
+  @Mutation(() => LocalizationDTO)
   @RequirePermission({ capability: Capability.LocalizationUpdate, scope: ScopeKind.Localization })
   @AuditWeb({
     action: 'update',
@@ -45,14 +45,14 @@ export class LocalizationsResolver {
     return await this.service.update(data);
   }
 
-  @Mutation(() => Localization)
+  @Mutation(() => LocalizationDTO)
   @RequirePermission({ capability: Capability.LocalizationUpdate, scope: ScopeKind.Localization })
   @AuditWeb({ action: 'update', resourceType: 'localization', resourceId: (a) => String(a.id) })
   async setDefaultLocalization(@Args('id') id: string) {
     return await this.service.setDefault(id);
   }
 
-  @Mutation(() => Localization)
+  @Mutation(() => LocalizationDTO)
   @RequirePermission({ capability: Capability.LocalizationDelete, scope: ScopeKind.Localization })
   @AuditWeb({
     action: 'delete',
@@ -63,7 +63,7 @@ export class LocalizationsResolver {
     return await this.service.delete(id);
   }
 
-  @Query(() => [Localization])
+  @Query(() => [LocalizationDTO])
   @RequirePermission({ capability: Capability.LocalizationRead, scope: ScopeKind.Localization })
   async listLocalizations(@Args() { projectId }: QueryLocalizationInput) {
     return await this.service.findMany(projectId);
@@ -72,7 +72,7 @@ export class LocalizationsResolver {
   // Content scope: translating is a content-editing action, gated the same
   // way as saving the translation (the scope resolver also verifies the
   // referenced localizationId belongs to the same project).
-  @Mutation(() => [TranslatedUnit])
+  @Mutation(() => [TranslatedUnitDTO])
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
   async translateLocalizationUnits(@Args('data') data: TranslateLocalizationUnitsInput) {
     return await this.machineTranslationService.translateUnits(data);

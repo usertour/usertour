@@ -103,7 +103,8 @@ substantially changed. Inside a domain module:
 
 ```
 <module>.module.ts · <module>.resolver.ts
-dtos/        *.input.ts, *.dto.ts   (GraphQL only)
+dtos/        *.input.ts, *.dto.ts   (GraphQL only; object types are
+                                     @ObjectType('X') class XDTO)
 services/    *.service.ts           take plain types from types/, never dtos/
 types/       *.type.ts
 utils/       *.util.ts
