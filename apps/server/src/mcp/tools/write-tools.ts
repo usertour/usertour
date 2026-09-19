@@ -20,7 +20,11 @@ import {
   updateContentBody,
 } from '@/api/content/content.schema';
 import { updateVersionBody } from '@/api/content-versions/content-versions.schema';
-import { updateVersionLocalizationBody } from '@/api/localizations/localizations.schema';
+import {
+  createLocalizationBody,
+  updateLocalizationBody,
+  updateVersionLocalizationBody,
+} from '@/api/localizations/localizations.schema';
 import { zodIssuesToValidationIssues } from '@/api/shared/zod-issues';
 import { ValidationError } from '@/common/errors/errors';
 import { isoDateTime } from '@/common/filters';
@@ -379,7 +383,12 @@ export function buildWriteTools(): McpTool[] {
           .describe(
             'The content version id — pass it together with its contentId (the pair is required).',
           ),
-        code: z.string().describe('The locale `code` from `list_localizations` (not the default).'),
+        code: z
+          .string()
+          .describe(
+            'The locale `code` — from `list_localizations`, or from `get_content_version` with ' +
+              '`expand: ["localizations"]` when that tool is outside your scopes. Not the default.',
+          ),
         translations: updateVersionLocalizationBody.shape.translations,
         enabled: updateVersionLocalizationBody.shape.enabled,
       },
@@ -865,6 +874,93 @@ export function buildWriteTools(): McpTool[] {
         await ctx.services.themes.delete(String(args.id), ctx.projectId);
         return { success: true };
       },
+    },
+
+    // ---- Localizations (project-level) ----
+    {
+      name: 'create_localization',
+      audit: auditCreate('localization'),
+      title: 'Create a localization',
+      capability: Capability.LocalizationCreate,
+      description:
+        'Add a language content can be translated into — the step to take when the language you ' +
+        'were asked to translate into is not in `list_localizations`. `code` is what an end ' +
+        "user's `locale_code` attribute must equal to receive this language; `locale` is the " +
+        'locale tag (e.g. `fr-FR`), `name` the display name. A `code` stays reserved while its ' +
+        'localization is soft-deleted: creating that code again RESTORES the deleted one — same ' +
+        'id, with every translation it held, each with the enabled state it had (so enabled ' +
+        'translations on published versions go live again) — and the response says so with ' +
+        '`restored: true`. The source language (`isDefault`) is set in the dashboard, not here.',
+      inputSchema: { ...createLocalizationBody.shape },
+      handler: (args, ctx) =>
+        ctx.services.localizations.create(ctx.projectId, {
+          code: String(args.code),
+          name: String(args.name),
+          locale: String(args.locale),
+        }),
+    },
+    {
+      name: 'update_localization',
+      audit: auditUpdate('localization', (args, ctx) =>
+        ctx.services.localizations.describeForAudit(String(args.id), ctx.projectId),
+      ),
+      title: 'Update a localization',
+      capability: Capability.LocalizationUpdate,
+      description:
+        'Rename a locale or change its `locale` tag / `code`. **Changing `code` takes effect on ' +
+        'LIVE content at once**: delivery picks a translation by matching `code` against each ' +
+        "user's `locale_code` attribute, so users still carrying the old code fall back to the " +
+        'source language until their attribute matches the new one. A code held by another ' +
+        'locale — including a soft-deleted one — is a conflict.',
+      inputSchema: {
+        id: z.string().describe('The localization id.'),
+        ...updateLocalizationBody.shape,
+      },
+      handler: (args, ctx) => {
+        const { id, ...fields } = args;
+        if (Object.values(fields).every((value) => value === undefined)) {
+          throw new ValidationError('Provide at least one of `code`, `name`, `locale`.');
+        }
+        return ctx.services.localizations.update(String(id), ctx.projectId, {
+          code: fields.code as string | undefined,
+          name: fields.name as string | undefined,
+          locale: fields.locale as string | undefined,
+        });
+      },
+    },
+    {
+      name: 'delete_localization',
+      audit: auditDelete('localization', (args, ctx) =>
+        ctx.services.localizations.describeForAudit(String(args.id), ctx.projectId),
+      ),
+      title: 'Delete a localization',
+      capability: Capability.LocalizationDelete,
+      description:
+        'Soft-delete a locale. It stops being offered and delivered AT ONCE — in every ' +
+        'environment, users of that language see the source language — but the translations it ' +
+        'holds on every version are kept, so `restore_localization` (or creating the same ' +
+        '`code` again) brings them all back. The default locale cannot be deleted. To switch ONE ' +
+        "content's translation off instead, use `update_version_localization` with " +
+        '`enabled: false`.',
+      inputSchema: { id: z.string().describe('The localization id.') },
+      handler: async (args, ctx) => {
+        await ctx.services.localizations.delete(String(args.id), ctx.projectId);
+        return { success: true };
+      },
+    },
+    {
+      name: 'restore_localization',
+      audit: auditUpdate('localization', (args, ctx) =>
+        ctx.services.localizations.describeForAudit(String(args.id), ctx.projectId),
+      ),
+      title: 'Restore a deleted localization',
+      capability: Capability.LocalizationUpdate,
+      description:
+        'Bring a soft-deleted locale back exactly as it was (find it with `list_localizations` ' +
+        '`deleted: true`). Every version translation it held returns with the enabled state it ' +
+        'had, so enabled translations on published versions are delivered again at once.',
+      inputSchema: { id: z.string().describe('The id of a deleted localization.') },
+      handler: (args, ctx) => ctx.services.localizations.restore(String(args.id), ctx.projectId),
     },
 
     // ---- Attribute definitions (project-level) ----

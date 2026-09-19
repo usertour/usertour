@@ -73,10 +73,18 @@ const ROUTES: Row[] = [
     template: `${P}/content/{contentId}/versions/{id}`,
     cap: Capability.ContentUpdate,
   },
-  // localizations — content-scoped on purpose: the locale list and a version's
-  // translation are read/written as part of authoring content, so they ride the
-  // content capabilities every existing credential already holds.
-  { method: 'get', template: `${P}/localizations`, cap: Capability.ContentRead },
+  // localizations — two resources: the project's locales are a settings-level
+  // resource with their own capability family; a version's TRANSLATION is part
+  // of the version and rides the content capabilities.
+  { method: 'get', template: `${P}/localizations`, cap: Capability.LocalizationRead },
+  { method: 'post', template: `${P}/localizations`, cap: Capability.LocalizationCreate },
+  { method: 'patch', template: `${P}/localizations/{id}`, cap: Capability.LocalizationUpdate },
+  { method: 'delete', template: `${P}/localizations/{id}`, cap: Capability.LocalizationDelete },
+  {
+    method: 'post',
+    template: `${P}/localizations/{id}/restore`,
+    cap: Capability.LocalizationUpdate,
+  },
   {
     method: 'get',
     template: `${P}/content/{contentId}/versions/{versionId}/localizations/{code}`,

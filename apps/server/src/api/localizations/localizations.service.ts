@@ -5,17 +5,24 @@ import { PrismaService } from 'nestjs-prisma';
 
 import {
   ContentNotFoundError,
+  DefaultLocalizationCannotBeDeletedError,
   LocalizationNotFoundError,
+  ResourceAlreadyExistsError,
+  ResourceConflictError,
   ValidationError,
   type ValidationIssue,
 } from '@/common/errors/errors';
 import { isHttpUrl } from '@/common/url';
 import { ContentService } from '@/content/content.service';
+import { LocalizationsService } from '@/localizations/localizations.service';
 import { UtilitiesService } from '@/utilities/utilities.service';
 
 import { resolveStaleEmbeds } from '../content-representation/embed-resolve';
 import { ApiObjectType } from '../shared/object-type';
 import type {
+  CreateLocalizationBody,
+  ListLocalizationsQuery,
+  UpdateLocalizationBody,
   UpdateVersionLocalizationBody,
   VersionLocalizationSummary,
 } from './localizations.schema';
@@ -38,6 +45,7 @@ interface LocalizationRow {
   name: string;
   locale: string;
   isDefault: boolean;
+  deleted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,11 +62,14 @@ const toStored = (row: VersionLocalizationRow | undefined): StoredTranslation | 
   row ? { localized: row.localized, backup: row.backup } : undefined;
 
 /**
- * v2 localizations handler: the project's locales (read-only) and each content
- * version's translation per locale, as flat translation units. Persistence is
- * delegated to the domain `upsertVersionLocalization` — the same single write
- * entry the dashboard saves through — so the editable-draft gate, the link
- * schema stamp and the version touch all apply unchanged.
+ * v2 localizations handler. Two resources live here:
+ *  - the project's locales — a settings-level resource (localization:*), managed
+ *    through the same domain service the dashboard uses, so soft delete,
+ *    restore-on-recreate and delivery-cache invalidation are shared;
+ *  - each content version's translation per locale, as flat translation units
+ *    (content:*). Persistence goes through the domain `upsertVersionLocalization`
+ *    — the single write entry the dashboard saves through — so the editable-draft
+ *    gate, the link schema stamp and the version touch all apply unchanged.
  */
 @Injectable()
 export class ApiLocalizationsService {
@@ -66,13 +77,63 @@ export class ApiLocalizationsService {
     private readonly content: ContentService,
     private readonly prisma: PrismaService,
     private readonly utilities: UtilitiesService,
+    private readonly localizations: LocalizationsService,
   ) {}
 
-  async list(projectId: string) {
-    const rows = await this.listProjectLocalizations(projectId);
+  async list(projectId: string, query: ListLocalizationsQuery = {}) {
+    const rows = await this.localizations.findMany(projectId, { deleted: query.deleted ?? false });
     // A project holds a handful of locales — one page, in the list envelope
     // every v2 collection uses.
     return { results: rows.map(this.mapLocalization), next: null, previous: null };
+  }
+
+  async create(projectId: string, body: CreateLocalizationBody) {
+    try {
+      const { localization, restored } = await this.localizations.createOrRestore({
+        projectId,
+        ...body,
+      });
+      return { ...this.mapLocalization(localization), restored };
+    } catch (err) {
+      throw this.toConflict(err);
+    }
+  }
+
+  async update(id: string, projectId: string, body: UpdateLocalizationBody) {
+    await this.requireLocalization(id, projectId, { deleted: false });
+    try {
+      return this.mapLocalization(await this.localizations.update({ id, ...body }));
+    } catch (err) {
+      throw this.toConflict(err);
+    }
+  }
+
+  async delete(id: string, projectId: string): Promise<void> {
+    const localization = await this.requireLocalization(id, projectId, { deleted: false });
+    if (localization.isDefault) {
+      throw new DefaultLocalizationCannotBeDeletedError();
+    }
+    await this.localizations.delete(id);
+  }
+
+  async restore(id: string, projectId: string) {
+    await this.requireLocalization(id, projectId, { deleted: true });
+    return this.mapLocalization(await this.localizations.restore(id));
+  }
+
+  /**
+   * Audit `before` for a delete: the locale plus how many version translations
+   * go dormant with it — the reach of the delete, kept out of the payloads.
+   */
+  async describeForAudit(id: string, projectId: string) {
+    const localization = await this.prisma.localization.findFirst({ where: { id, projectId } });
+    if (!localization) {
+      return undefined;
+    }
+    return {
+      ...localization,
+      versionTranslations: await this.localizations.countVersionTranslations(id),
+    };
   }
 
   async getVersionLocalization(
@@ -181,10 +242,30 @@ export class ApiLocalizationsService {
   }
 
   private async listProjectLocalizations(projectId: string): Promise<LocalizationRow[]> {
-    return this.prisma.localization.findMany({
-      where: { projectId },
-      orderBy: { createdAt: 'asc' },
+    return this.localizations.findMany(projectId);
+  }
+
+  /** A locale of THIS project in the given state — anything else is a 404. */
+  private async requireLocalization(
+    id: string,
+    projectId: string,
+    state: { deleted: boolean },
+  ): Promise<LocalizationRow> {
+    const localization = await this.prisma.localization.findFirst({
+      where: { id, projectId, deleted: state.deleted },
     });
+    if (!localization) {
+      throw new LocalizationNotFoundError();
+    }
+    return localization;
+  }
+
+  /** The domain raises a generic duplicate error; this surface answers 409. */
+  private toConflict(err: unknown): unknown {
+    if (err instanceof ResourceAlreadyExistsError) {
+      return new ResourceConflictError();
+    }
+    return err;
   }
 
   private mapLocalization = (row: LocalizationRow) => ({
@@ -194,6 +275,7 @@ export class ApiLocalizationsService {
     name: row.name,
     locale: row.locale,
     isDefault: row.isDefault,
+    deleted: row.deleted,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   });
@@ -271,7 +353,8 @@ export class ApiLocalizationsService {
     const localization = await this.prisma.localization.findUnique({
       where: { projectId_code: { projectId, code } },
     });
-    if (!localization) {
+    // A soft-deleted locale is not a translation target until it is restored.
+    if (!localization || localization.deleted) {
       throw new LocalizationNotFoundError();
     }
     if (localization.isDefault) {

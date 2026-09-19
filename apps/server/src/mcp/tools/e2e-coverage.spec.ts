@@ -66,6 +66,10 @@ const COVERED: Record<string, string> = {
   delete_environment: 'openapi/mcp.e2e-spec.ts',
   create_attribute_definition: 'openapi/mcp.e2e-spec.ts',
   list_localizations: 'openapi/mcp.e2e-spec.ts',
+  create_localization: 'openapi/mcp.e2e-spec.ts',
+  update_localization: 'openapi/mcp.e2e-spec.ts',
+  delete_localization: 'openapi/mcp.e2e-spec.ts',
+  restore_localization: 'openapi/mcp.e2e-spec.ts',
   get_version_localization: 'openapi/mcp.e2e-spec.ts',
   update_version_localization: 'openapi/mcp.e2e-spec.ts',
   // openapi/mcp-tool-contract.e2e-spec.ts — wrapper-layer contract cases

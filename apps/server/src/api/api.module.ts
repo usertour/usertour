@@ -14,6 +14,7 @@ import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
+import { LocalizationsModule } from '@/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { ThemesModule } from '@/themes/themes.module';
 
@@ -93,6 +94,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     AnalyticsModule,
     ThemesModule,
     EnvironmentsModule,
+    LocalizationsModule,
     ProjectsModule,
     UtilitiesModule,
     WebhooksModule,

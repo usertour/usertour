@@ -238,7 +238,6 @@ describe('MCP endpoint (e2e)', () => {
           'list_attribute_definitions',
           'list_content',
           'list_content_versions',
-          'list_localizations',
           'list_publish_history',
           'list_references',
           'list_event_definitions',
@@ -1816,19 +1815,105 @@ describe('MCP endpoint (e2e)', () => {
       });
     });
 
-    it('hides update_version_localization without content:update', async () => {
-      const token = await mint([Capability.ContentRead], [projectA]);
+    const LOCALE_SCOPES = [
+      Capability.LocalizationRead,
+      Capability.LocalizationCreate,
+      Capability.LocalizationUpdate,
+      Capability.LocalizationDelete,
+    ];
+    const toolNames = async (token: string): Promise<string[]> => {
       const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token);
-      const names = extractResult(res).result.tools.map((t: { name: string }) => t.name);
-      expect(names).toEqual(
-        expect.arrayContaining(['list_localizations', 'get_version_localization']),
+      return extractResult(res).result.tools.map((t: { name: string }) => t.name);
+    };
+
+    it('gates the two resources by their own scope families', async () => {
+      // Content scopes: a version's translation, but not the project's locales.
+      const contentOnly = await toolNames(await mint([Capability.ContentRead], [projectA]));
+      expect(contentOnly).toContain('get_version_localization');
+      expect(contentOnly).not.toContain('update_version_localization');
+      expect(contentOnly).not.toContain('list_localizations');
+      expect(contentOnly).not.toContain('create_localization');
+
+      // Localization scopes: the locales, but no content.
+      const localeOnly = await toolNames(await mint(LOCALE_SCOPES, [projectA]));
+      expect(localeOnly).toEqual(
+        expect.arrayContaining([
+          'list_localizations',
+          'create_localization',
+          'update_localization',
+          'delete_localization',
+          'restore_localization',
+        ]),
       );
-      expect(names).not.toContain('update_version_localization');
+      expect(localeOnly).not.toContain('get_version_localization');
+
+      const readOnly = await toolNames(await mint([Capability.LocalizationRead], [projectA]));
+      expect(readOnly).toContain('list_localizations');
+      expect(readOnly).not.toContain('create_localization');
+    });
+
+    it('create → update → delete → restore a locale, and re-create restores it', async () => {
+      const token = await mint(LOCALE_SCOPES, [projectA]);
+      const call = async (name: string, args: Record<string, unknown>) =>
+        parseToolContent({ result: await callTool(name, args, token) });
+      const liveCodes = async (deleted?: boolean) =>
+        (await call('list_localizations', deleted ? { deleted: true } : {})).items.map(
+          (item: { code: string }) => item.code,
+        );
+
+      const created = await call('create_localization', {
+        code: 'ja',
+        name: 'Japanese',
+        locale: 'ja-JP',
+      });
+      expect(created).toMatchObject({ code: 'ja', restored: false, deleted: false });
+
+      const updated = await call('update_localization', { id: created.id, name: '日本語' });
+      expect(updated).toMatchObject({ id: created.id, name: '日本語', code: 'ja' });
+      const empty = await callTool('update_localization', { id: created.id }, token);
+      expect(empty.isError).toBe(true);
+
+      expect(await call('delete_localization', { id: created.id })).toEqual({ success: true });
+      expect(await liveCodes()).not.toContain('ja');
+      expect(await liveCodes(true)).toContain('ja');
+
+      const restored = await call('restore_localization', { id: created.id });
+      expect(restored).toMatchObject({ id: created.id, deleted: false });
+      expect(await liveCodes()).toContain('ja');
+
+      await call('delete_localization', { id: created.id });
+      const recreated = await call('create_localization', {
+        code: 'ja',
+        name: 'Japanese',
+        locale: 'ja-JP',
+      });
+      expect(recreated).toMatchObject({ id: created.id, restored: true });
+
+      const audited = await prisma.auditLog.findMany({
+        where: { projectId: projectA, resourceType: 'localization', resourceId: created.id },
+        orderBy: { createdAt: 'asc' },
+      });
+      expect(audited.map((entry) => entry.operation)).toEqual([
+        'create_localization',
+        'update_localization',
+        'delete_localization',
+        'restore_localization',
+        'delete_localization',
+        'create_localization',
+      ]);
+
+      // Leave the project with its two seeded locales for the cases below.
+      await call('delete_localization', { id: created.id });
     });
 
     it('list → read → write → status round-trip', async () => {
       const token = await mint(
-        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [
+          Capability.ContentRead,
+          Capability.ContentCreate,
+          Capability.ContentUpdate,
+          Capability.LocalizationRead,
+        ],
         [projectA],
       );
 

@@ -1,4 +1,18 @@
-import { Body, Controller, Get, Param, Put, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  UseFilters,
+  UseGuards,
+  UsePipes,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
@@ -9,16 +23,25 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import {
+  CreateLocalizationBodyDto,
+  CreatedLocalizationDto,
+  ListLocalizationsQueryDto,
   ListLocalizationsResponseDto,
+  LocalizationDto,
+  UpdateLocalizationBodyDto,
   UpdateVersionLocalizationBodyDto,
   VersionLocalizationDto,
 } from './localizations.schema';
 import { ApiLocalizationsService } from './localizations.service';
 
 /**
- * The project's locales — read-only here (they are one-time project setup in
- * the dashboard). Gated by content:read: the list is the prerequisite for
- * reading or writing any version translation, not a resource of its own.
+ * The project's locales — a settings-level resource with its own capability
+ * family (localization:*), like themes or environments. A version's
+ * TRANSLATION is a different resource: it belongs to the version and rides the
+ * content capabilities (see ApiVersionLocalizationsController).
+ *
+ * The default locale (the source language) can be renamed but neither deleted
+ * nor reassigned here — switching it has project-wide side effects.
  */
 @ApiTags('Localizations')
 @ApiStandardErrorResponses()
@@ -31,13 +54,14 @@ export class ApiLocalizationsController {
   constructor(private readonly service: ApiLocalizationsService) {}
 
   @Get()
-  @RequireCapability(Capability.ContentRead)
+  @RequireCapability(Capability.LocalizationRead)
   @ApiOperation({
     summary: 'List localizations',
     description:
       'The locales this project translates content into. The `isDefault` one is the source ' +
       'language; every other `code` can carry a translation on each content version — read ' +
-      "and write those with the version's translation endpoints under Content versions.",
+      "and write those with the version's translation endpoints under Content versions. " +
+      '`deleted=true` lists the soft-deleted ones instead.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiResponse({
@@ -45,8 +69,103 @@ export class ApiLocalizationsController {
     description: 'List of localizations',
     type: ListLocalizationsResponseDto,
   })
-  async list(@Param('projectId') projectId: string) {
-    return this.service.list(projectId);
+  async list(@Param('projectId') projectId: string, @Query() query: ListLocalizationsQueryDto) {
+    return this.service.list(projectId, query);
+  }
+
+  @Post()
+  @RequireCapability(Capability.LocalizationCreate)
+  @ApiOperation({
+    summary: 'Create a localization',
+    description:
+      'Add a locale content can be translated into. A `code` stays reserved while its ' +
+      'localization is soft-deleted: creating that code again RESTORES the deleted one — same ' +
+      'id, with every translation it held (each with the enabled state it had) — and the ' +
+      'response says so with `restored: true`.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiResponse({ status: 201, description: 'Created localization', type: CreatedLocalizationDto })
+  @ApiResponse({
+    status: 409,
+    description: 'E1023 a live localization already uses this code',
+    type: ErrorResponseDto,
+  })
+  async create(@Param('projectId') projectId: string, @Body() body: CreateLocalizationBodyDto) {
+    return this.service.create(projectId, body);
+  }
+
+  @Patch(':id')
+  @RequireCapability(Capability.LocalizationUpdate)
+  @ApiOperation({
+    summary: 'Update a localization',
+    description:
+      'Rename a locale or change its locale tag / code. Changing `code` takes effect on live ' +
+      'content at once: delivery picks a translation by matching it against the end ' +
+      "user's `locale_code` attribute, so users carrying the old code fall back to the source " +
+      'language until their attribute matches the new one.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Localization ID' })
+  @ApiResponse({ status: 200, description: 'Updated localization', type: LocalizationDto })
+  @ApiResponse({ status: 404, description: 'Localization not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'E1023 another localization already uses this code (a soft-deleted one keeps its code ' +
+      'reserved until it is restored)',
+    type: ErrorResponseDto,
+  })
+  async update(
+    @Param('id') id: string,
+    @Param('projectId') projectId: string,
+    @Body() body: UpdateLocalizationBodyDto,
+  ) {
+    return this.service.update(id, projectId, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  @RequireCapability(Capability.LocalizationDelete)
+  @ApiOperation({
+    summary: 'Delete a localization',
+    description:
+      'Soft delete. The locale stops being offered and delivered at once — its users see the ' +
+      'source language — but the translations it holds on every version are kept, so ' +
+      'restoring it brings them all back. The default localization cannot be deleted.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Localization ID' })
+  @ApiResponse({ status: 204, description: 'Localization deleted' })
+  @ApiResponse({ status: 404, description: 'Localization not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description: 'E1041 the default localization cannot be deleted',
+    type: ErrorResponseDto,
+  })
+  async delete(@Param('id') id: string, @Param('projectId') projectId: string) {
+    await this.service.delete(id, projectId);
+  }
+
+  @Post(':id/restore')
+  @HttpCode(200)
+  @RequireCapability(Capability.LocalizationUpdate)
+  @ApiOperation({
+    summary: 'Restore a deleted localization',
+    description:
+      'Bring a soft-deleted locale back exactly as it was: every version translation it held ' +
+      'returns with the enabled state it had, so enabled translations on published versions ' +
+      'are delivered again at once.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Localization ID (of a deleted localization)' })
+  @ApiResponse({ status: 200, description: 'Restored localization', type: LocalizationDto })
+  @ApiResponse({
+    status: 404,
+    description: 'No deleted localization with this id',
+    type: ErrorResponseDto,
+  })
+  async restore(@Param('id') id: string, @Param('projectId') projectId: string) {
+    return this.service.restore(id, projectId);
   }
 }
 

@@ -485,6 +485,15 @@ export class EnvironmentNotFoundError extends OpenAPIError {
   };
 }
 
+export class DefaultLocalizationCannotBeDeletedError extends OpenAPIError {
+  code = 'E1041';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete the default localization — it is the source language content is authored in',
+    'zh-CN': '无法删除默认本地化——它是内容创作所用的源语言',
+  };
+}
+
 export class LocalizationNotFoundError extends OpenAPIError {
   code = 'E1040';
   statusCode = HttpStatus.NOT_FOUND;

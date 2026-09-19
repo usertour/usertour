@@ -1,10 +1,11 @@
 import { INestApplication } from '@nestjs/common';
-import { Capability } from '@usertour/types';
+import { Capability, ContentDataType } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
 import {
+  buildBizUser,
   buildContent,
   buildEnvironment,
   buildLocalization,
@@ -15,11 +16,13 @@ import {
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { UtilitiesService } from '@/utilities/utilities.service';
+import { ContentDataService } from '@/web-socket/core/content-data.service';
 import { createTestApp } from '../create-test-app';
 
 /**
- * Contract test for v2 localizations: the project's locales and each content
- * version's translation as flat units. Source text is authored through the real
+ * Contract test for v2 localizations — two resources with two scope families:
+ * the project's locales (localization:*, soft-deletable and restorable) and
+ * each content version's translation as flat units (content:*). Source text is authored through the real
  * version write so the units come from genuine editor trees, and every write
  * is verified by an independent read (and, where the contract is about storage,
  * against the VersionOnLocalization row itself).
@@ -45,6 +48,8 @@ describe('API v2 localizations (e2e)', () => {
   let frenchId: string;
   let readToken: string;
   let writeToken: string;
+  let localeReadToken: string;
+  let localeWriteToken: string;
 
   const CREATE = `mutation($input: CreateApiTokenInput!){
     createApiToken(input: $input){ token apiToken { id } }
@@ -59,7 +64,7 @@ describe('API v2 localizations (e2e)', () => {
     return gqlData(res).createApiToken.token;
   }
 
-  function api(method: 'get' | 'patch' | 'put' | 'post', path: string, token?: string) {
+  function api(method: 'get' | 'patch' | 'put' | 'post' | 'delete', path: string, token?: string) {
     const req = request(app.getHttpServer())[method](path);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   }
@@ -71,6 +76,10 @@ describe('API v2 localizations (e2e)', () => {
   const writeTranslation = (v: Ver, code: string, body: object, token = writeToken) =>
     api('put', `${versionPath(v)}/localizations/${code}`, token).send(body);
   const writeSource = (v: Ver, body: object) => api('patch', versionPath(v), writeToken).send(body);
+
+  // Other suites in this file add locales to the project; status checks look at French.
+  const frenchStatus = (summaries: { code: string }[]) =>
+    summaries.find((summary) => summary.code === 'fr');
 
   const unitBySource = (units: Unit[], source: string): Unit => {
     const unit = units.find((item) => item.source === source);
@@ -129,6 +138,13 @@ describe('API v2 localizations (e2e)', () => {
 
     readToken = await mint([Capability.ContentRead]);
     writeToken = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    localeReadToken = await mint([Capability.LocalizationRead]);
+    localeWriteToken = await mint([
+      Capability.LocalizationRead,
+      Capability.LocalizationCreate,
+      Capability.LocalizationUpdate,
+      Capability.LocalizationDelete,
+    ]);
   }, 60000);
 
   afterAll(async () => {
@@ -142,25 +158,237 @@ describe('API v2 localizations (e2e)', () => {
   });
 
   describe('project locales', () => {
-    it('lists every locale with content:read, flagging the default', async () => {
-      const res = await api('get', `/v2/projects/${projectId}/localizations`, readToken);
+    const localesPath = () => `/v2/projects/${projectId}/localizations`;
+    const createLocale = (body: object, token = localeWriteToken) =>
+      api('post', localesPath(), token).send(body);
+    const codesOf = (res: { body: { results: { code: string }[] } }) =>
+      res.body.results.map((item) => item.code);
+
+    it('lists every live locale with localization:read, flagging the default', async () => {
+      const res = await api('get', localesPath(), localeReadToken);
       expect(res.status).toBe(200);
       expect(res.body.next).toBeNull();
       expect(
-        res.body.results.map((item: { code: string; isDefault: boolean; object: string }) => ({
-          code: item.code,
-          isDefault: item.isDefault,
-          object: item.object,
-        })),
+        res.body.results
+          .filter((item: { code: string }) => ['en', 'fr'].includes(item.code))
+          .map((item: { code: string; isDefault: boolean; object: string; deleted: boolean }) => ({
+            code: item.code,
+            isDefault: item.isDefault,
+            object: item.object,
+            deleted: item.deleted,
+          })),
       ).toEqual([
-        { code: 'en', isDefault: true, object: 'localization' },
-        { code: 'fr', isDefault: false, object: 'localization' },
+        { code: 'en', isDefault: true, object: 'localization', deleted: false },
+        { code: 'fr', isDefault: false, object: 'localization', deleted: false },
       ]);
     });
 
-    it('requires a token', async () => {
-      const res = await api('get', `/v2/projects/${projectId}/localizations`);
-      expect(res.status).toBe(401);
+    it('is its own scope family: content scopes do not list or manage locales', async () => {
+      expect((await api('get', localesPath())).status).toBe(401);
+      expect((await api('get', localesPath(), readToken)).status).toBe(403);
+      expect(
+        (await createLocale({ code: 'xx', name: 'Nope', locale: 'xx-XX' }, writeToken)).status,
+      ).toBe(403);
+      // ...and a read-only locale token cannot write.
+      expect(
+        (await createLocale({ code: 'xx', name: 'Nope', locale: 'xx-XX' }, localeReadToken)).status,
+      ).toBe(403);
+    });
+
+    it('a content-only token still finds its target codes through the version expand', async () => {
+      const flow = await newFlow();
+      const res = await api('get', `${versionPath(flow)}?expand=localizations`, readToken);
+      expect(res.status).toBe(200);
+      expect(res.body.localizations.map((item: { code: string }) => item.code)).toContain('fr');
+    });
+
+    it('creates, renames and re-codes a locale; a taken code is a 409', async () => {
+      const created = await createLocale({ code: 'de', name: 'German', locale: 'de-DE' });
+      expect(created.status).toBe(201);
+      expect(created.body).toMatchObject({
+        object: 'localization',
+        code: 'de',
+        name: 'German',
+        locale: 'de-DE',
+        isDefault: false,
+        deleted: false,
+        restored: false,
+      });
+
+      const renamed = await api(
+        'patch',
+        `${localesPath()}/${created.body.id}`,
+        localeWriteToken,
+      ).send({ name: 'Deutsch', code: 'de-at' });
+      expect(renamed.status).toBe(200);
+      expect(renamed.body).toMatchObject({ id: created.body.id, name: 'Deutsch', code: 'de-at' });
+
+      const clash = await api(
+        'patch',
+        `${localesPath()}/${created.body.id}`,
+        localeWriteToken,
+      ).send({ code: 'fr' });
+      expect(clash.status).toBe(409);
+      expect(clash.body.error.code).toBe('E1023');
+      const duplicate = await createLocale({ code: 'fr', name: 'French again', locale: 'fr-FR' });
+      expect(duplicate.status).toBe(409);
+
+      // isDefault is not settable here; an empty patch is rejected.
+      const patchPath = `${localesPath()}/${created.body.id}`;
+      expect(
+        (await api('patch', patchPath, localeWriteToken).send({ isDefault: true })).status,
+      ).toBe(400);
+      expect((await api('patch', patchPath, localeWriteToken).send({})).status).toBe(400);
+    });
+
+    it('refuses to delete the default locale (E1041) and 404s foreign / unknown ids', async () => {
+      const english = await prisma.localization.findFirstOrThrow({
+        where: { projectId, isDefault: true },
+      });
+      const res = await api('delete', `${localesPath()}/${english.id}`, localeWriteToken);
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe('E1041');
+
+      const foreign = await buildLocalization(prisma, { code: 'pt' });
+      const notMine = await api('delete', `${localesPath()}/${foreign.id}`, localeWriteToken);
+      expect(notMine.status).toBe(404);
+      expect(notMine.body.error.code).toBe('E1040');
+      await prisma.localization.delete({ where: { id: foreign.id } });
+    });
+
+    it('soft-deletes and restores: translations survive, by restore and by re-create', async () => {
+      const italian = (await createLocale({ code: 'it', name: 'Italian', locale: 'it-IT' })).body;
+      const flow = await newFlow();
+      const units: Unit[] = (await readTranslation(flow, 'it')).body.units;
+      const textPath = unitBySource(units, 'Welcome aboard').path;
+      await writeTranslation(flow, 'it', {
+        translations: { [textPath]: 'Benvenuti a bordo' },
+        enabled: true,
+      });
+
+      const removed = await api('delete', `${localesPath()}/${italian.id}`, localeWriteToken);
+      expect(removed.status).toBe(204);
+      expect(codesOf(await api('get', localesPath(), localeReadToken))).not.toContain('it');
+      expect(codesOf(await api('get', `${localesPath()}?deleted=true`, localeReadToken))).toEqual([
+        'it',
+      ]);
+      // Not a translation target, and gone from the version's status, while deleted…
+      expect((await readTranslation(flow, 'it')).status).toBe(404);
+      const summary = await api('get', `${versionPath(flow)}?expand=localizations`, readToken);
+      expect(summary.body.localizations.map((item: { code: string }) => item.code)).not.toContain(
+        'it',
+      );
+      // …a second delete finds nothing live, and its code stays reserved.
+      expect((await api('delete', `${localesPath()}/${italian.id}`, localeWriteToken)).status).toBe(
+        404,
+      );
+      const german = await prisma.localization.findFirstOrThrow({
+        where: { projectId, code: 'de-at' },
+      });
+      expect(
+        (
+          await api('patch', `${localesPath()}/${german.id}`, localeWriteToken).send({
+            code: 'it',
+          })
+        ).status,
+      ).toBe(409);
+      // The rows are still there.
+      expect(
+        await prisma.versionOnLocalization.count({ where: { localizationId: italian.id } }),
+      ).toBe(1);
+
+      const restored = await api(
+        'post',
+        `${localesPath()}/${italian.id}/restore`,
+        localeWriteToken,
+      );
+      expect(restored.status).toBe(200);
+      expect(restored.body).toMatchObject({ id: italian.id, deleted: false });
+      const back = await readTranslation(flow, 'it');
+      expect(back.body.enabled).toBe(true);
+      expect(unitBySource(back.body.units, 'Welcome aboard').translation).toBe('Benvenuti a bordo');
+      // Restoring a live locale is a 404 — there is no deleted one with that id.
+      expect(
+        (await api('post', `${localesPath()}/${italian.id}/restore`, localeWriteToken)).status,
+      ).toBe(404);
+
+      // Same again, restored by creating the code a second time.
+      await api('delete', `${localesPath()}/${italian.id}`, localeWriteToken);
+      const recreated = await createLocale({ code: 'it', name: 'Italiano', locale: 'it-IT' });
+      expect(recreated.status).toBe(201);
+      expect(recreated.body).toMatchObject({ id: italian.id, name: 'Italiano', restored: true });
+      expect(
+        unitBySource((await readTranslation(flow, 'it')).body.units, 'Welcome aboard').translation,
+      ).toBe('Benvenuti a bordo');
+    });
+
+    it('a draft forked while the locale is deleted gets its translation back on restore', async () => {
+      const dutch = (await createLocale({ code: 'nl', name: 'Dutch', locale: 'nl-NL' })).body;
+      const flow = await newFlow();
+      const units: Unit[] = (await readTranslation(flow, 'nl')).body.units;
+      await writeTranslation(flow, 'nl', {
+        translations: { [unitBySource(units, 'Welcome aboard').path]: 'Welkom aan boord' },
+      });
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: flow.contentId,
+        versionId: flow.id,
+      });
+
+      await api('delete', `${localesPath()}/${dutch.id}`, localeWriteToken);
+      const forked = await api(
+        'post',
+        `/v2/projects/${projectId}/content/${flow.contentId}/versions`,
+        writeToken,
+      );
+      expect(forked.status).toBe(201);
+      await api('post', `${localesPath()}/${dutch.id}/restore`, localeWriteToken);
+
+      const draft: Ver = { contentId: flow.contentId, id: forked.body.id };
+      expect(
+        unitBySource((await readTranslation(draft, 'nl')).body.units, 'Welcome aboard').translation,
+      ).toBe('Welkom aan boord');
+    });
+
+    it('delivery follows the locale at once: deleted → source text, restored → translation', async () => {
+      const spanish = (await createLocale({ code: 'es', name: 'Spanish', locale: 'es-ES' })).body;
+      const flow = await newFlow('Welcome aboard');
+      const units: Unit[] = (await readTranslation(flow, 'es')).body.units;
+      await writeTranslation(flow, 'es', {
+        translations: { [unitBySource(units, 'Welcome aboard').path]: 'Bienvenido a bordo' },
+        enabled: true,
+      });
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: flow.contentId,
+        versionId: flow.id,
+      });
+      const bizUser = await buildBizUser(prisma, { environmentId, data: { locale_code: 'es' } });
+      const environment = await prisma.environment.findUniqueOrThrow({
+        where: { id: environmentId },
+      });
+
+      // What this user is actually served, through the published-version cache.
+      const delivered = async (): Promise<string> => {
+        const versions = await app
+          .get(ContentDataService)
+          .findCustomContentVersions(
+            { environment, externalUserId: bizUser.externalId },
+            [ContentDataType.FLOW],
+            flow.id,
+          );
+        return JSON.stringify(versions.map((version) => version.steps));
+      };
+
+      expect(await delivered()).toContain('Bienvenido a bordo');
+
+      await api('delete', `${localesPath()}/${spanish.id}`, localeWriteToken);
+      const afterDelete = await delivered();
+      expect(afterDelete).toContain('Welcome aboard');
+      expect(afterDelete).not.toContain('Bienvenido a bordo');
+
+      await api('post', `${localesPath()}/${spanish.id}/restore`, localeWriteToken);
+      expect(await delivered()).toContain('Bienvenido a bordo');
     });
   });
 
@@ -380,9 +608,13 @@ describe('API v2 localizations (e2e)', () => {
       expect(drifted.body.stats).toEqual({ total: 2, missing: 1, outdated: 1 });
 
       const summary = await api('get', `${versionPath(flow)}?expand=localizations`, readToken);
-      expect(summary.body.localizations).toEqual([
-        { code: 'fr', name: 'French', enabled: false, missing: 1, outdated: 1 },
-      ]);
+      expect(frenchStatus(summary.body.localizations)).toEqual({
+        code: 'fr',
+        name: 'French',
+        enabled: false,
+        missing: 1,
+        outdated: 1,
+      });
 
       const resaved = await writeTranslation(flow, 'fr', {
         translations: { [textPath]: 'Bon retour' },
@@ -562,9 +794,13 @@ describe('API v2 localizations (e2e)', () => {
       expect(unitBySource(res.body.units, 'We ship Friday').translation).toBe('Livraison vendredi');
 
       const summary = await api('get', `${versionPath(banner)}?expand=localizations`, readToken);
-      expect(summary.body.localizations).toEqual([
-        { code: 'fr', name: 'French', enabled: true, missing: 0, outdated: 0 },
-      ]);
+      expect(frenchStatus(summary.body.localizations)).toEqual({
+        code: 'fr',
+        name: 'French',
+        enabled: true,
+        missing: 0,
+        outdated: 0,
+      });
     });
   });
 });

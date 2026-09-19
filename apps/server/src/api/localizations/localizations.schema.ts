@@ -29,10 +29,75 @@ export const localization = z.object({
       'The source language content is authored in. It has no translation of its own — version ' +
         'translations exist only for the non-default locales.',
     ),
+  deleted: z
+    .boolean()
+    .describe(
+      'Soft-deleted: no longer offered or delivered, but the translations it holds on every ' +
+        'version are kept, so restoring it brings them all back.',
+    ),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
 });
 export class LocalizationDto extends createZodDto(localization) {}
+
+export const listLocalizationsQuery = z.object({
+  deleted: z
+    .stringbool()
+    .meta({ enum: ['true', 'false'] })
+    .optional()
+    .describe(
+      'List soft-deleted localizations instead of live ones — the recovery pool for restore.',
+    ),
+});
+export class ListLocalizationsQueryDto extends createZodDto(listLocalizationsQuery) {}
+export type ListLocalizationsQuery = z.infer<typeof listLocalizationsQuery>;
+
+const localeTag = z
+  .string()
+  .min(2)
+  .max(35)
+  .describe('The locale tag this entry stands for, e.g. `fr-FR`.');
+const localizationName = z.string().min(2).max(64).describe('Display name, e.g. "French".');
+const localizationCode = z
+  .string()
+  .min(2)
+  .max(35)
+  .describe(
+    "The value matched against an end user's `locale_code` attribute to pick their translation. " +
+      'Unique within the project.',
+  );
+
+export const createLocalizationBody = z
+  .object({ code: localizationCode, name: localizationName, locale: localeTag })
+  .strict();
+export class CreateLocalizationBodyDto extends createZodDto(createLocalizationBody) {}
+export type CreateLocalizationBody = z.infer<typeof createLocalizationBody>;
+
+/** Create response: the localization, plus whether it was brought back rather than made. */
+export const createdLocalization = localization.extend({
+  restored: z
+    .boolean()
+    .describe(
+      'true when this `code` belonged to a soft-deleted localization: that one was RESTORED ' +
+        '(same id, with every translation it held) instead of a new one being created.',
+    ),
+});
+export class CreatedLocalizationDto extends createZodDto(createdLocalization) {}
+
+// `isDefault` is not settable here — switching the source language has
+// project-wide side effects; this surface only manages the target locales.
+export const updateLocalizationBody = z
+  .object({
+    code: localizationCode.optional(),
+    name: localizationName.optional(),
+    locale: localeTag.optional(),
+  })
+  .strict()
+  .refine((body) => Object.values(body).some((value) => value !== undefined), {
+    message: 'Provide at least one of `code`, `name`, `locale`.',
+  });
+export class UpdateLocalizationBodyDto extends createZodDto(updateLocalizationBody) {}
+export type UpdateLocalizationBody = z.infer<typeof updateLocalizationBody>;
 
 export const listLocalizationsResponse = z.object({
   results: z.array(localization),

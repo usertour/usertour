@@ -1774,18 +1774,28 @@ export function buildReadTools(): McpTool[] {
     {
       name: 'list_localizations',
       title: 'List localizations',
-      capability: Capability.ContentRead,
+      capability: Capability.LocalizationRead,
       description:
         "List the project's locales. The `isDefault` one is the SOURCE language content is " +
         'authored in; every other `code` can carry a translation on each content version ' +
         '(`get_version_localization` / `update_version_localization`). Which translation a ' +
         "user receives is decided ONLY by their `locale_code` attribute matching a locale's " +
-        '`code` — the browser language is never detected. Locales are created in the dashboard ' +
-        '(Settings → Localization); an empty or default-only list means there is nothing to ' +
-        'translate into yet. Returns `{ items, nextCursor }`.',
-      inputSchema: {},
-      async handler(_args, ctx) {
-        return toListPayload(await ctx.services.localizations.list(ctx.projectId));
+        '`code` — the browser language is never detected. A default-only list means there is ' +
+        'nothing to translate into yet: add a target language with `create_localization`. ' +
+        '`deleted: true` lists the soft-deleted locales instead (the pool `restore_localization` ' +
+        'draws from). Returns `{ items, nextCursor }`.',
+      inputSchema: {
+        deleted: z
+          .boolean()
+          .optional()
+          .describe('List soft-deleted localizations instead of live ones.'),
+      },
+      async handler(args, ctx) {
+        return toListPayload(
+          await ctx.services.localizations.list(ctx.projectId, {
+            deleted: args.deleted === true,
+          }),
+        );
       },
     },
 
@@ -1813,7 +1823,12 @@ export function buildReadTools(): McpTool[] {
           .describe(
             'The content version id — pass it together with its contentId (the pair is required).',
           ),
-        code: z.string().describe('The locale `code` from `list_localizations` (not the default).'),
+        code: z
+          .string()
+          .describe(
+            'The locale `code` — from `list_localizations`, or from `get_content_version` with ' +
+              '`expand: ["localizations"]` when that tool is outside your scopes. Not the default.',
+          ),
       },
       async handler(args, ctx) {
         const contentId = asString(args.contentId);
