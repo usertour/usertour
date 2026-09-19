@@ -1212,6 +1212,7 @@ const translations = {
       scopeResources: {
         content: 'Content',
         theme: 'Themes',
+        localization: 'Localizations',
         user: 'Users',
         company: 'Companies',
         session: 'Sessions',
