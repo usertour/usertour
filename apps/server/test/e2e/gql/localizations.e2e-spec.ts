@@ -3,7 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { graphql, gqlData } from '../auth';
 import { createTestApp } from '../create-test-app';
-import { buildMembership, buildProject } from '../factories';
+import { buildContent, buildMembership, buildProject, buildVersion } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 /**
@@ -197,8 +197,20 @@ describe('GraphQL localizations (e2e)', () => {
   });
 
   describe('deleteLocalization', () => {
-    it('hard-deletes a non-default localization', async () => {
+    it('soft-deletes a non-default localization: hidden from the list, translations kept', async () => {
       const loc = gqlData(await createLocalization()).createLocalization;
+      const content = await buildContent(prisma, { projectId, type: 'flow' });
+      const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+      await prisma.versionOnLocalization.create({
+        data: {
+          versionId: version.id,
+          localizationId: loc.id,
+          enabled: true,
+          localized: { step: [] },
+          backup: {},
+        },
+      });
+
       const res = await graphql(app, {
         token,
         query:
@@ -208,7 +220,46 @@ describe('GraphQL localizations (e2e)', () => {
       expect(gqlData(res).deleteLocalization).toMatchObject({ id: loc.id });
 
       const row = await prisma.localization.findUnique({ where: { id: loc.id } });
-      expect(row).toBeNull();
+      expect(row).toMatchObject({ id: loc.id, deleted: true });
+      // The translation row survives — that is what makes the delete reversible.
+      expect(await prisma.versionOnLocalization.count({ where: { localizationId: loc.id } })).toBe(
+        1,
+      );
+
+      const list = await graphql(app, {
+        token,
+        query: 'query ($projectId: String!) { listLocalizations(projectId: $projectId) { id } }',
+        variables: { projectId },
+      });
+      const ids = gqlData(list).listLocalizations.map((item: { id: string }) => item.id);
+      expect(ids).not.toContain(loc.id);
+    });
+
+    it('creating the same code again restores the deleted localization', async () => {
+      const loc = gqlData(await createLocalization()).createLocalization;
+      await graphql(app, {
+        token,
+        query:
+          'mutation ($data: DeleteLocalizationInput!) { deleteLocalization(data: $data) { id } }',
+        variables: { data: { id: loc.id } },
+      });
+
+      const again = await graphql(app, {
+        token,
+        query:
+          'mutation ($data: CreateLocalizationInput!) { createLocalization(data: $data) { id name code } }',
+        variables: {
+          data: { projectId, code: loc.code, locale: loc.locale, name: 'Renamed on restore' },
+        },
+      });
+      // Same row, brought back — not a second localization with that code.
+      expect(gqlData(again).createLocalization).toMatchObject({
+        id: loc.id,
+        code: loc.code,
+        name: 'Renamed on restore',
+      });
+      const row = await prisma.localization.findUnique({ where: { id: loc.id } });
+      expect(row?.deleted).toBe(false);
     });
 
     it('errors deleting a default localization', async () => {

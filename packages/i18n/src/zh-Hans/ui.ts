@@ -612,6 +612,8 @@ const translations = {
       setDefaultMenuItem: '设为项目默认',
       setDefaultSuccess: '已设为默认本地化',
       deleteResource: '本地化',
+      deleteDescription:
+        '确定要删除 <strong>{{name}}</strong> 吗?删除后该语言会立即停止下发。它的译文会保留 —— 重新添加相同 code 的本地化即可恢复。',
       deleteSuccess: '本地化已删除',
       deleteFailure: '删除本地化失败。',
       createFailure: '创建本地化失败。',
@@ -1142,6 +1144,7 @@ const translations = {
       scopeResources: {
         content: '内容',
         theme: '主题',
+        localization: '本地化',
         user: '用户',
         company: '公司',
         session: '会话',

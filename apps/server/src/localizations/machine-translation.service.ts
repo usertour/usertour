@@ -84,8 +84,8 @@ export class MachineTranslationService {
 
     await this.assertPaidPlanOnCloud(versionId);
 
-    const localization = await this.prisma.localization.findUnique({
-      where: { id: localizationId },
+    const localization = await this.prisma.localization.findFirst({
+      where: { id: localizationId, deleted: false },
     });
     if (!localization) {
       throw new ParamsError();

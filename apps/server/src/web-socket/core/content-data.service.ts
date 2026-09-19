@@ -1,3 +1,4 @@
+import { DELIVERABLE_TRANSLATION } from '@/localizations/deliverable-translation';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -626,7 +627,7 @@ export class ContentDataService {
           // immutable as the version itself) so per-user locale substitution
           // never needs another read.
           versionOnLocalization: {
-            where: { enabled: true },
+            where: DELIVERABLE_TRANSLATION,
             select: { localized: true, localization: { select: { code: true } } },
           },
         },
@@ -715,7 +716,7 @@ export class ContentDataService {
             content: { select: { id: true, type: true } },
             steps: { orderBy: { sequence: 'asc' } },
             versionOnLocalization: {
-              where: { enabled: true },
+              where: DELIVERABLE_TRANSLATION,
               select: { localized: true, localization: { select: { code: true } } },
             },
           },

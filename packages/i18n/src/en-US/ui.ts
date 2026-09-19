@@ -654,6 +654,10 @@ const translations = {
       setDefaultMenuItem: 'Set as project default',
       setDefaultSuccess: 'The localization has been successfully set as default',
       deleteResource: 'localization',
+      // Deleting a localization is reversible (its translations are kept), so
+      // it does not use the shared "cannot be undone" description.
+      deleteDescription:
+        'Are you sure you want to delete <strong>{{name}}</strong>? It stops being delivered right away. Its translations are kept — add a localization with the same code again to restore it.',
       deleteSuccess: 'The localization has been successfully deleted',
       deleteFailure: 'Failed to delete localization.',
       createFailure: 'Failed to create localization.',
