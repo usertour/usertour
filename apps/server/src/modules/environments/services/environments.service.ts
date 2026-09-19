@@ -3,8 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { CreateEnvironmentInput, UpdateEnvironmentInput } from './dto/environment.input';
-import { ENVIRONMENT_DELETING, type EnvironmentDeletingPayload } from './environment.events';
+import { ENVIRONMENT_DELETING } from '../constants/environment-deleting.constant';
+import type { EnvironmentChanges } from '../types/environment-changes.type';
+import type { EnvironmentDeletingPayload } from '../types/environment-deleting-payload.type';
+import type { NewAccessToken } from '../types/new-access-token.type';
+import type { NewEnvironment } from '../types/new-environment.type';
 import { releaseSyncedSegmentMapping } from '@/integrations/cohort-sync.service';
 import {
   IdentityVerificationRequiresActiveSecretError,
@@ -13,7 +16,6 @@ import {
   PrimaryEnvironmentCannotBeDeletedError,
   SigningSecretLimitReachedError,
 } from '@/common/errors';
-import { CreateAccessTokenInput } from './dto/access-token.dto';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { ProjectsService } from '@/projects/projects.service';
 import { EncryptionService } from '@/shared/encryption.service';
@@ -69,7 +71,7 @@ export class EnvironmentsService {
     return { installed: userCount > 0, userCount };
   }
 
-  async create(newData: CreateEnvironmentInput) {
+  async create(newData: NewEnvironment) {
     return await this.prisma.$transaction(async (tx) => {
       await this.projectsService.checkEnvironmentLimit(newData.projectId, tx);
 
@@ -94,7 +96,7 @@ export class EnvironmentsService {
     });
   }
 
-  async update(input: UpdateEnvironmentInput) {
+  async update(input: EnvironmentChanges) {
     return await this.prisma.$transaction(async (tx) => {
       const env = await tx.environment.findUnique({
         where: { id: input.id },
@@ -315,7 +317,7 @@ export class EnvironmentsService {
   }
 
   // AccessToken related methods
-  async createAccessToken(environmentId: string, input: CreateAccessTokenInput) {
+  async createAccessToken(environmentId: string, input: NewAccessToken) {
     return this.prisma.accessToken.create({
       data: {
         name: input.name,

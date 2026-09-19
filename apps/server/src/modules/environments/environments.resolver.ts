@@ -5,29 +5,25 @@ import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
-import { ProjectIdArgs } from './args/project-id.args';
-import {
-  CreateEnvironmentInput,
-  DeleteEnvironmentInput,
-  UpdateEnvironmentInput,
-} from './dto/environment.input';
-import { EnvironmentsService } from './environments.service';
-import { Environment } from './models/environment.model';
-import { InstallationStatus } from './models/installation-status.model';
-import { AccessToken } from './dto/access-token.dto';
-import { CreateAccessTokenInput } from './dto/access-token.dto';
-import {
-  EnvironmentSigningSecret,
-  IdentityTokenDiagnosisModel,
-  IdentityVerificationStats,
-} from './dto/signing-secret.dto';
+import { AccessTokenDTO } from './dtos/access-token.dto';
+import { CreateAccessTokenInput } from './dtos/create-access-token.input';
+import { CreateEnvironmentInput } from './dtos/create-environment.input';
+import { DeleteEnvironmentInput } from './dtos/delete-environment.input';
+import { EnvironmentSigningSecretDTO } from './dtos/environment-signing-secret.dto';
+import { EnvironmentDTO } from './dtos/environment.dto';
+import { IdentityTokenDiagnosisDTO } from './dtos/identity-token-diagnosis.dto';
+import { IdentityVerificationStatsDTO } from './dtos/identity-verification-stats.dto';
+import { InstallationStatusDTO } from './dtos/installation-status.dto';
+import { ProjectIdArgs } from './dtos/project-id.input';
+import { UpdateEnvironmentInput } from './dtos/update-environment.input';
+import { EnvironmentsService } from './services/environments.service';
 
-@Resolver(() => Environment)
+@Resolver(() => EnvironmentDTO)
 @UseGuards(PermissionGuard)
 export class EnvironmentsResolver {
   constructor(private environmentsService: EnvironmentsService) {}
 
-  @Mutation(() => Environment)
+  @Mutation(() => EnvironmentDTO)
   @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Project })
   @AuditWeb({
     action: 'create',
@@ -38,7 +34,7 @@ export class EnvironmentsResolver {
     return this.environmentsService.create(newData);
   }
 
-  @Mutation(() => Environment)
+  @Mutation(() => EnvironmentDTO)
   @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Environment })
   @AuditWeb({
     action: 'update',
@@ -49,7 +45,7 @@ export class EnvironmentsResolver {
     return this.environmentsService.update(input);
   }
 
-  @Mutation(() => Environment)
+  @Mutation(() => EnvironmentDTO)
   @RequirePermission({ capability: Capability.EnvironmentManage, scope: ScopeKind.Environment })
   @AuditWeb({
     action: 'delete',
@@ -60,13 +56,13 @@ export class EnvironmentsResolver {
     return await this.environmentsService.delete(id);
   }
 
-  @Query(() => [Environment])
+  @Query(() => [EnvironmentDTO])
   @RequirePermission({ capability: Capability.EnvironmentRead, scope: ScopeKind.Project })
   userEnvironments(@Args() { projectId }: ProjectIdArgs) {
     return this.environmentsService.listEnvsByProjectId(projectId);
   }
 
-  @Query(() => InstallationStatus)
+  @Query(() => InstallationStatusDTO)
   @RequirePermission({ capability: Capability.EnvironmentRead, scope: ScopeKind.Environment })
   async verifyInstallation(@Args('environmentId') environmentId: string) {
     return this.environmentsService.verifyInstallation(environmentId);
@@ -78,7 +74,7 @@ export class EnvironmentsResolver {
     return this.environmentsService.projectHasAccessTokens(projectId);
   }
 
-  @Query(() => [AccessToken])
+  @Query(() => [AccessTokenDTO])
   @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
   async listAccessTokens(@Args('environmentId') environmentId: string) {
     const accessTokens = await this.environmentsService.findAllAccessTokens(environmentId);
@@ -101,7 +97,7 @@ export class EnvironmentsResolver {
     return `ak_${accessToken.accessToken}`;
   }
 
-  @Mutation(() => AccessToken)
+  @Mutation(() => AccessTokenDTO)
   @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
   // The ak_ value is a public client-side key by design (the SDK ships it), so the
   // snapshot needs no redaction — the audit-worthy fact is the lifecycle itself.
@@ -140,9 +136,9 @@ export class EnvironmentsResolver {
 
   // Identity verification (ADR 0008). Signing secrets are environment
   // credentials of the same sensitivity class as API access tokens, so the
-  // whole surface rides the AccessToken capabilities (OWNER-only).
+  // whole surface rides the AccessTokenDTO capabilities (OWNER-only).
 
-  @Query(() => [EnvironmentSigningSecret])
+  @Query(() => [EnvironmentSigningSecretDTO])
   @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
   async listSigningSecrets(@Args('environmentId') environmentId: string) {
     const signingSecrets = await this.environmentsService.listActiveSigningSecrets(environmentId);
@@ -165,7 +161,7 @@ export class EnvironmentsResolver {
     return signingSecret.secret;
   }
 
-  @Mutation(() => EnvironmentSigningSecret)
+  @Mutation(() => EnvironmentSigningSecretDTO)
   @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
   // Unlike ak_ tokens the utv_ value IS a credential — the result's plaintext
   // `secret` is blanked by the global SECRET_KEYS redaction before storage.
@@ -195,7 +191,7 @@ export class EnvironmentsResolver {
     return true;
   }
 
-  @Mutation(() => Environment)
+  @Mutation(() => EnvironmentDTO)
   @RequirePermission({ capability: Capability.AccessTokenManage, scope: ScopeKind.Environment })
   @AuditWeb({
     action: 'update',
@@ -210,13 +206,13 @@ export class EnvironmentsResolver {
     return await this.environmentsService.setRequireIdentityVerification(environmentId, required);
   }
 
-  @Query(() => [IdentityVerificationStats])
+  @Query(() => [IdentityVerificationStatsDTO])
   @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
   async getIdentityVerificationStats(@Args('environmentId') environmentId: string) {
     return await this.environmentsService.getIdentityVerificationStats(environmentId);
   }
 
-  @Query(() => IdentityTokenDiagnosisModel)
+  @Query(() => IdentityTokenDiagnosisDTO)
   @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
   async validateIdentityToken(
     @Args('environmentId') environmentId: string,

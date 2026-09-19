@@ -3,8 +3,7 @@ import { OpenAPICompaniesService } from './companies.service';
 import { BizService } from '@/biz/biz.service';
 import { CompanyNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
-import { Environment } from '@/environments/models/environment.model';
-import { Prisma } from '@prisma/client';
+import { type Environment, Prisma } from '@prisma/client';
 
 describe('OpenAPICompaniesService', () => {
   let service: OpenAPICompaniesService;
@@ -15,6 +14,7 @@ describe('OpenAPICompaniesService', () => {
     projectId: 'project-1',
     name: 'Test Environment',
     token: 'test-token',
+    deleted: false,
     isPrimary: false,
     requireIdentityVerification: false,
     createdAt: new Date(),

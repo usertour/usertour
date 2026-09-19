@@ -11,7 +11,7 @@ import {
   hashApiTokenSecret,
 } from '@/api-token/api-token.crypto';
 import { TwoFactorService } from '@/auth/two-factor.service';
-import { EnvironmentsService } from '@/environments/environments.service';
+import { EnvironmentsService } from '@/modules/environments/services/environments.service';
 
 import { buildEnvironment, buildMembership, buildProject } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';

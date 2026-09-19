@@ -6,7 +6,7 @@ import { ApiTokenGuard } from '@/api-token/api-token.guard';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
 
 import { ApiStandardErrorResponses } from '../shared/error-response';

@@ -1,4 +1,4 @@
-import { EnvironmentsModule } from '@/environments/environments.module';
+import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { LocalizationsModule } from '@/modules/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';

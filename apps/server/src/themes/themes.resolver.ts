@@ -1,4 +1,4 @@
-import { ProjectIdArgs } from '@/environments/args/project-id.args';
+import { ProjectIdArgs } from '@/modules/environments/dtos/project-id.input';
 import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';

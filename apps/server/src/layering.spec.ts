@@ -42,7 +42,6 @@ const LAYERS: Record<string, Layer> = {
   biz: 'modules',
   common: 'modules',
   content: 'modules',
-  environments: 'modules',
   events: 'modules',
   integrations: 'modules',
   license: 'modules',

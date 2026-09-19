@@ -1,5 +1,5 @@
 import { BaseModel } from '@/common/models/base.model';
-import { Environment } from '@/environments/models/environment.model';
+import { EnvironmentDTO } from '@/modules/environments/dtos/environment.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
@@ -13,8 +13,8 @@ export class Project extends BaseModel {
   @Field(() => String, { nullable: true })
   logoUrl?: string;
 
-  @Field(() => [Environment], { nullable: true })
-  environments?: [Environment];
+  @Field(() => [EnvironmentDTO], { nullable: true })
+  environments?: [EnvironmentDTO];
 
   @Field(() => String, { nullable: true })
   customerId?: string;

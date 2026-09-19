@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { type Environment, Prisma } from '@prisma/client';
 import { toArray } from '../shared/query';
 
 import { AnalyticsService } from '@/analytics/analytics.service';
@@ -9,7 +9,6 @@ import {
   ValidationError,
 } from '@/common/errors/errors';
 import { ContentService } from '@/content/content.service';
-import { Environment } from '@/environments/models/environment.model';
 import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
 
 import { paginate } from '../shared/pagination';

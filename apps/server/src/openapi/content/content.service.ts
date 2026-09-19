@@ -10,12 +10,11 @@ import {
   ListContentVersionsQueryDto,
   VersionOrderByType,
 } from './content.dto';
-import { Prisma } from '@prisma/client';
+import { type Environment, Prisma } from '@prisma/client';
 import { ContentService } from '@/content/content.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { extractQuestionData } from '@/utils/content-question';
 type ContentWithVersions = Prisma.ContentGetPayload<{

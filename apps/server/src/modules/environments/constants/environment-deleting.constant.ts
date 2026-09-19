@@ -4,7 +4,3 @@
  * which imports environments — can tear down what they own for it first.
  */
 export const ENVIRONMENT_DELETING = 'environment.deleting';
-
-export interface EnvironmentDeletingPayload {
-  environmentId: string;
-}

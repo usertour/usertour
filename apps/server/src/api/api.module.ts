@@ -12,7 +12,7 @@ import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exceptio
 import { UtilitiesModule } from '@/utilities/utilities.module';
 import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
-import { EnvironmentsModule } from '@/environments/environments.module';
+import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { LocalizationsModule } from '@/modules/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';

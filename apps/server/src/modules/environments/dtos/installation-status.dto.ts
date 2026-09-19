@@ -6,8 +6,8 @@ import { Field, Int, ObjectType } from '@nestjs/graphql';
  * at least one BizUser exists for the environment (i.e. usertour.identify() has
  * run against it).
  */
-@ObjectType()
-export class InstallationStatus {
+@ObjectType('InstallationStatus')
+export class InstallationStatusDTO {
   @Field()
   installed: boolean;
 

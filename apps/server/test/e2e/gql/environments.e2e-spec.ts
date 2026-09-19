@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ENVIRONMENT_DELETING } from '@/environments/environment.events';
+import { ENVIRONMENT_DELETING } from '@/modules/environments/constants/environment-deleting.constant';
 import { PrismaService } from 'nestjs-prisma';
 
 import { graphql, gqlData } from '../auth';

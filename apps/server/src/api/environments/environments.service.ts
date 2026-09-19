@@ -9,7 +9,7 @@ import {
   EnvironmentNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
-import { EnvironmentsService } from '@/environments/environments.service';
+import { EnvironmentsService } from '@/modules/environments/services/environments.service';
 
 import { nameContains } from '@/common/filters';
 import { paginate } from '../shared/pagination';

@@ -4,7 +4,7 @@ import { toArray } from '../shared/query';
 import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { BizService } from '@/biz/biz.service';
 import { CompanyNotFoundError, UserNotFoundError, ValidationError } from '@/common/errors/errors';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';

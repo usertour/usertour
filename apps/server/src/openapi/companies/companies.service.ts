@@ -10,7 +10,7 @@ import {
 import { CompanyNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { DeleteResponseDto } from '@/common/openapi/dtos';
 

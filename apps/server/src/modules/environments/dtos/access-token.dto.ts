@@ -1,8 +1,7 @@
-import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
-import { IsOptional, IsString } from 'class-validator';
+import { Field, ID, ObjectType } from '@nestjs/graphql';
 
-@ObjectType()
-export class AccessToken {
+@ObjectType('AccessToken')
+export class AccessTokenDTO {
   @Field(() => ID)
   id: string;
 
@@ -32,16 +31,4 @@ export class AccessToken {
 
   @Field()
   updatedAt: Date;
-}
-
-@InputType()
-export class CreateAccessTokenInput {
-  @Field()
-  @IsString()
-  name: string;
-
-  @Field({ nullable: true })
-  @IsString()
-  @IsOptional()
-  description?: string;
 }

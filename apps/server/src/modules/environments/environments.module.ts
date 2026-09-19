@@ -3,7 +3,7 @@ import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { Module } from '@nestjs/common';
 import { EnvironmentsResolver } from './environments.resolver';
-import { EnvironmentsService } from './environments.service';
+import { EnvironmentsService } from './services/environments.service';
 
 @Module({
   imports: [ProjectsModule, SharedModule],

@@ -8,7 +8,7 @@ import { BizModule } from '@/biz/biz.module';
 import { ApiTokenModule } from '@/api-token/api-token.module';
 import config from '@/common/configs/config';
 import { ContentModule } from '@/content/content.module';
-import { EnvironmentsModule } from '@/environments/environments.module';
+import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
 import { GqlConfigService } from '@/gql-config.service';
 import { ProjectsModule } from '@/projects/projects.module';

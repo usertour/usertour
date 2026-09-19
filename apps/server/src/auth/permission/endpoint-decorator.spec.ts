@@ -7,7 +7,7 @@ import { AttributesResolver } from '@/attributes/attributes.resolver';
 import { AuditResolver } from '@/audit/audit.resolver';
 import { BizResolver } from '@/biz/biz.resolver';
 import { ContentResolver } from '@/content/content.resolver';
-import { EnvironmentsResolver } from '@/environments/environments.resolver';
+import { EnvironmentsResolver } from '@/modules/environments/environments.resolver';
 import { EventsResolver } from '@/events/events.resolver';
 import { IntegrationsResolver } from '@/integrations/integrations.resolver';
 import { LocalizationsResolver } from '@/modules/localizations/localizations.resolver';

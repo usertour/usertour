@@ -1,6 +1,6 @@
 import { Controller, Get, Query, UseGuards, UseFilters } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
 import { OpenAPIKeyGuard } from '@/openapi/openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
