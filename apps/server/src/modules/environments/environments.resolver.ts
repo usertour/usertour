@@ -136,7 +136,7 @@ export class EnvironmentsResolver {
 
   // Identity verification (ADR 0008). Signing secrets are environment
   // credentials of the same sensitivity class as API access tokens, so the
-  // whole surface rides the AccessTokenDTO capabilities (OWNER-only).
+  // whole surface rides the AccessToken capabilities (OWNER-only).
 
   @Query(() => [EnvironmentSigningSecretDTO])
   @RequirePermission({ capability: Capability.AccessTokenRead, scope: ScopeKind.Environment })
