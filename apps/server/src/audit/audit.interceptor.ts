@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { type GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { type Observable, tap } from 'rxjs';
+import { localizationAuditSnapshot } from '@/localizations/localization-audit-snapshot';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { Audit, AuditWeb } from './audit.decorator';
 import { AuditService } from './audit.service';
@@ -472,20 +473,8 @@ export async function fetchBefore(
       return prisma.webhook.findUnique({ where: { id: String(id) } });
     case 'environment':
       return prisma.environment.findUnique({ where: { id: String(id) } });
-    case 'localization': {
-      // A locale delete is soft and keeps its translations, so the snapshot
-      // records the locale plus how many version translations it carries —
-      // the reach of the change, without the payloads.
-      const localization = await prisma.localization.findUnique({ where: { id: String(id) } });
-      return localization
-        ? {
-            ...localization,
-            versionTranslations: await prisma.versionOnLocalization.count({
-              where: { localizationId: localization.id },
-            }),
-          }
-        : null;
-    }
+    case 'localization':
+      return localizationAuditSnapshot(prisma, String(id));
     case 'project':
       return prisma.project.findUnique({ where: { id: String(id) } });
     default: // content → snapshot policy is 'none' anyway

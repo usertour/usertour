@@ -36,9 +36,6 @@ import {
   summarizeTranslationUnits,
 } from './version-translation';
 
-/** Per-provider cap on an oEmbed lookup — same budget as the version write path. */
-const OEMBED_TIMEOUT_MS = 5000;
-
 interface LocalizationRow {
   id: string;
   code: string;
@@ -121,21 +118,6 @@ export class ApiLocalizationsService {
     return this.mapLocalization(await this.localizations.restore(id));
   }
 
-  /**
-   * Audit `before` for a delete: the locale plus how many version translations
-   * go dormant with it — the reach of the delete, kept out of the payloads.
-   */
-  async describeForAudit(id: string, projectId: string) {
-    const localization = await this.prisma.localization.findFirst({ where: { id, projectId } });
-    if (!localization) {
-      return undefined;
-    }
-    return {
-      ...localization,
-      versionTranslations: await this.localizations.countVersionTranslations(id),
-    };
-  }
-
   async getVersionLocalization(
     versionId: string,
     contentId: string,
@@ -189,7 +171,7 @@ export class ApiLocalizationsService {
       // Only embeds whose url actually changed are looked up — an embed echoed
       // back unchanged keeps its stored resolution, so a provider hiccup can
       // never erase it.
-      await resolveStaleEmbeds(payload.localized, (url) => this.fetchOembed(url));
+      await resolveStaleEmbeds(payload.localized, (url) => this.utilities.queryOembedInfo(url));
       await this.content.upsertVersionLocalization({
         versionId,
         localizationId: localization.id,
@@ -426,15 +408,5 @@ export class ApiLocalizationsService {
       effective.set(path, isMediaUrlUnitPath(path) ? value.trim() : value);
     });
     return effective;
-  }
-
-  /** One oEmbed lookup, capped — the same budget as the version write path. */
-  private fetchOembed(url: string) {
-    return Promise.race([
-      this.utilities.queryOembedInfo(url),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('oembed timeout')), OEMBED_TIMEOUT_MS),
-      ),
-    ]);
   }
 }

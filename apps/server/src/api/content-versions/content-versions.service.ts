@@ -649,19 +649,13 @@ export class ApiContentVersionsService {
     // Resolve embeds whose url is new or changed (parsedUrl !== url), the way
     // the builder does — otherwise they render as a grey placeholder (new) or
     // keep showing the PREVIOUS content (url edited, old oembed retained by
-    // the keep-style merge). 5s cap per provider call; failure degrades to a
-    // plain iframe like the builder's failure path.
+    // the keep-style merge). Each provider call is time-capped inside
+    // resolveStaleEmbeds; failure degrades to a plain iframe like the builder's
+    // failure path.
     await Promise.all(
       [content.steps, content.data].map((payload) =>
         payload
-          ? resolveStaleEmbeds(payload, (url) =>
-              Promise.race([
-                this.utilities.queryOembedInfo(url),
-                new Promise<never>((_, reject) =>
-                  setTimeout(() => reject(new Error('oembed timeout')), 5000),
-                ),
-              ]),
-            )
+          ? resolveStaleEmbeds(payload, (url) => this.utilities.queryOembedInfo(url))
           : undefined,
       ),
     );

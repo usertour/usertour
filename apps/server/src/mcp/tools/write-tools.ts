@@ -27,6 +27,7 @@ import {
 } from '@/api/localizations/localizations.schema';
 import { zodIssuesToValidationIssues } from '@/api/shared/zod-issues';
 import { ValidationError } from '@/common/errors/errors';
+import { localizationAuditSnapshot } from '@/localizations/localization-audit-snapshot';
 import { isoDateTime } from '@/common/filters';
 import {
   createEnvironmentBody,
@@ -393,18 +394,19 @@ export function buildWriteTools(): McpTool[] {
         enabled: updateVersionLocalizationBody.shape.enabled,
       },
       handler: (args, ctx) => {
-        if (args.translations === undefined && args.enabled === undefined) {
-          throw new ValidationError('Provide `translations`, `enabled`, or both.');
+        const { contentId, versionId, code, ...body } = args;
+        // HERE-parse through the REST body schema (the tool's raw shape cannot
+        // carry its `.refine`), so both surfaces accept and reject identically.
+        const parsed = updateVersionLocalizationBody.safeParse(body);
+        if (!parsed.success) {
+          throw ValidationError.fromIssues(zodIssuesToValidationIssues(parsed.error));
         }
         return ctx.services.localizations.updateVersionLocalization(
-          String(args.versionId),
-          String(args.contentId),
+          String(versionId),
+          String(contentId),
           ctx.projectId,
-          String(args.code),
-          {
-            translations: args.translations as Record<string, string> | undefined,
-            enabled: args.enabled as boolean | undefined,
-          },
+          String(code),
+          parsed.data,
         );
       },
     },
@@ -902,7 +904,7 @@ export function buildWriteTools(): McpTool[] {
     {
       name: 'update_localization',
       audit: auditUpdate('localization', (args, ctx) =>
-        ctx.services.localizations.describeForAudit(String(args.id), ctx.projectId),
+        localizationAuditSnapshot(ctx.prisma, String(args.id), ctx.projectId),
       ),
       title: 'Update a localization',
       capability: Capability.LocalizationUpdate,
@@ -917,21 +919,20 @@ export function buildWriteTools(): McpTool[] {
         ...updateLocalizationBody.shape,
       },
       handler: (args, ctx) => {
-        const { id, ...fields } = args;
-        if (Object.values(fields).every((value) => value === undefined)) {
-          throw new ValidationError('Provide at least one of `code`, `name`, `locale`.');
+        const { id, ...body } = args;
+        // Same HERE-parse as update_version_localization: the "at least one
+        // field" rule lives on the REST schema's `.refine`.
+        const parsed = updateLocalizationBody.safeParse(body);
+        if (!parsed.success) {
+          throw ValidationError.fromIssues(zodIssuesToValidationIssues(parsed.error));
         }
-        return ctx.services.localizations.update(String(id), ctx.projectId, {
-          code: fields.code as string | undefined,
-          name: fields.name as string | undefined,
-          locale: fields.locale as string | undefined,
-        });
+        return ctx.services.localizations.update(String(id), ctx.projectId, parsed.data);
       },
     },
     {
       name: 'delete_localization',
       audit: auditDelete('localization', (args, ctx) =>
-        ctx.services.localizations.describeForAudit(String(args.id), ctx.projectId),
+        localizationAuditSnapshot(ctx.prisma, String(args.id), ctx.projectId),
       ),
       title: 'Delete a localization',
       capability: Capability.LocalizationDelete,
@@ -951,7 +952,7 @@ export function buildWriteTools(): McpTool[] {
     {
       name: 'restore_localization',
       audit: auditUpdate('localization', (args, ctx) =>
-        ctx.services.localizations.describeForAudit(String(args.id), ctx.projectId),
+        localizationAuditSnapshot(ctx.prisma, String(args.id), ctx.projectId),
       ),
       title: 'Restore a deleted localization',
       capability: Capability.LocalizationUpdate,

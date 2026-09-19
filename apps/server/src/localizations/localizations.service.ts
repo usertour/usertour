@@ -122,11 +122,6 @@ export class LocalizationsService {
     return localization;
   }
 
-  /** How many version translations hang off a locale — the reach of deleting it. */
-  async countVersionTranslations(id: string): Promise<number> {
-    return await this.prisma.versionOnLocalization.count({ where: { localizationId: id } });
-  }
-
   async get(id: string) {
     return await this.prisma.localization.findUnique({
       where: { id },

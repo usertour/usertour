@@ -39,6 +39,22 @@ export type OembedFetcher = (
   url: string,
 ) => Promise<{ html?: string; width?: unknown; height?: unknown }>;
 
+/** Cap on one provider lookup — a slow provider must not stall the write it rides on. */
+export const OEMBED_LOOKUP_TIMEOUT_MS = 5000;
+
+/** Rejects once the cap passes; the timer is always cleared, so a fast lookup leaves nothing pending. */
+const withLookupTimeout = async <T>(lookup: Promise<T>): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('oembed timeout')), OEMBED_LOOKUP_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([lookup, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 const collectStale = (node: unknown, out: EmbedElementNode[]): void => {
   if (Array.isArray(node)) {
     for (const child of node) collectStale(child, out);
@@ -61,8 +77,9 @@ const collectStale = (node: unknown, out: EmbedElementNode[]): void => {
  * Walk any compiled payload (flow steps content trees, banner/checklist/
  * announcement/resource-center block lists) and resolve every embed whose
  * `parsedUrl` is missing or belongs to a previous url. Mutates in place.
- * Fetch failures degrade to parsedUrl-only — the same state the builder
- * leaves when the oEmbed call fails (the widget iframes the url directly).
+ * Fetch failures — a provider error, or a lookup past the time cap — degrade to
+ * parsedUrl-only: the same state the builder leaves when the oEmbed call fails
+ * (the widget iframes the url directly).
  */
 export async function resolveStaleEmbeds(payload: unknown, fetch: OembedFetcher): Promise<void> {
   const stale: EmbedElementNode[] = [];
@@ -74,7 +91,7 @@ export async function resolveStaleEmbeds(payload: unknown, fetch: OembedFetcher)
       // The url changed (or is new): the old payload no longer describes it.
       el.oembed = undefined;
       try {
-        const info = await fetch(url);
+        const info = await withLookupTimeout(fetch(url));
         if (info?.html) {
           el.oembed = { html: info.html, width: info.width, height: info.height };
         }

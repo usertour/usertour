@@ -1,4 +1,4 @@
-import { resolveStaleEmbeds } from './embed-resolve';
+import { OEMBED_LOOKUP_TIMEOUT_MS, resolveStaleEmbeds } from './embed-resolve';
 
 describe('resolveStaleEmbeds', () => {
   const fetchMock = (html: string | null) =>
@@ -66,5 +66,26 @@ describe('resolveStaleEmbeds', () => {
     });
     expect(el).toMatchObject({ parsedUrl: 'https://example.com/x' });
     expect((el as { oembed?: unknown }).oembed).toBeUndefined();
+  });
+
+  describe('lookup time cap', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('gives up on a provider that never answers and degrades like any other failure', async () => {
+      const el = { type: 'embed', url: 'https://example.com/slow' };
+      const resolving = resolveStaleEmbeds(el, () => new Promise(() => undefined));
+      // The lookup starts synchronously, so its timer is already armed.
+      jest.advanceTimersByTime(OEMBED_LOOKUP_TIMEOUT_MS);
+      await resolving;
+      expect(el).toMatchObject({ parsedUrl: 'https://example.com/slow' });
+      expect((el as { oembed?: unknown }).oembed).toBeUndefined();
+    });
+
+    it('leaves no timer pending once the provider has answered', async () => {
+      const el = { type: 'embed', url: 'https://youtu.be/x' };
+      await resolveStaleEmbeds(el, async () => ({ html: '<iframe/>' }));
+      expect(jest.getTimerCount()).toBe(0);
+    });
   });
 });
