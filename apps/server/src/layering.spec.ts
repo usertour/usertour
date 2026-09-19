@@ -4,21 +4,21 @@ import { preProcessFile } from 'typescript';
 
 /**
  * Server layering tripwire (ADR 0015). GraphQL, REST and MCP are protocols;
- * business rules exist once, in the domain. Three layers, and imports only
- * point down:
+ * business rules exist once, in the modules every protocol calls. Two layers,
+ * and imports only point one way:
  *
- *   entrypoints → domain → platform
+ *   entrypoints → modules
  *
  * The composition root (`src/*.ts`) may import anything; nothing imports it.
  *
  * LAYERS classifies every path; it is also the migration status table — a
- * module that has moved lives under `domain/` (later `entrypoints/`,
- * `platform/`), one that has not is classified where it stands.
+ * module that has moved lives under `modules/` (the entrypoints will move into
+ * `entrypoints/`), one that has not is classified where it stands.
  */
 
-type Layer = 'entrypoints' | 'domain' | 'platform';
+type Layer = 'entrypoints' | 'modules';
 
-const RANK: Record<Layer, number> = { platform: 1, domain: 2, entrypoints: 3 };
+const RANK: Record<Layer, number> = { modules: 1, entrypoints: 2 };
 
 /** Path prefix under src/ → layer. The longest matching prefix wins. */
 const LAYERS: Record<string, Layer> = {
@@ -28,45 +28,43 @@ const LAYERS: Record<string, Layer> = {
   mcp: 'entrypoints',
   'web-socket': 'entrypoints', // the gateways; core/ is classified below
 
-  // ── domain: business modules, each with its thin GraphQL adapter ──
-  domain: 'domain', // the target layout
-  'web-socket/core': 'domain', // delivery runtime (also holds socket plumbing — split on next change)
-  admin: 'domain',
-  analytics: 'domain',
-  'api-token': 'domain',
-  attributes: 'domain',
-  audit: 'domain',
-  auth: 'domain',
-  biz: 'domain',
-  content: 'domain',
-  environments: 'domain',
-  events: 'domain',
-  integrations: 'domain',
-  oauth: 'domain',
-  projects: 'domain',
-  sso: 'domain',
-  subscription: 'domain',
-  team: 'domain',
-  themes: 'domain',
-  users: 'domain',
-  utilities: 'domain',
-  webhooks: 'domain',
-
-  // ── platform: infrastructure with no business concept ──
-  adapters: 'platform',
-  ai: 'platform',
-  common: 'platform',
-  license: 'platform',
-  outbound: 'platform',
-  shared: 'platform',
-  utils: 'platform',
+  // ── modules: business and infrastructure alike, each with its thin GraphQL adapter ──
+  modules: 'modules', // the target layout
+  'web-socket/core': 'modules', // delivery runtime (also holds socket plumbing — split on next change)
+  adapters: 'modules',
+  admin: 'modules',
+  ai: 'modules',
+  analytics: 'modules',
+  'api-token': 'modules',
+  attributes: 'modules',
+  audit: 'modules',
+  auth: 'modules',
+  biz: 'modules',
+  common: 'modules',
+  content: 'modules',
+  environments: 'modules',
+  events: 'modules',
+  integrations: 'modules',
+  license: 'modules',
+  oauth: 'modules',
+  outbound: 'modules',
+  projects: 'modules',
+  shared: 'modules',
+  sso: 'modules',
+  subscription: 'modules',
+  team: 'modules',
+  themes: 'modules',
+  users: 'modules',
+  utilities: 'modules',
+  utils: 'modules',
+  webhooks: 'modules',
 };
 
 /**
- * Upward imports that existed when the rule was introduced — debt, grouped as
- * in ADR 0015. This list may only SHRINK: fixing one fails the test until its
- * entry is removed, and a new upward import fails until it is fixed. Adding an
- * entry is the one move reviewers must question.
+ * Modules that import an entrypoint — debt that existed when the rule was
+ * introduced, grouped as in ADR 0015. This list may only SHRINK: fixing one
+ * fails the test until its entry is removed, and a new such import fails until
+ * it is fixed. Adding an entry is the one move reviewers must question.
  */
 const KNOWN_VIOLATIONS: readonly string[] = [
   // 1. content pushes to the websocket gateways directly
@@ -83,19 +81,12 @@ const KNOWN_VIOLATIONS: readonly string[] = [
   'webhooks/webhooks.listener.ts -> api/companies/companies.mapper',
   'webhooks/webhooks.listener.ts -> api/events/event.mapper',
   'webhooks/webhooks.listener.ts -> api/users/users.mapper',
-  // 3. common/ holds business code
-  'common/attribute/filter.ts -> attributes/models/attribute.model',
-  'common/decorators/environment.decorator.ts -> environments/models/environment.model',
-  'common/initialization/initialization.ts -> attributes/models/attribute.model',
-  'common/initialization/initialization.ts -> biz/models/segment.model',
-  'common/initialization/initialization.ts -> themes/dto/theme.input',
-  'common/openapi/types.ts -> attributes/models/attribute.model',
 ];
 
-/** Protocol types a domain service or pure-logic file must not see. */
+/** Protocol types a module's service or pure-logic file must not see. */
 const GRAPHQL_PACKAGES = new Set(['@nestjs/graphql']);
 /**
- * Folders that hold a module's GraphQL adapter: `dtos/` in the domain layout
+ * Folders that hold a module's GraphQL adapter: `dtos/` in the module layout
  * (ADR 0015); the older names still count, so a module moved without being
  * renamed is caught too.
  */
@@ -173,7 +164,7 @@ describe('server layering (ADR 0015)', () => {
     expect({ unclassified, stale }).toEqual({ unclassified: [], stale: [] });
   });
 
-  it('imports only point down: entrypoints → domain → platform', () => {
+  it('imports only point one way: entrypoints → modules', () => {
     const violations = new Set<string>();
     for (const { from, target } of edges) {
       const importer = layerOf(from);
@@ -189,16 +180,16 @@ describe('server layering (ADR 0015)', () => {
       }
     }
     const known = new Set(KNOWN_VIOLATIONS);
-    // New upward import: move the shared piece down a layer instead (ADR 0015).
+    // A module importing an entrypoint: move the shared piece into a module instead (ADR 0015).
     const introduced = [...violations].filter((violation) => !known.has(violation)).sort();
     // Debt paid off: remove the entry from KNOWN_VIOLATIONS.
     const resolved = [...known].filter((violation) => !violations.has(violation)).sort();
     expect({ introduced, resolved }).toEqual({ introduced: [], resolved: [] });
   });
 
-  it('domain services and logic take plain types, never the GraphQL adapter', () => {
+  it('module services and logic take plain types, never the GraphQL adapter', () => {
     const offenders = edges
-      .filter(({ from }) => from.startsWith('domain/'))
+      .filter(({ from }) => from.startsWith('modules/'))
       .filter(({ from }) => {
         const segments = from.split('/');
         const isAdapter =

@@ -1,4 +1,4 @@
-import { DELIVERABLE_TRANSLATION } from '@/domain/localizations/constants/deliverable-translation.constant';
+import { DELIVERABLE_TRANSLATION } from '@/modules/localizations/constants/deliverable-translation.constant';
 import {
   cuid,
   isConditionsActived,

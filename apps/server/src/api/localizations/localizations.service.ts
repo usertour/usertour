@@ -10,7 +10,7 @@ import {
   type VersionTranslation,
   VersionTranslationService,
 } from '@/content/version-translation.service';
-import { LocalizationsService } from '@/domain/localizations/services/localizations.service';
+import { LocalizationsService } from '@/modules/localizations/services/localizations.service';
 
 import { ApiObjectType } from '../shared/object-type';
 import type {

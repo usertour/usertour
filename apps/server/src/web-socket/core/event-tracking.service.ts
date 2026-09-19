@@ -1,4 +1,4 @@
-import { DELIVERABLE_TRANSLATION } from '@/domain/localizations/constants/deliverable-translation.constant';
+import { DELIVERABLE_TRANSLATION } from '@/modules/localizations/constants/deliverable-translation.constant';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { trackerSystemReservedEventAttributes } from '@usertour/constants';
 import { Injectable, Logger } from '@nestjs/common';

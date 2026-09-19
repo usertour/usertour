@@ -14,7 +14,7 @@ import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
-import { LocalizationsModule } from '@/domain/localizations/localizations.module';
+import { LocalizationsModule } from '@/modules/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { ThemesModule } from '@/themes/themes.module';
 
