@@ -1,7 +1,8 @@
 # Module boundaries
 
 Where new code goes. Three rules; everything in `apps/web` and the shared
-packages follows them.
+packages follows them. The server has its own layering — see
+[Server](#server-appsserver) at the end.
 
 ## 1. Pure UI primitives → `@usertour/ui`
 
@@ -84,3 +85,34 @@ an actual cross-app use case).
   shared") is carried by *being in `apps/web/src/components/` at all*
   — single-page code lives next to its page, so anything at the
   app-level `components/` is already shared.
+
+## Server (`apps/server`)
+
+Three layers, decided in [ADR 0015](../adr/0015-server-layering.md):
+
+- **entrypoints** — REST v2 (`api/`), REST v1 (`openapi/`), MCP (`mcp/`),
+  the websocket gateways. Parse, map to the wire format, translate errors.
+- **domain** — business modules, each with its services and its thin
+  GraphQL adapter (resolver, `dtos/`) side by side.
+- **platform** — infrastructure with no business concept.
+
+Imports only point down: entrypoints → domain → platform. A rule belongs
+in the domain when every entrypoint should obey it. New modules go in
+`src/domain/<module>/`; existing ones move there when they are next
+substantially changed. Inside a domain module:
+
+```
+<module>.module.ts · <module>.resolver.ts
+dtos/        *.input.ts, *.dto.ts   (GraphQL only)
+services/    *.service.ts           take plain types from types/, never dtos/
+types/       *.type.ts
+utils/       *.util.ts
+constants/   *.constant.ts
+```
+
+One export per file, named after it. `src/domain/localizations/` is the
+reference module.
+
+`apps/server/src/layering.spec.ts` enforces the direction and holds the
+layer map — which is also the record of what has been migrated.
+
