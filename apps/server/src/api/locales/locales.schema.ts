@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 import { ApiObjectType } from '../shared/object-type';
+import { nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 
 /**
  * `GET /v2/locales` — the locale catalog the dashboard's picker is built from,
@@ -24,9 +25,13 @@ const localeOption = z.object({
   name: z.string().describe('The language name to file it under, e.g. `French (France)`.'),
 });
 
+/**
+ * The same envelope every v2 collection uses, so a client can read it with the
+ * same code — the catalog is one page, so `next`/`previous` are always null.
+ */
 export const listLocales = z.object({
   results: z.array(localeOption),
-  next: z.null(),
-  previous: z.null(),
+  next: nextPageUrl,
+  previous: previousPageUrl,
 });
 export class ListLocalesResponseDto extends createZodDto(listLocales) {}
