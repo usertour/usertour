@@ -25,11 +25,16 @@ import {
 
 import {
   applyContentsTranslationUnits,
+  isHttpUrl,
+  isMediaUrlUnitPath,
   applyVersionDataTranslationUnits,
   assignLocalizedLinkUrl,
   blankLocalizedLinkDestinations,
   getLocalizableLinkUrl,
+  isTranslatableText,
+  buildLocalizedFlowBackup,
   buildLocalizedFlowSavePayload,
+  buildLocalizedVersionDataBackup,
   buildLocalizedVersionDataSavePayload,
   collectOutdatedUnitPaths,
   collectOutdatedVersionDataPaths,
@@ -1228,6 +1233,93 @@ describe('save payloads (a session may only overwrite what it was able to read)'
   });
 });
 
+describe('whitespace-only text runs (formatting splits "**Save** *now*" around a lone space)', () => {
+  const formatted = (): ContentEditorRoot[] =>
+    wrapElements([
+      {
+        type: ContentEditorElementType.TEXT,
+        data: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'Save', bold: true }, { text: ' ' }, { text: 'now', italic: true }],
+          },
+        ],
+      } as ContentEditorTextElement,
+    ]);
+
+  it('are not units, so a fully translated sentence is not left "missing"', () => {
+    const source = formatted();
+    const units = extractContentsTranslationUnits(source, undefined);
+    expect(units.map((unit) => unit.sourceText)).toEqual(['Save', 'now']);
+    expect(extractTranslatableUnits(source).map((unit) => unit.text)).toEqual(['Save', 'now']);
+
+    const localized = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map(units.map((unit) => [unit.path, `${unit.sourceText}-fr`])),
+    );
+    expect(countMissingTranslations(source, localized)).toBe(0);
+    // Their paths are positional, so skipping the space renumbers nothing.
+    expect(units.map((unit) => unit.path)).toEqual(['0.0.0:text.0.0', '0.0.0:text.0.2']);
+  });
+
+  it('still render: delivery keeps the source space between the translated runs', () => {
+    const source = formatted();
+    const units = extractContentsTranslationUnits(source, undefined);
+    const localized = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map(units.map((unit) => [unit.path, `${unit.sourceText}-fr`])),
+    );
+    const delivered = mergeLocalizedEditorContents(source, localized);
+    const runs = (delivered[0].children[0].children[0].element as ContentEditorTextElement).data[0]
+      .children as { text: string }[];
+    expect(runs.map((run) => run.text)).toEqual(['Save-fr', ' ', 'now-fr']);
+  });
+
+  it('isTranslatableText draws the line', () => {
+    expect(isTranslatableText('Save')).toBe(true);
+    expect(isTranslatableText(' Save ')).toBe(true);
+    expect(isTranslatableText('')).toBe(false);
+    expect(isTranslatableText(' \n\u00a0')).toBe(false);
+  });
+});
+
+describe('source snapshots (the backup saved alongside a translation)', () => {
+  it('snapshots every current step', () => {
+    const first = wrapElements([createTextElement()]);
+    const second = wrapElements([createButtonElement()]);
+    expect(
+      buildLocalizedFlowBackup(
+        [
+          { cvid: 'step-1', data: first },
+          { cvid: 'step-2', data: second },
+        ],
+        undefined,
+      ),
+    ).toEqual({ 'step-1': first, 'step-2': second });
+  });
+
+  it('re-snapshots current steps and keeps the stored snapshot of removed ones', () => {
+    const current = wrapElements([createTextElement()]);
+    const staleSnapshot = wrapElements([createButtonElement()]);
+    const removedSnapshot = wrapElements([createNpsElement()]);
+    expect(
+      buildLocalizedFlowBackup([{ cvid: 'step-1', data: current }], {
+        'step-1': staleSnapshot,
+        'step-removed': removedSnapshot,
+      }),
+    ).toEqual({ 'step-1': current, 'step-removed': removedSnapshot });
+  });
+
+  it('snapshots version data, defaulting an absent body to an empty object', () => {
+    const data = { buttonText: 'Get started' };
+    expect(buildLocalizedVersionDataBackup(data)).toBe(data);
+    expect(buildLocalizedVersionDataBackup(undefined)).toEqual({});
+    expect(buildLocalizedVersionDataBackup(null)).toEqual({});
+  });
+});
+
 describe('imported embed URLs (resolution travels with the swap)', () => {
   const importedUrl = 'https://example.com/watch?v=fr';
 
@@ -1274,6 +1366,97 @@ describe('imported embed URLs (resolution travels with the swap)', () => {
     expect(mergedEmbed.url).toBe(importedUrl);
     expect(mergedEmbed.parsedUrl).toBeUndefined();
     expect(mergedEmbed.oembed).toBeUndefined();
+  });
+});
+
+describe('clearing a unit (null — distinct from a blank value, which keeps)', () => {
+  const translatedUrl = 'https://example.com/watch?v=fr';
+
+  const unitsOf = (source: ContentEditorRoot[], localized: ContentEditorRoot[]) => {
+    return new Map(
+      extractContentsTranslationUnits(source, localized).map((unit) => [
+        unit.path,
+        unit.translatedText,
+      ]),
+    );
+  };
+
+  it('clears text, an image url and an embed url back to untranslated, leaving other units alone', () => {
+    const source = createSourceContents();
+    const translated = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map([
+        ['0.0.1:button.text', 'Suivant'],
+        ['0.0.2:question.name', 'Nous recommanderiez-vous ?'],
+        ['0.0.4:image.url', 'https://example.com/fr.png'],
+        ['0.0.5:embed.url', translatedUrl],
+      ]),
+      new Map([
+        [
+          translatedUrl,
+          { parsedUrl: translatedUrl, oembed: { html: '<iframe fr />', width: 640, height: 360 } },
+        ],
+      ]),
+    );
+
+    const cleared = applyContentsTranslationUnits(
+      source,
+      translated,
+      new Map([
+        ['0.0.1:button.text', null],
+        ['0.0.4:image.url', null],
+        ['0.0.5:embed.url', null],
+      ]),
+    );
+    const units = unitsOf(source, cleared);
+    expect(units.get('0.0.1:button.text')).toBe('');
+    expect(units.get('0.0.4:image.url')).toBe('');
+    expect(units.get('0.0.5:embed.url')).toBe('');
+    expect(units.get('0.0.2:question.name')).toBe('Nous recommanderiez-vous ?');
+
+    // The cleared embed must not keep the translated url's resolution, and
+    // delivery falls back to the source media.
+    const embed = getElement<ContentEditorEmebedElement>(cleared, 5);
+    expect(embed.parsedUrl).toBeUndefined();
+    expect(embed.oembed).toBeUndefined();
+    const sourceEmbed = getElement<ContentEditorEmebedElement>(source, 5);
+    const merged = getElement<ContentEditorEmebedElement>(
+      mergeLocalizedEditorContents(source, cleared),
+      5,
+    );
+    expect(merged.url).toBe(sourceEmbed.url);
+  });
+
+  it('clears a link override back to the keep-original sentinel', () => {
+    const source = wrapElements([createLinkTextElement()]);
+    const path = '0.0.0:text.0.1:link.url';
+    const overridden = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map([[path, 'https://example.com/cs/post']]),
+    );
+    const cleared = applyContentsTranslationUnits(source, overridden, new Map([[path, null]]));
+    expect(getElement<ContentEditorTextElement>(cleared, 0).data[0].children[1].url).toBe('');
+    expect(unitsOf(source, cleared).get(path)).toBe('');
+  });
+});
+
+describe('media url bar (shared by the server and the dashboard)', () => {
+  it('knows which unit paths carry a url rendered verbatim', () => {
+    expect(isMediaUrlUnitPath('steps/x/0.0.0:image.url')).toBe(true);
+    expect(isMediaUrlUnitPath('0.0.0:image.link.url')).toBe(true);
+    expect(isMediaUrlUnitPath('0.0.0:embed.url')).toBe(true);
+    expect(isMediaUrlUnitPath('0.0.0:text.0.1:link.url')).toBe(false);
+    expect(isMediaUrlUnitPath('0.0.1:button.text')).toBe(false);
+  });
+
+  it('accepts only absolute http(s) urls', () => {
+    expect(isHttpUrl('https://example.com/a.png')).toBe(true);
+    expect(isHttpUrl('http://localhost:3000/a.png')).toBe(true);
+    expect(isHttpUrl('exam')).toBe(false);
+    expect(isHttpUrl('/uploads/a.png')).toBe(false);
+    expect(isHttpUrl('javascript:alert(1)')).toBe(false);
   });
 });
 

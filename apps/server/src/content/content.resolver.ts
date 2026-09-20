@@ -14,7 +14,9 @@ import { PrismaService } from 'nestjs-prisma';
 import { ContentIdArgs } from './args/content-id.args';
 import { VersionIdArgs } from './args/version-id.args';
 import { ContentPublishRecordConnection } from './models/content-publish-record.model';
+import { ContentNotFoundError } from '@/common/errors/errors';
 import { ContentService } from './content.service';
+import { VersionTranslationService } from './version-translation.service';
 import { ContentOrder } from './dto/content-order.input';
 import { ContentQuery } from './dto/content-query.input';
 import {
@@ -24,7 +26,7 @@ import {
 } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
 import { VersionUpdateInput } from './dto/version-update.input';
-import { VersionIdInput, VersionUpdateLocalizationInput } from './dto/version.input';
+import { UpdateVersionLocalizationInput, VersionIdInput } from './dto/version.input';
 import { ContentConnection } from './models/content-connection.model';
 import { Content } from './models/content.model';
 import { VersionConnection } from './models/version-connection.model';
@@ -36,6 +38,7 @@ import { Version } from './models/version.model';
 export class ContentResolver {
   constructor(
     private contentService: ContentService,
+    private versionTranslationService: VersionTranslationService,
     private prisma: PrismaService,
   ) {}
 
@@ -208,10 +211,28 @@ export class ContentResolver {
     return await this.contentService.listVersionLocalizations(versionId);
   }
 
-  @Mutation(() => VersionOnLocalization)
+  // Scope resolves from data.contentId, and the project comes from that content
+  // — never from the client; the service refuses a version that is not the
+  // content's. Null when the change held nothing to write.
+  @Mutation(() => VersionOnLocalization, { nullable: true })
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async upsertVersionLocalization(@Args('data') input: VersionUpdateLocalizationInput) {
-    return await this.contentService.upsertVersionLocalization(input);
+  async updateVersionLocalization(@Args('data') input: UpdateVersionLocalizationInput) {
+    const { contentId, versionId, code, translations, enabled } = input;
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { projectId: true },
+    });
+    if (!content) {
+      throw new ContentNotFoundError();
+    }
+    const { projectId } = content;
+    const saved = await this.versionTranslationService.save(versionId, contentId, projectId, code, {
+      translations: translations
+        ? Object.fromEntries(translations.map((unit) => [unit.path, unit.translation ?? null]))
+        : undefined,
+      enabled,
+    });
+    return saved ?? null;
   }
 
   @Query(() => ContentConnection)

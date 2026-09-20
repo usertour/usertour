@@ -10,8 +10,6 @@ import {
   type LocalizedEmbedResolutions,
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
-  buildLocalizedFlowSavePayload,
-  buildLocalizedVersionDataSavePayload,
   collectOutdatedUnitPaths,
   collectOutdatedVersionDataPaths,
   createLocalizedWorkingContents,
@@ -40,7 +38,7 @@ import { ContentDataType } from '@usertour/types';
 import { Badge, Checkbox, TooltipProvider } from '@usertour/ui';
 import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { LocalizedEditorContents } from './localized-fields';
 import { LocalizationPreviewDialog } from './localization-preview-dialog';
@@ -51,6 +49,7 @@ import {
   LocalizationViewProvider,
   countMissingUnits,
 } from './localization-view';
+import { findLocalizationByRouteSegment } from './localization-route';
 import { type LocalizationSaveState, useLocalizationAutosave } from './use-localization-autosave';
 import {
   AnnouncementLocalizationSections,
@@ -92,7 +91,6 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
   } = props;
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const [showOnlyMissing, setShowOnlyMissing] = useState(false);
 
   const viewValue = useMemo(
@@ -113,7 +111,8 @@ const LocalizationEditorShell = (props: LocalizationEditorShellProps) => {
               <RiArrowLeftLine
                 className="h-4 w-4 flex-none cursor-pointer"
                 onClick={() => {
-                  navigate(location.pathname.replace(`/${localization.locale}`, ''));
+                  // Up one segment, back to the content's localization list.
+                  navigate('..', { relative: 'path' });
                 }}
               />
               <h3 className="min-w-0 truncate text-lg font-medium" title={localization.name}>
@@ -187,9 +186,10 @@ const useSourceLocaleName = (defaultLocalization: Localization | undefined): str
 
 // CSV import can swap embed URLs, and the widget renders embeds from
 // parsedUrl/oembed rather than the raw url — so every imported embed URL is
-// resolved the same way the per-row load button does. URLs that fail to
-// resolve still import: the stale source resolution is dropped by the
-// applier, and the embed renders empty until resolved from its row.
+// resolved the same way the per-row load button does, for THIS session's
+// preview only: a save sends the url, and the server resolves what it stores.
+// URLs that fail to resolve still import: the stale source resolution is
+// dropped by the applier, and the preview shows the embed empty.
 const useImportedEmbedResolutions = () => {
   const { invoke: queryOembedInfo } = useQueryOembedInfoLazyQuery();
   return useCallback(
@@ -247,10 +247,10 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     [version.steps],
   );
 
-  // The stored row as loaded at mount — the graft base for every save: a
-  // save may only overwrite what this session could read, so fragments the
-  // working copy couldn't align (drifted subtrees, removed steps) ride along
-  // on each payload instead of being erased (buildLocalizedFlowSavePayload).
+  // The stored row as loaded at mount — what the working copy and the
+  // outdated snapshot start from. Saves never send it back: they send the
+  // units that changed, and the server merges those into the row it holds
+  // (see useLocalizationAutosave).
   const [storedLocalized] = useState(
     () => (contentLocalization?.localized ?? undefined) as LocalizedFlowContent | undefined,
   );
@@ -269,8 +269,8 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     return initial;
   });
 
-  // Snapshot the outdated markers once per mount: every autosave rewrites
-  // `backup` to the current source, so a live computation would clear all
+  // Snapshot the outdated markers once per mount: every save re-bases the
+  // stored source snapshot, so a live computation would clear all
   // markers on the first keystroke — before the translator reviewed them.
   // Reworking a row removes just its path (resolveStepOutdated below), so
   // the row dot, section chip and card count retire together as the
@@ -310,36 +310,8 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     });
   }, []);
 
-  const stepsRef = useRef(steps);
-  stepsRef.current = steps;
-  const { saveState, scheduleSave } = useLocalizationAutosave({
-    resolveTargetVersionId,
-    localizationId: localization.id,
-    enabled: contentLocalization?.enabled ?? false,
-    buildBackup: () => {
-      const current = Object.fromEntries(stepsRef.current.map((step) => [step.cvid, step.data]));
-      if (!storedBackup) {
-        return current;
-      }
-      // Steps the payload preserves but the version no longer has keep their
-      // old source snapshot, so drift detection still works if they revive.
-      const preserved = Object.entries(storedBackup).filter(([cvid]) => !(cvid in current));
-      return { ...Object.fromEntries(preserved), ...current };
-    },
-  });
-
-  const handleStepContentsChange = useCallback(
-    (cvid: string, nextContents: ContentEditorRoot[]) => {
-      setWorking((previous) => {
-        const next = { ...previous, [cvid]: nextContents };
-        scheduleSave(buildLocalizedFlowSavePayload(next, storedLocalized));
-        return next;
-      });
-    },
-    [scheduleSave, storedLocalized],
-  );
-
-  // Export/import addresses flow units as `steps/<cvid>/<unit path>`.
+  // Flow units are addressed as `steps/<cvid>/<unit path>` — by saves and by
+  // export/import alike.
   const buildTransferUnits = useCallback(
     () =>
       steps.flatMap((step) =>
@@ -348,6 +320,21 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
         ),
       ),
     [steps, working],
+  );
+
+  const { saveState, scheduleSave } = useLocalizationAutosave({
+    resolveTargetVersionId,
+    contentId: content.id,
+    localeCode: localization.code,
+    readUnits: buildTransferUnits,
+  });
+
+  const handleStepContentsChange = useCallback(
+    (cvid: string, nextContents: ContentEditorRoot[]) => {
+      setWorking((previous) => ({ ...previous, [cvid]: nextContents }));
+      scheduleSave();
+    },
+    [scheduleSave],
   );
 
   const stepStats = useMemo(() => {
@@ -418,11 +405,11 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
             );
           }
         }
-        scheduleSave(buildLocalizedFlowSavePayload(next, storedLocalized));
         return next;
       });
+      scheduleSave();
     },
-    [steps, scheduleSave, storedLocalized, resolveImportedEmbeds],
+    [steps, scheduleSave, resolveImportedEmbeds],
   );
 
   return (
@@ -502,9 +489,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   const disabled = isViewOnly;
   const sourceData = version.data ?? {};
 
-  // Same graft base as the flow editor: fragments of the stored row this
-  // session couldn't read must survive every save (see
-  // buildLocalizedVersionDataSavePayload).
+  // The stored row as loaded at mount — same role as in the flow editor.
   const [storedLocalizedData] = useState<unknown>(
     () => contentLocalization?.localized ?? undefined,
   );
@@ -533,27 +518,27 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     });
   }, []);
 
-  const { saveState, scheduleSave } = useLocalizationAutosave({
-    resolveTargetVersionId,
-    localizationId: localization.id,
-    enabled: contentLocalization?.enabled ?? false,
-    buildBackup: () => version.data ?? {},
-  });
-
-  const handleDataChange = useCallback(
-    (data: unknown) => {
-      setWorkingData(data);
-      scheduleSave(buildLocalizedVersionDataSavePayload(content.type, data, storedLocalizedData));
-    },
-    [scheduleSave, content.type, storedLocalizedData],
-  );
-
   const units = useMemo(
     () => extractVersionDataTranslationUnits(content.type, sourceData, workingData),
     [content.type, sourceData, workingData],
   );
   const missingCount = useMemo(() => countMissingUnits(units), [units]);
   const buildTransferUnits = useCallback(() => units, [units]);
+
+  const { saveState, scheduleSave } = useLocalizationAutosave({
+    resolveTargetVersionId,
+    contentId: content.id,
+    localeCode: localization.code,
+    readUnits: buildTransferUnits,
+  });
+
+  const handleDataChange = useCallback(
+    (data: unknown) => {
+      setWorkingData(data);
+      scheduleSave();
+    },
+    [scheduleSave],
+  );
 
   const translateText = useUnitTranslateText({
     versionId: version.id,
@@ -574,19 +559,18 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
   const handleImportTranslations = useCallback(
     async (translations: ReadonlyMap<string, string>) => {
       const embedResolutions = await resolveImportedEmbeds(translations);
-      setWorkingData((previous: unknown) => {
-        const next = applyVersionDataTranslationUnits(
+      setWorkingData((previous: unknown) =>
+        applyVersionDataTranslationUnits(
           content.type,
           sourceData,
           previous,
           translations,
           embedResolutions,
-        );
-        scheduleSave(buildLocalizedVersionDataSavePayload(content.type, next, storedLocalizedData));
-        return next;
-      });
+        ),
+      );
+      scheduleSave();
     },
-    [content.type, sourceData, scheduleSave, storedLocalizedData, resolveImportedEmbeds],
+    [content.type, sourceData, scheduleSave, resolveImportedEmbeds],
   );
 
   const sections = (() => {
@@ -762,7 +746,7 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
   const { contentLocalizationList, loading } = useContentLocalizations(version?.id);
   const resolveTargetVersionId = useLocalizationSaveTarget(content, version?.id, refetchContent);
 
-  const localization = localizationList?.find((item) => item.locale === locateCode);
+  const localization = findLocalizationByRouteSegment(localizationList, locateCode);
   const defaultLocalization = localizationList?.find((item) => item.isDefault);
 
   // First-load gating only — a background refetch flips `loading` while the

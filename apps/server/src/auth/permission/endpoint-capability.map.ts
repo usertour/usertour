@@ -38,7 +38,7 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'content.listContentVersions': Capability.ContentRead, // R
   'content.listContentPublishRecords': Capability.ContentRead, // R
   'content.listVersionLocalizations': Capability.ContentRead, // R
-  'content.upsertVersionLocalization': Capability.ContentUpdate, // W
+  'content.updateVersionLocalization': Capability.ContentUpdate, // W
   'localizations.translateLocalizationUnits': Capability.ContentUpdate, // W
   'content.queryContent': Capability.ContentRead, // R
 

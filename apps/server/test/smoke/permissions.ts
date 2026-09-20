@@ -29,6 +29,10 @@
  *   SMOKE_LOCALIZATION_ID
  *   SMOKE_SEGMENT_ID
  *   SMOKE_INTEGRATION_ID
+ *   SMOKE_WEBHOOK_ID
+ *   SMOKE_WEBHOOK_MESSAGE_ID     (optional — only resendWebhookMessage reads it)
+ *   SMOKE_SIGNING_SECRET_ID
+ *   SMOKE_SSO_PROVIDER_ID
  *
  * Optional token environment variables (at least one required) — each enables
  * the checks for its role and is skipped when unset, so partial scenarios are
@@ -79,6 +83,9 @@ const REQUIRED_ENV = [
   'SMOKE_LOCALIZATION_ID',
   'SMOKE_SEGMENT_ID',
   'SMOKE_INTEGRATION_ID',
+  'SMOKE_WEBHOOK_ID',
+  'SMOKE_SIGNING_SECRET_ID',
+  'SMOKE_SSO_PROVIDER_ID',
 ] as const;
 
 const TOKEN_ENV: Record<Role, string> = {
@@ -125,6 +132,10 @@ const seed: Seed = {
   localizationId: process.env.SMOKE_LOCALIZATION_ID as string,
   segmentId: process.env.SMOKE_SEGMENT_ID as string,
   integrationId: process.env.SMOKE_INTEGRATION_ID as string,
+  webhookId: process.env.SMOKE_WEBHOOK_ID as string,
+  webhookMessageId: process.env.SMOKE_WEBHOOK_MESSAGE_ID as string,
+  signingSecretId: process.env.SMOKE_SIGNING_SECRET_ID as string,
+  ssoProviderId: process.env.SMOKE_SSO_PROVIDER_ID as string,
 };
 
 const printCurlOnly = process.argv.includes('--curl');

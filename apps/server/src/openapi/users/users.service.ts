@@ -6,7 +6,7 @@ import { BizService } from '@/biz/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { ListUsersQueryDto } from './users.dto';
 @Injectable()

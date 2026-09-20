@@ -3,7 +3,7 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { graphql, gqlData } from '../auth';
 import { createTestApp } from '../create-test-app';
-import { buildMembership, buildProject } from '../factories';
+import { buildContent, buildMembership, buildProject, buildVersion } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
 
 /**
@@ -26,6 +26,10 @@ describe('GraphQL localizations (e2e)', () => {
 
   let seq = 0;
   const tag = () => `loc-${Date.now()}-${seq++}`;
+  // `code` is the per-project identifier, so it carries the unique slug;
+  // `locale` is the language tag the entry stands for and is deliberately NOT
+  // unique (a project may run `fr` and `fr-enterprise`, both `fr-FR`).
+  const LOCALE_TAG = 'fr-FR';
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -62,7 +66,7 @@ describe('GraphQL localizations (e2e)', () => {
         createLocalization(data: $data) { id name locale code isDefault projectId }
       }`,
       variables: {
-        data: { name: slug, locale: slug, code: slug, projectId, ...overrides },
+        data: { name: slug, locale: LOCALE_TAG, code: slug, projectId, ...overrides },
       },
     });
   };
@@ -71,11 +75,11 @@ describe('GraphQL localizations (e2e)', () => {
     it('creates a localization and persists it', async () => {
       const slug = tag();
       const loc = gqlData(
-        await createLocalization({ name: slug, locale: slug, code: slug }),
+        await createLocalization({ name: slug, locale: LOCALE_TAG, code: slug }),
       ).createLocalization;
       expect(loc).toMatchObject({
         name: slug,
-        locale: slug,
+        locale: LOCALE_TAG,
         code: slug,
         isDefault: false,
         projectId,
@@ -84,7 +88,7 @@ describe('GraphQL localizations (e2e)', () => {
       const row = await prisma.localization.findUnique({ where: { id: loc.id } });
       expect(row).toMatchObject({
         name: slug,
-        locale: slug,
+        locale: LOCALE_TAG,
         code: slug,
         projectId,
         isDefault: false,
@@ -93,10 +97,29 @@ describe('GraphQL localizations (e2e)', () => {
 
     it('errors creating a duplicate code in the same project', async () => {
       const slug = tag();
-      gqlData(await createLocalization({ name: slug, locale: slug, code: slug }));
+      gqlData(await createLocalization({ name: slug, locale: LOCALE_TAG, code: slug }));
 
-      const res = await createLocalization({ name: tag(), locale: tag(), code: slug });
+      const res = await createLocalization({ name: tag(), locale: 'de-DE', code: slug });
       expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('field rules (the same ones REST and MCP get)', () => {
+    it('rejects a code a URL path could not carry, and trims what it stores', async () => {
+      const rejected = await createLocalization({ code: 'fr/CA' });
+      expect(rejected.body.errors?.[0]?.extensions?.code).toBe('E1017');
+
+      const slug = tag();
+      const created = gqlData(await createLocalization({ code: `  ${slug}  ` })).createLocalization;
+      expect(created.code).toBe(slug);
+    });
+
+    it('refuses a code that only differs in case from an existing one', async () => {
+      const slug = tag();
+      gqlData(await createLocalization({ code: slug }));
+
+      const clash = await createLocalization({ code: slug.toUpperCase() });
+      expect(clash.body.errors?.length).toBeGreaterThan(0);
     });
   });
 
@@ -197,8 +220,20 @@ describe('GraphQL localizations (e2e)', () => {
   });
 
   describe('deleteLocalization', () => {
-    it('hard-deletes a non-default localization', async () => {
+    it('soft-deletes a non-default localization: hidden from the list, translations kept', async () => {
       const loc = gqlData(await createLocalization()).createLocalization;
+      const content = await buildContent(prisma, { projectId, type: 'flow' });
+      const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+      await prisma.versionOnLocalization.create({
+        data: {
+          versionId: version.id,
+          localizationId: loc.id,
+          enabled: true,
+          localized: { step: [] },
+          backup: {},
+        },
+      });
+
       const res = await graphql(app, {
         token,
         query:
@@ -208,7 +243,46 @@ describe('GraphQL localizations (e2e)', () => {
       expect(gqlData(res).deleteLocalization).toMatchObject({ id: loc.id });
 
       const row = await prisma.localization.findUnique({ where: { id: loc.id } });
-      expect(row).toBeNull();
+      expect(row).toMatchObject({ id: loc.id, deleted: true });
+      // The translation row survives — that is what makes the delete reversible.
+      expect(await prisma.versionOnLocalization.count({ where: { localizationId: loc.id } })).toBe(
+        1,
+      );
+
+      const list = await graphql(app, {
+        token,
+        query: 'query ($projectId: String!) { listLocalizations(projectId: $projectId) { id } }',
+        variables: { projectId },
+      });
+      const ids = gqlData(list).listLocalizations.map((item: { id: string }) => item.id);
+      expect(ids).not.toContain(loc.id);
+    });
+
+    it('creating the same code again restores the deleted localization', async () => {
+      const loc = gqlData(await createLocalization()).createLocalization;
+      await graphql(app, {
+        token,
+        query:
+          'mutation ($data: DeleteLocalizationInput!) { deleteLocalization(data: $data) { id } }',
+        variables: { data: { id: loc.id } },
+      });
+
+      const again = await graphql(app, {
+        token,
+        query:
+          'mutation ($data: CreateLocalizationInput!) { createLocalization(data: $data) { id name code } }',
+        variables: {
+          data: { projectId, code: loc.code, locale: loc.locale, name: 'Renamed on restore' },
+        },
+      });
+      // Same row, brought back — not a second localization with that code.
+      expect(gqlData(again).createLocalization).toMatchObject({
+        id: loc.id,
+        code: loc.code,
+        name: 'Renamed on restore',
+      });
+      const row = await prisma.localization.findUnique({ where: { id: loc.id } });
+      expect(row?.deleted).toBe(false);
     });
 
     it('errors deleting a default localization', async () => {

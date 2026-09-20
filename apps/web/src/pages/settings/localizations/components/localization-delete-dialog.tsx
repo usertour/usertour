@@ -22,7 +22,7 @@ export const LocalizationDeleteDialog = (props: LocalizationDeleteDialogProps) =
       })}
       description={
         <Trans
-          i18nKey="settings.common.deleteConfirm.description"
+          i18nKey="settings.localizations.deleteDescription"
           values={{ name: data.name }}
           components={{ strong: <strong className="font-bold text-foreground" /> }}
         />

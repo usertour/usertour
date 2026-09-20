@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { type GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { type Observable, tap } from 'rxjs';
+import { localizationAuditSnapshot } from '@/modules/localizations/utils/localization-audit-snapshot.util';
 import { RequireCapability } from '@/api-token/require-capability.decorator';
 import { Audit, AuditWeb } from './audit.decorator';
 import { AuditService } from './audit.service';
@@ -281,7 +282,7 @@ export function bodyEnvironmentId(
   return typeof body?.environmentId === 'string' ? body.environmentId : null;
 }
 
-/** capability prefix → audit resourceType. Absent (read/localization/project/...) → not audited. */
+/** capability prefix → audit resourceType. Absent (read/project/...) → not audited. */
 const RESOURCE_BY_PREFIX: Record<string, string> = {
   content: 'content',
   theme: 'theme',
@@ -292,6 +293,7 @@ const RESOURCE_BY_PREFIX: Record<string, string> = {
   company: 'company',
   session: 'session',
   environment: 'environment',
+  localization: 'localization',
   webhook: 'webhook',
 };
 
@@ -471,6 +473,8 @@ export async function fetchBefore(
       return prisma.webhook.findUnique({ where: { id: String(id) } });
     case 'environment':
       return prisma.environment.findUnique({ where: { id: String(id) } });
+    case 'localization':
+      return localizationAuditSnapshot(prisma, String(id));
     case 'project':
       return prisma.project.findUnique({ where: { id: String(id) } });
     default: // content → snapshot policy is 'none' anyway

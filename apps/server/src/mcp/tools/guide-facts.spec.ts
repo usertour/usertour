@@ -5,9 +5,15 @@ import {
   CONTENT_TYPE_TRAITS,
   STEP_CAPABILITIES,
 } from '@usertour/helpers';
-import { ContentDataType, StepContentType } from '@usertour/types';
+import { ContentDataType, ContentEditorElementType, StepContentType } from '@usertour/types';
+import type { ContentEditorRoot } from '@usertour/types';
 
 import { REP_CONDITION_TYPE_TO_INTERNAL } from '@/api/content-representation/contract-map';
+import {
+  type TranslationSource,
+  applyTranslationUnits,
+  readTranslationUnits,
+} from '@/content/version-translation';
 
 import {
   AUTHORING_GUIDE,
@@ -194,5 +200,57 @@ describe('guide sections (the structure the slicing tool serves)', () => {
         ]),
       );
     }
+  });
+
+  it('localization: rewording in place = outdated; restructuring = missing (never a misplaced translation)', () => {
+    const step = (elements: unknown[]): TranslationSource => ({
+      contentType: ContentDataType.FLOW,
+      steps: [
+        {
+          cvid: 'step',
+          data: [
+            {
+              element: { type: ContentEditorElementType.GROUP },
+              children: [
+                {
+                  element: { type: ContentEditorElementType.COLUMN },
+                  children: elements.map((element) => ({ element, children: null })),
+                },
+              ],
+            },
+          ] as unknown as ContentEditorRoot[],
+        },
+      ],
+      data: undefined,
+    });
+    const text = (children: unknown[]) => ({
+      type: ContentEditorElementType.TEXT,
+      data: [{ type: 'paragraph', children }],
+    });
+
+    const original = step([text([{ text: 'Welcome to the app' }])]);
+    const [unit] = readTranslationUnits(original, undefined);
+    const stored = applyTranslationUnits(original, undefined, new Map([[unit.path, 'Bienvenue']]));
+    const flags = (source: TranslationSource) =>
+      readTranslationUnits(source, stored).map((item) => [item.translation, item.outdated]);
+
+    // behavior side
+    expect(flags(step([text([{ text: 'Welcome back' }])]))).toEqual([['Bienvenue', true]]);
+    const bolded = step([text([{ text: 'Welcome to ' }, { text: 'the app', bold: true }])]);
+    expect(flags(bolded)).toEqual([
+      ['', false],
+      ['', false],
+    ]);
+    const blockAdded = step([
+      text([{ text: 'New intro' }]),
+      text([{ text: 'Welcome to the app' }]),
+    ]);
+    expect(flags(blockAdded)).toEqual([
+      ['', false],
+      ['', false],
+    ]);
+    // guide side
+    expect(AUTHORING_GUIDE).toContain('breaks the positional pairing');
+    expect(AUTHORING_GUIDE).not.toContain('does not detach them');
   });
 });

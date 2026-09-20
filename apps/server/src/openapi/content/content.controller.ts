@@ -12,7 +12,7 @@ import {
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 
 @ApiTags('Content (v1)')
 @Controller()

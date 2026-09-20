@@ -18,10 +18,14 @@ import {
   type ValidationIssue,
 } from '@/common/errors/errors';
 import { ContentService, type WriteActor } from '@/content/content.service';
+import {
+  type TranslationTarget,
+  VersionTranslationService,
+} from '@/content/version-translation.service';
 import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
-import { resolveStaleEmbeds } from '../content-representation/embed-resolve';
+import { resolveStaleEmbeds } from '@/common/ombed/embed-resolve';
 import { UtilitiesService } from '@/utilities/utilities.service';
 import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
 import {
@@ -88,9 +92,12 @@ type VersionNode = {
   createdAt: Date;
 };
 
-/** Whether the response needs the version's step rows (either expand pulls them). */
+/**
+ * Whether the response needs the version's step rows: `steps` and `questions`
+ * derive from them, and a flow's translation status is counted over them.
+ */
 const needsSteps = (expand: string[]): boolean =>
-  expand.includes('steps') || expand.includes('questions');
+  expand.includes('steps') || expand.includes('questions') || expand.includes('localizations');
 
 /**
  * v2 content-versions handler. Depends on the domain {@link ContentService}; the
@@ -106,6 +113,7 @@ export class ApiContentVersionsService {
     private readonly prisma: PrismaService,
     private readonly themes: ApiThemesService,
     private readonly utilities: UtilitiesService,
+    private readonly translations: VersionTranslationService,
   ) {}
 
   async get(
@@ -128,7 +136,13 @@ export class ApiContentVersionsService {
       throw new ContentNotFoundError();
     }
     const resolvers = preloadedResolvers ?? (await loadDecompileResolvers(this.prisma, projectId));
-    return this.toVersion(version, projectId, expand, resolvers);
+    return this.toVersion(
+      version,
+      projectId,
+      expand,
+      resolvers,
+      await this.loadLocales(projectId, expand),
+    );
   }
 
   async list(
@@ -148,6 +162,8 @@ export class ApiContentVersionsService {
       throw new ContentNotFoundError();
     }
     const resolvers = await loadDecompileResolvers(this.prisma, projectId);
+    // Once per request, not once per row (see summarizeVersion).
+    const locales = await this.loadLocales(projectId, expand);
 
     return paginate({
       requestUrl,
@@ -162,7 +178,7 @@ export class ApiContentVersionsService {
           { content: true, ...(needsSteps(expand) ? { steps: true } : {}) },
           orderBy,
         ),
-      map: (node) => this.toVersion(node, projectId, expand, resolvers),
+      map: (node) => this.toVersion(node, projectId, expand, resolvers, locales),
     });
   }
 
@@ -176,6 +192,7 @@ export class ApiContentVersionsService {
     projectId: string,
     expand: string[],
     resolvers: DecompileResolvers,
+    locales: TranslationTarget[],
   ): Promise<ContentVersion> {
     const startRules = decompileStartRules(version.config, resolvers);
     const hideRules = decompileHideRules(version.config, resolvers);
@@ -191,7 +208,8 @@ export class ApiContentVersionsService {
 
     const wantsQuestions = expand.includes('questions');
     const wantsSteps = expand.includes('steps');
-    if (!wantsQuestions && !wantsSteps) {
+    const wantsLocalizations = expand.includes('localizations');
+    if (!wantsQuestions && !wantsSteps && !wantsLocalizations) {
       return mapVersion(version, null, undefined, rules, data);
     }
     // Steps were loaded in the list/get query (needsSteps === true here). Fall back
@@ -199,7 +217,15 @@ export class ApiContentVersionsService {
     const steps = version.steps ?? (await this.loadSteps(version.id, projectId));
     const questions = wantsQuestions ? mapQuestions(steps) : null;
     const decompiled = wantsSteps ? steps.map((s) => decompileStep(s, resolvers)) : undefined;
-    return mapVersion(version, questions, decompiled, rules, data);
+    const localizations = wantsLocalizations
+      ? await this.translations.summarize(locales, { ...version, steps })
+      : undefined;
+    return mapVersion(version, questions, decompiled, rules, data, localizations);
+  }
+
+  /** The project's translation targets, read only when the expand asks for them. */
+  private async loadLocales(projectId: string, expand: string[]): Promise<TranslationTarget[]> {
+    return expand.includes('localizations') ? this.translations.listTargets(projectId) : [];
   }
 
   private async loadSteps(versionId: string, projectId: string) {
@@ -622,19 +648,13 @@ export class ApiContentVersionsService {
     // Resolve embeds whose url is new or changed (parsedUrl !== url), the way
     // the builder does — otherwise they render as a grey placeholder (new) or
     // keep showing the PREVIOUS content (url edited, old oembed retained by
-    // the keep-style merge). 5s cap per provider call; failure degrades to a
-    // plain iframe like the builder's failure path.
+    // the keep-style merge). Each provider call is time-capped inside
+    // resolveStaleEmbeds; failure degrades to a plain iframe like the builder's
+    // failure path.
     await Promise.all(
       [content.steps, content.data].map((payload) =>
         payload
-          ? resolveStaleEmbeds(payload, (url) =>
-              Promise.race([
-                this.utilities.queryOembedInfo(url),
-                new Promise<never>((_, reject) =>
-                  setTimeout(() => reject(new Error('oembed timeout')), 5000),
-                ),
-              ]),
-            )
+          ? resolveStaleEmbeds(payload, (url) => this.utilities.queryOembedInfo(url))
           : undefined,
       ),
     );

@@ -25,7 +25,7 @@ import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiSegmentsService } from './segments.service';

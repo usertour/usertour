@@ -1,4 +1,5 @@
 import { useMutation } from '@apollo/client';
+import { useCallback } from 'react';
 import {
   createLocalization,
   deleteLocalization,
@@ -6,7 +7,7 @@ import {
   setDefaultLocalization,
   translateLocalizationUnits,
   updateLocalization,
-  upsertVersionLocalization,
+  updateVersionLocalization,
 } from '@usertour/gql';
 import type { VersionOnLocalization } from '@usertour/types';
 
@@ -60,41 +61,53 @@ export const useDeleteLocalizationMutation = () => {
   return { invoke, loading, error };
 };
 
-export interface UpsertVersionLocalizationInput {
-  localizationId: string;
+/** One unit of a translation save: `null` clears it, a blank string keeps the stored text. */
+export interface VersionTranslationUnitChange {
+  path: string;
+  translation: string | null;
+}
+
+export interface UpdateVersionLocalizationInput {
+  contentId: string;
   versionId: string;
-  localized?: unknown;
-  backup?: unknown;
+  /** The target locale's code. */
+  code: string;
+  /** Only the listed units are written; the server merges them into the stored row. */
+  translations?: VersionTranslationUnitChange[];
+  /** Omitted keeps the stored state. */
   enabled?: boolean;
 }
 
-export const useUpsertVersionLocalizationMutation = () => {
+export const useUpdateVersionLocalizationMutation = () => {
   // In-place saves auto-merge into the `VersionOnLocalization:id` slot; a
   // first save CREATES the row, which the normalized cache can't place into
   // the version's list by itself — insert the ref there.
-  const [mutation, { loading, error }] = useMutation(upsertVersionLocalization);
-  const invoke = async (input: UpsertVersionLocalizationInput): Promise<boolean> => {
-    const response = await mutation({
-      variables: { data: input },
-      update(cache, { data }) {
-        const upserted = data?.upsertVersionLocalization as VersionOnLocalization | undefined;
-        if (!upserted) {
-          return;
-        }
-        cache.updateQuery(
-          { query: listVersionLocalizations, variables: { versionId: input.versionId } },
-          (existing: { listVersionLocalizations: VersionOnLocalization[] } | null) => {
-            const rows = existing?.listVersionLocalizations;
-            if (!rows || rows.some((row) => row.id === upserted.id)) {
-              return existing ?? undefined;
-            }
-            return { listVersionLocalizations: [...rows, upserted] };
-          },
-        );
-      },
-    });
-    return !!response.data?.upsertVersionLocalization?.id;
-  };
+  const [mutation, { loading, error }] = useMutation(updateVersionLocalization);
+  const invoke = useCallback(
+    async (input: UpdateVersionLocalizationInput): Promise<boolean> => {
+      const response = await mutation({
+        variables: { data: input },
+        update(cache, { data }) {
+          const saved = data?.updateVersionLocalization as VersionOnLocalization | undefined;
+          if (!saved) {
+            return;
+          }
+          cache.updateQuery(
+            { query: listVersionLocalizations, variables: { versionId: input.versionId } },
+            (existing: { listVersionLocalizations: VersionOnLocalization[] } | null) => {
+              const rows = existing?.listVersionLocalizations;
+              if (!rows || rows.some((row) => row.id === saved.id)) {
+                return existing ?? undefined;
+              }
+              return { listVersionLocalizations: [...rows, saved] };
+            },
+          );
+        },
+      });
+      return !!response.data?.updateVersionLocalization?.id;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 

@@ -17,6 +17,7 @@ import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
 import { ApiUsageOverviewService } from '@/api/analytics/usage-overview.service';
 import { ApiReferencesService } from '@/api/references/references.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
+import { ApiLocalizationsService } from '@/api/localizations/localizations.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
 import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
@@ -82,6 +83,7 @@ export class McpService {
     segmentsService: ApiSegmentsService,
     sessionsService: ApiContentSessionsService,
     environmentsService: ApiEnvironmentsService,
+    localizationsService: ApiLocalizationsService,
     analyticsService: ApiAnalyticsService,
     usageOverviewService: ApiUsageOverviewService,
     referencesService: ApiReferencesService,
@@ -98,6 +100,7 @@ export class McpService {
       segments: segmentsService,
       sessions: sessionsService,
       environments: environmentsService,
+      localizations: localizationsService,
       analytics: analyticsService,
       usageOverview: usageOverviewService,
       references: referencesService,

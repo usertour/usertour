@@ -29,7 +29,7 @@
 set -u
 
 # ── env validation ────────────────────────────────────────────
-REQUIRED=(SMOKE_URL SMOKE_PROJECT_ID SMOKE_ENVIRONMENT_ID SMOKE_ENVIRONMENT_FOR_OWNER_DELETE_ID SMOKE_ENVIRONMENT_FOR_ADMIN_DELETE_ID SMOKE_CONTENT_ID SMOKE_VERSION_ID SMOKE_SESSION_ID SMOKE_SESSION_FOR_OWNER_DELETE_ID SMOKE_SESSION_FOR_ADMIN_DELETE_ID SMOKE_SESSION_FOR_OWNER_END_ID SMOKE_SESSION_FOR_ADMIN_END_ID SMOKE_THEME_ID SMOKE_THEME_FOR_OWNER_DELETE_ID SMOKE_THEME_FOR_ADMIN_DELETE_ID SMOKE_ATTRIBUTE_ID SMOKE_ATTRIBUTE_FOR_OWNER_DELETE_ID SMOKE_ATTRIBUTE_FOR_ADMIN_DELETE_ID SMOKE_EVENT_ID SMOKE_EVENT_FOR_OWNER_DELETE_ID SMOKE_EVENT_FOR_ADMIN_DELETE_ID SMOKE_LOCALIZATION_ID SMOKE_LOCALIZATION_FOR_OWNER_DELETE_ID SMOKE_LOCALIZATION_FOR_ADMIN_DELETE_ID SMOKE_SEGMENT_ID SMOKE_SEGMENT_FOR_OWNER_DELETE_ID SMOKE_SEGMENT_FOR_ADMIN_DELETE_ID SMOKE_INTEGRATION_ID SMOKE_MAPPING_ID SMOKE_ACCESS_TOKEN_ID SMOKE_STEP_ID SMOKE_BIZ_USER_ID SMOKE_BIZ_USER_FOR_OWNER_DELETE_ID SMOKE_BIZ_USER_FOR_ADMIN_DELETE_ID SMOKE_BIZ_COMPANY_ID SMOKE_BIZ_COMPANY_FOR_OWNER_DELETE_ID SMOKE_BIZ_COMPANY_FOR_ADMIN_DELETE_ID SMOKE_REMOVABLE_USER_ID SMOKE_REMOVABLE_USER_FOR_CHANGE_ROLE_ID SMOKE_INVITE_ID SMOKE_B_PROJECT_ID SMOKE_B_ENVIRONMENT_ID SMOKE_B_ENVIRONMENT_FOR_OWNER_DELETE_ID SMOKE_B_ENVIRONMENT_FOR_ADMIN_DELETE_ID SMOKE_B_CONTENT_ID SMOKE_B_VERSION_ID SMOKE_B_SESSION_ID SMOKE_B_SESSION_FOR_OWNER_DELETE_ID SMOKE_B_SESSION_FOR_ADMIN_DELETE_ID SMOKE_B_SESSION_FOR_OWNER_END_ID SMOKE_B_SESSION_FOR_ADMIN_END_ID SMOKE_B_THEME_ID SMOKE_B_THEME_FOR_OWNER_DELETE_ID SMOKE_B_THEME_FOR_ADMIN_DELETE_ID SMOKE_B_ATTRIBUTE_ID SMOKE_B_ATTRIBUTE_FOR_OWNER_DELETE_ID SMOKE_B_ATTRIBUTE_FOR_ADMIN_DELETE_ID SMOKE_B_EVENT_ID SMOKE_B_EVENT_FOR_OWNER_DELETE_ID SMOKE_B_EVENT_FOR_ADMIN_DELETE_ID SMOKE_B_LOCALIZATION_ID SMOKE_B_LOCALIZATION_FOR_OWNER_DELETE_ID SMOKE_B_LOCALIZATION_FOR_ADMIN_DELETE_ID SMOKE_B_SEGMENT_ID SMOKE_B_SEGMENT_FOR_OWNER_DELETE_ID SMOKE_B_SEGMENT_FOR_ADMIN_DELETE_ID SMOKE_B_INTEGRATION_ID SMOKE_B_MAPPING_ID SMOKE_B_ACCESS_TOKEN_ID SMOKE_B_STEP_ID SMOKE_B_BIZ_USER_ID SMOKE_B_BIZ_USER_FOR_OWNER_DELETE_ID SMOKE_B_BIZ_USER_FOR_ADMIN_DELETE_ID SMOKE_B_BIZ_COMPANY_ID SMOKE_B_BIZ_COMPANY_FOR_OWNER_DELETE_ID SMOKE_B_BIZ_COMPANY_FOR_ADMIN_DELETE_ID SMOKE_B_REMOVABLE_USER_ID SMOKE_B_REMOVABLE_USER_FOR_CHANGE_ROLE_ID SMOKE_B_INVITE_ID SMOKE_TOKEN_OWNER SMOKE_TOKEN_ADMIN SMOKE_TOKEN_VIEWER SMOKE_TOKEN_ELSEWHERE)
+REQUIRED=(SMOKE_URL SMOKE_PROJECT_ID SMOKE_ENVIRONMENT_ID SMOKE_ENVIRONMENT_FOR_OWNER_DELETE_ID SMOKE_ENVIRONMENT_FOR_ADMIN_DELETE_ID SMOKE_CONTENT_ID SMOKE_VERSION_ID SMOKE_SESSION_ID SMOKE_SESSION_FOR_OWNER_DELETE_ID SMOKE_SESSION_FOR_ADMIN_DELETE_ID SMOKE_SESSION_FOR_OWNER_END_ID SMOKE_SESSION_FOR_ADMIN_END_ID SMOKE_THEME_ID SMOKE_THEME_FOR_OWNER_DELETE_ID SMOKE_THEME_FOR_ADMIN_DELETE_ID SMOKE_ATTRIBUTE_ID SMOKE_ATTRIBUTE_FOR_OWNER_DELETE_ID SMOKE_ATTRIBUTE_FOR_ADMIN_DELETE_ID SMOKE_EVENT_ID SMOKE_EVENT_FOR_OWNER_DELETE_ID SMOKE_EVENT_FOR_ADMIN_DELETE_ID SMOKE_LOCALIZATION_ID SMOKE_LOCALIZATION_FOR_OWNER_DELETE_ID SMOKE_LOCALIZATION_FOR_ADMIN_DELETE_ID SMOKE_SEGMENT_ID SMOKE_SEGMENT_FOR_OWNER_DELETE_ID SMOKE_SEGMENT_FOR_ADMIN_DELETE_ID SMOKE_INTEGRATION_ID SMOKE_ACCESS_TOKEN_ID SMOKE_STEP_ID SMOKE_BIZ_USER_ID SMOKE_BIZ_USER_FOR_OWNER_DELETE_ID SMOKE_BIZ_USER_FOR_ADMIN_DELETE_ID SMOKE_BIZ_COMPANY_ID SMOKE_BIZ_COMPANY_FOR_OWNER_DELETE_ID SMOKE_BIZ_COMPANY_FOR_ADMIN_DELETE_ID SMOKE_REMOVABLE_USER_ID SMOKE_REMOVABLE_USER_FOR_CHANGE_ROLE_ID SMOKE_INVITE_ID SMOKE_WEBHOOK_ID SMOKE_WEBHOOK_FOR_OWNER_DELETE_ID SMOKE_WEBHOOK_FOR_ADMIN_DELETE_ID SMOKE_WEBHOOK_MESSAGE_ID SMOKE_SIGNING_SECRET_ID SMOKE_SIGNING_SECRET_FOR_OWNER_REVOKE_ID SMOKE_SIGNING_SECRET_FOR_ADMIN_REVOKE_ID SMOKE_SSO_PROVIDER_ID SMOKE_SSO_PROVIDER_FOR_OWNER_DELETE_ID SMOKE_SSO_PROVIDER_FOR_ADMIN_DELETE_ID SMOKE_B_PROJECT_ID SMOKE_B_ENVIRONMENT_ID SMOKE_B_ENVIRONMENT_FOR_OWNER_DELETE_ID SMOKE_B_ENVIRONMENT_FOR_ADMIN_DELETE_ID SMOKE_B_CONTENT_ID SMOKE_B_VERSION_ID SMOKE_B_SESSION_ID SMOKE_B_SESSION_FOR_OWNER_DELETE_ID SMOKE_B_SESSION_FOR_ADMIN_DELETE_ID SMOKE_B_SESSION_FOR_OWNER_END_ID SMOKE_B_SESSION_FOR_ADMIN_END_ID SMOKE_B_THEME_ID SMOKE_B_THEME_FOR_OWNER_DELETE_ID SMOKE_B_THEME_FOR_ADMIN_DELETE_ID SMOKE_B_ATTRIBUTE_ID SMOKE_B_ATTRIBUTE_FOR_OWNER_DELETE_ID SMOKE_B_ATTRIBUTE_FOR_ADMIN_DELETE_ID SMOKE_B_EVENT_ID SMOKE_B_EVENT_FOR_OWNER_DELETE_ID SMOKE_B_EVENT_FOR_ADMIN_DELETE_ID SMOKE_B_LOCALIZATION_ID SMOKE_B_LOCALIZATION_FOR_OWNER_DELETE_ID SMOKE_B_LOCALIZATION_FOR_ADMIN_DELETE_ID SMOKE_B_SEGMENT_ID SMOKE_B_SEGMENT_FOR_OWNER_DELETE_ID SMOKE_B_SEGMENT_FOR_ADMIN_DELETE_ID SMOKE_B_INTEGRATION_ID SMOKE_B_ACCESS_TOKEN_ID SMOKE_B_STEP_ID SMOKE_B_BIZ_USER_ID SMOKE_B_BIZ_USER_FOR_OWNER_DELETE_ID SMOKE_B_BIZ_USER_FOR_ADMIN_DELETE_ID SMOKE_B_BIZ_COMPANY_ID SMOKE_B_BIZ_COMPANY_FOR_OWNER_DELETE_ID SMOKE_B_BIZ_COMPANY_FOR_ADMIN_DELETE_ID SMOKE_B_REMOVABLE_USER_ID SMOKE_B_REMOVABLE_USER_FOR_CHANGE_ROLE_ID SMOKE_B_INVITE_ID SMOKE_B_WEBHOOK_ID SMOKE_B_WEBHOOK_FOR_OWNER_DELETE_ID SMOKE_B_WEBHOOK_FOR_ADMIN_DELETE_ID SMOKE_B_WEBHOOK_MESSAGE_ID SMOKE_B_SIGNING_SECRET_ID SMOKE_B_SIGNING_SECRET_FOR_OWNER_REVOKE_ID SMOKE_B_SIGNING_SECRET_FOR_ADMIN_REVOKE_ID SMOKE_B_SSO_PROVIDER_ID SMOKE_B_SSO_PROVIDER_FOR_OWNER_DELETE_ID SMOKE_B_SSO_PROVIDER_FOR_ADMIN_DELETE_ID SMOKE_TOKEN_OWNER SMOKE_TOKEN_ADMIN SMOKE_TOKEN_VIEWER SMOKE_TOKEN_ELSEWHERE)
 missing=()
 for v in "${REQUIRED[@]}"; do
   if [ -z "${!v:-}" ]; then missing+=("$v"); fi
@@ -95,7 +95,7 @@ mutual() {
   hit ELSEWHERE "$label  [B→A]" "$body_a"
 }
 
-section "R-tier QUERIES — in-project (26 endpoints, safe)"
+section "R-tier QUERIES — in-project (30 endpoints, safe)"
 run_endpoint 'projects.getProjectConfig' \
   "{\"query\":\"query(\$p:String!){getProjectConfig(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
@@ -108,14 +108,20 @@ run_endpoint 'content.getContentVersion' \
 run_endpoint 'content.listContentVersions' \
   "{\"query\":\"query(\$c:String!){listContentVersions(contentId:\$c){__typename}}\",\"variables\":{\"c\":\"${SMOKE_CONTENT_ID}\"}}"
 
-run_endpoint 'content.findManyVersionLocations' \
-  "{\"query\":\"query(\$v:String!){findManyVersionLocations(versionId:\$v){__typename}}\",\"variables\":{\"v\":\"${SMOKE_VERSION_ID}\"}}"
+run_endpoint 'content.listVersionLocalizations' \
+  "{\"query\":\"query(\$v:String!){listVersionLocalizations(versionId:\$v){__typename}}\",\"variables\":{\"v\":\"${SMOKE_VERSION_ID}\"}}"
 
 run_endpoint 'content.queryContent' \
   "{\"query\":\"query(\$q:ContentQuery){queryContent(query:\$q){__typename}}\",\"variables\":{\"q\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
 
+run_endpoint 'content.listContentPublishRecords' \
+  "{\"query\":\"query(\$c:String!){listContentPublishRecords(contentId:\$c){__typename}}\",\"variables\":{\"c\":\"${SMOKE_CONTENT_ID}\"}}"
+
 run_endpoint 'environments.userEnvironments' \
   "{\"query\":\"query(\$p:String!){userEnvironments(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+run_endpoint 'environments.verifyInstallation' \
+  "{\"query\":\"query(\$e:String!){verifyInstallation(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
 
 run_endpoint 'biz.queryBizUser' \
   "{\"query\":\"query(\$o:BizOrder!,\$q:BizQuery!){queryBizUser(orderBy:\$o,query:\$q){__typename}}\",\"variables\":{\"o\":{\"direction\":\"asc\",\"field\":\"createdAt\"},\"q\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
@@ -174,41 +180,14 @@ run_endpoint 'analytics.queryTooltipTargetMissingSessions' \
 run_endpoint 'analytics.queryTrackerUsers' \
   "{\"query\":\"query(\$o:AnalyticsOrder!,\$q:AnalyticsQuery!){queryTrackerUsers(orderBy:\$o,query:\$q){__typename}}\",\"variables\":{\"o\":{\"direction\":\"asc\",\"field\":\"createdAt\"},\"q\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"endDate\":\"2020-01-31\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\",\"startDate\":\"2020-01-01\",\"timezone\":\"UTC\"}}}"
 
-section "O-tier QUERIES — in-project (11 endpoints, safe)"
-run_endpoint 'projects.getProjectLicenseInfo' \
-  "{\"query\":\"query(\$p:String!){getProjectLicenseInfo(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+run_endpoint 'subscription.getSubscriptionByProjectId' \
+  "{\"query\":\"query(\$p:String!){getSubscriptionByProjectId(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
-run_endpoint 'environments.listAccessTokens' \
-  "{\"query\":\"query(\$e:String!){listAccessTokens(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
+run_endpoint 'subscription.getSubscriptionUsage' \
+  "{\"query\":\"query(\$p:String!){getSubscriptionUsage(projectId:\$p)}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
-run_endpoint 'environments.getAccessToken' \
-  "{\"query\":\"query(\$a:String!,\$e:String!){getAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
-
-run_endpoint 'integration.listIntegrations' \
-  "{\"query\":\"query(\$e:String!){listIntegrations(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
-
-run_endpoint 'integration.getIntegration' \
-  "{\"query\":\"query(\$e:String!,\$p:String!){getIntegration(environmentId:\$e,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}"
-
-run_endpoint 'integration.getSalesforceAuthUrl' \
-  "{\"query\":\"query(\$e:String!,\$p:String!){getSalesforceAuthUrl(environmentId:\$e,provider:\$p)}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}"
-
-run_endpoint 'integration.getSalesforceObjectFields' \
-  "{\"query\":\"query(\$i:String!){getSalesforceObjectFields(integrationId:\$i){__typename}}\",\"variables\":{\"i\":\"${SMOKE_INTEGRATION_ID}\"}}"
-
-run_endpoint 'integration.getIntegrationObjectMappings' \
-  "{\"query\":\"query(\$i:String!){getIntegrationObjectMappings(integrationId:\$i){__typename}}\",\"variables\":{\"i\":\"${SMOKE_INTEGRATION_ID}\"}}"
-
-run_endpoint 'integration.getIntegrationObjectMapping' \
-  "{\"query\":\"query(\$id:String!){getIntegrationObjectMapping(id:\$id){__typename}}\",\"variables\":{\"id\":\"${SMOKE_MAPPING_ID}\"}}"
-
-run_endpoint 'team.getInvites' \
-  "{\"query\":\"query(\$p:String!){getInvites(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
-
-run_endpoint 'team.getTeamMembers' \
-  "{\"query\":\"query(\$p:String!){getTeamMembers(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
-
-section "Cross-project mutual QUERIES (37 endpoints × 2 directions, safe)"
+section "O-tier QUERIES — in-project (0 endpoints, safe)"
+section "Cross-project mutual QUERIES (36 endpoints × 2 directions, safe)"
 mutual 'projects.getProjectConfig' \
   "{\"query\":\"query(\$p:String!){getProjectConfig(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
   "{\"query\":\"query(\$p:String!){getProjectConfig(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
@@ -225,17 +204,25 @@ mutual 'content.listContentVersions' \
   "{\"query\":\"query(\$c:String!){listContentVersions(contentId:\$c){__typename}}\",\"variables\":{\"c\":\"${SMOKE_B_CONTENT_ID}\"}}" \
   "{\"query\":\"query(\$c:String!){listContentVersions(contentId:\$c){__typename}}\",\"variables\":{\"c\":\"${SMOKE_CONTENT_ID}\"}}"
 
-mutual 'content.findManyVersionLocations' \
-  "{\"query\":\"query(\$v:String!){findManyVersionLocations(versionId:\$v){__typename}}\",\"variables\":{\"v\":\"${SMOKE_B_VERSION_ID}\"}}" \
-  "{\"query\":\"query(\$v:String!){findManyVersionLocations(versionId:\$v){__typename}}\",\"variables\":{\"v\":\"${SMOKE_VERSION_ID}\"}}"
+mutual 'content.listVersionLocalizations' \
+  "{\"query\":\"query(\$v:String!){listVersionLocalizations(versionId:\$v){__typename}}\",\"variables\":{\"v\":\"${SMOKE_B_VERSION_ID}\"}}" \
+  "{\"query\":\"query(\$v:String!){listVersionLocalizations(versionId:\$v){__typename}}\",\"variables\":{\"v\":\"${SMOKE_VERSION_ID}\"}}"
 
 mutual 'content.queryContent' \
   "{\"query\":\"query(\$q:ContentQuery){queryContent(query:\$q){__typename}}\",\"variables\":{\"q\":{\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}}" \
   "{\"query\":\"query(\$q:ContentQuery){queryContent(query:\$q){__typename}}\",\"variables\":{\"q\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
 
+mutual 'content.listContentPublishRecords' \
+  "{\"query\":\"query(\$c:String!){listContentPublishRecords(contentId:\$c){__typename}}\",\"variables\":{\"c\":\"${SMOKE_B_CONTENT_ID}\"}}" \
+  "{\"query\":\"query(\$c:String!){listContentPublishRecords(contentId:\$c){__typename}}\",\"variables\":{\"c\":\"${SMOKE_CONTENT_ID}\"}}"
+
 mutual 'environments.userEnvironments' \
   "{\"query\":\"query(\$p:String!){userEnvironments(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
   "{\"query\":\"query(\$p:String!){userEnvironments(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+mutual 'environments.verifyInstallation' \
+  "{\"query\":\"query(\$e:String!){verifyInstallation(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}" \
+  "{\"query\":\"query(\$e:String!){verifyInstallation(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
 
 mutual 'biz.queryBizUser' \
   "{\"query\":\"query(\$o:BizOrder!,\$q:BizQuery!){queryBizUser(orderBy:\$o,query:\$q){__typename}}\",\"variables\":{\"o\":{\"direction\":\"asc\",\"field\":\"createdAt\"},\"q\":{\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}}" \
@@ -313,41 +300,17 @@ mutual 'analytics.queryTrackerUsers' \
   "{\"query\":\"query(\$o:AnalyticsOrder!,\$q:AnalyticsQuery!){queryTrackerUsers(orderBy:\$o,query:\$q){__typename}}\",\"variables\":{\"o\":{\"direction\":\"asc\",\"field\":\"createdAt\"},\"q\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\",\"endDate\":\"2020-01-31\",\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"startDate\":\"2020-01-01\",\"timezone\":\"UTC\"}}}" \
   "{\"query\":\"query(\$o:AnalyticsOrder!,\$q:AnalyticsQuery!){queryTrackerUsers(orderBy:\$o,query:\$q){__typename}}\",\"variables\":{\"o\":{\"direction\":\"asc\",\"field\":\"createdAt\"},\"q\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"endDate\":\"2020-01-31\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\",\"startDate\":\"2020-01-01\",\"timezone\":\"UTC\"}}}"
 
+mutual 'subscription.getSubscriptionByProjectId' \
+  "{\"query\":\"query(\$p:String!){getSubscriptionByProjectId(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"query(\$p:String!){getSubscriptionByProjectId(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+mutual 'subscription.getSubscriptionUsage' \
+  "{\"query\":\"query(\$p:String!){getSubscriptionUsage(projectId:\$p)}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"query(\$p:String!){getSubscriptionUsage(projectId:\$p)}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
 mutual 'projects.getProjectLicenseInfo' \
   "{\"query\":\"query(\$p:String!){getProjectLicenseInfo(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
   "{\"query\":\"query(\$p:String!){getProjectLicenseInfo(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
-
-mutual 'environments.listAccessTokens' \
-  "{\"query\":\"query(\$e:String!){listAccessTokens(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}" \
-  "{\"query\":\"query(\$e:String!){listAccessTokens(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
-
-mutual 'environments.getAccessToken' \
-  "{\"query\":\"query(\$a:String!,\$e:String!){getAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_B_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}" \
-  "{\"query\":\"query(\$a:String!,\$e:String!){getAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
-
-mutual 'integration.listIntegrations' \
-  "{\"query\":\"query(\$e:String!){listIntegrations(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}" \
-  "{\"query\":\"query(\$e:String!){listIntegrations(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
-
-mutual 'integration.getIntegration' \
-  "{\"query\":\"query(\$e:String!,\$p:String!){getIntegration(environmentId:\$e,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}" \
-  "{\"query\":\"query(\$e:String!,\$p:String!){getIntegration(environmentId:\$e,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}"
-
-mutual 'integration.getSalesforceAuthUrl' \
-  "{\"query\":\"query(\$e:String!,\$p:String!){getSalesforceAuthUrl(environmentId:\$e,provider:\$p)}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}" \
-  "{\"query\":\"query(\$e:String!,\$p:String!){getSalesforceAuthUrl(environmentId:\$e,provider:\$p)}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}"
-
-mutual 'integration.getSalesforceObjectFields' \
-  "{\"query\":\"query(\$i:String!){getSalesforceObjectFields(integrationId:\$i){__typename}}\",\"variables\":{\"i\":\"${SMOKE_B_INTEGRATION_ID}\"}}" \
-  "{\"query\":\"query(\$i:String!){getSalesforceObjectFields(integrationId:\$i){__typename}}\",\"variables\":{\"i\":\"${SMOKE_INTEGRATION_ID}\"}}"
-
-mutual 'integration.getIntegrationObjectMappings' \
-  "{\"query\":\"query(\$i:String!){getIntegrationObjectMappings(integrationId:\$i){__typename}}\",\"variables\":{\"i\":\"${SMOKE_B_INTEGRATION_ID}\"}}" \
-  "{\"query\":\"query(\$i:String!){getIntegrationObjectMappings(integrationId:\$i){__typename}}\",\"variables\":{\"i\":\"${SMOKE_INTEGRATION_ID}\"}}"
-
-mutual 'integration.getIntegrationObjectMapping' \
-  "{\"query\":\"query(\$id:String!){getIntegrationObjectMapping(id:\$id){__typename}}\",\"variables\":{\"id\":\"${SMOKE_B_MAPPING_ID}\"}}" \
-  "{\"query\":\"query(\$id:String!){getIntegrationObjectMapping(id:\$id){__typename}}\",\"variables\":{\"id\":\"${SMOKE_MAPPING_ID}\"}}"
 
 mutual 'team.getInvites' \
   "{\"query\":\"query(\$p:String!){getInvites(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
@@ -356,6 +319,18 @@ mutual 'team.getInvites' \
 mutual 'team.getTeamMembers' \
   "{\"query\":\"query(\$p:String!){getTeamMembers(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
   "{\"query\":\"query(\$p:String!){getTeamMembers(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+mutual 'audit.auditLogs' \
+  "{\"query\":\"query(\$p:String!){auditLogs(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"query(\$p:String!){auditLogs(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+mutual 'sso.listProjectSsoProviders' \
+  "{\"query\":\"query(\$p:String!){listProjectSsoProviders(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"query(\$p:String!){listProjectSsoProviders(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+mutual 'sso.getProjectSsoSettings' \
+  "{\"query\":\"query(\$p:String!){getProjectSsoSettings(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"query(\$p:String!){getProjectSsoSettings(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
 if [ "$QUERIES_ONLY" -eq 1 ]; then echo; echo "(--queries-only set; skipping mutations)"; exit 0; fi
 
@@ -375,7 +350,7 @@ section "R-tier MUTATION — in-project (1 endpoint)"
 run_endpoint 'team.activeUserProject' \
   "{\"query\":\"mutation(\$d:ActiveUserProjectInput!){activeUserProject(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_PROJECT_ID}\",\"userId\":\"e2e\"}}}"
 
-section "W-tier MUTATIONS — in-project (39 endpoints, DESTRUCTIVE)"
+section "W-tier MUTATIONS — in-project (62 endpoints, DESTRUCTIVE)"
 run_endpoint 'content.createContent' \
   "{\"query\":\"mutation(\$d:ContentInput!){createContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"type\":\"flow\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
 
@@ -385,8 +360,8 @@ run_endpoint 'content.updateContent' \
 run_endpoint 'content.duplicateContent' \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
 
-run_endpoint 'content.updateVersionLocationData' \
-  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
+run_endpoint 'content.updateVersionLocalization' \
+  "{\"query\":\"mutation(\$d:UpdateVersionLocalizationInput!){updateVersionLocalization(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"versionId\":\"${SMOKE_VERSION_ID}\",\"code\":\"e2e-target\",\"enabled\":true}}}"
 
 run_endpoint 'content.updateContentVersion' \
   "{\"query\":\"mutation(\$d:VersionUpdateInput!){updateContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\",\"content\":{}}}}"
@@ -420,6 +395,24 @@ run_endpoint_per_role 'environments.deleteEnvironments' \
   "{\"query\":\"mutation(\$d:DeleteEnvironmentInput!){deleteEnvironments(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_ENVIRONMENT_FOR_ADMIN_DELETE_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:DeleteEnvironmentInput!){deleteEnvironments(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_ENVIRONMENT_FOR_OWNER_DELETE_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:DeleteEnvironmentInput!){deleteEnvironments(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_ENVIRONMENT_FOR_OWNER_DELETE_ID}\"}}}"
+
+run_endpoint 'environments.createAccessToken' \
+  "{\"query\":\"mutation(\$e:String!,\$i:CreateAccessTokenInput!){createAccessToken(environmentId:\$e,input:\$i){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"i\":{\"name\":\"e2e\"}}}"
+
+run_endpoint 'environments.deleteAccessToken' \
+  "{\"query\":\"mutation(\$a:String!,\$e:String!){deleteAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
+
+run_endpoint 'environments.createSigningSecret' \
+  "{\"query\":\"mutation(\$e:String!){createSigningSecret(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
+
+run_endpoint_per_role 'environments.revokeSigningSecret' \
+  "{\"query\":\"mutation(\$e:String!,\$s:String!){revokeSigningSecret(environmentId:\$e,signingSecretId:\$s)}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"s\":\"${SMOKE_SIGNING_SECRET_FOR_OWNER_REVOKE_ID}\"}}" \
+  "{\"query\":\"mutation(\$e:String!,\$s:String!){revokeSigningSecret(environmentId:\$e,signingSecretId:\$s)}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"s\":\"${SMOKE_SIGNING_SECRET_FOR_ADMIN_REVOKE_ID}\"}}" \
+  "{\"query\":\"mutation(\$e:String!,\$s:String!){revokeSigningSecret(environmentId:\$e,signingSecretId:\$s)}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"s\":\"${SMOKE_SIGNING_SECRET_FOR_OWNER_REVOKE_ID}\"}}" \
+  "{\"query\":\"mutation(\$e:String!,\$s:String!){revokeSigningSecret(environmentId:\$e,signingSecretId:\$s)}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"s\":\"${SMOKE_SIGNING_SECRET_FOR_OWNER_REVOKE_ID}\"}}"
+
+run_endpoint 'environments.setRequireIdentityVerification' \
+  "{\"query\":\"mutation(\$e:String!,\$r:Boolean!){setRequireIdentityVerification(environmentId:\$e,required:\$r){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"r\":false}}"
 
 run_endpoint 'biz.createSegment' \
   "{\"query\":\"mutation(\$d:CreatSegment!){createSegment(data:\$d){__typename}}\",\"variables\":{\"d\":{\"bizType\":\"USER\",\"dataType\":\"ALL\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
@@ -456,6 +449,42 @@ run_endpoint 'biz.createBizCompanyOnSegment' \
 
 run_endpoint 'biz.deleteBizCompanyOnSegment' \
   "{\"query\":\"mutation(\$d:DeleteBizCompanyOnSegment!){deleteBizCompanyOnSegment(data:\$d){__typename}}\",\"variables\":{\"d\":{\"bizCompanyIds\":[\"${SMOKE_BIZ_COMPANY_ID}\"],\"segmentId\":\"${SMOKE_SEGMENT_ID}\"}}}"
+
+run_endpoint 'integration.upsertIntegration' \
+  "{\"query\":\"mutation(\$d:UpsertIntegrationInput!){upsertIntegration(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\",\"provider\":\"amplitude\",\"key\":\"e2e-key\"}}}"
+
+run_endpoint 'integration.deleteIntegration' \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){deleteIntegration(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\"}}}"
+
+run_endpoint 'integration.sendIntegrationTestEvent' \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){sendIntegrationTestEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\"}}}"
+
+run_endpoint 'integration.startIntegrationOAuth' \
+  "{\"query\":\"mutation(\$d:StartIntegrationOAuthInput!){startIntegrationOAuth(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\",\"provider\":\"hubspot\"}}}"
+
+run_endpoint 'integration.disconnectIntegrationOAuth' \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){disconnectIntegrationOAuth(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\"}}}"
+
+run_endpoint 'integration.updateIntegrationEvents' \
+  "{\"query\":\"mutation(\$d:UpdateIntegrationEventsInput!){updateIntegrationEvents(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\",\"enabled\":true}}}"
+
+run_endpoint 'integration.upsertIntegrationObjectMapping' \
+  "{\"query\":\"mutation(\$d:UpsertIntegrationObjectMappingInput!){upsertIntegrationObjectMapping(data:\$d){__typename}}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_INTEGRATION_ID}\",\"remoteObject\":\"contact\",\"localObject\":\"user\",\"matchStrategy\":\"email\",\"inboundFields\":[],\"outboundFields\":[]}}}"
+
+run_endpoint 'integration.deleteIntegrationObjectMapping' \
+  "{\"query\":\"mutation(\$d:IntegrationObjectMappingIdInput!){deleteIntegrationObjectMapping(data:\$d)}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_INTEGRATION_ID}\",\"id\":\"missing\"}}}"
+
+run_endpoint 'integration.runIntegrationObjectMappingSync' \
+  "{\"query\":\"mutation(\$d:IntegrationObjectMappingIdInput!){runIntegrationObjectMappingSync(data:\$d){__typename}}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_INTEGRATION_ID}\",\"id\":\"missing\"}}}"
+
+run_endpoint 'integration.updateIntegrationInbound' \
+  "{\"query\":\"mutation(\$d:UpdateIntegrationInboundInput!){updateIntegrationInbound(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\",\"enabled\":true}}}"
+
+run_endpoint 'integration.rotateIntegrationInboundToken' \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){rotateIntegrationInboundToken(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\"}}}"
+
+run_endpoint 'localizations.translateLocalizationUnits' \
+  "{\"query\":\"mutation(\$d:TranslateLocalizationUnitsInput!){translateLocalizationUnits(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\",\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"units\":[{\"path\":\"0.0.0:button.text\",\"sourceText\":\"Next\"}]}}}"
 
 run_endpoint_per_role 'localizations.createLocalization' \
   "{\"query\":\"mutation(\$d:CreateLocalizationInput!){createLocalization(data:\$d){__typename}}\",\"variables\":{\"d\":{\"code\":\"e2e-owner\",\"locale\":\"e2e-owner\",\"name\":\"e2e-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}" \
@@ -538,50 +567,41 @@ run_endpoint_per_role 'analytics.endSession' \
   "{\"query\":\"mutation(\$s:String!){endSession(sessionId:\$s)}\",\"variables\":{\"s\":\"${SMOKE_SESSION_FOR_OWNER_END_ID}\"}}" \
   "{\"query\":\"mutation(\$s:String!){endSession(sessionId:\$s)}\",\"variables\":{\"s\":\"${SMOKE_SESSION_FOR_OWNER_END_ID}\"}}"
 
-section "O-tier MUTATIONS — in-project (13 endpoints, DESTRUCTIVE)"
-run_endpoint 'projects.updateProjectName' \
-  "{\"query\":\"mutation(\$n:String!,\$p:String!){updateProjectName(name:\$n,projectId:\$p){__typename}}\",\"variables\":{\"n\":\"e2e\",\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+run_endpoint 'webhooks.createWebhook' \
+  "{\"query\":\"mutation(\$d:CreateWebhookInput!){createWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\",\"url\":\"https://example.com/hooks/spot-check\",\"topics\":[\"content.published\"]}}}"
 
+run_endpoint 'webhooks.updateWebhook' \
+  "{\"query\":\"mutation(\$d:UpdateWebhookInput!){updateWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_ID}\",\"description\":\"spot-check\"}}}"
+
+run_endpoint 'webhooks.rotateWebhookSecret' \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){rotateWebhookSecret(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_ID}\"}}}"
+
+run_endpoint 'webhooks.sendWebhookTestEvent' \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){sendWebhookTestEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_ID}\"}}}"
+
+run_endpoint 'webhooks.resendWebhookMessage' \
+  "{\"query\":\"mutation(\$d:WebhookMessageInput!){resendWebhookMessage(data:\$d){__typename}}\",\"variables\":{\"d\":{\"webhookId\":\"${SMOKE_WEBHOOK_ID}\",\"messageId\":\"${SMOKE_WEBHOOK_MESSAGE_ID}\"}}}"
+
+run_endpoint_per_role 'webhooks.deleteWebhook' \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){deleteWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_FOR_OWNER_DELETE_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){deleteWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_FOR_ADMIN_DELETE_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){deleteWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_FOR_OWNER_DELETE_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){deleteWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_FOR_OWNER_DELETE_ID}\"}}}"
+
+section "O-tier MUTATIONS — in-project (4 endpoints, DESTRUCTIVE)"
 run_endpoint 'projects.updateProjectLicense' \
   "{\"query\":\"mutation(\$l:String!,\$p:String!){updateProjectLicense(license:\$l,projectId:\$p){__typename}}\",\"variables\":{\"l\":\"e2e\",\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
-run_endpoint 'environments.createAccessToken' \
-  "{\"query\":\"mutation(\$e:String!,\$i:CreateAccessTokenInput!){createAccessToken(environmentId:\$e,input:\$i){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"i\":{\"name\":\"e2e\"}}}"
+run_endpoint 'team.transferProjectOwnership' \
+  "{\"query\":\"mutation(\$d:TransferProjectOwnershipInput!){transferProjectOwnership(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_PROJECT_ID}\",\"userId\":\"${SMOKE_REMOVABLE_USER_FOR_CHANGE_ROLE_ID}\"}}}"
 
-run_endpoint 'environments.deleteAccessToken' \
-  "{\"query\":\"mutation(\$a:String!,\$e:String!){deleteAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
+run_endpoint 'subscription.createCheckoutSession' \
+  "{\"query\":\"mutation(\$d:CreateCheckoutSessionRequest!){createCheckoutSession(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_PROJECT_ID}\",\"planType\":\"starter\",\"interval\":\"monthly\"}}}"
 
-run_endpoint 'integration.updateIntegration' \
-  "{\"query\":\"mutation(\$e:String!,\$i:UpdateIntegrationInput!,\$p:String!){updateIntegration(environmentId:\$e,input:\$i,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"i\":{},\"p\":\"salesforce\"}}"
+run_endpoint 'subscription.createPortalSession' \
+  "{\"query\":\"mutation(\$p:String!){createPortalSession(projectId:\$p)}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
-run_endpoint 'integration.upsertIntegrationObjectMapping' \
-  "{\"query\":\"mutation(\$i:CreateIntegrationObjectMappingInput!,\$ii:String!){upsertIntegrationObjectMapping(input:\$i,integrationId:\$ii){__typename}}\",\"variables\":{\"i\":{\"sourceObjectType\":\"account\",\"destinationObjectType\":\"company\"},\"ii\":\"${SMOKE_INTEGRATION_ID}\"}}"
-
-run_endpoint 'integration.updateIntegrationObjectMapping' \
-  "{\"query\":\"mutation(\$id:String!,\$i:UpdateIntegrationObjectMappingInput!){updateIntegrationObjectMapping(id:\$id,input:\$i){__typename}}\",\"variables\":{\"id\":\"${SMOKE_MAPPING_ID}\",\"i\":{}}}"
-
-run_endpoint 'integration.deleteIntegrationObjectMapping' \
-  "{\"query\":\"mutation(\$id:String!){deleteIntegrationObjectMapping(id:\$id)}\",\"variables\":{\"id\":\"${SMOKE_MAPPING_ID}\"}}"
-
-run_endpoint 'integration.disconnectIntegration' \
-  "{\"query\":\"mutation(\$e:String!,\$p:String!){disconnectIntegration(environmentId:\$e,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}"
-
-run_endpoint_per_role 'team.inviteTeamMember' \
-  "{\"query\":\"mutation(\$d:InviteTeamMemberInput!){inviteTeamMember(data:\$d)}\",\"variables\":{\"d\":{\"email\":\"e2e-owner@test.example.com\",\"name\":\"e2e\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"role\":\"VIEWER\"}}}" \
-  "{\"query\":\"mutation(\$d:InviteTeamMemberInput!){inviteTeamMember(data:\$d)}\",\"variables\":{\"d\":{\"email\":\"e2e-other@test.example.com\",\"name\":\"e2e\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"role\":\"VIEWER\"}}}" \
-  "{\"query\":\"mutation(\$d:InviteTeamMemberInput!){inviteTeamMember(data:\$d)}\",\"variables\":{\"d\":{\"email\":\"e2e-other@test.example.com\",\"name\":\"e2e\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"role\":\"VIEWER\"}}}" \
-  "{\"query\":\"mutation(\$d:InviteTeamMemberInput!){inviteTeamMember(data:\$d)}\",\"variables\":{\"d\":{\"email\":\"e2e-other@test.example.com\",\"name\":\"e2e\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"role\":\"VIEWER\"}}}"
-
-run_endpoint 'team.removeTeamMember' \
-  "{\"query\":\"mutation(\$d:RemoveTeamMemberInput!){removeTeamMember(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_PROJECT_ID}\",\"userId\":\"${SMOKE_REMOVABLE_USER_ID}\"}}}"
-
-run_endpoint 'team.changeTeamMemberRole' \
-  "{\"query\":\"mutation(\$d:ChangeTeamMemberRoleInput!){changeTeamMemberRole(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_PROJECT_ID}\",\"role\":\"ADMIN\",\"userId\":\"${SMOKE_REMOVABLE_USER_FOR_CHANGE_ROLE_ID}\"}}}"
-
-run_endpoint 'team.cancelInvite' \
-  "{\"query\":\"mutation(\$d:CancelInviteInput!){cancelInvite(data:\$d)}\",\"variables\":{\"d\":{\"inviteId\":\"${SMOKE_INVITE_ID}\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}"
-
-section "Cross-project mutual MUTATIONS (53 endpoints × 2 directions)"
+section "Cross-project mutual MUTATIONS (76 endpoints × 2 directions)"
 # If guard works, all of these return E0013 with zero side effects.
 # If guard is broken (IDOR), A→B mutations EXECUTE on B — verify guard before running.
 mutual 'team.activeUserProject' \
@@ -600,9 +620,9 @@ mutual 'content.duplicateContent' \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:ContentDuplicateInput!){duplicateContent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\"}}}"
 
-mutual 'content.updateVersionLocationData' \
-  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_B_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_B_VERSION_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:VersionUpdateLocalizationInput!){updateVersionLocationData(data:\$d){__typename}}\",\"variables\":{\"d\":{\"backup\":{},\"enabled\":true,\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"localized\":{},\"versionId\":\"${SMOKE_VERSION_ID}\"}}}"
+mutual 'content.updateVersionLocalization' \
+  "{\"query\":\"mutation(\$d:UpdateVersionLocalizationInput!){updateVersionLocalization(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_B_CONTENT_ID}\",\"versionId\":\"${SMOKE_B_VERSION_ID}\",\"code\":\"e2e-target\",\"enabled\":true}}}" \
+  "{\"query\":\"mutation(\$d:UpdateVersionLocalizationInput!){updateVersionLocalization(data:\$d){__typename}}\",\"variables\":{\"d\":{\"contentId\":\"${SMOKE_CONTENT_ID}\",\"versionId\":\"${SMOKE_VERSION_ID}\",\"code\":\"e2e-target\",\"enabled\":true}}}"
 
 mutual 'content.updateContentVersion' \
   "{\"query\":\"mutation(\$d:VersionUpdateInput!){updateContentVersion(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_B_VERSION_ID}\",\"content\":{}}}}" \
@@ -640,6 +660,26 @@ mutual 'environments.deleteEnvironments' \
   "{\"query\":\"mutation(\$d:DeleteEnvironmentInput!){deleteEnvironments(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_ENVIRONMENT_FOR_OWNER_DELETE_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:DeleteEnvironmentInput!){deleteEnvironments(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_ENVIRONMENT_FOR_OWNER_DELETE_ID}\"}}}"
 
+mutual 'environments.createAccessToken' \
+  "{\"query\":\"mutation(\$e:String!,\$i:CreateAccessTokenInput!){createAccessToken(environmentId:\$e,input:\$i){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"i\":{\"name\":\"e2e\"}}}" \
+  "{\"query\":\"mutation(\$e:String!,\$i:CreateAccessTokenInput!){createAccessToken(environmentId:\$e,input:\$i){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"i\":{\"name\":\"e2e\"}}}"
+
+mutual 'environments.deleteAccessToken' \
+  "{\"query\":\"mutation(\$a:String!,\$e:String!){deleteAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_B_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}" \
+  "{\"query\":\"mutation(\$a:String!,\$e:String!){deleteAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
+
+mutual 'environments.createSigningSecret' \
+  "{\"query\":\"mutation(\$e:String!){createSigningSecret(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}" \
+  "{\"query\":\"mutation(\$e:String!){createSigningSecret(environmentId:\$e){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
+
+mutual 'environments.revokeSigningSecret' \
+  "{\"query\":\"mutation(\$e:String!,\$s:String!){revokeSigningSecret(environmentId:\$e,signingSecretId:\$s)}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"s\":\"${SMOKE_B_SIGNING_SECRET_FOR_OWNER_REVOKE_ID}\"}}" \
+  "{\"query\":\"mutation(\$e:String!,\$s:String!){revokeSigningSecret(environmentId:\$e,signingSecretId:\$s)}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"s\":\"${SMOKE_SIGNING_SECRET_FOR_OWNER_REVOKE_ID}\"}}"
+
+mutual 'environments.setRequireIdentityVerification' \
+  "{\"query\":\"mutation(\$e:String!,\$r:Boolean!){setRequireIdentityVerification(environmentId:\$e,required:\$r){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"r\":false}}" \
+  "{\"query\":\"mutation(\$e:String!,\$r:Boolean!){setRequireIdentityVerification(environmentId:\$e,required:\$r){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"r\":false}}"
+
 mutual 'biz.createSegment' \
   "{\"query\":\"mutation(\$d:CreatSegment!){createSegment(data:\$d){__typename}}\",\"variables\":{\"d\":{\"bizType\":\"USER\",\"dataType\":\"ALL\",\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:CreatSegment!){createSegment(data:\$d){__typename}}\",\"variables\":{\"d\":{\"bizType\":\"USER\",\"dataType\":\"ALL\",\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\"}}}"
@@ -675,6 +715,54 @@ mutual 'biz.createBizCompanyOnSegment' \
 mutual 'biz.deleteBizCompanyOnSegment' \
   "{\"query\":\"mutation(\$d:DeleteBizCompanyOnSegment!){deleteBizCompanyOnSegment(data:\$d){__typename}}\",\"variables\":{\"d\":{\"bizCompanyIds\":[\"${SMOKE_B_BIZ_COMPANY_ID}\"],\"segmentId\":\"${SMOKE_B_SEGMENT_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:DeleteBizCompanyOnSegment!){deleteBizCompanyOnSegment(data:\$d){__typename}}\",\"variables\":{\"d\":{\"bizCompanyIds\":[\"${SMOKE_BIZ_COMPANY_ID}\"],\"segmentId\":\"${SMOKE_SEGMENT_ID}\"}}}"
+
+mutual 'integration.upsertIntegration' \
+  "{\"query\":\"mutation(\$d:UpsertIntegrationInput!){upsertIntegration(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"provider\":\"amplitude\",\"key\":\"e2e-key\"}}}" \
+  "{\"query\":\"mutation(\$d:UpsertIntegrationInput!){upsertIntegration(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\",\"provider\":\"amplitude\",\"key\":\"e2e-key\"}}}"
+
+mutual 'integration.deleteIntegration' \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){deleteIntegration(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_INTEGRATION_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){deleteIntegration(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\"}}}"
+
+mutual 'integration.sendIntegrationTestEvent' \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){sendIntegrationTestEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_INTEGRATION_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){sendIntegrationTestEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\"}}}"
+
+mutual 'integration.startIntegrationOAuth' \
+  "{\"query\":\"mutation(\$d:StartIntegrationOAuthInput!){startIntegrationOAuth(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"provider\":\"hubspot\"}}}" \
+  "{\"query\":\"mutation(\$d:StartIntegrationOAuthInput!){startIntegrationOAuth(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\",\"provider\":\"hubspot\"}}}"
+
+mutual 'integration.disconnectIntegrationOAuth' \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){disconnectIntegrationOAuth(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_INTEGRATION_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){disconnectIntegrationOAuth(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\"}}}"
+
+mutual 'integration.updateIntegrationEvents' \
+  "{\"query\":\"mutation(\$d:UpdateIntegrationEventsInput!){updateIntegrationEvents(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_INTEGRATION_ID}\",\"enabled\":true}}}" \
+  "{\"query\":\"mutation(\$d:UpdateIntegrationEventsInput!){updateIntegrationEvents(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\",\"enabled\":true}}}"
+
+mutual 'integration.upsertIntegrationObjectMapping' \
+  "{\"query\":\"mutation(\$d:UpsertIntegrationObjectMappingInput!){upsertIntegrationObjectMapping(data:\$d){__typename}}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_B_INTEGRATION_ID}\",\"remoteObject\":\"contact\",\"localObject\":\"user\",\"matchStrategy\":\"email\",\"inboundFields\":[],\"outboundFields\":[]}}}" \
+  "{\"query\":\"mutation(\$d:UpsertIntegrationObjectMappingInput!){upsertIntegrationObjectMapping(data:\$d){__typename}}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_INTEGRATION_ID}\",\"remoteObject\":\"contact\",\"localObject\":\"user\",\"matchStrategy\":\"email\",\"inboundFields\":[],\"outboundFields\":[]}}}"
+
+mutual 'integration.deleteIntegrationObjectMapping' \
+  "{\"query\":\"mutation(\$d:IntegrationObjectMappingIdInput!){deleteIntegrationObjectMapping(data:\$d)}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_B_INTEGRATION_ID}\",\"id\":\"missing\"}}}" \
+  "{\"query\":\"mutation(\$d:IntegrationObjectMappingIdInput!){deleteIntegrationObjectMapping(data:\$d)}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_INTEGRATION_ID}\",\"id\":\"missing\"}}}"
+
+mutual 'integration.runIntegrationObjectMappingSync' \
+  "{\"query\":\"mutation(\$d:IntegrationObjectMappingIdInput!){runIntegrationObjectMappingSync(data:\$d){__typename}}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_B_INTEGRATION_ID}\",\"id\":\"missing\"}}}" \
+  "{\"query\":\"mutation(\$d:IntegrationObjectMappingIdInput!){runIntegrationObjectMappingSync(data:\$d){__typename}}\",\"variables\":{\"d\":{\"integrationId\":\"${SMOKE_INTEGRATION_ID}\",\"id\":\"missing\"}}}"
+
+mutual 'integration.updateIntegrationInbound' \
+  "{\"query\":\"mutation(\$d:UpdateIntegrationInboundInput!){updateIntegrationInbound(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_INTEGRATION_ID}\",\"enabled\":true}}}" \
+  "{\"query\":\"mutation(\$d:UpdateIntegrationInboundInput!){updateIntegrationInbound(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\",\"enabled\":true}}}"
+
+mutual 'integration.rotateIntegrationInboundToken' \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){rotateIntegrationInboundToken(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_INTEGRATION_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:IntegrationIdInput!){rotateIntegrationInboundToken(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_INTEGRATION_ID}\"}}}"
+
+mutual 'localizations.translateLocalizationUnits' \
+  "{\"query\":\"mutation(\$d:TranslateLocalizationUnitsInput!){translateLocalizationUnits(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_B_VERSION_ID}\",\"localizationId\":\"${SMOKE_B_LOCALIZATION_ID}\",\"units\":[{\"path\":\"0.0.0:button.text\",\"sourceText\":\"Next\"}]}}}" \
+  "{\"query\":\"mutation(\$d:TranslateLocalizationUnitsInput!){translateLocalizationUnits(data:\$d){__typename}}\",\"variables\":{\"d\":{\"versionId\":\"${SMOKE_VERSION_ID}\",\"localizationId\":\"${SMOKE_LOCALIZATION_ID}\",\"units\":[{\"path\":\"0.0.0:button.text\",\"sourceText\":\"Next\"}]}}}"
 
 mutual 'localizations.createLocalization' \
   "{\"query\":\"mutation(\$d:CreateLocalizationInput!){createLocalization(data:\$d){__typename}}\",\"variables\":{\"d\":{\"code\":\"e2e-owner\",\"locale\":\"e2e-owner\",\"name\":\"e2e-owner\",\"projectId\":\"${SMOKE_B_PROJECT_ID}\"}}}" \
@@ -744,41 +832,33 @@ mutual 'analytics.endSession' \
   "{\"query\":\"mutation(\$s:String!){endSession(sessionId:\$s)}\",\"variables\":{\"s\":\"${SMOKE_B_SESSION_FOR_OWNER_END_ID}\"}}" \
   "{\"query\":\"mutation(\$s:String!){endSession(sessionId:\$s)}\",\"variables\":{\"s\":\"${SMOKE_SESSION_FOR_OWNER_END_ID}\"}}"
 
-mutual 'projects.updateProjectName' \
-  "{\"query\":\"mutation(\$n:String!,\$p:String!){updateProjectName(name:\$n,projectId:\$p){__typename}}\",\"variables\":{\"n\":\"e2e\",\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
-  "{\"query\":\"mutation(\$n:String!,\$p:String!){updateProjectName(name:\$n,projectId:\$p){__typename}}\",\"variables\":{\"n\":\"e2e\",\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+mutual 'webhooks.createWebhook' \
+  "{\"query\":\"mutation(\$d:CreateWebhookInput!){createWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"url\":\"https://example.com/hooks/spot-check\",\"topics\":[\"content.published\"]}}}" \
+  "{\"query\":\"mutation(\$d:CreateWebhookInput!){createWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"environmentId\":\"${SMOKE_ENVIRONMENT_ID}\",\"url\":\"https://example.com/hooks/spot-check\",\"topics\":[\"content.published\"]}}}"
 
-mutual 'projects.updateProjectLicense' \
-  "{\"query\":\"mutation(\$l:String!,\$p:String!){updateProjectLicense(license:\$l,projectId:\$p){__typename}}\",\"variables\":{\"l\":\"e2e\",\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
-  "{\"query\":\"mutation(\$l:String!,\$p:String!){updateProjectLicense(license:\$l,projectId:\$p){__typename}}\",\"variables\":{\"l\":\"e2e\",\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+mutual 'webhooks.updateWebhook' \
+  "{\"query\":\"mutation(\$d:UpdateWebhookInput!){updateWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_WEBHOOK_ID}\",\"description\":\"spot-check\"}}}" \
+  "{\"query\":\"mutation(\$d:UpdateWebhookInput!){updateWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_ID}\",\"description\":\"spot-check\"}}}"
 
-mutual 'environments.createAccessToken' \
-  "{\"query\":\"mutation(\$e:String!,\$i:CreateAccessTokenInput!){createAccessToken(environmentId:\$e,input:\$i){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"i\":{\"name\":\"e2e\"}}}" \
-  "{\"query\":\"mutation(\$e:String!,\$i:CreateAccessTokenInput!){createAccessToken(environmentId:\$e,input:\$i){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"i\":{\"name\":\"e2e\"}}}"
+mutual 'webhooks.rotateWebhookSecret' \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){rotateWebhookSecret(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_WEBHOOK_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){rotateWebhookSecret(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_ID}\"}}}"
 
-mutual 'environments.deleteAccessToken' \
-  "{\"query\":\"mutation(\$a:String!,\$e:String!){deleteAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_B_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\"}}" \
-  "{\"query\":\"mutation(\$a:String!,\$e:String!){deleteAccessToken(accessTokenId:\$a,environmentId:\$e)}\",\"variables\":{\"a\":\"${SMOKE_ACCESS_TOKEN_ID}\",\"e\":\"${SMOKE_ENVIRONMENT_ID}\"}}"
+mutual 'webhooks.sendWebhookTestEvent' \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){sendWebhookTestEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_WEBHOOK_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){sendWebhookTestEvent(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_ID}\"}}}"
 
-mutual 'integration.updateIntegration' \
-  "{\"query\":\"mutation(\$e:String!,\$i:UpdateIntegrationInput!,\$p:String!){updateIntegration(environmentId:\$e,input:\$i,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"i\":{},\"p\":\"salesforce\"}}" \
-  "{\"query\":\"mutation(\$e:String!,\$i:UpdateIntegrationInput!,\$p:String!){updateIntegration(environmentId:\$e,input:\$i,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"i\":{},\"p\":\"salesforce\"}}"
+mutual 'webhooks.resendWebhookMessage' \
+  "{\"query\":\"mutation(\$d:WebhookMessageInput!){resendWebhookMessage(data:\$d){__typename}}\",\"variables\":{\"d\":{\"webhookId\":\"${SMOKE_B_WEBHOOK_ID}\",\"messageId\":\"${SMOKE_B_WEBHOOK_MESSAGE_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:WebhookMessageInput!){resendWebhookMessage(data:\$d){__typename}}\",\"variables\":{\"d\":{\"webhookId\":\"${SMOKE_WEBHOOK_ID}\",\"messageId\":\"${SMOKE_WEBHOOK_MESSAGE_ID}\"}}}"
 
-mutual 'integration.upsertIntegrationObjectMapping' \
-  "{\"query\":\"mutation(\$i:CreateIntegrationObjectMappingInput!,\$ii:String!){upsertIntegrationObjectMapping(input:\$i,integrationId:\$ii){__typename}}\",\"variables\":{\"i\":{\"sourceObjectType\":\"account\",\"destinationObjectType\":\"company\"},\"ii\":\"${SMOKE_B_INTEGRATION_ID}\"}}" \
-  "{\"query\":\"mutation(\$i:CreateIntegrationObjectMappingInput!,\$ii:String!){upsertIntegrationObjectMapping(input:\$i,integrationId:\$ii){__typename}}\",\"variables\":{\"i\":{\"sourceObjectType\":\"account\",\"destinationObjectType\":\"company\"},\"ii\":\"${SMOKE_INTEGRATION_ID}\"}}"
+mutual 'webhooks.deleteWebhook' \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){deleteWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_WEBHOOK_FOR_OWNER_DELETE_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:WebhookIdInput!){deleteWebhook(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_WEBHOOK_FOR_OWNER_DELETE_ID}\"}}}"
 
-mutual 'integration.updateIntegrationObjectMapping' \
-  "{\"query\":\"mutation(\$id:String!,\$i:UpdateIntegrationObjectMappingInput!){updateIntegrationObjectMapping(id:\$id,input:\$i){__typename}}\",\"variables\":{\"id\":\"${SMOKE_B_MAPPING_ID}\",\"i\":{}}}" \
-  "{\"query\":\"mutation(\$id:String!,\$i:UpdateIntegrationObjectMappingInput!){updateIntegrationObjectMapping(id:\$id,input:\$i){__typename}}\",\"variables\":{\"id\":\"${SMOKE_MAPPING_ID}\",\"i\":{}}}"
-
-mutual 'integration.deleteIntegrationObjectMapping' \
-  "{\"query\":\"mutation(\$id:String!){deleteIntegrationObjectMapping(id:\$id)}\",\"variables\":{\"id\":\"${SMOKE_B_MAPPING_ID}\"}}" \
-  "{\"query\":\"mutation(\$id:String!){deleteIntegrationObjectMapping(id:\$id)}\",\"variables\":{\"id\":\"${SMOKE_MAPPING_ID}\"}}"
-
-mutual 'integration.disconnectIntegration' \
-  "{\"query\":\"mutation(\$e:String!,\$p:String!){disconnectIntegration(environmentId:\$e,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_B_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}" \
-  "{\"query\":\"mutation(\$e:String!,\$p:String!){disconnectIntegration(environmentId:\$e,provider:\$p){__typename}}\",\"variables\":{\"e\":\"${SMOKE_ENVIRONMENT_ID}\",\"p\":\"salesforce\"}}"
+mutual 'projects.updateProject' \
+  "{\"query\":\"mutation(\$n:String,\$p:String!){updateProject(name:\$n,projectId:\$p){__typename}}\",\"variables\":{\"n\":\"e2e\",\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"mutation(\$n:String,\$p:String!){updateProject(name:\$n,projectId:\$p){__typename}}\",\"variables\":{\"n\":\"e2e\",\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
 mutual 'team.inviteTeamMember' \
   "{\"query\":\"mutation(\$d:InviteTeamMemberInput!){inviteTeamMember(data:\$d)}\",\"variables\":{\"d\":{\"email\":\"e2e-other@test.example.com\",\"name\":\"e2e\",\"projectId\":\"${SMOKE_B_PROJECT_ID}\",\"role\":\"VIEWER\"}}}" \
@@ -795,3 +875,35 @@ mutual 'team.changeTeamMemberRole' \
 mutual 'team.cancelInvite' \
   "{\"query\":\"mutation(\$d:CancelInviteInput!){cancelInvite(data:\$d)}\",\"variables\":{\"d\":{\"inviteId\":\"${SMOKE_B_INVITE_ID}\",\"projectId\":\"${SMOKE_B_PROJECT_ID}\"}}}" \
   "{\"query\":\"mutation(\$d:CancelInviteInput!){cancelInvite(data:\$d)}\",\"variables\":{\"d\":{\"inviteId\":\"${SMOKE_INVITE_ID}\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}"
+
+mutual 'sso.createOidcSsoProvider' \
+  "{\"query\":\"mutation(\$p:String!,\$i:CreateOidcSsoProviderInput!){createOidcSsoProvider(projectId:\$p,input:\$i){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\",\"i\":{\"name\":\"spot-check\",\"issuer\":\"https://idp.example.com/spot-check\",\"clientId\":\"spot-check\",\"clientSecret\":\"spot-check\"}}}" \
+  "{\"query\":\"mutation(\$p:String!,\$i:CreateOidcSsoProviderInput!){createOidcSsoProvider(projectId:\$p,input:\$i){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\",\"i\":{\"name\":\"spot-check\",\"issuer\":\"https://idp.example.com/spot-check\",\"clientId\":\"spot-check\",\"clientSecret\":\"spot-check\"}}}"
+
+mutual 'sso.updateSsoProvider' \
+  "{\"query\":\"mutation(\$i:String!,\$in:UpdateSsoProviderInput!){updateSsoProvider(id:\$i,input:\$in){__typename}}\",\"variables\":{\"i\":\"${SMOKE_B_SSO_PROVIDER_ID}\",\"in\":{\"name\":\"spot-check\"}}}" \
+  "{\"query\":\"mutation(\$i:String!,\$in:UpdateSsoProviderInput!){updateSsoProvider(id:\$i,input:\$in){__typename}}\",\"variables\":{\"i\":\"${SMOKE_SSO_PROVIDER_ID}\",\"in\":{\"name\":\"spot-check\"}}}"
+
+mutual 'sso.updateProjectSsoSettings' \
+  "{\"query\":\"mutation(\$p:String!,\$i:UpdateProjectSsoSettingsInput!){updateProjectSsoSettings(projectId:\$p,input:\$i){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\",\"i\":{\"requireSso\":false}}}" \
+  "{\"query\":\"mutation(\$p:String!,\$i:UpdateProjectSsoSettingsInput!){updateProjectSsoSettings(projectId:\$p,input:\$i){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\",\"i\":{\"requireSso\":false}}}"
+
+mutual 'sso.deleteSsoProvider' \
+  "{\"query\":\"mutation(\$i:String!){deleteSsoProvider(id:\$i)}\",\"variables\":{\"i\":\"${SMOKE_B_SSO_PROVIDER_FOR_OWNER_DELETE_ID}\"}}" \
+  "{\"query\":\"mutation(\$i:String!){deleteSsoProvider(id:\$i)}\",\"variables\":{\"i\":\"${SMOKE_SSO_PROVIDER_FOR_OWNER_DELETE_ID}\"}}"
+
+mutual 'projects.updateProjectLicense' \
+  "{\"query\":\"mutation(\$l:String!,\$p:String!){updateProjectLicense(license:\$l,projectId:\$p){__typename}}\",\"variables\":{\"l\":\"e2e\",\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"mutation(\$l:String!,\$p:String!){updateProjectLicense(license:\$l,projectId:\$p){__typename}}\",\"variables\":{\"l\":\"e2e\",\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+mutual 'team.transferProjectOwnership' \
+  "{\"query\":\"mutation(\$d:TransferProjectOwnershipInput!){transferProjectOwnership(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_B_PROJECT_ID}\",\"userId\":\"${SMOKE_B_REMOVABLE_USER_FOR_CHANGE_ROLE_ID}\"}}}" \
+  "{\"query\":\"mutation(\$d:TransferProjectOwnershipInput!){transferProjectOwnership(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_PROJECT_ID}\",\"userId\":\"${SMOKE_REMOVABLE_USER_FOR_CHANGE_ROLE_ID}\"}}}"
+
+mutual 'subscription.createCheckoutSession' \
+  "{\"query\":\"mutation(\$d:CreateCheckoutSessionRequest!){createCheckoutSession(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_B_PROJECT_ID}\",\"planType\":\"starter\",\"interval\":\"monthly\"}}}" \
+  "{\"query\":\"mutation(\$d:CreateCheckoutSessionRequest!){createCheckoutSession(data:\$d)}\",\"variables\":{\"d\":{\"projectId\":\"${SMOKE_PROJECT_ID}\",\"planType\":\"starter\",\"interval\":\"monthly\"}}}"
+
+mutual 'subscription.createPortalSession' \
+  "{\"query\":\"mutation(\$p:String!){createPortalSession(projectId:\$p)}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"mutation(\$p:String!){createPortalSession(projectId:\$p)}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"

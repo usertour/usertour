@@ -6,7 +6,6 @@ import { CONTENT_PUBLISHED, ContentPublishedPayload } from '@/webhooks/webhook.t
 import { UpdateContentInput } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
 import { VersionUpdateInput } from './dto/version-update.input';
-import { VersionUpdateLocalizationInput } from './dto/version.input';
 import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -65,6 +64,20 @@ type PublishActorNames = {
   actorTokenName?: string | null;
   environmentName?: string | null;
 };
+
+/** A version's translation row as stored, handed to saveVersionLocalization's builder. */
+export interface StoredVersionLocalization {
+  enabled: boolean;
+  localized: unknown;
+  backup: unknown;
+}
+
+/** What one save writes; an omitted field keeps its stored value. */
+export interface VersionLocalizationWrite {
+  enabled?: boolean;
+  localized?: unknown;
+  backup?: unknown;
+}
 
 @Injectable()
 export class ContentService {
@@ -1044,15 +1057,32 @@ export class ContentService {
     });
   }
 
-  async upsertVersionLocalization(input: VersionUpdateLocalizationInput) {
-    const { versionId, localizationId, localized, backup, enabled } = input;
-    if (!(await this.contentVersionIsEditable(versionId))) {
-      throw new ParamsError();
-    }
-    // localized/backup are optional: undefined is skipped by the update
-    // clause, so a state-only write (the enable toggle) can never clobber
-    // a translation saved from elsewhere.
+  /**
+   * The single write entry for a version's translation row. `build` receives
+   * the row as it stands INSIDE the transaction — after the Content-row lock —
+   * and returns what to write, so a caller that merges into the stored
+   * translation (a unit-level save) can never lose a concurrent save: two
+   * writers queue on the lock and the second merges into what the first left.
+   * `build` must be synchronous and free of I/O; it runs while the lock is held.
+   */
+  async saveVersionLocalization(
+    versionId: string,
+    localizationId: string,
+    build: (current: StoredVersionLocalization | undefined) => VersionLocalizationWrite,
+  ) {
     return await this.prisma.$transaction(async (tx) => {
+      // Same serialization as updateContentVersion: checking editability before
+      // the transaction let a publish/restore land between check and write, so a
+      // translation could be saved onto a version that had just gone live. The
+      // Content-row lock makes the two queue up — either this save sees the
+      // publish and is refused, or the publish ships this save.
+      await this.assertVersionEditableLocked(tx, versionId);
+      const current = await tx.versionOnLocalization.findUnique({
+        where: { versionId_localizationId: { versionId, localizationId } },
+      });
+      // Omitted fields keep their stored value, so a state-only write (the
+      // enable toggle) can never clobber a translation saved from elsewhere.
+      const { enabled, localized, backup } = build(current ?? undefined);
       // The schema-version stamp marks rows whose link destinations the new
       // save path wrote (semantic '' sentinel / override, never a clone). An
       // enable-only toggle must NOT stamp: it would exempt a legacy row from
@@ -1062,14 +1092,14 @@ export class ContentService {
         create: {
           versionId,
           localizationId,
-          localized: localized ?? {},
-          backup: backup ?? {},
-          enabled,
+          localized: (localized ?? {}) as Prisma.InputJsonValue,
+          backup: (backup ?? {}) as Prisma.InputJsonValue,
+          enabled: enabled ?? false,
           localizedSchemaVersion: LOCALIZED_LINKS_SCHEMA_VERSION,
         },
         update: {
-          localized: localized ?? undefined,
-          backup: backup ?? undefined,
+          localized: (localized ?? undefined) as Prisma.InputJsonValue | undefined,
+          backup: (backup ?? undefined) as Prisma.InputJsonValue | undefined,
           enabled,
           // Stamp exactly when `localized` is written (null skips like undefined).
           ...(localized != null ? { localizedSchemaVersion: LOCALIZED_LINKS_SCHEMA_VERSION } : {}),
@@ -1079,7 +1109,7 @@ export class ContentService {
       // draft: touch the version's updatedAt and hand the version back — the
       // client's normalized cache then moves the header's "Autosaved"
       // timestamp without a refetch. Only editable drafts reach this point
-      // (gate above), so no delivered version is ever touched.
+      // (locked gate above), so no delivered version is ever touched.
       const version = await tx.version.update({
         where: { id: versionId },
         data: { updatedAt: new Date() },

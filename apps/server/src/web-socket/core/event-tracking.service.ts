@@ -1,3 +1,4 @@
+import { DELIVERABLE_TRANSLATION } from '@/modules/localizations/constants/deliverable-translation.constant';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { trackerSystemReservedEventAttributes } from '@usertour/constants';
 import { Injectable, Logger } from '@nestjs/common';
@@ -561,7 +562,7 @@ export class EventTrackingService {
               sequence: true,
               data: true,
               versionOnLocalization: {
-                where: { enabled: true },
+                where: DELIVERABLE_TRANSLATION,
                 select: { localization: { select: { code: true } } },
               },
             },
@@ -1018,7 +1019,7 @@ export class EventTrackingService {
           version: {
             include: {
               versionOnLocalization: {
-                where: { enabled: true },
+                where: DELIVERABLE_TRANSLATION,
                 select: { localization: { select: { code: true } } },
               },
             },

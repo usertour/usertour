@@ -1,0 +1,20 @@
+import { AiModule } from '@/ai/ai.module';
+import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { ProjectsModule } from '@/projects/projects.module';
+import { SharedModule } from '@/shared/shared.module';
+import { Module } from '@nestjs/common';
+import { LocalizationsResolver } from './localizations.resolver';
+import { LocalizationsService } from './services/localizations.service';
+import { MachineTranslationService } from './services/machine-translation.service';
+
+@Module({
+  imports: [ProjectsModule, AiModule, SharedModule],
+  providers: [
+    LocalizationsResolver,
+    LocalizationsService,
+    MachineTranslationService,
+    PermissionGuard,
+  ],
+  exports: [LocalizationsService],
+})
+export class LocalizationsModule {}

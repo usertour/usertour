@@ -9,7 +9,7 @@ import {
   UserNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';

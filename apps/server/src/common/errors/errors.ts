@@ -415,6 +415,16 @@ export class ResourceConflictError extends OpenAPIError {
     en: 'A resource with this identifier already exists',
     'zh-CN': '该标识的资源已存在',
   };
+
+  // Same code, optionally sharper message (mirrors ResourceAlreadyExistsError,
+  // whose text this surface carries over): which identifier, and why.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
 }
 
 export class EventDefinitionNotFoundError extends OpenAPIError {
@@ -483,6 +493,46 @@ export class EnvironmentNotFoundError extends OpenAPIError {
     en: 'Environment not found',
     'zh-CN': '环境未找到',
   };
+}
+
+export class DefaultLocalizationCannotBeDeletedError extends OpenAPIError {
+  code = 'E1041';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete the default localization — it is the source language content is authored in',
+    'zh-CN': '无法删除默认本地化——它是内容创作所用的源语言',
+  };
+}
+
+/**
+ * One code, three lookups — each says what was actually looked for, since the
+ * bare "not found" sends a caller the wrong way (restoring a localization that
+ * is live is not a bad id, and a deleted one is "missing" only until restored).
+ */
+const LOCALIZATION_NOT_FOUND_MESSAGES = {
+  code: {
+    en: 'Localization not found — the project has no live localization with this code (a deleted one must be restored first)',
+    'zh-CN': '本地化语言未找到——项目中没有该 code 的可用语言(已删除的需先恢复)',
+  },
+  live: {
+    en: 'Localization not found — the project has no live localization with this id',
+    'zh-CN': '本地化语言未找到——项目中没有该 id 的可用语言',
+  },
+  deleted: {
+    en: 'Localization not found — the project has no DELETED localization with this id; it may already be live',
+    'zh-CN': '本地化语言未找到——项目中没有该 id 的已删除语言,它可能本来就是可用状态',
+  },
+} as const;
+
+export class LocalizationNotFoundError extends OpenAPIError {
+  code = 'E1040';
+  statusCode = HttpStatus.NOT_FOUND;
+  messageDict: { en: string; 'zh-CN': string };
+
+  constructor(lookedFor: keyof typeof LOCALIZATION_NOT_FOUND_MESSAGES) {
+    super();
+    this.messageDict = { ...LOCALIZATION_NOT_FOUND_MESSAGES[lookedFor] };
+  }
 }
 
 /**
@@ -962,6 +1012,16 @@ export class ResourceAlreadyExistsError extends BaseError {
     en: 'A resource with this identifier already exists.',
     'zh-CN': '该资源已存在。',
   };
+
+  // Same code, optionally sharper message: "taken" and "held by a deleted one"
+  // demand opposite next moves, and the envelope renders from messageDict.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
 }
 
 export class VersionNotEditableError extends BaseError {

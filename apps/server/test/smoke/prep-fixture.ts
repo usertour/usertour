@@ -41,15 +41,20 @@ import {
   buildInvite,
   buildLocalization,
   buildMembership,
+  buildOutboundMessage,
   buildProject,
   buildSegment,
   buildSession,
+  buildSigningSecret,
+  buildSsoProvider,
   buildStep,
   buildSubscription,
   buildTheme,
   buildUser,
   buildVersion,
+  buildWebhook,
 } from '../e2e/factories';
+import { TRANSLATION_TARGET_CODE } from '../e2e/endpoints';
 
 // ── tiny dotenv-with-${VAR}-expansion loader (no extra dep) ──────
 function loadDotEnv(path: string) {
@@ -161,7 +166,10 @@ async function seedProject(suffix: string, members: { role: string; email: strin
   // W block (which marks it as default). The two victims below are kept
   // non-default so deleteLocalization can succeed for OWNER and ADMIN
   // without hitting the "can't delete default" rule.
-  const localization = await buildLocalization(prisma, { projectId });
+  const localization = await buildLocalization(prisma, {
+    projectId,
+    code: TRANSLATION_TARGET_CODE,
+  });
   const localizationForOwnerDelete = await buildLocalization(prisma, { projectId });
   const localizationForAdminDelete = await buildLocalization(prisma, { projectId });
   // `segment` stays alive throughout the W block as the target for the four
@@ -172,6 +180,24 @@ async function seedProject(suffix: string, members: { role: string; email: strin
   const segmentForAdminDelete = await buildSegment(prisma, { projectId, environmentId });
   const integration = await buildIntegration(prisma, { environmentId });
   const accessToken = await buildAccessToken(prisma, { environmentId });
+  // `webhook` survives the W block (update / rotate / test event / resend and
+  // the message log read); the two victims below are what OWNER and ADMIN each
+  // consume via webhooks.deleteWebhook.
+  const webhook = await buildWebhook(prisma, { environmentId });
+  const webhookMessage = await buildOutboundMessage(prisma, {
+    environmentId,
+    webhookId: webhook.id,
+  });
+  const webhookForOwnerDelete = await buildWebhook(prisma, { environmentId });
+  const webhookForAdminDelete = await buildWebhook(prisma, { environmentId });
+  // `signingSecret` stays active for the get/list reads; the two below are the
+  // revoke targets (revoking is one-way, so OWNER and ADMIN need one each).
+  const signingSecret = await buildSigningSecret(prisma, { environmentId });
+  const signingSecretForOwnerRevoke = await buildSigningSecret(prisma, { environmentId });
+  const signingSecretForAdminRevoke = await buildSigningSecret(prisma, { environmentId });
+  const ssoProvider = await buildSsoProvider(prisma, { projectId });
+  const ssoProviderForOwnerDelete = await buildSsoProvider(prisma, { projectId });
+  const ssoProviderForAdminDelete = await buildSsoProvider(prisma, { projectId });
   const step = await buildStep(prisma, { versionId: version.id });
 
   const users: Record<string, string> = {};
@@ -228,6 +254,16 @@ async function seedProject(suffix: string, members: { role: string; email: strin
     segmentForAdminDelete: segmentForAdminDelete.id,
     integrationId: integration.id,
     accessTokenId: accessToken.id,
+    webhookId: webhook.id,
+    webhookMessageId: webhookMessage.id,
+    webhookForOwnerDelete: webhookForOwnerDelete.id,
+    webhookForAdminDelete: webhookForAdminDelete.id,
+    signingSecretId: signingSecret.id,
+    signingSecretForOwnerRevoke: signingSecretForOwnerRevoke.id,
+    signingSecretForAdminRevoke: signingSecretForAdminRevoke.id,
+    ssoProviderId: ssoProvider.id,
+    ssoProviderForOwnerDelete: ssoProviderForOwnerDelete.id,
+    ssoProviderForAdminDelete: ssoProviderForAdminDelete.id,
     stepId: step.id,
     bizUserId: bizUser.id,
     bizUserForOwnerDelete: bizUserForOwnerDelete.id,
@@ -314,6 +350,16 @@ async function seedProject(suffix: string, members: { role: string; email: strin
       `export SMOKE_REMOVABLE_USER_ID=${a.removableUserId}`,
       `export SMOKE_REMOVABLE_USER_FOR_CHANGE_ROLE_ID=${a.removableUserForChangeRole}`,
       `export SMOKE_INVITE_ID=${a.inviteId}`,
+      `export SMOKE_WEBHOOK_ID=${a.webhookId}`,
+      `export SMOKE_WEBHOOK_MESSAGE_ID=${a.webhookMessageId}`,
+      `export SMOKE_WEBHOOK_FOR_OWNER_DELETE_ID=${a.webhookForOwnerDelete}`,
+      `export SMOKE_WEBHOOK_FOR_ADMIN_DELETE_ID=${a.webhookForAdminDelete}`,
+      `export SMOKE_SIGNING_SECRET_ID=${a.signingSecretId}`,
+      `export SMOKE_SIGNING_SECRET_FOR_OWNER_REVOKE_ID=${a.signingSecretForOwnerRevoke}`,
+      `export SMOKE_SIGNING_SECRET_FOR_ADMIN_REVOKE_ID=${a.signingSecretForAdminRevoke}`,
+      `export SMOKE_SSO_PROVIDER_ID=${a.ssoProviderId}`,
+      `export SMOKE_SSO_PROVIDER_FOR_OWNER_DELETE_ID=${a.ssoProviderForOwnerDelete}`,
+      `export SMOKE_SSO_PROVIDER_FOR_ADMIN_DELETE_ID=${a.ssoProviderForAdminDelete}`,
       `export SMOKE_B_PROJECT_ID=${b.projectId}`,
       `export SMOKE_B_ENVIRONMENT_ID=${b.environmentId}`,
       `export SMOKE_B_ENVIRONMENT_FOR_OWNER_DELETE_ID=${b.environmentForOwnerDelete}`,
@@ -352,6 +398,16 @@ async function seedProject(suffix: string, members: { role: string; email: strin
       `export SMOKE_B_REMOVABLE_USER_ID=${b.removableUserId}`,
       `export SMOKE_B_REMOVABLE_USER_FOR_CHANGE_ROLE_ID=${b.removableUserForChangeRole}`,
       `export SMOKE_B_INVITE_ID=${b.inviteId}`,
+      `export SMOKE_B_WEBHOOK_ID=${b.webhookId}`,
+      `export SMOKE_B_WEBHOOK_MESSAGE_ID=${b.webhookMessageId}`,
+      `export SMOKE_B_WEBHOOK_FOR_OWNER_DELETE_ID=${b.webhookForOwnerDelete}`,
+      `export SMOKE_B_WEBHOOK_FOR_ADMIN_DELETE_ID=${b.webhookForAdminDelete}`,
+      `export SMOKE_B_SIGNING_SECRET_ID=${b.signingSecretId}`,
+      `export SMOKE_B_SIGNING_SECRET_FOR_OWNER_REVOKE_ID=${b.signingSecretForOwnerRevoke}`,
+      `export SMOKE_B_SIGNING_SECRET_FOR_ADMIN_REVOKE_ID=${b.signingSecretForAdminRevoke}`,
+      `export SMOKE_B_SSO_PROVIDER_ID=${b.ssoProviderId}`,
+      `export SMOKE_B_SSO_PROVIDER_FOR_OWNER_DELETE_ID=${b.ssoProviderForOwnerDelete}`,
+      `export SMOKE_B_SSO_PROVIDER_FOR_ADMIN_DELETE_ID=${b.ssoProviderForAdminDelete}`,
       `export SMOKE_TOKEN_OWNER=${tokens.OWNER}`,
       `export SMOKE_TOKEN_ADMIN=${tokens.ADMIN}`,
       `export SMOKE_TOKEN_VIEWER=${tokens.VIEWER}`,

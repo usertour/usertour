@@ -63,6 +63,17 @@ const toText = (value: unknown): string => {
   return typeof value === 'string' ? value : '';
 };
 
+/**
+ * Whether a source text is something to translate. Whitespace-only text is not:
+ * rich text splits "**Save** *now*" into three runs, the middle one a lone
+ * space. A translation cannot BE whitespace-only either (blank means "keep the
+ * source"), so counting such a run as a unit left it permanently "missing".
+ * Delivery falls back to the source for it, so the space still renders.
+ */
+export const isTranslatableText = (sourceText: string): boolean => {
+  return sourceText.trim() !== '';
+};
+
 const toPartnerText = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value : undefined;
 };
@@ -584,7 +595,7 @@ const applyWalkOptions = (fallback: LocalizedTextFallback): WalkOptions => {
 
 const createMissingCountVisitor = (count: { missing: number }): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.optional || visit.sourceText === '') {
+    if (visit.optional || !isTranslatableText(visit.sourceText)) {
       return;
     }
     if (visit.partnerText === undefined || visit.partnerText === '') {
@@ -607,7 +618,7 @@ const createOutdatedVisitor = (
   translated: ReadonlySet<string>,
 ): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.sourceText === '' || !translated.has(visit.path)) {
+    if (!isTranslatableText(visit.sourceText) || !translated.has(visit.path)) {
       return;
     }
     if (visit.partnerText !== visit.sourceText) {
@@ -655,13 +666,13 @@ export const createLocalizedWorkingContents = (
   return applyLocalizedText(source, localized, 'empty');
 };
 
-/** All non-empty translatable texts of a tree, in walk order. */
+/** All translatable texts of a tree (see isTranslatableText), in walk order. */
 export const extractTranslatableUnits = (
   contents: ContentEditorRoot[] | undefined,
 ): TranslatableUnit[] => {
   const units: TranslatableUnit[] = [];
   walkTranslatableFields(contents ?? [], undefined, (visit) => {
-    if (visit.sourceText !== '') {
+    if (isTranslatableText(visit.sourceText)) {
       units.push({ path: visit.path, text: visit.sourceText, optional: visit.optional });
     }
   });
@@ -1063,6 +1074,29 @@ export const collectOutdatedVersionDataPaths = (
 // rows whose path no longer matches simply don't apply.
 // ---------------------------------------------------------------------------
 
+/** Unit paths whose value is a media URL the SDK renders verbatim into src/href. */
+const MEDIA_URL_PATH_SUFFIXES = [':image.url', ':embed.url', ':image.link.url'];
+
+export const isMediaUrlUnitPath = (path: string): boolean => {
+  return MEDIA_URL_PATH_SUFFIXES.some((suffix) => path.endsWith(suffix));
+};
+
+/**
+ * True iff the value parses as an absolute http(s) URL. The bar every
+ * user-supplied media/link URL must clear before it is stored: the SDK and the
+ * builder render these verbatim into src/href on customers' pages, so a bare
+ * word or a relative path becomes a silently broken image/iframe the author
+ * only discovers in the browser.
+ */
+export const isHttpUrl = (value: string): boolean => {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 export interface LocalizationTranslationUnit {
   path: string;
   sourceText: string;
@@ -1079,7 +1113,7 @@ const createTranslationUnitCollector = (
   units: LocalizationTranslationUnit[],
 ): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.sourceText === '') {
+    if (!isTranslatableText(visit.sourceText)) {
       return;
     }
     units.push({
@@ -1098,17 +1132,28 @@ export type LocalizedEmbedResolutions = ReadonlyMap<
 >;
 
 /**
- * Imported cells only ever add or replace a translation: empty cells keep
- * the existing value, unknown paths are ignored. An imported embed URL drops
- * the previous URL's resolution data and installs the caller-provided one —
- * without it the embed renders empty until resolved from its editor row.
+ * Unit path → what to do with it: a non-blank string adds or replaces the
+ * translation, `null` clears it (text falls back to untranslated; a media or
+ * link url falls back to the source's), and a blank string keeps whatever is
+ * stored — a caller echoing a unit back empty must not erase it.
+ */
+export type TranslationUnitChanges = ReadonlyMap<string, string | null>;
+
+/**
+ * Unknown paths are ignored. A changed embed URL drops the previous URL's
+ * resolution data and installs the caller-provided one — without it the embed
+ * renders empty until resolved from its editor row.
  */
 const createTranslationApplier = (
-  translations: ReadonlyMap<string, string>,
+  translations: TranslationUnitChanges,
   embedResolutions?: LocalizedEmbedResolutions,
 ): TranslatableFieldVisitor => {
   return (visit) => {
     const value = translations.get(visit.path);
+    if (value === null) {
+      visit.assign('');
+      return;
+    }
     if (typeof value === 'string' && value.trim() !== '') {
       visit.assign(value);
       const resolution = embedResolutions?.get(value.trim());
@@ -1141,7 +1186,7 @@ export const extractVersionDataTranslationUnits = (
 export const applyContentsTranslationUnits = (
   source: ContentEditorRoot[] | undefined,
   localized: ContentEditorRoot[] | undefined,
-  translations: ReadonlyMap<string, string>,
+  translations: TranslationUnitChanges,
   embedResolutions?: LocalizedEmbedResolutions,
 ): ContentEditorRoot[] => {
   const working = applyLocalizedText(source, localized, 'empty');
@@ -1158,7 +1203,7 @@ export const applyVersionDataTranslationUnits = <T>(
   contentType: string,
   source: T,
   localized: unknown,
-  translations: ReadonlyMap<string, string>,
+  translations: TranslationUnitChanges,
   embedResolutions?: LocalizedEmbedResolutions,
 ): T => {
   const working = createLocalizedWorkingVersionData(contentType, source, localized);
@@ -1365,6 +1410,31 @@ export const buildLocalizedFlowSavePayload = (
     payload[cvid] = graftContentsTranslations(deepClone(contents), stored?.[cvid]);
   }
   return payload;
+};
+
+/**
+ * Source snapshot saved alongside a flow translation map — what later reads
+ * diff against the live source to flag drifted translations. Every current
+ * step is re-snapshotted; steps the version no longer has keep their stored
+ * snapshot, so drift detection still works if they revive.
+ */
+export const buildLocalizedFlowBackup = (
+  steps: ReadonlyArray<{ cvid: string; data?: unknown }>,
+  storedBackup: LocalizedFlowContent | undefined,
+): LocalizedFlowContent => {
+  const current = Object.fromEntries(
+    steps.map((step) => [step.cvid, step.data]),
+  ) as LocalizedFlowContent;
+  if (!storedBackup) {
+    return current;
+  }
+  const preserved = Object.entries(storedBackup).filter(([cvid]) => !(cvid in current));
+  return { ...Object.fromEntries(preserved), ...current };
+};
+
+/** Source snapshot saved alongside a version-data translation. */
+export const buildLocalizedVersionDataBackup = (sourceData: unknown): unknown => {
+  return sourceData ?? {};
 };
 
 const graftEmbeddedContents = (

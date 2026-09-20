@@ -12,8 +12,9 @@ import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exceptio
 import { UtilitiesModule } from '@/utilities/utilities.module';
 import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
-import { EnvironmentsModule } from '@/environments/environments.module';
+import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { EventsModule } from '@/events/events.module';
+import { LocalizationsModule } from '@/modules/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { ThemesModule } from '@/themes/themes.module';
 
@@ -35,6 +36,11 @@ import { ApiEnvironmentsController } from './environments/environments.controlle
 import { ApiEnvironmentsService } from './environments/environments.service';
 import { ApiEventDefinitionsController } from './event-definitions/event-definitions.controller';
 import { ApiEventDefinitionsService } from './event-definitions/event-definitions.service';
+import {
+  ApiLocalizationsController,
+  ApiVersionLocalizationsController,
+} from './localizations/localizations.controller';
+import { ApiLocalizationsService } from './localizations/localizations.service';
 import { ApiSegmentMembersController, ApiSegmentsController } from './segments/segments.controller';
 import { ApiSegmentsService } from './segments/segments.service';
 import { ApiThemesController } from './themes/themes.controller';
@@ -42,6 +48,7 @@ import { ApiThemesService } from './themes/themes.service';
 import { ApiUsersController } from './users/users.controller';
 import { ApiUsersService } from './users/users.service';
 import { ApiWebhooksController } from './webhooks/webhooks.controller';
+import { ApiLocalesController } from './locales/locales.controller';
 import { ApiMeController } from './me/me.controller';
 import { ApiEventsController } from './events/events.controller';
 import { WebSocketModule } from '@/web-socket/web-socket.module';
@@ -88,6 +95,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     AnalyticsModule,
     ThemesModule,
     EnvironmentsModule,
+    LocalizationsModule,
     ProjectsModule,
     UtilitiesModule,
     WebhooksModule,
@@ -110,8 +118,11 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiEventDefinitionsController,
     ApiWebhooksController,
     ApiMeController,
+    ApiLocalesController,
     ApiEventsController,
     ApiEnvironmentsController,
+    ApiLocalizationsController,
+    ApiVersionLocalizationsController,
   ],
   providers: [
     ApiMeService,
@@ -128,6 +139,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiThemesService,
     ApiSegmentsService,
     ApiEnvironmentsService,
+    ApiLocalizationsService,
     ApiWebhooksService,
     OpenAPIExceptionFilter,
     // Global fallback: keeps the v2 error envelope for exceptions thrown BEFORE
@@ -153,6 +165,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiSegmentsService,
     ApiContentSessionsService,
     ApiEnvironmentsService,
+    ApiLocalizationsService,
     ApiWebhooksService,
   ],
 })

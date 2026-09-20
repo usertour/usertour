@@ -622,6 +622,10 @@ model Localization {
   name                  String
   code                  String
   isDefault             Boolean                 @default(false)
+  /// Soft delete: the locale stops being offered and delivered, but every
+  /// version's translation row is kept, so restoring it brings them all back.
+  /// `code` stays reserved while deleted — creating it again restores this row.
+  deleted               Boolean                 @default(false)
   project               Project                 @relation(fields: [projectId], references: [id])
   projectId             String
   VersionOnLocalization VersionOnLocalization[]

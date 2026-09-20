@@ -15,6 +15,7 @@ import {
   buildBizUserOnCompany,
   buildContent,
   buildEvent,
+  buildLocalization,
   buildSegment,
   buildSession,
   buildStep,
@@ -233,6 +234,7 @@ describe('MCP endpoint (e2e)', () => {
           'get_content_version',
           'get_event_definition',
           'get_user',
+          'get_version_localization',
           'list_attribute_definitions',
           'list_content',
           'list_content_versions',
@@ -1791,6 +1793,242 @@ describe('MCP endpoint (e2e)', () => {
       const dup = await callTool('duplicate_content', { contentId: source.id, name: '   ' }, token);
       expect(dup.isError).toBe(true);
       expect(dup.content[0].text).toMatch(/non-whitespace/);
+    });
+  });
+
+  describe('localization tools', () => {
+    type Unit = { path: string; source: string; translation: string; outdated: boolean };
+
+    beforeAll(async () => {
+      await buildLocalization(prisma, {
+        projectId: projectA,
+        code: 'en',
+        locale: 'en-US',
+        name: 'English',
+        isDefault: true,
+      });
+      await buildLocalization(prisma, {
+        projectId: projectA,
+        code: 'fr',
+        locale: 'fr-FR',
+        name: 'French',
+      });
+    });
+
+    const LOCALE_SCOPES = [
+      Capability.LocalizationRead,
+      Capability.LocalizationCreate,
+      Capability.LocalizationUpdate,
+      Capability.LocalizationDelete,
+    ];
+    const toolNames = async (token: string): Promise<string[]> => {
+      const res = await rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, token);
+      return extractResult(res).result.tools.map((t: { name: string }) => t.name);
+    };
+
+    it('gates the two resources by their own scope families', async () => {
+      // Content scopes: a version's translation, but not the project's locales.
+      const contentOnly = await toolNames(await mint([Capability.ContentRead], [projectA]));
+      expect(contentOnly).toContain('get_version_localization');
+      expect(contentOnly).not.toContain('update_version_localization');
+      expect(contentOnly).not.toContain('list_localizations');
+      expect(contentOnly).not.toContain('create_localization');
+
+      // Localization scopes: the locales, but no content.
+      const localeOnly = await toolNames(await mint(LOCALE_SCOPES, [projectA]));
+      expect(localeOnly).toEqual(
+        expect.arrayContaining([
+          'list_localizations',
+          'create_localization',
+          'update_localization',
+          'delete_localization',
+          'restore_localization',
+        ]),
+      );
+      expect(localeOnly).not.toContain('get_version_localization');
+
+      const readOnly = await toolNames(await mint([Capability.LocalizationRead], [projectA]));
+      expect(readOnly).toContain('list_localizations');
+      expect(readOnly).not.toContain('create_localization');
+    });
+
+    it('create → update → delete → restore a locale, and re-create restores it', async () => {
+      const token = await mint(LOCALE_SCOPES, [projectA]);
+      const call = async (name: string, args: Record<string, unknown>) =>
+        parseToolContent({ result: await callTool(name, args, token) });
+      const liveCodes = async (deleted?: boolean) =>
+        (await call('list_localizations', deleted ? { deleted: true } : {})).items.map(
+          (item: { code: string }) => item.code,
+        );
+      // Audit rows are written by a queue worker after each call returns, so
+      // wait for all of them — and compare contents, not the order they landed.
+      const auditedOperations = async (localizationId: string, expected: number) => {
+        for (let attempt = 0; attempt < 50; attempt += 1) {
+          const rows = await prisma.auditLog.findMany({
+            where: {
+              projectId: projectA,
+              resourceType: 'localization',
+              resourceId: localizationId,
+            },
+            select: { operation: true },
+          });
+          if (rows.length >= expected) {
+            return rows.map((row) => row.operation).sort();
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        throw new Error(`fewer than ${expected} audit rows for ${localizationId}`);
+      };
+
+      try {
+        const created = await call('create_localization', {
+          code: 'ja',
+          name: 'Japanese',
+          locale: 'ja-JP',
+        });
+        expect(created).toMatchObject({ code: 'ja', restored: false, deleted: false });
+
+        const updated = await call('update_localization', { id: created.id, name: '日本語' });
+        expect(updated).toMatchObject({ id: created.id, name: '日本語', code: 'ja' });
+        const empty = await callTool('update_localization', { id: created.id }, token);
+        expect(empty.isError).toBe(true);
+
+        expect(await call('delete_localization', { id: created.id })).toEqual({ success: true });
+        expect(await liveCodes()).not.toContain('ja');
+        expect(await liveCodes(true)).toContain('ja');
+
+        const restored = await call('restore_localization', { id: created.id });
+        expect(restored).toMatchObject({ id: created.id, deleted: false });
+        expect(await liveCodes()).toContain('ja');
+
+        await call('delete_localization', { id: created.id });
+        const recreated = await call('create_localization', {
+          code: 'ja',
+          name: 'Japanese',
+          locale: 'ja-JP',
+        });
+        expect(recreated).toMatchObject({ id: created.id, restored: true });
+
+        expect(await auditedOperations(created.id, 6)).toEqual(
+          [
+            'create_localization',
+            'update_localization',
+            'delete_localization',
+            'restore_localization',
+            'delete_localization',
+            'create_localization',
+          ].sort(),
+        );
+      } finally {
+        // Leave the project with its two seeded locales for the cases below,
+        // whatever happened above.
+        await prisma.localization.updateMany({
+          where: { projectId: projectA, code: 'ja' },
+          data: { deleted: true },
+        });
+      }
+    });
+
+    it('list → read → write → status round-trip', async () => {
+      const token = await mint(
+        [
+          Capability.ContentRead,
+          Capability.ContentCreate,
+          Capability.ContentUpdate,
+          Capability.LocalizationRead,
+        ],
+        [projectA],
+      );
+
+      const locales = parseToolContent({ result: await callTool('list_localizations', {}, token) });
+      expect(locales.nextCursor).toBeNull();
+      expect(
+        locales.items.map((item: { code: string; isDefault: boolean }) => [
+          item.code,
+          item.isDefault,
+        ]),
+      ).toEqual([
+        ['en', true],
+        ['fr', false],
+      ]);
+
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'MCP localized', themeId },
+          token,
+        ),
+      });
+      const target = { contentId: created.id, versionId: created.editedVersionId };
+      const authored = await callTool(
+        'update_content_version',
+        {
+          ...target,
+          steps: [
+            { name: 'Hi', type: 'modal', content: [{ type: 'text', markdown: 'Hello there' }] },
+          ],
+        },
+        token,
+      );
+      expect(authored.isError).toBeFalsy();
+
+      const before = parseToolContent({
+        result: await callTool('get_version_localization', { ...target, code: 'fr' }, token),
+      });
+      expect(before.stats).toEqual({ total: 1, missing: 1, outdated: 0 });
+      const [unit] = before.units as Unit[];
+      expect(unit).toMatchObject({ source: 'Hello there', translation: '' });
+
+      const written = parseToolContent({
+        result: await callTool(
+          'update_version_localization',
+          { ...target, code: 'fr', translations: { [unit.path]: 'Bonjour' }, enabled: true },
+          token,
+        ),
+      });
+      expect(written).toMatchObject({
+        enabled: true,
+        stats: { total: 1, missing: 0, outdated: 0 },
+      });
+      expect((written.units as Unit[])[0].translation).toBe('Bonjour');
+
+      const version = parseToolContent({
+        result: await callTool(
+          'get_content_version',
+          { contentId: target.contentId, id: target.versionId, expand: ['localizations'] },
+          token,
+        ),
+      });
+      expect(version.localizations).toEqual([
+        { code: 'fr', name: 'French', enabled: true, missing: 0, outdated: 0 },
+      ]);
+    });
+
+    it('surfaces an unknown path and an empty write as tool errors', async () => {
+      const token = await mint(
+        [Capability.ContentRead, Capability.ContentCreate, Capability.ContentUpdate],
+        [projectA],
+      );
+      const created = parseToolContent({
+        result: await callTool(
+          'create_content',
+          { type: 'flow', name: 'MCP localized errors', themeId },
+          token,
+        ),
+      });
+      const target = { contentId: created.id, versionId: created.editedVersionId, code: 'fr' };
+
+      const unknown = await callTool(
+        'update_version_localization',
+        { ...target, translations: { 'steps/nope/0.0.0:button.text': 'x' } },
+        token,
+      );
+      expect(unknown.isError).toBe(true);
+      expect(unknown.content[0].text).toMatch(/unknown unit path/);
+
+      const empty = await callTool('update_version_localization', target, token);
+      expect(empty.isError).toBe(true);
+      expect(empty.content[0].text).toMatch(/translations.*enabled/);
     });
   });
 

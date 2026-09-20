@@ -40,6 +40,18 @@ export const SCOPE_RESOURCES: readonly ScopeResource[] = [
     write: [Capability.ThemeCreate, Capability.ThemeUpdate, Capability.ThemeDelete],
   },
   {
+    // The project's locales (Settings → Localization). A version's TRANSLATION
+    // is part of the content and rides the `content` row instead.
+    key: 'localization',
+    labelKey: 'settings.personalApiKeys.scopeResources.localization',
+    read: [Capability.LocalizationRead],
+    write: [
+      Capability.LocalizationCreate,
+      Capability.LocalizationUpdate,
+      Capability.LocalizationDelete,
+    ],
+  },
+  {
     key: 'user',
     labelKey: 'settings.personalApiKeys.scopeResources.user',
     read: [Capability.UserRead],
@@ -166,6 +178,7 @@ export const SCOPE_PRESETS: readonly ScopePreset[] = [
       ...capsOf('write', [
         'content',
         'theme',
+        'localization',
         'user',
         'company',
         'session',
@@ -177,12 +190,13 @@ export const SCOPE_PRESETS: readonly ScopePreset[] = [
     ],
   },
   {
-    // Content + its authoring dependencies; no end-user data. Environment read so
+    // Content + its authoring dependencies (locales included: translating into a
+    // new language starts with adding it); no end-user data. Environment read so
     // the key can list environments to publish to.
     key: 'contentAuthoring',
     labelKey: 'settings.personalApiKeys.presets.contentAuthoring',
     scopes: [
-      ...capsOf('write', ['content', 'theme', 'attribute', 'event']),
+      ...capsOf('write', ['content', 'theme', 'localization', 'attribute', 'event']),
       ...capsOf('read', ['environment']),
     ],
   },

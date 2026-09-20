@@ -40,6 +40,8 @@ const E = `${P}/environments/{environmentId}`;
 const ROUTES: Row[] = [
   // discovery — authenticate-only, no capability (any valid token may call it)
   { method: 'get', template: '/v2/me', cap: null },
+  // reference data — a constant, same answer for every token
+  { method: 'get', template: '/v2/locales', cap: null },
   // content
   { method: 'get', template: `${P}/content`, cap: Capability.ContentRead },
   { method: 'get', template: `${P}/content/{id}`, cap: Capability.ContentRead },
@@ -71,6 +73,28 @@ const ROUTES: Row[] = [
   {
     method: 'patch',
     template: `${P}/content/{contentId}/versions/{id}`,
+    cap: Capability.ContentUpdate,
+  },
+  // localizations — two resources: the project's locales are a settings-level
+  // resource with their own capability family; a version's TRANSLATION is part
+  // of the version and rides the content capabilities.
+  { method: 'get', template: `${P}/localizations`, cap: Capability.LocalizationRead },
+  { method: 'post', template: `${P}/localizations`, cap: Capability.LocalizationCreate },
+  { method: 'patch', template: `${P}/localizations/{id}`, cap: Capability.LocalizationUpdate },
+  { method: 'delete', template: `${P}/localizations/{id}`, cap: Capability.LocalizationDelete },
+  {
+    method: 'post',
+    template: `${P}/localizations/{id}/restore`,
+    cap: Capability.LocalizationUpdate,
+  },
+  {
+    method: 'get',
+    template: `${P}/content/{contentId}/versions/{versionId}/localizations/{code}`,
+    cap: Capability.ContentRead,
+  },
+  {
+    method: 'put',
+    template: `${P}/content/{contentId}/versions/{versionId}/localizations/{code}`,
     cap: Capability.ContentUpdate,
   },
   // analytics
