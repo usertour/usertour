@@ -248,6 +248,13 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ q: { environmentId: s.environmentId } }),
   },
 
+  {
+    key: 'content.listContentPublishRecords',
+    tier: 'R',
+    op: 'query',
+    doc: 'query($c:String!){listContentPublishRecords(contentId:$c){__typename}}',
+    vars: (s) => ({ c: s.contentId }),
+  },
   // --- environments (scope: project / environment) ---
   {
     key: 'environments.createEnvironments',
@@ -322,6 +329,80 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ a: s.accessTokenId, e: s.environmentId }),
   },
 
+  {
+    key: 'environments.verifyInstallation',
+    tier: 'R',
+    op: 'query',
+    doc: 'query($e:String!){verifyInstallation(environmentId:$e){__typename}}',
+    vars: (s) => ({ e: s.environmentId }),
+  },
+  {
+    key: 'environments.projectHasEnvironmentAccessTokens',
+    tier: 'W',
+    op: 'query',
+    doc: 'query($p:String!){projectHasEnvironmentAccessTokens(projectId:$p)}',
+    vars: (s) => ({ p: s.projectId }),
+  },
+  // Identity verification (ADR 0008/0009): environment credentials of the same
+  // sensitivity class as access tokens, and they carry the same capabilities.
+  {
+    key: 'environments.listSigningSecrets',
+    tier: 'W',
+    op: 'query',
+    doc: 'query($e:String!){listSigningSecrets(environmentId:$e){__typename}}',
+    vars: (s) => ({ e: s.environmentId }),
+  },
+  {
+    key: 'environments.getSigningSecret',
+    tier: 'W',
+    op: 'query',
+    doc: 'query($e:String!,$s:String!){getSigningSecret(environmentId:$e,signingSecretId:$s)}',
+    vars: (s) => ({ e: s.environmentId, s: s.signingSecretId }),
+  },
+  {
+    key: 'environments.getIdentityVerificationStats',
+    tier: 'W',
+    op: 'query',
+    doc: 'query($e:String!){getIdentityVerificationStats(environmentId:$e){__typename}}',
+    vars: (s) => ({ e: s.environmentId }),
+  },
+  {
+    key: 'environments.validateIdentityToken',
+    tier: 'W',
+    op: 'query',
+    doc: 'query($e:String!,$t:String!){validateIdentityToken(environmentId:$e,token:$t){__typename}}',
+    // A deliberately invalid token: the diagnosis answers with a reason, so the
+    // allow direction never depends on a signed fixture token.
+    vars: (s) => ({ e: s.environmentId, t: 'not-a-signed-token' }),
+  },
+  {
+    key: 'environments.createSigningSecret',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($e:String!){createSigningSecret(environmentId:$e){__typename}}',
+    vars: (s) => ({ e: s.environmentId }),
+  },
+  {
+    key: 'environments.revokeSigningSecret',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($e:String!,$s:String!){revokeSigningSecret(environmentId:$e,signingSecretId:$s)}',
+    vars: (s, role) => ({
+      e: s.environmentId,
+      s: pickByRole(role, {
+        owner: s.signingSecretForOwnerRevoke,
+        admin: s.signingSecretForAdminRevoke,
+      }),
+    }),
+  },
+  {
+    key: 'environments.setRequireIdentityVerification',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($e:String!,$r:Boolean!){setRequireIdentityVerification(environmentId:$e,required:$r){__typename}}',
+    // false: the smoke fixture must come back as it was found.
+    vars: (s) => ({ e: s.environmentId, r: false }),
+  },
   // --- biz (scope: environment / segment) ---
   {
     key: 'biz.queryBizUser',
@@ -1067,5 +1148,151 @@ export const ENDPOINTS: Endpoint[] = [
     op: 'mutation',
     doc: 'mutation($p:String!){createPortalSession(projectId:$p)}',
     vars: (s) => ({ p: s.projectId }),
+  },
+  // --- webhooks (all W — editor tier, ADR 0014; scope: webhook) ---
+  {
+    key: 'webhooks.listWebhooks',
+    tier: 'W',
+    op: 'query',
+    doc: 'query($e:String!){listWebhooks(environmentId:$e){__typename}}',
+    vars: (s) => ({ e: s.environmentId }),
+  },
+  {
+    key: 'webhooks.getWebhook',
+    tier: 'W',
+    op: 'query',
+    doc: 'query($i:String!){getWebhook(id:$i){__typename}}',
+    vars: (s) => ({ i: s.webhookId }),
+  },
+  {
+    key: 'webhooks.queryWebhookMessages',
+    tier: 'W',
+    op: 'query',
+    doc: 'query($w:String!){queryWebhookMessages(webhookId:$w){__typename}}',
+    vars: (s) => ({ w: s.webhookId }),
+  },
+  {
+    key: 'webhooks.createWebhook',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:CreateWebhookInput!){createWebhook(data:$d){__typename}}',
+    // example.com: the smoke run must not make a delivery land somewhere real.
+    vars: (s) => ({
+      d: {
+        environmentId: s.environmentId,
+        url: 'https://example.com/hooks/spot-check',
+        topics: ['content.published'],
+      },
+    }),
+  },
+  {
+    key: 'webhooks.updateWebhook',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:UpdateWebhookInput!){updateWebhook(data:$d){__typename}}',
+    vars: (s) => ({ d: { id: s.webhookId, description: 'spot-check' } }),
+  },
+  {
+    key: 'webhooks.rotateWebhookSecret',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:WebhookIdInput!){rotateWebhookSecret(data:$d){__typename}}',
+    vars: (s) => ({ d: { id: s.webhookId } }),
+  },
+  {
+    key: 'webhooks.sendWebhookTestEvent',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:WebhookIdInput!){sendWebhookTestEvent(data:$d){__typename}}',
+    vars: (s) => ({ d: { id: s.webhookId } }),
+  },
+  {
+    key: 'webhooks.resendWebhookMessage',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:WebhookMessageInput!){resendWebhookMessage(data:$d){__typename}}',
+    vars: (s) => ({ d: { webhookId: s.webhookId, messageId: s.webhookMessageId } }),
+  },
+  {
+    key: 'webhooks.deleteWebhook',
+    tier: 'W',
+    op: 'mutation',
+    doc: 'mutation($d:WebhookIdInput!){deleteWebhook(data:$d){__typename}}',
+    vars: (s, role) => ({
+      d: {
+        id: pickByRole(role, { owner: s.webhookForOwnerDelete, admin: s.webhookForAdminDelete }),
+      },
+    }),
+  },
+
+  // --- audit (scope: project) ---
+  {
+    key: 'audit.auditLogs',
+    tier: 'A',
+    op: 'query',
+    doc: 'query($p:String!){auditLogs(projectId:$p){__typename}}',
+    vars: (s) => ({ p: s.projectId }),
+    // The permission guard runs first (so every denial here is real), but an
+    // ALLOWED caller then hits the license gate (E0043) — the fixture has no
+    // signed license, so the allow direction would assert nothing.
+    denyOnly: true,
+  },
+
+  // --- sso (scope: project / sso) ---
+  {
+    key: 'sso.listProjectSsoProviders',
+    tier: 'A',
+    op: 'query',
+    doc: 'query($p:String!){listProjectSsoProviders(projectId:$p){__typename}}',
+    vars: (s) => ({ p: s.projectId }),
+  },
+  {
+    key: 'sso.getProjectSsoSettings',
+    tier: 'A',
+    op: 'query',
+    doc: 'query($p:String!){getProjectSsoSettings(projectId:$p){__typename}}',
+    vars: (s) => ({ p: s.projectId }),
+  },
+  {
+    key: 'sso.createOidcSsoProvider',
+    tier: 'A',
+    op: 'mutation',
+    doc: 'mutation($p:String!,$i:CreateOidcSsoProviderInput!){createOidcSsoProvider(projectId:$p,input:$i){__typename}}',
+    vars: (s) => ({
+      p: s.projectId,
+      i: {
+        name: 'spot-check',
+        issuer: 'https://idp.example.com/spot-check',
+        clientId: 'spot-check',
+        clientSecret: 'spot-check',
+      },
+    }),
+  },
+  {
+    key: 'sso.updateSsoProvider',
+    tier: 'A',
+    op: 'mutation',
+    doc: 'mutation($i:String!,$in:UpdateSsoProviderInput!){updateSsoProvider(id:$i,input:$in){__typename}}',
+    vars: (s) => ({ i: s.ssoProviderId, in: { name: 'spot-check' } }),
+  },
+  {
+    key: 'sso.updateProjectSsoSettings',
+    tier: 'A',
+    op: 'mutation',
+    doc: 'mutation($p:String!,$i:UpdateProjectSsoSettingsInput!){updateProjectSsoSettings(projectId:$p,input:$i){__typename}}',
+    // requireSso false: force-SSO would lock the fixture's own members out.
+    vars: (s) => ({ p: s.projectId, i: { requireSso: false } }),
+  },
+  {
+    key: 'sso.deleteSsoProvider',
+    tier: 'A',
+    op: 'mutation',
+    doc: 'mutation($i:String!){deleteSsoProvider(id:$i)}',
+    vars: (s, role) => ({
+      i: pickByRole(role, {
+        owner: s.ssoProviderForOwnerDelete,
+        admin: s.ssoProviderForAdminDelete,
+      }),
+    }),
   },
 ];
