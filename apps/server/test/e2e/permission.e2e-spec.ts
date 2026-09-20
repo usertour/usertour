@@ -8,6 +8,7 @@ import {
   DENY_ROLES,
   ENDPOINTS,
   ROLES,
+  TRANSLATION_TARGET_CODE,
   type Endpoint,
   type Role,
   type Seed,
@@ -24,13 +25,17 @@ import {
   buildInvite,
   buildLocalization,
   buildMembership,
+  buildOutboundMessage,
   buildProject,
   buildSegment,
   buildSession,
+  buildSigningSecret,
+  buildSsoProvider,
   buildStep,
   buildTheme,
   buildUser,
   buildVersion,
+  buildWebhook,
 } from './factories';
 
 /**
@@ -102,12 +107,25 @@ describe('Permission authorization (HTTP e2e)', () => {
     const attribute = await buildAttribute(prisma, { projectId });
     const theme = await buildTheme(prisma, { projectId });
     const event = await buildEvent(prisma, { projectId });
-    const localization = await buildLocalization(prisma, { projectId });
+    const localization = await buildLocalization(prisma, {
+      projectId,
+      code: TRANSLATION_TARGET_CODE,
+    });
     const segment = await buildSegment(prisma, { projectId, environmentId });
     const integration = await buildIntegration(prisma, { environmentId });
     const accessToken = await buildAccessToken(prisma, { environmentId });
     const step = await buildStep(prisma, { versionId: version.id });
     const bizCompany = await buildBizCompany(prisma, { environmentId });
+    // Webhook, SSO provider and signing secret fixtures: their mutations are
+    // deny-only here, and a scope resolver that can't find the row answers
+    // E0013 for everyone — which would make those denials pass vacuously.
+    const webhook = await buildWebhook(prisma, { environmentId });
+    const webhookMessage = await buildOutboundMessage(prisma, {
+      environmentId,
+      webhookId: webhook.id,
+    });
+    const signingSecret = await buildSigningSecret(prisma, { environmentId });
+    const ssoProvider = await buildSsoProvider(prisma, { projectId });
     // A removable, action-on-able member of project A — used by
     // team.removeTeamMember / changeTeamMemberRole / activeUserProject.
     const removable = await buildUser(prisma);
@@ -128,6 +146,10 @@ describe('Permission authorization (HTTP e2e)', () => {
       stepId: step.id,
       bizUserId: bizUser.id,
       bizCompanyId: bizCompany.id,
+      webhookId: webhook.id,
+      webhookMessageId: webhookMessage.id,
+      signingSecretId: signingSecret.id,
+      ssoProviderId: ssoProvider.id,
       removableUserId: removable.id,
       inviteId: invite.id,
       // Per-role consumable ids used by the spot-check to keep OWNER and
@@ -155,6 +177,12 @@ describe('Permission authorization (HTTP e2e)', () => {
       themeForAdminDelete: theme.id,
       localizationForOwnerDelete: localization.id,
       localizationForAdminDelete: localization.id,
+      webhookForOwnerDelete: webhook.id,
+      webhookForAdminDelete: webhook.id,
+      ssoProviderForOwnerDelete: ssoProvider.id,
+      ssoProviderForAdminDelete: ssoProvider.id,
+      signingSecretForOwnerRevoke: signingSecret.id,
+      signingSecretForAdminRevoke: signingSecret.id,
       removableUserForChangeRole: removable.id,
     });
   }, 60000);
@@ -169,6 +197,17 @@ describe('Permission authorization (HTTP e2e)', () => {
       });
       await prisma.invite.deleteMany({ where: { projectId: seed.projectId } });
       await prisma.accessToken.deleteMany({ where: { environmentId: seed.environmentId } });
+      await prisma.environmentSigningSecret.deleteMany({
+        where: { environmentId: seed.environmentId },
+      });
+      await prisma.projectSSOIdentityProvider.deleteMany({ where: { projectId: seed.projectId } });
+      // createSigningSecret / createWebhook (cross-project allow direction is
+      // never fired, but the in-project W mutations materialize rows).
+      await prisma.outboundDelivery.deleteMany({
+        where: { message: { environmentId: seed.environmentId } },
+      });
+      await prisma.outboundMessage.deleteMany({ where: { environmentId: seed.environmentId } });
+      await prisma.webhook.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.integration.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.bizSession.deleteMany({ where: { contentId: seed.contentId } });
       await prisma.bizUserOnSegment.deleteMany({ where: { segmentId: seed.segmentId } });
@@ -179,7 +218,7 @@ describe('Permission authorization (HTTP e2e)', () => {
       await prisma.bizCompany.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.bizUser.deleteMany({ where: { environmentId: seed.environmentId } });
       await prisma.step.deleteMany({ where: { versionId: seed.versionId } });
-      // upsertVersionLocalization (allow direction) materializes these rows.
+      // updateVersionLocalization (allow direction) materializes these rows.
       await prisma.versionOnLocalization.deleteMany({ where: { versionId: seed.versionId } });
       await prisma.contentOnEnvironment.deleteMany({ where: { contentId: seed.contentId } });
       await prisma.version.deleteMany({ where: { contentId: seed.contentId } });
@@ -228,7 +267,7 @@ describe('Permission authorization (HTTP e2e)', () => {
     );
 
   it('covers every role-gated endpoint', () => {
-    expect(ENDPOINTS).toHaveLength(102);
+    expect(ENDPOINTS).toHaveLength(128);
   });
 
   for (const ep of ENDPOINTS) {

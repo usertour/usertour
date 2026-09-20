@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
@@ -55,6 +55,13 @@ interface ProviderOAuthTransaction {
    * and is verified by spending the state instead (see consumeState).
    */
   marketplace?: true;
+  /**
+   * Makes every state unique. The other claims are fixed per user and
+   * environment and `iat` / `exp` only have second precision, so two handshakes
+   * started within the same second used to be byte-identical — and spending the
+   * first (consumeState) refused the second as a replay. Nothing reads it back.
+   */
+  jti: string;
 }
 
 /** System-owned bookkeeping in Integration.remoteState (ADR 0013 §3). */
@@ -217,6 +224,7 @@ export class ProviderConnectionService {
       projectId: environment.projectId,
       sub: userId,
       ...(returnUrl ? { marketplace: true as const } : {}),
+      jti: randomUUID(),
     };
     const state = await this.jwtService.signAsync(transaction, { expiresIn: STATE_TTL });
     return {

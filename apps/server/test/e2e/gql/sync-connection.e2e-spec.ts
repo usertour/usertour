@@ -453,6 +453,18 @@ describe('GraphQL CRM connections (e2e)', () => {
       expect(foreign.body.errors?.[0]?.message).toContain('not a HubSpot address');
     });
 
+    it('mints a distinct state for every handshake, even within the same second', async () => {
+      // The claims are otherwise fixed per user + environment and iat/exp have
+      // second precision: without a unique id two quick handshakes were
+      // byte-identical, and spending the first refused the second as a replay.
+      const [first, second, third] = await Promise.all([
+        beginHandshake(RETURN_URL),
+        beginHandshake(RETURN_URL),
+        beginHandshake(RETURN_URL),
+      ]);
+      expect(new Set([first.state, second.state, third.state]).size).toBe(3);
+    });
+
     it("last leg: finalize arrives in HubSpot's frame without our cookie, completes once, lands back on HubSpot", async () => {
       mockProvider();
       const { state } = await beginHandshake(RETURN_URL);

@@ -38,6 +38,9 @@ export const trackEventBody = z
   .object({
     userId: z
       .string()
+      // `min(1)` is what the published schema advertises; the refine below also
+      // refuses whitespace-only, which a length bound cannot express.
+      .min(1)
       .max(200)
       // An empty/whitespace id must never create an entity — the row would be
       // unaddressable by every id-keyed read/delete (same hardening as the

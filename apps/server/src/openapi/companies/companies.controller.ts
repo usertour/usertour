@@ -22,7 +22,7 @@ import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { DeleteResponseDto } from '@/common/openapi/dtos';
 

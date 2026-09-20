@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIEventDefinitionsService } from './event-definitions.service';
 import { EventsService } from '@/events/events.service';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { ListEventDefinitionsQueryDto, EventDefinitionOrderByType } from './event-definitions.dto';
 
 describe('OpenAPIEventDefinitionsService', () => {
@@ -13,6 +13,7 @@ describe('OpenAPIEventDefinitionsService', () => {
     projectId: 'project-1',
     name: 'Test Environment',
     token: 'test-token',
+    deleted: false,
     isPrimary: false,
     requireIdentityVerification: false,
     createdAt: new Date(),

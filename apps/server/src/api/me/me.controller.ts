@@ -27,7 +27,10 @@ export class ApiMeController {
 
   @Get()
   @ApiOperation({
-    summary: 'Introspect the token: its name and the projects/environments it may act on',
+    summary: 'Introspect the token',
+    description:
+      "Returns the token's name and the projects and environments it may act on — the " +
+      'credential-test and picker-population call for integration platforms.',
   })
   @ApiResponse({ status: 200, description: 'Token scope', type: MeResponseDto })
   async me(@Req() request: { apiToken: AuthedApiToken }): Promise<MeResponseDto> {

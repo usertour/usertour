@@ -2,10 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
 import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
-import {
-  ENVIRONMENT_DELETING,
-  type EnvironmentDeletingPayload,
-} from '@/environments/environment.events';
+import { ENVIRONMENT_DELETING } from '@/modules/environments/constants/environment-deleting.constant';
+import type { EnvironmentDeletingPayload } from '@/modules/environments/types/environment-deleting-payload.type';
 import { ProviderConnectionService } from './provider-connection.service';
 import { HubspotJournalService } from './hubspot-journal.service';
 import { ObjectMappingService } from './object-mapping.service';

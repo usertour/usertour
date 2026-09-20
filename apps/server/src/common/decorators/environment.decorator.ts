@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 
 export const EnvironmentDecorator = createParamDecorator((_, ctx: ExecutionContext) => {
   const request = ctx.switchToHttp().getRequest();

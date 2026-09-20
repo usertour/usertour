@@ -1350,7 +1350,8 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ContentRead,
       description:
         'Get a content version by id. `expand: ["steps"]` inlines the decompiled steps — read ' +
-        'these before calling `update_content_version`. Also supports "data" and "questions".',
+        'these before calling `update_content_version`. Also supports "data", "questions" and ' +
+        '"localizations" (per-locale translation status: enabled / missing / outdated).',
       inputSchema: {
         contentId: z
           .string()
@@ -1363,9 +1364,13 @@ export function buildReadTools(): McpTool[] {
             'The content version id — pass it together with its contentId (the pair is required).',
           ),
         expand: z
-          .array(z.enum(['questions', 'steps', 'data']))
+          .array(z.enum(['questions', 'steps', 'data', 'localizations']))
           .optional()
-          .describe('Related data to inline: steps, data, questions.'),
+          .describe(
+            'Related data to inline: steps, data, questions, localizations (per-locale ' +
+              'translation status — `enabled` / `missing` / `outdated` for every non-default ' +
+              'project locale; check it before publishing a version whose source text you edited).',
+          ),
       },
       async handler(args, ctx) {
         const contentId = asString(args.contentId);
@@ -1763,6 +1768,81 @@ export function buildReadTools(): McpTool[] {
           contentType: asString(args.contentType),
           expandUsers: expand?.includes('users') ?? false,
         });
+      },
+    },
+
+    {
+      name: 'list_localizations',
+      title: 'List localizations',
+      capability: Capability.LocalizationRead,
+      description:
+        "List the project's locales. The `isDefault` one is the SOURCE language content is " +
+        'authored in; every other `code` can carry a translation on each content version ' +
+        '(`get_version_localization` / `update_version_localization`). Which translation a ' +
+        "user receives is decided ONLY by their `locale_code` attribute matching a locale's " +
+        '`code` — the browser language is never detected. A default-only list means there is ' +
+        'nothing to translate into yet: add a target language with `create_localization`. ' +
+        '`deleted: true` lists the soft-deleted locales instead (the pool `restore_localization` ' +
+        'draws from). Returns `{ items, nextCursor }`.',
+      inputSchema: {
+        deleted: z
+          .boolean()
+          .optional()
+          .describe('List soft-deleted localizations instead of live ones.'),
+      },
+      async handler(args, ctx) {
+        return toListPayload(
+          await ctx.services.localizations.list(ctx.projectId, {
+            deleted: args.deleted === true,
+          }),
+        );
+      },
+    },
+
+    {
+      name: 'get_version_localization',
+      title: "Get a version's translation",
+      capability: Capability.ContentRead,
+      description:
+        'Read one locale of a content version as flat translation units: each has a stable ' +
+        '`path`, the `source` text, the current `translation` ("" = untranslated), `optional` ' +
+        '(media / link URLs — swap them per locale or leave empty to keep the source URL) and ' +
+        '`outdated` (the source text changed AFTER this translation was saved: it still ships, ' +
+        'but was written against older text — re-translate it). `stats` totals missing / ' +
+        'outdated. Works on any version, including a published one; a locale never translated ' +
+        'returns every unit with an empty translation. Not available for trackers (no UI text) ' +
+        'or for the default locale (it IS the source).',
+      inputSchema: {
+        contentId: z
+          .string()
+          .describe(
+            'The content id the version belongs to — version calls address a (contentId, versionId) pair; a version id alone, or a mismatched pair, 404s.',
+          ),
+        versionId: z
+          .string()
+          .describe(
+            'The content version id — pass it together with its contentId (the pair is required).',
+          ),
+        code: z
+          .string()
+          .describe(
+            'The locale `code` — from `list_localizations`, or from `get_content_version` with ' +
+              '`expand: ["localizations"]` when that tool is outside your scopes. Not the default.',
+          ),
+      },
+      async handler(args, ctx) {
+        const contentId = asString(args.contentId);
+        const versionId = asString(args.versionId);
+        const code = asString(args.code);
+        if (!contentId || !versionId || !code) {
+          throw new Error('`contentId`, `versionId` and `code` are required.');
+        }
+        return ctx.services.localizations.getVersionLocalization(
+          versionId,
+          contentId,
+          ctx.projectId,
+          code,
+        );
       },
     },
 

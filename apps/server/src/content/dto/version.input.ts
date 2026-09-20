@@ -34,22 +34,34 @@ export class VersionIdInput {
 }
 
 @InputType()
-export class VersionUpdateLocalizationInput {
+export class VersionTranslationUnitInput {
+  @Field(() => String)
+  path: string;
+
+  // null clears the unit; a blank string keeps the stored translation.
+  @Field(() => String, { nullable: true })
+  translation?: string | null;
+}
+
+@InputType()
+export class UpdateVersionLocalizationInput {
+  @Field(() => String)
+  contentId: string;
+
   @Field(() => String)
   versionId: string;
 
+  /** The target locale's code. */
   @Field(() => String)
-  localizationId: string;
+  code: string;
 
-  @Field(() => Boolean)
-  enabled: boolean;
+  // Only the units listed are written; every other unit keeps its stored
+  // translation, so two editors of one locale merge instead of overwriting
+  // each other.
+  @Field(() => [VersionTranslationUnitInput], { nullable: true })
+  translations?: VersionTranslationUnitInput[];
 
-  // Optional so state-only writes (the enable toggle) don't have to echo a
-  // payload back — resending a possibly stale copy is how translations get
-  // clobbered. Omitted fields keep their stored value.
-  @Field(() => GraphQLJSON, { nullable: true })
-  localized?: JsonValue;
-
-  @Field(() => GraphQLJSON, { nullable: true })
-  backup?: JsonValue;
+  // Omitted keeps the stored state.
+  @Field(() => Boolean, { nullable: true })
+  enabled?: boolean;
 }

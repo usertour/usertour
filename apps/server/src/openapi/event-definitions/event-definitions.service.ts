@@ -3,7 +3,7 @@ import { EventDefinition } from '../models/event-definition.model';
 import { EventsService as BusinessEventsService } from '@/events/events.service';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { EventDefinitionOrderByType, ListEventDefinitionsQueryDto } from './event-definitions.dto';
 import { parseOrderBy } from '@/common/openapi/sort';
 @Injectable()

@@ -11,7 +11,7 @@ import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filte
 import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { ContentSession } from '../models/content-session.model';
 

@@ -7,12 +7,11 @@ import {
 } from './content-sessions.dto';
 import { ContentSession, ContentSessionAnswers } from '../models/content-session.model';
 import { AnalyticsService } from '@/analytics/analytics.service';
-import { Prisma } from '@prisma/client';
+import { type Environment, Prisma } from '@prisma/client';
 import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import { ContentService } from '@/content/content.service';
-import { Environment } from '@/environments/models/environment.model';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { extractQuestionData } from '@/utils/content-question';
 

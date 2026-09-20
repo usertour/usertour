@@ -1,3 +1,4 @@
+import { DELIVERABLE_TRANSLATION } from '@/modules/localizations/constants/deliverable-translation.constant';
 import {
   cuid,
   isConditionsActived,
@@ -185,7 +186,7 @@ export class AnnouncementService {
             scheduledAt: true,
             themeId: true,
             versionOnLocalization: {
-              where: { enabled: true },
+              where: DELIVERABLE_TRANSLATION,
               select: { localized: true, localization: { select: { code: true } } },
             },
           },
@@ -240,7 +241,7 @@ export class AnnouncementService {
             scheduledAt: true,
             themeId: true,
             versionOnLocalization: {
-              where: { enabled: true },
+              where: DELIVERABLE_TRANSLATION,
               select: { localized: true, localization: { select: { code: true } } },
             },
           },

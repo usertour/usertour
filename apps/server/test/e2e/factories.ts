@@ -447,6 +447,86 @@ export async function buildAccessToken(
   });
 }
 
+export async function buildWebhook(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.WebhookUncheckedCreateInput> = {},
+) {
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma);
+    overrides.environmentId = environment.id;
+  }
+  return prisma.webhook.create({
+    data: {
+      // Inert destination: a permission fixture must never make a delivery
+      // land somewhere real. Raw factory secret, not a real ciphertext.
+      url: `https://example.com/hooks/${unique()}`,
+      topics: ['content.published'],
+      secret: 'factory-secret',
+      ...overrides,
+      environmentId: overrides.environmentId,
+    },
+  });
+}
+
+export async function buildOutboundMessage(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.OutboundMessageUncheckedCreateInput> = {},
+) {
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma);
+    overrides.environmentId = environment.id;
+  }
+  return prisma.outboundMessage.create({
+    data: {
+      id: `msg-${unique()}`,
+      topic: 'content.published',
+      payload: {},
+      ...overrides,
+      environmentId: overrides.environmentId,
+    },
+  });
+}
+
+export async function buildSigningSecret(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.EnvironmentSigningSecretUncheckedCreateInput> = {},
+) {
+  if (!overrides.environmentId) {
+    const environment = await buildEnvironment(prisma);
+    overrides.environmentId = environment.id;
+  }
+  return prisma.environmentSigningSecret.create({
+    // Secrets are AES-256-GCM encrypted at rest; a raw factory value reads
+    // back as null, which is all a permission fixture needs. A test that
+    // must USE the secret writes its own (EncryptionService.encrypt).
+    data: {
+      secret: `factory-utv-${unique()}`,
+      ...overrides,
+      environmentId: overrides.environmentId,
+    },
+  });
+}
+
+export async function buildSsoProvider(
+  prisma: PrismaClient,
+  overrides: Partial<Prisma.ProjectSSOIdentityProviderUncheckedCreateInput> = {},
+) {
+  if (!overrides.projectId) {
+    const project = await buildProject(prisma);
+    overrides.projectId = project.id;
+  }
+  return prisma.projectSSOIdentityProvider.create({
+    data: {
+      name: `idp-${unique()}`,
+      issuer: `https://idp.example.com/${unique()}`,
+      clientId: 'factory-client',
+      clientSecret: 'factory-secret',
+      ...overrides,
+      projectId: overrides.projectId,
+    },
+  });
+}
+
 export async function buildInvite(
   prisma: PrismaClient,
   overrides: Partial<Prisma.InviteUncheckedCreateInput> = {},

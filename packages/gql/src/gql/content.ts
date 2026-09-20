@@ -421,9 +421,9 @@ export const listVersionLocalizations = gql`
   }
 `;
 
-export const upsertVersionLocalization = gql`
-  mutation upsertVersionLocalization($data: VersionUpdateLocalizationInput!) {
-    upsertVersionLocalization(data: $data) {
+export const updateVersionLocalization = gql`
+  mutation updateVersionLocalization($data: UpdateVersionLocalizationInput!) {
+    updateVersionLocalization(data: $data) {
       id
       createdAt
       updatedAt

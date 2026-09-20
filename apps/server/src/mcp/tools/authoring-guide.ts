@@ -8,7 +8,7 @@
  * usability validator and the representation schema; guide-facts.spec.ts pins
  * the load-bearing claims and the section structure.
  */
-import { BuiltinLauncherIcon } from '@usertour/constants';
+import { BuiltinLauncherIcon, locates } from '@usertour/constants';
 
 export interface GuideSection {
   /** Slug the tool's `section` argument selects by. */
@@ -21,6 +21,13 @@ export interface GuideSection {
   appliesTo: 'all' | readonly string[];
   body: string;
 }
+
+/**
+ * The dashboard's locale picker, inlined into the guide (and served as data by
+ * GET /v2/locales): an agent adding a locale should file it under the same tag
+ * and language name a human would have picked from that list.
+ */
+const LOCALE_CATALOG = locates.map((option) => `\`${option.locale}\` ${option.name}`).join(' · ');
 
 export const GUIDE_SECTIONS: readonly GuideSection[] = [
   {
@@ -277,6 +284,24 @@ Before you call the build done, walk every flow you created and confirm it has a
 - **\`scheduledAt\`** (a version-level field on \`update_content_version\`, NOT inside \`data\`): the "announcement time". The feed hides the announcement until this instant passes and orders by it (newest first, cap 50 — the cap is taken BEFORE per-user targeting, so with heavy audience filtering users may see fewer than 50 even when more match). Leave it unset and publish stamps the publish time; set a FUTURE time to schedule a release note ahead of the release. It carries across version forks, \`duplicate_content\` copies, and restores.
 - **Targeting**: \`startRules.when\` is a pure audience filter for feed inclusion — \`attribute\` / \`segment\` conditions only (anything else is rejected). None of the session-start knobs (\`frequency\` / \`waitSeconds\` / \`priority\` / \`hideRules\`) exist for announcements.
 - Announcements create **no sessions**; the analytics signal is the SEEN event (feed opened / popup shown) — \`get_content_analytics\` reports \`uniqueSeen\` (seen fires once per user; repeat views never add).`,
+  },
+  {
+    name: 'localization',
+    title: 'Localization (translating content)',
+    summary:
+      'Reading and writing per-locale translations, what makes one outdated, how a user gets a locale.',
+    appliesTo: ['flow', 'checklist', 'launcher', 'banner', 'announcement', 'resource-center'],
+    body: `Content is authored in ONE source language (the project's default locale). Every other project locale can carry a translation **per content version**. A tracker has no UI text, so it has nothing to translate.
+- **The loop**: \`list_localizations\` (which locales exist; the target language missing? add it with \`create_localization\`) → \`get_version_localization\` (every translatable unit of the version for one locale: \`path\`, \`source\`, \`translation\`, \`optional\`, \`outdated\`) → \`update_version_localization\` with \`translations: { "<path>": "<text>" }\` and \`enabled: true\`. Paths are opaque — copy them verbatim from the read; an unknown path rejects the whole write.
+- **Translate the source last.** A translation is found again by identity first (a step's \`cvid\`, a checklist item's \`id\`) and then by POSITION inside it. Rewording text in place keeps the pairing and marks it **\`outdated\`**: still delivered, but written against older text. Changing the STRUCTURE does not: adding, removing or reordering a block in a step — or restyling part of a sentence (bolding one word splits it into several text runs) — breaks the positional pairing for that step or paragraph, so those units read back as **\`missing\`** with an empty translation (deliberate: a misaligned translation must never land on the wrong text). Newly added text is \`missing\` too. Plan on re-translating every step whose blocks you changed. So after ANY \`update_content_version\` that touches text, read \`get_content_version\` with \`expand: ["localizations"]\` (per-locale \`enabled\` / \`missing\` / \`outdated\`) and bring every enabled locale back to zero **before** \`publish_content\` — otherwise users of that locale keep reading the previous wording, or a mix of languages. Nothing blocks the publish; this check is yours to run.
+- **One call per locale.** Saving re-bases drift tracking for the WHOLE translation on the current source, so send every unit you are fixing for a locale in one \`update_version_localization\` call — \`outdated\` flags on units you leave out of that call are cleared along with the ones you fixed. A blank value keeps the existing translation (there is no "clear" here).
+- **\`optional\` units are URLs** (image, embed, link destinations). Leave them empty to keep the source URL; set one only to swap in locale-specific media. Image / embed URLs must be absolute http(s).
+- **Same draft rule as the source**: translations can only be written to an editable draft (\`E0049\` otherwise). \`create_content_version\` forks one and **carries every translation with it**, as do \`restore_content_version\` and \`duplicate_content\`. Reading works on any version.
+- **Delivery**: a translation reaches users only when it is \`enabled\` AND that version is published. Which locale a user gets is decided solely by their \`locale_code\` attribute matching a locale's \`code\` (set it with \`upsert_user\` / the SDK's identify) — the browser language is never detected. No match, a disabled translation, or an untranslated unit all fall back to the source text, unit by unit.
+- **Naming a new locale.** \`code\` is free-form (letters, digits, \`-\`, \`_\`; unique per project, case-insensitive) — usually the locale tag, but \`fr-enterprise\` next to \`fr\` gives one language two variants. \`locale\` is the tag it stands for and \`name\` the language it is: machine translation is asked to translate INTO \`name\`, so copy a pair from the catalog the dashboard offers rather than improvising a label — ${LOCALE_CATALOG}. A tag not listed here is accepted too, as long as it is well-formed (\`fr\`, \`fr-FR\`, \`zh-Hans-CN\`).
+- **Two different resources, two scope families.** The project's LOCALES are a settings-level resource (\`localization:*\` scopes: \`list_\` / \`create_\` / \`update_\` / \`delete_\` / \`restore_localization\`); a version's TRANSLATION is part of the content (\`content:*\` scopes). With content scopes only, the locale tools are not listed — read the target \`code\`s from \`get_content_version\` with \`expand: ["localizations"]\` instead, and ask for a locale to be added if the language you need is not there.
+- **Deleting a locale is soft and project-wide.** \`delete_localization\` stops that language being delivered at once, in every environment — but keeps every version's translation, so \`restore_localization\` (or \`create_localization\` with the same \`code\`, which answers \`restored: true\`) brings them all back, enabled states included. To silence ONE content's translation, set \`enabled: false\` on it instead. Changing a locale's \`code\` re-routes live delivery immediately (users match by \`locale_code\`). The source language (\`isDefault\`) is switched only in the dashboard.
+- Writes merge by unit: the units you send are written, every other unit keeps what it holds — so a person translating the same locale in the dashboard at the same moment cannot overwrite units you did not touch, and you cannot overwrite theirs.`,
   },
   {
     name: 'publish-requirements',

@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserNotFoundError, InvalidLimitError, UnknownError } from '@/common/errors/errors';
 import { ExpandType, GetUserQueryDto, ListUsersQueryDto, UpsertUserRequestDto } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { UserOrderByType } from './users.dto';
 
 describe('OpenAPIUsersService', () => {
@@ -17,6 +17,7 @@ describe('OpenAPIUsersService', () => {
     projectId: 'project1',
     name: 'Test Environment',
     token: 'test-token',
+    deleted: false,
     isPrimary: false,
     requireIdentityVerification: false,
     createdAt: new Date(),

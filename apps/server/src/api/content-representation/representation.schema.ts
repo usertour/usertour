@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { isoTimestamp } from '../shared/query';
 
 import { ATTR_OPS } from './attr-ops';
+import { versionLocalizationSummary } from '../localizations/localizations.schema';
 import { ApiObjectType } from '../shared/object-type';
 
 /**
@@ -1340,6 +1341,19 @@ export const contentVersion = z.object({
    * `data` expand is requested. Shape is determined by the content type.
    */
   data: z.unknown().optional(),
+  /**
+   * Per-locale translation status — only present when the `localizations`
+   * expand is requested. One entry per non-default project locale, including
+   * locales this version was never translated into.
+   */
+  localizations: z
+    .array(versionLocalizationSummary)
+    .optional()
+    .describe(
+      'Per-locale translation status — present only when the `localizations` expand is ' +
+        'requested on the content-versions endpoints. One entry per non-default project ' +
+        'locale, including locales this version was never translated into.',
+    ),
   /**
    * Announcement versions: the "announcement time" gating feed visibility and
    * ordering. Present only when set (publish stamps it when the author left it

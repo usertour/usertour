@@ -3,7 +3,7 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { Step } from './step.model';
 import GraphQLJSON from 'graphql-type-json';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { Environment } from '@/environments/models/environment.model';
+import { EnvironmentDTO } from '@/modules/environments/dtos/environment.dto';
 import { Version } from './version.model';
 
 export enum ContentType {
@@ -21,8 +21,8 @@ export enum ContentType {
 
 @ObjectType()
 export class ContentOnEnvironment extends BaseModel {
-  @Field(() => Environment)
-  environment: Environment;
+  @Field(() => EnvironmentDTO)
+  environment: EnvironmentDTO;
 
   @Field(() => String)
   environmentId: string;

@@ -1,5 +1,5 @@
 import { ContentModule } from '@/content/content.module';
-import { EnvironmentsModule } from '@/environments/environments.module';
+import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { Module } from '@nestjs/common';

@@ -1,7 +1,7 @@
 import { Controller, Get, Query, Logger, UseGuards, UseFilters } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIEventDefinitionsService } from './event-definitions.service';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';

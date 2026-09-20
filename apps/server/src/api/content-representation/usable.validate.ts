@@ -9,7 +9,7 @@ import { AttributeBizType } from '@/attributes/models/attribute.model';
 import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';
-import { matchesOembedProvider } from './embed-resolve';
+import { matchesOembedProvider } from '@/common/ombed/embed-resolve';
 import {
   type AnnouncementData,
   type BannerData,

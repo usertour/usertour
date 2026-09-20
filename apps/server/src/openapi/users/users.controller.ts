@@ -25,7 +25,7 @@ import { Audit } from '@/audit/audit.decorator';
 import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
 import { User } from '../models/user.model';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { Environment } from '@/environments/models/environment.model';
+import type { Environment } from '@prisma/client';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 
 @ApiTags('Users (v1)')
