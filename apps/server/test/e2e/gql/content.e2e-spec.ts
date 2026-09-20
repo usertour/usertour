@@ -861,6 +861,90 @@ describe('GraphQL content (e2e)', () => {
     });
   });
 
+  // ── listContentPublishRecords ────────────────────────────────────
+
+  describe('listContentPublishRecords', () => {
+    const publish = (versionId: string, envId: string) =>
+      graphql(app, {
+        token,
+        query: 'mutation ($data: VersionIdInput!) { publishedContentVersion(data: $data) { id } }',
+        variables: { data: { versionId, environmentId: envId } },
+      });
+    const unpublish = (contentId: string, envId: string) =>
+      graphql(app, {
+        token,
+        query:
+          'mutation ($data: ContentIdInput!) { unpublishedContentVersion(data: $data) { success } }',
+        variables: { data: { contentId, environmentId: envId } },
+      });
+    const list = (contentId: string, envId?: string) =>
+      graphql(app, {
+        token,
+        query: `query ($contentId: String!, $environmentId: String, $first: Int) {
+          listContentPublishRecords(contentId: $contentId, environmentId: $environmentId, first: $first) {
+            totalCount
+            edges { node { id action versionId versionSequence environmentId environmentName actorName } }
+          }
+        }`,
+        variables: { contentId, environmentId: envId, first: 10 },
+      });
+
+    it('returns the ledger newest-first, with the actor and environment names it snapshots', async () => {
+      const { content, version } = await seedContent();
+      // The ledger denormalizes WHO published at write time, so name the actor
+      // before publishing — a fixture user has none by default.
+      await prisma.user.update({ where: { id: userIds[0] }, data: { name: 'Ledger Owner' } });
+      await publish(version.id, environmentId);
+      await unpublish(content.id, environmentId);
+
+      const conn = gqlData(await list(content.id)).listContentPublishRecords;
+      expect(conn.totalCount).toBe(2);
+      const nodes = conn.edges.map((edge: { node: Record<string, unknown> }) => edge.node);
+      // Newest first — what the history tab renders top-down.
+      expect(nodes.map((node: { action: string }) => node.action)).toEqual([
+        'unpublish',
+        'publish',
+      ]);
+      const environment = await prisma.environment.findUnique({ where: { id: environmentId } });
+      for (const node of nodes) {
+        expect(node).toMatchObject({
+          versionId: version.id,
+          versionSequence: 0,
+          environmentId,
+          environmentName: environment?.name,
+        });
+        // Attribution is denormalized at write time so it survives the actor
+        // row being replaced or deleted — a null here would read as an
+        // anonymous publish in the history tab.
+        expect(node.actorName).toBe('Ledger Owner');
+      }
+    });
+
+    it('is empty for a content that was never published, and narrows by environment', async () => {
+      const { content, version } = await seedContent();
+      expect(gqlData(await list(content.id)).listContentPublishRecords.totalCount).toBe(0);
+
+      const otherEnvironment = await buildEnvironment(prisma, { projectId });
+      await publish(version.id, environmentId);
+      await publish(version.id, otherEnvironment.id);
+
+      expect(gqlData(await list(content.id)).listContentPublishRecords.totalCount).toBe(2);
+      const narrowed = gqlData(
+        await list(content.id, otherEnvironment.id),
+      ).listContentPublishRecords;
+      expect(narrowed.totalCount).toBe(1);
+      expect(narrowed.edges[0].node.environmentId).toBe(otherEnvironment.id);
+    });
+
+    it("does not read another content's records", async () => {
+      const first = await seedContent();
+      const second = await seedContent();
+      await publish(first.version.id, environmentId);
+
+      expect(gqlData(await list(second.content.id)).listContentPublishRecords.totalCount).toBe(0);
+    });
+  });
+
   // ── listVersionLocalizations ─────────────────────────────────────
 
   describe('listVersionLocalizations', () => {

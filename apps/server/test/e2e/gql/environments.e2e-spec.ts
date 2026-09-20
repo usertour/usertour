@@ -7,6 +7,7 @@ import { graphql, gqlData } from '../auth';
 import { createTestApp } from '../create-test-app';
 import {
   buildAccessToken,
+  buildBizUser,
   buildEnvironment,
   buildMembership,
   buildProject,
@@ -348,6 +349,45 @@ describe('GraphQL environments (e2e)', () => {
         variables: { environmentId: env.id, accessTokenId: 'does-not-exist' },
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('verifyInstallation', () => {
+    const verify = (envId: string) =>
+      graphql(app, {
+        token,
+        query:
+          'query ($environmentId: String!) { verifyInstallation(environmentId: $environmentId) { installed userCount } }',
+        variables: { environmentId: envId },
+      });
+
+    it('reports not-installed until the SDK has identified a user, then counts them', async () => {
+      const fresh = await buildEnvironment(prisma, { projectId });
+
+      // What the Installation page waits on: no user has ever been identified
+      // from this environment, so the snippet is not live yet.
+      expect(gqlData(await verify(fresh.id)).verifyInstallation).toEqual({
+        installed: false,
+        userCount: 0,
+      });
+
+      await buildBizUser(prisma, { environmentId: fresh.id });
+      await buildBizUser(prisma, { environmentId: fresh.id });
+      expect(gqlData(await verify(fresh.id)).verifyInstallation).toEqual({
+        installed: true,
+        userCount: 2,
+      });
+
+      // Per environment, not per project: a sibling environment stays
+      // uninstalled, which is what makes the page meaningful when staging is
+      // wired up before production.
+      expect(gqlData(await verify(primaryEnvId)).verifyInstallation).toEqual({
+        installed: false,
+        userCount: 0,
+      });
+
+      await prisma.bizUser.deleteMany({ where: { environmentId: fresh.id } });
+      await prisma.environment.delete({ where: { id: fresh.id } });
     });
   });
 
