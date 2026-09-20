@@ -241,6 +241,77 @@ describe('API v2 localizations (e2e)', () => {
       expect((await api('patch', patchPath, localeWriteToken).send({})).status).toBe(400);
     });
 
+    it('trims a code and refuses one a URL path could not carry', async () => {
+      const trimmed = await createLocale({
+        code: '  it  ',
+        name: '  Italian  ',
+        locale: ' it-IT ',
+      });
+      expect(trimmed.status).toBe(201);
+      // Stored trimmed: delivery matches trimmed, and the code is addressed in
+      // a URL path — a stored-with-spaces code could never be typed back.
+      expect(trimmed.body).toMatchObject({ code: 'it', name: 'Italian', locale: 'it-IT' });
+      // Hard delete: the API's delete is soft, and a leftover deleted row is
+      // visible to the `?deleted=true` listing the recovery tests assert on.
+      await prisma.localization.delete({ where: { id: trimmed.body.id } });
+
+      for (const code of ['fr/CA', 'pt BR', 'sv?', '-nb', 'x']) {
+        const res = await createLocale({ code, name: 'Rejected', locale: 'en-US' });
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('E1017');
+      }
+      // The tag has a shape too — `name` is free text, `locale` is not.
+      expect(
+        (await createLocale({ code: 'nb', name: 'Norwegian', locale: 'not a tag' })).status,
+      ).toBe(400);
+    });
+
+    it('treats codes as case-insensitive, the way delivery matches them', async () => {
+      // `FR` and `fr` would be one locale to an end user (delivery lowercases)
+      // but two rows to the unique index — whichever came first in a version's
+      // translation list would win, arbitrarily.
+      const clash = await createLocale({ code: 'FR', name: 'French upper', locale: 'fr-FR' });
+      expect(clash.status).toBe(409);
+      expect(clash.body.error.message).toContain('fr');
+
+      const created = await createLocale({ code: 'nl', name: 'Dutch', locale: 'nl-NL' });
+      expect(created.status).toBe(201);
+      const recode = await api(
+        'patch',
+        `${localesPath()}/${created.body.id}`,
+        localeWriteToken,
+      ).send({ code: 'FR' });
+      expect(recode.status).toBe(409);
+      // Re-casing its OWN code stays allowed: it is the same locale.
+      const recased = await api(
+        'patch',
+        `${localesPath()}/${created.body.id}`,
+        localeWriteToken,
+      ).send({ code: 'NL' });
+      expect(recased.status).toBe(200);
+      expect(recased.body.code).toBe('NL');
+      await prisma.localization.delete({ where: { id: created.body.id } });
+    });
+
+    it('serves the locale catalog to any valid token, no capability needed', async () => {
+      const res = await api('get', '/v2/locales', readToken);
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({ next: null, previous: null });
+      expect(res.body.results.length).toBeGreaterThan(20);
+      expect(res.body.results).toContainEqual({
+        object: 'locale',
+        locale: 'fr-FR',
+        name: 'French (France)',
+      });
+      // The pairing is the point: a caller copies `locale` + `name` straight
+      // into create, and `name` is what machine translation translates into.
+      for (const option of res.body.results as { locale: string; name: string }[]) {
+        expect(option.locale).toMatch(/^[A-Za-z]{2,8}(-[A-Za-z0-9]{2,8})*$/);
+        expect(option.name.length).toBeGreaterThan(1);
+      }
+      expect((await api('get', '/v2/locales')).status).toBe(401);
+    });
+
     it('refuses to delete the default locale (E1041) and 404s foreign / unknown ids', async () => {
       const english = await prisma.localization.findFirstOrThrow({
         where: { projectId, isDefault: true },

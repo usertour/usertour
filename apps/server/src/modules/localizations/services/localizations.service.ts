@@ -9,6 +9,7 @@ import {
   ResourceAlreadyExistsError,
 } from '@/common/errors';
 import { ProjectCacheService } from '@/shared/project-cache.service';
+import { normalizeLocalizationFields } from '../utils/normalize-localization-fields.util';
 
 /** Localization has a unique (projectId, code); surface a clash as a typed error, not a raw 500. */
 const isUniqueViolation = (err: unknown): boolean =>
@@ -32,19 +33,24 @@ export class LocalizationsService {
    * needs to say so which of the two happened.
    */
   async createOrRestore(data: NewLocalization) {
+    const fields = normalizeLocalizationFields(data);
     const existing = await this.prisma.localization.findUnique({
-      where: { projectId_code: { projectId: data.projectId, code: data.code } },
+      where: { projectId_code: { projectId: fields.projectId, code: fields.code } },
     });
     if (existing?.deleted) {
       const localization = await this.prisma.localization.update({
         where: { id: existing.id },
-        data: { deleted: false, name: data.name, locale: data.locale },
+        data: { deleted: false, name: fields.name, locale: fields.locale },
       });
       await this.invalidateDeliveredTranslations(localization.id);
       return { localization, restored: true };
     }
+    await this.assertCodeFree(fields.projectId, fields.code);
     try {
-      return { localization: await this.prisma.localization.create({ data }), restored: false };
+      return {
+        localization: await this.prisma.localization.create({ data: fields }),
+        restored: false,
+      };
     } catch (err) {
       if (isUniqueViolation(err)) {
         throw new ResourceAlreadyExistsError();
@@ -69,10 +75,13 @@ export class LocalizationsService {
   }
 
   async update(data: LocalizationChanges) {
-    const { id, ...others } = data;
+    const { id, ...others } = normalizeLocalizationFields(data);
     const item = await this.prisma.localization.findFirst({ where: { id, deleted: false } });
     if (!item) {
       throw new ParamsError();
+    }
+    if (others.code !== undefined && others.code !== item.code) {
+      await this.assertCodeFree(item.projectId, others.code, id);
     }
     try {
       const localization = await this.prisma.localization.update({
@@ -93,6 +102,34 @@ export class LocalizationsService {
       }
       throw err;
     }
+  }
+
+  /**
+   * Delivery matches a user's locale code case-insensitively, so `fr` and `FR`
+   * would be one locale to an end user while the unique index (exact) keeps
+   * them apart — whichever came first in a version's translation list would
+   * win, arbitrarily. Refuse the second one instead. The exact-match index
+   * still backs this under a race; only case VARIANTS could slip through, and
+   * the next write of either one reports the clash.
+   */
+  private async assertCodeFree(projectId: string, code: string, exceptId?: string): Promise<void> {
+    const clash = await this.prisma.localization.findFirst({
+      where: {
+        projectId,
+        code: { equals: code, mode: 'insensitive' },
+        ...(exceptId ? { id: { not: exceptId } } : {}),
+      },
+      select: { code: true, deleted: true },
+    });
+    if (!clash) {
+      return;
+    }
+    // A soft-deleted holder still reserves the code — restoring it is the way back.
+    throw new ResourceAlreadyExistsError(
+      clash.deleted
+        ? `"${clash.code}" is held by a deleted localization — restore that one instead.`
+        : `"${clash.code}" already exists in this project (locale codes are matched case-insensitively).`,
+    );
   }
 
   /**

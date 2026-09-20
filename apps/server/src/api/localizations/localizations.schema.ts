@@ -21,7 +21,12 @@ export const localization = z.object({
       "The locale's code — how version translations are addressed, and the value matched " +
         "against the end user's `locale_code` attribute to pick a translation at delivery.",
     ),
-  name: z.string().describe('Display name, e.g. "French".'),
+  name: z
+    .string()
+    .describe(
+      'The language this locale stands for, e.g. "French (France)" — also what machine ' +
+        'translation is asked to translate into.',
+    ),
   locale: z.string().describe('The locale tag this entry was created from, e.g. `fr-FR`.'),
   isDefault: z
     .boolean()
@@ -56,15 +61,28 @@ const localeTag = z
   .string()
   .min(2)
   .max(35)
-  .describe('The locale tag this entry stands for, e.g. `fr-FR`.');
-const localizationName = z.string().min(2).max(64).describe('Display name, e.g. "French".');
+  .describe(
+    'The locale tag this entry stands for, e.g. `fr-FR`. `GET /v2/locales` lists the common ' +
+      'tags with the language name to file each one under.',
+  );
+const localizationName = z
+  .string()
+  .min(2)
+  .max(64)
+  .describe(
+    'The language this locale stands for, e.g. "French (France)". Machine translation is asked ' +
+      'to translate INTO this name, so a real language name (copied from `GET /v2/locales`) ' +
+      'translates better than an improvised label.',
+  );
 const localizationCode = z
   .string()
   .min(2)
   .max(35)
   .describe(
-    "The value matched against an end user's `locale_code` attribute to pick their translation. " +
-      'Unique within the project.',
+    "The value matched against an end user's `locale_code` attribute to pick their translation, " +
+      'and how a version translation is addressed in the URL path. Letters, digits, `-` and `_` ' +
+      'only. Unique within the project, case-insensitively (delivery ignores case). Usually the ' +
+      'locale tag, but free-form: `fr-enterprise` next to `fr` gives one language two variants.',
   );
 
 export const createLocalizationBody = z

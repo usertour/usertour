@@ -8,7 +8,7 @@
  * usability validator and the representation schema; guide-facts.spec.ts pins
  * the load-bearing claims and the section structure.
  */
-import { BuiltinLauncherIcon } from '@usertour/constants';
+import { BuiltinLauncherIcon, locates } from '@usertour/constants';
 
 export interface GuideSection {
   /** Slug the tool's `section` argument selects by. */
@@ -21,6 +21,13 @@ export interface GuideSection {
   appliesTo: 'all' | readonly string[];
   body: string;
 }
+
+/**
+ * The dashboard's locale picker, inlined into the guide (and served as data by
+ * GET /v2/locales): an agent adding a locale should file it under the same tag
+ * and language name a human would have picked from that list.
+ */
+const LOCALE_CATALOG = locates.map((option) => `\`${option.locale}\` ${option.name}`).join(' · ');
 
 export const GUIDE_SECTIONS: readonly GuideSection[] = [
   {
@@ -291,9 +298,10 @@ Before you call the build done, walk every flow you created and confirm it has a
 - **\`optional\` units are URLs** (image, embed, link destinations). Leave them empty to keep the source URL; set one only to swap in locale-specific media. Image / embed URLs must be absolute http(s).
 - **Same draft rule as the source**: translations can only be written to an editable draft (\`E0049\` otherwise). \`create_content_version\` forks one and **carries every translation with it**, as do \`restore_content_version\` and \`duplicate_content\`. Reading works on any version.
 - **Delivery**: a translation reaches users only when it is \`enabled\` AND that version is published. Which locale a user gets is decided solely by their \`locale_code\` attribute matching a locale's \`code\` (set it with \`upsert_user\` / the SDK's identify) — the browser language is never detected. No match, a disabled translation, or an untranslated unit all fall back to the source text, unit by unit.
+- **Naming a new locale.** \`code\` is free-form (letters, digits, \`-\`, \`_\`; unique per project, case-insensitive) — usually the locale tag, but \`fr-enterprise\` next to \`fr\` gives one language two variants. \`locale\` is the tag it stands for and \`name\` the language it is: machine translation is asked to translate INTO \`name\`, so copy a pair from the catalog the dashboard offers rather than improvising a label — ${LOCALE_CATALOG}. A tag not listed here is accepted too, as long as it is well-formed (\`fr\`, \`fr-FR\`, \`zh-Hans-CN\`).
 - **Two different resources, two scope families.** The project's LOCALES are a settings-level resource (\`localization:*\` scopes: \`list_\` / \`create_\` / \`update_\` / \`delete_\` / \`restore_localization\`); a version's TRANSLATION is part of the content (\`content:*\` scopes). With content scopes only, the locale tools are not listed — read the target \`code\`s from \`get_content_version\` with \`expand: ["localizations"]\` instead, and ask for a locale to be added if the language you need is not there.
 - **Deleting a locale is soft and project-wide.** \`delete_localization\` stops that language being delivered at once, in every environment — but keeps every version's translation, so \`restore_localization\` (or \`create_localization\` with the same \`code\`, which answers \`restored: true\`) brings them all back, enabled states included. To silence ONE content's translation, set \`enabled: false\` on it instead. Changing a locale's \`code\` re-routes live delivery immediately (users match by \`locale_code\`). The source language (\`isDefault\`) is switched only in the dashboard.
-- Writes are last-writer-wins on the whole translation: a person editing the same locale in the dashboard at the same moment can overwrite your write with their next autosave.`,
+- Writes merge by unit: the units you send are written, every other unit keeps what it holds — so a person translating the same locale in the dashboard at the same moment cannot overwrite units you did not touch, and you cannot overwrite theirs.`,
   },
   {
     name: 'publish-requirements',

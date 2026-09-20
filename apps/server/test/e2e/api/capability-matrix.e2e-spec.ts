@@ -40,6 +40,8 @@ const E = `${P}/environments/{environmentId}`;
 const ROUTES: Row[] = [
   // discovery — authenticate-only, no capability (any valid token may call it)
   { method: 'get', template: '/v2/me', cap: null },
+  // reference data — a constant, same answer for every token
+  { method: 'get', template: '/v2/locales', cap: null },
   // content
   { method: 'get', template: `${P}/content`, cap: Capability.ContentRead },
   { method: 'get', template: `${P}/content/{id}`, cap: Capability.ContentRead },

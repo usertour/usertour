@@ -887,8 +887,11 @@ export function buildWriteTools(): McpTool[] {
       description:
         'Add a language content can be translated into — the step to take when the language you ' +
         'were asked to translate into is not in `list_localizations`. `code` is what an end ' +
-        "user's `locale_code` attribute must equal to receive this language; `locale` is the " +
-        'locale tag (e.g. `fr-FR`), `name` the display name. A `code` stays reserved while its ' +
+        "user's `locale_code` attribute must equal to receive this language (letters, digits, " +
+        '`-` and `_`; unique per project, case-insensitively); `locale` is the locale tag (e.g. ' +
+        '`fr-FR`) and `name` the language it is — machine translation is asked to translate INTO ' +
+        '`name`, so copy a tag/name pair from the catalog in `get_authoring_guide` (section ' +
+        '`localization`) rather than improvising one. A `code` stays reserved while its ' +
         'localization is soft-deleted: creating that code again RESTORES the deleted one — same ' +
         'id, with every translation it held, each with the enabled state it had (so enabled ' +
         'translations on published versions go live again) — and the response says so with ' +

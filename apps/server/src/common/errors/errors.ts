@@ -415,6 +415,16 @@ export class ResourceConflictError extends OpenAPIError {
     en: 'A resource with this identifier already exists',
     'zh-CN': '该标识的资源已存在',
   };
+
+  // Same code, optionally sharper message (mirrors ResourceAlreadyExistsError,
+  // whose text this surface carries over): which identifier, and why.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
 }
 
 export class EventDefinitionNotFoundError extends OpenAPIError {
@@ -1002,6 +1012,16 @@ export class ResourceAlreadyExistsError extends BaseError {
     en: 'A resource with this identifier already exists.',
     'zh-CN': '该资源已存在。',
   };
+
+  // Same code, optionally sharper message: "taken" and "held by a deleted one"
+  // demand opposite next moves, and the envelope renders from messageDict.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
 }
 
 export class VersionNotEditableError extends BaseError {

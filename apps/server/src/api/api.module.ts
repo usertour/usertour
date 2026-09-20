@@ -48,6 +48,7 @@ import { ApiThemesService } from './themes/themes.service';
 import { ApiUsersController } from './users/users.controller';
 import { ApiUsersService } from './users/users.service';
 import { ApiWebhooksController } from './webhooks/webhooks.controller';
+import { ApiLocalesController } from './locales/locales.controller';
 import { ApiMeController } from './me/me.controller';
 import { ApiEventsController } from './events/events.controller';
 import { WebSocketModule } from '@/web-socket/web-socket.module';
@@ -117,6 +118,7 @@ import { WebhooksModule } from '@/webhooks/webhooks.module';
     ApiEventDefinitionsController,
     ApiWebhooksController,
     ApiMeController,
+    ApiLocalesController,
     ApiEventsController,
     ApiEnvironmentsController,
     ApiLocalizationsController,

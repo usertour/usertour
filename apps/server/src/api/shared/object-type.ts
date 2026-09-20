@@ -28,6 +28,7 @@ export enum ApiObjectType {
   SEGMENT = 'segment',
   ENVIRONMENT = 'environment',
   LOCALIZATION = 'localization',
+  LOCALE = 'locale',
   CONTENT_VERSION_LOCALIZATION = 'contentVersionLocalization',
   CONTENT_ANALYTICS = 'contentAnalytics',
   QUESTION_ANALYTICS = 'questionAnalytics',

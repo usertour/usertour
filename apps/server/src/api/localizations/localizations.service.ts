@@ -125,10 +125,14 @@ export class ApiLocalizationsService {
     return localization;
   }
 
-  /** The domain raises a generic duplicate error; this surface answers 409. */
+  /**
+   * The domain raises a duplicate error; this surface answers 409 — carrying
+   * the domain's message, which says WHICH code clashed and whether a deleted
+   * locale is holding it (restore vs. pick another name).
+   */
   private toConflict(err: unknown): unknown {
     if (err instanceof ResourceAlreadyExistsError) {
-      return new ResourceConflictError();
+      return new ResourceConflictError(err.messageDict.en);
     }
     return err;
   }

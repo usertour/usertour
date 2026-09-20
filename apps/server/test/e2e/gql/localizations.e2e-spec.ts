@@ -26,6 +26,10 @@ describe('GraphQL localizations (e2e)', () => {
 
   let seq = 0;
   const tag = () => `loc-${Date.now()}-${seq++}`;
+  // `code` is the per-project identifier, so it carries the unique slug;
+  // `locale` is the language tag the entry stands for and is deliberately NOT
+  // unique (a project may run `fr` and `fr-enterprise`, both `fr-FR`).
+  const LOCALE_TAG = 'fr-FR';
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -62,7 +66,7 @@ describe('GraphQL localizations (e2e)', () => {
         createLocalization(data: $data) { id name locale code isDefault projectId }
       }`,
       variables: {
-        data: { name: slug, locale: slug, code: slug, projectId, ...overrides },
+        data: { name: slug, locale: LOCALE_TAG, code: slug, projectId, ...overrides },
       },
     });
   };
@@ -71,11 +75,11 @@ describe('GraphQL localizations (e2e)', () => {
     it('creates a localization and persists it', async () => {
       const slug = tag();
       const loc = gqlData(
-        await createLocalization({ name: slug, locale: slug, code: slug }),
+        await createLocalization({ name: slug, locale: LOCALE_TAG, code: slug }),
       ).createLocalization;
       expect(loc).toMatchObject({
         name: slug,
-        locale: slug,
+        locale: LOCALE_TAG,
         code: slug,
         isDefault: false,
         projectId,
@@ -84,7 +88,7 @@ describe('GraphQL localizations (e2e)', () => {
       const row = await prisma.localization.findUnique({ where: { id: loc.id } });
       expect(row).toMatchObject({
         name: slug,
-        locale: slug,
+        locale: LOCALE_TAG,
         code: slug,
         projectId,
         isDefault: false,
@@ -93,10 +97,29 @@ describe('GraphQL localizations (e2e)', () => {
 
     it('errors creating a duplicate code in the same project', async () => {
       const slug = tag();
-      gqlData(await createLocalization({ name: slug, locale: slug, code: slug }));
+      gqlData(await createLocalization({ name: slug, locale: LOCALE_TAG, code: slug }));
 
-      const res = await createLocalization({ name: tag(), locale: tag(), code: slug });
+      const res = await createLocalization({ name: tag(), locale: 'de-DE', code: slug });
       expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('field rules (the same ones REST and MCP get)', () => {
+    it('rejects a code a URL path could not carry, and trims what it stores', async () => {
+      const rejected = await createLocalization({ code: 'fr/CA' });
+      expect(rejected.body.errors?.[0]?.extensions?.code).toBe('E1017');
+
+      const slug = tag();
+      const created = gqlData(await createLocalization({ code: `  ${slug}  ` })).createLocalization;
+      expect(created.code).toBe(slug);
+    });
+
+    it('refuses a code that only differs in case from an existing one', async () => {
+      const slug = tag();
+      gqlData(await createLocalization({ code: slug }));
+
+      const clash = await createLocalization({ code: slug.toUpperCase() });
+      expect(clash.body.errors?.length).toBeGreaterThan(0);
     });
   });
 
