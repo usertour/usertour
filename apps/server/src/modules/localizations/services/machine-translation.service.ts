@@ -5,7 +5,7 @@ import { PlanType } from '@usertour/types';
 import { generateObject, jsonSchema, type LanguageModel } from 'ai';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AiService } from '@/ai/ai.service';
+import { AiService } from '@/modules/ai/services/ai.service';
 import {
   AiNotConfiguredError,
   MachineTranslationFailedError,

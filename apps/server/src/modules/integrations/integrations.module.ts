@@ -10,7 +10,7 @@ import {
   QUEUE_INTEGRATION_DELIVERY,
   QUEUE_INTEGRATION_RECONCILE,
 } from '@/common/consts/queen';
-import { OutboundModule } from '@/outbound/outbound.module';
+import { OutboundModule } from '@/modules/outbound/outbound.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { CohortSyncService } from './services/cohort-sync.service';

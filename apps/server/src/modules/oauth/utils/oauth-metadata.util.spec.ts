@@ -1,4 +1,7 @@
-import { buildAuthorizationServerMetadata, buildProtectedResourceMetadata } from './oauth-metadata';
+import {
+  buildAuthorizationServerMetadata,
+  buildProtectedResourceMetadata,
+} from './oauth-metadata.util';
 
 const ORIGIN = 'https://api.usertour.io';
 

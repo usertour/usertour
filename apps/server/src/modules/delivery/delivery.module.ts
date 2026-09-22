@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { LicenseModule } from '@/license/license.module';
+import { LicenseModule } from '@/modules/license/license.module';
 import { BizModule } from '@/modules/biz/biz.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';

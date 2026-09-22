@@ -1,4 +1,4 @@
-import { isAllowedRedirectUri, matchesRegisteredRedirectUri } from './redirect-allowlist';
+import { isAllowedRedirectUri, matchesRegisteredRedirectUri } from './redirect-allowlist.util';
 
 describe('isAllowedRedirectUri', () => {
   it('allows loopback http/https on any port', () => {

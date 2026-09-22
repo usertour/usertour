@@ -4,8 +4,8 @@ import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 
-import { OAuthConnection } from './dto/oauth-connection.dto';
-import { OAuthService } from './oauth.service';
+import { OAuthConnectionDTO } from './dtos/oauth-connection.dto';
+import { OAuthService } from './services/oauth.service';
 
 /**
  * Account-level "Connected apps": the OAuth grants a user has approved (e.g. an
@@ -17,8 +17,8 @@ import { OAuthService } from './oauth.service';
 export class OAuthGrantResolver {
   constructor(private readonly oauth: OAuthService) {}
 
-  @Query(() => [OAuthConnection])
-  async oauthConnections(@UserEntity() user: UserDTO): Promise<OAuthConnection[]> {
+  @Query(() => [OAuthConnectionDTO])
+  async oauthConnections(@UserEntity() user: UserDTO): Promise<OAuthConnectionDTO[]> {
     return this.oauth.listConnections(user.id);
   }
 

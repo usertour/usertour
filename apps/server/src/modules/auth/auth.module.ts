@@ -16,7 +16,7 @@ import { TwoFactorService } from './services/two-factor.service';
 import { TwoFactorResolver } from './resolvers/two-factor.resolver';
 import { TeamModule } from '@/modules/team/team.module';
 import { SharedModule } from '@/shared/shared.module';
-import { LicenseModule } from '@/license/license.module';
+import { LicenseModule } from '@/modules/license/license.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { BullModule } from '@nestjs/bullmq';
 import {

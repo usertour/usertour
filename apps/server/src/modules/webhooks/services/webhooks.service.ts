@@ -13,7 +13,8 @@ import {
   WebhookNotFoundError,
 } from '@/common/errors';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { OutboundLedgerService, maxLoggedAttempt } from '@/outbound/outbound-ledger.service';
+import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
+import { maxLoggedAttempt } from '@/modules/outbound/utils/max-logged-attempt.util';
 import { EncryptionService } from '@/shared/encryption.service';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';

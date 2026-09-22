@@ -7,7 +7,7 @@ import {
   hashSecret,
   refreshTokenSecret,
   tokenFingerprint,
-} from './oauth.crypto';
+} from './oauth-crypto.util';
 
 // The storage rule: EVERY prefixed token's DB fingerprint is the hash of its BARE
 // secret. These lock that rule so a future edit can't reintroduce the

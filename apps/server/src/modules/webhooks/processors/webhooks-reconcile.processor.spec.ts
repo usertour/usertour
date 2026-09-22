@@ -2,7 +2,7 @@ import {
   RECONCILE_BATCH_SIZE,
   RECONCILE_ORPHAN_AFTER_MS,
   rebuildAttemptBudget,
-} from '@/outbound/delivery-backoff';
+} from '@/modules/outbound/utils/delivery-backoff.util';
 import { WebhooksReconcileProcessor } from './webhooks-reconcile.processor';
 
 describe('WebhooksReconcileProcessor', () => {

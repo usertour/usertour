@@ -14,12 +14,12 @@ import { renderWebhookAutoDisabledEmail } from '@usertour/emails';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { AuditService } from '@/modules/audit/services/audit.service';
-import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 import {
   RetryAfterCarrier,
   deliveryBackoffStrategy,
   parseRetryAfter,
-} from '@/outbound/delivery-backoff';
+} from '@/modules/outbound/utils/delivery-backoff.util';
 import { WEBHOOK_SIGNATURE_HEADER, signWebhookPayload } from '../utils/webhook-signature.util';
 import { WebhookDeliveryJobData } from '../types/webhook.type';
 

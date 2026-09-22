@@ -1,5 +1,8 @@
 import { SYNC_ROUND_STALE_MS } from '@usertour/constants';
-import { RETRY_AFTER_MAX_MS, RETRY_DELAYS_MS } from '@/outbound/delivery-backoff';
+import {
+  RETRY_AFTER_MAX_MS,
+  RETRY_DELAYS_MS,
+} from '@/modules/outbound/utils/delivery-backoff.util';
 
 /**
  * A full-sync round's heartbeat is refreshed by every page and every retry,

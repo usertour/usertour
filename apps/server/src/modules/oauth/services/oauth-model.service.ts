@@ -21,8 +21,8 @@ import {
   generateOpaqueSecret,
   hashSecret,
   tokenFingerprint,
-} from './oauth.crypto';
-import { matchesRegisteredRedirectUri } from './redirect-allowlist';
+} from '../utils/oauth-crypto.util';
+import { matchesRegisteredRedirectUri } from '../utils/redirect-allowlist.util';
 
 const ALL_CAPABILITIES = new Set<string>(Object.values(Capability));
 

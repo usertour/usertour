@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { PrismaService } from 'nestjs-prisma';
-import { RedisIoAdapter } from './adapters/redis-io.adapter';
+import { RedisIoAdapter } from './web-socket/adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';

@@ -9,8 +9,8 @@ import { v4 } from 'uuid';
 import type { PresignedUploadRequest } from '../types/presigned-upload-request.type';
 import { PrismaService } from 'nestjs-prisma';
 import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
-import { LicenseService } from '@/license/license.service';
-import { AiService } from '@/ai/ai.service';
+import { LicenseService } from '@/modules/license/services/license.service';
+import { AiService } from '@/modules/ai/services/ai.service';
 import { configuredOAuthProviders } from '@/modules/integrations/sync/oauth-app-config';
 
 @Injectable()

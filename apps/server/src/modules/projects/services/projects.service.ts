@@ -10,7 +10,7 @@ import {
   ParamsError,
   TeamMemberLimitError,
 } from '@/common/errors';
-import { LicenseService } from '@/license/license.service';
+import { LicenseService } from '@/modules/license/services/license.service';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { Environment } from '@/common/types/schema';
 import { Prisma } from '@prisma/client';

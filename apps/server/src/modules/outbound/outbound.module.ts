@@ -1,8 +1,8 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { QUEUE_CLEAN_OUTBOUND_MESSAGES } from '@/common/consts/queen';
-import { OutboundCleanupProcessor } from './outbound-cleanup.processor';
-import { OutboundLedgerService } from './outbound-ledger.service';
+import { OutboundCleanupProcessor } from './processors/outbound-cleanup.processor';
+import { OutboundLedgerService } from './services/outbound-ledger.service';
 
 /**
  * Outbound delivery ledger shared by every push destination (webhooks now,

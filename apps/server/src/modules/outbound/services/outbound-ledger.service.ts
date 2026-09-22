@@ -1,50 +1,20 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
-import { OutboundMessageStatus, Prisma } from '@prisma/client';
+import { OutboundMessageStatus } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { QUEUE_CLEAN_OUTBOUND_MESSAGES } from '@/common/consts/queen';
 
-/** How long messages (and their attempts) are kept before the daily cleanup drops them. */
-export const OUTBOUND_MESSAGE_RETENTION_DAYS = 30;
-/** Stored excerpt limits — the ledger is a debugging aid, not an archive. */
-export const OUTBOUND_ERROR_MAX_LENGTH = 500;
-export const OUTBOUND_RESPONSE_BODY_MAX_LENGTH = 1_000;
+import { OUTBOUND_MESSAGE_RETENTION_DAYS } from '../constants/outbound-message-retention-days.constant';
+import { OUTBOUND_ERROR_MAX_LENGTH } from '../constants/outbound-error-max-length.constant';
+import { OUTBOUND_RESPONSE_BODY_MAX_LENGTH } from '../constants/outbound-response-body-max-length.constant';
+import { OutboundAttemptResult } from '../types/outbound-attempt-result.type';
+import { OutboundDestination } from '../types/outbound-destination.type';
+import { OutboundMessageInput } from '../types/outbound-message-input.type';
+
 /** Brief retries before a settle write is swallowed (see the class doc). */
 const RECORD_ATTEMPT_WRITE_RETRIES = 2;
-
-/**
- * The highest attempt number a set of delivery rows records — the ONLY
- * correct way to resume numbering or budgets. Never use the row COUNT:
- * settle-write retries and stalled twin jobs insert duplicate rows (see the
- * recordAttempt doc), which inflate a count but not the max.
- */
-export const maxLoggedAttempt = (deliveries: Array<{ attempt: number }>): number =>
-  deliveries.reduce((highest, delivery) => Math.max(highest, delivery.attempt), 0);
-
-/** Exactly one destination: a webhook endpoint or an integration provider. */
-export type OutboundDestination = { webhookId: string } | { integrationId: string };
-
-export interface OutboundMessageInput {
-  /** Public message id, chosen by the producer (webhook payload `id`). */
-  id: string;
-  environmentId: string;
-  destination: OutboundDestination;
-  topic: string;
-  payload: Prisma.InputJsonValue;
-}
-
-export interface OutboundAttemptResult {
-  attempt: number;
-  success: boolean;
-  responseStatus?: number | null;
-  responseBody?: string | null;
-  error?: string | null;
-  durationMs?: number | null;
-  /** True when this attempt exhausts the retry budget — a failure then marks the message FAILED. */
-  final: boolean;
-}
 
 /**
  * The outbound delivery ledger (ADR 0010 §10): one OutboundMessage per

@@ -8,7 +8,7 @@ import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
 import { mapCompany } from '@/api/companies/companies.mapper';
 import { mapEvent } from '@/api/events/event.mapper';
 import { mapUser } from '@/api/users/users.mapper';
-import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
+import { DELIVERY_ATTEMPTS } from '@/modules/outbound/utils/delivery-backoff.util';
 import { buildWebhookMessage } from '../utils/webhook-envelope.util';
 import {
   buildEntityTopic,
@@ -28,7 +28,7 @@ import {
   WebhookDeliveryJobData,
 } from '../types/webhook.type';
 import { WebhooksService } from '../services/webhooks.service';
-import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 
 type DeliveryJob = { name: string; data: WebhookDeliveryJobData; opts: Record<string, any> };
 

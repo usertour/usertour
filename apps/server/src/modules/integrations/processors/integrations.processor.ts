@@ -18,12 +18,12 @@ import type {
   IntegrationMessageEnvelope,
 } from '../types/integrations.type';
 import { AuditService } from '@/modules/audit/services/audit.service';
-import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 import {
   RetryAfterCarrier,
   deliveryBackoffStrategy,
   parseRetryAfter,
-} from '@/outbound/delivery-backoff';
+} from '@/modules/outbound/utils/delivery-backoff.util';
 import { buildProviderRequest } from '../utils/integration-adapters.util';
 import { IntegrationDeliveryJobData } from '../types/integrations.type';
 

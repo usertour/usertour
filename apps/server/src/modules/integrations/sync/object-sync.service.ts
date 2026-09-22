@@ -16,7 +16,7 @@ import type {
 import { BizService } from '@/modules/biz/services/biz.service';
 import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
 import { FeatureRequiresLicenseError, ValidationError } from '@/common/errors/errors';
-import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
+import { DELIVERY_ATTEMPTS } from '@/modules/outbound/utils/delivery-backoff.util';
 import { ProviderConnectionService } from './provider-connection.service';
 import {
   attributeBizTypeFor,

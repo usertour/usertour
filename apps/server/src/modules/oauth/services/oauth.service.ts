@@ -5,9 +5,13 @@ import { cuid } from '@usertour/helpers';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
+import { TransactionClaims } from '../types/transaction-claims.type';
 import { OAuthModelService } from './oauth-model.service';
-import { generateOpaqueSecret, hashSecret, tokenFingerprint } from './oauth.crypto';
-import { isAllowedRedirectUri, matchesRegisteredRedirectUri } from './redirect-allowlist';
+import { generateOpaqueSecret, hashSecret, tokenFingerprint } from '../utils/oauth-crypto.util';
+import {
+  isAllowedRedirectUri,
+  matchesRegisteredRedirectUri,
+} from '../utils/redirect-allowlist.util';
 
 // OAuth scopes ARE our Capability strings (mirrors oauth-metadata's scopes_supported).
 const SUPPORTED_SCOPES: ReadonlySet<string> = new Set<string>(Object.values(Capability));
@@ -26,18 +30,6 @@ const MAX_URI_LENGTH = 2048;
 /** Display-only metadata URI (logo/client): kept only when a sane-length string. */
 const metadataUri = (value: unknown): string | null =>
   typeof value === 'string' && value.length > 0 && value.length <= MAX_URI_LENGTH ? value : null;
-
-/** The validated authorize request, carried (signed) to the consent page. */
-export interface TransactionClaims {
-  kind: 'oauth_authorize';
-  clientId: string;
-  redirectUri: string;
-  scope: string[];
-  state?: string;
-  codeChallenge?: string;
-  codeChallengeMethod?: string;
-  resource?: string;
-}
 
 interface RegisterBody {
   client_name?: string;

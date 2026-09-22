@@ -5,7 +5,7 @@ import {
   computeBackoffDelay,
   deliveryBackoffStrategy,
   parseRetryAfter,
-} from './delivery-backoff';
+} from './delivery-backoff.util';
 
 describe('delivery-backoff', () => {
   it('ladder covers every retry of the attempt budget and spans ~24h', () => {

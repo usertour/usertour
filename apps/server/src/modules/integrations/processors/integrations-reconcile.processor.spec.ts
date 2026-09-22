@@ -1,4 +1,7 @@
-import { RECONCILE_BATCH_SIZE, RECONCILE_ORPHAN_AFTER_MS } from '@/outbound/delivery-backoff';
+import {
+  RECONCILE_BATCH_SIZE,
+  RECONCILE_ORPHAN_AFTER_MS,
+} from '@/modules/outbound/utils/delivery-backoff.util';
 import { IntegrationsReconcileProcessor } from './integrations-reconcile.processor';
 
 describe('IntegrationsReconcileProcessor', () => {

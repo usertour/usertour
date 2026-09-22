@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { LicenseService } from './license.service';
+import { LicenseService } from './services/license.service';
 
 @Module({
   providers: [LicenseService],

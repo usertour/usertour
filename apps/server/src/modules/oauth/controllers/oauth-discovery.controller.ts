@@ -4,7 +4,10 @@ import { Request } from 'express';
 
 import { resolveMcpOrigin, resolveMcpResource } from '@/common/http/resolve-origin';
 
-import { buildAuthorizationServerMetadata, buildProtectedResourceMetadata } from './oauth-metadata';
+import {
+  buildAuthorizationServerMetadata,
+  buildProtectedResourceMetadata,
+} from '../utils/oauth-metadata.util';
 
 /**
  * OAuth discovery metadata — how an MCP client bootstraps the auth flow. Public

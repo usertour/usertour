@@ -4,11 +4,11 @@ import { JwtModule } from '@nestjs/jwt';
 
 import { AuthModule } from '@/modules/auth/auth.module';
 
-import { OAuthController } from './oauth.controller';
-import { OAuthDiscoveryController } from './oauth-discovery.controller';
+import { OAuthController } from './controllers/oauth.controller';
+import { OAuthDiscoveryController } from './controllers/oauth-discovery.controller';
 import { OAuthGrantResolver } from './oauth-grant.resolver';
-import { OAuthModelService } from './oauth-model.service';
-import { OAuthService } from './oauth.service';
+import { OAuthModelService } from './services/oauth-model.service';
+import { OAuthService } from './services/oauth.service';
 
 /**
  * OAuth 2.1 authorization server for the MCP endpoint (Phase 3). Discovery

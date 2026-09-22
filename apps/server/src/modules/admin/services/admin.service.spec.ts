@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { FeatureRequiresLicenseError, SystemAdminMustEnable2FAFirstError } from '@/common/errors';
-import { LicenseService } from '@/license/license.service';
+import { LicenseService } from '@/modules/license/services/license.service';
 import { PasswordService } from '@/modules/auth/services/password.service';
 import { TeamService } from '@/modules/team/services/team.service';
 import { AdminService } from './admin.service';

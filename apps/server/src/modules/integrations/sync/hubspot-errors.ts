@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { parseRetryAfter } from '@/outbound/delivery-backoff';
+import { parseRetryAfter } from '@/modules/outbound/utils/delivery-backoff.util';
 
 /**
  * Signals a 429 (or a momentary 502/503) with the pause HubSpot asked for,

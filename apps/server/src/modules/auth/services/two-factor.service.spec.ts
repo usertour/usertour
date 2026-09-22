@@ -13,7 +13,7 @@ import {
   TwoFactorEnforcedDisableNotAllowedError,
   TwoFactorNotEnabledError,
 } from '@/common/errors';
-import { LicenseService } from '@/license/license.service';
+import { LicenseService } from '@/modules/license/services/license.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { RedisService } from '@/shared/redis.service';
 import { PasswordService } from './password.service';

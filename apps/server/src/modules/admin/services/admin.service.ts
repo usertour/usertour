@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
-import { LicenseService } from '@/license/license.service';
+import { LicenseService } from '@/modules/license/services/license.service';
 import {
   EmailAlreadyRegistered,
   FeatureRequiresLicenseError,

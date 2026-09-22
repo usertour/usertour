@@ -1,11 +1,9 @@
 import { Logger } from '@nestjs/common';
-import {
-  OUTBOUND_ERROR_MAX_LENGTH,
-  OUTBOUND_MESSAGE_RETENTION_DAYS,
-  OUTBOUND_RESPONSE_BODY_MAX_LENGTH,
-  OutboundLedgerService,
-  maxLoggedAttempt,
-} from './outbound-ledger.service';
+import { OUTBOUND_ERROR_MAX_LENGTH } from '../constants/outbound-error-max-length.constant';
+import { OUTBOUND_MESSAGE_RETENTION_DAYS } from '../constants/outbound-message-retention-days.constant';
+import { OUTBOUND_RESPONSE_BODY_MAX_LENGTH } from '../constants/outbound-response-body-max-length.constant';
+import { maxLoggedAttempt } from '../utils/max-logged-attempt.util';
+import { OutboundLedgerService } from './outbound-ledger.service';
 
 describe('OutboundLedgerService', () => {
   let prisma: {

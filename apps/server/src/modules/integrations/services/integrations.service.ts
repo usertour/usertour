@@ -19,7 +19,7 @@ import {
 } from '@/common/errors';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ApiObjectType } from '@/api/shared/object-type';
-import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { CohortSyncService } from './cohort-sync.service';

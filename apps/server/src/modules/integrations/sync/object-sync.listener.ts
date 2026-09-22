@@ -12,8 +12,8 @@ import type {
   IntegrationConfig,
 } from '@usertour/types';
 import { QUEUE_OBJECT_SYNC, QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
-import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
-import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
+import { DELIVERY_ATTEMPTS } from '@/modules/outbound/utils/delivery-backoff.util';
+import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 import {
   BIZ_ENTITY_CHANGED,
   type BizEntityChangedPayload,

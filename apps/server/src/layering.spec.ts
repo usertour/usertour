@@ -30,12 +30,7 @@ const LAYERS: Record<string, Layer> = {
 
   // ── modules: business and infrastructure alike, each with its thin GraphQL adapter ──
   modules: 'modules', // the target layout
-  adapters: 'modules',
-  ai: 'modules',
   common: 'modules',
-  license: 'modules',
-  oauth: 'modules',
-  outbound: 'modules',
   shared: 'modules',
   utils: 'modules',
 };

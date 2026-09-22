@@ -1,8 +1,8 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 
 /** A user-facing "connected app": one active OAuth grant. */
-@ObjectType()
-export class OAuthConnection {
+@ObjectType('OAuthConnection')
+export class OAuthConnectionDTO {
   @Field(() => ID)
   id: string;
 

@@ -3,12 +3,13 @@ import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
 import { WEBHOOK_TEST_TOPIC } from '@usertour/constants';
-import { OutboundLedgerService, maxLoggedAttempt } from '@/outbound/outbound-ledger.service';
+import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
+import { maxLoggedAttempt } from '@/modules/outbound/utils/max-logged-attempt.util';
 import {
   RECONCILE_BATCH_SIZE,
   RECONCILE_ORPHAN_AFTER_MS,
   rebuildAttemptBudget,
-} from '@/outbound/delivery-backoff';
+} from '@/modules/outbound/utils/delivery-backoff.util';
 import { WebhookDeliveryJobData } from '../types/webhook.type';
 
 export const RECONCILE_CRON_PATTERN = '20 * * * *'; // hourly at :20

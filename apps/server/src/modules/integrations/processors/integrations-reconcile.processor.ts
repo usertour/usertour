@@ -7,8 +7,9 @@ import {
   RECONCILE_BATCH_SIZE,
   RECONCILE_ORPHAN_AFTER_MS,
   rebuildAttemptBudget,
-} from '@/outbound/delivery-backoff';
-import { OutboundLedgerService, maxLoggedAttempt } from '@/outbound/outbound-ledger.service';
+} from '@/modules/outbound/utils/delivery-backoff.util';
+import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
+import { maxLoggedAttempt } from '@/modules/outbound/utils/max-logged-attempt.util';
 import { IntegrationDeliveryJobData, IntegrationMessageEnvelope } from '../types/integrations.type';
 
 // Offset from the webhook sweep (:20) so the two hourly ledger scans don't

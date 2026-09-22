@@ -26,7 +26,7 @@ import { TwoFactorService } from '@/modules/auth/services/two-factor.service';
 import { TwoFactorEnrollmentRequiredError } from '@/common/errors';
 import { resolveOrigin } from '@/common/http/resolve-origin';
 
-import { OAuthService } from './oauth.service';
+import { OAuthService } from '../services/oauth.service';
 
 /** Bearer value from an Authorization header, or null. The scheme is matched
  * case-insensitively (RFC 7235 §2.1), like the api-token guard's extractBearer. */
