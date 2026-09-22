@@ -1,0 +1,53 @@
+import { Field, InputType } from '@nestjs/graphql';
+import { JsonValue } from '@prisma/client/runtime/library';
+import { IsNotEmpty } from 'class-validator';
+import GraphQLJSON from 'graphql-type-json';
+
+import type { StepDraft } from '../types/step-draft.type';
+
+@InputType()
+export class StepInput implements StepDraft {
+  @Field({ nullable: true })
+  @IsNotEmpty()
+  id?: string;
+
+  // Front-end-generated logical id (cuid). What triggers/actions reference, and
+  // the upsert key for the whole-version save. Distinct from the DB primary key
+  // `id` (server-generated). Required when steps are sent via updateContentVersion.
+  @Field({ nullable: true })
+  cvid?: string;
+
+  @Field({ nullable: true })
+  @IsNotEmpty()
+  sequence?: number;
+
+  @Field({ nullable: true })
+  @IsNotEmpty()
+  name?: string;
+
+  @Field()
+  @IsNotEmpty()
+  type: string;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  screenshot?: JsonValue;
+
+  @Field({ nullable: true })
+  @IsNotEmpty()
+  themeId?: string;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  setting?: JsonValue;
+
+  @IsNotEmpty()
+  @Field(() => GraphQLJSON, { nullable: true })
+  data?: JsonValue;
+
+  @IsNotEmpty()
+  @Field(() => GraphQLJSON, { nullable: true })
+  trigger?: JsonValue;
+
+  @IsNotEmpty()
+  @Field(() => GraphQLJSON, { nullable: true })
+  target?: JsonValue;
+}

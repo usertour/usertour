@@ -8,8 +8,9 @@ import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
 } from '@/common/attribute/filter';
-import { BizService } from '@/biz/biz.service';
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
+import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';
 import {
   BuiltInSegmentCannotBeChangedError,
   CompanyNotFoundError,

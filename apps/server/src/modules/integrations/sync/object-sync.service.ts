@@ -13,7 +13,7 @@ import type {
   SyncRemoteObject,
   IntegrationConfig,
 } from '@usertour/types';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
 import { FeatureRequiresLicenseError, ValidationError } from '@/common/errors/errors';
 import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';

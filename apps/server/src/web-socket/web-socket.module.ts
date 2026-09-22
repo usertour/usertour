@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WebSocketGateway } from './web-socket.gateway';
 import { WebSocketService } from './web-socket.service';
 import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
-import { BizModule } from '@/biz/biz.module';
+import { BizModule } from '@/modules/biz/biz.module';
 import { LicenseModule } from '@/license/license.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';

@@ -8,7 +8,7 @@ import {
   ContentSessionNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
-import { ContentService } from '@/content/content.service';
+import { ContentService } from '@/modules/content/services/content.service';
 import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
 
 import { paginate } from '../shared/pagination';

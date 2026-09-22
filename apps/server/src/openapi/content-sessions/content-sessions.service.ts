@@ -11,7 +11,7 @@ import { type Environment, Prisma } from '@prisma/client';
 import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { ContentService } from '@/content/content.service';
+import { ContentService } from '@/modules/content/services/content.service';
 import { parseOrderBy } from '@/common/openapi/sort';
 import { extractQuestionData } from '@/utils/content-question';
 

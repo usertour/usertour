@@ -18,7 +18,8 @@ import {
   EventScope,
 } from '@usertour/types';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
+import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,

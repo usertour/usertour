@@ -11,7 +11,7 @@ import {
   VersionOrderByType,
 } from './content.dto';
 import { type Environment, Prisma } from '@prisma/client';
-import { ContentService } from '@/content/content.service';
+import { ContentService } from '@/modules/content/services/content.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';

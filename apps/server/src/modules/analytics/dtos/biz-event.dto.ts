@@ -1,5 +1,5 @@
 import { BaseModel } from '@/common/models/base.model';
-import { BizModel } from '@/biz/models/biz.model';
+import { BizModelDTO } from '@/modules/biz/dtos/biz.dto';
 import { EventsDTO } from '@/modules/events/dtos/events.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonObject } from '@prisma/client/runtime/library';
@@ -22,11 +22,11 @@ export class BizEventDTO extends BaseModel {
   @Field(() => String, { nullable: true })
   bizCompanyId?: string;
 
-  @Field(() => BizModel, { nullable: true })
-  bizCompany?: BizModel;
+  @Field(() => BizModelDTO, { nullable: true })
+  bizCompany?: BizModelDTO;
 
-  @Field(() => BizModel, { nullable: true })
-  bizUser?: BizModel;
+  @Field(() => BizModelDTO, { nullable: true })
+  bizUser?: BizModelDTO;
 
   @Field(() => EventsDTO, { nullable: true })
   event?: EventsDTO;

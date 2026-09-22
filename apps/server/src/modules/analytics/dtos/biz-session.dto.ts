@@ -1,11 +1,12 @@
-import { BizModel, BizUser } from '@/biz/models/biz.model';
+import { BizModelDTO } from '@/modules/biz/dtos/biz.dto';
+import { BizUserDTO } from '@/modules/biz/dtos/biz-user.dto';
 import { BaseModel } from '@/common/models/base.model';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { JsonObject } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 import { BizEventDTO } from './biz-event.dto';
-import { Content } from '@/content/models/content.model';
-import { Version } from '@/content/models/version.model';
+import { ContentDTO } from '@/modules/content/dtos/content.dto';
+import { VersionDTO } from '@/modules/content/dtos/version.dto';
 
 @ObjectType('BizSession')
 export class BizSessionDTO extends BaseModel {
@@ -24,18 +25,18 @@ export class BizSessionDTO extends BaseModel {
   @Field(() => String)
   contentId: string;
 
-  @Field(() => BizUser)
-  bizUser: BizUser;
+  @Field(() => BizUserDTO)
+  bizUser: BizUserDTO;
 
-  @Field(() => BizModel, { nullable: true })
-  bizCompany?: BizModel;
+  @Field(() => BizModelDTO, { nullable: true })
+  bizCompany?: BizModelDTO;
 
   @Field(() => [BizEventDTO], { nullable: true })
   bizEvent?: BizEventDTO[];
 
-  @Field(() => Content, { nullable: true })
-  content?: Content;
+  @Field(() => ContentDTO, { nullable: true })
+  content?: ContentDTO;
 
-  @Field(() => Version, { nullable: true })
-  version?: Version;
+  @Field(() => VersionDTO, { nullable: true })
+  version?: VersionDTO;
 }

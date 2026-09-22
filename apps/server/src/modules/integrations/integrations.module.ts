@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
-import { BizModule } from '@/biz/biz.module';
+import { BizModule } from '@/modules/biz/biz.module';
 import {
   QUEUE_OBJECT_SYNC,
   QUEUE_OBJECT_SYNC_CRON,

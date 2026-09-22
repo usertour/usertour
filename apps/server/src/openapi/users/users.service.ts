@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../models/user.model';
 import { UserNotFoundError } from '@/common/errors/errors';
 import { UpsertUserRequestDto, UserOrderByType, GetUserQueryDto } from './users.dto';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';

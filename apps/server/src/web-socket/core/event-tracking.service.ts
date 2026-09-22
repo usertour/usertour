@@ -57,7 +57,7 @@ import { ValidationError } from '@/common/errors';
 import { extractStepBindToAttribute } from '@/utils/content-question';
 import { calculateChecklistProgress } from '@/utils/content-utils';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import type {
   EventTrackingParams,
   EventTrackingItem,

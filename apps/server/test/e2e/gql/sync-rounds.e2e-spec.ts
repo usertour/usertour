@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { initialization } from '@/common/initialization/initialization';
 import { AxiosError, AxiosHeaders } from 'axios';

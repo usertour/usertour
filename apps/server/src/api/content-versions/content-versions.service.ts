@@ -17,11 +17,11 @@ import {
   ValidationError,
   type ValidationIssue,
 } from '@/common/errors/errors';
-import { ContentService, type WriteActor } from '@/content/content.service';
+import { ContentService, type WriteActor } from '@/modules/content/services/content.service';
 import {
   type TranslationTarget,
   VersionTranslationService,
-} from '@/content/version-translation.service';
+} from '@/modules/content/services/version-translation.service';
 import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';

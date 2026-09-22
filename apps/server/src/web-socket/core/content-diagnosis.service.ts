@@ -11,8 +11,9 @@ import {
 } from '@usertour/types';
 import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 
-import { BizService } from '@/biz/biz.service';
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
+import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,

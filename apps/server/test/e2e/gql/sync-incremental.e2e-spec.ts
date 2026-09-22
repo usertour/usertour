@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { initialization } from '@/common/initialization/initialization';
 import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
 import { AxiosError } from 'axios';

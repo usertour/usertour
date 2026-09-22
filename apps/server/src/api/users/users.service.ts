@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { toArray } from '../shared/query';
 
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { CompanyNotFoundError, UserNotFoundError, ValidationError } from '@/common/errors/errors';
 import type { Environment } from '@prisma/client';
 

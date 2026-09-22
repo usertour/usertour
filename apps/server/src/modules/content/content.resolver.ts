@@ -1,0 +1,366 @@
+import { CommonDTO } from '@/modules/auth/dtos/common.dto';
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
+import { UserEntity } from '@/common/decorators/user.decorator';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
+import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
+import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
+import { Capability } from '@usertour/types';
+import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
+import { UseGuards } from '@nestjs/common';
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import { PrismaService } from 'nestjs-prisma';
+import { ContentIdArgs } from './dtos/content-id-args.input';
+import { VersionIdArgs } from './dtos/version-id-args.input';
+import { ContentPublishRecordConnectionDTO } from './dtos/content-publish-record-connection.dto';
+import { ContentNotFoundError } from '@/common/errors/errors';
+import { ContentService } from './services/content.service';
+import { VersionTranslationService } from './services/version-translation.service';
+import { ContentOrder } from './dtos/content-order.input';
+import { ContentQuery } from './dtos/content-query.input';
+import { ContentDuplicateInput } from './dtos/content-duplicate.input';
+import { ContentIdInput } from './dtos/content-id.input';
+import { ContentUpdateInput } from './dtos/content-update.input';
+import { ContentVersionInput } from './dtos/content-version.input';
+import { ContentInput } from './dtos/content.input';
+import { VersionUpdateInput } from './dtos/version-update.input';
+import { UpdateVersionLocalizationInput } from './dtos/update-version-localization.input';
+import { VersionIdInput } from './dtos/version-id.input';
+import { ContentConnectionDTO } from './dtos/content-connection.dto';
+import { ContentDTO } from './dtos/content.dto';
+import { VersionConnectionDTO } from './dtos/version-connection.dto';
+import { VersionOnLocalizationDTO } from './dtos/version-on-localization.dto';
+import { VersionDTO } from './dtos/version.dto';
+
+@Resolver(() => ContentDTO)
+@UseGuards(PermissionGuard)
+export class ContentResolver {
+  constructor(
+    private contentService: ContentService,
+    private versionTranslationService: VersionTranslationService,
+    private prisma: PrismaService,
+  ) {}
+
+  @Mutation(() => ContentDTO)
+  @RequirePermission({ capability: Capability.ContentCreate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+  })
+  async createContent(@Args('data') data: ContentInput) {
+    return await this.contentService.createContent(data);
+  }
+
+  @Mutation(() => ContentDTO)
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+  })
+  async updateContent(@Args('data') data: ContentUpdateInput) {
+    return await this.contentService.updateContent(data.contentId, data.content);
+  }
+
+  @Mutation(() => ContentDTO)
+  @RequirePermission({ capability: Capability.ContentCreate, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'create',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+  })
+  async duplicateContent(@Args('data') data: ContentDuplicateInput) {
+    return await this.contentService.duplicateContent(data.contentId, data.name);
+  }
+
+  // Nullable: the underlying service filters soft-deleted rows, so a contentId
+  // that exists but is `deleted=true` resolves to null. Declaring the field as
+  // `Content!` made Apollo surface this as a generic 500 ISE for any caller
+  // hitting a soft-deleted content via deep-link/bookmark. The guard already
+  // authorizes only project members, so returning null leaks nothing.
+  @Query(() => ContentDTO, { nullable: true })
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
+  async getContent(@Args() { contentId }: ContentIdArgs) {
+    return await this.contentService.getContentById(contentId);
+  }
+
+  @Mutation(() => VersionDTO)
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  // Lifecycle boundary (once per edit session on published content) — audited, unlike
+  // the draft-edit stream (updateContentVersion etc.), whose ledger is version history.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
+  })
+  async createContentVersion(@UserEntity() user: UserDTO, @Args('data') data: ContentVersionInput) {
+    return await this.contentService.createContentVersion(data, { userId: user.id });
+  }
+
+  @Query(() => VersionDTO)
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
+  async getContentVersion(@Args() { versionId }: VersionIdArgs) {
+    return await this.contentService.getContentVersionById(versionId);
+  }
+
+  @Mutation(() => VersionDTO)
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  async updateContentVersion(@UserEntity() user: UserDTO, @Args('data') input: VersionUpdateInput) {
+    return await this.contentService.updateContentVersion(input, { userId: user.id });
+  }
+
+  @Mutation(() => VersionDTO)
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  // Restoring an old version wholesale replaces what's staged for publish — the
+  // classic "who did that?" action.
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
+  })
+  async restoreContentVersion(
+    @UserEntity() user: UserDTO,
+    @Args('data') { versionId }: VersionIdInput,
+  ) {
+    return await this.contentService.restoreContentVersion(versionId, { userId: user.id });
+  }
+
+  @Mutation(() => VersionDTO)
+  @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    // publishedContentVersion returns the CONTENT row (its id IS the content id) —
+    // reading `contentId` here yields undefined and the required-column write of
+    // the audit row fails silently, wiping web publishes from the audit trail.
+    resourceId: (_a, r) => String((r as { id?: string })?.id ?? ''),
+    environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
+  })
+  async publishedContentVersion(
+    @UserEntity() user: UserDTO,
+    @Args('data') { versionId, environmentId }: VersionIdInput,
+  ) {
+    return await this.contentService.publishedContentVersion(versionId, environmentId, {
+      userId: user.id,
+    });
+  }
+
+  @Mutation(() => CommonDTO)
+  @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'update',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+    environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
+  })
+  async unpublishedContentVersion(
+    @UserEntity() user: UserDTO,
+    @Args('data') { contentId, environmentId }: ContentIdInput,
+  ) {
+    await this.contentService.unpublishedContentVersion(contentId, environmentId, {
+      userId: user.id,
+    });
+    return { success: true };
+  }
+
+  @Mutation(() => CommonDTO)
+  @RequirePermission({ capability: Capability.ContentDelete, scope: ScopeKind.Content })
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'content',
+    resourceId: (a) => (a.data as { contentId: string }).contentId,
+  })
+  async deleteContent(@Args('data') { contentId }: ContentIdInput) {
+    await this.contentService.deleteContent(contentId);
+    return { success: true };
+  }
+
+  @Query(() => VersionConnectionDTO)
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
+  async listContentVersions(
+    @Args() { after, before, first, last }: PaginationArgs,
+    @Args() { contentId }: ContentIdArgs,
+  ) {
+    return await this.contentService.listContentVersions(contentId, {
+      first,
+      last,
+      before,
+      after,
+    });
+  }
+
+  @Query(() => ContentPublishRecordConnectionDTO)
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
+  async listContentPublishRecords(
+    @Args() { contentId }: ContentIdArgs,
+    @Args() pagination: PaginationArgs,
+    @Args('environmentId', { nullable: true }) environmentId?: string,
+  ) {
+    return await this.contentService.listContentPublishRecords(
+      contentId,
+      pagination,
+      environmentId ?? undefined,
+    );
+  }
+
+  @Query(() => [VersionOnLocalizationDTO])
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
+  async listVersionLocalizations(@Args() { versionId }: VersionIdArgs) {
+    return await this.contentService.listVersionLocalizations(versionId);
+  }
+
+  // Scope resolves from data.contentId, and the project comes from that content
+  // — never from the client; the service refuses a version that is not the
+  // content's. Null when the change held nothing to write.
+  @Mutation(() => VersionOnLocalizationDTO, { nullable: true })
+  @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
+  async updateVersionLocalization(@Args('data') input: UpdateVersionLocalizationInput) {
+    const { contentId, versionId, code, translations, enabled } = input;
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { projectId: true },
+    });
+    if (!content) {
+      throw new ContentNotFoundError();
+    }
+    const { projectId } = content;
+    const saved = await this.versionTranslationService.save(versionId, contentId, projectId, code, {
+      translations: translations
+        ? Object.fromEntries(translations.map((unit) => [unit.path, unit.translation ?? null]))
+        : undefined,
+      enabled,
+    });
+    return saved ?? null;
+  }
+
+  @Query(() => ContentConnectionDTO)
+  @RequirePermission({ capability: Capability.ContentRead, scope: ScopeKind.Content })
+  async queryContent(
+    @Args() { after, before, first, last }: PaginationArgs,
+    @Args({ name: 'query', type: () => ContentQuery, nullable: true })
+    query: ContentQuery,
+    @Args({
+      name: 'orderBy',
+      type: () => ContentOrder,
+      nullable: true,
+    })
+    orderBy: ContentOrder,
+  ) {
+    const { environmentId, published, ...rest } = query;
+    const conditions = {
+      ...rest,
+      deleted: false,
+    } as any;
+    const env = await this.prisma.environment.findUnique({
+      where: {
+        id: environmentId,
+      },
+      include: {
+        project: true,
+      },
+    });
+
+    conditions.environment = { project: { id: env.project.id } };
+
+    if (published !== undefined) {
+      if (!published) {
+        conditions.OR = [
+          {
+            contentOnEnvironments: {
+              none: {
+                environmentId,
+              },
+            },
+          },
+        ];
+      } else {
+        conditions.OR = [
+          {
+            contentOnEnvironments: {
+              some: {
+                environmentId,
+                published: true,
+              },
+            },
+          },
+        ];
+      }
+    }
+
+    if (conditions.name) {
+      conditions.name = { contains: conditions.name };
+    }
+    try {
+      return await findManyCursorConnection(
+        (args) =>
+          this.prisma.content.findMany({
+            where: {
+              ...conditions,
+            },
+            include: {
+              contentOnEnvironments: {
+                include: {
+                  environment: true,
+                },
+              },
+            },
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
+            ...args,
+          }),
+        () =>
+          this.prisma.content.count({
+            where: {
+              ...conditions,
+            },
+          }),
+        { first, last, before, after },
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  @ResolveField('steps')
+  steps(@Parent() content: ContentDTO) {
+    return this.prisma.step.findMany({
+      where: { versionId: content.editedVersionId },
+      orderBy: { sequence: 'asc' },
+    });
+  }
+
+  @ResolveField('editedVersion', () => VersionDTO, { nullable: true })
+  editedVersion(@Parent() content: ContentDTO) {
+    if (!content.editedVersionId) return null;
+    // include steps: the getContent document requests editedVersion.steps, and
+    // editedVersion shares the Version:id cache entry with getContentVersion —
+    // returning it without steps normalizes Version.steps to null and wipes the
+    // step list from detail's view.
+    return this.prisma.version.findUnique({
+      where: { id: content.editedVersionId },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
+    });
+  }
+}
+
+/**
+ * Field resolvers for Version rows. `updatedByName` resolves the author column
+ * to a display name at read time (page-sized lists — a per-row lookup is fine).
+ */
+@Resolver(() => VersionDTO)
+export class VersionFieldsResolver {
+  constructor(private prisma: PrismaService) {}
+
+  @ResolveField('updatedByName', () => String, { nullable: true })
+  async updatedByName(@Parent() version: { updatedByUserId?: string | null }) {
+    if (!version.updatedByUserId) {
+      return null;
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: version.updatedByUserId },
+      select: { name: true },
+    });
+    return user?.name ?? null;
+  }
+}

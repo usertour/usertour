@@ -9,7 +9,7 @@ import { rollingDayWindows } from '../utils/rolling-day-windows.util';
 import { GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
 import { createdAtWhere } from '@/common/filters';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { ContentType } from '@/content/constants/content-type.constant';
+import { ContentType } from '@/modules/content/constants/content-type.constant';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';

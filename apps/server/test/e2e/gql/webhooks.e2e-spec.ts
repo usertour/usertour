@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { EncryptionService } from '@/shared/encryption.service';
 
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { graphql, gqlData } from '../auth';
 import {
   buildBizCompany,

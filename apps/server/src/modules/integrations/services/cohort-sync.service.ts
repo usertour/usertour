@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Integration, Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { PrismaService } from 'nestjs-prisma';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { IntegrationNotFoundError, ValidationError } from '@/common/errors';
 import { resolveOrigin } from '@/common/http/resolve-origin';
 import { EncryptionService } from '@/shared/encryption.service';

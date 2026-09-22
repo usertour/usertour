@@ -1,4 +1,4 @@
-import { ContentModule } from '@/content/content.module';
+import { ContentModule } from '@/modules/content/content.module';
 import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';

@@ -33,9 +33,7 @@ const LAYERS: Record<string, Layer> = {
   'web-socket/core': 'modules', // delivery runtime (also holds socket plumbing — split on next change)
   adapters: 'modules',
   ai: 'modules',
-  biz: 'modules',
   common: 'modules',
-  content: 'modules',
   license: 'modules',
   oauth: 'modules',
   outbound: 'modules',
@@ -51,9 +49,9 @@ const LAYERS: Record<string, Layer> = {
  */
 const KNOWN_VIOLATIONS: readonly string[] = [
   // 1. content pushes to the websocket gateways directly
-  'content/content.module.ts -> web-socket/web-socket.module',
-  'content/content.service.ts -> web-socket/v2/web-socket-v2.gateway',
-  'content/content.service.ts -> web-socket/web-socket.gateway',
+  'modules/content/content.module.ts -> web-socket/web-socket.module',
+  'modules/content/services/content.service.ts -> web-socket/v2/web-socket-v2.gateway',
+  'modules/content/services/content.service.ts -> web-socket/web-socket.gateway',
   'web-socket/core/content-orchestrator.service.ts -> web-socket/v2/web-socket-v2.dto',
   // 2. integrations and outbound webhooks build payloads with REST v2 mappers
   'modules/integrations/listeners/integrations.listener.ts -> api/events/event.mapper',

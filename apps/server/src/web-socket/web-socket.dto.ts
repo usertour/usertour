@@ -7,8 +7,8 @@ import {
   Theme,
   BizSessionWithEvents,
 } from '@/common/types/schema';
-import { ContentType } from '@/content/constants/content-type.constant';
-import { ContentConfigObject } from '@/content/models/version.model';
+import { ContentType } from '@/modules/content/constants/content-type.constant';
+import { ContentConfigObject } from '@/modules/content/types/content-config-object.type';
 
 // Base request interface with token
 export interface BaseRequest {

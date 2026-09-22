@@ -1,14 +1,17 @@
 import type { Attribute } from '@prisma/client';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
-import { BizService } from '@/biz/biz.service';
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
+import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';
 import {
   createBizUserConditionsFilter,
   createConditionsFilter,
   createFilterItem,
 } from '@/common/attribute/filter';
 import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@usertour/types';
-import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
+import { ChecklistData } from '@/modules/content/types/checklist-data.type';
+import { ContentConfigObject } from '@/modules/content/types/content-config-object.type';
+import { RulesCondition } from '@/modules/content/types/rules-condition.type';
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -46,7 +49,7 @@ import {
 import { getPublishedVersionId } from '@/utils/content-utils';
 import { BizEvents } from '@usertour/types';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
-import { ContentType } from '@/content/constants/content-type.constant';
+import { ContentType } from '@/modules/content/constants/content-type.constant';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },

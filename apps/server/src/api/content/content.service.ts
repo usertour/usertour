@@ -11,7 +11,7 @@ import {
   ParamsError,
   ValidationError,
 } from '@/common/errors/errors';
-import { ContentService, type WriteActor } from '@/content/content.service';
+import { ContentService, type WriteActor } from '@/modules/content/services/content.service';
 import { ApiThemesService } from '../themes/themes.service';
 
 import { loadDecompileResolvers } from '../content-representation/attribute-resolvers';

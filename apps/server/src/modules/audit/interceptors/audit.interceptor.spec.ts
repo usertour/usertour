@@ -6,7 +6,7 @@ import { AnalyticsResolver } from '@/modules/analytics/analytics.resolver';
 import { ApiCompaniesController } from '@/api/companies/companies.controller';
 import { ApiSegmentMembersController } from '@/api/segments/segments.controller';
 import { ApiTokenResolver } from '@/modules/api-token/api-token.resolver';
-import { ContentResolver } from '@/content/content.resolver';
+import { ContentResolver } from '@/modules/content/content.resolver';
 
 import { Audit, AuditWeb } from '../decorators/audit.decorator';
 import {
