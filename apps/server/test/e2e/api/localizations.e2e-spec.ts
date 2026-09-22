@@ -843,7 +843,14 @@ describe('API v2 localizations (e2e)', () => {
       // The two texts are missing; a destination never is.
       expect(read.body.stats.missing).toBe(2);
 
-      // A destination is not held to the media bar: the host routes it.
+      // A destination is not held to the media bar (the host routes a path) —
+      // but a code-running scheme is refused, as the version write refuses it.
+      const unsafe = await writeTranslation(banner, 'fr', {
+        translations: { [target.path]: 'javascript:alert(1)' },
+      });
+      expect(unsafe.status).toBe(400);
+      expect(JSON.stringify(unsafe.body)).toContain('destination_url');
+
       const res = await writeTranslation(banner, 'fr', {
         translations: { [target.path]: ' /fr/mcp ' },
         enabled: true,

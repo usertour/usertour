@@ -22,7 +22,7 @@ import {
 } from '@usertour/ui';
 import Upload from 'rc-upload';
 import { UploadRequestOption } from 'rc-upload/lib/interface';
-import { ReactNode, useState } from 'react';
+import { Fragment, ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -33,7 +33,7 @@ import {
   useLocalizationView,
 } from './localization-view';
 import { ELEMENT_LABEL_KEYS, FIELD_LABEL_KEYS } from './localized-unit-labels';
-import { isUnusableMediaUrl } from './translation-unit-changes';
+import { isUnusableDestinationUrl, isUnusableMediaUrl } from './translation-unit-changes';
 
 // ---------------------------------------------------------------------------
 // The page renders FROM the unit list the walkers emit — the same list the
@@ -292,6 +292,7 @@ const DestinationUnitRow = (props: UnitRowProps) => {
         value={unit.translatedText}
         placeholder={t('contents.localization.image.usingOriginal')}
         disabled={disabled}
+        aria-invalid={isUnusableDestinationUrl(unit.translatedText)}
         onChange={(event) => handleValueChange(event.target.value)}
       />
       <MediaActionButton
@@ -332,7 +333,7 @@ const ImageUnitRow = (props: UnitRowProps) => {
   return (
     <Popover>
       <div className={FIELD_GRID}>
-        <div className="flex items-center gap-2 pt-2">{outdated && <OutdatedChip />}</div>
+        <div />
         <div className="rounded-md bg-secondary p-2">
           <img src={unit.sourceText} className="max-h-40 max-w-full rounded" />
         </div>
@@ -491,9 +492,11 @@ const LocalizedUnitRow = (props: UnitRowProps) => {
 };
 
 // ---------------------------------------------------------------------------
-// Unit list — rows in walk order, grouped under their element when they
-// have one. The missing-only filter keeps untranslated text; destinations
-// and media are never "untranslated" (keeping the original is the norm).
+// Unit list — rows in walk order, under the container they belong to (a
+// checklist task, a resource-center block) and the element they belong to,
+// when they have one. The missing-only filter keeps untranslated text;
+// destinations and media are never "untranslated" (keeping the original is
+// the norm).
 // ---------------------------------------------------------------------------
 
 interface UnitGroup {
@@ -502,18 +505,51 @@ interface UnitGroup {
   units: LocalizationTranslationUnit[];
 }
 
-const groupUnitsByElement = (units: LocalizationTranslationUnit[]): UnitGroup[] => {
-  const groups: UnitGroup[] = [];
+interface UnitContainer {
+  key: string;
+  group: LocalizationTranslationUnit['group'];
+  units: LocalizationTranslationUnit[];
+}
+
+/** Consecutive units sharing a key, in walk order. */
+const groupConsecutive = <T,>(
+  units: LocalizationTranslationUnit[],
+  keyOf: (unit: LocalizationTranslationUnit) => string,
+  make: (unit: LocalizationTranslationUnit, key: string) => T,
+  unitsOf: (group: T) => LocalizationTranslationUnit[],
+  keyOfGroup: (group: T) => string,
+): T[] => {
+  const groups: T[] = [];
   for (const unit of units) {
-    const key = unit.element?.path ?? `unit:${unit.path}`;
+    const key = keyOf(unit);
     const last = groups[groups.length - 1];
-    if (last && last.key === key) {
-      last.units.push(unit);
+    if (last && keyOfGroup(last) === key) {
+      unitsOf(last).push(unit);
     } else {
-      groups.push({ key, element: unit.element, units: [unit] });
+      groups.push(make(unit, key));
     }
   }
   return groups;
+};
+
+const groupUnitsByElement = (units: LocalizationTranslationUnit[]): UnitGroup[] => {
+  return groupConsecutive(
+    units,
+    (unit) => unit.element?.path ?? `unit:${unit.path}`,
+    (unit, key) => ({ key, element: unit.element, units: [unit] }),
+    (group) => group.units,
+    (group) => group.key,
+  );
+};
+
+const groupUnitsByContainer = (units: LocalizationTranslationUnit[]): UnitContainer[] => {
+  return groupConsecutive(
+    units,
+    (unit) => unit.group?.path ?? `unit:${unit.path}`,
+    (unit, key) => ({ key, group: unit.group, units: [unit] }),
+    (container) => container.units,
+    (container) => container.key,
+  );
 };
 
 export interface LocalizedUnitListProps {
@@ -545,41 +581,51 @@ export const LocalizedUnitList = (props: LocalizedUnitListProps) => {
     );
   };
 
+  const renderElementGroups = (groupUnits: LocalizationTranslationUnit[]) =>
+    groupUnitsByElement(groupUnits).map((group) => {
+      const elementLabelKey = group.element ? ELEMENT_LABEL_KEYS[group.element.type] : undefined;
+      if (!group.element || !elementLabelKey) {
+        return group.units.map((unit) => renderRow(unit));
+      }
+      const outdated = group.units.some((unit) => outdatedPaths?.has(unit.path));
+      // An embed's section IS its row: label the row with the element name.
+      if (group.units.length === 1 && group.units[0].field === 'embed.url') {
+        const unit = group.units[0];
+        return (
+          <LocalizedUnitRow
+            key={unit.path}
+            unit={unit}
+            label={t(elementLabelKey)}
+            disabled={disabled}
+            outdated={outdated}
+            onOutdatedResolved={onOutdatedResolved}
+            onUnitChange={onUnitChange}
+          />
+        );
+      }
+      return (
+        <div key={group.key} className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">{t(elementLabelKey)}</span>
+            {outdated && <OutdatedChip />}
+          </div>
+          {group.units.map((unit) => renderRow(unit))}
+        </div>
+      );
+    });
+
   return (
     <>
-      {groupUnitsByElement(visible).map((group) => {
-        const elementLabelKey = group.element ? ELEMENT_LABEL_KEYS[group.element.type] : undefined;
-        if (!group.element || !elementLabelKey) {
-          return group.units.map((unit) => renderRow(unit));
-        }
-        const outdated = group.units.some((unit) => outdatedPaths?.has(unit.path));
-        // An embed's section IS its row: label the row with the element name.
-        if (group.units.length === 1 && group.units[0].field === 'embed.url') {
-          const unit = group.units[0];
-          return (
-            <LocalizedUnitRow
-              key={unit.path}
-              unit={unit}
-              label={t(elementLabelKey)}
-              disabled={disabled}
-              outdated={outdated}
-              onOutdatedResolved={onOutdatedResolved}
-              onUnitChange={onUnitChange}
-            />
-          );
-        }
-        return (
-          <div key={group.key} className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">
-                {t(elementLabelKey)}
-              </span>
-              {outdated && <OutdatedChip />}
-            </div>
-            {group.units.map((unit) => renderRow(unit))}
+      {groupUnitsByContainer(visible).map((container) =>
+        container.group?.title ? (
+          <div key={container.key} className="flex flex-col gap-2">
+            <span className="text-sm font-medium">{container.group.title}</span>
+            {renderElementGroups(container.units)}
           </div>
-        );
-      })}
+        ) : (
+          <Fragment key={container.key}>{renderElementGroups(container.units)}</Fragment>
+        ),
+      )}
     </>
   );
 };

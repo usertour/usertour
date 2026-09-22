@@ -34,11 +34,12 @@ import {
   isHttpUrl,
   isTranslationUnitOptional,
   applyVersionDataTranslationUnits,
-  assignLocalizedLinkUrl,
   blankLocalizedUnitClones,
+  collectContentsDestinations,
   contentListDestination,
-  getLocalizableLinkUrl,
+  isSafeDestinationUrl,
   isTranslatableText,
+  linkDestination,
   LOCALIZED_UNITS_SCHEMA_VERSION,
   navigateDestination,
   readDestination,
@@ -66,6 +67,15 @@ import {
   mergeLocalizedVersionData,
 } from '../localization';
 import { deepClone } from '../utils';
+
+// Test-local link accessors over the destination store (the link's `data`
+// template mirrored into `url`).
+const getLocalizableLinkUrl = (node: unknown): string | undefined => {
+  return node && typeof node === 'object' ? readDestination(linkDestination(node)) : undefined;
+};
+const assignLocalizedLinkUrl = (node: unknown, value: string): void => {
+  writeDestination(linkDestination(node as object), value);
+};
 
 const wrapElements = (elements: ContentEditorElement[]): ContentEditorRoot[] => {
   return [
@@ -1694,8 +1704,14 @@ const createDismissAction = (id: string): RulesCondition => {
   return { id, type: ContentActionsItemType.FLOW_DISMIS, data: {} };
 };
 
-const readActionUrl = (actions: RulesCondition[] | undefined, id: string): string | undefined => {
-  const action = actions?.find((candidate) => candidate.id === id);
+/** The n-th navigate's destination in an action list (how the walkers pair them). */
+const readNavigateUrl = (
+  actions: RulesCondition[] | undefined,
+  ordinal = 0,
+): string | undefined => {
+  const action = actions?.filter(
+    (candidate) => candidate.type === ContentActionsItemType.PAGE_NAVIGATE,
+  )[ordinal];
   return action ? readDestination(navigateDestination(action.data)) : undefined;
 };
 
@@ -1736,29 +1752,36 @@ const createLauncherData = (): LauncherData => {
 };
 
 describe('navigate destinations (one concept, three stores)', () => {
-  const CTA_PATH = '0.0.0:button.actions.navigate-1:navigate.url';
+  const CTA_PATH = '0.0.0:button.actions.0:navigate.url';
 
-  it('localizes a button action by action id, leaving the rest of the action to the source', () => {
+  it('localizes a button navigate by its order among navigates, leaving the rest of the action to the source', () => {
     const source = wrapElements([createCtaButton()]);
     const units = extractTranslatableUnits(source);
     expect(units.find((unit) => unit.path === CTA_PATH)).toMatchObject({
       text: 'https://example.com/en/mcp',
       kind: 'destination',
     });
-    expect(units.some((unit) => unit.path.includes('dismiss-1'))).toBe(false);
+    expect(units).toHaveLength(2);
 
     const localized = createLocalizedWorkingContents(source, undefined);
     const localizedActions = getElement<ContentEditorButtonElement>(localized, 0).data.actions;
-    expect(readActionUrl(localizedActions, 'navigate-1')).toBe('');
-    const localizedAction = localizedActions.find((action) => action.id === 'navigate-1');
+    expect(readNavigateUrl(localizedActions)).toBe('');
+    const localizedAction = localizedActions.find(
+      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
+    );
     writeDestination(navigateDestination(localizedAction!.data), 'https://example.com/cs/mcp');
 
-    // The source reorders its actions — the id, not the position, pairs them.
-    const reordered = deepClone(source);
-    getElement<ContentEditorButtonElement>(reordered, 0).data.actions.reverse();
-    const merged = mergeLocalizedEditorContents(reordered, localized);
+    // The source reorders its actions and re-mints every id (what an API
+    // write does) — the navigate still pairs, by position among navigates.
+    const rewritten = deepClone(source);
+    const rewrittenActions = getElement<ContentEditorButtonElement>(rewritten, 0).data.actions;
+    rewrittenActions.reverse();
+    for (const action of rewrittenActions) {
+      action.id = `fresh-${action.type}`;
+    }
+    const merged = mergeLocalizedEditorContents(rewritten, localized);
     const mergedAction = getElement<ContentEditorButtonElement>(merged, 0).data.actions.find(
-      (action) => action.id === 'navigate-1',
+      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
     );
     expect(mergedAction?.data.value).toEqual(urlTemplate('https://example.com/cs/mcp'));
     expect(mergedAction?.data.openType).toBe('same');
@@ -1770,7 +1793,7 @@ describe('navigate destinations (one concept, three stores)', () => {
     nps.data.actions = [createNavigateAction('navigate-1', 'https://example.com/en/review')];
     expect(
       extractTranslatableUnits(wrapElements([nps])).find(
-        (unit) => unit.path === '0.0.0:question.actions.navigate-1:navigate.url',
+        (unit) => unit.path === '0.0.0:question.actions.0:navigate.url',
       )?.kind,
     ).toBe('destination');
 
@@ -1778,13 +1801,13 @@ describe('navigate destinations (one concept, three stores)', () => {
     checklist.items[0].clickedActions = [
       createNavigateAction('navigate-1', 'https://example.com/en/invite'),
     ];
-    const checklistPath = 'items.item-1:clickedActions.navigate-1:navigate.url';
+    const checklistPath = 'items.item-1:clickedActions.0:navigate.url';
     const checklistWorking = createLocalizedWorkingVersionData(
       ContentDataType.CHECKLIST,
       checklist,
       undefined,
     );
-    expect(readActionUrl(checklistWorking.items[0].clickedActions, 'navigate-1')).toBe('');
+    expect(readNavigateUrl(checklistWorking.items[0].clickedActions)).toBe('');
     const checklistApplied = applyVersionDataTranslationUnits(
       ContentDataType.CHECKLIST,
       checklist,
@@ -1796,12 +1819,12 @@ describe('navigate destinations (one concept, three stores)', () => {
       checklist,
       checklistApplied,
     );
-    expect(readActionUrl(checklistMerged.items[0].clickedActions, 'navigate-1')).toBe(
+    expect(readNavigateUrl(checklistMerged.items[0].clickedActions)).toBe(
       'https://example.com/cs/invite',
     );
 
     const launcher = createLauncherData();
-    const launcherPath = 'behavior.actions.navigate-1:navigate.url';
+    const launcherPath = 'behavior.actions.0:navigate.url';
     expect(
       extractVersionDataTranslationUnits(ContentDataType.LAUNCHER, launcher, undefined).find(
         (unit) => unit.path === launcherPath,
@@ -1817,15 +1840,13 @@ describe('navigate destinations (one concept, three stores)', () => {
         new Map([[launcherPath, 'https://example.com/cs/help']]),
       ),
     );
-    expect(readActionUrl(launcherMerged.behavior.actions, 'navigate-1')).toBe(
-      'https://example.com/cs/help',
-    );
+    expect(readNavigateUrl(launcherMerged.behavior.actions)).toBe('https://example.com/cs/help');
 
     const resourceCenter = createResourceCenterData();
     (resourceCenter.tabs[0].blocks[0] as { clickedActions: RulesCondition[] }).clickedActions = [
       createNavigateAction('navigate-1', 'https://example.com/en/support'),
     ];
-    const blockPath = 'tabs.tab-1.blocks.block-1:clickedActions.navigate-1:navigate.url';
+    const blockPath = 'tabs.tab-1.blocks.block-1:clickedActions.0:navigate.url';
     const resourceCenterMerged = mergeLocalizedVersionData(
       ContentDataType.RESOURCE_CENTER,
       resourceCenter,
@@ -1837,10 +1858,9 @@ describe('navigate destinations (one concept, three stores)', () => {
       ),
     );
     expect(
-      readActionUrl(
+      readNavigateUrl(
         (resourceCenterMerged.tabs[0].blocks[0] as { clickedActions: RulesCondition[] })
           .clickedActions,
-        'navigate-1',
       ),
     ).toBe('https://example.com/cs/support');
   });
@@ -1938,9 +1958,9 @@ describe('navigate destinations (one concept, three stores)', () => {
 
     expect(extractTranslatableUnits(source).some((unit) => unit.path === CTA_PATH)).toBe(false);
     const working = createLocalizedWorkingContents(source, stored);
-    expect(
-      readActionUrl(getElement<ContentEditorButtonElement>(working, 0).data.actions, 'navigate-1'),
-    ).toBe('https://example.com/cs/mcp');
+    expect(readNavigateUrl(getElement<ContentEditorButtonElement>(working, 0).data.actions)).toBe(
+      'https://example.com/cs/mcp',
+    );
     const merged = mergeLocalizedEditorContents(source, stored);
     expect(
       getElement<ContentEditorButtonElement>(merged, 0).data.actions.find(
@@ -1950,12 +1970,12 @@ describe('navigate destinations (one concept, three stores)', () => {
 
     sourceAction!.data.value = urlTemplate('https://example.com/en/mcp');
     const revived = mergeLocalizedEditorContents(source, stored);
-    expect(
-      readActionUrl(getElement<ContentEditorButtonElement>(revived, 0).data.actions, 'navigate-1'),
-    ).toBe('https://example.com/cs/mcp');
+    expect(readNavigateUrl(getElement<ContentEditorButtonElement>(revived, 0).data.actions)).toBe(
+      'https://example.com/cs/mcp',
+    );
   });
 
-  it('grafts a stored override for an action the source removed, and revives it', () => {
+  it('drops the override with the navigate it belonged to, and pairs a re-added one by position', () => {
     const source = wrapElements([createCtaButton()]);
     const stored = applyContentsTranslationUnits(
       source,
@@ -1967,19 +1987,121 @@ describe('navigate destinations (one concept, three stores)', () => {
     getElement<ContentEditorButtonElement>(shrunk, 0).data.actions = [
       createDismissAction('dismiss-1'),
     ];
+    // No navigate, no unit — and nothing parks in the payload for it.
+    expect(extractTranslatableUnits(shrunk).some((unit) => unit.path === CTA_PATH)).toBe(false);
     const working = createLocalizedWorkingContents(shrunk, stored);
     const payload = buildContentsSavePayload(working, stored);
     expect(
-      readActionUrl(getElement<ContentEditorButtonElement>(payload, 0).data.actions, 'navigate-1'),
-    ).toBe('https://example.com/cs/mcp');
-    // Delivery pairs by id, so the parked action never ships on its own…
-    const shrunkMerged = mergeLocalizedEditorContents(shrunk, payload);
-    expect(getElement<ContentEditorButtonElement>(shrunkMerged, 0).data.actions).toHaveLength(1);
-    // …and delivers again once the source restores the action.
-    const revived = mergeLocalizedEditorContents(source, payload);
+      readNavigateUrl(getElement<ContentEditorButtonElement>(payload, 0).data.actions),
+    ).toBeUndefined();
+
+    // A navigate added back is the list's first navigate again: the stored
+    // row (untouched by that save) still pairs with it.
+    const restored = mergeLocalizedEditorContents(source, stored);
+    expect(readNavigateUrl(getElement<ContentEditorButtonElement>(restored, 0).data.actions)).toBe(
+      'https://example.com/cs/mcp',
+    );
+  });
+});
+
+describe('destination url rule (shared by the version write and the translation write)', () => {
+  it('accepts routes the host can handle and mail / phone links', () => {
+    expect(isSafeDestinationUrl('/fr/mcp')).toBe(true);
+    expect(isSafeDestinationUrl('settings?tab=1')).toBe(true);
+    expect(isSafeDestinationUrl('#pricing')).toBe(true);
+    expect(isSafeDestinationUrl('https://example.com/cs/post')).toBe(true);
+    expect(isSafeDestinationUrl('HTTP://example.com')).toBe(true);
+    expect(isSafeDestinationUrl('mailto:support@example.com')).toBe(true);
+    expect(isSafeDestinationUrl('tel:+420123456789')).toBe(true);
+    expect(isSafeDestinationUrl('')).toBe(true);
+  });
+
+  it('refuses schemes that run code or carry a document', () => {
+    expect(isSafeDestinationUrl('javascript:alert(1)')).toBe(false);
+    expect(isSafeDestinationUrl(' JavaScript:alert(1)')).toBe(false);
+    expect(isSafeDestinationUrl('data:text/html,<script>')).toBe(false);
+    expect(isSafeDestinationUrl('vbscript:msgbox')).toBe(false);
+    expect(isSafeDestinationUrl('file:///etc/passwd')).toBe(false);
+  });
+
+  it('reads the scheme the way a browser does — whitespace and control characters cannot hide it', () => {
+    expect(isSafeDestinationUrl('java\tscript:alert(1)')).toBe(false);
+    expect(isSafeDestinationUrl('\u0001javascript:alert(1)')).toBe(false);
+    expect(isSafeDestinationUrl('javascript\n:alert(1)')).toBe(false);
+    // Not a url at all (the builder's untouched placeholder) is not a safe one.
+    expect(isSafeDestinationUrl('https://')).toBe(false);
+  });
+
+  it('collects every destination of a tree for a url check, chips stood in for', () => {
+    const button = createCtaButton();
+    const navigate = button.data.actions.find(
+      (action) => action.type === ContentActionsItemType.PAGE_NAVIGATE,
+    );
+    navigate!.data.value = [
+      {
+        type: 'paragraph',
+        children: [
+          { text: 'https://example.com/' },
+          {
+            type: 'user-attribute',
+            attrCode: 'locale_code',
+            fallback: '',
+            children: [{ text: '' }],
+          },
+        ],
+      },
+    ];
+    const image = createImageElement();
+    image.link = { url: '/pricing' };
+    const destinations = collectContentsDestinations(
+      wrapElements([createLinkTextElement(), button, image]),
+    );
+    expect(destinations).toEqual([
+      { path: '0.0.0:text.0.1:link.url', value: 'https://example.com/en/post' },
+      { path: '0.0.1:button.actions.0:navigate.url', value: 'https://example.com/attribute' },
+      { path: '0.0.2:image.link.url', value: '/pricing' },
+    ]);
+    // The dynamic navigate is still no translation unit.
     expect(
-      readActionUrl(getElement<ContentEditorButtonElement>(revived, 0).data.actions, 'navigate-1'),
-    ).toBe('https://example.com/cs/mcp');
+      extractTranslatableUnits(wrapElements([button])).some((unit) =>
+        unit.path.endsWith(':navigate.url'),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('container groups', () => {
+  it('names a checklist task and a resource-center block on every unit they own', () => {
+    const checklist = createChecklistData();
+    checklist.items[0].clickedActions = [
+      createNavigateAction('nav', 'https://example.com/en/invite'),
+    ];
+    const checklistUnits = extractVersionDataTranslationUnits(
+      ContentDataType.CHECKLIST,
+      checklist,
+      undefined,
+    );
+    const taskUnits = checklistUnits.filter((unit) => unit.path.startsWith('items.item-1'));
+    expect(taskUnits).toHaveLength(3);
+    for (const unit of taskUnits) {
+      expect(unit.group).toEqual({ path: 'items.item-1', title: 'Invite your team' });
+    }
+    expect(checklistUnits.find((unit) => unit.path === 'buttonText')?.group).toBeUndefined();
+
+    const resourceCenter = createResourceCenterData();
+    const blockUnits = extractVersionDataTranslationUnits(
+      ContentDataType.RESOURCE_CENTER,
+      resourceCenter,
+      undefined,
+    ).filter((unit) => unit.path.startsWith('tabs.tab-1.blocks.block-2'));
+    expect(blockUnits.length).toBeGreaterThan(1);
+    for (const unit of blockUnits) {
+      expect(unit.group).toEqual({ path: 'tabs.tab-1.blocks.block-2', title: 'Guides' });
+    }
+    // Units of an embedded tree carry both the block and their element.
+    expect(blockUnits.find((unit) => unit.path.includes('.content/'))?.element?.type).toBe(
+      ContentEditorElementType.TEXT,
+    );
   });
 });
 
@@ -2099,9 +2221,7 @@ describe('stored-row schema versions', () => {
     expect(getLocalizableLinkUrl(getElement<ContentEditorImageElement>(row, 2).link)).toBe(
       'https://example.com/en/pricing',
     );
-    expect(
-      readActionUrl(getElement<ContentEditorButtonElement>(row, 1).data.actions, 'navigate-1'),
-    ).toBe('');
+    expect(readNavigateUrl(getElement<ContentEditorButtonElement>(row, 1).data.actions)).toBe('');
     expect(getElement<ContentEditorImageElement>(row, 2).alt).toBe('');
   });
 
@@ -2112,9 +2232,7 @@ describe('stored-row schema versions', () => {
       getLocalizableLinkUrl(getElement<ContentEditorTextElement>(row, 0).data[0].children[1]),
     ).toBe('');
     expect(getLocalizableLinkUrl(getElement<ContentEditorImageElement>(row, 2).link)).toBe('');
-    expect(
-      readActionUrl(getElement<ContentEditorButtonElement>(row, 1).data.actions, 'navigate-1'),
-    ).toBe('');
+    expect(readNavigateUrl(getElement<ContentEditorButtonElement>(row, 1).data.actions)).toBe('');
   });
 
   it('a current row is left alone', () => {
@@ -2147,7 +2265,7 @@ describe('stored-row schema versions', () => {
       children: null,
     });
     expect(blankLocalizedUnitClones(row, 1)).toBe(true);
-    expect(readActionUrl(row.items[0].clickedActions, 'navigate-1')).toBe('');
+    expect(readNavigateUrl(row.items[0].clickedActions)).toBe('');
     expect(
       getElement<ContentEditorTextElement>(row.content as ContentEditorRoot[], 1).data[0]
         .children[0].fallback,
@@ -2242,7 +2360,7 @@ describe('unit coverage registry', () => {
       'text 0.0.0:text.0.2',
       'text 0.0.0:text.0.3:fallback',
       'text 0.0.1:button.text',
-      'destination 0.0.1:button.actions.navigate-1:navigate.url',
+      'destination 0.0.1:button.actions.0:navigate.url',
       'media 0.0.2:image.url',
       'text 0.0.2:image.alt',
       'destination 0.0.2:image.link.url',
@@ -2250,29 +2368,29 @@ describe('unit coverage registry', () => {
       'text 0.0.4:question.name',
       'text 0.0.4:question.lowLabel',
       'text 0.0.4:question.highLabel',
-      'destination 0.0.4:question.actions.nav:navigate.url',
+      'destination 0.0.4:question.actions.0:navigate.url',
       'text 0.0.5:question.name',
       'text 0.0.5:question.lowLabel',
       'text 0.0.5:question.highLabel',
-      'destination 0.0.5:question.actions.nav:navigate.url',
+      'destination 0.0.5:question.actions.0:navigate.url',
       'text 0.0.6:question.name',
       'text 0.0.6:question.lowLabel',
       'text 0.0.6:question.highLabel',
-      'destination 0.0.6:question.actions.nav:navigate.url',
+      'destination 0.0.6:question.actions.0:navigate.url',
       'text 0.0.7:question.name',
       'text 0.0.7:question.placeholder',
       'text 0.0.7:question.buttonText',
-      'destination 0.0.7:question.actions.nav:navigate.url',
+      'destination 0.0.7:question.actions.0:navigate.url',
       'text 0.0.8:question.name',
       'text 0.0.8:question.placeholder',
       'text 0.0.8:question.buttonText',
-      'destination 0.0.8:question.actions.nav:navigate.url',
+      'destination 0.0.8:question.actions.0:navigate.url',
       'text 0.0.9:question.name',
       'text 0.0.9:question.buttonText',
       'text 0.0.9:question.otherPlaceholder',
       'text 0.0.9:question.options.0.label',
       'text 0.0.9:question.options.1.label',
-      'destination 0.0.9:question.actions.nav:navigate.url',
+      'destination 0.0.9:question.actions.0:navigate.url',
     ]);
   });
 
@@ -2290,7 +2408,7 @@ describe('unit coverage registry', () => {
       'text content/0.0.0:button.text',
       'text items.item-1:name',
       'text items.item-1:description',
-      'destination items.item-1:clickedActions.nav:navigate.url',
+      'destination items.item-1:clickedActions.0:navigate.url',
       'text items.item-2:name',
     ]);
 
@@ -2302,7 +2420,7 @@ describe('unit coverage registry', () => {
       ),
     ).toEqual([
       'text buttonText',
-      'destination behavior.actions.navigate-1:navigate.url',
+      'destination behavior.actions.0:navigate.url',
       'text tooltip/0.0.0:text.0.0',
       'text tooltip/0.0.0:text.0.1',
     ]);
@@ -2325,7 +2443,7 @@ describe('unit coverage registry', () => {
       'text introContent/0.0.0:text.0.0',
       'text introContent/0.0.0:text.0.1',
       'text detailContent/0.0.0:button.text',
-      'destination detailContent/0.0.0:button.actions.navigate-1:navigate.url',
+      'destination detailContent/0.0.0:button.actions.0:navigate.url',
     ]);
 
     const resourceCenter = createResourceCenterData();
@@ -2367,7 +2485,7 @@ describe('unit coverage registry', () => {
       'text headerText',
       'text tabs.tab-1:name',
       'text tabs.tab-1.blocks.block-1:name.0',
-      'destination tabs.tab-1.blocks.block-1:clickedActions.nav:navigate.url',
+      'destination tabs.tab-1.blocks.block-1:clickedActions.0:navigate.url',
       'text tabs.tab-1.blocks.block-2:name.0',
       'text tabs.tab-1.blocks.block-2.content/0.0.0:text.0.0',
       'text tabs.tab-1.blocks.block-2.content/0.0.0:text.0.1',

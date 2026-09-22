@@ -68,6 +68,16 @@ describe('diffTranslationUnits', () => {
     ]);
   });
 
+  it('holds back a destination with a code-running scheme', () => {
+    const baseline = toTranslationBaseline([unit(NAVIGATE, '', 'destination')]);
+    expect(
+      diffTranslationUnits(baseline, [unit(NAVIGATE, 'javascript:alert(1)', 'destination')]),
+    ).toEqual([]);
+    expect(
+      diffTranslationUnits(baseline, [unit(NAVIGATE, 'mailto:hi@example.com', 'destination')]),
+    ).toEqual([{ path: NAVIGATE, translation: 'mailto:hi@example.com' }]);
+  });
+
   it('does not hold a destination to the media bar — a relative path is a valid one', () => {
     const baseline = toTranslationBaseline([
       unit(INLINE_LINK, '', 'destination'),

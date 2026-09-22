@@ -789,6 +789,7 @@ export const VALIDATION_ISSUE_RULES = [
   'reference_target',
   'auto_start',
   'media_url',
+  'destination_url',
 ] as const;
 
 /**
@@ -801,6 +802,7 @@ export const VALIDATION_ISSUE_RULES = [
  *  - `reference_target`   — a cross-content reference to a type that can't be targeted;
  *  - `auto_start`         — a start/hide-rule knob the content type doesn't support;
  *  - `media_url`          — an image/embed URL that isn't http(s).
+ *  - `destination_url`    — a link / navigate target using a scheme that runs code.
  */
 export type ValidationIssue = {
   rule: (typeof VALIDATION_ISSUE_RULES)[number];

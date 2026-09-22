@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import {
+  LOCALIZED_UNITS_SCHEMA_VERSION,
+  blankLocalizedUnitClones,
+  deepClone,
+  isSafeDestinationUrl,
+} from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -77,6 +83,7 @@ interface VersionLocalizationRow {
   enabled: boolean;
   localized: unknown;
   backup: unknown;
+  localizedSchemaVersion: number;
   updatedAt: Date;
 }
 
@@ -87,10 +94,27 @@ interface TranslatableVersion {
   content?: { type?: string | null } | null;
 }
 
+/**
+ * The stored row as a translation. A row stamped below the current schema
+ * version still holds verbatim source clones in the stores that became units
+ * after it was saved; they are blanked here, on read and on write alike, so
+ * a clone can never read as a translator's pin — nor be saved back as one
+ * and stamped current. The deploy-time backfill does the same to the rows
+ * themselves; this keeps correctness from depending on it having run.
+ */
 const toStored = (
-  row: { localized: unknown; backup: unknown } | undefined,
-): StoredTranslation | undefined =>
-  row ? { localized: row.localized, backup: row.backup } : undefined;
+  row: { localized: unknown; backup: unknown; localizedSchemaVersion: number } | undefined,
+): StoredTranslation | undefined => {
+  if (!row) {
+    return undefined;
+  }
+  if (row.localizedSchemaVersion >= LOCALIZED_UNITS_SCHEMA_VERSION) {
+    return { localized: row.localized, backup: row.backup };
+  }
+  const localized = deepClone(row.localized);
+  blankLocalizedUnitClones(localized, row.localizedSchemaVersion);
+  return { localized, backup: row.backup };
+};
 
 /**
  * Reading and writing a version's translation as translation units — the
@@ -317,7 +341,7 @@ export class VersionTranslationService {
   }
 
   /**
-   * Reject the whole write on any unaddressable path or unusable media URL, with
+   * Reject the whole write on any unaddressable path or unusable url, with
    * every problem listed — a dropped unit would read back as "saved" to a caller
    * that cannot see the difference.
    */
@@ -342,19 +366,24 @@ export class VersionTranslationService {
         return;
       }
       const url = value.trim();
-      // Same bar as the version write: the SDK renders a media url verbatim
-      // into src. A value this translation already stores passes unchanged.
-      if (
-        url !== '' &&
-        unit.kind === 'media' &&
-        !isHttpUrl(url) &&
-        unit.translation !== value &&
-        unit.translation !== url
-      ) {
+      // A value this translation already stores passes unchanged.
+      if (url === '' || unit.translation === value || unit.translation === url) {
+        return;
+      }
+      // Same bars as the version write: a media url is rendered verbatim into
+      // src, a destination into href.
+      if (unit.kind === 'media' && !isHttpUrl(url)) {
         issues.push({
           rule: 'media_url',
           path: `translations.${path}`,
           message: `must be a full http(s) URL (it is rendered verbatim on the page, so ${JSON.stringify(value)} would just be broken there).`,
+        });
+      }
+      if (unit.kind === 'destination' && !isSafeDestinationUrl(url)) {
+        issues.push({
+          rule: 'destination_url',
+          path: `translations.${path}`,
+          message: `must be a path or an http(s) / mailto / tel URL — ${JSON.stringify(value)} uses a scheme that is never allowed in a link.`,
         });
       }
     });

@@ -70,6 +70,7 @@ export interface StoredVersionLocalization {
   enabled: boolean;
   localized: unknown;
   backup: unknown;
+  localizedSchemaVersion: number;
 }
 
 /** What one save writes; an omitted field keeps its stored value. */

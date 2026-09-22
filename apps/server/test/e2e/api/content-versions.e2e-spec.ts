@@ -1863,4 +1863,98 @@ describe('API v2 /content-versions (e2e)', () => {
       });
     });
   });
+  it('refuses code-running schemes wherever a click goes, but echoes builder-authored ones verbatim', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const content = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+    // Builder-authored data the API never wrote: a scheme outside the rule.
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    await buildStep(prisma, {
+      versionId: version.id,
+      type: 'modal',
+      name: 'Legacy',
+      cvid: 'cv-legacy',
+      sequence: 0,
+      data: [
+        {
+          element: { type: 'group' },
+          children: [
+            {
+              element: { type: 'column' },
+              children: [
+                {
+                  element: {
+                    type: 'button',
+                    data: {
+                      text: 'Text us',
+                      actions: [
+                        {
+                          id: 'a1',
+                          type: 'page-navigate',
+                          data: {
+                            openType: 'same',
+                            value: [{ type: 'paragraph', children: [{ text: 'sms:+15550100' }] }],
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const path = `/v2/projects/${projectId}/content/${content.id}/versions/${version.id}`;
+
+    // Every carrier of a destination the representation has: a markdown link,
+    // an image's click-through, a navigate action — one E1017 names them all.
+    const bad = await api('patch', path, token).send({
+      steps: [
+        {
+          name: 'Bad',
+          type: 'modal',
+          content: [
+            { type: 'text', markdown: 'See [the docs](javascript:alert(1))' },
+            {
+              type: 'image',
+              url: 'https://cdn.example/a.png',
+              link: { url: 'data:text/html,<script>' },
+            },
+            {
+              type: 'button',
+              text: 'Go',
+              actions: [{ type: 'navigate', url: 'java\tscript:alert(2)' }],
+            },
+          ],
+        },
+      ],
+    });
+    expect(bad.status).toBe(400);
+    const rules = (bad.body.error.issues as { rule: string; path: string }[]).map(
+      (issue) => issue.rule,
+    );
+    expect(rules).toEqual(['destination_url', 'destination_url', 'destination_url']);
+
+    // The stored navigate echoed back through the representation passes
+    // (preserve-not-endorse) — and a path beside it is simply fine.
+    const echo = await api('patch', path, token).send({
+      steps: [
+        {
+          cvid: 'cv-legacy',
+          name: 'Legacy',
+          type: 'modal',
+          content: [
+            {
+              type: 'button',
+              text: 'Text us',
+              actions: [{ type: 'navigate', url: 'sms:+15550100' }],
+            },
+            { type: 'text', markdown: 'Or [open settings](/settings)' },
+          ],
+        },
+      ],
+    });
+    expect(echo.status).toBe(200);
+  });
 });

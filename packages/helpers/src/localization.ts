@@ -104,6 +104,16 @@ export interface TranslationUnitElement {
   type: ContentEditorElementType;
 }
 
+/**
+ * The id-keyed container a version-data unit belongs to — a checklist task, a
+ * resource-center block — named by what the author called it, so its rows
+ * read as one thing on screen.
+ */
+export interface TranslationUnitGroup {
+  path: string;
+  title: string;
+}
+
 export interface TranslatableUnit {
   /** Positional address of the text within the tree: `g.c.e:field[...]`. */
   path: string;
@@ -122,6 +132,7 @@ interface TranslatableFieldVisit {
   /** Values a field label interpolates (an option's index, a chip's attribute). */
   fieldArgs?: Record<string, string>;
   element?: TranslationUnitElement;
+  group?: TranslationUnitGroup;
   /** Writes into the walked tree (used by the clone-producing walks). */
   assign: (value: string) => void;
   /**
@@ -218,6 +229,19 @@ export const readDestination = (store: DestinationStore): string | undefined => 
 };
 
 /**
+ * The destination as a url checker should see it: a dynamic template has its
+ * user-attribute chips stood in for by a placeholder, so `javascript:{{x}}`
+ * cannot hide behind the chip that makes the walkers skip it.
+ */
+const readDestinationForValidation = (store: DestinationStore): string => {
+  const template = store.container[store.templateKey];
+  if (isArray(template)) {
+    return serializeLinkTemplate(template, () => 'attribute') ?? '';
+  }
+  return store.urlKey ? toText(store.container[store.urlKey]) : '';
+};
+
+/**
  * Writes a localized destination into every store a reader may consult.
  * Trimmed: a whitespace-only value must collapse to the '' keep-original
  * sentinel instead of shipping as a self-link href.
@@ -249,17 +273,29 @@ const inheritStoredDestination = (
   }
 };
 
-/** A rich-text link node's destination (see readDestination). */
-export const getLocalizableLinkUrl = (node: unknown): string | undefined => {
-  if (!node || typeof node !== 'object') {
-    return undefined;
-  }
-  return readDestination(linkDestination(node));
-};
+/**
+ * The one rule every destination write clears, source and translation alike:
+ * a path the host routes (relative, or absolute over http(s)), or a mail /
+ * phone link. A scheme that runs code or smuggles a document (`javascript:`,
+ * `data:`, `vbscript:`, …) is refused — the value lands verbatim in an href.
+ * The scheme is read the way a browser reads it — the WHATWG parser strips
+ * tabs, newlines and leading control characters, so `java\tscript:` IS
+ * `javascript:` — never by pattern-matching the text. A value that does not
+ * parse at all is refused too. Blank passes: it means "keep the original".
+ */
+const SAFE_DESTINATION_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+const RELATIVE_DESTINATION_BASE = 'https://relative.invalid/';
 
-/** Writes a rich-text link node's destination (see writeDestination). */
-export const assignLocalizedLinkUrl = (node: unknown, value: string): void => {
-  writeDestination(linkDestination(node as object), value);
+export const isSafeDestinationUrl = (value: string): boolean => {
+  const url = value.trim();
+  if (url === '') {
+    return true;
+  }
+  try {
+    return SAFE_DESTINATION_SCHEMES.has(new URL(url, RELATIVE_DESTINATION_BASE).protocol);
+  } catch {
+    return false;
+  }
 };
 
 interface WalkOptions {
@@ -286,6 +322,12 @@ interface WalkOptions {
     store: DestinationStore,
     partnerStore: DestinationStore | undefined,
   ) => void;
+  /**
+   * Visit dynamic destinations too, chips stood in for by a placeholder —
+   * for url validation, which must see every destination, translatable or
+   * not. Never used by a walk that writes.
+   */
+  dynamicDestinationsAsPlaceholders?: boolean;
 }
 
 /**
@@ -313,27 +355,46 @@ const visitDestination = (
     });
     return;
   }
+  if (sourceUrl === undefined && opts.dynamicDestinationsAsPlaceholders) {
+    visitor({
+      path,
+      sourceText: readDestinationForValidation(store),
+      partnerText: undefined,
+      kind: 'destination',
+      field,
+      assign: () => undefined,
+    });
+    return;
+  }
   opts.onOpaqueDestination?.(store, partnerStore);
 };
 
-type ActionLike = { id?: unknown; type?: unknown; data?: unknown };
+type ActionLike = { type?: unknown; data?: unknown };
 
-const isNavigateAction = (action: unknown): action is ActionLike & { id: string; data: object } => {
+const isNavigateAction = (action: unknown): action is ActionLike & { data: object } => {
   const candidate = action as ActionLike | null | undefined;
   return (
     candidate?.type === ContentActionsItemType.PAGE_NAVIGATE &&
-    typeof candidate.id === 'string' &&
     Boolean(candidate.data) &&
     typeof candidate.data === 'object'
   );
+};
+
+const navigateActionsOf = (actions: unknown): (ActionLike & { data: object })[] => {
+  return isArray(actions) ? actions.filter(isNavigateAction) : [];
 };
 
 /**
  * Action lists ride on every clickable thing — buttons, questions, checklist
  * tasks, launchers, resource-center blocks. The only action whose payload is
  * per-locale content is page-navigate (its destination); the rest carry
- * nothing a translator could change. Actions pair by id (the builder mints
- * one per action) so a reorder can never misalign a translation.
+ * nothing a translator could change. Navigates pair by their order among the
+ * list's navigates, not by action id: the builder mints ids but the API
+ * representation has none to echo, so a write there re-mints every id and an
+ * id-keyed translation would silently detach. Order is unambiguous by the
+ * builder's own rule — a navigate is a singleton per list (the action schema's
+ * `repeatable` defaults to false; only run-javascript repeats), so there is
+ * never a second one to confuse it with.
  */
 const walkActions = (
   actions: unknown,
@@ -342,31 +403,18 @@ const walkActions = (
   visitor: TranslatableFieldVisitor,
   opts: WalkOptions,
 ): void => {
-  if (!isArray(actions)) {
-    return;
-  }
-  const partnerById = new Map<string, ActionLike & { data: object }>();
-  if (isArray(partnerActions)) {
-    for (const partnerAction of partnerActions) {
-      if (isNavigateAction(partnerAction)) {
-        partnerById.set(partnerAction.id, partnerAction);
-      }
-    }
-  }
-  for (const action of actions) {
-    if (!isNavigateAction(action)) {
-      continue;
-    }
-    const partnerAction = partnerById.get(action.id);
+  const partnerNavigates = navigateActionsOf(partnerActions);
+  navigateActionsOf(actions).forEach((action, index) => {
+    const partnerAction = partnerNavigates[index];
     visitDestination(
       navigateDestination(action.data),
       partnerAction ? navigateDestination(partnerAction.data) : undefined,
-      `${pathPrefix}.${action.id}:navigate.url`,
+      `${pathPrefix}.${index}:navigate.url`,
       'navigate.url',
       visitor,
       opts,
     );
-  }
+  });
 };
 
 const walkSlateNodes = (
@@ -1024,6 +1072,33 @@ const withPathPrefix = (
     });
 };
 
+/** Stamps every unit of a container walk with the container it belongs to. */
+const withGroup = (
+  group: TranslationUnitGroup,
+  visitor: TranslatableFieldVisitor,
+): TranslatableFieldVisitor => {
+  return (visit) => visitor({ ...visit, group: visit.group ?? group });
+};
+
+/** The plain text of a rich-text label (a resource-center block name). */
+const richTextToPlainText = (nodes: unknown): string => {
+  if (!isArray(nodes)) {
+    return '';
+  }
+  let text = '';
+  for (const node of nodes as SlateNode[]) {
+    if (!node || typeof node !== 'object') {
+      continue;
+    }
+    if (typeof node.text === 'string') {
+      text += node.text;
+    } else if (isArray(node.children)) {
+      text += richTextToPlainText(node.children);
+    }
+  }
+  return text.trim();
+};
+
 const visitTextField = (
   visitor: TranslatableFieldVisitor,
   path: string,
@@ -1086,9 +1161,11 @@ const walkChecklistFields = (
       continue;
     }
     const partnerItem = partnerItems.find((candidate) => candidate?.id === item.id);
+    const itemPath = `items.${item.id}`;
+    const itemVisitor = withGroup({ path: itemPath, title: toText(item.name) }, visitor);
     visitTextField(
-      visitor,
-      `items.${item.id}:name`,
+      itemVisitor,
+      `${itemPath}:name`,
       'item.name',
       item.name,
       partnerItem?.name,
@@ -1097,8 +1174,8 @@ const walkChecklistFields = (
       },
     );
     visitTextField(
-      visitor,
-      `items.${item.id}:description`,
+      itemVisitor,
+      `${itemPath}:description`,
       'item.description',
       item.description,
       partnerItem?.description,
@@ -1109,8 +1186,8 @@ const walkChecklistFields = (
     walkActions(
       item.clickedActions,
       partnerItem?.clickedActions,
-      `items.${item.id}:clickedActions`,
-      visitor,
+      `${itemPath}:clickedActions`,
+      itemVisitor,
       opts,
     );
   }
@@ -1236,6 +1313,10 @@ const walkResourceCenterFields = (
       }
       const partnerBlock = partnerBlocksById.get(block.id);
       const blockPath = `tabs.${tab.id}.blocks.${block.id}`;
+      const blockVisitor = withGroup(
+        { path: blockPath, title: richTextToPlainText(block.name) },
+        visitor,
+      );
       // Rich-text block labels (name: RichTextNode[]) are user-visible;
       // plain-string names (rich-text / divider blocks) are builder-only
       // labels and stay untranslated. Link units are suppressed here:
@@ -1247,7 +1328,7 @@ const walkResourceCenterFields = (
           block.name as SlateNode[],
           isArray(partnerBlock?.name) ? (partnerBlock.name as SlateNode[]) : undefined,
           `${blockPath}:name`,
-          visitor,
+          blockVisitor,
           { ...opts, omitLinkUnits: true },
           'block.name',
         );
@@ -1258,17 +1339,17 @@ const walkResourceCenterFields = (
         `${blockPath}.content`,
         blockContent,
         partnerBlockContent,
-        visitor,
+        blockVisitor,
         opts,
       );
       walkActions(
         (block as { clickedActions?: unknown }).clickedActions,
         (partnerBlock as { clickedActions?: unknown } | undefined)?.clickedActions,
         `${blockPath}:clickedActions`,
-        visitor,
+        blockVisitor,
         opts,
       );
-      walkContentListItems(blockPath, block, partnerBlock, visitor, opts);
+      walkContentListItems(blockPath, block, partnerBlock, blockVisitor, opts);
     }
   }
 };
@@ -1487,6 +1568,7 @@ export interface LocalizationTranslationUnit {
   field: TranslationUnitField;
   fieldArgs?: Record<string, string>;
   element?: TranslationUnitElement;
+  group?: TranslationUnitGroup;
 }
 
 const createTranslationUnitCollector = (
@@ -1504,6 +1586,7 @@ const createTranslationUnitCollector = (
       field: visit.field,
       ...(visit.fieldArgs ? { fieldArgs: visit.fieldArgs } : {}),
       ...(visit.element ? { element: visit.element } : {}),
+      ...(visit.group ? { group: visit.group } : {}),
     });
   };
 };
@@ -1554,6 +1637,47 @@ export const extractContentsTranslationUnits = (
   const units: LocalizationTranslationUnit[] = [];
   walkTranslatableFields(source ?? [], localized, createTranslationUnitCollector(units));
   return units;
+};
+
+/** A destination as a url checker sees it (see collectContentsDestinations). */
+export interface DestinationValue {
+  path: string;
+  value: string;
+}
+
+const createDestinationCollector = (destinations: DestinationValue[]): TranslatableFieldVisitor => {
+  return (visit) => {
+    if (visit.kind === 'destination' && visit.sourceText !== '') {
+      destinations.push({ path: visit.path, value: visit.sourceText });
+    }
+  };
+};
+
+/**
+ * Every destination of a tree — plain and dynamic alike (chips stood in for
+ * by a placeholder) — for a url check. The same walk the translation write
+ * validates with, so a source write and a translated write agree on what a
+ * destination is and where one can sit.
+ */
+export const collectContentsDestinations = (
+  contents: ContentEditorRoot[] | undefined,
+): DestinationValue[] => {
+  const destinations: DestinationValue[] = [];
+  walkTranslatableFields(contents ?? [], undefined, createDestinationCollector(destinations), {
+    dynamicDestinationsAsPlaceholders: true,
+  });
+  return destinations;
+};
+
+export const collectVersionDataDestinations = (
+  contentType: string,
+  data: unknown,
+): DestinationValue[] => {
+  const destinations: DestinationValue[] = [];
+  walkVersionDataFields(contentType, data, undefined, createDestinationCollector(destinations), {
+    dynamicDestinationsAsPlaceholders: true,
+  });
+  return destinations;
 };
 
 export const extractVersionDataTranslationUnits = (
@@ -1681,34 +1805,10 @@ const graftSlateNodes = (working: SlateNode[], stored: SlateNode[] | undefined):
   return working;
 };
 
-/**
- * Stored page-navigate overrides for actions the working list no longer has
- * (removed from the source) are grafted back so an undo revives them; the
- * readers pair by id, so an unknown action is never delivered.
- */
-const graftActionsById = (working: unknown, stored: unknown): void => {
-  if (!isArray(working) || !isArray(stored)) {
-    return;
-  }
-  const knownIds = new Set(
-    working.filter((action) => isNavigateAction(action)).map((action) => action.id),
-  );
-  for (const storedAction of stored) {
-    if (isNavigateAction(storedAction) && !knownIds.has(storedAction.id)) {
-      working.push(deepClone(storedAction));
-    }
-  }
-};
-
 const graftElementTranslations = (
   element: ContentEditorElement,
   storedElement: ContentEditorElement,
 ): void => {
-  const elementData = (element as { data?: { actions?: unknown } }).data;
-  const storedData = (storedElement as { data?: { actions?: unknown } }).data;
-  if (elementData && typeof elementData === 'object' && !isArray(elementData)) {
-    graftActionsById(elementData.actions, storedData?.actions);
-  }
   if (element.type === ContentEditorElementType.TEXT) {
     const workingData = (element as { data?: unknown }).data;
     const storedData = (storedElement as { data?: unknown }).data;
@@ -1871,20 +1971,13 @@ const graftChecklistTranslations = (working: ChecklistData, stored: ChecklistDat
   }
   const knownItemIds = new Set(working.items.map((item) => item?.id).filter(Boolean));
   for (const storedItem of stored.items) {
-    if (!storedItem?.id) {
-      continue;
-    }
-    if (!knownItemIds.has(storedItem.id)) {
+    if (storedItem?.id && !knownItemIds.has(storedItem.id)) {
       working.items.push(deepClone(storedItem));
-      continue;
     }
-    const workingItem = working.items.find((item) => item?.id === storedItem.id);
-    graftActionsById(workingItem?.clickedActions, storedItem.clickedActions);
   }
 };
 
 const graftLauncherTranslations = (working: LauncherData, stored: LauncherData): void => {
-  graftActionsById(working.behavior?.actions, stored.behavior?.actions);
   if (working.tooltip && typeof working.tooltip === 'object') {
     graftEmbeddedContents(
       working.tooltip as unknown as Record<string, unknown>,
@@ -1965,10 +2058,6 @@ const graftResourceCenterTranslations = (
         block as unknown as Record<string, unknown>,
         'content',
         (storedBlock as { content?: unknown }).content,
-      );
-      graftActionsById(
-        (block as { clickedActions?: unknown }).clickedActions,
-        (storedBlock as { clickedActions?: unknown }).clickedActions,
       );
       graftContentListItemLabels(block, storedBlock);
     }

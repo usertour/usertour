@@ -246,12 +246,18 @@ export const migrateLocalizedUnitClones = async (
   console.log('Starting localized unit stores backfill...');
 
   for (;;) {
+    // Keyset pagination on id, NOT Prisma's cursor: the previous batch's rows
+    // are stamped current by the time the next page is read, so they no
+    // longer match the filter — a cursor + skip would then skip the first
+    // unprocessed row of every batch.
     const rows = await prisma.versionOnLocalization.findMany({
-      where: { localizedSchemaVersion: { lt: LOCALIZED_UNITS_SCHEMA_VERSION } },
+      where: {
+        localizedSchemaVersion: { lt: LOCALIZED_UNITS_SCHEMA_VERSION },
+        ...(cursor ? { id: { gt: cursor } } : {}),
+      },
       select: { id: true, localized: true, localizedSchemaVersion: true, updatedAt: true },
       take: batchSize,
       orderBy: { id: 'asc' },
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     if (rows.length === 0) {
       break;
