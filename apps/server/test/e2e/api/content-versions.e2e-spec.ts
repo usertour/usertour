@@ -1927,6 +1927,13 @@ describe('API v2 /content-versions (e2e)', () => {
               actions: [{ type: 'navigate', url: 'java\tscript:alert(2)' }],
             },
           ],
+          // A step's own action slot, outside its content.
+          triggers: [
+            {
+              when: [{ type: 'current_url', includes: ['*/done'] }],
+              do: [{ type: 'navigate', url: 'vbscript:x' }],
+            },
+          ],
         },
       ],
     });
@@ -1934,7 +1941,12 @@ describe('API v2 /content-versions (e2e)', () => {
     const rules = (bad.body.error.issues as { rule: string; path: string }[]).map(
       (issue) => issue.rule,
     );
-    expect(rules).toEqual(['destination_url', 'destination_url', 'destination_url']);
+    expect(rules).toEqual([
+      'destination_url',
+      'destination_url',
+      'destination_url',
+      'destination_url',
+    ]);
 
     // The stored navigate echoed back through the representation passes
     // (preserve-not-endorse) — and a path beside it is simply fine.

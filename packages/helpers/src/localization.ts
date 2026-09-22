@@ -1669,6 +1669,23 @@ export const collectContentsDestinations = (
   return destinations;
 };
 
+/**
+ * The destinations of a bare action list — a flow step's own action slots
+ * (click-the-target `target.actions`, trigger `do` lists), which sit outside
+ * the step's content tree and are no translation unit, but are destinations
+ * all the same.
+ */
+export const collectActionListDestinations = (
+  actions: unknown,
+  pathPrefix: string,
+): DestinationValue[] => {
+  const destinations: DestinationValue[] = [];
+  walkActions(actions, undefined, pathPrefix, createDestinationCollector(destinations), {
+    dynamicDestinationsAsPlaceholders: true,
+  });
+  return destinations;
+};
+
 export const collectVersionDataDestinations = (
   contentType: string,
   data: unknown,

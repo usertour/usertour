@@ -102,6 +102,31 @@ describe('collectDestinationIssues', () => {
     ).toEqual(['steps/step-1/0.0.2:button.actions.0:navigate.url']);
   });
 
+  it("covers a flow step's own action slots: click-the-target and trigger actions", () => {
+    const steps = flowSteps({});
+    Object.assign(steps[0], {
+      target: {
+        actions: [{ id: 't1', type: 'page-navigate', data: { value: template('javascript:1') } }],
+      },
+      trigger: [
+        { conditions: [], wait: 0, actions: [{ id: 'x', type: 'flow-dismis', data: {} }] },
+        {
+          conditions: [],
+          wait: 0,
+          actions: [{ id: 'y', type: 'page-navigate', data: { value: template('data:x') } }],
+        },
+      ],
+    });
+    expect(
+      collectDestinationIssues({ contentType: ContentDataType.FLOW, steps }).map(
+        (issue) => issue.path,
+      ),
+    ).toEqual([
+      'steps/step-1/target.actions.0:navigate.url',
+      'steps/step-1/trigger.1.actions.0:navigate.url',
+    ]);
+  });
+
   it('covers version data: a checklist task action and a resource-center list entry', () => {
     const checklist = collectDestinationIssues({
       contentType: ContentDataType.CHECKLIST,
