@@ -2,8 +2,13 @@ import { Type } from '@nestjs/common';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { PageInfo } from './page-info.model';
 
-export default function Paginated<TItem>(TItemClass: Type<TItem>) {
-  @ObjectType(`${TItemClass.name}Edge`)
+/**
+ * `itemName` is the item's GraphQL type name. It defaults to the class name,
+ * which is right only while the two coincide — an item class carrying the DTO
+ * suffix (ADR 0015) passes the name it pins, so the Edge type keeps its name.
+ */
+export default function Paginated<TItem>(TItemClass: Type<TItem>, itemName?: string) {
+  @ObjectType(`${itemName ?? TItemClass.name}Edge`)
   abstract class EdgeType {
     @Field(() => String)
     cursor: string;

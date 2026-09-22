@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { AnalyticsModule } from '@/analytics/analytics.module';
+import { AnalyticsModule } from '@/modules/analytics/analytics.module';
 import { ApiTokenModule } from '@/modules/api-token/api-token.module';
 import { AttributesModule } from '@/modules/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
@@ -54,7 +54,7 @@ import { ApiEventsController } from './events/events.controller';
 import { WebSocketModule } from '@/web-socket/web-socket.module';
 import { ApiMeService } from './me/me.service';
 import { ApiWebhooksService } from './webhooks/webhooks.service';
-import { WebhooksModule } from '@/webhooks/webhooks.module';
+import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
 
 /**
  * The contract-first v2 public API. A peer of (not nested in) the legacy

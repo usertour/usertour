@@ -12,7 +12,7 @@ import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/mo
 import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import {
   BizUser,
   Content,
@@ -46,7 +46,7 @@ import {
 import { getPublishedVersionId } from '@/utils/content-utils';
 import { BizEvents } from '@usertour/types';
 import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
-import { ContentType } from '@/content/models/content.model';
+import { ContentType } from '@/content/constants/content-type.constant';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },

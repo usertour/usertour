@@ -20,7 +20,7 @@ import {
   type EntityChange,
   BIZ_EVENT_TRACKED,
   type BizEventTrackedPayload,
-} from '@/webhooks/webhook.types';
+} from '@/modules/webhooks/types/webhook.type';
 import {
   SYNC_OBJECT_UPDATE_TOPIC,
   type SyncObjectUpdateEnvelope,

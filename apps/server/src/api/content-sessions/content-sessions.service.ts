@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { type Environment, Prisma } from '@prisma/client';
 import { toArray } from '../shared/query';
 
-import { AnalyticsService } from '@/analytics/analytics.service';
+import { AnalyticsService } from '@/modules/analytics/services/analytics.service';
 import {
   ContentNotFoundError,
   ContentSessionNotFoundError,

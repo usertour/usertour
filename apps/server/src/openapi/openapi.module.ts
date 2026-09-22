@@ -10,7 +10,7 @@ import { OpenAPIKeyGuard } from './openapi.guard';
  */
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
-import { AnalyticsModule } from '@/analytics/analytics.module';
+import { AnalyticsModule } from '@/modules/analytics/analytics.module';
 import { AttributesModule } from '@/modules/attributes/attributes.module';
 import { EventsModule } from '@/modules/events/events.module';
 import { BizModule } from '@/biz/biz.module';

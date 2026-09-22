@@ -1,5 +1,5 @@
 import { AdminModule } from '@/admin/admin.module';
-import { AnalyticsModule } from '@/analytics/analytics.module';
+import { AnalyticsModule } from '@/modules/analytics/analytics.module';
 import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
 import { AttributesModule } from '@/modules/attributes/attributes.module';
@@ -36,7 +36,7 @@ import { ApiModule } from './api/api.module';
 import { McpModule } from './mcp/mcp.module';
 import { OAuthModule } from './oauth/oauth.module';
 import { IntegrationsModule } from './integrations/integrations.module';
-import { WebhooksModule } from './webhooks/webhooks.module';
+import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
 import { LicenseModule } from './license/license.module';
 import { SharedModule } from './shared/shared.module';
 import { AuditModule } from './audit/audit.module';

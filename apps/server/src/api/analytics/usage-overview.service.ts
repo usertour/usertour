@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { ContentDataType } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { EVENT_TYPE_MAPPING } from '@/analytics/analytics.service';
+import { EVENT_TYPE_MAPPING } from '@/modules/analytics/services/analytics.service';
 import {
   CompanyNotFoundError,
   EnvironmentNotFoundError,

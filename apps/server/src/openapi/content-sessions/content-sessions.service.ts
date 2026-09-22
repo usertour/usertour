@@ -6,7 +6,7 @@ import {
   ListContentSessionsQueryDto,
 } from './content-sessions.dto';
 import { ContentSession, ContentSessionAnswers } from '../models/content-session.model';
-import { AnalyticsService } from '@/analytics/analytics.service';
+import { AnalyticsService } from '@/modules/analytics/services/analytics.service';
 import { type Environment, Prisma } from '@prisma/client';
 import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
 import { OpenApiObjectType } from '@/common/openapi/types';

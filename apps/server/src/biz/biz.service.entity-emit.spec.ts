@@ -1,6 +1,6 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BizService } from './biz.service';
-import { BIZ_ENTITY_CHANGED } from '@/webhooks/webhook.types';
+import { BIZ_ENTITY_CHANGED } from '@/modules/webhooks/types/webhook.type';
 
 /**
  * The emit-scope invariant: changes surface only after the OUTERMOST

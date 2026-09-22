@@ -2,7 +2,7 @@ import { createdAtWhere, nameContains } from '@/common/filters';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
-import { CONTENT_PUBLISHED, ContentPublishedPayload } from '@/webhooks/webhook.types';
+import { CONTENT_PUBLISHED, ContentPublishedPayload } from '@/modules/webhooks/types/webhook.type';
 import { UpdateContentInput } from './dto/content-update.input';
 import { ContentInput, ContentVersionInput } from './dto/content.input';
 import { VersionUpdateInput } from './dto/version-update.input';

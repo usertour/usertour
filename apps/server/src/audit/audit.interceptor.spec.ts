@@ -2,7 +2,7 @@ import { Reflector } from '@nestjs/core';
 import { Capability } from '@usertour/types';
 
 import { AdminResolver } from '@/admin/admin.resolver';
-import { AnalyticsResolver } from '@/analytics/analytics.resolver';
+import { AnalyticsResolver } from '@/modules/analytics/analytics.resolver';
 import { ApiCompaniesController } from '@/api/companies/companies.controller';
 import { ApiSegmentMembersController } from '@/api/segments/segments.controller';
 import { ApiTokenResolver } from '@/modules/api-token/api-token.resolver';

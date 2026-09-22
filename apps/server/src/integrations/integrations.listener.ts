@@ -8,7 +8,7 @@ import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
 import { mapEvent } from '@/api/events/event.mapper';
 import { DELIVERY_ATTEMPTS } from '@/outbound/delivery-backoff';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
-import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import { buildIntegrationMessage } from './integration-envelope';
 import { IntegrationDeliveryJobData } from './integrations.types';
 import { IntegrationsService } from './integrations.service';

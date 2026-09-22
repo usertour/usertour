@@ -34,7 +34,6 @@ const LAYERS: Record<string, Layer> = {
   adapters: 'modules',
   admin: 'modules',
   ai: 'modules',
-  analytics: 'modules',
   audit: 'modules',
   auth: 'modules',
   biz: 'modules',
@@ -47,7 +46,6 @@ const LAYERS: Record<string, Layer> = {
   shared: 'modules',
   subscription: 'modules',
   utils: 'modules',
-  webhooks: 'modules',
 };
 
 /**
@@ -67,10 +65,10 @@ const KNOWN_VIOLATIONS: readonly string[] = [
   'integrations/integrations.service.ts -> api/shared/object-type',
   'integrations/sync/object-mapping.service.ts -> api/shared/codename',
   'integrations/sync/object-sync.listener.ts -> api/events/event.mapper',
-  'webhooks/webhook-envelope.ts -> api/shared/object-type',
-  'webhooks/webhooks.listener.ts -> api/companies/companies.mapper',
-  'webhooks/webhooks.listener.ts -> api/events/event.mapper',
-  'webhooks/webhooks.listener.ts -> api/users/users.mapper',
+  'modules/webhooks/utils/webhook-envelope.util.ts -> api/shared/object-type',
+  'modules/webhooks/listeners/webhooks.listener.ts -> api/companies/companies.mapper',
+  'modules/webhooks/listeners/webhooks.listener.ts -> api/events/event.mapper',
+  'modules/webhooks/listeners/webhooks.listener.ts -> api/users/users.mapper',
 ];
 
 /** Protocol types a module's service or pure-logic file must not see. */

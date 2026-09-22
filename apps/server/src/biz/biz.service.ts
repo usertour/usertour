@@ -17,7 +17,7 @@ import {
   BIZ_ENTITY_CHANGED,
   BizEntityChangedPayload,
   EntityChange,
-} from '@/webhooks/webhook.types';
+} from '@/modules/webhooks/types/webhook.type';
 import { BizCompany, BizUser, BizUserOnCompany, Prisma } from '@prisma/client';
 import { BizOrder } from './dto/biz-order.input';
 import { BizQuery } from './dto/biz-query.input';

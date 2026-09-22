@@ -5,7 +5,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Event as EventDefinition } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import {
   getCurrentStepId,
   getEventState,

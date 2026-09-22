@@ -2,7 +2,7 @@ import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Reflector } from '@nestjs/core';
 import { RESOLVER_TYPE_METADATA } from '@nestjs/graphql';
 
-import { AnalyticsResolver } from '@/analytics/analytics.resolver';
+import { AnalyticsResolver } from '@/modules/analytics/analytics.resolver';
 import { AttributesResolver } from '@/modules/attributes/attributes.resolver';
 import { AuditResolver } from '@/audit/audit.resolver';
 import { BizResolver } from '@/biz/biz.resolver';
@@ -16,7 +16,7 @@ import { SsoResolver } from '@/modules/sso/sso.resolver';
 import { SubscriptionResolver } from '@/subscription/subscription.resolver';
 import { TeamResolver } from '@/modules/team/resolvers/team.resolver';
 import { ThemesResolver } from '@/modules/themes/themes.resolver';
-import { WebhooksResolver } from '@/webhooks/webhooks.resolver';
+import { WebhooksResolver } from '@/modules/webhooks/webhooks.resolver';
 
 import { ENDPOINT_CAPABILITY } from './endpoint-capability.map';
 import { PermissionGuard } from './permission.guard';
