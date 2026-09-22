@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator';
-import { SKIP_2FA_ENROLLMENT_KEY } from '@/common/decorators/skip-2fa-enrollment.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { SKIP_2FA_ENROLLMENT_KEY } from '../decorators/skip-2fa-enrollment.decorator';
 import { TwoFactorService } from '@/modules/auth/services/two-factor.service';
 
 /**

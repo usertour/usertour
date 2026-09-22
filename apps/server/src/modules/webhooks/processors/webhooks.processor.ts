@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import axios, { AxiosRequestConfig } from 'axios';
 import { DelayedError, Job } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
+import { QUEUE_WEBHOOK_DELIVERY } from '../constants/webhook-queues.constant';
 import {
   assertPublicHttpUrl,
   createGuardedHttpsAgent,

@@ -8,7 +8,7 @@ import { ApiTokenModule } from '@/modules/api-token/api-token.module';
 import { AttributesModule } from '@/modules/attributes/attributes.module';
 import { BizModule } from '@/modules/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exception.filter';
+import { V2FallbackExceptionFilter } from './shared/v2-fallback-exception.filter';
 import { UtilitiesModule } from '@/modules/utilities/utilities.module';
 import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/modules/content/content.module';

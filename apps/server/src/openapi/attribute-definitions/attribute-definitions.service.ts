@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { AttributesService } from '@/modules/attributes/services/attributes.service';
 import type { Environment } from '@prisma/client';
-import { mapBizType, mapDataType, OpenApiObjectType } from '@/common/openapi/types';
+import {
+  mapBizType,
+  mapDataType,
+  OpenApiObjectType,
+  isValidOpenApiObjectType,
+  mapOpenApiObjectTypeToBizType,
+} from '../shared/openapi-object-type';
 import { InvalidScopeError } from '@/common/errors/errors';
-import { isValidOpenApiObjectType, mapOpenApiObjectTypeToBizType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
-import { parseOrderBy } from '@/common/openapi/sort';
+import { parseOrderBy } from '../shared/sort';
 import { ListAttributeDefinitionsQueryDto } from './attribute-definitions.dto';
 
 @Injectable()

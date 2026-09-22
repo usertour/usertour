@@ -1,6 +1,6 @@
 import { CommonDTO } from '@/modules/auth/dtos/common.dto';
 import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';

@@ -12,8 +12,7 @@ import {
 } from '@/common/errors';
 import { LicenseService } from '@/modules/license/services/license.service';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-import { Environment } from '@/common/types/schema';
-import { Prisma } from '@prisma/client';
+import { Environment, Prisma } from '@prisma/client';
 import { type PlanFeatures, PlanType, ProjectConfig } from '@usertour/types';
 import { isWithinLimit, resolvePlanFeatures } from '@usertour/helpers';
 import { activeInviteWhere } from '@/modules/team/utils/active-invite-where.util';

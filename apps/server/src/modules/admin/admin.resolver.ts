@@ -10,7 +10,7 @@ import { AdminUserListDTO } from './dtos/admin-user-list.dto';
 import { InstanceSettingDTO } from './dtos/instance-setting.dto';
 import { ProjectDTO } from '@/modules/projects/dtos/project.dto';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 
 @Resolver()
 export class AdminResolver {

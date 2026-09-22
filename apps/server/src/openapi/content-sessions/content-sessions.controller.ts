@@ -9,7 +9,7 @@ import {
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { Audit } from '@/modules/audit/decorators/audit.decorator';
-import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
+import { EnvironmentId } from '../shared/environment-id.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import type { Environment } from '@prisma/client';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';

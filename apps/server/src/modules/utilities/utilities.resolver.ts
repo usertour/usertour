@@ -1,5 +1,5 @@
-import { Public } from '@/common/decorators/public.decorator';
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { Public } from '@/modules/auth/decorators/public.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 import { S3ConfigGuard } from '@/common/guards';
 import { resolveMcpResource, resolveOrigin } from '@/common/http/resolve-origin';
 import { UserDTO } from '@/modules/users/dtos/user.dto';

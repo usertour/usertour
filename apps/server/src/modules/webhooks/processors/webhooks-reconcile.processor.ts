@@ -1,7 +1,10 @@
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
-import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
+import {
+  QUEUE_WEBHOOK_DELIVERY,
+  QUEUE_WEBHOOK_RECONCILE,
+} from '../constants/webhook-queues.constant';
 import { WEBHOOK_TEST_TOPIC } from '@usertour/constants';
 import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 import { maxLoggedAttempt } from '@/modules/outbound/utils/max-logged-attempt.util';

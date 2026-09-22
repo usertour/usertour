@@ -1,4 +1,4 @@
-import { Public } from '@/common/decorators/public.decorator';
+import { Public } from '../decorators/public.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { Args, Mutation, Parent, ResolveField, Resolver, Context } from '@nestjs/graphql';
 import { AuthService } from '../services/auth.service';
@@ -16,9 +16,9 @@ import { CommonDTO } from '../dtos/common.dto';
 import { RegisterDTO } from '../dtos/register.dto';
 import { Logger, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { REFRESH_TOKEN_COOKIE } from '@/utils/cookie';
-import { UserEntity } from '@/common/decorators/user.decorator';
-import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
+import { REFRESH_TOKEN_COOKIE } from '../constants/auth-cookies.constant';
+import { UserEntity } from '../decorators/user.decorator';
+import { SkipTwoFactorEnrollment } from '../decorators/skip-2fa-enrollment.decorator';
 import { EmailConfigGuard } from '@/common/guards/email-config.guard';
 
 @Resolver(() => AuthDTO)

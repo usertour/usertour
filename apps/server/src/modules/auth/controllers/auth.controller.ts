@@ -3,13 +3,13 @@ import { AuthService } from '../services/auth.service';
 import { ConfigService } from '@nestjs/config';
 import { GithubOauthGuard } from '../guards/github-oauth.guard';
 import { GoogleOauthGuard } from '../guards/google-oauth.guard';
-import { Public } from '../../../common/decorators/public.decorator';
-import { UserEntity } from '../../../common/decorators/user.decorator';
+import { Public } from '../decorators/public.decorator';
+import { UserEntity } from '../decorators/user.decorator';
 import { Request, Response } from 'express';
 import { Logger } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { AuthenticationExpiredError, OAuthError, SsoRequiredError } from '@/common/errors';
-import { REFRESH_TOKEN_COOKIE } from '@/utils/cookie';
+import { REFRESH_TOKEN_COOKIE } from '../constants/auth-cookies.constant';
 
 /**
  * Same-origin `next` path from the OAuth `state` round-trip, or undefined.

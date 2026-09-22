@@ -14,7 +14,7 @@ import type {
   IntegrationConfig,
 } from '@usertour/types';
 import { BizService } from '@/modules/biz/services/biz.service';
-import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
+import { QUEUE_OBJECT_SYNC } from '../constants/integration-queues.constant';
 import { FeatureRequiresLicenseError, ValidationError } from '@/common/errors/errors';
 import { DELIVERY_ATTEMPTS } from '@/modules/outbound/utils/delivery-backoff.util';
 import { ProviderConnectionService } from './provider-connection.service';

@@ -2,7 +2,7 @@ import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { QUEUE_OBJECT_SYNC_CRON } from '@/common/consts/queen';
+import { QUEUE_OBJECT_SYNC_CRON } from '../constants/integration-queues.constant';
 import { HubspotJournalService } from './hubspot-journal.service';
 import { ObjectSyncService, FULL_SYNC_INTERVAL_MS, ROUND_STALE_MS } from './object-sync.service';
 

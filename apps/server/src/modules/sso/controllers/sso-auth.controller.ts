@@ -4,9 +4,9 @@ import { JwtService } from '@nestjs/jwt';
 import { Request, Response } from 'express';
 
 import { AuthService } from '@/modules/auth/services/auth.service';
-import { Public } from '@/common/decorators/public.decorator';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 import { OAuthError, SsoAccessDeniedError } from '@/common/errors';
-import { SSO_TX_COOKIE } from '@/utils/cookie';
+import { SSO_TX_COOKIE } from '../constants/sso-transaction-cookie.constant';
 
 import { SsoOidcService } from '../services/sso-oidc.service';
 import { SsoService } from '../services/sso.service';

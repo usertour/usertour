@@ -13,7 +13,7 @@ import {
   QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
-} from '@/common/consts/queen';
+} from '../constants/auth-queues.constant';
 import { AuditService } from '@/modules/audit/services/audit.service';
 import { EmailService } from '@/shared/email.service';
 import { RedisService } from '@/shared/redis.service';

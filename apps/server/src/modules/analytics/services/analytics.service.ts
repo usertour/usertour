@@ -4,9 +4,11 @@ import {
   ResourceCenterData,
   StepSettings,
   contentEndReason,
+  ContentEditorElementType,
+  ContentEditorQuestionElement,
 } from '@usertour/types';
 import { rollingDayWindows } from '../utils/rolling-day-windows.util';
-import { GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
+import { GENUINE_COMPLETION_EVENTS } from '@/modules/delivery/utils/event.util';
 import { createdAtWhere } from '@/common/filters';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ContentType } from '@/modules/content/constants/content-type.constant';
@@ -21,10 +23,12 @@ import type { AnalyticsFilter } from '../types/analytics-filter.type';
 import type { AnalyticsOrdering } from '../types/analytics-ordering.type';
 import type { TooltipTargetMissingFilter } from '../types/tooltip-target-missing-filter.type';
 import { formatInTimeZone } from 'date-fns-tz';
-import { ContentEditorElementType, ContentEditorQuestionElement } from '@usertour/types';
 
-import { extractStepQuestion, numberQuestionTypes } from '@/utils/content-question';
-import { resolveContentVersionId } from '@/utils/content-utils';
+import {
+  extractStepQuestion,
+  numberQuestionTypes,
+} from '@/modules/content/utils/content-question.util';
+import { resolveContentVersionId } from '@/modules/delivery/utils/content.util';
 import { isDisplayOnlyBlockType, serializeBlockName } from '@usertour/helpers';
 import { Prisma } from '@prisma/client';
 import { UnknownError } from '@/common/errors/errors';

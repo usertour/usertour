@@ -2,7 +2,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { Socket } from 'socket.io';
 import { ClientMessageKind, ServerMessageKind } from '@usertour/types';
 
-import { initialization } from '@/common/initialization/initialization';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
 import { SocketDataService } from '@/web-socket/core/socket-data.service';
 import {
   buildContent,

@@ -9,9 +9,13 @@ import {
   ResourceCenterData,
   ThemeTypesSetting,
   ThemeVariation,
+  AnnouncementDistribution,
+  CustomContentSession,
+  SessionTheme,
+  SessionStep,
+  SessionAttribute,
 } from '@usertour/types';
 import type { AnnouncementData } from '@usertour/types';
-import { AnnouncementDistribution } from '@usertour/types';
 import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 import { resolveUserLocaleCode } from '@usertour/helpers';
 import {
@@ -27,21 +31,15 @@ import {
   extractButtonConditionAttributeIds,
   extractAttributeIdsFromConditions,
   extractResourceCenterAttrCodes,
-} from '@/utils/content-utils';
-import { CustomContentSession, SessionTheme, SessionStep, SessionAttribute } from '@usertour/types';
-import {
-  CustomContentVersion,
-  SocketData,
-  Environment,
-  Step,
-  Theme,
-  BizSession,
-} from '@/common/types';
+} from '../utils/content.util';
+import { CustomContentVersion } from '../types/custom-content-version.type';
+import { SocketData } from '../types/socket-data.type';
+import { Environment, Step, Theme, BizSession } from '@prisma/client';
 import { ContentDataService } from './content-data.service';
 import { AnnouncementService, type VisibleAnnouncement } from './announcement.service';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
-import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
+import { buildSessionCreateLockKey } from '../utils/session-create-lock-key.util';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
 @Injectable()

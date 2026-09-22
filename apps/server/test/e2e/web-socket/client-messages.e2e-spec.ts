@@ -1,7 +1,7 @@
 import { PrismaService } from 'nestjs-prisma';
 import { BizEvents, ClientMessageKind, ServerMessageKind } from '@usertour/types';
 
-import { initialization } from '@/common/initialization/initialization';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
 import {
   buildContent,
   buildEnvironment,

@@ -2,7 +2,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { Global, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
-import { QUEUE_AUDIT_LOG } from '@/common/consts/queen';
+import { QUEUE_AUDIT_LOG } from './constants/audit-log-queue.constant';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { AuditInterceptor } from './interceptors/audit.interceptor';
 import { AuditListener } from './listeners/audit.listener';

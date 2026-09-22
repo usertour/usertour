@@ -14,7 +14,7 @@ import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { SocketAuthData } from '@usertour/types';
 import { ClientMessageDto } from './web-socket-v2.dto';
-import { buildExternalUserRoomId } from '@/utils/websocket-utils';
+import { buildExternalUserRoomId } from '../utils/websocket.util';
 import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';

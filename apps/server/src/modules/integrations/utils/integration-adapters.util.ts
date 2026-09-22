@@ -10,7 +10,7 @@ import {
   POSTHOG_API_ENDPOINT_US,
   SEGMENT_API_ENDPOINT,
   SEGMENT_API_ENDPOINT_EU,
-} from '@/common/consts/endpoint';
+} from '../constants/provider-api-endpoints.constant';
 import {
   IntegrationMessageEnvelope,
   ProviderAdapter,

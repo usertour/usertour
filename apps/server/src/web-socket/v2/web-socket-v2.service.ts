@@ -1,7 +1,7 @@
 import { BizService } from '@/modules/biz/services/biz.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Environment } from '@/common/types/schema';
+import { Environment, BizUser } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import {
@@ -46,7 +46,9 @@ import { ANNOUNCEMENT_SEEN_SOURCES } from '@usertour/constants';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { Socket, Server } from 'socket.io';
 import { SocketDataService } from '../core/socket-data.service';
-import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/types/content';
+import { ContentCancelContext } from '../types/content-cancel-context.type';
+import { ContentStartContext } from '../types/content-start-context.type';
+import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import {
   EventTrackingService,
   RESERVED_EVENT_CODE_NAMES,
@@ -54,11 +56,13 @@ import {
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { AnnouncementService } from '@/modules/delivery/services/announcement.service';
 import { ContentDataService } from '@/modules/delivery/services/content-data.service';
-import { BizUser } from '@/common/types/schema';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { IdentityVerificationService } from '@/shared/identity-verification.service';
-import { buildExternalUserRoomId, getSocketId } from '@/utils/websocket-utils';
-import { assignClientContext, buildAnnouncementSeenEventData } from '@/utils/event-v2';
+import { buildExternalUserRoomId, getSocketId } from '../utils/websocket.util';
+import {
+  assignClientContext,
+  buildAnnouncementSeenEventData,
+} from '@/modules/delivery/utils/event.util';
 
 @Injectable()
 export class WebSocketV2Service {

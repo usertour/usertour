@@ -1,12 +1,5 @@
-import {
-  BizCompany,
-  BizSession,
-  BizUser,
-  Step,
-  Version,
-  Theme,
-  BizSessionWithEvents,
-} from '@/common/types/schema';
+import { BizCompany, BizSession, BizUser, Step, Version, Theme } from '@prisma/client';
+import { BizSessionWithEvents } from '@/modules/delivery/types/biz-session-with-events.type';
 import { ContentType } from '@/modules/content/constants/content-type.constant';
 import { ContentConfigObject } from '@/modules/content/types/content-config-object.type';
 

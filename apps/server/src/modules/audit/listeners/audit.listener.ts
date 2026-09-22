@@ -2,7 +2,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
-import { QUEUE_AUDIT_LOG } from '@/common/consts/queen';
+import { QUEUE_AUDIT_LOG } from '../constants/audit-log-queue.constant';
 import { type AuditEntry, RESOURCE_CHANGED_EVENT } from '../types/audit.type';
 
 /**

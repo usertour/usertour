@@ -6,7 +6,7 @@ import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
   createConditionsFilter,
-} from '@/common/attribute/filter';
+} from '@/modules/biz/utils/attribute-filter.util';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import {
   evaluateAttributeCondition,
@@ -16,7 +16,7 @@ import {
 } from '@usertour/helpers';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { BizUser, Environment, Step, Attribute } from '@/common/types/schema';
+import { BizUser, Environment, Step, Attribute } from '@prisma/client';
 import {
   BizEvents,
   RulesCondition,

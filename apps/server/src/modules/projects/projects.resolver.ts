@@ -4,7 +4,7 @@ import { LicenseInfoDTO } from './dtos/license-info.dto';
 import { ProjectDTO } from './dtos/project.dto';
 import { ProjectConfigDTO } from './dtos/project-config.dto';
 import { ProjectsService } from './services/projects.service';
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';

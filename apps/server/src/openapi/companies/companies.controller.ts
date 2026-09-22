@@ -24,7 +24,7 @@ import { Audit } from '@/modules/audit/decorators/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import type { Environment } from '@prisma/client';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
-import { DeleteResponseDto } from '@/common/openapi/dtos';
+import { DeleteResponseDto } from '../shared/delete-response.dto';
 
 @ApiTags('Companies (v1)')
 @Controller('v1/companies')

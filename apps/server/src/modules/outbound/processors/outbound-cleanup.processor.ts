@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { QUEUE_CLEAN_OUTBOUND_MESSAGES } from '@/common/consts/queen';
+import { QUEUE_CLEAN_OUTBOUND_MESSAGES } from '../constants/clean-outbound-messages-queue.constant';
 import { OutboundLedgerService } from '../services/outbound-ledger.service';
 
 /** Drops ledger rows past the retention window (daily repeatable job). */

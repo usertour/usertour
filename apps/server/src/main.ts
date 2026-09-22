@@ -10,7 +10,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
-import { normalizeOpenApiParameters } from './common/openapi/normalize-parameters';
+import { normalizeOpenApiParameters } from './openapi/shared/normalize-parameters';
 import { configureApp } from './configure-app';
 
 // Import tracer for OpenTelemetry

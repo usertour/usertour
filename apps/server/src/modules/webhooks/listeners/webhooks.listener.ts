@@ -4,7 +4,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { WEBHOOK_CONTENT_PUBLISHED_TOPIC } from '@usertour/constants';
-import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
+import { QUEUE_WEBHOOK_DELIVERY } from '../constants/webhook-queues.constant';
 import { mapCompany } from '@/api/companies/companies.mapper';
 import { mapEvent } from '@/api/events/event.mapper';
 import { mapUser } from '@/api/users/users.mapper';

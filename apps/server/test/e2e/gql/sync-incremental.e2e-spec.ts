@@ -4,8 +4,8 @@ import type { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { BizService } from '@/modules/biz/services/biz.service';
-import { initialization } from '@/common/initialization/initialization';
-import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
+import { QUEUE_OBJECT_SYNC } from '@/modules/integrations/constants/integration-queues.constant';
 import { AxiosError } from 'axios';
 import {
   SYNC_BACKFILL_JOB,

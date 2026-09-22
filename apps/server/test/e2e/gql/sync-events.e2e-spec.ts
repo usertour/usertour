@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { BizEvents, EventAttributes } from '@usertour/types';
-import { initialization } from '@/common/initialization/initialization';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
 import { EncryptionService } from '@/shared/encryption.service';
 import { ObjectSyncListener } from '@/modules/integrations/sync/object-sync.listener';
 import {

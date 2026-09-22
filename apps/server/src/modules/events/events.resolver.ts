@@ -1,4 +1,4 @@
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';

@@ -1,7 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 
 import { OAuthConnectionDTO } from './dtos/oauth-connection.dto';

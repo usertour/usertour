@@ -14,7 +14,7 @@ import {
   buildVersion,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';
-import { initialization } from '@/common/initialization/initialization';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
 
 /**
  * Functional e2e for the `analytics` GraphQL resolver — follows the themes

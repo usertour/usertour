@@ -4,7 +4,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { SYNC_INTEGRATION_PROVIDERS, WEBHOOK_EVENT_TOPIC_PREFIX } from '@usertour/constants';
-import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
+import { QUEUE_INTEGRATION_DELIVERY } from '../constants/integration-queues.constant';
 import { mapEvent } from '@/api/events/event.mapper';
 import { DELIVERY_ATTEMPTS } from '@/modules/outbound/utils/delivery-backoff.util';
 import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';

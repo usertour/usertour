@@ -4,7 +4,7 @@ import { ClientMessageKind } from '@usertour/types';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { WebSocketContext } from './web-socket-v2.dto';
 import { DistributedLockService } from '@/modules/delivery/services/distributed-lock.service';
-import { buildSocketLockKey, getSocketToken } from '@/utils/websocket-utils';
+import { buildSocketLockKey, getSocketToken } from '../utils/websocket.util';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
 interface MessageHandler {

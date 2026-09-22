@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { WEBHOOK_PREFIX_SUBSCRIPTIONS, WEBHOOK_TEST_TOPIC } from '@usertour/constants';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { QUEUE_WEBHOOK_DELIVERY } from '@/common/consts/queen';
+import { QUEUE_WEBHOOK_DELIVERY } from '../constants/webhook-queues.constant';
 import { assertPublicHttpUrl } from '@/common/egress/egress-guard';
 import {
   FeatureRequiresLicenseError,

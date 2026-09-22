@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, HttpException, Logger, Param, Post } from '@nestjs/common';
 import { Integration } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { Public } from '@/common/decorators/public.decorator';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 import { CohortSyncBatch } from '../types/cohort-sync.type';
 import { CohortSyncService } from '../services/cohort-sync.service';
 import { hashInboundToken } from '../utils/inbound-token.util';

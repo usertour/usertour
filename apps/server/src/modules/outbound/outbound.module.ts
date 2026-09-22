@@ -1,6 +1,6 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
-import { QUEUE_CLEAN_OUTBOUND_MESSAGES } from '@/common/consts/queen';
+import { QUEUE_CLEAN_OUTBOUND_MESSAGES } from './constants/clean-outbound-messages-queue.constant';
 import { OutboundCleanupProcessor } from './processors/outbound-cleanup.processor';
 import { OutboundLedgerService } from './services/outbound-ledger.service';
 

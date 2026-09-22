@@ -9,7 +9,7 @@ import {
   QUEUE_OBJECT_SYNC_CRON,
   QUEUE_INTEGRATION_DELIVERY,
   QUEUE_INTEGRATION_RECONCILE,
-} from '@/common/consts/queen';
+} from './constants/integration-queues.constant';
 import { OutboundModule } from '@/modules/outbound/outbound.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';

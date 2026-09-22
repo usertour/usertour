@@ -4,7 +4,7 @@ import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
 
-import { Public } from '@/common/decorators/public.decorator';
+import { Public } from '@/modules/auth/decorators/public.decorator';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';

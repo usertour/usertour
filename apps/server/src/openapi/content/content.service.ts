@@ -13,10 +13,10 @@ import {
 import { type Environment, Prisma } from '@prisma/client';
 import { ContentService } from '@/modules/content/services/content.service';
 import { ContentNotFoundError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
 import { paginate } from '@/common/openapi/pagination';
-import { parseOrderBy } from '@/common/openapi/sort';
-import { extractQuestionData } from '@/utils/content-question';
+import { parseOrderBy } from '../shared/sort';
+import { extractQuestionData } from '@/modules/content/utils/content-question.util';
 type ContentWithVersions = Prisma.ContentGetPayload<{
   include: {
     editedVersion: true;

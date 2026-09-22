@@ -8,7 +8,7 @@ import { SubscriptionPlanDTO } from './dtos/subscription-plan.dto';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 
 // PermissionGuard is not global: without this class-level registration the

@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { initialization } from '@/common/initialization/initialization';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
 import { EncryptionService } from '@/shared/encryption.service';
 import { AxiosError, AxiosHeaders } from 'axios';
 import * as hubspotApi from '@/modules/integrations/sync/hubspot-api';

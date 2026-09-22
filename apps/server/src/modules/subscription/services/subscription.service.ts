@@ -10,11 +10,11 @@ import type {
 } from '../types/subscription.type';
 import { Subscription, Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
-import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '@/common/consts/queen';
+import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '../constants/check-canceled-subscriptions-queue.constant';
 import { PrismaService } from 'nestjs-prisma';
 import { ParamsError } from '@/common/errors';
 import type { SubscriptionPlan } from '@prisma/client';
-import { parseSubscriptionPlan } from '@/utils/subscription';
+import { parseSubscriptionPlan } from '../utils/subscription-plan.util';
 
 @Injectable()
 export class SubscriptionService implements OnModuleInit {

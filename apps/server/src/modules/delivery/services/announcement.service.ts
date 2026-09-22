@@ -7,7 +7,7 @@ import {
   resolveUserLocaleCode,
 } from '@usertour/helpers';
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, BizUser, Environment } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import {
   AnnouncementData,
@@ -24,8 +24,7 @@ import {
   DEFAULT_ANNOUNCEMENT_DATA,
   DEFAULT_POPUP_CONFIG,
 } from '@usertour/constants';
-import { BizUser, Environment } from '@/common/types/schema';
-import { extractThemeVariationsAttributeIds, extractUserAttrCodes } from '@/utils/content-utils';
+import { extractThemeVariationsAttributeIds, extractUserAttrCodes } from '../utils/content.util';
 import { ContentDataService } from './content-data.service';
 import {
   type AutoStartRulesConfig,

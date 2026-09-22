@@ -4,7 +4,7 @@ import { BizAttributeTypes } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
 import type { Attribute } from '@prisma/client';
-import { createFilterItem } from '@/common/attribute/filter';
+import { createFilterItem } from '@/modules/biz/utils/attribute-filter.util';
 import { createTestApp } from './create-test-app';
 import { buildBizUser, buildEnvironment, buildProject } from './factories';
 

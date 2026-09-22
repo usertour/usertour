@@ -16,8 +16,8 @@ import {
   getDefaultSegments,
   initialization,
   initializationThemes,
-} from '@/common/initialization/initialization';
-import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
+} from '@/modules/projects/utils/project-initialization.util';
+import { RolesScopeEnum } from '@/modules/auth/decorators/roles.decorator';
 import { PasswordService } from '@/modules/auth/services/password.service';
 import { TeamService } from '@/modules/team/services/team.service';
 import { Role } from '@prisma/client';

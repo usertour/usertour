@@ -2,7 +2,10 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
-import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
+import {
+  QUEUE_WEBHOOK_DELIVERY,
+  QUEUE_WEBHOOK_RECONCILE,
+} from './constants/webhook-queues.constant';
 import { OutboundModule } from '@/modules/outbound/outbound.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';

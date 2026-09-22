@@ -6,7 +6,7 @@ import { SegmentNotFoundError } from '@/common/errors';
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
-} from '@/common/attribute/filter';
+} from '../utils/attribute-filter.util';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -31,9 +31,9 @@ import type { SegmentDeletion } from '../types/segment-deletion.type';
 import type { SegmentUserMembership } from '../types/segment-user-membership.type';
 import type { SegmentUserRemoval } from '../types/segment-user-removal.type';
 import { ParamsError, UnknownError, ValidationError } from '@/common/errors';
-import { getDefaultColumns } from '@/common/initialization/initialization';
+import { getDefaultColumns } from '@/modules/projects/utils/project-initialization.util';
 import { BizAttributeTypes, ColumnSetting } from '@usertour/types';
-import { IntegrationSource } from '@/common/types/integration';
+import { IntegrationSource } from '@/modules/integrations/constants/integration-source.constant';
 import isEqual from 'fast-deep-equal';
 import {
   capitalizeFirstLetter,

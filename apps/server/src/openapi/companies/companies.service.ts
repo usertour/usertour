@@ -8,11 +8,11 @@ import {
   GetCompanyQueryDto,
 } from './companies.dto';
 import { CompanyNotFoundError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
 import { paginate } from '@/common/openapi/pagination';
 import type { Environment } from '@prisma/client';
-import { parseOrderBy } from '@/common/openapi/sort';
-import { DeleteResponseDto } from '@/common/openapi/dtos';
+import { parseOrderBy } from '../shared/sort';
+import { DeleteResponseDto } from '../shared/delete-response.dto';
 
 @Injectable()
 export class OpenAPICompaniesService {

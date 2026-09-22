@@ -7,7 +7,7 @@ import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-t
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
-} from '@/common/attribute/filter';
+} from '@/modules/biz/utils/attribute-filter.util';
 import { BizService } from '@/modules/biz/services/biz.service';
 import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
 import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';

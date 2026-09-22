@@ -34,7 +34,7 @@ import {
   CONTENT_SEEN_EVENTS,
   isVersionMismatchWithActiveSession,
   unsetActiveSessionOnVersionMismatch,
-} from '@/utils/content-utils';
+} from '@/modules/delivery/utils/content.util';
 import {
   buildExternalUserRoomId,
   extractExcludedContentIds,
@@ -42,20 +42,18 @@ import {
   buildSocketLockKey,
   extractSessionsByContentType,
   getSocketId,
-} from '@/utils/websocket-utils';
-import {
-  SocketData,
-  CustomContentVersion,
-  ContentStartContext,
-  ContentCancelContext,
-  CancelSessionParams,
-  ActivateSessionParams,
-  ContentStartResult,
-  ConditionExtractionMode,
-  Environment,
-  TryAutoStartContentOptions,
-  EventTrackingItem,
-} from '@/common/types';
+} from '../utils/websocket.util';
+import { SocketData } from '@/modules/delivery/types/socket-data.type';
+import { CustomContentVersion } from '@/modules/delivery/types/custom-content-version.type';
+import { ContentStartContext } from '../types/content-start-context.type';
+import { ContentCancelContext } from '../types/content-cancel-context.type';
+import { CancelSessionParams } from '../types/cancel-session-params.type';
+import { ActivateSessionParams } from '../types/activate-session-params.type';
+import { ContentStartResult } from '../types/content-start-result.type';
+import { ConditionExtractionMode } from '@/modules/delivery/constants/condition-extraction-mode.constant';
+import { Environment } from '@prisma/client';
+import { TryAutoStartContentOptions } from '../types/try-auto-start-content-options.type';
+import { EventTrackingItem } from '@/modules/delivery/types/event-tracking-item.type';
 import { DistributedLockService } from '@/modules/delivery/services/distributed-lock.service';
 import { ContentDataService } from '@/modules/delivery/services/content-data.service';
 import { SessionBuilderService } from '@/modules/delivery/services/session-builder.service';
@@ -63,7 +61,7 @@ import { EventTrackingService } from '@/modules/delivery/services/event-tracking
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-import { getStartEventType, getEndEventType } from '@/utils/event-v2';
+import { getStartEventType, getEndEventType } from '@/modules/delivery/utils/event.util';
 import { WebSocketContext } from '../v2/web-socket-v2.dto';
 
 /**

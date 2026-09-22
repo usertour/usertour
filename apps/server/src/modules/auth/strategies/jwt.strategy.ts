@@ -6,7 +6,7 @@ import { AuthService } from '../services/auth.service';
 import type { JwtClaims } from '../types/jwt-claims.type';
 import type { User } from '@prisma/client';
 import { Request } from 'express';
-import { ACCESS_TOKEN_COOKIE } from '@/utils/cookie';
+import { ACCESS_TOKEN_COOKIE } from '../constants/auth-cookies.constant';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

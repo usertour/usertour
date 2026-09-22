@@ -2,7 +2,10 @@ import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, OnModuleInit } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
 import { INTEGRATION_TEST_TOPIC } from '@usertour/constants';
-import { QUEUE_INTEGRATION_DELIVERY, QUEUE_INTEGRATION_RECONCILE } from '@/common/consts/queen';
+import {
+  QUEUE_INTEGRATION_DELIVERY,
+  QUEUE_INTEGRATION_RECONCILE,
+} from '../constants/integration-queues.constant';
 import {
   RECONCILE_BATCH_SIZE,
   RECONCILE_ORPHAN_AFTER_MS,

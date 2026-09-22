@@ -4,6 +4,7 @@ import {
   blankLocalizedUnitClones,
   deepClone,
   isSafeDestinationUrl,
+  isHttpUrl,
 } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot } from '@usertour/types';
@@ -19,8 +20,7 @@ import {
   collectStaleEmbedUrls,
   fetchEmbedResolutions,
   installEmbedResolutions,
-} from '@/common/ombed/embed-resolve';
-import { isHttpUrl } from '@/common/url';
+} from '@/modules/utilities/utils/embed-resolve.util';
 import { UtilitiesService } from '@/modules/utilities/services/utilities.service';
 
 import { ContentService } from './content.service';

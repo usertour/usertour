@@ -5,7 +5,7 @@ import axios from 'axios';
 import { DelayedError, Job } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import type { IntegrationConfig, IntegrationProvider } from '@usertour/types';
-import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
+import { QUEUE_INTEGRATION_DELIVERY } from '../constants/integration-queues.constant';
 import { renderIntegrationAutoDisabledEmail } from '@usertour/emails';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';

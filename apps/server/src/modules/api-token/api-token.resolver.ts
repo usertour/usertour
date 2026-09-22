@@ -2,7 +2,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import type { PrismaService } from 'nestjs-prisma';
 
 import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 
 import { ApiTokenDTO } from './dtos/api-token.dto';

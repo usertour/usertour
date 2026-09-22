@@ -1,7 +1,10 @@
 import { ContentDataType, ContentEditorElementType, EventAttributes } from '@usertour/types';
 
-import { extractQuestionData, numberQuestionTypes } from '@/utils/content-question';
-import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
+import {
+  extractQuestionData,
+  numberQuestionTypes,
+} from '@/modules/content/utils/content-question.util';
+import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/modules/delivery/utils/event.util';
 
 import { ApiObjectType } from '../shared/object-type';
 import { ContentSession, ContentSessionAnswer, SessionExpand } from './content-sessions.schema';

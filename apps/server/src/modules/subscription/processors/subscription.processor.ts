@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { SubscriptionService } from '../services/subscription.service';
-import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '@/common/consts/queen';
+import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '../constants/check-canceled-subscriptions-queue.constant';
 
 @Processor(QUEUE_CHECK_CANCELED_SUBSCRIPTIONS)
 export class CheckCanceledSubscriptionsProcessor extends WorkerHost {

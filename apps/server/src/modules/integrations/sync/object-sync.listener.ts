@@ -11,7 +11,10 @@ import type {
   IntegrationProvider,
   IntegrationConfig,
 } from '@usertour/types';
-import { QUEUE_OBJECT_SYNC, QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
+import {
+  QUEUE_OBJECT_SYNC,
+  QUEUE_INTEGRATION_DELIVERY,
+} from '../constants/integration-queues.constant';
 import { DELIVERY_ATTEMPTS } from '@/modules/outbound/utils/delivery-backoff.util';
 import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 import {

@@ -4,7 +4,7 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { OutboundMessageStatus } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { QUEUE_CLEAN_OUTBOUND_MESSAGES } from '@/common/consts/queen';
+import { QUEUE_CLEAN_OUTBOUND_MESSAGES } from '../constants/clean-outbound-messages-queue.constant';
 
 import { OUTBOUND_MESSAGE_RETENTION_DAYS } from '../constants/outbound-message-retention-days.constant';
 import { OUTBOUND_ERROR_MAX_LENGTH } from '../constants/outbound-error-max-length.constant';

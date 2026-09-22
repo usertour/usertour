@@ -17,8 +17,8 @@ import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.const
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
-} from '@/common/attribute/filter';
-import { BizUser, Environment } from '@/common/types/schema';
+} from '@/modules/biz/utils/attribute-filter.util';
+import { BizUser, Environment } from '@prisma/client';
 import {
   evaluateCustomContentVersion,
   filterAvailableAutoStartContentVersions,
@@ -30,8 +30,8 @@ import {
   isShowOnlyContentType,
   isSingleSessionContentType,
   isSingletonContentType,
-} from '@/utils/content-utils';
-import type { CustomContentVersion } from '@/common/types/content';
+} from '../utils/content.util';
+import type { CustomContentVersion } from '../types/custom-content-version.type';
 
 import { AnnouncementService } from './announcement.service';
 import type { AutoStartRulesConfig } from './condition-evaluation.service';

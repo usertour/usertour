@@ -35,7 +35,7 @@ Infrastructure is not a layer of its own (see Alternatives): the line that pays 
 
 - **entrypoints → modules**, never the reverse. Modules may import each other; so may entrypoints (MCP binds the REST v2 services).
 - The composition root (`src/*.ts`: `main.ts`, `app.module.ts`, …) may import anything; nothing imports it.
-- **Inside `src/modules/`**, a service or pure-logic file must not import `@nestjs/graphql`, anything under a module's `dtos/`, or a `*.resolver`. Services take plain types declared in `types/`; the GraphQL inputs `implements` them. Resolvers depend on services, never the reverse. Guards and interceptors (`*.guard.ts`, `*.interceptor.ts`) are protocol plumbing — they read the GraphQL execution context by nature — and are exempt like the resolver is; the rule is about what the business code sees.
+- **Inside `src/modules/`**, a service or pure-logic file must not import `@nestjs/graphql`, anything under a module's `dtos/`, or a `*.resolver`. Services take plain types declared in `types/`; the GraphQL inputs `implements` them. Resolvers depend on services, never the reverse. Guards, interceptors and decorators (`*.guard.ts`, `*.interceptor.ts`, `*.decorator.ts`) are protocol plumbing — they read the GraphQL execution context by nature — and are exempt like the resolver is; the rule is about what the business code sees.
 
 ### 3. Inside a module
 

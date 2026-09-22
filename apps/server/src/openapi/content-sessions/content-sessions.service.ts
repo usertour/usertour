@@ -9,11 +9,11 @@ import { ContentSession, ContentSessionAnswers } from '../models/content-session
 import { AnalyticsService } from '@/modules/analytics/services/analytics.service';
 import { type Environment, Prisma } from '@prisma/client';
 import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
 import { paginate } from '@/common/openapi/pagination';
 import { ContentService } from '@/modules/content/services/content.service';
-import { parseOrderBy } from '@/common/openapi/sort';
-import { extractQuestionData } from '@/utils/content-question';
+import { parseOrderBy } from '../shared/sort';
+import { extractQuestionData } from '@/modules/content/utils/content-question.util';
 
 type ContentSessionWithRelations = Prisma.BizSessionGetPayload<{
   include: {

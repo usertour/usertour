@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Job } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
-import { QUEUE_AUDIT_LOG } from '@/common/consts/queen';
+import { QUEUE_AUDIT_LOG } from '../constants/audit-log-queue.constant';
 import type { AuditEntry } from '../types/audit.type';
 
 /**

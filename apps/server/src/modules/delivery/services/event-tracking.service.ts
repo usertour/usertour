@@ -3,7 +3,14 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { trackerSystemReservedEventAttributes } from '@usertour/constants';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Event as EventDefinition } from '@prisma/client';
+import {
+  Event as EventDefinition,
+  BizCompany,
+  BizSession,
+  BizUser,
+  Environment,
+  Step,
+} from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import {
@@ -33,7 +40,7 @@ import {
   getAnswer,
   assignClientContext,
   assignDeliveredLocale,
-} from '@/utils/event-v2';
+} from '../utils/event.util';
 import {
   BizEvents,
   CompanyAttributes,
@@ -42,29 +49,20 @@ import {
   ChecklistItemType,
 } from '@usertour/types';
 import type { ClientContext } from '@usertour/types';
-import {
-  BizCompany,
-  BizSession,
-  BizUser,
-  Environment,
-  Step,
-  BizSessionWithEvents,
-  BizSessionWithRelations,
-  Tx,
-} from '@/common/types/schema';
+import { BizSessionWithEvents } from '../types/biz-session-with-events.type';
+import { BizSessionWithRelations } from '../types/biz-session-with-relations.type';
+import { TransactionClient } from '../types/transaction-client.type';
 import { humanize, isNullish } from '@usertour/helpers';
 import { ValidationError } from '@/common/errors';
-import { extractStepBindToAttribute } from '@/utils/content-question';
-import { calculateChecklistProgress } from '@/utils/content-utils';
+import { extractStepBindToAttribute } from '@/modules/content/utils/content-question.util';
+import { calculateChecklistProgress } from '../utils/content.util';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { BizService } from '@/modules/biz/services/biz.service';
-import type {
-  EventTrackingParams,
-  EventTrackingItem,
-  EventHandlerConfig,
-  EventHandler,
-  EventTransactionParams,
-} from '@/common/types/track';
+import type { EventTrackingParams } from '../types/event-tracking-params.type';
+import type { EventTrackingItem } from '../types/event-tracking-item.type';
+import type { EventHandlerConfig } from '../types/event-handler-config.type';
+import type { EventHandler } from '../types/event-handler.type';
+import type { EventTransactionParams } from '../types/event-transaction-params.type';
 
 /**
  * Code names of built-in analytics events — unforgeable through every custom
@@ -632,7 +630,7 @@ export class EventTrackingService {
    */
   private async findBizSessionWithRelations(
     sessionId: string,
-    client?: PrismaService | Tx,
+    client?: PrismaService | TransactionClient,
   ): Promise<BizSessionWithRelations | null> {
     const prismaClient = client ?? this.prisma;
     return await prismaClient.bizSession.findUnique({
@@ -654,7 +652,7 @@ export class EventTrackingService {
    */
   private async findTrackingSession(
     sessionId: string,
-    client?: PrismaService | Tx,
+    client?: PrismaService | TransactionClient,
   ): Promise<BizSessionWithRelations | null> {
     const bizSession = await this.findBizSessionWithRelations(sessionId, client);
 
@@ -687,7 +685,7 @@ export class EventTrackingService {
     eventId: string,
     data: Record<string, any>,
     extraAllowedAttributes: string[] = [],
-    client?: PrismaService | Tx,
+    client?: PrismaService | TransactionClient,
   ): Promise<Record<string, any> | false> {
     // Early return if no data provided
     if (!data || Object.keys(data).length === 0) {
@@ -734,7 +732,7 @@ export class EventTrackingService {
    * Handle question answer creation or update for question answered events
    */
   private async handleQuestionAnswer(
-    tx: Tx,
+    tx: TransactionClient,
     bizEventId: string,
     bizSession: BizSessionWithEvents,
     events: Record<string, unknown>,
@@ -804,7 +802,7 @@ export class EventTrackingService {
    * @returns True if the event was created successfully
    */
   private async handleEventCreation(
-    tx: Tx,
+    tx: TransactionClient,
     bizSession: BizSessionWithEvents,
     eventId: string,
     eventCodeName: string,
@@ -847,7 +845,7 @@ export class EventTrackingService {
    * @returns Promise<void>
    */
   private async updateBizSession(
-    tx: Tx,
+    tx: TransactionClient,
     bizSession: BizSession,
     eventCodeName: string,
     events: Record<string, unknown>,
@@ -915,7 +913,11 @@ export class EventTrackingService {
    * @param currentTime - Current timestamp
    * @returns Promise for user update operation
    */
-  private updateUserSeenAttributes(tx: Tx, user: BizUser, currentTime: string): Promise<BizUser> {
+  private updateUserSeenAttributes(
+    tx: TransactionClient,
+    user: BizUser,
+    currentTime: string,
+  ): Promise<BizUser> {
     const userData = (user.data as Record<string, unknown>) || {};
     const updatedUserData = this.updateSeenTimestamps(
       userData,
@@ -938,7 +940,7 @@ export class EventTrackingService {
    * @returns Promise for company update operation or null
    */
   private async updateCompanySeenAttributes(
-    tx: Tx,
+    tx: TransactionClient,
     bizCompanyId: string,
     currentTime: string,
   ): Promise<BizCompany | null> {
@@ -971,7 +973,11 @@ export class EventTrackingService {
    * @param bizCompanyId - Business company ID
    * @returns Promise<void>
    */
-  private async updateSeenAttributes(tx: Tx, user: BizUser, bizCompanyId?: string): Promise<void> {
+  private async updateSeenAttributes(
+    tx: TransactionClient,
+    user: BizUser,
+    bizCompanyId?: string,
+  ): Promise<void> {
     const currentTime = new Date().toISOString();
 
     // Prepare update operations
@@ -995,7 +1001,7 @@ export class EventTrackingService {
   /**
    * Execute event tracking transaction
    */
-  private async executeEventTransaction(tx: Tx, params: EventTransactionParams) {
+  private async executeEventTransaction(tx: TransactionClient, params: EventTransactionParams) {
     const {
       environment,
       externalUserId,
@@ -1081,7 +1087,7 @@ export class EventTrackingService {
    * @returns True if event was tracked successfully
    */
   private async trackEventWithSession(
-    tx: Tx,
+    tx: TransactionClient,
     params: Omit<EventTransactionParams, 'externalUserId' | 'data'>,
     buildEventData: (session: BizSessionWithRelations) => Record<string, any> | null,
   ): Promise<boolean> {
@@ -1120,7 +1126,10 @@ export class EventTrackingService {
    * @param params - Event tracking parameters
    * @returns True if the event was tracked successfully
    */
-  private async handleFlowStepSeen(tx: Tx, params: EventTrackingParams): Promise<boolean> {
+  private async handleFlowStepSeen(
+    tx: TransactionClient,
+    params: EventTrackingParams,
+  ): Promise<boolean> {
     // Track FLOW_STEP_SEEN event
     const success = await this.trackEventWithSession(
       tx,
@@ -1167,7 +1176,10 @@ export class EventTrackingService {
    * @param params - Event tracking parameters
    * @returns True if the event was tracked successfully
    */
-  private async handleQuestionAnswered(tx: Tx, params: EventTrackingParams): Promise<boolean> {
+  private async handleQuestionAnswered(
+    tx: TransactionClient,
+    params: EventTrackingParams,
+  ): Promise<boolean> {
     const bizSession = await this.findTrackingSession(params.sessionId, tx);
     if (!bizSession) {
       return false;
@@ -1221,7 +1233,7 @@ export class EventTrackingService {
       this.eventHandlers.set(config.eventName, {
         handle: config.handle
           ? config.handle
-          : async (tx: Tx, params: EventTrackingParams) => {
+          : async (tx: TransactionClient, params: EventTrackingParams) => {
               // When handle is not provided, buildEventData is required by type definition
               if (!config.buildEventData) {
                 throw new Error(

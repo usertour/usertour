@@ -23,8 +23,8 @@ import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.const
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
-} from '@/common/attribute/filter';
-import { Step } from '@/common/types/schema';
+} from '@/modules/biz/utils/attribute-filter.util';
+import { Step } from '@prisma/client';
 
 describe('ConditionEvaluationService', () => {
   let service: ConditionEvaluationService;

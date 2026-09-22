@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { SubscriptionService } from './services/subscription.service';
 import { CheckCanceledSubscriptionsProcessor } from './processors/subscription.processor';
-import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '@/common/consts/queen';
+import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from './constants/check-canceled-subscriptions-queue.constant';
 import { StripeModule } from '@golevelup/nestjs-stripe';
 import { SubscriptionController } from './controllers/subscription.controller';
 import { SubscriptionResolver } from './subscription.resolver';

@@ -4,7 +4,7 @@ import { AttributeBizTypes, AttributeDataType, BizEvents } from '@usertour/types
 
 import { compileContent } from '@/api/content-representation/representation.compile';
 import type { CompileResolvers } from '@/api/content-representation/rules.compile';
-import { extractQuestionData } from '@/utils/content-question';
+import { extractQuestionData } from '@/modules/content/utils/content-question.util';
 import { EventTrackingService } from '@/modules/delivery/services/event-tracking.service';
 import { createTestApp } from '../create-test-app';
 import {

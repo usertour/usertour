@@ -9,7 +9,7 @@ import {
   ValidationError,
 } from '@/common/errors/errors';
 import { ContentService } from '@/modules/content/services/content.service';
-import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
+import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/modules/delivery/utils/event.util';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';

@@ -7,7 +7,7 @@ import {
   QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
-} from '@/common/consts/queen';
+} from '../constants/auth-queues.constant';
 import { AuthService } from '../services/auth.service';
 
 @Processor(QUEUE_SEND_MAGIC_LINK_EMAIL)

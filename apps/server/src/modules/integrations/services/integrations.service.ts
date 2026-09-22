@@ -11,7 +11,7 @@ import {
 } from '@usertour/constants';
 import type { Request } from 'express';
 import type { IntegrationConfig, IntegrationProvider } from '@usertour/types';
-import { QUEUE_INTEGRATION_DELIVERY } from '@/common/consts/queen';
+import { QUEUE_INTEGRATION_DELIVERY } from '../constants/integration-queues.constant';
 import {
   FeatureRequiresLicenseError,
   IntegrationNotFoundError,

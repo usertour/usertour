@@ -6,7 +6,7 @@ import { AttributeBizTypeNames } from '@/modules/attributes/constants/attribute-
 import { InvalidLimitError, InvalidScopeError } from '@/common/errors/errors';
 import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
 import type { Environment } from '@prisma/client';
 import { ListAttributeDefinitionsQueryDto } from './attribute-definitions.dto';
 

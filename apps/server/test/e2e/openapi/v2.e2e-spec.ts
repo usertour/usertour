@@ -4,7 +4,7 @@ import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { OpenApiObjectType } from '@/openapi/shared/openapi-object-type';
 
 import { gqlData, graphql } from '../auth';
 import {

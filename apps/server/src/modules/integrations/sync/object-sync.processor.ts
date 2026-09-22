@@ -1,7 +1,7 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job, UnrecoverableError } from 'bullmq';
-import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
+import { QUEUE_OBJECT_SYNC } from '../constants/integration-queues.constant';
 import {
   deliveryBackoffStrategy,
   type RetryAfterCarrier,

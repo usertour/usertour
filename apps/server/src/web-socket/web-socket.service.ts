@@ -7,12 +7,12 @@ import {
   createBizUserConditionsFilter,
   createConditionsFilter,
   createFilterItem,
-} from '@/common/attribute/filter';
+} from '@/modules/biz/utils/attribute-filter.util';
 import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@usertour/types';
 import { ChecklistData } from '@/modules/content/types/checklist-data.type';
 import { ContentConfigObject } from '@/modules/content/types/content-config-object.type';
 import { RulesCondition } from '@/modules/content/types/rules-condition.type';
-import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
+import { getEventProgress, getEventState, isValidEvent } from './utils/event.util';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
@@ -28,7 +28,7 @@ import {
   BizSession,
 } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { TrackEventData } from '@/common/types/track';
+import { TrackEventData } from '@/modules/delivery/types/track-event-data.type';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import {
   ConfigRequest,
@@ -46,9 +46,10 @@ import {
   GetProjectSettingsRequest,
   GetProjectSettingsResponse,
 } from './web-socket.dto';
-import { getPublishedVersionId } from '@/utils/content-utils';
+import { getPublishedVersionId } from '@/modules/delivery/utils/content.util';
 import { BizEvents } from '@usertour/types';
-import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
+import { BizEventWithEvent } from '@/modules/delivery/types/biz-event-with-event.type';
+import { BizSessionWithEvents } from '@/modules/delivery/types/biz-session-with-events.type';
 import { ContentType } from '@/modules/content/constants/content-type.constant';
 
 const EVENT_CODE_MAP = {

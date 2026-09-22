@@ -2,19 +2,12 @@ import { DELIVERABLE_TRANSLATION } from '@/modules/localizations/constants/deliv
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, BizUser, Environment, Theme, Attribute, BizSession } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
-import {
-  BizUser,
-  Environment,
-  Theme,
-  VersionWithStepsAndContent,
-  Attribute,
-  BizSessionWithEvents,
-  BizSessionWithContentAndVersion,
-  BizEventWithEvent,
-  BizSession,
-} from '@/common/types/schema';
+import { VersionWithStepsAndContent } from '../types/version-with-steps-and-content.type';
+import { BizSessionWithEvents } from '../types/biz-session-with-events.type';
+import { BizSessionWithContentAndVersion } from '../types/biz-session-with-content-and-version.type';
+import { BizEventWithEvent } from '../types/biz-event-with-event.type';
 import {
   BizEvents,
   ContentConfigObject,
@@ -36,13 +29,14 @@ import {
   mergeLocalizedVersionData,
   resolveUserLocaleCode,
 } from '@usertour/helpers';
-import { getAttributeValue, getPublishedVersionId } from '@/utils/content-utils';
-import { CustomContentVersion, ContentSessionCollection } from '@/common/types/content';
+import { getAttributeValue, getPublishedVersionId } from '../utils/content.util';
+import { CustomContentVersion } from '../types/custom-content-version.type';
+import { ContentSessionCollection } from '../types/content-session-collection.type';
 import {
   ConditionEvaluationService,
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
-import { DISMISSED_EVENTS } from '@/utils/event-v2';
+import { DISMISSED_EVENTS } from '../utils/event.util';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 
 // ============================================================================

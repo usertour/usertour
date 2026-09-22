@@ -6,10 +6,10 @@ import {
   hasMissingRequiredData,
 } from '@usertour/helpers';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
-import { extractQuestionData } from '@/utils/content-question';
+import { extractQuestionData } from '@/modules/content/utils/content-question.util';
 import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';
-import { matchesOembedProvider } from '@/common/ombed/embed-resolve';
+import { matchesOembedProvider } from '@/modules/utilities/utils/embed-resolve.util';
 import {
   type AnnouncementData,
   type BannerData,

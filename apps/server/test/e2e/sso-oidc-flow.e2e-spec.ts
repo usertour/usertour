@@ -4,7 +4,8 @@ import request from 'supertest';
 import { PrismaService } from 'nestjs-prisma';
 
 import { SsoOidcService } from '@/modules/sso/services/sso-oidc.service';
-import { ACCESS_TOKEN_COOKIE, SSO_TX_COOKIE } from '@/utils/cookie';
+import { ACCESS_TOKEN_COOKIE } from '@/modules/auth/constants/auth-cookies.constant';
+import { SSO_TX_COOKIE } from '@/modules/sso/constants/sso-transaction-cookie.constant';
 import {
   buildEnvironment,
   buildInvite,

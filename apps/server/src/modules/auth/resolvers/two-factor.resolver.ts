@@ -1,9 +1,9 @@
 import { Args, Context, Mutation, Resolver } from '@nestjs/graphql';
 import { Response } from 'express';
 import { PrismaService } from 'nestjs-prisma';
-import { Public } from '@/common/decorators/public.decorator';
-import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
-import { UserEntity } from '@/common/decorators/user.decorator';
+import { Public } from '../decorators/public.decorator';
+import { SkipTwoFactorEnrollment } from '../decorators/skip-2fa-enrollment.decorator';
+import { UserEntity } from '../decorators/user.decorator';
 import { InvalidTwoFactorChallengeError } from '@/common/errors';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { AuthService } from '../services/auth.service';

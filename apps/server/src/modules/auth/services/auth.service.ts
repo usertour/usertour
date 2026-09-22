@@ -4,7 +4,7 @@ import {
   getDefaultSegments,
   initialization,
   initializationThemes,
-} from '@/common/initialization/initialization';
+} from '@/modules/projects/utils/project-initialization.util';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { randomBytes, createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
@@ -21,8 +21,12 @@ import type { AuthResult } from '../types/auth-result.type';
 import type { TokenData } from '../types/token-data.type';
 import { PasswordService } from './password.service';
 import { TwoFactorService } from './two-factor.service';
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, UID_COOKIE } from '@/utils/cookie';
-import { omit } from '@/utils/typesafe';
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  UID_COOKIE,
+} from '../constants/auth-cookies.constant';
+import { omit } from '../utils/typesafe.util';
 import ms from 'ms';
 import {
   AccountNotFoundError,
@@ -48,12 +52,12 @@ import {
 import { AuditService } from '@/modules/audit/services/audit.service';
 import { TeamService } from '@/modules/team/services/team.service';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
-import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
+import { RolesScopeEnum } from '../decorators/roles.decorator';
 import {
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
   QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
-} from '@/common/consts/queen';
+} from '../constants/auth-queues.constant';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { RedisService, LockReleaseFn } from '@/shared/redis.service';
