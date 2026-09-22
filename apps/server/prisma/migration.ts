@@ -1,6 +1,6 @@
 import {
-  LOCALIZED_LINKS_SCHEMA_VERSION,
-  blankLocalizedLinkDestinations,
+  LOCALIZED_UNITS_SCHEMA_VERSION,
+  blankLocalizedUnitClones,
   cuid,
   deepClone,
 } from '@usertour/helpers';
@@ -216,15 +216,16 @@ export const migrateConditionIds = async (prisma: PrismaClient, batchSize = 100)
 };
 
 /**
- * One-time normalization of VersionOnLocalization rows saved before link
- * units existed (localizedSchemaVersion below the current value): their link
- * destinations are verbatim clones of the source, which the delivery merge
- * would misread as translator overrides once the source url drifts. Blanks
- * every destination to the '' keep-original sentinel and stamps the row.
+ * Normalization of VersionOnLocalization rows stamped below the current
+ * LOCALIZED_UNITS_SCHEMA_VERSION: the stores that became units after the row
+ * was saved are verbatim clones of the source, which the delivery merge would
+ * misread as translator overrides once the source drifts. Blanks exactly those
+ * stores (per generation — see blankLocalizedUnitClones) to the ''
+ * keep-original sentinel and stamps the row.
  *
- * Runs from prisma/seed.ts on every deploy; already-stamped rows are never
- * touched, so translator overrides written by the new save path (which
- * stamps on every localized write) are safe. Each update is optimistic-locked
+ * Runs from prisma/seed.ts on every deploy; rows at the current version are
+ * never touched, so translator overrides written by the current save path
+ * (which stamps on every localized write) are safe. Each update is optimistic-locked
  * on the row's `localized` CONTENT (jsonb equality with the payload we read
  * and transformed): a row concurrently saved during the deploy overlap is
  * skipped and — if the writer was an old pod that doesn't stamp — caught by
@@ -233,7 +234,7 @@ export const migrateConditionIds = async (prisma: PrismaClient, batchSize = 100)
  * millisecond precision, so rows stored with microsecond components (raw-SQL
  * or DB-default writers) would never match and be skipped forever.
  */
-export const migrateLocalizedLinkDestinations = async (
+export const migrateLocalizedUnitClones = async (
   prisma: PrismaClient,
   batchSize = 100,
 ): Promise<void> => {
@@ -242,15 +243,21 @@ export const migrateLocalizedLinkDestinations = async (
   let skipped = 0;
   let cursor: string | undefined;
 
-  console.log('Starting localized link destinations backfill...');
+  console.log('Starting localized unit stores backfill...');
 
   for (;;) {
+    // Keyset pagination on id, NOT Prisma's cursor: the previous batch's rows
+    // are stamped current by the time the next page is read, so they no
+    // longer match the filter — a cursor + skip would then skip the first
+    // unprocessed row of every batch.
     const rows = await prisma.versionOnLocalization.findMany({
-      where: { localizedSchemaVersion: { lt: LOCALIZED_LINKS_SCHEMA_VERSION } },
-      select: { id: true, localized: true, updatedAt: true },
+      where: {
+        localizedSchemaVersion: { lt: LOCALIZED_UNITS_SCHEMA_VERSION },
+        ...(cursor ? { id: { gt: cursor } } : {}),
+      },
+      select: { id: true, localized: true, localizedSchemaVersion: true, updatedAt: true },
       take: batchSize,
       orderBy: { id: 'asc' },
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     if (rows.length === 0) {
       break;
@@ -261,16 +268,16 @@ export const migrateLocalizedLinkDestinations = async (
       // The blanking mutates in place, so transform a clone and keep the
       // read payload pristine for the optimistic-lock comparison below.
       const blankedLocalized = deepClone(row.localized);
-      const changed = blankLocalizedLinkDestinations(blankedLocalized);
+      const changed = blankLocalizedUnitClones(blankedLocalized, row.localizedSchemaVersion);
       const result = await prisma.versionOnLocalization.updateMany({
         where: {
           id: row.id,
-          localizedSchemaVersion: { lt: LOCALIZED_LINKS_SCHEMA_VERSION },
+          localizedSchemaVersion: row.localizedSchemaVersion,
           localized: { equals: row.localized as Prisma.InputJsonValue },
         },
         data: {
           ...(changed ? { localized: blankedLocalized as Prisma.InputJsonValue } : {}),
-          localizedSchemaVersion: LOCALIZED_LINKS_SCHEMA_VERSION,
+          localizedSchemaVersion: LOCALIZED_UNITS_SCHEMA_VERSION,
           // Preserve the row's own timestamp — a backfill is not an edit.
           // (Written at Prisma's millisecond precision; sub-ms digits of a
           // raw-SQL-era timestamp are truncated, which is fine.)
@@ -292,7 +299,7 @@ export const migrateLocalizedLinkDestinations = async (
   }
 
   console.log(
-    `Localized link destinations backfill completed: ${blanked} blanked, ${stampedAsIs} stamped as-is, ${skipped} skipped (concurrent writes)`,
+    `Localized unit stores backfill completed: ${blanked} blanked, ${stampedAsIs} stamped as-is, ${skipped} skipped (concurrent writes)`,
   );
 };
 

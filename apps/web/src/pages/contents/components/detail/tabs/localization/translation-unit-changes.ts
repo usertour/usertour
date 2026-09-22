@@ -1,4 +1,8 @@
-import { type LocalizationTranslationUnit, isHttpUrl, isMediaUrlUnitPath } from '@usertour/helpers';
+import {
+  type LocalizationTranslationUnit,
+  isHttpUrl,
+  isSafeDestinationUrl,
+} from '@usertour/helpers';
 import type { VersionTranslationUnitChange } from '@usertour/hooks';
 
 /** Unit path → the translation the server is known to hold. */
@@ -14,6 +18,11 @@ export const isUnusableMediaUrl = (value: string): boolean => {
   return url !== '' && !isHttpUrl(url);
 };
 
+/** A destination the server would refuse — a scheme that runs code in a link. */
+export const isUnusableDestinationUrl = (value: string): boolean => {
+  return !isSafeDestinationUrl(value);
+};
+
 export const toTranslationBaseline = (
   units: readonly LocalizationTranslationUnit[],
 ): Map<string, string> => {
@@ -24,9 +33,10 @@ export const toTranslationBaseline = (
  * What a save has to send: the units whose translation differs from the
  * baseline. An emptied translation is sent as `null` (clear) — a blank string
  * would mean "keep" to the server. A media url still being typed is held back
- * rather than sent: the server refuses the whole save over one unusable url,
- * which would block every other edit riding along. A held unit stays different
- * from the baseline, so it goes out by itself once it is a full url.
+ * rather than sent (a media url that is not http(s) yet, a destination with a
+ * code-running scheme): the server refuses the whole save over one unusable
+ * url, which would block every other edit riding along. A held unit stays
+ * different from the baseline, so it goes out by itself once it is usable.
  */
 export const diffTranslationUnits = (
   baseline: TranslationBaseline,
@@ -45,7 +55,10 @@ export const diffTranslationUnits = (
       }
       continue;
     }
-    if (isMediaUrlUnitPath(unit.path) && isUnusableMediaUrl(current)) {
+    if (unit.kind === 'media' && isUnusableMediaUrl(current)) {
+      continue;
+    }
+    if (unit.kind === 'destination' && isUnusableDestinationUrl(current)) {
       continue;
     }
     changes.push({ path: unit.path, translation: current });

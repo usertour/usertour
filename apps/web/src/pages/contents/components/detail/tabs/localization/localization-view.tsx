@@ -1,4 +1,4 @@
-import type { LocalizationTranslationUnit } from '@usertour/helpers';
+import { type LocalizationTranslationUnit, isTranslationUnitOptional } from '@usertour/helpers';
 import { RiCheckLine } from '@usertour/icons';
 import { Card } from '@usertour/ui';
 import { ReactNode, createContext, useContext } from 'react';
@@ -37,7 +37,7 @@ export const useLocalizationView = (): LocalizationViewContextValue => {
 // ---------------------------------------------------------------------------
 
 export const isUnitMissing = (unit: LocalizationTranslationUnit): boolean => {
-  return !unit.optional && unit.translatedText.trim() === '';
+  return !isTranslationUnitOptional(unit.kind) && unit.translatedText.trim() === '';
 };
 
 export const countMissingUnits = (

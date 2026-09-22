@@ -21,16 +21,11 @@ import {
 } from '@usertour/helpers';
 import { RiArrowLeftLine, RiArrowRightLine } from '@usertour/icons';
 import type {
-  AnnouncementData,
-  BannerData,
-  ChecklistData,
   Content,
   ContentEditorRoot,
   ContentVersion,
-  LauncherData,
   Localization,
   LocalizedFlowContent,
-  ResourceCenterData,
   Step,
   VersionOnLocalization,
 } from '@usertour/types';
@@ -40,7 +35,6 @@ import { ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
-import { LocalizedEditorContents } from './localized-fields';
 import { LocalizationPreviewDialog } from './localization-preview-dialog';
 import { LocalizationTransferActions } from './localization-transfer-actions';
 import { MachineTranslationButton, useUnitTranslateText } from './machine-translation-button';
@@ -50,14 +44,13 @@ import {
   countMissingUnits,
 } from './localization-view';
 import { findLocalizationByRouteSegment } from './localization-route';
-import { type LocalizationSaveState, useLocalizationAutosave } from './use-localization-autosave';
 import {
-  AnnouncementLocalizationSections,
-  BannerLocalizationSections,
-  ChecklistLocalizationSections,
-  LauncherLocalizationSections,
-  ResourceCenterLocalizationSections,
-} from './version-data-sections';
+  type LocalizedUnitChange,
+  LocalizedUnitList,
+  VersionDataLocalizationSections,
+  toEmbedResolutions,
+} from './localized-units';
+import { type LocalizationSaveState, useLocalizationAutosave } from './use-localization-autosave';
 
 // ---------------------------------------------------------------------------
 // Shared editor chrome — locale heading, enabled badge, save indicator and
@@ -329,31 +322,37 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
     readUnits: buildTransferUnits,
   });
 
-  const handleStepContentsChange = useCallback(
-    (cvid: string, nextContents: ContentEditorRoot[]) => {
-      setWorking((previous) => ({ ...previous, [cvid]: nextContents }));
+  // A row edit is a unit change applied through the same applier CSV import
+  // and machine translation use — the page never touches the tree itself.
+  const handleUnitChange = useCallback(
+    (step: TranslatableStep, change: LocalizedUnitChange) => {
+      setWorking((previous) => ({
+        ...previous,
+        [step.cvid]: applyContentsTranslationUnits(
+          step.data as ContentEditorRoot[],
+          previous[step.cvid],
+          new Map([[change.path, change.value]]),
+          toEmbedResolutions(change),
+        ),
+      }));
       scheduleSave();
     },
     [scheduleSave],
   );
 
-  const stepStats = useMemo(() => {
-    const stats = new Map<string, { missing: number; outdated: number }>();
-    for (const step of steps) {
-      const units = extractContentsTranslationUnits(
-        step.data as ContentEditorRoot[],
-        working[step.cvid],
-      );
-      stats.set(step.cvid, {
-        missing: countMissingUnits(units),
-        outdated: outdatedByStep.get(step.cvid)?.size ?? 0,
-      });
-    }
-    return stats;
-  }, [steps, working, outdatedByStep]);
+  const stepUnits = useMemo(
+    () =>
+      new Map(
+        steps.map((step) => [
+          step.cvid,
+          extractContentsTranslationUnits(step.data as ContentEditorRoot[], working[step.cvid]),
+        ]),
+      ),
+    [steps, working],
+  );
   const missingCount = useMemo(
-    () => [...stepStats.values()].reduce((sum, stat) => sum + stat.missing, 0),
-    [stepStats],
+    () => [...stepUnits.values()].reduce((sum, units) => sum + countMissingUnits(units), 0),
+    [stepUnits],
   );
 
   const translateText = useUnitTranslateText({
@@ -446,21 +445,21 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
       }
     >
       {steps.map((step, index) => {
-        const stats = stepStats.get(step.cvid) ?? { missing: 0, outdated: 0 };
+        const units = stepUnits.get(step.cvid) ?? [];
+        const outdatedPaths = outdatedByStep.get(step.cvid);
         return (
           <LocalizationGroupCard
             key={step.cvid}
             title={`${index + 1}. ${step.name}`}
-            missingCount={stats.missing}
-            outdatedCount={stats.outdated}
+            missingCount={countMissingUnits(units)}
+            outdatedCount={outdatedPaths?.size ?? 0}
           >
-            <LocalizedEditorContents
-              sourceContents={(step.data ?? []) as ContentEditorRoot[]}
-              workingContents={working[step.cvid] ?? []}
-              outdatedUnitPaths={outdatedByStep.get(step.cvid)}
+            <LocalizedUnitList
+              units={units}
+              outdatedPaths={outdatedPaths}
               onOutdatedResolved={(unitPath) => resolveStepOutdated(step.cvid, unitPath)}
               disabled={disabled}
-              onContentsChange={(contents) => handleStepContentsChange(step.cvid, contents)}
+              onUnitChange={(change) => handleUnitChange(step, change)}
             />
           </LocalizationGroupCard>
         );
@@ -532,12 +531,20 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     readUnits: buildTransferUnits,
   });
 
-  const handleDataChange = useCallback(
-    (data: unknown) => {
-      setWorkingData(data);
+  const handleUnitChange = useCallback(
+    (change: LocalizedUnitChange) => {
+      setWorkingData((previous: unknown) =>
+        applyVersionDataTranslationUnits(
+          content.type,
+          sourceData,
+          previous,
+          new Map([[change.path, change.value]]),
+          toEmbedResolutions(change),
+        ),
+      );
       scheduleSave();
     },
-    [scheduleSave],
+    [content.type, sourceData, scheduleSave],
   );
 
   const translateText = useUnitTranslateText({
@@ -573,60 +580,6 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
     [content.type, sourceData, scheduleSave, resolveImportedEmbeds],
   );
 
-  const sections = (() => {
-    const sectionProps = {
-      units,
-      outdatedPaths,
-      onOutdatedResolved: resolveOutdated,
-      disabled,
-      onDataChange: handleDataChange,
-    };
-    switch (content.type) {
-      case ContentDataType.CHECKLIST:
-        return (
-          <ChecklistLocalizationSections
-            sourceData={sourceData as ChecklistData}
-            workingData={workingData as ChecklistData}
-            {...sectionProps}
-          />
-        );
-      case ContentDataType.LAUNCHER:
-        return (
-          <LauncherLocalizationSections
-            sourceData={sourceData as LauncherData}
-            workingData={workingData as LauncherData}
-            {...sectionProps}
-          />
-        );
-      case ContentDataType.BANNER:
-        return (
-          <BannerLocalizationSections
-            sourceData={sourceData as BannerData}
-            workingData={workingData as BannerData}
-            {...sectionProps}
-          />
-        );
-      case ContentDataType.ANNOUNCEMENT:
-        return (
-          <AnnouncementLocalizationSections
-            sourceData={sourceData as AnnouncementData}
-            workingData={workingData as AnnouncementData}
-            {...sectionProps}
-          />
-        );
-      case ContentDataType.RESOURCE_CENTER:
-        return (
-          <ResourceCenterLocalizationSections
-            sourceData={sourceData as ResourceCenterData}
-            workingData={workingData as ResourceCenterData}
-            {...sectionProps}
-          />
-        );
-      default:
-        return null;
-    }
-  })();
-
   return (
     <LocalizationEditorShell
       localization={localization}
@@ -660,7 +613,15 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
         </>
       }
     >
-      {sections}
+      <VersionDataLocalizationSections
+        contentType={content.type}
+        sourceData={sourceData}
+        units={units}
+        outdatedPaths={outdatedPaths}
+        onOutdatedResolved={resolveOutdated}
+        disabled={disabled}
+        onUnitChange={handleUnitChange}
+      />
     </LocalizationEditorShell>
   );
 };

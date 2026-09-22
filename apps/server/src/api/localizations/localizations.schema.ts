@@ -133,11 +133,19 @@ export const translationUnit = z.object({
     ),
   source: z.string().describe('The text in the source language.'),
   translation: z.string().describe('The current translation, or "" when untranslated.'),
+  kind: z
+    .enum(['text', 'destination', 'media'])
+    .describe(
+      'What the value is. `text`: copy to translate. `destination`: a link / button / task ' +
+        'navigation target — swap it for the locale-specific page or leave it empty to keep the ' +
+        'source; any string the host can route, a relative path included. `media`: an image / ' +
+        'embed URL — swap it or leave it empty; must be an absolute http(s) URL.',
+    ),
   optional: z
     .boolean()
     .describe(
-      'true for media / link URLs: they may be swapped per locale but count as neither text ' +
-        'to translate nor "missing" when left empty (the source URL is used).',
+      'Derived from `kind`: true for destinations and media — they may be swapped per locale but ' +
+        'count as neither text to translate nor "missing" when left empty.',
     ),
   outdated: z
     .boolean()

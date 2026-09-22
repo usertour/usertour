@@ -2668,6 +2668,9 @@ const translations = {
         taskDescription: '任务描述',
         blockLabel: '区块标签',
         listItemLabel: '列表项名称',
+        navigateUrl: '跳转地址',
+        imageAlt: '替代文本',
+        attributeFallback: '{{attribute}} 的兜底文本',
       },
       section: {
         general: '通用',
