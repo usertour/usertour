@@ -1,4 +1,4 @@
-import type { AuditEntry } from '@/audit/audit.types';
+import type { AuditEntry } from '@/modules/audit/types/audit.type';
 import type { AuditCapture, McpTool, McpToolContext } from '@/mcp/mcp.types';
 
 /**

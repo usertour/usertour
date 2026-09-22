@@ -6,10 +6,10 @@ import { ProjectConfigDTO } from './dtos/project-config.dto';
 import { ProjectsService } from './services/projects.service';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
-import { AuditWeb } from '@/audit/audit.decorator';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { RequirePermission } from '@/auth/permission/require-permission.decorator';
-import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
+import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
 import { Capability } from '@usertour/types';
 
 @Resolver(() => ProjectDTO)

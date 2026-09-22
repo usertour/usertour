@@ -13,7 +13,7 @@ import {
 import { renderWebhookAutoDisabledEmail } from '@usertour/emails';
 import { EmailService } from '@/shared/email.service';
 import { EncryptionService } from '@/shared/encryption.service';
-import { AuditService } from '@/audit/audit.service';
+import { AuditService } from '@/modules/audit/services/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import {
   RetryAfterCarrier,

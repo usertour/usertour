@@ -1,5 +1,5 @@
-import { AuthService } from '@/auth/auth.service';
-import { PasswordService } from '@/auth/password.service';
+import { AuthService } from '@/modules/auth/services/auth.service';
+import { PasswordService } from '@/modules/auth/services/password.service';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import type { EmailChange } from '../types/email-change.type';

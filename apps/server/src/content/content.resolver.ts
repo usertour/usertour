@@ -1,11 +1,11 @@
-import { Common } from '@/auth/models/common.model';
-import { AuditWeb } from '@/audit/audit.decorator';
+import { CommonDTO } from '@/modules/auth/dtos/common.dto';
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { RequirePermission } from '@/auth/permission/require-permission.decorator';
-import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
+import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
 import { Capability } from '@usertour/types';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { UseGuards } from '@nestjs/common';
@@ -147,7 +147,7 @@ export class ContentResolver {
     });
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
   @AuditWeb({
     action: 'update',
@@ -165,7 +165,7 @@ export class ContentResolver {
     return { success: true };
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.ContentDelete, scope: ScopeKind.Content })
   @AuditWeb({
     action: 'delete',

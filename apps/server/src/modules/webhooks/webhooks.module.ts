@@ -1,7 +1,7 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
 import { OutboundModule } from '@/outbound/outbound.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';

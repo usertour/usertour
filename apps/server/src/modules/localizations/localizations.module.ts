@@ -1,5 +1,5 @@
 import { AiModule } from '@/ai/ai.module';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { Module } from '@nestjs/common';

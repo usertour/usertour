@@ -27,7 +27,7 @@ import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { ApiWebhooksService } from '@/api/webhooks/webhooks.service';
 import { BaseError } from '@/common/errors/base';
-import { AuditService } from '@/audit/audit.service';
+import { AuditService } from '@/modules/audit/services/audit.service';
 import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
 
 import { McpServices, McpTool, McpToolContext } from './mcp.types';

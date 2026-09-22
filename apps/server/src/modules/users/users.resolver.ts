@@ -8,8 +8,8 @@ import { CreateOwnedProjectInput } from './dtos/create-owned-project.input';
 import { UpdateUserInput } from './dtos/update-user.input';
 import { UserDTO } from './dtos/user.dto';
 import { UsersService } from './services/users.service';
-import { AuthService } from '@/auth/auth.service';
-import { TwoFactorService } from '@/auth/two-factor.service';
+import { AuthService } from '@/modules/auth/services/auth.service';
+import { TwoFactorService } from '@/modules/auth/services/two-factor.service';
 import { ProjectDTO } from '@/modules/projects/dtos/project.dto';
 @Resolver(() => UserDTO)
 export class UsersResolver {

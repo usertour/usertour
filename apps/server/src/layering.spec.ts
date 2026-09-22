@@ -32,10 +32,7 @@ const LAYERS: Record<string, Layer> = {
   modules: 'modules', // the target layout
   'web-socket/core': 'modules', // delivery runtime (also holds socket plumbing — split on next change)
   adapters: 'modules',
-  admin: 'modules',
   ai: 'modules',
-  audit: 'modules',
-  auth: 'modules',
   biz: 'modules',
   common: 'modules',
   content: 'modules',
@@ -43,7 +40,6 @@ const LAYERS: Record<string, Layer> = {
   oauth: 'modules',
   outbound: 'modules',
   shared: 'modules',
-  subscription: 'modules',
   utils: 'modules',
 };
 

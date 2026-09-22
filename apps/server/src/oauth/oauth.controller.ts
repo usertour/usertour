@@ -22,7 +22,7 @@ import { PrismaService } from 'nestjs-prisma';
 
 import { environmentSelectionMissing } from '@usertour/helpers';
 
-import { TwoFactorService } from '@/auth/two-factor.service';
+import { TwoFactorService } from '@/modules/auth/services/two-factor.service';
 import { TwoFactorEnrollmentRequiredError } from '@/common/errors';
 import { resolveOrigin } from '@/common/http/resolve-origin';
 

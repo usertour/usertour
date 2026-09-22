@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
-import { AuthModule } from '@/auth/auth.module';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 
 import { SsoAuthController } from './controllers/sso-auth.controller';

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProjectsModule } from '@/modules/projects/projects.module';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { TeamResolver } from './resolvers/team.resolver';
 import { UserOnProjectResolver } from './resolvers/user-on-project.resolver';
 import { TeamService } from './services/team.service';

@@ -15,10 +15,10 @@ import { InviteDTO } from '../dtos/invite.dto';
 import { Public } from '@/common/decorators/public.decorator';
 import { UseGuards } from '@nestjs/common';
 import { EmailConfigGuard } from '@/common/guards/email-config.guard';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { RequirePermission } from '@/auth/permission/require-permission.decorator';
-import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
-import { AuditWeb } from '@/audit/audit.decorator';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
+import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { Capability } from '@usertour/types';
 
 @Resolver()

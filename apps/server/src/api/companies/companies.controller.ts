@@ -17,7 +17,7 @@ import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/modules/api-token/guards/api-token.guard';
 import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
-import { Audit } from '@/audit/audit.decorator';
+import { Audit } from '@/modules/audit/decorators/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';

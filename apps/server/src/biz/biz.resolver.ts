@@ -1,9 +1,9 @@
-import { Common } from '@/auth/models/common.model';
-import { AuditWeb } from '@/audit/audit.decorator';
+import { CommonDTO } from '@/modules/auth/dtos/common.dto';
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { RequirePermission } from '@/auth/permission/require-permission.decorator';
-import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
+import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
@@ -101,7 +101,7 @@ export class BizResolver {
     return await this.service.updateSegment(data);
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.SegmentDelete, scope: ScopeKind.Segment })
   @AuditWeb({
     action: 'delete',
@@ -119,7 +119,7 @@ export class BizResolver {
     return await this.service.listSegment(environmentId);
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   // Membership changes what the segment TARGETS — recorded on the segment, one
   // entry per call (a call = one add action, possibly many members).
@@ -147,7 +147,7 @@ export class BizResolver {
     return { success: ret.count > 0, count: ret.count };
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   @AuditWeb({
     action: 'update',
@@ -167,7 +167,7 @@ export class BizResolver {
     return { success: ret.count > 0, count: ret.count };
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.UserDelete, scope: ScopeKind.Environment })
   // Irreversible bulk hard delete — the ids live in the args (the result is only a
   // count), so capture them; one entry per call.
@@ -195,7 +195,7 @@ export class BizResolver {
     };
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.CompanyDelete, scope: ScopeKind.Environment })
   @AuditWeb({
     action: 'delete',
@@ -218,7 +218,7 @@ export class BizResolver {
     return { success: ret.count > 0, count: ret.count };
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   @AuditWeb({
     action: 'update',
@@ -244,7 +244,7 @@ export class BizResolver {
     return { success: ret.count > 0, count: ret.count };
   }
 
-  @Mutation(() => Common)
+  @Mutation(() => CommonDTO)
   @RequirePermission({ capability: Capability.SegmentUpdate, scope: ScopeKind.Segment })
   @AuditWeb({
     action: 'update',

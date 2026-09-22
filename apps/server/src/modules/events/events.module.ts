@@ -1,4 +1,4 @@
-import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { Module } from '@nestjs/common';
 import { EventsResolver } from './events.resolver';

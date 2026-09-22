@@ -3,7 +3,7 @@ import { LocalizationsModule } from '@/modules/localizations/localizations.modul
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { UtilitiesModule } from '@/modules/utilities/utilities.module';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { Module } from '@nestjs/common';
 import { ContentResolver, VersionFieldsResolver } from './content.resolver';
 import { ContentService } from './content.service';

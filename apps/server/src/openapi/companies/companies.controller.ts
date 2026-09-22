@@ -20,7 +20,7 @@ import {
 import { OpenAPIKeyGuard } from '../openapi.guard';
 import { Company } from '../models/company.model';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { Audit } from '@/audit/audit.decorator';
+import { Audit } from '@/modules/audit/decorators/audit.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import type { Environment } from '@prisma/client';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';

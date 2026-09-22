@@ -1,8 +1,8 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from '@/auth/auth.module';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { BizModule } from '@/biz/biz.module';
 import {
   QUEUE_OBJECT_SYNC,

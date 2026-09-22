@@ -22,7 +22,7 @@ import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { ApiWebhooksService } from '@/api/webhooks/webhooks.service';
-import type { AuditAction } from '@/audit/audit.types';
+import type { AuditAction } from '@/modules/audit/types/audit.type';
 import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
 
 /**

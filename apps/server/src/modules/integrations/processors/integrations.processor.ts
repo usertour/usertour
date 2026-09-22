@@ -17,7 +17,7 @@ import type {
   SyncObjectUpdateEnvelope,
   IntegrationMessageEnvelope,
 } from '../types/integrations.type';
-import { AuditService } from '@/audit/audit.service';
+import { AuditService } from '@/modules/audit/services/audit.service';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import {
   RetryAfterCarrier,

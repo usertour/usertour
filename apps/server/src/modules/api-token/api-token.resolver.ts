@@ -1,7 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import type { PrismaService } from 'nestjs-prisma';
 
-import { AuditWeb } from '@/audit/audit.decorator';
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 

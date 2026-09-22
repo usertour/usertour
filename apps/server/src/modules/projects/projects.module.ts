@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ProjectsResolver } from './projects.resolver';
 import { ProjectsService } from './services/projects.service';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { LicenseModule } from '@/license/license.module';
 import { SharedModule } from '@/shared/shared.module';
 

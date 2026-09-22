@@ -1,13 +1,13 @@
 import { UseGuards } from '@nestjs/common';
 
-import { AuditWeb } from '@/audit/audit.decorator';
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
 
 import { Public } from '@/common/decorators/public.decorator';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { RequirePermission } from '@/auth/permission/require-permission.decorator';
-import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
+import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
 
 import { CreateOidcSsoProviderInput } from './dtos/create-oidc-sso-provider.input';
 import { ProjectSsoSettingsDTO } from './dtos/project-sso-settings.dto';

@@ -10,7 +10,7 @@ import {
   OAUTH_TOKEN_PREFIX,
   hashApiTokenSecret,
 } from '@/modules/api-token/utils/api-token-crypto.util';
-import { TwoFactorService } from '@/auth/two-factor.service';
+import { TwoFactorService } from '@/modules/auth/services/two-factor.service';
 import { EnvironmentsService } from '@/modules/environments/services/environments.service';
 
 import { buildEnvironment, buildMembership, buildProject } from '../factories';

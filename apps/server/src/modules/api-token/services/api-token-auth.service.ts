@@ -4,7 +4,7 @@ import { Capability, Role } from '@usertour/types';
 import { Environment, Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
-import { publishWhitelistOf } from '@/auth/permission/publish-whitelist';
+import { publishWhitelistOf } from '@/modules/auth/permission/publish-whitelist';
 
 import {
   EnvironmentNotFoundError,

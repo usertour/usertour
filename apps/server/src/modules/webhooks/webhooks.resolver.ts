@@ -1,10 +1,10 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Capability } from '@usertour/types';
-import { AuditWeb } from '@/audit/audit.decorator';
-import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { RequirePermission } from '@/auth/permission/require-permission.decorator';
-import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
+import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
+import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
+import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { CreateWebhookInput } from './dtos/create-webhook.input';
 import { QueryWebhooksInput } from './dtos/query-webhooks.input';

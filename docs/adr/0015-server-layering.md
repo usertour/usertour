@@ -50,7 +50,7 @@ modules/<module>/
   constants/                *.constant.ts
 ```
 
-One export per file, the file named after it in kebab-case (`create-localization.input.ts`, `localization-audit-snapshot.util.ts`). Only the module and its main resolver sit at the module root. A module that also owns protocol plumbing files them by kind the same way — `guards/`, `decorators/`, `controllers/` — next to the folders above. This is the layout of the product studied, where it holds for nine files in ten; a cohesive helper set (a token's crypto primitives) may share one `*.util.ts`.
+One export per file, the file named after it in kebab-case (`create-localization.input.ts`, `localization-audit-snapshot.util.ts`). Only the module and its main resolver sit at the module root. A module that also owns protocol plumbing or background work files it by kind the same way — `guards/`, `decorators/`, `interceptors/`, `strategies/`, `controllers/`, `processors/`, `listeners/` — next to the folders above, and a cohesive subtree (`auth/permission/`, `integrations/sync/`) moves as one piece. This is the layout of the product studied, where it holds for nine files in ten; a cohesive helper set (a token's crypto primitives) or vocabulary (a module's event names and payload types) may share one file.
 
 Object types carry a `DTO` class suffix and name their GraphQL type explicitly — `@ObjectType('Localization') class LocalizationDTO`. The suffix shows the layer at every import, and keeps the GraphQL class apart from the Prisma model of the same name that services work with; the explicit name means renaming a class can never rename a public GraphQL type. Inputs keep the `…Input` names they already have and no explicit name. The product studied does the same for four object types in five.
 
