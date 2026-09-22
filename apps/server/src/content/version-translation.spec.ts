@@ -5,7 +5,6 @@ import {
   type TranslationSource,
   applyTranslationUnits,
   isContentTypeLocalizable,
-  isMediaUrlUnitPath,
   readTranslationUnits,
   summarizeTranslationUnits,
 } from './version-translation';
@@ -171,13 +170,9 @@ describe('version translation units', () => {
     expect(readTranslationUnits(source, stored)[0].translation).toBe('Maintenance ce soir');
   });
 
-  it('classifies content types and media unit paths', () => {
+  it('classifies content types', () => {
     expect(isContentTypeLocalizable(ContentDataType.FLOW)).toBe(true);
     expect(isContentTypeLocalizable(ContentDataType.CHECKLIST)).toBe(true);
     expect(isContentTypeLocalizable(ContentDataType.TRACKER)).toBe(false);
-    expect(isMediaUrlUnitPath('steps/x/0.0.0:image.url')).toBe(true);
-    expect(isMediaUrlUnitPath('steps/x/0.0.0:image.link.url')).toBe(true);
-    expect(isMediaUrlUnitPath('steps/x/0.0.0:text.0.0:link.url')).toBe(false);
-    expect(isMediaUrlUnitPath('steps/x/0.0.0:embed.url')).toBe(true);
   });
 });

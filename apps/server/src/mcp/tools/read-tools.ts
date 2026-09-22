@@ -1805,8 +1805,9 @@ export function buildReadTools(): McpTool[] {
       capability: Capability.ContentRead,
       description:
         'Read one locale of a content version as flat translation units: each has a stable ' +
-        '`path`, the `source` text, the current `translation` ("" = untranslated), `optional` ' +
-        '(media / link URLs — swap them per locale or leave empty to keep the source URL) and ' +
+        '`path`, the `source` text, the current `translation` ("" = untranslated), `kind` ' +
+        '(`text` to translate; `destination` = a link / button / task navigation target and ' +
+        '`media` = an image / embed URL — swap those per locale or leave empty to keep the source) and ' +
         '`outdated` (the source text changed AFTER this translation was saved: it still ships, ' +
         'but was written against older text — re-translate it). `stats` totals missing / ' +
         'outdated. Works on any version, including a published one; a locale never translated ' +

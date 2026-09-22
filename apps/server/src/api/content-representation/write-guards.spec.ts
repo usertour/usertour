@@ -251,7 +251,9 @@ describe('collectWriteViolations (single write walk)', () => {
         name: 'S',
         type: 'modal',
         content: [
-          { type: 'image', url: 'hello', link: { url: 'also-not-a-url' } },
+          // The click-through is a destination, not media — it is checked after
+          // compile (destination-url.validate), not here.
+          { type: 'image', url: 'hello', link: { url: '/pricing' } },
           { type: 'image', url: 'https://ok.example/a.png' },
           // Stored verbatim echo: legacy junk already on this version passes.
           { type: 'embed', url: 'legacy-junk' },
@@ -265,7 +267,6 @@ describe('collectWriteViolations (single write walk)', () => {
     });
     expect(out.issues.map((i) => ({ rule: i.rule, path: i.path }))).toEqual([
       { rule: 'media_url', path: 'steps[0].content[0].url' },
-      { rule: 'media_url', path: 'steps[0].content[0].link.url' },
     ]);
     // Same junk WITHOUT the stored exemption is rejected (data entry covered too).
     const fresh = collectWriteViolations({

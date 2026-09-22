@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import {
+  LOCALIZED_UNITS_SCHEMA_VERSION,
+  blankLocalizedUnitClones,
+  deepClone,
+  isSafeDestinationUrl,
+} from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -25,7 +31,6 @@ import {
   type TranslationUnitView,
   applyTranslationUnits,
   isContentTypeLocalizable,
-  isMediaUrlUnitPath,
   readTranslationUnits,
   summarizeTranslationUnits,
 } from './version-translation';
@@ -78,6 +83,7 @@ interface VersionLocalizationRow {
   enabled: boolean;
   localized: unknown;
   backup: unknown;
+  localizedSchemaVersion: number;
   updatedAt: Date;
 }
 
@@ -88,10 +94,27 @@ interface TranslatableVersion {
   content?: { type?: string | null } | null;
 }
 
+/**
+ * The stored row as a translation. A row stamped below the current schema
+ * version still holds verbatim source clones in the stores that became units
+ * after it was saved; they are blanked here, on read and on write alike, so
+ * a clone can never read as a translator's pin — nor be saved back as one
+ * and stamped current. The deploy-time backfill does the same to the rows
+ * themselves; this keeps correctness from depending on it having run.
+ */
 const toStored = (
-  row: { localized: unknown; backup: unknown } | undefined,
-): StoredTranslation | undefined =>
-  row ? { localized: row.localized, backup: row.backup } : undefined;
+  row: { localized: unknown; backup: unknown; localizedSchemaVersion: number } | undefined,
+): StoredTranslation | undefined => {
+  if (!row) {
+    return undefined;
+  }
+  if (row.localizedSchemaVersion >= LOCALIZED_UNITS_SCHEMA_VERSION) {
+    return { localized: row.localized, backup: row.backup };
+  }
+  const localized = deepClone(row.localized);
+  blankLocalizedUnitClones(localized, row.localizedSchemaVersion);
+  return { localized, backup: row.backup };
+};
 
 /**
  * Reading and writing a version's translation as translation units — the
@@ -155,8 +178,9 @@ export class VersionTranslationService {
 
     const stored = toStored(await this.findRow(versionId, target.id));
     const submitted = new Map(Object.entries(change.translations ?? {}));
-    this.assertTranslationsValid(submitted, source, stored);
-    const translations = this.effectiveTranslations(submitted);
+    const units = readTranslationUnits(source, stored);
+    this.assertTranslationsValid(submitted, units);
+    const translations = this.effectiveTranslations(submitted, units);
 
     if (translations.size === 0) {
       // Nothing to translate — `translations` omitted, empty, or all blank
@@ -317,21 +341,19 @@ export class VersionTranslationService {
   }
 
   /**
-   * Reject the whole write on any unaddressable path or unusable media URL, with
+   * Reject the whole write on any unaddressable path or unusable url, with
    * every problem listed — a dropped unit would read back as "saved" to a caller
    * that cannot see the difference.
    */
   private assertTranslationsValid(
     translations: ReadonlyMap<string, string | null>,
-    source: TranslationSource,
-    stored: StoredTranslation | undefined,
+    units: readonly TranslationUnitView[],
   ): void {
-    const currentByPath = new Map(
-      readTranslationUnits(source, stored).map((unit) => [unit.path, unit.translation]),
-    );
+    const unitByPath = new Map(units.map((unit) => [unit.path, unit]));
     const issues: ValidationIssue[] = [];
     translations.forEach((value, path) => {
-      if (!currentByPath.has(path)) {
+      const unit = unitByPath.get(path);
+      if (!unit) {
         issues.push({
           rule: 'schema',
           path: `translations.${path}`,
@@ -344,19 +366,24 @@ export class VersionTranslationService {
         return;
       }
       const url = value.trim();
-      // Same bar as the version write: the SDK renders these verbatim into
-      // src/href. A value this translation already stores passes unchanged.
-      if (
-        url !== '' &&
-        isMediaUrlUnitPath(path) &&
-        !isHttpUrl(url) &&
-        currentByPath.get(path) !== value &&
-        currentByPath.get(path) !== url
-      ) {
+      // A value this translation already stores passes unchanged.
+      if (url === '' || unit.translation === value || unit.translation === url) {
+        return;
+      }
+      // Same bars as the version write: a media url is rendered verbatim into
+      // src, a destination into href.
+      if (unit.kind === 'media' && !isHttpUrl(url)) {
         issues.push({
           rule: 'media_url',
           path: `translations.${path}`,
           message: `must be a full http(s) URL (it is rendered verbatim on the page, so ${JSON.stringify(value)} would just be broken there).`,
+        });
+      }
+      if (unit.kind === 'destination' && !isSafeDestinationUrl(url)) {
+        issues.push({
+          rule: 'destination_url',
+          path: `translations.${path}`,
+          message: `must be a path or an http(s) / mailto / tel URL — ${JSON.stringify(value)} uses a scheme that is never allowed in a link.`,
         });
       }
     });
@@ -367,14 +394,16 @@ export class VersionTranslationService {
 
   /**
    * The translations that actually change something. A blank value keeps the
-   * existing translation, so it is not a write; `null` is — it clears. Media
-   * URLs are trimmed — the SDK renders them verbatim into src/href; translated
-   * TEXT is kept as sent, since leading/trailing spaces are meaningful between
-   * adjacent text runs.
+   * existing translation, so it is not a write; `null` is — it clears. Urls
+   * (destinations and media) are trimmed — the SDK renders them verbatim into
+   * href/src; translated TEXT is kept as sent, since leading/trailing spaces
+   * are meaningful between adjacent text runs.
    */
   private effectiveTranslations(
     submitted: ReadonlyMap<string, string | null>,
+    units: readonly TranslationUnitView[],
   ): Map<string, string | null> {
+    const kindByPath = new Map(units.map((unit) => [unit.path, unit.kind]));
     const effective = new Map<string, string | null>();
     submitted.forEach((value, path) => {
       if (value === null) {
@@ -384,7 +413,7 @@ export class VersionTranslationService {
       if (value.trim() === '') {
         return;
       }
-      effective.set(path, isMediaUrlUnitPath(path) ? value.trim() : value);
+      effective.set(path, kindByPath.get(path) === 'text' ? value : value.trim());
     });
     return effective;
   }

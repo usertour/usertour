@@ -12,6 +12,7 @@
 import {
   type LocalizationTranslationUnit,
   type TranslationUnitChanges,
+  type TranslationUnitKind,
   applyContentsTranslationUnits,
   applyVersionDataTranslationUnits,
   buildLocalizedFlowBackup,
@@ -24,9 +25,9 @@ import {
   createLocalizedWorkingVersionData,
   extractContentsTranslationUnits,
   extractVersionDataTranslationUnits,
+  isTranslationUnitOptional,
   isVersionDataLocalizable,
 } from '@usertour/helpers';
-export { isMediaUrlUnitPath } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot, LocalizedFlowContent } from '@usertour/types';
 
@@ -49,6 +50,8 @@ export interface TranslationUnitView {
   path: string;
   source: string;
   translation: string;
+  kind: TranslationUnitKind;
+  /** Derived from `kind`: whether the unit may stay untranslated without counting as missing. */
   optional: boolean;
   outdated: boolean;
 }
@@ -79,7 +82,8 @@ const toView = (
   path,
   source: unit.sourceText,
   translation: unit.translatedText,
-  optional: unit.optional,
+  kind: unit.kind,
+  optional: isTranslationUnitOptional(unit.kind),
   outdated,
 });
 

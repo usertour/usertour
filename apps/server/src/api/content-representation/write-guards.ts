@@ -34,12 +34,16 @@ import {
  *  - `step_shape`: placement shape must match the step kind (tooltip→{side,align},
  *    modal→{position}; wrong-shape fields are silently dropped otherwise), and
  *    onClick (click-the-target-to-advance) only works on a tooltip.
- *  - `media_url`: an image/embed block's `url` (and an image's `link.url`) must
- *    be an absolute http(s) URL — the SDK renders it verbatim into src/href, so
- *    anything else is a silently broken image/iframe (same bar as theme media
- *    URLs). A value the stored version already carries passes VERBATIM
- *    (preserve-not-endorse, the dangling-goto policy): legacy data must stay
- *    echo-editable.
+ *  - `media_url`: an image/embed block's `url` must be an absolute http(s) URL —
+ *    the SDK renders it verbatim into src, so anything else is a silently
+ *    broken image/iframe (same bar as theme media URLs). A value the stored
+ *    version already carries passes VERBATIM (preserve-not-endorse, the
+ *    dangling-goto policy): legacy data must stay echo-editable.
+ *  Where a click GOES (image links, navigate targets, rich-text links, list
+ *  entries) is checked after compile, on the internal model, by
+ *  destination-url.validate — the representation has no single shape for a
+ *  destination (markdown links, plain urls, list-entry fields), the compiled
+ *  model does.
  * checklist `completeWhen` / RC `onlyShowWhen` intentionally allow the full
  * condition set — only the reactive slots above are restricted.
  */
@@ -227,13 +231,6 @@ export function collectWriteViolations(input: {
     const obj = node as Record<string, unknown>;
     if (obj.type === 'image' || obj.type === 'embed') {
       mediaUrlAt(obj.url, `${path}.url`, `An ${String(obj.type)} block's url`);
-      if (obj.type === 'image') {
-        mediaUrlAt(
-          (obj.link as Record<string, unknown> | undefined)?.url,
-          `${path}.link.url`,
-          "An image block's link url",
-        );
-      }
     }
     for (const key of Object.keys(obj)) {
       mediaUrls(obj[key], `${path}.${key}`);

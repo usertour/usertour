@@ -54,6 +54,7 @@ import {
   validateVersionUsable,
 } from '../content-representation/usable.validate';
 import { validateAutoStartForType } from '../content-representation/auto-start.validate';
+import { collectDestinationIssues } from '../content-representation/destination-url.validate';
 import { compileVersionData } from '../content-representation/version-data.compile';
 import { decompileVersionData } from '../content-representation/version-data.decompile';
 import { paginate } from '../shared/pagination';
@@ -644,6 +645,21 @@ export class ApiContentVersionsService {
 
     // All compiles are done — refuse if any condition referenced an unknown code.
     refuseUnresolvedCodes();
+
+    // Where a click goes is checked on the compiled model — the one place a
+    // destination has a single shape — with the walk the translation write
+    // validates with (see destination-url.validate). The stored version's
+    // own destinations pass verbatim, like media urls above.
+    const destinationIssues = collectDestinationIssues({
+      contentType,
+      steps: content.steps,
+      data: content.data,
+      storedSteps: version.steps,
+      storedData: (version as { data?: unknown }).data,
+    });
+    if (destinationIssues.length > 0) {
+      throw ValidationError.fromIssues(destinationIssues);
+    }
 
     // Resolve embeds whose url is new or changed (parsedUrl !== url), the way
     // the builder does — otherwise they render as a grey placeholder (new) or

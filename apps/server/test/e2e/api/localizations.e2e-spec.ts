@@ -32,6 +32,7 @@ type Unit = {
   path: string;
   source: string;
   translation: string;
+  kind: 'text' | 'destination' | 'media';
   optional: boolean;
   outdated: boolean;
 };
@@ -814,6 +815,72 @@ describe('API v2 localizations (e2e)', () => {
       expect(JSON.stringify(row.localized)).toContain(
         '"parsedUrl":"https://intranet.example.com/demo-fr"',
       );
+    });
+  });
+
+  describe('destination units', () => {
+    it('swaps a button navigate target per locale — relative paths allowed — and delivers it', async () => {
+      const banner = await newVersion('banner');
+      const authored = await writeSource(banner, {
+        data: {
+          content: [
+            { type: 'text', markdown: 'Try the new MCP server' },
+            {
+              type: 'button',
+              text: 'Try it',
+              actions: [{ type: 'navigate', url: 'https://example.com/en/mcp', newTab: true }],
+            },
+          ],
+        },
+      });
+      expect(authored.status).toBe(200);
+
+      const read = await readTranslation(banner, 'fr');
+      const target = unitBySource(read.body.units, 'https://example.com/en/mcp');
+      expect(target.kind).toBe('destination');
+      expect(target.optional).toBe(true);
+      expect(target.path).toMatch(/:button\.actions\.[^:]+:navigate\.url$/);
+      // The two texts are missing; a destination never is.
+      expect(read.body.stats.missing).toBe(2);
+
+      // A destination is not held to the media bar (the host routes a path) —
+      // but a code-running scheme is refused, as the version write refuses it.
+      const unsafe = await writeTranslation(banner, 'fr', {
+        translations: { [target.path]: 'javascript:alert(1)' },
+      });
+      expect(unsafe.status).toBe(400);
+      expect(JSON.stringify(unsafe.body)).toContain('destination_url');
+
+      const res = await writeTranslation(banner, 'fr', {
+        translations: { [target.path]: ' /fr/mcp ' },
+        enabled: true,
+      });
+      expect(res.status).toBe(200);
+      expect(unitBySource(res.body.units, 'https://example.com/en/mcp').translation).toBe(
+        '/fr/mcp',
+      );
+
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: banner.contentId,
+        versionId: banner.id,
+      });
+      const bizUser = await buildBizUser(prisma, { environmentId, data: { locale_code: 'fr' } });
+      const environment = await prisma.environment.findUniqueOrThrow({
+        where: { id: environmentId },
+      });
+      const versions = await app
+        .get(ContentDataService)
+        .findCustomContentVersions(
+          { environment, externalUserId: bizUser.externalId },
+          [ContentDataType.BANNER],
+          banner.id,
+        );
+      const delivered = JSON.stringify(versions.map((version) => version.data));
+      expect(delivered).toContain('"text":"/fr/mcp"');
+      expect(delivered).not.toContain('https://example.com/en/mcp');
+      // The rest of the action still comes from the source.
+      expect(delivered).toContain('"openType":"new"');
     });
   });
 
