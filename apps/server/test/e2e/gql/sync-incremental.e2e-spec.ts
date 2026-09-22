@@ -16,7 +16,7 @@ import {
   SYNC_OBJECT_UPDATE_TOPIC,
   type SyncObjectUpdateEnvelope,
 } from '@/modules/integrations/types/integrations.type';
-import { EncryptionService } from '@/shared/encryption.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import * as hubspotCrmApi from '@/modules/integrations/sync/hubspot-crm-api';
 
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';

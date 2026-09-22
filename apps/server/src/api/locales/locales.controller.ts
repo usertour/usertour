@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { locates } from '@usertour/constants';
 
 import { ApiTokenAuthenticateGuard } from '@/modules/api-token/guards/api-token-authenticate.guard';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 
 import { ApiObjectType } from '../shared/object-type';
 import { ApiStandardErrorResponses } from '../shared/error-response';

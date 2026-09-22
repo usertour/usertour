@@ -7,7 +7,7 @@ import {
   createBizUserConditionsFilter,
   createConditionsFilter,
 } from '@/modules/biz/utils/attribute-filter.util';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import {
   evaluateAttributeCondition,
   isArray,

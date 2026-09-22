@@ -26,7 +26,7 @@ import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { ApiWebhooksService } from '@/api/webhooks/webhooks.service';
-import { BaseError } from '@/common/errors/base';
+import { BaseError } from '@/modules/common/errors/base-error';
 import { AuditService } from '@/modules/audit/services/audit.service';
 import { ContentDiagnosisService } from '@/modules/delivery/services/content-diagnosis.service';
 

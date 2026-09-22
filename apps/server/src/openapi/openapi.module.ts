@@ -8,7 +8,7 @@ import { OpenAPIKeyGuard } from './openapi.guard';
  * content is read-only here and writes cover only end-user data (users /
  * companies / sessions / memberships) — but any new capability belongs in v2.
  */
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 import { ConfigModule } from '@nestjs/config';
 import { AnalyticsModule } from '@/modules/analytics/analytics.module';
 import { AttributesModule } from '@/modules/attributes/attributes.module';

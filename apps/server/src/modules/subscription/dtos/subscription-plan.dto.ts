@@ -1,9 +1,9 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
 @ObjectType('SubscriptionPlanModel')
-export class SubscriptionPlanDTO extends BaseModel {
+export class SubscriptionPlanDTO extends BaseDTO {
   @Field(() => String)
   planType: string;
 

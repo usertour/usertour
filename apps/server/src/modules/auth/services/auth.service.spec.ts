@@ -8,15 +8,15 @@ import {
   PasswordIncorrect,
   SsoRequiredError,
   TooManyLoginAttemptsError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 import {
   QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,
   QUEUE_SEND_MAGIC_LINK_EMAIL,
   QUEUE_SEND_RESET_PASSWORD_EMAIL,
 } from '../constants/auth-queues.constant';
 import { AuditService } from '@/modules/audit/services/audit.service';
-import { EmailService } from '@/shared/email.service';
-import { RedisService } from '@/shared/redis.service';
+import { EmailService } from '@/modules/common/services/email.service';
+import { RedisService } from '@/modules/common/services/redis.service';
 import { TeamService } from '@/modules/team/services/team.service';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { AuthService } from './auth.service';

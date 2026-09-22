@@ -1,7 +1,7 @@
 import { Controller, Delete, Query, UseFilters, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OpenAPIKeyGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 import { Audit } from '@/modules/audit/decorators/audit.decorator';
 import { OpenAPICompanyMembershipsService } from './company-memberships.service';
 import { EnvironmentId } from '../shared/environment-id.decorator';

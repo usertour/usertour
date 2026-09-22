@@ -1,6 +1,6 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { TwoFactorEnrollmentRequiredError } from '@/common/errors';
+import { TwoFactorEnrollmentRequiredError } from '@/modules/common/errors/errors';
 import { TwoFactorService } from '@/modules/auth/services/two-factor.service';
 import { TwoFactorEnrollmentGuard } from './two-factor-enrollment.guard';
 

@@ -1,6 +1,6 @@
 import { ObjectType } from '@nestjs/graphql';
 
-import PaginatedResponse from '@/common/pagination/pagination';
+import { PaginatedResponse } from '@/modules/common/dtos/paginated-response.dto';
 
 import { IntegrationMessageDTO } from './integration-message.dto';
 

@@ -10,7 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { WebSocketThrottlerGuard } from './web-socket-throttler.guard';
-import { SDKAuthenticationError, ServiceUnavailableError } from '@/common/errors';
+import { SDKAuthenticationError, ServiceUnavailableError } from '@/modules/common/errors/errors';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { SocketAuthData } from '@usertour/types';
 import { ClientMessageDto } from './web-socket-v2.dto';

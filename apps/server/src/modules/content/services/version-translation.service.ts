@@ -15,7 +15,7 @@ import {
   LocalizationNotFoundError,
   ValidationError,
   type ValidationIssue,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import {
   collectStaleEmbedUrls,
   fetchEmbedResolutions,

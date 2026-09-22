@@ -1,4 +1,4 @@
-import { FeatureRequiresLicenseError } from '@/common/errors/errors';
+import { FeatureRequiresLicenseError } from '@/modules/common/errors/errors';
 import { AuditResolver } from './audit.resolver';
 
 // The plan read-window is a tri-state: -1 = unlimited, 0 = none, N = last N days.

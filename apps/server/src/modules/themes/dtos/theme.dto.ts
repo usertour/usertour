@@ -1,10 +1,10 @@
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
 @ObjectType('Theme')
-export class ThemeDTO extends BaseModel {
+export class ThemeDTO extends BaseDTO {
   @Field()
   name: string;
 

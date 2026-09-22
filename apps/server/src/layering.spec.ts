@@ -11,9 +11,9 @@ import { preProcessFile } from 'typescript';
  *
  * The composition root (`src/*.ts`) may import anything; nothing imports it.
  *
- * LAYERS classifies every path; it is also the migration status table — a
- * module that has moved lives under `modules/` (the entrypoints will move into
- * `entrypoints/`), one that has not is classified where it stands.
+ * LAYERS classifies every path; it is also the migration status table —
+ * every module now lives under `modules/`; the entrypoints will move into
+ * `entrypoints/` later, each as a whole directory.
  */
 
 type Layer = 'entrypoints' | 'modules';
@@ -29,10 +29,7 @@ const LAYERS: Record<string, Layer> = {
   'web-socket': 'entrypoints', // the gateways and their socket plumbing; the delivery runtime is modules/delivery
 
   // ── modules: business and infrastructure alike, each with its thin GraphQL adapter ──
-  modules: 'modules', // the target layout
-  common: 'modules',
-  shared: 'modules',
-  utils: 'modules',
+  modules: 'modules',
 };
 
 /**

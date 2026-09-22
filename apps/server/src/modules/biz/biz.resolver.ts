@@ -1,6 +1,6 @@
 import { CommonDTO } from '@/modules/auth/dtos/common.dto';
 import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
-import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { PaginationArgs } from '@/modules/common/dtos/pagination.args';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';

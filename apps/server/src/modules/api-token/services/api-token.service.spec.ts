@@ -3,7 +3,7 @@ import type { PrismaService } from 'nestjs-prisma';
 
 import { Capability } from '@usertour/types';
 
-import { ParamsError } from '@/common/errors';
+import { ParamsError } from '@/modules/common/errors/errors';
 
 import { ApiTokenService } from './api-token.service';
 

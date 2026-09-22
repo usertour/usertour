@@ -3,7 +3,7 @@ import { Controller, Delete, Get, Post, Req, Res, UseFilters, UseGuards } from '
 import { Request, Response } from 'express';
 
 import { AuthedApiToken } from '@/modules/api-token/services/api-token-auth.service';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 
 import { McpAuthGuard } from './mcp-auth.guard';
 import { McpService } from './mcp.service';

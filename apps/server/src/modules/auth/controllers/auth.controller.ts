@@ -8,7 +8,11 @@ import { UserEntity } from '../decorators/user.decorator';
 import { Request, Response } from 'express';
 import { Logger } from '@nestjs/common';
 import type { User } from '@prisma/client';
-import { AuthenticationExpiredError, OAuthError, SsoRequiredError } from '@/common/errors';
+import {
+  AuthenticationExpiredError,
+  OAuthError,
+  SsoRequiredError,
+} from '@/modules/common/errors/errors';
 import { REFRESH_TOKEN_COOKIE } from '../constants/auth-cookies.constant';
 
 /**

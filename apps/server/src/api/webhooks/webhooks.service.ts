@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { WebhookNotFoundError } from '@/common/errors';
+import { WebhookNotFoundError } from '@/modules/common/errors/errors';
 import type { Environment } from '@prisma/client';
 import { WebhooksService } from '@/modules/webhooks/services/webhooks.service';
 

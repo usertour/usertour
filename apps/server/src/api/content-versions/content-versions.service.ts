@@ -16,7 +16,7 @@ import {
   ParamsError,
   ValidationError,
   type ValidationIssue,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import { ContentService, type WriteActor } from '@/modules/content/services/content.service';
 import {
   type TranslationTarget,

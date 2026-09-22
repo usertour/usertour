@@ -1,4 +1,4 @@
-import { ValidationError, WebhookNotFoundError } from '@/common/errors';
+import { ValidationError, WebhookNotFoundError } from '@/modules/common/errors/errors';
 import { WebhooksService } from './webhooks.service';
 
 /**

@@ -4,7 +4,7 @@ import {
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
 import { PrismaService } from 'nestjs-prisma';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import {
   RulesCondition,
   BizAttributeTypes,

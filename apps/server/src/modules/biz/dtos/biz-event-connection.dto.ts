@@ -1,4 +1,4 @@
-import PaginatedResponse from '@/common/pagination/pagination';
+import { PaginatedResponse } from '@/modules/common/dtos/paginated-response.dto';
 import { ObjectType } from '@nestjs/graphql';
 import { BizEventDTO } from '@/modules/analytics/dtos/biz-event.dto';
 

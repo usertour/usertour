@@ -80,7 +80,7 @@ src/
 - New modules go straight into the target layout.
 - An existing module moves when it is next substantially changed, never for the sake of moving. Moving one means decoupling its service signatures first, then `git mv` and import updates.
 - `api/`, `openapi/`, `mcp/` and `web-socket/` are already cohesive. They are classified in place and will be renamed into `entrypoints/` later, each as a whole directory in one step.
-- Shared helpers (`common/`, `shared/`, `utils/`) are in the modules layer and stay where they are; consolidating them is out of scope.
+- The former grab-bags (`common/`, `shared/`, `utils/`) are dissolved, not moved: business code went to the module that owns it, v1-only helpers to `openapi/shared/`, and what is genuinely cross-cutting — the error classes, configuration, the GraphQL pagination and ordering primitives, the exception filter, the config guards, the egress guard, the request context and the shared infrastructure services (Redis, email, encryption, project cache, identity verification) — is `modules/common/`, one module in the layout of §3.
 - Pilot: `localizations/` — service signatures decoupled, then moved to `src/modules/localizations/` in the layout of §3.
 
 ### 6. Known debt
@@ -94,7 +94,7 @@ src/
 
 3. Publish-time usability validation, write guards and auto-start capability checks under `api/content-representation/`. Moving them is its own piece of work; it starts by running the usability validator read-only over existing published versions, to learn how much of what the builder produced it would reject.
 
-**Filing** (not a dependency problem; for review): `common/` holds business code — project initialization defaults, the attribute filter, REST v1 types, the environment decorator. It belongs in the modules and the v1 entrypoint it serves.
+**Filing** — resolved. `common/` held business code (project initialization defaults, the attribute filter, REST v1 types, the environment decorator); each piece now lives with the module or the v1 entrypoint it serves (see §5).
 
 ## Consequences
 

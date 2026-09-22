@@ -8,7 +8,7 @@ import {
   ContentNotFoundError,
   EnvironmentNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 
 import { mapContentAnalytics, mapQuestionAnalytics } from './analytics.mapper';
 import type { QuestionRollingWindows } from './analytics.mapper';

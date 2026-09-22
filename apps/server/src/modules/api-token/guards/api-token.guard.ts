@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { InvalidApiKeyError } from '@/common/errors';
+import { InvalidApiKeyError } from '@/modules/common/errors/errors';
 
 import { RequireCapability } from '../decorators/require-capability.decorator';
 import { ApiTokenAuthService } from '../services/api-token-auth.service';

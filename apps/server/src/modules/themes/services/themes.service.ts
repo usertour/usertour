@@ -3,8 +3,8 @@ import { PrismaService } from 'nestjs-prisma';
 import type { NewTheme } from '../types/new-theme.type';
 import type { ThemeChanges } from '../types/theme-changes.type';
 import type { ThemeCopy } from '../types/theme-copy.type';
-import { ParamsError, ThemeInUseError } from '@/common/errors';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ParamsError, ThemeInUseError } from '@/modules/common/errors/errors';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 
 @Injectable()
 export class ThemesService {

@@ -1,4 +1,4 @@
-import { createdAtWhere, nameContains } from '@/common/filters';
+import { createdAtWhere, nameContains } from '@/modules/common/utils/query-filters.util';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'nestjs-prisma';
@@ -18,7 +18,7 @@ import {
   UnknownError,
   VersionConflictError,
   VersionNotEditableError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 import { ContentConfigObject, ContentDataType } from '@usertour/types';
 import {
   LOCALIZED_UNITS_SCHEMA_VERSION,
@@ -28,7 +28,7 @@ import {
   remapFlowTranslationIdentifiers,
   remapVersionDataTranslationIdentifiers,
 } from '@usertour/helpers';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 
 /**
  * Who performed a version / publish write. Web passes the session user; the

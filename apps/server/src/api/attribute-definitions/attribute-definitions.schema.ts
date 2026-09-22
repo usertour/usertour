@@ -5,7 +5,7 @@ import { singleOrArray, isoTimestamp } from '../shared/query';
 import { AttributeDataTypeNames } from '@/modules/attributes/constants/attribute-data-type-names.constant';
 
 import { codeName as codeNameSchema } from '../shared/codename';
-import { nameSearchField } from '@/common/filters';
+import { nameSearchField } from '@/modules/common/utils/query-filters.util';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 

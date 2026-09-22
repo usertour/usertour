@@ -3,7 +3,7 @@ import { ContentDataType } from '@usertour/types';
 
 import { z } from 'zod';
 
-import { ValidationError } from '@/common/errors/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 
 import { zodIssuesToValidationIssues } from '../shared/zod-issues';
 

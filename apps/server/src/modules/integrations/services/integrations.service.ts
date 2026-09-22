@@ -16,11 +16,11 @@ import {
   FeatureRequiresLicenseError,
   IntegrationNotFoundError,
   ValidationError,
-} from '@/common/errors';
-import { PaginationArgs } from '@/common/pagination/pagination.args';
+} from '@/modules/common/errors/errors';
+import type { Pagination } from '@/modules/common/types/pagination.type';
 import { ApiObjectType } from '@/api/shared/object-type';
 import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
-import { EncryptionService } from '@/shared/encryption.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { CohortSyncService } from './cohort-sync.service';
 import { SyncTeardownService } from '../sync/sync-teardown.service';
@@ -391,7 +391,7 @@ export class IntegrationsService {
   }
 
   /** The integration's message log (newest first), each with its attempts. */
-  async listMessages(integrationId: string, pagination: PaginationArgs) {
+  async listMessages(integrationId: string, pagination: Pagination) {
     const { first, last, before, after } = pagination ?? {};
     return this.ledger.listMessages({ integrationId }, { first, last, before, after });
   }

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DistributedLockService } from './distributed-lock.service';
-import { RedisService } from '@/shared/redis.service';
+import { RedisService } from '@/modules/common/services/redis.service';
 
 describe('DistributedLockService', () => {
   let service: DistributedLockService;

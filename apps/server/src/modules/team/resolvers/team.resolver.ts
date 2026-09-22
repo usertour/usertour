@@ -14,7 +14,7 @@ import { Logger } from '@nestjs/common';
 import { InviteDTO } from '../dtos/invite.dto';
 import { Public } from '@/modules/auth/decorators/public.decorator';
 import { UseGuards } from '@nestjs/common';
-import { EmailConfigGuard } from '@/common/guards/email-config.guard';
+import { EmailConfigGuard } from '@/modules/common/guards/email-config.guard';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';

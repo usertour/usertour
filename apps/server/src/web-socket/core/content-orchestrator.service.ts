@@ -60,7 +60,7 @@ import { SessionBuilderService } from '@/modules/delivery/services/session-build
 import { EventTrackingService } from '@/modules/delivery/services/event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { getStartEventType, getEndEventType } from '@/modules/delivery/utils/event.util';
 import { WebSocketContext } from '../v2/web-socket-v2.dto';
 

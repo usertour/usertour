@@ -8,8 +8,8 @@ import {
 import { BaseExceptionFilter } from '@nestjs/core';
 import { Request } from 'express';
 
-import { UnknownRouteError, ValidationError } from '@/common/errors/errors';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { UnknownRouteError, ValidationError } from '@/modules/common/errors/errors';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 
 /**
  * Global fallback that keeps the v2 error ENVELOPE promise for exceptions the

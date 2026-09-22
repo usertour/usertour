@@ -4,10 +4,10 @@ import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { TeamResolver } from './resolvers/team.resolver';
 import { UserOnProjectResolver } from './resolvers/user-on-project.resolver';
 import { TeamService } from './services/team.service';
-import { SharedModule } from '@/shared/shared.module';
+import { CommonModule } from '@/modules/common/common.module';
 
 @Module({
-  imports: [ProjectsModule, SharedModule],
+  imports: [ProjectsModule, CommonModule],
   providers: [TeamResolver, TeamService, UserOnProjectResolver, PermissionGuard],
   exports: [TeamService],
 })

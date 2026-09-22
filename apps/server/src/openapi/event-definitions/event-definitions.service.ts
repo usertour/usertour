@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventDefinition } from '../models/event-definition.model';
 import { EventsService as BusinessEventsService } from '@/modules/events/services/events.service';
 import { OpenApiObjectType } from '../shared/openapi-object-type';
-import { paginate } from '@/common/openapi/pagination';
+import { paginate } from '@/modules/common/utils/pagination.util';
 import type { Environment } from '@prisma/client';
 import { EventDefinitionOrderByType, ListEventDefinitionsQueryDto } from './event-definitions.dto';
 import { parseOrderBy } from '../shared/sort';

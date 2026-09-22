@@ -12,7 +12,7 @@ import {
 } from './constants/integration-queues.constant';
 import { OutboundModule } from '@/modules/outbound/outbound.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
-import { SharedModule } from '@/shared/shared.module';
+import { CommonModule } from '@/modules/common/common.module';
 import { CohortSyncService } from './services/cohort-sync.service';
 import { ProviderConnectionService } from './sync/provider-connection.service';
 import { HubspotJournalService } from './sync/hubspot-journal.service';
@@ -45,7 +45,7 @@ import { IntegrationsService } from './services/integrations.service';
     BullModule.registerQueue({ name: QUEUE_OBJECT_SYNC_CRON, prefix: 'outbound_cron' }),
     OutboundModule,
     ProjectsModule,
-    SharedModule,
+    CommonModule,
     ConfigModule,
     BizModule,
     // JwtModule (signed OAuth state for CRM connections, ADR 0013 §2).

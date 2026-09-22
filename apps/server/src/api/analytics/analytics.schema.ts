@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 
-import { isUnambiguousIsoDate } from '@/common/filters';
+import { isUnambiguousIsoDate } from '@/modules/common/utils/query-filters.util';
 import { z } from 'zod';
 import { questionTypeEnum, stepTypeEnum } from '../content-representation/representation.schema';
 

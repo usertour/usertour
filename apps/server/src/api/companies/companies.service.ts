@@ -8,7 +8,7 @@ import {
   CompanyNotFoundError,
   UserNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import type { Environment } from '@prisma/client';
 
 import { paginate } from '../shared/pagination';

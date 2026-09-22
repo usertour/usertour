@@ -4,7 +4,7 @@ import { contentTypeEnum } from '../content/content.schema';
 import { questionTypeEnum } from '../content-representation/representation.schema';
 import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
-import { createdAtRangeFields } from '@/common/filters';
+import { createdAtRangeFields } from '@/modules/common/utils/query-filters.util';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 

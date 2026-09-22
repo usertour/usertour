@@ -2,14 +2,14 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
 import { ContentOnEnvironmentDTO } from './content-on-environment.dto';
 import { StepDTO } from './step.dto';
 import { VersionDTO } from './version.dto';
 
 @ObjectType('Content')
-export class ContentDTO extends BaseModel {
+export class ContentDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   name?: string;
 

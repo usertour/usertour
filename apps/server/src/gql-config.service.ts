@@ -4,7 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { GqlOptionsFactory } from '@nestjs/graphql';
 import { STATUS_CODES } from 'node:http';
 import { GraphQLError } from 'graphql';
-import { BaseError, ValidationError } from './common/errors';
+import { BaseError } from '@/modules/common/errors/base-error';
+import { ValidationError } from '@/modules/common/errors/errors';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {

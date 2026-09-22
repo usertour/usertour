@@ -1,4 +1,4 @@
-import { OAuthError } from '@/common/errors/errors';
+import { OAuthError } from '@/modules/common/errors/errors';
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 

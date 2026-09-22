@@ -2,7 +2,7 @@ import { Controller, Get, Req } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 
-import { resolveMcpOrigin, resolveMcpResource } from '@/common/http/resolve-origin';
+import { resolveMcpOrigin, resolveMcpResource } from '@/modules/common/utils/resolve-origin.util';
 
 import {
   buildAuthorizationServerMetadata,

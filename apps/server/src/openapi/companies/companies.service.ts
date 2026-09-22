@@ -7,9 +7,9 @@ import {
   ListCompaniesQueryDto,
   GetCompanyQueryDto,
 } from './companies.dto';
-import { CompanyNotFoundError } from '@/common/errors/errors';
+import { CompanyNotFoundError } from '@/modules/common/errors/errors';
 import { OpenApiObjectType } from '../shared/openapi-object-type';
-import { paginate } from '@/common/openapi/pagination';
+import { paginate } from '@/modules/common/utils/pagination.util';
 import type { Environment } from '@prisma/client';
 import { parseOrderBy } from '../shared/sort';
 import { DeleteResponseDto } from '../shared/delete-response.dto';

@@ -1,5 +1,5 @@
 import { AuthController } from './auth.controller';
-import { SsoRequiredError } from '@/common/errors';
+import { SsoRequiredError } from '@/modules/common/errors/errors';
 
 // Covers finishOauth's branches reached via the social (Google/GitHub) callbacks:
 // the force-SSO redirect and the normal token landing. The callbacks wrap

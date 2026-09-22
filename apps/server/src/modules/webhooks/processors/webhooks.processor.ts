@@ -9,10 +9,10 @@ import {
   assertPublicHttpUrl,
   createGuardedHttpsAgent,
   guardedLookup,
-} from '@/common/egress/egress-guard';
+} from '@/modules/common/utils/egress-guard.util';
 import { renderWebhookAutoDisabledEmail } from '@usertour/emails';
-import { EmailService } from '@/shared/email.service';
-import { EncryptionService } from '@/shared/encryption.service';
+import { EmailService } from '@/modules/common/services/email.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import { AuditService } from '@/modules/audit/services/audit.service';
 import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 import {

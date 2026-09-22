@@ -5,7 +5,10 @@ import { roleCan } from '@usertour/constants';
 import { Capability, Role } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { MemberEnvironmentNotAllowedError, NoPermissionError } from '@/common/errors';
+import {
+  MemberEnvironmentNotAllowedError,
+  NoPermissionError,
+} from '@/modules/common/errors/errors';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 
 import { publishWhitelistOf } from './publish-whitelist';

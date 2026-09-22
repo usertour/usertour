@@ -17,10 +17,10 @@ import {
   TwoFactorEnforcedDisableNotAllowedError,
   TwoFactorEnrollmentRequiredError,
   TwoFactorNotEnabledError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 import { LicenseService } from '@/modules/license/services/license.service';
-import { EncryptionService } from '@/shared/encryption.service';
-import { RedisService } from '@/shared/redis.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
+import { RedisService } from '@/modules/common/services/redis.service';
 import { PasswordService } from './password.service';
 
 export type ChallengePurpose = 'mfa-verify' | 'mfa-setup-required';

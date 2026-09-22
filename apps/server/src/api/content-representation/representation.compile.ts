@@ -1,7 +1,7 @@
 import { cuid, defaultColumn, defaultStep } from '@usertour/helpers';
 import { StepContentType } from '@usertour/types';
 
-import { ValidationError } from '@/common/errors/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 
 import {
   RepresentationAction,

@@ -15,7 +15,7 @@ import {
   SystemThemeCannotBeChangedError,
   ThemeNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { ThemesService } from '@/modules/themes/services/themes.service';
 
@@ -27,7 +27,7 @@ import {
 import { loadConditionContext } from '../content-representation/condition-context';
 import { collectRuleIssues } from '../content-representation/condition-validate';
 import { compileConditions } from '../content-representation/rules.compile';
-import { nameContains } from '@/common/filters';
+import { nameContains } from '@/modules/common/utils/query-filters.util';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import {

@@ -8,7 +8,7 @@ import {
   EventDefinitionNotFoundError,
   SegmentNotFoundError,
   ThemeNotFoundError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 
 /**
  * Reverse-reference lookup: "who is still using this attribute / event / theme /

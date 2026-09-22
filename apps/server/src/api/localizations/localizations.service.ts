@@ -5,7 +5,7 @@ import {
   LocalizationNotFoundError,
   ResourceAlreadyExistsError,
   ResourceConflictError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import {
   type VersionTranslation,
   VersionTranslationService,

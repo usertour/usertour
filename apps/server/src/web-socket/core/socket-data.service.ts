@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from '@/shared/redis.service';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { RedisService } from '@/modules/common/services/redis.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { Socket } from 'socket.io';
 import { getSocketId } from '../utils/websocket.util';

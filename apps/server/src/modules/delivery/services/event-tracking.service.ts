@@ -53,7 +53,7 @@ import { BizSessionWithEvents } from '../types/biz-session-with-events.type';
 import { BizSessionWithRelations } from '../types/biz-session-with-relations.type';
 import { TransactionClient } from '../types/transaction-client.type';
 import { humanize, isNullish } from '@usertour/helpers';
-import { ValidationError } from '@/common/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 import { extractStepBindToAttribute } from '@/modules/content/utils/content-question.util';
 import { calculateChecklistProgress } from '../utils/content.util';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';

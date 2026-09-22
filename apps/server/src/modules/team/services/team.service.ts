@@ -5,11 +5,12 @@ import {
   TeamMemberAlreadyInProjectError,
   TeamMemberAlreadyInvitedError,
   TeamMemberLimitError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { EmailService, type SendEmailInput } from '@/shared/email.service';
+import { EmailService } from '@/modules/common/services/email.service';
+import { type SendEmailInput } from '@/modules/common/types/send-email-input.type';
 import { renderInviteTeamMemberEmail } from '@usertour/emails';
 import { ConfigService } from '@nestjs/config';
 import { ProjectsService } from '@/modules/projects/services/projects.service';

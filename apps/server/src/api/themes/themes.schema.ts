@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { representationCondition } from '../content-representation/representation.schema';
-import { nameSearchField } from '@/common/filters';
+import { nameSearchField } from '@/modules/common/utils/query-filters.util';
 import { displayName } from '../shared/name';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';

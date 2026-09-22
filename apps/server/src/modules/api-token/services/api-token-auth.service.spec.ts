@@ -5,7 +5,7 @@ import type { PrismaService } from 'nestjs-prisma';
 import {
   EnvironmentNotInTokenScopeError,
   MemberCannotPublishToEnvironmentError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 
 import { ApiTokenAuthService, type AuthedApiToken } from './api-token-auth.service';
 

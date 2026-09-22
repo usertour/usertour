@@ -3,10 +3,10 @@ import { ProjectsResolver } from './projects.resolver';
 import { ProjectsService } from './services/projects.service';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { LicenseModule } from '@/modules/license/license.module';
-import { SharedModule } from '@/shared/shared.module';
+import { CommonModule } from '@/modules/common/common.module';
 
 @Module({
-  imports: [LicenseModule, SharedModule],
+  imports: [LicenseModule, CommonModule],
   providers: [ProjectsResolver, ProjectsService, PermissionGuard],
   exports: [ProjectsService],
 })

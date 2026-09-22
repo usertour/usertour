@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 
 import { AuthService } from '@/modules/auth/services/auth.service';
 import { Public } from '@/modules/auth/decorators/public.decorator';
-import { OAuthError, SsoAccessDeniedError } from '@/common/errors';
+import { OAuthError, SsoAccessDeniedError } from '@/modules/common/errors/errors';
 import { SSO_TX_COOKIE } from '../constants/sso-transaction-cookie.constant';
 
 import { SsoOidcService } from '../services/sso-oidc.service';

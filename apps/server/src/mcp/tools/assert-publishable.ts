@@ -1,4 +1,4 @@
-import { MemberCannotPublishToEnvironmentError } from '@/common/errors/errors';
+import { MemberCannotPublishToEnvironmentError } from '@/modules/common/errors/errors';
 
 import { McpToolContext } from '../mcp.types';
 

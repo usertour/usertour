@@ -1,4 +1,4 @@
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { ProjectDTO } from '@/modules/projects/dtos/project.dto';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
@@ -10,7 +10,7 @@ registerEnumType(Role, {
 });
 
 @ObjectType('UserOnProject')
-export class UserOnProjectDTO extends BaseModel {
+export class UserOnProjectDTO extends BaseDTO {
   @Field(() => Role)
   role: Role;
 

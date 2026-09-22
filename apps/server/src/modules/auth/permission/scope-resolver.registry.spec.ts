@@ -1,4 +1,4 @@
-import { NoPermissionError } from '@/common/errors';
+import { NoPermissionError } from '@/modules/common/errors/errors';
 
 import { ScopeKind, type ScopeServices, createScopeResolvers } from './scope-resolver.registry';
 

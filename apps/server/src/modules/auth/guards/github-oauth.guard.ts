@@ -1,6 +1,6 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { OAuthError } from '@/common/errors/errors';
+import { OAuthError } from '@/modules/common/errors/errors';
 
 @Injectable()
 export class GithubOauthGuard extends AuthGuard('github') {

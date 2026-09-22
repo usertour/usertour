@@ -4,7 +4,7 @@ import { environmentSelectionMissing } from '@usertour/helpers';
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ParamsError } from '@/common/errors';
+import { ParamsError } from '@/modules/common/errors/errors';
 
 import {
   API_TOKEN_PREFIX,

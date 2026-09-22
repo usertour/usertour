@@ -9,9 +9,9 @@ import {
   LicenseProjectMismatchError,
   ParamsError,
   TeamMemberLimitError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 import { LicenseService } from '@/modules/license/services/license.service';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { Environment, Prisma } from '@prisma/client';
 import { type PlanFeatures, PlanType, ProjectConfig } from '@usertour/types';
 import { isWithinLimit, resolvePlanFeatures } from '@usertour/helpers';

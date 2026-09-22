@@ -8,9 +8,9 @@ import {
 import { ContentSession, ContentSessionAnswers } from '../models/content-session.model';
 import { AnalyticsService } from '@/modules/analytics/services/analytics.service';
 import { type Environment, Prisma } from '@prisma/client';
-import { ContentNotFoundError, ContentSessionNotFoundError } from '@/common/errors/errors';
+import { ContentNotFoundError, ContentSessionNotFoundError } from '@/modules/common/errors/errors';
 import { OpenApiObjectType } from '../shared/openapi-object-type';
-import { paginate } from '@/common/openapi/pagination';
+import { paginate } from '@/modules/common/utils/pagination.util';
 import { ContentService } from '@/modules/content/services/content.service';
 import { parseOrderBy } from '../shared/sort';
 import { extractQuestionData } from '@/modules/content/utils/content-question.util';

@@ -7,7 +7,7 @@ import {
   ContentNotFoundError,
   ContentSessionNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import { ContentService } from '@/modules/content/services/content.service';
 import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/modules/delivery/utils/event.util';
 

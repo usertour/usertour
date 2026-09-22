@@ -3,7 +3,7 @@ import { ApiResponse } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { VALIDATION_ISSUE_RULES } from '@/common/errors/errors';
+import { VALIDATION_ISSUE_RULES } from '@/modules/common/errors/errors';
 
 /**
  * The v2 error envelope, exactly as OpenAPIExceptionFilter emits it. Declared

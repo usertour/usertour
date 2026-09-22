@@ -4,9 +4,9 @@ import { Integration, Prisma } from '@prisma/client';
 import { Request } from 'express';
 import { PrismaService } from 'nestjs-prisma';
 import { BizService } from '@/modules/biz/services/biz.service';
-import { IntegrationNotFoundError, ValidationError } from '@/common/errors';
-import { resolveOrigin } from '@/common/http/resolve-origin';
-import { EncryptionService } from '@/shared/encryption.service';
+import { IntegrationNotFoundError, ValidationError } from '@/modules/common/errors/errors';
+import { resolveOrigin } from '@/modules/common/utils/resolve-origin.util';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import { CohortSyncBatch, CohortSyncResult } from '../types/cohort-sync.type';
 import {
   buildInboundUrl,

@@ -8,7 +8,7 @@ import {
   PredefinedDefinitionCannotBeChangedError,
   ResourceAlreadyExistsError,
   ResourceConflictError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 
 import {
   ApiObjectType,

@@ -8,7 +8,7 @@ import {
   CompanyNotFoundError,
   EnvironmentNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 
 import { resolveRange, V2_CONTENT_TYPES } from './analytics.service';
 

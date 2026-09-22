@@ -1,6 +1,6 @@
 import { Field, InputType, registerEnumType } from '@nestjs/graphql';
 
-import { Order } from '@/common/order/order';
+import { Order } from '@/modules/common/dtos/order.input';
 
 import { AuditLogOrderField } from '../constants/audit-log-order-field.constant';
 import type { AuditLogOrdering } from '../types/audit-log-ordering.type';

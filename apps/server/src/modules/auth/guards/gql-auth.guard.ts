@@ -1,5 +1,5 @@
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { AuthenticationExpiredError } from '@/common/errors';
+import { AuthenticationExpiredError } from '@/modules/common/errors/errors';
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';

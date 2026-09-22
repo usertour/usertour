@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisService } from '@/shared/redis.service';
+import { RedisService } from '@/modules/common/services/redis.service';
 
 // ============================================================================
 // Distributed Lock Service

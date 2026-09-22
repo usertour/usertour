@@ -5,7 +5,7 @@ import { PrismaService } from 'nestjs-prisma';
 import type { EmailChange } from '../types/email-change.type';
 import type { PasswordChange } from '../types/password-change.type';
 import type { UserChanges } from '../types/user-changes.type';
-import { PasswordIncorrect } from '@/common/errors';
+import { PasswordIncorrect } from '@/modules/common/errors/errors';
 
 @Injectable()
 export class UsersService {

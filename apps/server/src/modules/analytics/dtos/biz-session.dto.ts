@@ -1,6 +1,6 @@
 import { BizModelDTO } from '@/modules/biz/dtos/biz.dto';
 import { BizUserDTO } from '@/modules/biz/dtos/biz-user.dto';
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { JsonObject } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
@@ -9,7 +9,7 @@ import { ContentDTO } from '@/modules/content/dtos/content.dto';
 import { VersionDTO } from '@/modules/content/dtos/version.dto';
 
 @ObjectType('BizSession')
-export class BizSessionDTO extends BaseModel {
+export class BizSessionDTO extends BaseDTO {
   @Field(() => Int)
   state: number;
 

@@ -12,7 +12,7 @@ import {
   SYNC_PAGE_JOB,
   type SyncPageJobData,
 } from '@/modules/integrations/sync/object-sync.service';
-import { EncryptionService } from '@/shared/encryption.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import * as hubspotCrmApi from '@/modules/integrations/sync/hubspot-crm-api';
 
 import { graphql, gqlErrorCode } from '../auth';

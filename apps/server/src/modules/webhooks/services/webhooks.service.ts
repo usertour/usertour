@@ -5,17 +5,17 @@ import { WEBHOOK_PREFIX_SUBSCRIPTIONS, WEBHOOK_TEST_TOPIC } from '@usertour/cons
 import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { QUEUE_WEBHOOK_DELIVERY } from '../constants/webhook-queues.constant';
-import { assertPublicHttpUrl } from '@/common/egress/egress-guard';
+import { assertPublicHttpUrl } from '@/modules/common/utils/egress-guard.util';
 import {
   FeatureRequiresLicenseError,
   ValidationError,
   WebhookMessageNotFoundError,
   WebhookNotFoundError,
-} from '@/common/errors';
-import { PaginationArgs } from '@/common/pagination/pagination.args';
+} from '@/modules/common/errors/errors';
+import type { Pagination } from '@/modules/common/types/pagination.type';
 import { OutboundLedgerService } from '@/modules/outbound/services/outbound-ledger.service';
 import { maxLoggedAttempt } from '@/modules/outbound/utils/max-logged-attempt.util';
-import { EncryptionService } from '@/shared/encryption.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import type { NewWebhook } from '../types/new-webhook.type';
@@ -306,7 +306,7 @@ export class WebhooksService {
   }
 
   /** The endpoint's message log (newest first), each with its attempts. */
-  async listMessages(webhookId: string, pagination: PaginationArgs) {
+  async listMessages(webhookId: string, pagination: Pagination) {
     const { first, last, before, after } = pagination ?? {};
     return this.ledger.listMessages({ webhookId }, { first, last, before, after });
   }

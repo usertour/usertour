@@ -7,7 +7,7 @@ import {
   assertPublicHttpUrl,
   createGuardedHttpsAgent,
   guardedLookup,
-} from '@/common/egress/egress-guard';
+} from '@/modules/common/utils/egress-guard.util';
 
 export interface OidcAuthRequest {
   url: string;

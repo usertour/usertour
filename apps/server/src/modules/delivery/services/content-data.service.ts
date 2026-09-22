@@ -37,7 +37,7 @@ import {
   ConditionEvaluationContext,
 } from './condition-evaluation.service';
 import { DISMISSED_EVENTS } from '../utils/event.util';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 
 // ============================================================================
 // Type Definitions

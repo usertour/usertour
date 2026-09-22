@@ -16,7 +16,7 @@ import {
   MemberCannotPublishToEnvironmentError,
   MissingApiKeyError,
   ProjectNotInTokenScopeError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 
 import { hashApiTokenSecret, stripTokenPrefix } from '../utils/api-token-crypto.util';
 

@@ -1,10 +1,10 @@
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { ProjectDTO } from '@/modules/projects/dtos/project.dto';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('Invite')
-export class InviteDTO extends BaseModel {
+export class InviteDTO extends BaseDTO {
   // Nullable because the public `getInvite` query strips identifying fields
   // (email, code, ids) before returning — only admin queries get the full row.
   @Field(() => String, { nullable: true })

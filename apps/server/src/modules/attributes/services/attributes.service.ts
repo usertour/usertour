@@ -4,9 +4,9 @@ import type { AttributeChanges } from '../types/attribute-changes.type';
 import type { NewAttribute } from '../types/new-attribute.type';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
-import { ProjectCacheService } from '@/shared/project-cache.service';
-import { nameContains } from '@/common/filters';
-import { ResourceAlreadyExistsError, ValidationError } from '@/common/errors';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
+import { nameContains } from '@/modules/common/utils/query-filters.util';
+import { ResourceAlreadyExistsError, ValidationError } from '@/modules/common/errors/errors';
 
 @Injectable()
 export class AttributesService {

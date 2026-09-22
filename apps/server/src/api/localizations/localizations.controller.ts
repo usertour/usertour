@@ -18,7 +18,7 @@ import { Capability } from '@usertour/types';
 
 import { ApiTokenGuard } from '@/modules/api-token/guards/api-token.guard';
 import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 
 import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { ApiValidationPipe } from '../shared/validation.pipe';

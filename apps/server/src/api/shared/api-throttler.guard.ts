@@ -9,7 +9,7 @@ import {
   hashApiTokenSecret,
   stripTokenPrefix,
 } from '@/modules/api-token/utils/api-token-crypto.util';
-import { RateLimitExceededError } from '@/common/errors/errors';
+import { RateLimitExceededError } from '@/modules/common/errors/errors';
 
 interface ResolvedThrottle {
   tracker: string;

@@ -1,4 +1,4 @@
-import { ValidationError } from '@/common/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 
 import { AttributesService } from './attributes.service';
 

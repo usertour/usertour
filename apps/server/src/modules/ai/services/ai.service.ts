@@ -6,7 +6,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { LanguageModel } from 'ai';
 
-import { AiNotConfiguredError } from '@/common/errors';
+import { AiNotConfiguredError } from '@/modules/common/errors/errors';
 
 /**
  * Instance-level AI provider access (the AI_* environment variables) — the

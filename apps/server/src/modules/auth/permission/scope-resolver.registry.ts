@@ -1,4 +1,4 @@
-import { NoPermissionError } from '@/common/errors';
+import { NoPermissionError } from '@/modules/common/errors/errors';
 
 /**
  * Identifies how to resolve the owning project for a guarded endpoint.

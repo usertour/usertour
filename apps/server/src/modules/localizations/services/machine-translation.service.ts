@@ -11,7 +11,7 @@ import {
   MachineTranslationFailedError,
   MachineTranslationRequiresPaidPlanError,
   ParamsError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 
 import type { MachineTranslationRequest } from '../types/machine-translation-request.type';
 

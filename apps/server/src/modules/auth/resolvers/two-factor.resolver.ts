@@ -4,7 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { Public } from '../decorators/public.decorator';
 import { SkipTwoFactorEnrollment } from '../decorators/skip-2fa-enrollment.decorator';
 import { UserEntity } from '../decorators/user.decorator';
-import { InvalidTwoFactorChallengeError } from '@/common/errors';
+import { InvalidTwoFactorChallengeError } from '@/modules/common/errors/errors';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { AuthService } from '../services/auth.service';
 import { ConfirmTwoFactorSetupInput } from '../dtos/confirm-two-factor-setup.input';

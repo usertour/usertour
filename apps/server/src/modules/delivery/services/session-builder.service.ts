@@ -40,7 +40,7 @@ import { AnnouncementService, type VisibleAnnouncement } from './announcement.se
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { buildSessionCreateLockKey } from '../utils/session-create-lock-key.util';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 
 @Injectable()
 export class SessionBuilderService {

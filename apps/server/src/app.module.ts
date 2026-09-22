@@ -6,7 +6,7 @@ import { AttributesModule } from '@/modules/attributes/attributes.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { BizModule } from '@/modules/biz/biz.module';
 import { ApiTokenModule } from '@/modules/api-token/api-token.module';
-import config from '@/common/configs/config';
+import config from '@/modules/common/config/config';
 import { ContentModule } from '@/modules/content/content.module';
 import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { EventsModule } from '@/modules/events/events.module';
@@ -38,7 +38,7 @@ import { OAuthModule } from '@/modules/oauth/oauth.module';
 import { IntegrationsModule } from '@/modules/integrations/integrations.module';
 import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
 import { LicenseModule } from '@/modules/license/license.module';
-import { SharedModule } from './shared/shared.module';
+import { CommonModule } from '@/modules/common/common.module';
 import { AuditModule } from '@/modules/audit/audit.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { loggingMiddleware } from 'nestjs-prisma';
@@ -161,7 +161,7 @@ import { Logger } from '@nestjs/common';
     ApiModule,
     McpModule,
     OAuthModule,
-    SharedModule,
+    CommonModule,
     AdminModule,
   ],
   controllers: [AppController],

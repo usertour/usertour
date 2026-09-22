@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { NoPermissionError } from '@/common/errors';
+import { NoPermissionError } from '@/modules/common/errors/errors';
 
 @Injectable()
 export class SystemAdminGuard implements CanActivate {

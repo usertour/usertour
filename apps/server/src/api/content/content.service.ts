@@ -10,7 +10,7 @@ import {
   ContentNotPublishableError,
   ParamsError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import { ContentService, type WriteActor } from '@/modules/content/services/content.service';
 import { ApiThemesService } from '../themes/themes.service';
 

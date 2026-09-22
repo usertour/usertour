@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
-import { EncryptionService } from '@/shared/encryption.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 
 import { graphql, gqlData, gqlErrorCode } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';

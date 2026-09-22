@@ -15,7 +15,7 @@ import { configureApp } from './configure-app';
 
 // Import tracer for OpenTelemetry
 import { startTracer } from './tracer';
-import { setTraceID } from './utils/middleware/set-trace-id';
+import { setTraceID } from '@/modules/common/middleware/set-trace-id.middleware';
 
 // import { AllExceptionsFilter } from './common/filter';
 

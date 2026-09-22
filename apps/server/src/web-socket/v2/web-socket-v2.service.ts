@@ -56,8 +56,8 @@ import {
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { AnnouncementService } from '@/modules/delivery/services/announcement.service';
 import { ContentDataService } from '@/modules/delivery/services/content-data.service';
-import { ProjectCacheService } from '@/shared/project-cache.service';
-import { IdentityVerificationService } from '@/shared/identity-verification.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
+import { IdentityVerificationService } from '@/modules/common/services/identity-verification.service';
 import { buildExternalUserRoomId, getSocketId } from '../utils/websocket.util';
 import {
   assignClientContext,

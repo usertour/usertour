@@ -1,7 +1,7 @@
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { SsoProviderType } from '@prisma/client';
 
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
 registerEnumType(SsoProviderType, {
   name: 'SsoProviderType',
@@ -14,7 +14,7 @@ registerEnumType(SsoProviderType, {
  * returned over the API. Provisioning policy lives on ProjectSsoSettingsDTO.
  */
 @ObjectType('SsoProviderModel')
-export class SsoProviderDTO extends BaseModel {
+export class SsoProviderDTO extends BaseDTO {
   @Field()
   projectId: string;
 

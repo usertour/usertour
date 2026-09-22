@@ -12,7 +12,7 @@ import { Subscription, Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '../constants/check-canceled-subscriptions-queue.constant';
 import { PrismaService } from 'nestjs-prisma';
-import { ParamsError } from '@/common/errors';
+import { ParamsError } from '@/modules/common/errors/errors';
 import type { SubscriptionPlan } from '@prisma/client';
 import { parseSubscriptionPlan } from '../utils/subscription-plan.util';
 

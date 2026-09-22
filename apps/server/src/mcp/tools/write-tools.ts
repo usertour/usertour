@@ -26,9 +26,9 @@ import {
   updateVersionLocalizationBody,
 } from '@/api/localizations/localizations.schema';
 import { zodIssuesToValidationIssues } from '@/api/shared/zod-issues';
-import { ValidationError } from '@/common/errors/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 import { localizationAuditSnapshot } from '@/modules/localizations/utils/localization-audit-snapshot.util';
-import { isoDateTime } from '@/common/filters';
+import { isoDateTime } from '@/modules/common/utils/query-filters.util';
 import {
   createEnvironmentBody,
   type CreateEnvironmentBody,

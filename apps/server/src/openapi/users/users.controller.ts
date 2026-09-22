@@ -20,13 +20,13 @@ import {
 import { OpenAPIUsersService } from './users.service';
 import { UpsertUserRequestDto, ExpandType, ListUsersQueryDto, GetUserQueryDto } from './users.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 import { Audit } from '@/modules/audit/decorators/audit.decorator';
 import { EnvironmentId } from '../shared/environment-id.decorator';
 import { User } from '../models/user.model';
-import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { EnvironmentDecorator } from '@/modules/common/decorators/environment.decorator';
 import type { Environment } from '@prisma/client';
-import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { RequestUrl } from '@/modules/common/decorators/request-url.decorator';
 
 @ApiTags('Users (v1)')
 @Controller('v1/users')

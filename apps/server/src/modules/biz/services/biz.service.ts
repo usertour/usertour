@@ -1,13 +1,18 @@
 import type { Attribute } from '@prisma/client';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { AttributeDataType } from '@/modules/attributes/constants/attribute-data-type.constant';
-import { createdAtWhere } from '@/common/filters';
-import { SegmentNotFoundError } from '@/common/errors';
+import { createdAtWhere } from '@/modules/common/utils/query-filters.util';
+import {
+  SegmentNotFoundError,
+  ParamsError,
+  UnknownError,
+  ValidationError,
+} from '@/modules/common/errors/errors';
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
 } from '../utils/attribute-filter.util';
-import { PaginationArgs } from '@/common/pagination/pagination.args';
+import type { Pagination } from '@/modules/common/types/pagination.type';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable, Logger } from '@nestjs/common';
@@ -30,7 +35,6 @@ import type { SegmentCompanyRemoval } from '../types/segment-company-removal.typ
 import type { SegmentDeletion } from '../types/segment-deletion.type';
 import type { SegmentUserMembership } from '../types/segment-user-membership.type';
 import type { SegmentUserRemoval } from '../types/segment-user-removal.type';
-import { ParamsError, UnknownError, ValidationError } from '@/common/errors';
 import { getDefaultColumns } from '@/modules/projects/utils/project-initialization.util';
 import { BizAttributeTypes, ColumnSetting } from '@usertour/types';
 import { IntegrationSource } from '@/modules/integrations/constants/integration-source.constant';
@@ -43,7 +47,7 @@ import {
   isNull,
   isValidISO8601,
 } from '@usertour/helpers';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 
 // Legacy data in DB may be stored as Record<string, boolean>; new shape is ColumnSetting[].
 // Normalize at the service boundary so callers always see the array shape.
@@ -670,7 +674,7 @@ export class BizService {
     return conditions;
   }
 
-  async queryBizUser(query: BizFilter, pagination: PaginationArgs, orderBy: BizOrdering) {
+  async queryBizUser(query: BizFilter, pagination: Pagination, orderBy: BizOrdering) {
     const { first, last, before, after } = pagination;
     const { environmentId, segmentId, data, userId, search, companyId } = query;
     try {
@@ -768,7 +772,7 @@ export class BizService {
     }
   }
 
-  async queryBizCompany(query: BizFilter, pagination: PaginationArgs, orderBy: BizOrdering) {
+  async queryBizCompany(query: BizFilter, pagination: Pagination, orderBy: BizOrdering) {
     const { first, last, before, after } = pagination;
     const { environmentId, segmentId, data, companyId, search } = query;
     try {
@@ -1713,7 +1717,7 @@ export class BizService {
 
   async queryBizUserEvents(
     query: { environmentId: string; userId: string },
-    pagination: PaginationArgs,
+    pagination: Pagination,
     orderBy: BizOrdering,
   ) {
     const { first, last, before, after } = pagination;
@@ -1745,7 +1749,7 @@ export class BizService {
 
   async queryBizCompanyEvents(
     query: { environmentId: string; companyId: string },
-    pagination: PaginationArgs,
+    pagination: Pagination,
     orderBy: BizOrdering,
   ) {
     const { first, last, before, after } = pagination;

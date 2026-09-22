@@ -15,7 +15,7 @@ import { GoogleOauthStrategy } from './strategies/google-oauth.strategy';
 import { TwoFactorService } from './services/two-factor.service';
 import { TwoFactorResolver } from './resolvers/two-factor.resolver';
 import { TeamModule } from '@/modules/team/team.module';
-import { SharedModule } from '@/shared/shared.module';
+import { CommonModule } from '@/modules/common/common.module';
 import { LicenseModule } from '@/modules/license/license.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { BullModule } from '@nestjs/bullmq';
@@ -49,7 +49,7 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
     BullModule.registerQueue({ name: QUEUE_SEND_RESET_PASSWORD_EMAIL }),
     BullModule.registerQueue({ name: QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS, prefix: 'auth_cron' }),
     TeamModule,
-    SharedModule,
+    CommonModule,
     LicenseModule,
     ProjectsModule,
     (StripeModule as any).externallyConfigured(StripeModule, 0),

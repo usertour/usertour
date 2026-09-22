@@ -1,4 +1,5 @@
-import { EmailService, type SendEmailInput } from '@/shared/email.service';
+import { EmailService } from '@/modules/common/services/email.service';
+import { type SendEmailInput } from '@/modules/common/types/send-email-input.type';
 import { renderResetPasswordEmail, renderVerifyEmail } from '@usertour/emails';
 import {
   getDefaultSegments,
@@ -31,7 +32,6 @@ import ms from 'ms';
 import {
   AccountNotFoundError,
   AuthenticationExpiredError,
-  BaseError,
   EmailAlreadyRegistered,
   InvalidVerificationSession,
   OAuthError,
@@ -48,7 +48,8 @@ import {
   SystemAdminSetupRequiredError,
   SystemAdminSetupUnavailableError,
   WrongInviteAccountError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
+import { BaseError } from '@/modules/common/errors/base-error';
 import { AuditService } from '@/modules/audit/services/audit.service';
 import { TeamService } from '@/modules/team/services/team.service';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
@@ -60,7 +61,8 @@ import {
 } from '../constants/auth-queues.constant';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { RedisService, LockReleaseFn } from '@/shared/redis.service';
+import { RedisService } from '@/modules/common/services/redis.service';
+import { LockReleaseFn } from '@/modules/common/types/lock-release-fn.type';
 
 const EMAIL_COOLDOWN_MS = 60 * 1000; // 60 seconds - minimum interval between email sends
 const EMAIL_COOLDOWN_SECONDS = EMAIL_COOLDOWN_MS / 1000;

@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import type { PaginationArgs } from '@/common/pagination/pagination.args';
+import type { Pagination } from '@/modules/common/types/pagination.type';
 import { redactSnapshot } from '../utils/audit-redaction.util';
 import type { AuditLogFilter } from '../types/audit-log-filter.type';
 import type { AuditLogOrdering } from '../types/audit-log-ordering.type';
@@ -56,7 +56,7 @@ export class AuditService {
   async listAuditLogs(
     projectId: string,
     query: AuditLogFilter | undefined,
-    pagination: PaginationArgs | undefined,
+    pagination: Pagination | undefined,
     orderBy: AuditLogOrdering | undefined,
     createdAtCutoff?: Date,
   ) {

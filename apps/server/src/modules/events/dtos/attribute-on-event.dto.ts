@@ -1,8 +1,8 @@
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('AttributeOnEvent')
-export class AttributeOnEventDTO extends BaseModel {
+export class AttributeOnEventDTO extends BaseDTO {
   @Field(() => String)
   attributeId: string;
 

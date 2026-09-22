@@ -1,8 +1,8 @@
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('Attribute')
-export class AttributeDTO extends BaseModel {
+export class AttributeDTO extends BaseDTO {
   @Field(() => Int)
   bizType: number;
 

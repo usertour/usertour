@@ -1,4 +1,4 @@
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { UserOnProjectDTO } from '@/modules/team/dtos/user-on-project.dto';
 import { Field, HideField, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Role } from '@prisma/client';
@@ -11,7 +11,7 @@ registerEnumType(Role, {
 });
 
 @ObjectType('User')
-export class UserDTO extends BaseModel {
+export class UserDTO extends BaseDTO {
   @Field()
   @IsEmail()
   email: string;

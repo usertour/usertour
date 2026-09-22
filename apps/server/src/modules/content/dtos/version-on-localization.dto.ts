@@ -1,4 +1,4 @@
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
@@ -6,7 +6,7 @@ import GraphQLJSON from 'graphql-type-json';
 import { VersionDTO } from './version.dto';
 
 @ObjectType('VersionOnLocalization')
-export class VersionOnLocalizationDTO extends BaseModel {
+export class VersionOnLocalizationDTO extends BaseDTO {
   @Field(() => GraphQLJSON, { nullable: true })
   localized: JsonValue;
 

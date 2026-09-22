@@ -1,6 +1,6 @@
 import { Field, InputType, registerEnumType } from '@nestjs/graphql';
 
-import { Order } from '@/common/order/order';
+import { Order } from '@/modules/common/dtos/order.input';
 
 import { ContentOrderField } from '../constants/content-order-field.constant';
 

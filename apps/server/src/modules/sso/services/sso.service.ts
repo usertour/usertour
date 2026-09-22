@@ -7,10 +7,10 @@ import {
   FeatureRequiresLicenseError,
   ParamsError,
   SsoRequiresActiveProviderError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
 
-import { assertPublicHttpUrl } from '@/common/egress/egress-guard';
+import { assertPublicHttpUrl } from '@/modules/common/utils/egress-guard.util';
 
 import type { NewOidcSsoProvider } from '../types/new-oidc-sso-provider.type';
 import type { ProjectSsoSettingsChanges } from '../types/project-sso-settings-changes.type';

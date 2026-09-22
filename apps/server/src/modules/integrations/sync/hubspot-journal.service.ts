@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { Integration } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import type { SyncInboundField, SyncRemoteObject } from '@usertour/types';
-import { RedisService } from '@/shared/redis.service';
+import { RedisService } from '@/modules/common/services/redis.service';
 import { ProviderConnectionService, GrantRevokedError } from './provider-connection.service';
 import { hubspotObjectTypeFor, matchRemotePropertyFor } from './object-mapping.types';
 import { ObjectSyncService, type MappingWithIntegration } from './object-sync.service';

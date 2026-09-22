@@ -10,7 +10,7 @@ import {
   LicenseExpiredError,
   ParamsError,
   SystemAdminMustEnable2FAFirstError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 import {
   getDefaultSegments,

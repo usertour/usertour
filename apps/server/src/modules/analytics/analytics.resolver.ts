@@ -1,4 +1,4 @@
-import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { PaginationArgs } from '@/modules/common/dtos/pagination.args';
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { AnalyticsService } from './services/analytics.service';

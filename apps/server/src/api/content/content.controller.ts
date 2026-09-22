@@ -23,8 +23,8 @@ import {
 } from '@/modules/api-token/services/api-token-auth.service';
 import { ApiTokenGuard } from '@/modules/api-token/guards/api-token.guard';
 import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
-import { RequestUrl } from '@/common/decorators/request-url.decorator';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { RequestUrl } from '@/modules/common/decorators/request-url.decorator';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 
 import { ApiValidationPipe } from '../shared/validation.pipe';
 import { ApiContentService } from './content.service';

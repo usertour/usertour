@@ -22,9 +22,9 @@ import {
 } from '@/modules/api-token/services/api-token-auth.service';
 import { ApiTokenGuard } from '@/modules/api-token/guards/api-token.guard';
 import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
-import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { RequestUrl } from '@/common/decorators/request-url.decorator';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { EnvironmentDecorator } from '@/modules/common/decorators/environment.decorator';
+import { RequestUrl } from '@/modules/common/decorators/request-url.decorator';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 import type { Environment } from '@prisma/client';
 
 import { ApiStandardErrorResponses } from '../shared/error-response';

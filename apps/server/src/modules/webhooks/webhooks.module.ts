@@ -8,7 +8,7 @@ import {
 } from './constants/webhook-queues.constant';
 import { OutboundModule } from '@/modules/outbound/outbound.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
-import { SharedModule } from '@/shared/shared.module';
+import { CommonModule } from '@/modules/common/common.module';
 import { WebhooksListener } from './listeners/webhooks.listener';
 import { WebhooksProcessor } from './processors/webhooks.processor';
 import { WebhooksReconcileProcessor } from './processors/webhooks-reconcile.processor';
@@ -28,7 +28,7 @@ import { WebhooksService } from './services/webhooks.service';
     BullModule.registerQueue({ name: QUEUE_WEBHOOK_RECONCILE, prefix: 'outbound_cron' }),
     OutboundModule,
     ProjectsModule,
-    SharedModule,
+    CommonModule,
     ConfigModule,
   ],
   providers: [

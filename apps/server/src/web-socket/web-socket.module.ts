@@ -11,7 +11,7 @@ import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
 import { WebSocketV2Service } from './v2/web-socket-v2.service';
 import { WebSocketV2Guard } from './v2/web-socket-v2.guard';
 import { WebSocketThrottlerGuard } from './v2/web-socket-throttler.guard';
-import { SharedModule } from '@/shared/shared.module';
+import { CommonModule } from '@/modules/common/common.module';
 import { DeliveryModule } from '@/modules/delivery/delivery.module';
 import { ContentOrchestratorService } from './core/content-orchestrator.service';
 import { SocketOperationService } from './core/socket-operation.service';
@@ -27,7 +27,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     BizModule,
     LicenseModule,
     ProjectsModule,
-    SharedModule,
+    CommonModule,
     ConfigModule,
     // WebSocket rate limiting configuration
     // - short: 30 requests per second per socket (burst protection)

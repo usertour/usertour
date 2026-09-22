@@ -19,7 +19,7 @@ import { Request, Response } from 'express';
 import { REFRESH_TOKEN_COOKIE } from '../constants/auth-cookies.constant';
 import { UserEntity } from '../decorators/user.decorator';
 import { SkipTwoFactorEnrollment } from '../decorators/skip-2fa-enrollment.decorator';
-import { EmailConfigGuard } from '@/common/guards/email-config.guard';
+import { EmailConfigGuard } from '@/modules/common/guards/email-config.guard';
 
 @Resolver(() => AuthDTO)
 export class AuthResolver {

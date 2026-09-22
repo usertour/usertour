@@ -17,7 +17,7 @@ import {
   SegmentNotFoundError,
   UserNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
@@ -28,7 +28,7 @@ import {
   loadDecompileResolvers,
   loadResolvers,
 } from '../content-representation/attribute-resolvers';
-import { nameContains } from '@/common/filters';
+import { nameContains } from '@/modules/common/utils/query-filters.util';
 import { paginate } from '../shared/pagination';
 import { toArray } from '../shared/query';
 import { parseOrderBy } from '../shared/sort';

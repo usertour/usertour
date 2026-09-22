@@ -9,8 +9,8 @@ import {
 } from '@usertour/types';
 import { rollingDayWindows } from '../utils/rolling-day-windows.util';
 import { GENUINE_COMPLETION_EVENTS } from '@/modules/delivery/utils/event.util';
-import { createdAtWhere } from '@/common/filters';
-import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { createdAtWhere } from '@/modules/common/utils/query-filters.util';
+import type { Pagination } from '@/modules/common/types/pagination.type';
 import { ContentType } from '@/modules/content/constants/content-type.constant';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Injectable } from '@nestjs/common';
@@ -31,8 +31,8 @@ import {
 import { resolveContentVersionId } from '@/modules/delivery/utils/content.util';
 import { isDisplayOnlyBlockType, serializeBlockName } from '@usertour/helpers';
 import { Prisma } from '@prisma/client';
-import { UnknownError } from '@/common/errors/errors';
-import { PaginationConnection } from '@/common/openapi/pagination';
+import { UnknownError } from '@/modules/common/errors/errors';
+import { PaginationConnection } from '@/modules/common/utils/pagination.util';
 import { defaultEvents } from '@usertour/constants';
 
 type AnalyticsConditions = {
@@ -1408,7 +1408,7 @@ export class AnalyticsService {
 
   async queryRecentSessions(
     query: AnalyticsFilter,
-    pagination: PaginationArgs,
+    pagination: Pagination,
     orderBy: AnalyticsOrdering,
   ) {
     const { first, last, before, after } = pagination;
@@ -1470,7 +1470,7 @@ export class AnalyticsService {
 
   async listSessionsDetail(
     query: AnalyticsFilter,
-    pagination: PaginationArgs,
+    pagination: Pagination,
     orderBy: AnalyticsOrdering,
   ) {
     try {
@@ -1546,7 +1546,7 @@ export class AnalyticsService {
    */
   async queryTooltipTargetMissingSessions(
     query: TooltipTargetMissingFilter,
-    pagination: PaginationArgs,
+    pagination: Pagination,
     orderBy: AnalyticsOrdering,
   ) {
     const { contentId, environmentId, startDate, endDate, stepCvid } = query;
@@ -2135,7 +2135,7 @@ export class AnalyticsService {
       startDate?: string;
       endDate?: string;
     },
-    pagination: PaginationArgs,
+    pagination: Pagination,
     orderBy: AnalyticsOrdering,
   ) {
     const { first, last, before, after } = pagination;
@@ -2274,7 +2274,7 @@ export class AnalyticsService {
    */
   async queryTrackerUsers(
     query: AnalyticsFilter,
-    pagination: PaginationArgs,
+    pagination: Pagination,
     orderBy: AnalyticsOrdering,
   ) {
     const { contentId, startDate, endDate, environmentId } = query;

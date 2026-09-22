@@ -9,10 +9,10 @@ import {
   ResourceAlreadyExistsError,
   UnknownError,
   ValidationError,
-} from '@/common/errors';
-import { nameContains } from '@/common/filters';
+} from '@/modules/common/errors/errors';
+import { nameContains } from '@/modules/common/utils/query-filters.util';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
-import { PaginationConnection } from '@/common/openapi/pagination';
+import { PaginationConnection } from '@/modules/common/utils/pagination.util';
 import { Event, Prisma } from '@prisma/client';
 
 @Injectable()

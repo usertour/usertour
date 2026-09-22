@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
-import { EncryptionService } from '@/shared/encryption.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import { INTEGRATION_TX_COOKIE } from '@/modules/integrations/constants/integration-transaction-cookie.constant';
 import * as hubspotApi from '@/modules/integrations/sync/hubspot-api';
 import { HubspotJournalService } from '@/modules/integrations/sync/hubspot-journal.service';

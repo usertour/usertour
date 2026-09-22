@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-github2';
 
 import { AuthService } from '../services/auth.service';
-import { OAuthError } from '@/common/errors/errors';
+import { OAuthError } from '@/modules/common/errors/errors';
 
 @Injectable()
 export class GithubOauthStrategy extends PassportStrategy(Strategy, 'github') {

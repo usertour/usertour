@@ -1,6 +1,6 @@
 import { cuid } from '@usertour/helpers';
 
-import { ValidationError } from '@/common/errors/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 
 import { compileContent } from './representation.compile';
 import { compileActions, compileConditions, CompileResolvers } from './rules.compile';

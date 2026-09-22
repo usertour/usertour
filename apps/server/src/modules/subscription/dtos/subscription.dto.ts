@@ -2,10 +2,10 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
 @ObjectType('SubscriptionModel')
-export class SubscriptionDTO extends BaseModel {
+export class SubscriptionDTO extends BaseDTO {
   @Field(() => String)
   projectId: string;
 

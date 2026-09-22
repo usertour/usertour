@@ -2,10 +2,10 @@ import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonObject } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
 @ObjectType('BizCompanyOnSegmentModel')
-export class BizCompanyOnSegmentDTO extends BaseModel {
+export class BizCompanyOnSegmentDTO extends BaseDTO {
   @Field(() => String)
   segmentId: string;
 

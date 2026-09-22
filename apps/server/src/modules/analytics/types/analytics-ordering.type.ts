@@ -1,4 +1,4 @@
-import type { OrderDirection } from '@/common/order/order-direction';
+import type { OrderDirection } from '@/modules/common/constants/order-direction.constant';
 
 import type { AnalyticsOrderField } from '../constants/analytics-order-field.constant';
 

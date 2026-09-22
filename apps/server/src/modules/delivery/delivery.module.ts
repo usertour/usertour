@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { LicenseModule } from '@/modules/license/license.module';
 import { BizModule } from '@/modules/biz/biz.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
-import { SharedModule } from '@/shared/shared.module';
+import { CommonModule } from '@/modules/common/common.module';
 
 import { AnnouncementService } from './services/announcement.service';
 import { ConditionEvaluationService } from './services/condition-evaluation.service';
@@ -21,7 +21,7 @@ import { SessionBuilderService } from './services/session-builder.service';
  * the MCP diagnose tools all call it; none of it knows a socket exists.
  */
 @Module({
-  imports: [BizModule, LicenseModule, ProjectsModule, SharedModule],
+  imports: [BizModule, LicenseModule, ProjectsModule, CommonModule],
   providers: [
     AnnouncementService,
     ConditionEvaluationService,

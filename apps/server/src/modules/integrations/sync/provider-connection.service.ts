@@ -8,10 +8,14 @@ import type { Integration, Prisma } from '@prisma/client';
 import type { CookieOptions } from 'express';
 import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
 import type { SyncIntegrationProvider, IntegrationProvider } from '@usertour/types';
-import { FeatureRequiresLicenseError, OAuthError, ValidationError } from '@/common/errors/errors';
+import {
+  FeatureRequiresLicenseError,
+  OAuthError,
+  ValidationError,
+} from '@/modules/common/errors/errors';
 import { ProjectsService } from '@/modules/projects/services/projects.service';
-import { EncryptionService } from '@/shared/encryption.service';
-import { RedisService } from '@/shared/redis.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
+import { RedisService } from '@/modules/common/services/redis.service';
 import {
   buildHubspotAuthorizeUrl,
   exchangeHubspotCode,

@@ -8,7 +8,7 @@ import {
   ResourceAlreadyExistsError,
   ResourceConflictError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import { EventsService } from '@/modules/events/services/events.service';
 
 import { paginate } from '../shared/pagination';

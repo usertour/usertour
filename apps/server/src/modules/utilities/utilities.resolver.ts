@@ -1,7 +1,7 @@
 import { Public } from '@/modules/auth/decorators/public.decorator';
 import { UserEntity } from '@/modules/auth/decorators/user.decorator';
-import { S3ConfigGuard } from '@/common/guards';
-import { resolveMcpResource, resolveOrigin } from '@/common/http/resolve-origin';
+import { S3ConfigGuard } from '@/modules/common/guards/s3-config.guard';
+import { resolveMcpResource, resolveOrigin } from '@/modules/common/utils/resolve-origin.util';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

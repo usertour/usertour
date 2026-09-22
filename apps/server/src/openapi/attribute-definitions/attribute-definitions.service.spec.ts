@@ -3,7 +3,7 @@ import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.serv
 import { AttributesService } from '@/modules/attributes/services/attributes.service';
 import { AttributeDataTypeNames } from '@/modules/attributes/constants/attribute-data-type-names.constant';
 import { AttributeBizTypeNames } from '@/modules/attributes/constants/attribute-biz-type-names.constant';
-import { InvalidLimitError, InvalidScopeError } from '@/common/errors/errors';
+import { InvalidLimitError, InvalidScopeError } from '@/modules/common/errors/errors';
 import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';
 import { OpenApiObjectType } from '../shared/openapi-object-type';

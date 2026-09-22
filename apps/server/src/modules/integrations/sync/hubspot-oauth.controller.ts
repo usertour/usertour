@@ -2,7 +2,7 @@ import { Controller, Get, Logger, Query, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { Public } from '@/modules/auth/decorators/public.decorator';
-import { FeatureRequiresLicenseError } from '@/common/errors/errors';
+import { FeatureRequiresLicenseError } from '@/modules/common/errors/errors';
 import { INTEGRATION_TX_COOKIE } from '../constants/integration-transaction-cookie.constant';
 import { isHubspotReturnUrl } from './hubspot-api';
 import {

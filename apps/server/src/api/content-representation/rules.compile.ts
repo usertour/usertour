@@ -1,6 +1,6 @@
 import { DEFAULT_FREQUENCY, cuid } from '@usertour/helpers';
 
-import { ValidationError } from '@/common/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 
 import {
   CompilableCondition,

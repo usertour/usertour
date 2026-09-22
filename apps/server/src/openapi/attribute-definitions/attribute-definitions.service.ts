@@ -8,8 +8,8 @@ import {
   isValidOpenApiObjectType,
   mapOpenApiObjectTypeToBizType,
 } from '../shared/openapi-object-type';
-import { InvalidScopeError } from '@/common/errors/errors';
-import { paginate } from '@/common/openapi/pagination';
+import { InvalidScopeError } from '@/modules/common/errors/errors';
+import { paginate } from '@/modules/common/utils/pagination.util';
 import { parseOrderBy } from '../shared/sort';
 import { ListAttributeDefinitionsQueryDto } from './attribute-definitions.dto';
 

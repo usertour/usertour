@@ -6,7 +6,7 @@ import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { RequirePermission } from '@/modules/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
-import { PaginationArgs } from '@/common/pagination/pagination.args';
+import { PaginationArgs } from '@/modules/common/dtos/pagination.args';
 import { UserEntity } from '@/modules/auth/decorators/user.decorator';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { INTEGRATION_TX_COOKIE } from './constants/integration-transaction-cookie.constant';

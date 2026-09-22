@@ -23,8 +23,8 @@ import { PrismaService } from 'nestjs-prisma';
 import { environmentSelectionMissing } from '@usertour/helpers';
 
 import { TwoFactorService } from '@/modules/auth/services/two-factor.service';
-import { TwoFactorEnrollmentRequiredError } from '@/common/errors';
-import { resolveOrigin } from '@/common/http/resolve-origin';
+import { TwoFactorEnrollmentRequiredError } from '@/modules/common/errors/errors';
+import { resolveOrigin } from '@/modules/common/utils/resolve-origin.util';
 
 import { OAuthService } from '../services/oauth.service';
 

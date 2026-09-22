@@ -11,8 +11,8 @@ import type {
   IntegrationProvider,
 } from '@usertour/types';
 import { codeName as codeNameSchema } from '@/api/shared/codename';
-import { ValidationError } from '@/common/errors/errors';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { ValidationError } from '@/modules/common/errors/errors';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { ProviderConnectionService, GrantRevokedError } from './provider-connection.service';
 import { HubspotJournalService } from './hubspot-journal.service';
 import { ObjectSyncService } from './object-sync.service';
