@@ -32,6 +32,7 @@ import {
   isUnitMissing,
   useLocalizationView,
 } from './localization-view';
+import { groupUnitsByContainer, groupUnitsByElement } from './localized-unit-groups';
 import { ELEMENT_LABEL_KEYS, FIELD_LABEL_KEYS } from './localized-unit-labels';
 import { isUnusableDestinationUrl, isUnusableMediaUrl } from './translation-unit-changes';
 
@@ -244,28 +245,38 @@ const TextUnitRow = (props: UnitRowProps) => {
 };
 
 /**
- * Shared shell for url rows (destinations, embed urls): label with the
- * outdated chip, read-only source cell, and a caller-provided input/actions
- * area. These rows skip the missing dot and machine translation that text
- * rows carry — keeping the original is the norm.
+ * Shared shell for url rows (destinations, embed urls): label, read-only
+ * source cell, the input with the same outdated dot a text row carries, and
+ * the row's action buttons. These rows skip the missing dot and machine
+ * translation — keeping the original is the norm.
  */
 interface UrlFieldRowProps {
   label: ReactNode;
   outdated: boolean;
   sourceUrl: ReactNode;
+  input: ReactNode;
   children: ReactNode;
 }
 
 const UrlFieldRow = (props: UrlFieldRowProps) => {
-  const { label, outdated, sourceUrl, children } = props;
+  const { label, outdated, sourceUrl, input, children } = props;
+  const { t } = useTranslation();
   return (
     <div className={FIELD_GRID}>
-      <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
-        {label}
-        {outdated && <OutdatedChip />}
-      </div>
+      <div className="pt-2 text-xs text-muted-foreground">{label}</div>
       <div className="min-h-9 break-all rounded-md bg-secondary px-3 py-2 text-sm">{sourceUrl}</div>
-      <div className="flex flex-row items-center gap-1.5">{children}</div>
+      <div className="flex flex-row items-center gap-1.5">
+        <div className="relative min-w-0 flex-1">
+          {input}
+          {outdated && (
+            <span
+              title={t('contents.localization.sourceChanged')}
+              className="absolute inset-y-0 right-2.5 my-auto h-1.5 w-1.5 rounded-full bg-warning"
+            />
+          )}
+        </div>
+        {children}
+      </div>
     </div>
   );
 };
@@ -287,14 +298,21 @@ const DestinationUnitRow = (props: UnitRowProps) => {
   };
 
   return (
-    <UrlFieldRow label={label} outdated={outdated} sourceUrl={unit.sourceText}>
-      <Input
-        value={unit.translatedText}
-        placeholder={t('contents.localization.image.usingOriginal')}
-        disabled={disabled}
-        aria-invalid={isUnusableDestinationUrl(unit.translatedText)}
-        onChange={(event) => handleValueChange(event.target.value)}
-      />
+    <UrlFieldRow
+      label={label}
+      outdated={outdated}
+      sourceUrl={unit.sourceText}
+      input={
+        <Input
+          value={unit.translatedText}
+          placeholder={t('contents.localization.image.usingOriginal')}
+          disabled={disabled}
+          className={cn(outdated && 'pr-8')}
+          aria-invalid={isUnusableDestinationUrl(unit.translatedText)}
+          onChange={(event) => handleValueChange(event.target.value)}
+        />
+      }
+    >
       <MediaActionButton
         tooltip={t('contents.localization.image.useOriginal')}
         disabled={disabled || unit.translatedText === ''}
@@ -446,14 +464,21 @@ const EmbedUnitRow = (props: UnitRowProps) => {
   };
 
   return (
-    <UrlFieldRow label={label} outdated={outdated} sourceUrl={unit.sourceText}>
-      <Input
-        value={draftUrl}
-        placeholder={t('contents.localization.image.usingOriginal')}
-        disabled={disabled}
-        aria-invalid={isUnusableMediaUrl(draftUrl)}
-        onChange={(event) => setDraftUrl(event.target.value)}
-      />
+    <UrlFieldRow
+      label={label}
+      outdated={outdated}
+      sourceUrl={unit.sourceText}
+      input={
+        <Input
+          value={draftUrl}
+          placeholder={t('contents.localization.image.usingOriginal')}
+          disabled={disabled}
+          className={cn(outdated && 'pr-8')}
+          aria-invalid={isUnusableMediaUrl(draftUrl)}
+          onChange={(event) => setDraftUrl(event.target.value)}
+        />
+      }
+    >
       <MediaActionButton
         tooltip={t('contents.localization.image.load')}
         disabled={disabled || resolving || isUnusableMediaUrl(draftUrl)}
@@ -498,59 +523,6 @@ const LocalizedUnitRow = (props: UnitRowProps) => {
 // destinations and media are never "untranslated" (keeping the original is
 // the norm).
 // ---------------------------------------------------------------------------
-
-interface UnitGroup {
-  key: string;
-  element: LocalizationTranslationUnit['element'];
-  units: LocalizationTranslationUnit[];
-}
-
-interface UnitContainer {
-  key: string;
-  group: LocalizationTranslationUnit['group'];
-  units: LocalizationTranslationUnit[];
-}
-
-/** Consecutive units sharing a key, in walk order. */
-const groupConsecutive = <T,>(
-  units: LocalizationTranslationUnit[],
-  keyOf: (unit: LocalizationTranslationUnit) => string,
-  make: (unit: LocalizationTranslationUnit, key: string) => T,
-  unitsOf: (group: T) => LocalizationTranslationUnit[],
-  keyOfGroup: (group: T) => string,
-): T[] => {
-  const groups: T[] = [];
-  for (const unit of units) {
-    const key = keyOf(unit);
-    const last = groups[groups.length - 1];
-    if (last && keyOfGroup(last) === key) {
-      unitsOf(last).push(unit);
-    } else {
-      groups.push(make(unit, key));
-    }
-  }
-  return groups;
-};
-
-const groupUnitsByElement = (units: LocalizationTranslationUnit[]): UnitGroup[] => {
-  return groupConsecutive(
-    units,
-    (unit) => unit.element?.path ?? `unit:${unit.path}`,
-    (unit, key) => ({ key, element: unit.element, units: [unit] }),
-    (group) => group.units,
-    (group) => group.key,
-  );
-};
-
-const groupUnitsByContainer = (units: LocalizationTranslationUnit[]): UnitContainer[] => {
-  return groupConsecutive(
-    units,
-    (unit) => unit.group?.path ?? `unit:${unit.path}`,
-    (unit, key) => ({ key, group: unit.group, units: [unit] }),
-    (container) => container.units,
-    (container) => container.key,
-  );
-};
 
 export interface LocalizedUnitListProps {
   units: LocalizationTranslationUnit[];
