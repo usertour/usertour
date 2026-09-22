@@ -1,4 +1,4 @@
-import type { LocalizationTranslationUnit } from '@usertour/helpers';
+import type { LocalizationTranslationUnit, TranslationUnitKind } from '@usertour/helpers';
 
 import {
   advanceTranslationBaseline,
@@ -10,12 +10,12 @@ import {
 const unit = (
   path: string,
   translatedText: string,
-  optional = false,
+  kind: TranslationUnitKind = 'text',
 ): LocalizationTranslationUnit => ({
   path,
   sourceText: 'source',
   translatedText,
-  optional,
+  kind,
 });
 
 const TEXT = 'steps/a/0.0.0:text.0.0';
@@ -23,6 +23,7 @@ const BUTTON = 'steps/a/0.0.1:button.text';
 const IMAGE = 'steps/a/0.0.2:image.url';
 const IMAGE_LINK = 'steps/a/0.0.2:image.link.url';
 const INLINE_LINK = 'steps/a/0.0.0:text.0.1:link.url';
+const NAVIGATE = 'steps/a/0.0.1:button.actions.act1:navigate.url';
 
 describe('diffTranslationUnits', () => {
   it('sends only the units that differ from the baseline', () => {
@@ -36,9 +37,9 @@ describe('diffTranslationUnits', () => {
   it('sends an emptied translation as null — a blank string would mean "keep"', () => {
     const baseline = toTranslationBaseline([
       unit(TEXT, 'Bienvenue'),
-      unit(IMAGE, 'https://a.test/fr.png', true),
+      unit(IMAGE, 'https://a.test/fr.png', 'media'),
     ]);
-    expect(diffTranslationUnits(baseline, [unit(TEXT, '   '), unit(IMAGE, '', true)])).toEqual([
+    expect(diffTranslationUnits(baseline, [unit(TEXT, '   '), unit(IMAGE, '', 'media')])).toEqual([
       { path: TEXT, translation: null },
       { path: IMAGE, translation: null },
     ]);
@@ -50,8 +51,8 @@ describe('diffTranslationUnits', () => {
   });
 
   it('holds back a half-typed media url without blocking the other edits', () => {
-    const baseline = toTranslationBaseline([unit(TEXT, ''), unit(IMAGE_LINK, '', true)]);
-    const typing = [unit(TEXT, 'Bienvenue'), unit(IMAGE_LINK, 'exam', true)];
+    const baseline = toTranslationBaseline([unit(TEXT, ''), unit(IMAGE, '', 'media')]);
+    const typing = [unit(TEXT, 'Bienvenue'), unit(IMAGE, 'exam', 'media')];
     expect(diffTranslationUnits(baseline, typing)).toEqual([
       { path: TEXT, translation: 'Bienvenue' },
     ]);
@@ -60,16 +61,28 @@ describe('diffTranslationUnits', () => {
     const afterText = advanceTranslationBaseline(baseline, [
       { path: TEXT, translation: 'Bienvenue' },
     ]);
-    const finished = [unit(TEXT, 'Bienvenue'), unit(IMAGE_LINK, 'https://example.com/fr', true)];
+    const finished = [unit(TEXT, 'Bienvenue'), unit(IMAGE, 'https://a.test/fr.png', 'media')];
     expect(diffTranslationUnits(afterText, finished)).toEqual([
-      { path: IMAGE_LINK, translation: 'https://example.com/fr' },
+      { path: IMAGE, translation: 'https://a.test/fr.png' },
     ]);
   });
 
-  it('does not hold an inline text link to the media bar', () => {
-    const baseline = toTranslationBaseline([unit(INLINE_LINK, '', true)]);
-    expect(diffTranslationUnits(baseline, [unit(INLINE_LINK, '/fr/pricing', true)])).toEqual([
+  it('does not hold a destination to the media bar — a relative path is a valid one', () => {
+    const baseline = toTranslationBaseline([
+      unit(INLINE_LINK, '', 'destination'),
+      unit(IMAGE_LINK, '', 'destination'),
+      unit(NAVIGATE, '', 'destination'),
+    ]);
+    expect(
+      diffTranslationUnits(baseline, [
+        unit(INLINE_LINK, '/fr/pricing', 'destination'),
+        unit(IMAGE_LINK, '/fr/pricing', 'destination'),
+        unit(NAVIGATE, '/fr/mcp', 'destination'),
+      ]),
+    ).toEqual([
       { path: INLINE_LINK, translation: '/fr/pricing' },
+      { path: IMAGE_LINK, translation: '/fr/pricing' },
+      { path: NAVIGATE, translation: '/fr/mcp' },
     ]);
   });
 });

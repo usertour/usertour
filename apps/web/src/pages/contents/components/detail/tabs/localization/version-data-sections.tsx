@@ -11,18 +11,31 @@ import type {
   ResourceCenterBlock,
   ResourceCenterData,
   ResourceCenterTab,
+  RulesCondition,
 } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 
-import { LocalizationGroupCard, countMissingUnits, countOutdatedPaths } from './localization-view';
 import {
+  LocalizationGroupCard,
+  countMissingUnits,
+  countOutdatedPaths,
+  useLocalizationView,
+} from './localization-view';
+import {
+  LocalizedActionRows,
+  LocalizedDestinationRow,
   LocalizedEditorContents,
   LocalizedFieldRow,
+  hasNavigateActionRows,
+} from './localized-fields';
+import {
   type SlateNode,
   collectSlateLeafPairs,
+  readContentListNavigateUrl,
   setSlateLeafText,
   toText,
-} from './localized-fields';
+  withContentListNavigateUrl,
+} from './localized-pairs';
 
 /**
  * Per-content-type translation sections for `version.data`. Each component
@@ -147,6 +160,17 @@ export const ChecklistLocalizationSections = (props: VersionDataSectionsProps<Ch
                     onValueChange={(value) => handleItemChange(item.id, { description: value })}
                   />
                 )}
+                <LocalizedActionRows
+                  sourceActions={item.clickedActions}
+                  workingActions={workingItem?.clickedActions}
+                  pathPrefix={`items.${item.id}:clickedActions`}
+                  outdatedPaths={outdatedPaths}
+                  onOutdatedResolved={onOutdatedResolved}
+                  disabled={disabled}
+                  onActionsChange={(clickedActions) =>
+                    handleItemChange(item.id, { clickedActions })
+                  }
+                />
               </div>
             );
           })}
@@ -190,6 +214,17 @@ export const LauncherLocalizationSections = (props: VersionDataSectionsProps<Lau
           onValueChange={(value) => onDataChange({ ...workingData, buttonText: value })}
         />
       )}
+      <LocalizedActionRows
+        sourceActions={sourceData.behavior?.actions}
+        workingActions={workingData.behavior?.actions}
+        pathPrefix="behavior.actions"
+        outdatedPaths={outdatedPaths}
+        onOutdatedResolved={onOutdatedResolved}
+        disabled={disabled}
+        onActionsChange={(actions) =>
+          onDataChange({ ...workingData, behavior: { ...workingData.behavior, actions } })
+        }
+      />
       <LocalizedEditorContents
         sourceContents={asContents(sourceData.tooltip?.content)}
         workingContents={asContents(workingData.tooltip?.content)}
@@ -363,6 +398,7 @@ export const ResourceCenterLocalizationSections = (
     onDataChange,
   } = props;
   const { t } = useTranslation();
+  const { showOnlyMissing } = useLocalizationView();
   const tabs = Array.isArray(sourceData.tabs) ? sourceData.tabs : [];
 
   const updateTab = (tabId: string, updateTabFn: (tab: ResourceCenterTab) => ResourceCenterTab) => {
@@ -453,19 +489,38 @@ export const ResourceCenterLocalizationSections = (
               const namePairs = sourceName ? collectSlateLeafPairs(sourceName, workingName) : [];
               const sourceContent = (block as { content?: unknown }).content;
               const workingContent = (workingBlock as { content?: unknown } | undefined)?.content;
-              // Content-list entries with a display-name override; the
-              // referenced content's admin name itself never localizes.
-              const labeledItems = asContentItems(block).filter(
-                (contentItem) => toText(contentItem.label) !== '',
+              const sourceActions = (block as { clickedActions?: RulesCondition[] }).clickedActions;
+              const workingActions = (
+                workingBlock as { clickedActions?: RulesCondition[] } | undefined
+              )?.clickedActions;
+              // Content-list entries with a display-name override (the
+              // referenced content's admin name itself never localizes) or a
+              // navigation of their own.
+              const localizableItems = asContentItems(block).filter(
+                (contentItem) =>
+                  toText(contentItem.label) !== '' ||
+                  readContentListNavigateUrl(contentItem) !== undefined,
               );
               const workingItems = asContentItems(workingBlock);
               if (
                 namePairs.length === 0 &&
                 !hasTranslatableTree(sourceContent) &&
-                labeledItems.length === 0
+                !hasNavigateActionRows(sourceActions) &&
+                localizableItems.length === 0
               ) {
                 return null;
               }
+              const updateContentItem = (
+                contentId: string,
+                updateItemFn: (contentItem: ContentListItem) => ContentListItem,
+              ) => {
+                updateBlock(tab.id, block.id, (next) => {
+                  const nextItems = asContentItems(next).map((candidate) =>
+                    candidate.contentId === contentId ? updateItemFn(candidate) : candidate,
+                  );
+                  return { ...next, contentItems: nextItems } as ResourceCenterBlock;
+                });
+              };
               return (
                 <div key={block.id} className="flex flex-col gap-2">
                   {namePairs.map((pair) => (
@@ -491,32 +546,66 @@ export const ResourceCenterLocalizationSections = (
                       }}
                     />
                   ))}
-                  {labeledItems.map((contentItem) => {
-                    const labelPath = `${blockPath}.contentItems.${contentItem.contentId}:label`;
+                  <LocalizedActionRows
+                    sourceActions={sourceActions}
+                    workingActions={workingActions}
+                    pathPrefix={`${blockPath}:clickedActions`}
+                    outdatedPaths={outdatedPaths}
+                    onOutdatedResolved={onOutdatedResolved}
+                    disabled={disabled}
+                    onActionsChange={(clickedActions) =>
+                      updateBlock(
+                        tab.id,
+                        block.id,
+                        (next) => ({ ...next, clickedActions }) as ResourceCenterBlock,
+                      )
+                    }
+                  />
+                  {localizableItems.map((contentItem) => {
+                    const itemPath = `${blockPath}.contentItems.${contentItem.contentId}`;
+                    const labelPath = `${itemPath}:label`;
+                    const navigatePath = `${itemPath}:navigate.url`;
                     const workingItem = workingItems.find(
                       (candidate) => candidate.contentId === contentItem.contentId,
                     );
+                    const sourceNavigateUrl = readContentListNavigateUrl(contentItem);
                     return (
-                      <LocalizedFieldRow
-                        key={contentItem.contentId}
-                        label={t('contents.localization.field.listItemLabel')}
-                        source={toText(contentItem.label)}
-                        value={toText(workingItem?.label)}
-                        placeholder={toText(contentItem.label)}
-                        disabled={disabled}
-                        outdated={outdatedPaths.has(labelPath)}
-                        onOutdatedResolved={() => onOutdatedResolved(labelPath)}
-                        onValueChange={(value) =>
-                          updateBlock(tab.id, block.id, (next) => {
-                            const nextItems = asContentItems(next).map((candidate) =>
-                              candidate.contentId === contentItem.contentId
-                                ? { ...candidate, label: value }
-                                : candidate,
-                            );
-                            return { ...next, contentItems: nextItems } as ResourceCenterBlock;
-                          })
-                        }
-                      />
+                      <div key={contentItem.contentId} className="flex flex-col gap-2">
+                        {toText(contentItem.label) !== '' && (
+                          <LocalizedFieldRow
+                            label={t('contents.localization.field.listItemLabel')}
+                            source={toText(contentItem.label)}
+                            value={toText(workingItem?.label)}
+                            placeholder={toText(contentItem.label)}
+                            disabled={disabled}
+                            outdated={outdatedPaths.has(labelPath)}
+                            onOutdatedResolved={() => onOutdatedResolved(labelPath)}
+                            onValueChange={(value) =>
+                              updateContentItem(contentItem.contentId, (candidate) => ({
+                                ...candidate,
+                                label: value,
+                              }))
+                            }
+                          />
+                        )}
+                        {sourceNavigateUrl !== undefined && !showOnlyMissing && (
+                          <LocalizedDestinationRow
+                            label={t('contents.localization.field.navigateUrl')}
+                            sourceUrl={sourceNavigateUrl}
+                            value={
+                              workingItem ? (readContentListNavigateUrl(workingItem) ?? '') : ''
+                            }
+                            disabled={disabled}
+                            outdated={outdatedPaths.has(navigatePath)}
+                            onOutdatedResolved={() => onOutdatedResolved(navigatePath)}
+                            onValueChange={(url) =>
+                              updateContentItem(contentItem.contentId, (candidate) =>
+                                withContentListNavigateUrl(candidate, url),
+                              )
+                            }
+                          />
+                        )}
+                      </div>
                     );
                   })}
                   {Array.isArray(sourceContent) && (

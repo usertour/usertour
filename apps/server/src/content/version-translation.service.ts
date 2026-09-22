@@ -25,7 +25,6 @@ import {
   type TranslationUnitView,
   applyTranslationUnits,
   isContentTypeLocalizable,
-  isMediaUrlUnitPath,
   readTranslationUnits,
   summarizeTranslationUnits,
 } from './version-translation';
@@ -155,8 +154,9 @@ export class VersionTranslationService {
 
     const stored = toStored(await this.findRow(versionId, target.id));
     const submitted = new Map(Object.entries(change.translations ?? {}));
-    this.assertTranslationsValid(submitted, source, stored);
-    const translations = this.effectiveTranslations(submitted);
+    const units = readTranslationUnits(source, stored);
+    this.assertTranslationsValid(submitted, units);
+    const translations = this.effectiveTranslations(submitted, units);
 
     if (translations.size === 0) {
       // Nothing to translate — `translations` omitted, empty, or all blank
@@ -323,15 +323,13 @@ export class VersionTranslationService {
    */
   private assertTranslationsValid(
     translations: ReadonlyMap<string, string | null>,
-    source: TranslationSource,
-    stored: StoredTranslation | undefined,
+    units: readonly TranslationUnitView[],
   ): void {
-    const currentByPath = new Map(
-      readTranslationUnits(source, stored).map((unit) => [unit.path, unit.translation]),
-    );
+    const unitByPath = new Map(units.map((unit) => [unit.path, unit]));
     const issues: ValidationIssue[] = [];
     translations.forEach((value, path) => {
-      if (!currentByPath.has(path)) {
+      const unit = unitByPath.get(path);
+      if (!unit) {
         issues.push({
           rule: 'schema',
           path: `translations.${path}`,
@@ -344,14 +342,14 @@ export class VersionTranslationService {
         return;
       }
       const url = value.trim();
-      // Same bar as the version write: the SDK renders these verbatim into
-      // src/href. A value this translation already stores passes unchanged.
+      // Same bar as the version write: the SDK renders a media url verbatim
+      // into src. A value this translation already stores passes unchanged.
       if (
         url !== '' &&
-        isMediaUrlUnitPath(path) &&
+        unit.kind === 'media' &&
         !isHttpUrl(url) &&
-        currentByPath.get(path) !== value &&
-        currentByPath.get(path) !== url
+        unit.translation !== value &&
+        unit.translation !== url
       ) {
         issues.push({
           rule: 'media_url',
@@ -367,14 +365,16 @@ export class VersionTranslationService {
 
   /**
    * The translations that actually change something. A blank value keeps the
-   * existing translation, so it is not a write; `null` is — it clears. Media
-   * URLs are trimmed — the SDK renders them verbatim into src/href; translated
-   * TEXT is kept as sent, since leading/trailing spaces are meaningful between
-   * adjacent text runs.
+   * existing translation, so it is not a write; `null` is — it clears. Urls
+   * (destinations and media) are trimmed — the SDK renders them verbatim into
+   * href/src; translated TEXT is kept as sent, since leading/trailing spaces
+   * are meaningful between adjacent text runs.
    */
   private effectiveTranslations(
     submitted: ReadonlyMap<string, string | null>,
+    units: readonly TranslationUnitView[],
   ): Map<string, string | null> {
+    const kindByPath = new Map(units.map((unit) => [unit.path, unit.kind]));
     const effective = new Map<string, string | null>();
     submitted.forEach((value, path) => {
       if (value === null) {
@@ -384,7 +384,7 @@ export class VersionTranslationService {
       if (value.trim() === '') {
         return;
       }
-      effective.set(path, isMediaUrlUnitPath(path) ? value.trim() : value);
+      effective.set(path, kindByPath.get(path) === 'text' ? value : value.trim());
     });
     return effective;
   }

@@ -10,28 +10,39 @@ import type {
   ContentEditorRoot,
   ContentEditorTextElement,
   ContentListItem,
+  LauncherData,
   LocalizedFlowContent,
   ResourceCenterData,
+  RulesCondition,
 } from '@usertour/types';
 import {
   AnnouncementDistribution,
   ChecklistCompletionOrder,
   ChecklistInitialDisplay,
+  ContentActionsItemType,
   ContentDataType,
   ContentEditorElementType,
+  LauncherActionType,
   LauncherIconSource,
+  LauncherTriggerElement,
+  LauncherTriggerEvent,
   ResourceCenterBlockType,
 } from '@usertour/types';
 
 import {
   applyContentsTranslationUnits,
   isHttpUrl,
-  isMediaUrlUnitPath,
+  isTranslationUnitOptional,
   applyVersionDataTranslationUnits,
   assignLocalizedLinkUrl,
-  blankLocalizedLinkDestinations,
+  blankLocalizedUnitClones,
+  contentListDestination,
   getLocalizableLinkUrl,
   isTranslatableText,
+  LOCALIZED_UNITS_SCHEMA_VERSION,
+  navigateDestination,
+  readDestination,
+  writeDestination,
   buildLocalizedFlowBackup,
   buildLocalizedFlowSavePayload,
   buildLocalizedVersionDataBackup,
@@ -155,7 +166,7 @@ const getElement = <T extends ContentEditorElement>(
 };
 
 describe('extractTranslatableUnits', () => {
-  it('collects every non-empty translatable text with optional flags', () => {
+  it('collects every non-empty translatable text with its kind', () => {
     const units = extractTranslatableUnits(createSourceContents());
     const byPath = new Map(units.map((unit) => [unit.path, unit]));
 
@@ -165,8 +176,9 @@ describe('extractTranslatableUnits', () => {
     expect(byPath.get('0.0.2:question.name')?.text).toBe('How likely are you to recommend us?');
     expect(byPath.get('0.0.2:question.lowLabel')?.text).toBe('Not likely');
     expect(byPath.get('0.0.3:question.options.1.label')?.text).toBe('Blue');
-    expect(byPath.get('0.0.4:image.url')?.optional).toBe(true);
-    expect(byPath.get('0.0.5:embed.url')?.optional).toBe(true);
+    expect(byPath.get('0.0.1:button.text')?.kind).toBe('text');
+    expect(byPath.get('0.0.4:image.url')?.kind).toBe('media');
+    expect(byPath.get('0.0.5:embed.url')?.kind).toBe('media');
     // Empty source fields (e.g. unset otherPlaceholder) never become units.
     expect(byPath.has('0.0.3:question.otherPlaceholder')).toBe(false);
   });
@@ -326,8 +338,8 @@ describe('collectOutdatedUnitPaths', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Inline link destinations — the url travels as an optional unit like media
-// urls: swappable per locale, untranslated keeps the source url.
+// Inline link destinations — the url travels as a `destination` unit:
+// swappable per locale, untranslated keeps the source url.
 // ---------------------------------------------------------------------------
 
 const createLinkTextElement = (): ContentEditorTextElement => {
@@ -352,13 +364,13 @@ const createLinkTextElement = (): ContentEditorTextElement => {
 };
 
 describe('link url localization', () => {
-  it('extracts the link url as an optional unit alongside its anchor text', () => {
+  it('extracts the link url as a destination unit alongside its anchor text', () => {
     const units = extractTranslatableUnits(wrapElements([createLinkTextElement()]));
     const byPath = new Map(units.map((unit) => [unit.path, unit]));
     expect(byPath.get('0.0.0:text.0.1.0')?.text).toBe('the forum post');
     expect(byPath.get('0.0.0:text.0.1:link.url')).toMatchObject({
       text: 'https://example.com/en/post',
-      optional: true,
+      kind: 'destination',
     });
   });
 
@@ -510,9 +522,9 @@ describe('link url localization', () => {
     legacyText.data[0].children[1].children[0].text = 'příspěvek na fóru';
     legacyText.data[0].children[2].text = '';
 
-    expect(blankLocalizedLinkDestinations(legacy)).toBe(true);
+    expect(blankLocalizedUnitClones(legacy, 0)).toBe(true);
     // Idempotent: a second pass finds nothing left to blank.
-    expect(blankLocalizedLinkDestinations(legacy)).toBe(false);
+    expect(blankLocalizedUnitClones(legacy, 0)).toBe(false);
 
     const blankedLink = getElement<ContentEditorTextElement>(legacy, 0).data[0].children[1];
     expect(getLocalizableLinkUrl(blankedLink)).toBe('');
@@ -531,9 +543,9 @@ describe('link url localization', () => {
     const image = createImageElement();
     image.link = { url: 'https://example.com/en/pricing' };
     const legacy = wrapElements([image]);
-    expect(blankLocalizedLinkDestinations(legacy)).toBe(true);
+    expect(blankLocalizedUnitClones(legacy, 0)).toBe(true);
     expect(getLocalizableLinkUrl(getElement<ContentEditorImageElement>(legacy, 0).link)).toBe('');
-    expect(blankLocalizedLinkDestinations(legacy)).toBe(false);
+    expect(blankLocalizedUnitClones(legacy, 0)).toBe(false);
   });
 
   it('round-trips the url through the translation exchange', () => {
@@ -542,7 +554,7 @@ describe('link url localization', () => {
     expect(units.find((unit) => unit.path === '0.0.0:text.0.1:link.url')).toMatchObject({
       sourceText: 'https://example.com/en/post',
       translatedText: '',
-      optional: true,
+      kind: 'destination',
     });
 
     const applied = applyContentsTranslationUnits(
@@ -678,7 +690,7 @@ describe('link url localization', () => {
     const units = extractTranslatableUnits(source);
     expect(units.find((unit) => unit.path === '0.0.0:image.link.url')).toMatchObject({
       text: 'https://example.com/en/pricing',
-      optional: true,
+      kind: 'destination',
     });
 
     const localized = createLocalizedWorkingContents(source, undefined);
@@ -1442,13 +1454,11 @@ describe('clearing a unit (null — distinct from a blank value, which keeps)', 
   });
 });
 
-describe('media url bar (shared by the server and the dashboard)', () => {
-  it('knows which unit paths carry a url rendered verbatim', () => {
-    expect(isMediaUrlUnitPath('steps/x/0.0.0:image.url')).toBe(true);
-    expect(isMediaUrlUnitPath('0.0.0:image.link.url')).toBe(true);
-    expect(isMediaUrlUnitPath('0.0.0:embed.url')).toBe(true);
-    expect(isMediaUrlUnitPath('0.0.0:text.0.1:link.url')).toBe(false);
-    expect(isMediaUrlUnitPath('0.0.1:button.text')).toBe(false);
+describe('unit kinds (shared by the server and the dashboard)', () => {
+  it('only text counts as missing while untranslated', () => {
+    expect(isTranslationUnitOptional('text')).toBe(false);
+    expect(isTranslationUnitOptional('destination')).toBe(true);
+    expect(isTranslationUnitOptional('media')).toBe(true);
   });
 
   it('accepts only absolute http(s) urls', () => {
@@ -1660,5 +1670,710 @@ describe('resource center content-list item labels', () => {
       merged.tabs[0].blocks[0] as { contentItems: ContentListItem[] }
     ).contentItems.find((item) => item.contentId === 'flow-1');
     expect(revived?.label).toBe('Premiers pas');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Navigate destinations — one concept, three stores. A page-navigate action
+// (buttons, questions, checklist tasks, launchers, resource-center blocks) and
+// a content-list entry's own navigation localize under the rules inline links
+// established: destination unit, opaque when dynamic, paired by id.
+// ---------------------------------------------------------------------------
+
+const urlTemplate = (url: string) => [{ type: 'paragraph', children: [{ text: url }] }];
+
+const createNavigateAction = (id: string, url: string): RulesCondition => {
+  return {
+    id,
+    type: ContentActionsItemType.PAGE_NAVIGATE,
+    data: { openType: 'same', value: urlTemplate(url) },
+  };
+};
+
+const createDismissAction = (id: string): RulesCondition => {
+  return { id, type: ContentActionsItemType.FLOW_DISMIS, data: {} };
+};
+
+const readActionUrl = (actions: RulesCondition[] | undefined, id: string): string | undefined => {
+  const action = actions?.find((candidate) => candidate.id === id);
+  return action ? readDestination(navigateDestination(action.data)) : undefined;
+};
+
+const createCtaButton = (): ContentEditorButtonElement => {
+  return {
+    type: ContentEditorElementType.BUTTON,
+    data: {
+      text: 'Try it',
+      actions: [
+        createDismissAction('dismiss-1'),
+        createNavigateAction('navigate-1', 'https://example.com/en/mcp'),
+      ],
+    },
+  };
+};
+
+const createLauncherData = (): LauncherData => {
+  return {
+    type: 'icon',
+    iconType: 'question',
+    buttonText: 'Help',
+    target: { element: undefined, screenshot: undefined, alignment: {} as never },
+    behavior: {
+      triggerElement: LauncherTriggerElement.LAUNCHER,
+      actionType: LauncherActionType.PERFORM_ACTION,
+      triggerEvent: LauncherTriggerEvent.CLICKED,
+      actions: [createNavigateAction('navigate-1', 'https://example.com/en/help')],
+    },
+    tooltip: {
+      reference: 'launcher',
+      element: undefined,
+      alignment: {} as never,
+      width: 300,
+      settings: {} as never,
+      content: [],
+    },
+  } as unknown as LauncherData;
+};
+
+describe('navigate destinations (one concept, three stores)', () => {
+  const CTA_PATH = '0.0.0:button.actions.navigate-1:navigate.url';
+
+  it('localizes a button action by action id, leaving the rest of the action to the source', () => {
+    const source = wrapElements([createCtaButton()]);
+    const units = extractTranslatableUnits(source);
+    expect(units.find((unit) => unit.path === CTA_PATH)).toMatchObject({
+      text: 'https://example.com/en/mcp',
+      kind: 'destination',
+    });
+    expect(units.some((unit) => unit.path.includes('dismiss-1'))).toBe(false);
+
+    const localized = createLocalizedWorkingContents(source, undefined);
+    const localizedActions = getElement<ContentEditorButtonElement>(localized, 0).data.actions;
+    expect(readActionUrl(localizedActions, 'navigate-1')).toBe('');
+    const localizedAction = localizedActions.find((action) => action.id === 'navigate-1');
+    writeDestination(navigateDestination(localizedAction!.data), 'https://example.com/cs/mcp');
+
+    // The source reorders its actions — the id, not the position, pairs them.
+    const reordered = deepClone(source);
+    getElement<ContentEditorButtonElement>(reordered, 0).data.actions.reverse();
+    const merged = mergeLocalizedEditorContents(reordered, localized);
+    const mergedAction = getElement<ContentEditorButtonElement>(merged, 0).data.actions.find(
+      (action) => action.id === 'navigate-1',
+    );
+    expect(mergedAction?.data.value).toEqual(urlTemplate('https://example.com/cs/mcp'));
+    expect(mergedAction?.data.openType).toBe('same');
+    expect(countMissingTranslations(source, localized)).toBe(1);
+  });
+
+  it('localizes question actions, checklist task actions, launcher actions and resource-center action blocks', () => {
+    const nps = createNpsElement();
+    nps.data.actions = [createNavigateAction('navigate-1', 'https://example.com/en/review')];
+    expect(
+      extractTranslatableUnits(wrapElements([nps])).find(
+        (unit) => unit.path === '0.0.0:question.actions.navigate-1:navigate.url',
+      )?.kind,
+    ).toBe('destination');
+
+    const checklist = createChecklistData();
+    checklist.items[0].clickedActions = [
+      createNavigateAction('navigate-1', 'https://example.com/en/invite'),
+    ];
+    const checklistPath = 'items.item-1:clickedActions.navigate-1:navigate.url';
+    const checklistWorking = createLocalizedWorkingVersionData(
+      ContentDataType.CHECKLIST,
+      checklist,
+      undefined,
+    );
+    expect(readActionUrl(checklistWorking.items[0].clickedActions, 'navigate-1')).toBe('');
+    const checklistApplied = applyVersionDataTranslationUnits(
+      ContentDataType.CHECKLIST,
+      checklist,
+      undefined,
+      new Map([[checklistPath, 'https://example.com/cs/invite']]),
+    );
+    const checklistMerged = mergeLocalizedVersionData(
+      ContentDataType.CHECKLIST,
+      checklist,
+      checklistApplied,
+    );
+    expect(readActionUrl(checklistMerged.items[0].clickedActions, 'navigate-1')).toBe(
+      'https://example.com/cs/invite',
+    );
+
+    const launcher = createLauncherData();
+    const launcherPath = 'behavior.actions.navigate-1:navigate.url';
+    expect(
+      extractVersionDataTranslationUnits(ContentDataType.LAUNCHER, launcher, undefined).find(
+        (unit) => unit.path === launcherPath,
+      )?.sourceText,
+    ).toBe('https://example.com/en/help');
+    const launcherMerged = mergeLocalizedVersionData(
+      ContentDataType.LAUNCHER,
+      launcher,
+      applyVersionDataTranslationUnits(
+        ContentDataType.LAUNCHER,
+        launcher,
+        undefined,
+        new Map([[launcherPath, 'https://example.com/cs/help']]),
+      ),
+    );
+    expect(readActionUrl(launcherMerged.behavior.actions, 'navigate-1')).toBe(
+      'https://example.com/cs/help',
+    );
+
+    const resourceCenter = createResourceCenterData();
+    (resourceCenter.tabs[0].blocks[0] as { clickedActions: RulesCondition[] }).clickedActions = [
+      createNavigateAction('navigate-1', 'https://example.com/en/support'),
+    ];
+    const blockPath = 'tabs.tab-1.blocks.block-1:clickedActions.navigate-1:navigate.url';
+    const resourceCenterMerged = mergeLocalizedVersionData(
+      ContentDataType.RESOURCE_CENTER,
+      resourceCenter,
+      applyVersionDataTranslationUnits(
+        ContentDataType.RESOURCE_CENTER,
+        resourceCenter,
+        undefined,
+        new Map([[blockPath, 'https://example.com/cs/support']]),
+      ),
+    );
+    expect(
+      readActionUrl(
+        (resourceCenterMerged.tabs[0].blocks[0] as { clickedActions: RulesCondition[] })
+          .clickedActions,
+        'navigate-1',
+      ),
+    ).toBe('https://example.com/cs/support');
+  });
+
+  it("localizes a content-list entry's own navigation by contentId", () => {
+    const source = createResourceCenterData();
+    source.tabs[0].blocks.push({
+      id: 'block-list',
+      name: [{ text: 'Guides' }],
+      type: ResourceCenterBlockType.CONTENT_LIST,
+      onlyShowBlock: false,
+      onlyShowBlockConditions: [],
+      iconSource: LauncherIconSource.NONE,
+      iconType: '',
+      flowIconSource: LauncherIconSource.NONE,
+      flowIconType: '',
+      checklistIconSource: LauncherIconSource.NONE,
+      checklistIconType: '',
+      showSearchField: false,
+      contentItems: [
+        {
+          contentId: 'flow-1',
+          contentType: 'flow',
+          navigateUrl: urlTemplate('https://example.com/en/app/settings'),
+          navigateOpenType: 'new',
+          onlyShowItem: false,
+          onlyShowItemConditions: [],
+        },
+        {
+          contentId: 'flow-2',
+          contentType: 'flow',
+          onlyShowItem: false,
+          onlyShowItemConditions: [],
+        },
+      ],
+    });
+    const itemPath = 'tabs.tab-1.blocks.block-list.contentItems.flow-1:navigate.url';
+    const units = extractVersionDataTranslationUnits(
+      ContentDataType.RESOURCE_CENTER,
+      source,
+      undefined,
+    );
+    expect(units.find((unit) => unit.path === itemPath)).toMatchObject({
+      sourceText: 'https://example.com/en/app/settings',
+      kind: 'destination',
+    });
+    // An entry without navigation has nothing to localize.
+    expect(units.some((unit) => unit.path.includes('flow-2:navigate'))).toBe(false);
+
+    const merged = mergeLocalizedVersionData(
+      ContentDataType.RESOURCE_CENTER,
+      source,
+      applyVersionDataTranslationUnits(
+        ContentDataType.RESOURCE_CENTER,
+        source,
+        undefined,
+        new Map([[itemPath, 'https://example.com/cs/app/settings']]),
+      ),
+    );
+    const mergedItem = (merged.tabs[0].blocks[2] as { contentItems: ContentListItem[] })
+      .contentItems[0];
+    expect(readDestination(contentListDestination(mergedItem))).toBe(
+      'https://example.com/cs/app/settings',
+    );
+    expect(mergedItem.navigateOpenType).toBe('new');
+  });
+
+  it('treats a dynamic navigate destination as opaque: no unit, stored value carried, revived later', () => {
+    const source = wrapElements([createCtaButton()]);
+    const stored = createLocalizedWorkingContents(source, undefined);
+    const storedAction = getElement<ContentEditorButtonElement>(stored, 0).data.actions.find(
+      (action) => action.id === 'navigate-1',
+    );
+    writeDestination(navigateDestination(storedAction!.data), 'https://example.com/cs/mcp');
+
+    const chipTemplate = [
+      {
+        type: 'paragraph',
+        children: [
+          { text: 'https://example.com/' },
+          {
+            type: 'user-attribute',
+            attrCode: 'locale_code',
+            fallback: 'en',
+            children: [{ text: '' }],
+          },
+          { text: '/mcp' },
+        ],
+      },
+    ];
+    const sourceAction = getElement<ContentEditorButtonElement>(source, 0).data.actions.find(
+      (action) => action.id === 'navigate-1',
+    );
+    sourceAction!.data.value = chipTemplate;
+
+    expect(extractTranslatableUnits(source).some((unit) => unit.path === CTA_PATH)).toBe(false);
+    const working = createLocalizedWorkingContents(source, stored);
+    expect(
+      readActionUrl(getElement<ContentEditorButtonElement>(working, 0).data.actions, 'navigate-1'),
+    ).toBe('https://example.com/cs/mcp');
+    const merged = mergeLocalizedEditorContents(source, stored);
+    expect(
+      getElement<ContentEditorButtonElement>(merged, 0).data.actions.find(
+        (action) => action.id === 'navigate-1',
+      )?.data.value,
+    ).toEqual(chipTemplate);
+
+    sourceAction!.data.value = urlTemplate('https://example.com/en/mcp');
+    const revived = mergeLocalizedEditorContents(source, stored);
+    expect(
+      readActionUrl(getElement<ContentEditorButtonElement>(revived, 0).data.actions, 'navigate-1'),
+    ).toBe('https://example.com/cs/mcp');
+  });
+
+  it('grafts a stored override for an action the source removed, and revives it', () => {
+    const source = wrapElements([createCtaButton()]);
+    const stored = applyContentsTranslationUnits(
+      source,
+      undefined,
+      new Map([[CTA_PATH, 'https://example.com/cs/mcp']]),
+    );
+
+    const shrunk = deepClone(source);
+    getElement<ContentEditorButtonElement>(shrunk, 0).data.actions = [
+      createDismissAction('dismiss-1'),
+    ];
+    const working = createLocalizedWorkingContents(shrunk, stored);
+    const payload = buildContentsSavePayload(working, stored);
+    expect(
+      readActionUrl(getElement<ContentEditorButtonElement>(payload, 0).data.actions, 'navigate-1'),
+    ).toBe('https://example.com/cs/mcp');
+    // Delivery pairs by id, so the parked action never ships on its own…
+    const shrunkMerged = mergeLocalizedEditorContents(shrunk, payload);
+    expect(getElement<ContentEditorButtonElement>(shrunkMerged, 0).data.actions).toHaveLength(1);
+    // …and delivers again once the source restores the action.
+    const revived = mergeLocalizedEditorContents(source, payload);
+    expect(
+      readActionUrl(getElement<ContentEditorButtonElement>(revived, 0).data.actions, 'navigate-1'),
+    ).toBe('https://example.com/cs/mcp');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Text the walkers used to skip: a user-attribute chip's fallback (rendered
+// whenever the attribute is unset) and an image's alt text.
+// ---------------------------------------------------------------------------
+
+describe('chip fallback and image alt text', () => {
+  const createGreetingElement = (): ContentEditorTextElement => {
+    return {
+      type: ContentEditorElementType.TEXT,
+      data: [
+        {
+          type: 'paragraph',
+          children: [
+            { text: 'Hi ' },
+            {
+              type: 'user-attribute',
+              attrCode: 'first_name',
+              fallback: 'there',
+              children: [{ text: '' }],
+            },
+            { text: '!' },
+          ],
+        },
+      ],
+    };
+  };
+
+  it('translates a chip fallback as text, keeping the attribute binding from the source', () => {
+    const source = wrapElements([createGreetingElement()]);
+    const units = extractTranslatableUnits(source);
+    expect(units.find((unit) => unit.path === '0.0.0:text.0.1:fallback')).toMatchObject({
+      text: 'there',
+      kind: 'text',
+    });
+    // Hi + fallback + ! — the chip's empty text child is not a unit.
+    expect(countMissingTranslations(source, undefined)).toBe(3);
+
+    const merged = mergeLocalizedEditorContents(
+      source,
+      applyContentsTranslationUnits(
+        source,
+        undefined,
+        new Map([['0.0.0:text.0.1:fallback', 'du']]),
+      ),
+    );
+    const chip = getElement<ContentEditorTextElement>(merged, 0).data[0].children[1];
+    expect(chip.fallback).toBe('du');
+    expect(chip.attrCode).toBe('first_name');
+  });
+
+  it('translates an image alt text', () => {
+    const image = createImageElement();
+    image.alt = 'The new dashboard';
+    const source = wrapElements([image]);
+    expect(
+      extractTranslatableUnits(source).find((unit) => unit.path === '0.0.0:image.alt'),
+    ).toMatchObject({
+      text: 'The new dashboard',
+      kind: 'text',
+    });
+    const merged = mergeLocalizedEditorContents(
+      source,
+      applyContentsTranslationUnits(
+        source,
+        undefined,
+        new Map([['0.0.0:image.alt', 'Der neue Dashboard']]),
+      ),
+    );
+    expect(getElement<ContentEditorImageElement>(merged, 0).alt).toBe('Der neue Dashboard');
+  });
+
+  it('emits nothing for an empty fallback or a missing alt', () => {
+    const element = createGreetingElement();
+    (element.data[0] as { children: Array<Record<string, unknown>> }).children[1].fallback = '';
+    const units = extractTranslatableUnits(wrapElements([element, createImageElement()]));
+    expect(units.some((unit) => unit.path.endsWith(':fallback'))).toBe(false);
+    expect(units.some((unit) => unit.path.endsWith(':image.alt'))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stored-row schema versions — each generation of units blanks only the
+// stores it introduced, on rows stamped before it.
+// ---------------------------------------------------------------------------
+
+describe('stored-row schema versions', () => {
+  const createStoredRow = () => {
+    const image = createImageElement();
+    image.alt = 'The new dashboard';
+    image.link = { url: 'https://example.com/en/pricing' };
+    const source = wrapElements([createLinkTextElement(), createCtaButton(), image]);
+    // A structural clone with a translator's link override on top — what a
+    // version-1 row looks like once the newer stores exist in the source.
+    const row = deepClone(source);
+    assignLocalizedLinkUrl(
+      getElement<ContentEditorTextElement>(row, 0).data[0].children[1],
+      'https://example.com/cs/post',
+    );
+    return row;
+  };
+
+  it('is at its second generation', () => {
+    expect(LOCALIZED_UNITS_SCHEMA_VERSION).toBe(2);
+  });
+
+  it('a version-1 row keeps its link overrides and gets only the newer stores blanked', () => {
+    const row = createStoredRow();
+    expect(blankLocalizedUnitClones(row, 1)).toBe(true);
+    expect(blankLocalizedUnitClones(row, 1)).toBe(false);
+
+    expect(
+      getLocalizableLinkUrl(getElement<ContentEditorTextElement>(row, 0).data[0].children[1]),
+    ).toBe('https://example.com/cs/post');
+    expect(getLocalizableLinkUrl(getElement<ContentEditorImageElement>(row, 2).link)).toBe(
+      'https://example.com/en/pricing',
+    );
+    expect(
+      readActionUrl(getElement<ContentEditorButtonElement>(row, 1).data.actions, 'navigate-1'),
+    ).toBe('');
+    expect(getElement<ContentEditorImageElement>(row, 2).alt).toBe('');
+  });
+
+  it('a version-0 row gets every generation blanked', () => {
+    const row = createStoredRow();
+    expect(blankLocalizedUnitClones(row, 0)).toBe(true);
+    expect(
+      getLocalizableLinkUrl(getElement<ContentEditorTextElement>(row, 0).data[0].children[1]),
+    ).toBe('');
+    expect(getLocalizableLinkUrl(getElement<ContentEditorImageElement>(row, 2).link)).toBe('');
+    expect(
+      readActionUrl(getElement<ContentEditorButtonElement>(row, 1).data.actions, 'navigate-1'),
+    ).toBe('');
+  });
+
+  it('a current row is left alone', () => {
+    const row = createStoredRow();
+    expect(blankLocalizedUnitClones(row, LOCALIZED_UNITS_SCHEMA_VERSION)).toBe(false);
+  });
+
+  it('blanks version-data stores too: task actions, content-list navigation, chip fallbacks', () => {
+    const row = createChecklistData();
+    row.items[0].clickedActions = [
+      createNavigateAction('navigate-1', 'https://example.com/en/invite'),
+    ];
+    (row.content as ContentEditorRoot[])[0].children[0].children.push({
+      element: {
+        type: ContentEditorElementType.TEXT,
+        data: [
+          {
+            type: 'paragraph',
+            children: [
+              {
+                type: 'user-attribute',
+                attrCode: 'first_name',
+                fallback: 'there',
+                children: [{ text: '' }],
+              },
+            ],
+          },
+        ],
+      },
+      children: null,
+    });
+    expect(blankLocalizedUnitClones(row, 1)).toBe(true);
+    expect(readActionUrl(row.items[0].clickedActions, 'navigate-1')).toBe('');
+    expect(
+      getElement<ContentEditorTextElement>(row.content as ContentEditorRoot[], 1).data[0]
+        .children[0].fallback,
+    ).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unit coverage registry — every carrier of per-locale content, populated.
+// A field that becomes a unit is registered here; one that silently stops
+// being walked shows up as a missing path. Keep it exhaustive.
+// ---------------------------------------------------------------------------
+
+describe('unit coverage registry', () => {
+  it('editor trees: every element type, every action slot', () => {
+    const text = createLinkTextElement();
+    (text.data[0] as { children: unknown[] }).children.push({
+      type: 'user-attribute',
+      attrCode: 'first_name',
+      fallback: 'there',
+      children: [{ text: '' }],
+    });
+    const image = createImageElement();
+    image.alt = 'The new dashboard';
+    image.link = { url: 'https://example.com/en/pricing' };
+    const nps = createNpsElement();
+    nps.data.actions = [createNavigateAction('nav', 'https://example.com/en/nps')];
+    const choice = createChoiceElement();
+    choice.data.buttonText = 'Submit';
+    choice.data.otherPlaceholder = 'Other…';
+    choice.data.actions = [createNavigateAction('nav', 'https://example.com/en/choice')];
+    const contents = wrapElements([
+      text,
+      createCtaButton(),
+      image,
+      createEmbedElement(),
+      nps,
+      {
+        type: ContentEditorElementType.STAR_RATING,
+        data: {
+          cvid: 'q-star',
+          name: 'Rate us',
+          lowRange: 1,
+          highRange: 5,
+          lowLabel: 'Bad',
+          highLabel: 'Great',
+          actions: [createNavigateAction('nav', 'https://example.com/en/star')],
+        },
+      },
+      {
+        type: ContentEditorElementType.SCALE,
+        data: {
+          cvid: 'q-scale',
+          name: 'Effort',
+          lowRange: 1,
+          highRange: 7,
+          lowLabel: 'Low',
+          highLabel: 'High',
+          actions: [createNavigateAction('nav', 'https://example.com/en/scale')],
+        },
+      },
+      {
+        type: ContentEditorElementType.SINGLE_LINE_TEXT,
+        data: {
+          cvid: 'q-single',
+          name: 'Your name',
+          placeholder: 'Name',
+          buttonText: 'Send',
+          required: false,
+          actions: [createNavigateAction('nav', 'https://example.com/en/single')],
+        },
+      },
+      {
+        type: ContentEditorElementType.MULTI_LINE_TEXT,
+        data: {
+          cvid: 'q-multi',
+          name: 'Feedback',
+          placeholder: 'Tell us',
+          buttonText: 'Send',
+          required: false,
+          actions: [createNavigateAction('nav', 'https://example.com/en/multi')],
+        },
+      },
+      choice,
+    ]);
+
+    const paths = extractTranslatableUnits(contents).map((unit) => `${unit.kind} ${unit.path}`);
+    expect(paths).toEqual([
+      'text 0.0.0:text.0.0',
+      'text 0.0.0:text.0.1.0',
+      'destination 0.0.0:text.0.1:link.url',
+      'text 0.0.0:text.0.2',
+      'text 0.0.0:text.0.3:fallback',
+      'text 0.0.1:button.text',
+      'destination 0.0.1:button.actions.navigate-1:navigate.url',
+      'media 0.0.2:image.url',
+      'text 0.0.2:image.alt',
+      'destination 0.0.2:image.link.url',
+      'media 0.0.3:embed.url',
+      'text 0.0.4:question.name',
+      'text 0.0.4:question.lowLabel',
+      'text 0.0.4:question.highLabel',
+      'destination 0.0.4:question.actions.nav:navigate.url',
+      'text 0.0.5:question.name',
+      'text 0.0.5:question.lowLabel',
+      'text 0.0.5:question.highLabel',
+      'destination 0.0.5:question.actions.nav:navigate.url',
+      'text 0.0.6:question.name',
+      'text 0.0.6:question.lowLabel',
+      'text 0.0.6:question.highLabel',
+      'destination 0.0.6:question.actions.nav:navigate.url',
+      'text 0.0.7:question.name',
+      'text 0.0.7:question.placeholder',
+      'text 0.0.7:question.buttonText',
+      'destination 0.0.7:question.actions.nav:navigate.url',
+      'text 0.0.8:question.name',
+      'text 0.0.8:question.placeholder',
+      'text 0.0.8:question.buttonText',
+      'destination 0.0.8:question.actions.nav:navigate.url',
+      'text 0.0.9:question.name',
+      'text 0.0.9:question.buttonText',
+      'text 0.0.9:question.otherPlaceholder',
+      'text 0.0.9:question.options.0.label',
+      'text 0.0.9:question.options.1.label',
+      'destination 0.0.9:question.actions.nav:navigate.url',
+    ]);
+  });
+
+  it('version data: every plain field, embedded tree and action slot per content type', () => {
+    const checklist = createChecklistData();
+    checklist.items[0].clickedActions = [
+      createNavigateAction('nav', 'https://example.com/en/invite'),
+    ];
+    expect(
+      extractVersionDataTranslationUnits(ContentDataType.CHECKLIST, checklist, undefined).map(
+        (unit) => `${unit.kind} ${unit.path}`,
+      ),
+    ).toEqual([
+      'text buttonText',
+      'text content/0.0.0:button.text',
+      'text items.item-1:name',
+      'text items.item-1:description',
+      'destination items.item-1:clickedActions.nav:navigate.url',
+      'text items.item-2:name',
+    ]);
+
+    const launcher = createLauncherData();
+    launcher.tooltip.content = wrapElements([createTextElement()]);
+    expect(
+      extractVersionDataTranslationUnits(ContentDataType.LAUNCHER, launcher, undefined).map(
+        (unit) => `${unit.kind} ${unit.path}`,
+      ),
+    ).toEqual([
+      'text buttonText',
+      'destination behavior.actions.navigate-1:navigate.url',
+      'text tooltip/0.0.0:text.0.0',
+      'text tooltip/0.0.0:text.0.1',
+    ]);
+
+    const announcement: AnnouncementData = {
+      title: 'New dashboard',
+      introContent: wrapElements([createTextElement()]),
+      enableReadMore: true,
+      readMoreLabel: 'Read more',
+      detailContent: wrapElements([createCtaButton()]),
+      distribution: AnnouncementDistribution.BADGE,
+    };
+    expect(
+      extractVersionDataTranslationUnits(ContentDataType.ANNOUNCEMENT, announcement, undefined).map(
+        (unit) => `${unit.kind} ${unit.path}`,
+      ),
+    ).toEqual([
+      'text title',
+      'text readMoreLabel',
+      'text introContent/0.0.0:text.0.0',
+      'text introContent/0.0.0:text.0.1',
+      'text detailContent/0.0.0:button.text',
+      'destination detailContent/0.0.0:button.actions.navigate-1:navigate.url',
+    ]);
+
+    const resourceCenter = createResourceCenterData();
+    (resourceCenter.tabs[0].blocks[0] as { clickedActions: RulesCondition[] }).clickedActions = [
+      createNavigateAction('nav', 'https://example.com/en/support'),
+    ];
+    resourceCenter.tabs[0].blocks.push({
+      id: 'block-list',
+      name: [{ text: 'Guides' }],
+      type: ResourceCenterBlockType.CONTENT_LIST,
+      onlyShowBlock: false,
+      onlyShowBlockConditions: [],
+      iconSource: LauncherIconSource.NONE,
+      iconType: '',
+      flowIconSource: LauncherIconSource.NONE,
+      flowIconType: '',
+      checklistIconSource: LauncherIconSource.NONE,
+      checklistIconType: '',
+      showSearchField: false,
+      contentItems: [
+        {
+          contentId: 'flow-1',
+          contentType: 'flow',
+          label: 'Getting started',
+          navigateUrl: urlTemplate('https://example.com/en/app'),
+          onlyShowItem: false,
+          onlyShowItemConditions: [],
+        },
+      ],
+    });
+    expect(
+      extractVersionDataTranslationUnits(
+        ContentDataType.RESOURCE_CENTER,
+        resourceCenter,
+        undefined,
+      ).map((unit) => `${unit.kind} ${unit.path}`),
+    ).toEqual([
+      'text buttonText',
+      'text headerText',
+      'text tabs.tab-1:name',
+      'text tabs.tab-1.blocks.block-1:name.0',
+      'destination tabs.tab-1.blocks.block-1:clickedActions.nav:navigate.url',
+      'text tabs.tab-1.blocks.block-2:name.0',
+      'text tabs.tab-1.blocks.block-2.content/0.0.0:text.0.0',
+      'text tabs.tab-1.blocks.block-2.content/0.0.0:text.0.1',
+      'text tabs.tab-1.blocks.block-list:name.0',
+      'text tabs.tab-1.blocks.block-list.contentItems.flow-1:label',
+      'destination tabs.tab-1.blocks.block-list.contentItems.flow-1:navigate.url',
+    ]);
   });
 });

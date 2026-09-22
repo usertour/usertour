@@ -14,7 +14,12 @@ import type {
   LocalizedFlowContent,
   ResourceCenterData,
 } from '@usertour/types';
-import { ContentDataType, ContentEditorElementType, UserAttributes } from '@usertour/types';
+import {
+  ContentActionsItemType,
+  ContentDataType,
+  ContentEditorElementType,
+  UserAttributes,
+} from '@usertour/types';
 
 import { serializeLinkTemplate } from './content';
 import { isQuestionElement } from './content-helper';
@@ -31,12 +36,33 @@ import { deepClone } from './utils';
  * the wrong node — it just falls back to untranslated.
  */
 
+/**
+ * What a unit's value IS — the one property every consumer keys its behavior
+ * on, so a new field only has to say which kind it is:
+ *
+ * - `text`: copy the user reads. Machine-translated, counted as missing while
+ *   untranslated, stored exactly as sent (spaces between runs matter).
+ * - `destination`: an href — a rich-text link, an image's click-through, a
+ *   page-navigate action, a content-list entry's navigation. A localized page
+ *   behind localized copy is per-locale content too, but no one translates a
+ *   url: never machine-translated, blank means "keep the source", trimmed on
+ *   save, any string the host can route (a relative path included).
+ * - `media`: a src the SDK renders verbatim — image and embed urls. Like a
+ *   destination, plus the absolute-http(s) bar: a bare word here is a silently
+ *   broken image or iframe.
+ */
+export type TranslationUnitKind = 'text' | 'destination' | 'media';
+
+/** Whether a unit may stay untranslated without counting as missing. */
+export const isTranslationUnitOptional = (kind: TranslationUnitKind): boolean => {
+  return kind !== 'text';
+};
+
 export interface TranslatableUnit {
   /** Positional address of the text within the tree: `g.c.e:field[...]`. */
   path: string;
   text: string;
-  /** Optional units (image/embed URLs) may stay untranslated without counting as missing. */
-  optional: boolean;
+  kind: TranslationUnitKind;
 }
 
 interface TranslatableFieldVisit {
@@ -44,7 +70,7 @@ interface TranslatableFieldVisit {
   sourceText: string;
   /** Aligned partner text; undefined when the partner is absent or misaligned. */
   partnerText: string | undefined;
-  optional: boolean;
+  kind: TranslationUnitKind;
   /** Writes into the walked tree (used by the clone-producing walks). */
   assign: (value: string) => void;
   /**
@@ -89,39 +115,204 @@ type SlateNode = {
   children?: unknown;
 } & Record<string, unknown>;
 
-/** A slate link node or an image element's `link` object — same two stores. */
-type LinkLike = { url?: unknown; data?: unknown } & Record<string, unknown>;
+// ---------------------------------------------------------------------------
+// Destinations — one concept, three stores.
+//
+// A destination is authored as a rich-text template (user-attribute chips
+// allowed) that delivery serializes through the shared link-template grammar.
+// Where that template lives differs by carrier: a rich-text link node and an
+// image's click-through keep it in `data` and mirror the plain string into
+// `url` for url-only readers; a page-navigate action keeps it in its `value`;
+// a resource-center content-list entry in `navigateUrl`. The store describes
+// the location so the rules — which destinations localize, how a translated
+// one is written, how an unreadable one is carried — are written once.
+// ---------------------------------------------------------------------------
+
+export interface DestinationStore {
+  container: Record<string, unknown>;
+  /** The rich-text template — the authority delivery renders from. */
+  templateKey: string;
+  /** A plain-string mirror some readers consult instead of the template. */
+  urlKey?: string;
+}
+
+/** A rich-text link node, or an image element's `link` object. */
+export const linkDestination = (link: object): DestinationStore => {
+  return { container: link as Record<string, unknown>, templateKey: 'data', urlKey: 'url' };
+};
+
+/** The `data` of a page-navigate action (`{ value, openType }`). */
+export const navigateDestination = (actionData: object): DestinationStore => {
+  return { container: actionData as Record<string, unknown>, templateKey: 'value' };
+};
+
+/** A resource-center content-list entry (`{ navigateUrl, navigateOpenType }`). */
+export const contentListDestination = (contentItem: object): DestinationStore => {
+  return { container: contentItem as Record<string, unknown>, templateKey: 'navigateUrl' };
+};
+
+/**
+ * The single-string destination of a store: its template when present — read
+ * with the SAME grammar delivery renders with — else the plain mirror.
+ * Undefined — not localizable — when the template contains user-attribute
+ * chips: such a destination has no one string a translator could safely
+ * replace.
+ */
+export const readDestination = (store: DestinationStore): string | undefined => {
+  const template = store.container[store.templateKey];
+  if (isArray(template)) {
+    return serializeLinkTemplate(template, () => undefined);
+  }
+  return store.urlKey ? toText(store.container[store.urlKey]) : '';
+};
+
+/**
+ * Writes a localized destination into every store a reader may consult.
+ * Trimmed: a whitespace-only value must collapse to the '' keep-original
+ * sentinel instead of shipping as a self-link href.
+ */
+export const writeDestination = (store: DestinationStore, value: string): void => {
+  const url = value.trim();
+  store.container[store.templateKey] = [{ type: 'paragraph', children: [{ text: url }] }];
+  if (store.urlKey) {
+    store.container[store.urlKey] = url;
+  }
+};
+
+/** The working-copy opaque-destination handler: inherit the stored value verbatim. */
+const inheritStoredDestination = (
+  store: DestinationStore,
+  partnerStore: DestinationStore | undefined,
+): void => {
+  if (!partnerStore) {
+    return;
+  }
+  const template = partnerStore.container[partnerStore.templateKey];
+  const url = partnerStore.urlKey ? partnerStore.container[partnerStore.urlKey] : undefined;
+  if (template === undefined && url === undefined) {
+    return;
+  }
+  store.container[store.templateKey] = isArray(template) ? deepClone(template) : template;
+  if (store.urlKey) {
+    store.container[store.urlKey] = url;
+  }
+};
+
+/** A rich-text link node's destination (see readDestination). */
+export const getLocalizableLinkUrl = (node: unknown): string | undefined => {
+  if (!node || typeof node !== 'object') {
+    return undefined;
+  }
+  return readDestination(linkDestination(node));
+};
+
+/** Writes a rich-text link node's destination (see writeDestination). */
+export const assignLocalizedLinkUrl = (node: unknown, value: string): void => {
+  writeDestination(linkDestination(node as object), value);
+};
 
 interface WalkOptions {
   /** Suppress link handling entirely (block names — delivery never renders a link url there). */
   omitLinkUnits?: boolean;
   /**
    * Emit a unit for an empty (but still static) destination too. The
-   * translation-applier walks a WORKING tree, where a localizable link was
-   * blanked to '' — without this its unit path would stop being addressable
-   * and an imported url for it would be silently dropped.
+   * translation-applier walks a WORKING tree, where a localizable destination
+   * was blanked to '' — without this its unit path would stop being
+   * addressable and an imported url for it would be silently dropped.
    */
   includeEmptyLinkUnits?: boolean;
   /**
-   * Called for a link whose destination emits no unit (dynamic chip template,
-   * or an empty/absent destination). Working-copy builds use it to carry the
-   * stored row's destination into the clone, so a save can only overwrite
-   * what this session could actually read — without it, making a link dynamic
+   * Called for a destination that emits no unit (dynamic chip template, or an
+   * empty/absent destination). Working-copy builds use it to carry the stored
+   * row's destination into the clone, so a save can only overwrite what this
+   * session could actually read — without it, making a destination dynamic
    * would erase its stored translation on the next unrelated save. Delivery
    * merges pass no handler: an unreadable destination stays source-managed
    * (the stored value is preserved but dormant, and revives when the source
    * destination becomes a plain non-empty string again).
    */
-  onOpaqueLink?: (link: LinkLike, partnerLink: LinkLike | undefined) => void;
+  onOpaqueDestination?: (
+    store: DestinationStore,
+    partnerStore: DestinationStore | undefined,
+  ) => void;
 }
 
-/** The working-copy opaque-link handler: inherit the stored destination verbatim. */
-const inheritStoredLink = (link: LinkLike, partnerLink: LinkLike | undefined): void => {
-  if (!partnerLink || (partnerLink.url === undefined && partnerLink.data === undefined)) {
+/**
+ * The one visit every destination goes through, whatever its store: a plain
+ * non-empty destination travels as a `destination` unit — swappable like
+ * media urls, untranslated keeps the source; anything else is opaque.
+ */
+const visitDestination = (
+  store: DestinationStore,
+  partnerStore: DestinationStore | undefined,
+  path: string,
+  visitor: TranslatableFieldVisitor,
+  opts: WalkOptions,
+): void => {
+  const sourceUrl = readDestination(store);
+  if (sourceUrl || (sourceUrl === '' && opts.includeEmptyLinkUnits)) {
+    visitor({
+      path,
+      sourceText: sourceUrl,
+      partnerText: partnerStore ? readDestination(partnerStore) : undefined,
+      kind: 'destination',
+      assign: (value) => writeDestination(store, value),
+    });
     return;
   }
-  link.url = partnerLink.url;
-  link.data = isArray(partnerLink.data) ? deepClone(partnerLink.data) : partnerLink.data;
+  opts.onOpaqueDestination?.(store, partnerStore);
+};
+
+type ActionLike = { id?: unknown; type?: unknown; data?: unknown };
+
+const isNavigateAction = (action: unknown): action is ActionLike & { id: string; data: object } => {
+  const candidate = action as ActionLike | null | undefined;
+  return (
+    candidate?.type === ContentActionsItemType.PAGE_NAVIGATE &&
+    typeof candidate.id === 'string' &&
+    Boolean(candidate.data) &&
+    typeof candidate.data === 'object'
+  );
+};
+
+/**
+ * Action lists ride on every clickable thing — buttons, questions, checklist
+ * tasks, launchers, resource-center blocks. The only action whose payload is
+ * per-locale content is page-navigate (its destination); the rest carry
+ * nothing a translator could change. Actions pair by id (the builder mints
+ * one per action) so a reorder can never misalign a translation.
+ */
+const walkActions = (
+  actions: unknown,
+  partnerActions: unknown,
+  pathPrefix: string,
+  visitor: TranslatableFieldVisitor,
+  opts: WalkOptions,
+): void => {
+  if (!isArray(actions)) {
+    return;
+  }
+  const partnerById = new Map<string, ActionLike & { data: object }>();
+  if (isArray(partnerActions)) {
+    for (const partnerAction of partnerActions) {
+      if (isNavigateAction(partnerAction)) {
+        partnerById.set(partnerAction.id, partnerAction);
+      }
+    }
+  }
+  for (const action of actions) {
+    if (!isNavigateAction(action)) {
+      continue;
+    }
+    const partnerAction = partnerById.get(action.id);
+    visitDestination(
+      navigateDestination(action.data),
+      partnerAction ? navigateDestination(partnerAction.data) : undefined,
+      `${pathPrefix}.${action.id}:navigate.url`,
+      visitor,
+      opts,
+    );
+  }
 };
 
 const walkSlateNodes = (
@@ -143,7 +334,7 @@ const walkSlateNodes = (
         path: nodePath,
         sourceText: node.text,
         partnerText: toPartnerText(partnerNode?.text),
-        optional: false,
+        kind: 'text',
         assign: (value) => {
           node.text = value;
         },
@@ -157,100 +348,117 @@ const walkSlateNodes = (
           : undefined;
       walkSlateNodes(node.children as SlateNode[], partnerChildren, nodePath, visitor, opts);
     }
+    // A user-attribute chip renders its fallback whenever the attribute is
+    // unset — copy the user reads, in the source language unless translated.
+    if (node.type === 'user-attribute') {
+      const partnerChip = partnerNode?.type === 'user-attribute' ? partnerNode : undefined;
+      visitor({
+        path: `${nodePath}:fallback`,
+        sourceText: toText(node.fallback),
+        partnerText: toPartnerText(partnerChip?.fallback),
+        kind: 'text',
+        assign: (value) => {
+          node.fallback = value;
+        },
+      });
+    }
     // Inline links: the destination is per-locale content too (a localized
-    // page behind localized anchor text), so it travels as an optional unit —
-    // swappable like media urls, untranslated keeps the source destination.
-    // Only a plain non-empty destination is localizable; dynamic templates
-    // (user-attribute chips) and empty destinations go through onOpaqueLink.
+    // page behind localized anchor text).
     if (node.type === 'link' && !opts.omitLinkUnits) {
-      const sourceUrl = getLocalizableLinkUrl(node);
       const partnerLink = partnerNode?.type === 'link' ? partnerNode : undefined;
-      if (sourceUrl || (sourceUrl === '' && opts.includeEmptyLinkUnits)) {
-        visitor({
-          path: `${nodePath}:link.url`,
-          sourceText: sourceUrl,
-          partnerText: partnerLink ? getLocalizableLinkUrl(partnerLink) : undefined,
-          optional: true,
-          assign: (value) => assignLocalizedLinkUrl(node, value),
-        });
-      } else {
-        opts.onOpaqueLink?.(node, partnerLink);
-      }
+      visitDestination(
+        linkDestination(node),
+        partnerLink ? linkDestination(partnerLink) : undefined,
+        `${nodePath}:link.url`,
+        visitor,
+        opts,
+      );
     }
   });
 };
 
-/**
- * A link stores its destination twice: the rich-text `data` template is the
- * authority — delivery recomputes `url` from it via the shared
- * serializeLinkTemplate grammar, substituting user-attribute chips
- * (replaceUserAttr) — while the plain `url` field backs url-only links that
- * predate template-writing (delivery falls back to it when `data` is absent).
- * Localization therefore reads the template when present, and writes BOTH
- * stores so every reader sees the swapped destination.
- */
+// ---------------------------------------------------------------------------
+// Stored-row schema versions — a saved VersionOnLocalization row is a
+// structural clone of the source, so every field that was not yet a unit when
+// the row was written holds the SOURCE value verbatim, not a translation.
+// Once such a field becomes a unit, readers would mistake the clone for a
+// deliberate translator pin (a value equal to the source is a legitimate pin,
+// so it cannot be told apart by comparison). Each version below names the
+// stores that became units with it; the deploy-time backfill blanks exactly
+// those stores on rows stamped below that version — never on rows at or
+// above it, whose values a translator wrote — and the server stamps the
+// current version on every localized write.
+// ---------------------------------------------------------------------------
 
-/**
- * The single-string destination of a link node (or an image element's `link`
- * object): its `data` template when present — read with the SAME grammar
- * delivery renders with — else the raw `url`. Undefined — not localizable —
- * when the template contains user-attribute chips.
- */
-export const getLocalizableLinkUrl = (node: unknown): string | undefined => {
-  if (!node || typeof node !== 'object') {
-    return undefined;
-  }
-  const link = node as SlateNode;
-  if (isArray(link.data)) {
-    return serializeLinkTemplate(link.data, () => undefined);
-  }
-  return toText(link.url);
-};
+/** Version 1: rich-text link nodes and image click-through links. */
+const LOCALIZED_LINKS_SCHEMA_VERSION = 1;
+/** Version 2: page-navigate actions, content-list navigation, image alt, chip fallback. */
+const LOCALIZED_DESTINATIONS_AND_ATTRIBUTES_SCHEMA_VERSION = 2;
 
-/**
- * Writes a localized destination into both stores a reader may consult.
- * Trimmed: a whitespace-only value must collapse to the '' keep-original
- * sentinel instead of shipping as a self-link href.
- */
-export const assignLocalizedLinkUrl = (node: unknown, value: string): void => {
-  const link = node as SlateNode;
-  const url = value.trim();
-  link.url = url;
-  link.data = [{ type: 'paragraph', children: [{ text: url }] }];
-};
+export const LOCALIZED_UNITS_SCHEMA_VERSION = LOCALIZED_DESTINATIONS_AND_ATTRIBUTES_SCHEMA_VERSION;
 
-/**
- * Format version of the link-destination stores inside a saved
- * VersionOnLocalization row. Version 1 = link destinations are semantic
- * ('' keep-original sentinel or a genuine translator override); version 0 =
- * pre-link-unit rows whose links are verbatim structural clones of the
- * source. The server stamps 1 on every save; the deploy-time backfill
- * upgrades 0-rows via blankLocalizedLinkDestinations.
- */
-export const LOCALIZED_LINKS_SCHEMA_VERSION = 1;
-
-const blankStoredLink = (link: LinkLike): boolean => {
-  if (link.url === '' && getLocalizableLinkUrl(link) === '') {
+const blankStoredDestination = (store: DestinationStore): boolean => {
+  const mirrorBlank = store.urlKey === undefined || store.container[store.urlKey] === '';
+  if (mirrorBlank && readDestination(store) === '') {
     return false;
   }
-  assignLocalizedLinkUrl(link, '');
+  writeDestination(store, '');
   return true;
 };
 
+const blankStoredText = (record: Record<string, unknown>, key: string): boolean => {
+  if (typeof record[key] !== 'string' || record[key] === '') {
+    return false;
+  }
+  record[key] = '';
+  return true;
+};
+
+/** Blanks the stores a record holds that became units with `version`. */
+const blankStoresIntroducedIn = (version: number, record: Record<string, unknown>): boolean => {
+  switch (version) {
+    case LOCALIZED_LINKS_SCHEMA_VERSION: {
+      if (record.type === 'link' && isArray(record.children)) {
+        return blankStoredDestination(linkDestination(record));
+      }
+      if (
+        record.type === ContentEditorElementType.IMAGE &&
+        record.link &&
+        typeof record.link === 'object'
+      ) {
+        return blankStoredDestination(linkDestination(record.link));
+      }
+      return false;
+    }
+    case LOCALIZED_DESTINATIONS_AND_ATTRIBUTES_SCHEMA_VERSION: {
+      if (isNavigateAction(record)) {
+        return blankStoredDestination(navigateDestination(record.data));
+      }
+      if (typeof record.contentId === 'string' && isArray(record.navigateUrl)) {
+        return blankStoredDestination(contentListDestination(record));
+      }
+      if (record.type === ContentEditorElementType.IMAGE) {
+        return blankStoredText(record, 'alt');
+      }
+      if (record.type === 'user-attribute') {
+        return blankStoredText(record, 'fallback');
+      }
+      return false;
+    }
+    default:
+      return false;
+  }
+};
+
 /**
- * Deploy-time normalization for rows saved before link units existed: their
- * link destinations are verbatim structural clones of the source — never a
- * translator override, since no writer for them existed. Blanks every
- * destination (slate link nodes and image elements' click-through links) to
- * the '' keep-original sentinel so readers see "no override" instead of
- * resurrecting the clone once the source url drifts. Generic deep walk —
- * `localized` payloads are flow cvid-maps or version-data objects, both
- * embedding editor trees at type-specific spots. Returns whether anything
- * changed. Must run ONLY on rows the new save path has never written (the
- * LOCALIZED_LINKS_SCHEMA_VERSION gate): on post-feature rows it would erase
- * real overrides.
+ * Deploy-time normalization of a row stamped `storedSchemaVersion`: blanks
+ * every store that became a unit in a later version to the '' keep-original
+ * sentinel, so readers see "no override" instead of resurrecting the clone
+ * once the source drifts. Generic deep walk — `localized` payloads are flow
+ * cvid-maps or version-data objects, both embedding editor trees at
+ * type-specific spots. Returns whether anything changed. Idempotent.
  */
-export const blankLocalizedLinkDestinations = (value: unknown): boolean => {
+export const blankLocalizedUnitClones = (value: unknown, storedSchemaVersion: number): boolean => {
   let changed = false;
   const visit = (node: unknown): void => {
     if (!node || typeof node !== 'object') {
@@ -263,15 +471,12 @@ export const blankLocalizedLinkDestinations = (value: unknown): boolean => {
       return;
     }
     const record = node as Record<string, unknown>;
-    if (record.type === 'link' && isArray(record.children)) {
-      changed = blankStoredLink(record) || changed;
-    }
-    if (
-      record.type === ContentEditorElementType.IMAGE &&
-      record.link &&
-      typeof record.link === 'object'
+    for (
+      let version = storedSchemaVersion + 1;
+      version <= LOCALIZED_UNITS_SCHEMA_VERSION;
+      version += 1
     ) {
-      changed = blankStoredLink(record.link as LinkLike) || changed;
+      changed = blankStoresIntroducedIn(version, record) || changed;
     }
     for (const child of Object.values(record)) {
       visit(child);
@@ -285,12 +490,14 @@ type ScaleLikeData = {
   name?: string;
   lowLabel?: string;
   highLabel?: string;
+  actions?: unknown;
 };
 
 type FreeTextData = {
   name?: string;
   placeholder?: string;
   buttonText?: string;
+  actions?: unknown;
 };
 
 const walkElementFields = (
@@ -304,16 +511,19 @@ const walkElementFields = (
     fieldPath: string,
     sourceValue: unknown,
     partnerValue: unknown,
-    optional: boolean,
+    kind: TranslationUnitKind,
     assign: (value: string) => void,
   ) => {
     visitor({
       path: `${elementPath}:${fieldPath}`,
       sourceText: toText(sourceValue),
       partnerText: toPartnerText(partnerValue),
-      optional,
+      kind,
       assign,
     });
+  };
+  const visitActions = (fieldPath: string, actions: unknown, partnerActions: unknown) => {
+    walkActions(actions, partnerActions, `${elementPath}:${fieldPath}`, visitor, opts);
   };
 
   switch (element.type) {
@@ -337,38 +547,35 @@ const walkElementFields = (
         return;
       }
       const partnerButton = partnerElement as ContentEditorButtonElement | undefined;
-      visitField('button.text', buttonData.text, partnerButton?.data?.text, false, (value) => {
+      visitField('button.text', buttonData.text, partnerButton?.data?.text, 'text', (value) => {
         buttonData.text = value;
       });
+      visitActions('button.actions', buttonData.actions, partnerButton?.data?.actions);
       return;
     }
     case ContentEditorElementType.IMAGE: {
       const imageElement = element;
       const partnerImage = partnerElement as ContentEditorImageElement | undefined;
-      visitField('image.url', imageElement.url, partnerImage?.url, true, (value) => {
+      visitField('image.url', imageElement.url, partnerImage?.url, 'media', (value) => {
         imageElement.url = value;
       });
-      // The image's click-through link is the same two-store link record the
-      // inline text link is, resolved by the same delivery pass — it localizes
-      // (and rides opaquely) under the same rules.
+      visitField('image.alt', imageElement.alt, partnerImage?.alt, 'text', (value) => {
+        imageElement.alt = value;
+      });
+      // The click-through link is the same store an inline text link is.
       const imageLink = imageElement.link;
       if (imageLink && typeof imageLink === 'object') {
-        const sourceLinkUrl = getLocalizableLinkUrl(imageLink);
         const partnerLink =
           partnerImage?.link && typeof partnerImage.link === 'object'
             ? partnerImage.link
             : undefined;
-        if (sourceLinkUrl || (sourceLinkUrl === '' && opts.includeEmptyLinkUnits)) {
-          visitor({
-            path: `${elementPath}:image.link.url`,
-            sourceText: sourceLinkUrl,
-            partnerText: partnerLink ? getLocalizableLinkUrl(partnerLink) : undefined,
-            optional: true,
-            assign: (value) => assignLocalizedLinkUrl(imageLink, value),
-          });
-        } else {
-          opts.onOpaqueLink?.(imageLink, partnerLink);
-        }
+        visitDestination(
+          linkDestination(imageLink),
+          partnerLink ? linkDestination(partnerLink) : undefined,
+          `${elementPath}:image.link.url`,
+          visitor,
+          opts,
+        );
       }
       return;
     }
@@ -380,7 +587,7 @@ const walkElementFields = (
         path: `${elementPath}:embed.url`,
         sourceText: sourceUrl,
         partnerText: toPartnerText(partnerEmbed?.url),
-        optional: true,
+        kind: 'media',
         assign: (value) => {
           if (value !== embedElement.url) {
             // Resolution data belongs to the URL it was fetched for — a
@@ -411,15 +618,16 @@ const walkElementFields = (
         return;
       }
       const partnerData = (partnerElement as { data?: ScaleLikeData } | undefined)?.data;
-      visitField('question.name', data.name, partnerData?.name, false, (value) => {
+      visitField('question.name', data.name, partnerData?.name, 'text', (value) => {
         data.name = value;
       });
-      visitField('question.lowLabel', data.lowLabel, partnerData?.lowLabel, false, (value) => {
+      visitField('question.lowLabel', data.lowLabel, partnerData?.lowLabel, 'text', (value) => {
         data.lowLabel = value;
       });
-      visitField('question.highLabel', data.highLabel, partnerData?.highLabel, false, (value) => {
+      visitField('question.highLabel', data.highLabel, partnerData?.highLabel, 'text', (value) => {
         data.highLabel = value;
       });
+      visitActions('question.actions', data.actions, partnerData?.actions);
       return;
     }
     case ContentEditorElementType.SINGLE_LINE_TEXT:
@@ -429,14 +637,14 @@ const walkElementFields = (
         return;
       }
       const partnerData = (partnerElement as { data?: FreeTextData } | undefined)?.data;
-      visitField('question.name', data.name, partnerData?.name, false, (value) => {
+      visitField('question.name', data.name, partnerData?.name, 'text', (value) => {
         data.name = value;
       });
       visitField(
         'question.placeholder',
         data.placeholder,
         partnerData?.placeholder,
-        false,
+        'text',
         (value) => {
           data.placeholder = value;
         },
@@ -445,11 +653,12 @@ const walkElementFields = (
         'question.buttonText',
         data.buttonText,
         partnerData?.buttonText,
-        false,
+        'text',
         (value) => {
           data.buttonText = value;
         },
       );
+      visitActions('question.actions', data.actions, partnerData?.actions);
       return;
     }
     case ContentEditorElementType.MULTIPLE_CHOICE: {
@@ -458,14 +667,14 @@ const walkElementFields = (
         return;
       }
       const partnerData = (partnerElement as ContentEditorMultipleChoiceElement | undefined)?.data;
-      visitField('question.name', data.name, partnerData?.name, false, (value) => {
+      visitField('question.name', data.name, partnerData?.name, 'text', (value) => {
         data.name = value;
       });
       visitField(
         'question.buttonText',
         data.buttonText,
         partnerData?.buttonText,
-        false,
+        'text',
         (value) => {
           data.buttonText = value;
         },
@@ -474,7 +683,7 @@ const walkElementFields = (
         'question.otherPlaceholder',
         data.otherPlaceholder,
         partnerData?.otherPlaceholder,
-        false,
+        'text',
         (value) => {
           data.otherPlaceholder = value;
         },
@@ -489,12 +698,13 @@ const walkElementFields = (
           `question.options.${optionIndex}.label`,
           option.label,
           partnerOptions?.[optionIndex]?.label,
-          false,
+          'text',
           (value) => {
             option.label = value;
           },
         );
       });
+      visitActions('question.actions', data.actions, partnerData?.actions);
       return;
     }
     default:
@@ -566,7 +776,7 @@ type LocalizedTextFallback = 'source' | 'empty';
  * (the locale keeps this value when the source later changes). Rows saved
  * before link units existed carried the source destination verbatim as a
  * structural clone; those are normalized to '' by the deploy-time backfill
- * (blankLocalizedLinkDestinations), never re-guessed here by comparing
+ * (blankLocalizedUnitClones), never re-guessed here by comparing
  * against the live source — the live source drifts, and the comparison would
  * resurrect retired urls or erase pins.
  */
@@ -585,17 +795,17 @@ const createApplyVisitor = (fallback: LocalizedTextFallback): TranslatableFieldV
 };
 
 /**
- * Working-copy walks ('empty') inherit opaque link destinations from the
- * stored row so a save can't erase them; delivery merges ('source') leave
- * them source-managed (preserved but dormant).
+ * Working-copy walks ('empty') inherit opaque destinations from the stored
+ * row so a save can't erase them; delivery merges ('source') leave them
+ * source-managed (preserved but dormant).
  */
 const applyWalkOptions = (fallback: LocalizedTextFallback): WalkOptions => {
-  return fallback === 'empty' ? { onOpaqueLink: inheritStoredLink } : {};
+  return fallback === 'empty' ? { onOpaqueDestination: inheritStoredDestination } : {};
 };
 
 const createMissingCountVisitor = (count: { missing: number }): TranslatableFieldVisitor => {
   return (visit) => {
-    if (visit.optional || !isTranslatableText(visit.sourceText)) {
+    if (isTranslationUnitOptional(visit.kind) || !isTranslatableText(visit.sourceText)) {
       return;
     }
     if (visit.partnerText === undefined || visit.partnerText === '') {
@@ -673,7 +883,7 @@ export const extractTranslatableUnits = (
   const units: TranslatableUnit[] = [];
   walkTranslatableFields(contents ?? [], undefined, (visit) => {
     if (isTranslatableText(visit.sourceText)) {
-      units.push({ path: visit.path, text: visit.sourceText, optional: visit.optional });
+      units.push({ path: visit.path, text: visit.sourceText, kind: visit.kind });
     }
   });
   return units;
@@ -737,7 +947,7 @@ const visitTextField = (
     path,
     sourceText: toText(sourceValue),
     partnerText: toPartnerText(partnerValue),
-    optional: false,
+    kind: 'text',
     assign,
   });
 };
@@ -791,6 +1001,13 @@ const walkChecklistFields = (
         item.description = value;
       },
     );
+    walkActions(
+      item.clickedActions,
+      partnerItem?.clickedActions,
+      `items.${item.id}:clickedActions`,
+      visitor,
+      opts,
+    );
   }
 };
 
@@ -803,6 +1020,13 @@ const walkLauncherFields = (
   visitTextField(visitor, 'buttonText', data.buttonText, partner?.buttonText, (value) => {
     data.buttonText = value;
   });
+  walkActions(
+    data.behavior?.actions,
+    partner?.behavior?.actions,
+    'behavior.actions',
+    visitor,
+    opts,
+  );
   walkEmbeddedContents('tooltip', data.tooltip?.content, partner?.tooltip?.content, visitor, opts);
 };
 
@@ -896,7 +1120,14 @@ const walkResourceCenterFields = (
         visitor,
         opts,
       );
-      walkContentListItemLabels(blockPath, block, partnerBlock, visitor);
+      walkActions(
+        (block as { clickedActions?: unknown }).clickedActions,
+        (partnerBlock as { clickedActions?: unknown } | undefined)?.clickedActions,
+        `${blockPath}:clickedActions`,
+        visitor,
+        opts,
+      );
+      walkContentListItems(blockPath, block, partnerBlock, visitor, opts);
     }
   }
 };
@@ -905,14 +1136,16 @@ type ContentListItemLike = { contentId?: string; label?: string };
 
 /**
  * Content-list entries can carry a display-name override (the referenced
- * content's admin name itself never localizes); items donate by contentId
- * so reordering the list can never misalign a translation.
+ * content's admin name itself never localizes) and a navigation destination
+ * of their own; items donate by contentId so reordering the list can never
+ * misalign a translation.
  */
-const walkContentListItemLabels = (
+const walkContentListItems = (
   blockPath: string,
   block: unknown,
   partnerBlock: unknown,
   visitor: TranslatableFieldVisitor,
+  opts: WalkOptions,
 ): void => {
   const contentItems = (block as { contentItems?: unknown }).contentItems;
   if (!isArray(contentItems)) {
@@ -927,14 +1160,16 @@ const walkContentListItemLabels = (
     const partnerItem = partnerItems.find(
       (candidate) => candidate?.contentId === contentItem.contentId,
     );
-    visitTextField(
+    const itemPath = `${blockPath}.contentItems.${contentItem.contentId}`;
+    visitTextField(visitor, `${itemPath}:label`, contentItem.label, partnerItem?.label, (value) => {
+      contentItem.label = value;
+    });
+    visitDestination(
+      contentListDestination(contentItem),
+      partnerItem ? contentListDestination(partnerItem) : undefined,
+      `${itemPath}:navigate.url`,
       visitor,
-      `${blockPath}.contentItems.${contentItem.contentId}:label`,
-      contentItem.label,
-      partnerItem?.label,
-      (value) => {
-        contentItem.label = value;
-      },
+      opts,
     );
   }
 };
@@ -1074,19 +1309,12 @@ export const collectOutdatedVersionDataPaths = (
 // rows whose path no longer matches simply don't apply.
 // ---------------------------------------------------------------------------
 
-/** Unit paths whose value is a media URL the SDK renders verbatim into src/href. */
-const MEDIA_URL_PATH_SUFFIXES = [':image.url', ':embed.url', ':image.link.url'];
-
-export const isMediaUrlUnitPath = (path: string): boolean => {
-  return MEDIA_URL_PATH_SUFFIXES.some((suffix) => path.endsWith(suffix));
-};
-
 /**
  * True iff the value parses as an absolute http(s) URL. The bar every
- * user-supplied media/link URL must clear before it is stored: the SDK and the
- * builder render these verbatim into src/href on customers' pages, so a bare
- * word or a relative path becomes a silently broken image/iframe the author
- * only discovers in the browser.
+ * user-supplied media URL must clear before it is stored: the SDK and the
+ * builder render these verbatim into src on customers' pages, so a bare word
+ * or a relative path becomes a silently broken image/iframe the author only
+ * discovers in the browser.
  */
 export const isHttpUrl = (value: string): boolean => {
   try {
@@ -1102,11 +1330,11 @@ export interface LocalizationTranslationUnit {
   sourceText: string;
   translatedText: string;
   /**
-   * Media URLs (image/embed) travel in the exchange so a CSV round-trip can
-   * swap them, but they are not text: machine translation and missing counts
-   * must skip optional units.
+   * Destinations and media urls travel in the exchange so a CSV round-trip
+   * can swap them, but they are not text: machine translation and missing
+   * counts key off the kind (see TranslationUnitKind).
    */
-  optional: boolean;
+  kind: TranslationUnitKind;
 }
 
 const createTranslationUnitCollector = (
@@ -1120,7 +1348,7 @@ const createTranslationUnitCollector = (
       path: visit.path,
       sourceText: visit.sourceText,
       translatedText: resolveTranslatedText(visit) ?? '',
-      optional: visit.optional,
+      kind: visit.kind,
     });
   };
 };
@@ -1298,10 +1526,34 @@ const graftSlateNodes = (working: SlateNode[], stored: SlateNode[] | undefined):
   return working;
 };
 
+/**
+ * Stored page-navigate overrides for actions the working list no longer has
+ * (removed from the source) are grafted back so an undo revives them; the
+ * readers pair by id, so an unknown action is never delivered.
+ */
+const graftActionsById = (working: unknown, stored: unknown): void => {
+  if (!isArray(working) || !isArray(stored)) {
+    return;
+  }
+  const knownIds = new Set(
+    working.filter((action) => isNavigateAction(action)).map((action) => action.id),
+  );
+  for (const storedAction of stored) {
+    if (isNavigateAction(storedAction) && !knownIds.has(storedAction.id)) {
+      working.push(deepClone(storedAction));
+    }
+  }
+};
+
 const graftElementTranslations = (
   element: ContentEditorElement,
   storedElement: ContentEditorElement,
 ): void => {
+  const elementData = (element as { data?: { actions?: unknown } }).data;
+  const storedData = (storedElement as { data?: { actions?: unknown } }).data;
+  if (elementData && typeof elementData === 'object' && !isArray(elementData)) {
+    graftActionsById(elementData.actions, storedData?.actions);
+  }
   if (element.type === ContentEditorElementType.TEXT) {
     const workingData = (element as { data?: unknown }).data;
     const storedData = (storedElement as { data?: unknown }).data;
@@ -1464,13 +1716,20 @@ const graftChecklistTranslations = (working: ChecklistData, stored: ChecklistDat
   }
   const knownItemIds = new Set(working.items.map((item) => item?.id).filter(Boolean));
   for (const storedItem of stored.items) {
-    if (storedItem?.id && !knownItemIds.has(storedItem.id)) {
-      working.items.push(deepClone(storedItem));
+    if (!storedItem?.id) {
+      continue;
     }
+    if (!knownItemIds.has(storedItem.id)) {
+      working.items.push(deepClone(storedItem));
+      continue;
+    }
+    const workingItem = working.items.find((item) => item?.id === storedItem.id);
+    graftActionsById(workingItem?.clickedActions, storedItem.clickedActions);
   }
 };
 
 const graftLauncherTranslations = (working: LauncherData, stored: LauncherData): void => {
+  graftActionsById(working.behavior?.actions, stored.behavior?.actions);
   if (working.tooltip && typeof working.tooltip === 'object') {
     graftEmbeddedContents(
       working.tooltip as unknown as Record<string, unknown>,
@@ -1551,6 +1810,10 @@ const graftResourceCenterTranslations = (
         block as unknown as Record<string, unknown>,
         'content',
         (storedBlock as { content?: unknown }).content,
+      );
+      graftActionsById(
+        (block as { clickedActions?: unknown }).clickedActions,
+        (storedBlock as { clickedActions?: unknown }).clickedActions,
       );
       graftContentListItemLabels(block, storedBlock);
     }

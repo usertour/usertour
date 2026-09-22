@@ -1,4 +1,4 @@
-import { type LocalizationTranslationUnit, isHttpUrl, isMediaUrlUnitPath } from '@usertour/helpers';
+import { type LocalizationTranslationUnit, isHttpUrl } from '@usertour/helpers';
 import type { VersionTranslationUnitChange } from '@usertour/hooks';
 
 /** Unit path → the translation the server is known to hold. */
@@ -45,7 +45,7 @@ export const diffTranslationUnits = (
       }
       continue;
     }
-    if (isMediaUrlUnitPath(unit.path) && isUnusableMediaUrl(current)) {
+    if (unit.kind === 'media' && isUnusableMediaUrl(current)) {
       continue;
     }
     changes.push({ path: unit.path, translation: current });

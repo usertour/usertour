@@ -66,9 +66,9 @@ export const useUnitTranslateText = (
   }, [configured, lockedByPlan, disabled, translateUnits, versionId, localizationId]);
 };
 
-/** Optional units are media URLs — not text, never sent to the LLM. */
+/** Only text goes to the LLM — destinations and media urls are swapped, never translated. */
 const isUntranslatedTextUnit = (unit: LocalizationTranslationUnit): boolean => {
-  return !unit.optional && unit.sourceText.trim() !== '' && unit.translatedText.trim() === '';
+  return unit.kind === 'text' && unit.sourceText.trim() !== '' && unit.translatedText.trim() === '';
 };
 
 /**

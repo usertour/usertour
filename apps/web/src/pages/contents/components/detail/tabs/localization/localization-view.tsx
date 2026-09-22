@@ -37,7 +37,7 @@ export const useLocalizationView = (): LocalizationViewContextValue => {
 // ---------------------------------------------------------------------------
 
 export const isUnitMissing = (unit: LocalizationTranslationUnit): boolean => {
-  return !unit.optional && unit.translatedText.trim() === '';
+  return unit.kind === 'text' && unit.translatedText.trim() === '';
 };
 
 export const countMissingUnits = (

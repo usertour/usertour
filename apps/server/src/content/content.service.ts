@@ -20,7 +20,7 @@ import {
 } from '@/common/errors';
 import { ContentConfigObject, ContentDataType } from '@usertour/types';
 import {
-  LOCALIZED_LINKS_SCHEMA_VERSION,
+  LOCALIZED_UNITS_SCHEMA_VERSION,
   duplicateConfig,
   duplicateData,
   duplicateStep,
@@ -1083,10 +1083,10 @@ export class ContentService {
       // Omitted fields keep their stored value, so a state-only write (the
       // enable toggle) can never clobber a translation saved from elsewhere.
       const { enabled, localized, backup } = build(current ?? undefined);
-      // The schema-version stamp marks rows whose link destinations the new
+      // The schema-version stamp marks rows whose unit stores the current
       // save path wrote (semantic '' sentinel / override, never a clone). An
-      // enable-only toggle must NOT stamp: it would exempt a legacy row from
-      // the deploy-time link backfill without normalizing it.
+      // enable-only toggle must NOT stamp: it would exempt an older row from
+      // the deploy-time backfill without normalizing it.
       const row = await tx.versionOnLocalization.upsert({
         where: { versionId_localizationId: { versionId, localizationId } },
         create: {
@@ -1095,14 +1095,14 @@ export class ContentService {
           localized: (localized ?? {}) as Prisma.InputJsonValue,
           backup: (backup ?? {}) as Prisma.InputJsonValue,
           enabled: enabled ?? false,
-          localizedSchemaVersion: LOCALIZED_LINKS_SCHEMA_VERSION,
+          localizedSchemaVersion: LOCALIZED_UNITS_SCHEMA_VERSION,
         },
         update: {
           localized: (localized ?? undefined) as Prisma.InputJsonValue | undefined,
           backup: (backup ?? undefined) as Prisma.InputJsonValue | undefined,
           enabled,
           // Stamp exactly when `localized` is written (null skips like undefined).
-          ...(localized != null ? { localizedSchemaVersion: LOCALIZED_LINKS_SCHEMA_VERSION } : {}),
+          ...(localized != null ? { localizedSchemaVersion: LOCALIZED_UNITS_SCHEMA_VERSION } : {}),
         },
       });
       // Translations belong to the draft, so saving one counts as saving the

@@ -2806,6 +2806,9 @@ const translations = {
         taskDescription: 'Task description',
         blockLabel: 'Block label',
         listItemLabel: 'List item name',
+        navigateUrl: 'Navigate to',
+        imageAlt: 'Alt text',
+        attributeFallback: 'Fallback for {{attribute}}',
       },
       section: {
         general: 'General',

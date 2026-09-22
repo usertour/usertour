@@ -5,7 +5,6 @@ import {
   formatElementPath,
   getErrorMessage,
   getLocalizableLinkUrl,
-  isTranslatableText,
 } from '@usertour/helpers';
 import { useAws, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
 import { ImageEditIcon, RiSparkling2Line, SpinnerIcon } from '@usertour/icons';
@@ -18,6 +17,7 @@ import type {
   ContentEditorMultipleChoiceElement,
   ContentEditorRoot,
   ContentEditorTextElement,
+  RulesCondition,
 } from '@usertour/types';
 import { ContentEditorElementType } from '@usertour/types';
 import {
@@ -37,128 +37,17 @@ import { ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useLocalizationView } from './localization-view';
+import {
+  type SlateNode,
+  collectNavigateActionPairs,
+  collectSlateFieldPairs,
+  setNavigateActionUrl,
+  setSlateChipFallback,
+  setSlateLeafText,
+  setSlateLinkUrl,
+  toText,
+} from './localized-pairs';
 import { isUnusableMediaUrl } from './translation-unit-changes';
-
-export const toText = (value: unknown): string => {
-  return typeof value === 'string' ? value : '';
-};
-
-// ---------------------------------------------------------------------------
-// Slate helpers — a working tree is a structural clone of its source tree
-// (createLocalizedWorkingContents / createLocalizedWorkingVersionData
-// guarantee it), so both can be walked with the same index paths.
-// ---------------------------------------------------------------------------
-
-export type SlateNode = {
-  text?: unknown;
-  children?: unknown;
-} & Record<string, unknown>;
-
-export interface SlateLeafPair {
-  path: number[];
-  sourceText: string;
-  value: string;
-}
-
-export interface SlateLinkPair {
-  path: number[];
-  sourceUrl: string;
-  value: string;
-}
-
-export interface SlateFieldPairs {
-  leafPairs: SlateLeafPair[];
-  linkPairs: SlateLinkPair[];
-}
-
-/**
- * One walk collects both editable field kinds, so the positional-alignment
- * convention (working tree = structural clone of the source tree) lives in
- * exactly one place. Link destinations read/write through the helpers' link
- * accessors so the `data` template (what delivery renders) and the `url`
- * field stay in agreement; dynamic (user-attribute chip) and empty
- * destinations yield no pair and stay source-managed.
- */
-export const collectSlateFieldPairs = (
-  sourceNodes: SlateNode[],
-  workingNodes: SlateNode[],
-): SlateFieldPairs => {
-  const leafPairs: SlateLeafPair[] = [];
-  const linkPairs: SlateLinkPair[] = [];
-  const visit = (source: SlateNode[], working: SlateNode[], path: number[]): void => {
-    source.forEach((sourceNode, index) => {
-      if (!sourceNode || typeof sourceNode !== 'object') {
-        return;
-      }
-      const workingNode = working?.[index];
-      const nodePath = [...path, index];
-      if (typeof sourceNode.text === 'string') {
-        // Same line as the unit walkers draw, so the rows shown here are
-        // exactly the units the missing count is taken over.
-        if (isTranslatableText(sourceNode.text)) {
-          leafPairs.push({
-            path: nodePath,
-            sourceText: sourceNode.text,
-            value: toText(workingNode?.text),
-          });
-        }
-        return;
-      }
-      if (sourceNode.type === 'link') {
-        const sourceUrl = getLocalizableLinkUrl(sourceNode);
-        if (sourceUrl) {
-          linkPairs.push({
-            path: nodePath,
-            sourceUrl,
-            value: (workingNode ? getLocalizableLinkUrl(workingNode) : undefined) ?? '',
-          });
-        }
-      }
-      if (Array.isArray(sourceNode.children)) {
-        visit(
-          sourceNode.children as SlateNode[],
-          (Array.isArray(workingNode?.children) ? workingNode.children : []) as SlateNode[],
-          nodePath,
-        );
-      }
-    });
-  };
-  visit(sourceNodes, workingNodes, []);
-  return { leafPairs, linkPairs };
-};
-
-/** Leaf-only view for trees that never render links (block names). */
-export const collectSlateLeafPairs = (
-  sourceNodes: SlateNode[],
-  workingNodes: SlateNode[],
-): SlateLeafPair[] => {
-  return collectSlateFieldPairs(sourceNodes, workingNodes).leafPairs;
-};
-
-const getSlateNodeAtPath = (nodes: SlateNode[], path: number[]): SlateNode | undefined => {
-  let node: SlateNode | undefined = nodes[path[0]];
-  for (const index of path.slice(1)) {
-    if (!node || !Array.isArray(node.children)) {
-      return undefined;
-    }
-    node = (node.children as SlateNode[])[index];
-  }
-  return node;
-};
-
-export const setSlateLeafText = (nodes: SlateNode[], path: number[], text: string): void => {
-  const node = getSlateNodeAtPath(nodes, path);
-  if (node) {
-    node.text = text;
-  }
-};
-
-export const setSlateLinkUrl = (nodes: SlateNode[], path: number[], url: string): void => {
-  const node = getSlateNodeAtPath(nodes, path);
-  if (node && node.type === 'link') {
-    assignLocalizedLinkUrl(node, url);
-  }
-};
 
 // ---------------------------------------------------------------------------
 // Layout primitives
@@ -374,7 +263,12 @@ const UrlFieldRow = (props: UrlFieldRowProps) => {
   );
 };
 
-interface LocalizedLinkUrlRowProps {
+/**
+ * A destination row: where a click goes. Any string the host can route is a
+ * valid destination (a relative path included), so there is no url bar here —
+ * unlike media urls, which the SDK renders verbatim into src.
+ */
+interface LocalizedDestinationRowProps {
   label: string;
   sourceUrl: string;
   value: string;
@@ -382,25 +276,10 @@ interface LocalizedLinkUrlRowProps {
   outdated: boolean;
   onOutdatedResolved: () => void;
   onValueChange: (value: string) => void;
-  /**
-   * The destination is rendered verbatim into an href (an image's
-   * click-through), so only a full http(s) url is saved — anything else is
-   * flagged here and held back until it is one.
-   */
-  requireHttpUrl?: boolean;
 }
 
-const LocalizedLinkUrlRow = (props: LocalizedLinkUrlRowProps) => {
-  const {
-    label,
-    sourceUrl,
-    value,
-    disabled,
-    outdated,
-    onOutdatedResolved,
-    onValueChange,
-    requireHttpUrl,
-  } = props;
+export const LocalizedDestinationRow = (props: LocalizedDestinationRowProps) => {
+  const { label, sourceUrl, value, disabled, outdated, onOutdatedResolved, onValueChange } = props;
   const { t } = useTranslation();
 
   const handleValueChange = (nextValue: string) => {
@@ -416,7 +295,6 @@ const LocalizedLinkUrlRow = (props: LocalizedLinkUrlRowProps) => {
         value={value}
         placeholder={t('contents.localization.image.usingOriginal')}
         disabled={disabled}
-        aria-invalid={requireHttpUrl === true && isUnusableMediaUrl(value)}
         onChange={(event) => handleValueChange(event.target.value)}
       />
       <MediaActionButton
@@ -427,6 +305,66 @@ const LocalizedLinkUrlRow = (props: LocalizedLinkUrlRowProps) => {
       />
     </UrlFieldRow>
   );
+};
+
+/**
+ * One destination row per page-navigate action in an action list. Unit paths
+ * are `<pathPrefix>.<action id>:navigate.url`, the same address the walkers
+ * give them, so outdated lookups and resolutions line up. Destination rows
+ * are never "untranslated" — keeping the original is the norm — so the
+ * missing-only filter hides them.
+ */
+export interface LocalizedActionRowsProps {
+  sourceActions: RulesCondition[] | undefined;
+  workingActions: RulesCondition[] | undefined;
+  pathPrefix: string;
+  outdatedPaths: ReadonlySet<string>;
+  onOutdatedResolved: (unitPath: string) => void;
+  disabled: boolean;
+  onActionsChange: (actions: RulesCondition[]) => void;
+}
+
+export const LocalizedActionRows = (props: LocalizedActionRowsProps) => {
+  const {
+    sourceActions,
+    workingActions,
+    pathPrefix,
+    outdatedPaths,
+    onOutdatedResolved,
+    disabled,
+    onActionsChange,
+  } = props;
+  const { t } = useTranslation();
+  const { showOnlyMissing } = useLocalizationView();
+  if (showOnlyMissing) {
+    return null;
+  }
+  return (
+    <>
+      {collectNavigateActionPairs(sourceActions, workingActions).map((pair) => {
+        const unitPath = `${pathPrefix}.${pair.actionId}:navigate.url`;
+        return (
+          <LocalizedDestinationRow
+            key={unitPath}
+            label={t('contents.localization.field.navigateUrl')}
+            sourceUrl={pair.sourceUrl}
+            value={pair.value}
+            disabled={disabled}
+            outdated={outdatedPaths.has(unitPath)}
+            onOutdatedResolved={() => onOutdatedResolved(unitPath)}
+            onValueChange={(url) =>
+              onActionsChange(setNavigateActionUrl(workingActions, pair.actionId, url))
+            }
+          />
+        );
+      })}
+    </>
+  );
+};
+
+/** Whether an action list holds a destination row (for "nothing to show" checks). */
+export const hasNavigateActionRows = (sourceActions: RulesCondition[] | undefined): boolean => {
+  return collectNavigateActionPairs(sourceActions, undefined).length > 0;
 };
 
 export interface LocalizedElementSectionProps {
@@ -486,11 +424,18 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
   const working = workingElement as ContentEditorTextElement;
   const sourceData = Array.isArray(source.data) ? (source.data as SlateNode[]) : [];
   const workingData = Array.isArray(working.data) ? (working.data as SlateNode[]) : [];
-  const { leafPairs, linkPairs: allLinkPairs } = collectSlateFieldPairs(sourceData, workingData);
+  const {
+    leafPairs,
+    linkPairs: allLinkPairs,
+    chipPairs: allChipPairs,
+  } = collectSlateFieldPairs(sourceData, workingData);
   const pairs = showOnlyMissing ? leafPairs.filter((pair) => pair.value.trim() === '') : leafPairs;
+  const chipPairs = showOnlyMissing
+    ? allChipPairs.filter((pair) => pair.value.trim() === '')
+    : allChipPairs;
   // Link rows are never "untranslated" — keeping the original url is the norm.
   const linkPairs = showOnlyMissing ? [] : allLinkPairs;
-  if (pairs.length === 0 && linkPairs.length === 0) {
+  if (pairs.length === 0 && chipPairs.length === 0 && linkPairs.length === 0) {
     return null;
   }
 
@@ -502,6 +447,10 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
 
   const handleLeafChange = (path: number[], text: string) => {
     applyDataEdit((nodes) => setSlateLeafText(nodes, path, text));
+  };
+
+  const handleChipFallbackChange = (path: number[], text: string) => {
+    applyDataEdit((nodes) => setSlateChipFallback(nodes, path, text));
   };
 
   const handleLinkUrlChange = (path: number[], url: string) => {
@@ -522,10 +471,28 @@ const LocalizedTextElement = (props: LocalizedElementEditorProps) => {
           onValueChange={(text) => handleLeafChange(pair.path, text)}
         />
       ))}
+      {chipPairs.map((pair) => {
+        const fieldPath = `text.${pair.path.join('.')}:fallback`;
+        return (
+          <LocalizedFieldRow
+            key={fieldPath}
+            label={t('contents.localization.field.attributeFallback', {
+              attribute: pair.attributeCode,
+            })}
+            source={pair.sourceText}
+            value={pair.value}
+            placeholder={pair.sourceText}
+            disabled={disabled}
+            outdated={outdatedFields.has(fieldPath)}
+            onOutdatedResolved={() => onFieldResolved(fieldPath)}
+            onValueChange={(text) => handleChipFallbackChange(pair.path, text)}
+          />
+        );
+      })}
       {linkPairs.map((pair) => {
         const fieldPath = `text.${pair.path.join('.')}:link.url`;
         return (
-          <LocalizedLinkUrlRow
+          <LocalizedDestinationRow
             key={fieldPath}
             label={t('contents.localization.field.linkUrl')}
             sourceUrl={pair.sourceUrl}
@@ -555,22 +522,35 @@ const LocalizedButtonElement = (props: LocalizedElementEditorProps) => {
   const source = sourceElement as ContentEditorButtonElement;
   const working = workingElement as ContentEditorButtonElement;
   const sourceText = toText(source.data?.text);
-  if (sourceText === '') {
-    return null;
-  }
-  if (showOnlyMissing && toText(working.data?.text).trim() !== '') {
+  const showText =
+    sourceText !== '' && (!showOnlyMissing || toText(working.data?.text).trim() === '');
+  const showActions = !showOnlyMissing && hasNavigateActionRows(source.data?.actions);
+  if (!showText && !showActions) {
     return null;
   }
   return (
     <LocalizedElementSection label={label} outdated={outdatedFields.size > 0}>
-      <LocalizedFieldRow
-        source={sourceText}
-        value={toText(working.data?.text)}
-        placeholder={sourceText}
+      {showText && (
+        <LocalizedFieldRow
+          source={sourceText}
+          value={toText(working.data?.text)}
+          placeholder={sourceText}
+          disabled={disabled}
+          outdated={outdatedFields.has('button.text')}
+          onOutdatedResolved={() => onFieldResolved('button.text')}
+          onValueChange={(text) => onElementChange({ ...working, data: { ...working.data, text } })}
+        />
+      )}
+      <LocalizedActionRows
+        sourceActions={source.data?.actions}
+        workingActions={working.data?.actions}
+        pathPrefix="button.actions"
+        outdatedPaths={outdatedFields}
+        onOutdatedResolved={onFieldResolved}
         disabled={disabled}
-        outdated={outdatedFields.has('button.text')}
-        onOutdatedResolved={() => onFieldResolved('button.text')}
-        onValueChange={(text) => onElementChange({ ...working, data: { ...working.data, text } })}
+        onActionsChange={(actions) =>
+          onElementChange({ ...working, data: { ...working.data, actions } })
+        }
       />
     </LocalizedElementSection>
   );
@@ -594,9 +574,29 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
   const [remoteImageUrl, setRemoteImageUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
-  // Media rows are never "untranslated" — keeping the original is the norm.
+  // The alt text is copy (screen readers announce it); the media rows are
+  // never "untranslated" — keeping the original is the norm — so the
+  // missing-only filter shows only an untranslated alt.
+  const sourceAlt = toText(source.alt);
+  const showAlt = sourceAlt !== '' && (!showOnlyMissing || toText(working.alt).trim() === '');
+  const altRow = showAlt ? (
+    <LocalizedFieldRow
+      label={t('contents.localization.field.imageAlt')}
+      source={sourceAlt}
+      value={toText(working.alt)}
+      placeholder={sourceAlt}
+      disabled={disabled}
+      outdated={outdatedFields.has('image.alt')}
+      onOutdatedResolved={() => onFieldResolved('image.alt')}
+      onValueChange={(alt) => onElementChange({ ...working, alt })}
+    />
+  ) : null;
   if (showOnlyMissing) {
-    return null;
+    return altRow ? (
+      <LocalizedElementSection label={label} outdated={outdatedFields.size > 0}>
+        {altRow}
+      </LocalizedElementSection>
+    ) : null;
   }
 
   const handleImageUrlChange = (url: string) => {
@@ -710,8 +710,9 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
           </div>
         </PopoverContent>
       </Popover>
+      {altRow}
       {sourceLinkUrl ? (
-        <LocalizedLinkUrlRow
+        <LocalizedDestinationRow
           label={t('contents.localization.field.linkUrl')}
           sourceUrl={sourceLinkUrl}
           value={(working.link ? getLocalizableLinkUrl(working.link) : undefined) ?? ''}
@@ -719,7 +720,6 @@ const LocalizedImageElement = (props: LocalizedElementEditorProps) => {
           outdated={outdatedFields.has('image.link.url')}
           onOutdatedResolved={() => onFieldResolved('image.link.url')}
           onValueChange={handleLinkUrlChange}
-          requireHttpUrl
         />
       ) : null}
     </LocalizedElementSection>
@@ -885,7 +885,9 @@ const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
       }
       return !showOnlyMissing || toText(workingOptions[optionIndex]?.label).trim() === '';
     });
-  if (presentFields.length === 0 && visibleOptions.length === 0) {
+  const sourceActions = sourceData.actions as RulesCondition[] | undefined;
+  const showActions = !showOnlyMissing && hasNavigateActionRows(sourceActions);
+  if (presentFields.length === 0 && visibleOptions.length === 0 && !showActions) {
     return null;
   }
 
@@ -932,6 +934,15 @@ const LocalizedQuestionFields = (props: LocalizedQuestionFieldsProps) => {
           />
         );
       })}
+      <LocalizedActionRows
+        sourceActions={sourceActions}
+        workingActions={workingData.actions as RulesCondition[] | undefined}
+        pathPrefix="question.actions"
+        outdatedPaths={outdatedFields}
+        onOutdatedResolved={onFieldResolved}
+        disabled={disabled}
+        onActionsChange={(actions) => onElementChange(withElementData(workingElement, { actions }))}
+      />
     </LocalizedElementSection>
   );
 };

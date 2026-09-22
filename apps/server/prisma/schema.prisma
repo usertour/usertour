@@ -644,11 +644,11 @@ model VersionOnLocalization {
   localizationId         String
   localized              Json         @db.JsonB
   backup                 Json         @db.JsonB
-  /// Format version of the link destinations inside `localized`
-  /// (LOCALIZED_LINKS_SCHEMA_VERSION): 0 = pre-link-unit row whose links are
-  /// verbatim source clones — the deploy-time backfill blanks them; the app
-  /// stamps the current version on every localized write. Copies carry the
-  /// source row's value.
+  /// Format version of the unit stores inside `localized`
+  /// (LOCALIZED_UNITS_SCHEMA_VERSION): stores that became units after this
+  /// version still hold verbatim source clones — the deploy-time backfill
+  /// blanks exactly those; the app stamps the current version on every
+  /// localized write. Copies carry the source row's value.
   localizedSchemaVersion Int          @default(0)
 
   @@unique([versionId, localizationId])
