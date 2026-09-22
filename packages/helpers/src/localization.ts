@@ -58,11 +58,58 @@ export const isTranslationUnitOptional = (kind: TranslationUnitKind): boolean =>
   return kind !== 'text';
 };
 
+/**
+ * WHICH value a unit is, independent of where it sits — the registry every
+ * presentation keys on (the dashboard maps each to a row label). A walker
+ * that emits a unit names its field here first, so a new field cannot reach
+ * a consumer that has no idea how to show it: the dashboard's label table is
+ * typed over this list and fails to compile until it says what to do.
+ */
+export const TRANSLATION_UNIT_FIELDS = [
+  // Rich text
+  'text',
+  'fallback',
+  'link.url',
+  // Elements
+  'button.text',
+  'navigate.url',
+  'image.url',
+  'image.alt',
+  'image.link.url',
+  'embed.url',
+  'question.name',
+  'question.lowLabel',
+  'question.highLabel',
+  'question.placeholder',
+  'question.buttonText',
+  'question.otherPlaceholder',
+  'question.option',
+  // Version data
+  'buttonText',
+  'headerText',
+  'title',
+  'readMoreLabel',
+  'tab.name',
+  'block.name',
+  'item.name',
+  'item.description',
+  'contentItem.label',
+] as const;
+export type TranslationUnitField = (typeof TRANSLATION_UNIT_FIELDS)[number];
+
+/** The editor element a unit belongs to — what groups its rows on screen. */
+export interface TranslationUnitElement {
+  /** Element address in unit-path terms (`g.c.e`, prefixed inside version data). */
+  path: string;
+  type: ContentEditorElementType;
+}
+
 export interface TranslatableUnit {
   /** Positional address of the text within the tree: `g.c.e:field[...]`. */
   path: string;
   text: string;
   kind: TranslationUnitKind;
+  field: TranslationUnitField;
 }
 
 interface TranslatableFieldVisit {
@@ -71,6 +118,10 @@ interface TranslatableFieldVisit {
   /** Aligned partner text; undefined when the partner is absent or misaligned. */
   partnerText: string | undefined;
   kind: TranslationUnitKind;
+  field: TranslationUnitField;
+  /** Values a field label interpolates (an option's index, a chip's attribute). */
+  fieldArgs?: Record<string, string>;
+  element?: TranslationUnitElement;
   /** Writes into the walked tree (used by the clone-producing walks). */
   assign: (value: string) => void;
   /**
@@ -246,6 +297,7 @@ const visitDestination = (
   store: DestinationStore,
   partnerStore: DestinationStore | undefined,
   path: string,
+  field: TranslationUnitField,
   visitor: TranslatableFieldVisitor,
   opts: WalkOptions,
 ): void => {
@@ -256,6 +308,7 @@ const visitDestination = (
       sourceText: sourceUrl,
       partnerText: partnerStore ? readDestination(partnerStore) : undefined,
       kind: 'destination',
+      field,
       assign: (value) => writeDestination(store, value),
     });
     return;
@@ -309,6 +362,7 @@ const walkActions = (
       navigateDestination(action.data),
       partnerAction ? navigateDestination(partnerAction.data) : undefined,
       `${pathPrefix}.${action.id}:navigate.url`,
+      'navigate.url',
       visitor,
       opts,
     );
@@ -321,6 +375,7 @@ const walkSlateNodes = (
   path: string,
   visitor: TranslatableFieldVisitor,
   opts: WalkOptions = {},
+  leafField: TranslationUnitField = 'text',
 ): void => {
   const aligned = isArray(partnerNodes) && partnerNodes.length === nodes.length;
   nodes.forEach((node, index) => {
@@ -335,6 +390,7 @@ const walkSlateNodes = (
         sourceText: node.text,
         partnerText: toPartnerText(partnerNode?.text),
         kind: 'text',
+        field: leafField,
         assign: (value) => {
           node.text = value;
         },
@@ -346,7 +402,14 @@ const walkSlateNodes = (
         partnerNode && partnerNode.type === node.type && isArray(partnerNode.children)
           ? (partnerNode.children as SlateNode[])
           : undefined;
-      walkSlateNodes(node.children as SlateNode[], partnerChildren, nodePath, visitor, opts);
+      walkSlateNodes(
+        node.children as SlateNode[],
+        partnerChildren,
+        nodePath,
+        visitor,
+        opts,
+        leafField,
+      );
     }
     // A user-attribute chip renders its fallback whenever the attribute is
     // unset — copy the user reads, in the source language unless translated.
@@ -357,6 +420,8 @@ const walkSlateNodes = (
         sourceText: toText(node.fallback),
         partnerText: toPartnerText(partnerChip?.fallback),
         kind: 'text',
+        field: 'fallback',
+        fieldArgs: { attribute: toText(node.attrCode) },
         assign: (value) => {
           node.fallback = value;
         },
@@ -370,6 +435,7 @@ const walkSlateNodes = (
         linkDestination(node),
         partnerLink ? linkDestination(partnerLink) : undefined,
         `${nodePath}:link.url`,
+        'link.url',
         visitor,
         opts,
       );
@@ -504,21 +570,27 @@ const walkElementFields = (
   element: ContentEditorElement,
   partnerElement: ContentEditorElement | undefined,
   elementPath: string,
-  visitor: TranslatableFieldVisitor,
+  outerVisitor: TranslatableFieldVisitor,
   opts: WalkOptions = {},
 ): void => {
+  // Every unit of an element carries the element, so rows group under it.
+  const visitor: TranslatableFieldVisitor = (visit) => {
+    outerVisitor({ ...visit, element: { path: elementPath, type: element.type } });
+  };
+  // Element fields are addressed by their field id (`<element>:<field>`).
   const visitField = (
-    fieldPath: string,
+    field: TranslationUnitField,
     sourceValue: unknown,
     partnerValue: unknown,
     kind: TranslationUnitKind,
     assign: (value: string) => void,
   ) => {
     visitor({
-      path: `${elementPath}:${fieldPath}`,
+      path: `${elementPath}:${field}`,
       sourceText: toText(sourceValue),
       partnerText: toPartnerText(partnerValue),
       kind,
+      field,
       assign,
     });
   };
@@ -573,6 +645,7 @@ const walkElementFields = (
           linkDestination(imageLink),
           partnerLink ? linkDestination(partnerLink) : undefined,
           `${elementPath}:image.link.url`,
+          'image.link.url',
           visitor,
           opts,
         );
@@ -588,6 +661,7 @@ const walkElementFields = (
         sourceText: sourceUrl,
         partnerText: toPartnerText(partnerEmbed?.url),
         kind: 'media',
+        field: 'embed.url',
         assign: (value) => {
           if (value !== embedElement.url) {
             // Resolution data belongs to the URL it was fetched for — a
@@ -694,15 +768,17 @@ const walkElementFields = (
         if (!option) {
           return;
         }
-        visitField(
-          `question.options.${optionIndex}.label`,
-          option.label,
-          partnerOptions?.[optionIndex]?.label,
-          'text',
-          (value) => {
+        visitor({
+          path: `${elementPath}:question.options.${optionIndex}.label`,
+          sourceText: toText(option.label),
+          partnerText: toPartnerText(partnerOptions?.[optionIndex]?.label),
+          kind: 'text',
+          field: 'question.option',
+          fieldArgs: { index: String(optionIndex + 1) },
+          assign: (value) => {
             option.label = value;
           },
-        );
+        });
       });
       visitActions('question.actions', data.actions, partnerData?.actions);
       return;
@@ -883,7 +959,12 @@ export const extractTranslatableUnits = (
   const units: TranslatableUnit[] = [];
   walkTranslatableFields(contents ?? [], undefined, (visit) => {
     if (isTranslatableText(visit.sourceText)) {
-      units.push({ path: visit.path, text: visit.sourceText, kind: visit.kind });
+      units.push({
+        path: visit.path,
+        text: visit.sourceText,
+        kind: visit.kind,
+        field: visit.field,
+      });
     }
   });
   return units;
@@ -933,12 +1014,20 @@ const withPathPrefix = (
   prefix: string,
   visitor: TranslatableFieldVisitor,
 ): TranslatableFieldVisitor => {
-  return (visit) => visitor({ ...visit, path: `${prefix}/${visit.path}` });
+  return (visit) =>
+    visitor({
+      ...visit,
+      path: `${prefix}/${visit.path}`,
+      element: visit.element
+        ? { ...visit.element, path: `${prefix}/${visit.element.path}` }
+        : undefined,
+    });
 };
 
 const visitTextField = (
   visitor: TranslatableFieldVisitor,
   path: string,
+  field: TranslationUnitField,
   sourceValue: unknown,
   partnerValue: unknown,
   assign: (value: string) => void,
@@ -948,6 +1037,7 @@ const visitTextField = (
     sourceText: toText(sourceValue),
     partnerText: toPartnerText(partnerValue),
     kind: 'text',
+    field,
     assign,
   });
 };
@@ -976,9 +1066,16 @@ const walkChecklistFields = (
   visitor: TranslatableFieldVisitor,
   opts: WalkOptions = {},
 ): void => {
-  visitTextField(visitor, 'buttonText', data.buttonText, partner?.buttonText, (value) => {
-    data.buttonText = value;
-  });
+  visitTextField(
+    visitor,
+    'buttonText',
+    'buttonText',
+    data.buttonText,
+    partner?.buttonText,
+    (value) => {
+      data.buttonText = value;
+    },
+  );
   walkEmbeddedContents('content', data.content, partner?.content, visitor, opts);
   if (!isArray(data.items)) {
     return;
@@ -989,12 +1086,20 @@ const walkChecklistFields = (
       continue;
     }
     const partnerItem = partnerItems.find((candidate) => candidate?.id === item.id);
-    visitTextField(visitor, `items.${item.id}:name`, item.name, partnerItem?.name, (value) => {
-      item.name = value;
-    });
+    visitTextField(
+      visitor,
+      `items.${item.id}:name`,
+      'item.name',
+      item.name,
+      partnerItem?.name,
+      (value) => {
+        item.name = value;
+      },
+    );
     visitTextField(
       visitor,
       `items.${item.id}:description`,
+      'item.description',
       item.description,
       partnerItem?.description,
       (value) => {
@@ -1017,9 +1122,16 @@ const walkLauncherFields = (
   visitor: TranslatableFieldVisitor,
   opts: WalkOptions = {},
 ): void => {
-  visitTextField(visitor, 'buttonText', data.buttonText, partner?.buttonText, (value) => {
-    data.buttonText = value;
-  });
+  visitTextField(
+    visitor,
+    'buttonText',
+    'buttonText',
+    data.buttonText,
+    partner?.buttonText,
+    (value) => {
+      data.buttonText = value;
+    },
+  );
   walkActions(
     data.behavior?.actions,
     partner?.behavior?.actions,
@@ -1045,12 +1157,19 @@ const walkAnnouncementFields = (
   visitor: TranslatableFieldVisitor,
   opts: WalkOptions = {},
 ): void => {
-  visitTextField(visitor, 'title', data.title, partner?.title, (value) => {
+  visitTextField(visitor, 'title', 'title', data.title, partner?.title, (value) => {
     data.title = value;
   });
-  visitTextField(visitor, 'readMoreLabel', data.readMoreLabel, partner?.readMoreLabel, (value) => {
-    data.readMoreLabel = value;
-  });
+  visitTextField(
+    visitor,
+    'readMoreLabel',
+    'readMoreLabel',
+    data.readMoreLabel,
+    partner?.readMoreLabel,
+    (value) => {
+      data.readMoreLabel = value;
+    },
+  );
   walkEmbeddedContents('introContent', data.introContent, partner?.introContent, visitor, opts);
   walkEmbeddedContents('detailContent', data.detailContent, partner?.detailContent, visitor, opts);
 };
@@ -1061,12 +1180,26 @@ const walkResourceCenterFields = (
   visitor: TranslatableFieldVisitor,
   opts: WalkOptions = {},
 ): void => {
-  visitTextField(visitor, 'buttonText', data.buttonText, partner?.buttonText, (value) => {
-    data.buttonText = value;
-  });
-  visitTextField(visitor, 'headerText', data.headerText, partner?.headerText, (value) => {
-    data.headerText = value;
-  });
+  visitTextField(
+    visitor,
+    'buttonText',
+    'buttonText',
+    data.buttonText,
+    partner?.buttonText,
+    (value) => {
+      data.buttonText = value;
+    },
+  );
+  visitTextField(
+    visitor,
+    'headerText',
+    'headerText',
+    data.headerText,
+    partner?.headerText,
+    (value) => {
+      data.headerText = value;
+    },
+  );
   if (!isArray(data.tabs)) {
     return;
   }
@@ -1084,9 +1217,16 @@ const walkResourceCenterFields = (
       continue;
     }
     const partnerTab = partnerTabs.find((candidate) => candidate?.id === tab.id);
-    visitTextField(visitor, `tabs.${tab.id}:name`, tab.name, partnerTab?.name, (value) => {
-      tab.name = value;
-    });
+    visitTextField(
+      visitor,
+      `tabs.${tab.id}:name`,
+      'tab.name',
+      tab.name,
+      partnerTab?.name,
+      (value) => {
+        tab.name = value;
+      },
+    );
     if (!isArray(tab.blocks)) {
       continue;
     }
@@ -1109,6 +1249,7 @@ const walkResourceCenterFields = (
           `${blockPath}:name`,
           visitor,
           { ...opts, omitLinkUnits: true },
+          'block.name',
         );
       }
       const blockContent = (block as { content?: unknown }).content;
@@ -1161,13 +1302,21 @@ const walkContentListItems = (
       (candidate) => candidate?.contentId === contentItem.contentId,
     );
     const itemPath = `${blockPath}.contentItems.${contentItem.contentId}`;
-    visitTextField(visitor, `${itemPath}:label`, contentItem.label, partnerItem?.label, (value) => {
-      contentItem.label = value;
-    });
+    visitTextField(
+      visitor,
+      `${itemPath}:label`,
+      'contentItem.label',
+      contentItem.label,
+      partnerItem?.label,
+      (value) => {
+        contentItem.label = value;
+      },
+    );
     visitDestination(
       contentListDestination(contentItem),
       partnerItem ? contentListDestination(partnerItem) : undefined,
       `${itemPath}:navigate.url`,
+      'navigate.url',
       visitor,
       opts,
     );
@@ -1335,6 +1484,9 @@ export interface LocalizationTranslationUnit {
    * counts key off the kind (see TranslationUnitKind).
    */
   kind: TranslationUnitKind;
+  field: TranslationUnitField;
+  fieldArgs?: Record<string, string>;
+  element?: TranslationUnitElement;
 }
 
 const createTranslationUnitCollector = (
@@ -1349,6 +1501,9 @@ const createTranslationUnitCollector = (
       sourceText: visit.sourceText,
       translatedText: resolveTranslatedText(visit) ?? '',
       kind: visit.kind,
+      field: visit.field,
+      ...(visit.fieldArgs ? { fieldArgs: visit.fieldArgs } : {}),
+      ...(visit.element ? { element: visit.element } : {}),
     });
   };
 };

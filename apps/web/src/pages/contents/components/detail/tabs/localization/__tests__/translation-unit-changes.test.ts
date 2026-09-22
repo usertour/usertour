@@ -16,6 +16,7 @@ const unit = (
   sourceText: 'source',
   translatedText,
   kind,
+  field: 'text',
 });
 
 const TEXT = 'steps/a/0.0.0:text.0.0';
