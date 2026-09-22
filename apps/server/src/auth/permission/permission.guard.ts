@@ -6,7 +6,7 @@ import { Capability, Role } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
 import { MemberEnvironmentNotAllowedError, NoPermissionError } from '@/common/errors';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 
 import { publishWhitelistOf } from './publish-whitelist';
 import { RequirePermission } from './require-permission.decorator';

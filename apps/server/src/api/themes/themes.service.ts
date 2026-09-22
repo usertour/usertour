@@ -16,7 +16,7 @@ import {
   ThemeNotFoundError,
   ValidationError,
 } from '@/common/errors/errors';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { ThemesService } from '@/modules/themes/services/themes.service';
 
 import {

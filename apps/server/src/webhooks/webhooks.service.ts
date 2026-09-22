@@ -15,7 +15,7 @@ import {
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { OutboundLedgerService, maxLoggedAttempt } from '@/outbound/outbound-ledger.service';
 import { EncryptionService } from '@/shared/encryption.service';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { CreateWebhookInput, UpdateWebhookInput } from './dto/webhook.input';
 import { buildWebhookMessage } from './webhook-envelope';

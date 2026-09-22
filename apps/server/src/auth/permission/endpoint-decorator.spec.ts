@@ -11,10 +11,10 @@ import { EnvironmentsResolver } from '@/modules/environments/environments.resolv
 import { EventsResolver } from '@/modules/events/events.resolver';
 import { IntegrationsResolver } from '@/integrations/integrations.resolver';
 import { LocalizationsResolver } from '@/modules/localizations/localizations.resolver';
-import { ProjectsResolver } from '@/projects/projects.resolver';
-import { SsoResolver } from '@/sso/sso.resolver';
+import { ProjectsResolver } from '@/modules/projects/projects.resolver';
+import { SsoResolver } from '@/modules/sso/sso.resolver';
 import { SubscriptionResolver } from '@/subscription/subscription.resolver';
-import { TeamResolver } from '@/team/team.resolver';
+import { TeamResolver } from '@/modules/team/resolvers/team.resolver';
 import { ThemesResolver } from '@/modules/themes/themes.resolver';
 import { WebhooksResolver } from '@/webhooks/webhooks.resolver';
 

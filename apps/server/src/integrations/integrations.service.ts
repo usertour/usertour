@@ -21,7 +21,7 @@ import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { ApiObjectType } from '@/api/shared/object-type';
 import { OutboundLedgerService } from '@/outbound/outbound-ledger.service';
 import { EncryptionService } from '@/shared/encryption.service';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { CohortSyncService } from './cohort-sync.service';
 import { SyncTeardownService } from './sync/sync-teardown.service';
 import {

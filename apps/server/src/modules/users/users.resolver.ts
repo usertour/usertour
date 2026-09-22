@@ -10,7 +10,7 @@ import { UserDTO } from './dtos/user.dto';
 import { UsersService } from './services/users.service';
 import { AuthService } from '@/auth/auth.service';
 import { TwoFactorService } from '@/auth/two-factor.service';
-import { Project } from '@/projects/models/project.model';
+import { ProjectDTO } from '@/modules/projects/dtos/project.dto';
 @Resolver(() => UserDTO)
 export class UsersResolver {
   constructor(
@@ -47,7 +47,7 @@ export class UsersResolver {
   // Self-serve project creation for stranded users (zero project memberships).
   // The service-level guard enforces the "only when 0 projects" rule; the
   // frontend only surfaces the entry from /select-project's empty state.
-  @Mutation(() => Project)
+  @Mutation(() => ProjectDTO)
   async createOwnedProject(
     @UserEntity() user: UserDTO,
     @Args('data') input: CreateOwnedProjectInput,

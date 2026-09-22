@@ -17,7 +17,7 @@ import {
   SigningSecretLimitReachedError,
 } from '@/common/errors';
 import { ProjectCacheService } from '@/shared/project-cache.service';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import {
   IdentityVerificationService,

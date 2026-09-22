@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { PrismaService } from 'nestjs-prisma';
 
-import { SsoOidcService } from '@/sso/sso-oidc.service';
+import { SsoOidcService } from '@/modules/sso/services/sso-oidc.service';
 import { ACCESS_TOKEN_COOKIE, SSO_TX_COOKIE } from '@/utils/cookie';
 import {
   buildEnvironment,

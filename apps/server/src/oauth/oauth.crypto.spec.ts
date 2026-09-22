@@ -1,4 +1,4 @@
-import { stripTokenPrefix } from '@/api-token/api-token.crypto';
+import { stripTokenPrefix } from '@/modules/api-token/utils/api-token-crypto.util';
 
 import {
   accessTokenSecret,

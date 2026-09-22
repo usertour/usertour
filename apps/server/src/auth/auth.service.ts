@@ -45,8 +45,8 @@ import {
   WrongInviteAccountError,
 } from '@/common/errors';
 import { AuditService } from '@/audit/audit.service';
-import { TeamService } from '@/team/team.service';
-import { ProjectsService } from '@/projects/projects.service';
+import { TeamService } from '@/modules/team/services/team.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import {
   QUEUE_SEND_MAGIC_LINK_EMAIL,

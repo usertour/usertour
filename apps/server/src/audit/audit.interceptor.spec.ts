@@ -5,7 +5,7 @@ import { AdminResolver } from '@/admin/admin.resolver';
 import { AnalyticsResolver } from '@/analytics/analytics.resolver';
 import { ApiCompaniesController } from '@/api/companies/companies.controller';
 import { ApiSegmentMembersController } from '@/api/segments/segments.controller';
-import { ApiTokenResolver } from '@/api-token/api-token.resolver';
+import { ApiTokenResolver } from '@/modules/api-token/api-token.resolver';
 import { ContentResolver } from '@/content/content.resolver';
 
 import { Audit, AuditWeb } from './audit.decorator';

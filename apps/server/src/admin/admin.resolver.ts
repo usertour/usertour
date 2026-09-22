@@ -10,7 +10,7 @@ import {
   AdminProjectMember,
   InstanceSetting,
 } from './models/admin.model';
-import { Project } from '@/projects/models/project.model';
+import { ProjectDTO } from '@/modules/projects/dtos/project.dto';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { UserEntity } from '@/common/decorators/user.decorator';
 
@@ -143,7 +143,7 @@ export class AdminResolver {
     );
   }
 
-  @Mutation(() => Project)
+  @Mutation(() => ProjectDTO)
   @UseGuards(SystemAdminGuard)
   async adminCreateProject(@Args('name') name: string, @Args('ownerUserId') ownerUserId: string) {
     return this.adminService.createProject(name, ownerUserId);

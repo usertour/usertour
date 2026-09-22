@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { QUEUE_WEBHOOK_DELIVERY, QUEUE_WEBHOOK_RECONCILE } from '@/common/consts/queen';
 import { OutboundModule } from '@/outbound/outbound.module';
-import { ProjectsModule } from '@/projects/projects.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { WebhooksListener } from './webhooks.listener';
 import { WebhooksProcessor } from './webhooks.processor';

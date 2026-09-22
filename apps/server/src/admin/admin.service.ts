@@ -19,7 +19,7 @@ import {
 } from '@/common/initialization/initialization';
 import { RolesScopeEnum } from '@/common/decorators/roles.decorator';
 import { PasswordService } from '@/auth/password.service';
-import { TeamService } from '@/team/team.service';
+import { TeamService } from '@/modules/team/services/team.service';
 import { Role } from '@prisma/client';
 
 @Injectable()

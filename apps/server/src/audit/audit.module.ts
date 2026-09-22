@@ -3,7 +3,7 @@ import { Global, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { QUEUE_AUDIT_LOG } from '@/common/consts/queen';
-import { ProjectsModule } from '@/projects/projects.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
 import { AuditInterceptor } from './audit.interceptor';
 import { AuditListener } from './audit.listener';
 import { AuditProcessor } from './audit.processor';

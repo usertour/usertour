@@ -2,7 +2,10 @@ import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import { ZodTypeAny } from 'zod';
 
-import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
+import {
+  ApiTokenAuthService,
+  AuthedApiToken,
+} from '@/modules/api-token/services/api-token-auth.service';
 import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
 import { ApiCompaniesService } from '@/api/companies/companies.service';
 import { ApiContentService } from '@/api/content/content.service';

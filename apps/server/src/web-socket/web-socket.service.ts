@@ -26,7 +26,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { TrackEventData } from '@/common/types/track';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import {
   ConfigRequest,
   ConfigResponse,

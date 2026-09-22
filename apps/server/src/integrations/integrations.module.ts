@@ -11,7 +11,7 @@ import {
   QUEUE_INTEGRATION_RECONCILE,
 } from '@/common/consts/queen';
 import { OutboundModule } from '@/outbound/outbound.module';
-import { ProjectsModule } from '@/projects/projects.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { CohortSyncService } from './cohort-sync.service';
 import { ProviderConnectionService } from './sync/provider-connection.service';

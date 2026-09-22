@@ -2,7 +2,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { Controller, Delete, Get, Post, Req, Res, UseFilters, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 
-import { AuthedApiToken } from '@/api-token/api-token-auth.service';
+import { AuthedApiToken } from '@/modules/api-token/services/api-token-auth.service';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 
 import { McpAuthGuard } from './mcp-auth.guard';

@@ -7,7 +7,10 @@ import { z } from 'zod';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
+import {
+  ApiTokenAuthService,
+  AuthedApiToken,
+} from '@/modules/api-token/services/api-token-auth.service';
 import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
 import { ApiCompaniesService } from '@/api/companies/companies.service';
 import { ApiContentService } from '@/api/content/content.service';

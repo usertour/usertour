@@ -12,7 +12,7 @@ import type {
 import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { OAUTH_TOKEN_PREFIX } from '@/api-token/api-token.crypto';
+import { OAUTH_TOKEN_PREFIX } from '@/modules/api-token/utils/api-token-crypto.util';
 
 import {
   accessTokenSecret,

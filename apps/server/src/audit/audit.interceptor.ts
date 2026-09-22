@@ -10,7 +10,7 @@ import { type GqlContextType, GqlExecutionContext } from '@nestjs/graphql';
 import { PrismaService } from 'nestjs-prisma';
 import { type Observable, tap } from 'rxjs';
 import { localizationAuditSnapshot } from '@/modules/localizations/utils/localization-audit-snapshot.util';
-import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
 import { Audit, AuditWeb } from './audit.decorator';
 import { AuditService } from './audit.service';
 import type {

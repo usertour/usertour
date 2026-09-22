@@ -15,8 +15,8 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
-import { ApiTokenGuard } from '@/api-token/api-token.guard';
-import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { ApiTokenGuard } from '@/modules/api-token/guards/api-token.guard';
+import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { RequestUrl } from '@/common/decorators/request-url.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';

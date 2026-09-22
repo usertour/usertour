@@ -14,10 +14,10 @@ import { GithubOauthStrategy } from './strategy/github-oauth.strategy';
 import { GoogleOauthStrategy } from './strategy/google-oauth.strategy';
 import { TwoFactorService } from './two-factor.service';
 import { TwoFactorResolver } from './two-factor.resolver';
-import { TeamModule } from '@/team/team.module';
+import { TeamModule } from '@/modules/team/team.module';
 import { SharedModule } from '@/shared/shared.module';
 import { LicenseModule } from '@/license/license.module';
-import { ProjectsModule } from '@/projects/projects.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
 import { BullModule } from '@nestjs/bullmq';
 import {
   QUEUE_CLEAN_EXPIRED_REFRESH_TOKENS,

@@ -9,7 +9,7 @@ import {
   API_TOKEN_PREFIX,
   OAUTH_TOKEN_PREFIX,
   hashApiTokenSecret,
-} from '@/api-token/api-token.crypto';
+} from '@/modules/api-token/utils/api-token-crypto.util';
 import { TwoFactorService } from '@/auth/two-factor.service';
 import { EnvironmentsService } from '@/modules/environments/services/environments.service';
 

@@ -3,7 +3,7 @@ import {
   generateApiTokenSecret,
   hashApiTokenSecret,
   stripTokenPrefix,
-} from '@/api-token/api-token.crypto';
+} from '@/modules/api-token/utils/api-token-crypto.util';
 
 /** Refresh tokens are validated against OAuthGrant, never the ApiToken path. */
 export const OAUTH_REFRESH_TOKEN_PREFIX = 'utr_';

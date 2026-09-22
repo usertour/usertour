@@ -4,7 +4,7 @@ import { RequestMethod } from '@nestjs/common';
 import { METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { Reflector } from '@nestjs/core';
 
-import { RequireCapability } from '@/api-token/require-capability.decorator';
+import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
 
 import { Audit } from './audit.decorator';
 import { deriveAudit } from './audit.interceptor';

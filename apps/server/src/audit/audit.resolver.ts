@@ -6,7 +6,7 @@ import { RequirePermission } from '@/auth/permission/require-permission.decorato
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { FeatureRequiresLicenseError } from '@/common/errors/errors';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { AuditService } from './audit.service';
 import { AuditLogOrder } from './dto/audit-log-order.input';
 import { AuditLogQuery } from './dto/audit-log-query.input';

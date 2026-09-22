@@ -39,7 +39,7 @@ import {
 } from '@/common/types';
 import { ContentDataService } from './content-data.service';
 import { AnnouncementService, type VisibleAnnouncement } from './announcement.service';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { DistributedLockService } from './distributed-lock.service';
 import { buildSessionCreateLockKey } from '@/utils/websocket-utils';
 import { ProjectCacheService } from '@/shared/project-cache.service';

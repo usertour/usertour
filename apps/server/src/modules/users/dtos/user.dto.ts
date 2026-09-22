@@ -1,5 +1,5 @@
 import { BaseModel } from '@/common/models/base.model';
-import { UserOnProject } from '@/team/models/useronproject.model';
+import { UserOnProjectDTO } from '@/modules/team/dtos/user-on-project.dto';
 import { Field, HideField, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Role } from '@prisma/client';
 import { IsEmail } from 'class-validator';
@@ -24,8 +24,8 @@ export class UserDTO extends BaseModel {
 
   // Not every user read resolves project memberships — explicitly nullable
   // so the contract can't drift with toolchain nullability inference.
-  @Field(() => [UserOnProject], { nullable: true })
-  projects?: [UserOnProject];
+  @Field(() => [UserOnProjectDTO], { nullable: true })
+  projects?: [UserOnProjectDTO];
 
   @HideField()
   password: string;

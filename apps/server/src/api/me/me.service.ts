@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AuthedApiToken, environmentAllowlistOf } from '@/api-token/api-token-auth.service';
+import {
+  AuthedApiToken,
+  environmentAllowlistOf,
+} from '@/modules/api-token/services/api-token-auth.service';
 import { ApiObjectType } from '../shared/object-type';
 import { MeResponseDto } from './me.schema';
 

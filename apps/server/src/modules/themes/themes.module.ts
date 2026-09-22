@@ -1,5 +1,5 @@
 import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { ProjectsModule } from '@/projects/projects.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
 import { ThemesResolver } from './themes.resolver';
 import { ThemesService } from './services/themes.service';

@@ -1,4 +1,4 @@
-import { ApiTokenAuthService } from '@/api-token/api-token-auth.service';
+import { ApiTokenAuthService } from '@/modules/api-token/services/api-token-auth.service';
 import { EnvironmentNotInTokenScopeError } from '@/common/errors';
 
 import { resolveEnvironment } from './read-tools';

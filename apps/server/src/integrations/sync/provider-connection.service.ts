@@ -9,7 +9,7 @@ import type { CookieOptions } from 'express';
 import { SYNC_INTEGRATION_PROVIDERS } from '@usertour/constants';
 import type { SyncIntegrationProvider, IntegrationProvider } from '@usertour/types';
 import { FeatureRequiresLicenseError, OAuthError, ValidationError } from '@/common/errors/errors';
-import { ProjectsService } from '@/projects/projects.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { RedisService } from '@/shared/redis.service';
 import {

@@ -4,7 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { FeatureRequiresLicenseError, SystemAdminMustEnable2FAFirstError } from '@/common/errors';
 import { LicenseService } from '@/license/license.service';
 import { PasswordService } from '@/auth/password.service';
-import { TeamService } from '@/team/team.service';
+import { TeamService } from '@/modules/team/services/team.service';
 import { AdminService } from './admin.service';
 
 // Focused regression for the Layer-A piece of "instance enforces 2FA":

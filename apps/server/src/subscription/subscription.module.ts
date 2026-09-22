@@ -7,7 +7,7 @@ import { StripeModule } from '@golevelup/nestjs-stripe';
 import { SubscriptionController } from './subscription.controller';
 import { SubscriptionResolver } from './subscription.resolver';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
-import { ProjectsModule } from '@/projects/projects.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
 
 @Module({
   imports: [
