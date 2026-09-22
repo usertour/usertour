@@ -12,7 +12,7 @@ import {
   FrequencyUnits,
 } from '@usertour/types';
 
-import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
+import { ContentDiagnosisService } from '@/modules/delivery/services/content-diagnosis.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
 import { SocketDataService } from '@/web-socket/core/socket-data.service';
 import { buildDiagnoseReport } from '@/mcp/tools/diagnose-report';

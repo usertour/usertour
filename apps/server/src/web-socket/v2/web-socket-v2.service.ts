@@ -50,10 +50,10 @@ import { ContentCancelContext, ContentStartContext, SocketData } from '@/common/
 import {
   EventTrackingService,
   RESERVED_EVENT_CODE_NAMES,
-} from '@/web-socket/core/event-tracking.service';
+} from '@/modules/delivery/services/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
-import { AnnouncementService } from '@/web-socket/core/announcement.service';
-import { ContentDataService } from '@/web-socket/core/content-data.service';
+import { AnnouncementService } from '@/modules/delivery/services/announcement.service';
+import { ContentDataService } from '@/modules/delivery/services/content-data.service';
 import { BizUser } from '@/common/types/schema';
 import { ProjectCacheService } from '@/shared/project-cache.service';
 import { IdentityVerificationService } from '@/shared/identity-verification.service';

@@ -7,7 +7,7 @@ import { RequireCapability } from '@/modules/api-token/decorators/require-capabi
 import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import type { Environment } from '@prisma/client';
-import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
+import { EventTrackingService } from '@/modules/delivery/services/event-tracking.service';
 
 import { ApiStandardErrorResponses } from '../shared/error-response';
 import { ApiValidationPipe } from '../shared/validation.pipe';

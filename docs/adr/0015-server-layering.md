@@ -22,7 +22,7 @@ We studied the layout of a large open-source NestJS product whose tree reads ver
 
 | Layer | Contains | Job |
 |---|---|---|
-| **entrypoints** | Protocol surfaces heavy enough to be trees of their own: REST v2 (`api/`), REST v1 (`openapi/`), MCP (`mcp/`), the websocket gateways (`web-socket/` except `core/`) | Parse a request, map a result to the wire format, translate errors. A REST v2 or MCP surface also owns its external representation — the content codec, zod contracts, the tool registry — which is protocol and is why these are separate trees. |
+| **entrypoints** | Protocol surfaces heavy enough to be trees of their own: REST v2 (`api/`), REST v1 (`openapi/`), MCP (`mcp/`), the websocket gateways and their socket plumbing (`web-socket/`) | Parse a request, map a result to the wire format, translate errors. A REST v2 or MCP surface also owns its external representation — the content codec, zod contracts, the tool registry — which is protocol and is why these are separate trees. |
 | **modules** | Everything else, business and infrastructure alike. Each module is self-contained: its services, its pure logic, and its thin GraphQL adapter (the resolver and `dtos/`) side by side | What is valid, what state allows a write, what a write leaves behind — and the infrastructure those rules run on. |
 
 A rule belongs in a module, not in an entrypoint, when every other entrypoint should obey it too.
@@ -87,7 +87,7 @@ src/
 
 **Modules importing an entrypoint** (in the ledger, 12 at decision time):
 
-1. **Content pushes to the websocket gateways directly** — `content.module` and `content.service` import the gateways, and `web-socket/core/content-orchestrator` imports a v2 gateway DTO (4). Direction: the module emits an event; the gateway listens.
+1. **Content pushes to the websocket gateways directly** — `content.module` and `content.service` import the gateways (3; a fourth, the content orchestrator importing a v2 gateway DTO, resolved itself when the orchestrator was filed with the gateways). Direction: the module emits an event; the gateway listens.
 2. **Integrations and outbound webhooks build their payloads with REST v2 mappers** — `api/events/event.mapper`, `api/users/users.mapper`, `api/companies/companies.mapper`, `api/shared/object-type`, `api/shared/codename` (8). The public object shape is shared by the v2 API and outbound payloads on purpose; it needs a home both can import — a representation module shared by the entrypoints and the outbound channel, or outbound delivery treated as an entrypoint of its own.
 
 **Rules in an entrypoint** (invisible to the test — they are imports in the allowed direction):
@@ -103,7 +103,7 @@ src/
 - Infrastructure may depend on business modules without the test noticing. That is accepted: it is a filing concern here, not a hazard.
 - Two layouts coexist for a long time. The layer map and the shrink-only ledger keep the half-migrated state visible instead of silent.
 - Every module move changes import paths and can conflict with open branches; large modules (`content/`) need a quiet moment.
-- `web-socket/core/` is classified as a module although it also contains socket plumbing next to the delivery runtime; splitting it waits for its next substantial change.
+- `web-socket/core/` held the delivery runtime next to the socket plumbing. The runtime — what an identified user is shown, session building, condition evaluation, diagnosis — is now `modules/delivery/`; the socket services and the orchestrator that drives them stay with the gateways, where they belong.
 
 ## Alternatives Considered
 

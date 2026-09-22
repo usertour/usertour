@@ -16,7 +16,7 @@ import {
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { UtilitiesService } from '@/modules/utilities/services/utilities.service';
-import { ContentDataService } from '@/web-socket/core/content-data.service';
+import { ContentDataService } from '@/modules/delivery/services/content-data.service';
 import { createTestApp } from '../create-test-app';
 
 /**

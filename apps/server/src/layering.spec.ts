@@ -26,11 +26,10 @@ const LAYERS: Record<string, Layer> = {
   api: 'entrypoints', // REST v2 — also owns the public representation (codec, zod contracts)
   openapi: 'entrypoints', // REST v1
   mcp: 'entrypoints',
-  'web-socket': 'entrypoints', // the gateways; core/ is classified below
+  'web-socket': 'entrypoints', // the gateways and their socket plumbing; the delivery runtime is modules/delivery
 
   // ── modules: business and infrastructure alike, each with its thin GraphQL adapter ──
   modules: 'modules', // the target layout
-  'web-socket/core': 'modules', // delivery runtime (also holds socket plumbing — split on next change)
   adapters: 'modules',
   ai: 'modules',
   common: 'modules',
@@ -52,7 +51,6 @@ const KNOWN_VIOLATIONS: readonly string[] = [
   'modules/content/content.module.ts -> web-socket/web-socket.module',
   'modules/content/services/content.service.ts -> web-socket/v2/web-socket-v2.gateway',
   'modules/content/services/content.service.ts -> web-socket/web-socket.gateway',
-  'web-socket/core/content-orchestrator.service.ts -> web-socket/v2/web-socket-v2.dto',
   // 2. integrations and outbound webhooks build payloads with REST v2 mappers
   'modules/integrations/listeners/integrations.listener.ts -> api/events/event.mapper',
   'modules/integrations/services/integrations.service.ts -> api/shared/object-type',

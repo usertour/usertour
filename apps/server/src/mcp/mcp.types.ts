@@ -23,7 +23,7 @@ import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { ApiWebhooksService } from '@/api/webhooks/webhooks.service';
 import type { AuditAction } from '@/modules/audit/types/audit.type';
-import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
+import { ContentDiagnosisService } from '@/modules/delivery/services/content-diagnosis.service';
 
 /**
  * The v2 API services an MCP tool handler can reach through its context — the

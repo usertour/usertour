@@ -56,10 +56,10 @@ import {
   TryAutoStartContentOptions,
   EventTrackingItem,
 } from '@/common/types';
-import { DistributedLockService } from './distributed-lock.service';
-import { ContentDataService } from './content-data.service';
-import { SessionBuilderService } from './session-builder.service';
-import { EventTrackingService } from './event-tracking.service';
+import { DistributedLockService } from '@/modules/delivery/services/distributed-lock.service';
+import { ContentDataService } from '@/modules/delivery/services/content-data.service';
+import { SessionBuilderService } from '@/modules/delivery/services/session-builder.service';
+import { EventTrackingService } from '@/modules/delivery/services/event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
 import { ProjectCacheService } from '@/shared/project-cache.service';
