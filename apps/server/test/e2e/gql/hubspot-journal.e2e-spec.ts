@@ -6,13 +6,13 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { initialization } from '@/common/initialization/initialization';
-import { HubspotJournalService } from '@/integrations/sync/hubspot-journal.service';
+import { HubspotJournalService } from '@/modules/integrations/sync/hubspot-journal.service';
 import { EncryptionService } from '@/shared/encryption.service';
 import { RedisService } from '@/shared/redis.service';
-import { HUBSPOT_JOURNAL_POLL_LOCK_KEY } from '@/integrations/sync/hubspot-journal.service';
-import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
-import { HubspotRateLimitError } from '@/integrations/sync/hubspot-errors';
-import * as journalApi from '@/integrations/sync/hubspot-journal-api';
+import { HUBSPOT_JOURNAL_POLL_LOCK_KEY } from '@/modules/integrations/sync/hubspot-journal.service';
+import * as hubspotCrmApi from '@/modules/integrations/sync/hubspot-crm-api';
+import { HubspotRateLimitError } from '@/modules/integrations/sync/hubspot-errors';
+import * as journalApi from '@/modules/integrations/sync/hubspot-journal-api';
 
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';

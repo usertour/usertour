@@ -11,7 +11,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 import { LicenseService } from '@/license/license.service';
 import { AiService } from '@/ai/ai.service';
-import { configuredOAuthProviders } from '@/integrations/sync/oauth-app-config';
+import { configuredOAuthProviders } from '@/modules/integrations/sync/oauth-app-config';
 
 @Injectable()
 export class UtilitiesService {

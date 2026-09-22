@@ -6,14 +6,14 @@ import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-t
 import { initialization } from '@/common/initialization/initialization';
 import { AxiosError, AxiosHeaders } from 'axios';
 import { type Job, UnrecoverableError } from 'bullmq';
-import { ObjectSyncProcessor } from '@/integrations/sync/object-sync.processor';
+import { ObjectSyncProcessor } from '@/modules/integrations/sync/object-sync.processor';
 import {
   ObjectSyncService,
   SYNC_PAGE_JOB,
   type SyncPageJobData,
-} from '@/integrations/sync/object-sync.service';
+} from '@/modules/integrations/sync/object-sync.service';
 import { EncryptionService } from '@/shared/encryption.service';
-import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
+import * as hubspotCrmApi from '@/modules/integrations/sync/hubspot-crm-api';
 
 import { graphql, gqlErrorCode } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';

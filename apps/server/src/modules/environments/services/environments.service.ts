@@ -8,7 +8,7 @@ import type { EnvironmentChanges } from '../types/environment-changes.type';
 import type { EnvironmentDeletingPayload } from '../types/environment-deleting-payload.type';
 import type { NewAccessToken } from '../types/new-access-token.type';
 import type { NewEnvironment } from '../types/new-environment.type';
-import { releaseSyncedSegmentMapping } from '@/integrations/cohort-sync.service';
+import { releaseSyncedSegmentMapping } from '@/modules/integrations/services/cohort-sync.service';
 import {
   IdentityVerificationRequiresActiveSecretError,
   LastEnvironmentCannotBeDeletedError,

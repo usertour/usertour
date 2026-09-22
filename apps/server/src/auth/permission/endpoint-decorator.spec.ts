@@ -9,7 +9,7 @@ import { BizResolver } from '@/biz/biz.resolver';
 import { ContentResolver } from '@/content/content.resolver';
 import { EnvironmentsResolver } from '@/modules/environments/environments.resolver';
 import { EventsResolver } from '@/modules/events/events.resolver';
-import { IntegrationsResolver } from '@/integrations/integrations.resolver';
+import { IntegrationsResolver } from '@/modules/integrations/integrations.resolver';
 import { LocalizationsResolver } from '@/modules/localizations/localizations.resolver';
 import { ProjectsResolver } from '@/modules/projects/projects.resolver';
 import { SsoResolver } from '@/modules/sso/sso.resolver';

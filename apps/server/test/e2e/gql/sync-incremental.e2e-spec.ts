@@ -11,13 +11,13 @@ import {
   SYNC_BACKFILL_JOB,
   DeliverySkippedError,
   ObjectSyncService,
-} from '@/integrations/sync/object-sync.service';
+} from '@/modules/integrations/sync/object-sync.service';
 import {
   SYNC_OBJECT_UPDATE_TOPIC,
   type SyncObjectUpdateEnvelope,
-} from '@/integrations/integrations.types';
+} from '@/modules/integrations/types/integrations.type';
 import { EncryptionService } from '@/shared/encryption.service';
-import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
+import * as hubspotCrmApi from '@/modules/integrations/sync/hubspot-crm-api';
 
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';

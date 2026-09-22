@@ -35,7 +35,7 @@ import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
 import { McpModule } from './mcp/mcp.module';
 import { OAuthModule } from './oauth/oauth.module';
-import { IntegrationsModule } from './integrations/integrations.module';
+import { IntegrationsModule } from '@/modules/integrations/integrations.module';
 import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
 import { LicenseModule } from './license/license.module';
 import { SharedModule } from './shared/shared.module';
