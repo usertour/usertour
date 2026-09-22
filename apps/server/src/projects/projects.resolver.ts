@@ -5,7 +5,7 @@ import { ProjectConfigModel } from './models/project-config.model';
 import { LicenseInfo } from './models/license-info.model';
 import { ProjectsService } from './projects.service';
 import { UserEntity } from '@/common/decorators/user.decorator';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { AuditWeb } from '@/audit/audit.decorator';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
@@ -39,7 +39,7 @@ export class ProjectsResolver {
     resourceId: (a) => String(a.projectId),
   })
   async updateProject(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('projectId') projectId: string,
     @Args('name', { nullable: true }) name?: string,
     @Args('logoUrl', { nullable: true }) logoUrl?: string,
@@ -58,7 +58,7 @@ export class ProjectsResolver {
     resourceId: (a) => String(a.projectId),
   })
   async updateProjectLicense(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('projectId') projectId: string,
     @Args('license') license: string,
   ) {

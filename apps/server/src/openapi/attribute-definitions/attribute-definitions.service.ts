@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AttributesService } from '@/attributes/attributes.service';
+import { AttributesService } from '@/modules/attributes/services/attributes.service';
 import type { Environment } from '@prisma/client';
 import { mapBizType, mapDataType, OpenApiObjectType } from '@/common/openapi/types';
 import { InvalidScopeError } from '@/common/errors/errors';

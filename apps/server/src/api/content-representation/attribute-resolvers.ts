@@ -1,6 +1,6 @@
 import { PrismaService } from 'nestjs-prisma';
 
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 
 import { AttributeScope, CompileResolvers } from './rules.compile';
 import { DecompileResolvers } from './rules.decompile';

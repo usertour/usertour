@@ -1,7 +1,7 @@
 import { Common } from '@/auth/models/common.model';
 import { AuditWeb } from '@/audit/audit.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
@@ -95,7 +95,7 @@ export class ContentResolver {
     resourceType: 'content',
     resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
   })
-  async createContentVersion(@UserEntity() user: User, @Args('data') data: ContentVersionInput) {
+  async createContentVersion(@UserEntity() user: UserDTO, @Args('data') data: ContentVersionInput) {
     return await this.contentService.createContentVersion(data, { userId: user.id });
   }
 
@@ -107,7 +107,7 @@ export class ContentResolver {
 
   @Mutation(() => Version)
   @RequirePermission({ capability: Capability.ContentUpdate, scope: ScopeKind.Content })
-  async updateContentVersion(@UserEntity() user: User, @Args('data') input: VersionUpdateInput) {
+  async updateContentVersion(@UserEntity() user: UserDTO, @Args('data') input: VersionUpdateInput) {
     return await this.contentService.updateContentVersion(input, { userId: user.id });
   }
 
@@ -121,7 +121,7 @@ export class ContentResolver {
     resourceId: (_a, r) => String((r as { contentId?: string })?.contentId ?? ''),
   })
   async restoreContentVersion(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('data') { versionId }: VersionIdInput,
   ) {
     return await this.contentService.restoreContentVersion(versionId, { userId: user.id });
@@ -139,7 +139,7 @@ export class ContentResolver {
     environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
   })
   async publishedContentVersion(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('data') { versionId, environmentId }: VersionIdInput,
   ) {
     return await this.contentService.publishedContentVersion(versionId, environmentId, {
@@ -156,7 +156,7 @@ export class ContentResolver {
     environmentId: (a) => (a.data as { environmentId?: string }).environmentId,
   })
   async unpublishedContentVersion(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('data') { contentId, environmentId }: ContentIdInput,
   ) {
     await this.contentService.unpublishedContentVersion(contentId, environmentId, {

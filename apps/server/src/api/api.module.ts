@@ -5,18 +5,18 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AnalyticsModule } from '@/analytics/analytics.module';
 import { ApiTokenModule } from '@/api-token/api-token.module';
-import { AttributesModule } from '@/attributes/attributes.module';
+import { AttributesModule } from '@/modules/attributes/attributes.module';
 import { BizModule } from '@/biz/biz.module';
 import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
 import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exception.filter';
-import { UtilitiesModule } from '@/utilities/utilities.module';
+import { UtilitiesModule } from '@/modules/utilities/utilities.module';
 import { ApiThrottlerGuard } from './shared/api-throttler.guard';
 import { ContentModule } from '@/content/content.module';
 import { EnvironmentsModule } from '@/modules/environments/environments.module';
-import { EventsModule } from '@/events/events.module';
+import { EventsModule } from '@/modules/events/events.module';
 import { LocalizationsModule } from '@/modules/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';
-import { ThemesModule } from '@/themes/themes.module';
+import { ThemesModule } from '@/modules/themes/themes.module';
 
 import { ApiAnalyticsController } from './analytics/analytics.controller';
 import { ApiAnalyticsService } from './analytics/analytics.service';

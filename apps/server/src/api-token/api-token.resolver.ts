@@ -3,7 +3,7 @@ import type { PrismaService } from 'nestjs-prisma';
 
 import { AuditWeb } from '@/audit/audit.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 
 import { ApiTokenService } from './api-token.service';
 import {
@@ -42,7 +42,7 @@ export class ApiTokenResolver {
   constructor(private readonly apiTokenService: ApiTokenService) {}
 
   @Query(() => [ApiToken])
-  async apiTokens(@UserEntity() user: User): Promise<ApiToken[]> {
+  async apiTokens(@UserEntity() user: UserDTO): Promise<ApiToken[]> {
     const tokens = await this.apiTokenService.listTokens(user.id);
     return tokens.map((token) => this.toModel(token));
   }
@@ -58,7 +58,7 @@ export class ApiTokenResolver {
       (args.input as { projectIds?: string[] } | undefined)?.projectIds ?? [],
   })
   async createApiToken(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('input') input: CreateApiTokenInput,
   ): Promise<CreatedApiToken> {
     const { token, plaintext } = await this.apiTokenService.createToken(user.id, input);
@@ -68,7 +68,7 @@ export class ApiTokenResolver {
   @Mutation(() => ApiToken)
   @AuditWeb({ action: 'update', resourceType: 'api_token', resolveProjectId: tokenProjectId })
   async updateApiToken(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('id') id: string,
     @Args('input') input: UpdateApiTokenInput,
   ): Promise<ApiToken> {
@@ -79,14 +79,17 @@ export class ApiTokenResolver {
   @Mutation(() => CreatedApiToken)
   // Rotation is an update to the credential; the `operation` field records rotateApiToken.
   @AuditWeb({ action: 'update', resourceType: 'api_token', resolveProjectId: tokenProjectId })
-  async rotateApiToken(@UserEntity() user: User, @Args('id') id: string): Promise<CreatedApiToken> {
+  async rotateApiToken(
+    @UserEntity() user: UserDTO,
+    @Args('id') id: string,
+  ): Promise<CreatedApiToken> {
     const { token, plaintext } = await this.apiTokenService.rotateToken(user.id, id);
     return { apiToken: this.toModel(token), token: plaintext };
   }
 
   @Mutation(() => Boolean)
   @AuditWeb({ action: 'delete', resourceType: 'api_token', resolveProjectId: tokenProjectId })
-  async deleteApiToken(@UserEntity() user: User, @Args('id') id: string): Promise<boolean> {
+  async deleteApiToken(@UserEntity() user: UserDTO, @Args('id') id: string): Promise<boolean> {
     return this.apiTokenService.deleteToken(user.id, id);
   }
 

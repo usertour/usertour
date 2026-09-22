@@ -1,4 +1,5 @@
-import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model';
+import type { Attribute } from '@prisma/client';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { BizService } from '@/biz/biz.service';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
 import {

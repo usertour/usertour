@@ -8,7 +8,7 @@ import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { RequirePermission } from '@/auth/permission/require-permission.decorator';
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { UserEntity } from '@/common/decorators/user.decorator';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 
 // PermissionGuard is not global: without this class-level registration the
 // @RequirePermission decorators below are inert (a resolver-level guard is what
@@ -21,7 +21,7 @@ export class SubscriptionResolver {
   @Mutation(() => String)
   @RequirePermission({ capability: Capability.BillingManage, scope: ScopeKind.Project })
   async createCheckoutSession(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('data') { projectId, planType, interval }: CreateCheckoutSessionRequest,
   ): Promise<string> {
     const session = await this.subscriptionService.createCheckoutSession(
@@ -36,7 +36,7 @@ export class SubscriptionResolver {
   @Mutation(() => String)
   @RequirePermission({ capability: Capability.BillingManage, scope: ScopeKind.Project })
   async createPortalSession(
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Args('projectId') projectId: string,
   ): Promise<string> {
     const session = await this.subscriptionService.createPortalSession(user.id, projectId);

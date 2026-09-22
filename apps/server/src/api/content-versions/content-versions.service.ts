@@ -26,7 +26,7 @@ import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
 import { resolveStaleEmbeds } from '@/common/ombed/embed-resolve';
-import { UtilitiesService } from '@/utilities/utilities.service';
+import { UtilitiesService } from '@/modules/utilities/services/utilities.service';
 import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
 import {
   type ContentReference,

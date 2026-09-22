@@ -1,6 +1,6 @@
 import { BaseModel } from '@/common/models/base.model';
 import { Project } from '@/projects/models/project.model';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
@@ -51,8 +51,8 @@ export class Invite extends BaseModel {
   @Field(() => [String], { nullable: true })
   allowedEnvironmentIds?: string[] | null;
 
-  @Field(() => User, { nullable: true })
-  user?: User;
+  @Field(() => UserDTO, { nullable: true })
+  user?: UserDTO;
 
   @Field(() => Project, { nullable: true })
   project?: Project;

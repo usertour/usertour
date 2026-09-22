@@ -1,4 +1,4 @@
-import { AttributeDataTypeNames } from '@/attributes/models/attribute.model';
+import { AttributeDataTypeNames } from '@/modules/attributes/constants/attribute-data-type-names.constant';
 import { ApiProperty } from '@nestjs/swagger';
 import { OpenApiObjectType } from '@/common/openapi/types';
 

@@ -2,7 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { singleOrArray, isoTimestamp } from '../shared/query';
 
-import { AttributeDataTypeNames } from '@/attributes/models/attribute.model';
+import { AttributeDataTypeNames } from '@/modules/attributes/constants/attribute-data-type-names.constant';
 
 import { codeName as codeNameSchema } from '../shared/codename';
 import { nameSearchField } from '@/common/filters';

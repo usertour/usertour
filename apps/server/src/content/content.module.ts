@@ -2,7 +2,7 @@ import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { LocalizationsModule } from '@/modules/localizations/localizations.module';
 import { ProjectsModule } from '@/projects/projects.module';
 import { SharedModule } from '@/shared/shared.module';
-import { UtilitiesModule } from '@/utilities/utilities.module';
+import { UtilitiesModule } from '@/modules/utilities/utilities.module';
 import { PermissionGuard } from '@/auth/permission/permission.guard';
 import { Module } from '@nestjs/common';
 import { ContentResolver, VersionFieldsResolver } from './content.resolver';

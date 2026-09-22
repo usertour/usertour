@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventDefinition } from '../models/event-definition.model';
-import { EventsService as BusinessEventsService } from '@/events/events.service';
+import { EventsService as BusinessEventsService } from '@/modules/events/services/events.service';
 import { OpenApiObjectType } from '@/common/openapi/types';
 import { paginate } from '@/common/openapi/pagination';
 import type { Environment } from '@prisma/client';

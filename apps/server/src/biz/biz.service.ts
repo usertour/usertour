@@ -1,8 +1,6 @@
-import {
-  Attribute,
-  AttributeBizType,
-  AttributeDataType,
-} from '@/attributes/models/attribute.model';
+import type { Attribute } from '@prisma/client';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
+import { AttributeDataType } from '@/modules/attributes/constants/attribute-data-type.constant';
 import { createdAtWhere } from '@/common/filters';
 import { SegmentNotFoundError } from '@/common/errors';
 import {

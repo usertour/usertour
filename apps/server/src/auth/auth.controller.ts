@@ -7,7 +7,7 @@ import { Public } from '../common/decorators/public.decorator';
 import { UserEntity } from '../common/decorators/user.decorator';
 import { Request, Response } from 'express';
 import { Logger } from '@nestjs/common';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { AuthenticationExpiredError, OAuthError, SsoRequiredError } from '@/common/errors';
 import { REFRESH_TOKEN_COOKIE } from '@/utils/cookie';
 
@@ -84,7 +84,7 @@ export class AuthController {
   @Get('github/callback')
   @Public()
   async githubAuthCallback(
-    @UserEntity() user: User & { isNewUser?: boolean },
+    @UserEntity() user: UserDTO & { isNewUser?: boolean },
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -101,7 +101,7 @@ export class AuthController {
   @Get('google/callback')
   @Public()
   async googleAuthCallback(
-    @UserEntity() user: User & { isNewUser?: boolean },
+    @UserEntity() user: UserDTO & { isNewUser?: boolean },
     @Req() req: Request,
     @Res() res: Response,
   ) {

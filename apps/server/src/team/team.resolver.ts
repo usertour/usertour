@@ -1,5 +1,5 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { TeamService } from './team.service';
 import { UserOnProject } from './models/useronproject.model';
 import {
@@ -55,7 +55,7 @@ export class TeamResolver {
     resourceId: (a) => (a.data as { email: string }).email,
   })
   @UseGuards(EmailConfigGuard)
-  async inviteTeamMember(@UserEntity() user: User, @Args('data') data: InviteTeamMemberInput) {
+  async inviteTeamMember(@UserEntity() user: UserDTO, @Args('data') data: InviteTeamMemberInput) {
     this.logger.log(`Inviting team member: ${user.id}`);
     await this.teamService.inviteTeamMember(
       user.id,

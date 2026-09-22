@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from './auth.service';
 import { JwtDto } from './dto/jwt.dto';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { Request } from 'express';
 import { ACCESS_TOKEN_COOKIE } from '@/utils/cookie';
 
@@ -24,7 +24,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtDto & { tokenType?: string; purpose?: string }): Promise<User | null> {
+  async validate(
+    payload: JwtDto & { tokenType?: string; purpose?: string },
+  ): Promise<UserDTO | null> {
     // Session tokens carry only userId/iat/exp. Every other token this server
     // signs with the same secret (2FA challenge, SSO and CRM transactions)
     // declares what it is, and none of them is a session.

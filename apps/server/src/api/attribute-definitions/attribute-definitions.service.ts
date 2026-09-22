@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { AttributesService } from '@/attributes/attributes.service';
+import { AttributesService } from '@/modules/attributes/services/attributes.service';
 import { BizService } from '@/biz/biz.service';
 import {
   AttributeDefinitionNotFoundError,

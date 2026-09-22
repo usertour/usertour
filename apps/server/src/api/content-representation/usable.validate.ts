@@ -5,7 +5,7 @@ import {
   type ValidateContext,
   hasMissingRequiredData,
 } from '@usertour/helpers';
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { extractQuestionData } from '@/utils/content-question';
 import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';

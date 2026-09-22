@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
-import { AttributesService } from '@/attributes/attributes.service';
-import { AttributeDataTypeNames, AttributeBizTypeNames } from '@/attributes/models/attribute.model';
+import { AttributesService } from '@/modules/attributes/services/attributes.service';
+import { AttributeDataTypeNames } from '@/modules/attributes/constants/attribute-data-type-names.constant';
+import { AttributeBizTypeNames } from '@/modules/attributes/constants/attribute-biz-type-names.constant';
 import { InvalidLimitError, InvalidScopeError } from '@/common/errors/errors';
 import { Connection } from '@devoxa/prisma-relay-cursor-connection';
 import { ConfigService } from '@nestjs/config';

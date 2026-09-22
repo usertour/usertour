@@ -11,7 +11,7 @@ import {
   InstanceSetting,
 } from './models/admin.model';
 import { Project } from '@/projects/models/project.model';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { UserEntity } from '@/common/decorators/user.decorator';
 
 @Resolver()
@@ -78,7 +78,7 @@ export class AdminResolver {
 
   @Mutation(() => InstanceSetting)
   @UseGuards(SystemAdminGuard)
-  async updateInstanceRequire2FA(@UserEntity() user: User, @Args('value') value: boolean) {
+  async updateInstanceRequire2FA(@UserEntity() user: UserDTO, @Args('value') value: boolean) {
     return this.adminService.updateInstanceRequire2FA(user.id, value);
   }
 
@@ -98,7 +98,7 @@ export class AdminResolver {
     return this.adminService.getAdminUsers(query, page || 1, pageSize || 20, status, role);
   }
 
-  @Mutation(() => User)
+  @Mutation(() => UserDTO)
   @UseGuards(SystemAdminGuard)
   async adminCreateUser(
     @Args('name') name: string,
@@ -108,7 +108,7 @@ export class AdminResolver {
     return this.adminService.createUser(name, email, password);
   }
 
-  @Mutation(() => User)
+  @Mutation(() => UserDTO)
   @UseGuards(SystemAdminGuard)
   async updateUserSystemAdmin(
     @Args('userId') userId: string,
@@ -117,7 +117,7 @@ export class AdminResolver {
     return this.adminService.updateUserSystemAdmin(userId, isSystemAdmin);
   }
 
-  @Mutation(() => User)
+  @Mutation(() => UserDTO)
   @UseGuards(SystemAdminGuard)
   async updateUserDisabled(@Args('userId') userId: string, @Args('disabled') disabled: boolean) {
     return this.adminService.updateUserDisabled(userId, disabled);

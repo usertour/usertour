@@ -56,7 +56,7 @@ import { humanize, isNullish } from '@usertour/helpers';
 import { ValidationError } from '@/common/errors';
 import { extractStepBindToAttribute } from '@/utils/content-question';
 import { calculateChecklistProgress } from '@/utils/content-utils';
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { BizService } from '@/biz/biz.service';
 import type {
   EventTrackingParams,

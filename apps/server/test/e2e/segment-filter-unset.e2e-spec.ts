@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { BizAttributeTypes } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { Attribute } from '@/attributes/models/attribute.model';
+import type { Attribute } from '@prisma/client';
 import { createFilterItem } from '@/common/attribute/filter';
 import { createTestApp } from './create-test-app';
 import { buildBizUser, buildEnvironment, buildProject } from './factories';

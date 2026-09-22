@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIEventDefinitionsService } from './event-definitions.service';
-import { EventsService } from '@/events/events.service';
+import { EventsService } from '@/modules/events/services/events.service';
 import type { Environment } from '@prisma/client';
 import { ListEventDefinitionsQueryDto, EventDefinitionOrderByType } from './event-definitions.dto';
 

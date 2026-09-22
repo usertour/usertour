@@ -36,13 +36,11 @@ const LAYERS: Record<string, Layer> = {
   ai: 'modules',
   analytics: 'modules',
   'api-token': 'modules',
-  attributes: 'modules',
   audit: 'modules',
   auth: 'modules',
   biz: 'modules',
   common: 'modules',
   content: 'modules',
-  events: 'modules',
   integrations: 'modules',
   license: 'modules',
   oauth: 'modules',
@@ -52,9 +50,6 @@ const LAYERS: Record<string, Layer> = {
   sso: 'modules',
   subscription: 'modules',
   team: 'modules',
-  themes: 'modules',
-  users: 'modules',
-  utilities: 'modules',
   utils: 'modules',
   webhooks: 'modules',
 };
@@ -191,9 +186,14 @@ describe('server layering (ADR 0015)', () => {
       .filter(({ from }) => from.startsWith('modules/'))
       .filter(({ from }) => {
         const segments = from.split('/');
+        // Guards and interceptors are protocol plumbing: they read the GraphQL
+        // execution context by nature, so they may see the adapter. Services
+        // and pure logic may not.
         const isAdapter =
           from.endsWith('.resolver.ts') ||
           from.endsWith('.module.ts') ||
+          from.endsWith('.guard.ts') ||
+          from.endsWith('.interceptor.ts') ||
           segments.some((segment) => ADAPTER_SEGMENTS.has(segment));
         return !isAdapter;
       })

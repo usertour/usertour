@@ -1,5 +1,5 @@
 import { Public } from '@/common/decorators/public.decorator';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { Args, Mutation, Parent, ResolveField, Resolver, Context } from '@nestjs/graphql';
 import { AuthService } from './auth.service';
 import { AuthResult } from './dto/auth.dto';
@@ -96,7 +96,7 @@ export class AuthResolver {
 
   @Mutation(() => Boolean)
   @SkipTwoFactorEnrollment()
-  async logout(@UserEntity() user: User, @Context() context: { req: Request; res: Response }) {
+  async logout(@UserEntity() user: UserDTO, @Context() context: { req: Request; res: Response }) {
     this.logger.log(`Logging out user: ${user.id}`);
     // Clear cookies first — it only writes response headers and can't fail, so
     // logout stays effective even if the revoke below hits a DB error.
@@ -115,7 +115,7 @@ export class AuthResolver {
     return true;
   }
 
-  @ResolveField('user', () => User, { nullable: true })
+  @ResolveField('user', () => UserDTO, { nullable: true })
   async user(@Parent() auth: Auth) {
     if (!auth.accessToken) {
       return null;

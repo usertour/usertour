@@ -2,7 +2,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 
 import { AuditWeb } from '@/audit/audit.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 
 import { OAuthConnection } from './dto/oauth-connection.dto';
 import { OAuthService } from './oauth.service';
@@ -18,7 +18,7 @@ export class OAuthGrantResolver {
   constructor(private readonly oauth: OAuthService) {}
 
   @Query(() => [OAuthConnection])
-  async oauthConnections(@UserEntity() user: User): Promise<OAuthConnection[]> {
+  async oauthConnections(@UserEntity() user: UserDTO): Promise<OAuthConnection[]> {
     return this.oauth.listConnections(user.id);
   }
 
@@ -36,7 +36,10 @@ export class OAuthGrantResolver {
         })
       )?.projectId,
   })
-  async revokeOAuthConnection(@UserEntity() user: User, @Args('id') id: string): Promise<boolean> {
+  async revokeOAuthConnection(
+    @UserEntity() user: UserDTO,
+    @Args('id') id: string,
+  ): Promise<boolean> {
     return this.oauth.revokeConnection(user.id, id);
   }
 }

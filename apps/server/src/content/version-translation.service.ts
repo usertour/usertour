@@ -21,7 +21,7 @@ import {
   installEmbedResolutions,
 } from '@/common/ombed/embed-resolve';
 import { isHttpUrl } from '@/common/url';
-import { UtilitiesService } from '@/utilities/utilities.service';
+import { UtilitiesService } from '@/modules/utilities/services/utilities.service';
 
 import { ContentService } from './content.service';
 import {

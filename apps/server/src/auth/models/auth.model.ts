@@ -1,4 +1,4 @@
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { GraphQLJWT } from 'graphql-scalars';
 
@@ -13,8 +13,8 @@ export class Auth {
   @Field(() => String, { nullable: true })
   projectId?: string;
 
-  @Field(() => User, { nullable: true })
-  user?: User;
+  @Field(() => UserDTO, { nullable: true })
+  user?: UserDTO;
 
   /**
    * True when the user has 2FA enabled and must complete verification before tokens are issued.

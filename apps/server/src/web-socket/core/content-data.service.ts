@@ -1,5 +1,5 @@
 import { DELIVERABLE_TRANSLATION } from '@/modules/localizations/constants/deliverable-translation.constant';
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { Prisma } from '@prisma/client';

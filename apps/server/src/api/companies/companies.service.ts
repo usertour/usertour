@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { toArray } from '../shared/query';
 
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { BizService } from '@/biz/biz.service';
 import {
   CompanyMembershipNotFoundError,

@@ -1,6 +1,6 @@
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
-import { InitThemeInput } from '@/themes/dto/theme.input';
+import { InitThemeInput } from '@/modules/themes/dtos/init-theme.input';
 import { Prisma } from '@prisma/client';
 import { ColumnSetting, EventAttributes, UserAttributes, CompanyAttributes } from '@usertour/types';
 import {

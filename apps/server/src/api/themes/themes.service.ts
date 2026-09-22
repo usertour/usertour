@@ -17,7 +17,7 @@ import {
   ValidationError,
 } from '@/common/errors/errors';
 import { ProjectsService } from '@/projects/projects.service';
-import { ThemesService } from '@/themes/themes.service';
+import { ThemesService } from '@/modules/themes/services/themes.service';
 
 import {
   buildDecompileResolversFrom,

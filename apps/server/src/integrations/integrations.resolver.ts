@@ -8,7 +8,7 @@ import { RequirePermission } from '@/auth/permission/require-permission.decorato
 import { ScopeKind } from '@/auth/permission/scope-resolver.registry';
 import { PaginationArgs } from '@/common/pagination/pagination.args';
 import { UserEntity } from '@/common/decorators/user.decorator';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { INTEGRATION_TX_COOKIE } from '@/utils/cookie';
 import {
   IntegrationIdInput,
@@ -121,7 +121,7 @@ export class IntegrationsResolver {
   @RequirePermission({ capability: Capability.IntegrationManage, scope: ScopeKind.Integration })
   async startIntegrationOAuth(
     @Args('data') data: StartIntegrationOAuthInput,
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Context() context: { res: Response },
   ) {
     const { url, state } = await this.connections.startOAuth({ ...data, userId: user.id });

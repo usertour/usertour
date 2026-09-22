@@ -3,7 +3,7 @@ import { Prisma, type Segment as PrismaSegment } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,

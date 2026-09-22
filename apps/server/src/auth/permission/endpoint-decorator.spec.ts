@@ -3,19 +3,19 @@ import { Reflector } from '@nestjs/core';
 import { RESOLVER_TYPE_METADATA } from '@nestjs/graphql';
 
 import { AnalyticsResolver } from '@/analytics/analytics.resolver';
-import { AttributesResolver } from '@/attributes/attributes.resolver';
+import { AttributesResolver } from '@/modules/attributes/attributes.resolver';
 import { AuditResolver } from '@/audit/audit.resolver';
 import { BizResolver } from '@/biz/biz.resolver';
 import { ContentResolver } from '@/content/content.resolver';
 import { EnvironmentsResolver } from '@/modules/environments/environments.resolver';
-import { EventsResolver } from '@/events/events.resolver';
+import { EventsResolver } from '@/modules/events/events.resolver';
 import { IntegrationsResolver } from '@/integrations/integrations.resolver';
 import { LocalizationsResolver } from '@/modules/localizations/localizations.resolver';
 import { ProjectsResolver } from '@/projects/projects.resolver';
 import { SsoResolver } from '@/sso/sso.resolver';
 import { SubscriptionResolver } from '@/subscription/subscription.resolver';
 import { TeamResolver } from '@/team/team.resolver';
-import { ThemesResolver } from '@/themes/themes.resolver';
+import { ThemesResolver } from '@/modules/themes/themes.resolver';
 import { WebhooksResolver } from '@/webhooks/webhooks.resolver';
 
 import { ENDPOINT_CAPABILITY } from './endpoint-capability.map';

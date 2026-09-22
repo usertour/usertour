@@ -5,7 +5,7 @@ import { Public } from '@/common/decorators/public.decorator';
 import { SkipTwoFactorEnrollment } from '@/common/decorators/skip-2fa-enrollment.decorator';
 import { UserEntity } from '@/common/decorators/user.decorator';
 import { InvalidTwoFactorChallengeError } from '@/common/errors';
-import { User } from '@/users/models/user.model';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { AuthService } from './auth.service';
 import {
   ConfirmTwoFactorSetupInput,
@@ -28,7 +28,7 @@ export class TwoFactorResolver {
 
   @Mutation(() => TwoFactorSetupPayload)
   @SkipTwoFactorEnrollment()
-  async startTwoFactorSetup(@UserEntity() user: User): Promise<TwoFactorSetupPayload> {
+  async startTwoFactorSetup(@UserEntity() user: UserDTO): Promise<TwoFactorSetupPayload> {
     return this.twoFactorService.startSetup(user);
   }
 
@@ -36,7 +36,7 @@ export class TwoFactorResolver {
   @SkipTwoFactorEnrollment()
   async confirmTwoFactorSetup(
     @Args('data') data: ConfirmTwoFactorSetupInput,
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
     @Context() context: { res: Response },
   ): Promise<TwoFactorEnableResult> {
     const { recoveryCodes } = await this.twoFactorService.confirmSetup(
@@ -128,7 +128,7 @@ export class TwoFactorResolver {
   @Mutation(() => Boolean)
   async disableTwoFactor(
     @Args('data') data: TwoFactorStepUpInput,
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
   ): Promise<boolean> {
     const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
     if (!fullUser) {
@@ -141,7 +141,7 @@ export class TwoFactorResolver {
   @Mutation(() => TwoFactorEnableResult)
   async regenerateRecoveryCodes(
     @Args('data') data: TwoFactorStepUpInput,
-    @UserEntity() user: User,
+    @UserEntity() user: UserDTO,
   ): Promise<TwoFactorEnableResult> {
     const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
     if (!fullUser) {
