@@ -728,12 +728,13 @@ export class BizService {
       let conditions: any = data ? data : {};
       let segment: Segment;
       if (segmentId) {
-        // A deleted segment keeps its memberships (ADR 0016) but lists no members.
+        // A deleted segment keeps its memberships (ADR 0016) but is not found here,
+        // as over REST.
         segment = await this.prisma.segment.findFirst({
           where: { id: segmentId, projectId, deleted: false },
         });
         if (!segment) {
-          return false;
+          throw new SegmentNotFoundError();
         }
         if (!data && segment.dataType === SegmentDataType.CONDITION) {
           conditions = segment.data;
@@ -809,6 +810,9 @@ export class BizService {
       );
       return resp;
     } catch (error) {
+      if (error instanceof SegmentNotFoundError) {
+        throw error;
+      }
       throw new UnknownError(error);
     }
   }
@@ -827,12 +831,13 @@ export class BizService {
       let conditions: any = data ? data : {};
       let segment: Segment;
       if (segmentId) {
-        // A deleted segment keeps its memberships (ADR 0016) but lists no members.
+        // A deleted segment keeps its memberships (ADR 0016) but is not found here,
+        // as over REST.
         segment = await this.prisma.segment.findFirst({
           where: { id: segmentId, projectId, deleted: false },
         });
         if (!segment) {
-          return false;
+          throw new SegmentNotFoundError();
         }
         if (!data && segment.dataType === SegmentDataType.CONDITION) {
           conditions = segment.data;
@@ -896,6 +901,9 @@ export class BizService {
       );
       return resp;
     } catch (error) {
+      if (error instanceof SegmentNotFoundError) {
+        throw error;
+      }
       throw new UnknownError(error);
     }
   }

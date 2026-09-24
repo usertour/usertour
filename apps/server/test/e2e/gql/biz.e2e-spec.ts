@@ -166,7 +166,7 @@ describe('GraphQL biz (e2e)', () => {
   });
 
   describe('queryBizUser / queryBizCompany on a deleted segment', () => {
-    it('lists no members of a deleted segment, though the memberships are kept', async () => {
+    it('answers E1025 (segment not found), as REST does, and keeps the memberships', async () => {
       const userSegment = await buildSegment(prisma, {
         projectId,
         environmentId,
@@ -189,12 +189,17 @@ describe('GraphQL biz (e2e)', () => {
       await prisma.bizCompanyOnSegment.create({
         data: { segmentId: companySegment.id, bizCompanyId: company.id },
       });
+      // The selection the web app sends: totalCount and pageInfo are
+      // non-nullable, so a bare `false` from the service used to surface as
+      // "Cannot return null for non-nullable field" instead of a real error.
       const run = (field: 'queryBizUser' | 'queryBizCompany', segmentId: string) =>
         graphql(app, {
           token,
           query: `query ($query: BizQuery!, $orderBy: BizOrder!, $first: Int) {
             ${field}(query: $query, orderBy: $orderBy, first: $first) {
-              edges { node { id } }
+              totalCount
+              pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+              edges { cursor node { id } }
             }
           }`,
           variables: {
@@ -204,10 +209,19 @@ describe('GraphQL biz (e2e)', () => {
           },
         });
 
-      const users = await run('queryBizUser', userSegment.id);
-      expect(users.body.data?.queryBizUser?.edges ?? []).toEqual([]);
-      const companies = await run('queryBizCompany', companySegment.id);
-      expect(companies.body.data?.queryBizCompany?.edges ?? []).toEqual([]);
+      for (const [field, segmentId] of [
+        ['queryBizUser', userSegment.id],
+        ['queryBizCompany', companySegment.id],
+      ] as const) {
+        const res = await run(field, segmentId);
+        expect(res.body.data).toBeNull();
+        expect(res.body.errors).toHaveLength(1);
+        expect(res.body.errors[0].extensions.code).toBe('E1025');
+      }
+      expect(await prisma.bizUserOnSegment.count({ where: { segmentId: userSegment.id } })).toBe(1);
+      expect(
+        await prisma.bizCompanyOnSegment.count({ where: { segmentId: companySegment.id } }),
+      ).toBe(1);
     });
   });
 
