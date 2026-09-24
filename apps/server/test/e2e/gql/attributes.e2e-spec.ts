@@ -203,7 +203,7 @@ describe('GraphQL attributes (e2e)', () => {
   });
 
   describe('deleteAttribute', () => {
-    it('hard-deletes the attribute row', async () => {
+    it('soft-deletes the attribute row (ADR 0016)', async () => {
       const created = gqlData(await createAttribute({ displayName: 'Trash' })).createAttribute;
 
       const res = await graphql(app, {
@@ -216,7 +216,7 @@ describe('GraphQL attributes (e2e)', () => {
       expect(gqlData(res).deleteAttribute).toMatchObject({ id: created.id });
 
       const row = await prisma.attribute.findUnique({ where: { id: created.id } });
-      expect(row).toBeNull();
+      expect(row).toMatchObject({ deleted: true });
     });
 
     it('errors deleting an unknown attribute', async () => {

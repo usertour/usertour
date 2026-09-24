@@ -2,6 +2,7 @@ import { EnvironmentsModule } from '@/modules/environments/environments.module';
 import { LocalizationsModule } from '@/modules/localizations/localizations.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { CommonModule } from '@/modules/common/common.module';
+import { ReferencesModule } from '@/modules/references/references.module';
 import { UtilitiesModule } from '@/modules/utilities/utilities.module';
 import { PermissionGuard } from '@/modules/auth/permission/permission.guard';
 import { Module } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { WebSocketModule } from '@/web-socket/web-socket.module';
     WebSocketModule,
     CommonModule,
     UtilitiesModule,
+    ReferencesModule,
   ],
   providers: [
     ContentResolver,

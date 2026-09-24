@@ -174,18 +174,57 @@ describe('MCP tool contract (e2e)', () => {
     });
   });
 
-  describe('delete_segment', () => {
-    it('hard-deletes a manual segment by id', async () => {
+  describe('delete_segment / restore_segment', () => {
+    it('soft-deletes a manual segment, keeping its members; restore_segment brings it back', async () => {
       const segment = await buildSegment(prisma, {
         projectId: projectA,
         environmentId: envA,
         dataType: 3, // MANUAL
       });
-      const token = await mint([Capability.SegmentDelete]);
+      const bizUser = await buildBizUser(prisma, { environmentId: envA });
+      await prisma.bizUserOnSegment.create({
+        data: { segmentId: segment.id, bizUserId: bizUser.id, data: {} },
+      });
+      const token = await mint([Capability.SegmentDelete, Capability.SegmentUpdate]);
 
       const result = await callTool('delete_segment', { id: segment.id }, token);
       expect(result.isError).toBeFalsy();
-      expect(await prisma.segment.findUnique({ where: { id: segment.id } })).toBeNull();
+      expect(await prisma.segment.findUnique({ where: { id: segment.id } })).toMatchObject({
+        deleted: true,
+      });
+      expect(await prisma.bizUserOnSegment.count({ where: { segmentId: segment.id } })).toBe(1);
+
+      const restored = await callTool('restore_segment', { id: segment.id }, token);
+      expect(restored.isError).toBeFalsy();
+      expect(await prisma.segment.findUnique({ where: { id: segment.id } })).toMatchObject({
+        deleted: false,
+      });
+    });
+
+    it('refuses a segment live content still uses with E1043, naming the content', async () => {
+      const segment = await buildSegment(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        dataType: 3,
+      });
+      const content = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        name: 'Segment gated tour',
+      });
+      await buildVersion(prisma, {
+        contentId: content.id,
+        config: { autoStartRules: [{ type: 'segment', data: { segmentId: segment.id } }] },
+      });
+      const token = await mint([Capability.SegmentDelete]);
+
+      const result = await callTool('delete_segment', { id: segment.id }, token);
+      expect(result.isError).toBe(true);
+      expect(toolText(result)).toContain('E1043');
+      expect(toolText(result)).toContain('Segment gated tour');
+      expect(await prisma.segment.findUnique({ where: { id: segment.id } })).toMatchObject({
+        deleted: false,
+      });
     });
 
     it('refuses the built-in "all" segment with E1037', async () => {
@@ -198,18 +237,28 @@ describe('MCP tool contract (e2e)', () => {
       const result = await callTool('delete_segment', { id: builtin.id }, token);
       expect(result.isError).toBe(true);
       expect(toolText(result)).toContain('E1037');
-      expect(await prisma.segment.findUnique({ where: { id: builtin.id } })).not.toBeNull();
+      expect(await prisma.segment.findUnique({ where: { id: builtin.id } })).toMatchObject({
+        deleted: false,
+      });
     });
   });
 
-  describe('delete_theme', () => {
-    it('hard-deletes an ordinary theme by id', async () => {
+  describe('delete_theme / restore_theme', () => {
+    it('soft-deletes an ordinary theme; restore_theme brings it back', async () => {
       const theme = await buildTheme(prisma, { projectId: projectA });
-      const token = await mint([Capability.ThemeDelete]);
+      const token = await mint([Capability.ThemeDelete, Capability.ThemeUpdate]);
 
       const result = await callTool('delete_theme', { id: theme.id }, token);
       expect(result.isError).toBeFalsy();
-      expect(await prisma.theme.findUnique({ where: { id: theme.id } })).toBeNull();
+      expect(await prisma.theme.findUnique({ where: { id: theme.id } })).toMatchObject({
+        deleted: true,
+      });
+
+      const restored = await callTool('restore_theme', { id: theme.id }, token);
+      expect(restored.isError).toBeFalsy();
+      expect(await prisma.theme.findUnique({ where: { id: theme.id } })).toMatchObject({
+        deleted: false,
+      });
     });
 
     it('refuses the project default theme with E1034', async () => {
@@ -221,18 +270,47 @@ describe('MCP tool contract (e2e)', () => {
     });
   });
 
-  describe('delete_attribute_definition', () => {
-    it('hard-deletes a custom attribute by id', async () => {
+  describe('delete_attribute_definition / restore_attribute_definition', () => {
+    it('soft-deletes a custom attribute; restore_attribute_definition brings it back', async () => {
       const attribute = await buildAttribute(prisma, {
         projectId: projectA,
         bizType: 1,
         dataType: 2,
       });
-      const token = await mint([Capability.AttributeDelete]);
+      const token = await mint([Capability.AttributeDelete, Capability.AttributeUpdate]);
 
       const result = await callTool('delete_attribute_definition', { id: attribute.id }, token);
       expect(result.isError).toBeFalsy();
-      expect(await prisma.attribute.findUnique({ where: { id: attribute.id } })).toBeNull();
+      expect(await prisma.attribute.findUnique({ where: { id: attribute.id } })).toMatchObject({
+        deleted: true,
+      });
+
+      const restored = await callTool('restore_attribute_definition', { id: attribute.id }, token);
+      expect(restored.isError).toBeFalsy();
+      expect(await prisma.attribute.findUnique({ where: { id: attribute.id } })).toMatchObject({
+        deleted: false,
+      });
+    });
+
+    it('refuses an attribute a draft condition still uses with E1042', async () => {
+      const attribute = await buildAttribute(prisma, {
+        projectId: projectA,
+        bizType: 1,
+        dataType: 2,
+      });
+      const content = await buildContent(prisma, { projectId: projectA, environmentId: envA });
+      await buildVersion(prisma, {
+        contentId: content.id,
+        config: { autoStartRules: [{ type: 'user-attr', data: { attrId: attribute.id } }] },
+      });
+      const token = await mint([Capability.AttributeDelete]);
+
+      const result = await callTool('delete_attribute_definition', { id: attribute.id }, token);
+      expect(result.isError).toBe(true);
+      expect(toolText(result)).toContain('E1042');
+      expect(await prisma.attribute.findUnique({ where: { id: attribute.id } })).toMatchObject({
+        deleted: false,
+      });
     });
 
     it('refuses a predefined attribute with E1036', async () => {
@@ -246,30 +324,49 @@ describe('MCP tool contract (e2e)', () => {
       const result = await callTool('delete_attribute_definition', { id: attribute.id }, token);
       expect(result.isError).toBe(true);
       expect(toolText(result)).toContain('E1036');
-      expect(await prisma.attribute.findUnique({ where: { id: attribute.id } })).not.toBeNull();
+      expect(await prisma.attribute.findUnique({ where: { id: attribute.id } })).toMatchObject({
+        deleted: false,
+      });
     });
   });
 
-  describe('delete_event_definition', () => {
-    it('hard-deletes an unused event definition by id', async () => {
-      const event = await buildEvent(prisma, { projectId: projectA });
-      const token = await mint([Capability.EventDelete]);
-
-      const result = await callTool('delete_event_definition', { id: event.id }, token);
-      expect(result.isError).toBeFalsy();
-      expect(await prisma.event.findUnique({ where: { id: event.id } })).toBeNull();
-    });
-
-    it('refuses a definition with recorded events with E1030', async () => {
+  describe('delete_event_definition / restore_event_definition', () => {
+    it('soft-deletes an event even with recorded events; restore_event_definition brings it back', async () => {
       const event = await buildEvent(prisma, { projectId: projectA });
       const bizUser = await buildBizUser(prisma, { environmentId: envA });
       await prisma.bizEvent.create({ data: { eventId: event.id, bizUserId: bizUser.id } });
+      const token = await mint([Capability.EventDelete, Capability.EventUpdate]);
+
+      const result = await callTool('delete_event_definition', { id: event.id }, token);
+      expect(result.isError).toBeFalsy();
+      expect(await prisma.event.findUnique({ where: { id: event.id } })).toMatchObject({
+        deleted: true,
+      });
+      expect(await prisma.bizEvent.count({ where: { eventId: event.id } })).toBe(1);
+
+      const restored = await callTool('restore_event_definition', { id: event.id }, token);
+      expect(restored.isError).toBeFalsy();
+      expect(await prisma.event.findUnique({ where: { id: event.id } })).toMatchObject({
+        deleted: false,
+      });
+    });
+
+    it('refuses an event a tracker still fires with E1030', async () => {
+      const event = await buildEvent(prisma, { projectId: projectA });
+      const content = await buildContent(prisma, {
+        projectId: projectA,
+        environmentId: envA,
+        type: 'tracker',
+      });
+      await buildVersion(prisma, { contentId: content.id, data: { eventId: event.id } });
       const token = await mint([Capability.EventDelete]);
 
       const result = await callTool('delete_event_definition', { id: event.id }, token);
       expect(result.isError).toBe(true);
       expect(toolText(result)).toContain('E1030');
-      expect(await prisma.event.findUnique({ where: { id: event.id } })).not.toBeNull();
+      expect(await prisma.event.findUnique({ where: { id: event.id } })).toMatchObject({
+        deleted: false,
+      });
     });
   });
 

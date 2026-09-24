@@ -48,6 +48,8 @@ import {
   isValidISO8601,
 } from '@usertour/helpers';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
+import { ReferencesService } from '@/modules/references/services/references.service';
+import { deletedDependencyRestoreError } from '@/modules/references/utils/deleted-dependency-error.util';
 
 // Legacy data in DB may be stored as Record<string, boolean>; new shape is ColumnSetting[].
 // Normalize at the service boundary so callers always see the array shape.
@@ -90,10 +92,10 @@ interface ResolvedAttributes {
    */
   attrMap: Map<string, Attribute>;
   /**
-   * True iff at least one Attribute row was created during this call.
-   * Triggers project-level Attribute cache invalidation.
+   * True iff at least one Attribute row was created or restored during this
+   * call. Triggers project-level Attribute cache invalidation.
    */
-  createdNewAttribute: boolean;
+  catalogChanged: boolean;
 }
 
 /**
@@ -129,6 +131,7 @@ export class BizService {
     private prisma: PrismaService,
     private readonly cache: ProjectCacheService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly references: ReferencesService,
   ) {}
 
   /**
@@ -359,24 +362,59 @@ export class BizService {
     });
   }
 
+  /**
+   * Soft delete (ADR 0016). Memberships stay, so a restored manual segment comes
+   * back with its members; the sync mappings go, as the cascade removed them
+   * before, so no integration keeps writing into a deleted segment. Refused
+   * while a live surface (content conditions, theme variations) uses it.
+   */
   async deleteSegment(data: SegmentDeletion) {
-    try {
-      const deleteUsersOnSegment = this.prisma.bizUserOnSegment.deleteMany({
-        where: { segmentId: data.id },
-      });
-      const deleteCompaniesOnSegment = this.prisma.bizCompanyOnSegment.deleteMany({
-        where: { segmentId: data.id },
-      });
-      const deleteSegment = this.prisma.segment.delete({
-        where: { id: data.id },
-      });
-      return await this.prisma.$transaction([
-        deleteUsersOnSegment,
-        deleteCompaniesOnSegment,
-        deleteSegment,
-      ]);
-    } catch (_) {
-      throw new UnknownError();
+    const segment = await this.prisma.segment.findFirst({
+      where: { id: data.id, deleted: false },
+    });
+    if (!segment) {
+      throw new SegmentNotFoundError();
+    }
+    await this.references.assertUnreferenced(segment.projectId, 'segment', segment.id);
+    const [, deleted] = await this.prisma.$transaction([
+      this.prisma.integrationSyncedSegment.deleteMany({ where: { segmentId: segment.id } }),
+      this.prisma.segment.update({ where: { id: segment.id }, data: { deleted: true } }),
+    ]);
+    return deleted;
+  }
+
+  /**
+   * Bring a soft-deleted segment back with its members. Idempotent on a live
+   * one. Refused while its conditions use deleted definitions (ADR 0016 §5).
+   */
+  async restoreSegment(id: string) {
+    const segment = await this.prisma.segment.findUnique({ where: { id } });
+    if (!segment) {
+      throw new SegmentNotFoundError();
+    }
+    if (segment.deleted) {
+      const dependencies = await this.references.findDeletedConditionReferences(
+        segment.projectId,
+        segment.data,
+      );
+      if (dependencies.length > 0) {
+        throw deletedDependencyRestoreError('segment', dependencies);
+      }
+    }
+    const restored = segment.deleted
+      ? await this.prisma.segment.update({ where: { id }, data: { deleted: false } })
+      : segment;
+    return { ...restored, columns: normalizeSegmentColumns(restored.columns) };
+  }
+
+  /** Membership writes only touch live segments. */
+  private async assertSegmentLive(segmentId: string): Promise<void> {
+    const segment = await this.prisma.segment.findFirst({
+      where: { id: segmentId, deleted: false },
+      select: { id: true },
+    });
+    if (!segment) {
+      throw new ParamsError('Segment not found');
     }
   }
 
@@ -388,7 +426,7 @@ export class BizService {
       throw new ParamsError('Environment not found');
     }
     const segments = await this.prisma.segment.findMany({
-      where: { projectId: environment.projectId },
+      where: { projectId: environment.projectId, deleted: false },
       orderBy: { createdAt: 'asc' },
     });
     return segments.map((segment) => ({
@@ -415,7 +453,7 @@ export class BizService {
 
     // Get segment and validate
     const segment = await this.getSegment(firstItem.segmentId);
-    if (!segment) {
+    if (!segment || segment.deleted) {
       throw new ParamsError('Segment not found');
     }
 
@@ -446,6 +484,7 @@ export class BizService {
   }
 
   async deleteBizUserOnSegment(data: SegmentUserRemoval) {
+    await this.assertSegmentLive(data.segmentId);
     await this.assertSegmentNotSynced(data.segmentId, 'its membership');
     return await this.prisma.bizUserOnSegment.deleteMany({
       where: {
@@ -472,7 +511,7 @@ export class BizService {
 
     // Get segment and validate
     const segment = await this.getSegment(firstItem.segmentId);
-    if (!segment) {
+    if (!segment || segment.deleted) {
       throw new ParamsError('Segment not found');
     }
 
@@ -503,6 +542,7 @@ export class BizService {
   }
 
   async deleteBizCompanyOnSegment(data: SegmentCompanyRemoval) {
+    await this.assertSegmentLive(data.segmentId);
     return await this.prisma.bizCompanyOnSegment.deleteMany({
       where: {
         segmentId: data.segmentId,
@@ -688,11 +728,13 @@ export class BizService {
       let conditions: any = data ? data : {};
       let segment: Segment;
       if (segmentId) {
+        // A deleted segment keeps its memberships (ADR 0016) but is not found here,
+        // as over REST.
         segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, projectId },
+          where: { id: segmentId, projectId, deleted: false },
         });
         if (!segment) {
-          return false;
+          throw new SegmentNotFoundError();
         }
         if (!data && segment.dataType === SegmentDataType.CONDITION) {
           conditions = segment.data;
@@ -768,6 +810,9 @@ export class BizService {
       );
       return resp;
     } catch (error) {
+      if (error instanceof SegmentNotFoundError) {
+        throw error;
+      }
       throw new UnknownError(error);
     }
   }
@@ -786,11 +831,13 @@ export class BizService {
       let conditions: any = data ? data : {};
       let segment: Segment;
       if (segmentId) {
+        // A deleted segment keeps its memberships (ADR 0016) but is not found here,
+        // as over REST.
         segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, projectId },
+          where: { id: segmentId, projectId, deleted: false },
         });
         if (!segment) {
-          return false;
+          throw new SegmentNotFoundError();
         }
         if (!data && segment.dataType === SegmentDataType.CONDITION) {
           conditions = segment.data;
@@ -854,6 +901,9 @@ export class BizService {
       );
       return resp;
     } catch (error) {
+      if (error instanceof SegmentNotFoundError) {
+        throw error;
+      }
       throw new UnknownError(error);
     }
   }
@@ -1094,13 +1144,13 @@ export class BizService {
     attributes: Record<string, any>,
     origin?: string,
   ): Promise<Record<string, any>> {
-    const { outputData, createdNewAttribute } = await this.resolveAttributes(
+    const { outputData, catalogChanged } = await this.resolveAttributes(
       tx,
       projectId,
       bizType,
       await this.withoutForeignOwnedAttributes(tx, projectId, bizType, attributes, origin),
     );
-    if (createdNewAttribute) {
+    if (catalogChanged) {
       await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
     return outputData;
@@ -1117,7 +1167,7 @@ export class BizService {
     eventId: string,
     attributes: Record<string, any>,
   ): Promise<Record<string, any>> {
-    const { outputData, attrMap, createdNewAttribute } = await this.resolveAttributes(
+    const { outputData, attrMap, catalogChanged } = await this.resolveAttributes(
       tx,
       projectId,
       AttributeBizType.EVENT,
@@ -1132,7 +1182,7 @@ export class BizService {
       .filter((id): id is string => !!id);
     await this.linkAttributesToEvent(tx, eventId, linkIds);
 
-    if (createdNewAttribute) {
+    if (catalogChanged) {
       await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
     return outputData;
@@ -1201,7 +1251,7 @@ export class BizService {
       }
     }
     if (codeNames.length === 0) {
-      return { outputData, attrMap, createdNewAttribute: false };
+      return { outputData, attrMap, catalogChanged: false };
     }
 
     const existing = await tx.attribute.findMany({
@@ -1212,9 +1262,17 @@ export class BizService {
     }
 
     const displayName = bizType === AttributeBizType.EVENT ? humanize : capitalizeFirstLetter;
-    let createdNewAttribute = false;
+    let catalogChanged = false;
     for (const codeName of codeNames) {
       let attr = attrMap.get(codeName);
+      // Data still arriving under a soft-deleted codeName means the attribute is
+      // not dead: restore it (ADR 0016), keeping its data type — values that do
+      // not validate against it are dropped below like for any attribute.
+      if (attr?.deleted) {
+        attr = await tx.attribute.update({ where: { id: attr.id }, data: { deleted: false } });
+        attrMap.set(codeName, attr);
+        catalogChanged = true;
+      }
       if (!attr) {
         attr = await tx.attribute.create({
           data: {
@@ -1226,7 +1284,7 @@ export class BizService {
           },
         });
         attrMap.set(codeName, attr);
-        createdNewAttribute = true;
+        catalogChanged = true;
       }
       const result = this.validateAttrValue(attr, attributes[codeName]);
       if (result.ok) {
@@ -1234,7 +1292,7 @@ export class BizService {
       }
     }
 
-    return { outputData, attrMap, createdNewAttribute };
+    return { outputData, attrMap, catalogChanged };
   }
 
   /**
@@ -1519,7 +1577,7 @@ export class BizService {
    */
   async assertSegmentInProject(segmentId: string, projectId: string): Promise<void> {
     const segment = await this.prisma.segment.findFirst({
-      where: { id: segmentId, projectId },
+      where: { id: segmentId, projectId, deleted: false },
       select: { id: true },
     });
     if (!segment) {

@@ -717,14 +717,30 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete a segment',
       capability: Capability.SegmentDelete,
       description:
-        'Delete a segment. Not blocked while referenced: a content start/hide rule gating on it ' +
-        'keeps a dead reference that FAILS CLOSED (the condition never matches again). Check ' +
-        '`list_references(kind: "segment")` first.',
+        'Soft-delete a segment: it leaves lists but keeps its members, and `restore_segment` ' +
+        'brings it back. REFUSED (E1043) while live or draft content or a theme variation still ' +
+        'uses it — the error names them; `list_references(kind: "segment")` shows where. An ' +
+        'integration sync feeding it stops (restore does not bring the sync back).',
       inputSchema: { id: z.string().describe('The segment id.') },
       handler: async (args, ctx) => {
         await ctx.services.segments.delete(String(args.id), ctx.projectId);
         return { success: true };
       },
+    },
+    {
+      name: 'restore_segment',
+      audit: auditUpdate('segment', (args, ctx) =>
+        ctx.prisma.segment.findUnique({ where: { id: String(args.id) } }),
+      ),
+      title: 'Restore a deleted segment',
+      capability: Capability.SegmentUpdate,
+      description:
+        'Bring a soft-deleted segment back with its members (find it via `list_segments` with ' +
+        '`deleted: true`). REFUSED (E1046) while its conditions use deleted attributes — the ' +
+        'error names them with ids; `restore_attribute_definition` them first, then retry. ' +
+        'Idempotent if the segment is not deleted. Returns the segment.',
+      inputSchema: { id: z.string().describe('The id of a deleted segment.') },
+      handler: (args, ctx) => ctx.services.segments.restore(String(args.id), ctx.projectId),
     },
     {
       name: 'add_segment_member',
@@ -868,14 +884,31 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete a theme',
       capability: Capability.ThemeDelete,
       description:
-        'Delete a theme. Rejected for the project default / system themes, and while any live or ' +
-        'draft version still uses the theme (switch that content to another theme first — see ' +
-        'update_content_version themeId). Historical versions do not block deletion.',
+        'Soft-delete a theme: it leaves lists but historical versions keep it, and ' +
+        '`restore_theme` brings it back. Rejected for the project default / system themes, and ' +
+        'while any live or draft version still uses the theme (switch that content to another ' +
+        'theme first — see update_content_version themeId). Historical versions do not block ' +
+        'deletion.',
       inputSchema: { id: z.string().describe('The theme id.') },
       handler: async (args, ctx) => {
         await ctx.services.themes.delete(String(args.id), ctx.projectId);
         return { success: true };
       },
+    },
+    {
+      name: 'restore_theme',
+      audit: auditUpdate('theme', (args, ctx) =>
+        ctx.prisma.theme.findUnique({ where: { id: String(args.id) } }),
+      ),
+      title: 'Restore a deleted theme',
+      capability: Capability.ThemeUpdate,
+      description:
+        'Bring a soft-deleted theme back as it was (find it via `list_themes` with ' +
+        '`deleted: true`). It returns as a non-default theme. REFUSED (E1046) while its variation ' +
+        'conditions use deleted attributes or segments — the error names them with ids; restore ' +
+        'them first, then retry. Idempotent if the theme is not deleted. Returns the theme.',
+      inputSchema: { id: z.string().describe('The id of a deleted theme.') },
+      handler: (args, ctx) => ctx.services.themes.restore(String(args.id), ctx.projectId),
     },
 
     // ---- Localizations (project-level) ----
@@ -1017,18 +1050,32 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete an attribute definition',
       capability: Capability.AttributeDelete,
       description:
-        'Delete an attribute definition. NOT blocked or cascaded even when it is still in use: ' +
-        'any condition that references it (a segment, or a content start/hide/trigger/button rule), ' +
-        'a survey `bindAttribute`, or a theme variation keeps a now-dead reference and silently ' +
-        'FAILS CLOSED — a segment on it then matches nobody, content gated on it stops showing ' +
-        '(never fail-open, but silently broken). Stored user values for it are orphaned, not ' +
-        'purged. Find every reference first with `list_references(kind: "attribute")`, rewire ' +
-        'or unbind them, THEN delete.',
+        'Soft-delete an attribute definition: it leaves lists and pickers but keeps resolving by ' +
+        'id, and `restore_attribute_definition` — or creating the same scope + codeName again — ' +
+        'brings it back. REFUSED (E1042) while anything live still uses it: a condition in live ' +
+        'or draft content (start/hide/trigger/button rules), a survey `bindAttribute`, a segment, ' +
+        'or a theme variation — the error names them; `list_references(kind: "attribute")` shows ' +
+        'where. Stored user values are kept. Data sent under its codeName (identify) restores it.',
       inputSchema: { id: z.string().describe('The attribute id.') },
       handler: async (args, ctx) => {
         await ctx.services.attributeDefinitions.delete(String(args.id), ctx.projectId);
         return { success: true };
       },
+    },
+    {
+      name: 'restore_attribute_definition',
+      audit: auditUpdate('attribute', (args, ctx) =>
+        ctx.prisma.attribute.findUnique({ where: { id: String(args.id) } }),
+      ),
+      title: 'Restore a deleted attribute definition',
+      capability: Capability.AttributeUpdate,
+      description:
+        'Bring a soft-deleted attribute definition back as it was (find it via ' +
+        '`list_attribute_definitions` with `deleted: true`), so conditions that referenced it ' +
+        'resolve again. Idempotent if it is not deleted. Returns the definition.',
+      inputSchema: { id: z.string().describe('The id of a deleted attribute definition.') },
+      handler: (args, ctx) =>
+        ctx.services.attributeDefinitions.restore(String(args.id), ctx.projectId),
     },
 
     // ---- Event definitions (project-level) ----
@@ -1072,17 +1119,30 @@ export function buildWriteTools(): McpTool[] {
       title: 'Delete an event definition',
       capability: Capability.EventDelete,
       description:
-        'Delete an event definition. Refused (E1030) if it already has recorded events. Otherwise ' +
-        'NOT blocked or cascaded even when referenced: a tracker that fires it (its `data.event`) ' +
-        'or an event condition keeps a now-dead reference and silently stops firing / matching. ' +
-        '`validate_content_version` will then flag the referencing content ("references an unknown ' +
-        'event"), but an already-PUBLISHED version stays broken and segments have no validate — so ' +
-        'rewire references BEFORE deleting.',
+        'Soft-delete an event definition: it leaves lists and pickers, recorded events keep ' +
+        'resolving it, and `restore_event_definition` — or creating or tracking the same codeName ' +
+        'again — brings it back. REFUSED (E1030) while live or draft content uses it (a tracker ' +
+        'that fires it, or an event condition) — the error names them; ' +
+        '`list_references(kind: "event")` shows where. Having recorded events does not block it.',
       inputSchema: { id: z.string().describe('The event id.') },
       handler: async (args, ctx) => {
         await ctx.services.eventDefinitions.delete(String(args.id), ctx.projectId);
         return { success: true };
       },
+    },
+    {
+      name: 'restore_event_definition',
+      audit: auditUpdate('event', (args, ctx) =>
+        ctx.prisma.event.findUnique({ where: { id: String(args.id) } }),
+      ),
+      title: 'Restore a deleted event definition',
+      capability: Capability.EventUpdate,
+      description:
+        'Bring a soft-deleted event definition back as it was (find it via ' +
+        '`list_event_definitions` with `deleted: true`). Idempotent if it is not deleted. ' +
+        'Returns the definition.',
+      inputSchema: { id: z.string().describe('The id of a deleted event definition.') },
+      handler: (args, ctx) => ctx.services.eventDefinitions.restore(String(args.id), ctx.projectId),
     },
 
     // ---- Sessions (env-level; session:manage) ----

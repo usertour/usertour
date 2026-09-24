@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
+import { deletedListField, isoTimestamp, orderByField, singleOrArray } from '../shared/query';
 
 import { representationCondition } from '../content-representation/representation.schema';
 import { nameSearchField } from '@/modules/common/utils/query-filters.util';
@@ -90,6 +90,7 @@ export const listThemesQuery = z.object({
   expand: singleOrArray(themeExpand).describe(
     'Inline: settings (stored intent), variations, resolvedSettings (every "Auto" resolved).',
   ),
+  deleted: deletedListField('themes'),
 });
 export class ListThemesQueryDto extends createZodDto(listThemesQuery) {}
 

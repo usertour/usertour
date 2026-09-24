@@ -2,6 +2,7 @@ import { useDeleteThemeMutation } from '@usertour/hooks';
 import { Theme } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
+import { localizeDefinitionReferenceError } from '@/utils/definition-references';
 
 interface ThemeDeleteDialogProps {
   data: Theme;
@@ -27,7 +28,11 @@ export const ThemeDeleteDialog = (props: ThemeDeleteDialogProps) => {
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}
-      invoke={() => deleteTheme(data.id)}
+      invoke={() =>
+        deleteTheme(data.id).catch((error) => {
+          throw localizeDefinitionReferenceError(error, t);
+        })
+      }
       successToast={t('settings.themes.deleteSuccess')}
       failureToast={t('settings.themes.deleteFailure')}
       onSettled={onSubmit}

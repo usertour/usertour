@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { singleOrArray, isoTimestamp } from '../shared/query';
+import { deletedListField, isoTimestamp, singleOrArray } from '../shared/query';
 
 import { codeName as codeNameSchema } from '../shared/codename';
 import { nameSearchField } from '@/modules/common/utils/query-filters.util';
@@ -25,6 +25,7 @@ export const listEventDefinitionsQuery = z.object({
   ).describe(
     'Order by createdAt / codeName / displayName (prefix - for descending). Text sorting is case-sensitive (byte order): uppercase sorts before lowercase.',
   ),
+  deleted: deletedListField('event definitions'),
 });
 export class ListEventDefinitionsQueryDto extends createZodDto(listEventDefinitionsQuery) {}
 

@@ -2,6 +2,7 @@ import { Event } from '@usertour/types';
 import { useDeleteEventMutation } from '@usertour/hooks';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { Trans, useTranslation } from 'react-i18next';
+import { localizeDefinitionReferenceError } from '@/utils/definition-references';
 
 interface EventDeleteDialogProps {
   data: Event;
@@ -33,7 +34,11 @@ export const EventDeleteDialog = (props: EventDeleteDialogProps) => {
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}
-      invoke={() => deleteEvent(data.id)}
+      invoke={() =>
+        deleteEvent(data.id).catch((error) => {
+          throw localizeDefinitionReferenceError(error, t);
+        })
+      }
       successToast={t('settings.events.deleteSuccess')}
       failureToast={t('settings.events.deleteFailure')}
       onSettled={onSubmit}

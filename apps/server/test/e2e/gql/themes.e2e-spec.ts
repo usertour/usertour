@@ -164,7 +164,7 @@ describe('GraphQL themes (e2e)', () => {
   });
 
   describe('deleteTheme', () => {
-    it('deletes a non-default theme', async () => {
+    it('soft-deletes a non-default theme (ADR 0016)', async () => {
       const t = gqlData(await createTheme('Trash')).createTheme;
       const res = await graphql(app, {
         token,
@@ -174,7 +174,19 @@ describe('GraphQL themes (e2e)', () => {
       expect(gqlData(res).deleteTheme).toMatchObject({ id: t.id });
 
       const row = await prisma.theme.findUnique({ where: { id: t.id } });
-      expect(row).toBeNull();
+      expect(row).toMatchObject({ deleted: true });
+
+      // a deleted theme can never become the project default
+      const setDefault = await graphql(app, {
+        token,
+        query:
+          'mutation ($themeId: String!) { setDefaultTheme(themeId: $themeId) { id isDefault } }',
+        variables: { themeId: t.id },
+      });
+      expect(setDefault.body.errors?.length).toBeGreaterThan(0);
+      expect(await prisma.theme.findUnique({ where: { id: t.id } })).toMatchObject({
+        isDefault: false,
+      });
     });
   });
 });

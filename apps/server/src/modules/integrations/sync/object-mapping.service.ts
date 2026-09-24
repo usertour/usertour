@@ -384,7 +384,7 @@ export class ObjectMappingService {
     for (const field of fields) {
       const remote = remoteByName.get(field.remote) as HubspotProperty;
       const dataType = localDataTypeFor(remote);
-      const current = existingByCode.get(field.local);
+      let current = existingByCode.get(field.local);
       if (!current) {
         await tx.attribute.create({
           data: {
@@ -399,10 +399,14 @@ export class ObjectMappingService {
         });
         continue;
       }
+      // A soft-deleted attribute keeps its codeName reserved (ADR 0016): mapping
+      // onto it restores it, then the adoption rules below apply as to any
+      // existing attribute. The transaction rolls the restore back if they refuse.
       if (current.deleted) {
-        throw new ValidationError(
-          `Attribute "${field.local}" was deleted; choose another attribute name.`,
-        );
+        current = await tx.attribute.update({
+          where: { id: current.id },
+          data: { deleted: false },
+        });
       }
       // System attributes stay Usertour's: `email` is the match key (a
       // provider-owned email is dropped on identify, so new users could never

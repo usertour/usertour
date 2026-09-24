@@ -165,6 +165,66 @@ describe('GraphQL biz (e2e)', () => {
     });
   });
 
+  describe('queryBizUser / queryBizCompany on a deleted segment', () => {
+    it('answers E1025 (segment not found), as REST does, and keeps the memberships', async () => {
+      const userSegment = await buildSegment(prisma, {
+        projectId,
+        environmentId,
+        bizType: 1,
+        dataType: 3,
+        deleted: true,
+      });
+      const companySegment = await buildSegment(prisma, {
+        projectId,
+        environmentId,
+        bizType: 2,
+        dataType: 3,
+        deleted: true,
+      });
+      const member = await buildBizUser(prisma, { environmentId });
+      const company = await buildBizCompany(prisma, { environmentId });
+      await prisma.bizUserOnSegment.create({
+        data: { segmentId: userSegment.id, bizUserId: member.id },
+      });
+      await prisma.bizCompanyOnSegment.create({
+        data: { segmentId: companySegment.id, bizCompanyId: company.id },
+      });
+      // The selection the web app sends: totalCount and pageInfo are
+      // non-nullable, so a bare `false` from the service used to surface as
+      // "Cannot return null for non-nullable field" instead of a real error.
+      const run = (field: 'queryBizUser' | 'queryBizCompany', segmentId: string) =>
+        graphql(app, {
+          token,
+          query: `query ($query: BizQuery!, $orderBy: BizOrder!, $first: Int) {
+            ${field}(query: $query, orderBy: $orderBy, first: $first) {
+              totalCount
+              pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+              edges { cursor node { id } }
+            }
+          }`,
+          variables: {
+            query: { environmentId, segmentId },
+            orderBy: { field: 'createdAt', direction: 'desc' },
+            first: 50,
+          },
+        });
+
+      for (const [field, segmentId] of [
+        ['queryBizUser', userSegment.id],
+        ['queryBizCompany', companySegment.id],
+      ] as const) {
+        const res = await run(field, segmentId);
+        expect(res.body.data).toBeNull();
+        expect(res.body.errors).toHaveLength(1);
+        expect(res.body.errors[0].extensions.code).toBe('E1025');
+      }
+      expect(await prisma.bizUserOnSegment.count({ where: { segmentId: userSegment.id } })).toBe(1);
+      expect(
+        await prisma.bizCompanyOnSegment.count({ where: { segmentId: companySegment.id } }),
+      ).toBe(1);
+    });
+  });
+
   // ── queryBizCompany ──────────────────────────────────────────────────────
 
   describe('queryBizCompany', () => {
@@ -459,7 +519,7 @@ describe('GraphQL biz (e2e)', () => {
   // ── deleteSegment ────────────────────────────────────────────────────────
 
   describe('deleteSegment', () => {
-    it('deletes a segment and its join rows', async () => {
+    it('soft-deletes a segment and keeps its members (ADR 0016)', async () => {
       const seg = await buildSegment(prisma, { projectId, environmentId, bizType: 1, dataType: 3 });
       const bizUser = await buildBizUser(prisma, { environmentId });
       await prisma.bizUserOnSegment.create({
@@ -477,8 +537,8 @@ describe('GraphQL biz (e2e)', () => {
         prisma.segment.findUnique({ where: { id: seg.id } }),
         prisma.bizUserOnSegment.count({ where: { segmentId: seg.id } }),
       ]);
-      expect(row).toBeNull();
-      expect(joins).toBe(0);
+      expect(row).toMatchObject({ deleted: true });
+      expect(joins).toBe(1);
     });
 
     it('errors deleting an unknown segment', async () => {

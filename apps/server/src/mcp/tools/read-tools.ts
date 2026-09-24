@@ -787,7 +787,7 @@ export function buildReadTools(): McpTool[] {
         'or the human displayName — search by the codeName you see in conditions/identify), ' +
         '`scope` ("user", "company", "companyMembership", or "eventDefinition" for event ' +
         'attributes), or `eventName` (only the event-scoped attributes attached to that one ' +
-        'event). Returns `{ items, nextCursor }`.',
+        'event). `deleted: true` lists the soft-deleted ones instead. Returns `{ items, nextCursor }`.',
       inputSchema: {
         ...nameSearchField,
         scope: z
@@ -801,6 +801,12 @@ export function buildReadTools(): McpTool[] {
           .string()
           .optional()
           .describe('Filter to the attributes attached to this event (by event codeName).'),
+        deleted: z
+          .boolean()
+          .optional()
+          .describe(
+            'List soft-deleted ones instead of live ones — the recovery pool for `restore_attribute_definition`.',
+          ),
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: z
@@ -831,6 +837,7 @@ export function buildReadTools(): McpTool[] {
             name: asString(args.name),
             scope: asString(args.scope),
             eventName: asString(args.eventName),
+            deleted: args.deleted === true,
           },
         );
         return toListPayload(result);
@@ -859,9 +866,16 @@ export function buildReadTools(): McpTool[] {
       description:
         'List event definitions (the catalog of tracked events) for the project. Optionally ' +
         'filter by `name` (case-insensitive substring of either the machine codeName or the human ' +
-        'displayName). Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
+        'displayName); `deleted: true` lists the soft-deleted ones instead. Returns ' +
+        '`{ items, nextCursor }`; pass `nextCursor` back as `cursor` to page.',
       inputSchema: {
         ...nameSearchField,
+        deleted: z
+          .boolean()
+          .optional()
+          .describe(
+            'List soft-deleted ones instead of live ones — the recovery pool for `restore_event_definition`.',
+          ),
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -875,6 +889,7 @@ export function buildReadTools(): McpTool[] {
             cursor: asString(args.cursor),
             orderBy: asOrderBy(args.orderBy),
             name: asString(args.name),
+            deleted: args.deleted === true,
           },
         );
         return toListPayload(result);
@@ -982,9 +997,16 @@ export function buildReadTools(): McpTool[] {
         'page until `nextCursor` is null before concluding a theme does not exist. Check ' +
         '`variationCount` before switching content to another theme: variations do NOT travel ' +
         'with the content, so moving onto a theme with 0 variations silently drops conditional ' +
-        'styling (dark mode …) for the users those conditions targeted.',
+        'styling (dark mode …) for the users those conditions targeted. `deleted: true` lists the ' +
+        'soft-deleted themes instead.',
       inputSchema: {
         ...nameSearchField,
+        deleted: z
+          .boolean()
+          .optional()
+          .describe(
+            'List soft-deleted ones instead of live ones — the recovery pool for `restore_theme`.',
+          ),
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -995,6 +1017,7 @@ export function buildReadTools(): McpTool[] {
           cursor: asString(args.cursor),
           orderBy: asOrderBy(args.orderBy),
           name: asString(args.name),
+          deleted: args.deleted === true,
         });
         return toListPayload(result);
       },
@@ -1223,14 +1246,15 @@ export function buildReadTools(): McpTool[] {
       annotations: READ_ONLY,
       description:
         'Reverse lookup: everything still USING an attribute / event / segment / theme / ' +
-        'content — run it BEFORE a delete, since deletes are not blocked and a dangling ' +
-        'reference fails closed (a segment on a deleted attribute matches nobody; gated ' +
-        "content stops showing). Scans the LIVE surfaces only: every content's edited draft + " +
+        'content. Deleting an attribute, event, segment or theme is REFUSED while anything ' +
+        'listed here uses it, so run this first to see what to rewire. (A content reference ' +
+        'does not block deleting that content.) Scans the LIVE surfaces only: every live ' +
+        "content's edited draft + " +
         'published versions (start/hide rules, step triggers, question bindings, bodies, theme ' +
         'assignments), segment definitions, and theme variations. Matching is by exact stored ' +
         'reference, not text search. NOT covered: `{{ codeName }}` mentions inside text ' +
         '(display bindings that just render empty) and old historical versions. Empty result = ' +
-        'nothing live references it — safe to delete as far as references go.',
+        'nothing live references it — the delete will not be refused for references.',
       inputSchema: {
         kind: z
           .enum(['attribute', 'event', 'segment', 'theme', 'content'])
@@ -1261,8 +1285,8 @@ export function buildReadTools(): McpTool[] {
           referencedBy: referrers,
           summary:
             referrers.length === 0
-              ? 'Nothing live references this — safe to delete as far as references go.'
-              : `Referenced by ${referrers.length} object(s) — rewire them before deleting.`,
+              ? 'Nothing live references this — deleting it will not be refused for references.'
+              : `Referenced by ${referrers.length} object(s) — deleting is refused until they are rewired.`,
         };
       },
     },
@@ -1485,14 +1509,20 @@ export function buildReadTools(): McpTool[] {
       title: 'List segments',
       capability: Capability.SegmentRead,
       description:
-        'List the project\'s segments. Filter by `name` or `bizType` ("user" or "company"). ' +
-        'Returns `{ items, nextCursor }`.',
+        'List the project\'s segments. Filter by `name` or `bizType` ("user" or "company"); ' +
+        '`deleted: true` lists the soft-deleted segments instead. Returns `{ items, nextCursor }`.',
       inputSchema: {
         bizType: z
           .enum(['user', 'company'])
           .optional()
           .describe('Filter to user or company segments.'),
         ...nameSearchField,
+        deleted: z
+          .boolean()
+          .optional()
+          .describe(
+            'List soft-deleted ones instead of live ones — the recovery pool for `restore_segment`.',
+          ),
         limit: limitSchema,
         cursor: cursorSchema,
         orderBy: orderBySchema,
@@ -1504,6 +1534,7 @@ export function buildReadTools(): McpTool[] {
           orderBy: asOrderBy(args.orderBy),
           name: asString(args.name),
           bizType: asString(args.bizType) as 'user' | 'company' | undefined,
+          deleted: args.deleted === true,
         });
         return toListPayload(result);
       },

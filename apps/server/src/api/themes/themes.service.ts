@@ -69,7 +69,7 @@ export class ApiThemesService {
     projectId: string,
     query: ListThemesQuery,
   ): Promise<{ results: Theme[]; next: string | null; previous: string | null }> {
-    const { limit, cursor, name } = query;
+    const { limit, cursor, name, deleted } = query;
     const expand = toArray(query.expand);
     // Resolvers are only consumed when decompiling variation conditions; skip the
     // two catalog queries on the common read path that doesn't expand variations.
@@ -82,7 +82,7 @@ export class ApiThemesService {
     const nameFilter = nameContains(name);
     const where: Prisma.ThemeWhereInput = {
       projectId,
-      deleted: false,
+      deleted: deleted ?? false,
       ...(nameFilter ? { name: nameFilter } : {}),
     };
 
@@ -465,6 +465,16 @@ export class ApiThemesService {
       throw new DefaultThemeCannotBeDeletedError();
     }
     await this.themes.deleteTheme(id);
+  }
+
+  /** Restore a deleted theme. Idempotent on a live one. */
+  async restore(id: string, projectId: string): Promise<Theme> {
+    const theme = await this.themes.getTheme(id);
+    if (!theme || theme.projectId !== projectId) {
+      throw new ThemeNotFoundError();
+    }
+    await this.themes.restoreTheme(id);
+    return this.get(id, projectId, {});
   }
 
   /** Load a live theme that belongs to the project, or throw E1021. Shared with the version themeId write. */

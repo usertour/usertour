@@ -30,3 +30,15 @@ export const orderByField = z.enum(['createdAt', '-createdAt']);
 
 /** Response timestamp: ISO 8601, documented as format: date-time. */
 export const isoTimestamp = z.string().meta({ format: 'date-time' });
+
+/**
+ * `deleted=true` on a list of soft-deletable definitions (ADR 0016): list the
+ * deleted ones instead of the live ones — the recovery pool for restore.
+ */
+export function deletedListField(plural: string) {
+  return z
+    .stringbool()
+    .meta({ enum: ['true', 'false'] })
+    .optional()
+    .describe(`List soft-deleted ${plural} instead of live ones — the recovery pool for restore.`);
+}

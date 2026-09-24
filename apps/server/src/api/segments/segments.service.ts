@@ -58,7 +58,7 @@ export class ApiSegmentsService {
     projectId: string,
     query: ListSegmentsQuery,
   ): Promise<{ results: Segment[]; next: string | null; previous: string | null }> {
-    const { bizType: bizTypeFilter, limit, cursor, name } = query;
+    const { bizType: bizTypeFilter, limit, cursor, name, deleted } = query;
     const resolvers = await loadDecompileResolvers(this.prisma, projectId);
     const nameFilter = nameContains(name);
     const bizType =
@@ -72,6 +72,7 @@ export class ApiSegmentsService {
     ]) as Prisma.SegmentOrderByWithRelationInput[];
     const where: Prisma.SegmentWhereInput = {
       projectId,
+      deleted: deleted ?? false,
       ...(bizType !== undefined ? { bizType } : {}),
       ...(nameFilter ? { name: nameFilter } : {}),
     };
@@ -270,13 +271,20 @@ export class ApiSegmentsService {
     }
   }
 
-  /** Delete a segment (not the built-in `all`). Members cascade in the domain. */
+  /** Delete (soft) a segment (not the built-in `all`); refused while live content or a theme uses it. */
   async delete(id: string, projectId: string): Promise<void> {
     const seg = await this.requireSegment(id, projectId);
     if (seg.dataType === SegmentDataType.ALL) {
       throw new BuiltInSegmentCannotBeChangedError();
     }
     await this.biz.deleteSegment({ id });
+  }
+
+  /** Restore a deleted segment with its members. Idempotent on a live one. */
+  async restore(id: string, projectId: string): Promise<Segment> {
+    await this.requireSegment(id, projectId, { includeDeleted: true });
+    await this.biz.restoreSegment(id);
+    return this.get(id, projectId);
   }
 
   /** Add an env user/company to a manual segment (idempotent). */
@@ -335,10 +343,17 @@ export class ApiSegmentsService {
     }
   }
 
-  /** Load a segment that belongs to this project, or 404. */
-  private async requireSegment(id: string, projectId: string) {
+  /**
+   * Load a segment that belongs to this project, or 404. A deleted one is
+   * missing too — its members included — except to restore it.
+   */
+  private async requireSegment(
+    id: string,
+    projectId: string,
+    options: { includeDeleted?: boolean } = {},
+  ) {
     const seg = await this.prisma.segment.findUnique({ where: { id } });
-    if (!seg || seg.projectId !== projectId) {
+    if (!seg || seg.projectId !== projectId || (seg.deleted && !options.includeDeleted)) {
       throw new SegmentNotFoundError();
     }
     return seg;

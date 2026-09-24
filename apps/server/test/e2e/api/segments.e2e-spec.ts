@@ -318,16 +318,14 @@ describe('API v2 segments (e2e)', () => {
     expect(JSON.stringify(res.body.error)).toContain('at least one condition');
   });
 
-  it('a condition whose attribute was DELETED reads as `unsupported`, not a leaked cuid', async () => {
-    // Full loop from console sweep endpoint 15: create attribute -> reference
-    // it in a segment -> delete the attribute (204, nothing blocks it). The
-    // condition used to decompile with the raw internal id in `attribute` — a
-    // field whose contract is a codeName — looking perfectly healthy on read
-    // and only failing on write-back. It must surface as `unsupported` with a
-    // note that says what happened.
+  it('deleting an attribute a segment uses is refused (409 E1042), naming the segment', async () => {
+    // ADR 0016: a live segment's conditions are a live surface, so the
+    // attribute they reference cannot be deleted underneath them. Once the
+    // segment is deleted it no longer blocks.
     const token = await mint([
       Capability.SegmentRead,
       Capability.SegmentCreate,
+      Capability.SegmentDelete,
       Capability.AttributeCreate,
       Capability.AttributeDelete,
     ]);
@@ -335,8 +333,8 @@ describe('API v2 segments (e2e)', () => {
       .post(`/v2/projects/${projectId}/attribute-definitions`)
       .set('Authorization', `Bearer ${token}`)
       .send({
-        codeName: 'seg_doomed_attr',
-        displayName: 'Doomed',
+        codeName: 'seg_guarded_attr',
+        displayName: 'Guarded',
         scope: 'user',
         dataType: 'string',
       });
@@ -344,26 +342,57 @@ describe('API v2 segments (e2e)', () => {
     const attrId = created.body.id;
 
     const seg = await send('post', segPath(), token).send({
-      name: 'refs doomed attr',
+      name: 'refs guarded attr',
       bizType: 'user',
       kind: 'condition',
       conditions: [
-        { type: 'attribute', scope: 'user', attribute: 'seg_doomed_attr', op: 'is', value: 'x' },
+        { type: 'attribute', scope: 'user', attribute: 'seg_guarded_attr', op: 'is', value: 'x' },
       ],
     });
     expect(seg.status).toBe(201);
 
-    const del = await request(app.getHttpServer())
-      .delete(`/v2/projects/${projectId}/attribute-definitions/${attrId}`)
-      .set('Authorization', `Bearer ${token}`);
-    expect(del.status).toBe(204);
+    const deleteAttribute = () =>
+      request(app.getHttpServer())
+        .delete(`/v2/projects/${projectId}/attribute-definitions/${attrId}`)
+        .set('Authorization', `Bearer ${token}`);
+    const blocked = await deleteAttribute();
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('E1042');
+    expect(blocked.body.error.message).toContain('refs guarded attr');
 
-    const read = await api('get', `${segPath()}/${seg.body.id}`, token);
+    expect((await send('delete', `${segPath()}/${seg.body.id}`, token).send()).status).toBe(204);
+    expect((await deleteAttribute()).status).toBe(204);
+  });
+
+  it('a condition whose attribute row is GONE reads as `unsupported`, not a leaked cuid', async () => {
+    // Attributes are soft-deleted now (ADR 0016) and keep resolving to their
+    // codeName, but rows hard-deleted before that left dangling ids behind.
+    // Such a condition used to decompile with the raw internal id in
+    // `attribute` — a field whose contract is a codeName. It must surface as
+    // `unsupported` with a note that says what happened.
+    const token = await mint([Capability.SegmentRead]);
+    const doomed = await buildAttribute(prisma, {
+      projectId,
+      codeName: 'seg_doomed_attr',
+      bizType: 1,
+      dataType: 2,
+    });
+    const seg = await buildSegment(prisma, {
+      projectId,
+      environmentId,
+      name: 'refs doomed attr',
+      bizType: 1,
+      dataType: 2,
+      data: [{ type: 'user-attr', data: { attrId: doomed.id, logic: 'is', value: 'x' } }],
+    });
+    await prisma.attribute.delete({ where: { id: doomed.id } });
+
+    const read = await api('get', `${segPath()}/${seg.id}`, token);
     expect(read.status).toBe(200);
     const cond = read.body.conditions?.[0];
     expect(cond.type).toBe('unsupported');
     expect(cond.note).toContain('deleted attribute');
-    expect(cond.note).toContain(attrId);
+    expect(cond.note).toContain(doomed.id);
     // The raw cuid must NOT appear as a codeName-contract value anywhere.
     expect(cond.attribute).toBeUndefined();
   });
@@ -505,6 +534,71 @@ describe('API v2 segments (e2e)', () => {
     const id = created.body.id;
     expect((await send('delete', `${segPath()}/${id}`, token).send()).status).toBe(204);
     expect((await api('get', `${segPath()}/${id}`, token)).status).toBe(404);
+  });
+
+  it('refuses to restore a segment whose conditions use a deleted attribute (409 E1046)', async () => {
+    // ADR 0016 §5: a restored segment is live at once, so it must not come back
+    // referencing a deleted definition. Restoring the attribute first unblocks it.
+    const token = await mint([
+      Capability.SegmentDelete,
+      Capability.SegmentUpdate,
+      Capability.AttributeDelete,
+      Capability.AttributeUpdate,
+    ]);
+    const attribute = await buildAttribute(prisma, {
+      projectId,
+      codeName: 'seg_restore_dep',
+      bizType: 1,
+      dataType: 2,
+    });
+    const seg = await buildSegment(prisma, {
+      projectId,
+      environmentId,
+      name: 'depends on attr',
+      bizType: 1,
+      dataType: 2,
+      data: [{ type: 'user-attr', data: { attrId: attribute.id, logic: 'is', value: 'x' } }],
+    });
+    expect((await send('delete', `${segPath()}/${seg.id}`, token).send()).status).toBe(204);
+    const attributePath = `/v2/projects/${projectId}/attribute-definitions/${attribute.id}`;
+    expect((await send('delete', attributePath, token).send()).status).toBe(204);
+
+    const blocked = await send('post', `${segPath()}/${seg.id}/restore`, token).send();
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('E1046');
+    expect(blocked.body.error.message).toContain(attribute.id);
+
+    expect((await send('post', `${attributePath}/restore`, token).send()).status).toBe(200);
+    expect((await send('post', `${segPath()}/${seg.id}/restore`, token).send()).status).toBe(200);
+  });
+
+  it('a deleted segment keeps its members, 404s by id, lists under deleted=true, and restores', async () => {
+    const token = await mint([
+      Capability.SegmentCreate,
+      Capability.SegmentDelete,
+      Capability.SegmentRead,
+      Capability.SegmentUpdate,
+    ]);
+    const created = await send('post', segPath(), token).send({
+      name: 'recoverable manual',
+      bizType: 'user',
+      kind: 'manual',
+    });
+    expect(created.status).toBe(201);
+    const id = created.body.id;
+    const bizUser = await buildBizUser(prisma, { environmentId });
+    await prisma.bizUserOnSegment.create({ data: { segmentId: id, bizUserId: bizUser.id } });
+
+    expect((await send('delete', `${segPath()}/${id}`, token).send()).status).toBe(204);
+    expect((await api('get', `${segPath()}/${id}`, token)).status).toBe(404);
+    const deleted = await api('get', `${segPath()}?deleted=true&limit=100`, token);
+    expect(deleted.body.results.map((seg: { id: string }) => seg.id)).toContain(id);
+    expect(await prisma.bizUserOnSegment.count({ where: { segmentId: id } })).toBe(1);
+
+    const restored = await send('post', `${segPath()}/${id}/restore`, token).send();
+    expect(restored.status).toBe(200);
+    expect(restored.body).toMatchObject({ id, name: 'recoverable manual' });
+    expect(await prisma.bizUserOnSegment.count({ where: { segmentId: id } })).toBe(1);
   });
 
   it('cannot modify or delete the built-in "all" segment (409 E1037 — permanent property)', async () => {

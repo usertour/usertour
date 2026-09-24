@@ -124,7 +124,13 @@ export class ApiSegmentsController {
   @Delete(':id')
   @HttpCode(204)
   @RequireCapability(Capability.SegmentDelete)
-  @ApiOperation({ summary: 'Delete a segment' })
+  @ApiOperation({
+    summary: 'Delete a segment',
+    description:
+      'Soft delete: the segment leaves lists, keeps its members, stops syncing from any ' +
+      'integration, and can be restored. Refused (E1043) while live or draft content or a ' +
+      'theme uses it.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
   @ApiParam({ name: 'id', description: 'Segment ID' })
   @ApiResponse({ status: 204, description: 'Segment deleted' })
@@ -133,11 +139,38 @@ export class ApiSegmentsController {
     status: 409,
     description:
       'The built-in "all" segment cannot be modified or deleted (E1037) — create a condition ' +
-      'segment for a filtered audience.',
+      'segment for a filtered audience. Or it is in use (E1043) by live or draft content or a ' +
+      'theme — the message names them; remove it from them first.',
     type: ErrorResponseDto,
   })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
+  }
+
+  @Post(':id/restore')
+  @HttpCode(200)
+  @RequireCapability(Capability.SegmentUpdate)
+  @ApiOperation({
+    summary: 'Restore a deleted segment',
+    description:
+      'Bring a soft-deleted segment back with its members (find it via ' +
+      'GET /segments?deleted=true). An integration sync it had does not come back with it. ' +
+      'Refused (E1046) while its conditions use deleted attributes — restore those first. ' +
+      'Idempotent on a segment that is not deleted.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID', schema: { type: 'string' } })
+  @ApiParam({ name: 'id', description: 'Segment ID' })
+  @ApiResponse({ status: 200, description: 'Restored segment', type: SegmentDto })
+  @ApiResponse({ status: 404, description: 'Segment not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'E1046 its conditions use deleted definitions — the message names them with their ids; ' +
+      'restore them first, then retry.',
+    type: ErrorResponseDto,
+  })
+  async restore(@Param('projectId') projectId: string, @Param('id') id: string) {
+    return this.service.restore(id, projectId);
   }
 }
 

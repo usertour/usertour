@@ -4,7 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildAttribute, buildBizUser } from '../factories';
+import { buildAttribute, buildBizUser, buildContent, buildStep, buildVersion } from '../factories';
 import { buildAuthorizedUser } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 import { OpenApiFixture, openapi, seedApiFixture, teardownApiFixture } from '../openapi';
@@ -253,14 +253,16 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(list.body.results.map((a: { id: string }) => a.id)).not.toContain(id);
   });
 
-  it('creates an EVENT-scoped attribute, attaches it to an event, and delete severs the link', async () => {
+  it('creates an EVENT-scoped attribute, attaches it to an event; delete hides it, restore brings it back', async () => {
     // Builder parity: the attributes page's Events tab hand-creates event
     // attributes too — pre-define → attach must work without any track.
     const token = await mint([
       Capability.AttributeCreate,
       Capability.AttributeDelete,
       Capability.AttributeRead,
+      Capability.AttributeUpdate,
       Capability.EventCreate,
+      Capability.EventRead,
     ]);
     const created = await send('post', basePath(), token).send({
       scope: 'eventDefinition',
@@ -288,11 +290,146 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     expect(evt.status).toBe(201);
     expect(evt.body.attributes).toEqual(['evt_attr_via_api']);
 
-    // Delete clears the AttributeOnEvent join in the same transaction — a bare
-    // delete would P2003 on the link the attach above just created.
+    // Soft delete (ADR 0016) keeps the AttributeOnEvent link but the event no
+    // longer lists the attribute; restoring brings it back attached.
     expect((await send('delete', `${basePath()}/${created.body.id}`, token).send()).status).toBe(
       204,
     );
+    const eventPath = `/v2/projects/${fx.projectId}/event-definitions/${evt.body.id}`;
+    expect((await api('get', eventPath, token)).body.attributes).toEqual([]);
+
+    const restored = await send('post', `${basePath()}/${created.body.id}/restore`, token).send();
+    expect(restored.status).toBe(200);
+    expect((await api('get', eventPath, token)).body.attributes).toEqual(['evt_attr_via_api']);
+  });
+
+  it('a question binding blocks deleting its USER attribute only while it is on', async () => {
+    // The editor keeps `selectedAttribute` when the binding is switched off, and
+    // a binding only ever writes to a user attribute — so neither an off
+    // binding nor a same-codeName company attribute counts as a reference.
+    const token = await mint([Capability.AttributeDelete]);
+    const userAttribute = await buildAttribute(prisma, {
+      projectId: fx.projectId,
+      codeName: 'attr_bound_answer',
+      bizType: 1,
+      dataType: 2,
+    });
+    const companyAttribute = await buildAttribute(prisma, {
+      projectId: fx.projectId,
+      codeName: 'attr_bound_answer',
+      bizType: 2,
+      dataType: 2,
+    });
+    const content = await buildContent(prisma, {
+      projectId: fx.projectId,
+      environmentId: fx.environmentId,
+      type: 'flow',
+      name: 'Binds an answer',
+    });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const questionStep = await buildStep(prisma, {
+      versionId: version.id,
+      type: 'modal',
+      sequence: 0,
+      data: [
+        {
+          element: {
+            type: 'nps',
+            data: { bindToAttribute: true, selectedAttribute: 'attr_bound_answer' },
+          },
+        },
+      ],
+    });
+
+    expect(
+      (await send('delete', `${basePath()}/${companyAttribute.id}`, token).send()).status,
+    ).toBe(204);
+    const blocked = await send('delete', `${basePath()}/${userAttribute.id}`, token).send();
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('E1042');
+    expect(blocked.body.error.message).toContain('Binds an answer');
+
+    await prisma.step.update({
+      where: { id: questionStep.id },
+      data: {
+        data: [
+          {
+            element: {
+              type: 'nps',
+              data: { bindToAttribute: false, selectedAttribute: 'attr_bound_answer' },
+            },
+          },
+        ],
+      },
+    });
+    expect((await send('delete', `${basePath()}/${userAttribute.id}`, token).send()).status).toBe(
+      204,
+    );
+  });
+
+  it('writing a user value under a deleted codeName restores the attribute (ADR 0016)', async () => {
+    const token = await mint([
+      Capability.AttributeCreate,
+      Capability.AttributeDelete,
+      Capability.AttributeRead,
+      Capability.UserWrite,
+    ]);
+    const created = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: 'attr_still_sent',
+      displayName: 'Still sent',
+    });
+    expect(created.status).toBe(201);
+    expect((await send('delete', `${basePath()}/${created.body.id}`, token).send()).status).toBe(
+      204,
+    );
+
+    const upserted = await request(app.getHttpServer())
+      .put(`/v2/projects/${fx.projectId}/environments/${fx.environmentId}/users/attr-restore-user`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ attributes: { attr_still_sent: 'yes' } });
+    expect(upserted.status).toBe(200);
+    expect((await api('get', `${basePath()}/${created.body.id}`, token)).status).toBe(200);
+  });
+
+  it('re-creating a deleted codeName restores the same attribute; another data type is refused (E1045)', async () => {
+    const token = await mint([
+      Capability.AttributeCreate,
+      Capability.AttributeDelete,
+      Capability.AttributeRead,
+    ]);
+    const created = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: 'attr_reborn',
+      displayName: 'Reborn',
+    });
+    expect(created.status).toBe(201);
+    expect((await send('delete', `${basePath()}/${created.body.id}`, token).send()).status).toBe(
+      204,
+    );
+    expect((await api('get', `${basePath()}/${created.body.id}`, token)).status).toBe(404);
+    const deletedList = await api('get', `${basePath()}?deleted=true&limit=100`, token);
+    expect(deletedList.body.results.map((a: { id: string }) => a.id)).toContain(created.body.id);
+
+    const retyped = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'number',
+      codeName: 'attr_reborn',
+      displayName: 'Reborn',
+    });
+    expect(retyped.status).toBe(409);
+    expect(retyped.body.error.code).toBe('E1045');
+
+    const recreated = await send('post', basePath(), token).send({
+      scope: 'user',
+      dataType: 'string',
+      codeName: 'attr_reborn',
+      displayName: 'Reborn again',
+    });
+    expect(recreated.status).toBe(201);
+    expect(recreated.body).toMatchObject({ id: created.body.id, displayName: 'Reborn again' });
   });
 
   it('retypes an attribute when no stored value conflicts, and rejects when one does', async () => {

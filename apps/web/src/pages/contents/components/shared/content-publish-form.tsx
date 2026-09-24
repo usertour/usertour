@@ -22,6 +22,7 @@ import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useMemberPublishScope } from '@/hooks/use-member-publish-scope';
 import { getContentTypeMeta } from './content-type-meta';
+import { getDefinitionReferenceErrorMessage } from '@/utils/definition-references';
 
 interface ContentPublishFormProps {
   versionId: string;
@@ -163,7 +164,7 @@ export const ContentPublishForm = (props: ContentPublishFormProps) => {
       onSubmit(allSuccess);
       setIsLoading(false);
     } catch (error) {
-      showToast(false, getErrorMessage(error));
+      showToast(false, getDefinitionReferenceErrorMessage(error, t) ?? getErrorMessage(error));
       setIsLoading(false);
     }
   }, [environmentList, publishVersion, onSubmit, selectedEnvironments, toast, versionId, t]);

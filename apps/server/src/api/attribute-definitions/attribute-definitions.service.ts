@@ -51,7 +51,7 @@ export class ApiAttributeDefinitionsService {
     projectId: string,
     query: ListAttributeDefinitionsQuery,
   ): Promise<{ results: Attribute[]; next: string | null; previous: string | null }> {
-    const { limit, cursor, scope, orderBy, eventName, name } = query;
+    const { limit, cursor, scope, orderBy, eventName, name, deleted } = query;
 
     if (scope && !isApiObjectType(scope)) {
       throw new InvalidScopeError(scope);
@@ -74,6 +74,7 @@ export class ApiAttributeDefinitionsService {
           toArray(eventName),
           sortOrders,
           name,
+          deleted ?? false,
         ),
       map: mapAttribute,
     });
@@ -132,10 +133,16 @@ export class ApiAttributeDefinitionsService {
     return mapAttribute(updated);
   }
 
-  /** Delete an attribute definition. */
+  /** Delete (soft) an attribute definition; refused while live content, a segment or a theme uses it. */
   async delete(id: string, projectId: string): Promise<void> {
     await this.requireWritable(id, projectId);
     await this.attributes.delete(id);
+  }
+
+  /** Restore a deleted attribute definition. Idempotent on a live one. */
+  async restore(id: string, projectId: string): Promise<Attribute> {
+    await this.requireExisting(id, projectId, { includeDeleted: true });
+    return mapAttribute(await this.attributes.restore(id));
   }
 
   /**
@@ -151,10 +158,17 @@ export class ApiAttributeDefinitionsService {
     return attr;
   }
 
-  /** Resolve an attribute that belongs to this project, or 404 (no cross-project leak). */
-  private async requireExisting(id: string, projectId: string) {
+  /**
+   * Resolve an attribute that belongs to this project, or 404 (no cross-project
+   * leak). A deleted one is missing too, except to restore it.
+   */
+  private async requireExisting(
+    id: string,
+    projectId: string,
+    options: { includeDeleted?: boolean } = {},
+  ) {
     const attr = await this.attributes.get(id);
-    if (!attr || attr.projectId !== projectId) {
+    if (!attr || attr.projectId !== projectId || (attr.deleted && !options.includeDeleted)) {
       throw new AttributeDefinitionNotFoundError();
     }
     return attr;

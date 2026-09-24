@@ -17,11 +17,11 @@ import { EventsModule } from '@/modules/events/events.module';
 import { LocalizationsModule } from '@/modules/localizations/localizations.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
 import { ThemesModule } from '@/modules/themes/themes.module';
+import { ReferencesModule } from '@/modules/references/references.module';
 
 import { ApiAnalyticsController } from './analytics/analytics.controller';
 import { ApiAnalyticsService } from './analytics/analytics.service';
 import { ApiUsageOverviewService } from './analytics/usage-overview.service';
-import { ApiReferencesService } from './references/references.service';
 import { ApiAttributeDefinitionsController } from './attribute-definitions/attribute-definitions.controller';
 import { ApiAttributeDefinitionsService } from './attribute-definitions/attribute-definitions.service';
 import { ApiCompaniesController } from './companies/companies.controller';
@@ -94,6 +94,7 @@ import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
     BizModule,
     AnalyticsModule,
     ThemesModule,
+    ReferencesModule,
     EnvironmentsModule,
     LocalizationsModule,
     ProjectsModule,
@@ -128,7 +129,6 @@ import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
     ApiMeService,
     ApiAnalyticsService,
     ApiUsageOverviewService,
-    ApiReferencesService,
     ApiEventDefinitionsService,
     ApiAttributeDefinitionsService,
     ApiContentService,
@@ -154,7 +154,7 @@ import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
   exports: [
     ApiAnalyticsService,
     ApiUsageOverviewService,
-    ApiReferencesService,
+    ReferencesModule,
     ApiContentService,
     ApiContentVersionsService,
     ApiAttributeDefinitionsService,

@@ -201,10 +201,16 @@ export class CohortSyncService {
       return existing;
     }
 
-    const segment =
-      (await this.prisma.segment.findFirst({
-        where: { projectId, source: provider, sourceId: cohortId },
-      })) ?? (await this.createSegmentForCohort(projectId, provider, cohortId, cohortName));
+    const held = await this.prisma.segment.findFirst({
+      where: { projectId, source: provider, sourceId: cohortId },
+    });
+    // A cohort that is still syncing brings its soft-deleted segment back
+    // (ADR 0016) — the (projectId, source, sourceId) key stays reserved.
+    const segment = held
+      ? held.deleted
+        ? await this.bizService.restoreSegment(held.id)
+        : held
+      : await this.createSegmentForCohort(projectId, provider, cohortId, cohortName);
     try {
       return await this.prisma.integrationSyncedSegment.create({
         data: {

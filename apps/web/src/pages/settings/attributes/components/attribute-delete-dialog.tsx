@@ -2,6 +2,7 @@ import { Attribute } from '@usertour/types';
 import { useDeleteAttributeMutation } from '@usertour/hooks';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { Trans, useTranslation } from 'react-i18next';
+import { localizeDefinitionReferenceError } from '@/utils/definition-references';
 
 interface AttributeDeleteDialogProps {
   data: Attribute;
@@ -33,7 +34,11 @@ export const AttributeDeleteDialog = (props: AttributeDeleteDialogProps) => {
       cancelLabel={t('settings.common.cancel')}
       open={open}
       onOpenChange={onOpenChange}
-      invoke={() => deleteAttribute(data.id)}
+      invoke={() =>
+        deleteAttribute(data.id).catch((error) => {
+          throw localizeDefinitionReferenceError(error, t);
+        })
+      }
       successToast={t('settings.attributes.deleteSuccess')}
       failureToast={t('settings.attributes.deleteFailure')}
       onSettled={onSubmit}

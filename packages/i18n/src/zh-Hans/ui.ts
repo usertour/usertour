@@ -4573,6 +4573,19 @@ const translations = {
     notFound: '您访问的页面不存在。',
     serverError: '服务器出现问题，请稍后重试。',
   },
+  definitionReferences: {
+    inUse: '无法删除：{{references}} 仍在使用它，请先从中移除。',
+    deletedReferenced: '无法发布：该版本使用了已删除的{{references}}，请先恢复或替换。',
+    reference: '{{kind}}「{{name}}」',
+    more: '另外 {{count}} 项',
+    kinds: {
+      content: '内容',
+      segment: '分群',
+      theme: '主题',
+      attribute: '属性',
+      event: '事件',
+    },
+  },
 };
 
 export default translations;

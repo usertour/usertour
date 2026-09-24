@@ -18,7 +18,7 @@ import { ApiContentSessionsService } from '@/api/content-sessions/content-sessio
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
 import { ApiUsageOverviewService } from '@/api/analytics/usage-overview.service';
-import { ApiReferencesService } from '@/api/references/references.service';
+import { ReferencesService } from '@/modules/references/services/references.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
 import { ApiLocalizationsService } from '@/api/localizations/localizations.service';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
@@ -89,7 +89,7 @@ export class McpService {
     localizationsService: ApiLocalizationsService,
     analyticsService: ApiAnalyticsService,
     usageOverviewService: ApiUsageOverviewService,
-    referencesService: ApiReferencesService,
+    referencesService: ReferencesService,
     webhooksService: ApiWebhooksService,
   ) {
     this.services = {

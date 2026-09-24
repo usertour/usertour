@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
+import { deletedListField, isoTimestamp, orderByField, singleOrArray } from '../shared/query';
 
 import {
   NON_EMPTY_GROUP,
@@ -112,6 +112,7 @@ export const listSegmentsQuery = z.object({
   cursor,
   ...nameSearchField,
   orderBy: singleOrArray(orderByField).describe('Order by createdAt / -createdAt.'),
+  deleted: deletedListField('segments'),
 });
 export class ListSegmentsQueryDto extends createZodDto(listSegmentsQuery) {}
 
