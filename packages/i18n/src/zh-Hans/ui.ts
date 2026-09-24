@@ -4585,6 +4585,35 @@ const translations = {
       attribute: '属性',
       event: '事件',
     },
+    dialog: {
+      title: '无法删除{{resource}}',
+      description: '<strong>{{name}}</strong> 仍在以下位置被使用，请先从中移除，再删除它。',
+      close: '关闭',
+    },
+    referrerKinds: {
+      content: '内容',
+      segment: '分群',
+      theme: '主题',
+    },
+    surfaces: {
+      startRules: '自动开始规则',
+      hideRules: '隐藏规则',
+      versionSettings: '设置',
+      contentBody: '内容',
+      stepTrigger: '第 {{step}} 步触发器',
+      stepContent: '第 {{step}} 步内容',
+      questionBinding: '第 {{step}} 步问题的属性绑定',
+      versionTheme: '主题',
+      stepTheme: '第 {{step}} 步主题',
+      segmentConditions: '分群条件',
+      themeVariations: '主题变体条件',
+    },
+    versions: {
+      draft: '草稿',
+      published: '线上',
+      draftAndPublished: '草稿和线上',
+    },
+    locationWithVersion: '{{location}}（{{version}}）',
   },
 };
 

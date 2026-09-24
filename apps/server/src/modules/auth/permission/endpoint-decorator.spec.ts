@@ -12,6 +12,7 @@ import { EventsResolver } from '@/modules/events/events.resolver';
 import { IntegrationsResolver } from '@/modules/integrations/integrations.resolver';
 import { LocalizationsResolver } from '@/modules/localizations/localizations.resolver';
 import { ProjectsResolver } from '@/modules/projects/projects.resolver';
+import { ReferencesResolver } from '@/modules/references/references.resolver';
 import { SsoResolver } from '@/modules/sso/sso.resolver';
 import { SubscriptionResolver } from '@/modules/subscription/subscription.resolver';
 import { TeamResolver } from '@/modules/team/resolvers/team.resolver';
@@ -41,6 +42,7 @@ const RESOLVERS: Record<string, new (...args: any[]) => any> = {
   integration: IntegrationsResolver,
   localizations: LocalizationsResolver,
   projects: ProjectsResolver,
+  references: ReferencesResolver,
   sso: SsoResolver,
   subscription: SubscriptionResolver,
   team: TeamResolver,

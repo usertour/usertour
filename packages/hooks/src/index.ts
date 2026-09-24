@@ -23,6 +23,7 @@ export * from './hooks/segments';
 export * from './hooks/activity-feed';
 export * from './hooks/sessions';
 export * from './hooks/analytics';
+export * from './hooks/references';
 export * from './hooks/use-tooltip-target-missing-sessions';
 export * from './hooks/use-checklist-preview-animation';
 export { useContentCount } from './hooks/use-content-count';

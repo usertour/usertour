@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
+import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
 import {
   AttributeDefinitionInUseError,
   AttributeDefinitionNotFoundError,
@@ -15,8 +16,10 @@ import {
   ThemeNotFoundError,
 } from '@/modules/common/errors/errors';
 import type { DeletedReference } from '../types/deleted-reference.type';
+import type { ReferenceLocation } from '../types/reference-location.type';
 import type { ReferenceRow } from '../types/reference-row.type';
 import type { ReferenceTargetKind } from '../types/reference-target-kind.type';
+import { describeReferenceLocation } from '../utils/describe-reference-location.util';
 import { referenceDetails } from '../utils/reference-details.util';
 
 /**
@@ -45,7 +48,7 @@ import { referenceDetails } from '../utils/reference-details.util';
  * bindings that render empty, not references), and historical versions.
  */
 
-type VersionRole = 'draft' | 'published' | 'draft+published';
+type VersionRole = NonNullable<ReferenceLocation['version']>;
 
 /** JSON keys under which stored conditions reference a definition by id. */
 const ID_REFERENCE_KEYS = {
@@ -190,21 +193,31 @@ export class ReferencesService {
 
     const rows = new Map<string, ReferenceRow>();
     const addHit = (
-      referrerKind: ReferenceRow['referrerKind'],
-      id: string,
-      name: string,
-      where: string,
-      contentType?: string,
+      referrer: Pick<
+        ReferenceRow,
+        'referrerKind' | 'id' | 'name' | 'contentType' | 'segmentBizType'
+      >,
+      location: ReferenceLocation,
     ) => {
-      const key = `${referrerKind}:${id}`;
-      const row = rows.get(key) ?? { referrerKind, id, name, contentType, where: [] };
-      if (!row.where.includes(where)) row.where.push(where);
+      const key = `${referrer.referrerKind}:${referrer.id}`;
+      const row = rows.get(key) ?? { ...referrer, locations: [], where: [] };
+      const where = describeReferenceLocation(location);
+      if (!row.where.includes(where)) {
+        row.locations.push(location);
+        row.where.push(where);
+      }
       rows.set(key, row);
     };
+    const contentReferrer = (c: (typeof contents)[number]) => ({
+      referrerKind: 'content' as const,
+      id: c.id,
+      name: c.name ?? '',
+      contentType: c.type,
+    });
     const roleOf = (versionId: string): VersionRole => {
       const edited = editedIds.has(versionId);
       const published = publishedIds.has(versionId);
-      return edited && published ? 'draft+published' : edited ? 'draft' : 'published';
+      return edited && published ? 'draftAndPublished' : edited ? 'draft' : 'published';
     };
 
     // ── Theme: plain foreign-key columns, exact queries, no JSON walk ─────────
@@ -222,18 +235,19 @@ export class ReferencesService {
         ]);
         for (const v of versions) {
           const c = contentByVersion.get(v.id);
-          if (c) addHit('content', c.id, c.name ?? '', `version theme (${roleOf(v.id)})`, c.type);
+          if (c) {
+            addHit(contentReferrer(c), { surface: 'versionTheme', version: roleOf(v.id) });
+          }
         }
         for (const s of steps) {
           const c = contentByVersion.get(s.versionId);
-          if (c)
-            addHit(
-              'content',
-              c.id,
-              c.name ?? '',
-              `step ${s.sequence + 1} theme override (${roleOf(s.versionId)})`,
-              c.type,
-            );
+          if (c) {
+            addHit(contentReferrer(c), {
+              surface: 'stepTheme',
+              step: s.sequence + 1,
+              version: roleOf(s.versionId),
+            });
+          }
         }
       }
       return { referrers: [...rows.values()] };
@@ -271,24 +285,14 @@ export class ReferencesService {
         else walk(value, onHit, [...path, key]);
       }
     };
-    const label = (
-      surface: 'config' | 'data' | 'step',
-      path: string[],
-      stepSeq?: number,
-    ): string => {
-      if (surface === 'config') {
-        if (path[0] === 'autoStartRules') return 'start rules';
-        if (path[0] === 'hideRules') return 'hide rules';
-        return 'version settings';
-      }
-      if (surface === 'step') {
-        const inTrigger = path[0] === 'trigger';
-        const isBinding = path[path.length - 1] === 'selectedAttribute';
-        const stepNo = `step ${(stepSeq ?? 0) + 1}`;
-        if (isBinding) return `${stepNo} question binding`;
-        return inTrigger ? `${stepNo} trigger` : `${stepNo} content`;
-      }
-      return 'content body';
+    const configSurface = (path: string[]): ReferenceLocation['surface'] => {
+      if (path[0] === 'autoStartRules') return 'startRules';
+      if (path[0] === 'hideRules') return 'hideRules';
+      return 'versionSettings';
+    };
+    const stepSurface = (path: string[], inTrigger: boolean): ReferenceLocation['surface'] => {
+      if (path[path.length - 1] === 'selectedAttribute') return 'questionBinding';
+      return inTrigger ? 'stepTrigger' : 'stepContent';
     };
 
     if (liveVersionIds.length > 0) {
@@ -324,31 +328,17 @@ export class ReferencesService {
         for (const v of versions) {
           const c = contentByVersion.get(v.id);
           if (!c || (kind === 'content' && c.id === targetId)) continue;
-          const role = roleOf(v.id);
-          walk(v.config, (p) =>
-            addHit('content', c.id, c.name ?? '', `${label('config', p)} (${role})`, c.type),
-          );
-          walk(v.data, (p) =>
-            addHit('content', c.id, c.name ?? '', `${label('data', p)} (${role})`, c.type),
-          );
+          const referrer = contentReferrer(c);
+          const version = roleOf(v.id);
+          walk(v.config, (p) => addHit(referrer, { surface: configSurface(p), version }));
+          walk(v.data, () => addHit(referrer, { surface: 'contentBody', version }));
           for (const s of v.steps) {
+            const step = s.sequence + 1;
             walk(s.data, (p) =>
-              addHit(
-                'content',
-                c.id,
-                c.name ?? '',
-                `${label('step', p, s.sequence)} (${role})`,
-                c.type,
-              ),
+              addHit(referrer, { surface: stepSurface(p, false), step, version }),
             );
             walk(s.trigger, (p) =>
-              addHit(
-                'content',
-                c.id,
-                c.name ?? '',
-                `${label('step', ['trigger', ...p], s.sequence)} (${role})`,
-                c.type,
-              ),
+              addHit(referrer, { surface: stepSurface(p, true), step, version }),
             );
           }
         }
@@ -359,10 +349,17 @@ export class ReferencesService {
     if (kind === 'attribute') {
       const segments = await this.prisma.segment.findMany({
         where: { projectId, deleted: false },
-        select: { id: true, name: true, data: true },
+        select: { id: true, name: true, data: true, bizType: true },
       });
       for (const seg of segments) {
-        walk(seg.data, () => addHit('segment', seg.id, seg.name ?? '', 'segment conditions'));
+        const referrer = {
+          referrerKind: 'segment' as const,
+          id: seg.id,
+          name: seg.name ?? '',
+          segmentBizType:
+            seg.bizType === SegmentBizType.COMPANY ? ('company' as const) : ('user' as const),
+        };
+        walk(seg.data, () => addHit(referrer, { surface: 'segmentConditions' }));
       }
     }
 
@@ -373,7 +370,8 @@ export class ReferencesService {
         select: { id: true, name: true, variations: true },
       });
       for (const t of themes) {
-        walk(t.variations, () => addHit('theme', t.id, t.name ?? '', 'theme variation conditions'));
+        const referrer = { referrerKind: 'theme' as const, id: t.id, name: t.name ?? '' };
+        walk(t.variations, () => addHit(referrer, { surface: 'themeVariations' }));
       }
     }
 

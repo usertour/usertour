@@ -4802,6 +4802,36 @@ const translations = {
       attribute: 'attribute',
       event: 'event',
     },
+    dialog: {
+      title: "Can't delete {{resource}}",
+      description:
+        '<strong>{{name}}</strong> is still used in the places below. Remove it from them, then delete it.',
+      close: 'Close',
+    },
+    referrerKinds: {
+      content: 'Content',
+      segment: 'Segment',
+      theme: 'Theme',
+    },
+    surfaces: {
+      startRules: 'Start rules',
+      hideRules: 'Hide rules',
+      versionSettings: 'Settings',
+      contentBody: 'Content',
+      stepTrigger: 'Step {{step}} trigger',
+      stepContent: 'Step {{step}} content',
+      questionBinding: 'Step {{step}} question binding',
+      versionTheme: 'Theme',
+      stepTheme: 'Step {{step}} theme',
+      segmentConditions: 'Segment conditions',
+      themeVariations: 'Theme variation conditions',
+    },
+    versions: {
+      draft: 'draft',
+      published: 'live',
+      draftAndPublished: 'draft and live',
+    },
+    locationWithVersion: '{{location}} ({{version}})',
   },
 };
 

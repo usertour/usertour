@@ -124,6 +124,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
   'themes.deleteTheme': W,
   'themes.getTheme': R,
   'themes.listThemes': R,
+  // references
+  'references.listDefinitionReferences': R,
   // events
   'events.createEvent': W,
   'events.updateEvent': W,
@@ -170,8 +172,8 @@ const ENDPOINT_ROLES: Record<string, Role[]> = {
 };
 
 describe('endpoint → capability compatibility baseline', () => {
-  it('snapshot covers exactly the same 128 endpoints as the capability map', () => {
-    expect(Object.keys(ENDPOINT_ROLES).length).toBe(128);
+  it('snapshot covers exactly the same 129 endpoints as the capability map', () => {
+    expect(Object.keys(ENDPOINT_ROLES).length).toBe(129);
     expect(Object.keys(ENDPOINT_ROLES).sort()).toEqual(Object.keys(ENDPOINT_CAPABILITY).sort());
   });
 
