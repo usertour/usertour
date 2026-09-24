@@ -1,8 +1,8 @@
-import { BaseModel } from '@/common/models/base.model';
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('Environment')
-export class EnvironmentDTO extends BaseModel {
+export class EnvironmentDTO extends BaseDTO {
   @Field()
   name: string;
 

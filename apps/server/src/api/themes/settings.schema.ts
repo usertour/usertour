@@ -2,7 +2,7 @@ import { THEME_SETTING_CONSTRAINTS, type ThemeSettingConstraint } from '@usertou
 import { AvatarType } from '@usertour/types';
 import { z } from 'zod';
 
-import { isHttpUrl } from '@/common/url';
+import { isHttpUrl } from '@usertour/helpers';
 
 /**
  * The theme `settings` write contract — a zod schema GENERATED from the neutral

@@ -1,6 +1,6 @@
 import { IsString, IsObject, IsOptional } from 'class-validator';
 import { Server, Socket } from 'socket.io';
-import { SocketData } from '@/common/types/content';
+import { SocketData } from '@/modules/delivery/types/socket-data.type';
 
 // ============================================================================
 // Server-Specific Types

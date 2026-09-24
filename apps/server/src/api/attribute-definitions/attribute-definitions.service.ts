@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
-import { AttributesService } from '@/attributes/attributes.service';
-import { BizService } from '@/biz/biz.service';
+import { AttributesService } from '@/modules/attributes/services/attributes.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import {
   AttributeDefinitionNotFoundError,
   InvalidScopeError,
   PredefinedDefinitionCannotBeChangedError,
   ResourceAlreadyExistsError,
   ResourceConflictError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 
 import {
   ApiObjectType,

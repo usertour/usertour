@@ -2,12 +2,12 @@ import { Body, Controller, Post, UseFilters, UseGuards, UsePipes } from '@nestjs
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
-import { ApiTokenGuard } from '@/api-token/api-token.guard';
-import { RequireCapability } from '@/api-token/require-capability.decorator';
-import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { ApiTokenGuard } from '@/modules/api-token/guards/api-token.guard';
+import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
+import { EnvironmentDecorator } from '@/modules/common/decorators/environment.decorator';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 import type { Environment } from '@prisma/client';
-import { EventTrackingService } from '@/web-socket/core/event-tracking.service';
+import { EventTrackingService } from '@/modules/delivery/services/event-tracking.service';
 
 import { ApiStandardErrorResponses } from '../shared/error-response';
 import { ApiValidationPipe } from '../shared/validation.pipe';

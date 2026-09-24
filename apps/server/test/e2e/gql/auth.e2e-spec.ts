@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AuthService } from '@/auth/auth.service';
+import { AuthService } from '@/modules/auth/services/auth.service';
 
 import { graphql, gqlData, signToken } from '../auth';
 import { createTestApp } from '../create-test-app';

@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import {
   EventDefinitionNotFoundError,
   PredefinedDefinitionCannotBeChangedError,
   ResourceAlreadyExistsError,
   ResourceConflictError,
   ValidationError,
-} from '@/common/errors/errors';
-import { EventsService } from '@/events/events.service';
+} from '@/modules/common/errors/errors';
+import { EventsService } from '@/modules/events/services/events.service';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';

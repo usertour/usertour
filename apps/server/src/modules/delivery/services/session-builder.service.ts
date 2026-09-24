@@ -1,0 +1,887 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from 'nestjs-prisma';
+import {
+  BannerData,
+  ChecklistData,
+  ContentDataType,
+  LauncherData,
+  ResourceCenterBlockType,
+  ResourceCenterData,
+  ThemeTypesSetting,
+  ThemeVariation,
+  AnnouncementDistribution,
+  CustomContentSession,
+  SessionTheme,
+  SessionStep,
+  SessionAttribute,
+} from '@usertour/types';
+import type { AnnouncementData } from '@usertour/types';
+import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
+import { resolveUserLocaleCode } from '@usertour/helpers';
+import {
+  extractStepTriggerAttributeIds,
+  extractStepContentAttrCodes,
+  extractThemeVariationsAttributeIds,
+  evaluateChecklistItemsWithContext,
+  evaluateResourceCenterBlocksWithContext,
+  extractLauncherAttrCodes,
+  isExpandPending,
+  extractChecklistAttrCodes,
+  extractBannerAttrCodes,
+  extractButtonConditionAttributeIds,
+  extractAttributeIdsFromConditions,
+  extractResourceCenterAttrCodes,
+} from '../utils/content.util';
+import { CustomContentVersion } from '../types/custom-content-version.type';
+import { SocketData } from '../types/socket-data.type';
+import { Environment, Step, Theme, BizSession } from '@prisma/client';
+import { ContentDataService } from './content-data.service';
+import { AnnouncementService, type VisibleAnnouncement } from './announcement.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
+import { DistributedLockService } from './distributed-lock.service';
+import { buildSessionCreateLockKey } from '../utils/session-create-lock-key.util';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
+
+@Injectable()
+export class SessionBuilderService {
+  private readonly logger = new Logger(SessionBuilderService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly contentDataService: ContentDataService,
+    private readonly announcementService: AnnouncementService,
+    private readonly projectsService: ProjectsService,
+    private readonly distributedLockService: DistributedLockService,
+    private readonly cache: ProjectCacheService,
+  ) {}
+
+  // ============================================================================
+  // Public API Methods
+  // ============================================================================
+
+  /**
+   * Create a biz session
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @param versionId - The version ID
+   * @returns The created session
+   */
+  /**
+   * Idempotently find or create a biz session for singleton content types (FLOW, CHECKLIST).
+   * Uses a per-user per-content distributed lock + DB double-check to prevent duplicate
+   * sessions when the same user has multiple concurrent sockets (e.g. two browser tabs).
+   * @returns `{ session, isNew }` — `isNew` tells the caller whether to track a start event
+   */
+  async findOrCreateBizSession(
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+    versionId: string,
+    bizUserId: string,
+    contentId: string,
+  ): Promise<{ session: BizSession; isNew: boolean } | null> {
+    const lockKey = buildSessionCreateLockKey(environment.id, externalUserId, contentId);
+    const result = await this.distributedLockService.withRetryLock(
+      lockKey,
+      async () => {
+        // Double-check: another socket may have created the session while we waited for the lock
+        const existing = await this.contentDataService.findActiveSessionByContentId(
+          contentId,
+          bizUserId,
+        );
+        if (existing) {
+          this.logger.debug(`Reusing session created by concurrent socket: ${existing.id}`);
+          return { session: existing, isNew: false };
+        }
+        const session = await this.createBizSession(
+          environment,
+          externalUserId,
+          externalCompanyId,
+          versionId,
+        );
+        return session ? { session, isNew: true } : null;
+      },
+      5, // retry attempts
+      300, // retry interval ms
+      5000, // lock timeout ms
+    );
+    return result ?? null;
+  }
+
+  /**
+   * Create a biz session
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @param versionId - The version ID
+   * @returns The created session
+   */
+  async createBizSession(
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+    versionId: string,
+  ): Promise<BizSession | null> {
+    const environmentId = environment.id;
+    const bizUser = await this.cache.memoize(
+      this.cache.memoKeys.bizUser(environmentId, String(externalUserId)),
+      () =>
+        this.prisma.bizUser.findFirst({
+          where: { externalId: String(externalUserId), environmentId },
+        }),
+    );
+    const bizCompany = await this.cache.memoize(
+      this.cache.memoKeys.bizCompany(environmentId, String(externalCompanyId)),
+      () =>
+        this.prisma.bizCompany.findFirst({
+          where: { externalId: String(externalCompanyId), environmentId },
+        }),
+    );
+    if (!bizUser || (externalCompanyId && !bizCompany)) {
+      return null;
+    }
+
+    const version = await this.prisma.version.findUnique({
+      where: { id: versionId },
+      include: {
+        content: true,
+      },
+    });
+
+    if (!version) {
+      return null;
+    }
+
+    return await this.prisma.bizSession.create({
+      data: {
+        state: 0,
+        progress: 0,
+        projectId: environment.projectId,
+        environmentId: environment.id,
+        bizUserId: bizUser.id,
+        contentId: version.content.id,
+        versionId,
+        bizCompanyId: externalCompanyId ? bizCompany.id : null,
+      },
+    });
+  }
+
+  /**
+   * Update the current step ID for a biz session
+   * @param sessionId - The session ID
+   * @param currentStepId - The current step ID
+   * @returns The updated biz session or null if not found
+   */
+  async updateCurrentStepId(sessionId: string, currentStepId: string): Promise<BizSession | null> {
+    return await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { currentStepId },
+    });
+  }
+
+  /**
+   * Update the version ID for a biz session
+   * @param sessionId - The session ID
+   * @param versionId - The version ID
+   * @returns The updated biz session or null if not found
+   */
+  async updateBizSessionVersionId(
+    sessionId: string,
+    versionId: string,
+  ): Promise<BizSession | null> {
+    return await this.prisma.bizSession.update({
+      where: { id: sessionId },
+      data: { versionId },
+    });
+  }
+
+  /**
+   * Create content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The socket data
+   * @param sessionId - The session ID
+   * @param stepCvid - The step CVID
+   * @returns The content session or null if the session creation fails
+   */
+  async createContentSession(
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+    sessionId?: string,
+    stepCvid?: string,
+  ): Promise<CustomContentSession | null> {
+    const { environment, externalUserId, externalCompanyId } = socketData;
+    const contentType = customContentVersion.content.type as ContentDataType;
+    const config = await this.projectsService.getConfig(environment);
+    // The locale for the widget's built-in chrome, shipped with every session
+    // payload: the explicit locale_code attribute, else the project's default
+    // localization — the language the content is authored in — so the chrome
+    // always matches the content language actually delivered. Never
+    // auto-detected from the browser. Deliberately not gated on the content
+    // having a matching translation. findBizUser is request-memoized, so
+    // this adds no query.
+    const bizUser = await this.contentDataService.findBizUser(environment, externalUserId);
+    const userLocale =
+      resolveUserLocaleCode(bizUser?.data) ??
+      (await this.findDefaultLocalizationCode(environment.projectId)) ??
+      undefined;
+    const themes = await this.contentDataService.findThemes({
+      environment,
+      externalUserId,
+      externalCompanyId,
+    });
+
+    // Custom CSS gate: when the project's plan doesn't include it, strip
+    // customCss from every theme before it ships in the session. This is the
+    // single enforcement point — it covers the top theme and the per-step
+    // themes (createSessionSteps reuses this same array) — so a downgrade
+    // takes effect immediately and without touching stored data.
+    const sessionThemes = config.customCss
+      ? themes
+      : themes.map((theme) => this.stripThemeCustomCss(theme));
+
+    const sessionTheme = await this.createSessionTheme(
+      sessionThemes,
+      customContentVersion.themeId,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
+    const session: CustomContentSession = {
+      id: sessionId,
+      type: contentType,
+      userLocale,
+      content: {
+        id: customContentVersion.contentId,
+        name: customContentVersion.content.name,
+        type: customContentVersion.content.type as ContentDataType,
+        project: {
+          id: environment.projectId,
+          removeBranding: config.removeBranding,
+        },
+      },
+      draftMode: false,
+      attributes: [],
+      version: {
+        id: customContentVersion.id,
+        theme: sessionTheme,
+      },
+    };
+    if (contentType === ContentDataType.CHECKLIST) {
+      return await this.processChecklistSession(session, customContentVersion, socketData);
+    }
+    if (contentType === ContentDataType.FLOW) {
+      return await this.processFlowSession(
+        session,
+        customContentVersion,
+        socketData,
+        sessionThemes,
+        stepCvid,
+      );
+    }
+    if (contentType === ContentDataType.LAUNCHER) {
+      return await this.processLauncherSession(session, customContentVersion, socketData);
+    }
+    if (contentType === ContentDataType.BANNER) {
+      return await this.processBannerSession(session, customContentVersion, socketData);
+    }
+    if (contentType === ContentDataType.RESOURCE_CENTER) {
+      return await this.processResourceCenterSession(session, customContentVersion, socketData);
+    }
+    if (contentType === ContentDataType.TRACKER) {
+      return await this.processTrackerSession(session, customContentVersion, socketData);
+    }
+    return session;
+  }
+
+  /**
+   * The project's default localization code — the language its content is
+   * authored in. Memoized per request scope: changing the default is a rare
+   * admin action and takes effect on the next request.
+   */
+  private async findDefaultLocalizationCode(projectId: string): Promise<string | null> {
+    const localization = await this.cache.memoize(
+      this.cache.memoKeys.defaultLocalization(projectId),
+      () =>
+        this.prisma.localization.findFirst({
+          where: { projectId, isDefault: true },
+          select: { code: true },
+        }),
+    );
+    return localization?.code ?? null;
+  }
+
+  /**
+   * Sync session version ID if published version differs from custom version
+   * This ensures the biz session's versionId is updated to match the published version
+   * when the content is using a draft/custom version that differs from published
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   */
+  async syncSessionVersionIfNeeded(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+  ): Promise<void> {
+    if (!session.id) {
+      return;
+    }
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: session.id },
+    });
+    if (!bizSession) {
+      return;
+    }
+
+    if (bizSession.versionId !== customContentVersion.id) {
+      await this.updateBizSessionVersionId(bizSession.id, customContentVersion.id);
+    }
+  }
+
+  // ============================================================================
+  // Content Type Processing Methods
+  // ============================================================================
+
+  /**
+   * Process CHECKLIST content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @returns The processed session
+   */
+  private async processChecklistSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId, clientContext, clientConditions } =
+      socketData;
+    const checklistData = customContentVersion.data as unknown as ChecklistData;
+    const attrCodes = extractChecklistAttrCodes(checklistData);
+    const buttonAttrIds = extractButtonConditionAttributeIds(checklistData);
+
+    const attributes = await this.extractAttributes(
+      buttonAttrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
+
+    // Evaluate checklist items with client conditions
+    const items = await evaluateChecklistItemsWithContext(
+      customContentVersion,
+      clientContext,
+      clientConditions,
+    );
+
+    session.expandPending = isExpandPending(customContentVersion);
+    session.version.checklist = { ...checklistData, items };
+    return session;
+  }
+
+  /**
+   * Process BANNER content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @returns The processed session
+   */
+  private async processBannerSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId } = socketData;
+    const bannerData = customContentVersion.data as unknown as BannerData;
+    const attrCodes = extractBannerAttrCodes(bannerData?.contents);
+    const buttonAttrIds = extractButtonConditionAttributeIds(bannerData);
+
+    const attributes = await this.extractAttributes(
+      buttonAttrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
+    session.version.banner = bannerData;
+    return session;
+  }
+
+  /**
+   * Process RESOURCE_CENTER content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @returns The processed session
+   */
+  private async processResourceCenterSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId, clientContext, clientConditions } =
+      socketData;
+    const rawResourceCenterData = customContentVersion.data as unknown as ResourceCenterData;
+    const resourceCenterData = await evaluateResourceCenterBlocksWithContext(
+      rawResourceCenterData,
+      clientContext,
+      clientConditions,
+    );
+
+    // Extract attribute codes and button-condition attribute ids across the whole block tree
+    const attrCodes: string[] = [];
+    const buttonAttrIds: string[] = [];
+    const allBlocks = resourceCenterData.tabs.flatMap((tab) => tab.blocks);
+    attrCodes.push(...extractResourceCenterAttrCodes(allBlocks));
+    for (const block of allBlocks) {
+      if (
+        (block.type === ResourceCenterBlockType.RICH_TEXT ||
+          block.type === ResourceCenterBlockType.SUB_PAGE) &&
+        block.content
+      ) {
+        buttonAttrIds.push(...extractButtonConditionAttributeIds({ contents: block.content }));
+      }
+    }
+
+    const attributes = await this.extractAttributes(
+      buttonAttrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
+
+    // Populate the announcement unread count and popup payload
+    await this.populateAnnouncements(
+      resourceCenterData,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
+    session.version.resourceCenter = resourceCenterData;
+    return session;
+  }
+
+  /**
+   * Populate the announcement presentation on the resource center data: the
+   * global announcementUnreadCount (BADGE- and POPUP-level announcements the
+   * user hasn't seen), and the newest unseen POPUP-level announcement as the
+   * self-presenting popup payload. Reads through the shared
+   * AnnouncementService.findVisibleAnnouncements — the same bounded query +
+   * targeting the feed uses — so neither the badge count nor the popup can
+   * include announcements the feed would hide.
+   */
+  private async populateAnnouncements(
+    resourceCenterData: ResourceCenterData,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId: string,
+  ): Promise<void> {
+    // Announcement state is global; the block is only the navigation entry.
+    // Require a VISIBLE announcement block: block-level "Only show block if..."
+    // conditions set isVisible=false, and the orchestrator strips those blocks
+    // before shipping. Counting a hidden one would light the badge / self-pop a
+    // popup for a user whose shipped data.tabs no longer contains the block —
+    // Read more would land nowhere and the badge could never be cleared.
+    const hasAnnouncementBlock = (resourceCenterData.tabs ?? []).some((tab) =>
+      tab.blocks.some(
+        (block) => block.type === ResourceCenterBlockType.ANNOUNCEMENT && block.isVisible !== false,
+      ),
+    );
+    if (!hasAnnouncementBlock) return;
+
+    const setUnread = (count: number) => {
+      resourceCenterData.announcementUnreadCount = count;
+    };
+
+    // Shared request-memoized lookup, so this hot session-build path reuses the
+    // bizUser row attribute resolution already fetched instead of re-querying.
+    const bizUser = await this.contentDataService.findBizUser(environment, externalUserId);
+    if (!bizUser) {
+      setUnread(0);
+      return;
+    }
+
+    // Newest N visible announcements — the same query + targeting the feed uses
+    // (AnnouncementService), so the badge count and the list can't disagree.
+    const visible = await this.announcementService.findVisibleAnnouncements(
+      environment,
+      bizUser,
+      externalCompanyId,
+    );
+
+    const distributionOf = (item: VisibleAnnouncement): AnnouncementDistribution => {
+      const data = item.publishedVersion.data as AnnouncementData | null;
+      return data?.distribution ?? DEFAULT_ANNOUNCEMENT_DATA.distribution;
+    };
+
+    // BADGE and POPUP announcements both light the launcher badge (POPUP is the
+    // louder level, so it implies badge behavior); only SILENT is excluded.
+    const notifyingItems = visible.filter(
+      (item) => distributionOf(item) !== AnnouncementDistribution.SILENT,
+    );
+    if (notifyingItems.length === 0) {
+      setUnread(0);
+      return;
+    }
+
+    const notifyingContentIds = notifyingItems.map((item) => item.contentId);
+    const seenSet = await this.announcementService.getSeenAnnouncementIds(
+      bizUser.id,
+      notifyingContentIds,
+    );
+    setUnread(notifyingContentIds.filter((id) => !seenSet.has(id)).length);
+
+    // The newest unseen POPUP-level announcement self-presents once. `visible`
+    // is ordered newest-first, so the first match wins; older unseen popups
+    // stay badge-only until this one is acknowledged (no queueing).
+    const popupItem = notifyingItems.find(
+      (item) =>
+        distributionOf(item) === AnnouncementDistribution.POPUP && !seenSet.has(item.contentId),
+    );
+    if (popupItem) {
+      resourceCenterData.popupAnnouncement = await this.announcementService.buildPopupAnnouncement(
+        popupItem,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+    }
+  }
+
+  /**
+   * Process FLOW content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The socket data
+   * @param themes - The themes array
+   * @param stepCvid - The step CVID
+   * @returns The processed session or null if current step not found
+   */
+  private async processFlowSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+    themes: Theme[],
+    stepCvid?: string,
+  ): Promise<CustomContentSession | null> {
+    const steps = customContentVersion.steps;
+    const { environment, externalUserId, externalCompanyId } = socketData;
+
+    const attributes = await this.extractStepsAttributes(
+      steps,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+    session.attributes = attributes;
+
+    const versionSteps = customContentVersion.steps;
+    const sessionSteps = await this.createSessionSteps(
+      versionSteps,
+      themes,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+    session.version.steps = sessionSteps;
+
+    if (stepCvid) {
+      const currentStep = steps.find((step) => step.cvid === stepCvid);
+      if (!currentStep) {
+        this.logger.error(`Current step not found for stepCvid ${stepCvid}`);
+        return null;
+      }
+      session.currentStep = {
+        cvid: currentStep.cvid,
+        id: currentStep.id,
+      };
+    }
+
+    return session;
+  }
+
+  /**
+   * Process LAUNCHER content type session
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @returns The processed session
+   */
+  private async processLauncherSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId } = socketData;
+    const launcher = customContentVersion.data as unknown as LauncherData;
+    const attrCodes = extractLauncherAttrCodes(launcher);
+    const buttonAttrIds = extractButtonConditionAttributeIds(launcher);
+
+    const attributes = await this.extractAttributes(
+      buttonAttrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+    session.attributes = attributes;
+
+    session.version.launcher = { ...launcher };
+    return session;
+  }
+
+  /**
+   * Process TRACKER content type session
+   * Tracker sessions carry the eventId from version.data for SDK-side event triggering.
+   * Extracts and injects required attributes from autoStartRules conditions
+   * (aligning with Launcher attribute injection pattern).
+   */
+  private async processTrackerSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+  ): Promise<CustomContentSession> {
+    const { environment, externalUserId, externalCompanyId } = socketData;
+    const data = customContentVersion.data as any;
+    session.version.tracker = { eventId: data?.eventId ?? '' };
+    // Send full config so SDK can evaluate tracker conditions locally.
+    session.version.config = customContentVersion.config;
+
+    // Extract attribute IDs from autoStartRules conditions for attribute injection
+    const autoStartRules = customContentVersion.config?.autoStartRules ?? [];
+    const attrIds = extractAttributeIdsFromConditions(autoStartRules);
+
+    if (attrIds.length > 0) {
+      const attributes = await this.extractAttributes(
+        attrIds,
+        environment,
+        externalUserId,
+        externalCompanyId,
+      );
+      session.attributes = attributes;
+    }
+
+    return session;
+  }
+
+  // ============================================================================
+  // Theme and Step Processing Methods
+  // ============================================================================
+
+  /**
+   * Get theme settings
+   * @param themes - The themes
+   * @param themeId - The theme ID
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @returns The theme settings or null if not found
+   */
+  /**
+   * Return a copy of the theme with `customCss` removed — from the base
+   * settings AND from every variation's settings — for plans that don't
+   * include the custom CSS feature. Variations carry a full settings copy
+   * (the builder seeds them with cloneDeep(base)), and the SDK adopts the
+   * matched variation's settings wholesale, so skipping them would let a
+   * theme with variations smuggle customCss past the gate (and re-hide the
+   * Made-with-Usertour badge). Does not mutate the original (the themes array
+   * may be shared / cached); returns it unchanged when there's nothing to
+   * strip.
+   */
+  private stripThemeCustomCss(theme: Theme): Theme {
+    const stripCss = (settings: ThemeTypesSetting | null): ThemeTypesSetting | null => {
+      if (!settings || settings.customCss == null) {
+        return settings;
+      }
+      const { customCss: _customCss, ...rest } = settings;
+      return rest as ThemeTypesSetting;
+    };
+
+    const settings = theme.settings as ThemeTypesSetting | null;
+    const variations = (theme.variations as ThemeVariation[] | null) ?? null;
+
+    const strippedSettings = stripCss(settings);
+    const variationsHaveCss = !!variations?.some(
+      (variation) => (variation?.settings as ThemeTypesSetting | undefined)?.customCss != null,
+    );
+
+    // Nothing to strip anywhere — return the original untouched.
+    if (strippedSettings === settings && !variationsHaveCss) {
+      return theme;
+    }
+
+    return {
+      ...theme,
+      settings: strippedSettings as unknown as Theme['settings'],
+      variations: variationsHaveCss
+        ? (variations!.map((variation) => ({
+            ...variation,
+            settings: stripCss(variation.settings as ThemeTypesSetting),
+          })) as unknown as Theme['variations'])
+        : theme.variations,
+    };
+  }
+
+  private async createSessionTheme(
+    themes: Theme[],
+    themeId: string,
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionTheme | null> {
+    const theme = themes.find((theme) => theme.id === themeId);
+    if (!theme) {
+      return null;
+    }
+
+    const settings = theme.settings as ThemeTypesSetting;
+    const variations = (theme.variations as ThemeVariation[]) || [];
+
+    const attrIds = extractThemeVariationsAttributeIds(variations);
+    const attributes = await this.extractAttributes(
+      attrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+    );
+
+    return {
+      settings,
+      variations,
+      attributes,
+    };
+  }
+
+  /**
+   * Create session steps
+   * @param steps - The steps
+   * @param themes - The themes
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @returns The session steps
+   */
+  private async createSessionSteps(
+    steps: Step[],
+    themes: Theme[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionStep[]> {
+    // Early return for empty steps
+    if (!steps.length) {
+      return [];
+    }
+
+    // Create a cache for session themes to avoid duplicate processing
+    const themeCache = new Map<string, SessionTheme | null>();
+
+    // Collect unique theme IDs that need processing
+    const uniqueThemeIds = new Set<string>();
+    for (const step of steps) {
+      if (step.themeId) {
+        uniqueThemeIds.add(step.themeId);
+      }
+    }
+
+    // Batch process all unique themes
+    const themePromises = Array.from(uniqueThemeIds).map(async (themeId) => {
+      try {
+        const sessionTheme = await this.createSessionTheme(
+          themes,
+          themeId,
+          environment,
+          externalUserId,
+          externalCompanyId,
+        );
+        themeCache.set(themeId, sessionTheme);
+      } catch (error) {
+        this.logger.error({
+          message: `Failed to create session theme for themeId ${themeId}:`,
+          error,
+        });
+        themeCache.set(themeId, null);
+      }
+    });
+
+    // Wait for all theme processing to complete
+    await Promise.all(themePromises);
+
+    // Process steps with cached themes
+    const results: SessionStep[] = steps.map((step) => {
+      if (!step.themeId) {
+        return step as unknown as SessionStep;
+      }
+
+      const sessionTheme = themeCache.get(step.themeId);
+      return {
+        ...step,
+        theme: sessionTheme,
+      } as unknown as SessionStep;
+    });
+
+    return results;
+  }
+
+  // ============================================================================
+  // Attribute Extraction Methods
+  // ============================================================================
+
+  /**
+   * Extract steps attributes
+   * @param steps - The steps
+   * @param environment - The environment
+   * @param externalUserId - The external user ID
+   * @param externalCompanyId - The external company ID
+   * @returns The steps attributes
+   */
+  private async extractStepsAttributes(
+    steps: Step[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+  ): Promise<SessionAttribute[]> {
+    if (!steps || steps.length === 0) {
+      return [];
+    }
+
+    const attrIds = extractStepTriggerAttributeIds(steps);
+    const attrCodes = extractStepContentAttrCodes(steps);
+    const buttonAttrIds = extractButtonConditionAttributeIds(steps);
+
+    return await this.extractAttributes(
+      [...attrIds, ...buttonAttrIds],
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+  }
+
+  /**
+   * Extract attribute data based on attribute IDs and codes. Delegates to
+   * ContentDataService so the session builder and the announcement feed resolve
+   * attributes through one implementation.
+   */
+  private async extractAttributes(
+    attrIds: string[],
+    environment: Environment,
+    externalUserId: string,
+    externalCompanyId?: string,
+    attrCodes: string[] = [],
+  ): Promise<SessionAttribute[]> {
+    return this.contentDataService.resolveSessionAttributes(
+      attrIds,
+      environment,
+      externalUserId,
+      externalCompanyId,
+      attrCodes,
+    );
+  }
+}

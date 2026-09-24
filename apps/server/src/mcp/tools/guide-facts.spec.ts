@@ -13,7 +13,7 @@ import {
   type TranslationSource,
   applyTranslationUnits,
   readTranslationUnits,
-} from '@/content/version-translation';
+} from '@/modules/content/utils/version-translation.util';
 
 import {
   AUTHORING_GUIDE,

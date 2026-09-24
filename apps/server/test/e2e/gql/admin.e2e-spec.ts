@@ -7,7 +7,7 @@ import { teardownProject } from './_support';
 
 // The admin resolver is guarded by SystemAdminGuard, which requires self-hosted
 // mode. The repo's root `.env` ships `IS_SELF_HOSTED_MODE=false` and `.env.test`
-// doesn't override it. The `config` object (src/common/configs/config.ts) reads
+// doesn't override it. The `config` object (src/modules/common/config/config.ts) reads
 // `process.env.IS_SELF_HOSTED_MODE` at MODULE-IMPORT time, so we must set it
 // before AppModule is ever imported. We therefore (1) force it ON here at module
 // scope (this runs before the lazy `require` of create-test-app in beforeAll)

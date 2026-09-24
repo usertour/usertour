@@ -1,4 +1,4 @@
-import { AttributeDataTypeNames } from '@/attributes/models/attribute.model';
+import { AttributeDataTypeNames } from '@/modules/attributes/constants/attribute-data-type-names.constant';
 
 /**
  * The `object` discriminator vocabulary for v2 API resources. Owned by this

@@ -3,11 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
-import { EncryptionService } from '@/shared/encryption.service';
-import { INTEGRATION_TX_COOKIE } from '@/utils/cookie';
-import * as hubspotApi from '@/integrations/sync/hubspot-api';
-import { HubspotJournalService } from '@/integrations/sync/hubspot-journal.service';
-import { ObjectSyncService } from '@/integrations/sync/object-sync.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
+import { INTEGRATION_TX_COOKIE } from '@/modules/integrations/constants/integration-transaction-cookie.constant';
+import * as hubspotApi from '@/modules/integrations/sync/hubspot-api';
+import { HubspotJournalService } from '@/modules/integrations/sync/hubspot-journal.service';
+import { ObjectSyncService } from '@/modules/integrations/sync/object-sync.service';
 
 import { graphql, gqlData, gqlErrorCode } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';

@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../models/user.model';
-import { UserNotFoundError } from '@/common/errors/errors';
+import { UserNotFoundError } from '@/modules/common/errors/errors';
 import { UpsertUserRequestDto, UserOrderByType, GetUserQueryDto } from './users.dto';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { ExpandType, ExpandTypes } from './users.dto';
-import { OpenApiObjectType } from '@/common/openapi/types';
-import { paginate } from '@/common/openapi/pagination';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
+import { paginate } from '@/modules/common/utils/pagination.util';
 import type { Environment } from '@prisma/client';
-import { parseOrderBy } from '@/common/openapi/sort';
+import { parseOrderBy } from '../shared/sort';
 import { ListUsersQueryDto } from './users.dto';
 @Injectable()
 export class OpenAPIUsersService {

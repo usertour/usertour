@@ -1,12 +1,15 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { BizEvents, EventAttributes } from '@usertour/types';
-import { initialization } from '@/common/initialization/initialization';
-import { EncryptionService } from '@/shared/encryption.service';
-import { ObjectSyncListener } from '@/integrations/sync/object-sync.listener';
-import { DeliverySkippedError, ObjectSyncService } from '@/integrations/sync/object-sync.service';
-import * as timelineApi from '@/integrations/sync/hubspot-timeline-api';
-import type { IntegrationMessageEnvelope } from '@/integrations/integrations.types';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
+import { ObjectSyncListener } from '@/modules/integrations/sync/object-sync.listener';
+import {
+  DeliverySkippedError,
+  ObjectSyncService,
+} from '@/modules/integrations/sync/object-sync.service';
+import * as timelineApi from '@/modules/integrations/sync/hubspot-timeline-api';
+import type { IntegrationMessageEnvelope } from '@/modules/integrations/types/integrations.type';
 
 import { graphql, gqlData } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';

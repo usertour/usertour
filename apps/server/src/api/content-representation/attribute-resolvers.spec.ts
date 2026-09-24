@@ -1,4 +1,4 @@
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 
 import { buildCompileResolversFrom, buildDecompileResolversFrom } from './attribute-resolvers';
 

@@ -1,0 +1,142 @@
+import { Public } from '../decorators/public.decorator';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
+import { Args, Mutation, Parent, ResolveField, Resolver, Context } from '@nestjs/graphql';
+import { AuthService } from '../services/auth.service';
+import type { AuthResult } from '../types/auth-result.type';
+import { AcceptInviteInput } from '../dtos/accept-invite.input';
+import { ResetPasswordByCodeInput } from '../dtos/change-password.input';
+import { LoginInput } from '../dtos/login.input';
+import { MagicLinkInput } from '../dtos/magic-link.input';
+import { ResendLinkInput } from '../dtos/resend-link.input';
+import { ResetPasswordInput } from '../dtos/reset-password.input';
+import { SetupSystemAdminInput } from '../dtos/setup-system-admin.input';
+import { SignupInput } from '../dtos/signup.input';
+import { AuthDTO } from '../dtos/auth.dto';
+import { CommonDTO } from '../dtos/common.dto';
+import { RegisterDTO } from '../dtos/register.dto';
+import { Logger, UseGuards } from '@nestjs/common';
+import { Request, Response } from 'express';
+import { REFRESH_TOKEN_COOKIE } from '../constants/auth-cookies.constant';
+import { UserEntity } from '../decorators/user.decorator';
+import { SkipTwoFactorEnrollment } from '../decorators/skip-2fa-enrollment.decorator';
+import { EmailConfigGuard } from '@/modules/common/guards/email-config.guard';
+
+@Resolver(() => AuthDTO)
+export class AuthResolver {
+  private readonly logger = new Logger(AuthResolver.name);
+  constructor(private readonly auth: AuthService) {}
+
+  @Mutation(() => RegisterDTO)
+  @Public()
+  @UseGuards(EmailConfigGuard)
+  createMagicLink(@Args('data') data: MagicLinkInput) {
+    data.email = data.email.toLowerCase();
+    return this.auth.createMagicLink(data.email);
+  }
+
+  @Mutation(() => RegisterDTO)
+  @Public()
+  @UseGuards(EmailConfigGuard)
+  resendMagicLink(@Args('data') data: ResendLinkInput) {
+    return this.auth.resendMargicLink(data.id);
+  }
+
+  @Mutation(() => CommonDTO)
+  @Public()
+  @UseGuards(EmailConfigGuard)
+  resetUserPassword(@Args('data') data: ResetPasswordInput) {
+    data.email = data.email.toLowerCase();
+    return this.auth.resetUserPassword(data.email);
+  }
+
+  @Mutation(() => CommonDTO)
+  @Public()
+  resetUserPasswordByCode(@Args('data') data: ResetPasswordByCodeInput) {
+    return this.auth.resetUserPasswordByCode(data.code, data.password);
+  }
+
+  @Mutation(() => AuthDTO)
+  @Public()
+  async setupSystemAdmin(
+    @Args('data') data: SetupSystemAdminInput,
+    @Context() context: { res: Response },
+  ) {
+    const result = await this.auth.setupSystemAdmin(
+      data.name,
+      data.email.toLowerCase(),
+      data.password,
+    );
+    return this.formatAuthResult(result, context.res);
+  }
+
+  @Mutation(() => AuthDTO)
+  @Public()
+  async signup(@Args('data') data: SignupInput, @Context() context: { res: Response }) {
+    const result = await this.auth.signup(data);
+    return this.formatAuthResult(result, context.res);
+  }
+
+  @Mutation(() => AuthDTO)
+  @Public()
+  async acceptInvite(@Args('data') data: AcceptInviteInput, @Context() context: { res: Response }) {
+    const result = await this.auth.acceptInvite(data);
+    return this.formatAuthResult(result, context.res);
+  }
+
+  @Mutation(() => AuthDTO)
+  @Public()
+  async login(
+    @Args('data') { email, password, inviteCode }: LoginInput,
+    @Context() context: { res: Response },
+  ) {
+    const result = await this.auth.emailLogin(email.toLowerCase(), password, inviteCode);
+    this.logger.log(`Login attempt resolved for email: ${email} (${result.kind})`);
+    return this.formatAuthResult(result, context.res);
+  }
+
+  @Mutation(() => Boolean)
+  @SkipTwoFactorEnrollment()
+  async logout(@UserEntity() user: UserDTO, @Context() context: { req: Request; res: Response }) {
+    this.logger.log(`Logging out user: ${user.id}`);
+    // Clear cookies first — it only writes response headers and can't fail, so
+    // logout stays effective even if the revoke below hits a DB error.
+    this.auth.clearAuthCookie(context.res);
+    // Revoke only THIS session's refresh token (per-device logout), not every
+    // session the user has. Best-effort: a failure here must not fail logout.
+    const refreshToken = context.req.cookies?.[REFRESH_TOKEN_COOKIE];
+    if (refreshToken) {
+      try {
+        await this.auth.revokeRefreshToken(refreshToken);
+      } catch (error) {
+        this.logger.error(`Failed to revoke refresh token on logout for ${user.id}`, error);
+      }
+    }
+    this.logger.log(`Successfully logged out user: ${user.id}`);
+    return true;
+  }
+
+  @ResolveField('user', () => UserDTO, { nullable: true })
+  async user(@Parent() auth: AuthDTO) {
+    if (!auth.accessToken) {
+      return null;
+    }
+    return await this.auth.getUserFromToken(auth.accessToken);
+  }
+
+  private formatAuthResult(result: AuthResult, res: Response): AuthDTO {
+    if (result.kind === 'tokens') {
+      this.auth.setAuthCookie(res, result.tokens);
+      return {
+        accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+        requiresTwoFactor: false,
+        requiresTwoFactorSetup: false,
+      };
+    }
+    return {
+      requiresTwoFactor: result.purpose === 'mfa-verify',
+      requiresTwoFactorSetup: result.purpose === 'mfa-setup-required',
+      twoFactorChallenge: result.challengeToken,
+    };
+  }
+}

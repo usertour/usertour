@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { OpenApiObjectType } from '@/openapi/shared/openapi-object-type';
 
 import { createTestApp } from '../create-test-app';
 import { buildBizUser, buildContent, buildSession, buildVersion } from '../factories';

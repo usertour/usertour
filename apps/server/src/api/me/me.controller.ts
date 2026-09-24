@@ -1,9 +1,9 @@
 import { Controller, Get, Req, UseFilters, UseGuards, UsePipes } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { AuthedApiToken } from '@/api-token/api-token-auth.service';
-import { ApiTokenAuthenticateGuard } from '@/api-token/api-token-authenticate.guard';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { AuthedApiToken } from '@/modules/api-token/services/api-token-auth.service';
+import { ApiTokenAuthenticateGuard } from '@/modules/api-token/guards/api-token-authenticate.guard';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 
 import { ApiStandardErrorResponses } from '../shared/error-response';
 import { ApiValidationPipe } from '../shared/validation.pipe';

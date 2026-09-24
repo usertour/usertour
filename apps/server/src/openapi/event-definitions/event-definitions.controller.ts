@@ -2,10 +2,10 @@ import { Controller, Get, Query, Logger, UseGuards, UseFilters } from '@nestjs/c
 import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { OpenAPIEventDefinitionsService } from './event-definitions.service';
 import type { Environment } from '@prisma/client';
-import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { EnvironmentDecorator } from '@/modules/common/decorators/environment.decorator';
 import { OpenAPIKeyGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
+import { RequestUrl } from '@/modules/common/decorators/request-url.decorator';
 import { ListEventDefinitionsQueryDto } from './event-definitions.dto';
 
 @ApiTags('Event Definitions (v1)')

@@ -9,7 +9,7 @@ import {
   representationStartRules,
   representationStepInput,
 } from '../content-representation/representation.schema';
-import { isoDateTime } from '@/common/filters';
+import { isoDateTime } from '@/modules/common/utils/query-filters.util';
 
 import { representationResourceCenter } from '../content-representation/resource-center.schema';
 import {

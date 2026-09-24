@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { type Environment, Prisma } from '@prisma/client';
 import { toArray } from '../shared/query';
 
-import { AnalyticsService } from '@/analytics/analytics.service';
+import { AnalyticsService } from '@/modules/analytics/services/analytics.service';
 import {
   ContentNotFoundError,
   ContentSessionNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
-import { ContentService } from '@/content/content.service';
-import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/utils/event-v2';
+} from '@/modules/common/errors/errors';
+import { ContentService } from '@/modules/content/services/content.service';
+import { DISMISSED_EVENTS, GENUINE_COMPLETION_EVENTS } from '@/modules/delivery/utils/event.util';
 
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';

@@ -1,14 +1,7 @@
-import {
-  BizCompany,
-  BizSession,
-  BizUser,
-  Step,
-  Version,
-  Theme,
-  BizSessionWithEvents,
-} from '@/common/types/schema';
-import { ContentType } from '@/content/models/content.model';
-import { ContentConfigObject } from '@/content/models/version.model';
+import { BizCompany, BizSession, BizUser, Step, Version, Theme } from '@prisma/client';
+import { BizSessionWithEvents } from '@/modules/delivery/types/biz-session-with-events.type';
+import { ContentType } from '@/modules/content/constants/content-type.constant';
+import { ContentConfigObject } from '@/modules/content/types/content-config-object.type';
 
 // Base request interface with token
 export interface BaseRequest {

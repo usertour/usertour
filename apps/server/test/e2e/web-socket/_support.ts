@@ -13,14 +13,13 @@ export interface WebSocketTestApp {
 /**
  * Boots the full application on an ephemeral port so socket.io clients can
  * perform a real websocket handshake against the v2 gateway (`/v2`
- * namespace). The HTTP e2e harness (createTestApp + supertest) never listens
- * on a port; websocket specs need a live server. Uses the default in-process
+ * namespace). createTestApp listens on an ephemeral port for every suite;
+ * websocket specs read it back for a real handshake. Uses the default in-process
  * socket.io adapter — the RedisIoAdapter is only wired in main.ts and a
  * single-instance test doesn't need cross-instance fan-out.
  */
 export async function createWebSocketTestApp(): Promise<WebSocketTestApp> {
   const app = await createTestApp();
-  await app.listen(0);
   const address = app.getHttpServer().address() as AddressInfo;
   return {
     app,

@@ -3,20 +3,20 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { AnalyticsModule } from '@/analytics/analytics.module';
-import { ApiTokenModule } from '@/api-token/api-token.module';
-import { AttributesModule } from '@/attributes/attributes.module';
-import { BizModule } from '@/biz/biz.module';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { V2FallbackExceptionFilter } from '@/common/filters/v2-fallback-exception.filter';
-import { UtilitiesModule } from '@/utilities/utilities.module';
+import { AnalyticsModule } from '@/modules/analytics/analytics.module';
+import { ApiTokenModule } from '@/modules/api-token/api-token.module';
+import { AttributesModule } from '@/modules/attributes/attributes.module';
+import { BizModule } from '@/modules/biz/biz.module';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
+import { V2FallbackExceptionFilter } from './shared/v2-fallback-exception.filter';
+import { UtilitiesModule } from '@/modules/utilities/utilities.module';
 import { ApiThrottlerGuard } from './shared/api-throttler.guard';
-import { ContentModule } from '@/content/content.module';
+import { ContentModule } from '@/modules/content/content.module';
 import { EnvironmentsModule } from '@/modules/environments/environments.module';
-import { EventsModule } from '@/events/events.module';
+import { EventsModule } from '@/modules/events/events.module';
 import { LocalizationsModule } from '@/modules/localizations/localizations.module';
-import { ProjectsModule } from '@/projects/projects.module';
-import { ThemesModule } from '@/themes/themes.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
+import { ThemesModule } from '@/modules/themes/themes.module';
 
 import { ApiAnalyticsController } from './analytics/analytics.controller';
 import { ApiAnalyticsService } from './analytics/analytics.service';
@@ -54,7 +54,7 @@ import { ApiEventsController } from './events/events.controller';
 import { WebSocketModule } from '@/web-socket/web-socket.module';
 import { ApiMeService } from './me/me.service';
 import { ApiWebhooksService } from './webhooks/webhooks.service';
-import { WebhooksModule } from '@/webhooks/webhooks.module';
+import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
 
 /**
  * The contract-first v2 public API. A peer of (not nested in) the legacy

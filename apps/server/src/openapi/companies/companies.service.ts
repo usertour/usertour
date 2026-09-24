@@ -1,18 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Company } from '../models/company.model';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import {
   UpsertCompanyRequestDto,
   CompanyExpandType,
   ListCompaniesQueryDto,
   GetCompanyQueryDto,
 } from './companies.dto';
-import { CompanyNotFoundError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/openapi/types';
-import { paginate } from '@/common/openapi/pagination';
+import { CompanyNotFoundError } from '@/modules/common/errors/errors';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
+import { paginate } from '@/modules/common/utils/pagination.util';
 import type { Environment } from '@prisma/client';
-import { parseOrderBy } from '@/common/openapi/sort';
-import { DeleteResponseDto } from '@/common/openapi/dtos';
+import { parseOrderBy } from '../shared/sort';
+import { DeleteResponseDto } from '../shared/delete-response.dto';
 
 @Injectable()
 export class OpenAPICompaniesService {

@@ -16,17 +16,17 @@ import {
   ParamsError,
   ValidationError,
   type ValidationIssue,
-} from '@/common/errors/errors';
-import { ContentService, type WriteActor } from '@/content/content.service';
+} from '@/modules/common/errors/errors';
+import { ContentService, type WriteActor } from '@/modules/content/services/content.service';
 import {
   type TranslationTarget,
   VersionTranslationService,
-} from '@/content/version-translation.service';
+} from '@/modules/content/services/version-translation.service';
 import { ApiThemesService } from '../themes/themes.service';
 
 import { loadConditionContext } from '../content-representation/condition-context';
-import { resolveStaleEmbeds } from '@/common/ombed/embed-resolve';
-import { UtilitiesService } from '@/utilities/utilities.service';
+import { resolveStaleEmbeds } from '@/modules/utilities/utils/embed-resolve.util';
+import { UtilitiesService } from '@/modules/utilities/services/utilities.service';
 import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
 import {
   type ContentReference,

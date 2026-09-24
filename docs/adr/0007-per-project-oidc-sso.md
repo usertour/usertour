@@ -113,7 +113,7 @@ Re-run `assertNotSsoLocked` inside `refreshAccessToken` so enforcement reaches a
 - `apps/server/src/sso/*` — SSO module: resolver, service, `sso-oidc.service.ts` (`exchangeCallback` + userinfo fallback), `sso-auth.controller.ts` (callback, `finishSso`, error redirects).
 - `apps/server/src/auth/auth.service.ts` — `issueTokensOrChallenge` / `assertNotSsoLocked` / `ssoValidate` / `resolveSsoJoinRole` / `login` / `refreshAccessToken`.
 - `apps/server/prisma/schema.prisma` — `ProjectSSOIdentityProvider`, `ProjectSsoSettings`.
-- `apps/server/src/common/errors/errors.ts` — `SsoRequiredError` E0051, `SsoRequiresActiveProviderError` E0052, `SsoAccessDeniedError` E0053.
+- `apps/server/src/modules/common/errors/errors.ts` — `SsoRequiredError` E0051, `SsoRequiresActiveProviderError` E0052, `SsoAccessDeniedError` E0053.
 - `apps/web/src/pages/settings/sso/*` — provider/enforcement/provisioning settings UI.
 - `apps/web/src/pages/authentication/sso.tsx` — per-project SSO entry page.
 - `apps/web/src/apollo/middlewares/errors.ts` — silent refresh on `E0011`.

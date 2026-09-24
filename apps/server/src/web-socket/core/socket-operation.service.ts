@@ -7,7 +7,7 @@ import {
   ClientCondition,
   ConditionWaitTimer,
 } from '@usertour/types';
-import { SocketData } from '@/common/types';
+import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { SocketEmitterService } from './socket-emitter.service';
 import { SocketParallelService } from './socket-parallel.service';
 import {
@@ -19,7 +19,7 @@ import {
   detectChangedPreservedSessions,
   extractSessionsByContentType,
   getSessionKey,
-} from '@/utils/websocket-utils';
+} from '../utils/websocket.util';
 import { SocketDataService } from './socket-data.service';
 
 // ============================================================================

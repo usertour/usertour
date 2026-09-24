@@ -40,7 +40,7 @@ host — so the host lives in the docs repo, never in this server.
 
 ## Two server-side facts to keep working
 
-- **`normalizeOpenApiParameters`** (`src/common/openapi/normalize-parameters.ts`)
+- **`normalizeOpenApiParameters`** (`src/openapi/shared/normalize-parameters.ts`)
   fixes union query params (the `singleOrArray` helper) that nestjs-zod renders
   with `anyOf` at the parameter top level — invalid OpenAPI that strict validators
   (Mintlify, swagger-parser) reject. It runs for both `/api` (v1+v2) and

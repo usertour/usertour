@@ -7,12 +7,12 @@ import {
   ListContentSessionsQueryDto,
 } from './content-sessions.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { Audit } from '@/audit/audit.decorator';
-import { EnvironmentId } from '@/common/decorators/environment-id.decorator';
-import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
+import { Audit } from '@/modules/audit/decorators/audit.decorator';
+import { EnvironmentId } from '../shared/environment-id.decorator';
+import { RequestUrl } from '@/modules/common/decorators/request-url.decorator';
 import type { Environment } from '@prisma/client';
-import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { EnvironmentDecorator } from '@/modules/common/decorators/environment.decorator';
 import { ContentSession } from '../models/content-session.model';
 
 @ApiTags('Content Sessions (v1)')

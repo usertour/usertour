@@ -8,10 +8,10 @@ import {
   EnvironmentLimitError,
   EnvironmentNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import { EnvironmentsService } from '@/modules/environments/services/environments.service';
 
-import { nameContains } from '@/common/filters';
+import { nameContains } from '@/modules/common/utils/query-filters.util';
 import { paginate } from '../shared/pagination';
 import { parseOrderBy } from '../shared/sort';
 import { mapEnvironment } from './environments.mapper';

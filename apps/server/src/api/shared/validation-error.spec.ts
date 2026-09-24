@@ -1,4 +1,4 @@
-import { ValidationError } from '@/common/errors/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 
 // The MCP tool surface renders ONLY the message string (no structured issues),
 // so the aggregate message must carry each issue's path — without it a schema

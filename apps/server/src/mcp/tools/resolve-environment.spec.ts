@@ -1,5 +1,5 @@
-import { ApiTokenAuthService } from '@/api-token/api-token-auth.service';
-import { EnvironmentNotInTokenScopeError } from '@/common/errors';
+import { ApiTokenAuthService } from '@/modules/api-token/services/api-token-auth.service';
+import { EnvironmentNotInTokenScopeError } from '@/modules/common/errors/errors';
 
 import { resolveEnvironment } from './read-tools';
 

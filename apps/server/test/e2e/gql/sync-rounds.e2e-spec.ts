@@ -1,19 +1,19 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { BizService } from '@/biz/biz.service';
-import { AttributeBizType } from '@/attributes/models/attribute.model';
-import { initialization } from '@/common/initialization/initialization';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
 import { AxiosError, AxiosHeaders } from 'axios';
 import { type Job, UnrecoverableError } from 'bullmq';
-import { ObjectSyncProcessor } from '@/integrations/sync/object-sync.processor';
+import { ObjectSyncProcessor } from '@/modules/integrations/sync/object-sync.processor';
 import {
   ObjectSyncService,
   SYNC_PAGE_JOB,
   type SyncPageJobData,
-} from '@/integrations/sync/object-sync.service';
-import { EncryptionService } from '@/shared/encryption.service';
-import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
+} from '@/modules/integrations/sync/object-sync.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
+import * as hubspotCrmApi from '@/modules/integrations/sync/hubspot-crm-api';
 
 import { graphql, gqlErrorCode } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';

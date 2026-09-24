@@ -19,7 +19,7 @@ import { buildAuthorizedUser, teardownProject } from './_support';
  * conditions mixing user/membership attributes — executed against a real
  * Postgres so the compiled Prisma JSON/relation filters are validated
  * end-to-end, not just shape-asserted (see
- * src/common/attribute/filter.spec.ts for the shapes).
+ * src/modules/biz/utils/attribute-filter.util.spec.ts for the shapes).
  *
  * The semantics under test:
  *  - One existential quantifier over the whole tree: AND-ed cross-entity

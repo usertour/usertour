@@ -2,7 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
-import { nameSearchField } from '@/common/filters';
+import { nameSearchField } from '@/modules/common/utils/query-filters.util';
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';
 

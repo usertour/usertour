@@ -5,13 +5,13 @@ import { PlanType } from '@usertour/types';
 import { generateObject, jsonSchema, type LanguageModel } from 'ai';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AiService } from '@/ai/ai.service';
+import { AiService } from '@/modules/ai/services/ai.service';
 import {
   AiNotConfiguredError,
   MachineTranslationFailedError,
   MachineTranslationRequiresPaidPlanError,
   ParamsError,
-} from '@/common/errors';
+} from '@/modules/common/errors/errors';
 
 import type { MachineTranslationRequest } from '../types/machine-translation-request.type';
 

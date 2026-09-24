@@ -3,12 +3,12 @@ import { ContentDataType } from '@usertour/types';
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AnalyticsService } from '@/analytics/analytics.service';
+import { AnalyticsService } from '@/modules/analytics/services/analytics.service';
 import {
   ContentNotFoundError,
   EnvironmentNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 
 import { mapContentAnalytics, mapQuestionAnalytics } from './analytics.mapper';
 import type { QuestionRollingWindows } from './analytics.mapper';

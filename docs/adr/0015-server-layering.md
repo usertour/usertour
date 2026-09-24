@@ -22,7 +22,7 @@ We studied the layout of a large open-source NestJS product whose tree reads ver
 
 | Layer | Contains | Job |
 |---|---|---|
-| **entrypoints** | Protocol surfaces heavy enough to be trees of their own: REST v2 (`api/`), REST v1 (`openapi/`), MCP (`mcp/`), the websocket gateways (`web-socket/` except `core/`) | Parse a request, map a result to the wire format, translate errors. A REST v2 or MCP surface also owns its external representation — the content codec, zod contracts, the tool registry — which is protocol and is why these are separate trees. |
+| **entrypoints** | Protocol surfaces heavy enough to be trees of their own: REST v2 (`api/`), REST v1 (`openapi/`), MCP (`mcp/`), the websocket gateways and their socket plumbing (`web-socket/`) | Parse a request, map a result to the wire format, translate errors. A REST v2 or MCP surface also owns its external representation — the content codec, zod contracts, the tool registry — which is protocol and is why these are separate trees. |
 | **modules** | Everything else, business and infrastructure alike. Each module is self-contained: its services, its pure logic, and its thin GraphQL adapter (the resolver and `dtos/`) side by side | What is valid, what state allows a write, what a write leaves behind — and the infrastructure those rules run on. |
 
 A rule belongs in a module, not in an entrypoint, when every other entrypoint should obey it too.
@@ -35,7 +35,7 @@ Infrastructure is not a layer of its own (see Alternatives): the line that pays 
 
 - **entrypoints → modules**, never the reverse. Modules may import each other; so may entrypoints (MCP binds the REST v2 services).
 - The composition root (`src/*.ts`: `main.ts`, `app.module.ts`, …) may import anything; nothing imports it.
-- **Inside `src/modules/`**, a service or pure-logic file must not import `@nestjs/graphql`, anything under a module's `dtos/`, or a `*.resolver`. Services take plain types declared in `types/`; the GraphQL inputs `implements` them. Resolvers depend on services, never the reverse.
+- **Inside `src/modules/`**, a service or pure-logic file must not import `@nestjs/graphql`, anything under a module's `dtos/`, or a `*.resolver`. Services take plain types declared in `types/`; the GraphQL inputs `implements` them. Resolvers depend on services, never the reverse. Guards, interceptors and decorators (`*.guard.ts`, `*.interceptor.ts`, `*.decorator.ts`) are protocol plumbing — they read the GraphQL execution context by nature — and are exempt like the resolver is; the rule is about what the business code sees.
 
 ### 3. Inside a module
 
@@ -50,11 +50,11 @@ modules/<module>/
   constants/                *.constant.ts
 ```
 
-One export per file, the file named after it in kebab-case (`create-localization.input.ts`, `localization-audit-snapshot.util.ts`). Only the module and its main resolver sit at the module root. This is the layout of the product studied, where it holds for nine files in ten.
+One export per file, the file named after it in kebab-case (`create-localization.input.ts`, `localization-audit-snapshot.util.ts`). Only the module and its main resolver sit at the module root. A module that also owns protocol plumbing or background work files it by kind the same way — `guards/`, `decorators/`, `interceptors/`, `strategies/`, `controllers/`, `processors/`, `listeners/` — next to the folders above, and a cohesive subtree (`auth/permission/`, `integrations/sync/`) moves as one piece. This is the layout of the product studied, where it holds for nine files in ten; a cohesive helper set (a token's crypto primitives) or vocabulary (a module's event names and payload types) may share one file.
 
 Object types carry a `DTO` class suffix and name their GraphQL type explicitly — `@ObjectType('Localization') class LocalizationDTO`. The suffix shows the layer at every import, and keeps the GraphQL class apart from the Prisma model of the same name that services work with; the explicit name means renaming a class can never rename a public GraphQL type. Inputs keep the `…Input` names they already have and no explicit name. The product studied does the same for four object types in five.
 
-Moving a module into this layout leaves the generated schema byte-identical: files are renamed, input classes keep their names, and object types that gain the suffix pin their existing name.
+Moving a module into this layout leaves the generated schema byte-identical: files are renamed, input classes keep their names, and object types that gain the suffix pin their existing name. A connection passes that name too — `PaginatedResponse(WebhookMessageDTO, 'WebhookMessage')` — because the factory names the Edge type after its item, and would otherwise read the class name.
 
 ### 4. Enforcement
 
@@ -80,21 +80,21 @@ src/
 - New modules go straight into the target layout.
 - An existing module moves when it is next substantially changed, never for the sake of moving. Moving one means decoupling its service signatures first, then `git mv` and import updates.
 - `api/`, `openapi/`, `mcp/` and `web-socket/` are already cohesive. They are classified in place and will be renamed into `entrypoints/` later, each as a whole directory in one step.
-- Shared helpers (`common/`, `shared/`, `utils/`) are in the modules layer and stay where they are; consolidating them is out of scope.
+- The former grab-bags (`common/`, `shared/`, `utils/`) are dissolved, not moved: business code went to the module that owns it, v1-only helpers to `openapi/shared/`, and what is genuinely cross-cutting — the error classes, configuration, the GraphQL pagination and ordering primitives, the exception filter, the config guards, the egress guard, the request context and the shared infrastructure services (Redis, email, encryption, project cache, identity verification) — is `modules/common/`, one module in the layout of §3.
 - Pilot: `localizations/` — service signatures decoupled, then moved to `src/modules/localizations/` in the layout of §3.
 
 ### 6. Known debt
 
 **Modules importing an entrypoint** (in the ledger, 12 at decision time):
 
-1. **Content pushes to the websocket gateways directly** — `content.module` and `content.service` import the gateways, and `web-socket/core/content-orchestrator` imports a v2 gateway DTO (4). Direction: the module emits an event; the gateway listens.
+1. **Content pushes to the websocket gateways directly** — `content.module` and `content.service` import the gateways (3; a fourth, the content orchestrator importing a v2 gateway DTO, resolved itself when the orchestrator was filed with the gateways). Direction: the module emits an event; the gateway listens.
 2. **Integrations and outbound webhooks build their payloads with REST v2 mappers** — `api/events/event.mapper`, `api/users/users.mapper`, `api/companies/companies.mapper`, `api/shared/object-type`, `api/shared/codename` (8). The public object shape is shared by the v2 API and outbound payloads on purpose; it needs a home both can import — a representation module shared by the entrypoints and the outbound channel, or outbound delivery treated as an entrypoint of its own.
 
 **Rules in an entrypoint** (invisible to the test — they are imports in the allowed direction):
 
 3. Publish-time usability validation, write guards and auto-start capability checks under `api/content-representation/`. Moving them is its own piece of work; it starts by running the usability validator read-only over existing published versions, to learn how much of what the builder produced it would reject.
 
-**Filing** (not a dependency problem; for review): `common/` holds business code — project initialization defaults, the attribute filter, REST v1 types, the environment decorator. It belongs in the modules and the v1 entrypoint it serves.
+**Filing** — resolved. `common/` held business code (project initialization defaults, the attribute filter, REST v1 types, the environment decorator); each piece now lives with the module or the v1 entrypoint it serves (see §5).
 
 ## Consequences
 
@@ -103,7 +103,7 @@ src/
 - Infrastructure may depend on business modules without the test noticing. That is accepted: it is a filing concern here, not a hazard.
 - Two layouts coexist for a long time. The layer map and the shrink-only ledger keep the half-migrated state visible instead of silent.
 - Every module move changes import paths and can conflict with open branches; large modules (`content/`) need a quiet moment.
-- `web-socket/core/` is classified as a module although it also contains socket plumbing next to the delivery runtime; splitting it waits for its next substantial change.
+- `web-socket/core/` held the delivery runtime next to the socket plumbing. The runtime — what an identified user is shown, session building, condition evaluation, diagnosis — is now `modules/delivery/`; the socket services and the orchestrator that drives them stay with the gateways, where they belong.
 
 ## Alternatives Considered
 

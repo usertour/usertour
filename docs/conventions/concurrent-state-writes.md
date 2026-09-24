@@ -141,9 +141,9 @@ benign race, not an error.
 
 ## Reference implementations
 
-- `apps/server/src/webhooks/webhooks.processor.ts` — `resetBreaker` (rules 2,
+- `apps/server/src/modules/webhooks/processors/webhooks.processor.ts` — `resetBreaker` (rules 2,
   5, 7), `recordFailedAttempt` (rules 1, 5), `autoDisable` (rule 3).
-- `apps/server/src/outbound/outbound-ledger.service.ts` — `claimForResend`
+- `apps/server/src/modules/outbound/services/outbound-ledger.service.ts` — `claimForResend`
   (rules 3, 4), `releaseResendClaim` (rule 6).
-- `apps/server/src/webhooks/webhooks.service.ts` — `resendMessage` (rule 4's
+- `apps/server/src/modules/webhooks/services/webhooks.service.ts` — `resendMessage` (rule 4's
   generation-keyed jobId, rule 6's guarded rollback).

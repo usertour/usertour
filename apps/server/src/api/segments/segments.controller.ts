@@ -18,13 +18,16 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { Capability } from '@usertour/types';
 
-import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
-import { ApiTokenGuard } from '@/api-token/api-token.guard';
-import { RequireCapability } from '@/api-token/require-capability.decorator';
-import { Audit } from '@/audit/audit.decorator';
-import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { RequestUrl } from '@/common/decorators/request-url.decorator';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import {
+  ApiTokenAuthService,
+  AuthedApiToken,
+} from '@/modules/api-token/services/api-token-auth.service';
+import { ApiTokenGuard } from '@/modules/api-token/guards/api-token.guard';
+import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
+import { Audit } from '@/modules/audit/decorators/audit.decorator';
+import { EnvironmentDecorator } from '@/modules/common/decorators/environment.decorator';
+import { RequestUrl } from '@/modules/common/decorators/request-url.decorator';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 import type { Environment } from '@prisma/client';
 
 import { ApiValidationPipe } from '../shared/validation.pipe';

@@ -2,7 +2,10 @@ import { Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import { ZodTypeAny } from 'zod';
 
-import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
+import {
+  ApiTokenAuthService,
+  AuthedApiToken,
+} from '@/modules/api-token/services/api-token-auth.service';
 import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
 import { ApiCompaniesService } from '@/api/companies/companies.service';
 import { ApiContentService } from '@/api/content/content.service';
@@ -19,8 +22,8 @@ import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { ApiWebhooksService } from '@/api/webhooks/webhooks.service';
-import type { AuditAction } from '@/audit/audit.types';
-import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
+import type { AuditAction } from '@/modules/audit/types/audit.type';
+import { ContentDiagnosisService } from '@/modules/delivery/services/content-diagnosis.service';
 
 /**
  * The v2 API services an MCP tool handler can reach through its context — the

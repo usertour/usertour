@@ -16,9 +16,9 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Capability } from '@usertour/types';
 
-import { ApiTokenGuard } from '@/api-token/api-token.guard';
-import { RequireCapability } from '@/api-token/require-capability.decorator';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { ApiTokenGuard } from '@/modules/api-token/guards/api-token.guard';
+import { RequireCapability } from '@/modules/api-token/decorators/require-capability.decorator';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 
 import { ApiStandardErrorResponses, ErrorResponseDto } from '../shared/error-response';
 import { ApiValidationPipe } from '../shared/validation.pipe';

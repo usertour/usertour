@@ -1,4 +1,4 @@
-import { ENDPOINT_CAPABILITY } from '@/auth/permission/endpoint-capability.map';
+import { ENDPOINT_CAPABILITY } from '@/modules/auth/permission/endpoint-capability.map';
 
 import { ENDPOINTS } from './endpoints';
 

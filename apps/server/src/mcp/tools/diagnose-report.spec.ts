@@ -1,7 +1,7 @@
 import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
 
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
-import type { DiagnoseFacts } from '@/web-socket/core/content-diagnosis.service';
+import type { DiagnoseFacts } from '@/modules/delivery/services/content-diagnosis.service';
 
 import {
   type AnnotatedCondition,

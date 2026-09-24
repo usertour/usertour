@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 
-import { EmailService } from '@/shared/email.service';
-import { TeamService } from '@/team/team.service';
+import { EmailService } from '@/modules/common/services/email.service';
+import { TeamService } from '@/modules/team/services/team.service';
 
 import { gqlData, graphql } from '../auth';
 import { createTestApp } from '../create-test-app';

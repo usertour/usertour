@@ -1,21 +1,21 @@
-import { AdminModule } from '@/admin/admin.module';
-import { AnalyticsModule } from '@/analytics/analytics.module';
+import { AdminModule } from '@/modules/admin/admin.module';
+import { AnalyticsModule } from '@/modules/analytics/analytics.module';
 import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
-import { AttributesModule } from '@/attributes/attributes.module';
-import { AuthModule } from '@/auth/auth.module';
-import { BizModule } from '@/biz/biz.module';
-import { ApiTokenModule } from '@/api-token/api-token.module';
-import config from '@/common/configs/config';
-import { ContentModule } from '@/content/content.module';
+import { AttributesModule } from '@/modules/attributes/attributes.module';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { BizModule } from '@/modules/biz/biz.module';
+import { ApiTokenModule } from '@/modules/api-token/api-token.module';
+import config from '@/modules/common/config/config';
+import { ContentModule } from '@/modules/content/content.module';
 import { EnvironmentsModule } from '@/modules/environments/environments.module';
-import { EventsModule } from '@/events/events.module';
+import { EventsModule } from '@/modules/events/events.module';
 import { GqlConfigService } from '@/gql-config.service';
-import { ProjectsModule } from '@/projects/projects.module';
-import { SsoModule } from '@/sso/sso.module';
-import { ThemesModule } from '@/themes/themes.module';
-import { UsersModule } from '@/users/users.module';
-import { UtilitiesModule } from '@/utilities/utilities.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
+import { SsoModule } from '@/modules/sso/sso.module';
+import { ThemesModule } from '@/modules/themes/themes.module';
+import { UsersModule } from '@/modules/users/users.module';
+import { UtilitiesModule } from '@/modules/utilities/utilities.module';
 import { WebSocketModule } from '@/web-socket/web-socket.module';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { HttpModule } from '@nestjs/axios';
@@ -25,21 +25,21 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { PrismaModule } from 'nestjs-prisma';
 import { AppResolver } from './app.resolver';
 import { LocalizationsModule } from './modules/localizations/localizations.module';
-import { TeamModule } from './team/team.module';
+import { TeamModule } from '@/modules/team/team.module';
 import { BullModule } from '@nestjs/bullmq';
 import { StripeModule } from '@golevelup/nestjs-stripe';
-import { SubscriptionModule } from './subscription/subscription.module';
+import { SubscriptionModule } from '@/modules/subscription/subscription.module';
 import { LoggerModule } from 'nestjs-pino';
 // import api from '@opentelemetry/api';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
 import { McpModule } from './mcp/mcp.module';
-import { OAuthModule } from './oauth/oauth.module';
-import { IntegrationsModule } from './integrations/integrations.module';
-import { WebhooksModule } from './webhooks/webhooks.module';
-import { LicenseModule } from './license/license.module';
-import { SharedModule } from './shared/shared.module';
-import { AuditModule } from './audit/audit.module';
+import { OAuthModule } from '@/modules/oauth/oauth.module';
+import { IntegrationsModule } from '@/modules/integrations/integrations.module';
+import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
+import { LicenseModule } from '@/modules/license/license.module';
+import { CommonModule } from '@/modules/common/common.module';
+import { AuditModule } from '@/modules/audit/audit.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { loggingMiddleware } from 'nestjs-prisma';
 import { Logger } from '@nestjs/common';
@@ -161,7 +161,7 @@ import { Logger } from '@nestjs/common';
     ApiModule,
     McpModule,
     OAuthModule,
-    SharedModule,
+    CommonModule,
     AdminModule,
   ],
   controllers: [AppController],

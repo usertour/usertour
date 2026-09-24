@@ -7,7 +7,10 @@ import { z } from 'zod';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 
-import { ApiTokenAuthService, AuthedApiToken } from '@/api-token/api-token-auth.service';
+import {
+  ApiTokenAuthService,
+  AuthedApiToken,
+} from '@/modules/api-token/services/api-token-auth.service';
 import { ApiAttributeDefinitionsService } from '@/api/attribute-definitions/attribute-definitions.service';
 import { ApiCompaniesService } from '@/api/companies/companies.service';
 import { ApiContentService } from '@/api/content/content.service';
@@ -23,9 +26,9 @@ import { ApiSegmentsService } from '@/api/segments/segments.service';
 import { ApiThemesService } from '@/api/themes/themes.service';
 import { ApiUsersService } from '@/api/users/users.service';
 import { ApiWebhooksService } from '@/api/webhooks/webhooks.service';
-import { BaseError } from '@/common/errors/base';
-import { AuditService } from '@/audit/audit.service';
-import { ContentDiagnosisService } from '@/web-socket/core/content-diagnosis.service';
+import { BaseError } from '@/modules/common/errors/base-error';
+import { AuditService } from '@/modules/audit/services/audit.service';
+import { ContentDiagnosisService } from '@/modules/delivery/services/content-diagnosis.service';
 
 import { McpServices, McpTool, McpToolContext } from './mcp.types';
 import { SERVER_INSTRUCTIONS } from './server-instructions';

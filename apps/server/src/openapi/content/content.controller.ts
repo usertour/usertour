@@ -1,6 +1,6 @@
 import { Get, Param, Query, UseFilters, UseGuards, Controller } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 import { OpenAPIContentService } from './content.service';
 import { Content, ContentVersion } from '../models/content.model';
 import {
@@ -10,8 +10,8 @@ import {
   ListContentVersionsQueryDto,
 } from './content.dto';
 import { OpenAPIKeyGuard } from '../openapi.guard';
-import { RequestUrl } from '@/common/decorators/request-url.decorator';
-import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
+import { RequestUrl } from '@/modules/common/decorators/request-url.decorator';
+import { EnvironmentDecorator } from '@/modules/common/decorators/environment.decorator';
 import type { Environment } from '@prisma/client';
 
 @ApiTags('Content (v1)')

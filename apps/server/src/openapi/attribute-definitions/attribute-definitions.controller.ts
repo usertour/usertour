@@ -3,9 +3,9 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Environment } from '@prisma/client';
 import { OpenAPIAttributeDefinitionsService } from './attribute-definitions.service';
 import { OpenAPIKeyGuard } from '@/openapi/openapi.guard';
-import { OpenAPIExceptionFilter } from '@/common/filters/openapi-exception.filter';
-import { EnvironmentDecorator } from '@/common/decorators/environment.decorator';
-import { RequestUrl } from '@/common/decorators/request-url.decorator';
+import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
+import { EnvironmentDecorator } from '@/modules/common/decorators/environment.decorator';
+import { RequestUrl } from '@/modules/common/decorators/request-url.decorator';
 import { ListAttributeDefinitionsQueryDto } from './attribute-definitions.dto';
 
 @ApiTags('Attribute Definitions (v1)')

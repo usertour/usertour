@@ -7,7 +7,7 @@ import {
   ConditionWaitTimer,
 } from '@usertour/types';
 import { uuidV4 } from '@usertour/helpers';
-import { getSocketToken } from '@/utils/websocket-utils';
+import { getSocketToken } from '../utils/websocket.util';
 
 // ============================================================================
 // Socket Emitter Service

@@ -5,11 +5,11 @@ import {
   LocalizationNotFoundError,
   ResourceAlreadyExistsError,
   ResourceConflictError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 import {
   type VersionTranslation,
   VersionTranslationService,
-} from '@/content/version-translation.service';
+} from '@/modules/content/services/version-translation.service';
 import { LocalizationsService } from '@/modules/localizations/services/localizations.service';
 
 import { ApiObjectType } from '../shared/object-type';

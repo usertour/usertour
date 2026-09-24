@@ -1,4 +1,4 @@
-import type { ValidationIssue } from '@/common/errors/errors';
+import type { ValidationIssue } from '@/modules/common/errors/errors';
 import { unknownColorKeyHint } from '@/api/themes/settings.schema';
 
 /** zod path array → `a[0].b`-style path, matching the write guards' path style. */
