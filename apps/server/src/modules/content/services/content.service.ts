@@ -13,12 +13,15 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { Prisma } from '@prisma/client';
 import {
   ContentPublishedDeleteError,
+  DeletedDefinitionReferencedError,
   EnvironmentProjectMismatchError,
   ParamsError,
   UnknownError,
   VersionConflictError,
   VersionNotEditableError,
 } from '@/modules/common/errors/errors';
+import { ReferencesService } from '@/modules/references/services/references.service';
+import { referenceDetails } from '@/modules/references/utils/reference-details.util';
 import { ContentConfigObject, ContentDataType } from '@usertour/types';
 import {
   LOCALIZED_UNITS_SCHEMA_VERSION,
@@ -89,6 +92,7 @@ export class ContentService {
     private webSocketV2Gateway: WebSocketV2Gateway,
     private readonly cache: ProjectCacheService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly references: ReferencesService,
   ) {}
 
   async createContent(input: NewContent) {
@@ -525,6 +529,20 @@ export class ContentService {
   async publishedContentVersion(versionId: string, environmentId: string, actor?: WriteActor) {
     const version = await this.getContentVersionById(versionId);
     await this.requireEnvironmentInContentProject(environmentId, version.contentId);
+    // A live surface never references a deleted definition (ADR 0016 §4). Only a
+    // restored historical version can bring one back into a draft; it may be
+    // saved, not published.
+    const deletedReferences = await this.references.findDeletedReferences(version.id);
+    if (deletedReferences.length > 0) {
+      const names = deletedReferences.map((ref) => `${ref.kind} "${ref.name || ref.id}"`);
+      const error = new DeletedDefinitionReferencedError(
+        `This version references deleted definitions: ${names.join(', ')}. Restore them or replace them, then publish.`,
+      );
+      error.details = referenceDetails(
+        deletedReferences.map((ref) => ({ kind: ref.kind, name: ref.name || ref.id })),
+      );
+      throw error;
+    }
     const now = new Date();
     // Resolved BEFORE the transaction: the names are snapshotted onto the
     // ledger row so attribution outlives the actor (see publishActorFields).

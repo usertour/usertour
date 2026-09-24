@@ -1244,7 +1244,7 @@ describe('MCP endpoint (e2e)', () => {
       expect(ct.referencedBy.find((r: any) => r.id === holder.id).where[0]).toContain('trigger');
 
       // Nothing references the TARGET flow's own attribute-free sibling query:
-      // an unreferenced probe answers "safe to delete".
+      // an unreferenced probe answers that its delete will not be refused.
       const lonely = await prisma.attribute.create({
         data: {
           projectId: projectA,
@@ -1256,7 +1256,7 @@ describe('MCP endpoint (e2e)', () => {
       });
       const empty = await refs('attribute', lonely.id);
       expect(empty.referencedBy).toEqual([]);
-      expect(empty.summary).toContain('safe to delete');
+      expect(empty.summary).toContain('will not be refused');
     });
 
     it('get_content_schema batches several types with the shared $defs emitted once', async () => {

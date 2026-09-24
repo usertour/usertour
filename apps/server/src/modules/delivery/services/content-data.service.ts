@@ -580,8 +580,10 @@ export class ContentDataService {
       this.cache.keys.themes(environment.projectId),
       ContentDataService.PROJECT_CONFIG_TTL_SECONDS,
       () =>
+        // A published version never references a deleted theme (ADR 0016), so
+        // deleted ones would only cost variation evaluation on every session.
         this.prisma.theme.findMany({
-          where: { projectId: environment.projectId },
+          where: { projectId: environment.projectId, deleted: false },
         }),
     );
   }

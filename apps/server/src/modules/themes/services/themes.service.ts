@@ -3,14 +3,17 @@ import { PrismaService } from 'nestjs-prisma';
 import type { NewTheme } from '../types/new-theme.type';
 import type { ThemeChanges } from '../types/theme-changes.type';
 import type { ThemeCopy } from '../types/theme-copy.type';
-import { ParamsError, ThemeInUseError } from '@/modules/common/errors/errors';
+import { ParamsError } from '@/modules/common/errors/errors';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
+import { ReferencesService } from '@/modules/references/services/references.service';
+import { deletedDependencyRestoreError } from '@/modules/references/utils/deleted-dependency-error.util';
 
 @Injectable()
 export class ThemesService {
   constructor(
     private prisma: PrismaService,
     private readonly cache: ProjectCacheService,
+    private readonly references: ReferencesService,
   ) {}
 
   async createTheme(data: NewTheme) {
@@ -34,7 +37,8 @@ export class ThemesService {
   }
 
   async setDefaultTheme(themeId: string) {
-    const theme = await this.prisma.theme.findFirst({ where: { id: themeId } });
+    // New content takes the default theme, so a deleted one must never become it.
+    const theme = await this.prisma.theme.findFirst({ where: { id: themeId, deleted: false } });
     if (!theme) {
       throw new ParamsError();
     }
@@ -67,47 +71,51 @@ export class ThemesService {
     });
   }
 
+  /**
+   * Soft delete (ADR 0016): the row stays so historical versions keep their
+   * theme and restoring one reproduces it. Refused while a live surface uses
+   * the theme — the scan covers version-level themeId and per-step overrides
+   * of every live content's draft and published versions; history never blocks.
+   */
   async deleteTheme(id: string) {
-    const theme = await this.prisma.theme.findFirst({ where: { id } });
-    if (theme.isSystem || theme.isDefault) {
+    const theme = await this.prisma.theme.findFirst({ where: { id, deleted: false } });
+    if (!theme || theme.isSystem || theme.isDefault) {
       throw new ParamsError();
     }
-    // Refuse while the theme is ACTIVELY used: by a live published version or a
-    // content's current draft (version-level themeId or a per-step override).
-    // Historical-version references don't block — versions are permanent, so they
-    // would make every once-used theme undeletable. Without this guard the FK's
-    // ON DELETE SET NULL silently strips the theme from live versions, which then
-    // stop rendering (the runtime has no fallback theme).
-    const usesTheme = { OR: [{ themeId: id }, { steps: { some: { themeId: id } } }] };
-    const [draftUsers, liveUsers] = await Promise.all([
-      this.prisma.content.findMany({
-        where: { deleted: false, editedVersion: usesTheme },
-        select: { name: true },
-        take: 6,
-      }),
-      this.prisma.content.findMany({
-        where: {
-          deleted: false,
-          contentOnEnvironments: { some: { published: true, publishedVersion: usesTheme } },
-        },
-        select: { name: true },
-        take: 6,
-      }),
-    ]);
-    const names = [...new Set([...liveUsers, ...draftUsers].map((c) => c.name))];
-    if (names.length > 0) {
-      const shown = names.slice(0, 5).join(', ');
-      throw new ThemeInUseError(
-        `Cannot delete this theme: it is used by live or draft content (${shown}${
-          names.length > 5 ? ', …' : ''
-        }). Switch that content to another theme first.`,
-      );
-    }
-    const deleted = await this.prisma.theme.delete({
+    await this.references.assertUnreferenced(theme.projectId, 'theme', id);
+    const deleted = await this.prisma.theme.update({
       where: { id },
+      data: { deleted: true },
     });
     await this.cache.invalidate(this.cache.keys.themes(deleted.projectId));
     return deleted;
+  }
+
+  /**
+   * Bring a soft-deleted theme back as it was. Idempotent on a live theme.
+   * Refused while its variations use deleted definitions (ADR 0016 §5).
+   */
+  async restoreTheme(id: string) {
+    const theme = await this.prisma.theme.findFirst({ where: { id } });
+    if (!theme) {
+      throw new ParamsError();
+    }
+    if (!theme.deleted) {
+      return theme;
+    }
+    const dependencies = await this.references.findDeletedConditionReferences(
+      theme.projectId,
+      theme.variations,
+    );
+    if (dependencies.length > 0) {
+      throw deletedDependencyRestoreError('theme', dependencies);
+    }
+    const restored = await this.prisma.theme.update({
+      where: { id },
+      data: { deleted: false },
+    });
+    await this.cache.invalidate(this.cache.keys.themes(restored.projectId));
+    return restored;
   }
 
   async copyTheme(input: ThemeCopy) {
@@ -126,7 +134,7 @@ export class ThemesService {
 
   async listThemesByProjectId(projectId: string) {
     return await this.prisma.theme.findMany({
-      where: { projectId },
+      where: { projectId, deleted: false },
       orderBy: { id: 'asc' },
     });
   }

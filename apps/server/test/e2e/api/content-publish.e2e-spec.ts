@@ -221,6 +221,56 @@ describe('API v2 content publish (e2e)', () => {
     expect(res.body.error.code).toBe('E1012');
   });
 
+  it('refuses to publish a version that references a deleted definition (422 E1044), on every entry point', async () => {
+    // ADR 0016 §4: only a restored historical version can carry a deleted
+    // definition back into a draft. It may be saved but not published — through
+    // v2 and through the web app's GraphQL alike.
+    const staleContent = await buildContent(prisma, {
+      projectId,
+      environmentId,
+      type: 'flow',
+      name: 'Stale theme flow',
+    });
+    const stale = await buildUsableFlowVersion(prisma, {
+      contentId: staleContent.id,
+      projectId,
+      sequence: 0,
+    });
+    await prisma.theme.update({
+      where: { id: stale.themeId as string },
+      data: { deleted: true, name: 'Retired theme' },
+    });
+
+    const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
+    const viaApi = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${staleContent.id}/publish`,
+      token,
+    ).send({ environmentId, versionId: stale.id });
+    expect(viaApi.status).toBe(422);
+    expect(viaApi.body.error.code).toBe('E1044');
+    expect(viaApi.body.error.message).toContain('Retired theme');
+
+    const viaWeb = await graphql(app, {
+      token: ownerToken,
+      query: 'mutation($d:VersionIdInput!){publishedContentVersion(data:$d){id}}',
+      variables: { d: { versionId: stale.id, environmentId } },
+    });
+    expect(viaWeb.body.errors?.[0]?.message).toContain('Retired theme');
+    expect(await prisma.contentOnEnvironment.count({ where: { contentId: staleContent.id } })).toBe(
+      0,
+    );
+
+    // restoring the theme lifts the refusal
+    await prisma.theme.update({ where: { id: stale.themeId as string }, data: { deleted: false } });
+    const published = await api(
+      'post',
+      `/v2/projects/${projectId}/content/${staleContent.id}/publish`,
+      token,
+    ).send({ environmentId, versionId: stale.id });
+    expect(published.status).toBe(200);
+  });
+
   it('returns 404 publishing an unknown content (E1004)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentPublish]);
     const res = await api(

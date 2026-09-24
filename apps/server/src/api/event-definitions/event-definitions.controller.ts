@@ -73,7 +73,12 @@ export class ApiEventDefinitionsController {
   @RequireCapability(Capability.EventCreate)
   @ApiOperation({ summary: 'Create an event definition' })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
-  @ApiResponse({ status: 201, description: 'Event definition created', type: EventDefinitionDto })
+  @ApiResponse({
+    status: 201,
+    description:
+      'Event definition created — or, when a deleted event holds this codeName, that one restored',
+    type: EventDefinitionDto,
+  })
   @ApiResponse({
     status: 409,
     description: 'An event with this codeName already exists',
@@ -108,7 +113,12 @@ export class ApiEventDefinitionsController {
   @Delete(':id')
   @HttpCode(204)
   @RequireCapability(Capability.EventDelete)
-  @ApiOperation({ summary: 'Delete an event definition' })
+  @ApiOperation({
+    summary: 'Delete an event definition',
+    description:
+      'Soft delete: the definition leaves lists and pickers, recorded events keep resolving it, ' +
+      'and it can be restored. Refused (E1030) while live or draft content uses it.',
+  })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Event definition ID' })
   @ApiResponse({ status: 204, description: 'Event definition deleted' })
@@ -116,11 +126,29 @@ export class ApiEventDefinitionsController {
   @ApiResponse({
     status: 409,
     description:
-      'State conflict — E1030 the event already has recorded events, E1036 it is predefined; ' +
-      'neither can be deleted.',
+      'State conflict — E1030 the event is used by live or draft content (the message names ' +
+      'it; remove it from that content first), E1036 it is predefined and cannot be deleted.',
     type: ErrorResponseDto,
   })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
+  }
+
+  @Post(':id/restore')
+  @HttpCode(200)
+  @RequireCapability(Capability.EventUpdate)
+  @ApiOperation({
+    summary: 'Restore a deleted event definition',
+    description:
+      'Bring a soft-deleted event definition back as it was (find it via ' +
+      'GET /event-definitions?deleted=true). Creating or tracking an event with the same ' +
+      'codeName restores it too. Idempotent on a definition that is not deleted.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Event definition ID' })
+  @ApiResponse({ status: 200, description: 'Restored event definition', type: EventDefinitionDto })
+  @ApiResponse({ status: 404, description: 'Event definition not found', type: ErrorResponseDto })
+  async restore(@Param('projectId') projectId: string, @Param('id') id: string) {
+    return this.service.restore(id, projectId);
   }
 }

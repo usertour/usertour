@@ -459,7 +459,7 @@ describe('GraphQL biz (e2e)', () => {
   // ── deleteSegment ────────────────────────────────────────────────────────
 
   describe('deleteSegment', () => {
-    it('deletes a segment and its join rows', async () => {
+    it('soft-deletes a segment and keeps its members (ADR 0016)', async () => {
       const seg = await buildSegment(prisma, { projectId, environmentId, bizType: 1, dataType: 3 });
       const bizUser = await buildBizUser(prisma, { environmentId });
       await prisma.bizUserOnSegment.create({
@@ -477,8 +477,8 @@ describe('GraphQL biz (e2e)', () => {
         prisma.segment.findUnique({ where: { id: seg.id } }),
         prisma.bizUserOnSegment.count({ where: { segmentId: seg.id } }),
       ]);
-      expect(row).toBeNull();
-      expect(joins).toBe(0);
+      expect(row).toMatchObject({ deleted: true });
+      expect(joins).toBe(1);
     });
 
     it('errors deleting an unknown segment', async () => {

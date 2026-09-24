@@ -198,7 +198,7 @@ describe('GraphQL events (e2e)', () => {
   });
 
   describe('deleteEvent', () => {
-    it('deletes an event and its attribute links', async () => {
+    it('soft-deletes an event and keeps its attribute links (ADR 0016)', async () => {
       const attr = await buildAttribute(prisma, { projectId, bizType: 4 });
       const created = gqlData(await createEvent(codeName('del'), 'Trash', [attr.id])).createEvent;
 
@@ -213,8 +213,8 @@ describe('GraphQL events (e2e)', () => {
         prisma.event.findUnique({ where: { id: created.id } }),
         prisma.attributeOnEvent.findMany({ where: { eventId: created.id } }),
       ]);
-      expect(row).toBeNull();
-      expect(links).toHaveLength(0);
+      expect(row).toMatchObject({ deleted: true });
+      expect(links).toHaveLength(1);
     });
 
     it('errors deleting an unknown event', async () => {

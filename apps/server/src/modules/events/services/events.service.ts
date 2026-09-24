@@ -4,7 +4,6 @@ import type { EventChanges } from '../types/event-changes.type';
 import type { NewAttributeOnEvent } from '../types/new-attribute-on-event.type';
 import type { NewEvent } from '../types/new-event.type';
 import {
-  EventDefinitionInUseError,
   ParamsError,
   ResourceAlreadyExistsError,
   UnknownError,
@@ -14,17 +13,50 @@ import { nameContains } from '@/modules/common/utils/query-filters.util';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { PaginationConnection } from '@/modules/common/utils/pagination.util';
 import { Event, Prisma } from '@prisma/client';
+import { ReferencesService } from '@/modules/references/services/references.service';
 
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly references: ReferencesService,
+  ) {}
 
+  /**
+   * A codeName stays reserved while its event is soft-deleted (ADR 0016), so
+   * creating it again restores that row — conditions and recorded events keep
+   * pointing at the same id. The incoming attributes are linked on top of the
+   * ones it kept.
+   */
   async create(data: NewEvent) {
     const { attributeIds } = data;
 
     data.attributeIds = undefined;
+
+    const held = await this.prisma.event.findUnique({
+      where: { codeName_projectId: { codeName: data.codeName, projectId: data.projectId } },
+    });
+    if (held?.deleted) {
+      return await this.prisma.$transaction(async (tx) => {
+        const restored = await tx.event.update({
+          where: { id: held.id },
+          data: {
+            deleted: false,
+            displayName: data.displayName,
+            ...(data.description !== undefined ? { description: data.description } : {}),
+          },
+        });
+        if (attributeIds.length > 0) {
+          await tx.attributeOnEvent.createMany({
+            data: attributeIds.map((attributeId) => ({ attributeId, eventId: held.id })),
+            skipDuplicates: true,
+          });
+        }
+        return restored;
+      });
+    }
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -131,45 +163,50 @@ export class EventsService {
     if (existing?.predefined) {
       throw new ValidationError('Cannot delete a predefined event definition.');
     }
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        // An event with recorded BizEvent rows (fired by a tracker / usertour.track())
-        // can't be hard-deleted — the FK is RESTRICT. Surface a clean domain error rather
-        // than leaking the raw Postgres constraint failure to API / MCP callers.
-        const recorded = await tx.bizEvent.count({ where: { eventId: id } });
-        if (recorded > 0) {
-          throw new EventDefinitionInUseError();
-        }
-
-        await tx.attributeOnEvent.deleteMany({
-          where: { eventId: id },
-        });
-
-        return await tx.event.delete({
-          where: { id },
-        });
-      });
-    } catch (err) {
-      // Backstop for a race (a BizEvent inserted between the count and the delete) or any
-      // other FK still referencing the event: P2003 = foreign-key constraint violation.
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
-        throw new EventDefinitionInUseError();
-      }
-      throw err;
+    if (!existing || existing.deleted) {
+      throw new ParamsError();
     }
+    // Soft delete (ADR 0016): recorded events keep resolving their definition by
+    // id, so having fired no longer pins it. Refused while a live surface uses it.
+    await this.references.assertUnreferenced(existing.projectId, 'event', id);
+    return await this.prisma.event.update({
+      where: { id },
+      data: { deleted: true },
+    });
+  }
+
+  /** Bring a soft-deleted event back as it was. Idempotent on a live one. */
+  async restore(id: string) {
+    const existing = await this.prisma.event.findUnique({ where: { id } });
+    if (!existing) {
+      throw new ParamsError();
+    }
+    if (!existing.deleted) {
+      return existing;
+    }
+    return await this.prisma.event.update({
+      where: { id },
+      data: { deleted: false },
+    });
   }
 
   async get(id: string) {
     return await this.prisma.event.findUnique({
       where: { id },
-      // Include the attribute links so the v2 read shape can expose codeNames.
-      include: { attributeOnEvent: { include: { attribute: { select: { codeName: true } } } } },
+      // Include the attribute links so the v2 read shape can expose codeNames. A
+      // soft-deleted attribute keeps its link (restore brings it back) but is not listed.
+      include: {
+        attributeOnEvent: {
+          where: { attribute: { deleted: false } },
+          include: { attribute: { select: { codeName: true } } },
+        },
+      },
     });
   }
 
   async list(projectId: string) {
     return await this.prisma.event.findMany({
-      where: { projectId },
+      where: { projectId, deleted: false },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
   }
@@ -191,11 +228,12 @@ export class EventsService {
     },
     orderBy: Prisma.EventOrderByWithRelationInput[],
     name?: string,
+    deleted = false,
   ): Promise<PaginationConnection<Event>> {
     const nameFilter = nameContains(name);
     const where = {
       projectId,
-      deleted: false,
+      deleted,
       // Match the machine `codeName` as well as the human `displayName` — callers (esp. MCP
       // agents) reference events by codeName, so a displayName-only filter silently misses.
       ...(nameFilter ? { OR: [{ codeName: nameFilter }, { displayName: nameFilter }] } : {}),
@@ -203,7 +241,10 @@ export class EventsService {
     // Include the attribute links (codeNames) for the v2 read shape; kept off the
     // count() call, which doesn't accept `include`.
     const include = {
-      attributeOnEvent: { include: { attribute: { select: { codeName: true } } } },
+      attributeOnEvent: {
+        where: { attribute: { deleted: false } },
+        include: { attribute: { select: { codeName: true } } },
+      },
     };
     return findManyCursorConnection(
       (args) => this.prisma.event.findMany({ where, orderBy, include, ...args }),

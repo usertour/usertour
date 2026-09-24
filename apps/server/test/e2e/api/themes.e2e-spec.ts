@@ -11,6 +11,7 @@ import {
   buildContent,
   buildEnvironment,
   buildProject,
+  buildSegment,
   buildSubscription,
   buildTheme,
   buildVersion,
@@ -538,6 +539,74 @@ describe('API v2 themes + version themeId (e2e)', () => {
     await prisma.contentOnEnvironment.deleteMany({ where: { contentId: content.id } });
     const freed = await send('delete', `${basePath()}/${inUseThemeId}`, token).send();
     expect(freed.status).toBe(204);
+
+    // soft delete (ADR 0016): the historical version keeps its theme
+    expect((await prisma.version.findUnique({ where: { id: draft.id } }))?.themeId).toBe(
+      inUseThemeId,
+    );
+  });
+
+  it('refuses to restore a theme whose variations use a deleted segment (409 E1046)', async () => {
+    const token = await mint([Capability.ThemeDelete, Capability.ThemeUpdate]);
+    const environmentId = (await buildEnvironment(prisma, { projectId })).id;
+    const segment = await buildSegment(prisma, {
+      projectId,
+      environmentId,
+      name: 'Dark mode fans',
+      bizType: 1,
+      dataType: 3,
+    });
+    const theme = await prisma.theme.create({
+      data: {
+        projectId,
+        name: 'Variant theme',
+        settings: {},
+        variations: [
+          {
+            id: 'variation-1',
+            name: 'Fans',
+            conditions: [{ type: 'segment', data: { segmentId: segment.id } }],
+            settings: {},
+          },
+        ],
+      },
+    });
+    expect((await send('delete', `${basePath()}/${theme.id}`, token).send()).status).toBe(204);
+    await prisma.segment.update({ where: { id: segment.id }, data: { deleted: true } });
+
+    const blocked = await send('post', `${basePath()}/${theme.id}/restore`, token).send();
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('E1046');
+    expect(blocked.body.error.message).toContain('Dark mode fans');
+
+    await prisma.segment.update({ where: { id: segment.id }, data: { deleted: false } });
+    expect((await send('post', `${basePath()}/${theme.id}/restore`, token).send()).status).toBe(
+      200,
+    );
+  });
+
+  it('a deleted theme leaves the list, lists under deleted=true, and restores', async () => {
+    const token = await mint([
+      Capability.ThemeCreate,
+      Capability.ThemeDelete,
+      Capability.ThemeRead,
+      Capability.ThemeUpdate,
+    ]);
+    const created = await send('post', basePath(), token).send({ name: 'Recoverable' });
+    const id = created.body.id;
+    expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
+
+    const live = await api('get', `${basePath()}?limit=100`, token);
+    expect(live.body.results.map((t: { id: string }) => t.id)).not.toContain(id);
+    const deleted = await api('get', `${basePath()}?deleted=true&limit=100`, token);
+    expect(deleted.body.results.map((t: { id: string }) => t.id)).toContain(id);
+
+    const restored = await send('post', `${basePath()}/${id}/restore`, token).send();
+    expect(restored.status).toBe(200);
+    expect(restored.body).toMatchObject({ id, name: 'Recoverable', isDefault: false });
+    expect((await api('get', `${basePath()}/${id}`, token)).status).toBe(200);
+    // idempotent on a live theme
+    expect((await send('post', `${basePath()}/${id}/restore`, token).send()).status).toBe(200);
   });
 
   it('cannot delete the default theme (409 E1034 state-conflict, with a real way out)', async () => {

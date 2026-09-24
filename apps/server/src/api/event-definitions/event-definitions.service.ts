@@ -38,14 +38,15 @@ export class ApiEventDefinitionsService {
     projectId: string,
     query: ListEventDefinitionsQuery,
   ): Promise<{ results: EventDefinition[]; next: string | null; previous: string | null }> {
-    const { cursor, limit, name } = query;
+    const { cursor, limit, name, deleted } = query;
     const sortOrders = parseOrderBy(query.orderBy, ['createdAt', 'codeName', 'displayName']);
 
     return paginate({
       requestUrl,
       cursor,
       limit,
-      fetch: (params) => this.events.listWithPagination(projectId, params, sortOrders, name),
+      fetch: (params) =>
+        this.events.listWithPagination(projectId, params, sortOrders, name, deleted ?? false),
       map: mapEventDefinition,
     });
   }
@@ -122,10 +123,17 @@ export class ApiEventDefinitionsService {
     return unique.map((code) => idByCode.get(code) as string);
   }
 
-  /** Delete an event definition. */
+  /** Delete (soft) an event definition; refused while live content uses it. */
   async delete(id: string, projectId: string): Promise<void> {
     await this.requireWritable(id, projectId);
     await this.events.delete(id);
+  }
+
+  /** Restore a deleted event definition. Idempotent on a live one. */
+  async restore(id: string, projectId: string): Promise<EventDefinition> {
+    await this.requireExisting(id, projectId, { includeDeleted: true });
+    await this.events.restore(id);
+    return mapEventDefinition(await this.requireExisting(id, projectId));
   }
 
   /**
@@ -140,10 +148,17 @@ export class ApiEventDefinitionsService {
     return event;
   }
 
-  /** Resolve an event that belongs to this project, or 404 (no cross-project leak). */
-  private async requireExisting(id: string, projectId: string) {
+  /**
+   * Resolve an event that belongs to this project, or 404 (no cross-project
+   * leak). A deleted one is missing too, except to restore it.
+   */
+  private async requireExisting(
+    id: string,
+    projectId: string,
+    options: { includeDeleted?: boolean } = {},
+  ) {
     const event = await this.events.get(id);
-    if (!event || event.projectId !== projectId) {
+    if (!event || event.projectId !== projectId || (event.deleted && !options.includeDeleted)) {
       throw new EventDefinitionNotFoundError();
     }
     return event;

@@ -437,27 +437,29 @@ export class EventDefinitionNotFoundError extends OpenAPIError {
 }
 
 /**
- * Deleting an event definition that already has recorded events (BizEvent rows —
- * e.g. fired by a tracker or `usertour.track()`) is blocked by a DB foreign-key
- * RESTRICT. Translate that into a clean domain error instead of leaking the raw
- * Postgres constraint message to API / MCP callers.
+ * The in-use refusals of ADR 0016: a definition that a live surface (a draft or
+ * published version of live content, a live segment's conditions, a live
+ * theme's variations) still references cannot be deleted. History never
+ * blocks. Each carries the referrer names inline when the caller has them, so
+ * people and agents know what to rewire.
  */
 export class EventDefinitionInUseError extends OpenAPIError {
   code = 'E1030';
   statusCode = HttpStatus.CONFLICT;
   messageDict = {
-    en: 'Cannot delete an event definition that has recorded events. Trackers or usertour.track() calls have already logged events against it.',
-    'zh-CN': '无法删除已记录事件的事件定义（已有 tracker 或 usertour.track() 记录的事件引用它）。',
+    en: 'Cannot delete an event definition that is used by live or draft content. Remove it from that content first.',
+    'zh-CN': '无法删除正被线上或草稿内容使用的事件定义，请先从这些内容中移除它。',
   };
+
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
 }
 
-/**
- * Deleting a theme that is still ACTIVELY used — referenced by a live published
- * version or a content's current draft (version-level themeId or a per-step
- * override). Without this guard the FK's ON DELETE SET NULL silently strips the
- * theme from those versions and the SDK stops rendering them (there is no
- * fallback theme at runtime). Historical-version references don't block.
- */
 export class ThemeInUseError extends OpenAPIError {
   code = 'E1031';
   statusCode = HttpStatus.CONFLICT;
@@ -466,8 +468,106 @@ export class ThemeInUseError extends OpenAPIError {
     'zh-CN': '无法删除正被线上或草稿内容使用的主题，请先为这些内容更换主题。',
   };
 
-  // Same shape as ContentNotPublishableError: the caller may inline the
-  // offending content names so people/agents know what to re-theme.
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
+export class AttributeDefinitionInUseError extends OpenAPIError {
+  code = 'E1042';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete an attribute definition that is used by live or draft content, a segment or a theme. Remove it from them first.',
+    'zh-CN': '无法删除正被线上或草稿内容、分群或主题使用的属性定义，请先从这些地方移除它。',
+  };
+
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
+export class SegmentInUseError extends OpenAPIError {
+  code = 'E1043';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Cannot delete a segment that is used by live or draft content or a theme. Remove it from them first.',
+    'zh-CN': '无法删除正被线上或草稿内容或主题使用的分群，请先从这些地方移除它。',
+  };
+
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
+/**
+ * Publishing a version that references a soft-deleted definition by id — only
+ * reachable by restoring a historical version (ADR 0016 §4). Restore the
+ * definition or pick another, then publish.
+ */
+export class DeletedDefinitionReferencedError extends OpenAPIError {
+  code = 'E1044';
+  statusCode = HttpStatus.UNPROCESSABLE_ENTITY;
+  messageDict = {
+    en: 'This version references deleted definitions. Restore them or replace them, then publish.',
+    'zh-CN': '该版本引用了已删除的定义,请先恢复或替换它们再发布。',
+  };
+
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
+/**
+ * Restoring a segment or theme whose conditions reference soft-deleted
+ * definitions (ADR 0016 §5). It would go live at once referencing them;
+ * restore those definitions first — with their own permission — then retry.
+ */
+export class DeletedDependencyRestoreError extends OpenAPIError {
+  code = 'E1046';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'Its conditions use deleted definitions. Restore those first, then restore this.',
+    'zh-CN': '它的条件使用了已删除的定义,请先恢复这些定义再恢复它。',
+  };
+
+  constructor(message?: string) {
+    super();
+    if (message) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
+  }
+}
+
+/**
+ * Creating an attribute whose codeName is held by a deleted attribute of a
+ * different data type. Creating it restores the deleted one, and conditions
+ * written against the old type would mis-evaluate under a new one.
+ */
+export class AttributeCodeNameHeldByDeletedError extends OpenAPIError {
+  code = 'E1045';
+  statusCode = HttpStatus.CONFLICT;
+  messageDict = {
+    en: 'This codeName belongs to a deleted attribute of another data type. Restore that attribute or choose another codeName.',
+    'zh-CN': '该 codeName 属于一个已删除的、数据类型不同的属性,请恢复该属性或换一个 codeName。',
+  };
+
   constructor(message?: string) {
     super();
     if (message) {

@@ -149,9 +149,10 @@ export class ApiThemesController {
   @ApiOperation({
     summary: 'Delete a theme',
     description:
-      'Rejected for the default / system theme, and while any live or draft version still uses ' +
-      'the theme (409 E1031 — switch that content to another theme first). Historical versions ' +
-      'do not block deletion.',
+      'Soft delete: the theme leaves lists and pickers but historical versions keep it, and it ' +
+      'can be restored. Rejected for the default / system theme, and while any live or draft ' +
+      'version still uses the theme (409 E1031 — switch that content to another theme first). ' +
+      'Historical versions do not block deletion.',
   })
   @ApiParam({ name: 'projectId', description: 'Project ID' })
   @ApiParam({ name: 'id', description: 'Theme ID' })
@@ -167,5 +168,31 @@ export class ApiThemesController {
   })
   async remove(@Param('projectId') projectId: string, @Param('id') id: string) {
     await this.service.delete(id, projectId);
+  }
+
+  @Post(':id/restore')
+  @HttpCode(200)
+  @RequireCapability(Capability.ThemeUpdate)
+  @ApiOperation({
+    summary: 'Restore a deleted theme',
+    description:
+      'Bring a soft-deleted theme back as it was (find it via GET /themes?deleted=true). It ' +
+      'returns as a non-default theme. Refused (E1046) while its variation conditions use ' +
+      'deleted attributes or segments — restore those first. Idempotent on a theme that is ' +
+      'not deleted.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Project ID' })
+  @ApiParam({ name: 'id', description: 'Theme ID' })
+  @ApiResponse({ status: 200, description: 'Restored theme', type: ThemeDto })
+  @ApiResponse({ status: 404, description: 'Theme not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 409,
+    description:
+      'E1046 its variation conditions use deleted definitions — the message names them with ' +
+      'their ids; restore them first, then retry.',
+    type: ErrorResponseDto,
+  })
+  async restore(@Param('projectId') projectId: string, @Param('id') id: string) {
+    return this.service.restore(id, projectId);
   }
 }

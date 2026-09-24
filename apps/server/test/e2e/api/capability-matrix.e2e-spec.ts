@@ -111,6 +111,7 @@ const ROUTES: Row[] = [
   { method: 'post', template: `${P}/themes/{id}/duplicate`, cap: Capability.ThemeCreate },
   { method: 'patch', template: `${P}/themes/{id}`, cap: Capability.ThemeUpdate },
   { method: 'delete', template: `${P}/themes/{id}`, cap: Capability.ThemeDelete },
+  { method: 'post', template: `${P}/themes/{id}/restore`, cap: Capability.ThemeUpdate },
   // attribute definitions
   { method: 'get', template: `${P}/attribute-definitions`, cap: Capability.AttributeRead },
   { method: 'get', template: `${P}/attribute-definitions/{id}`, cap: Capability.AttributeRead },
@@ -121,18 +122,29 @@ const ROUTES: Row[] = [
     template: `${P}/attribute-definitions/{id}`,
     cap: Capability.AttributeDelete,
   },
+  {
+    method: 'post',
+    template: `${P}/attribute-definitions/{id}/restore`,
+    cap: Capability.AttributeUpdate,
+  },
   // event definitions
   { method: 'get', template: `${P}/event-definitions`, cap: Capability.EventRead },
   { method: 'get', template: `${P}/event-definitions/{id}`, cap: Capability.EventRead },
   { method: 'post', template: `${P}/event-definitions`, cap: Capability.EventCreate },
   { method: 'patch', template: `${P}/event-definitions/{id}`, cap: Capability.EventUpdate },
   { method: 'delete', template: `${P}/event-definitions/{id}`, cap: Capability.EventDelete },
+  {
+    method: 'post',
+    template: `${P}/event-definitions/{id}/restore`,
+    cap: Capability.EventUpdate,
+  },
   // segments (project-level definitions)
   { method: 'get', template: `${P}/segments`, cap: Capability.SegmentRead },
   { method: 'get', template: `${P}/segments/{id}`, cap: Capability.SegmentRead },
   { method: 'post', template: `${P}/segments`, cap: Capability.SegmentCreate },
   { method: 'patch', template: `${P}/segments/{id}`, cap: Capability.SegmentUpdate },
   { method: 'delete', template: `${P}/segments/{id}`, cap: Capability.SegmentDelete },
+  { method: 'post', template: `${P}/segments/{id}/restore`, cap: Capability.SegmentUpdate },
   // segment membership (environment-level)
   {
     method: 'put',
