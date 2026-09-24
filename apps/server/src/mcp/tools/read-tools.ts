@@ -17,7 +17,10 @@ import {
   contentTypeEnum,
   type ListContentQuery,
 } from '@/api/content/content.schema';
-import { EnvironmentNotInTokenScopeError, InsufficientScopeError } from '@/common/errors';
+import {
+  EnvironmentNotInTokenScopeError,
+  InsufficientScopeError,
+} from '@/modules/common/errors/errors';
 import { representationStepInput } from '@/api/content-representation/representation.schema';
 import { representationResourceCenter } from '@/api/content-representation/resource-center.schema';
 import {
@@ -30,7 +33,7 @@ import {
 import { SessionExpand } from '@/api/content-sessions/content-sessions.schema';
 import { UserExpand } from '@/api/users/users.schema';
 import { VersionExpand } from '@/api/content-versions/content-versions.schema';
-import { createdAtRangeFields, nameSearchField } from '@/common/filters';
+import { createdAtRangeFields, nameSearchField } from '@/modules/common/utils/query-filters.util';
 import { themeSettingsPatchSchema } from '@/api/themes/settings.schema';
 import { ThemeExpand } from '@/api/themes/themes.schema';
 

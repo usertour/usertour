@@ -3,9 +3,9 @@ import { Server, Socket } from 'socket.io';
 import { ClientMessageKind } from '@usertour/types';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { WebSocketContext } from './web-socket-v2.dto';
-import { DistributedLockService } from '../core/distributed-lock.service';
-import { buildSocketLockKey, getSocketToken } from '@/utils/websocket-utils';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+import { DistributedLockService } from '@/modules/delivery/services/distributed-lock.service';
+import { buildSocketLockKey, getSocketToken } from '../utils/websocket.util';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 
 interface MessageHandler {
   handle(context: WebSocketContext, payload?: any): Promise<any>;

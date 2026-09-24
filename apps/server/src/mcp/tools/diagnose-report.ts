@@ -2,7 +2,7 @@ import { getAutoStartCapabilities, isConditionsActived } from '@usertour/helpers
 import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
 
 import type { RepresentationCondition } from '@/api/content-representation/representation.schema';
-import type { DiagnoseFacts } from '@/web-socket/core/content-diagnosis.service';
+import type { DiagnoseFacts } from '@/modules/delivery/services/content-diagnosis.service';
 
 /**
  * MCP-layer assembler for "why isn't my content showing?". The websocket service

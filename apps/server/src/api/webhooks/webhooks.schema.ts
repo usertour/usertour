@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { MAX_TOPIC_SUBSCRIPTIONS } from '@/webhooks/webhook-topics';
+import { MAX_TOPIC_SUBSCRIPTIONS } from '@/modules/webhooks/utils/webhook-topics.util';
 
 import { ApiObjectType } from '../shared/object-type';
 import { cursor, limit } from '../shared/pagination.schema';

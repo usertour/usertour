@@ -2,8 +2,8 @@ import { createHmac } from 'node:crypto';
 import { PrismaService } from 'nestjs-prisma';
 import { ClientMessageKind, ServerMessageKind } from '@usertour/types';
 
-import { initialization } from '@/common/initialization/initialization';
-import { EncryptionService } from '@/shared/encryption.service';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import {
   buildContent,
   buildEnvironment,

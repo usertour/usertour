@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPICompanyMembershipsService } from './company-memberships.service';
-import { BizService } from '@/biz/biz.service';
-import { CompanyMembershipNotFoundError } from '@/common/errors/errors';
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { CompanyMembershipNotFoundError } from '@/modules/common/errors/errors';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
 import { DeleteCompanyMembershipQueryDto } from './company-memberships.dto';
 import { Prisma } from '@prisma/client';
 

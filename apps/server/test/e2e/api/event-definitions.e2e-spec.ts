@@ -6,7 +6,7 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { ApiModule } from '@/api/api.module';
-import { normalizeOpenApiParameters } from '@/common/openapi/normalize-parameters';
+import { normalizeOpenApiParameters } from '@/openapi/shared/normalize-parameters';
 import { OpenAPIModule } from '@/openapi/openapi.module';
 
 import { gqlData, graphql } from '../auth';

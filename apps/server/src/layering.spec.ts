@@ -11,9 +11,9 @@ import { preProcessFile } from 'typescript';
  *
  * The composition root (`src/*.ts`) may import anything; nothing imports it.
  *
- * LAYERS classifies every path; it is also the migration status table — a
- * module that has moved lives under `modules/` (the entrypoints will move into
- * `entrypoints/`), one that has not is classified where it stands.
+ * LAYERS classifies every path; it is also the migration status table —
+ * every module now lives under `modules/`; the entrypoints will move into
+ * `entrypoints/` later, each as a whole directory.
  */
 
 type Layer = 'entrypoints' | 'modules';
@@ -26,37 +26,10 @@ const LAYERS: Record<string, Layer> = {
   api: 'entrypoints', // REST v2 — also owns the public representation (codec, zod contracts)
   openapi: 'entrypoints', // REST v1
   mcp: 'entrypoints',
-  'web-socket': 'entrypoints', // the gateways; core/ is classified below
+  'web-socket': 'entrypoints', // the gateways and their socket plumbing; the delivery runtime is modules/delivery
 
   // ── modules: business and infrastructure alike, each with its thin GraphQL adapter ──
-  modules: 'modules', // the target layout
-  'web-socket/core': 'modules', // delivery runtime (also holds socket plumbing — split on next change)
-  adapters: 'modules',
-  admin: 'modules',
-  ai: 'modules',
-  analytics: 'modules',
-  'api-token': 'modules',
-  attributes: 'modules',
-  audit: 'modules',
-  auth: 'modules',
-  biz: 'modules',
-  common: 'modules',
-  content: 'modules',
-  events: 'modules',
-  integrations: 'modules',
-  license: 'modules',
-  oauth: 'modules',
-  outbound: 'modules',
-  projects: 'modules',
-  shared: 'modules',
-  sso: 'modules',
-  subscription: 'modules',
-  team: 'modules',
-  themes: 'modules',
-  users: 'modules',
-  utilities: 'modules',
-  utils: 'modules',
-  webhooks: 'modules',
+  modules: 'modules',
 };
 
 /**
@@ -67,19 +40,18 @@ const LAYERS: Record<string, Layer> = {
  */
 const KNOWN_VIOLATIONS: readonly string[] = [
   // 1. content pushes to the websocket gateways directly
-  'content/content.module.ts -> web-socket/web-socket.module',
-  'content/content.service.ts -> web-socket/v2/web-socket-v2.gateway',
-  'content/content.service.ts -> web-socket/web-socket.gateway',
-  'web-socket/core/content-orchestrator.service.ts -> web-socket/v2/web-socket-v2.dto',
+  'modules/content/content.module.ts -> web-socket/web-socket.module',
+  'modules/content/services/content.service.ts -> web-socket/v2/web-socket-v2.gateway',
+  'modules/content/services/content.service.ts -> web-socket/web-socket.gateway',
   // 2. integrations and outbound webhooks build payloads with REST v2 mappers
-  'integrations/integrations.listener.ts -> api/events/event.mapper',
-  'integrations/integrations.service.ts -> api/shared/object-type',
-  'integrations/sync/object-mapping.service.ts -> api/shared/codename',
-  'integrations/sync/object-sync.listener.ts -> api/events/event.mapper',
-  'webhooks/webhook-envelope.ts -> api/shared/object-type',
-  'webhooks/webhooks.listener.ts -> api/companies/companies.mapper',
-  'webhooks/webhooks.listener.ts -> api/events/event.mapper',
-  'webhooks/webhooks.listener.ts -> api/users/users.mapper',
+  'modules/integrations/listeners/integrations.listener.ts -> api/events/event.mapper',
+  'modules/integrations/services/integrations.service.ts -> api/shared/object-type',
+  'modules/integrations/sync/object-mapping.service.ts -> api/shared/codename',
+  'modules/integrations/sync/object-sync.listener.ts -> api/events/event.mapper',
+  'modules/webhooks/utils/webhook-envelope.util.ts -> api/shared/object-type',
+  'modules/webhooks/listeners/webhooks.listener.ts -> api/companies/companies.mapper',
+  'modules/webhooks/listeners/webhooks.listener.ts -> api/events/event.mapper',
+  'modules/webhooks/listeners/webhooks.listener.ts -> api/users/users.mapper',
 ];
 
 /** Protocol types a module's service or pure-logic file must not see. */
@@ -191,9 +163,15 @@ describe('server layering (ADR 0015)', () => {
       .filter(({ from }) => from.startsWith('modules/'))
       .filter(({ from }) => {
         const segments = from.split('/');
+        // Guards, interceptors and decorators are protocol plumbing: they read
+        // the GraphQL execution context by nature, so they may see the adapter.
+        // Services and pure logic may not.
         const isAdapter =
           from.endsWith('.resolver.ts') ||
           from.endsWith('.module.ts') ||
+          from.endsWith('.guard.ts') ||
+          from.endsWith('.interceptor.ts') ||
+          from.endsWith('.decorator.ts') ||
           segments.some((segment) => ADAPTER_SEGMENTS.has(segment));
         return !isAdapter;
       })

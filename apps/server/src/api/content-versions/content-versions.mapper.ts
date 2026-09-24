@@ -1,4 +1,4 @@
-import { extractQuestionData } from '@/utils/content-question';
+import { extractQuestionData } from '@/modules/content/utils/content-question.util';
 
 import {
   ContentVersion,

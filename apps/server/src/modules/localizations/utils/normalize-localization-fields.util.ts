@@ -1,4 +1,4 @@
-import { ValidationError, type ValidationIssue } from '@/common/errors/errors';
+import { ValidationError, type ValidationIssue } from '@/modules/common/errors/errors';
 
 /**
  * The shape rules for a locale's own fields, applied by the service so every

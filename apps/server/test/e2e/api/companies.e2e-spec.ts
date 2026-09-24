@@ -1,7 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { AttributeBizType } from '@/attributes/models/attribute.model';
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
+import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
+import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';
 import { BizAttributeTypes, Capability } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';

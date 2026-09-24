@@ -38,7 +38,7 @@ auth: (cb) => cb(this.authCredentials || {})
 The server's handshake middleware (`apps/server/src/web-socket/v2/web-socket-v2.gateway.ts`) reads this, resolves the environment from the token, ensures a `bizUser` exists, optionally resolves an existing `bizCompany`, and writes the result into `socketData`:
 
 ```ts
-// apps/server/src/common/types/content.ts
+// apps/server/src/modules/delivery/types/socket-data.type.ts
 interface SocketData {
   environment: Environment;
   externalUserId: string;
@@ -70,7 +70,7 @@ This asymmetry is intentional for v0.7.x — see [ADR 0001](../adr/0001-socket-i
 
 ### Room scoping
 
-`buildExternalUserRoomId` (`apps/server/src/utils/websocket-utils.ts:71`) produces:
+`buildExternalUserRoomId` (`apps/server/src/web-socket/utils/websocket.util.ts:57`) produces:
 
 ```
 user:${environmentId}:${externalUserId}

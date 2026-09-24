@@ -5,8 +5,11 @@ import { resolvePlanFeatures } from '@usertour/helpers';
 import { PlanType } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
-import { hashApiTokenSecret, stripTokenPrefix } from '@/api-token/api-token.crypto';
-import { RateLimitExceededError } from '@/common/errors/errors';
+import {
+  hashApiTokenSecret,
+  stripTokenPrefix,
+} from '@/modules/api-token/utils/api-token-crypto.util';
+import { RateLimitExceededError } from '@/modules/common/errors/errors';
 
 interface ResolvedThrottle {
   tracker: string;

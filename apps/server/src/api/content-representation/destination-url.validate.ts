@@ -8,7 +8,7 @@ import {
 import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot } from '@usertour/types';
 
-import type { ValidationIssue } from '@/common/errors/errors';
+import type { ValidationIssue } from '@/modules/common/errors/errors';
 
 type InternalStep = {
   cvid?: string | null;

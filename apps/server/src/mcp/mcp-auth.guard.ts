@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Request } from 'express';
 
-import { ApiTokenAuthService } from '@/api-token/api-token-auth.service';
+import { ApiTokenAuthService } from '@/modules/api-token/services/api-token-auth.service';
 
 /**
  * Authenticates the whole `/mcp` endpoint from the `Authorization: Bearer

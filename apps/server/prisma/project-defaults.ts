@@ -20,7 +20,7 @@ import { AttributeBizTypes, EventAttributes } from '@usertour/types';
  * deploy and across concurrent replicas.
  *
  * KEEP IN SYNC: initializeProject below mirrors apps/server
- * src/common/initialization/initialization.ts's per-project logic (the no-src
+ * src/modules/projects/utils/project-initialization.util.ts's per-project logic (the no-src
  * production constraint forces the duplication — this file can't import from
  * src). Only the diff/insert mechanics are duplicated; the default DATA is
  * shared via @usertour/constants, so the drift-prone part has one source.

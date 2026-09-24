@@ -1,0 +1,45 @@
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+
+import { AuditWeb } from '@/modules/audit/decorators/audit.decorator';
+import { UserEntity } from '@/modules/auth/decorators/user.decorator';
+import { UserDTO } from '@/modules/users/dtos/user.dto';
+
+import { OAuthConnectionDTO } from './dtos/oauth-connection.dto';
+import { OAuthService } from './services/oauth.service';
+
+/**
+ * Account-level "Connected apps": the OAuth grants a user has approved (e.g. an
+ * MCP connector). Authenticated by the global GraphQL guard + {@link UserEntity};
+ * a user only ever sees / revokes their own grants. Revoking kills the grant's
+ * access tokens (via `ApiToken.oauthGrantId`) and its refresh lineage.
+ */
+@Resolver()
+export class OAuthGrantResolver {
+  constructor(private readonly oauth: OAuthService) {}
+
+  @Query(() => [OAuthConnectionDTO])
+  async oauthConnections(@UserEntity() user: UserDTO): Promise<OAuthConnectionDTO[]> {
+    return this.oauth.listConnections(user.id);
+  }
+
+  @Mutation(() => Boolean)
+  // Account-level; the audit log is project-scoped, so attribute the entry to the
+  // grant's own project (OAuthGrant.projectId).
+  @AuditWeb({
+    action: 'delete',
+    resourceType: 'oauth_grant',
+    resolveProjectId: async (args, prisma) =>
+      (
+        await prisma.oAuthGrant.findUnique({
+          where: { id: String(args.id) },
+          select: { projectId: true },
+        })
+      )?.projectId,
+  })
+  async revokeOAuthConnection(
+    @UserEntity() user: UserDTO,
+    @Args('id') id: string,
+  ): Promise<boolean> {
+    return this.oauth.revokeConnection(user.id, id);
+  }
+}

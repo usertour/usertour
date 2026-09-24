@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventDefinition } from '../models/event-definition.model';
-import { EventsService as BusinessEventsService } from '@/events/events.service';
-import { OpenApiObjectType } from '@/common/openapi/types';
-import { paginate } from '@/common/openapi/pagination';
+import { EventsService as BusinessEventsService } from '@/modules/events/services/events.service';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
+import { paginate } from '@/modules/common/utils/pagination.util';
 import type { Environment } from '@prisma/client';
 import { EventDefinitionOrderByType, ListEventDefinitionsQueryDto } from './event-definitions.dto';
-import { parseOrderBy } from '@/common/openapi/sort';
+import { parseOrderBy } from '../shared/sort';
 @Injectable()
 export class OpenAPIEventDefinitionsService {
   private readonly logger = new Logger(OpenAPIEventDefinitionsService.name);

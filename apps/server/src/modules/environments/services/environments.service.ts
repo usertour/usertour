@@ -8,22 +8,20 @@ import type { EnvironmentChanges } from '../types/environment-changes.type';
 import type { EnvironmentDeletingPayload } from '../types/environment-deleting-payload.type';
 import type { NewAccessToken } from '../types/new-access-token.type';
 import type { NewEnvironment } from '../types/new-environment.type';
-import { releaseSyncedSegmentMapping } from '@/integrations/cohort-sync.service';
+import { releaseSyncedSegmentMapping } from '@/modules/integrations/services/cohort-sync.service';
 import {
   IdentityVerificationRequiresActiveSecretError,
   LastEnvironmentCannotBeDeletedError,
   ParamsError,
   PrimaryEnvironmentCannotBeDeletedError,
   SigningSecretLimitReachedError,
-} from '@/common/errors';
-import { ProjectCacheService } from '@/shared/project-cache.service';
-import { ProjectsService } from '@/projects/projects.service';
-import { EncryptionService } from '@/shared/encryption.service';
-import {
-  IdentityVerificationService,
-  SIGNING_SECRET_PREFIX,
-  VerificationStats,
-} from '@/shared/identity-verification.service';
+} from '@/modules/common/errors/errors';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
+import { IdentityVerificationService } from '@/modules/common/services/identity-verification.service';
+import { SIGNING_SECRET_PREFIX } from '@/modules/common/constants/signing-secret-prefix.constant';
+import { VerificationStats } from '@/modules/common/types/verification-stats.type';
 
 /** Steady-state secret plus one rotation slot (ADR 0008) */
 const MAX_ACTIVE_SIGNING_SECRETS = 2;

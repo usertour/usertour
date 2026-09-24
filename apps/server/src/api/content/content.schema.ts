@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { contentVersion } from '../content-representation/representation.schema';
-import { createdAtRangeFields, nameSearchField } from '@/common/filters';
+import { createdAtRangeFields, nameSearchField } from '@/modules/common/utils/query-filters.util';
 import { ApiObjectType } from '../shared/object-type';
 import { displayName } from '../shared/name';
 import { cursor, limit, nextPageUrl, previousPageUrl } from '../shared/pagination.schema';

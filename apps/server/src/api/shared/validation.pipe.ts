@@ -1,6 +1,6 @@
 import { createZodValidationPipe } from 'nestjs-zod';
 
-import { ValidationError } from '@/common/errors/errors';
+import { ValidationError } from '@/modules/common/errors/errors';
 
 import { zodIssuesToValidationIssues } from './zod-issues';
 

@@ -3,20 +3,21 @@ import { Prisma, type Segment as PrismaSegment } from '@prisma/client';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { PrismaService } from 'nestjs-prisma';
 
-import { AttributeBizType } from '@/attributes/models/attribute.model';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import {
   createBizCompanyConditionsFilter,
   createBizUserConditionsFilter,
-} from '@/common/attribute/filter';
-import { BizService } from '@/biz/biz.service';
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+} from '@/modules/biz/utils/attribute-filter.util';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
+import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';
 import {
   BuiltInSegmentCannotBeChangedError,
   CompanyNotFoundError,
   SegmentNotFoundError,
   UserNotFoundError,
   ValidationError,
-} from '@/common/errors/errors';
+} from '@/modules/common/errors/errors';
 
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 
@@ -27,7 +28,7 @@ import {
   loadDecompileResolvers,
   loadResolvers,
 } from '../content-representation/attribute-resolvers';
-import { nameContains } from '@/common/filters';
+import { nameContains } from '@/modules/common/utils/query-filters.util';
 import { paginate } from '../shared/pagination';
 import { toArray } from '../shared/query';
 import { parseOrderBy } from '../shared/sort';

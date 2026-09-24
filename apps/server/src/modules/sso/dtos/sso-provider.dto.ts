@@ -1,0 +1,44 @@
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { SsoProviderType } from '@prisma/client';
+
+import { BaseDTO } from '@/modules/common/dtos/base.dto';
+
+registerEnumType(SsoProviderType, {
+  name: 'SsoProviderType',
+  description: 'SSO identity provider protocol',
+});
+
+/**
+ * Authenticated view of a project's SSO identity provider (owner-only).
+ * `clientSecret` is intentionally omitted — it is write-only and never
+ * returned over the API. Provisioning policy lives on ProjectSsoSettingsDTO.
+ */
+@ObjectType('SsoProviderModel')
+export class SsoProviderDTO extends BaseDTO {
+  @Field()
+  projectId: string;
+
+  @Field(() => SsoProviderType)
+  type: SsoProviderType;
+
+  @Field()
+  name: string;
+
+  @Field()
+  status: string;
+
+  @Field()
+  issuer: string;
+
+  @Field()
+  clientId: string;
+
+  @Field({ nullable: true })
+  authorizationUrl?: string;
+
+  @Field({ nullable: true })
+  tokenUrl?: string;
+
+  @Field({ nullable: true })
+  userInfoUrl?: string;
+}

@@ -3,21 +3,21 @@ import { INestApplication } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { BizService } from '@/biz/biz.service';
-import { initialization } from '@/common/initialization/initialization';
-import { QUEUE_OBJECT_SYNC } from '@/common/consts/queen';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
+import { QUEUE_OBJECT_SYNC } from '@/modules/integrations/constants/integration-queues.constant';
 import { AxiosError } from 'axios';
 import {
   SYNC_BACKFILL_JOB,
   DeliverySkippedError,
   ObjectSyncService,
-} from '@/integrations/sync/object-sync.service';
+} from '@/modules/integrations/sync/object-sync.service';
 import {
   SYNC_OBJECT_UPDATE_TOPIC,
   type SyncObjectUpdateEnvelope,
-} from '@/integrations/integrations.types';
-import { EncryptionService } from '@/shared/encryption.service';
-import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
+} from '@/modules/integrations/types/integrations.type';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
+import * as hubspotCrmApi from '@/modules/integrations/sync/hubspot-crm-api';
 
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';
 import { buildAuthorizedUser, teardownProject } from './_support';

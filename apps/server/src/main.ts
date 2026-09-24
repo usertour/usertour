@@ -3,19 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { PrismaService } from 'nestjs-prisma';
-import { RedisIoAdapter } from './adapters/redis-io.adapter';
+import { RedisIoAdapter } from './web-socket/adapters/redis-io.adapter';
 import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
-import { normalizeOpenApiParameters } from './common/openapi/normalize-parameters';
+import { normalizeOpenApiParameters } from './openapi/shared/normalize-parameters';
 import { configureApp } from './configure-app';
 
 // Import tracer for OpenTelemetry
 import { startTracer } from './tracer';
-import { setTraceID } from './utils/middleware/set-trace-id';
+import { setTraceID } from '@/modules/common/middleware/set-trace-id.middleware';
 
 // import { AllExceptionsFilter } from './common/filter';
 

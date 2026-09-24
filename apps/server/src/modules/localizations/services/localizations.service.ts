@@ -7,8 +7,8 @@ import {
   DefaultLocalizationCannotBeDeletedError,
   ParamsError,
   ResourceAlreadyExistsError,
-} from '@/common/errors';
-import { ProjectCacheService } from '@/shared/project-cache.service';
+} from '@/modules/common/errors/errors';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { normalizeLocalizationFields } from '../utils/normalize-localization-fields.util';
 
 /** Localization has a unique (projectId, code); surface a clash as a typed error, not a raw 500. */

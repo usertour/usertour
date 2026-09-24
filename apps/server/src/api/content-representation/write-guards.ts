@@ -1,7 +1,7 @@
 import { ContentActionsItemType, ContentDataType } from '@usertour/types';
 
-import type { ValidationIssue } from '@/common/errors/errors';
-import { isHttpUrl } from '@/common/url';
+import type { ValidationIssue } from '@/modules/common/errors/errors';
+import { isHttpUrl } from '@usertour/helpers';
 
 import {
   REACTIVE_REJECTED_REP_CONDITION_TYPES,

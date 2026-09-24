@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenAPIUsersService } from './users.service';
-import { BizService } from '@/biz/biz.service';
+import { BizService } from '@/modules/biz/services/biz.service';
 import { ConfigService } from '@nestjs/config';
-import { UserNotFoundError, InvalidLimitError, UnknownError } from '@/common/errors/errors';
+import { UserNotFoundError, InvalidLimitError, UnknownError } from '@/modules/common/errors/errors';
 import { ExpandType, GetUserQueryDto, ListUsersQueryDto, UpsertUserRequestDto } from './users.dto';
-import { OpenApiObjectType } from '@/common/openapi/types';
+import { OpenApiObjectType } from '../shared/openapi-object-type';
 import type { Environment } from '@prisma/client';
 import { UserOrderByType } from './users.dto';
 

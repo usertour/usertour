@@ -1,13 +1,13 @@
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
-import { initialization } from '@/common/initialization/initialization';
-import { EncryptionService } from '@/shared/encryption.service';
+import { initialization } from '@/modules/projects/utils/project-initialization.util';
+import { EncryptionService } from '@/modules/common/services/encryption.service';
 import { AxiosError, AxiosHeaders } from 'axios';
-import * as hubspotApi from '@/integrations/sync/hubspot-api';
-import * as hubspotCrmApi from '@/integrations/sync/hubspot-crm-api';
-import { HubspotJournalService } from '@/integrations/sync/hubspot-journal.service';
-import { ObjectSyncService } from '@/integrations/sync/object-sync.service';
+import * as hubspotApi from '@/modules/integrations/sync/hubspot-api';
+import * as hubspotCrmApi from '@/modules/integrations/sync/hubspot-crm-api';
+import { HubspotJournalService } from '@/modules/integrations/sync/hubspot-journal.service';
+import { ObjectSyncService } from '@/modules/integrations/sync/object-sync.service';
 
 import { graphql, gqlData } from '../auth';
 import { buildEnvironment, buildProject, buildSubscription } from '../factories';

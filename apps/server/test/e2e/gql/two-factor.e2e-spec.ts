@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { authenticator } from 'otplib';
 import { PrismaService } from 'nestjs-prisma';
 
-import { TwoFactorService } from '@/auth/two-factor.service';
+import { TwoFactorService } from '@/modules/auth/services/two-factor.service';
 
 import { graphql, gqlData, signToken } from '../auth';
 import { createTestApp } from '../create-test-app';

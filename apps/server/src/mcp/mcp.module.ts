@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ApiModule } from '@/api/api.module';
-import { ApiTokenModule } from '@/api-token/api-token.module';
+import { ApiTokenModule } from '@/modules/api-token/api-token.module';
 import { WebSocketModule } from '@/web-socket/web-socket.module';
 
 import { McpAuthGuard } from './mcp-auth.guard';

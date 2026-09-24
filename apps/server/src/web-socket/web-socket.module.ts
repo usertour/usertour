@@ -4,35 +4,30 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WebSocketGateway } from './web-socket.gateway';
 import { WebSocketService } from './web-socket.service';
 import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
-import { BizModule } from '@/biz/biz.module';
-import { LicenseModule } from '@/license/license.module';
-import { ProjectsModule } from '@/projects/projects.module';
+import { BizModule } from '@/modules/biz/biz.module';
+import { LicenseModule } from '@/modules/license/license.module';
+import { ProjectsModule } from '@/modules/projects/projects.module';
 import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
 import { WebSocketV2Service } from './v2/web-socket-v2.service';
 import { WebSocketV2Guard } from './v2/web-socket-v2.guard';
 import { WebSocketThrottlerGuard } from './v2/web-socket-throttler.guard';
-import { SharedModule } from '@/shared/shared.module';
-import { EventTrackingService } from './core/event-tracking.service';
-import { ConditionEvaluationService } from './core/condition-evaluation.service';
-import { ContentDataService } from './core/content-data.service';
-import { SessionBuilderService } from './core/session-builder.service';
+import { CommonModule } from '@/modules/common/common.module';
+import { DeliveryModule } from '@/modules/delivery/delivery.module';
 import { ContentOrchestratorService } from './core/content-orchestrator.service';
-import { ContentDiagnosisService } from './core/content-diagnosis.service';
 import { SocketOperationService } from './core/socket-operation.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
 import { SocketMessageQueueService } from './core/socket-message-queue.service';
 import { SocketDataService } from './core/socket-data.service';
-import { DistributedLockService } from './core/distributed-lock.service';
-import { AnnouncementService } from './core/announcement.service';
 import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 
 @Module({
   imports: [
+    DeliveryModule,
     BizModule,
     LicenseModule,
     ProjectsModule,
-    SharedModule,
+    CommonModule,
     ConfigModule,
     // WebSocket rate limiting configuration
     // - short: 30 requests per second per socket (burst protection)
@@ -71,21 +66,15 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     WebSocketV2Service,
     WebSocketV2Guard,
     WebSocketThrottlerGuard,
-    EventTrackingService,
-    ConditionEvaluationService,
-    ContentDataService,
-    SessionBuilderService,
     ContentOrchestratorService,
-    ContentDiagnosisService,
     SocketOperationService,
     SocketEmitterService,
     SocketParallelService,
     SocketMessageQueueService,
     SocketDataService,
-    DistributedLockService,
-    AnnouncementService,
     WebSocketV2MessageHandler,
   ],
-  exports: [WebSocketGateway, WebSocketV2Gateway, ContentDiagnosisService, EventTrackingService],
+  // DeliveryModule is re-exported: the api and mcp modules reach the runtime through this module.
+  exports: [WebSocketGateway, WebSocketV2Gateway, DeliveryModule],
 })
 export class WebSocketModule {}

@@ -1,17 +1,21 @@
-import { Attribute, AttributeBizType } from '@/attributes/models/attribute.model';
-import { BizService } from '@/biz/biz.service';
-import { SegmentBizType, SegmentDataType } from '@/biz/models/segment.model';
+import type { Attribute } from '@prisma/client';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
+import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';
 import {
   createBizUserConditionsFilter,
   createConditionsFilter,
   createFilterItem,
-} from '@/common/attribute/filter';
+} from '@/modules/biz/utils/attribute-filter.util';
 import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@usertour/types';
-import { ChecklistData, ContentConfigObject, RulesCondition } from '@/content/models/version.model';
-import { getEventProgress, getEventState, isValidEvent } from '@/utils/event';
+import { ChecklistData } from '@/modules/content/types/checklist-data.type';
+import { ContentConfigObject } from '@/modules/content/types/content-config-object.type';
+import { RulesCondition } from '@/modules/content/types/rules-condition.type';
+import { getEventProgress, getEventState, isValidEvent } from './utils/event.util';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/webhooks/webhook.types';
+import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import {
   BizUser,
   Content,
@@ -24,8 +28,8 @@ import {
   BizSession,
 } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
-import { TrackEventData } from '@/common/types/track';
-import { ProjectsService } from '@/projects/projects.service';
+import { TrackEventData } from '@/modules/delivery/types/track-event-data.type';
+import { ProjectsService } from '@/modules/projects/services/projects.service';
 import {
   ConfigRequest,
   ConfigResponse,
@@ -42,10 +46,11 @@ import {
   GetProjectSettingsRequest,
   GetProjectSettingsResponse,
 } from './web-socket.dto';
-import { getPublishedVersionId } from '@/utils/content-utils';
+import { getPublishedVersionId } from '@/modules/delivery/utils/content.util';
 import { BizEvents } from '@usertour/types';
-import { BizEventWithEvent, BizSessionWithEvents } from '@/common/types/schema';
-import { ContentType } from '@/content/models/content.model';
+import { BizEventWithEvent } from '@/modules/delivery/types/biz-event-with-event.type';
+import { BizSessionWithEvents } from '@/modules/delivery/types/biz-session-with-events.type';
+import { ContentType } from '@/modules/content/constants/content-type.constant';
 
 const EVENT_CODE_MAP = {
   seen: { eventCodeName: BizEvents.FLOW_STEP_SEEN, expectResult: true },

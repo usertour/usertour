@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { SDKAuthenticationError } from '@/common/errors';
+import { SDKAuthenticationError } from '@/modules/common/errors/errors';
 import { SocketDataService } from '../core/socket-data.service';
 
 /**
