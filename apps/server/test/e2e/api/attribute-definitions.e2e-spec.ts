@@ -4,7 +4,7 @@ import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
-import { buildAttribute, buildBizUser } from '../factories';
+import { buildAttribute, buildBizUser, buildContent, buildStep, buildVersion } from '../factories';
 import { buildAuthorizedUser } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 import { OpenApiFixture, openapi, seedApiFixture, teardownApiFixture } from '../openapi';
@@ -301,6 +301,70 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     const restored = await send('post', `${basePath()}/${created.body.id}/restore`, token).send();
     expect(restored.status).toBe(200);
     expect((await api('get', eventPath, token)).body.attributes).toEqual(['evt_attr_via_api']);
+  });
+
+  it('a question binding blocks deleting its USER attribute only while it is on', async () => {
+    // The editor keeps `selectedAttribute` when the binding is switched off, and
+    // a binding only ever writes to a user attribute — so neither an off
+    // binding nor a same-codeName company attribute counts as a reference.
+    const token = await mint([Capability.AttributeDelete]);
+    const userAttribute = await buildAttribute(prisma, {
+      projectId: fx.projectId,
+      codeName: 'attr_bound_answer',
+      bizType: 1,
+      dataType: 2,
+    });
+    const companyAttribute = await buildAttribute(prisma, {
+      projectId: fx.projectId,
+      codeName: 'attr_bound_answer',
+      bizType: 2,
+      dataType: 2,
+    });
+    const content = await buildContent(prisma, {
+      projectId: fx.projectId,
+      environmentId: fx.environmentId,
+      type: 'flow',
+      name: 'Binds an answer',
+    });
+    const version = await buildVersion(prisma, { contentId: content.id, sequence: 0 });
+    const questionStep = await buildStep(prisma, {
+      versionId: version.id,
+      type: 'modal',
+      sequence: 0,
+      data: [
+        {
+          element: {
+            type: 'nps',
+            data: { bindToAttribute: true, selectedAttribute: 'attr_bound_answer' },
+          },
+        },
+      ],
+    });
+
+    expect(
+      (await send('delete', `${basePath()}/${companyAttribute.id}`, token).send()).status,
+    ).toBe(204);
+    const blocked = await send('delete', `${basePath()}/${userAttribute.id}`, token).send();
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('E1042');
+    expect(blocked.body.error.message).toContain('Binds an answer');
+
+    await prisma.step.update({
+      where: { id: questionStep.id },
+      data: {
+        data: [
+          {
+            element: {
+              type: 'nps',
+              data: { bindToAttribute: false, selectedAttribute: 'attr_bound_answer' },
+            },
+          },
+        ],
+      },
+    });
+    expect((await send('delete', `${basePath()}/${userAttribute.id}`, token).send()).status).toBe(
+      204,
+    );
   });
 
   it('writing a user value under a deleted codeName restores the attribute (ADR 0016)', async () => {

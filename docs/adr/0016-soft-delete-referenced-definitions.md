@@ -59,7 +59,7 @@ Event's "refuse once any `BizEvent` was recorded" is dropped: `BizEvent` rows ke
 
 ### 4. Publish refuses deleted references
 
-Restoring a historical version can bring a deleted definition's id back into a draft. Drafts stay lenient, the existing standard (incomplete content is tolerated); **publish** refuses a version whose conditions, theme or step themes reference a deleted definition, naming it. The author either restores the definition or picks another. This closes the only path by which a live surface could come to reference a deleted definition after §3.
+Restoring a historical version can bring a deleted definition's id back into a draft. Drafts stay lenient, the existing standard (incomplete content is tolerated); **publish** refuses a version whose conditions, theme, step themes or enabled question bindings reference a deleted definition, naming it. A question binding names its user attribute by codeName rather than id, but it is a reference all the same — and, like the in-use scan, it counts only while `bindToAttribute` is on and only against a USER attribute, the only kind a question writes. The author either restores the definition or picks another. This closes the only path by which a live surface could come to reference a deleted definition after §3.
 
 The check lives in `ContentService.publishedContentVersion`, which the web app (GraphQL), v2 and MCP all publish through.
 

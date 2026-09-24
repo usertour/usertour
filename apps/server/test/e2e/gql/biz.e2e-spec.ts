@@ -165,6 +165,52 @@ describe('GraphQL biz (e2e)', () => {
     });
   });
 
+  describe('queryBizUser / queryBizCompany on a deleted segment', () => {
+    it('lists no members of a deleted segment, though the memberships are kept', async () => {
+      const userSegment = await buildSegment(prisma, {
+        projectId,
+        environmentId,
+        bizType: 1,
+        dataType: 3,
+        deleted: true,
+      });
+      const companySegment = await buildSegment(prisma, {
+        projectId,
+        environmentId,
+        bizType: 2,
+        dataType: 3,
+        deleted: true,
+      });
+      const member = await buildBizUser(prisma, { environmentId });
+      const company = await buildBizCompany(prisma, { environmentId });
+      await prisma.bizUserOnSegment.create({
+        data: { segmentId: userSegment.id, bizUserId: member.id },
+      });
+      await prisma.bizCompanyOnSegment.create({
+        data: { segmentId: companySegment.id, bizCompanyId: company.id },
+      });
+      const run = (field: 'queryBizUser' | 'queryBizCompany', segmentId: string) =>
+        graphql(app, {
+          token,
+          query: `query ($query: BizQuery!, $orderBy: BizOrder!, $first: Int) {
+            ${field}(query: $query, orderBy: $orderBy, first: $first) {
+              edges { node { id } }
+            }
+          }`,
+          variables: {
+            query: { environmentId, segmentId },
+            orderBy: { field: 'createdAt', direction: 'desc' },
+            first: 50,
+          },
+        });
+
+      const users = await run('queryBizUser', userSegment.id);
+      expect(users.body.data?.queryBizUser?.edges ?? []).toEqual([]);
+      const companies = await run('queryBizCompany', companySegment.id);
+      expect(companies.body.data?.queryBizCompany?.edges ?? []).toEqual([]);
+    });
+  });
+
   // ── queryBizCompany ──────────────────────────────────────────────────────
 
   describe('queryBizCompany', () => {

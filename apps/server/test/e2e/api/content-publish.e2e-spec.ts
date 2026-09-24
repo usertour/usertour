@@ -5,9 +5,11 @@ import request from 'supertest';
 
 import { gqlData, graphql } from '../auth';
 import {
+  buildAttribute,
   buildContent,
   buildEnvironment,
   buildProject,
+  buildStep,
   buildUsableFlowVersion,
   buildVersion,
 } from '../factories';
@@ -269,6 +271,58 @@ describe('API v2 content publish (e2e)', () => {
       token,
     ).send({ environmentId, versionId: stale.id });
     expect(published.status).toBe(200);
+  });
+
+  it('refuses to publish a version whose enabled question binding writes to a deleted attribute (E1044)', async () => {
+    // A binding names its user attribute by codeName, not id — still a
+    // reference: restoring an old version must not publish past a deleted one.
+    const boundContent = await buildContent(prisma, {
+      projectId,
+      environmentId,
+      type: 'flow',
+      name: 'Bound survey',
+    });
+    const bound = await buildUsableFlowVersion(prisma, {
+      contentId: boundContent.id,
+      projectId,
+      sequence: 0,
+    });
+    await buildStep(prisma, {
+      versionId: bound.id,
+      type: 'modal',
+      sequence: 1,
+      data: [
+        {
+          element: {
+            type: 'nps',
+            data: { bindToAttribute: true, selectedAttribute: 'publish_bound_score' },
+          },
+        },
+      ],
+    });
+    const attribute = await buildAttribute(prisma, {
+      projectId,
+      codeName: 'publish_bound_score',
+      bizType: 1,
+      dataType: 1,
+      deleted: true,
+    });
+
+    const viaWeb = await graphql(app, {
+      token: ownerToken,
+      query: 'mutation($d:VersionIdInput!){publishedContentVersion(data:$d){id}}',
+      variables: { d: { versionId: bound.id, environmentId } },
+    });
+    expect(viaWeb.body.errors?.[0]?.extensions?.code).toBe('E1044');
+    expect(viaWeb.body.errors?.[0]?.message).toContain('publish_bound_score');
+
+    await prisma.attribute.update({ where: { id: attribute.id }, data: { deleted: false } });
+    const published = await graphql(app, {
+      token: ownerToken,
+      query: 'mutation($d:VersionIdInput!){publishedContentVersion(data:$d){id}}',
+      variables: { d: { versionId: bound.id, environmentId } },
+    });
+    expect(published.body.errors).toBeUndefined();
   });
 
   it('returns 404 publishing an unknown content (E1004)', async () => {

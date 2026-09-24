@@ -728,8 +728,9 @@ export class BizService {
       let conditions: any = data ? data : {};
       let segment: Segment;
       if (segmentId) {
+        // A deleted segment keeps its memberships (ADR 0016) but lists no members.
         segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, projectId },
+          where: { id: segmentId, projectId, deleted: false },
         });
         if (!segment) {
           return false;
@@ -826,8 +827,9 @@ export class BizService {
       let conditions: any = data ? data : {};
       let segment: Segment;
       if (segmentId) {
+        // A deleted segment keeps its memberships (ADR 0016) but lists no members.
         segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, projectId },
+          where: { id: segmentId, projectId, deleted: false },
         });
         if (!segment) {
           return false;

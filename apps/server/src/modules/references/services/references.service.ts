@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import {
   AttributeDefinitionInUseError,
   AttributeDefinitionNotFoundError,
@@ -34,7 +35,9 @@ import { referenceDetails } from '../utils/reference-details.util';
  * Precision: stored conditions carry INTERNAL ids (`attrId` / `eventId` /
  * `segmentId` / `contentId` keys), so matching is by exact key+value — never a
  * text search. The one duality: a question's attribute binding stores the
- * CODENAME (`selectedAttribute`), so attribute lookups match both vocabularies.
+ * CODENAME (`selectedAttribute`), so attribute lookups match both vocabularies —
+ * only for a USER attribute (the only kind a question writes), and only while
+ * the binding is on (`bindToAttribute`; switching it off keeps the codeName).
  * A coarse jsonb::text LIKE prefilter shortlists version rows first (it can
  * only over-select; the precise walk decides), so the common case loads little.
  *
@@ -53,23 +56,54 @@ const ID_REFERENCE_KEYS = {
 
 type IdReferenceKind = (typeof ID_REFERENCE_KEYS)[keyof typeof ID_REFERENCE_KEYS];
 
-/** Collect every definition id a stored JSON tree references, by kind. */
-const collectIdReferences = (node: unknown, found: Record<IdReferenceKind, Set<string>>): void => {
+/** What a stored JSON tree references: ids by kind, plus bound user attribute codeNames. */
+type CollectedReferences = Record<IdReferenceKind, Set<string>> & {
+  boundAttributeCodes: Set<string>;
+};
+
+const emptyReferences = (): CollectedReferences => ({
+  attribute: new Set(),
+  event: new Set(),
+  segment: new Set(),
+  boundAttributeCodes: new Set(),
+});
+
+/**
+ * The user attribute codeName a question element writes its answer to, or
+ * undefined. The editor keeps `selectedAttribute` when the binding is switched
+ * off, and the runtime writes only while `bindToAttribute` is on.
+ */
+const enabledBindingCode = (node: object): string | undefined => {
+  const { bindToAttribute, selectedAttribute } = node as {
+    bindToAttribute?: unknown;
+    selectedAttribute?: unknown;
+  };
+  return bindToAttribute === true && typeof selectedAttribute === 'string' && selectedAttribute
+    ? selectedAttribute
+    : undefined;
+};
+
+/** Collect every definition a stored JSON tree references. */
+const collectReferences = (node: unknown, found: CollectedReferences): void => {
   if (Array.isArray(node)) {
     for (const item of node) {
-      collectIdReferences(item, found);
+      collectReferences(item, found);
     }
     return;
   }
   if (!node || typeof node !== 'object') {
     return;
   }
+  const boundCode = enabledBindingCode(node);
+  if (boundCode) {
+    found.boundAttributeCodes.add(boundCode);
+  }
   for (const [key, value] of Object.entries(node)) {
     const kind = ID_REFERENCE_KEYS[key as keyof typeof ID_REFERENCE_KEYS];
     if (kind && typeof value === 'string' && value) {
       found[kind].add(value);
     } else {
-      collectIdReferences(value, found);
+      collectReferences(value, found);
     }
   }
 };
@@ -96,13 +130,16 @@ export class ReferencesService {
     // authoritative "nothing references this, safe to delete", which is the
     // exact wrong direction to fail in (read-only-credential audit).
     let codeName: string | undefined;
+    // Only a USER attribute can be the target of a question binding.
+    let bindable = false;
     if (kind === 'attribute') {
       const attr = await this.prisma.attribute.findFirst({
         where: { id: targetId, projectId },
-        select: { codeName: true },
+        select: { codeName: true, bizType: true },
       });
       if (!attr) throw new AttributeDefinitionNotFoundError();
       codeName = attr.codeName;
+      bindable = attr.bizType === AttributeBizType.USER;
     } else if (kind === 'event') {
       const ev = await this.prisma.event.findFirst({
         where: { id: targetId, projectId },
@@ -203,15 +240,12 @@ export class ReferencesService {
     }
 
     // ── JSON-borne references: coarse LIKE prefilter, then a precise walk ─────
-    const needles = [targetId, ...(kind === 'attribute' && codeName ? [codeName] : [])];
+    const needles = [targetId, ...(bindable && codeName ? [codeName] : [])];
     const matchesLeaf = (key: string, value: unknown): boolean => {
       if (typeof value !== 'string') return false;
       switch (kind) {
         case 'attribute':
-          if (key === 'attrId') return value === targetId;
-          // Question bindings store the CODENAME, not the id.
-          if (key === 'selectedAttribute') return value === codeName;
-          return false;
+          return key === 'attrId' && value === targetId;
         case 'event':
           return key === 'eventId' && value === targetId;
         case 'segment':
@@ -228,6 +262,10 @@ export class ReferencesService {
         return;
       }
       if (!node || typeof node !== 'object') return;
+      // Question bindings store the CODENAME, not the id, and count only while on.
+      if (bindable && enabledBindingCode(node) === codeName) {
+        onHit([...path, 'selectedAttribute']);
+      }
       for (const [key, value] of Object.entries(node)) {
         if (matchesLeaf(key, value)) onHit([...path, key]);
         else walk(value, onHit, [...path, key]);
@@ -380,11 +418,10 @@ export class ReferencesService {
   }
 
   /**
-   * The soft-deleted definitions a version references by id — its theme, its
-   * steps' themes, and the attribute / event / segment ids in its conditions.
-   * Publish refuses a version with any (ADR 0016 §4). Question bindings, which
-   * reference an attribute by codeName, are not id references and are left to
-   * the usability check.
+   * The soft-deleted definitions a version references — its theme, its steps'
+   * themes, the attribute / event / segment ids in its conditions, and the user
+   * attributes its enabled question bindings write to (by codeName). Publish
+   * refuses a version with any (ADR 0016 §4).
    */
   async findDeletedReferences(versionId: string): Promise<DeletedReference[]> {
     const version = await this.prisma.version.findUnique({
@@ -402,22 +439,18 @@ export class ReferencesService {
     }
     const projectId = version.content.projectId;
     const themeIds = new Set<string>();
-    const found: Record<IdReferenceKind, Set<string>> = {
-      attribute: new Set(),
-      event: new Set(),
-      segment: new Set(),
-    };
+    const found = emptyReferences();
     if (version.themeId) {
       themeIds.add(version.themeId);
     }
-    collectIdReferences(version.config, found);
-    collectIdReferences(version.data, found);
+    collectReferences(version.config, found);
+    collectReferences(version.data, found);
     for (const step of version.steps) {
       if (step.themeId) {
         themeIds.add(step.themeId);
       }
-      collectIdReferences(step.data, found);
-      collectIdReferences(step.trigger, found);
+      collectReferences(step.data, found);
+      collectReferences(step.trigger, found);
     }
     return this.resolveDeleted(projectId, themeIds, found);
   }
@@ -432,19 +465,15 @@ export class ReferencesService {
     projectId: string,
     conditions: unknown,
   ): Promise<DeletedReference[]> {
-    const found: Record<IdReferenceKind, Set<string>> = {
-      attribute: new Set(),
-      event: new Set(),
-      segment: new Set(),
-    };
-    collectIdReferences(conditions, found);
+    const found = emptyReferences();
+    collectReferences(conditions, found);
     return this.resolveDeleted(projectId, new Set(), found);
   }
 
   private async resolveDeleted(
     projectId: string,
     themeIds: Set<string>,
-    found: Record<IdReferenceKind, Set<string>>,
+    found: CollectedReferences,
   ): Promise<DeletedReference[]> {
     const deletedWhere = (ids: Set<string>) => ({ id: { in: [...ids] }, projectId, deleted: true });
     const [themes, attributes, events, segments] = await Promise.all([
@@ -454,9 +483,20 @@ export class ReferencesService {
             select: { id: true, name: true },
           })
         : [],
-      found.attribute.size > 0
+      found.attribute.size > 0 || found.boundAttributeCodes.size > 0
         ? this.prisma.attribute.findMany({
-            where: deletedWhere(found.attribute),
+            where: {
+              projectId,
+              deleted: true,
+              OR: [
+                { id: { in: [...found.attribute] } },
+                // A question binding writes to a USER attribute, named by codeName.
+                {
+                  bizType: AttributeBizType.USER,
+                  codeName: { in: [...found.boundAttributeCodes] },
+                },
+              ],
+            },
             select: { id: true, codeName: true },
           })
         : [],
