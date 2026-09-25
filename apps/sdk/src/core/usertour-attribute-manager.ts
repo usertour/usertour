@@ -1,5 +1,5 @@
 import { UserTourTypes } from '@usertour/types';
-import { isEqual } from '@usertour/helpers';
+import { attributeCacheChanged, mergeAttributeCache } from '@usertour/helpers';
 import { Evented } from '@/utils/evented';
 
 import { autoBind } from '@/utils';
@@ -7,6 +7,11 @@ import { autoBind } from '@/utils';
 /**
  * Simple manager for user, company, and membership attributes
  * Extends Evented to provide event notification capabilities
+ *
+ * The cache exists only for change detection: it holds the literals this
+ * page already sent. A key written with an operation object ({add}, {union},
+ * …) is always sent and never cached — the server computes its value, which
+ * the client cannot know (ADR 0017 §6).
  */
 export class UsertourAttributeManager extends Evented {
   // === Properties ===
@@ -31,8 +36,7 @@ export class UsertourAttributeManager extends Evented {
     currentAttributes: UserTourTypes.Attributes,
     newAttributes: UserTourTypes.Attributes,
   ): boolean {
-    const mergedAttributes = { ...currentAttributes, ...newAttributes };
-    return !isEqual(currentAttributes, mergedAttributes);
+    return attributeCacheChanged(currentAttributes, newAttributes);
   }
 
   /**
@@ -73,7 +77,7 @@ export class UsertourAttributeManager extends Evented {
       return false; // No changes detected
     }
 
-    this.userAttributes = { ...this.userAttributes, ...attributes };
+    this.userAttributes = mergeAttributeCache(this.userAttributes, attributes);
 
     return true;
   }
@@ -88,7 +92,7 @@ export class UsertourAttributeManager extends Evented {
       return false; // No changes detected
     }
 
-    this.companyAttributes = { ...this.companyAttributes, ...attributes };
+    this.companyAttributes = mergeAttributeCache(this.companyAttributes, attributes);
 
     return true;
   }
@@ -103,7 +107,7 @@ export class UsertourAttributeManager extends Evented {
       return false; // No changes detected
     }
 
-    this.membershipAttributes = { ...this.membershipAttributes, ...attributes };
+    this.membershipAttributes = mergeAttributeCache(this.membershipAttributes, attributes);
 
     return true;
   }

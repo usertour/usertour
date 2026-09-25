@@ -84,25 +84,85 @@ export interface Usertour {
   isResourceCenterOpen: () => boolean;
 }
 
+/**
+ * Attribute values (ADR 0017): a literal, `null` to remove the attribute, a
+ * `Date` (sent as ISO 8601 UTC), or exactly one operation object.
+ */
 export interface Attributes {
-  [name: string]: AttributeLiteralOrList | AttributeChange;
+  [name: string]: AttributeValue | AttributeOperation | LegacyAttributeChange;
 }
 
 type AttributeLiteral = string | number | boolean | null | undefined;
 type AttributeLiteralOrList = AttributeLiteral | AttributeLiteral[];
+type AttributeValue = AttributeLiteralOrList | Date;
 
-interface AttributeChange {
-  set?: AttributeLiteralOrList;
-  set_once?: AttributeLiteralOrList;
-  add?: string | number;
-  subtract?: string | number;
-  append?: AttributeLiteralOrList;
-  prepend?: AttributeLiteralOrList;
-  remove?: AttributeLiteralOrList;
-  data_type?: AttributeDataType;
-}
-
+/**
+ * Pins the type of the attribute definition when this write creates it. It
+ * never retypes an existing definition — a conflicting `data_type` is
+ * rejected; change the type in the attribute settings instead.
+ */
 type AttributeDataType = 'string' | 'boolean' | 'number' | 'datetime' | 'list';
+
+/** Exactly one operation per attribute. */
+export type AttributeOperation =
+  | {
+      /** Set the value (same as a literal), optionally pinning `data_type`. */
+      set: AttributeValue;
+      data_type?: AttributeDataType;
+      set_once?: never;
+      add?: never;
+      union?: never;
+      remove?: never;
+    }
+  | {
+      /** Set the value only when the attribute has no value yet. */
+      set_once: AttributeValue;
+      data_type?: AttributeDataType;
+      set?: never;
+      add?: never;
+      union?: never;
+      remove?: never;
+    }
+  | {
+      /** Add to a Number attribute (negative to subtract); a missing value starts at 0. */
+      add: number;
+      set?: never;
+      set_once?: never;
+      union?: never;
+      remove?: never;
+      data_type?: never;
+    }
+  | {
+      /** Append the value(s) not yet present to a List attribute; a missing list starts empty. */
+      union: AttributeLiteralOrList;
+      set?: never;
+      set_once?: never;
+      add?: never;
+      remove?: never;
+      data_type?: never;
+    }
+  | {
+      /** Remove every matching value from a List attribute; a missing attribute stays undefined. */
+      remove: AttributeLiteralOrList;
+      set?: never;
+      set_once?: never;
+      add?: never;
+      union?: never;
+      data_type?: never;
+    };
+
+/**
+ * Operation spellings the SDK still translates for compatibility. Each one
+ * is deprecated; the SDK rewrites it and logs a warning.
+ */
+export interface LegacyAttributeChange {
+  /** @deprecated Use `{ add: -n }`. */
+  subtract?: number;
+  /** @deprecated Use `{ union: values }` — lists are deduplicated sets. */
+  append?: AttributeLiteralOrList;
+  /** @deprecated Use `{ union: values }` — list order is never observable. */
+  prepend?: AttributeLiteralOrList;
+}
 
 export type IdentifyOptions = {
   /**
@@ -121,12 +181,14 @@ export interface GroupOptions {
   membership?: Attributes;
 }
 
+/** Events are immutable facts: a literal, a `Date`, or `{set, data_type}` only. */
 export interface EventAttributes {
-  [name: string]: AttributeLiteral | EventAttributeChange;
+  [name: string]: AttributeValue | EventAttributeChange;
 }
 
-interface EventAttributeChange {
-  set?: AttributeLiteral;
+export interface EventAttributeChange {
+  set: AttributeValue;
+  /** Pins the type of a new event attribute definition; never retypes an existing one. */
   data_type?: AttributeDataType;
 }
 
