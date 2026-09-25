@@ -65,3 +65,25 @@ describe('attribute resolvers — scope-aware codeName ↔ id', () => {
     expect(comp.attributeId(dec.attributeCode(id), dec.attributeScope(id))).toBe(id);
   });
 });
+
+// ADR 0016: a soft-deleted definition still decompiles to its codeName, but a
+// write naming it must miss (and be refused) — no new reference to it is stored.
+describe('attribute resolvers — soft-deleted definitions', () => {
+  const attributes = [
+    { id: 'gone-plan', codeName: 'plan', bizType: AttributeBizType.USER, deleted: true },
+  ];
+  const events = [{ id: 'gone-evt', codeName: 'purchase', deleted: true }];
+
+  it('compile records a miss for a deleted attribute or event', () => {
+    const r = buildCompileResolversFrom(attributes, events);
+    expect(r.attributeId('plan', 'user')).toBe('plan');
+    expect(r.eventId('purchase')).toBe('purchase');
+    expect(r.misses).toEqual(['attribute "plan" (scope user)', 'event "purchase"']);
+  });
+
+  it('decompile still resolves a deleted id to its codeName', () => {
+    const r = buildDecompileResolversFrom(attributes, events);
+    expect(r.tryAttributeCode?.('gone-plan')).toBe('plan');
+    expect(r.tryEventCode?.('gone-evt')).toBe('purchase');
+  });
+});

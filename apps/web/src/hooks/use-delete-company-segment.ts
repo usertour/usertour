@@ -1,6 +1,8 @@
 import { useDeleteSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getDefinitionReferenceErrorMessage } from '@/utils/definition-references';
 
 interface DeleteCompanySegmentResult {
   success: boolean;
@@ -17,6 +19,7 @@ interface DeleteCompanySegmentResult {
  */
 export const useDeleteCompanySegment = () => {
   const { invoke: deleteSegment, loading } = useDeleteSegmentMutation();
+  const { t } = useTranslation();
 
   const deleteSegmentById = useCallback(
     async (segmentId: string): Promise<DeleteCompanySegmentResult> => {
@@ -27,10 +30,13 @@ export const useDeleteCompanySegment = () => {
         }
         return { success: false, error: 'Delete operation failed' };
       } catch (error) {
-        return { success: false, error: getErrorMessage(error) };
+        return {
+          success: false,
+          error: getDefinitionReferenceErrorMessage(error, t) ?? getErrorMessage(error),
+        };
       }
     },
-    [deleteSegment],
+    [deleteSegment, t],
   );
 
   return {

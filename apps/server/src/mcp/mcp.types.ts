@@ -13,7 +13,7 @@ import { ApiContentSessionsService } from '@/api/content-sessions/content-sessio
 import { ApiContentVersionsService } from '@/api/content-versions/content-versions.service';
 import { ApiAnalyticsService } from '@/api/analytics/analytics.service';
 import { ApiUsageOverviewService } from '@/api/analytics/usage-overview.service';
-import { ApiReferencesService } from '@/api/references/references.service';
+import { ReferencesService } from '@/modules/references/services/references.service';
 import { ApiEnvironmentsService } from '@/api/environments/environments.service';
 import type { Environment } from '@prisma/client';
 import { ApiEventDefinitionsService } from '@/api/event-definitions/event-definitions.service';
@@ -45,7 +45,7 @@ export interface McpServices {
   localizations: ApiLocalizationsService;
   analytics: ApiAnalyticsService;
   usageOverview: ApiUsageOverviewService;
-  references: ApiReferencesService;
+  references: ReferencesService;
   webhooks: ApiWebhooksService;
 }
 

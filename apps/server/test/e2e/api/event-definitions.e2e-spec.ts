@@ -13,9 +13,11 @@ import { gqlData, graphql } from '../auth';
 import {
   buildAttribute,
   buildBizUser,
+  buildContent,
   buildEnvironment,
   buildEvent,
   buildProject,
+  buildVersion,
 } from '../factories';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
@@ -185,35 +187,90 @@ describe('API v2 /event-definitions (e2e)', () => {
     expect(list.body.results.map((e: { id: string }) => e.id)).not.toContain(id);
   });
 
-  it('refuses to delete an event definition that has recorded events (409 E1030)', async () => {
+  it('soft-deletes an event with recorded events; restore and re-create bring the same id back', async () => {
+    // ADR 0016: recorded events keep resolving their definition by id, so
+    // having fired no longer pins it; the codeName stays reserved while deleted.
     const token = await mint([
       Capability.EventCreate,
+      Capability.EventUpdate,
       Capability.EventDelete,
       Capability.EventRead,
     ]);
     const created = await send('post', basePath(), token).send({
-      codeName: 'evt_in_use',
-      displayName: 'In Use',
+      codeName: 'evt_fired',
+      displayName: 'Fired',
     });
     expect(created.status).toBe(201);
-
-    // Record an event against it, as a tracker / usertour.track() would. The FK is RESTRICT,
-    // so a raw delete would leak a Postgres error — the service must translate it to E1030.
+    const id = created.body.id;
     const env = await buildEnvironment(prisma, { projectId });
     const bizUser = await buildBizUser(prisma, { environmentId: env.id });
-    const bizEvent = await prisma.bizEvent.create({
-      data: { eventId: created.body.id, bizUserId: bizUser.id },
+    await prisma.bizEvent.create({ data: { eventId: id, bizUserId: bizUser.id } });
+
+    expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
+    expect((await api('get', `${basePath()}/${id}`, token)).status).toBe(404);
+    const deletedList = await api('get', `${basePath()}?deleted=true`, token);
+    expect(deletedList.body.results.map((e: { id: string }) => e.id)).toContain(id);
+
+    const restored = await send('post', `${basePath()}/${id}/restore`, token).send();
+    expect(restored.status).toBe(200);
+    expect(restored.body).toMatchObject({ id, codeName: 'evt_fired' });
+
+    expect((await send('delete', `${basePath()}/${id}`, token).send()).status).toBe(204);
+    const recreated = await send('post', basePath(), token).send({
+      codeName: 'evt_fired',
+      displayName: 'Fired again',
     });
+    expect(recreated.status).toBe(201);
+    expect(recreated.body).toMatchObject({ id, displayName: 'Fired again' });
+  });
+
+  it('tracking a deleted codeName restores the event (ADR 0016)', async () => {
+    const env = await buildEnvironment(prisma, { projectId });
+    const token = await mint([
+      Capability.EventCreate,
+      Capability.EventDelete,
+      Capability.EventRead,
+      Capability.UserWrite,
+    ]);
+    const created = await send('post', basePath(), token).send({
+      codeName: 'evt_still_tracked',
+      displayName: 'Still tracked',
+    });
+    expect(created.status).toBe(201);
+    expect((await send('delete', `${basePath()}/${created.body.id}`, token).send()).status).toBe(
+      204,
+    );
+    await buildBizUser(prisma, { environmentId: env.id, externalId: 'evt-restore-user' });
+
+    const tracked = await send(
+      'post',
+      `/v2/projects/${projectId}/environments/${env.id}/events`,
+      await mint([Capability.UserWrite, Capability.EventRead], [env.id]),
+    ).send({ userId: 'evt-restore-user', name: 'evt_still_tracked' });
+    expect(tracked.status).toBeLessThan(300);
+    expect((await api('get', `${basePath()}/${created.body.id}`, token)).status).toBe(200);
+  });
+
+  it('refuses to delete an event definition live content uses (409 E1030), naming it', async () => {
+    const token = await mint([Capability.EventCreate, Capability.EventDelete]);
+    const created = await send('post', basePath(), token).send({
+      codeName: 'evt_tracked',
+      displayName: 'Tracked',
+    });
+    expect(created.status).toBe(201);
+    const env = await buildEnvironment(prisma, { projectId });
+    const tracker = await buildContent(prisma, {
+      projectId,
+      environmentId: env.id,
+      type: 'tracker',
+      name: 'Tracks it',
+    });
+    await buildVersion(prisma, { contentId: tracker.id, data: { eventId: created.body.id } });
 
     const del = await send('delete', `${basePath()}/${created.body.id}`, token).send();
     expect(del.status).toBe(409);
     expect(del.body.error.code).toBe('E1030');
-
-    // Once the recorded events are gone, the definition deletes cleanly.
-    await prisma.bizEvent.delete({ where: { id: bizEvent.id } });
-    expect((await send('delete', `${basePath()}/${created.body.id}`, token).send()).status).toBe(
-      204,
-    );
+    expect(del.body.error.message).toContain('Tracks it');
   });
 
   it('attaches / reads / replaces event attributes by codeName', async () => {

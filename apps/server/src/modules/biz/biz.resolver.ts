@@ -108,8 +108,8 @@ export class BizResolver {
     resourceId: (a) => (a.data as { id: string }).id,
   })
   async deleteSegment(@Args('data') data: DeleteSegment) {
-    const [, , r3] = await this.service.deleteSegment(data);
-    return { success: !!r3.id };
+    const deleted = await this.service.deleteSegment(data);
+    return { success: !!deleted.id };
   }
 
   @Query(() => [SegmentDTO])

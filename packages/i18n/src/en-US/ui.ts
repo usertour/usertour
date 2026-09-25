@@ -4789,6 +4789,20 @@ const translations = {
     notFound: 'The page you are trying to visit does not exist.',
     serverError: 'Oops! Something is wrong with the server. Please try again later.',
   },
+  definitionReferences: {
+    inUse: "Can't delete it: {{references}} still use it. Remove it from them first.",
+    deletedReferenced:
+      "Can't publish: this version uses deleted {{references}}. Restore them or replace them first.",
+    reference: '{{kind}} "{{name}}"',
+    more: '{{count}} more',
+    kinds: {
+      content: 'content',
+      segment: 'segment',
+      theme: 'theme',
+      attribute: 'attribute',
+      event: 'event',
+    },
+  },
 };
 
 export default translations;

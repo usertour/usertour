@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { singleOrArray, isoTimestamp } from '../shared/query';
+import { deletedListField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { AttributeDataTypeNames } from '@/modules/attributes/constants/attribute-data-type-names.constant';
 
@@ -40,6 +40,7 @@ export const listAttributeDefinitionsQuery = z.object({
     'Filter to attributes attached to these event(s), matched by event codeName (EXACT match — ' +
       'not displayName; a displayName silently matches nothing). Multiple values OR together.',
   ),
+  deleted: deletedListField('attribute definitions'),
 });
 export class ListAttributeDefinitionsQueryDto extends createZodDto(listAttributeDefinitionsQuery) {}
 

@@ -6,16 +6,55 @@ import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection
 import { Prisma } from '@prisma/client';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { nameContains } from '@/modules/common/utils/query-filters.util';
-import { ResourceAlreadyExistsError, ValidationError } from '@/modules/common/errors/errors';
+import {
+  AttributeCodeNameHeldByDeletedError,
+  ParamsError,
+  ResourceAlreadyExistsError,
+  ValidationError,
+} from '@/modules/common/errors/errors';
+import { ReferencesService } from '@/modules/references/services/references.service';
 
 @Injectable()
 export class AttributesService {
   constructor(
     private prisma: PrismaService,
     private readonly cache: ProjectCacheService,
+    private readonly references: ReferencesService,
   ) {}
 
+  /**
+   * A codeName stays reserved while its attribute is soft-deleted (ADR 0016), so
+   * creating it again restores that row — every condition that referenced the
+   * old id resolves again — instead of forking a new id. The data type must
+   * match: conditions written against the old type would mis-evaluate.
+   */
   async create(data: NewAttribute) {
+    const held = await this.prisma.attribute.findUnique({
+      where: {
+        projectId_bizType_codeName: {
+          projectId: data.projectId,
+          bizType: data.bizType,
+          codeName: data.codeName,
+        },
+      },
+    });
+    if (held?.deleted) {
+      if (data.dataType !== held.dataType) {
+        throw new AttributeCodeNameHeldByDeletedError(
+          `"${data.codeName}" belongs to a deleted attribute of another data type. Restore that attribute or choose another codeName.`,
+        );
+      }
+      const restored = await this.prisma.attribute.update({
+        where: { id: held.id },
+        data: {
+          deleted: false,
+          displayName: data.displayName,
+          ...(data.description !== undefined ? { description: data.description } : {}),
+        },
+      });
+      await this.cache.invalidateDeferred(this.cache.keys.attrs(restored.projectId));
+      return restored;
+    }
     try {
       const created = await this.prisma.attribute.create({ data });
       await this.cache.invalidateDeferred(this.cache.keys.attrs(created.projectId));
@@ -85,19 +124,36 @@ export class AttributesService {
         `Attribute "${existing.codeName}" is synced from ${existing.source}; remove it from the integration mapping first.`,
       );
     }
-    // Clear AttributeOnEvent join rows before deleting the Attribute.
-    // The relation has Prisma's default `onDelete: Restrict`, so a bare
-    // `attribute.delete` throws P2003 the moment any event has tracked
-    // this attribute. Mirrors what `events.service.ts.delete` already
-    // does for the opposite side of the same join. Historical event
-    // payloads keep their data — only the definition-layer link is
-    // severed.
-    const deleted = await this.prisma.$transaction(async (tx) => {
-      await tx.attributeOnEvent.deleteMany({ where: { attributeId: id } });
-      return await tx.attribute.delete({ where: { id } });
+    if (!existing || existing.deleted) {
+      throw new ParamsError();
+    }
+    // Soft delete (ADR 0016): the row and its AttributeOnEvent links stay, so
+    // stored conditions still decompile to a codeName and restoring brings the
+    // attribute back whole. Refused while a live surface still uses it.
+    await this.references.assertUnreferenced(existing.projectId, 'attribute', id);
+    const deleted = await this.prisma.attribute.update({
+      where: { id },
+      data: { deleted: true },
     });
     await this.cache.invalidateDeferred(this.cache.keys.attrs(deleted.projectId));
     return deleted;
+  }
+
+  /** Bring a soft-deleted attribute back as it was. Idempotent on a live one. */
+  async restore(id: string) {
+    const existing = await this.prisma.attribute.findUnique({ where: { id } });
+    if (!existing) {
+      throw new ParamsError();
+    }
+    if (!existing.deleted) {
+      return existing;
+    }
+    const restored = await this.prisma.attribute.update({
+      where: { id },
+      data: { deleted: false },
+    });
+    await this.cache.invalidateDeferred(this.cache.keys.attrs(restored.projectId));
+    return restored;
   }
 
   async get(id: string) {
@@ -109,12 +165,12 @@ export class AttributesService {
   async list(projectId: string, bizType: number) {
     if (bizType === 0) {
       return await this.prisma.attribute.findMany({
-        where: { projectId },
+        where: { projectId, deleted: false },
         orderBy: { id: 'asc' },
       });
     }
     return await this.prisma.attribute.findMany({
-      where: { projectId, bizType },
+      where: { projectId, bizType, deleted: false },
       orderBy: { id: 'asc' },
     });
   }
@@ -131,11 +187,12 @@ export class AttributesService {
     eventName?: string[],
     orderBy?: Prisma.AttributeOrderByWithRelationInput[],
     name?: string,
+    deleted = false,
   ) {
     const nameFilter = nameContains(name);
     const where: Prisma.AttributeWhereInput = {
       projectId,
-      deleted: false,
+      deleted,
       ...(bizType && { bizType }),
       ...(eventName && { attributeOnEvent: { some: { event: { codeName: { in: eventName } } } } }),
       // Match the machine `codeName` as well as the human `displayName`: callers (esp. MCP

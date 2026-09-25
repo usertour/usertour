@@ -18,8 +18,8 @@ import { DecompileResolvers } from './rules.decompile';
  * attribute), so they get a separate map.
  */
 
-type AttributeRow = { id: string; codeName: string; bizType: number };
-type EventRow = { id: string; codeName: string };
+type AttributeRow = { id: string; codeName: string; bizType: number; deleted?: boolean };
+type EventRow = { id: string; codeName: string; deleted?: boolean };
 
 const SCOPE_BY_BIZTYPE: Partial<Record<number, AttributeScope>> = {
   [AttributeBizType.USER]: 'user',
@@ -27,11 +27,17 @@ const SCOPE_BY_BIZTYPE: Partial<Record<number, AttributeScope>> = {
   [AttributeBizType.MEMBERSHIP]: 'companyMembership',
 };
 
-/** code → internal id, scoped (write path). */
+/**
+ * code → internal id, scoped (write path). Soft-deleted definitions do not
+ * resolve (ADR 0016): a write naming one records a miss and is refused, so no
+ * new reference to a deleted definition is ever stored.
+ */
 export function buildCompileResolversFrom(
-  attributes: AttributeRow[],
-  events: EventRow[],
+  allAttributes: AttributeRow[],
+  allEvents: EventRow[],
 ): CompileResolvers {
+  const attributes = allAttributes.filter((attribute) => !attribute.deleted);
+  const events = allEvents.filter((event) => !event.deleted);
   const attrMap = new Map<string, string>();
   for (const a of attributes) {
     const scope = SCOPE_BY_BIZTYPE[a.bizType];
@@ -90,19 +96,20 @@ export function buildDecompileResolversFrom(
 /**
  * Load a project's attribute + event catalogs — the shared input for both resolver
  * maps, defined once here (was copy-pasted across content-versions / themes /
- * segments). Soft-deleted rows are intentionally INCLUDED: decompile (id→code)
- * must still resolve a since-deleted attribute's id to its readable codeName (else
- * the API shows a raw id), and the write path rejects references to deleted attrs
- * downstream (condition-context filters them). That is why these catalogs do NOT
- * apply the `deleted: false` the usability validator uses.
+ * segments). Soft-deleted rows are INCLUDED, flagged: decompile (id→code) must
+ * still resolve a deleted definition's id to its readable codeName (else the API
+ * shows a raw id), while compile (code→id) skips them.
  */
 export async function loadResolverCatalogs(prisma: PrismaService, projectId: string) {
   return Promise.all([
     prisma.attribute.findMany({
       where: { projectId },
-      select: { id: true, codeName: true, bizType: true },
+      select: { id: true, codeName: true, bizType: true, deleted: true },
     }),
-    prisma.event.findMany({ where: { projectId }, select: { id: true, codeName: true } }),
+    prisma.event.findMany({
+      where: { projectId },
+      select: { id: true, codeName: true, deleted: true },
+    }),
   ]);
 }
 

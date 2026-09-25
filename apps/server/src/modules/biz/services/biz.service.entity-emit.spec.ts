@@ -14,7 +14,12 @@ describe('BizService.withEntityChangeEmit', () => {
 
   beforeEach(() => {
     emitter = { emit: jest.fn() };
-    service = new BizService({} as never, {} as never, emitter as never as EventEmitter2);
+    service = new BizService(
+      {} as never,
+      {} as never,
+      emitter as never as EventEmitter2,
+      {} as never,
+    );
   });
 
   const collect = (bizId: string) =>

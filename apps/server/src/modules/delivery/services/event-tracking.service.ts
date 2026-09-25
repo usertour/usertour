@@ -264,13 +264,18 @@ export class EventTrackingService {
         `"${codeName}" is a built-in Usertour event and cannot be tracked as a custom event.`,
       );
     }
-    const event = await retryOnceOnUniqueConflict(() =>
+    const upserted = await retryOnceOnUniqueConflict(() =>
       this.prisma.event.upsert({
         where: { codeName_projectId: { codeName, projectId } },
         create: { codeName, displayName: humanize(codeName), projectId },
         update: {},
       }),
     );
+    // Tracking a soft-deleted codeName means the event is not dead: restore it
+    // (ADR 0016) rather than record against a definition marked deleted.
+    const event = upserted.deleted
+      ? await this.prisma.event.update({ where: { id: upserted.id }, data: { deleted: false } })
+      : upserted;
     if (event.predefined) {
       throw new ValidationError(
         `"${codeName}" is a built-in Usertour event and cannot be tracked as a custom event.`,
