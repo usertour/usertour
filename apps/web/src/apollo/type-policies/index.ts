@@ -118,4 +118,11 @@ export const TypePolicy: TypePolicies = {
       auditLogs: accumulatorMerge(['projectId', 'query', 'orderBy']),
     },
   },
+  // A referrer is a view of a content / segment / theme from ONE definition's
+  // side: its `id` is the referrer's, but its `locations` depend on which
+  // definition was asked about. Normalizing by id would let one lookup's
+  // locations overwrite another's, so keep each result inside its query.
+  DefinitionReference: {
+    keyFields: false,
+  },
 };

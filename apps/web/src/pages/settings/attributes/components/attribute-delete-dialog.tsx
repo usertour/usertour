@@ -3,6 +3,7 @@ import { useDeleteAttributeMutation } from '@usertour/hooks';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { Trans, useTranslation } from 'react-i18next';
 import { localizeDefinitionReferenceError } from '@/utils/definition-references';
+import { DefinitionDeleteGate } from '@/components/definition-references';
 
 interface AttributeDeleteDialogProps {
   data: Attribute;
@@ -17,32 +18,40 @@ export const AttributeDeleteDialog = (props: AttributeDeleteDialogProps) => {
   const { t } = useTranslation();
 
   return (
-    <DestructiveConfirmDialog
-      title={t('settings.common.deleteConfirm.title', {
-        resource: t('settings.attributes.deleteResource'),
-      })}
-      description={
-        <Trans
-          i18nKey="settings.common.deleteConfirm.description"
-          values={{ name: data.displayName }}
-          components={{ strong: <strong className="font-bold text-foreground" /> }}
-        />
-      }
-      confirmLabel={t('settings.common.deleteConfirm.confirm', {
-        resource: t('settings.attributes.deleteResource'),
-      })}
-      cancelLabel={t('settings.common.cancel')}
+    <DefinitionDeleteGate
+      kind="attribute"
+      id={data.id}
+      name={data.displayName}
       open={open}
       onOpenChange={onOpenChange}
-      invoke={() =>
-        deleteAttribute(data.id).catch((error) => {
-          throw localizeDefinitionReferenceError(error, t);
-        })
-      }
-      successToast={t('settings.attributes.deleteSuccess')}
-      failureToast={t('settings.attributes.deleteFailure')}
-      onSettled={onSubmit}
-    />
+    >
+      <DestructiveConfirmDialog
+        title={t('settings.common.deleteConfirm.title', {
+          resource: t('settings.attributes.deleteResource'),
+        })}
+        description={
+          <Trans
+            i18nKey="settings.common.deleteConfirm.description"
+            values={{ name: data.displayName }}
+            components={{ strong: <strong className="font-bold text-foreground" /> }}
+          />
+        }
+        confirmLabel={t('settings.common.deleteConfirm.confirm', {
+          resource: t('settings.attributes.deleteResource'),
+        })}
+        cancelLabel={t('settings.common.cancel')}
+        open={open}
+        onOpenChange={onOpenChange}
+        invoke={() =>
+          deleteAttribute(data.id).catch((error) => {
+            throw localizeDefinitionReferenceError(error, t);
+          })
+        }
+        successToast={t('settings.attributes.deleteSuccess')}
+        failureToast={t('settings.attributes.deleteFailure')}
+        onSettled={onSubmit}
+      />
+    </DefinitionDeleteGate>
   );
 };
 

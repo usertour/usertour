@@ -1,3 +1,5 @@
+import type { ReferenceLocation } from './reference-location.type';
+
 /** One object that still references the target of a reverse-reference lookup. */
 export interface ReferenceRow {
   /** What kind of object holds the reference. */
@@ -6,6 +8,10 @@ export interface ReferenceRow {
   name: string;
   /** Present when referrerKind === 'content'. */
   contentType?: string;
-  /** Human-readable spots, deduped — e.g. "start rules (draft)", "step 2 trigger (published)". */
+  /** Present when referrerKind === 'segment': whose segment list it lives in. */
+  segmentBizType?: 'user' | 'company';
+  /** Every place it is used, deduped. */
+  locations: ReferenceLocation[];
+  /** `locations` in English — e.g. "start rules (draft)", "step 2 trigger (published)". */
   where: string[];
 }

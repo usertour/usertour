@@ -6,6 +6,7 @@ import { useDeleteSegment } from '@/hooks/use-delete-segment';
 import { useDeleteCompanySegment } from '@/hooks/use-delete-company-segment';
 import { segmentNamespace } from './segment-i18n';
 import type { SegmentEntity } from './types';
+import { DefinitionDeleteGate } from '@/components/definition-references';
 
 export interface SegmentDeleteDialogProps {
   entity: SegmentEntity;
@@ -52,22 +53,30 @@ export const SegmentDeleteDialog = memo((props: SegmentDeleteDialogProps) => {
   }, [segment?.id, segment?.name, deleteSegmentById, onSubmit, onOpenChange, toast, t, ns]);
 
   return (
-    <DestructiveConfirmDialog
-      title={t(`${ns}.dialogs.deleteSegment.title`)}
-      description={
-        <Trans
-          i18nKey={`${ns}.dialogs.deleteSegment.description`}
-          values={{ segmentName: segment?.name ?? '' }}
-          components={{ strong: <strong className="font-bold text-foreground" /> }}
-        />
-      }
-      confirmLabel={t(`${ns}.dialogs.deleteSegment.confirmButton`)}
-      cancelLabel={t(`${ns}.actions.cancel`)}
+    <DefinitionDeleteGate
+      kind="segment"
+      id={segment?.id ?? ''}
+      name={segment?.name ?? ''}
       open={open}
       onOpenChange={onOpenChange}
-      onConfirm={handleConfirm}
-      loading={loading}
-    />
+    >
+      <DestructiveConfirmDialog
+        title={t(`${ns}.dialogs.deleteSegment.title`)}
+        description={
+          <Trans
+            i18nKey={`${ns}.dialogs.deleteSegment.description`}
+            values={{ segmentName: segment?.name ?? '' }}
+            components={{ strong: <strong className="font-bold text-foreground" /> }}
+          />
+        }
+        confirmLabel={t(`${ns}.dialogs.deleteSegment.confirmButton`)}
+        cancelLabel={t(`${ns}.actions.cancel`)}
+        open={open}
+        onOpenChange={onOpenChange}
+        onConfirm={handleConfirm}
+        loading={loading}
+      />
+    </DefinitionDeleteGate>
   );
 });
 
