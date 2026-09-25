@@ -856,6 +856,15 @@ export const ENDPOINTS: Endpoint[] = [
     vars: (s) => ({ p: s.projectId }),
   },
 
+  // --- references (scope: project) ---
+  {
+    key: 'references.listDefinitionReferences',
+    tier: 'R',
+    op: 'query',
+    doc: 'query($p:String!,$k:String!,$i:String!){listDefinitionReferences(projectId:$p,kind:$k,id:$i){__typename}}',
+    vars: (s) => ({ p: s.projectId, k: 'attribute', i: s.attributeId }),
+  },
+
   // --- events (scope: event) ---
   {
     key: 'events.createEvent',

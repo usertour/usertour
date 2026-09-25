@@ -1282,7 +1282,14 @@ export function buildReadTools(): McpTool[] {
           kind,
           id,
           ...(codeName ? { codeName } : {}),
-          referencedBy: referrers,
+          // The English `where` phrases; the structured locations are the web app's.
+          referencedBy: referrers.map((row) => ({
+            referrerKind: row.referrerKind,
+            id: row.id,
+            name: row.name,
+            contentType: row.contentType,
+            where: row.where,
+          })),
           summary:
             referrers.length === 0
               ? 'Nothing live references this — deleting it will not be refused for references.'

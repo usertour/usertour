@@ -130,6 +130,9 @@ export const ENDPOINT_CAPABILITY: Record<string, Capability> = {
   'themes.getTheme': Capability.ThemeRead, // R
   'themes.listThemes': Capability.ThemeRead, // R
 
+  // references
+  'references.listDefinitionReferences': Capability.ContentRead, // R
+
   // events
   'events.createEvent': Capability.EventCreate, // W
   'events.updateEvent': Capability.EventUpdate, // W
