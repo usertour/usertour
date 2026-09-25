@@ -151,13 +151,15 @@ export function getBannerWrapperStyle(
 }
 
 function getBannerContentWrapperStyle(data: BannerData): CSSProperties {
-  const style: CSSProperties = {};
+  // Always inline: the banner frame mounts outside #usertour-widget, where
+  // index.css's iframe reset does not reach, so otherwise it keeps the
+  // browser's 2px inset border (or the host's own iframe border).
+  const style: CSSProperties = { border: 'none' };
   if (data?.maxEmbedWidth != null) {
     style.maxWidth = `${data.maxEmbedWidth}px`;
   }
   if (data?.borderRadius != null) {
     style.borderRadius = `${data.borderRadius}px`;
-    style.border = 'none';
   }
   if (data?.outerMargin) {
     const { top, right, bottom, left } = data.outerMargin;

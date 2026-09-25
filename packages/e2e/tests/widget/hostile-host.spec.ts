@@ -74,10 +74,8 @@ for (const [caseName, shell] of Object.entries(SHELLS)) {
 }
 
 test.describe('banner under a hostile host stylesheet', () => {
-  // KNOWN BUG, same root cause as banner.spec.ts: the banner frame lives
-  // outside #usertour-widget and nothing resets its border, so the host's
-  // `iframe { border }` rule lands on it (2px default → the host's 3px).
-  test.fail();
+  // Compared with the reset page (the correct layout): the host's own
+  // `iframe { border }` must not reach the banner frame either.
 
   test('banner-stacked-rows lays out the same', async ({ gallery }) => {
     const shell = { selector: 'iframe.usertour-widget-banner-frame' };

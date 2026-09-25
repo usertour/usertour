@@ -38,13 +38,11 @@ test('a banner with stacked rows grows to show all of them', async ({ gallery })
   expect(visible).toBeGreaterThanOrEqual(needed);
 });
 
+// The banner frame mounts outside #usertour-widget, so index.css's iframe
+// reset never reached it: on a page without a global reset it kept the
+// browser's 2px inset border, which also hid 4px of content. Pages with a
+// reset (e.g. Tailwind) masked the bug.
 test.describe('on a page without a CSS reset', () => {
-  // KNOWN BUG (found 2026-09-25): the banner frame keeps the browser's default
-  // 2px iframe border. index.css only resets `#usertour-widget iframe`, and
-  // the banner mounts outside #usertour-widget; `.usertour-widget-banner-frame`
-  // sets no border. Pages with a global reset (e.g. Tailwind) hide it.
-  test.fail();
-
   test('the banner frame has no border', async ({ gallery, page }) => {
     await gallery.open('banner-one-line');
     await gallery.settledBox(page.locator(BANNER));
@@ -57,6 +55,6 @@ test.describe('on a page without a CSS reset', () => {
   test('a banner with stacked rows shows all of them', async ({ gallery }) => {
     await gallery.open('banner-stacked-rows');
     const { visible, needed } = await frameFit(gallery);
-    expect(visible, 'the border eats 4px of the frame').toBeGreaterThanOrEqual(needed);
+    expect(visible).toBeGreaterThanOrEqual(needed);
   });
 });

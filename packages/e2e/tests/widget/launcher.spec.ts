@@ -44,12 +44,8 @@ test.describe('a hover launcher', () => {
     gallery,
     page,
   }) => {
-    // KNOWN BUG (found 2026-09-25): leaving the tooltip never closes it.
-    // usePopperMouseLeave (apps/sdk/src/components/launcher.tsx) binds its
-    // mouseleave in an effect that runs once at mount, while the tooltip is
-    // not rendered yet (popperRef.current is null), and never re-runs. Only a
-    // click outside, or re-entering and leaving the launcher, closes it.
-    test.fail();
+    // Leaving the tooltip used to never close it: the mouseleave was bound
+    // once at mount, before the tooltip existed.
     await gallery.open('launcher-hover');
     await gallery.settledBox(page.locator(ICON));
 
@@ -62,6 +58,42 @@ test.describe('a hover launcher', () => {
     await page.mouse.move(40, 760);
     await expect(page.locator(TOOLTIP), 'closed after the pointer left it').toBeHidden();
   });
+});
+
+test('a hover launcher stays open when the pointer goes from its tooltip back to it', async ({
+  gallery,
+  page,
+}) => {
+  await gallery.open('launcher-hover');
+  const icon = await gallery.settledBox(page.locator(ICON));
+
+  await page.locator(ICON).hover();
+  const tooltip = await gallery.settledBox(page.locator('[data-usertour-popper-content-wrapper]'));
+  await page.mouse.move(tooltip.x + tooltip.width / 2, tooltip.y + tooltip.height / 2);
+  await page.mouse.move(icon.x + icon.width / 2, icon.y + icon.height / 2, { steps: 5 });
+  await page.waitForTimeout(400);
+
+  await expect(page.locator('[data-usertour-popper-content-wrapper]')).toBeVisible();
+});
+
+// A click launcher's tooltip is a popover: only a click outside closes it,
+// never the pointer wandering off.
+test('a click launcher stays open when the pointer leaves its tooltip', async ({
+  gallery,
+  page,
+}) => {
+  await gallery.open('launcher-icon');
+  await gallery.settledBox(page.locator(ICON));
+
+  await page.locator(ICON).click();
+  const tooltip = await gallery.settledBox(page.locator('[data-usertour-popper-content-wrapper]'));
+  await page.mouse.move(tooltip.x + tooltip.width / 2, tooltip.y + tooltip.height / 2);
+  await page.mouse.move(40, 760);
+  await page.waitForTimeout(400);
+  await expect(page.locator('[data-usertour-popper-content-wrapper]')).toBeVisible();
+
+  await page.mouse.click(40, 760);
+  await expect(page.locator('[data-usertour-popper-content-wrapper]')).toBeHidden();
 });
 
 // Guards ee9a1b70c: an inline opacity used to override the theme's icon opacity.
