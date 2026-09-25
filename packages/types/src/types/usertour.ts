@@ -104,7 +104,7 @@ type AttributeValue = AttributeLiteralOrList | Date;
 type AttributeDataType = 'string' | 'boolean' | 'number' | 'datetime' | 'list';
 
 /** Exactly one operation per attribute. */
-export type AttributeOperation =
+type AttributeOperation =
   | {
       /** Set the value (same as a literal), optionally pinning `data_type`. */
       set: AttributeValue;
@@ -155,7 +155,7 @@ export type AttributeOperation =
  * Operation spellings the SDK still translates for compatibility. Each one
  * is deprecated; the SDK rewrites it and logs a warning.
  */
-export interface LegacyAttributeChange {
+interface LegacyAttributeChange {
   /** @deprecated Use `{ add: -n }`. */
   subtract?: number;
   /** @deprecated Use `{ union: values }` — lists are deduplicated sets. */
@@ -186,7 +186,7 @@ export interface EventAttributes {
   [name: string]: AttributeValue | EventAttributeChange;
 }
 
-export interface EventAttributeChange {
+interface EventAttributeChange {
   set: AttributeValue;
   /** Pins the type of a new event attribute definition; never retypes an existing one. */
   data_type?: AttributeDataType;
