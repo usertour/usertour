@@ -1035,6 +1035,12 @@ importers:
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
+      '@types/node':
+        specifier: 18.19.63
+        version: 18.19.63
+      typescript:
+        specifier: 5.3.3
+        version: 5.3.3
 
   packages/editor:
     dependencies:

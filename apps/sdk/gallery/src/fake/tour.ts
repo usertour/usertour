@@ -17,13 +17,21 @@ type TourSnapshotInput = {
   step: SessionStep;
   theme: ThemeTypesSetting;
   triggerRef?: Element | null;
+  userAttributes?: TourStore['userAttributes'];
   currentStepIndex?: number;
   totalSteps?: number;
 };
 
 /** The store UsertourTour holds while showing `step`. */
 export const buildTourSnapshot = (input: TourSnapshotInput): TourStore => {
-  const { step, theme, triggerRef = null, currentStepIndex = 0, totalSteps = 1 } = input;
+  const {
+    step,
+    theme,
+    triggerRef = null,
+    userAttributes = {},
+    currentStepIndex = 0,
+    totalSteps = 1,
+  } = input;
   const base = buildBaseSnapshot(theme, BASE_Z_INDEX + WidgetZIndex.TOUR_OFFSET);
   // getStepStyle: tooltips keep the base style, other step types re-derive it.
   const globalStyle =
@@ -33,6 +41,7 @@ export const buildTourSnapshot = (input: TourSnapshotInput): TourStore => {
 
   return {
     ...base,
+    userAttributes,
     globalStyle,
     triggerRef,
     currentStep: step,

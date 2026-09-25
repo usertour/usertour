@@ -4,10 +4,14 @@ export type Box = { x: number; y: number; width: number; height: number };
 
 type RecordedCall = { method: string; args: unknown[] };
 
+type ThemeColor = { background: string; color: string };
+
 declare global {
   interface Window {
     /** Filled by the gallery's fake SDK instances (apps/sdk/gallery/src/calls.ts). */
     __galleryCalls: RecordedCall[];
+    /** The case's resolved theme (apps/sdk/gallery/src/main.tsx); only the fields tests read. */
+    __galleryTheme: { mainColor: ThemeColor; brandColor: ThemeColor };
   }
 }
 

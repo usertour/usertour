@@ -116,3 +116,32 @@ export const BlankPageWithReset = () => (
     <BlankPage />
   </>
 );
+
+/** A target tucked into the bottom-right corner of the viewport. */
+export const CornerTarget = () => (
+  <div style={{ position: 'relative', height: '100vh' }}>
+    <button
+      type="button"
+      data-gallery-target=""
+      style={{ position: 'absolute', right: 24, bottom: 24, padding: '8px 16px' }}
+    >
+      Target
+    </button>
+  </div>
+);
+
+/** A target inside a scrollable panel (a list, a table, a settings pane). */
+export const ScrollPanelTarget = () => (
+  <div style={{ padding: 40 }}>
+    <div
+      data-gallery-scroller=""
+      style={{ height: 400, width: 480, overflow: 'auto', border: '1px solid #e5e5e5' }}
+    >
+      <div style={{ height: 150 }} />
+      <button type="button" data-gallery-target="" style={{ padding: '8px 16px' }}>
+        Target
+      </button>
+      <div style={{ height: 1200 }} />
+    </div>
+  </div>
+);

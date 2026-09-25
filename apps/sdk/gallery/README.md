@@ -28,6 +28,25 @@ pnpm --filter @usertour/sdk gallery     # http://127.0.0.1:5190
 pnpm e2e:widget                         # build + the whole Playwright suite
 ```
 
+## Query parameters
+
+Any case takes these:
+
+| Parameter | Effect |
+|---|---|
+| `theme=default\|dark` | The theme to render with (`src/fixtures/theme.ts`). |
+| `host=hostile` | Adds a careless global stylesheet to the host page (`src/hostile-host.css`). |
+
+Some cases take their own:
+
+| Case | Parameter |
+|---|---|
+| `flow-modal` | `position=` a modal placement (`centerTop`, `leftCenter`, `rightBottom`…), `ox=`/`oy=` offsets |
+| `flow-question` | `kind=nps\|star\|scale\|single\|multi\|text\|textarea` |
+| `resource-center-*` | `placement=top-left\|top-right\|bottom-left\|bottom-right` |
+
+For example `/?case=resource-center-popup&placement=top-left&theme=dark`.
+
 ## Add a case
 
 1. Build the host page (the "customer page") as a component. Mark the element

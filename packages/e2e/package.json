@@ -5,9 +5,12 @@
   "description": "Real-browser tests (Playwright). Widget suite drives the SDK gallery in apps/sdk/gallery.",
   "scripts": {
     "e2e:widget": "playwright test --project=widget",
-    "e2e:report": "playwright show-report"
+    "e2e:report": "playwright show-report",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "@types/node": "18.19.63",
+    "typescript": "5.3.3"
   }
 }

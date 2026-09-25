@@ -23,3 +23,9 @@ export const onboardingChecklist: ChecklistData = {
     task('publish', 'Publish your first flow', false),
   ],
 };
+
+/** The same checklist with every task done. */
+export const finishedChecklist: ChecklistData = {
+  ...onboardingChecklist,
+  items: onboardingChecklist.items.map((item) => ({ ...item, isCompleted: true })),
+};

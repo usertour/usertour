@@ -118,3 +118,84 @@ test('a bubble step sits above its avatar in the bottom-left corner', async ({ g
   expect(Math.abs(bubble.x - avatar.x)).toBeLessThanOrEqual(TOLERANCE);
   expect(bubble.y + bubble.height, 'bubble ends above the avatar').toBeLessThanOrEqual(avatar.y);
 });
+
+test('an auto-aligned tooltip near the bottom-right corner flips above and stays on screen', async ({
+  gallery,
+  page,
+}) => {
+  await gallery.open('tooltip-auto-in-corner');
+  const tip = await gallery.landedTooltipBox();
+  const target = (await gallery.target.boundingBox()) as Box;
+  const viewport = page.viewportSize() as { width: number; height: number };
+
+  await expect(gallery.tooltip).toHaveAttribute('data-usertour-popper-data-placement', 'top');
+  expect(Math.abs(SIDES.top.gap(target, tip) - EXPECTED_GAP)).toBeLessThanOrEqual(TOLERANCE);
+  expect(tip.x).toBeGreaterThanOrEqual(0);
+  expect(tip.y).toBeGreaterThanOrEqual(0);
+  expect(tip.x + tip.width).toBeLessThanOrEqual(viewport.width);
+  expect(tip.y + tip.height).toBeLessThanOrEqual(viewport.height);
+});
+
+test('a tooltip on a target in a scrolling panel follows it, and hides once it scrolls out', async ({
+  gallery,
+  page,
+}) => {
+  await gallery.open('tooltip-in-scroll-panel');
+  await expectBeside(gallery, 'right');
+  const scrollPanelTo = (top: number) =>
+    page.locator('[data-gallery-scroller]').evaluate((el, value) => {
+      el.scrollTop = value;
+    }, top);
+
+  await scrollPanelTo(100);
+  await expect
+    .poll(
+      async () => {
+        const tip = (await gallery.tooltip.boundingBox()) as Box;
+        const target = (await gallery.target.boundingBox()) as Box;
+        return Math.abs(SIDES.right.misalignment(target, tip));
+      },
+      { message: 'tooltip centered on the scrolled target', timeout: 3000 },
+    )
+    .toBeLessThanOrEqual(TOLERANCE);
+
+  await scrollPanelTo(600);
+  await expect(gallery.tooltip, 'hidden while its target is scrolled out of view').toBeHidden();
+});
+
+test.describe('modal positions honour both offsets', () => {
+  const OX = 100;
+  const OY = 30;
+  const open = async (gallery: import('./gallery').Gallery, position: string) => {
+    await gallery.open(`flow-modal&position=${position}&ox=${OX}&oy=${OY}`);
+    const box = await gallery.settledBox(gallery.tooltip);
+    const viewport = gallery.page.viewportSize() as { width: number; height: number };
+    return { box, viewport };
+  };
+
+  test('leftTop', async ({ gallery }) => {
+    const { box } = await open(gallery, 'leftTop');
+    expect(Math.abs(box.x - OX)).toBeLessThanOrEqual(TOLERANCE);
+    expect(Math.abs(box.y - OY)).toBeLessThanOrEqual(TOLERANCE);
+  });
+
+  test('rightBottom', async ({ gallery }) => {
+    const { box, viewport } = await open(gallery, 'rightBottom');
+    expect(Math.abs(viewport.width - (box.x + box.width) - OX)).toBeLessThanOrEqual(TOLERANCE);
+    expect(Math.abs(viewport.height - (box.y + box.height) - OY)).toBeLessThanOrEqual(TOLERANCE);
+  });
+
+  // Guards 61f719ac4: the edge-centered placements used to drop the offset
+  // along their centered axis.
+  test('centerTop shifts sideways by the X offset', async ({ gallery }) => {
+    const { box, viewport } = await open(gallery, 'centerTop');
+    expect(Math.abs(centerX(box) - (viewport.width / 2 + OX))).toBeLessThanOrEqual(TOLERANCE);
+    expect(Math.abs(box.y - OY)).toBeLessThanOrEqual(TOLERANCE);
+  });
+
+  test('leftCenter shifts down by the Y offset', async ({ gallery }) => {
+    const { box, viewport } = await open(gallery, 'leftCenter');
+    expect(Math.abs(box.x - OX)).toBeLessThanOrEqual(TOLERANCE);
+    expect(Math.abs(centerY(box) - (viewport.height / 2 + OY))).toBeLessThanOrEqual(TOLERANCE);
+  });
+});
