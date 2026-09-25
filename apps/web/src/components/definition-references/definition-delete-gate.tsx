@@ -1,7 +1,6 @@
 import { useListDefinitionReferencesQuery } from '@usertour/hooks';
 import type { DefinitionReferenceKind } from '@usertour/types';
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { DefinitionInUseDialog } from './definition-in-use-dialog';
 
@@ -23,7 +22,6 @@ export interface DefinitionDeleteGateProps {
  */
 export const DefinitionDeleteGate = (props: DefinitionDeleteGateProps) => {
   const { kind, id, name, open, onOpenChange, children } = props;
-  const { t } = useTranslation();
   const { project } = useAppContext();
   const { references, loading } = useListDefinitionReferencesQuery(
     project?.id,
@@ -39,7 +37,7 @@ export const DefinitionDeleteGate = (props: DefinitionDeleteGateProps) => {
   if (open && references && references.length > 0) {
     return (
       <DefinitionInUseDialog
-        resource={t(`definitionReferences.kinds.${kind}`)}
+        kind={kind}
         name={name}
         references={references}
         open={open}

@@ -4588,12 +4588,18 @@ const translations = {
     dialog: {
       title: '无法删除{{resource}}',
       description: '<strong>{{name}}</strong> 仍在以下位置被使用，请先从中移除，再删除它。',
+      themeDescription:
+        '<strong>{{name}}</strong> 仍被以下内容使用，请先为它们更换主题，再删除它。',
       close: '关闭',
     },
-    referrerKinds: {
+    groups: {
       content: '内容',
       segment: '分群',
       theme: '主题',
+    },
+    states: {
+      live: '线上',
+      draft: '草稿',
     },
     surfaces: {
       startRules: '自动开始规则',
@@ -4608,12 +4614,6 @@ const translations = {
       segmentConditions: '分群条件',
       themeVariations: '主题变体条件',
     },
-    versions: {
-      draft: '草稿',
-      published: '线上',
-      draftAndPublished: '草稿和线上',
-    },
-    locationWithVersion: '{{location}}（{{version}}）',
   },
 };
 

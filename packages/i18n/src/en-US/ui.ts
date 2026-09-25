@@ -4806,12 +4806,18 @@ const translations = {
       title: "Can't delete {{resource}}",
       description:
         '<strong>{{name}}</strong> is still used in the places below. Remove it from them, then delete it.',
+      themeDescription:
+        '<strong>{{name}}</strong> is still used by the content below. Switch that content to another theme, then delete this one.',
       close: 'Close',
     },
-    referrerKinds: {
+    groups: {
       content: 'Content',
-      segment: 'Segment',
-      theme: 'Theme',
+      segment: 'Segments',
+      theme: 'Themes',
+    },
+    states: {
+      live: 'Live',
+      draft: 'Draft',
     },
     surfaces: {
       startRules: 'Start rules',
@@ -4826,12 +4832,6 @@ const translations = {
       segmentConditions: 'Segment conditions',
       themeVariations: 'Theme variation conditions',
     },
-    versions: {
-      draft: 'draft',
-      published: 'live',
-      draftAndPublished: 'draft and live',
-    },
-    locationWithVersion: '{{location}} ({{version}})',
   },
 };
 
