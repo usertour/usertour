@@ -33,12 +33,39 @@ import { Socket, logger, timerManager } from '@/utils';
 import { getWsUri } from '@/core/usertour-env';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour/constants';
 import { getClientContext } from '@/core/usertour-helper';
-import { uuidV4 } from '@usertour/helpers';
+import {
+  ConnectionSignal,
+  ConnectionState,
+  isRetryableHandshakeError,
+  reconnectDelayMs,
+  reduceConnection,
+  stripNonIdempotentWrites,
+  uuidV4,
+} from '@usertour/helpers';
 
 // === Interfaces ===
 // Batch options interface for consistency
 export interface BatchOptions {
   batch?: boolean;
+}
+
+/** A write the socket resent after a reconnect and the server accepted. */
+export type ReplayedWrite =
+  | { kind: 'user'; params: UpsertUserDto }
+  | { kind: 'company'; params: UpsertCompanyDto };
+
+/** The two writes worth resending: literal merges, idempotent (ADR 0018 §4). */
+interface PendingWrite {
+  kind: ReplayedWrite['kind'];
+  params: UpsertUserDto | UpsertCompanyDto;
+  /** True once the emit failed for a transport reason (timeout, closed socket). */
+  failed: boolean;
+}
+
+/** Outcome of one emit: whether the server answered at all, and what it said. */
+interface EmitOutcome {
+  acknowledged: boolean;
+  result: boolean;
 }
 
 /**
@@ -103,6 +130,9 @@ export interface IUsertourSocket {
   // Auth management
   updateCredentials(authInfo: Partial<SocketAuthData>): void;
 
+  // Connection recovery (ADR 0018)
+  onWriteReplayed(listener: (write: ReplayedWrite) => void): void;
+
   // Event management with acknowledgment support
   on(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
   onQueue(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
@@ -136,6 +166,17 @@ export class UsertourSocket implements IUsertourSocket {
   private connectListener: (() => void) | null = null;
   // Promise chain for serializing event handlers (especially SERVER_MESSAGE)
   private eventHandlerQueues = new Map<string, Promise<boolean>>();
+  // === Connection recovery (ADR 0018) ===
+  // Socket.IO abandons a socket after a handshake rejection or a server-side
+  // disconnect; the state machine in @usertour/helpers decides when the SDK
+  // has to reconnect by hand, replay, or re-evaluate.
+  private connectionState: ConnectionState = 'idle';
+  private reconnectAttempt = 0;
+  private readonly RECONNECT_TIMEOUT_ID = 'socket-reconnect';
+  // The latest UpsertUser / UpsertCompany, resent after a reconnect when the
+  // emit failed for a transport reason. Cleared on a credential change.
+  private readonly pendingWrites = new Map<ReplayedWrite['kind'], PendingWrite>();
+  private writeReplayedListener: ((write: ReplayedWrite) => void) | null = null;
 
   // === Constructor ===
   constructor() {
@@ -151,6 +192,22 @@ export class UsertourSocket implements IUsertourSocket {
         },
       },
     });
+
+    this.socket.on('connect', () => this.applyConnectionSignal({ type: 'connect' }));
+    this.socket.on('disconnect', (reason: string) =>
+      this.applyConnectionSignal({ type: 'disconnect', reason }),
+    );
+    this.socket.on('connect_error', (error: unknown) =>
+      this.applyConnectionSignal(
+        {
+          type: 'connect_error',
+          retryable: isRetryableHandshakeError(error),
+          // false once Socket.IO gave the socket up (a handshake rejection)
+          active: this.socket.isActive(),
+        },
+        error,
+      ),
+    );
   }
 
   // === Connection Management ===
@@ -174,7 +231,15 @@ export class UsertourSocket implements IUsertourSocket {
       logger.info('Auth credentials changed, reconnecting socket...');
       this.resetBatchState();
       this.cancelConnecting();
+      // A pending write belongs to the previous identity: never replay it
+      // onto the next one (ADR 0001's isolation rule).
+      this.pendingWrites.clear();
+      this.clearReconnect();
       this.socket.disconnect();
+      // A disconnected socket emits no 'disconnect' for this call; the new
+      // identity starts from idle either way, so its first connect is a
+      // first connect, not a reconnect.
+      this.connectionState = 'idle';
     }
 
     this.authCredentials = {
@@ -197,6 +262,7 @@ export class UsertourSocket implements IUsertourSocket {
    * timer hanging once cleared.
    */
   private ensureConnecting(): void {
+    this.applyConnectionSignal({ type: 'connect_requested' });
     if (this.socket.isConnected() || this.connecting) {
       return;
     }
@@ -240,6 +306,10 @@ export class UsertourSocket implements IUsertourSocket {
 
     // Cancel any in-flight connect (clears CONNECT_TIMEOUT + connect listener)
     this.cancelConnecting();
+
+    // Nothing to resend or retry for a connection we are closing on purpose
+    this.pendingWrites.clear();
+    this.clearReconnect();
 
     // Clear batch state and pending timeout
     this.resetBatchState();
@@ -308,7 +378,20 @@ export class UsertourSocket implements IUsertourSocket {
    * Returns false on error, logs the error, and never throws
    */
   private async emitClientMessage(kind: ClientMessageKind, payload: any = {}): Promise<boolean> {
-    if (!this.socket) return false;
+    const outcome = await this.emitClientMessageWithOutcome(kind, payload);
+    return outcome.result;
+  }
+
+  /**
+   * Emit and report whether the server answered at all: a `false` from the
+   * server is a verdict, a timeout or a closed socket is not — the replay
+   * registry needs the difference (ADR 0018 §4).
+   */
+  private async emitClientMessageWithOutcome(
+    kind: ClientMessageKind,
+    payload: any = {},
+  ): Promise<EmitOutcome> {
+    if (!this.socket) return { acknowledged: false, result: false };
     try {
       // EMIT_TIMEOUT bounds the await: when the socket is buffering during a
       // slow or failed connect, we surface that as a falsy result (caught
@@ -318,10 +401,10 @@ export class UsertourSocket implements IUsertourSocket {
         { kind, payload, requestId: uuidV4() },
         this.EMIT_TIMEOUT,
       );
-      return result ?? false;
+      return { acknowledged: true, result: result ?? false };
     } catch (error) {
       logger.error(`Failed to emit ${kind}:`, error);
-      return false;
+      return { acknowledged: false, result: false };
     }
   }
 
@@ -333,7 +416,19 @@ export class UsertourSocket implements IUsertourSocket {
     payload: any,
     options?: BatchOptions,
   ): Promise<boolean> {
-    if (!this.socket) return false;
+    const outcome = await this.sendClientMessageWithOutcome(kind, payload, options);
+    return outcome.result;
+  }
+
+  /**
+   * Send a client message with batch support, reporting the emit outcome
+   */
+  private async sendClientMessageWithOutcome(
+    kind: ClientMessageKind,
+    payload: any,
+    options?: BatchOptions,
+  ): Promise<EmitOutcome> {
+    if (!this.socket) return { acknowledged: false, result: false };
 
     // For batch messages, clear any pending timeout and ensure batch is started.
     // BEGIN_BATCH is fire-and-forget: TCP/Socket.IO ordering guarantees the
@@ -349,7 +444,7 @@ export class UsertourSocket implements IUsertourSocket {
     }
 
     // Send the message
-    const result = await this.emitClientMessage(kind, payload);
+    const outcome = await this.emitClientMessageWithOutcome(kind, payload);
 
     // Schedule batch end after message is sent (regardless of success/failure)
     // endBatchInternal triggers toggleContents which is needed even if some messages fail
@@ -361,16 +456,46 @@ export class UsertourSocket implements IUsertourSocket {
       );
     }
 
-    return result;
+    return outcome;
   }
 
   // === User and Company Operations ===
   async upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<boolean> {
-    return await this.sendClientMessage(ClientMessageKind.UPSERT_USER, params, options);
+    return await this.sendPendingWrite('user', ClientMessageKind.UPSERT_USER, params, options);
   }
 
   async upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<boolean> {
-    return await this.sendClientMessage(ClientMessageKind.UPSERT_COMPANY, params, options);
+    return await this.sendPendingWrite(
+      'company',
+      ClientMessageKind.UPSERT_COMPANY,
+      params,
+      options,
+    );
+  }
+
+  /**
+   * Send one of the two replayable writes, keeping it on record until the
+   * server answers. A transport failure (timeout, closed socket) marks it
+   * failed so the next connect resends it; a server verdict — true or false
+   * — retires it. A newer write of the same kind supersedes an older one.
+   */
+  private async sendPendingWrite(
+    kind: ReplayedWrite['kind'],
+    messageKind: ClientMessageKind,
+    params: UpsertUserDto | UpsertCompanyDto,
+    options?: BatchOptions,
+  ): Promise<boolean> {
+    const pending: PendingWrite = { kind, params, failed: false };
+    this.pendingWrites.set(kind, pending);
+    const outcome = await this.sendClientMessageWithOutcome(messageKind, params, options);
+    if (this.pendingWrites.get(kind) === pending) {
+      if (outcome.acknowledged) {
+        this.pendingWrites.delete(kind);
+      } else {
+        pending.failed = true;
+      }
+    }
+    return outcome.result;
   }
 
   // === Event Tracking ===
@@ -637,6 +762,128 @@ export class UsertourSocket implements IUsertourSocket {
 
   once(event: string, handler: (...args: any[]) => void): void {
     this.socket?.once(event, handler);
+  }
+
+  // === Connection Recovery (ADR 0018) ===
+  onWriteReplayed(listener: (write: ReplayedWrite) => void): void {
+    this.writeReplayedListener = listener;
+  }
+
+  /**
+   * Feed a socket signal through the state machine and run what it decides.
+   * `error` is the handshake rejection, when the signal came from one.
+   */
+  private applyConnectionSignal(signal: ConnectionSignal, error?: unknown): void {
+    const previous = this.connectionState;
+    const { state, actions } = reduceConnection(previous, signal);
+    this.connectionState = state;
+    if (state === 'rejected' && previous !== 'rejected') {
+      logger.warn(
+        'Connection rejected by the server; it will be retried only with different credentials',
+        error,
+      );
+    }
+
+    if (signal.type === 'connect') {
+      this.reconnectAttempt = 0;
+      this.clearReconnect();
+    }
+    for (const action of actions) {
+      switch (action) {
+        case 'schedule_reconnect':
+          this.scheduleReconnect();
+          break;
+        case 'stop':
+          this.clearReconnect();
+          break;
+        default:
+          break;
+      }
+    }
+    if (actions.includes('replay') || actions.includes('evaluate')) {
+      void this.recoverAfterConnect(actions.includes('evaluate'));
+    }
+  }
+
+  /**
+   * Manual reconnect with backoff, for the two cases Socket.IO abandons: a
+   * handshake rejection the server called retryable, and a server-initiated
+   * disconnect. Once a manual connect succeeds, Socket.IO's own manager
+   * handles later transport drops again.
+   */
+  private scheduleReconnect(): void {
+    const delay = reconnectDelayMs(this.reconnectAttempt);
+    this.reconnectAttempt += 1;
+    logger.info(`Scheduling socket reconnect in ${delay}ms (attempt ${this.reconnectAttempt})`);
+    timerManager.setTimeout(
+      this.RECONNECT_TIMEOUT_ID,
+      () => {
+        if (this.socket.isConnected() || !this.authCredentials) {
+          return;
+        }
+        this.socket.connect();
+      },
+      delay,
+    );
+  }
+
+  private clearReconnect(): void {
+    timerManager.clearTimeout(this.RECONNECT_TIMEOUT_ID);
+  }
+
+  /**
+   * After a connect: resend the writes that failed while offline, then — on
+   * a reconnect — ask for one evaluation so the page learns what changed
+   * server-side meanwhile. A replayed write is batched and ends its own batch,
+   * so the explicit END_BATCH is only sent when nothing was replayed.
+   */
+  private async recoverAfterConnect(evaluate: boolean): Promise<void> {
+    const replayed = await this.replayPendingWrites();
+    if (evaluate && !replayed) {
+      await this.emitClientMessage(ClientMessageKind.END_BATCH);
+    }
+  }
+
+  private async replayPendingWrites(): Promise<boolean> {
+    let replayed = false;
+    for (const kind of ['user', 'company'] as const) {
+      const pending = this.pendingWrites.get(kind);
+      if (!pending?.failed) {
+        continue;
+      }
+      const params = this.replayableParams(pending);
+      const messageKind =
+        kind === 'user' ? ClientMessageKind.UPSERT_USER : ClientMessageKind.UPSERT_COMPANY;
+      const outcome = await this.sendClientMessageWithOutcome(messageKind, params, {
+        batch: true,
+      });
+      if (this.pendingWrites.get(kind) !== pending) {
+        continue; // superseded while in flight
+      }
+      if (!outcome.acknowledged) {
+        continue; // still failed: kept for the next connect
+      }
+      this.pendingWrites.delete(kind);
+      replayed = true;
+      if (outcome.result) {
+        this.writeReplayedListener?.({ kind, params } as ReplayedWrite);
+      }
+    }
+    return replayed;
+  }
+
+  /** The pending payload without its `add` operations (ADR 0018 §4). */
+  private replayableParams(pending: PendingWrite): UpsertUserDto | UpsertCompanyDto {
+    if (pending.kind === 'user') {
+      const params = pending.params as UpsertUserDto;
+      return { ...params, attributes: stripNonIdempotentWrites(params.attributes) };
+    }
+    const params = pending.params as UpsertCompanyDto;
+    return {
+      ...params,
+      attributes: stripNonIdempotentWrites(params.attributes),
+      membership: stripNonIdempotentWrites(params.membership),
+    };
   }
 
   // === Auth Management ===

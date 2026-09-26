@@ -31,6 +31,8 @@ interface WaitTimerItem extends ConditionWaitTimer {
   timerId: string;
   startTime: number;
   isActive: boolean;
+  /** Set once the timer fired; the record stays so a reconnect can declare it (ADR 0018 §6). */
+  fired?: boolean;
 }
 
 /**
@@ -140,6 +142,25 @@ export class ConditionWaitTimersMonitor extends Evented {
   }
 
   /**
+   * Every timer the SDK knows — running ones and fired ones — in the shape
+   * the handshake declares them: `activated` marks a fired timer.
+   */
+  getWaitTimers(): ConditionWaitTimer[] {
+    const timers: ConditionWaitTimer[] = [];
+    for (const waitTimerItem of this.waitTimers.values()) {
+      const { contentId, contentType, versionId, waitTime } = waitTimerItem;
+      timers.push({
+        contentId,
+        contentType,
+        versionId,
+        waitTime,
+        activated: waitTimerItem.fired === true,
+      });
+    }
+    return timers;
+  }
+
+  /**
    * Gets a specific wait timer by versionId
    */
   getWaitTimer(versionId: string): ConditionWaitTimer | null {
@@ -192,11 +213,12 @@ export class ConditionWaitTimersMonitor extends Evented {
       return; // Timer not found or already cancelled
     }
 
-    // Mark as inactive
+    // Mark as inactive but keep the record: the handshake declares fired
+    // timers too, so a reconnect does not forget the wait already served.
+    // It leaves the map on cancel (the server's cancel, a restart of the
+    // same version, or cleanup).
     waitTimerItem.isActive = false;
-
-    // Remove from map
-    this.waitTimers.delete(versionId);
+    waitTimerItem.fired = true;
 
     // Report timer fired
     this.reportWaitTimerStateChange(waitTimerItem, 'fired');

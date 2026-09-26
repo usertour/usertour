@@ -1015,6 +1015,22 @@ export class UsertourCore extends Evented {
    */
   private initializeSocketEventListeners(): void {
     this.socketService.onQueue(WebSocketEvents.SERVER_MESSAGE, this.handleServerMessage);
+    // Connection recovery (ADR 0018): fold a replayed write into the
+    // attribute cache exactly as the original call would have.
+    this.socketService.onWriteReplayed((write) => {
+      if (write.kind === 'user') {
+        if (write.params.attributes) {
+          this.attributeManager.setUserAttributes(write.params.attributes);
+        }
+        return;
+      }
+      if (write.params.attributes) {
+        this.attributeManager.setCompanyAttributes(write.params.attributes);
+      }
+      if (write.params.membership) {
+        this.attributeManager.setMembershipAttributes(write.params.membership);
+      }
+    });
   }
 
   // === Message Handling ===
@@ -1771,6 +1787,9 @@ export class UsertourCore extends Evented {
     const bannerSessionId = this.activatedBanner?.getSessionId();
     const resourceCenterSessionId = this.activatedResourceCenter?.getSessionId();
     const launchers = this.launchers.map((l) => l.getContentId());
+    // Running and fired wait timers travel with the handshake so a reconnect
+    // neither restarts nor forgets them (ADR 0018 §6).
+    const waitTimers = this.waitTimerMonitor?.getWaitTimers() ?? [];
     this.socketService.updateCredentials({
       clientConditions,
       clientContext,
@@ -1783,6 +1802,7 @@ export class UsertourCore extends Evented {
       bannerSessionId,
       resourceCenterSessionId,
       launchers,
+      waitTimers,
     });
   }
 

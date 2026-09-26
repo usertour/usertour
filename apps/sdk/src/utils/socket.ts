@@ -135,4 +135,13 @@ export class Socket {
   isConnected(): boolean {
     return this.socket.connected;
   }
+
+  /**
+   * Whether Socket.IO will still reconnect this socket by itself. False once
+   * it abandoned the socket — after a handshake rejection or a server-side
+   * disconnect — in which case only an explicit `connect()` revives it.
+   */
+  isActive(): boolean {
+    return this.socket.active;
+  }
 }
