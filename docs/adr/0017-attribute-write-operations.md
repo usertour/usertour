@@ -53,7 +53,7 @@ Dropped from the published typings: `subtract` (an `add` of a negative number), 
 | String | any string (ISO-shaped included); number and boolean, stringified |
 | Number | number; a numeric string only when lossless (`String(Number(s)) === s`) |
 | Boolean | boolean; `'true'` / `'false'` |
-| DateTime | any ISO 8601 (any offset, any fraction digits), normalised to UTC `Z` |
+| DateTime | any ISO 8601 (any offset, any fraction digits), normalised to UTC `Z` with millisecond precision; a value already in the strict UTC form (`…:00Z` / `…:00.000Z`) is stored as sent, so values stored before this ADR never look changed |
 | List | array; a scalar wrapped as `[scalar]` |
 
 Not coerced, by design: epoch numbers (seconds vs milliseconds is ambiguous), localised date strings, lossy numeric strings such as `'007'`. A value that does not fit is a type mismatch: SDK drops and warns, v2 / MCP return 400.

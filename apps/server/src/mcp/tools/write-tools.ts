@@ -637,8 +637,11 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.CompanyWrite,
       description:
         'Add a user to a company, or update the membership (idempotent). Optional membership ' +
-        'attributes merge. Returns the membership (external ids + attributes). An attribute with ' +
-        'an unknown codeName AUTO-CREATES a definition (dataType inferred from the value) — a ' +
+        'attributes merge; each value takes the same forms as upsert_user — a literal, null ' +
+        '(remove), or exactly one operation object ({set} / {set_once}, optionally with ' +
+        '`data_type`; {add}; {union}; {remove}). Returns the membership (external ids + ' +
+        'attributes). An attribute with an unknown codeName AUTO-CREATES a definition (dataType ' +
+        'inferred from the value) — a ' +
         "typo'd codeName therefore lands on a silently-created new attribute while the REAL one " +
         'is not updated. With multiple environments you must pass `environmentId` (single-env ' +
         'projects default).',

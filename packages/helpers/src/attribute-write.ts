@@ -45,14 +45,22 @@ const isScalar = (value: unknown): value is AttributeScalar => {
   return isString(value) || isNumber(value) || isBoolean(value);
 };
 
+/**
+ * A scalar or a list of scalars, as a list. A null or undefined element is
+ * dropped: a sparse array or a serialised `undefined` is a common accident,
+ * and a list stored before elements were validated may carry one — neither
+ * should cost the whole key, or the whole stored list under `union`. A list
+ * holding an object or a nested list is not a list of scalars.
+ */
 const toScalarList = (value: unknown): AttributeScalar[] | undefined => {
   if (isScalar(value)) {
     return [value];
   }
-  if (isArray(value) && value.every(isScalar)) {
-    return value;
+  if (!isArray(value)) {
+    return undefined;
   }
-  return undefined;
+  const values = value.filter((item) => item !== null && item !== undefined);
+  return values.every(isScalar) ? values : undefined;
 };
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
@@ -101,7 +109,7 @@ export const parseAttributeWrite = (value: unknown): AttributeWriteParse => {
   let dataType: BizAttributeTypes | undefined;
   if (hasDataType) {
     const name = value[DATA_TYPE_KEY];
-    if (!isString(name) || !(name in WRITE_DATA_TYPES)) {
+    if (!isString(name) || !Object.prototype.hasOwnProperty.call(WRITE_DATA_TYPES, name)) {
       return {
         ok: false,
         reason: `data_type must be one of ${Object.keys(WRITE_DATA_TYPES).join(', ')}`,
@@ -167,15 +175,21 @@ export const inferWriteDataType = (write: AttributeWrite): BizAttributeTypes => 
 // epoch numbers are rejected as ambiguous.
 const ISO_DATE_TIME =
   /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(?:[Zz]|([+-])(\d{2}):?(\d{2}))$/;
+// The form values were always stored in: UTC `Z`, seconds, optional milliseconds.
+const STRICT_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
 
 const daysInMonth = (year: number, month: number): number => {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 };
 
 /**
- * Accept any ISO 8601 date-time and return it as UTC `Z` with millisecond
- * precision, or undefined when the string is not a valid date-time. Calendar
- * fields are range-checked so a parser cannot "repair" `2024-13-45`.
+ * Accept any ISO 8601 date-time and return it in UTC `Z`, or undefined when
+ * the string is not a valid date-time. Calendar fields are range-checked so a
+ * parser cannot "repair" `2024-13-45`. A value already in the strict UTC form
+ * is returned as sent: that is the form values were stored in before offsets
+ * were accepted, and rewriting `…:00Z` to `…:00.000Z` would make every such
+ * stored value look changed on its next write. Only an offset, a lowercase
+ * marker or another fraction length is rewritten, to millisecond precision.
  */
 export const normalizeIsoDateTime = (value: unknown): string | undefined => {
   if (!isString(value)) {
@@ -208,9 +222,15 @@ export const normalizeIsoDateTime = (value: unknown): string | undefined => {
     }
     offsetMinutes = (sign === '-' ? -1 : 1) * (offsetHours * 60 + offsetMins);
   }
-  const epoch =
-    Date.UTC(year, month - 1, day, hour, minute, second, millis) - offsetMinutes * 60_000;
-  return new Date(epoch).toISOString();
+  if (STRICT_UTC.test(value)) {
+    return value;
+  }
+  // Not Date.UTC(year, …): it reads a year of 0–99 as 1900–1999, so a
+  // zero-value time such as 0001-01-01 would come out as 1901.
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(hour, minute, second, millis);
+  return new Date(date.getTime() - offsetMinutes * 60_000).toISOString();
 };
 
 export type AttributeCoercion = { ok: true; value: unknown } | { ok: false };
@@ -219,8 +239,9 @@ export type AttributeCoercion = { ok: true; value: unknown } | { ok: false };
  * Fit a value into a target type without losing information (ADR 0017 §3):
  * numbers and booleans stringify; only a round-tripping numeric string
  * becomes a number; `'true'` / `'false'` become booleans; any ISO 8601
- * date-time normalises to UTC; a scalar wraps into a one-element list.
- * Everything else is a mismatch.
+ * date-time normalises to UTC (a strict UTC value stays as sent); a scalar
+ * wraps into a one-element list, whose null holes are dropped. Everything
+ * else is a mismatch.
  */
 export const coerceAttributeValue = (
   value: unknown,
@@ -363,14 +384,13 @@ export const attributeCacheChanged = (
 
 export type LegacyAttributeRewrite = { codeName: string; from: string; to: string };
 
-const LEGACY_OPERATION_KEYS = ['subtract', 'append', 'prepend'] as const;
-
 /**
  * Rewrite the deprecated operation spellings the SDK still accepts into the
  * current vocabulary before sending: `subtract: n` → `add: -n`, `append` /
  * `prepend` → `union`, and a numeric string in `add` → number. Anything else
  * is passed through untouched for the server to judge. `onRewrite` receives
- * one call per rewritten key so the SDK can warn.
+ * one call per key whose spelling was deprecated, so the SDK can warn; a
+ * numeric `add` string is corrected silently — `add` is not deprecated.
  */
 export const normalizeLegacyAttributeWrites = (
   attributes: Record<string, unknown>,
@@ -404,12 +424,10 @@ export const normalizeLegacyAttributeWrites = (
     }
     result = result ?? { ...attributes };
     result[codeName] = rewritten;
-    onRewrite?.({ codeName, from: key, to: Object.keys(rewritten)[0] });
+    const to = Object.keys(rewritten)[0];
+    if (to !== key) {
+      onRewrite?.({ codeName, from: key, to });
+    }
   }
   return result ?? attributes;
-};
-
-/** The deprecated operation keys, for callers that only need to detect them. */
-export const isLegacyAttributeOperationKey = (key: string): boolean => {
-  return (LEGACY_OPERATION_KEYS as readonly string[]).includes(key);
 };
