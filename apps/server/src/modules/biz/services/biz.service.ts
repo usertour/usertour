@@ -129,16 +129,6 @@ type AttributeWriteVerdict =
   | { ok: false; reason: string };
 
 /**
- * Seed data for a NEW biz record. first/last_seen_at were historically written
- * only as a side effect of the first BizEvent landing (event-tracking's
- * isFirstEvent branch) — so a brand-new user's FIRST auto-start evaluation ran
- * before first_seen_at existed, and "new user" targeting (first_seen_at
- * less_than N) missed exactly the first pageview it exists for (the welcome
- * screen). Creation IS the first sighting: seed both at create time. Explicit
- * caller attributes still win (spread after the seed); the event path's
- * isFirstEvent check is naturally idempotent and keeps refreshing last_seen_at.
- */
-/**
  * A lock order must agree across server instances, so it compares code
  * points — never the locale-dependent `localeCompare`.
  */
@@ -149,6 +139,16 @@ const compareCodePoints = (left: string, right: string): number => {
   return left > right ? 1 : 0;
 };
 
+/**
+ * Seed data for a NEW biz record. first/last_seen_at were historically written
+ * only as a side effect of the first BizEvent landing (event-tracking's
+ * isFirstEvent branch) — so a brand-new user's FIRST auto-start evaluation ran
+ * before first_seen_at existed, and "new user" targeting (first_seen_at
+ * less_than N) missed exactly the first pageview it exists for (the welcome
+ * screen). Creation IS the first sighting: seed both at create time. Explicit
+ * caller attributes still win (spread after the seed); the event path's
+ * isFirstEvent check is naturally idempotent and keeps refreshing last_seen_at.
+ */
 const seedSeenAttributes = (attributes: Record<string, any>): Record<string, any> => {
   const now = new Date().toISOString();
   return { first_seen_at: now, last_seen_at: now, ...attributes };
