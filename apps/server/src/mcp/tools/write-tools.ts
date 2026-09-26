@@ -1021,7 +1021,10 @@ export function buildWriteTools(): McpTool[] {
         'stored value conflicts with the new type. Note: upsert_user/upsert_company AUTO-CREATE an ' +
         'undefined attribute (type inferred from the first value), and tracking auto-registers ' +
         'event properties at ingestion — so define one up front only to pin the type before any ' +
-        'write.',
+        'write. For A/B tests and canary rollouts use dataType `random_ab` (each user gets a ' +
+        'stable A or B) or `random_number` with `randomMax` (a stable integer in 1..randomMax): ' +
+        'user or company scope only, values assigned by Usertour and never writable, type and ' +
+        'range locked after creation; target them in conditions like any string / number attribute.',
       inputSchema: { ...createAttributeBody.shape },
       handler: (args, ctx) =>
         ctx.services.attributeDefinitions.create(

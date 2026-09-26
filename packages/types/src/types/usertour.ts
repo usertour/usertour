@@ -5,17 +5,25 @@ export interface Usertour {
 
   init: (token: string) => void;
 
-  identify: (userId: string, attributes?: Attributes, opts?: IdentifyOptions) => Promise<void>;
+  identify: (
+    userId: string,
+    attributes?: Attributes,
+    opts?: IdentifyOptions,
+  ) => Promise<AttributesWriteResult>;
 
   // No identity-token option: anonymous ids are minted client-side by the
   // SDK, so a backend can never sign one — the server exempts them by format.
-  identifyAnonymous: (attributes?: Attributes) => Promise<void>;
+  identifyAnonymous: (attributes?: Attributes) => Promise<AttributesWriteResult>;
 
-  updateUser: (attributes: Attributes, opts?: IdentifyOptions) => Promise<void>;
+  updateUser: (attributes: Attributes, opts?: IdentifyOptions) => Promise<AttributesWriteResult>;
 
-  group: (groupId: string, attributes?: Attributes, opts?: GroupOptions) => Promise<void>;
+  group: (
+    groupId: string,
+    attributes?: Attributes,
+    opts?: GroupOptions,
+  ) => Promise<AttributesWriteResult>;
 
-  updateGroup: (attributes: Attributes, opts?: GroupOptions) => Promise<void>;
+  updateGroup: (attributes: Attributes, opts?: GroupOptions) => Promise<AttributesWriteResult>;
 
   track(name: string, attributes?: EventAttributes, opts?: TrackOptions): Promise<void>;
 
@@ -169,6 +177,16 @@ interface LegacyAttributeChange {
   append?: AttributeLiteralOrList;
   /** @deprecated Use `{ union: values }` — list order is never observable. */
   prepend?: AttributeLiteralOrList;
+}
+
+/**
+ * What an identify / update call reports back: the write succeeded, and
+ * `rejected` names any attribute the server refused (a value that does not
+ * fit the attribute's type, an operation written incorrectly, a
+ * system-generated attribute) with the reason. Every other key was written.
+ */
+export interface AttributesWriteResult {
+  rejected: Array<{ codeName: string; reason: string }>;
 }
 
 export type IdentifyOptions = {

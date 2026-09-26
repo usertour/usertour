@@ -64,9 +64,17 @@ export const attribute = z.object({
   dataType: z
     .nativeEnum(AttributeDataTypeNames)
     .describe(
-      'Value type. `random_ab` / `random_number` are SYSTEM-GENERATED bucketing types (stable ' +
-        'per-user random values for splits) — they appear in reads and conditions but cannot ' +
-        'be created through the API.',
+      'Value type. `random_ab` / `random_number` are SYSTEM-GENERATED bucketing types: each ' +
+        'user (or company) is assigned a stable value — `A`/`B`, or an integer in ' +
+        '[1, randomMax] — for A/B tests and canary rollouts. Their values cannot be written; ' +
+        'their type and range are locked after creation.',
+    ),
+  randomMax: z
+    .number()
+    .int()
+    .nullable()
+    .describe(
+      'Upper bound of a `random_number` attribute (values are 1..randomMax); null otherwise.',
     ),
   description: z.string(),
   displayName: z.string(),
@@ -89,6 +97,8 @@ const createDataType = z.enum([
   AttributeDataTypeNames.Boolean,
   AttributeDataTypeNames.List,
   AttributeDataTypeNames.DateTime,
+  AttributeDataTypeNames.RandomAB,
+  AttributeDataTypeNames.RandomNumber,
 ]);
 
 export const createAttributeBody = z
@@ -100,7 +110,20 @@ export const createAttributeBody = z
         'properties at ingestion, so pre-defining is only needed to pin the type or attach ' +
         'before the first track).',
     ),
-    dataType: createDataType.describe('The attribute value type.'),
+    dataType: createDataType.describe(
+      'The attribute value type. `random_ab` / `random_number` (user and company scope only) ' +
+        'are assigned by Usertour per entity, stable for life, and cannot be written.',
+    ),
+    randomMax: z
+      .number()
+      .int()
+      .min(2)
+      .max(10000)
+      .optional()
+      .describe(
+        'Required for `random_number`: values are assigned in 1..randomMax. Ignored for other ' +
+          'types. Locked after creation.',
+      ),
     codeName: codeNameSchema.describe(
       'Stable identifier, unique per project + scope. Immutable. Must start with a letter, then ' +
         'letters/digits/underscores, 2\u2013100 chars.',
@@ -122,7 +145,8 @@ export const updateAttributeBody = z
       .describe(
         "Change the attribute's value type. Allowed only while NO stored value would conflict with " +
           'the new type (else rejected — clear the conflicting values, or delete + recreate). Fixes ' +
-          'a wrong type inferred from a first mistyped upsert. `scope` and `codeName` stay immutable.',
+          'a wrong type inferred from a first mistyped upsert. `scope` and `codeName` stay immutable; ' +
+          'a random bucketing type can neither be changed into nor out of.',
       ),
   })
   .strict();

@@ -6,7 +6,9 @@ import { PrismaService } from 'nestjs-prisma';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import {
   UpsertUserDto,
+  UpsertAck,
   UpsertCompanyDto,
+  RejectedAttributeWrite,
   GoToStepDto,
   ClickChecklistTaskDto,
   HideChecklistDto,
@@ -248,7 +250,7 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business users
    */
-  async upsertBizUsers(context: WebSocketContext, data: UpsertUserDto): Promise<boolean> {
+  async upsertBizUsers(context: WebSocketContext, data: UpsertUserDto): Promise<UpsertAck | false> {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
@@ -270,9 +272,12 @@ export class WebSocketV2Service {
     // A real transaction: upsertBizUsers takes the BizUser row FOR UPDATE so
     // its read-merge-write cannot lose a concurrent write (ADR 0017 §4); the
     // lock only exists inside a transaction.
+    const rejected: RejectedAttributeWrite[] = [];
     const bizUser = await this.bizService.withEntityChangeEmit(environment.id, () =>
       this.prisma.$transaction((tx) =>
-        this.bizService.upsertBizUsers(tx, externalUserId, attributes, environment.id),
+        this.bizService.upsertBizUsers(tx, externalUserId, attributes, environment.id, {
+          rejected,
+        }),
       ),
     );
     if (!bizUser) {
@@ -280,7 +285,10 @@ export class WebSocketV2Service {
       this.logger.error(`Failed to upsert business user ${externalUserId} for socket ${socket.id}`);
       return false;
     }
-    return await this.updateSocketData(socket, { externalUserId, bizUserId: bizUser.id });
+    const stored = await this.updateSocketData(socket, { externalUserId, bizUserId: bizUser.id });
+    // The acknowledgement names the keys that were refused (ADR 0020 §6): the
+    // accepted ones are written, the host learns about the rest.
+    return stored ? { ok: true, rejected } : false;
   }
 
   /**
@@ -289,7 +297,10 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business companies
    */
-  async upsertBizCompanies(context: WebSocketContext, data: UpsertCompanyDto): Promise<boolean> {
+  async upsertBizCompanies(
+    context: WebSocketContext,
+    data: UpsertCompanyDto,
+  ): Promise<UpsertAck | false> {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
@@ -319,6 +330,7 @@ export class WebSocketV2Service {
       return false;
     }
 
+    const rejected: RejectedAttributeWrite[] = [];
     const bizCompany = await this.bizService.withEntityChangeEmit(environment.id, () =>
       // A REAL transaction, not this.prisma: upsertBizCompanies is
       // multi-statement (company upsert + membership upsert), and the
@@ -334,6 +346,7 @@ export class WebSocketV2Service {
           attributes,
           environment.id,
           membership,
+          { rejected },
         ),
       ),
     );
@@ -345,7 +358,11 @@ export class WebSocketV2Service {
       );
       return false;
     }
-    return await this.updateSocketData(socket, { externalCompanyId, bizCompanyId: bizCompany.id });
+    const stored = await this.updateSocketData(socket, {
+      externalCompanyId,
+      bizCompanyId: bizCompany.id,
+    });
+    return stored ? { ok: true, rejected } : false;
   }
 
   /**

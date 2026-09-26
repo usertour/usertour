@@ -299,7 +299,7 @@ describe('WebSocket v2 flow lifecycle and auto-start (e2e)', () => {
       attributes: {},
       membership: {},
     });
-    expect(upsertAck).toBe(true);
+    expect(upsertAck).toMatchObject({ ok: true, rejected: [] });
     const freeCompanyAck = await client.sendClientMessage(ClientMessageKind.END_BATCH, {});
     expect(freeCompanyAck).toBe(true);
     expect(await findAutoStartSession()).toBeNull();
@@ -312,7 +312,7 @@ describe('WebSocket v2 flow lifecycle and auto-start (e2e)', () => {
       attributes: {},
       membership: {},
     });
-    expect(upsertAck).toBe(true);
+    expect(upsertAck).toMatchObject({ ok: true, rejected: [] });
 
     const endBatchAck = await client.sendClientMessage(ClientMessageKind.END_BATCH, {});
     expect(endBatchAck).toBe(true);
@@ -416,7 +416,7 @@ describe('WebSocket v2 flow lifecycle and auto-start (e2e)', () => {
         attributes: { subscription: 'pro' },
         membership: { role: 'admin' },
       });
-      expect(upsertAck).toBe(true);
+      expect(upsertAck).toMatchObject({ ok: true, rejected: [] });
 
       const endBatchAck = await orClient.sendClientMessage(ClientMessageKind.END_BATCH, {});
       expect(endBatchAck).toBe(true);

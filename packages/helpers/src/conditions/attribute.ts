@@ -6,6 +6,7 @@ import {
   RulesEvaluationOptions,
 } from '@usertour/types';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { effectiveDataType } from '../bucketing';
 import { isArray } from '../type-utils';
 
 /**
@@ -47,24 +48,27 @@ export function evaluateAttributeCondition(
         : userAttributes;
 
   const actualValue = getAttributeValue(attr.codeName, bizAttributes);
+  // A bucketing attribute (ADR 0020) compares as the type it resembles:
+  // Random A/B as a String, Random number as a Number.
+  const dataType = effectiveDataType(attr.dataType);
 
-  if (attr.dataType === BizAttributeTypes.String) {
+  if (dataType === BizAttributeTypes.String) {
     return evaluateStringCondition(logic, actualValue, value as string);
   }
 
-  if (attr.dataType === BizAttributeTypes.Number) {
+  if (dataType === BizAttributeTypes.Number) {
     return evaluateNumberCondition(logic, actualValue, value as number, value2 as number);
   }
 
-  if (attr.dataType === BizAttributeTypes.Boolean) {
+  if (dataType === BizAttributeTypes.Boolean) {
     return evaluateBooleanCondition(logic, actualValue);
   }
 
-  if (attr.dataType === BizAttributeTypes.List) {
+  if (dataType === BizAttributeTypes.List) {
     return evaluateListCondition(logic, actualValue, listValues);
   }
 
-  if (attr.dataType === BizAttributeTypes.DateTime) {
+  if (dataType === BizAttributeTypes.DateTime) {
     return evaluateDateTimeCondition(logic, actualValue, value as string | number);
   }
 

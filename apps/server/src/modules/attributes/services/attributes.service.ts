@@ -1,5 +1,16 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
+import { Queue } from 'bullmq';
 import { PrismaService } from 'nestjs-prisma';
+import { isBucketingDataType, isValidRandomMax } from '@usertour/helpers';
+import { BizAttributeTypes } from '@usertour/types';
+import { RANDOM_NUMBER_RANGE_MAX, RANDOM_NUMBER_RANGE_MIN } from '@usertour/constants';
+import { AttributeBizType } from '../constants/attribute-biz-type.constant';
+import {
+  ATTRIBUTE_BACKFILL_JOB,
+  AttributeBackfillJobData,
+  QUEUE_ATTRIBUTE_BACKFILL,
+} from '../constants/attribute-queues.constant';
 import type { AttributeChanges } from '../types/attribute-changes.type';
 import type { NewAttribute } from '../types/new-attribute.type';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
@@ -20,6 +31,7 @@ export class AttributesService {
     private prisma: PrismaService,
     private readonly cache: ProjectCacheService,
     private readonly references: ReferencesService,
+    @InjectQueue(QUEUE_ATTRIBUTE_BACKFILL) private readonly backfillQueue: Queue,
   ) {}
 
   /**
@@ -28,7 +40,8 @@ export class AttributesService {
    * old id resolves again — instead of forking a new id. The data type must
    * match: conditions written against the old type would mis-evaluate.
    */
-  async create(data: NewAttribute) {
+  async create(input: NewAttribute) {
+    const data = this.normalizeBucketing(input);
     const held = await this.prisma.attribute.findUnique({
       where: {
         projectId_bizType_codeName: {
@@ -53,11 +66,14 @@ export class AttributesService {
         },
       });
       await this.cache.invalidateDeferred(this.cache.keys.attrs(restored.projectId));
+      // Rows born while the definition was deleted carry no value.
+      await this.enqueueBackfill(restored.id, restored.dataType);
       return restored;
     }
     try {
       const created = await this.prisma.attribute.create({ data });
       await this.cache.invalidateDeferred(this.cache.keys.attrs(created.projectId));
+      await this.enqueueBackfill(created.id, created.dataType);
       return created;
     } catch (err) {
       // (projectId, bizType, codeName) is unique — surface dup as typed
@@ -68,6 +84,47 @@ export class AttributesService {
       }
       throw err;
     }
+  }
+
+  /**
+   * A bucketing definition (ADR 0020 §5) lives on users and companies only,
+   * a Random number one needs its upper bound, and neither takes a
+   * client-supplied `randomMax` it does not use.
+   */
+  private normalizeBucketing(input: NewAttribute): NewAttribute {
+    const { randomMax, ...rest } = input;
+    if (!isBucketingDataType(input.dataType)) {
+      return rest;
+    }
+    if (input.bizType !== AttributeBizType.USER && input.bizType !== AttributeBizType.COMPANY) {
+      throw new ValidationError(
+        'A random bucketing attribute can only be defined on users or companies.',
+      );
+    }
+    if (input.dataType === BizAttributeTypes.RandomNumber) {
+      if (!isValidRandomMax(randomMax)) {
+        throw new ValidationError(
+          `A Random number attribute needs an upper bound between ${RANDOM_NUMBER_RANGE_MIN} and ${RANDOM_NUMBER_RANGE_MAX}.`,
+        );
+      }
+      return { ...rest, randomMax };
+    }
+    return { ...rest, randomMax: 2 };
+  }
+
+  /** Materialise a bucketing definition onto the project's existing rows (ADR 0020 §3). */
+  private async enqueueBackfill(attributeId: string, dataType: number): Promise<void> {
+    if (!isBucketingDataType(dataType)) {
+      return;
+    }
+    const jobData: AttributeBackfillJobData = { attributeId };
+    await this.backfillQueue.add(ATTRIBUTE_BACKFILL_JOB, jobData, {
+      jobId: `${ATTRIBUTE_BACKFILL_JOB}:${attributeId}:${Date.now()}`,
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 10_000 },
+      removeOnComplete: true,
+      removeOnFail: 20,
+    });
   }
 
   async update(data: AttributeChanges) {
@@ -84,6 +141,19 @@ export class AttributesService {
     if (existing && codeName !== undefined && codeName !== existing.codeName) {
       throw new ValidationError(
         `codeName is immutable (it keys stored user/company data) — cannot rename "${existing.codeName}" to "${codeName}". Create a new attribute instead.`,
+      );
+    }
+    // A bucketing attribute's type is locked (ADR 0020 §5): into or out of it,
+    // the stored buckets would become values of another kind, and any type
+    // change of a Random number attribute would re-bucket everyone.
+    if (
+      existing &&
+      others.dataType !== undefined &&
+      others.dataType !== existing.dataType &&
+      (isBucketingDataType(existing.dataType) || isBucketingDataType(others.dataType))
+    ) {
+      throw new ValidationError(
+        `The type of "${existing.codeName}" cannot be changed: random bucketing attributes keep their type and range for life. Create a new attribute instead.`,
       );
     }
     // A provider-owned attribute (CRM sync, ADR 0013 §6) takes its shape from

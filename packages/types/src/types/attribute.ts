@@ -6,6 +6,8 @@ export type Attribute = {
   codeName: string;
   description: string;
   dataType: number;
+  /** Upper bound of a Random number attribute (ADR 0020); meaningless for other types. */
+  randomMax?: number | null;
   createdAt: string;
   predefined: boolean;
   /** 'internal' or the owning integration provider (ADR 0013 §6). */

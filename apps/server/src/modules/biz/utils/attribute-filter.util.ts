@@ -3,6 +3,7 @@ import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-t
 import { Prisma } from '@prisma/client';
 import { endOfDay, startOfDay, subDays } from 'date-fns';
 import { BizAttributeTypes } from '@usertour/types';
+import { effectiveDataType } from '@usertour/helpers';
 
 export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   const { data = {} } = condition;
@@ -11,7 +12,9 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   if (!attr) {
     return false;
   }
-  if (attr.dataType === BizAttributeTypes.String) {
+  // A bucketing attribute (ADR 0020) filters as the type it resembles.
+  const dataType = effectiveDataType(attr.dataType);
+  if (dataType === BizAttributeTypes.String) {
     switch (logic) {
       case 'is':
         return { data: { path: [attr.codeName], equals: value } };
@@ -59,7 +62,7 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
       // return { data: { path: [attr.codeName], not: "" } };
     }
   }
-  if (attr.dataType === BizAttributeTypes.Number) {
+  if (dataType === BizAttributeTypes.Number) {
     const intValue = Number(value);
     const intValue2 = Number(value2);
     switch (logic) {
@@ -103,7 +106,7 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
       // return { data: { path: [attr.codeName], not: "" } };
     }
   }
-  if (attr.dataType === BizAttributeTypes.Boolean) {
+  if (dataType === BizAttributeTypes.Boolean) {
     switch (logic) {
       case 'true':
         return { data: { path: [attr.codeName], equals: true } };
@@ -127,7 +130,7 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
       // return { data: { path: [attr.codeName], not: "" } };
     }
   }
-  if (attr.dataType === BizAttributeTypes.List) {
+  if (dataType === BizAttributeTypes.List) {
     // Filter out empty values from listValues
     const filteredValues = listValues.filter(
       (value) => value !== null && value !== undefined && value !== '',
@@ -183,7 +186,7 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
       // return { data: { path: [attr.codeName], not: "" } };
     }
   }
-  if (attr.dataType === BizAttributeTypes.DateTime) {
+  if (dataType === BizAttributeTypes.DateTime) {
     const now = new Date();
     let dateValue: Date | undefined;
     if (value && !Number.isNaN(new Date(value).getTime())) {

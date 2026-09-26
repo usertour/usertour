@@ -13,6 +13,7 @@ import {
   isArray,
   isNullish,
   isConditionsActived,
+  missingBucketValues,
 } from '@usertour/helpers';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
@@ -336,7 +337,19 @@ export class ConditionEvaluationService {
     bizType: AttributeBizType,
     context: ConditionEvaluationContext,
   ): Promise<RulesEvaluationOptions | null> {
-    const userAttributes = (context.bizUser.data as Record<string, any>) || {};
+    const storedUserAttributes = (context.bizUser.data as Record<string, any>) || {};
+    // Read-time fallback for bucketing attributes (ADR 0020 §3): a definition
+    // created after this user was born may not be backfilled yet; the value is
+    // derived, so computing it here gives the same answer the backfill will
+    // store. Nothing is written.
+    const userAttributes = {
+      ...missingBucketValues(
+        context.attributes.filter((attr) => attr.bizType === AttributeBizType.USER),
+        context.bizUser.externalId,
+        storedUserAttributes,
+      ),
+      ...storedUserAttributes,
+    };
 
     // Convert Attribute[] to SimpleAttribute[] for RulesEvaluationOptions
     // AttributeBizType and AttributeBizTypes have the same numeric values (1, 2, 3)
@@ -366,7 +379,15 @@ export class ConditionEvaluationService {
       return null;
     }
 
-    const companyAttributes = (userOnCompany.bizCompany.data as Record<string, any>) || {};
+    const storedCompanyAttributes = (userOnCompany.bizCompany.data as Record<string, any>) || {};
+    const companyAttributes = {
+      ...missingBucketValues(
+        context.attributes.filter((attr) => attr.bizType === AttributeBizType.COMPANY),
+        userOnCompany.bizCompany.externalId,
+        storedCompanyAttributes,
+      ),
+      ...storedCompanyAttributes,
+    };
     const membershipAttributes = (userOnCompany.data as Record<string, any>) || {};
 
     return {

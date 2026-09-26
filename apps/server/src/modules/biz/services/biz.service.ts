@@ -36,7 +36,7 @@ import type { SegmentDeletion } from '../types/segment-deletion.type';
 import type { SegmentUserMembership } from '../types/segment-user-membership.type';
 import type { SegmentUserRemoval } from '../types/segment-user-removal.type';
 import { getDefaultColumns } from '@/modules/projects/utils/project-initialization.util';
-import { BizAttributeTypes, ColumnSetting } from '@usertour/types';
+import { BizAttributeTypes, ColumnSetting, RejectedAttributeWrite } from '@usertour/types';
 import { IntegrationSource } from '@/modules/integrations/constants/integration-source.constant';
 import isEqual from 'fast-deep-equal';
 import {
@@ -48,7 +48,9 @@ import {
   getAttributeType,
   humanize,
   inferWriteDataType,
+  isBucketingDataType,
   isNull,
+  missingBucketValues,
   parseAttributeWrite,
 } from '@usertour/helpers';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
@@ -83,12 +85,24 @@ function normalizeSegmentColumns(raw: unknown): ColumnSetting[] {
  * attribute-row map for downstream lookups, and a flag for cache
  * invalidation.
  */
+/**
+ * Options of the entity upserts. `rejected` is a sink the caller may pass to
+ * learn which keys were refused (ADR 0020 §6) — the SDK acknowledgement
+ * carries them back so the host is not left believing they were written.
+ */
+export interface UpsertAttributeOptions {
+  origin?: string;
+  rejected?: RejectedAttributeWrite[];
+}
+
 interface ResolvedAttributeWrites {
   /**
    * codeName → accepted write, values already coerced to the definition
    * type. Rejected writes are dropped (and logged); removals are kept.
    */
   writes: Map<string, AttributeWrite>;
+  /** The keys dropped, with the reason — for the caller's acknowledgement. */
+  rejected: RejectedAttributeWrite[];
   /**
    * codeName → Attribute row (existing or just-created). Lets callers
    * resolve codeName → id without a second lookup, e.g. for
@@ -298,8 +312,29 @@ export class BizService {
     client?: Prisma.TransactionClient,
   ): Promise<{ id: string; externalId: string }[]> {
     const db = client ?? this.prisma;
+    // Bucketing values are born with the row (ADR 0020 §3); one definition
+    // query serves the whole batch.
+    const environment = await db.environment.findUnique({
+      where: { id: environmentId },
+      select: { projectId: true },
+    });
+    const bucketingDefinitions = environment
+      ? await db.attribute.findMany({
+          where: {
+            projectId: environment.projectId,
+            bizType: AttributeBizType.USER,
+            deleted: false,
+            dataType: { in: [BizAttributeTypes.RandomAB, BizAttributeTypes.RandomNumber] },
+          },
+          select: { id: true, codeName: true, dataType: true, randomMax: true },
+        })
+      : [];
     await db.bizUser.createMany({
-      data: missing.map((externalId) => ({ environmentId, externalId, data: {} })),
+      data: missing.map((externalId) => ({
+        environmentId,
+        externalId,
+        data: missingBucketValues(bucketingDefinitions, externalId, {}),
+      })),
       skipDuplicates: true,
     });
     const created = await db.bizUser.findMany({
@@ -929,7 +964,7 @@ export class BizService {
     externalUserId: string,
     attributes: Record<string, any>,
     environmentId: string,
-    options?: { origin?: string },
+    options?: UpsertAttributeOptions,
   ): Promise<BizUser | null> {
     const environment = await tx.environment.findFirst({
       where: { id: environmentId },
@@ -938,13 +973,14 @@ export class BizService {
       return null;
     }
     const externalId = String(externalUserId);
-    const writes = await this.resolveEntityAttributeWrites(
+    const { writes, rejected } = await this.resolveEntityAttributeWrites(
       tx,
       environment.projectId,
       AttributeBizType.USER,
       attributes,
       options?.origin,
     );
+    options?.rejected?.push(...rejected);
 
     await tx.$queryRaw`SELECT id FROM "BizUser" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR UPDATE`;
     const user = await tx.bizUser.findFirst({
@@ -957,8 +993,19 @@ export class BizService {
           environmentId,
           // Writes land on the seed so an explicit first_seen_at still wins;
           // a null never reaches the row (it would only manufacture a
-          // spurious `<entity>.updated` diff on the next identify).
-          data: this.applyAttributeWrites(seedSeenAttributes({}), writes),
+          // spurious `<entity>.updated` diff on the next identify). Bucketing
+          // values are born with the row (ADR 0020 §3).
+          data: this.applyAttributeWrites(
+            seedSeenAttributes(
+              await this.bucketingSeed(
+                tx,
+                environment.projectId,
+                AttributeBizType.USER,
+                externalId,
+              ),
+            ),
+            writes,
+          ),
         },
       });
       this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
@@ -996,6 +1043,7 @@ export class BizService {
     attributes: Record<string, any>,
     environmentId: string,
     membership: Record<string, any>,
+    options?: UpsertAttributeOptions,
   ): Promise<BizCompany | null> {
     const environmenet = await tx.environment.findFirst({
       where: { id: environmentId },
@@ -1017,11 +1065,12 @@ export class BizService {
       environmentId,
       externalCompanyId,
       attributes,
+      options,
     );
     if (!company) {
       return null;
     }
-    await this.upsertBizMembership(tx, projectId, company.id, user.id, membership || {});
+    await this.upsertBizMembership(tx, projectId, company.id, user.id, membership || {}, options);
 
     return company;
   }
@@ -1047,16 +1096,17 @@ export class BizService {
     environmentId: string,
     externalCompanyId: string,
     attributes: Record<string, any>,
-    options?: { origin?: string },
+    options?: UpsertAttributeOptions,
   ): Promise<BizCompany | null> {
     const externalId = String(externalCompanyId);
-    const writes = await this.resolveEntityAttributeWrites(
+    const { writes, rejected } = await this.resolveEntityAttributeWrites(
       tx,
       projectId,
       AttributeBizType.COMPANY,
       attributes,
       options?.origin,
     );
+    options?.rejected?.push(...rejected);
 
     await tx.$queryRaw`SELECT id FROM "BizCompany" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR UPDATE`;
     const company = await tx.bizCompany.findFirst({
@@ -1094,8 +1144,13 @@ export class BizService {
         externalId,
         environmentId,
         // Same seeding rule as users: writes land on the seed, nulls never
-        // reach the row.
-        data: this.applyAttributeWrites(seedSeenAttributes({}), writes),
+        // reach the row, bucketing values are born with the row.
+        data: this.applyAttributeWrites(
+          seedSeenAttributes(
+            await this.bucketingSeed(tx, projectId, AttributeBizType.COMPANY, externalId),
+          ),
+          writes,
+        ),
       },
     });
     this.collectEntityChange({ entity: 'company', action: 'created', bizId: created.id });
@@ -1109,13 +1164,16 @@ export class BizService {
     bizCompanyId: string,
     bizUserId: string,
     membership: Record<string, any>,
+    options?: UpsertAttributeOptions,
   ): Promise<BizUserOnCompany> {
-    const writes = await this.resolveEntityAttributeWrites(
+    const { writes, rejected } = await this.resolveEntityAttributeWrites(
       tx,
       projectId,
       AttributeBizType.MEMBERSHIP,
       membership,
+      options?.origin,
     );
+    options?.rejected?.push(...rejected);
 
     await tx.$queryRaw`SELECT id FROM "BizUserOnCompany" WHERE "bizCompanyId" = ${bizCompanyId} AND "bizUserId" = ${bizUserId} FOR UPDATE`;
     const relation = await tx.bizUserOnCompany.findFirst({
@@ -1165,8 +1223,8 @@ export class BizService {
     bizType: AttributeBizType,
     attributes: Record<string, any>,
     origin?: string,
-  ): Promise<Map<string, AttributeWrite>> {
-    const { writes, catalogChanged } = await this.resolveAttributeWrites(
+  ): Promise<{ writes: Map<string, AttributeWrite>; rejected: RejectedAttributeWrite[] }> {
+    const { writes, rejected, catalogChanged } = await this.resolveAttributeWrites(
       tx,
       projectId,
       bizType,
@@ -1175,7 +1233,30 @@ export class BizService {
     if (catalogChanged) {
       await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
-    return writes;
+    return { writes, rejected };
+  }
+
+  /**
+   * Values of the project's bucketing definitions for an entity about to be
+   * born (ADR 0020 §3): derived, so seeding them at creation costs one small
+   * query and guarantees every row carries them from its first read.
+   */
+  private async bucketingSeed(
+    tx: Prisma.TransactionClient,
+    projectId: string,
+    bizType: AttributeBizType,
+    externalId: string,
+  ): Promise<Record<string, string | number>> {
+    const definitions = await tx.attribute.findMany({
+      where: {
+        projectId,
+        bizType,
+        deleted: false,
+        dataType: { in: [BizAttributeTypes.RandomAB, BizAttributeTypes.RandomNumber] },
+      },
+      select: { id: true, codeName: true, dataType: true, randomMax: true },
+    });
+    return missingBucketValues(definitions, externalId, {});
   }
 
   /**
@@ -1291,11 +1372,13 @@ export class BizService {
   ): Promise<ResolvedAttributeWrites> {
     const writes = new Map<string, AttributeWrite>();
     const attrMap = new Map<string, Attribute>();
+    const rejected: RejectedAttributeWrite[] = [];
     const pending = new Map<string, AttributeWrite>();
     for (const codeName in attributes) {
       const parsed = parseAttributeWrite(attributes[codeName]);
       if (parsed.ok === false) {
         this.logger.warn(`Dropped attribute "${codeName}": ${parsed.reason}.`);
+        rejected.push({ codeName, reason: parsed.reason });
         continue;
       }
       // A removal needs no definition: an unknown codeName has nothing to
@@ -1307,7 +1390,7 @@ export class BizService {
       pending.set(codeName, parsed.write);
     }
     if (pending.size === 0) {
-      return { writes, attrMap, catalogChanged: false };
+      return { writes, attrMap, rejected, catalogChanged: false };
     }
 
     const existing = await tx.attribute.findMany({
@@ -1332,6 +1415,7 @@ export class BizService {
       const verdict = this.judgeAttributeWrite(bizType, attr, write);
       if (verdict.ok === false) {
         this.logger.warn(`Dropped attribute "${codeName}": ${verdict.reason}.`);
+        rejected.push({ codeName, reason: verdict.reason });
         continue;
       }
       if (verdict.skip === true) {
@@ -1353,7 +1437,7 @@ export class BizService {
       writes.set(codeName, verdict.write);
     }
 
-    return { writes, attrMap, catalogChanged };
+    return { writes, attrMap, rejected, catalogChanged };
   }
 
   /**
@@ -1381,6 +1465,14 @@ export class BizService {
     }
     const target = attr ? attr.dataType : inferWriteDataType(write);
     const targetName = BizAttributeTypes[target] ?? String(target);
+    // A bucketing attribute's value is derived by the system (ADR 0020 §5):
+    // the definition can be created, its values cannot be written.
+    if (attr && isBucketingDataType(attr.dataType)) {
+      return {
+        ok: false,
+        reason: `system-generated attribute (${targetName}); its value cannot be set — use another attribute name`,
+      };
+    }
     if (
       attr &&
       (write.kind === 'set' || write.kind === 'set_once') &&
@@ -1598,12 +1690,25 @@ export class BizService {
 
     // The socket-connect creation IS the user's birth — notify user.created
     // here (empty attributes) so the later identify upsert reads as an update.
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+      select: { projectId: true },
+    });
     return await this.withEntityChangeEmit(environmentId, async () => {
       const created = await this.prisma.bizUser.create({
         data: {
           externalId: String(externalUserId),
           environmentId,
-          data: seedSeenAttributes({}),
+          data: seedSeenAttributes(
+            environment
+              ? await this.bucketingSeed(
+                  this.prisma,
+                  environment.projectId,
+                  AttributeBizType.USER,
+                  String(externalUserId),
+                )
+              : {},
+          ),
         },
       });
       this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
