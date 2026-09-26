@@ -954,10 +954,13 @@ export class BizService {
   }
 
   /**
-   * Must run inside a transaction: the BizUser row is taken FOR UPDATE so the
-   * read-merge-write cannot lose a concurrent write (ADR 0017 §4). Every write
-   * locks — an unlocked literal write would read the whole jsonb and write it
-   * back over a concurrent `add`.
+   * Must run inside a transaction: the BizUser row is taken FOR NO KEY UPDATE
+   * so the read-merge-write cannot lose a concurrent write (ADR 0017 §4).
+   * Every write locks — an unlocked literal write would read the whole jsonb
+   * and write it back over a concurrent `add`. NO KEY, because the row's key
+   * never changes here and an insert of a membership or an event takes KEY
+   * SHARE on it through the foreign key: FOR UPDATE would block that insert,
+   * and two writers locking user and company in opposite orders deadlocked.
    */
   async upsertBizUsers(
     tx: Prisma.TransactionClient,
@@ -982,7 +985,7 @@ export class BizService {
     );
     options?.rejected?.push(...rejected);
 
-    await tx.$queryRaw`SELECT id FROM "BizUser" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "BizUser" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR NO KEY UPDATE`;
     const user = await tx.bizUser.findFirst({
       where: { externalId, environmentId },
     });
@@ -1082,7 +1085,7 @@ export class BizService {
     attributes: Record<string, any>,
   ): Promise<BizCompany | null> {
     return await this.withEntityChangeEmit(environmentId, () =>
-      // A real transaction: upsertBizCompanyAttributes takes the row FOR UPDATE.
+      // A real transaction: upsertBizCompanyAttributes takes the row FOR NO KEY UPDATE.
       this.prisma.$transaction((tx) =>
         this.upsertBizCompanyAttributes(tx, projectId, environmentId, companyId, attributes),
       ),
@@ -1108,7 +1111,22 @@ export class BizService {
     );
     options?.rejected?.push(...rejected);
 
-    await tx.$queryRaw`SELECT id FROM "BizCompany" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR UPDATE`;
+    // Every member's page load calls group() on the same company row, and
+    // most of those calls change nothing. Read without the lock first and
+    // return when the writes would leave the row as it is — a no-op
+    // linearises at the moment of that read — so the row is only locked by a
+    // write that changes something, which re-reads under the lock.
+    const unlocked = await tx.bizCompany.findFirst({
+      where: { externalId, environmentId },
+    });
+    if (unlocked) {
+      const unlockedData = (unlocked.data as Record<string, any>) || {};
+      if (isEqual(unlockedData, this.applyAttributeWrites(unlockedData, writes))) {
+        return unlocked;
+      }
+    }
+
+    await tx.$queryRaw`SELECT id FROM "BizCompany" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR NO KEY UPDATE`;
     const company = await tx.bizCompany.findFirst({
       where: { externalId, environmentId },
     });
@@ -1175,7 +1193,7 @@ export class BizService {
     );
     options?.rejected?.push(...rejected);
 
-    await tx.$queryRaw`SELECT id FROM "BizUserOnCompany" WHERE "bizCompanyId" = ${bizCompanyId} AND "bizUserId" = ${bizUserId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "BizUserOnCompany" WHERE "bizCompanyId" = ${bizCompanyId} AND "bizUserId" = ${bizUserId} FOR NO KEY UPDATE`;
     const relation = await tx.bizUserOnCompany.findFirst({
       where: { bizCompanyId, bizUserId },
     });
@@ -1745,31 +1763,31 @@ export class BizService {
           throw new UnknownError('Failed to upsert user');
         }
 
-        // Handle companies/companies and memberships
-        if (companies) {
-          for (const company of companies) {
-            await this.upsertBizCompanies(
-              tx,
-              company.id,
-              externalUserId,
-              company.attributes || {},
-              environmentId,
-              {},
-            );
-          }
-        }
-
-        if (memberships) {
-          for (const membership of memberships) {
-            await this.upsertBizCompanies(
-              tx,
-              membership.company.id,
-              externalUserId,
-              membership.company.attributes || {},
-              environmentId,
-              membership.attributes || {},
-            );
-          }
+        // Companies and memberships in one order by company id: two requests
+        // locking the same company rows in different orders would deadlock.
+        // The sort is stable, so a company listed under both keeps its
+        // company-then-membership sequence.
+        const steps = [
+          ...(companies ?? []).map((company) => ({
+            companyId: company.id,
+            attributes: company.attributes || {},
+            membership: {},
+          })),
+          ...(memberships ?? []).map((membership) => ({
+            companyId: membership.company.id,
+            attributes: membership.company.attributes || {},
+            membership: membership.attributes || {},
+          })),
+        ].sort((left, right) => left.companyId.localeCompare(right.companyId));
+        for (const step of steps) {
+          await this.upsertBizCompanies(
+            tx,
+            step.companyId,
+            externalUserId,
+            step.attributes,
+            environmentId,
+            step.membership,
+          );
         }
 
         return user;
