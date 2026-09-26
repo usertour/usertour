@@ -994,20 +994,22 @@ export class BizService {
         data: {
           externalId,
           environmentId,
-          // Writes land on the seed so an explicit first_seen_at still wins;
-          // a null never reaches the row (it would only manufacture a
+          // Writes apply first; the seen-at seed only fills what they left
+          // empty, so a `set_once` first_seen_at is the first value the row
+          // ever has and a null removes nothing the row was about to get.
+          // A null never reaches the row (it would only manufacture a
           // spurious `<entity>.updated` diff on the next identify). Bucketing
           // values are born with the row (ADR 0020 §3).
-          data: this.applyAttributeWrites(
-            seedSeenAttributes(
+          data: seedSeenAttributes(
+            this.applyAttributeWrites(
               await this.bucketingSeed(
                 tx,
                 environment.projectId,
                 AttributeBizType.USER,
                 externalId,
               ),
+              writes,
             ),
-            writes,
           ),
         },
       });
@@ -1161,13 +1163,14 @@ export class BizService {
       data: {
         externalId,
         environmentId,
-        // Same seeding rule as users: writes land on the seed, nulls never
-        // reach the row, bucketing values are born with the row.
-        data: this.applyAttributeWrites(
-          seedSeenAttributes(
+        // Same seeding rule as users: writes first, the seen-at seed fills
+        // the rest, nulls never reach the row, bucketing values are born
+        // with the row.
+        data: seedSeenAttributes(
+          this.applyAttributeWrites(
             await this.bucketingSeed(tx, projectId, AttributeBizType.COMPANY, externalId),
+            writes,
           ),
-          writes,
         ),
       },
     });
