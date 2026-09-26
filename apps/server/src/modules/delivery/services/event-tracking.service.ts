@@ -3,14 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { trackerSystemReservedEventAttributes } from '@usertour/constants';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  Event as EventDefinition,
-  BizCompany,
-  BizSession,
-  BizUser,
-  Environment,
-  Step,
-} from '@prisma/client';
+import { Event as EventDefinition, BizSession, BizUser, Environment, Step } from '@prisma/client';
 import { PrismaService } from 'nestjs-prisma';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import {
@@ -41,13 +34,7 @@ import {
   assignClientContext,
   assignDeliveredLocale,
 } from '../utils/event.util';
-import {
-  BizEvents,
-  CompanyAttributes,
-  EventAttributes,
-  UserAttributes,
-  ChecklistItemType,
-} from '@usertour/types';
+import { BizEvents, EventAttributes, ChecklistItemType } from '@usertour/types';
 import type { ClientContext } from '@usertour/types';
 import { BizSessionWithEvents } from '../types/biz-session-with-events.type';
 import { BizSessionWithRelations } from '../types/biz-session-with-relations.type';
@@ -889,89 +876,6 @@ export class EventTrackingService {
   // ============================================================================
 
   /**
-   * Update seen timestamps for a data record
-   * @param data - Current data record
-   * @param firstSeenKey - Key for first seen timestamp
-   * @param lastSeenKey - Key for last seen timestamp
-   * @param currentTime - Current timestamp
-   * @returns Updated data with seen timestamps
-   */
-  private updateSeenTimestamps(
-    data: Record<string, unknown>,
-    firstSeenKey: string,
-    lastSeenKey: string,
-    currentTime: string,
-  ): Record<string, unknown> {
-    const isFirstEvent = !data[firstSeenKey];
-
-    return {
-      ...data,
-      [lastSeenKey]: currentTime,
-      ...(isFirstEvent && { [firstSeenKey]: currentTime }),
-    };
-  }
-
-  /**
-   * Update user seen attributes
-   * @param tx - Database transaction
-   * @param user - Business user
-   * @param currentTime - Current timestamp
-   * @returns Promise for user update operation
-   */
-  private updateUserSeenAttributes(
-    tx: TransactionClient,
-    user: BizUser,
-    currentTime: string,
-  ): Promise<BizUser> {
-    const userData = (user.data as Record<string, unknown>) || {};
-    const updatedUserData = this.updateSeenTimestamps(
-      userData,
-      UserAttributes.FIRST_SEEN_AT,
-      UserAttributes.LAST_SEEN_AT,
-      currentTime,
-    );
-
-    return tx.bizUser.update({
-      where: { id: user.id },
-      data: { data: updatedUserData as any },
-    });
-  }
-
-  /**
-   * Update company seen attributes if company exists
-   * @param tx - Database transaction
-   * @param bizCompanyId - Business company ID
-   * @param currentTime - Current timestamp
-   * @returns Promise for company update operation or null
-   */
-  private async updateCompanySeenAttributes(
-    tx: TransactionClient,
-    bizCompanyId: string,
-    currentTime: string,
-  ): Promise<BizCompany | null> {
-    const company = await tx.bizCompany.findUnique({
-      where: { id: bizCompanyId },
-    });
-
-    if (!company) {
-      return null;
-    }
-
-    const companyData = (company.data as Record<string, unknown>) || {};
-    const updatedCompanyData = this.updateSeenTimestamps(
-      companyData,
-      CompanyAttributes.FIRST_SEEN_AT,
-      CompanyAttributes.LAST_SEEN_AT,
-      currentTime,
-    );
-
-    return tx.bizCompany.update({
-      where: { id: company.id },
-      data: { data: updatedCompanyData as any },
-    });
-  }
-
-  /**
    * Update user and company seen attributes
    * @param tx - Database transaction
    * @param user - Business user
@@ -984,19 +888,13 @@ export class EventTrackingService {
     bizCompanyId?: string,
   ): Promise<void> {
     const currentTime = new Date().toISOString();
-
-    // Prepare update operations
-    const updateOperations: Promise<BizUser | BizCompany | null>[] = [
-      this.updateUserSeenAttributes(tx, user, currentTime),
-    ];
-
-    // Add company update operation if company exists
+    // One jsonb merge per row: `user` was read at the start of the
+    // transaction, and writing its data back whole would overwrite any
+    // attribute write committed since (ADR 0017 §4).
+    await this.bizService.touchSeenAttributes(tx, 'user', user.id, currentTime);
     if (bizCompanyId) {
-      updateOperations.push(this.updateCompanySeenAttributes(tx, bizCompanyId, currentTime));
+      await this.bizService.touchSeenAttributes(tx, 'company', bizCompanyId, currentTime);
     }
-
-    // Execute all updates in parallel within the transaction
-    await Promise.all(updateOperations);
   }
 
   // ============================================================================

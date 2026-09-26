@@ -8,7 +8,7 @@ import {
   createConditionsFilter,
   createFilterItem,
 } from '@/modules/biz/utils/attribute-filter.util';
-import { EventAttributes, UserAttributes, CompanyAttributes, PlanType } from '@usertour/types';
+import { EventAttributes, PlanType } from '@usertour/types';
 import { ChecklistData } from '@/modules/content/types/checklist-data.type';
 import { ContentConfigObject } from '@/modules/content/types/content-config-object.type';
 import { RulesCondition } from '@/modules/content/types/rules-condition.type';
@@ -1190,45 +1190,18 @@ export class WebSocketService {
     user: BizUser,
     bizSession: { bizCompanyId: string | null },
   ): Promise<void> {
-    // Update user attributes
+    // One jsonb merge per row, never a write-back of `user.data`: it was read
+    // earlier in the transaction and would overwrite any attribute write
+    // committed since (ADR 0017 §4).
     const currentTime = new Date().toISOString();
-    const userData = (user.data as Record<string, unknown>) || {};
-    const isFirstUserEvent = !userData[UserAttributes.FIRST_SEEN_AT];
-
-    const updatedUserData = {
-      ...userData,
-      [UserAttributes.LAST_SEEN_AT]: currentTime,
-      ...(isFirstUserEvent && { [UserAttributes.FIRST_SEEN_AT]: currentTime }),
-    };
-
-    await tx.bizUser.update({
-      where: { id: user.id },
-      data: { data: updatedUserData },
-    });
-
-    // Update company attributes if user belongs to a company
+    await this.bizService.touchSeenAttributes(tx, 'user', user.id, currentTime);
     if (bizSession.bizCompanyId) {
-      const company = await tx.bizCompany.findUnique({
-        where: { id: bizSession.bizCompanyId },
-      });
-
-      if (company) {
-        const companyData = (company.data as Record<string, unknown>) || {};
-        const isFirstCompanyEvent = !companyData[CompanyAttributes.FIRST_SEEN_AT];
-
-        const updatedCompanyData = {
-          ...companyData,
-          [CompanyAttributes.LAST_SEEN_AT]: currentTime,
-          ...(isFirstCompanyEvent && {
-            [CompanyAttributes.FIRST_SEEN_AT]: currentTime,
-          }),
-        };
-
-        await tx.bizCompany.update({
-          where: { id: company.id },
-          data: { data: updatedCompanyData },
-        });
-      }
+      await this.bizService.touchSeenAttributes(
+        tx,
+        'company',
+        bizSession.bizCompanyId,
+        currentTime,
+      );
     }
   }
 

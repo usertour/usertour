@@ -435,6 +435,25 @@ describe('API v2 attribute write operations (e2e)', () => {
       expect((row?.data as Record<string, unknown>).aw_hits).toBe(parallel);
     });
 
+    it('adds racing with events are all counted; an event stamps only its own keys', async () => {
+      await putUser('aw-race-ev', { aw_ev_hits: 0 });
+      const seededFirstSeen = (await stored('aw-race-ev')).first_seen_at;
+      const parallel = 10;
+      const results = await Promise.all(
+        Array.from({ length: parallel }, (_, i) => [
+          putUser('aw-race-ev', { aw_ev_hits: { add: 1 } }),
+          track('aw-race-ev', `aw_race_${i % 2}`, {}),
+        ]).flat(),
+      );
+      for (const res of results) {
+        expect([200, 201]).toContain(res.status);
+      }
+      const data = await stored('aw-race-ev');
+      expect(data.aw_ev_hits).toBe(parallel);
+      expect(data.first_seen_at).toBe(seededFirstSeen);
+      expect(typeof data.last_seen_at).toBe('string');
+    });
+
     it('parallel first writes of one new codeName all succeed and define it once', async () => {
       const parallel = 8;
       const results = await Promise.all(

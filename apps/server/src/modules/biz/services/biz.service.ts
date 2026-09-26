@@ -36,7 +36,13 @@ import type { SegmentDeletion } from '../types/segment-deletion.type';
 import type { SegmentUserMembership } from '../types/segment-user-membership.type';
 import type { SegmentUserRemoval } from '../types/segment-user-removal.type';
 import { getDefaultColumns } from '@/modules/projects/utils/project-initialization.util';
-import { BizAttributeTypes, ColumnSetting, RejectedAttributeWrite } from '@usertour/types';
+import {
+  BizAttributeTypes,
+  ColumnSetting,
+  CompanyAttributes,
+  RejectedAttributeWrite,
+  UserAttributes,
+} from '@usertour/types';
 import { IntegrationSource } from '@/modules/integrations/constants/integration-source.constant';
 import isEqual from 'fast-deep-equal';
 import {
@@ -1310,6 +1316,33 @@ export class BizService {
       }
     }
     return next;
+  }
+
+  /**
+   * Stamp last_seen_at — and first_seen_at when the row has none — on a user
+   * or company as one jsonb merge. The statement touches only its own two
+   * keys, so an attribute write that landed between the caller's read of the
+   * row and this write is never overwritten, and no lock is needed for it.
+   * An event path that instead wrote the row's data back whole lost such
+   * writes (ADR 0017 §4).
+   */
+  async touchSeenAttributes(
+    tx: Prisma.TransactionClient,
+    entity: 'user' | 'company',
+    id: string,
+    at: string,
+  ): Promise<void> {
+    const firstSeenKey =
+      entity === 'user' ? UserAttributes.FIRST_SEEN_AT : CompanyAttributes.FIRST_SEEN_AT;
+    const lastSeenKey =
+      entity === 'user' ? UserAttributes.LAST_SEEN_AT : CompanyAttributes.LAST_SEEN_AT;
+    const lastSeen = JSON.stringify({ [lastSeenKey]: at });
+    const firstSeen = JSON.stringify({ [firstSeenKey]: at });
+    if (entity === 'user') {
+      await tx.$executeRaw`UPDATE "BizUser" SET data = COALESCE(data, '{}'::jsonb) || ${lastSeen}::jsonb || CASE WHEN NULLIF(COALESCE(data, '{}'::jsonb) ->> ${firstSeenKey}, '') IS NULL THEN ${firstSeen}::jsonb ELSE '{}'::jsonb END, "updatedAt" = NOW() WHERE id = ${id}`;
+      return;
+    }
+    await tx.$executeRaw`UPDATE "BizCompany" SET data = COALESCE(data, '{}'::jsonb) || ${lastSeen}::jsonb || CASE WHEN NULLIF(COALESCE(data, '{}'::jsonb) ->> ${firstSeenKey}, '') IS NULL THEN ${firstSeen}::jsonb ELSE '{}'::jsonb END, "updatedAt" = NOW() WHERE id = ${id}`;
   }
 
   /**
