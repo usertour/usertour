@@ -131,6 +131,29 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
     }
   }
   if (dataType === BizAttributeTypes.List) {
+    // Emptiness needs no operand, so it is answered before the operand
+    // guard below — behind it, `is empty` / `has any value` on a list never
+    // matched anyone. An emptied list (`[]`) is empty, as the client-side
+    // evaluator already reads it.
+    if (logic === 'empty') {
+      return {
+        OR: [
+          { data: { path: [attr.codeName], equals: '' } },
+          { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
+          { data: { path: [attr.codeName], equals: [] } },
+        ],
+      };
+    }
+    if (logic === 'any') {
+      return {
+        AND: [
+          { data: { path: [attr.codeName], not: '' } },
+          { data: { path: [attr.codeName], not: Prisma.AnyNull } },
+          { data: { path: [attr.codeName], not: [] } },
+        ],
+      };
+    }
+
     // Filter out empty values from listValues
     const filteredValues = listValues.filter(
       (value) => value !== null && value !== undefined && value !== '',
@@ -168,22 +191,6 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
             })),
           },
         };
-      case 'empty':
-        return {
-          OR: [
-            { data: { path: [attr.codeName], equals: '' } },
-            { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
-          ],
-        };
-      // return { data: { path: [attr.codeName], equals: "" } };
-      case 'any':
-        return {
-          AND: [
-            { data: { path: [attr.codeName], not: '' } },
-            { data: { path: [attr.codeName], not: Prisma.AnyNull } },
-          ],
-        };
-      // return { data: { path: [attr.codeName], not: "" } };
     }
   }
   if (dataType === BizAttributeTypes.DateTime) {

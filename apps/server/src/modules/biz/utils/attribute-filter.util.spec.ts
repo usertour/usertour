@@ -1,4 +1,4 @@
-import type { Attribute } from '@prisma/client';
+import { type Attribute, Prisma } from '@prisma/client';
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import {
   createBizCompanyConditionsFilter,
@@ -38,6 +38,12 @@ const attributes = [
     dataType: BizAttributeTypes.String,
     codeName: 'role',
   },
+  {
+    id: 'attr-user-tags',
+    bizType: AttributeBizType.USER,
+    dataType: BizAttributeTypes.List,
+    codeName: 'tags',
+  },
 ] as Attribute[];
 
 const userEmailIs = (value: string, operators: 'and' | 'or' = 'and') => ({
@@ -70,6 +76,41 @@ const companySubscriptionLeaf = (value: string) => ({
 });
 const companySeatsLeaf = (value: number) => ({ data: { path: ['seats'], gt: value } });
 const membershipRoleLeaf = (value: string) => ({ data: { path: ['role'], equals: value } });
+
+describe('createConditionsFilter — list emptiness', () => {
+  const userTags = (logic: 'empty' | 'any') => ({
+    type: 'user-attr',
+    operators: 'and',
+    data: { attrId: 'attr-user-tags', logic },
+  });
+
+  // A list emptied by `remove` is stored as `[]`; the client-side evaluator
+  // reads that as empty, and so must the segment filter.
+  it('treats an empty list as empty and not as any value', () => {
+    expect(createConditionsFilter([userTags('empty')], attributes)).toEqual({
+      AND: [
+        {
+          OR: [
+            { data: { path: ['tags'], equals: '' } },
+            { data: { path: ['tags'], equals: Prisma.AnyNull } },
+            { data: { path: ['tags'], equals: [] } },
+          ],
+        },
+      ],
+    });
+    expect(createConditionsFilter([userTags('any')], attributes)).toEqual({
+      AND: [
+        {
+          AND: [
+            { data: { path: ['tags'], not: '' } },
+            { data: { path: ['tags'], not: Prisma.AnyNull } },
+            { data: { path: ['tags'], not: [] } },
+          ],
+        },
+      ],
+    });
+  });
+});
 
 describe('createBizUserConditionsFilter', () => {
   it('returns false for empty conditions', () => {
