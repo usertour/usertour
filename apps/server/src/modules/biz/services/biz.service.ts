@@ -236,7 +236,7 @@ export class BizService {
       }
     }
     for (const key of Object.keys(currentData)) {
-      if (!(key in mergedData)) {
+      if (!Object.prototype.hasOwnProperty.call(mergedData, key)) {
         previous[key] = currentData[key];
       }
     }
