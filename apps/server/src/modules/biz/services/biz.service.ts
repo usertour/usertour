@@ -132,6 +132,17 @@ type AttributeWriteVerdict =
  * caller attributes still win (spread after the seed); the event path's
  * isFirstEvent check is naturally idempotent and keeps refreshing last_seen_at.
  */
+/**
+ * A lock order must agree across server instances, so it compares code
+ * points — never the locale-dependent `localeCompare`.
+ */
+const compareCodePoints = (left: string, right: string): number => {
+  if (left < right) {
+    return -1;
+  }
+  return left > right ? 1 : 0;
+};
+
 const seedSeenAttributes = (attributes: Record<string, any>): Record<string, any> => {
   const now = new Date().toISOString();
   return { first_seen_at: now, last_seen_at: now, ...attributes };
@@ -1466,10 +1477,14 @@ export class BizService {
       // transaction on the unique index nor deadlocks with the winner, then
       // read back what exists: the winner's type is what every write is
       // judged against.
-      creations.sort((left, right) => left.codeName.localeCompare(right.codeName));
+      creations.sort((left, right) => compareCodePoints(left.codeName, right.codeName));
       await tx.attribute.createMany({ data: creations, skipDuplicates: true });
       const created = await tx.attribute.findMany({
-        where: { projectId, bizType, codeName: { in: creations.map((c) => c.codeName) } },
+        where: {
+          projectId,
+          bizType,
+          codeName: { in: creations.map((creation) => creation.codeName) },
+        },
       });
       for (const attr of created) {
         attrMap.set(attr.codeName, attr);
@@ -1821,7 +1836,7 @@ export class BizService {
             attributes: membership.company.attributes || {},
             membership: membership.attributes || {},
           })),
-        ].sort((left, right) => left.companyId.localeCompare(right.companyId));
+        ].sort((left, right) => compareCodePoints(left.companyId, right.companyId));
         for (const step of steps) {
           await this.upsertBizCompanies(
             tx,

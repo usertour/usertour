@@ -165,6 +165,8 @@ describe('normalizeIsoDateTime', () => {
     ['hour 24', '2024-01-01T24:00:00Z'],
     ['second 60', '2024-01-01T00:00:60Z'],
     ['offset hour 15', '2024-01-01T00:00:00+15:00'],
+    ['offset pushing past year 9999', '9999-12-31T23:59:59-01:00'],
+    ['offset pushing before year 1', '0001-01-01T00:00:00+01:00'],
     ['epoch number', 1733961600000],
     ['plain string', 'tomorrow'],
     ['null', null],
@@ -280,6 +282,7 @@ describe('applyAttributeWrite', () => {
         ['x'],
         ['admin', 'x'],
       ],
+      ['a stored value that is not a scalar list is left as it is', [{ a: 1 }], ['x'], [{ a: 1 }]],
     ])('%s', (_, current, values, expected) => {
       expect(applyAttributeWrite(current, parsed({ union: values }))).toEqual(expected);
     });
@@ -302,6 +305,7 @@ describe('applyAttributeWrite', () => {
         'x',
         ['admin'],
       ],
+      ['a stored value that is not a scalar list is left as it is', [['a']], 'a', [['a']]],
     ])('%s', (_, current, values, expected) => {
       expect(applyAttributeWrite(current, parsed({ remove: values }))).toEqual(expected);
     });

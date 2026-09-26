@@ -230,7 +230,15 @@ export const normalizeIsoDateTime = (value: unknown): string | undefined => {
   const date = new Date(0);
   date.setUTCFullYear(year, month - 1, day);
   date.setUTCHours(hour, minute, second, millis);
-  return new Date(date.getTime() - offsetMinutes * 60_000).toISOString();
+  const utc = new Date(date.getTime() - offsetMinutes * 60_000);
+  // An offset can push the instant past year 9999 or before year 1, where
+  // toISOString() switches to the six-digit year form that only JavaScript
+  // reads back. Such a value is not a date-time this store can hold.
+  const utcYear = utc.getUTCFullYear();
+  if (utcYear < 1 || utcYear > 9999) {
+    return undefined;
+  }
+  return utc.toISOString();
 };
 
 export type AttributeCoercion = { ok: true; value: unknown } | { ok: false };
@@ -324,14 +332,25 @@ export const applyAttributeWrite = (
     case 'add':
       return (isNumber(current) ? current : 0) + write.value;
     case 'union': {
-      const existing = toScalarList(current) ?? [];
+      if (current === undefined) {
+        return dedupe(write.values);
+      }
+      // A stored value that is not a list of scalars is left as it is: the
+      // write then changes nothing rather than replacing data it cannot read.
+      const existing = toScalarList(current);
+      if (!existing) {
+        return current;
+      }
       return dedupe([...existing, ...write.values]);
     }
     case 'remove': {
       if (current === undefined) {
         return ATTRIBUTE_DELETE;
       }
-      const existing = toScalarList(current) ?? [];
+      const existing = toScalarList(current);
+      if (!existing) {
+        return current;
+      }
       return existing.filter((item) => !write.values.some((removed) => isEqual(removed, item)));
     }
     default:
