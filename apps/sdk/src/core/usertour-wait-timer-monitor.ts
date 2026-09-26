@@ -6,6 +6,7 @@ import { uuidV4 } from '@usertour/helpers';
 import { ConditionWaitTimer } from '@usertour/types';
 import { MAX_WAIT_SECONDS, SDKClientEvents } from '@usertour/constants';
 
+const log = logger.scope('wait-timer');
 // === Interfaces ===
 /**
  * Options for wait timer monitoring
@@ -92,9 +93,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     // Report timer started
     this.reportWaitTimerStateChange(condition, 'started');
 
-    logger.info(
-      `Wait timer started for versionId: ${condition.versionId}, waitTime: ${condition.waitTime}s`,
-    );
+    log.debug(`Wait timer started (version ${condition.versionId}, ${condition.waitTime}s)`);
   }
 
   /**
@@ -120,7 +119,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     // Report timer cancelled
     this.reportWaitTimerStateChange(waitTimerItem, 'cancelled');
 
-    logger.info(`Wait timer cancelled for versionId: ${versionId}`);
+    log.debug(`Wait timer cancelled (version ${versionId})`);
   }
 
   // === Status Queries ===
@@ -223,7 +222,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     // Report timer fired
     this.reportWaitTimerStateChange(waitTimerItem, 'fired');
 
-    logger.info(`Wait timer fired for versionId: ${versionId}`);
+    log.debug(`Wait timer fired (version ${versionId})`);
   }
 
   /**
@@ -239,7 +238,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     }
 
     this.waitTimers.clear();
-    logger.info('All wait timers cleared');
+    log.debug('All wait timers cleared');
   }
 
   // === Event Reporting ===
@@ -262,9 +261,9 @@ export class ConditionWaitTimersMonitor extends Evented {
       this.trigger(SDKClientEvents.WAIT_TIMER_STATE_CHANGED, eventData);
 
       // Log for debugging
-      logger.info(`Wait timer ${state}:`, eventData);
+      log.debug(`Wait timer ${state}`, eventData);
     } catch (error) {
-      logger.error(`Error reporting wait timer ${state}:`, error);
+      log.error(`Failed to report wait timer ${state}`, error);
     }
   }
 

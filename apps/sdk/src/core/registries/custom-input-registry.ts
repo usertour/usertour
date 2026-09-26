@@ -1,5 +1,6 @@
 import { autoBind, logger } from '@/utils';
 
+const log = logger.scope('custom-input');
 /**
  * Custom input registration entry
  */
@@ -37,11 +38,11 @@ export class CustomInputRegistry {
     if (existingIndex !== -1) {
       // Update existing registration (last registration wins)
       this.registrations[existingIndex] = { cssSelector, getValue };
-      logger.info(`Updated custom input registration: ${cssSelector}`);
+      log.debug(`Custom input registration updated (${cssSelector})`);
     } else {
       // Add new registration
       this.registrations.push({ cssSelector, getValue });
-      logger.info(`Registered custom input: ${cssSelector}`);
+      log.debug(`Custom input registered (${cssSelector})`);
     }
   }
 
@@ -61,7 +62,9 @@ export class CustomInputRegistry {
         }
       } catch {
         // Invalid selector, skip
-        logger.warn(`Invalid CSS selector in custom input registration: ${reg.cssSelector}`);
+        log.warn(
+          `Custom input registration has an invalid CSS selector (${reg.cssSelector}); skipping it`,
+        );
       }
     }
     return null;
@@ -87,7 +90,7 @@ export class CustomInputRegistry {
       // Default: use textContent
       return element.textContent?.trim() || '';
     } catch (error) {
-      logger.error('Error getting custom input value:', error);
+      log.error('Custom input getValue() threw; using an empty value', error);
       return '';
     }
   }
@@ -106,7 +109,7 @@ export class CustomInputRegistry {
    */
   clear(): void {
     this.registrations = [];
-    logger.info('Cleared all custom input registrations');
+    log.debug('Cleared all custom input registrations');
   }
 
   /**

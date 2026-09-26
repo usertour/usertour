@@ -7,6 +7,7 @@ import { uuidV4, isConditionsActived } from '@usertour/helpers';
 import { TrackCondition } from '@usertour/types';
 import { SDKClientEvents } from '@usertour/constants';
 
+const log = logger.scope('conditions');
 // === Interfaces ===
 /**
  * Options for condition monitoring
@@ -185,7 +186,7 @@ export class UsertourConditionsMonitor extends Evented {
       const [evaluatedCondition] = await evaluator.evaluate([trackCondition.condition]);
       return isConditionsActived([evaluatedCondition]);
     } catch (error) {
-      logger.error(`Error evaluating condition ${trackCondition.condition.id}:`, error);
+      log.error(`Failed to evaluate condition ${trackCondition.condition.id}`, error);
       return false;
     }
   }
@@ -220,7 +221,7 @@ export class UsertourConditionsMonitor extends Evented {
         }
       }
     } catch (error) {
-      logger.error('Error checking initial condition states:', error);
+      log.error('Failed to check the initial condition states', error);
     }
   }
 
@@ -263,7 +264,7 @@ export class UsertourConditionsMonitor extends Evented {
         }
       }
     } catch (error) {
-      logger.error('Error checking conditions:', error);
+      log.error('Failed to check conditions', error);
     }
   }
 
@@ -287,9 +288,9 @@ export class UsertourConditionsMonitor extends Evented {
       this.trigger(SDKClientEvents.CONDITION_STATE_CHANGED, eventData);
 
       // Log for debugging
-      logger.info(`Condition ${state}:`, eventData);
+      log.debug(`Condition ${state}`, eventData);
     } catch (error) {
-      logger.error(`Error reporting condition ${state}:`, error);
+      log.error(`Failed to report condition ${state}`, error);
     }
   }
 

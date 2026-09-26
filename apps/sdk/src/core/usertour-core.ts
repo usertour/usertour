@@ -63,6 +63,7 @@ import {
   ServerMessageHandlerContext,
 } from './server-message-handlers';
 
+const log = logger.scope('core');
 interface AppStartOptions {
   environmentId?: string;
   mode: SDKSettingsMode;
@@ -235,8 +236,8 @@ export class UsertourCore extends Evented {
       if (this.externalCompanyId) {
         const claims = decodeTokenClaims(opts.token);
         if (claims && claims.companyId == null) {
-          logger.warn(
-            'identify() received an identity token without a companyId claim while a company is set; the next reconnect will be rejected under enforcement',
+          log.warn(
+            'identify() received an identity token without a companyId claim while a company is set; with enforcement on, the next reconnect will be rejected',
           );
         }
       }
@@ -495,8 +496,8 @@ export class UsertourCore extends Evented {
       return attributes;
     }
     return normalizeLegacyAttributeWrites(attributes, ({ codeName, from, to }) => {
-      logger.warn(
-        `Attribute "${codeName}": the "${from}" operation is deprecated and was sent as "${to}".`,
+      log.warn(
+        `Attribute "${codeName}": the ${from} operation is deprecated; it was sent as ${to}`,
       );
     }) as UserTourTypes.Attributes;
   }
@@ -593,6 +594,18 @@ export class UsertourCore extends Evented {
    * Sets the base z-index for UI elements
    * @param baseZIndex - The base z-index value to set
    */
+  /**
+   * Open or close the SDK's console logging (ADR 0019 §3). Effective at once
+   * and persisted for future loads until switched off.
+   */
+  setDebug(enabled: boolean) {
+    if (enabled) {
+      logger.enabled();
+    } else {
+      logger.disable();
+    }
+  }
+
   setBaseZIndex(baseZIndex: number) {
     this.baseZIndex = baseZIndex;
   }
@@ -734,7 +747,7 @@ export class UsertourCore extends Evented {
     if (this.socketService.isConnected()) {
       const clientContext = getClientContext();
       this.socketService.updateClientContext(clientContext).catch((err) => {
-        logger.error('Failed to sync clientContext after setUrlFilter:', err);
+        log.error('Failed to send the client context after setUrlFilter()', err);
       });
     }
   }
@@ -1172,7 +1185,7 @@ export class UsertourCore extends Evented {
   private async setFlowSession(session: CustomContentSession): Promise<boolean> {
     // Check if this session has been dismissed (terminal state check)
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring setFlowSession for dismissed session: ${session.id}`);
+      log.debug(`Ignoring SetFlowSession for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1246,7 +1259,7 @@ export class UsertourCore extends Evented {
   private async setChecklistSession(session: CustomContentSession): Promise<boolean> {
     // Check if this session has been dismissed (terminal state check)
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring setChecklistSession for dismissed session: ${session.id}`);
+      log.debug(`Ignoring SetChecklistSession for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1279,7 +1292,7 @@ export class UsertourCore extends Evented {
    */
   private async setBannerSession(session: CustomContentSession): Promise<boolean> {
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring setBannerSession for dismissed session: ${session.id}`);
+      log.debug(`Ignoring SetBannerSession for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1336,7 +1349,7 @@ export class UsertourCore extends Evented {
    */
   private async setResourceCenterSession(session: CustomContentSession): Promise<boolean> {
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring setResourceCenterSession for dismissed session: ${session.id}`);
+      log.debug(`Ignoring SetResourceCenterSession for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1403,7 +1416,7 @@ export class UsertourCore extends Evented {
   private async addLauncher(session: CustomContentSession): Promise<boolean> {
     // Check if this session has been dismissed (terminal state check)
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring addLauncher for dismissed session: ${session.id}`);
+      log.debug(`Ignoring AddLauncher for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1600,8 +1613,8 @@ export class UsertourCore extends Evented {
           { batch: true },
         );
         if (!result) {
-          logger.error(
-            `Failed to fire wait timer for versionId: ${changeEvent.condition.versionId}`,
+          log.error(
+            `Failed to report the fired wait timer (version ${changeEvent.condition.versionId})`,
           );
         }
       },

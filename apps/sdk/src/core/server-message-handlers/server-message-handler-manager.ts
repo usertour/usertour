@@ -24,6 +24,7 @@ import {
   UnsetResourceCenterSessionHandler,
 } from './server-message-handlers';
 
+const log = logger.scope('server-message');
 /**
  * Manages server message handlers and routes messages to appropriate handlers
  */
@@ -80,14 +81,14 @@ export class ServerMessageHandlerManager {
     const handler = this.handlers.get(kind);
 
     if (!handler) {
-      logger.warn(`No handler found for server message kind: ${kind}`);
+      log.warn(`No handler for server message ${kind}; ignoring it`);
       return false;
     }
 
     try {
       return await handler.handle(payload, context);
     } catch (error) {
-      logger.error(`Error handling server message kind ${kind}:`, error);
+      log.error(`Failed to handle server message ${kind}`, error);
       return false;
     }
   }

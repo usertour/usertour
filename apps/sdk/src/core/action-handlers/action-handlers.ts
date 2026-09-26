@@ -4,6 +4,7 @@ import { ErrorMessages } from '@/types/error-messages';
 import { logger } from '@/utils';
 import { BaseActionHandler, ActionHandlerContext, ActionSource } from './action-handler.interface';
 
+const log = logger.scope('action');
 /**
  * Handler for common actions that all components support
  */
@@ -21,7 +22,7 @@ export class CommonActionHandler extends BaseActionHandler {
         break;
       case ContentActionsItemType.JAVASCRIPT_EVALUATE:
         if (context.isEvalJsDisabled) {
-          logger.warn('JavaScript evaluation is disabled. Skipping JAVASCRIPT_EVALUATE action.');
+          log.warn('JavaScript evaluation is disabled; the evaluate-JavaScript action was skipped');
           return;
         }
         executeUserCode(action.data.value);

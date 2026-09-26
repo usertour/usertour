@@ -16,6 +16,7 @@ import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, BannerActionHandler } from '@/core/action-handlers';
 import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT, SDKClientEvents } from '@usertour/constants';
 
+const log = logger.scope('banner');
 // Element-attached banners keep watching for their target for as long as the
 // session lives (same as launchers): in an SPA the target may only render after
 // a client-side navigation, long past a short one-shot timeout.
@@ -36,7 +37,7 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
       await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
-      logger.error('Error in banner checking:', error);
+      log.error('Failed to check the banner state', error);
     }
   }
 
@@ -182,7 +183,7 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     const data = store.bannerData;
     const targetElement = data?.containerElement;
     if (!targetElement) {
-      logger.error('Banner target element not found', { data });
+      log.warn('Banner target element was not found', { data });
       return;
     }
 
