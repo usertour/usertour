@@ -15,6 +15,7 @@ import { StorageKeys, WidgetZIndex } from '@usertour/constants';
 import { isEqual, storage } from '@usertour/helpers';
 import { hasConditionType, rootsHaveButtonConditions } from './usertour-helper';
 
+const log = logger.scope('checklist');
 export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   // === Abstract Methods Implementation ===
   /**
@@ -32,7 +33,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
       await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
-      logger.error('Error in checklist checking:', error);
+      log.error('Failed to check the checklist state', error);
     }
   }
 

@@ -43,6 +43,7 @@ import {
   uuidV4,
 } from '@usertour/helpers';
 
+const log = logger.scope('socket');
 // === Interfaces ===
 // Batch options interface for consistency
 export interface BatchOptions {
@@ -228,7 +229,7 @@ export class UsertourSocket implements IUsertourSocket {
    */
   setAuth(externalUserId: string, token: string, identityToken?: string): void {
     if (this.requiresReconnect(externalUserId, token)) {
-      logger.info('Auth credentials changed, reconnecting socket...');
+      log.info('Credentials changed; reconnecting');
       this.resetBatchState();
       this.cancelConnecting();
       // A pending write belongs to the previous identity: never replay it
@@ -300,7 +301,7 @@ export class UsertourSocket implements IUsertourSocket {
    * Disconnect socket and clear auth credentials
    */
   disconnect(): void {
-    logger.info('Disconnecting socket and clearing credentials...');
+    log.info('Disconnecting and clearing credentials');
     // Clear event handler queues to prevent memory leaks
     this.eventHandlerQueues.clear();
 
@@ -403,7 +404,7 @@ export class UsertourSocket implements IUsertourSocket {
       );
       return { acknowledged: true, result: result ?? false };
     } catch (error) {
-      logger.error(`Failed to emit ${kind}:`, error);
+      log.error(`Failed to send ${kind}`, error);
       return { acknowledged: false, result: false };
     }
   }
@@ -630,7 +631,7 @@ export class UsertourSocket implements IUsertourSocket {
       }
       return null;
     } catch (error) {
-      logger.error(`Failed to request ${kind}:`, error);
+      log.error(`Failed to request ${kind}`, error);
       return null;
     }
   }
@@ -685,7 +686,7 @@ export class UsertourSocket implements IUsertourSocket {
         const result = await handler(message);
         callback?.(result);
       } catch (error) {
-        logger.error(`Failed to process ${event}:`, error, message);
+        log.error(`Failed to handle ${event}`, error, message);
         callback?.(false);
       }
     });
@@ -712,7 +713,7 @@ export class UsertourSocket implements IUsertourSocket {
 
       // Process message asynchronously in queue
       this.executeHandlerInOrder(event, () => handler(message)).catch((error) => {
-        logger.error(`Failed to process ${event}:`, error, message);
+        log.error(`Failed to handle ${event}`, error, message);
       });
     });
   }
@@ -735,11 +736,11 @@ export class UsertourSocket implements IUsertourSocket {
     const newTask = lastTask
       .then(() => Promise.resolve(handler()))
       .catch((err) => {
-        logger.warn(`Previous ${event} handler failed, continuing with next:`, err?.message);
+        log.warn(`A previous ${event} handler failed; continuing with the next one`, err?.message);
         return Promise.resolve(handler());
       })
       .catch((err) => {
-        logger.error(`${event} handler execution failed:`, err);
+        log.error(`Failed to run the ${event} handler`, err);
         return false;
       });
 
@@ -778,8 +779,11 @@ export class UsertourSocket implements IUsertourSocket {
     const { state, actions } = reduceConnection(previous, signal);
     this.connectionState = state;
     if (state === 'rejected' && previous !== 'rejected') {
-      logger.warn(
-        'Connection rejected by the server; it will be retried only with different credentials',
+      // Always visible (ADR 0019 §2): the SDK has stopped reconnecting and the
+      // host has no promise or event to learn that from.
+      const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
+      log.critical(
+        `Connection rejected by the server${typeof code === 'string' ? ` (${code})` : ''}: the environment token or identity token was refused. Usertour content will not show on this page until identify() is called with valid credentials.`,
         error,
       );
     }
@@ -814,7 +818,7 @@ export class UsertourSocket implements IUsertourSocket {
   private scheduleReconnect(): void {
     const delay = reconnectDelayMs(this.reconnectAttempt);
     this.reconnectAttempt += 1;
-    logger.info(`Scheduling socket reconnect in ${delay}ms (attempt ${this.reconnectAttempt})`);
+    log.info(`Reconnecting in ${delay} ms (attempt ${this.reconnectAttempt})`);
     timerManager.setTimeout(
       this.RECONNECT_TIMEOUT_ID,
       () => {
@@ -892,7 +896,7 @@ export class UsertourSocket implements IUsertourSocket {
    */
   updateCredentials(authInfo: Partial<SocketAuthData>): void {
     if (!this.socket) {
-      logger.warn('Socket not initialized. Cannot update auth.');
+      log.warn('Cannot update credentials before the socket exists');
       return;
     }
 
@@ -914,7 +918,7 @@ export class UsertourSocket implements IUsertourSocket {
     // storing the new token would strand the SDK offline until a full page
     // reload. Restart the connect attempt with the updated credentials.
     if (identityTokenChanged && !this.socket.isConnected()) {
-      logger.info('Identity token changed while disconnected, reconnecting socket...');
+      log.info('Identity token changed while disconnected; reconnecting');
       this.cancelConnecting();
       this.ensureConnecting();
     }

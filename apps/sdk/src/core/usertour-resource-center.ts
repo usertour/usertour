@@ -27,6 +27,7 @@ import { isDisplayOnlyBlockType, isEqual, storage } from '@usertour/helpers';
 import { UsertourLiveChatManager } from '@/core/usertour-live-chat-manager';
 import { UsertourTheme } from '@/core/usertour-theme';
 
+const log = logger.scope('resource-center');
 export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStore> {
   getAnnouncementBadgeCount(): number {
     return this.getStoreData()?.resourceCenterData?.announcementUnreadCount ?? 0;
@@ -42,7 +43,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       await this.checkAndUpdateThemeSettings();
       await this.checkAndUpdatePopupAnnouncementTheme();
     } catch (error) {
-      logger.error('Error in resource center checking:', error);
+      log.error('Failed to check the resource center state', error);
     }
   }
 
@@ -76,11 +77,11 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
   async show(): Promise<void> {
     const storeData = await this.buildStoreData();
     if (!storeData) {
-      logger.warn('Resource center: buildStoreData returned null (missing theme?)');
+      log.warn('Cannot open: the store data could not be built (is the theme missing?)');
       return;
     }
     if (!storeData.resourceCenterData) {
-      logger.warn('Resource center: resourceCenterData is missing from session');
+      log.warn('Cannot open: the session has no resource center data');
       return;
     }
     this.setStoreData({ ...storeData, openState: true });
@@ -203,7 +204,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       });
       return enrichedItems;
     } catch (error) {
-      logger.error('Failed to fetch content list items:', error);
+      log.error('Failed to load the content list', error);
       this.updateStore({ contentListError: true, contentListLoading: false });
       return [];
     }
@@ -228,7 +229,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       // semantics as the user clicking the close button.
       await this.expand(false);
     } catch (error) {
-      logger.error('Failed to start content from content list:', error);
+      log.error('Failed to start content from the content list', error);
     }
   }
 
@@ -244,7 +245,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       // null); the feed distinguishes it from an empty feed and offers a retry.
       return await this.socketService.listAnnouncements();
     } catch (error) {
-      logger.error('Failed to list announcements:', error);
+      log.error('Failed to load announcements', error);
       return null;
     }
   };
@@ -253,7 +254,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     try {
       return await this.socketService.getAnnouncement({ contentId });
     } catch (error) {
-      logger.error('Failed to get announcement:', error);
+      log.error('Failed to load the announcement', error);
       return null;
     }
   };
@@ -285,7 +286,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
     try {
       return await this.socketService.markAnnouncementsSeen({ items, source });
     } catch (error) {
-      logger.error('Failed to mark announcements seen:', error);
+      log.error('Failed to mark announcements as seen', error);
       // Accepted trade-off: the optimistic updates above are NOT rolled back
       // and there is no retry. Sub-30s disconnects never land here (socket.io
       // buffers the emit and flushes on reconnect); on a longer outage the
@@ -385,7 +386,7 @@ export class UsertourResourceCenter extends UsertourComponent<ResourceCenterStor
       this.updateStore({ expanded: false, liveChatActive: true, liveChatProviderOpen: true });
       this.socketService.closeResourceCenter({ sessionId });
     } catch (error) {
-      logger.error('Failed to open live chat:', error);
+      log.error('Failed to open live chat', error);
     }
   };
 

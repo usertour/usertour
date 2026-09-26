@@ -1,5 +1,6 @@
-import { logger } from '@/utils';
+import { logger } from './logger';
 
+const log = logger.scope('timer');
 /**
  * Timer task interface
  */
@@ -102,7 +103,7 @@ export class TimerManager {
       try {
         callback();
       } catch (error) {
-        logger.error(`Timer timeout ${id} failed:`, error);
+        log.error(`Timeout callback ${id} threw`, error);
       }
       this.timeouts.delete(id);
     }, delay);
@@ -132,7 +133,7 @@ export class TimerManager {
       try {
         callback();
       } catch (error) {
-        logger.error(`Timer interval ${id} failed:`, error);
+        log.error(`Interval callback ${id} threw`, error);
       }
     }, interval);
     this.intervals.set(id, intervalId);
@@ -312,7 +313,7 @@ export class TimerManager {
           task.lastRun = now;
           processedCount++;
         } catch (error) {
-          logger.error(`Timer task ${id} failed:`, error);
+          log.error(`Timer task ${id} threw`, error);
         }
       }
     }

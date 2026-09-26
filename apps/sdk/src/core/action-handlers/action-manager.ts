@@ -2,6 +2,7 @@ import { ContentActionsItemType, RulesCondition } from '@usertour/types';
 import { ActionHandler, ActionHandlerContext } from './action-handler.interface';
 import { logger } from '@/utils';
 
+const log = logger.scope('action');
 /**
  * Manages action handlers and executes actions
  */
@@ -79,10 +80,10 @@ export class ActionManager {
       try {
         await handler.handle(action, context);
       } catch (error) {
-        logger.error(`Failed to execute action ${action.type}:`, error);
+        log.error(`Failed to run action ${action.type}`, error);
       }
     } else {
-      logger.warn(`No handler found for action type: ${action.type}`);
+      log.warn(`No handler for action ${action.type}; ignoring it`);
     }
   }
 

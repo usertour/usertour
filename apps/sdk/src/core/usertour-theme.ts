@@ -11,6 +11,7 @@ import { getUserTourCss } from '@/core/usertour-env';
 import { rulesEvaluatorManager } from '@/core/usertour-rules-evaluator';
 import { logger } from '@/utils/logger';
 
+const log = logger.scope('theme');
 // === Private Helpers ===
 /**
  * Gets CSS assets based on theme settings
@@ -81,7 +82,7 @@ export const UsertourTheme = {
           return item.settings;
         }
       } catch (error) {
-        logger.error('Error evaluating theme variation conditions:', error);
+        log.error("Failed to evaluate a theme variation's conditions; skipping it", error);
         // Continue to check other variations
       }
     }

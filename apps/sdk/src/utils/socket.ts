@@ -4,7 +4,7 @@ import {
   SocketOptions as SocketIOOptions,
   io,
 } from 'socket.io-client';
-import { autoBind } from '@/utils';
+import { autoBind } from './auto-bind';
 
 // Configuration options for Socket connection
 interface SocketOptions {

@@ -7,6 +7,7 @@ import { autoBind } from '@/utils';
 import { Evented } from '@/utils/evented';
 import { logger } from '@/utils/logger';
 
+const log = logger.scope('trigger');
 /**
  * Manages trigger conditions and execution for a single step
  * Simple and focused - one trigger instance per step
@@ -104,7 +105,7 @@ export class UsertourTrigger extends Evented {
         updatedTrigger: { ...rest, conditions: activatedConditions },
       };
     } catch (error) {
-      logger.error(`Error evaluating trigger conditions for trigger ${trigger.id}:`, error);
+      log.error(`Failed to evaluate the conditions of trigger ${trigger.id}`, error);
       return null;
     }
   }

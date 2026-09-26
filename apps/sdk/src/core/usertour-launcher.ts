@@ -13,6 +13,7 @@ import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
 
+const log = logger.scope('launcher');
 // Launcher timeout: 1 hour (3600 seconds)
 // Longer timeout for launcher since multiple launchers can coexist without affecting each other
 const LAUNCHER_TARGET_MISSING_SECONDS = 3600;
@@ -39,7 +40,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
       await this.checkTargetVisibility();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
-      logger.error('Error in launcher checking:', error);
+      log.error('Failed to check the launcher state', error);
     }
   }
 
@@ -50,8 +51,8 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   async show() {
     const storeData = await this.buildStoreData();
-    logger.info(
-      `[launcher] show() hasData=${!!storeData?.launcherData} sid=${this.getSessionId() || 'NONE'}`,
+    log.debug(
+      `show: launcher data ${storeData?.launcherData ? 'present' : 'missing'}, session ${this.getSessionId() || 'none'}`,
     );
     if (!storeData?.launcherData) {
       return;
@@ -162,7 +163,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
 
     const targetElement = data?.target?.element as ElementSelectorPropsData;
     if (!targetElement) {
-      logger.error('Target element not found', { data });
+      log.warn('Launcher target element was not found', { data });
       return;
     }
 
@@ -173,8 +174,8 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     // LIVE watcher on every re-send wipes its found/announced element state
     // mid-flight and drops most beacons on first paint; keep it instead.
     const targetKey = JSON.stringify(targetElement);
-    logger.info(
-      `[launcher] watcher reuse=${!!(this.watcher && this.watcherTargetKey === targetKey)} hasWatcher=${!!this.watcher} el=${!!this.watcher?.getElement()} sid=${this.getSessionId() || 'NONE'}`,
+    log.debug(
+      `attach: watcher reused=${!!(this.watcher && this.watcherTargetKey === targetKey)}, watcher exists=${!!this.watcher}, element found=${!!this.watcher?.getElement()}, session ${this.getSessionId() || 'none'}`,
     );
     if (this.watcher && this.watcherTargetKey === targetKey) {
       // The re-run may carry NEW session state: a sessionless pre-activation
@@ -195,7 +196,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
             openState: isVisibleNode(el),
             triggerRef: el as HTMLElement,
           });
-          logger.info('[launcher] handoff complete — beacon opened');
+          log.debug('Target element handed off to the beacon');
         } else {
           // The found element has since been DETACHED (SPA re-render kept the
           // JS reference but unmounted the node). Don't hand a dead reference
@@ -250,7 +251,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
    */
   private handleElementFound(el: Element, store: LauncherStore): void {
     const sessionId = this.getSessionId();
-    logger.info(`[launcher] elementFound sid=${sessionId || 'NONE'}`);
+    log.debug(`Target element found (session ${sessionId || 'none'})`);
     if (!sessionId) {
       this.instance.startContent(
         this.getContentId(),

@@ -12,6 +12,7 @@ import { UsertourBanner } from './usertour-banner';
 import { UsertourResourceCenter } from './usertour-resource-center';
 import { SDKClientEvents } from '@usertour/constants';
 
+const log = logger.scope('ui');
 // === Interfaces ===
 export interface UIManagerConfig {
   containerId?: string;
@@ -78,14 +79,19 @@ export class UsertourUIManager extends Evented {
         this.trigger(SDKClientEvents.INITIALIZATION_COMPLETE);
         return true;
       } catch (error) {
-        logger.error(ErrorMessages.UI_INITIALIZATION_FAILED, error);
-
         const isLastAttempt = attempt >= this.config.maxRetries;
         if (isLastAttempt) {
+          // Always visible (ADR 0019 §2): nothing will render on this page and
+          // the host has no promise or event to learn that from.
+          log.critical(
+            `UI initialization failed after ${attempt} attempts — Usertour content will not show on this page.`,
+            error,
+          );
           this.isInitializing = false;
           this.trigger(SDKClientEvents.INITIALIZATION_FAILED, error);
           return false;
         }
+        log.warn(`UI initialization failed (attempt ${attempt}), retrying`, error);
 
         await this.wait(this.config.retryDelay);
       }
@@ -211,7 +217,7 @@ export class UsertourUIManager extends Evented {
     try {
       this.root.unmount();
     } catch (error) {
-      logger.error(ErrorMessages.ERROR_UNMOUNTING_REACT_ROOT, error);
+      log.error('Failed to unmount the React root during cleanup', error);
     } finally {
       this.root = undefined;
     }
@@ -229,7 +235,7 @@ export class UsertourUIManager extends Evented {
       try {
         this.container.parentNode.removeChild(this.container);
       } catch (error) {
-        logger.error(ErrorMessages.ERROR_REMOVING_CONTAINER, error);
+        log.error('Failed to remove the container during cleanup', error);
       }
     }
 
