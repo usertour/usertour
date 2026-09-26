@@ -5,6 +5,7 @@ import {
   AttributeWrite,
   coerceAttributeValue,
   inferWriteDataType,
+  attributeDataEqual,
   normalizeIsoDateTime,
   parseAttributeWrite,
 } from '../attribute-write';
@@ -313,6 +314,23 @@ describe('applyAttributeWrite', () => {
     ])('%s', (_, current, values, expected) => {
       expect(applyAttributeWrite(current, parsed({ remove: values }))).toEqual(expected);
     });
+  });
+});
+
+describe('attributeDataEqual', () => {
+  test.each([
+    ['same scalars', { a: 1, b: 'x' }, { b: 'x', a: 1 }, true],
+    ['same lists', { tags: ['a', 'b'] }, { tags: ['a', 'b'] }, true],
+    ['different value', { a: 1 }, { a: 2 }, false],
+    ['missing key', { a: 1, b: 2 }, { a: 1 }, false],
+    ['extra key', { a: 1 }, { a: 1, b: 2 }, false],
+    ['toString as an attribute', { toString: 1 }, { toString: 1 }, true],
+    ['toString differs', { toString: 1 }, { toString: 2 }, false],
+    ['valueOf as a list', { valueOf: ['x'] }, { valueOf: ['x'] }, true],
+    ['constructor as an attribute', { constructor: 'acme' }, { constructor: 'acme' }, true],
+    ['constructor only on one side', { constructor: 'acme' }, {}, false],
+  ])('%s', (_, left, right, expected) => {
+    expect(attributeDataEqual(left, right)).toBe(expected);
   });
 });
 

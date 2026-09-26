@@ -399,6 +399,25 @@ export const mergeAttributeCache = <T extends Record<string, unknown>>(
   return next as T;
 };
 
+/**
+ * Whether two attribute maps hold the same values. Not a generic deep equal:
+ * one reads the map's `toString`, `valueOf` and `constructor` as methods,
+ * and throws or misjudges once an attribute carries such a name. Own keys
+ * only; each value is a scalar or a list of scalars, compared as such.
+ */
+export const attributeDataEqual = (
+  left: Record<string, unknown>,
+  right: Record<string, unknown>,
+): boolean => {
+  const leftKeys = Object.keys(left);
+  if (leftKeys.length !== Object.keys(right).length) {
+    return false;
+  }
+  return leftKeys.every(
+    (key) => Object.prototype.hasOwnProperty.call(right, key) && isEqual(left[key], right[key]),
+  );
+};
+
 /** Whether the payload needs sending: any operation, or any literal that differs from the cache. */
 export const attributeCacheChanged = (
   cache: Record<string, unknown>,
@@ -407,7 +426,7 @@ export const attributeCacheChanged = (
   if (Object.values(incoming).some(isAttributeOperation)) {
     return true;
   }
-  return !isEqual(cache, { ...cache, ...incoming });
+  return !attributeDataEqual(cache, { ...cache, ...incoming });
 };
 
 export type LegacyAttributeRewrite = { codeName: string; from: string; to: string };

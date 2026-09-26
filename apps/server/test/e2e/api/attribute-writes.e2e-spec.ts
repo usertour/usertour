@@ -187,6 +187,52 @@ describe('API v2 attribute write operations (e2e)', () => {
       expect(unioned.body.attributes.aw_roles).toEqual(['admin', 'editor']);
     });
 
+    it('a codeName that names an Object.prototype member is an ordinary attribute', async () => {
+      // The global pipe must not hand these to class-transformer (it throws
+      // on `constructor` and drops `valueOf` / `toString`), and the merge
+      // must read own keys only.
+      const first = await putUser('aw-proto', {
+        constructor: 'acme',
+        toString: { add: 1 },
+        valueOf: { union: 'x' },
+        hasOwnProperty: { set_once: 'once' },
+      });
+      expect(first.status).toBe(200);
+      expect(first.body.attributes).toMatchObject({
+        constructor: 'acme',
+        toString: 1,
+        valueOf: ['x'],
+        hasOwnProperty: 'once',
+      });
+      const second = await putUser('aw-proto', {
+        constructor: { set_once: 'other' },
+        toString: { add: 1 },
+        hasOwnProperty: { set_once: 'twice' },
+      });
+      expect(second.body.attributes).toMatchObject({
+        constructor: 'acme',
+        toString: 2,
+        hasOwnProperty: 'once',
+      });
+      expect(await stored('aw-proto')).toMatchObject({ constructor: 'acme', toString: 2 });
+    });
+
+    it('__proto__ is refused as an attribute name on the lenient path', async () => {
+      const biz = app.get(BizService);
+      const rejectedWrites: { codeName: string; reason: string }[] = [];
+      // JSON.parse yields an own `__proto__` key, as a wire payload does.
+      const attributes = JSON.parse('{"__proto__": "x", "aw_proto_ok": "y"}');
+      await prisma.$transaction((tx) =>
+        biz.upsertBizUsers(tx, 'aw-proto-key', attributes, fx.environmentId, {
+          rejected: rejectedWrites,
+        }),
+      );
+      expect(rejectedWrites).toEqual([{ codeName: '__proto__', reason: expect.any(String) }]);
+      const data = await stored('aw-proto-key');
+      expect(data.aw_proto_ok).toBe('y');
+      expect(Object.prototype.hasOwnProperty.call(data, '__proto__')).toBe(false);
+    });
+
     it('null removes the key; a literal and {set} both replace', async () => {
       await putUser('aw-null', { plan: 'free', seats: 3 });
       const res = await putUser('aw-null', { plan: null, seats: { set: 5 } });

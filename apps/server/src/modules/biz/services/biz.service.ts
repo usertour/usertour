@@ -46,8 +46,9 @@ import {
 import { IntegrationSource } from '@/modules/integrations/constants/integration-source.constant';
 import isEqual from 'fast-deep-equal';
 import {
-  ATTRIBUTE_DELETE,
   applyAttributeWrite,
+  ATTRIBUTE_DELETE,
+  attributeDataEqual,
   AttributeWrite,
   capitalizeFirstLetter,
   coerceAttributeValue,
@@ -227,8 +228,11 @@ export class BizService {
   ): Record<string, any> {
     const previous: Record<string, any> = {};
     for (const key of Object.keys(mergedData)) {
-      if (!isEqual(currentData[key], mergedData[key])) {
-        previous[key] = key in currentData ? currentData[key] : null;
+      // Own keys only: `constructor` on a plain object is Object.prototype's.
+      const had = Object.prototype.hasOwnProperty.call(currentData, key);
+      const before = had ? currentData[key] : undefined;
+      if (!isEqual(before, mergedData[key])) {
+        previous[key] = had ? before : null;
       }
     }
     for (const key of Object.keys(currentData)) {
@@ -1037,7 +1041,7 @@ export class BizService {
     const nextData = this.applyAttributeWrites(currentData, writes);
 
     // Only update if data has actually changed
-    if (isEqual(currentData, nextData)) {
+    if (attributeDataEqual(currentData, nextData)) {
       return user;
     }
 
@@ -1140,7 +1144,7 @@ export class BizService {
     });
     if (unlocked) {
       const unlockedData = (unlocked.data as Record<string, any>) || {};
-      if (isEqual(unlockedData, this.applyAttributeWrites(unlockedData, writes))) {
+      if (attributeDataEqual(unlockedData, this.applyAttributeWrites(unlockedData, writes))) {
         return unlocked;
       }
     }
@@ -1155,7 +1159,7 @@ export class BizService {
       const nextData = this.applyAttributeWrites(currentData, writes);
 
       // Only update if data has actually changed
-      if (isEqual(currentData, nextData)) {
+      if (attributeDataEqual(currentData, nextData)) {
         return company;
       }
 
@@ -1223,7 +1227,7 @@ export class BizService {
       const nextData = this.applyAttributeWrites(currentData, writes);
 
       // Only update if data has actually changed
-      if (isEqual(currentData, nextData)) {
+      if (attributeDataEqual(currentData, nextData)) {
         return relation;
       }
 
