@@ -16,6 +16,7 @@
     "build:sdk:dev": "pnpm build:deps && pnpm --filter @usertour/sdk build:dev",
     "build:sdk:dev:iife": "pnpm build:deps && pnpm --filter @usertour/sdk build:dev:iife",
     "build:server": "pnpm build:deps && pnpm --filter @usertour/server build",
+    "e2e:widget": "pnpm build:sdk && pnpm --filter @usertour/e2e e2e:widget",
     "lint": "biome lint .",
     "lint:fix": "biome lint . --write",
     "format": "biome format .",

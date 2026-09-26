@@ -13,6 +13,10 @@
     "build:dev": "tsc && BROWSERSLIST_ENV=production vite build --mode development",
     "build:dev:iife": "tsc && BROWSERSLIST_ENV=legacy vite build --mode development",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "gallery": "vite --config gallery/vite.config.ts",
+    "gallery:build": "vite build --config gallery/vite.config.ts",
+    "gallery:preview": "vite preview --config gallery/vite.config.ts",
+    "gallery:typecheck": "tsc --noEmit -p gallery/tsconfig.json",
     "preview": "vite preview",
     "smoke": "node scripts/smoke-bundle.mjs"
   },
