@@ -1379,7 +1379,7 @@ export class BizService {
 
   /**
    * Parse every value, find-or-create Attribute rows for the codeNames that
-   * need one (one batched findMany + sequential creates for misses), and
+   * need one (one batched findMany + one createMany for the misses), and
    * judge each write against its definition. Returns the accepted writes,
    * the attribute map so callers (e.g. AttributeOnEvent linking) can resolve
    * codeName → id without a second round trip, and whether the catalog
@@ -1423,17 +1423,62 @@ export class BizService {
 
     const displayName = bizType === AttributeBizType.EVENT ? humanize : capitalizeFirstLetter;
     let catalogChanged = false;
+    // First pass: restore soft-deleted definitions and collect the missing ones.
+    const creations: Prisma.AttributeCreateManyInput[] = [];
     for (const [codeName, write] of pending) {
-      let attr = attrMap.get(codeName);
+      const attr = attrMap.get(codeName);
       // Data still arriving under a soft-deleted codeName means the attribute is
       // not dead: restore it (ADR 0016), keeping its data type — values that do
       // not fit it are dropped below like for any attribute.
       if (attr?.deleted) {
-        attr = await tx.attribute.update({ where: { id: attr.id }, data: { deleted: false } });
-        attrMap.set(codeName, attr);
+        attrMap.set(
+          codeName,
+          await tx.attribute.update({ where: { id: attr.id }, data: { deleted: false } }),
+        );
         catalogChanged = true;
+        continue;
       }
-      const verdict = this.judgeAttributeWrite(bizType, attr, write);
+      if (attr) {
+        continue;
+      }
+      const verdict = this.judgeAttributeWrite(bizType, undefined, write);
+      if (verdict.ok === false) {
+        this.logger.warn(`Dropped attribute "${codeName}": ${verdict.reason}.`);
+        rejected.push({ codeName, reason: verdict.reason });
+        pending.delete(codeName);
+        continue;
+      }
+      if (verdict.skip === true) {
+        pending.delete(codeName);
+        continue;
+      }
+      creations.push({
+        codeName,
+        dataType: verdict.dataType,
+        displayName: displayName(codeName),
+        projectId,
+        bizType,
+      });
+    }
+    if (creations.length > 0) {
+      // Two writes can carry the same new codeName at once. Insert with
+      // skipDuplicates, in codeName order, so the loser neither aborts its
+      // transaction on the unique index nor deadlocks with the winner, then
+      // read back what exists: the winner's type is what every write is
+      // judged against.
+      creations.sort((left, right) => left.codeName.localeCompare(right.codeName));
+      await tx.attribute.createMany({ data: creations, skipDuplicates: true });
+      const created = await tx.attribute.findMany({
+        where: { projectId, bizType, codeName: { in: creations.map((c) => c.codeName) } },
+      });
+      for (const attr of created) {
+        attrMap.set(attr.codeName, attr);
+      }
+      catalogChanged = true;
+    }
+    // Second pass: judge every write against the definition it now has.
+    for (const [codeName, write] of pending) {
+      const verdict = this.judgeAttributeWrite(bizType, attrMap.get(codeName), write);
       if (verdict.ok === false) {
         this.logger.warn(`Dropped attribute "${codeName}": ${verdict.reason}.`);
         rejected.push({ codeName, reason: verdict.reason });
@@ -1441,19 +1486,6 @@ export class BizService {
       }
       if (verdict.skip === true) {
         continue;
-      }
-      if (!attr) {
-        attr = await tx.attribute.create({
-          data: {
-            codeName,
-            dataType: verdict.dataType,
-            displayName: displayName(codeName),
-            projectId,
-            bizType,
-          },
-        });
-        attrMap.set(codeName, attr);
-        catalogChanged = true;
       }
       writes.set(codeName, verdict.write);
     }
@@ -1651,10 +1683,18 @@ export class BizService {
         `"${codeName}" has too many stored values to safely re-type. Clear its values, or delete and recreate the attribute with the intended type.`,
       );
     }
-    // Exact fit, not coercion: a retype rewrites no stored value, so each one
-    // must already be of the new type as the readers will interpret it.
+    // Shape fit, not coercion: a retype rewrites no stored value, so each one
+    // must already be what readers of the new type expect. Any string is a
+    // String — a stored ISO date-time included; every other type must match
+    // exactly.
+    const fits = (value: unknown): boolean => {
+      if (newDataType === BizAttributeTypes.String) {
+        return typeof value === 'string';
+      }
+      return getAttributeType(value) === newDataType;
+    };
     const conflicts = rows.filter(
-      (r) => getAttributeType((r.data as Record<string, unknown>)?.[codeName]) !== newDataType,
+      (r) => !fits((r.data as Record<string, unknown>)?.[codeName]),
     ).length;
     if (conflicts > 0) {
       const expected = BizAttributeTypes[newDataType] ?? String(newDataType);
