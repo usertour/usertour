@@ -520,16 +520,20 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.UserWrite,
       description:
         'Create or update an end-user by external id (idempotent). Attributes merge into the ' +
-        'existing ones and are type-checked against each attribute definition (a value whose type ' +
-        'mismatches is rejected, never coerced/stored wrong); a DateTime value must be full ISO ' +
-        '8601 with time + zone (e.g. "2026-01-15T00:00:00Z") — a date-only string or epoch number ' +
-        'is rejected. An attribute with NO definition yet is AUTO-CREATED, its type inferred from ' +
-        'this first value — so send the correct JSON type on the first write (a number as 42 not ' +
-        '"42", a date as full ISO-UTC), or it locks in as String. The type can be corrected later ' +
-        'via update_attribute_definition only while no stored value conflicts. A TYPO in a codeName ' +
-        'therefore creates a new attribute silently and the real one is NOT updated — double-check ' +
-        'codeNames against list_attribute_definitions. With multiple ' +
-        'environments you must pass `environmentId` (single-env projects default).',
+        'existing ones. A value is a literal, null (remove), or ONE operation object: {set}, ' +
+        '{set_once} (only when absent), {add} (Number, negative to subtract; starts at 0), ' +
+        '{union} / {remove} (List, deduplicated). Values are coerced losslessly to the definition ' +
+        'type (42 into a String attribute becomes "42", "42" into a Number becomes 42, any ISO ' +
+        '8601 date-time is normalised to UTC); a value that does not fit is rejected — a date-only ' +
+        'string or an epoch number never fits DateTime. An attribute with NO definition yet is ' +
+        'AUTO-CREATED with its type inferred from this first value (a string is DateTime only in ' +
+        'the strict "2026-01-15T00:00:00.000Z" form) — pin it with {set: value, data_type: ' +
+        '"string" | "number" | "boolean" | "datetime" | "list"} when the value could be misread; ' +
+        'data_type never retypes an existing definition (use update_attribute_definition, which ' +
+        'works while no stored value conflicts). A TYPO in a codeName creates a new attribute ' +
+        'silently and the real one is NOT updated — double-check codeNames against ' +
+        'list_attribute_definitions. With multiple environments you must pass `environmentId` ' +
+        '(single-env projects default).',
       inputSchema: {
         id: z.string().trim().min(1).describe('The user external id (non-empty).'),
         environmentId: environmentIdSchema,
@@ -575,12 +579,16 @@ export function buildWriteTools(): McpTool[] {
       capability: Capability.CompanyWrite,
       description:
         'Create or update a company by external id (idempotent). Attributes merge into the ' +
-        'existing ones and are type-checked against each definition (a type mismatch is rejected). ' +
-        'An attribute with NO definition yet is AUTO-CREATED with its type inferred from this first ' +
-        'value — send the correct JSON type (42 not "42"), or it locks in as String (correctable ' +
-        'via update_attribute_definition only while no stored value conflicts). A TYPO in a ' +
-        'codeName silently creates a new attribute and the real one is NOT updated. With multiple ' +
-        'environments you must pass `environmentId` (single-env projects default).',
+        'existing ones. A value is a literal, null (remove), or ONE operation object: {set}, ' +
+        '{set_once}, {add} (Number, negative to subtract), {union} / {remove} (List, deduplicated). ' +
+        'Values are coerced losslessly to the definition type (42 into a String attribute becomes ' +
+        '"42"); a value that does not fit is rejected. An attribute with NO definition yet is ' +
+        'AUTO-CREATED with its type inferred from this first value — pin it with ' +
+        '{set: value, data_type: "string" | "number" | "boolean" | "datetime" | "list"} when the ' +
+        'value could be misread (a date-like string, a numeric id); data_type never retypes an ' +
+        'existing definition (use update_attribute_definition). A TYPO in a codeName silently ' +
+        'creates a new attribute and the real one is NOT updated. With multiple environments you ' +
+        'must pass `environmentId` (single-env projects default).',
       inputSchema: {
         id: z.string().trim().min(1).describe('The company external id (non-empty).'),
         environmentId: environmentIdSchema,

@@ -43,6 +43,25 @@ export enum AttributeBizTypes {
   Event = 4,
 }
 
+/**
+ * Operation keys accepted inside a per-attribute write object (ADR 0017):
+ * `{ count: { add: 1 } }`. Exactly one per object; `data_type` may only
+ * accompany `set` / `set_once`.
+ */
+export enum AttributeWriteOperation {
+  Set = 'set',
+  SetOnce = 'set_once',
+  Add = 'add',
+  Union = 'union',
+  Remove = 'remove',
+}
+
+/**
+ * Public `data_type` names a write may pin on first creation of an attribute
+ * definition (ADR 0017 §3). Never retypes an existing definition.
+ */
+export type AttributeWriteDataType = 'string' | 'number' | 'boolean' | 'datetime' | 'list';
+
 export enum AttributeDataType {
   Number = 1,
   String = 2,

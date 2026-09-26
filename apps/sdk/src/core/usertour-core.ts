@@ -5,7 +5,14 @@ import {
   WidgetZIndex,
 } from '@usertour/constants';
 import { AssetAttributes } from '@usertour/frame';
-import { isConditionsActived, isEmptyString, isNullish, storage, uuidV4 } from '@usertour/helpers';
+import {
+  isConditionsActived,
+  isEmptyString,
+  isNullish,
+  normalizeLegacyAttributeWrites,
+  storage,
+  uuidV4,
+} from '@usertour/helpers';
 import {
   contentStartReason,
   SDKSettingsMode,
@@ -241,10 +248,11 @@ export class UsertourCore extends Evented {
     // applied to the upsert below.
     this.socketService.setAuth(externalUserId, this.startOptions.token, this.identityToken);
 
+    const userAttributes = this.normalizeAttributes(attributes);
     const result = await this.socketService.upsertUser(
       {
         externalUserId,
-        attributes,
+        attributes: userAttributes,
       },
       { batch: true },
     );
@@ -254,12 +262,12 @@ export class UsertourCore extends Evented {
 
     // Only update attributes after successful API call so updateUser's
     // change-detection guard remains accurate after retries.
-    if (attributes) {
-      this.attributeManager.setUserAttributes(attributes);
+    if (userAttributes) {
+      this.attributeManager.setUserAttributes(userAttributes);
     }
     this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
       userId: externalUserId,
-      attributes,
+      attributes: userAttributes,
     });
   }
 
@@ -310,15 +318,17 @@ export class UsertourCore extends Evented {
       this.applyIdentityToken(opts.token);
     }
 
-    // Check if attributes have actually changed to avoid unnecessary API calls
-    if (!this.attributeManager.userAttrsChanged(attributes)) {
+    // Check if attributes have actually changed to avoid unnecessary API calls.
+    // A key carrying an operation object always counts as changed.
+    const userAttributes = this.normalizeAttributes(attributes) ?? {};
+    if (!this.attributeManager.userAttrsChanged(userAttributes)) {
       return; // No changes detected, skip the update
     }
     // First call API with new attributes
     const result = await this.socketService.upsertUser(
       {
         externalUserId,
-        attributes,
+        attributes: userAttributes,
       },
       { batch: true },
     );
@@ -327,7 +337,7 @@ export class UsertourCore extends Evented {
     }
 
     // Only update local state after successful API call
-    this.attributeManager.setUserAttributes(attributes);
+    this.attributeManager.setUserAttributes(userAttributes);
   }
 
   /**
@@ -371,12 +381,14 @@ export class UsertourCore extends Evented {
       this.applyIdentityToken(opts.token);
     }
 
+    const companyAttributes = this.normalizeAttributes(attributes);
+    const membershipAttributes = this.normalizeAttributes(opts?.membership);
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
         externalCompanyId,
-        attributes,
-        membership: opts?.membership,
+        attributes: companyAttributes,
+        membership: membershipAttributes,
         token: this.identityToken,
       },
       { batch: true },
@@ -401,11 +413,11 @@ export class UsertourCore extends Evented {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
-    if (attributes) {
-      this.attributeManager.setCompanyAttributes(attributes);
+    if (companyAttributes) {
+      this.attributeManager.setCompanyAttributes(companyAttributes);
     }
-    if (opts?.membership) {
-      this.attributeManager.setMembershipAttributes(opts.membership);
+    if (membershipAttributes) {
+      this.attributeManager.setMembershipAttributes(membershipAttributes);
     }
   }
 
@@ -429,10 +441,14 @@ export class UsertourCore extends Evented {
       this.applyIdentityToken(opts.token);
     }
 
-    // Check if attributes have actually changed to avoid unnecessary API calls
-    const hasCompanyChanged = attributes && this.attributeManager.companyAttrsChanged(attributes);
+    // Check if attributes have actually changed to avoid unnecessary API calls.
+    // A key carrying an operation object always counts as changed.
+    const companyAttributes = this.normalizeAttributes(attributes);
+    const membershipAttributes = this.normalizeAttributes(opts?.membership);
+    const hasCompanyChanged =
+      companyAttributes && this.attributeManager.companyAttrsChanged(companyAttributes);
     const hasMembershipChanged =
-      opts?.membership && this.attributeManager.membershipAttrsChanged(opts.membership);
+      membershipAttributes && this.attributeManager.membershipAttrsChanged(membershipAttributes);
 
     if (!hasCompanyChanged && !hasMembershipChanged) {
       return; // No changes detected, skip the update
@@ -443,8 +459,8 @@ export class UsertourCore extends Evented {
       {
         externalUserId,
         externalCompanyId,
-        attributes,
-        membership: opts?.membership,
+        attributes: companyAttributes,
+        membership: membershipAttributes,
         token: this.identityToken,
       },
       { batch: true },
@@ -459,12 +475,30 @@ export class UsertourCore extends Evented {
     }
 
     // Only update local state after successful API call
-    if (attributes) {
-      this.attributeManager.setCompanyAttributes(attributes);
+    if (companyAttributes) {
+      this.attributeManager.setCompanyAttributes(companyAttributes);
     }
-    if (opts?.membership) {
-      this.attributeManager.setMembershipAttributes(opts.membership);
+    if (membershipAttributes) {
+      this.attributeManager.setMembershipAttributes(membershipAttributes);
     }
+  }
+
+  /**
+   * Rewrite deprecated operation spellings (`subtract`, `append`, `prepend`)
+   * into the current vocabulary before sending, warning once per key
+   * (ADR 0017 §6). The server accepts only the current vocabulary.
+   */
+  private normalizeAttributes(
+    attributes?: UserTourTypes.Attributes,
+  ): UserTourTypes.Attributes | undefined {
+    if (!attributes) {
+      return attributes;
+    }
+    return normalizeLegacyAttributeWrites(attributes, ({ codeName, from, to }) => {
+      logger.warn(
+        `Attribute "${codeName}": the "${from}" operation is deprecated and was sent as "${to}".`,
+      );
+    }) as UserTourTypes.Attributes;
   }
 
   // === Public API: Event Tracking ===
