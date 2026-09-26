@@ -1307,7 +1307,10 @@ export class BizService {
   ): Record<string, any> {
     const next: Record<string, any> = { ...current };
     for (const [codeName, write] of writes) {
-      const stored = isNull(next[codeName]) ? undefined : next[codeName];
+      // Own keys only: a codeName such as `constructor` or `toString` would
+      // otherwise read Object.prototype's member as the stored value.
+      const own = Object.prototype.hasOwnProperty.call(next, codeName) ? next[codeName] : undefined;
+      const stored = isNull(own) ? undefined : own;
       const value = applyAttributeWrite(stored, write);
       if (value === ATTRIBUTE_DELETE) {
         delete next[codeName];
@@ -1440,6 +1443,14 @@ export class BizService {
     const rejected: RejectedAttributeWrite[] = [];
     const pending = new Map<string, AttributeWrite>();
     for (const codeName in attributes) {
+      // On a plain object `__proto__` is the prototype setter, not a property:
+      // assigning it would silently change the object instead of storing a
+      // value. Only the lenient SDK path can carry it (v2 validates names).
+      if (codeName === '__proto__') {
+        this.logger.warn(`Dropped attribute "${codeName}": not a valid attribute name.`);
+        rejected.push({ codeName, reason: 'not a valid attribute name' });
+        continue;
+      }
       const parsed = parseAttributeWrite(attributes[codeName]);
       if (parsed.ok === false) {
         this.logger.warn(`Dropped attribute "${codeName}": ${parsed.reason}.`);

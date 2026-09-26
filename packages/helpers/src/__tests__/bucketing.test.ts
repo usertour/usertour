@@ -149,6 +149,11 @@ describe('missingBucketValues', () => {
     expect(['A', 'B']).toContain(values.experiment);
   });
 
+  test('a codeName that names an Object.prototype member is still missing', () => {
+    const values = missingBucketValues([{ ...ab, codeName: 'constructor' }], 'u', {});
+    expect(['A', 'B']).toContain(values.constructor);
+  });
+
   test('returns an empty object when nothing is missing', () => {
     expect(
       missingBucketValues([{ ...ab, codeName: 'experiment' }], 'u', { experiment: 'A' }),

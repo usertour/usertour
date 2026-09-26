@@ -114,7 +114,7 @@ export const missingBucketValues = (
 ): Record<string, string | number> => {
   const values: Record<string, string | number> = {};
   for (const attribute of attributes) {
-    if (attribute.codeName in stored) {
+    if (Object.prototype.hasOwnProperty.call(stored, attribute.codeName)) {
       continue;
     }
     const value = bucketValue(attribute, externalId);

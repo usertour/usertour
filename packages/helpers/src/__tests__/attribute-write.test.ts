@@ -151,6 +151,9 @@ describe('normalizeIsoDateTime', () => {
     ['year one, kept as sent', '0001-01-01T00:00:00Z', '0001-01-01T00:00:00Z'],
     ['year one with offset', '0001-01-01T08:00:00+08:00', '0001-01-01T00:00:00.000Z'],
     ['year one lowercase', '0001-01-01t00:00:00z', '0001-01-01T00:00:00.000Z'],
+    ['year zero leap day', '0000-02-29T00:00:00.000Z', '0000-02-29T00:00:00.000Z'],
+    ['offset into year zero', '0001-01-01T00:00:00+01:00', '0000-12-31T23:00:00.000Z'],
+    ['year 2000 leap day', '2000-02-29T00:00:00Z', '2000-02-29T00:00:00Z'],
   ])('%s', (_, input, expected) => {
     expect(normalizeIsoDateTime(input)).toBe(expected);
   });
@@ -166,7 +169,8 @@ describe('normalizeIsoDateTime', () => {
     ['second 60', '2024-01-01T00:00:60Z'],
     ['offset hour 15', '2024-01-01T00:00:00+15:00'],
     ['offset pushing past year 9999', '9999-12-31T23:59:59-01:00'],
-    ['offset pushing before year 1', '0001-01-01T00:00:00+01:00'],
+    ['offset pushing before year 0', '0000-01-01T00:00:00+01:00'],
+    ['year 1900 is not a leap year', '1900-02-29T00:00:00Z'],
     ['epoch number', 1733961600000],
     ['plain string', 'tomorrow'],
     ['null', null],

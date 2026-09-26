@@ -178,8 +178,17 @@ const ISO_DATE_TIME =
 // The form values were always stored in: UTC `Z`, seconds, optional milliseconds.
 const STRICT_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
 
+// Proleptic Gregorian, computed directly: Date.UTC reads a year of 0–99 as
+// 1900–1999, which made year 0 (a leap year) look like 1900 (not one).
+const isLeapYear = (year: number): boolean => {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+};
+
 const daysInMonth = (year: number, month: number): number => {
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (month === 2) {
+    return isLeapYear(year) ? 29 : 28;
+  }
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
 };
 
 /**
@@ -231,11 +240,11 @@ export const normalizeIsoDateTime = (value: unknown): string | undefined => {
   date.setUTCFullYear(year, month - 1, day);
   date.setUTCHours(hour, minute, second, millis);
   const utc = new Date(date.getTime() - offsetMinutes * 60_000);
-  // An offset can push the instant past year 9999 or before year 1, where
-  // toISOString() switches to the six-digit year form that only JavaScript
-  // reads back. Such a value is not a date-time this store can hold.
+  // An offset can push the instant out of the four-digit years 0000–9999,
+  // where toISOString() switches to the six-digit year form that only
+  // JavaScript reads back. Such a value is not a date-time this store holds.
   const utcYear = utc.getUTCFullYear();
-  if (utcYear < 1 || utcYear > 9999) {
+  if (utcYear < 0 || utcYear > 9999) {
     return undefined;
   }
   return utc.toISOString();
