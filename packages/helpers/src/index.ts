@@ -18,3 +18,4 @@ export * from './content-helper';
 export * from './plan-features';
 export * from './token-scopes';
 export * from './localization';
+export * from './connection-recovery';

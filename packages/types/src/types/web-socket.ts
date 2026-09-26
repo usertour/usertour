@@ -27,6 +27,12 @@ export interface SocketAuthData {
    */
   identityToken?: string;
   clientConditions?: ClientCondition[];
+  /**
+   * Wait timers the SDK holds — running and already fired — restored into
+   * the connection's socket data on (re)connect so a reconnect neither
+   * restarts a running timer nor forgets a fired one (ADR 0018 §6).
+   */
+  waitTimers?: ConditionWaitTimer[];
   launchers?: string[];
   token?: string;
   flowSessionId?: string;

@@ -160,13 +160,17 @@ export class WebSocketV2Service {
       ? await this.bizService.getBizCompany(externalCompanyId, environmentId)
       : null;
 
-    // Build base socket data
+    // Build base socket data. Wait timers come back from the client on a
+    // reconnect (ADR 0018 §6), client-declared like clientConditions: a
+    // running timer keeps its remaining time on the SDK's clock, a fired one
+    // is honoured on the first evaluation. Only a non-array is refused — it
+    // would throw in the auto-start filter.
     const socketData: SocketData = {
       environment,
       externalUserId,
       clientContext,
       externalCompanyId,
-      waitTimers: [],
+      waitTimers: Array.isArray(auth.waitTimers) ? auth.waitTimers : [],
       clientConditions,
       bizUserId: bizUser.id,
       bizCompanyId: bizCompany?.id,
