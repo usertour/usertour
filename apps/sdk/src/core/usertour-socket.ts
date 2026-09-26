@@ -27,7 +27,9 @@ import {
   ClientCondition,
   WebSocketEvents,
   ClientMessageKind,
+  RejectedAttributeWrite,
   SocketAuthData,
+  UpsertAck,
 } from '@usertour/types';
 import { Socket, logger, timerManager } from '@/utils';
 import { getWsUri } from '@/core/usertour-env';
@@ -67,15 +69,36 @@ interface PendingWrite {
 interface EmitOutcome {
   acknowledged: boolean;
   result: boolean;
+  /** Attribute keys the server refused on an upsert (ADR 0020 §6); empty otherwise. */
+  rejected: RejectedAttributeWrite[];
 }
+
+/** What an upsert reports to the core: written or not, and which keys were refused. */
+export interface UpsertOutcome {
+  ok: boolean;
+  rejected: RejectedAttributeWrite[];
+}
+
+/**
+ * Read a client-message acknowledgement. Upserts answer `{ ok, rejected }`
+ * (ADR 0020 §6); everything else — and a server predating this — answers a
+ * bare boolean, which reads as "nothing rejected".
+ */
+const readAck = (raw: unknown): { result: boolean; rejected: RejectedAttributeWrite[] } => {
+  if (raw !== null && typeof raw === 'object') {
+    const ack = raw as Partial<UpsertAck>;
+    return { result: ack.ok === true, rejected: Array.isArray(ack.rejected) ? ack.rejected : [] };
+  }
+  return { result: raw === true, rejected: [] };
+};
 
 /**
  * Socket service interface for type safety and testing
  */
 export interface IUsertourSocket {
   // User and Company operations
-  upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<boolean>;
-  upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<boolean>;
+  upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<UpsertOutcome>;
+  upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<UpsertOutcome>;
 
   // Event tracking
   trackEvent(params: TrackEventDto, options?: BatchOptions): Promise<boolean>;
@@ -392,20 +415,20 @@ export class UsertourSocket implements IUsertourSocket {
     kind: ClientMessageKind,
     payload: any = {},
   ): Promise<EmitOutcome> {
-    if (!this.socket) return { acknowledged: false, result: false };
+    if (!this.socket) return { acknowledged: false, result: false, rejected: [] };
     try {
       // EMIT_TIMEOUT bounds the await: when the socket is buffering during a
       // slow or failed connect, we surface that as a falsy result (caught
       // below) instead of hanging the caller indefinitely.
-      const result = await this.socket.emitWithAck<boolean | undefined>(
+      const raw = await this.socket.emitWithAck<unknown>(
         WebSocketEvents.CLIENT_MESSAGE,
         { kind, payload, requestId: uuidV4() },
         this.EMIT_TIMEOUT,
       );
-      return { acknowledged: true, result: result ?? false };
+      return { acknowledged: true, ...readAck(raw) };
     } catch (error) {
       log.error(`Failed to send ${kind}`, error);
-      return { acknowledged: false, result: false };
+      return { acknowledged: false, result: false, rejected: [] };
     }
   }
 
@@ -429,7 +452,7 @@ export class UsertourSocket implements IUsertourSocket {
     payload: any,
     options?: BatchOptions,
   ): Promise<EmitOutcome> {
-    if (!this.socket) return { acknowledged: false, result: false };
+    if (!this.socket) return { acknowledged: false, result: false, rejected: [] };
 
     // For batch messages, clear any pending timeout and ensure batch is started.
     // BEGIN_BATCH is fire-and-forget: TCP/Socket.IO ordering guarantees the
@@ -461,11 +484,11 @@ export class UsertourSocket implements IUsertourSocket {
   }
 
   // === User and Company Operations ===
-  async upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<boolean> {
+  async upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<UpsertOutcome> {
     return await this.sendPendingWrite('user', ClientMessageKind.UPSERT_USER, params, options);
   }
 
-  async upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<boolean> {
+  async upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<UpsertOutcome> {
     return await this.sendPendingWrite(
       'company',
       ClientMessageKind.UPSERT_COMPANY,
@@ -485,7 +508,7 @@ export class UsertourSocket implements IUsertourSocket {
     messageKind: ClientMessageKind,
     params: UpsertUserDto | UpsertCompanyDto,
     options?: BatchOptions,
-  ): Promise<boolean> {
+  ): Promise<UpsertOutcome> {
     const pending: PendingWrite = { kind, params, failed: false };
     this.pendingWrites.set(kind, pending);
     const outcome = await this.sendClientMessageWithOutcome(messageKind, params, options);
@@ -496,7 +519,7 @@ export class UsertourSocket implements IUsertourSocket {
         pending.failed = true;
       }
     }
-    return outcome.result;
+    return { ok: outcome.result, rejected: outcome.rejected };
   }
 
   // === Event Tracking ===

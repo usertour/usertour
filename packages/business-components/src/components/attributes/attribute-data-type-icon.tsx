@@ -1,6 +1,7 @@
 import {
   RiCalendarLine,
   RiCheckboxLine,
+  RiDiceLine,
   RiHashtag,
   RiListUnordered,
   RiShuffleLine,
@@ -31,8 +32,9 @@ export const AttributeDataTypeIcon = (props: AttributeDataTypeIconProps) => {
     case AttributeDataType.DateTime:
       return <RiCalendarLine className={className} />;
     case AttributeDataType.RandomAB:
-    case AttributeDataType.RandomNumber:
       return <RiShuffleLine className={className} />;
+    case AttributeDataType.RandomNumber:
+      return <RiDiceLine className={className} />;
     default:
       return <RiText className={className} />;
   }

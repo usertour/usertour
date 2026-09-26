@@ -154,6 +154,22 @@ export type UpsertUserDto = {
   attributes?: Record<string, any>;
 };
 
+/** One attribute key the server refused on an upsert, with the reason (ADR 0020 §6). */
+export interface RejectedAttributeWrite {
+  codeName: string;
+  reason: string;
+}
+
+/**
+ * Acknowledgement of UpsertUser / UpsertCompany: the accepted keys were
+ * written; `rejected` names the ones that were not. A server predating this
+ * acknowledges a bare `true`, which reads as "nothing rejected".
+ */
+export interface UpsertAck {
+  ok: true;
+  rejected: RejectedAttributeWrite[];
+}
+
 /**
  * Upsert company request
  */

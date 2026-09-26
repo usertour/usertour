@@ -13,6 +13,9 @@ export class UpdateAttributeInput
       'predefined',
       'source',
       'sourceId',
+      // Locked after creation (ADR 0020): changing N would change the meaning
+      // of every condition written against the attribute.
+      'randomMax',
     ]),
     InputType,
   )

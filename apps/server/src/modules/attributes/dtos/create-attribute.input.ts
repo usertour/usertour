@@ -1,4 +1,4 @@
-import { Field, InputType, OmitType } from '@nestjs/graphql';
+import { Field, InputType, Int, OmitType } from '@nestjs/graphql';
 
 import type { NewAttribute } from '../types/new-attribute.type';
 import { AttributeDTO } from './attribute.dto';
@@ -18,4 +18,8 @@ export class CreateAttributeInput
   // but creation may omit it and take the default.
   @Field(() => String, { nullable: true })
   description?: string;
+
+  // Required for a Random number attribute, ignored otherwise (ADR 0020 §5).
+  @Field(() => Int, { nullable: true })
+  randomMax?: number;
 }

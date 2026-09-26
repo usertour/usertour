@@ -17,10 +17,13 @@ import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateUserAttr } from '../../validators';
 import { format } from 'date-fns';
+import { RANDOM_AB_VALUES } from '@usertour/constants';
+import { effectiveDataType } from '@usertour/helpers';
 import { DateTimePicker, Input } from '@usertour/ui';
 import { AttributeDataTypeIcon } from '../../../attributes/attribute-data-type-icon';
 import { IntegrationSourceMark } from '../../../integrations/integration-source-mark';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
+import { ConditionSelect } from '../../ui/condition-select';
 import {
   DATE_PICKER_OPERATORS,
   VALUELESS_OPERATORS,
@@ -282,7 +285,19 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
     attribute?.dataType === AttributeDataType.DateTime &&
     DATE_PICKER_OPERATORS.has(data.logic ?? '');
 
-  const inputType = attribute?.dataType === AttributeDataType.Number ? 'number' : 'text';
+  // Bucketing attributes read as the type they resemble (ADR 0020 §4): a
+  // Random number takes a number, bounded by the attribute's own range; a
+  // Random A/B picks one of its two values.
+  const inputType =
+    effectiveDataType(attribute?.dataType ?? AttributeDataType.String) === AttributeDataType.Number
+      ? 'number'
+      : 'text';
+  const numberBounds =
+    attribute?.dataType === AttributeDataType.RandomNumber
+      ? { min: 1, max: attribute.randomMax ?? undefined }
+      : {};
+  const isRandomAB = attribute?.dataType === AttributeDataType.RandomAB;
+  const randomABOptions = RANDOM_AB_VALUES.map((value) => ({ value, label: value }));
 
   return (
     <div className="flex flex-col gap-2">
@@ -316,6 +331,7 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
             <Input
               variant="compact-surface"
               type={inputType}
+              {...numberBounds}
               value={data.value ?? ''}
               onChange={(e) => handleValueChange(e.target.value)}
               placeholder={t('conditions.types.userAttr.valuePlaceholder')}
@@ -325,15 +341,24 @@ function UserAttrEditor({ condition, onChange }: EditorProps) {
             <Input
               variant="compact-surface"
               type={inputType}
+              {...numberBounds}
               value={data.value2 ?? ''}
               onChange={(e) => handleValue2Change(e.target.value)}
               className="flex-1"
             />
           </div>
+        ) : isRandomAB ? (
+          <ConditionSelect
+            value={data.value || undefined}
+            onChange={handleValueChange}
+            options={randomABOptions}
+            placeholder={t('conditions.types.userAttr.valuePlaceholder')}
+          />
         ) : (
           <Input
             variant="compact-surface"
             type={inputType}
+            {...numberBounds}
             value={data.value ?? ''}
             onChange={(e) => handleValueChange(e.target.value)}
             placeholder={t('conditions.types.userAttr.valuePlaceholder')}

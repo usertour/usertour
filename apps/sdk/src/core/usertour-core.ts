@@ -194,7 +194,7 @@ export class UsertourCore extends Evented {
     userId: string,
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.IdentifyOptions,
-  ): Promise<void> {
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     // Ensure the SDK has been initialized before calling identify
     this.ensureInit();
 
@@ -257,7 +257,7 @@ export class UsertourCore extends Evented {
       },
       { batch: true },
     );
-    if (!result) {
+    if (!result.ok) {
       throw new Error(ErrorMessages.FAILED_TO_IDENTIFY_USER);
     }
 
@@ -270,13 +270,16 @@ export class UsertourCore extends Evented {
       userId: externalUserId,
       attributes: userAttributes,
     });
+    return this.reportRejected(result.rejected);
   }
 
   /**
    * Creates and identifies an anonymous user
    * @param attributes - Optional user attributes
    */
-  async identifyAnonymous(attributes?: UserTourTypes.Attributes): Promise<void> {
+  async identifyAnonymous(
+    attributes?: UserTourTypes.Attributes,
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     // Ensure the SDK has been initialized before calling identifyAnonymous
     this.ensureInit();
 
@@ -297,7 +300,7 @@ export class UsertourCore extends Evented {
       userId = `anon-${uuidV4()}`;
       storage.setLocalStorage(key, { userId });
     }
-    await this.identify(userId, attributes);
+    return await this.identify(userId, attributes);
   }
 
   /**
@@ -308,7 +311,7 @@ export class UsertourCore extends Evented {
   async updateUser(
     attributes: UserTourTypes.Attributes,
     opts?: UserTourTypes.IdentifyOptions,
-  ): Promise<void> {
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     // Ensure the SDK has been initialized before calling updateUser
     const externalUserId = this.ensureIdentify();
 
@@ -323,7 +326,7 @@ export class UsertourCore extends Evented {
     // A key carrying an operation object always counts as changed.
     const userAttributes = this.normalizeAttributes(attributes) ?? {};
     if (!this.attributeManager.userAttrsChanged(userAttributes)) {
-      return; // No changes detected, skip the update
+      return { rejected: [] }; // No changes detected, skip the update
     }
     // First call API with new attributes
     const result = await this.socketService.upsertUser(
@@ -333,12 +336,13 @@ export class UsertourCore extends Evented {
       },
       { batch: true },
     );
-    if (!result) {
+    if (!result.ok) {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_USER);
     }
 
     // Only update local state after successful API call
     this.attributeManager.setUserAttributes(userAttributes);
+    return this.reportRejected(result.rejected);
   }
 
   /**
@@ -351,7 +355,7 @@ export class UsertourCore extends Evented {
     companyId: string,
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.GroupOptions,
-  ): Promise<void> {
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     // Ensure the SDK has been initialized before calling group
     const externalUserId = this.ensureIdentify();
 
@@ -394,7 +398,7 @@ export class UsertourCore extends Evented {
       },
       { batch: true },
     );
-    if (!result) {
+    if (!result.ok) {
       // Roll back the optimistic identity state: a server-rejected membership
       // claim left in place would ride every reconnect handshake (rejected
       // companyId + non-matching token) and kill the whole connection.
@@ -420,6 +424,7 @@ export class UsertourCore extends Evented {
     if (membershipAttributes) {
       this.attributeManager.setMembershipAttributes(membershipAttributes);
     }
+    return this.reportRejected(result.rejected);
   }
 
   /**
@@ -430,7 +435,7 @@ export class UsertourCore extends Evented {
   async updateGroup(
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.GroupOptions,
-  ): Promise<void> {
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     const externalUserId = this.ensureIdentify();
     const externalCompanyId = this.ensureGroup();
 
@@ -452,7 +457,7 @@ export class UsertourCore extends Evented {
       membershipAttributes && this.attributeManager.membershipAttrsChanged(membershipAttributes);
 
     if (!hasCompanyChanged && !hasMembershipChanged) {
-      return; // No changes detected, skip the update
+      return { rejected: [] }; // No changes detected, skip the update
     }
 
     // First call API with new attributes
@@ -466,7 +471,7 @@ export class UsertourCore extends Evented {
       },
       { batch: true },
     );
-    if (!result) {
+    if (!result.ok) {
       // Same rollback rule as group(): a rejected claim must not stay on the
       // reconnect auth (compare-and-restore, concurrency-safe).
       if (opts?.token) {
@@ -482,6 +487,21 @@ export class UsertourCore extends Evented {
     if (membershipAttributes) {
       this.attributeManager.setMembershipAttributes(membershipAttributes);
     }
+    return this.reportRejected(result.rejected);
+  }
+
+  /**
+   * Keys the server refused on an upsert (ADR 0020 §6): every other key was
+   * written, so the call resolves — but a host that never looks at the
+   * return value should still see why a value is missing.
+   */
+  private reportRejected(
+    rejected: UserTourTypes.AttributesWriteResult['rejected'],
+  ): UserTourTypes.AttributesWriteResult {
+    for (const { codeName, reason } of rejected) {
+      log.warn(`Attribute "${codeName}" was not written: ${reason}`);
+    }
+    return { rejected };
   }
 
   /**

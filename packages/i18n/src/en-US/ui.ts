@@ -543,6 +543,15 @@ const translations = {
         codeNameTooltip:
           'Code-friendly identifier used throughout Usertour to reference this attribute. e.g. "billing_plan".',
         codeNamePlaceholder: 'Enter code name',
+        dataTypeHints: {
+          randomAB:
+            'Random A/B: Usertour assigns every user or company "A" or "B", split evenly. It cannot be set from your code, and the type is locked after creation.',
+          randomNumber:
+            'Random number: Usertour assigns every user or company a whole number from 1 to the upper bound you enter (2–10,000), spread evenly. It cannot be set from your code, and the type and bound are locked after creation.',
+        },
+        randomMaxLabel: 'Upper bound',
+        randomMaxPlaceholder: 'Max',
+        randomMaxInvalid: 'Enter an upper bound between 2 and 10,000.',
         bizTypes: {
           user: 'User',
           company: 'Company',

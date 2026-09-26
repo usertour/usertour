@@ -112,7 +112,7 @@ describe('WebSocket v2 client messages (e2e)', () => {
       externalUserId,
       attributes: { plan: 'pro', name: 'Socket Tester' },
     });
-    expect(ack).toBe(true);
+    expect(ack).toMatchObject({ ok: true, rejected: [] });
 
     const bizUser = await prisma.bizUser.findFirst({
       where: { externalId: externalUserId, environmentId },
@@ -142,7 +142,7 @@ describe('WebSocket v2 client messages (e2e)', () => {
       attributes: { name: 'Socket Corp', subscription: 'pro' },
       membership: { role: 'admin' },
     });
-    expect(ack).toBe(true);
+    expect(ack).toMatchObject({ ok: true, rejected: [] });
 
     const bizCompany = await prisma.bizCompany.findFirst({
       where: { externalId: externalCompanyId, environmentId },

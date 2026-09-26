@@ -527,6 +527,8 @@ export type CreateAttributeMutationVariables = {
   bizType: AttributeBizTypes;
   displayName: string;
   codeName: string;
+  /** Upper bound of a Random number attribute (ADR 0020); required for that type only. */
+  randomMax?: number;
 };
 
 export const useCreateAttributeMutation = () => {

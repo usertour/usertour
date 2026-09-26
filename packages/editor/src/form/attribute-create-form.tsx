@@ -28,10 +28,12 @@ import {
 } from '@usertour/ui';
 import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour/icons';
 import { AttributeDataTypeIcon } from '@usertour/business-components';
+import { RANDOM_NUMBER_RANGE_MAX, RANDOM_NUMBER_RANGE_MIN } from '@usertour/constants';
+import { isBucketingDataType, isValidRandomMax } from '@usertour/helpers';
 import { CreateAttributeMutationVariables, useCreateAttributeMutation } from '@usertour/hooks';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -45,26 +47,67 @@ interface CreateFormProps {
   onSuccess?: (attribute: Partial<Attribute>) => void;
 }
 
-const formSchema = z.object({
-  dataType: z.enum([
-    String(BizAttributeTypes.Number),
-    String(BizAttributeTypes.String),
-    String(BizAttributeTypes.Boolean),
-    String(BizAttributeTypes.DateTime),
-    String(BizAttributeTypes.List),
-  ]),
-  bizType: z.enum([
-    String(AttributeBizTypes.User),
-    String(AttributeBizTypes.Company),
-    String(AttributeBizTypes.Membership),
-    String(AttributeBizTypes.Event),
-  ]),
-  displayName: z.string().max(20).min(2),
-  codeName: z.string().max(20).min(2),
-  description: z.string({}).max(100),
-});
+/**
+ * A factory (not a const) so the Random number bound's message is localized.
+ * `randomMax` holds the raw input text; it must be a whole number within the
+ * supported range only when the data type is Random number (ADR 0020).
+ */
+const buildFormSchema = (t: (key: string) => string) =>
+  z
+    .object({
+      dataType: z.enum([
+        String(BizAttributeTypes.Number),
+        String(BizAttributeTypes.String),
+        String(BizAttributeTypes.Boolean),
+        String(BizAttributeTypes.DateTime),
+        String(BizAttributeTypes.List),
+        String(BizAttributeTypes.RandomAB),
+        String(BizAttributeTypes.RandomNumber),
+      ]),
+      bizType: z.enum([
+        String(AttributeBizTypes.User),
+        String(AttributeBizTypes.Company),
+        String(AttributeBizTypes.Membership),
+        String(AttributeBizTypes.Event),
+      ]),
+      displayName: z.string().max(20).min(2),
+      codeName: z.string().max(20).min(2),
+      description: z.string({}).max(100),
+      randomMax: z.string(),
+    })
+    .superRefine((values, ctx) => {
+      if (values.dataType !== String(BizAttributeTypes.RandomNumber)) {
+        return;
+      }
+      if (!isValidRandomMax(Number(values.randomMax))) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['randomMax'],
+          message: t('settings.attributes.form.randomMaxInvalid'),
+        });
+      }
+    });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<ReturnType<typeof buildFormSchema>>;
+
+// Bucketing types exist for users and companies only (ADR 0020 §1).
+const BUCKETING_BIZ_TYPES = new Set([
+  String(AttributeBizTypes.User),
+  String(AttributeBizTypes.Company),
+]);
+
+// The Data type hint describes the selected type where it behaves unlike the
+// rest: a bucketing type is assigned by Usertour and locked after creation.
+const dataTypeTooltip = (t: (key: string) => string, dataType: string): string => {
+  const generic = t('settings.attributes.form.dataTypeTooltip');
+  if (dataType === String(BizAttributeTypes.RandomAB)) {
+    return `${generic} ${t('settings.attributes.form.dataTypeHints.randomAB')}`;
+  }
+  if (dataType === String(BizAttributeTypes.RandomNumber)) {
+    return `${generic} ${t('settings.attributes.form.dataTypeHints.randomNumber')}`;
+  }
+  return generic;
+};
 
 // Picker option metadata for the bizType and dataType DropdownMenus.
 // Labels resolve at render time via the shared settings i18n namespace.
@@ -109,6 +152,14 @@ const DATA_TYPE_OPTIONS = [
     labelKey: 'settings.attributes.form.dataTypes.dateTime',
   },
   { value: String(BizAttributeTypes.List), labelKey: 'settings.attributes.form.dataTypes.list' },
+  {
+    value: String(BizAttributeTypes.RandomAB),
+    labelKey: 'settings.attributes.form.dataTypes.randomAB',
+  },
+  {
+    value: String(BizAttributeTypes.RandomNumber),
+    labelKey: 'settings.attributes.form.dataTypes.randomNumber',
+  },
 ] as const;
 
 export const AttributeCreateForm = ({
@@ -138,14 +189,23 @@ export const AttributeCreateForm = ({
     dataType: String(BizAttributeTypes.Number),
     displayName: '',
     codeName: '',
+    randomMax: '',
     ...propDefaultValues,
   };
 
+  const formSchema = useMemo(() => buildFormSchema(t), [t]);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
     mode: 'onChange',
   });
+  const bizType = form.watch('bizType');
+  const dataType = form.watch('dataType');
+  const dataTypeOptions = DATA_TYPE_OPTIONS.filter(
+    (option) => !isBucketingDataType(Number(option.value)) || BUCKETING_BIZ_TYPES.has(bizType),
+  );
+  const isRandomNumber = dataType === String(BizAttributeTypes.RandomNumber);
+  const randomMaxError = form.formState.errors.randomMax?.message;
 
   // Re-seed with the latest `defaultValues` whenever the dialog opens.
   // `form.reset()` (no arg) would snap back to the values captured at
@@ -163,11 +223,16 @@ export const AttributeCreateForm = ({
   async function handleOnSubmit(formValues: FormValues) {
     setIsLoading(true);
     try {
+      const { randomMax, ...fields } = formValues;
+      const selectedDataType = Number.parseInt(formValues.dataType);
       const data = {
-        ...formValues,
+        ...fields,
         bizType: Number.parseInt(formValues.bizType),
-        dataType: Number.parseInt(formValues.dataType),
+        dataType: selectedDataType,
         projectId,
+        ...(selectedDataType === BizAttributeTypes.RandomNumber
+          ? { randomMax: Number(randomMax) }
+          : {}),
       } as CreateAttributeMutationVariables;
       const result = await invoke(data);
       if (!result?.id) {
@@ -238,7 +303,17 @@ export const AttributeCreateForm = ({
                             {BIZ_TYPE_OPTIONS.map((option) => (
                               <DropdownMenuItem
                                 key={option.value}
-                                onSelect={() => field.onChange(option.value)}
+                                onSelect={() => {
+                                  field.onChange(option.value);
+                                  // A bucketing type cannot follow the entity
+                                  // to membership or event; fall back to Number.
+                                  if (
+                                    !BUCKETING_BIZ_TYPES.has(option.value) &&
+                                    isBucketingDataType(Number(form.getValues('dataType')))
+                                  ) {
+                                    form.setValue('dataType', String(BizAttributeTypes.Number));
+                                  }
+                                }}
                               >
                                 <span className="flex items-center gap-1">
                                   {option.icon}
@@ -266,49 +341,70 @@ export const AttributeCreateForm = ({
                         <FormLabel className="flex flex-row">
                           {t('settings.attributes.form.dataTypeLabel')}
                           <QuestionTooltip className="ml-1">
-                            {t('settings.attributes.form.dataTypeTooltip')}
+                            {dataTypeTooltip(t, field.value)}
                           </QuestionTooltip>
                         </FormLabel>
-                        <DropdownMenu modal={false}>
-                          <FormControl>
-                            <DropdownMenuTrigger asChild disabled={isDisabled}>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="w-72 justify-between font-normal"
-                              >
-                                {selected ? (
-                                  <span className="flex items-center gap-1.5">
-                                    <AttributeDataTypeIcon
-                                      dataType={Number(selected.value)}
-                                      className="h-4 w-4 shrink-0 text-muted-foreground"
-                                    />
-                                    {t(selected.labelKey)}
-                                  </span>
-                                ) : (
-                                  t('settings.attributes.form.dataTypePlaceholder')
-                                )}
-                                <CaretSortIcon className="h-4 w-4 opacity-50" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                          </FormControl>
-                          <DropdownMenuContent align="start" className="w-72">
-                            {DATA_TYPE_OPTIONS.map((option) => (
-                              <DropdownMenuItem
-                                key={option.value}
-                                className="gap-1.5"
-                                onSelect={() => field.onChange(option.value)}
-                              >
-                                <AttributeDataTypeIcon
-                                  dataType={Number(option.value)}
-                                  className="h-4 w-4 shrink-0 text-muted-foreground"
-                                />
-                                {t(option.labelKey)}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* A Random number's upper bound is a parameter of the
+                            type, so it sits in the type's own row. */}
+                        <div className="flex w-72 gap-2">
+                          <DropdownMenu modal={false}>
+                            <FormControl>
+                              <DropdownMenuTrigger asChild disabled={isDisabled}>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="min-w-0 flex-1 justify-between font-normal"
+                                >
+                                  {selected ? (
+                                    <span className="flex min-w-0 items-center gap-1.5">
+                                      <AttributeDataTypeIcon
+                                        dataType={Number(selected.value)}
+                                        className="h-4 w-4 shrink-0 text-muted-foreground"
+                                      />
+                                      <span className="truncate">{t(selected.labelKey)}</span>
+                                    </span>
+                                  ) : (
+                                    t('settings.attributes.form.dataTypePlaceholder')
+                                  )}
+                                  <CaretSortIcon className="h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                            </FormControl>
+                            <DropdownMenuContent align="start" className="w-72">
+                              {dataTypeOptions.map((option) => (
+                                <DropdownMenuItem
+                                  key={option.value}
+                                  className="gap-1.5"
+                                  onSelect={() => field.onChange(option.value)}
+                                >
+                                  <AttributeDataTypeIcon
+                                    dataType={Number(option.value)}
+                                    className="h-4 w-4 shrink-0 text-muted-foreground"
+                                  />
+                                  {t(option.labelKey)}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          {isRandomNumber && (
+                            <Input
+                              type="number"
+                              min={RANDOM_NUMBER_RANGE_MIN}
+                              max={RANDOM_NUMBER_RANGE_MAX}
+                              step={1}
+                              aria-label={t('settings.attributes.form.randomMaxLabel')}
+                              placeholder={t('settings.attributes.form.randomMaxPlaceholder')}
+                              className="h-8 w-24 shrink-0"
+                              {...form.register('randomMax')}
+                            />
+                          )}
+                        </div>
                         <FormMessage />
+                        {isRandomNumber && randomMaxError && (
+                          <p className="text-[0.8rem] font-medium text-destructive">
+                            {randomMaxError}
+                          </p>
+                        )}
                       </FormItem>
                     );
                   }}

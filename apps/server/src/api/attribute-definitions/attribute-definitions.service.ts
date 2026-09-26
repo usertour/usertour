@@ -95,6 +95,7 @@ export class ApiAttributeDefinitionsService {
         codeName: body.codeName,
         displayName: body.displayName,
         description: body.description ?? '',
+        ...(body.randomMax !== undefined ? { randomMax: body.randomMax } : {}),
       });
       return mapAttribute(created);
     } catch (err) {

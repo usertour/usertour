@@ -17,18 +17,20 @@ export interface OperatorEntry {
   summaryLabelKey?: string;
 }
 
+const NUMBER_OPERATORS: OperatorEntry[] = [
+  { value: 'is', labelKey: 'conditions.operators.is' },
+  { value: 'not', labelKey: 'conditions.operators.isNot' },
+  { value: 'isLessThan', labelKey: 'conditions.operators.isLessThan' },
+  { value: 'isLessThanOrEqualTo', labelKey: 'conditions.operators.isLessThanOrEqualTo' },
+  { value: 'isGreaterThan', labelKey: 'conditions.operators.isGreaterThan' },
+  { value: 'isGreaterThanOrEqualTo', labelKey: 'conditions.operators.isGreaterThanOrEqualTo' },
+  { value: 'between', labelKey: 'conditions.operators.isBetween' },
+  { value: 'any', labelKey: 'conditions.operators.hasAnyValue' },
+  { value: 'empty', labelKey: 'conditions.operators.isEmpty' },
+];
+
 export const OPERATORS_BY_DATATYPE: Record<number, OperatorEntry[]> = {
-  [AttributeDataType.Number]: [
-    { value: 'is', labelKey: 'conditions.operators.is' },
-    { value: 'not', labelKey: 'conditions.operators.isNot' },
-    { value: 'isLessThan', labelKey: 'conditions.operators.isLessThan' },
-    { value: 'isLessThanOrEqualTo', labelKey: 'conditions.operators.isLessThanOrEqualTo' },
-    { value: 'isGreaterThan', labelKey: 'conditions.operators.isGreaterThan' },
-    { value: 'isGreaterThanOrEqualTo', labelKey: 'conditions.operators.isGreaterThanOrEqualTo' },
-    { value: 'between', labelKey: 'conditions.operators.isBetween' },
-    { value: 'any', labelKey: 'conditions.operators.hasAnyValue' },
-    { value: 'empty', labelKey: 'conditions.operators.isEmpty' },
-  ],
+  [AttributeDataType.Number]: NUMBER_OPERATORS,
   [AttributeDataType.String]: [
     { value: 'is', labelKey: 'conditions.operators.is' },
     { value: 'not', labelKey: 'conditions.operators.isNot' },
@@ -75,6 +77,13 @@ export const OPERATORS_BY_DATATYPE: Record<number, OperatorEntry[]> = {
     { value: 'any', labelKey: 'conditions.operators.hasAnyValue' },
     { value: 'empty', labelKey: 'conditions.operators.isEmpty' },
   ],
+  // Bucketing attributes (ADR 0020): a Random A/B holds exactly `A` or `B`,
+  // so only equality means anything; a Random number is a number.
+  [AttributeDataType.RandomAB]: [
+    { value: 'is', labelKey: 'conditions.operators.is' },
+    { value: 'not', labelKey: 'conditions.operators.isNot' },
+  ],
+  [AttributeDataType.RandomNumber]: NUMBER_OPERATORS,
 };
 
 export function operatorsFor(dataType: number | undefined): OperatorEntry[] {
