@@ -1,12 +1,21 @@
 import { INestApplication } from '@nestjs/common';
-import { BizAttributeTypes, Capability } from '@usertour/types';
+import { BizAttributeTypes, BizEvents, Capability, EventAttributes } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { BizService } from '@/modules/biz/services/biz.service';
+import { EventTrackingService } from '@/modules/delivery/services/event-tracking.service';
 import { gqlData, graphql } from '../auth';
 import { createTestApp } from '../create-test-app';
+import {
+  buildAttribute,
+  buildContent,
+  buildEvent,
+  buildSession,
+  buildStep,
+  buildVersion,
+} from '../factories';
 import { buildAuthorizedUser } from '../gql/_support';
 import { OpenApiFixture, seedApiFixture, teardownApiFixture } from '../openapi';
 
@@ -435,23 +444,95 @@ describe('API v2 attribute write operations (e2e)', () => {
       expect((row?.data as Record<string, unknown>).aw_hits).toBe(parallel);
     });
 
-    it('adds racing with events are all counted; an event stamps only its own keys', async () => {
+    it('an add committed while a content event is in flight survives its seen-at stamp', async () => {
+      // The SDK content-event path is the one that stamps seen-at on the user
+      // and the session's company; v2 POST /events does not, so this runs
+      // through EventTrackingService with a flow session. The event reads the
+      // user when its transaction starts; the adds are committed after that
+      // read and before the stamp, which is where a write-back of the read
+      // row would undo them. Racing requests rarely land in that window, so
+      // the adds are placed in it.
       await putUser('aw-race-ev', { aw_ev_hits: 0 });
-      const seededFirstSeen = (await stored('aw-race-ev')).first_seen_at;
-      const parallel = 10;
-      const results = await Promise.all(
-        Array.from({ length: parallel }, (_, i) => [
-          putUser('aw-race-ev', { aw_ev_hits: { add: 1 } }),
-          track('aw-race-ev', `aw_race_${i % 2}`, {}),
-        ]).flat(),
-      );
-      for (const res of results) {
-        expect([200, 201]).toContain(res.status);
+      await putCompany('aw-race-ev-co', { aw_ev_seats: 0 });
+      const bizUser = await userRow('aw-race-ev');
+      const bizCompany = await prisma.bizCompany.findFirstOrThrow({
+        where: { environmentId: fx.environmentId, externalId: 'aw-race-ev-co' },
+      });
+      const seededUser = await stored('aw-race-ev');
+      const seededCompany = bizCompany.data as Record<string, unknown>;
+
+      const stepSeen = await buildEvent(prisma, {
+        projectId: fx.projectId,
+        codeName: BizEvents.FLOW_STEP_SEEN,
+        predefined: true,
+      });
+      // An event with no attached attribute keeps no data and is not recorded.
+      const stepIdAttribute = await buildAttribute(prisma, {
+        projectId: fx.projectId,
+        codeName: EventAttributes.FLOW_STEP_ID,
+        displayName: 'Flow step id',
+        dataType: BizAttributeTypes.String,
+        bizType: AttributeBizType.EVENT,
+      });
+      await prisma.attributeOnEvent.create({
+        data: { eventId: stepSeen.id, attributeId: stepIdAttribute.id },
+      });
+      const content = await buildContent(prisma, {
+        projectId: fx.projectId,
+        environmentId: fx.environmentId,
+        type: 'flow',
+      });
+      const version = await buildVersion(prisma, { contentId: content.id });
+      // Two steps, so seeing the first one never completes the flow.
+      const firstStep = await buildStep(prisma, { versionId: version.id, sequence: 0 });
+      await buildStep(prisma, { versionId: version.id, sequence: 1 });
+      const session = await buildSession(prisma, {
+        bizUserId: bizUser?.id,
+        bizCompanyId: bizCompany.id,
+        contentId: content.id,
+        versionId: version.id,
+      });
+      const eventTracking = app.get(EventTrackingService);
+
+      // handleEventCreation runs inside the event transaction, after the user
+      // read and before the seen-at stamp.
+      const inFlight = eventTracking as unknown as {
+        handleEventCreation: (...args: unknown[]) => Promise<boolean>;
+      };
+      const createEvent = inFlight.handleEventCreation.bind(eventTracking);
+      const userWrites: request.Response[] = [];
+      const companyWrites: request.Response[] = [];
+      const spy = jest
+        .spyOn(inFlight, 'handleEventCreation')
+        .mockImplementationOnce(async (...args: unknown[]) => {
+          userWrites.push(await putUser('aw-race-ev', { aw_ev_hits: { add: 1 } }));
+          companyWrites.push(await putCompany('aw-race-ev-co', { aw_ev_seats: { add: 1 } }));
+          return createEvent(...args);
+        });
+      try {
+        const tracked = await eventTracking.trackEventByType(BizEvents.FLOW_STEP_SEEN, {
+          sessionId: session.id,
+          environment: { id: fx.environmentId, projectId: fx.projectId } as never,
+          clientContext: { pageUrl: 'http://app/', viewportWidth: 1280, viewportHeight: 800 },
+          stepId: firstStep.id,
+        });
+        expect(tracked).toBe(true);
+      } finally {
+        spy.mockRestore();
       }
-      const data = await stored('aw-race-ev');
-      expect(data.aw_ev_hits).toBe(parallel);
-      expect(data.first_seen_at).toBe(seededFirstSeen);
-      expect(typeof data.last_seen_at).toBe('string');
+      expect(userWrites.map((res) => res.status)).toEqual([200]);
+      expect(companyWrites.map((res) => res.status)).toEqual([200]);
+      expect(await prisma.bizEvent.count({ where: { bizSessionId: session.id } })).toBe(1);
+
+      const user = await stored('aw-race-ev');
+      expect(user.aw_ev_hits).toBe(1);
+      expect(user.first_seen_at).toBe(seededUser.first_seen_at);
+      expect(user.last_seen_at).not.toBe(seededUser.last_seen_at);
+      const company = (await prisma.bizCompany.findUniqueOrThrow({ where: { id: bizCompany.id } }))
+        .data as Record<string, unknown>;
+      expect(company.aw_ev_seats).toBe(1);
+      expect(company.first_seen_at).toBe(seededCompany.first_seen_at);
+      expect(company.last_seen_at).not.toBe(seededCompany.last_seen_at);
     });
 
     it('parallel first writes of one new codeName all succeed and define it once', async () => {
