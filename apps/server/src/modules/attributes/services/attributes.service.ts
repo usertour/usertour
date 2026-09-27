@@ -57,6 +57,13 @@ export class AttributesService {
           `"${data.codeName}" belongs to a deleted attribute of another data type. Restore that attribute or choose another codeName.`,
         );
       }
+      // The range is locked for life like the type (ADR 0020 §5): reviving the
+      // old definition under a new bound would silently keep the old one.
+      if (isBucketingDataType(held.dataType) && data.randomMax !== held.randomMax) {
+        throw new AttributeCodeNameHeldByDeletedError(
+          `"${data.codeName}" belongs to a deleted attribute with another range (1 to ${held.randomMax}). Restore that attribute or choose another codeName.`,
+        );
+      }
       const restored = await this.prisma.attribute.update({
         where: { id: held.id },
         data: {
@@ -156,6 +163,19 @@ export class AttributesService {
         `The type of "${existing.codeName}" cannot be changed: random bucketing attributes keep their type and range for life. Create a new attribute instead.`,
       );
     }
+    // Its scope is locked as well: a bucketing attribute exists for users and
+    // companies only, and that rule must hold on every entry point, not just
+    // on create.
+    if (
+      existing &&
+      others.bizType !== undefined &&
+      others.bizType !== existing.bizType &&
+      isBucketingDataType(existing.dataType)
+    ) {
+      throw new ValidationError(
+        `The object type of "${existing.codeName}" cannot be changed: random bucketing attributes keep their object type for life. Create a new attribute instead.`,
+      );
+    }
     // A provider-owned attribute (CRM sync, ADR 0013 §6) takes its shape from
     // the remote property; a type change here would break the next mapping
     // save and the values the sync writes. Labels and descriptions stay free.
@@ -223,6 +243,8 @@ export class AttributesService {
       data: { deleted: false },
     });
     await this.cache.invalidateDeferred(this.cache.keys.attrs(restored.projectId));
+    // Rows born while the definition was deleted carry no value (ADR 0020 §3).
+    await this.enqueueBackfill(restored.id, restored.dataType);
     return restored;
   }
 
