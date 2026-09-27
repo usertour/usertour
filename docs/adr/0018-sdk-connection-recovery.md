@@ -33,7 +33,7 @@ Two things are *not* problems and are recorded so they are not re-reviewed: the 
 | `disconnect`, any transport reason | Socket.IO reconnects by itself: record `reconnecting`. |
 | `disconnect`, reason `io server disconnect` | Socket.IO will not reconnect: the SDK reconnects **manually** with backoff. |
 | `connect_error` with `err.data.retryable === true` | Manual reconnect with backoff. |
-| `connect_error` with `err.data.retryable === false` | Stop: state `rejected`, host event (§7). Only credentials that *differ* from the rejected ones (`setAuth` / `updateCredentials`) start a new attempt — the existing rule, kept. |
+| `connect_error` with `err.data.retryable === false` | Stop: state `rejected`, host event (§7). Only credentials that *differ* from the rejected ones (`setAuth` / `updateCredentials`) start a new attempt — the existing rule, kept. When the credential set had connected before, that attempt is a reconnect, so the connect it leads to evaluates: a refreshed token alone sends no other request. |
 | `connect_error` without `data` (older server) | Treated as retryable: a handshake a minute is better than a page offline forever. |
 | `connect` after a previous connection | `resetBatchState()`, replay unacknowledged writes (§4), then `END_BATCH` (§5). The first connection does neither: `identify()` drives it. |
 
@@ -50,13 +50,15 @@ The handshake middleware distinguishes two outcomes and attaches `data` to the e
 
 The catch-all no longer reports a transient server fault as the client's fault.
 
-### 3. The guard rebuilds instead of kicking
+### 3. The guard kicks; the SDK comes back with the state of now
 
-When `WebSocketV2Guard` finds no `socketData`, it rebuilds it from `socket.handshake.auth` through the same `initializeSocketData` the handshake uses, stores it, and lets the message through. Only a rebuild that fails disconnects the socket — and the SDK now reconnects from that too (§1). The 24 h TTL stays; a rebuild is a renewal.
+When `WebSocketV2Guard` finds no `socketData` — a Redis restart or failover, the 24 h TTL on a tab that stayed connected but wrote nothing, or the deletion a failed user write performs on purpose — it disconnects the socket. Before this ADR that was terminal; with §1 the SDK reconnects by itself, and its handshake carries the state of now. Rebuilding from `socket.handshake.auth` was tried first and rejected: that object is fixed for the life of the connection, so a rebuild restored the company, sessions, client conditions and timers of the moment the connection was made, and a Redis read error read as "data gone" overwrote a record that was still there.
 
 ### 4. Unacknowledged upserts are replayed on reconnect
 
-The socket service keeps at most one pending payload per kind for `UpsertUser` and `UpsertCompany` (the latest wins). A payload is registered when `identify()` / `updateUser()` / `group()` / `updateGroup()` emits it; it is retired when the acknowledgement arrives — success **or** an explicit `false` from the server — and marked failed when the emit fails because of a timeout or a closed socket. On connect the socket service replays the failed ones, user then company, batched; the core folds an accepted replay into the attribute cache exactly as the original call would have.
+The socket service keeps one pending record per kind for `UpsertUser` and `UpsertCompany`, holding every write of that kind that failed for a transport reason (a timeout, a closed socket), merged key by key with the newest values winning — keeping only the latest payload lost the keys of an earlier one, the very `identify()` attributes this section exists for. An acknowledgement — success **or** an explicit `false` from the server — retires from the record the keys that write carried, since the server now holds their newer values. On connect the socket service replays the records, user then company, batched, with the identity token of now; the core folds an accepted replay into the attribute cache exactly as the original call would have, and fires the identify success event the timed-out `identify()` never could.
+
+A record is dropped instead of replayed when it belongs to another user or company than the credentials of now (a `group()` that timed out was rolled back, and must not land later on a company the SDK no longer claims), when it is older than ten minutes (a laptop waking from sleep must not overwrite what an API wrote meanwhile), or when one replay already went unanswered (a payload the server refuses without an acknowledgement would otherwise be resent, and waited on, at every connect).
 
 Only these two kinds replay: they are literal merges and idempotent. Events are not replayed (a replay can double-count, and the caller already received the failure); content messages are not replayed (each has its own UI feedback). A key carrying an `add` operation is stripped from a replayed payload: after a timeout the SDK cannot know whether the server applied the write before the acknowledgement was lost, and ADR 0017 accepted `add` as non-idempotent without widening that window. `set_once`, `union` and `remove` are idempotent and replay as-is.
 
@@ -68,7 +70,7 @@ After the replay, the SDK sends a single `END_BATCH`. The server's existing `end
 
 ### 6. Wait timers travel in the handshake
 
-`SocketAuthData` gains `waitTimers: ConditionWaitTimer[]`, declared by the client like `clientConditions` are today. The SDK's timer monitor keeps a fired timer on record (`activated: true`) until it is cancelled, and `syncSocketCredentials` includes every running and fired timer. `initializeSocketData` restores `auth.waitTimers` instead of resetting to `[]`, treated exactly like `clientConditions`: stored as declared, with only a non-array refused (it would throw in the auto-start filter). The server reads two fields of a stored timer — `versionId` and `activated` — so there is nothing else to validate.
+`SocketAuthData` gains `waitTimers: ConditionWaitTimer[]`, declared by the client like `clientConditions` are today. The SDK's timer monitor keeps a fired timer on record (`activated: true`) until it is cancelled, and `syncSocketCredentials` includes every running and fired timer; a timer firing refreshes the credentials at once, since the fired report itself may be lost to the disconnect and the server neither re-issues a timer it holds nor starts content on one it thinks is running. `initializeSocketData` restores `auth.waitTimers` instead of resetting to `[]`, treated exactly like `clientConditions`: stored as declared, with only a non-array refused (it would throw in the auto-start filter). The server reads two fields of a stored timer — `versionId` and `activated` — so there is nothing else to validate.
 
 The next evaluation then finds the timers already present: a running one is not re-issued (the SDK's clock keeps its remaining time), a fired one satisfies `isAllowedByConditionWaitTimers` and the content starts. The trust surface equals that of `clientConditions`: a client can only make its own content appear earlier.
 
@@ -78,11 +80,11 @@ No host-facing event ships with this. The SDK's public `on()` / `off()` are unim
 
 ### 8. Testing
 
-The SDK has no test harness. The state machine (signal → next state + actions), the backoff sequence and the replay registry are written as pure functions in `@usertour/helpers`, where jest runs them table-driven; `UsertourSocket` and the core only wire them to Socket.IO. Server e2e covers: a handshake that throws yields `retryable: true`; an invalid token yields `retryable: false`; a message arriving after its `socketData` was deleted from Redis is served after a rebuild, not disconnected; `waitTimers` in `auth` survive into `socketData`, and a non-list is stored as `[]`.
+The SDK has no test harness. The state machine (signal → next state + actions), the backoff sequence and the replay registry are written as pure functions in `@usertour/helpers`, where jest runs them table-driven; `UsertourSocket` and the core only wire them to Socket.IO. Server e2e covers: a handshake that throws yields `retryable: true`; an invalid token yields `retryable: false`; a message arriving after its `socketData` was deleted from Redis disconnects the socket with the reason the SDK reconnects from, and nothing is rebuilt; `waitTimers` in `auth` survive into `socketData`, and a non-list is stored as `[]`.
 
 ### 9. Rollout
 
-Server first — the error classification, the guard rebuild and the optional `waitTimers` in `auth` are all backward compatible with the current SDK. SDK second; it treats a `connect_error` without `data` (an older self-hosted server) as retryable, so nothing strands on a version skew.
+Server first — the error classification and the optional `waitTimers` in `auth` are backward compatible with the current SDK. SDK second; it treats a `connect_error` without `data` (an older self-hosted server) as retryable, so nothing strands on a version skew.
 
 ## Consequences
 
