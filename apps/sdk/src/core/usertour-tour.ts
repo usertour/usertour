@@ -593,7 +593,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     if (isTimeout) {
-      log.warn('Step target element stayed hidden past the timeout; closing the flow');
+      log.warn('Step target element stayed hidden past the timeout; closing the flow', {
+        target: currentStep?.target,
+      });
       await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }

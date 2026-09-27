@@ -53,7 +53,7 @@ No `logLevel` option: the switch is boolean and shows everything, as the analyti
 |---|---|---|
 | `debug` | Internal state flow: condition evaluations, timer start/fire/cancel, socket signals and state transitions, queue processing, cache decisions. Dozens of lines per minute is fine here. | `console.log` (Chrome hides `console.debug` by default) |
 | `info` | Milestones, a handful per session: connected and reconnected, credentials changed, a reconnect scheduled, an identity token refreshed. | `console.log` |
-| `warn` | Degraded but continuing: an unsupported method, evaluation disabled, an attribute the server refused, a handler missing, a target element not found on the page or not configured, a pending write dropped. | `console.warn` |
+| `warn` | Degraded but continuing: an unsupported method, evaluation disabled, an attribute the server refused, a handler missing, a target element not found on the page or not configured. | `console.warn` |
 | `error` | One operation failed: `Failed to <verb> <object>` for the SDK's own operations, `<object> threw` for a host callback or handler that raised. Still gated. | `console.error` |
 | `critical` | §2 only. | `console.error`, always |
 

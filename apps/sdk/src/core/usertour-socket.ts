@@ -804,6 +804,14 @@ export class UsertourSocket implements IUsertourSocket {
     if (state !== previous) {
       log.debug(`Connection ${previous} → ${state} on ${signal.type}`);
     }
+    if (signal.type === 'connect_error') {
+      // A first connection that fails stays `connecting`, so this is the
+      // only trace of a server that cannot be reached at all.
+      const message = (error as { message?: unknown } | undefined)?.message;
+      log.debug(
+        `Connection attempt failed${typeof message === 'string' ? ` (${message})` : ''}${signal.retryable ? '' : '; not retryable'}`,
+      );
+    }
     if (signal.type === 'connect') {
       log.info(previous === 'reconnecting' ? 'Reconnected' : 'Connected');
     }

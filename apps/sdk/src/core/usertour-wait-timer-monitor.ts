@@ -257,8 +257,8 @@ export class ConditionWaitTimersMonitor extends Evented {
         state,
       };
 
-      // Emit event for external listeners; the specific line ("Wait timer
-      // started (version …)") was already logged by the caller.
+      // Emit event for external listeners; the log line is the caller's — one
+      // per timer for start / fire / cancel, one summary for clearing all.
       this.trigger(SDKClientEvents.WAIT_TIMER_STATE_CHANGED, eventData);
     } catch (error) {
       log.error(`Failed to report the wait timer state (${state})`, error);
