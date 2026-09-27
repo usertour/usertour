@@ -886,9 +886,11 @@ export class UsertourSocket implements IUsertourSocket {
     if (signal.type === 'connect') {
       log.info(previous === 'reconnecting' ? 'Reconnected' : 'Connected');
     }
-    if (state === 'rejected' && previous !== 'rejected') {
-      // Always visible (ADR 0019 §2): the SDK has stopped reconnecting and the
-      // host has no promise or event to learn that from.
+    // Always visible (ADR 0019 §2): the SDK has stopped reconnecting and the
+    // host has no promise or event to learn that from. Not when the refusal
+    // judged credentials the host has since replaced: the next attempt
+    // starts right below, and the SDK has not stopped.
+    if (state === 'rejected' && previous !== 'rejected' && !this.credentialsChangedInFlight) {
       const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
       log.critical(
         `Connection rejected by the server${typeof code === 'string' ? ` (${code})` : ''}: the environment token or identity token was refused. Usertour content will not show on this page until init() or identify() is called with valid credentials.`,
