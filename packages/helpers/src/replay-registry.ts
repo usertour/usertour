@@ -20,10 +20,12 @@ import {
  *
  * Invariants:
  * - One record per kind (user, company), merged key by key, `add` stripped.
- * - A key belongs to its latest send. A newer write retires the keys it
- *   carries the moment it is sent; an earlier send that fails afterwards
- *   registers only the keys no later send took; an earlier send that lands
- *   retires only those.
+ * - A key belongs to its latest send **to the same target**. A newer write
+ *   retires the keys it carries the moment it is sent; an earlier send that
+ *   fails afterwards registers only the keys no later send took; an earlier
+ *   send that lands retires only those. A write to another company owns
+ *   nothing of this one's: a group() that is refused rolls back to the
+ *   previous company, whose failed keys must still be there.
  * - A record holds one user and, for a company write, one company: a write
  *   for another target is never merged, and a record for a target the
  *   session has left is dropped instead of replayed.
@@ -63,7 +65,8 @@ export interface ReplayRegistryOptions {
 
 export class ReplayRegistry<T extends TargetedWrite> {
   private readonly records = new Map<WriteKind, FailedWrite<T>>();
-  private readonly sentSeqs = new Map<WriteKind, SentKeySeqs>();
+  /** Per target (kind, user, company): which send each key was last carried by. */
+  private readonly sentSeqs = new Map<string, SentKeySeqs>();
   private epoch = 0;
   private seq = 0;
   private readonly ttlMs: number;
@@ -96,7 +99,7 @@ export class ReplayRegistry<T extends TargetedWrite> {
     if (ticket.epoch !== this.epoch || !isSameTarget(kind, write, target)) {
       return;
     }
-    const owned = keysStillOwnedBy(write, this.sentKeys(kind), ticket.seq);
+    const owned = keysStillOwnedBy(write, this.sentKeys(kind, write), ticket.seq);
     if (!owned) {
       return;
     }
@@ -143,7 +146,7 @@ export class ReplayRegistry<T extends TargetedWrite> {
     if (ticket.epoch !== this.epoch) {
       return false;
     }
-    const landed = keysStillOwnedBy(write, this.sentKeys(kind), ticket.seq);
+    const landed = keysStillOwnedBy(write, this.sentKeys(kind, write), ticket.seq);
     if (landed) {
       this.retire(kind, landed);
     }
@@ -165,12 +168,13 @@ export class ReplayRegistry<T extends TargetedWrite> {
 
   private nextTicket(kind: WriteKind, write: T): SendTicket {
     this.seq += 1;
-    this.sentSeqs.set(kind, noteSentKeys(this.sentSeqs.get(kind), write, this.seq));
+    const key = targetKey(kind, write);
+    this.sentSeqs.set(key, noteSentKeys(this.sentSeqs.get(key), write, this.seq));
     return { seq: this.seq, epoch: this.epoch };
   }
 
-  private sentKeys(kind: WriteKind): SentKeySeqs {
-    return this.sentSeqs.get(kind) ?? { attributes: {}, membership: {} };
+  private sentKeys(kind: WriteKind, write: WriteTarget): SentKeySeqs {
+    return this.sentSeqs.get(targetKey(kind, write)) ?? { attributes: {}, membership: {} };
   }
 
   private retire(kind: WriteKind, write: T): void {
@@ -202,6 +206,11 @@ export class ReplayRegistry<T extends TargetedWrite> {
     return undefined;
   }
 }
+
+const targetKey = (kind: WriteKind, write: WriteTarget): string => {
+  const company = kind === 'company' ? (write.externalCompanyId ?? '') : '';
+  return `${kind}\u0000${write.externalUserId ?? ''}\u0000${company}`;
+};
 
 /** Whether a write and a target name the same user and, for a company write, the same company. */
 const isSameTarget = (kind: WriteKind, write: WriteTarget, target: WriteTarget): boolean => {

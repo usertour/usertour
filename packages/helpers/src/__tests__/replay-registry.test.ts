@@ -171,6 +171,22 @@ describe('ReplayRegistry — who it is for', () => {
     expect(registry.has('company')).toBe(false);
   });
 
+  test("a write to another company owns nothing of this company's keys", () => {
+    // Offline on A: updateGroup({plan:'enterprise'}); before it times out,
+    // group('B', {plan:'basic'}); A's write times out; on reconnect B is
+    // refused and the core rolls back to A. A's plan must still replay.
+    const { registry } = harness();
+    const onAWrite = { ...onA, attributes: { plan: 'enterprise' } };
+    const aTicket = registry.sent('company', onAWrite);
+    registry.sent('company', { ...onB, attributes: { plan: 'basic' } });
+    registry.failed('company', aTicket, onAWrite, onA);
+    const started = registry.startReplay('company', onA, 'tok');
+    expect(started.kind).toBe('send');
+    if (started.kind === 'send') {
+      expect(started.write.attributes).toEqual({ plan: 'enterprise' });
+    }
+  });
+
   test('a replay answered after group() moved to another company is not folded in', () => {
     const { registry } = harness();
     const onAWrite = { ...onA, attributes: { plan: 'enterprise' } };
