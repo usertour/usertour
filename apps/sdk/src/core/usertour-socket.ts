@@ -38,15 +38,16 @@ import { getClientContext } from '@/core/usertour-helper';
 import {
   ConnectionSignal,
   ConnectionState,
+  FailedWrite,
   isRetryableHandshakeError,
   MAX_WRITE_REPLAYS,
-  mergeFailedWrite,
   PENDING_WRITE_TTL_MS,
   reconnectDelayMs,
+  recordFailedWrite,
   reduceConnection,
-  stripNonIdempotentWrites,
+  retireWrittenKeys,
   uuidV4,
-  withoutWrittenKeys,
+  withoutExpiredKeys,
 } from '@usertour/helpers';
 
 const log = logger.scope('socket');
@@ -64,17 +65,10 @@ export type ReplayedWrite =
 /**
  * The writes worth resending: literal merges, idempotent (ADR 0018 §4). One
  * record per kind holds every failed write of that kind, merged key by key
- * with the newest values winning and `add` operations already stripped; an
- * acknowledged write retires the keys it carried.
+ * with the newest values winning and `add` operations stripped; a newer
+ * write of the kind — sent or acknowledged — retires the keys it carries.
  */
-interface PendingWrite {
-  kind: ReplayedWrite['kind'];
-  params: UpsertUserDto | UpsertCompanyDto;
-  /** When the most recent write folded into this record failed. */
-  failedAt: number;
-  /** How many connects have already resent it. */
-  replays: number;
-}
+type PendingWrite = FailedWrite<UpsertUserDto | UpsertCompanyDto>;
 
 /** Outcome of one emit: whether the server answered at all, and what it said. */
 interface EmitOutcome {
@@ -214,8 +208,10 @@ export class UsertourSocket implements IUsertourSocket {
   private readonly RECONNECT_TIMEOUT_ID = 'socket-reconnect';
   // The UpsertUser / UpsertCompany writes that failed for a transport reason,
   // one merged record per kind, resent after a reconnect. Cleared on a
-  // credential change.
+  // credential change or a reset; `recoveryEpoch` counts those, so a write
+  // that was in flight across one cannot re-register itself afterwards.
   private readonly pendingWrites = new Map<ReplayedWrite['kind'], PendingWrite>();
+  private recoveryEpoch = 0;
   private writeReplayedListener: ((write: ReplayedWrite) => void) | null = null;
 
   // === Constructor ===
@@ -277,6 +273,7 @@ export class UsertourSocket implements IUsertourSocket {
       // A pending write belongs to the previous identity: never replay it
       // onto the next one (ADR 0001's isolation rule).
       this.pendingWrites.clear();
+      this.recoveryEpoch += 1;
       this.clearReconnect();
       this.socket.disconnect();
       // A disconnected socket emits no 'disconnect' for this call; the new
@@ -287,6 +284,10 @@ export class UsertourSocket implements IUsertourSocket {
       this.hadConnected = false;
     }
 
+    // Only the identity lives here. Everything else the handshake declares
+    // — company, sessions, client conditions, timers — is the core's state,
+    // and the core syncs it right after this call: a fresh identity must not
+    // inherit the previous one's, and the same identity gets its own back.
     this.authCredentials = {
       externalUserId,
       token,
@@ -355,6 +356,7 @@ export class UsertourSocket implements IUsertourSocket {
     // Nothing to resend or retry for a connection we are closing on purpose;
     // the next credentials start from scratch: first connect, first backoff.
     this.pendingWrites.clear();
+    this.recoveryEpoch += 1;
     this.clearReconnect();
     this.connectionState = 'idle';
     this.reconnectAttempt = 0;
@@ -523,11 +525,12 @@ export class UsertourSocket implements IUsertourSocket {
   }
 
   /**
-   * Send one of the two replayable writes. A transport failure (timeout,
-   * closed socket) folds the payload into the pending record of its kind so
-   * the next connect resends it; a server verdict — true or false — retires
-   * from that record the keys this write carried, since the server now holds
-   * their newer values.
+   * Send one of the two replayable writes. The keys it carries leave the
+   * pending record first: Socket.IO flushes a buffered write before the
+   * `connect` that triggers the replay, so a replayed older value would land
+   * after it. A transport failure (timeout, closed socket) then folds the
+   * payload back into the record for the next connect; a server verdict —
+   * true or false — leaves the keys retired, since the server holds them.
    */
   private async sendPendingWrite(
     kind: ReplayedWrite['kind'],
@@ -535,54 +538,58 @@ export class UsertourSocket implements IUsertourSocket {
     params: UpsertUserDto | UpsertCompanyDto,
     options?: BatchOptions,
   ): Promise<UpsertOutcome> {
+    const epoch = this.recoveryEpoch;
+    this.retireKeysOf(kind, params);
     const outcome = await this.sendClientMessageWithOutcome(messageKind, params, options);
-    if (outcome.acknowledged) {
-      this.retireWrittenKeys(kind, params);
-    } else {
-      this.recordFailedWrite(kind, params);
+    // A credential change or a reset happened meanwhile: this write belongs
+    // to the session before it and must not re-register itself.
+    if (!outcome.acknowledged && epoch === this.recoveryEpoch) {
+      this.recordFailure(kind, params);
     }
     return { ok: outcome.result, rejected: outcome.rejected };
   }
 
-  private recordFailedWrite(
+  /** Whether a write and a pending record address the same user or company. */
+  private sameTarget(
+    kind: ReplayedWrite['kind'],
+    pending: PendingWrite,
+    params: UpsertUserDto | UpsertCompanyDto,
+  ): boolean {
+    if (pending.write.externalUserId !== params.externalUserId) {
+      return false;
+    }
+    return (
+      kind === 'user' ||
+      (pending.write as UpsertCompanyDto).externalCompanyId ===
+        (params as UpsertCompanyDto).externalCompanyId
+    );
+  }
+
+  private recordFailure(
     kind: ReplayedWrite['kind'],
     params: UpsertUserDto | UpsertCompanyDto,
   ): void {
+    // A write for another user or company is never merged with the record:
+    // it is a stale request of an identity the SDK left, or group() moved on.
+    if (params.externalUserId !== this.authCredentials?.externalUserId) {
+      return;
+    }
     const previous = this.pendingWrites.get(kind);
-    // A write for another company starts a new record: group() moved on, and
-    // the earlier company's attributes are its own.
-    const sameTarget =
-      previous !== undefined &&
-      (kind === 'user' ||
-        (previous.params as UpsertCompanyDto).externalCompanyId ===
-          (params as UpsertCompanyDto).externalCompanyId);
-    this.pendingWrites.set(kind, {
-      kind,
-      params: mergeFailedWrite(sameTarget ? previous.params : undefined, this.replayable(params)),
-      failedAt: Date.now(),
-      replays: 0,
-    });
+    const mergeable = previous && this.sameTarget(kind, previous, params) ? previous : undefined;
+    this.pendingWrites.set(kind, recordFailedWrite(mergeable, params, Date.now()));
   }
 
-  private retireWrittenKeys(
+  private retireKeysOf(
     kind: ReplayedWrite['kind'],
     params: UpsertUserDto | UpsertCompanyDto,
   ): void {
     const pending = this.pendingWrites.get(kind);
-    if (!pending) {
+    if (!pending || !this.sameTarget(kind, pending, params)) {
       return;
     }
-    // A write to another company retires nothing from this company's record.
-    if (
-      kind === 'company' &&
-      (pending.params as UpsertCompanyDto).externalCompanyId !==
-        (params as UpsertCompanyDto).externalCompanyId
-    ) {
-      return;
-    }
-    const remaining = withoutWrittenKeys(pending.params, params);
+    const remaining = retireWrittenKeys(pending, params);
     if (remaining) {
-      pending.params = remaining;
+      this.pendingWrites.set(kind, remaining);
     } else {
       this.pendingWrites.delete(kind);
     }
@@ -940,19 +947,25 @@ export class UsertourSocket implements IUsertourSocket {
   private async replayPendingWrites(): Promise<boolean> {
     let replayed = false;
     for (const kind of ['user', 'company'] as const) {
-      const pending = this.pendingWrites.get(kind);
-      if (!pending) {
+      const recorded = this.pendingWrites.get(kind);
+      if (!recorded) {
         continue;
       }
-      const refusal = this.replayRefusal(pending);
-      if (refusal) {
+      // Keys that failed longer ago than the window are not resent; a laptop
+      // waking from sleep must not overwrite what an API wrote meanwhile.
+      const pending = withoutExpiredKeys(recorded, Date.now(), PENDING_WRITE_TTL_MS);
+      const refusal = pending
+        ? this.replayRefusal(kind, pending)
+        : 'it is older than the replay window';
+      if (!pending || refusal) {
         this.pendingWrites.delete(kind);
         log.warn(`Dropped the pending ${kind} write: ${refusal}`);
         continue;
       }
+      this.pendingWrites.set(kind, pending);
       // The write travels with the identity token of now, not of when it
       // failed: a rotated token would only get it refused.
-      const params = { ...pending.params, token: this.authCredentials?.identityToken };
+      const params = { ...pending.write, token: this.authCredentials?.identityToken };
       const messageKind =
         kind === 'user' ? ClientMessageKind.UPSERT_USER : ClientMessageKind.UPSERT_COMPANY;
       const outcome = await this.sendClientMessageWithOutcome(messageKind, params, {
@@ -961,7 +974,7 @@ export class UsertourSocket implements IUsertourSocket {
       if (outcome.acknowledged) {
         // Retire what landed from whatever record exists now — a write that
         // failed meanwhile may have replaced it, carrying these keys too.
-        this.retireWrittenKeys(kind, params);
+        this.retireKeysOf(kind, params);
         replayed = true;
         if (outcome.result) {
           this.writeReplayedListener?.({ kind, params } as ReplayedWrite);
@@ -974,36 +987,21 @@ export class UsertourSocket implements IUsertourSocket {
   }
 
   /** Why a pending write must not be resent, or undefined when it may be. */
-  private replayRefusal(pending: PendingWrite): string | undefined {
+  private replayRefusal(kind: ReplayedWrite['kind'], pending: PendingWrite): string | undefined {
     if (pending.replays >= MAX_WRITE_REPLAYS) {
       return 'it was already resent and the server did not answer';
     }
-    if (Date.now() - pending.failedAt > PENDING_WRITE_TTL_MS) {
-      return 'it is older than the replay window';
-    }
     const credentials = this.authCredentials;
-    if (!credentials || pending.params.externalUserId !== credentials.externalUserId) {
+    if (!credentials || pending.write.externalUserId !== credentials.externalUserId) {
       return 'it belongs to another user';
     }
     if (
-      pending.kind === 'company' &&
-      (pending.params as UpsertCompanyDto).externalCompanyId !== credentials.externalCompanyId
+      kind === 'company' &&
+      (pending.write as UpsertCompanyDto).externalCompanyId !== credentials.externalCompanyId
     ) {
       return 'the SDK is no longer on that company';
     }
     return undefined;
-  }
-
-  /** The payload without its `add` operations (ADR 0018 §4). */
-  private replayable(params: UpsertUserDto | UpsertCompanyDto): UpsertUserDto | UpsertCompanyDto {
-    if ('externalCompanyId' in params) {
-      return {
-        ...params,
-        attributes: stripNonIdempotentWrites(params.attributes),
-        membership: stripNonIdempotentWrites(params.membership),
-      };
-    }
-    return { ...params, attributes: stripNonIdempotentWrites(params.attributes) };
   }
 
   /**
@@ -1012,6 +1010,7 @@ export class UsertourSocket implements IUsertourSocket {
    */
   clearRecoveryState(): void {
     this.pendingWrites.clear();
+    this.recoveryEpoch += 1;
     if (this.authCredentials) {
       this.authCredentials = { ...this.authCredentials, waitTimers: [] };
     }

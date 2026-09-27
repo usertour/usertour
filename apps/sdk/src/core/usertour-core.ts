@@ -248,6 +248,10 @@ export class UsertourCore extends Evented {
     // connect when needed, and any failure surfaces through the EMIT_TIMEOUT
     // applied to the upsert below.
     this.socketService.setAuth(externalUserId, this.startOptions.token, this.identityToken);
+    // setAuth keeps only the identity; the rest of the handshake — company,
+    // sessions, client conditions, timers — is synced from here, so a new
+    // user starts clean (reset() ran above) and the same user keeps its own.
+    this.syncSocketCredentials();
 
     const userAttributes = this.normalizeAttributes(attributes);
     const result = await this.socketService.upsertUser(

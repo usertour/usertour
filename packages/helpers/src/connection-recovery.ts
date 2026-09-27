@@ -128,7 +128,7 @@ export const isRetryableHandshakeError = (error: unknown): boolean => {
   return (data as { retryable?: unknown }).retryable !== false;
 };
 
-/** A failed write is replayed only this long after it failed (ADR 0018 §4). */
+/** A failed key is replayed only this long after it failed (ADR 0018 §4). */
 export const PENDING_WRITE_TTL_MS = 10 * 60_000;
 /** A failed write is resent at most this many times before it is dropped. */
 export const MAX_WRITE_REPLAYS = 1;
@@ -137,6 +137,23 @@ export const MAX_WRITE_REPLAYS = 1;
 export interface ReplayableWrite {
   attributes?: Record<string, unknown>;
   membership?: Record<string, unknown>;
+}
+
+/** When each key of a failed write last failed, per field. */
+export interface FailedKeyStamps {
+  attributes: Record<string, number>;
+  membership: Record<string, number>;
+}
+
+/** Everything of one kind that failed and still awaits a replay. */
+export interface FailedWrite<T extends ReplayableWrite> {
+  /** The merged payload, its `add` operations already stripped. */
+  write: T;
+  stamps: FailedKeyStamps;
+  /** The most recent failure — what a write carrying no keys expires by. */
+  failedAt: number;
+  /** Connects that already resent it. */
+  replays: number;
 }
 
 /**
@@ -163,6 +180,77 @@ export const mergeFailedWrite = <T extends ReplayableWrite>(
 };
 
 /**
+ * Fold a failed write into the record of its kind. The merge happens before
+ * the `add` strip: an `add` on a key replaces an older literal for it and
+ * then leaves with the strip, so the literal is never replayed over an add
+ * the server may have applied. Each key keeps the time it last failed; the
+ * replay count carries over, so a record already resent once does not get
+ * a second chance from an unrelated later failure.
+ */
+export const recordFailedWrite = <T extends ReplayableWrite>(
+  previous: FailedWrite<T> | undefined,
+  write: T,
+  at: number,
+): FailedWrite<T> => {
+  const merged = mergeFailedWrite(previous?.write, write);
+  const stripped = withFields(
+    merged,
+    stripNonIdempotentWrites(merged.attributes),
+    stripNonIdempotentWrites(merged.membership),
+  );
+  const stamps = keepStampsOf(
+    {
+      attributes: { ...previous?.stamps.attributes, ...stampAll(write.attributes, at) },
+      membership: { ...previous?.stamps.membership, ...stampAll(write.membership, at) },
+    },
+    stripped,
+  );
+  return { write: stripped, stamps, failedAt: at, replays: previous?.replays ?? 0 };
+};
+
+/**
+ * Drop from a failed write the keys another write of its kind carries — one
+ * acknowledged since, whose values the server now holds, or one just sent,
+ * which must land after the replay rather than before it. Undefined once no
+ * key is left: the newer write proves the identity or membership exists.
+ */
+export const retireWrittenKeys = <T extends ReplayableWrite>(
+  record: FailedWrite<T>,
+  written: ReplayableWrite,
+): FailedWrite<T> | undefined => {
+  const write = withoutWrittenKeys(record.write, written);
+  if (!write) {
+    return undefined;
+  }
+  return { ...record, write, stamps: keepStampsOf(record.stamps, write) };
+};
+
+/**
+ * Drop the keys that failed longer ago than the window. A record with no
+ * key left is kept while its last failure is recent — a bare group() still
+ * creates the membership — and dropped once that is old too.
+ */
+export const withoutExpiredKeys = <T extends ReplayableWrite>(
+  record: FailedWrite<T>,
+  now: number,
+  ttl: number,
+): FailedWrite<T> | undefined => {
+  const fresh = (key: string, stamps: Record<string, number>): boolean =>
+    now - (stamps[key] ?? record.failedAt) <= ttl;
+  const attributes = pickKeys(record.write.attributes, (key) =>
+    fresh(key, record.stamps.attributes),
+  );
+  const membership = pickKeys(record.write.membership, (key) =>
+    fresh(key, record.stamps.membership),
+  );
+  if (isEmptyRecord(attributes) && isEmptyRecord(membership) && now - record.failedAt > ttl) {
+    return undefined;
+  }
+  const write = withFields(record.write, attributes, membership);
+  return { ...record, write, stamps: keepStampsOf(record.stamps, write) };
+};
+
+/**
  * Drop from a failed write the keys an acknowledged write carried since: the
  * server now holds newer values for them, so replaying the old ones would
  * regress. Returns undefined when nothing is left to replay.
@@ -176,7 +264,21 @@ export const withoutWrittenKeys = <T extends ReplayableWrite>(
   if (isEmptyRecord(attributes) && isEmptyRecord(membership)) {
     return undefined;
   }
-  return { ...failed, attributes, membership };
+  return withFields(failed, attributes, membership);
+};
+
+/** `write` with its attribute fields replaced; an absent field stays absent. */
+const withFields = <T extends ReplayableWrite>(
+  write: T,
+  attributes: Record<string, unknown> | undefined,
+  membership: Record<string, unknown> | undefined,
+): T => {
+  const { attributes: _attributes, membership: _membership, ...rest } = write;
+  return {
+    ...(rest as T),
+    ...(attributes === undefined ? {} : { attributes }),
+    ...(membership === undefined ? {} : { membership }),
+  };
 };
 
 const omitKeys = (
@@ -186,14 +288,45 @@ const omitKeys = (
   if (!source || !written) {
     return source;
   }
+  return pickKeys(source, (key) => !Object.prototype.hasOwnProperty.call(written, key));
+};
+
+const pickKeys = (
+  source: Record<string, unknown> | undefined,
+  keep: (key: string) => boolean,
+): Record<string, unknown> | undefined => {
+  if (!source) {
+    return source;
+  }
   const result: Record<string, unknown> = {};
   for (const key of Object.keys(source)) {
-    if (!Object.prototype.hasOwnProperty.call(written, key)) {
+    if (keep(key)) {
       result[key] = source[key];
     }
   }
   return result;
 };
+
+const stampAll = (
+  record: Record<string, unknown> | undefined,
+  at: number,
+): Record<string, number> => {
+  const stamps: Record<string, number> = {};
+  for (const key of Object.keys(record ?? {})) {
+    stamps[key] = at;
+  }
+  return stamps;
+};
+
+/** Only the stamps of keys the write still carries. */
+const keepStampsOf = (stamps: FailedKeyStamps, write: ReplayableWrite): FailedKeyStamps => ({
+  attributes: pickKeys(stamps.attributes, (key) =>
+    Object.prototype.hasOwnProperty.call(write.attributes ?? {}, key),
+  ) as Record<string, number>,
+  membership: pickKeys(stamps.membership, (key) =>
+    Object.prototype.hasOwnProperty.call(write.membership ?? {}, key),
+  ) as Record<string, number>,
+});
 
 const isEmptyRecord = (record: Record<string, unknown> | undefined): boolean => {
   return !record || Object.keys(record).length === 0;

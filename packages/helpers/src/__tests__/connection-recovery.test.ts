@@ -5,9 +5,13 @@ import {
   mergeFailedWrite,
   RECONNECT_MAX_DELAY_MS,
   reconnectDelayMs,
+  recordFailedWrite,
   reduceConnection,
+  type ReplayableWrite,
+  retireWrittenKeys,
   SERVER_DISCONNECT_REASON,
   stripNonIdempotentWrites,
+  withoutExpiredKeys,
   withoutWrittenKeys,
 } from '../connection-recovery';
 
@@ -207,6 +211,60 @@ describe('withoutWrittenKeys', () => {
   test('a write without attributes retires nothing', () => {
     const failed = { attributes: { plan: 'pro' } };
     expect(withoutWrittenKeys(failed, {})).toEqual(failed);
+  });
+});
+
+describe('recordFailedWrite', () => {
+  const MIN = 60_000;
+  type Write = ReplayableWrite & { externalCompanyId?: string };
+
+  test('an add that fails after a literal for the same key leaves the key out entirely', () => {
+    const first = recordFailedWrite<Write>(
+      undefined,
+      { attributes: { count: 10, plan: 'pro' } },
+      1000,
+    );
+    const second = recordFailedWrite<Write>(first, { attributes: { count: { add: 1 } } }, 2000);
+    expect(second.write).toEqual({ attributes: { plan: 'pro' } });
+    expect(second.stamps).toEqual({ attributes: { plan: 1000 }, membership: {} });
+  });
+
+  test('each key keeps the time it last failed; the replay count carries over', () => {
+    const first = recordFailedWrite<Write>(undefined, { attributes: { plan: 'pro' } }, 1000);
+    const resent = { ...first, replays: 1 };
+    const second = recordFailedWrite<Write>(resent, { attributes: { last_seen: 'x' } }, 5000);
+    expect(second.write).toEqual({ attributes: { plan: 'pro', last_seen: 'x' } });
+    expect(second.stamps.attributes).toEqual({ plan: 1000, last_seen: 5000 });
+    expect(second.replays).toBe(1);
+    expect(second.failedAt).toBe(5000);
+  });
+
+  test('withoutExpiredKeys drops only the keys that failed too long ago', () => {
+    const first = recordFailedWrite<Write>(undefined, { attributes: { plan: 'pro' } }, 0);
+    const second = recordFailedWrite<Write>(first, { attributes: { last_seen: 'x' } }, 8 * MIN);
+    const pruned = withoutExpiredKeys(second, 12 * MIN, 10 * MIN);
+    expect(pruned?.write).toEqual({ attributes: { last_seen: 'x' } });
+    expect(pruned?.stamps.attributes).toEqual({ last_seen: 8 * MIN });
+  });
+
+  test('a record without keys is kept while its failure is recent and dropped once it is old', () => {
+    const bare = recordFailedWrite<Write>(undefined, { externalCompanyId: 'c' }, 0);
+    expect(withoutExpiredKeys(bare, 5 * MIN, 10 * MIN)).toEqual(bare);
+    expect(withoutExpiredKeys(bare, 11 * MIN, 10 * MIN)).toBeUndefined();
+  });
+
+  test('retireWrittenKeys drops the keys and their stamps, and the record once none is left', () => {
+    const record = recordFailedWrite<Write>(
+      undefined,
+      { attributes: { plan: 'pro', seats: 3 }, membership: { role: 'x' } },
+      1000,
+    );
+    const partial = retireWrittenKeys(record, { attributes: { plan: 'free' } });
+    expect(partial?.write).toEqual({ attributes: { seats: 3 }, membership: { role: 'x' } });
+    expect(partial?.stamps).toEqual({ attributes: { seats: 1000 }, membership: { role: 1000 } });
+    expect(
+      retireWrittenKeys(record, { attributes: { plan: 1, seats: 1 }, membership: { role: 1 } }),
+    ).toBeUndefined();
   });
 });
 
