@@ -409,7 +409,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
     // Create new watcher
     if (!step.target) {
-      log.warn('Step target element was not found; closing the flow', { step });
+      log.warn('Step has no target element configured; closing the flow', { step });
       this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }
@@ -497,6 +497,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     const behavior = store.themeSettings?.tooltip?.missingTargetBehavior;
+    log.warn(
+      `Step target element was not found on the page; ${
+        behavior === MissingTooltipTargetBehavior.USE_BUBBLE
+          ? 'showing the step as a bubble'
+          : 'closing the flow'
+      }`,
+      { target: step.target },
+    );
 
     if (behavior === MissingTooltipTargetBehavior.USE_BUBBLE) {
       // Convert tooltip to bubble, use stepOverride to ensure correct styles
@@ -585,6 +593,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     if (isTimeout) {
+      log.warn('Step target element stayed hidden past the timeout; closing the flow', {
+        target: currentStep?.target,
+      });
       await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }

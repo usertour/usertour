@@ -52,7 +52,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   async show() {
     const storeData = await this.buildStoreData();
     log.debug(
-      `show: launcher data ${storeData?.launcherData ? 'present' : 'missing'}, session ${this.getSessionId() || 'none'}`,
+      `Launcher data is ${storeData?.launcherData ? 'present' : 'missing'} (session ${this.getSessionId() || 'none'})`,
     );
     if (!storeData?.launcherData) {
       return;
@@ -163,7 +163,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
 
     const targetElement = data?.target?.element as ElementSelectorPropsData;
     if (!targetElement) {
-      log.warn('Launcher target element was not found', { data });
+      log.warn('Launcher has no target element configured; the launcher is not shown', { data });
       return;
     }
 
@@ -175,7 +175,13 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     // mid-flight and drops most beacons on first paint; keep it instead.
     const targetKey = JSON.stringify(targetElement);
     log.debug(
-      `attach: watcher reused=${!!(this.watcher && this.watcherTargetKey === targetKey)}, watcher exists=${!!this.watcher}, element found=${!!this.watcher?.getElement()}, session ${this.getSessionId() || 'none'}`,
+      `Attaching the launcher: watcher ${
+        this.watcher && this.watcherTargetKey === targetKey
+          ? 'reused'
+          : this.watcher
+            ? 'replaced'
+            : 'created'
+      }, element ${this.watcher?.getElement() ? 'found' : 'not found yet'} (session ${this.getSessionId() || 'none'})`,
     );
     if (this.watcher && this.watcherTargetKey === targetKey) {
       // The re-run may carry NEW session state: a sessionless pre-activation

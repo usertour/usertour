@@ -103,7 +103,7 @@ export class TimerManager {
       try {
         callback();
       } catch (error) {
-        log.error(`Timeout callback ${id} threw`, error);
+        log.error(`Timeout callback (${id}) threw`, error);
       }
       this.timeouts.delete(id);
     }, delay);
@@ -133,7 +133,7 @@ export class TimerManager {
       try {
         callback();
       } catch (error) {
-        log.error(`Interval callback ${id} threw`, error);
+        log.error(`Interval callback (${id}) threw`, error);
       }
     }, interval);
     this.intervals.set(id, intervalId);
@@ -313,7 +313,7 @@ export class TimerManager {
           task.lastRun = now;
           processedCount++;
         } catch (error) {
-          log.error(`Timer task ${id} threw`, error);
+          log.error(`Timer task (${id}) threw`, error);
         }
       }
     }
