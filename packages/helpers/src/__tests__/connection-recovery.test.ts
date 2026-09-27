@@ -2,7 +2,9 @@ import {
   CLIENT_DISCONNECT_REASON,
   ConnectionState,
   isRetryableHandshakeError,
+  keysStillOwnedBy,
   mergeFailedWrite,
+  noteSentKeys,
   RECONNECT_MAX_DELAY_MS,
   reconnectDelayMs,
   recordFailedWrite,
@@ -265,6 +267,40 @@ describe('recordFailedWrite', () => {
     expect(
       retireWrittenKeys(record, { attributes: { plan: 1, seats: 1 }, membership: { role: 1 } }),
     ).toBeUndefined();
+  });
+});
+
+describe('keysStillOwnedBy', () => {
+  test('a key belongs to its latest send', () => {
+    let sent = noteSentKeys(undefined, { attributes: { plan: 'old', seats: 3 } }, 1);
+    sent = noteSentKeys(sent, { attributes: { plan: 'new' } }, 2);
+    expect(sent).toEqual({ attributes: { plan: 2, seats: 1 }, membership: {} });
+    expect(keysStillOwnedBy({ attributes: { plan: 'old', seats: 3 } }, sent, 1)).toEqual({
+      attributes: { seats: 3 },
+    });
+    expect(keysStillOwnedBy({ attributes: { plan: 'new' } }, sent, 2)).toEqual({
+      attributes: { plan: 'new' },
+    });
+  });
+
+  test('a send whose every key a later send took owns nothing', () => {
+    let sent = noteSentKeys(undefined, { attributes: { plan: 'old' } }, 1);
+    sent = noteSentKeys(sent, { attributes: { plan: 'new' } }, 2);
+    expect(keysStillOwnedBy({ attributes: { plan: 'old' } }, sent, 1)).toBeUndefined();
+  });
+
+  test('a write that carried no keys is returned as it is', () => {
+    const bare: ReplayableWrite & { externalCompanyId: string } = { externalCompanyId: 'c' };
+    expect(keysStillOwnedBy(bare, noteSentKeys(undefined, bare, 1), 1)).toBe(bare);
+  });
+
+  test('membership keys are tracked apart from attributes', () => {
+    let sent = noteSentKeys(undefined, { attributes: { a: 1 }, membership: { role: 'x' } }, 1);
+    sent = noteSentKeys(sent, { membership: { role: 'y' } }, 2);
+    expect(keysStillOwnedBy({ attributes: { a: 1 }, membership: { role: 'x' } }, sent, 1)).toEqual({
+      attributes: { a: 1 },
+      membership: {},
+    });
   });
 });
 

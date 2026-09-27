@@ -250,6 +250,45 @@ export const withoutExpiredKeys = <T extends ReplayableWrite>(
   return { ...record, write, stamps: keepStampsOf(record.stamps, write) };
 };
 
+/** The send each key was last carried by, per field. */
+export interface SentKeySeqs {
+  attributes: Record<string, number>;
+  membership: Record<string, number>;
+}
+
+/** Note that `write` went out as send number `seq`: its keys now belong to it. */
+export const noteSentKeys = (
+  sent: SentKeySeqs | undefined,
+  write: ReplayableWrite,
+  seq: number,
+): SentKeySeqs => ({
+  attributes: { ...sent?.attributes, ...stampAll(write.attributes, seq) },
+  membership: { ...sent?.membership, ...stampAll(write.membership, seq) },
+});
+
+/**
+ * The part of send `seq` that no later send has carried: a key belongs to
+ * its latest send, so an earlier one that fails must not register the key
+ * and an earlier one that lands must not retire it. Undefined when the
+ * write carried keys and a later send took every one of them; a write that
+ * carried none is returned as it is.
+ */
+export const keysStillOwnedBy = <T extends ReplayableWrite>(
+  write: T,
+  sent: SentKeySeqs,
+  seq: number,
+): T | undefined => {
+  if (isEmptyRecord(write.attributes) && isEmptyRecord(write.membership)) {
+    return write;
+  }
+  const attributes = pickKeys(write.attributes, (key) => sent.attributes[key] === seq);
+  const membership = pickKeys(write.membership, (key) => sent.membership[key] === seq);
+  if (isEmptyRecord(attributes) && isEmptyRecord(membership)) {
+    return undefined;
+  }
+  return withFields(write, attributes, membership);
+};
+
 /**
  * Drop from a failed write the keys an acknowledged write carried since: the
  * server now holds newer values for them, so replaying the old ones would

@@ -19,5 +19,6 @@ export * from './plan-features';
 export * from './token-scopes';
 export * from './localization';
 export * from './connection-recovery';
+export * from './replay-registry';
 export * from './debug-flag';
 export * from './bucketing';

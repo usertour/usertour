@@ -1062,6 +1062,12 @@ export class UsertourCore extends Evented {
     // Connection recovery (ADR 0018): fold a replayed write into the
     // attribute cache exactly as the original call would have.
     this.socketService.onWriteReplayed((write) => {
+      // A replay answered after the core moved on — identify() of another
+      // user, group() of another company, reset() — must not land in the
+      // cache of where the core is now.
+      if (write.params.externalUserId !== this.externalUserId) {
+        return;
+      }
       if (write.kind === 'user') {
         if (write.params.attributes) {
           this.attributeManager.setUserAttributes(write.params.attributes);
@@ -1069,12 +1075,13 @@ export class UsertourCore extends Evented {
         // The identify() this write came from rejected on its timeout, so
         // its success event never fired; a shared-link start still waits
         // for one.
-        if (write.params.externalUserId === this.externalUserId) {
-          this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
-            userId: write.params.externalUserId,
-            attributes: write.params.attributes,
-          });
-        }
+        this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
+          userId: write.params.externalUserId,
+          attributes: write.params.attributes,
+        });
+        return;
+      }
+      if (write.params.externalCompanyId !== this.externalCompanyId) {
         return;
       }
       if (write.params.attributes) {
