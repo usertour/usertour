@@ -41,6 +41,24 @@ describe('WebSocketThrottlerGuard', () => {
     });
   });
 
+  describe('a message over the limit', () => {
+    it('is marked on the socket for the handler to answer, not thrown', async () => {
+      // The testing module compiles without running lifecycle hooks; the
+      // guard reads its throttler list in one.
+      await (guard as unknown as { onModuleInit: () => Promise<void> }).onModuleInit();
+      const socket = { id: 'over-limit', handshake: { address: '127.0.0.1' }, data: {} };
+      const context = createMockContext(socket);
+      for (let i = 0; i < 10; i++) {
+        await expect(guard.canActivate(context)).resolves.toBe(true);
+        expect(WebSocketThrottlerGuard.consumeRefusal(socket as never)).toBe(false);
+      }
+      await expect(guard.canActivate(context)).resolves.toBe(true);
+      expect(WebSocketThrottlerGuard.consumeRefusal(socket as never)).toBe(true);
+      // Consumed once: the next message starts clean.
+      expect(WebSocketThrottlerGuard.consumeRefusal(socket as never)).toBe(false);
+    });
+  });
+
   describe('getTracker', () => {
     const callGetTracker = (g: WebSocketThrottlerGuard, socket: unknown) =>
       (g as unknown as { getTracker: (req: unknown) => Promise<string> }).getTracker(socket);

@@ -153,6 +153,11 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket,
     @MessageBody() raw: unknown,
   ): Promise<any> {
+    // Read before any await: the guard marked the socket for this message in
+    // the same tick.
+    if (WebSocketThrottlerGuard.consumeRefusal(socket)) {
+      return false;
+    }
     // Validated here rather than by a parameter pipe: a pipe that throws
     // leaves the message without an acknowledgement, and the SDK then takes
     // a malformed message for a network failure and resends it (ADR 0018
