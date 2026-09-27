@@ -506,8 +506,9 @@ export class UsertourCore extends Evented {
 
   /**
    * Rewrite deprecated operation spellings (`subtract`, `append`, `prepend`)
-   * into the current vocabulary before sending, warning once per key
-   * (ADR 0017 §6). The server accepts only the current vocabulary.
+   * into the current vocabulary before sending, warning for each rewritten
+   * key on every call (ADR 0017 §6). The server accepts only the current
+   * vocabulary.
    */
   private normalizeAttributes(
     attributes?: UserTourTypes.Attributes,

@@ -1,11 +1,21 @@
 import { INestApplication } from '@nestjs/common';
-import { BizAttributeTypes, Capability } from '@usertour/types';
+import { BizAttributeTypes, BizEvents, Capability, EventAttributes } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 import request from 'supertest';
 
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
+import { BizService } from '@/modules/biz/services/biz.service';
+import { EventTrackingService } from '@/modules/delivery/services/event-tracking.service';
 import { gqlData, graphql } from '../auth';
 import { createTestApp } from '../create-test-app';
+import {
+  buildAttribute,
+  buildContent,
+  buildEvent,
+  buildSession,
+  buildStep,
+  buildVersion,
+} from '../factories';
 import { buildAuthorizedUser } from '../gql/_support';
 import { OpenApiFixture, seedApiFixture, teardownApiFixture } from '../openapi';
 
@@ -49,6 +59,10 @@ describe('API v2 attribute write operations (e2e)', () => {
       .send({ userId, name, attributes });
   const definition = (codeName: string, bizType: number = AttributeBizType.USER) =>
     prisma.attribute.findFirst({ where: { projectId: fx.projectId, bizType, codeName } });
+  const userRow = (externalId: string) =>
+    prisma.bizUser.findFirst({ where: { environmentId: fx.environmentId, externalId } });
+  const stored = async (externalId: string) =>
+    ((await userRow(externalId))?.data as Record<string, unknown>) ?? {};
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -140,6 +154,83 @@ describe('API v2 attribute write operations (e2e)', () => {
 
       const emptied = await putUser('aw-remove', { aw_flags: { remove: 'b' } });
       expect(emptied.body.attributes.aw_flags).toEqual([]);
+
+      // An emptied list is empty to the segment filter, as it is to the
+      // client-side evaluator — and Prisma runs the `[]` comparison.
+      const byEmpty = await prisma.bizUser.findFirst({
+        where: {
+          environmentId: fx.environmentId,
+          externalId: 'aw-remove',
+          data: { path: ['aw_flags'], equals: [] },
+        },
+      });
+      expect(byEmpty).not.toBeNull();
+      const byAny = await prisma.bizUser.findFirst({
+        where: {
+          environmentId: fx.environmentId,
+          externalId: 'aw-remove',
+          data: { path: ['aw_flags'], not: [] },
+        },
+      });
+      expect(byAny).toBeNull();
+    });
+
+    it('a null hole in a stored list is dropped, never the list', async () => {
+      // Lists stored before elements were validated may hold a null.
+      await putUser('aw-holes', { aw_roles: ['admin'] });
+      const row = await userRow('aw-holes');
+      await prisma.bizUser.update({
+        where: { id: row!.id },
+        data: { data: { ...(row!.data as Record<string, unknown>), aw_roles: ['admin', null] } },
+      });
+      const unioned = await putUser('aw-holes', { aw_roles: { union: 'editor' } });
+      expect(unioned.body.attributes.aw_roles).toEqual(['admin', 'editor']);
+    });
+
+    it('a codeName that names an Object.prototype member is an ordinary attribute', async () => {
+      // The global pipe must not hand these to class-transformer (it throws
+      // on `constructor` and drops `valueOf` / `toString`), and the merge
+      // must read own keys only.
+      const first = await putUser('aw-proto', {
+        constructor: 'acme',
+        toString: { add: 1 },
+        valueOf: { union: 'x' },
+        hasOwnProperty: { set_once: 'once' },
+      });
+      expect(first.status).toBe(200);
+      expect(first.body.attributes).toMatchObject({
+        constructor: 'acme',
+        toString: 1,
+        valueOf: ['x'],
+        hasOwnProperty: 'once',
+      });
+      const second = await putUser('aw-proto', {
+        constructor: { set_once: 'other' },
+        toString: { add: 1 },
+        hasOwnProperty: { set_once: 'twice' },
+      });
+      expect(second.body.attributes).toMatchObject({
+        constructor: 'acme',
+        toString: 2,
+        hasOwnProperty: 'once',
+      });
+      expect(await stored('aw-proto')).toMatchObject({ constructor: 'acme', toString: 2 });
+    });
+
+    it('__proto__ is refused as an attribute name on the lenient path', async () => {
+      const biz = app.get(BizService);
+      const rejectedWrites: { codeName: string; reason: string }[] = [];
+      // JSON.parse yields an own `__proto__` key, as a wire payload does.
+      const attributes = JSON.parse('{"__proto__": "x", "aw_proto_ok": "y"}');
+      await prisma.$transaction((tx) =>
+        biz.upsertBizUsers(tx, 'aw-proto-key', attributes, fx.environmentId, {
+          rejected: rejectedWrites,
+        }),
+      );
+      expect(rejectedWrites).toEqual([{ codeName: '__proto__', reason: expect.any(String) }]);
+      const data = await stored('aw-proto-key');
+      expect(data.aw_proto_ok).toBe('y');
+      expect(Object.prototype.hasOwnProperty.call(data, '__proto__')).toBe(false);
     });
 
     it('null removes the key; a literal and {set} both replace', async () => {
@@ -217,6 +308,49 @@ describe('API v2 attribute write operations (e2e)', () => {
       expect(res.body.error.message).toMatch(/type mismatch/i);
     });
 
+    it('a strict UTC value is stored as sent, so re-sending it changes nothing', async () => {
+      const first = await putUser('aw-utc', {
+        aw_stamp: { set: '2024-01-01T00:00:00Z', data_type: 'datetime' },
+      });
+      expect(first.body.attributes.aw_stamp).toBe('2024-01-01T00:00:00Z');
+      expect((await definition('aw_stamp'))?.dataType).toBe(BizAttributeTypes.DateTime);
+      const before = (await userRow('aw-utc'))!.updatedAt;
+
+      const again = await putUser('aw-utc', { aw_stamp: '2024-01-01T00:00:00Z' });
+      expect(again.status).toBe(200);
+      expect((await userRow('aw-utc'))!.updatedAt).toEqual(before);
+    });
+
+    it('a year-one date-time keeps its year when it is rewritten', async () => {
+      const res = await putUser('aw-year-one', {
+        aw_zero_time: { set: '0001-01-01T08:00:00+08:00', data_type: 'datetime' },
+      });
+      expect(res.body.attributes.aw_zero_time).toBe('0001-01-01T00:00:00.000Z');
+    });
+
+    it('a DateTime attribute whose values are ISO strings can become a String, not a Number', async () => {
+      await putUser('aw-retype', {
+        aw_retype_at: { set: '2024-01-01T00:00:00.000Z', data_type: 'datetime' },
+      });
+      const biz = app.get(BizService);
+      await expect(
+        biz.assertStoredValuesFitDataType(
+          fx.projectId,
+          AttributeBizType.USER,
+          'aw_retype_at',
+          BizAttributeTypes.String,
+        ),
+      ).resolves.toBeUndefined();
+      await expect(
+        biz.assertStoredValuesFitDataType(
+          fx.projectId,
+          AttributeBizType.USER,
+          'aw_retype_at',
+          BizAttributeTypes.Number,
+        ),
+      ).rejects.toThrow();
+    });
+
     it('inference stays strict: an offset ISO string on a new attribute is a String', async () => {
       const res = await putUser('aw-infer', { aw_offset_first: '2024-12-12T08:30:00+08:00' });
       expect(res.body.attributes.aw_offset_first).toBe('2024-12-12T08:30:00+08:00');
@@ -243,6 +377,44 @@ describe('API v2 attribute write operations (e2e)', () => {
   });
 
   describe('companies and memberships', () => {
+    it('a locked user row does not block a membership insert that references it', async () => {
+      await putUser('aw-lock-user', { aw_lock_hits: 0 });
+      await putCompany('aw-lock-co', { aw_lock_plan: 'pro' });
+      const biz = app.get(BizService);
+      let release: () => void = () => {};
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      // Hold the user row the way every attribute write does, with a change
+      // so the lock is really taken, and keep the transaction open.
+      const holder = prisma.$transaction(
+        async (tx) => {
+          await biz.upsertBizUsers(
+            tx,
+            'aw-lock-user',
+            { aw_lock_hits: { add: 1 } },
+            fx.environmentId,
+          );
+          await gate;
+        },
+        { timeout: 15000 },
+      );
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Inserting the membership takes KEY SHARE on the user row through its
+      // foreign key; FOR UPDATE would block it until the holder commits.
+      const insert = putMembership('aw-lock-co', 'aw-lock-user', { aw_lock_role: 'admin' }).then(
+        (res) => res.status,
+      );
+      const outcome = await Promise.race([
+        insert,
+        new Promise<string>((resolve) => setTimeout(() => resolve('blocked'), 3000)),
+      ]);
+      release();
+      await holder;
+      expect(outcome).toBe(200);
+    });
+
     it('company attributes take the same operations', async () => {
       await putCompany('aw-co', { aw_seats_used: { add: 3 }, aw_regions: { union: 'eu' } });
       const res = await putCompany('aw-co', {
@@ -265,6 +437,22 @@ describe('API v2 attribute write operations (e2e)', () => {
 
       const once = await putMembership('aw-co-m', 'aw-member', { aw_role: { set_once: 'admin' } });
       expect(once.body.attributes.aw_role).toBe('admin');
+    });
+  });
+
+  describe('creation', () => {
+    it('a set_once first_seen_at on creation is the first value the row has', async () => {
+      const res = await putUser('aw-born', {
+        first_seen_at: { set_once: '2020-01-01T00:00:00.000Z' },
+      });
+      expect(res.status).toBe(200);
+      expect((await stored('aw-born')).first_seen_at).toBe('2020-01-01T00:00:00.000Z');
+    });
+
+    it('a null on creation leaves the seeded first_seen_at in place', async () => {
+      const res = await putUser('aw-born-null', { first_seen_at: null });
+      expect(res.status).toBe(200);
+      expect(typeof (await stored('aw-born-null')).first_seen_at).toBe('string');
     });
   });
 
@@ -300,6 +488,119 @@ describe('API v2 attribute write operations (e2e)', () => {
         where: { environmentId: fx.environmentId, externalId: 'aw-race' },
       });
       expect((row?.data as Record<string, unknown>).aw_hits).toBe(parallel);
+    });
+
+    it('an add committed while a content event is in flight survives its seen-at stamp', async () => {
+      // The SDK content-event path is the one that stamps seen-at on the user
+      // and the session's company; v2 POST /events does not, so this runs
+      // through EventTrackingService with a flow session. The event reads the
+      // user when its transaction starts; the adds are committed after that
+      // read and before the stamp, which is where a write-back of the read
+      // row would undo them. Racing requests rarely land in that window, so
+      // the adds are placed in it.
+      await putUser('aw-race-ev', { aw_ev_hits: 0 });
+      await putCompany('aw-race-ev-co', { aw_ev_seats: 0 });
+      const bizUser = await userRow('aw-race-ev');
+      const bizCompany = await prisma.bizCompany.findFirstOrThrow({
+        where: { environmentId: fx.environmentId, externalId: 'aw-race-ev-co' },
+      });
+      const seededUser = await stored('aw-race-ev');
+      const seededCompany = bizCompany.data as Record<string, unknown>;
+
+      const stepSeen = await buildEvent(prisma, {
+        projectId: fx.projectId,
+        codeName: BizEvents.FLOW_STEP_SEEN,
+        predefined: true,
+      });
+      // An event with no attached attribute keeps no data and is not recorded.
+      const stepIdAttribute = await buildAttribute(prisma, {
+        projectId: fx.projectId,
+        codeName: EventAttributes.FLOW_STEP_ID,
+        displayName: 'Flow step id',
+        dataType: BizAttributeTypes.String,
+        bizType: AttributeBizType.EVENT,
+      });
+      await prisma.attributeOnEvent.create({
+        data: { eventId: stepSeen.id, attributeId: stepIdAttribute.id },
+      });
+      const content = await buildContent(prisma, {
+        projectId: fx.projectId,
+        environmentId: fx.environmentId,
+        type: 'flow',
+      });
+      const version = await buildVersion(prisma, { contentId: content.id });
+      // Two steps, so seeing the first one never completes the flow.
+      const firstStep = await buildStep(prisma, { versionId: version.id, sequence: 0 });
+      await buildStep(prisma, { versionId: version.id, sequence: 1 });
+      const session = await buildSession(prisma, {
+        bizUserId: bizUser?.id,
+        bizCompanyId: bizCompany.id,
+        contentId: content.id,
+        versionId: version.id,
+      });
+      const eventTracking = app.get(EventTrackingService);
+
+      // handleEventCreation runs inside the event transaction, after the user
+      // read and before the seen-at stamp.
+      const inFlight = eventTracking as unknown as {
+        handleEventCreation: (...args: unknown[]) => Promise<boolean>;
+      };
+      const createEvent = inFlight.handleEventCreation.bind(eventTracking);
+      const userWrites: request.Response[] = [];
+      const companyWrites: request.Response[] = [];
+      const spy = jest
+        .spyOn(inFlight, 'handleEventCreation')
+        .mockImplementationOnce(async (...args: unknown[]) => {
+          userWrites.push(await putUser('aw-race-ev', { aw_ev_hits: { add: 1 } }));
+          companyWrites.push(await putCompany('aw-race-ev-co', { aw_ev_seats: { add: 1 } }));
+          return createEvent(...args);
+        });
+      try {
+        const tracked = await eventTracking.trackEventByType(BizEvents.FLOW_STEP_SEEN, {
+          sessionId: session.id,
+          environment: { id: fx.environmentId, projectId: fx.projectId } as never,
+          clientContext: { pageUrl: 'http://app/', viewportWidth: 1280, viewportHeight: 800 },
+          stepId: firstStep.id,
+        });
+        expect(tracked).toBe(true);
+      } finally {
+        spy.mockRestore();
+      }
+      expect(userWrites.map((res) => res.status)).toEqual([200]);
+      expect(companyWrites.map((res) => res.status)).toEqual([200]);
+      expect(await prisma.bizEvent.count({ where: { bizSessionId: session.id } })).toBe(1);
+
+      const user = await stored('aw-race-ev');
+      expect(user.aw_ev_hits).toBe(1);
+      expect(user.first_seen_at).toBe(seededUser.first_seen_at);
+      expect(user.last_seen_at).not.toBe(seededUser.last_seen_at);
+      const company = (await prisma.bizCompany.findUniqueOrThrow({ where: { id: bizCompany.id } }))
+        .data as Record<string, unknown>;
+      expect(company.aw_ev_seats).toBe(1);
+      expect(company.first_seen_at).toBe(seededCompany.first_seen_at);
+      expect(company.last_seen_at).not.toBe(seededCompany.last_seen_at);
+    });
+
+    it('parallel first writes of one new codeName all succeed and define it once', async () => {
+      const parallel = 8;
+      const results = await Promise.all(
+        Array.from({ length: parallel }, (_, i) =>
+          putUser(`aw-def-${i}`, { aw_brand_new: i, aw_brand_new_b: `v${i}` }),
+        ),
+      );
+      for (const [i, res] of results.entries()) {
+        expect(res.status).toBe(200);
+        expect(res.body.attributes).toMatchObject({ aw_brand_new: i, aw_brand_new_b: `v${i}` });
+      }
+      expect(
+        await prisma.attribute.count({
+          where: {
+            projectId: fx.projectId,
+            bizType: AttributeBizType.USER,
+            codeName: { in: ['aw_brand_new', 'aw_brand_new_b'] },
+          },
+        }),
+      ).toBe(2);
     });
   });
 });

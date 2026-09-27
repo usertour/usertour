@@ -269,7 +269,7 @@ export class WebSocketV2Service {
       return false;
     }
 
-    // A real transaction: upsertBizUsers takes the BizUser row FOR UPDATE so
+    // A real transaction: upsertBizUsers takes the BizUser row FOR NO KEY UPDATE so
     // its read-merge-write cannot lose a concurrent write (ADR 0017 §4); the
     // lock only exists inside a transaction.
     const rejected: RejectedAttributeWrite[] = [];

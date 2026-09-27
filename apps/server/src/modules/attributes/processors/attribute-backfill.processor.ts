@@ -56,7 +56,7 @@ export class AttributeBackfillProcessor extends WorkerHost {
         }
         for (const row of rows) {
           const stored = (row.data as Record<string, unknown> | null) ?? {};
-          if (attribute.codeName in stored) {
+          if (Object.prototype.hasOwnProperty.call(stored, attribute.codeName)) {
             continue;
           }
           const value = bucketValue(attribute, row.externalId);

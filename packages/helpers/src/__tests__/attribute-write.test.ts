@@ -5,6 +5,7 @@ import {
   AttributeWrite,
   coerceAttributeValue,
   inferWriteDataType,
+  attributeDataEqual,
   normalizeIsoDateTime,
   parseAttributeWrite,
 } from '../attribute-write';
@@ -40,6 +41,13 @@ describe('parseAttributeWrite', () => {
     expect(parsed(null)).toEqual({ kind: 'delete' });
   });
 
+  test.each(['constructor', 'toString', '__proto__'])(
+    'data_type %s is not a type name, whatever the prototype says',
+    (name) => {
+      expect(rejected({ set: 'x', data_type: name })).toMatch(/data_type must be one of/);
+    },
+  );
+
   test.each([
     ['set', { set: 'x' }, { kind: 'set', value: 'x', dataType: undefined }],
     [
@@ -51,6 +59,7 @@ describe('parseAttributeWrite', () => {
     ['negative add', { add: -1.5 }, { kind: 'add', value: -1.5 }],
     ['union scalar', { union: 'export' }, { kind: 'union', values: ['export'] }],
     ['union list', { union: ['a', 'b'] }, { kind: 'union', values: ['a', 'b'] }],
+    ['union with a null hole', { union: ['a', null] }, { kind: 'union', values: ['a'] }],
     ['remove scalar', { remove: 'old' }, { kind: 'remove', values: ['old'] }],
     ['remove list', { remove: ['a', 1, true] }, { kind: 'remove', values: ['a', 1, true] }],
   ])('%s operation', (_, value, expected) => {
@@ -93,7 +102,7 @@ describe('parseAttributeWrite', () => {
     ['add Infinity', { add: Number.POSITIVE_INFINITY }],
     ['union object', { union: { a: 1 } }],
     ['union nested list', { union: [['a']] }],
-    ['union null element', { union: ['a', null] }],
+    ['union list holding an object', { union: ['a', { b: 1 }] }],
     ['remove object', { remove: {} }],
     ['class instance', new Date()],
   ])('%s is rejected', (_, value) => {
@@ -130,7 +139,7 @@ describe('inferWriteDataType', () => {
 describe('normalizeIsoDateTime', () => {
   test.each([
     ['strict utc', '2024-12-12T08:30:00.000Z', '2024-12-12T08:30:00.000Z'],
-    ['no fraction', '2024-12-12T08:30:00Z', '2024-12-12T08:30:00.000Z'],
+    ['no fraction, kept as sent', '2024-12-12T08:30:00Z', '2024-12-12T08:30:00Z'],
     ['microseconds', '2024-12-12T08:30:00.123456Z', '2024-12-12T08:30:00.123Z'],
     ['one fraction digit', '2024-12-12T08:30:00.5Z', '2024-12-12T08:30:00.500Z'],
     ['zero offset colon', '2024-12-12T08:30:00.123456+00:00', '2024-12-12T08:30:00.123Z'],
@@ -139,7 +148,13 @@ describe('normalizeIsoDateTime', () => {
     ['offset without colon', '2024-12-12T08:30:00+0800', '2024-12-12T00:30:00.000Z'],
     ['lowercase markers', '2024-12-12t08:30:00z', '2024-12-12T08:30:00.000Z'],
     ['offset crossing midnight', '2024-01-01T01:00:00+02:00', '2023-12-31T23:00:00.000Z'],
-    ['leap day', '2024-02-29T00:00:00Z', '2024-02-29T00:00:00.000Z'],
+    ['leap day', '2024-02-29T00:00:00Z', '2024-02-29T00:00:00Z'],
+    ['year one, kept as sent', '0001-01-01T00:00:00Z', '0001-01-01T00:00:00Z'],
+    ['year one with offset', '0001-01-01T08:00:00+08:00', '0001-01-01T00:00:00.000Z'],
+    ['year one lowercase', '0001-01-01t00:00:00z', '0001-01-01T00:00:00.000Z'],
+    ['year zero leap day', '0000-02-29T00:00:00.000Z', '0000-02-29T00:00:00.000Z'],
+    ['offset into year zero', '0001-01-01T00:00:00+01:00', '0000-12-31T23:00:00.000Z'],
+    ['year 2000 leap day', '2000-02-29T00:00:00Z', '2000-02-29T00:00:00Z'],
   ])('%s', (_, input, expected) => {
     expect(normalizeIsoDateTime(input)).toBe(expected);
   });
@@ -154,6 +169,9 @@ describe('normalizeIsoDateTime', () => {
     ['hour 24', '2024-01-01T24:00:00Z'],
     ['second 60', '2024-01-01T00:00:60Z'],
     ['offset hour 15', '2024-01-01T00:00:00+15:00'],
+    ['offset pushing past year 9999', '9999-12-31T23:59:59-01:00'],
+    ['offset pushing before year 0', '0000-01-01T00:00:00+01:00'],
+    ['year 1900 is not a leap year', '1900-02-29T00:00:00Z'],
     ['epoch number', 1733961600000],
     ['plain string', 'tomorrow'],
     ['null', null],
@@ -183,6 +201,7 @@ describe('coerceAttributeValue', () => {
     ["'false' → Boolean", 'false', B, false],
     ['offset iso → DateTime', '2024-12-12T08:30:00+08:00', D, '2024-12-12T00:30:00.000Z'],
     ['list → List', ['a', 1], L, ['a', 1]],
+    ['list with null holes → List', ['a', null, undefined, 'b'], L, ['a', 'b']],
     ['scalar → List', 'a', L, ['a']],
     ['number scalar → List', 7, L, [7]],
   ])('%s', (_, value, target, expected) => {
@@ -205,6 +224,7 @@ describe('coerceAttributeValue', () => {
     ['date only → DateTime', '2024-12-12', D],
     ['localised date → DateTime', '12/12/2024', D],
     ['nested list → List', [['a']], L],
+    ['list holding an object → List', ['a', { b: 1 }], L],
     ['object → List', { a: 1 }, L],
     ['anything → Nil', 'x', BizAttributeTypes.Nil],
     ['anything → RandomAB', 'x', BizAttributeTypes.RandomAB],
@@ -261,6 +281,13 @@ describe('applyAttributeWrite', () => {
       ['keeps existing order', ['b', 'a'], ['a'], ['b', 'a']],
       ['dedupes within the operand', [], ['a', 'a'], ['a']],
       ['distinguishes 1 from "1"', [1], ['1'], [1, '1']],
+      [
+        'a null hole in the stored list is dropped, not the list',
+        ['admin', null],
+        ['x'],
+        ['admin', 'x'],
+      ],
+      ['a stored value that is not a scalar list is left as it is', [{ a: 1 }], ['x'], [{ a: 1 }]],
     ])('%s', (_, current, values, expected) => {
       expect(applyAttributeWrite(current, parsed({ union: values }))).toEqual(expected);
     });
@@ -277,9 +304,33 @@ describe('applyAttributeWrite', () => {
       ['missing value is a no-op', ['a'], 'z', ['a']],
       ['emptying keeps the list', ['a'], 'a', []],
       ['does not cross types', [1, '1'], 1, ['1']],
+      [
+        'a null hole in the stored list is dropped, not the list',
+        ['admin', null, 'x'],
+        'x',
+        ['admin'],
+      ],
+      ['a stored value that is not a scalar list is left as it is', [['a']], 'a', [['a']]],
     ])('%s', (_, current, values, expected) => {
       expect(applyAttributeWrite(current, parsed({ remove: values }))).toEqual(expected);
     });
+  });
+});
+
+describe('attributeDataEqual', () => {
+  test.each([
+    ['same scalars', { a: 1, b: 'x' }, { b: 'x', a: 1 }, true],
+    ['same lists', { tags: ['a', 'b'] }, { tags: ['a', 'b'] }, true],
+    ['different value', { a: 1 }, { a: 2 }, false],
+    ['missing key', { a: 1, b: 2 }, { a: 1 }, false],
+    ['extra key', { a: 1 }, { a: 1, b: 2 }, false],
+    ['toString as an attribute', { toString: 1 }, { toString: 1 }, true],
+    ['toString differs', { toString: 1 }, { toString: 2 }, false],
+    ['valueOf as a list', { valueOf: ['x'] }, { valueOf: ['x'] }, true],
+    ['constructor as an attribute', { constructor: 'acme' }, { constructor: 'acme' }, true],
+    ['constructor only on one side', { constructor: 'acme' }, {}, false],
+  ])('%s', (_, left, right, expected) => {
+    expect(attributeDataEqual(left, right)).toBe(expected);
   });
 });
 
@@ -346,12 +397,12 @@ describe('client-side helpers', () => {
         plan: 'pro',
         keep: { set_once: 'x' },
       });
+      // A numeric `add` string is corrected, not reported: `add` is not deprecated.
       expect(rewrites).toEqual([
         { codeName: 'days_left', from: 'subtract', to: 'add' },
         { codeName: 'credits', from: 'subtract', to: 'add' },
         { codeName: 'tags', from: 'append', to: 'union' },
         { codeName: 'first', from: 'prepend', to: 'union' },
-        { codeName: 'hits', from: 'add', to: 'add' },
       ]);
     });
 
