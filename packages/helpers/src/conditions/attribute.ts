@@ -82,7 +82,12 @@ export function evaluateAttributeCondition(
  * @returns Attribute value
  */
 function getAttributeValue(codeName: string, attributes: UserTourTypes.Attributes): any {
-  return attributes?.[codeName];
+  // Own keys only: an attribute named `constructor` or `toString` that is
+  // absent must read as absent, not as the inherited function.
+  if (!attributes || !Object.prototype.hasOwnProperty.call(attributes, codeName)) {
+    return undefined;
+  }
+  return attributes[codeName];
 }
 
 /**

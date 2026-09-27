@@ -53,10 +53,10 @@ export interface BatchOptions {
   batch?: boolean;
 }
 
-/** A write the socket resent after a reconnect and the server accepted. */
+/** A write resent after a reconnect that the server answered: what was sent, and the keys it refused. */
 export type ReplayedWrite =
-  | { kind: 'user'; params: UpsertUserDto }
-  | { kind: 'company'; params: UpsertCompanyDto };
+  | { kind: 'user'; params: UpsertUserDto; rejected: RejectedAttributeWrite[] }
+  | { kind: 'company'; params: UpsertCompanyDto; rejected: RejectedAttributeWrite[] };
 
 /** Outcome of one emit: whether the server answered at all, and what it said. */
 interface EmitOutcome {
@@ -932,7 +932,11 @@ export class UsertourSocket implements IUsertourSocket {
       // The core folds the replay into its cache only when the session is
       // still the one the write was for.
       if (outcome.result && fold) {
-        this.writeReplayedListener?.({ kind, params: started.write } as ReplayedWrite);
+        this.writeReplayedListener?.({
+          kind,
+          params: started.write,
+          rejected: outcome.rejected,
+        } as ReplayedWrite);
       }
     }
     return replayed;

@@ -1461,12 +1461,6 @@ export class BizService {
         rejected.push({ codeName, reason: parsed.reason });
         continue;
       }
-      // A removal needs no definition: an unknown codeName has nothing to
-      // remove, a known one is removed regardless of its type.
-      if (parsed.write.kind === 'delete') {
-        writes.set(codeName, parsed.write);
-        continue;
-      }
       pending.set(codeName, parsed.write);
     }
     if (pending.size === 0) {
@@ -1486,6 +1480,24 @@ export class BizService {
     const creations: Prisma.AttributeCreateManyInput[] = [];
     for (const [codeName, write] of pending) {
       const attr = attrMap.get(codeName);
+      // A bucketing attribute's value is derived (ADR 0020 §5): every write to
+      // it is refused, a removal included — a null would leave the row without
+      // a value no backfill comes back for — and a write to a soft-deleted one
+      // does not revive it either, since the write itself goes nowhere.
+      if (attr && isBucketingDataType(attr.dataType)) {
+        const reason = this.systemGeneratedReason(attr.dataType);
+        this.logger.warn(`Dropped attribute "${codeName}": ${reason}.`);
+        rejected.push({ codeName, reason });
+        pending.delete(codeName);
+        continue;
+      }
+      // A removal needs no definition: an unknown codeName has nothing to
+      // remove, a known one is removed regardless of its type.
+      if (write.kind === 'delete') {
+        writes.set(codeName, write);
+        pending.delete(codeName);
+        continue;
+      }
       // Data still arriving under a soft-deleted codeName means the attribute is
       // not dead: restore it (ADR 0016), keeping its data type — values that do
       // not fit it are dropped below like for any attribute.
@@ -1556,6 +1568,12 @@ export class BizService {
     return { writes, attrMap, rejected, catalogChanged };
   }
 
+  /** Why a write to a bucketing attribute is refused, for every path that refuses one. */
+  private systemGeneratedReason(dataType: number): string {
+    const name = BizAttributeTypes[dataType] ?? String(dataType);
+    return `system-generated attribute (${name}); its value cannot be set — use another attribute name`;
+  }
+
   /**
    * The one place the ADR 0017 acceptance rules live, shared by the lenient
    * (drop + log) and the strict (throw) paths so they can never diverge:
@@ -1584,10 +1602,7 @@ export class BizService {
     // A bucketing attribute's value is derived by the system (ADR 0020 §5):
     // the definition can be created, its values cannot be written.
     if (attr && isBucketingDataType(attr.dataType)) {
-      return {
-        ok: false,
-        reason: `system-generated attribute (${targetName}); its value cannot be set — use another attribute name`,
-      };
+      return { ok: false, reason: this.systemGeneratedReason(attr.dataType) };
     }
     if (
       attr &&
@@ -1685,6 +1700,11 @@ export class BizService {
         continue;
       }
       if (parsed.write.kind === 'delete') {
+        // Removing a derived value is a write to it (ADR 0020 §5).
+        const attr = byCodeName.get(codeName);
+        if (attr && isBucketingDataType(attr.dataType)) {
+          failures.push(`"${codeName}" (${this.systemGeneratedReason(attr.dataType)})`);
+        }
         continue;
       }
       const verdict = this.judgeAttributeWrite(bizType, byCodeName.get(codeName), parsed.write);

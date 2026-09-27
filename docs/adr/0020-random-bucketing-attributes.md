@@ -35,8 +35,8 @@ Deriving instead of drawing is what makes the two defining properties free:
 ### 3. Three moments write the value
 
 1. **At birth.** Every place a user or company row is created — `ensureBizUser`, the two upsert create branches, `createMissingBizUsers` on the track path, the company create branch — seeds every bucketing definition of the project next to `first_seen_at`.
-2. **At definition creation.** A background job (the BullMQ processor pattern the integrations use) walks the users — or companies — of every environment in the project in batches and writes the key where it is missing. It is idempotent and safe to re-run.
-3. **At read time, as a fallback.** Condition evaluation that finds a bucketing definition whose value is missing on the entity computes it in place without writing. This covers the window before the backfill has reached a row. Segment filters run in SQL and cannot compute a hash, so during that window a segment on a fresh definition may under-count; that is the one accepted transient.
+2. **At definition creation — and at restore.** A background job (the BullMQ processor pattern the integrations use) walks the users — or companies — of every environment in the project in batches and writes the key where it is missing. It is idempotent and safe to re-run. A definition restored after a soft delete — explicitly, or by being created again under its codeName — runs it too, for the rows born while it was deleted.
+3. **At read time, as a fallback.** Every read that feeds an evaluation — the server's condition evaluation, the attribute values handed to the SDK for the conditions it checks itself (step triggers, button rules, tracker start rules, theme variations), and the diagnosis report — derives a missing bucketing value in place without writing. This covers the window before the backfill has reached a row. Segment filters run in SQL and cannot compute a hash, so during that window a segment on a fresh definition may under-count; that is the one accepted transient. A second, rarer one is accepted with it: a row whose birth transaction read the definitions before a new definition committed, and committed after the backfill's last batch, is missed by both — the read-time fallback still evaluates it correctly, only the SQL segment does not.
 
 ### 4. Conditions treat them as the type they resemble
 
@@ -44,10 +44,10 @@ An `effectiveDataType` mapping in `@usertour/helpers` — `RandomAB → String`,
 
 ### 5. Definitions can be created; values cannot be written
 
-- **Web**: the two types join the dialog; choosing Random number reveals "Between 1 and N" bound to `randomMax` (lower bound fixed at 1, `N` from 2 to 10 000); an information panel states what the type does. The type is locked once created.
+- **Web**: the two types join the dialog; choosing Random number reveals "Between 1 and N" bound to `randomMax` (lower bound fixed at 1, `N` from 2 to 10 000); an information panel states what the type does. The type, the range and the scope are locked once created, on every entry point: a soft-deleted definition created again under its codeName must carry the same range, or the request is refused like a type mismatch.
 - **GraphQL and v2 / MCP**: `randomMax` is exposed on the definition model and accepted on create for `random_number`; `create_attribute_definition` accepts both types and the "cannot be created" note goes away. The retype guard refuses any change into or out of the two types — a bucket is not a value that "fits" another type, and a re-typed definition would silently re-bucket everyone.
 - **Scope**: user and company. Membership and event are refused: a membership bucket has no known use, and an event is an immutable fact, not something to split on.
-- **Writes**: `judgeAttributeWrite` names the refusal — *"`<codeName>` is a system-generated attribute and cannot be set; use another attribute name"* — so the v2 400 and the SDK's warning say why, not "type mismatch".
+- **Writes**: `judgeAttributeWrite` names the refusal — *"`<codeName>` is a system-generated attribute and cannot be set; use another attribute name"* — so the v2 400 and the SDK's warning say why, not "type mismatch". A `null` is a write too: removing a derived value would leave the row without one that no backfill comes back for. A write that arrives for a soft-deleted bucketing definition does not revive it, unlike other attributes (ADR 0016): the write itself is refused, and a refusal must have no side effect. On the SDK, a refused key leaves the local attribute cache — on a direct call and on a replay after a reconnect alike — so the next call carrying it is sent and reported again.
 
 ### 6. The upsert acknowledgement carries the refused keys
 

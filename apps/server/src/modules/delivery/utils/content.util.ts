@@ -1167,7 +1167,11 @@ export const getAttributeValue = (data: any, codeName: string): any => {
   if (!data || typeof data !== 'object') {
     return null;
   }
-
+  // Own keys only: a row without `constructor` or `toString` holds no value
+  // for an attribute of that name, not the inherited function.
+  if (!Object.prototype.hasOwnProperty.call(data, codeName)) {
+    return null;
+  }
   return data[codeName] ?? null;
 };
 
