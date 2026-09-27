@@ -61,6 +61,25 @@ describe('bucketing attributes in conditions', () => {
     expect(evaluateAttributeCondition(rule, options)).toBe(expected);
   });
 
+  test('an attribute named after a prototype member reads as absent when missing', () => {
+    const named: SimpleAttribute[] = [
+      {
+        id: 'ctor-attr',
+        codeName: 'constructor',
+        dataType: BizAttributeTypes.RandomAB,
+        bizType: AttributeBizTypes.User,
+      },
+    ];
+    const empty: RulesEvaluationOptions = { attributes: named, userAttributes: {} };
+    expect(evaluateAttributeCondition(condition('ctor-attr', 'empty'), empty)).toBe(true);
+    expect(evaluateAttributeCondition(condition('ctor-attr', 'any'), empty)).toBe(false);
+    const present: RulesEvaluationOptions = {
+      attributes: named,
+      userAttributes: { constructor: 'A' },
+    };
+    expect(evaluateAttributeCondition(condition('ctor-attr', 'is', 'A'), present)).toBe(true);
+  });
+
   test('a missing value is empty, never a match', () => {
     const empty: RulesEvaluationOptions = { attributes, userAttributes: {} };
     expect(evaluateAttributeCondition(condition('experiment-attr', 'is', 'A'), empty)).toBe(false);

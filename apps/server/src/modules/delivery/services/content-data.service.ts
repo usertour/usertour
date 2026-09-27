@@ -21,8 +21,10 @@ import {
   ThemeVariation,
 } from '@usertour/types';
 import {
+  bucketValue,
   buildConfig,
   isArray,
+  isBucketingDataType,
   isVersionDataLocalizable,
   matchTranslationByLocale,
   mergeLocalizedEditorContents,
@@ -94,6 +96,23 @@ type VersionWithSession = {
  */
 type BizEventWithSessionAndContent = BizEventWithEvent & {
   bizSession: { contentId: string | null; content: { type: string } | null } | null;
+};
+
+/**
+ * The stored value, or — for a bucketing definition the backfill has not
+ * reached, or that a row was born without — the value it derives to (ADR
+ * 0020 §3). The SDK evaluates its own conditions on what this returns, so it
+ * must see what the server's evaluation sees.
+ */
+const storedOrBucketed = (attr: Attribute, externalId: string, data: unknown): unknown => {
+  const stored = data ? getAttributeValue(data, attr.codeName) : null;
+  if (stored !== null && stored !== undefined) {
+    return stored;
+  }
+  if (!isBucketingDataType(attr.dataType)) {
+    return null;
+  }
+  return bucketValue(attr, externalId) ?? null;
 };
 
 /**
@@ -458,10 +477,7 @@ export class ContentDataService {
     }
 
     if (attr.bizType === AttributeBizType.USER) {
-      if (bizUser?.data) {
-        return getAttributeValue(bizUser.data, attr.codeName);
-      }
-      return null;
+      return storedOrBucketed(attr, bizUser.externalId, bizUser.data);
     }
 
     if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
@@ -500,7 +516,7 @@ export class ContentDataService {
       }
 
       if (attr.bizType === AttributeBizType.COMPANY) {
-        return getAttributeValue(bizCompany.data, attr.codeName);
+        return storedOrBucketed(attr, bizCompany.externalId, bizCompany.data);
       }
 
       if (attr.bizType === AttributeBizType.MEMBERSHIP) {

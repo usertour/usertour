@@ -1,8 +1,23 @@
 import {
   canCompleteChecklistItem,
   extractClientConditionWaitTimers,
+  getAttributeValue,
   priorityCompare,
 } from './content.util';
+
+describe('getAttributeValue — own keys only', () => {
+  it('reads a stored value, and null for a missing key or no data', () => {
+    expect(getAttributeValue({ plan: 'pro' }, 'plan')).toBe('pro');
+    expect(getAttributeValue({ plan: 'pro' }, 'seats')).toBeNull();
+    expect(getAttributeValue(null, 'plan')).toBeNull();
+  });
+
+  it('a missing prototype-named key is null, not the inherited function', () => {
+    expect(getAttributeValue({}, 'constructor')).toBeNull();
+    expect(getAttributeValue({}, 'toString')).toBeNull();
+    expect(getAttributeValue({ constructor: 'A' }, 'constructor')).toBe('A');
+  });
+});
 
 // Sort semantics: negative = a first. PRIORITIES is ordered highest→lowest, so
 // a lower index sorts first.
