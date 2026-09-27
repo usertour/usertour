@@ -69,45 +69,24 @@ describe('WebSocket v2 connection recovery (e2e)', () => {
   });
 
   describe('socket data lost under a live connection', () => {
-    it('is rebuilt from the handshake and the message is served', async () => {
-      const externalUserId = `ws-recovery-rebuild-${Date.now()}`;
+    it('disconnects the socket so the SDK reconnects with the state of now', async () => {
       const client = await connectWebSocketClient(harness.baseUrl, {
         token: environmentToken,
-        externalUserId,
+        externalUserId: `ws-recovery-lost-${Date.now()}`,
       });
       const socketDataService = harness.app.get(SocketDataService);
       const handle = socketHandle(client.socket.id as string);
-
       await socketDataService.delete(handle);
       expect(await socketDataService.get(handle)).toBeNull();
-
-      const ack = await client.sendClientMessage(ClientMessageKind.END_BATCH, {});
-      expect(ack).toBe(true);
-      expect(client.socket.connected).toBe(true);
-
-      const rebuilt = await socketDataService.get(handle);
-      expect(rebuilt?.externalUserId).toBe(externalUserId);
-      expect(rebuilt?.bizUserId).toEqual(expect.any(String));
-
-      client.disconnect();
-    });
-
-    it('disconnects only when the rebuild itself fails', async () => {
-      const client = await connectWebSocketClient(harness.baseUrl, {
-        token: environmentToken,
-        externalUserId: `ws-recovery-rebuild-fail-${Date.now()}`,
-      });
-      const socketDataService = harness.app.get(SocketDataService);
-      await socketDataService.delete(socketHandle(client.socket.id as string));
-      jest
-        .spyOn(harness.app.get(WebSocketV2Service), 'initializeSocketData')
-        .mockResolvedValueOnce(null);
 
       const disconnected = new Promise<string>((resolve) => {
         client.socket.on('disconnect', (reason) => resolve(reason));
       });
       await client.sendClientMessage(ClientMessageKind.END_BATCH, {}).catch(() => undefined);
+      // The reason Socket.IO gives up on — the one the SDK reconnects from.
       expect(await disconnected).toBe('io server disconnect');
+      // Nothing was rebuilt from the stale handshake.
+      expect(await socketDataService.get(handle)).toBeNull();
     });
   });
 

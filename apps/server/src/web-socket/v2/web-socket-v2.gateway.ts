@@ -74,13 +74,11 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         return next(handshakeRejection(new SDKAuthenticationError(), false));
       }
 
+      // A rejected socket never reaches handleDisconnect, so nothing may be
+      // stored for it before the handshake is sure to succeed: the capacity
+      // check comes first, and a failure after the store deletes it again.
+      let stored = false;
       try {
-        // Store client data in Redis using socket ID
-        const success = await this.socketDataService.set(socket, socketData);
-        if (!success) {
-          return next(handshakeRejection(new ServiceUnavailableError(), true));
-        }
-
         // Build room ID and check capacity
         const room = buildExternalUserRoomId(socketData.environment.id, socketData.externalUserId);
         const socketsInRoom = await this.server.in(room).fetchSockets();
@@ -93,6 +91,12 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           );
         }
 
+        // Store client data in Redis using socket ID
+        stored = await this.socketDataService.set(socket, socketData);
+        if (!stored) {
+          return next(handshakeRejection(new ServiceUnavailableError(), true));
+        }
+
         // Join user room for targeted messaging
         await socket.join(room);
 
@@ -102,6 +106,9 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         this.logger.error(
           `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
         );
+        if (stored) {
+          await this.socketDataService.delete(socket).catch(() => undefined);
+        }
         return next(handshakeRejection(new ServiceUnavailableError(), true));
       }
     });

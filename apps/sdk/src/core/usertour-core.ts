@@ -248,6 +248,10 @@ export class UsertourCore extends Evented {
     // connect when needed, and any failure surfaces through the EMIT_TIMEOUT
     // applied to the upsert below.
     this.socketService.setAuth(externalUserId, this.startOptions.token, this.identityToken);
+    // setAuth keeps only the identity; the rest of the handshake — company,
+    // sessions, client conditions, timers — is synced from here, so a new
+    // user starts clean (reset() ran above) and the same user keeps its own.
+    this.syncSocketCredentials();
 
     const userAttributes = this.normalizeAttributes(attributes);
     const result = await this.socketService.upsertUser(
@@ -424,6 +428,11 @@ export class UsertourCore extends Evented {
     if (membershipAttributes) {
       this.attributeManager.setMembershipAttributes(membershipAttributes);
     }
+    // The reconnect credentials must carry the new company now, not after
+    // the next server message (which a company with nothing to show never
+    // sends): the handshake evaluates on them, and a failed write for this
+    // company is replayed only while they name it.
+    this.syncSocketCredentials();
     return this.reportRejected(result.rejected);
   }
 
@@ -987,6 +996,8 @@ export class UsertourCore extends Evented {
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
     this.cleanupWaitTimerMonitor();
+    // Failed writes and declared timers belonged to this session (ADR 0018 §1)
+    this.socketService.clearRecoveryState();
     // Cleanup tracker monitor
     this.cleanupTrackerMonitor();
     // Stop URL monitor
@@ -1052,10 +1063,26 @@ export class UsertourCore extends Evented {
     // Connection recovery (ADR 0018): fold a replayed write into the
     // attribute cache exactly as the original call would have.
     this.socketService.onWriteReplayed((write) => {
+      // A replay answered after the core moved on — identify() of another
+      // user, group() of another company, reset() — must not land in the
+      // cache of where the core is now.
+      if (write.params.externalUserId !== this.externalUserId) {
+        return;
+      }
       if (write.kind === 'user') {
         if (write.params.attributes) {
           this.attributeManager.setUserAttributes(write.params.attributes);
         }
+        // The identify() this write came from rejected on its timeout, so
+        // its success event never fired; a shared-link start still waits
+        // for one.
+        this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
+          userId: write.params.externalUserId,
+          attributes: write.params.attributes,
+        });
+        return;
+      }
+      if (write.params.externalCompanyId !== this.externalCompanyId) {
         return;
       }
       if (write.params.attributes) {
@@ -1626,6 +1653,11 @@ export class UsertourCore extends Evented {
           return;
         }
 
+        // The reconnect handshake must declare this timer as fired before
+        // the report below can be lost to a disconnect: the server neither
+        // re-issues a timer it holds nor starts content on one it thinks is
+        // still running (ADR 0018 §6).
+        this.syncSocketCredentials();
         // Handle timer firing - could trigger next step or other actions
         const result = await this.socketService.fireConditionWaitTimer(
           {
