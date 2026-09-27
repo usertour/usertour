@@ -1,64 +1,35 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
-import { SocketAuthData } from '@usertour/types';
 import { SDKAuthenticationError } from '@/modules/common/errors/errors';
-import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { SocketDataService } from '../core/socket-data.service';
-import { WebSocketV2Service } from './web-socket-v2.service';
 
 /**
- * WebSocket V2 Guard - checks that the connection still has its socket data,
- * rebuilding it when the store lost it.
+ * WebSocket V2 Guard - checks that the connection still has its socket data.
+ *
+ * Socket data can vanish under a live connection — a Redis restart or
+ * failover, or the 24 h TTL on a tab that stayed connected but wrote nothing
+ * — and a failed user write deletes it on purpose. In every case the socket
+ * is disconnected: the SDK reconnects by itself after a server-initiated
+ * disconnect (ADR 0018 §1) and its handshake carries the state of now.
+ * Rebuilding here from `socket.handshake.auth` would restore the state of
+ * the moment the connection was made (ADR 0018 §3).
  */
 @Injectable()
 export class WebSocketV2Guard implements CanActivate {
   private readonly logger = new Logger(WebSocketV2Guard.name);
 
-  constructor(
-    private readonly socketDataService: SocketDataService,
-    private readonly service: WebSocketV2Service,
-  ) {}
+  constructor(private readonly socketDataService: SocketDataService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const socket: Socket = context.switchToWs().getClient();
 
-    const socketData =
-      (await this.socketDataService.get(socket)) ?? (await this.rebuildSocketData(socket));
+    const socketData = await this.socketDataService.get(socket);
     if (!socketData?.environment) {
+      this.logger.warn(`Socket ${socket.id} has no socket data; disconnecting so it reconnects`);
       socket.disconnect(true);
       throw new SDKAuthenticationError();
     }
 
     return true;
-  }
-
-  /**
-   * Socket data can vanish under a live connection — a Redis restart or
-   * failover, or the 24 h TTL on a tab that stayed connected but wrote
-   * nothing. Rebuild it from the handshake this socket was accepted with,
-   * exactly as the handshake did, instead of kicking the socket: Socket.IO
-   * does not reconnect after a server-initiated disconnect (ADR 0018 §3).
-   * Only a rebuild that fails disconnects; the SDK then reconnects and the
-   * handshake gives the verdict.
-   */
-  private async rebuildSocketData(socket: Socket): Promise<SocketData | null> {
-    try {
-      const auth = (socket.handshake?.auth ?? {}) as unknown as SocketAuthData;
-      const socketData = await this.service.initializeSocketData(auth);
-      if (!socketData) {
-        return null;
-      }
-      const stored = await this.socketDataService.set(socket, socketData);
-      if (!stored) {
-        return null;
-      }
-      this.logger.warn(`Rebuilt missing socket data for socket ${socket.id}`);
-      return socketData;
-    } catch (error: unknown) {
-      this.logger.error(
-        `Failed to rebuild socket data for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
-      );
-      return null;
-    }
   }
 }
