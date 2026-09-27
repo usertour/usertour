@@ -124,6 +124,24 @@ export class UsertourAttributeManager extends Evented {
     return true;
   }
 
+  /**
+   * The keys of a write the server did not confirm leave the cache: what it
+   * holds for them is unknown, and a stale literal would make the next call
+   * carrying them look unchanged and go unsent — while a resend of the write
+   * that failed offline would then land its stale value (ADR 0018 §4).
+   */
+  forgetUserAttributes(codeNames: readonly string[]): void {
+    this.userAttributes = mergeAttributeCache(this.userAttributes, {}, codeNames);
+  }
+
+  forgetCompanyAttributes(codeNames: readonly string[]): void {
+    this.companyAttributes = mergeAttributeCache(this.companyAttributes, {}, codeNames);
+  }
+
+  forgetMembershipAttributes(codeNames: readonly string[]): void {
+    this.membershipAttributes = mergeAttributeCache(this.membershipAttributes, {}, codeNames);
+  }
+
   // === Attribute Getters ===
   /**
    * Get user attributes

@@ -274,6 +274,9 @@ export class UsertourCore extends Evented {
       { batch: true },
     );
     if (!result.ok) {
+      // Unconfirmed keys leave the cache so the next call carrying them is
+      // sent, and a resend of this write cannot land over a newer value.
+      this.attributeManager.forgetUserAttributes(Object.keys(userAttributes ?? {}));
       throw new Error(ErrorMessages.FAILED_TO_IDENTIFY_USER);
     }
 
@@ -353,6 +356,7 @@ export class UsertourCore extends Evented {
       { batch: true },
     );
     if (!result.ok) {
+      this.attributeManager.forgetUserAttributes(Object.keys(userAttributes));
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_USER);
     }
 
@@ -431,12 +435,17 @@ export class UsertourCore extends Evented {
       // the reconnect auth while this upsert was in flight, and the tokenless
       // failure path has no other sync. Idempotent and cheap.
       this.syncSocketCredentials();
+      this.forgetCompanyWrite(externalCompanyId, companyAttributes, membershipAttributes);
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
-    const refused = refusedCodeNames(result.rejected);
-    this.attributeManager.setCompanyAttributes(companyAttributes ?? {}, refused);
-    this.attributeManager.setMembershipAttributes(membershipAttributes ?? {}, refused);
+    // Cached only while the core is still on this company: a later group()
+    // may have moved on, and this answer would land in that company's cache.
+    if (this.externalCompanyId === externalCompanyId) {
+      const refused = refusedCodeNames(result.rejected);
+      this.attributeManager.setCompanyAttributes(companyAttributes ?? {}, refused);
+      this.attributeManager.setMembershipAttributes(membershipAttributes ?? {}, refused);
+    }
     // The reconnect credentials must carry the new company now, not after
     // the next server message (which a company with nothing to show never
     // sends): the handshake evaluates on them, and a failed write for this
@@ -495,14 +504,35 @@ export class UsertourCore extends Evented {
       if (opts?.token) {
         this.rollbackIdentityToken(opts.token, previousIdentityToken);
       }
+      this.forgetCompanyWrite(externalCompanyId, companyAttributes, membershipAttributes);
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
-    // Only update local state after successful API call
-    const refused = refusedCodeNames(result.rejected);
-    this.attributeManager.setCompanyAttributes(companyAttributes ?? {}, refused);
-    this.attributeManager.setMembershipAttributes(membershipAttributes ?? {}, refused);
+    // Only update local state after successful API call, and only while the
+    // core is still on this company (same rule as group()).
+    if (this.externalCompanyId === externalCompanyId) {
+      const refused = refusedCodeNames(result.rejected);
+      this.attributeManager.setCompanyAttributes(companyAttributes ?? {}, refused);
+      this.attributeManager.setMembershipAttributes(membershipAttributes ?? {}, refused);
+    }
     return this.reportRejected(result.rejected);
+  }
+
+  /**
+   * A company write the server did not confirm: its keys leave the caches
+   * (see forgetUserAttributes) — unless the core has moved to another
+   * company, whose caches this write never touched.
+   */
+  private forgetCompanyWrite(
+    externalCompanyId: string,
+    companyAttributes: UserTourTypes.Attributes | undefined,
+    membershipAttributes: UserTourTypes.Attributes | undefined,
+  ): void {
+    if (this.externalCompanyId !== externalCompanyId) {
+      return;
+    }
+    this.attributeManager.forgetCompanyAttributes(Object.keys(companyAttributes ?? {}));
+    this.attributeManager.forgetMembershipAttributes(Object.keys(membershipAttributes ?? {}));
   }
 
   /**
@@ -1002,8 +1032,11 @@ export class UsertourCore extends Evented {
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
     this.cleanupWaitTimerMonitor();
-    // Failed writes and declared timers belonged to this session (ADR 0018 §1)
-    this.socketService.clearRecoveryState();
+    // The session ends here: the socket disconnects and forgets its
+    // credentials and failed writes, so a transport blip cannot reconnect
+    // as the user who just left and evaluate for them; the next identify()
+    // starts a fresh connection (ADR 0018 §1).
+    this.socketService.disconnect();
     // Cleanup tracker monitor
     this.cleanupTrackerMonitor();
     // Stop URL monitor
@@ -1069,8 +1102,15 @@ export class UsertourCore extends Evented {
    */
   private initializeSocketEventListeners(): void {
     this.socketService.onQueue(WebSocketEvents.SERVER_MESSAGE, this.handleServerMessage);
-    // Connection recovery (ADR 0018): fold a replayed write into the
-    // attribute cache exactly as the original call would have.
+    // Connection recovery (ADR 0018): the replay decisions are made against
+    // where the core is now — the company from the moment group() was
+    // called — not against credentials the server has yet to confirm.
+    this.socketService.setTargetResolver(() => ({
+      externalUserId: this.externalUserId,
+      externalCompanyId: this.externalCompanyId,
+    }));
+    // Fold a replayed write into the attribute cache exactly as the original
+    // call would have.
     this.socketService.onWriteReplayed((write) => {
       // A replay answered after the core moved on — identify() of another
       // user, group() of another company, reset() — must not land in the
