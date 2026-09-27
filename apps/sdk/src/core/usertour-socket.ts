@@ -572,6 +572,14 @@ export class UsertourSocket implements IUsertourSocket {
     if (!pending) {
       return;
     }
+    // A write to another company retires nothing from this company's record.
+    if (
+      kind === 'company' &&
+      (pending.params as UpsertCompanyDto).externalCompanyId !==
+        (params as UpsertCompanyDto).externalCompanyId
+    ) {
+      return;
+    }
     const remaining = withoutWrittenKeys(pending.params, params);
     if (remaining) {
       pending.params = remaining;

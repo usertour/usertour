@@ -424,6 +424,11 @@ export class UsertourCore extends Evented {
     if (membershipAttributes) {
       this.attributeManager.setMembershipAttributes(membershipAttributes);
     }
+    // The reconnect credentials must carry the new company now, not after
+    // the next server message (which a company with nothing to show never
+    // sends): the handshake evaluates on them, and a failed write for this
+    // company is replayed only while they name it.
+    this.syncSocketCredentials();
     return this.reportRejected(result.rejected);
   }
 
