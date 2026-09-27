@@ -187,6 +187,21 @@ describe('API v2 attribute write operations (e2e)', () => {
       expect(unioned.body.attributes.aw_roles).toEqual(['admin', 'editor']);
     });
 
+    it('a `__proto__` key is refused, not silently dropped', async () => {
+      // Sent as raw JSON: an object literal would set the prototype instead.
+      const res = await request(app.getHttpServer())
+        .put(`${base()}/users/aw-proto-key`)
+        .set('Authorization', `Bearer ${token}`)
+        .set('Content-Type', 'application/json')
+        .send('{"attributes":{"plan":"pro","__proto__":{"admin":true}}}');
+      expect(res.status).toBe(400);
+      expect(res.body.error.message).toMatch(/__proto__/);
+      const row = await prisma.bizUser.findFirst({
+        where: { externalId: 'aw-proto-key', environmentId: fx.environmentId },
+      });
+      expect(row).toBeNull();
+    });
+
     it('a codeName that names an Object.prototype member is an ordinary attribute', async () => {
       // The global pipe must not hand these to class-transformer (it throws
       // on `constructor` and drops `valueOf` / `toString`), and the merge

@@ -112,6 +112,13 @@ describe('GraphQL attributes (e2e)', () => {
       });
     });
 
+    it('errors creating an attribute named __proto__', async () => {
+      const res = await createAttribute({ codeName: '__proto__' });
+      expect(res.body.errors?.[0]?.message).toMatch(/__proto__/);
+      const rows = await prisma.attribute.findMany({ where: { projectId, codeName: '__proto__' } });
+      expect(rows).toHaveLength(0);
+    });
+
     it('errors creating a duplicate (projectId, bizType, codeName)', async () => {
       const codeName = uniqueCodeName('dup');
       gqlData(await createAttribute({ codeName, bizType: BIZ_USER }));
