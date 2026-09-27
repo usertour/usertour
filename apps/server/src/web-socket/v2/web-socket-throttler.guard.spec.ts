@@ -11,10 +11,11 @@ describe('WebSocketThrottlerGuard', () => {
     handshake: { address: address ?? '127.0.0.1' },
   });
 
-  const createMockContext = (socket: unknown): ExecutionContext =>
+  const createMockContext = (socket: unknown, message: unknown = {}): ExecutionContext =>
     ({
       switchToWs: () => ({
         getClient: () => socket,
+        getData: () => message,
       }),
       getType: () => 'ws',
       getClass: () => ({ name: 'TestClass' }),
@@ -42,20 +43,24 @@ describe('WebSocketThrottlerGuard', () => {
   });
 
   describe('a message over the limit', () => {
-    it('is marked on the socket for the handler to answer, not thrown', async () => {
+    it('is marked on the message for the handler to answer, not thrown', async () => {
       // The testing module compiles without running lifecycle hooks; the
       // guard reads its throttler list in one.
       await (guard as unknown as { onModuleInit: () => Promise<void> }).onModuleInit();
-      const socket = { id: 'over-limit', handshake: { address: '127.0.0.1' }, data: {} };
-      const context = createMockContext(socket);
+      const socket = { id: 'over-limit', handshake: { address: '127.0.0.1' } };
       for (let i = 0; i < 10; i++) {
-        await expect(guard.canActivate(context)).resolves.toBe(true);
-        expect(WebSocketThrottlerGuard.consumeRefusal(socket as never)).toBe(false);
+        const allowed = { kind: 'x', payload: { i } };
+        await expect(guard.canActivate(createMockContext(socket, allowed))).resolves.toBe(true);
+        expect(WebSocketThrottlerGuard.consumeRefusal(allowed)).toBe(false);
       }
-      await expect(guard.canActivate(context)).resolves.toBe(true);
-      expect(WebSocketThrottlerGuard.consumeRefusal(socket as never)).toBe(true);
-      // Consumed once: the next message starts clean.
-      expect(WebSocketThrottlerGuard.consumeRefusal(socket as never)).toBe(false);
+      const over = { kind: 'x', payload: { i: 10 } };
+      const another = { kind: 'x', payload: { i: 11 } };
+      await expect(guard.canActivate(createMockContext(socket, over))).resolves.toBe(true);
+      // The mark belongs to that message, not to its socket or its neighbours.
+      expect(WebSocketThrottlerGuard.consumeRefusal(another)).toBe(false);
+      expect(WebSocketThrottlerGuard.consumeRefusal(over)).toBe(true);
+      // Consumed once.
+      expect(WebSocketThrottlerGuard.consumeRefusal(over)).toBe(false);
     });
   });
 

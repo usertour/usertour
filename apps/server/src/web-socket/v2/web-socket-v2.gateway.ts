@@ -153,9 +153,8 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket,
     @MessageBody() raw: unknown,
   ): Promise<any> {
-    // Read before any await: the guard marked the socket for this message in
-    // the same tick.
-    if (WebSocketThrottlerGuard.consumeRefusal(socket)) {
+    // The guard marked this message object if it is over the limit.
+    if (WebSocketThrottlerGuard.consumeRefusal(raw)) {
       return false;
     }
     // Validated here rather than by a parameter pipe: a pipe that throws
