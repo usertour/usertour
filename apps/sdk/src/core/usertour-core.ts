@@ -64,6 +64,18 @@ import {
 } from './server-message-handlers';
 
 const log = logger.scope('core');
+
+/**
+ * The keys the server refused. They leave the local cache (ADR 0020 §6):
+ * what the server holds for them is unknown here, and a stale literal would
+ * make the next call carrying the key look unchanged and go unsent. A company
+ * acknowledgement names refused keys without their scope, so a refused key
+ * leaves the company and the membership cache alike; the same-named key the
+ * other scope accepted is then sent once more, which costs one upsert.
+ */
+const refusedCodeNames = (rejected: UserTourTypes.AttributesWriteResult['rejected']): string[] => {
+  return rejected.map((entry) => entry.codeName);
+};
 interface AppStartOptions {
   environmentId?: string;
   mode: SDKSettingsMode;
@@ -268,7 +280,7 @@ export class UsertourCore extends Evented {
     // Only update attributes after successful API call so updateUser's
     // change-detection guard remains accurate after retries.
     if (userAttributes) {
-      this.attributeManager.setUserAttributes(userAttributes);
+      this.attributeManager.setUserAttributes(userAttributes, refusedCodeNames(result.rejected));
     }
     this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
       userId: externalUserId,
@@ -345,7 +357,7 @@ export class UsertourCore extends Evented {
     }
 
     // Only update local state after successful API call
-    this.attributeManager.setUserAttributes(userAttributes);
+    this.attributeManager.setUserAttributes(userAttributes, refusedCodeNames(result.rejected));
     return this.reportRejected(result.rejected);
   }
 
@@ -422,12 +434,9 @@ export class UsertourCore extends Evented {
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
-    if (companyAttributes) {
-      this.attributeManager.setCompanyAttributes(companyAttributes);
-    }
-    if (membershipAttributes) {
-      this.attributeManager.setMembershipAttributes(membershipAttributes);
-    }
+    const refused = refusedCodeNames(result.rejected);
+    this.attributeManager.setCompanyAttributes(companyAttributes ?? {}, refused);
+    this.attributeManager.setMembershipAttributes(membershipAttributes ?? {}, refused);
     // The reconnect credentials must carry the new company now, not after
     // the next server message (which a company with nothing to show never
     // sends): the handshake evaluates on them, and a failed write for this
@@ -490,12 +499,9 @@ export class UsertourCore extends Evented {
     }
 
     // Only update local state after successful API call
-    if (companyAttributes) {
-      this.attributeManager.setCompanyAttributes(companyAttributes);
-    }
-    if (membershipAttributes) {
-      this.attributeManager.setMembershipAttributes(membershipAttributes);
-    }
+    const refused = refusedCodeNames(result.rejected);
+    this.attributeManager.setCompanyAttributes(companyAttributes ?? {}, refused);
+    this.attributeManager.setMembershipAttributes(membershipAttributes ?? {}, refused);
     return this.reportRejected(result.rejected);
   }
 
@@ -1072,10 +1078,11 @@ export class UsertourCore extends Evented {
       if (write.params.externalUserId !== this.externalUserId) {
         return;
       }
+      // A replay is answered like a direct call: the keys the server refused
+      // leave the cache and are reported.
+      const refused = refusedCodeNames(write.rejected);
       if (write.kind === 'user') {
-        if (write.params.attributes) {
-          this.attributeManager.setUserAttributes(write.params.attributes);
-        }
+        this.attributeManager.setUserAttributes(write.params.attributes ?? {}, refused);
         // The identify() this write came from rejected on its timeout, so
         // its success event never fired; a shared-link start still waits
         // for one.
@@ -1083,17 +1090,15 @@ export class UsertourCore extends Evented {
           userId: write.params.externalUserId,
           attributes: write.params.attributes,
         });
+        this.reportRejected(write.rejected);
         return;
       }
       if (write.params.externalCompanyId !== this.externalCompanyId) {
         return;
       }
-      if (write.params.attributes) {
-        this.attributeManager.setCompanyAttributes(write.params.attributes);
-      }
-      if (write.params.membership) {
-        this.attributeManager.setMembershipAttributes(write.params.membership);
-      }
+      this.attributeManager.setCompanyAttributes(write.params.attributes ?? {}, refused);
+      this.attributeManager.setMembershipAttributes(write.params.membership ?? {}, refused);
+      this.reportRejected(write.rejected);
     });
   }
 

@@ -379,21 +379,32 @@ export const isAttributeOperation = (value: unknown): boolean => {
 };
 
 /**
- * Merge a payload the server accepted into the SDK's local attribute cache,
+ * Fold a payload the server answered into the SDK's local attribute cache,
  * which exists only for change detection. Literals are cached; a key that
- * carried an operation is dropped, because its stored value is unknown here.
+ * carried an operation is dropped, because its stored value is unknown here;
+ * a key the server refused is dropped for the same reason — a stale literal
+ * would make the next call carrying it look unchanged and go unsent.
  */
 export const mergeAttributeCache = <T extends Record<string, unknown>>(
   cache: T,
-  accepted: T,
+  sent: T,
+  refused: readonly string[] = [],
 ): T => {
-  const next: Record<string, unknown> = { ...cache };
-  for (const codeName of Object.keys(accepted)) {
-    const value = accepted[codeName];
-    if (isAttributeOperation(value)) {
-      delete next[codeName];
-    } else {
-      next[codeName] = value;
+  const dropped = new Set(refused);
+  for (const codeName of Object.keys(sent)) {
+    if (isAttributeOperation(sent[codeName])) {
+      dropped.add(codeName);
+    }
+  }
+  const next: Record<string, unknown> = {};
+  for (const codeName of Object.keys(cache)) {
+    if (!dropped.has(codeName)) {
+      next[codeName] = cache[codeName];
+    }
+  }
+  for (const codeName of Object.keys(sent)) {
+    if (!dropped.has(codeName)) {
+      next[codeName] = sent[codeName];
     }
   }
   return next as T;

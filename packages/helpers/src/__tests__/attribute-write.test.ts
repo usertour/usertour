@@ -365,6 +365,13 @@ describe('client-side helpers', () => {
     ).toEqual({ plan: 'pro', gone: null });
   });
 
+  test('mergeAttributeCache: a refused key leaves the cache, cached before or sent now', () => {
+    const cache = { plan: 'free', seats: 3 };
+    expect(
+      mergeAttributeCache(cache, { plan: 'pro', experiment: 'B' }, ['experiment', 'seats']),
+    ).toEqual({ plan: 'pro' });
+  });
+
   test('attributeCacheChanged: an operation always counts as a change', () => {
     expect(attributeCacheChanged({ count: 3 }, { count: { add: 1 } })).toBe(true);
     expect(attributeCacheChanged({ count: 3 }, { count: 3 })).toBe(false);
