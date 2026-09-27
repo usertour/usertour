@@ -986,6 +986,8 @@ export class UsertourCore extends Evented {
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
     this.cleanupWaitTimerMonitor();
+    // Failed writes and declared timers belonged to this session (ADR 0018 §1)
+    this.socketService.clearRecoveryState();
     // Cleanup tracker monitor
     this.cleanupTrackerMonitor();
     // Stop URL monitor
@@ -1054,6 +1056,15 @@ export class UsertourCore extends Evented {
       if (write.kind === 'user') {
         if (write.params.attributes) {
           this.attributeManager.setUserAttributes(write.params.attributes);
+        }
+        // The identify() this write came from rejected on its timeout, so
+        // its success event never fired; a shared-link start still waits
+        // for one.
+        if (write.params.externalUserId === this.externalUserId) {
+          this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
+            userId: write.params.externalUserId,
+            attributes: write.params.attributes,
+          });
         }
         return;
       }
@@ -1625,6 +1636,11 @@ export class UsertourCore extends Evented {
           return;
         }
 
+        // The reconnect handshake must declare this timer as fired before
+        // the report below can be lost to a disconnect: the server neither
+        // re-issues a timer it holds nor starts content on one it thinks is
+        // still running (ADR 0018 §6).
+        this.syncSocketCredentials();
         // Handle timer firing - could trigger next step or other actions
         const result = await this.socketService.fireConditionWaitTimer(
           {

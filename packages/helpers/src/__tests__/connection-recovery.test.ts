@@ -1,16 +1,31 @@
 import {
   CLIENT_DISCONNECT_REASON,
   ConnectionState,
-  RECONNECT_MAX_DELAY_MS,
-  SERVER_DISCONNECT_REASON,
   isRetryableHandshakeError,
+  mergeFailedWrite,
+  RECONNECT_MAX_DELAY_MS,
   reconnectDelayMs,
   reduceConnection,
+  SERVER_DISCONNECT_REASON,
   stripNonIdempotentWrites,
+  withoutWrittenKeys,
 } from '../connection-recovery';
 
 describe('reduceConnection', () => {
   const states: ConnectionState[] = ['idle', 'connecting', 'connected', 'reconnecting', 'rejected'];
+
+  test('new credentials after a rejection reconnect when the set had connected before', () => {
+    expect(reduceConnection('rejected', { type: 'connect_requested', hadConnected: true })).toEqual(
+      { state: 'reconnecting', actions: [] },
+    );
+    expect(reduceConnection('reconnecting', { type: 'connect' })).toEqual({
+      state: 'connected',
+      actions: ['replay', 'evaluate'],
+    });
+    expect(
+      reduceConnection('rejected', { type: 'connect_requested', hadConnected: false }),
+    ).toEqual({ state: 'connecting', actions: [] });
+  });
 
   test('connect_requested opens from idle and rejected only', () => {
     expect(reduceConnection('idle', { type: 'connect_requested' })).toEqual({
@@ -135,6 +150,63 @@ describe('isRetryableHandshakeError', () => {
     ['not an error', 'boom', true],
   ])('%s', (_, error, expected) => {
     expect(isRetryableHandshakeError(error)).toBe(expected);
+  });
+});
+
+describe('mergeFailedWrite', () => {
+  test('keeps the older keys and lets the newer values win', () => {
+    expect(
+      mergeFailedWrite(
+        { externalUserId: 'u', attributes: { plan: 'pro', seats: 3 } },
+        { externalUserId: 'u', attributes: { seats: 4, last_seen: 'x' } },
+      ),
+    ).toEqual({ externalUserId: 'u', attributes: { plan: 'pro', seats: 4, last_seen: 'x' } });
+  });
+
+  test('merges membership separately and takes other fields from the newer write', () => {
+    expect(
+      mergeFailedWrite(
+        {
+          externalCompanyId: 'c',
+          token: 'old',
+          attributes: { name: 'A' },
+          membership: { role: 'x' },
+        },
+        { externalCompanyId: 'c', token: 'new', membership: { seat: 1 } },
+      ),
+    ).toEqual({
+      externalCompanyId: 'c',
+      token: 'new',
+      attributes: { name: 'A' },
+      membership: { role: 'x', seat: 1 },
+    });
+  });
+
+  test('returns the newer write when there was none before', () => {
+    const next = { attributes: { a: 1 } };
+    expect(mergeFailedWrite(undefined, next)).toBe(next);
+  });
+});
+
+describe('withoutWrittenKeys', () => {
+  test('drops the keys a later write landed and keeps the rest', () => {
+    expect(
+      withoutWrittenKeys(
+        { attributes: { plan: 'pro', seats: 3 }, membership: { role: 'x' } },
+        { attributes: { plan: 'free' } },
+      ),
+    ).toEqual({ attributes: { seats: 3 }, membership: { role: 'x' } });
+  });
+
+  test('is undefined once nothing is left to replay', () => {
+    expect(
+      withoutWrittenKeys({ attributes: { plan: 'pro' } }, { attributes: { plan: 'free' } }),
+    ).toBeUndefined();
+  });
+
+  test('a write without attributes retires nothing', () => {
+    const failed = { attributes: { plan: 'pro' } };
+    expect(withoutWrittenKeys(failed, {})).toEqual(failed);
   });
 });
 

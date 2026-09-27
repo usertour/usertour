@@ -11,8 +11,13 @@ import { isObject } from './type-utils';
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'rejected';
 
 export type ConnectionSignal =
-  /** `ensureConnecting` was asked to open the socket (first connect, or after a credential change). */
-  | { type: 'connect_requested' }
+  /**
+   * `ensureConnecting` was asked to open the socket: the first connect, a
+   * credential change, or new credentials after a rejection. `hadConnected`
+   * says whether this credential set was ever connected — a connect after a
+   * rejection then counts as a reconnect and gets its evaluation.
+   */
+  | { type: 'connect_requested'; hadConnected?: boolean }
   | { type: 'connect' }
   | { type: 'disconnect'; reason: string }
   /**
@@ -55,6 +60,9 @@ export const reduceConnection = (
 ): ConnectionTransition => {
   switch (signal.type) {
     case 'connect_requested':
+      if (state === 'rejected' && signal.hadConnected === true) {
+        return { state: 'reconnecting', actions: [] };
+      }
       if (state === 'idle' || state === 'rejected') {
         return { state: 'connecting', actions: [] };
       }
@@ -118,6 +126,77 @@ export const isRetryableHandshakeError = (error: unknown): boolean => {
     return true;
   }
   return (data as { retryable?: unknown }).retryable !== false;
+};
+
+/** A failed write is replayed only this long after it failed (ADR 0018 §4). */
+export const PENDING_WRITE_TTL_MS = 10 * 60_000;
+/** A failed write is resent at most this many times before it is dropped. */
+export const MAX_WRITE_REPLAYS = 1;
+
+/** The attribute-bearing part of an UpsertUser / UpsertCompany payload. */
+export interface ReplayableWrite {
+  attributes?: Record<string, unknown>;
+  membership?: Record<string, unknown>;
+}
+
+/**
+ * Fold a newer failed write into the older ones of its kind: attributes and
+ * membership merge key by key with the newer value winning, every other field
+ * comes from the newer write. Keeping only the latest payload lost the keys
+ * of an earlier one (ADR 0018 §4).
+ */
+export const mergeFailedWrite = <T extends ReplayableWrite>(
+  previous: T | undefined,
+  next: T,
+): T => {
+  if (!previous) {
+    return next;
+  }
+  const merged: T = { ...previous, ...next };
+  if (previous.attributes || next.attributes) {
+    merged.attributes = { ...previous.attributes, ...next.attributes };
+  }
+  if (previous.membership || next.membership) {
+    merged.membership = { ...previous.membership, ...next.membership };
+  }
+  return merged;
+};
+
+/**
+ * Drop from a failed write the keys an acknowledged write carried since: the
+ * server now holds newer values for them, so replaying the old ones would
+ * regress. Returns undefined when nothing is left to replay.
+ */
+export const withoutWrittenKeys = <T extends ReplayableWrite>(
+  failed: T,
+  written: ReplayableWrite,
+): T | undefined => {
+  const attributes = omitKeys(failed.attributes, written.attributes);
+  const membership = omitKeys(failed.membership, written.membership);
+  if (isEmptyRecord(attributes) && isEmptyRecord(membership)) {
+    return undefined;
+  }
+  return { ...failed, attributes, membership };
+};
+
+const omitKeys = (
+  source: Record<string, unknown> | undefined,
+  written: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined => {
+  if (!source || !written) {
+    return source;
+  }
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(source)) {
+    if (!Object.prototype.hasOwnProperty.call(written, key)) {
+      result[key] = source[key];
+    }
+  }
+  return result;
+};
+
+const isEmptyRecord = (record: Record<string, unknown> | undefined): boolean => {
+  return !record || Object.keys(record).length === 0;
 };
 
 /**
