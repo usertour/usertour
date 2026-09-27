@@ -97,8 +97,22 @@ export class WebSocketMessageValidationPipe implements PipeTransform {
       throw new WsException(`Payload is required for message kind: ${kind}`);
     }
 
+    // The attribute maps are keyed by the host's own names, which may be
+    // `constructor` or `toString`: class-transformer throws on the one and
+    // drops the others. They are checked here as plain objects and passed
+    // through untouched; the domain reads them by own key (ADR 0017 §8).
+    const { attributes, membership, ...rest } = payload as Record<string, unknown>;
+    for (const [field, map] of [
+      ['attributes', attributes],
+      ['membership', membership],
+    ] as const) {
+      if (map !== undefined && (map === null || typeof map !== 'object' || Array.isArray(map))) {
+        throw new WsException(`Invalid payload for ${kind}: ${field} must be an object`);
+      }
+    }
+
     try {
-      const instance = plainToInstance(ValidatorClass, payload);
+      const instance = plainToInstance(ValidatorClass, rest);
       const errors = await validate(instance, {
         whitelist: true,
         forbidNonWhitelisted: false,
@@ -113,7 +127,14 @@ export class WebSocketMessageValidationPipe implements PipeTransform {
         throw new WsException(`Invalid payload for ${kind}: ${errorMessages}`);
       }
 
-      return instance;
+      const validated = instance as Record<string, unknown>;
+      if (attributes !== undefined) {
+        validated.attributes = attributes;
+      }
+      if (membership !== undefined) {
+        validated.membership = membership;
+      }
+      return validated;
     } catch (error) {
       if (error instanceof WsException) {
         throw error;

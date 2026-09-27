@@ -44,6 +44,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     private readonly messageHandler: WebSocketV2MessageHandler,
     private readonly queueService: SocketMessageQueueService,
     private readonly socketDataService: SocketDataService,
+    private readonly validationPipe: WebSocketMessageValidationPipe,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -150,8 +151,21 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   @UseGuards(WebSocketThrottlerGuard)
   async handleClientMessage(
     @ConnectedSocket() socket: Socket,
-    @MessageBody(WebSocketMessageValidationPipe) message: ClientMessageDto,
+    @MessageBody() raw: unknown,
   ): Promise<any> {
+    // Validated here rather than by a parameter pipe: a pipe that throws
+    // leaves the message without an acknowledgement, and the SDK then takes
+    // a malformed message for a network failure and resends it (ADR 0018
+    // §4). A refused message is answered `false` like any other refusal.
+    let message: ClientMessageDto;
+    try {
+      message = await this.validationPipe.transform(raw);
+    } catch (error) {
+      this.logger.warn(
+        `Refused client message from socket ${socket.id}: ${(error as Error).message}`,
+      );
+      return false;
+    }
     const { kind, payload, requestId } = message;
 
     this.logger.debug(
