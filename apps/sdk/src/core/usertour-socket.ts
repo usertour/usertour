@@ -759,7 +759,7 @@ export class UsertourSocket implements IUsertourSocket {
     const newTask = lastTask
       .then(() => Promise.resolve(handler()))
       .catch((err) => {
-        log.warn(`A previous ${event} handler failed; continuing with the next one`, err?.message);
+        log.warn(`The ${event} handler failed; retrying it once`, err?.message);
         return Promise.resolve(handler());
       })
       .catch((err) => {
@@ -801,12 +801,18 @@ export class UsertourSocket implements IUsertourSocket {
     const previous = this.connectionState;
     const { state, actions } = reduceConnection(previous, signal);
     this.connectionState = state;
+    if (state !== previous) {
+      log.debug(`Connection ${previous} → ${state} on ${signal.type}`);
+    }
+    if (signal.type === 'connect') {
+      log.info(previous === 'reconnecting' ? 'Reconnected' : 'Connected');
+    }
     if (state === 'rejected' && previous !== 'rejected') {
       // Always visible (ADR 0019 §2): the SDK has stopped reconnecting and the
       // host has no promise or event to learn that from.
       const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
       log.critical(
-        `Connection rejected by the server${typeof code === 'string' ? ` (${code})` : ''}: the environment token or identity token was refused. Usertour content will not show on this page until identify() is called with valid credentials.`,
+        `Connection rejected by the server${typeof code === 'string' ? ` (${code})` : ''}: the environment token or identity token was refused. Usertour content will not show on this page until init() or identify() is called with valid credentials.`,
         error,
       );
     }

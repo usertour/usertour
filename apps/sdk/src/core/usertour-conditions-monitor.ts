@@ -186,7 +186,7 @@ export class UsertourConditionsMonitor extends Evented {
       const [evaluatedCondition] = await evaluator.evaluate([trackCondition.condition]);
       return isConditionsActived([evaluatedCondition]);
     } catch (error) {
-      log.error(`Failed to evaluate condition ${trackCondition.condition.id}`, error);
+      log.error(`Failed to evaluate the condition (${trackCondition.condition.id})`, error);
       return false;
     }
   }
@@ -290,7 +290,7 @@ export class UsertourConditionsMonitor extends Evented {
       // Log for debugging
       log.debug(`Condition ${state}`, eventData);
     } catch (error) {
-      log.error(`Failed to report condition ${state}`, error);
+      log.error(`Failed to report the condition state (${state})`, error);
     }
   }
 

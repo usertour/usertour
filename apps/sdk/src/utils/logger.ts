@@ -41,7 +41,6 @@ import { window } from './globals';
 
 const DEBUG_KEY = 'debug';
 const NAMESPACE = 'usertour-widget';
-const LOGGER_PREFIX = `[${NAMESPACE}]`;
 
 const readStoredFlag = (): string => {
   try {
@@ -129,13 +128,8 @@ const createScopedLogger = (prefix: string): ScopedLogger => ({
 });
 
 export const logger = {
-  ...createScopedLogger(LOGGER_PREFIX),
-
-  /** A logger whose lines carry the component name: `[usertour-widget:socket]`. */
+  /** A logger whose lines carry the component name: `[usertour-widget:socket]`. Every file logs through one. */
   scope: (name: string): ScopedLogger => createScopedLogger(`[${NAMESPACE}:${name}]`),
-
-  /** Whether the gate is currently open. */
-  isEnabled: (): boolean => debugEnabled,
 
   /** Turn logging on, immediately, and persist OUR namespace for future loads —
    * never `*`, which would also switch on every other debug-convention library

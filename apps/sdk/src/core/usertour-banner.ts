@@ -183,7 +183,7 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     const data = store.bannerData;
     const targetElement = data?.containerElement;
     if (!targetElement) {
-      log.warn('Banner target element was not found', { data });
+      log.warn('Banner has no container element configured; the banner is not shown', { data });
       return;
     }
 

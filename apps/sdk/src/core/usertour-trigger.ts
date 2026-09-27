@@ -105,7 +105,7 @@ export class UsertourTrigger extends Evented {
         updatedTrigger: { ...rest, conditions: activatedConditions },
       };
     } catch (error) {
-      log.error(`Failed to evaluate the conditions of trigger ${trigger.id}`, error);
+      log.error(`Failed to evaluate the conditions of the trigger (${trigger.id})`, error);
       return null;
     }
   }

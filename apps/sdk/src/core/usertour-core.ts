@@ -611,10 +611,6 @@ export class UsertourCore extends Evented {
 
   // === Public API: Configuration ===
   /**
-   * Sets the base z-index for UI elements
-   * @param baseZIndex - The base z-index value to set
-   */
-  /**
    * Open or close the SDK's console logging (ADR 0019 §3). Effective at once
    * and persisted for future loads until switched off.
    */
@@ -626,6 +622,10 @@ export class UsertourCore extends Evented {
     }
   }
 
+  /**
+   * Sets the base z-index for UI elements
+   * @param baseZIndex - The base z-index value to set
+   */
   setBaseZIndex(baseZIndex: number) {
     this.baseZIndex = baseZIndex;
   }
@@ -1016,7 +1016,10 @@ export class UsertourCore extends Evented {
    */
   private setupUIManagerInitialization() {
     this.once(SDKClientEvents.DOM_LOADED, () => {
-      this.ensureUIManagerInitialized();
+      // A final failure is already reported by the critical line; an
+      // unhandled rejection would print a second one and get filed by the
+      // host's error tracker.
+      this.ensureUIManagerInitialized().catch(() => undefined);
     });
   }
 

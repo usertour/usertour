@@ -41,9 +41,9 @@ The bar is: *the host has no other way to learn about it*. Both happen asynchron
 
 ### 3. A public switch and a URL parameter
 
-- **`usertour.setDebug(enabled: boolean)`** — the one API addition. It calls the existing `enabled()` / `disable()`: effective immediately, persisted in `localStorage.debug` under the SDK's own namespace so it survives reloads until `setDebug(false)`. The loader queues it like the other `set*` methods, so a call placed before the script has loaded is applied on load instead of throwing.
+- **`usertour.setDebug(enabled: boolean)`** — the one API addition. It calls the existing `enabled()` / `disable()`: effective immediately, persisted in `localStorage.debug` under the SDK's own namespace so it survives reloads until `setDebug(false)`. The npm loader from 0.0.25 and the installation snippet copied after this release queue it like the other `set*` methods; a snippet copied earlier does not know the method, and a call placed before the script has loaded throws there and stops the script — so the documented paths are the console and the URL parameter, and "in code" is qualified accordingly.
 - **`?usertour_debug=1`** in the page URL turns the gate on for that page load without persisting. This is the support path: a customer adds a parameter and takes a screenshot; no code, no storage editing, no explanation of namespaces.
-- The `localStorage.debug` convention stays as the third door; `localStorage.debug = '*'` also opens Socket.IO's own logs, which is useful when the transport is the question.
+- The `localStorage.debug` convention stays as the third door for tools that already speak it. (It does not reach Socket.IO: the bundled `socket.io-client` esm build carries no `debug` namespaces.)
 
 No `logLevel` option: the switch is boolean and shows everything, as the analytics SDKs do. Finer filtering by namespace is possible later through the existing convention (`readFlag` already accepts `usertour-widget:<scope>`) and is not built now.
 
@@ -52,9 +52,9 @@ No `logLevel` option: the switch is boolean and shows everything, as the analyti
 | Level | Meaning | Console method |
 |---|---|---|
 | `debug` | Internal state flow: condition evaluations, timer start/fire/cancel, socket signals and state transitions, queue processing, cache decisions. Dozens of lines per minute is fine here. | `console.log` (Chrome hides `console.debug` by default) |
-| `info` | Milestones, a dozen per session: identified, content started/ended, batch evaluated, reconnected, credentials changed. | `console.log` |
-| `warn` | Degraded but continuing: an unsupported method, evaluation disabled, an attribute dropped, a handler missing, a target element not found. | `console.warn` |
-| `error` | One operation failed: an emit or request failed, a handler or host callback threw, a fetch failed. Still gated. | `console.error` |
+| `info` | Milestones, a handful per session: connected and reconnected, credentials changed, a reconnect scheduled, an identity token refreshed. | `console.log` |
+| `warn` | Degraded but continuing: an unsupported method, evaluation disabled, an attribute the server refused, a handler missing, a target element not found on the page or not configured, a pending write dropped. | `console.warn` |
+| `error` | One operation failed: `Failed to <verb> <object>` for the SDK's own operations, `<object> threw` for a host callback or handler that raised. Still gated. | `console.error` |
 | `critical` | §2 only. | `console.error`, always |
 
 Every line carries a scope: `logger.scope('socket')` yields the prefix `[usertour-widget:socket]`. The existing `+Xms` delta and colour stay as they are.
