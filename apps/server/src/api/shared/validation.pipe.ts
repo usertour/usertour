@@ -3,6 +3,7 @@ import { createZodValidationPipe } from 'nestjs-zod';
 
 import { ValidationError } from '@/modules/common/errors/errors';
 
+import { protoKeyPath } from './proto-key';
 import { zodIssuesToValidationIssues } from './zod-issues';
 
 const ZodPipe = createZodValidationPipe({
@@ -15,38 +16,6 @@ const ZodPipe = createZodValidationPipe({
       : new ValidationError('Validation error');
   },
 });
-
-/**
- * The path of the first own `__proto__` key in a parsed JSON body, if any.
- * JSON.parse keeps it as an own key, but `z.record` drops it before the key
- * rule sees it, so the body would be accepted with that key silently
- * ignored — and no API here has a legitimate use for the name.
- */
-const protoKeyPath = (value: unknown, path = ''): string | undefined => {
-  if (value === null || typeof value !== 'object') {
-    return undefined;
-  }
-  if (Array.isArray(value)) {
-    for (let i = 0; i < value.length; i++) {
-      const found = protoKeyPath(value[i], `${path}[${i}]`);
-      if (found) {
-        return found;
-      }
-    }
-    return undefined;
-  }
-  for (const key of Object.keys(value)) {
-    const keyPath = path ? `${path}.${key}` : key;
-    if (key === '__proto__') {
-      return keyPath;
-    }
-    const found = protoKeyPath((value as Record<string, unknown>)[key], keyPath);
-    if (found) {
-      return found;
-    }
-  }
-  return undefined;
-};
 
 /**
  * v2 request validation pipe. On a zod failure it throws the shared

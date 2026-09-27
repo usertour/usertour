@@ -1378,6 +1378,29 @@ describe('MCP endpoint (e2e)', () => {
   });
 
   describe('argument hardening', () => {
+    it('refuses a `__proto__` key in tool arguments instead of dropping it', async () => {
+      const token = await mint([Capability.UserWrite], [projectA]);
+      // Sent as raw JSON: an object literal would set the prototype instead.
+      const res = await request(app.getHttpServer())
+        .post('/mcp')
+        .set('Content-Type', 'application/json')
+        .set('Accept', 'application/json, text/event-stream')
+        .set('Authorization', `Bearer ${token}`)
+        .send(
+          '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"upsert_user",' +
+            '"arguments":{"id":"mcp-proto-key","attributes":{"plan":"pro","__proto__":{"admin":true}}}}}',
+        );
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        jsonrpc: '2.0',
+        id: 7,
+        error: { code: -32602, message: expect.stringMatching(/__proto__/) },
+      });
+      expect(
+        await prisma.bizUser.count({ where: { environmentId: envA, externalId: 'mcp-proto-key' } }),
+      ).toBe(0);
+    });
+
     it('refuses a blank external id on upsert_user / upsert_company (nothing created)', async () => {
       const token = await mint([Capability.UserWrite, Capability.CompanyWrite], [projectA]);
       for (const [name, id] of [
