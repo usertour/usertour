@@ -977,6 +977,9 @@ export class UsertourSocket implements IUsertourSocket {
         this.targetNow(),
         this.authCredentials?.identityToken,
       );
+      for (const reason of started.dropped) {
+        log.warn(`Dropped a pending ${kind} write: ${reason}`);
+      }
       if (started.kind === 'nothing') {
         continue;
       }

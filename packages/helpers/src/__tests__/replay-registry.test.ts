@@ -59,7 +59,7 @@ describe('ReplayRegistry — what is resent', () => {
     const old = registry.sent('user', { ...user, attributes: { plan: 'old' } });
     registry.sent('user', { ...user, attributes: { plan: 'new' } });
     registry.failed('user', old, { ...user, attributes: { plan: 'old' } }, user);
-    expect(registry.startReplay('user', user, 'tok')).toEqual({ kind: 'nothing' });
+    expect(registry.startReplay('user', user, 'tok')).toEqual({ kind: 'nothing', dropped: [] });
   });
 
   test('a newer write sent after the older one failed takes its keys out of the record', () => {
@@ -145,6 +145,24 @@ describe('ReplayRegistry — who it is for', () => {
     });
   });
 
+  test('a record for the previous user is dropped on the next connect, with its reason', () => {
+    const { registry } = harness();
+    const stale = registry.sent('user', { externalUserId: 'a', attributes: { email: 'a@x' } });
+    registry.failed(
+      'user',
+      stale,
+      { externalUserId: 'a', attributes: { email: 'a@x' } },
+      {
+        externalUserId: 'a',
+      },
+    );
+    expect(registry.startReplay('user', { externalUserId: 'b' }, 'tok')).toEqual({
+      kind: 'nothing',
+      dropped: ['it belongs to another user'],
+    });
+    expect(registry.has('user')).toBe(false);
+  });
+
   test('a write for the previous user is not merged even without a reset', () => {
     const { registry } = harness();
     const stale = registry.sent('user', { externalUserId: 'a', attributes: { email: 'a@x' } });
@@ -165,10 +183,30 @@ describe('ReplayRegistry — who it is for', () => {
     registry.failed('company', toB, { ...onB, attributes: { name: 'B' } }, onB);
     // The core rolled back to A.
     expect(registry.startReplay('company', onA, 'tok')).toEqual({
-      kind: 'refused',
-      reason: 'the SDK is no longer on that company',
+      kind: 'nothing',
+      dropped: ['the SDK is no longer on that company'],
     });
     expect(registry.has('company')).toBe(false);
+  });
+
+  test("a failed group() to another company does not replace this company's failed update", () => {
+    // Offline on A: updateGroup({plan:'enterprise'}) times out; then
+    // group('B') times out too; the core rolls back to A. A's update must
+    // still replay on the next connect, and B's record must be dropped.
+    const { registry } = harness();
+    const onAWrite = { ...onA, attributes: { plan: 'enterprise' } };
+    const aTicket = registry.sent('company', onAWrite);
+    registry.failed('company', aTicket, onAWrite, onA);
+    const toB = { ...onB, attributes: { size: 5 } };
+    const bTicket = registry.sent('company', toB);
+    registry.failed('company', bTicket, toB, onB);
+    const started = registry.startReplay('company', onA, 'tok');
+    expect(started.kind).toBe('send');
+    expect(started.dropped).toEqual(['the SDK is no longer on that company']);
+    if (started.kind === 'send') {
+      expect(started.write).toEqual({ ...onA, token: 'tok', attributes: { plan: 'enterprise' } });
+    }
+    expect(registry.has('company')).toBe(true);
   });
 
   test("a write to another company owns nothing of this company's keys", () => {
@@ -223,6 +261,7 @@ describe('ReplayRegistry — replays and newer writes in flight together', () =>
     expect(registry.startReplay('user', user, 'tok')).toEqual({
       kind: 'refused',
       reason: 'it was already resent and the server did not answer',
+      dropped: [],
     });
   });
 
@@ -250,6 +289,6 @@ describe('ReplayRegistry — replays and newer writes in flight together', () =>
     registry.failed('user', ticket, write, user);
     const started = startSend(registry);
     registry.replayAnswered('user', started.ticket, started.write, user);
-    expect(registry.startReplay('user', user, 'tok')).toEqual({ kind: 'nothing' });
+    expect(registry.startReplay('user', user, 'tok')).toEqual({ kind: 'nothing', dropped: [] });
   });
 });
