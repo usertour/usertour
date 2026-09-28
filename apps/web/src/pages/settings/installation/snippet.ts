@@ -41,7 +41,7 @@ export const buildSelfHostedEnvVars = (apiUrl: string): string => {
   return `<script>
   window.USERTOURJS_ENV_VARS = {
     WS_URI: "${base}/",
-    ASSETS_URI: "${base}/sdk/",
+    ASSETS_URI: "${base}/sdk",
     USERTOURJS_ES2020_URL: "${base}/sdk/es2020/usertour.js",
     USERTOURJS_LEGACY_URL: "${base}/sdk/legacy/usertour.iife.js",
   };
