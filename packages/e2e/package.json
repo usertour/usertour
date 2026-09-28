@@ -12,6 +12,7 @@
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "18.19.63",
+    "@usertour/constants": "workspace:^",
     "socket.io": "^4.7.2",
     "typescript": "5.3.3"
   }

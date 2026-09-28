@@ -1038,6 +1038,9 @@ importers:
       '@types/node':
         specifier: 18.19.63
         version: 18.19.63
+      '@usertour/constants':
+        specifier: workspace:^
+        version: link:../constants
       socket.io:
         specifier: ^4.7.2
         version: 4.8.1

@@ -18,8 +18,12 @@ import { Server, type Socket } from 'socket.io';
 
 export type RejectedKey = { codeName: string; reason: string };
 export type UpsertAck = { ok: boolean; rejected: RejectedKey[] };
-/** What a client message is answered with; `silent` leaves it unacknowledged. */
-export type Answer = UpsertAck | boolean | 'silent';
+/**
+ * What a client message is answered with: an upsert's `{ ok, rejected }`, a
+ * boolean, or the data a query expects back (a list, a record); `silent`
+ * leaves the message unacknowledged.
+ */
+export type Answer = UpsertAck | boolean | 'silent' | Record<string, unknown> | unknown[];
 
 export type ClientMessage = {
   kind: string;

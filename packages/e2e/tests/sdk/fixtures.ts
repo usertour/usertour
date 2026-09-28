@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { type Page, test as base, expect } from '@playwright/test';
+import { type FrameLocator, type Locator, type Page, test as base, expect } from '@playwright/test';
 import { ProtocolServer } from './protocol-server';
 
 /**
@@ -49,7 +49,7 @@ export class SdkPage {
    * env vars must be on `window` before the bundle evaluates — that is when
    * the SDK reads its server URL, once.
    */
-  async open(): Promise<void> {
+  async open(options: { assetsUri?: string } = {}): Promise<void> {
     await this.page.addInitScript(
       ({ wsUri, assetsUri }) => {
         window.USERTOURJS_ENV_VARS = { WS_URI: wsUri, ASSETS_URI: assetsUri };
@@ -70,10 +70,12 @@ export class SdkPage {
           };
         }
       },
-      { wsUri: this.protocol.url, assetsUri: `${RUNTIME_HOST_URL}/sdk-dist` },
+      { wsUri: this.protocol.url, assetsUri: options.assetsUri ?? `${RUNTIME_HOST_URL}/sdk-dist` },
     );
     await this.page.clock.install();
-    await this.page.goto(`${RUNTIME_HOST_URL}/runtime.html`);
+    // Debug logging from the first line: the query flag is read when the
+    // bundle evaluates, before any call could turn it on.
+    await this.page.goto(`${RUNTIME_HOST_URL}/runtime.html?usertour_debug=1`);
     await this.page.addScriptTag({ type: 'module', url: SDK_BUNDLE_URL });
     await expect
       .poll(() => this.page.evaluate(() => Boolean(window.usertour && !window.usertour._stubbed)))
@@ -169,6 +171,30 @@ export class SdkPage {
     return this.call('reset');
   }
 
+  isStarted(contentId: string): Promise<boolean> {
+    return this.page.evaluate(
+      (contentId) => Boolean(window.usertour?.isStarted?.(contentId)),
+      contentId,
+    );
+  }
+
+  // --- the rendered widgets (see tests/sdk/content.ts for what is pushed) ---
+
+  /** The SDK's mount point; attached once the UI initialised. */
+  get widget(): Locator {
+    return this.page.locator('#usertour-widget');
+  }
+
+  /** The floating surface of a flow step, a launcher tooltip or an expanded checklist. */
+  get surface(): Locator {
+    return this.page.locator('[data-usertour-popper-content-wrapper]');
+  }
+
+  /** The content frame inside a surface: a step's blocks, the checklist's items. */
+  frame(): FrameLocator {
+    return this.page.frameLocator('iframe.usertour-widget-surface-viewport');
+  }
+
   logs(): Promise<LogLine[]> {
     return this.page.evaluate(() => window.__usertourLogs);
   }
@@ -178,10 +204,15 @@ export class SdkPage {
   }
 }
 
-type Fixtures = { sdk: SdkPage };
+type Fixtures = {
+  sdk: SdkPage;
+  /** Where the page loads the SDK's CSS from; a test overrides it to break the UI. */
+  assetsUri: string;
+};
 type WorkerFixtures = { protocol: ProtocolServer };
 
 export const test = base.extend<Fixtures, WorkerFixtures>({
+  assetsUri: [`${RUNTIME_HOST_URL}/sdk-dist`, { option: true }],
   protocol: [
     // biome-ignore lint/correctness/noEmptyPattern: Playwright requires the destructuring form
     async ({}, use) => {
@@ -191,10 +222,10 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     },
     { scope: 'worker' },
   ],
-  sdk: async ({ page, protocol }, use) => {
+  sdk: async ({ page, protocol, assetsUri }, use) => {
     protocol.reset();
     const sdk = new SdkPage(page, protocol);
-    await sdk.open();
+    await sdk.open({ assetsUri });
     await use(sdk);
   },
 });

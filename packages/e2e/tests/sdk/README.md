@@ -31,6 +31,20 @@ fixtures and never starts the SDK.
   through `sdk.logLines(/pattern/)` for the warnings and criticals the host
   would see.
 
+## What is here
+
+- `connection.spec.ts`, `identity.spec.ts` — the connection's lifecycle and the
+  write path (identify, group, the cache, the replay after a reconnect).
+- `rules.spec.ts` — the conditions the SDK evaluates in the page, wait timers,
+  the URL monitor, trackers.
+- `flow.spec.ts`, `content-types.spec.ts` — the content lifecycle: a pushed
+  session rendered, navigated, ended; checklists, banners, launchers, resource
+  centers; what each reports back.
+- `messages.spec.ts` — the message framing (batches), `track()`, unknown server
+  messages, the UI failing to initialise.
+- `content.ts` — the sessions the server pushes, reduced to what the widgets
+  read; `protocol-server.ts` and `fixtures.ts` — the harness.
+
 ## Running
 
 ```sh
