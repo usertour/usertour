@@ -90,6 +90,36 @@ describe('WebSocket v2 connection recovery (e2e)', () => {
     });
   });
 
+  describe('the SDK version declared in the handshake', () => {
+    it('is stored as declared', async () => {
+      const client = await connectWebSocketClient(harness.baseUrl, {
+        token: environmentToken,
+        externalUserId: `ws-recovery-version-${Date.now()}`,
+        sdkVersion: '0.8.1',
+      });
+      const stored = await harness.app
+        .get(SocketDataService)
+        .get(socketHandle(client.socket.id as string));
+      expect(stored?.sdkVersion).toBe('0.8.1');
+      client.disconnect();
+    });
+
+    it('is absent when the client declares none or something that is not a version', async () => {
+      for (const sdkVersion of [undefined, { major: 1 }, 'v1 <script>']) {
+        const client = await connectWebSocketClient(harness.baseUrl, {
+          token: environmentToken,
+          externalUserId: `ws-recovery-no-version-${Date.now()}`,
+          sdkVersion,
+        });
+        const stored = await harness.app
+          .get(SocketDataService)
+          .get(socketHandle(client.socket.id as string));
+        expect(stored?.sdkVersion).toBeUndefined();
+        client.disconnect();
+      }
+    });
+  });
+
   describe('wait timers declared in the handshake', () => {
     it('are restored into socket data as declared', async () => {
       const waitTimers = [

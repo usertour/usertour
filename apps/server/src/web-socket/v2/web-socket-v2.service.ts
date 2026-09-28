@@ -64,6 +64,7 @@ import {
   buildExternalUserRoomId,
   getSocketId,
   sanitizeClientConditions,
+  sanitizeSdkVersion,
   sanitizeWaitTimers,
 } from '../utils/websocket.util';
 import {
@@ -178,6 +179,7 @@ export class WebSocketV2Service {
       environment,
       externalUserId,
       clientContext,
+      sdkVersion: sanitizeSdkVersion(auth.sdkVersion),
       externalCompanyId,
       waitTimers: sanitizeWaitTimers(auth.waitTimers),
       clientConditions,

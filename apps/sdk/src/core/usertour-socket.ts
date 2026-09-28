@@ -32,7 +32,7 @@ import {
   UpsertAck,
 } from '@usertour/types';
 import { Socket, logger, timerManager } from '@/utils';
-import { getWsUri } from '@/core/usertour-env';
+import { getSdkVersion, getWsUri } from '@/core/usertour-env';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour/constants';
 import { getClientContext } from '@/core/usertour-helper';
 import {
@@ -215,9 +215,11 @@ export class UsertourSocket implements IUsertourSocket {
       namespace: WEBSOCKET_NAMESPACES_V2,
       socketConfig: {
         autoConnect: false,
-        // Use function for auth to ensure latest info on reconnection
+        // Use function for auth to ensure latest info on reconnection. The
+        // bundle's version rides every handshake so the server can tell
+        // which SDK a connection runs.
         auth: (cb) => {
-          cb(this.authCredentials || {});
+          cb(this.authCredentials ? { ...this.authCredentials, sdkVersion: getSdkVersion() } : {});
         },
       },
     });

@@ -1,4 +1,4 @@
-import { EMIT_TIMEOUT_MS, expect, test } from './fixtures';
+import { EMIT_TIMEOUT_MS, SDK_VERSION, expect, test } from './fixtures';
 import { defaultAnswer } from './protocol-server';
 
 /**
@@ -15,9 +15,11 @@ test.describe('identity and attribute writes', () => {
     expect(result).toEqual({ ok: true, value: { rejected: [] } });
 
     expect(protocol.connections).toHaveLength(1);
+    // The bundle's own version rides the handshake.
     expect(protocol.connections[0].auth).toMatchObject({
       token: 'env-token',
       externalUserId: 'u1',
+      sdkVersion: SDK_VERSION,
     });
     const upserts = protocol.messages('UpsertUser');
     expect(upserts).toHaveLength(1);

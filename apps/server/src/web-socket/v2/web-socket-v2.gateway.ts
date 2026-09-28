@@ -8,6 +8,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import api from '@opentelemetry/api';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { WebSocketThrottlerGuard } from './web-socket-throttler.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/modules/common/errors/errors';
@@ -38,6 +39,14 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   server: Server;
 
   private readonly logger = new Logger(WebSocketV2Gateway.name);
+
+  // Accepted handshakes by the SDK version the bundle declared: how many
+  // connections still run an older bundle, and for how long after a release.
+  private readonly acceptedHandshakes = api.metrics
+    .getMeter('usertour-websocket-gateway', '1.0.0')
+    .createCounter('websocket_handshakes_accepted_total', {
+      description: 'Accepted WebSocket handshakes, by the SDK version the client declared',
+    });
 
   constructor(
     private readonly service: WebSocketV2Service,
@@ -101,7 +110,11 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         // Join user room for targeted messaging
         await socket.join(room);
 
-        this.logger.log(`Socket ${socket.id} authenticated for user ${socketData.externalUserId}`);
+        const sdkVersion = socketData.sdkVersion ?? 'unknown';
+        this.acceptedHandshakes.add(1, { sdk_version: sdkVersion });
+        this.logger.log(
+          `Socket ${socket.id} authenticated for user ${socketData.externalUserId} (sdk ${sdkVersion})`,
+        );
         return next();
       } catch (error: unknown) {
         this.logger.error(
