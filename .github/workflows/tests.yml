@@ -198,8 +198,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Chromium for Playwright
         run: pnpm --filter @usertour/e2e exec playwright install --with-deps chromium
+      # The bundle bakes its VITE_* values in at build time and the post-build
+      # smoke refuses one that left any of them undefined. The example file
+      # carries the defaults, as the Dockerfile and CONTRIBUTING use it.
       - name: Build the SDK bundle
-        run: pnpm build:sdk
+        run: |
+          cp apps/sdk/.env.example apps/sdk/.env
+          pnpm build:sdk
       - name: Widget suite
         run: pnpm --filter @usertour/e2e e2e:widget
       - name: SDK runtime suite
