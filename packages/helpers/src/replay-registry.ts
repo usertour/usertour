@@ -28,8 +28,12 @@ import {
  *   fails afterwards registers only the keys no later send took; an earlier
  *   send that lands retires only those. A write to another company owns
  *   nothing of this one's.
- * - On a connect, the record for the target the session is on now is resent;
- *   the records for targets the session has left are dropped, never replayed.
+ * - A failure registers under the write's own target, whatever the session
+ *   is on by then: a group() that moves on before the previous company's
+ *   write fails must not lose that write, since the group() may be refused
+ *   and the session rolled back. Where the session is matters at the
+ *   connect: the record for the target it is on then is resent, the records
+ *   for the targets it has left are dropped, never replayed.
  * - A reset or an identity change ends an epoch: a send from before it can
  *   neither register a failure nor be folded into the session after it.
  * - A key is not resent more than `ttlMs` after it failed; a record is not
@@ -103,11 +107,12 @@ export class ReplayRegistry<T extends TargetedWrite> {
   }
 
   /**
-   * A write got no answer. Registered for the target the session is on now,
-   * in the epoch it was sent in, with the keys no later send has carried.
+   * A write got no answer. Registered under its own target, in the epoch it
+   * was sent in, with the keys no later send has carried. An identity change
+   * ends the epoch, so a write of the previous user never registers.
    */
-  failed(kind: WriteKind, ticket: SendTicket, write: T, target: WriteTarget): void {
-    if (ticket.epoch !== this.epoch || !isSameTarget(kind, write, target)) {
+  failed(kind: WriteKind, ticket: SendTicket, write: T): void {
+    if (ticket.epoch !== this.epoch) {
       return;
     }
     const owned = keysStillOwnedBy(write, this.sentKeys(kind, write), ticket.seq);
