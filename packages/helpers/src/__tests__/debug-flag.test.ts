@@ -13,6 +13,9 @@ describe('debugFlagNamesNamespace', () => {
     ['exact namespace', 'usertour-widget', true],
     ['namespace wildcard', 'usertour-widget:*', true],
     ['namespace scope', 'usertour-widget:socket', true],
+    ['prefix wildcard', 'usertour-widget*', true],
+    ['shorter prefix wildcard', 'usertour-w*', true],
+    ['wildcard of another tool', 'socket.io*', false],
     ['among other tools', 'socket.io-client:*, usertour-widget:*', true],
     ['other tool only', 'socket.io-client:*', false],
     ['prefix that is not ours', 'usertour-widgets', false],
@@ -48,6 +51,12 @@ describe('withDebugNamespace / withoutDebugNamespace', () => {
       'socket.io-client:*,usertour-widget:*',
     );
     expect(withDebugNamespace('usertour-widget:*', NS)).toBe('usertour-widget:*');
+  });
+
+  test('removes the wildcard forms that open the gate too, so off stays off', () => {
+    expect(withoutDebugNamespace('socket.io-client:*,usertour-widget*,usertour-w*', NS)).toBe(
+      'socket.io-client:*',
+    );
   });
 
   test('removes only our tokens and never the wildcard', () => {

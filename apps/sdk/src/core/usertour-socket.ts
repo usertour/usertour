@@ -570,7 +570,7 @@ export class UsertourSocket implements IUsertourSocket {
     const ticket = this.replay.sent(kind, params);
     const outcome = await this.sendClientMessageWithOutcome(messageKind, params, options);
     if (!outcome.acknowledged) {
-      this.replay.failed(kind, ticket, params, this.targetNow());
+      this.replay.failed(kind, ticket, params);
     }
     return { ok: outcome.result, rejected: outcome.rejected };
   }
@@ -977,6 +977,9 @@ export class UsertourSocket implements IUsertourSocket {
         this.targetNow(),
         this.authCredentials?.identityToken,
       );
+      for (const reason of started.dropped) {
+        log.warn(`Dropped a pending ${kind} write: ${reason}`);
+      }
       if (started.kind === 'nothing') {
         continue;
       }

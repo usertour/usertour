@@ -19,16 +19,21 @@ import {
  * every timing rule lives here, where a table of scenarios can test it.
  *
  * Invariants:
- * - One record per kind (user, company), merged key by key, `add` stripped.
+ * - One record per target (kind, user, company), merged key by key, `add`
+ *   stripped. A failure for another target is its own record: a failed
+ *   group() to company B leaves company A's failed update where it is, so
+ *   the rollback to A still has it.
  * - A key belongs to its latest send **to the same target**. A newer write
  *   retires the keys it carries the moment it is sent; an earlier send that
  *   fails afterwards registers only the keys no later send took; an earlier
  *   send that lands retires only those. A write to another company owns
- *   nothing of this one's: a group() that is refused rolls back to the
- *   previous company, whose failed keys must still be there.
- * - A record holds one user and, for a company write, one company: a write
- *   for another target is never merged, and a record for a target the
- *   session has left is dropped instead of replayed.
+ *   nothing of this one's.
+ * - A failure registers under the write's own target, whatever the session
+ *   is on by then: a group() that moves on before the previous company's
+ *   write fails must not lose that write, since the group() may be refused
+ *   and the session rolled back. Where the session is matters at the
+ *   connect: the record for the target it is on then is resent, the records
+ *   for the targets it has left are dropped, never replayed.
  * - A reset or an identity change ends an epoch: a send from before it can
  *   neither register a failure nor be folded into the session after it.
  * - A key is not resent more than `ttlMs` after it failed; a record is not
@@ -36,7 +41,7 @@ import {
  */
 export type WriteKind = 'user' | 'company';
 
-/** The identity the session is on now, as the socket credentials name it. */
+/** The identity the session is on now, as the core names it. */
 export interface WriteTarget {
   externalUserId?: string;
   externalCompanyId?: string;
@@ -52,10 +57,14 @@ export interface SendTicket {
   epoch: number;
 }
 
-export type ReplayStart<T> =
+export type ReplayStart<T> = {
+  /** Why each record for a target the session has left was dropped. */
+  dropped: string[];
+} & (
   | { kind: 'nothing' }
   | { kind: 'refused'; reason: string }
-  | { kind: 'send'; write: T; ticket: SendTicket };
+  | { kind: 'send'; write: T; ticket: SendTicket }
+);
 
 export interface ReplayRegistryOptions {
   ttlMs?: number;
@@ -64,8 +73,9 @@ export interface ReplayRegistryOptions {
 }
 
 export class ReplayRegistry<T extends TargetedWrite> {
-  private readonly records = new Map<WriteKind, FailedWrite<T>>();
-  /** Per target (kind, user, company): which send each key was last carried by. */
+  /** Per target key (see `targetKey`): the failed write awaiting a resend. */
+  private readonly records = new Map<string, FailedWrite<T>>();
+  /** Per target: which send each key was last carried by. */
   private readonly sentSeqs = new Map<string, SentKeySeqs>();
   private epoch = 0;
   private seq = 0;
@@ -79,9 +89,14 @@ export class ReplayRegistry<T extends TargetedWrite> {
     this.now = options.now ?? Date.now;
   }
 
-  /** Whether a record of this kind awaits a replay. */
+  /** Whether any record of this kind awaits a replay. */
   has(kind: WriteKind): boolean {
-    return this.records.has(kind);
+    for (const key of this.records.keys()) {
+      if (kindOf(key) === kind) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** A write goes out: its keys now belong to this send and leave the record. */
@@ -92,49 +107,65 @@ export class ReplayRegistry<T extends TargetedWrite> {
   }
 
   /**
-   * A write got no answer. Registered for the target the session is on now,
-   * in the epoch it was sent in, with the keys no later send has carried.
+   * A write got no answer. Registered under its own target, in the epoch it
+   * was sent in, with the keys no later send has carried. An identity change
+   * ends the epoch, so a write of the previous user never registers.
    */
-  failed(kind: WriteKind, ticket: SendTicket, write: T, target: WriteTarget): void {
-    if (ticket.epoch !== this.epoch || !isSameTarget(kind, write, target)) {
+  failed(kind: WriteKind, ticket: SendTicket, write: T): void {
+    if (ticket.epoch !== this.epoch) {
       return;
     }
     const owned = keysStillOwnedBy(write, this.sentKeys(kind, write), ticket.seq);
     if (!owned) {
       return;
     }
-    const previous = this.records.get(kind);
-    const mergeable = previous && isSameTarget(kind, previous.write, owned) ? previous : undefined;
+    const key = targetKey(kind, owned);
     // Registered even when the strip leaves no key: the resend still does
     // what the write did besides its attributes — a group() creates the
     // membership — and an attribute-less user resend costs one upsert.
-    this.records.set(kind, recordFailedWrite(mergeable, owned, this.now()));
+    this.records.set(key, recordFailedWrite(this.records.get(key), owned, this.now()));
   }
 
   /**
-   * What to resend for this kind on a connect: the record with its expired
-   * keys dropped and the token of now, counted as an attempt before it goes
-   * out — so a record replaced while the replay is out still carries the
-   * count, which an answer resets. A record the session has left, or already
-   * resent that many times without an answer, is dropped with the reason.
+   * What to resend for this kind on a connect: the record for the target the
+   * session is on now, with its expired keys dropped and the token of now,
+   * counted as an attempt before it goes out — so a record replaced while
+   * the replay is out still carries the count, which an answer resets. The
+   * records for targets the session has left are dropped with their reason;
+   * so is a record already resent that many times without an answer.
    */
   startReplay(kind: WriteKind, target: WriteTarget, token: string | undefined): ReplayStart<T> {
-    const recorded = this.records.get(kind);
+    const dropped: string[] = [];
+    const current = targetKey(kind, target);
+    for (const key of [...this.records.keys()]) {
+      if (kindOf(key) === kind && key !== current) {
+        this.records.delete(key);
+        dropped.push(
+          kind === 'user' ? 'it belongs to another user' : 'the SDK is no longer on that company',
+        );
+      }
+    }
+    const recorded = this.records.get(current);
     if (!recorded) {
-      return { kind: 'nothing' };
+      return { kind: 'nothing', dropped };
     }
     const fresh = withoutExpiredKeys(recorded, this.now(), this.ttlMs);
-    const refusal = fresh
-      ? this.refusal(kind, fresh, target)
-      : 'it is older than the replay window';
-    if (!fresh || refusal) {
-      this.records.delete(kind);
-      return { kind: 'refused', reason: refusal ?? 'it is older than the replay window' };
+    if (!fresh) {
+      this.records.delete(current);
+      return { kind: 'refused', reason: 'it is older than the replay window', dropped };
+    }
+    if (fresh.replays >= this.maxReplays) {
+      this.records.delete(current);
+      return {
+        kind: 'refused',
+        reason: 'it was already resent and the server did not answer',
+        dropped,
+      };
     }
     const pending = { ...fresh, replays: fresh.replays + 1 };
-    this.records.set(kind, pending);
+    this.records.set(current, pending);
     const write = { ...pending.write, token } as T;
-    return { kind: 'send', write, ticket: this.nextTicket(kind, write) };
+    return { kind: 'send', write, ticket: this.nextTicket(kind, write), dropped };
   }
 
   /**
@@ -152,9 +183,10 @@ export class ReplayRegistry<T extends TargetedWrite> {
     }
     // The count is of unanswered replays: what remains on record now came
     // from newer writes and gets its own attempt.
-    const remaining = this.records.get(kind);
-    if (remaining && isSameTarget(kind, remaining.write, write)) {
-      this.records.set(kind, { ...remaining, replays: 0 });
+    const key = targetKey(kind, write);
+    const remaining = this.records.get(key);
+    if (remaining) {
+      this.records.set(key, { ...remaining, replays: 0 });
     }
     return isSameTarget(kind, write, target);
   }
@@ -178,39 +210,28 @@ export class ReplayRegistry<T extends TargetedWrite> {
   }
 
   private retire(kind: WriteKind, write: T): void {
-    const record = this.records.get(kind);
-    if (!record || !isSameTarget(kind, record.write, write)) {
+    const key = targetKey(kind, write);
+    const record = this.records.get(key);
+    if (!record) {
       return;
     }
     const remaining = retireWrittenKeys(record, write);
     if (remaining) {
-      this.records.set(kind, remaining);
+      this.records.set(key, remaining);
     } else {
-      this.records.delete(kind);
+      this.records.delete(key);
     }
-  }
-
-  private refusal(
-    kind: WriteKind,
-    record: FailedWrite<T>,
-    target: WriteTarget,
-  ): string | undefined {
-    if (record.replays >= this.maxReplays) {
-      return 'it was already resent and the server did not answer';
-    }
-    if (!isSameTarget(kind, record.write, target)) {
-      return kind === 'user'
-        ? 'it belongs to another user'
-        : 'the SDK is no longer on that company';
-    }
-    return undefined;
   }
 }
 
+const SEPARATOR = '\u0000';
+
 const targetKey = (kind: WriteKind, write: WriteTarget): string => {
   const company = kind === 'company' ? (write.externalCompanyId ?? '') : '';
-  return `${kind}\u0000${write.externalUserId ?? ''}\u0000${company}`;
+  return `${kind}${SEPARATOR}${write.externalUserId ?? ''}${SEPARATOR}${company}`;
 };
+
+const kindOf = (key: string): WriteKind => key.slice(0, key.indexOf(SEPARATOR)) as WriteKind;
 
 /** Whether a write and a target name the same user and, for a company write, the same company. */
 const isSameTarget = (kind: WriteKind, write: WriteTarget, target: WriteTarget): boolean => {

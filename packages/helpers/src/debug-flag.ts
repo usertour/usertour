@@ -1,8 +1,10 @@
 /**
  * The SDK's debug gate (ADR 0019), as pure string rules so they can be tested
  * without a browser. The gate opens when the npm-`debug`-style flag in
- * `localStorage.debug` names the SDK (`*`, or a token starting with the
- * namespace), or when the page URL carries `?usertour_debug=1`.
+ * `localStorage.debug` names the SDK — `*`, the namespace itself, one of its
+ * scopes (`usertour-widget:socket`), or a wildcard that covers it
+ * (`usertour-widget*`, `usertour-widget:*`) — or when the page URL carries
+ * `?usertour_debug=1`.
  */
 
 export const DEBUG_QUERY_PARAM = 'usertour_debug';
@@ -13,11 +15,21 @@ const splitTokens = (value: string): string[] =>
     .map((token) => token.trim())
     .filter(Boolean);
 
+/** Whether one npm-`debug` token names the namespace: exactly, one of its scopes, or by wildcard. */
+const tokenNamesNamespace = (token: string, namespace: string): boolean => {
+  if (token === '*' || token === namespace || token.startsWith(`${namespace}:`)) {
+    return true;
+  }
+  if (token.endsWith('*')) {
+    const prefix = token.slice(0, -1);
+    return namespace.startsWith(prefix) || `${namespace}:`.startsWith(prefix);
+  }
+  return false;
+};
+
 /** Whether a `localStorage.debug` value names the namespace (or everything). */
 export const debugFlagNamesNamespace = (storageValue: string, namespace: string): boolean => {
-  return splitTokens(storageValue).some(
-    (token) => token === '*' || token === namespace || token.startsWith(`${namespace}:`),
-  );
+  return splitTokens(storageValue).some((token) => tokenNamesNamespace(token, namespace));
 };
 
 /** Whether a URL search string asks for debug output for this page load. */
@@ -41,9 +53,13 @@ export const withDebugNamespace = (storageValue: string, namespace: string): str
   return (tokens.includes(own) ? tokens : [...tokens, own]).join(',');
 };
 
-/** `localStorage.debug` with every token of the namespace removed; `*` stays. */
+/**
+ * `localStorage.debug` with every token that names the namespace removed —
+ * the same tokens that open the gate, wildcards included, so an off stays
+ * off across reloads; the global `*` stays, it is not ours to remove.
+ */
 export const withoutDebugNamespace = (storageValue: string, namespace: string): string => {
   return splitTokens(storageValue)
-    .filter((token) => token !== namespace && !token.startsWith(`${namespace}:`))
+    .filter((token) => token === '*' || !tokenNamesNamespace(token, namespace))
     .join(',');
 };

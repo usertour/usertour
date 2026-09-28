@@ -243,7 +243,11 @@ const extractUserAttributeValue = (
   if (!userAttributes || !('attrCode' in element) || typeof element.attrCode !== 'string') {
     return 'fallback' in element && typeof element.fallback === 'string' ? element.fallback : '';
   }
-  const attrValue = userAttributes[element.attrCode];
+  // Own keys only: a user without a value for an attribute named
+  // `constructor` has none, not the inherited function.
+  const attrValue = Object.prototype.hasOwnProperty.call(userAttributes, element.attrCode)
+    ? userAttributes[element.attrCode]
+    : undefined;
   const fallback =
     'fallback' in element && typeof element.fallback === 'string' ? element.fallback : '';
   return attrValue ?? fallback;

@@ -1,9 +1,9 @@
 import {
+  ClientCondition,
+  ConditionWaitTimer,
   ContentDataType,
   CustomContentSession,
   TrackCondition,
-  ClientCondition,
-  ConditionWaitTimer,
 } from '@usertour/types';
 import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { hasContentSessionChanges } from '@/modules/delivery/utils/content.util';
@@ -353,4 +353,45 @@ export const detectChangedPreservedSessions = (
     }
     return hasContentSessionChanges(oldSession, session);
   });
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/**
+ * The wait timers a client declares on its handshake (ADR 0018 §6), kept
+ * only where well formed: a malformed entry would throw in the auto-start
+ * filter and take every later evaluation of this connection down with it.
+ */
+export const sanitizeWaitTimers = (value: unknown): ConditionWaitTimer[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(
+    (item): item is ConditionWaitTimer =>
+      isRecord(item) &&
+      typeof item.contentId === 'string' &&
+      typeof item.contentType === 'string' &&
+      typeof item.versionId === 'string' &&
+      typeof item.waitTime === 'number' &&
+      Number.isFinite(item.waitTime) &&
+      item.waitTime >= 0 &&
+      (item.activated === undefined || typeof item.activated === 'boolean'),
+  );
+};
+
+/** The client conditions a client declares on its handshake, kept only where well formed. */
+export const sanitizeClientConditions = (value: unknown): ClientCondition[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(
+    (item): item is ClientCondition =>
+      isRecord(item) &&
+      typeof item.contentId === 'string' &&
+      typeof item.contentType === 'string' &&
+      typeof item.versionId === 'string' &&
+      typeof item.conditionId === 'string' &&
+      (item.isActive === undefined || typeof item.isActive === 'boolean'),
+  );
 };
