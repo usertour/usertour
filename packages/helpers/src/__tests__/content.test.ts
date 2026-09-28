@@ -108,6 +108,19 @@ describe('replaceUserAttr — link href derivation (B-2 regression)', () => {
     );
     expect(linkOf(out).value).toBe('Sam');
   });
+
+  it('reads the attributes by own key: a missing `constructor` shows the fallback, not a function', () => {
+    const out = replaceUserAttr(
+      tree({ type: 'user-attribute', attrCode: 'constructor', fallback: 'friend' }),
+      { name: 'Sam' } as never,
+    );
+    expect(linkOf(out).value).toBe('friend');
+    const present = replaceUserAttr(
+      tree({ type: 'user-attribute', attrCode: 'constructor', fallback: 'friend' }),
+      { constructor: 'Acme' } as never,
+    );
+    expect(linkOf(present).value).toBe('Acme');
+  });
 });
 
 describe('serializeBlockName', () => {
