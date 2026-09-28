@@ -41,6 +41,12 @@ export class AttributesService {
    * match: conditions written against the old type would mis-evaluate.
    */
   async create(input: NewAttribute) {
+    // The one name a plain object cannot hold as a key: assigning it sets the
+    // prototype instead of storing a value. Refused on every entry point,
+    // as the SDK write path refuses it (ADR 0017 §8).
+    if (input.codeName === '__proto__') {
+      throw new ValidationError('"__proto__" is not a valid attribute name.');
+    }
     const data = this.normalizeBucketing(input);
     const held = await this.prisma.attribute.findUnique({
       where: {

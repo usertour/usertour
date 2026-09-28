@@ -100,7 +100,11 @@ export const attachUserAttributeValues = (
   }
   const ref = node as { type: string; scope?: string; attribute?: string };
   if (ref.type === 'attribute' && ref.scope === 'user' && ref.attribute) {
-    const value = userAttributes[ref.attribute];
+    // Own keys only: a user without a value for an attribute named
+    // `constructor` has none, not the inherited function.
+    const value = Object.prototype.hasOwnProperty.call(userAttributes, ref.attribute)
+      ? userAttributes[ref.attribute]
+      : undefined;
     node.actual = value ?? null;
     if (value === undefined && node.status === 'unmatched') {
       // The condition didn't fail on a wrong VALUE — the user has no value at

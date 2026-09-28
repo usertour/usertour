@@ -149,7 +149,7 @@ export interface IUsertourSocket {
 
   // Connection recovery (ADR 0018)
   onWriteReplayed(listener: (write: ReplayedWrite) => void): void;
-  clearRecoveryState(): void;
+  setTargetResolver(resolve: () => WriteTarget): void;
 
   // Event management with acknowledgment support
   on(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
@@ -179,6 +179,12 @@ export class UsertourSocket implements IUsertourSocket {
   // Tracks an in-flight `socket.connect()`; prevents duplicate connect
   // attempts and lets `disconnect()` cancel the pending CONNECT_TIMEOUT.
   private connecting = false;
+  // Credentials replaced while an attempt was in flight on the previous ones:
+  // a refusal of that attempt is not the last word (ADR 0018 §1).
+  private credentialsChangedInFlight = false;
+  // Where the core is now; the credentials lag behind it while a group() is
+  // in flight (see `targetNow`).
+  private targetResolver: (() => WriteTarget) | null = null;
   // Reference to the active `connect` listener so we can detach it on
   // success, timeout, or external cancel.
   private connectListener: (() => void) | null = null;
@@ -253,7 +259,8 @@ export class UsertourSocket implements IUsertourSocket {
    *    current socket, then starts a fresh connect with the new credentials.
    */
   setAuth(externalUserId: string, token: string, identityToken?: string): void {
-    if (this.requiresReconnect(externalUserId, token)) {
+    const identityChanged = this.requiresReconnect(externalUserId, token);
+    if (identityChanged) {
       log.info('Credentials changed; reconnecting');
       this.resetBatchState();
       this.cancelConnecting();
@@ -262,6 +269,9 @@ export class UsertourSocket implements IUsertourSocket {
       this.replay.reset();
       this.clearReconnect();
       this.socket.disconnect();
+      // Nor may a message buffered while offline go out on the next
+      // identity's connection.
+      this.socket.discardBuffered();
       // A disconnected socket emits no 'disconnect' for this call; the new
       // identity starts from idle either way, so its first connect is a
       // first connect, not a reconnect — with a fresh backoff.
@@ -269,6 +279,12 @@ export class UsertourSocket implements IUsertourSocket {
       this.reconnectAttempt = 0;
       this.hadConnected = false;
     }
+    // The same identity with another identity token: the previous one may
+    // have been refused, or an attempt may be in flight on it.
+    const identityTokenChanged =
+      !identityChanged &&
+      this.authCredentials !== undefined &&
+      this.authCredentials.identityToken !== identityToken;
 
     // Only the identity lives here. Everything else the handshake declares
     // — company, sessions, client conditions, timers — is the core's state,
@@ -281,6 +297,28 @@ export class UsertourSocket implements IUsertourSocket {
       clientContext: getClientContext(),
     };
 
+    if (identityTokenChanged) {
+      this.reconnectForIdentityToken();
+    } else {
+      this.ensureConnecting();
+    }
+  }
+
+  /**
+   * A refreshed identity token must be able to revive a dead socket: Socket.IO
+   * stops reconnecting once the server's auth middleware refused a handshake
+   * (the previous token expired, say), so merely storing the new token would
+   * strand the SDK offline until a page reload. Restart the attempt on the
+   * new credentials; when one is in flight on the old ones, its refusal
+   * starts the next (ADR 0018 §1).
+   */
+  private reconnectForIdentityToken(): void {
+    if (this.socket.isConnected()) {
+      return;
+    }
+    log.info('Identity token changed while disconnected; reconnecting');
+    this.credentialsChangedInFlight = true;
+    this.cancelConnecting();
     this.ensureConnecting();
   }
 
@@ -298,6 +336,9 @@ export class UsertourSocket implements IUsertourSocket {
     if (this.socket.isConnected() || this.connecting) {
       return;
     }
+    // A connect requested now supersedes the manual reconnect timer; left
+    // armed, it would open a second socket for the same page.
+    this.clearReconnect();
     this.connecting = true;
 
     const onConnect = () => this.cancelConnecting();
@@ -309,7 +350,11 @@ export class UsertourSocket implements IUsertourSocket {
       () => this.cancelConnecting(),
       this.CONNECT_TIMEOUT,
     );
-    this.socket.connect();
+    // Not started when an attempt is already in flight: that one carries
+    // the credentials it began with, so a refusal must start another.
+    if (this.socket.connect()) {
+      this.credentialsChangedInFlight = false;
+    }
   }
 
   /**
@@ -350,8 +395,10 @@ export class UsertourSocket implements IUsertourSocket {
     // Clear batch state and pending timeout
     this.resetBatchState();
 
-    // Disconnect the socket
+    // Disconnect the socket; what was buffered for it belongs to the session
+    // that just ended.
     this.socket.disconnect();
+    this.socket.discardBuffered();
 
     // Clear auth credentials
     this.authCredentials = undefined;
@@ -528,8 +575,18 @@ export class UsertourSocket implements IUsertourSocket {
     return { ok: outcome.result, rejected: outcome.rejected };
   }
 
-  /** The user and company the credentials name now. */
+  /**
+   * The user and company the session is on now. Asked of the core when it
+   * registered a resolver: the core moves to a company the moment group()
+   * is called, while the credentials follow only once the server confirmed
+   * it — and in between, on a reconnect, the buffered group() goes out
+   * first, so a write for the company being left must already count as
+   * left (ADR 0018 §4).
+   */
   private targetNow(): WriteTarget {
+    if (this.targetResolver) {
+      return this.targetResolver();
+    }
     return {
       externalUserId: this.authCredentials?.externalUserId,
       externalCompanyId: this.authCredentials?.externalCompanyId,
@@ -829,9 +886,11 @@ export class UsertourSocket implements IUsertourSocket {
     if (signal.type === 'connect') {
       log.info(previous === 'reconnecting' ? 'Reconnected' : 'Connected');
     }
-    if (state === 'rejected' && previous !== 'rejected') {
-      // Always visible (ADR 0019 §2): the SDK has stopped reconnecting and the
-      // host has no promise or event to learn that from.
+    // Always visible (ADR 0019 §2): the SDK has stopped reconnecting and the
+    // host has no promise or event to learn that from. Not when the refusal
+    // judged credentials the host has since replaced: the next attempt
+    // starts right below, and the SDK has not stopped.
+    if (state === 'rejected' && previous !== 'rejected' && !this.credentialsChangedInFlight) {
       const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
       log.critical(
         `Connection rejected by the server${typeof code === 'string' ? ` (${code})` : ''}: the environment token or identity token was refused. Usertour content will not show on this page until init() or identify() is called with valid credentials.`,
@@ -842,6 +901,7 @@ export class UsertourSocket implements IUsertourSocket {
     if (signal.type === 'connect') {
       this.reconnectAttempt = 0;
       this.clearReconnect();
+      this.credentialsChangedInFlight = false;
     }
     for (const action of actions) {
       switch (action) {
@@ -850,6 +910,14 @@ export class UsertourSocket implements IUsertourSocket {
           break;
         case 'stop':
           this.clearReconnect();
+          // The attempt is over: a later identify() must be able to start
+          // one instead of finding this one still "in flight".
+          this.cancelConnecting();
+          // The refusal judged credentials the host has since replaced.
+          if (this.credentialsChangedInFlight) {
+            log.info('Credentials changed during the refused attempt; connecting again');
+            this.ensureConnecting();
+          }
           break;
         default:
           break;
@@ -873,7 +941,9 @@ export class UsertourSocket implements IUsertourSocket {
     timerManager.setTimeout(
       this.RECONNECT_TIMEOUT_ID,
       () => {
-        if (this.socket.isConnected() || !this.authCredentials) {
+        // Active covers connected and in flight: a host call may have
+        // started the connection meanwhile.
+        if (this.socket.isActive() || !this.authCredentials) {
           return;
         }
         this.socket.connect();
@@ -942,15 +1012,9 @@ export class UsertourSocket implements IUsertourSocket {
     return replayed;
   }
 
-  /**
-   * Forget the failed writes and the declared wait timers: the core reset
-   * the session they belonged to (ADR 0018 §1).
-   */
-  clearRecoveryState(): void {
-    this.replay.reset();
-    if (this.authCredentials) {
-      this.authCredentials = { ...this.authCredentials, waitTimers: [] };
-    }
+  /** Where the core is now, for the replay decisions (see `targetNow`). */
+  setTargetResolver(resolve: () => WriteTarget): void {
+    this.targetResolver = resolve;
   }
 
   // === Auth Management ===
@@ -975,15 +1039,8 @@ export class UsertourSocket implements IUsertourSocket {
       ...authInfo,
     };
 
-    // A refreshed identity token must be able to revive a dead socket:
-    // Socket.IO stops auto-reconnecting once a handshake is rejected by the
-    // server's auth middleware (e.g. the previous token expired), so merely
-    // storing the new token would strand the SDK offline until a full page
-    // reload. Restart the connect attempt with the updated credentials.
-    if (identityTokenChanged && !this.socket.isConnected()) {
-      log.info('Identity token changed while disconnected; reconnecting');
-      this.cancelConnecting();
-      this.ensureConnecting();
+    if (identityTokenChanged) {
+      this.reconnectForIdentityToken();
     }
   }
 }

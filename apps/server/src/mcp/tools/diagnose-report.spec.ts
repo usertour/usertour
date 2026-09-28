@@ -114,6 +114,29 @@ describe('annotateConditions (decompiled readable + runtime status, lockstep)', 
     expect(inner?.find((c) => c.type === 'content_state')?.name).toBe('Welcome Tour');
   });
 
+  it('reads the user attributes by own key: a missing `constructor` is absent, not the inherited function', () => {
+    const tree = {
+      type: 'group',
+      match: 'all',
+      status: 'unmatched',
+      conditions: [
+        {
+          type: 'attribute',
+          scope: 'user',
+          attribute: 'constructor',
+          op: 'is',
+          status: 'unmatched',
+        },
+      ],
+    } as unknown as AnnotatedCondition;
+    attachUserAttributeValues(tree, {});
+    const leaf = (tree.conditions as Array<{ actual?: unknown; note?: string }>)[0];
+    expect(leaf.actual).toBeNull();
+    expect(leaf.note).toContain('NO value');
+    attachUserAttributeValues(tree, { constructor: 'acme' });
+    expect(leaf.actual).toBe('acme');
+  });
+
   it('attaches the user ACTUAL value to user-scoped attribute leaves (present → value, absent → null)', () => {
     const tree = {
       type: 'group',

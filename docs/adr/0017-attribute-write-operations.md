@@ -93,7 +93,7 @@ An unchanged result is not written and emits no `*.updated` webhook; the existin
 | integration-owned attributes | operations are refused exactly as literals are |
 | integration sync | unchanged, literals only |
 
-The rules live in the domain layer (`BizService` attribute resolution), not in the WebSocket payload validators (`@IsObject()` stays) nor in the v2 zod schema beyond shape documentation: the WebSocket layer rejects whole messages, whereas the SDK contract for a bad value is "drop this key, write the rest", and v2 / MCP do not pass through that layer at all.
+The rules live in the domain layer (`BizService` attribute resolution), not in the WebSocket payload validators (`@IsObject()` stays) nor in the v2 zod schema beyond shape documentation: the WebSocket layer rejects whole messages, whereas the SDK contract for a bad value is "drop this key, write the rest", and v2 / MCP do not pass through that layer at all. The same split shows on a list holding a `null` element: v2 refuses the body (its shape allows scalars only), the SDK drops the hole and writes the rest. That is the whole-message versus per-key contract, not a divergence to reconcile — v2 stays strict.
 
 ### 9. Rollout order
 

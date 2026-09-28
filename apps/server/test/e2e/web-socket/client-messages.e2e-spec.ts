@@ -122,6 +122,60 @@ describe('WebSocket v2 client messages (e2e)', () => {
     expect((bizUser?.data as Record<string, unknown>).name).toBe('Socket Tester');
   });
 
+  it('UpsertUser writes attributes named after Object.prototype members like any other', async () => {
+    // The validation pipe must hand these to the domain untouched: a
+    // class-transformer pass throws on `constructor` and drops the rest.
+    const ack = await client.sendClientMessage(ClientMessageKind.UPSERT_USER, {
+      externalUserId,
+      attributes: { constructor: 'acme', toString: 'ts', valueOf: 'vo', hasOwnProperty: 'ho' },
+    });
+    expect(ack).toMatchObject({ ok: true, rejected: [] });
+
+    const bizUser = await prisma.bizUser.findFirst({
+      where: { externalId: externalUserId, environmentId },
+    });
+    expect(bizUser?.data).toMatchObject({
+      constructor: 'acme',
+      toString: 'ts',
+      valueOf: 'vo',
+      hasOwnProperty: 'ho',
+    });
+  });
+
+  it('a malformed message is answered false, not left without an acknowledgement', async () => {
+    const ack = await client.sendClientMessage(ClientMessageKind.UPSERT_USER, {
+      externalUserId,
+      attributes: 'plan=pro',
+    });
+    expect(ack).toBe(false);
+  });
+
+  it('UpsertUser names an integration-owned attribute in the acknowledgement instead of dropping it silently', async () => {
+    await prisma.attribute.create({
+      data: {
+        projectId,
+        bizType: 1,
+        codeName: 'ws_owned_plan',
+        displayName: 'Owned plan',
+        dataType: 2,
+        source: 'hubspot',
+      },
+    });
+    const ack = await client.sendClientMessage(ClientMessageKind.UPSERT_USER, {
+      externalUserId,
+      attributes: { ws_owned_plan: 'enterprise', plan: 'team' },
+    });
+    expect(ack).toMatchObject({
+      ok: true,
+      rejected: [{ codeName: 'ws_owned_plan', reason: expect.stringMatching(/owned by hubspot/) }],
+    });
+    const bizUser = await prisma.bizUser.findFirst({
+      where: { externalId: externalUserId, environmentId },
+    });
+    expect(bizUser?.data).toMatchObject({ plan: 'team' });
+    expect(bizUser?.data).not.toHaveProperty('ws_owned_plan');
+  });
+
   it('UpsertUser rejects a payload for a different user than the socket auth', async () => {
     const ack = await client.sendClientMessage(ClientMessageKind.UPSERT_USER, {
       externalUserId: 'someone-else',

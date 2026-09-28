@@ -1266,16 +1266,23 @@ export class BizService {
     attributes: Record<string, any>,
     origin?: string,
   ): Promise<{ writes: Map<string, AttributeWrite>; rejected: RejectedAttributeWrite[] }> {
+    const foreign = await this.withoutForeignOwnedAttributes(
+      tx,
+      projectId,
+      bizType,
+      attributes,
+      origin,
+    );
     const { writes, rejected, catalogChanged } = await this.resolveAttributeWrites(
       tx,
       projectId,
       bizType,
-      await this.withoutForeignOwnedAttributes(tx, projectId, bizType, attributes, origin),
+      foreign.attributes,
     );
     if (catalogChanged) {
       await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
-    return { writes, rejected };
+    return { writes, rejected: [...foreign.rejected, ...rejected] };
   }
 
   /**
@@ -1403,10 +1410,10 @@ export class BizService {
     bizType: AttributeBizType,
     attributes: Record<string, any>,
     origin: string | undefined,
-  ): Promise<Record<string, any>> {
+  ): Promise<{ attributes: Record<string, any>; rejected: RejectedAttributeWrite[] }> {
     const codeNames = Object.keys(attributes);
     if (codeNames.length === 0) {
-      return attributes;
+      return { attributes, rejected: [] };
     }
     const owned = await tx.attribute.findMany({
       where: { projectId, bizType, codeName: { in: codeNames }, source: { not: 'internal' } },
@@ -1414,18 +1421,21 @@ export class BizService {
     });
     const foreign = owned.filter((attr) => attr.source !== origin);
     if (foreign.length === 0) {
-      return attributes;
+      return { attributes, rejected: [] };
     }
+    // Reported like any refused key (ADR 0020 §6): the SDK must not cache
+    // the value as written.
     const result = { ...attributes };
+    const rejected: RejectedAttributeWrite[] = [];
     for (const attr of foreign) {
       delete result[attr.codeName];
+      const reason = `owned by ${attr.source}; it is synced from an integration and cannot be written here`;
       this.logger.warn(
-        `Dropped write to "${attr.codeName}": the attribute is owned by ${attr.source} (writer: ${
-          origin ?? 'sdk/api'
-        }).`,
+        `Dropped write to "${attr.codeName}": ${reason} (writer: ${origin ?? 'sdk/api'}).`,
       );
+      rejected.push({ codeName: attr.codeName, reason });
     }
-    return result;
+    return { attributes: result, rejected };
   }
 
   /**
@@ -1476,8 +1486,10 @@ export class BizService {
 
     const displayName = bizType === AttributeBizType.EVENT ? humanize : capitalizeFirstLetter;
     let catalogChanged = false;
-    // First pass: restore soft-deleted definitions and collect the missing ones.
+    // First pass: collect the soft-deleted definitions to restore and the
+    // missing ones to create.
     const creations: Prisma.AttributeCreateManyInput[] = [];
+    const revivals: Attribute[] = [];
     for (const [codeName, write] of pending) {
       const attr = attrMap.get(codeName);
       // A bucketing attribute's value is derived (ADR 0020 §5): every write to
@@ -1502,11 +1514,7 @@ export class BizService {
       // not dead: restore it (ADR 0016), keeping its data type — values that do
       // not fit it are dropped below like for any attribute.
       if (attr?.deleted) {
-        attrMap.set(
-          codeName,
-          await tx.attribute.update({ where: { id: attr.id }, data: { deleted: false } }),
-        );
-        catalogChanged = true;
+        revivals.push(attr);
         continue;
       }
       if (attr) {
@@ -1530,6 +1538,18 @@ export class BizService {
         projectId,
         bizType,
       });
+    }
+    if (revivals.length > 0) {
+      // Two writes reviving the same definitions in opposite orders would
+      // deadlock on the row locks: one order for everyone.
+      revivals.sort((left, right) => compareCodePoints(left.codeName, right.codeName));
+      for (const attr of revivals) {
+        attrMap.set(
+          attr.codeName,
+          await tx.attribute.update({ where: { id: attr.id }, data: { deleted: false } }),
+        );
+      }
+      catalogChanged = true;
     }
     if (creations.length > 0) {
       // Two writes can carry the same new codeName at once. Insert with

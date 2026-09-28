@@ -1093,6 +1093,53 @@ describe('validateVersionUsable', () => {
       expect(r.errors.some((e) => /binds to attribute/.test(e.message))).toBe(false);
     });
 
+    // The upsert coerces losslessly (ADR 0017 §3): a number stringifies and a
+    // scalar wraps into a list, so those binds capture the answer and get no
+    // warning; a text answer into a Number attribute is refused, and does.
+    const withTypedBind = (questionType: string, dataType: number) =>
+      validateVersionUsable({
+        type: ContentDataType.FLOW,
+        themeId: 't1',
+        steps: [
+          {
+            type: StepContentType.MODAL,
+            sequence: 0,
+            cvid: 'a',
+            data: [
+              {
+                children: [
+                  {
+                    children: [
+                      {
+                        element: {
+                          type: questionType,
+                          data: { name: 'Q', bindToAttribute: true, selectedAttribute: 'typed' },
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ] as never,
+        conditionContext: {
+          attributes: [{ id: 'a2', dataType, bizType: 1, codeName: 'typed' }],
+          segments: [],
+          contents: [],
+          events: [],
+        } as never,
+      });
+
+    it('does not warn when the answer coerces into the attribute type', () => {
+      expect(bindWarn(withTypedBind('nps', 2))).toBe(false); // number → String
+      expect(bindWarn(withTypedBind('single-line-text', 4))).toBe(false); // text → List
+    });
+
+    it('warns when the answer cannot coerce into the attribute type', () => {
+      expect(bindWarn(withTypedBind('single-line-text', 1))).toBe(true); // text → Number
+    });
+
     it('does not warn when the bound attribute exists', () => {
       expect(bindWarn(withBoundQuestion('plan'))).toBe(false);
     });
