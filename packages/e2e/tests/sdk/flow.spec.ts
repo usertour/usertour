@@ -22,7 +22,7 @@ test.describe('flow sessions', () => {
     await start(sdk);
     // Let identify()'s batch close before counting.
     await sdk.advance(100);
-    await protocol.waitForMessages('EndBatch', 1);
+    await protocol.waitForBatchesToClose();
     const before = protocol.seen.length;
     await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1'));
 
@@ -100,6 +100,9 @@ test.describe('flow sessions', () => {
     await start(sdk);
     await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1'));
     await expect(sdk.surface).toBeVisible();
+    // Let identify()'s batch close before counting.
+    await sdk.advance(100);
+    await protocol.waitForBatchesToClose();
     const before = protocol.seen.length;
     await protocol.push('UnsetFlowSession', { sessionId: 'session-1' });
     await expect(sdk.surface).toHaveCount(0);

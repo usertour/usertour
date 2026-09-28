@@ -216,6 +216,19 @@ export class ProtocolServer {
     );
   }
 
+  /**
+   * Wait until every batch the SDK opened has closed. A batch closes 50ms of
+   * page time after its last acknowledgement, so advance the page clock
+   * first; count-based assertions taken before that see the EndBatch land.
+   */
+  waitForBatchesToClose(timeoutMs?: number): Promise<void> {
+    return this.waitFor(
+      () => this.messages('EndBatch').length >= this.messages('BeginBatch').length,
+      'the open batches to close',
+      timeoutMs,
+    );
+  }
+
   waitForConnections(count: number, timeoutMs?: number): Promise<void> {
     return this.waitFor(
       () => this.connections.length >= count,

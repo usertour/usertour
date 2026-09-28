@@ -53,8 +53,8 @@ test.describe('track()', () => {
   }) => {
     await sdk.init();
     await sdk.identify('u1');
-    await sdk.advance(50);
-    await protocol.waitForMessages('EndBatch', 1);
+    await sdk.advance(100);
+    await protocol.waitForBatchesToClose();
     const before = protocol.seen.length;
 
     const result = await sdk.call('track', 'clicked_upgrade', { plan: 'pro' });

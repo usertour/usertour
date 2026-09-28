@@ -26,6 +26,11 @@ fixtures and never starts the SDK.
   starts a public-API call; `sdk.settle(id)` reads its outcome after the clock
   was advanced or the server answered. `sdk.call` awaits directly and is for
   calls the server answers on its own.
+- **The clock keeps flowing.** `clock.install()` fakes the timers but time
+  still passes in real time; `advance` jumps ahead. A batch closes on a
+  50ms timer, so before counting messages, advance and call
+  `protocol.waitForBatchesToClose()` — otherwise the EndBatch lands between
+  the count and the assertion on some machines and not on others.
 - **Assert on what the server saw.** `protocol.connections`, `attempts` and
   `messages(kind)` are the record; the page's console lines are available
   through `sdk.logLines(/pattern/)` for the warnings and criticals the host
