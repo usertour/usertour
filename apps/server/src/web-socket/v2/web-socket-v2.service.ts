@@ -60,7 +60,12 @@ import { AnnouncementService } from '@/modules/delivery/services/announcement.se
 import { ContentDataService } from '@/modules/delivery/services/content-data.service';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { IdentityVerificationService } from '@/modules/common/services/identity-verification.service';
-import { buildExternalUserRoomId, getSocketId } from '../utils/websocket.util';
+import {
+  buildExternalUserRoomId,
+  getSocketId,
+  sanitizeClientConditions,
+  sanitizeWaitTimers,
+} from '../utils/websocket.util';
 import {
   assignClientContext,
   buildAnnouncementSeenEventData,
@@ -127,7 +132,10 @@ export class WebSocketV2Service {
    * @returns Initialized SocketData or null if validation fails
    */
   async initializeSocketData(auth: SocketAuthData): Promise<SocketData | null> {
-    const { externalUserId, externalCompanyId, clientContext, clientConditions = [], token } = auth;
+    const { externalUserId, externalCompanyId, clientContext, token } = auth;
+    // Client-declared, so taken only where well formed (a malformed entry
+    // would throw in every later evaluation of this connection).
+    const clientConditions = sanitizeClientConditions(auth.clientConditions);
 
     // Validate required fields
     if (!externalUserId || !token) {
@@ -165,14 +173,13 @@ export class WebSocketV2Service {
     // Build base socket data. Wait timers come back from the client on a
     // reconnect (ADR 0018 §6), client-declared like clientConditions: a
     // running timer keeps its remaining time on the SDK's clock, a fired one
-    // is honoured on the first evaluation. Only a non-array is refused — it
-    // would throw in the auto-start filter.
+    // is honoured on the first evaluation.
     const socketData: SocketData = {
       environment,
       externalUserId,
       clientContext,
       externalCompanyId,
-      waitTimers: Array.isArray(auth.waitTimers) ? auth.waitTimers : [],
+      waitTimers: sanitizeWaitTimers(auth.waitTimers),
       clientConditions,
       bizUserId: bizUser.id,
       bizCompanyId: bizCompany?.id,
