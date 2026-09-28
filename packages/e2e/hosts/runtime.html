@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SDK runtime host</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font: 14px/1.4 system-ui, sans-serif;
+        color: #1f2937;
+      }
+      main {
+        max-width: 720px;
+      }
+      #panel {
+        margin-top: 16px;
+        padding: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      A plain customer page. The test injects USERTOURJS_ENV_VARS before this
+      page loads and then adds the built SDK bundle as a module script, exactly
+      as a customer's snippet would. The elements below are targets for the
+      rules the SDK evaluates in the browser (element present / clicked,
+      text-input, text-fill); they do nothing by themselves.
+    -->
+    <main>
+      <h1>Runtime host</h1>
+      <p>This page hosts the SDK bundle for the Playwright runtime suite.</p>
+      <button id="cta" type="button">Get started</button>
+      <button id="secondary" type="button" disabled>Disabled action</button>
+      <div id="panel">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" />
+      </div>
+    </main>
+  </body>
+</html>

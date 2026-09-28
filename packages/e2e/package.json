@@ -2,15 +2,18 @@
   "name": "@usertour/e2e",
   "version": "0.0.0",
   "private": true,
-  "description": "Real-browser tests (Playwright). Widget suite drives the SDK gallery in apps/sdk/gallery.",
+  "description": "Real-browser tests (Playwright). Widget suite drives the SDK gallery in apps/sdk/gallery; sdk suite drives the built SDK bundle against a protocol server (tests/sdk).",
   "scripts": {
     "e2e:widget": "playwright test --project=widget",
+    "e2e:sdk": "E2E_PROJECT=sdk playwright test --project=sdk",
     "e2e:report": "playwright show-report",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "18.19.63",
+    "@usertour/constants": "workspace:^",
+    "socket.io": "^4.7.2",
     "typescript": "5.3.3"
   }
 }

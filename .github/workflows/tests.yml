@@ -1,0 +1,218 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main, staging]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# A newer push to the same pull request or branch supersedes the run in
+# progress — except on main, where every run completes.
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  # Which parts of the repository the change touches. The shared packages
+  # and the toolchain files reach everything; the rest gates its own jobs.
+  changes:
+    name: What changed
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      shared: ${{ steps.filter.outputs.shared }}
+      server: ${{ steps.filter.outputs.server }}
+      sdk: ${{ steps.filter.outputs.sdk }}
+      web: ${{ steps.filter.outputs.web }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared:
+              - 'packages/types/**'
+              - 'packages/constants/**'
+              - 'packages/helpers/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - 'biome.json'
+              - '.github/workflows/tests.yml'
+            server:
+              - 'apps/server/**'
+              - 'packages/emails/**'
+            sdk:
+              - 'apps/sdk/**'
+              - 'packages/widget/**'
+              - 'packages/frame/**'
+              - 'packages/finder/**'
+              - 'packages/dom/**'
+              - 'packages/icons/**'
+              - 'packages/react-context/**'
+              - 'packages/tailwind/**'
+              - 'packages/radix/**'
+            web:
+              - 'apps/web/**'
+              - 'packages/ui/**'
+              - 'packages/business-components/**'
+              - 'packages/editor/**'
+              - 'packages/gql/**'
+              - 'packages/hooks/**'
+              - 'packages/icons/**'
+              - 'packages/i18n/**'
+              - 'packages/tailwind/**'
+              - 'packages/widget/**'
+              - 'packages/radix/**'
+            e2e:
+              - 'packages/e2e/**'
+
+  # Lint, type checks and the unit suites: no services needed.
+  checks:
+    name: Lint, types and unit tests
+    runs-on: ubuntu-latest
+    needs: changes
+    timeout-minutes: 30
+    env:
+      SHARED: ${{ needs.changes.outputs.shared == 'true' }}
+      SERVER: ${{ needs.changes.outputs.server == 'true' || needs.changes.outputs.shared == 'true' }}
+      SDK: ${{ needs.changes.outputs.sdk == 'true' || needs.changes.outputs.shared == 'true' }}
+      WEB: ${{ needs.changes.outputs.web == 'true' || needs.changes.outputs.shared == 'true' }}
+      E2E: ${{ needs.changes.outputs.e2e == 'true' || needs.changes.outputs.sdk == 'true' || needs.changes.outputs.shared == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The lint step compares against the base branch.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Only the files the pull request changed, as the pre-commit hook does:
+      # the repository carries a backlog that a full `biome check .` reports.
+      - name: Lint and format the changed files (biome)
+        if: github.event_name == 'pull_request'
+        run: pnpm exec biome check --changed --since=origin/${{ github.base_ref }}
+      - name: Build the shared packages
+        run: pnpm build:deps
+      - name: Generate the Prisma client
+        if: env.SERVER == 'true'
+        run: pnpm --filter @usertour/server prisma:generate
+      - name: Type check (server)
+        if: env.SERVER == 'true'
+        run: pnpm --filter @usertour/server exec tsc --noEmit -p tsconfig.json
+      - name: Type check (sdk)
+        if: env.SDK == 'true'
+        run: pnpm --filter @usertour/sdk exec tsc --noEmit -p tsconfig.json
+      - name: Type check (e2e)
+        if: env.E2E == 'true'
+        run: pnpm --filter @usertour/e2e typecheck
+      - name: Unit tests (helpers)
+        if: env.SHARED == 'true'
+        run: pnpm --filter @usertour/helpers test
+      - name: Unit tests (server)
+        if: env.SERVER == 'true'
+        run: pnpm --filter @usertour/server test
+      - name: Unit tests (web)
+        if: env.WEB == 'true'
+        run: pnpm --filter @usertour/web test
+
+  # The server's end-to-end suites against a real Postgres and Redis: the
+  # HTTP API, GraphQL, the socket protocol, the rules conformance.
+  server-e2e:
+    name: Server e2e
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.server == 'true' || needs.changes.outputs.shared == 'true'
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: usertour_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # The same database the local apps/server/.env.test points at; the e2e
+      # global setup refuses any name that does not end in `_test`.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/usertour_test?schema=public
+      DATABASE_DIRECT_URL: postgresql://postgres:postgres@localhost:5433/usertour_test?schema=public
+      Redis_HOST: localhost
+      Redis_PORT: 6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:deps
+      - run: pnpm --filter @usertour/server prisma:generate
+      - name: Server e2e (migrates the test database first)
+        run: pnpm --filter @usertour/server test:e2e
+
+  # The real-browser suites: the widget gallery and the SDK runtime against
+  # the protocol server. Both run on the built SDK bundle.
+  browser:
+    name: Browser suites (widget, sdk)
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.sdk == 'true' || needs.changes.outputs.e2e == 'true' || needs.changes.outputs.shared == 'true'
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @usertour/e2e exec playwright install --with-deps chromium
+      # The bundle bakes its VITE_* values in at build time and the post-build
+      # smoke refuses one that left any of them undefined. The example file
+      # carries the defaults, as the Dockerfile and CONTRIBUTING use it.
+      - name: Build the SDK bundle
+        run: |
+          cp apps/sdk/.env.example apps/sdk/.env
+          pnpm build:sdk
+      - name: Widget suite
+        run: pnpm --filter @usertour/e2e e2e:widget
+      - name: SDK runtime suite
+        run: pnpm --filter @usertour/e2e e2e:sdk
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: packages/e2e/playwright-report
+          retention-days: 7
