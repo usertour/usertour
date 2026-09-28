@@ -102,9 +102,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Only the files the pull request changed, as the pre-commit hook does:
       # the repository carries a backlog that a full `biome check .` reports.
+      # A change set without a file biome handles (docs, workflows, SQL) is
+      # not an error, as in lint-staged.
       - name: Lint and format the changed files (biome)
         if: github.event_name == 'pull_request'
-        run: pnpm exec biome check --changed --since=origin/${{ github.base_ref }}
+        run: pnpm exec biome check --changed --since=origin/${{ github.base_ref }} --no-errors-on-unmatched
       - name: Build the shared packages
         run: pnpm build:deps
       - name: Generate the Prisma client
