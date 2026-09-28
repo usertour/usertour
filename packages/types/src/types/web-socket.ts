@@ -35,6 +35,12 @@ export interface SocketAuthData {
   waitTimers?: ConditionWaitTimer[];
   launchers?: string[];
   token?: string;
+  /**
+   * The version of the SDK bundle making the connection, as built into it;
+   * absent from bundles that predate the field. Recorded per connection,
+   * never acted on.
+   */
+  sdkVersion?: string;
   flowSessionId?: string;
   checklistSessionId?: string;
   bannerSessionId?: string;

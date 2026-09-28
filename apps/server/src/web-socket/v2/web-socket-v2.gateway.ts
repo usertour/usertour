@@ -101,7 +101,11 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
         // Join user room for targeted messaging
         await socket.join(room);
 
-        this.logger.log(`Socket ${socket.id} authenticated for user ${socketData.externalUserId}`);
+        // The version names the bundle this connection runs: after a release,
+        // the lines still saying the previous one are the pages not yet reloaded.
+        this.logger.log(
+          `Socket ${socket.id} authenticated for user ${socketData.externalUserId} (sdk ${socketData.sdkVersion ?? 'unknown'})`,
+        );
         return next();
       } catch (error: unknown) {
         this.logger.error(

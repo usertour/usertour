@@ -1,8 +1,18 @@
-import { sanitizeClientConditions, sanitizeWaitTimers } from './websocket.util';
+import { sanitizeClientConditions, sanitizeSdkVersion, sanitizeWaitTimers } from './websocket.util';
 
 describe('handshake guards', () => {
   const timer = { contentId: 'c1', contentType: 'flow', versionId: 'v1', waitTime: 5 };
   const condition = { contentId: 'c1', contentType: 'flow', versionId: 'v1', conditionId: 'r1' };
+
+  it('keeps a short version string as the SDK version and nothing else', () => {
+    expect(sanitizeSdkVersion('0.8.1')).toBe('0.8.1');
+    expect(sanitizeSdkVersion(' 0.8.1-beta.2+build.7 ')).toBe('0.8.1-beta.2+build.7');
+    expect(sanitizeSdkVersion(undefined)).toBeUndefined();
+    expect(sanitizeSdkVersion(81)).toBeUndefined();
+    expect(sanitizeSdkVersion('')).toBeUndefined();
+    expect(sanitizeSdkVersion('0.8.1 <script>')).toBeUndefined();
+    expect(sanitizeSdkVersion('9'.repeat(33))).toBeUndefined();
+  });
 
   it('keeps well-formed wait timers and drops the rest', () => {
     expect(

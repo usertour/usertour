@@ -380,6 +380,20 @@ export const sanitizeWaitTimers = (value: unknown): ConditionWaitTimer[] => {
   );
 };
 
+/**
+ * The SDK bundle version a client declares on its handshake: a short
+ * version string, or nothing. Older bundles declare none. It is client
+ * input, kept only to be stored on the connection and named in its log
+ * line; anything but a short version-shaped string is dropped.
+ */
+export const sanitizeSdkVersion = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return /^[0-9A-Za-z.+-]{1,32}$/.test(trimmed) ? trimmed : undefined;
+};
+
 /** The client conditions a client declares on its handshake, kept only where well formed. */
 export const sanitizeClientConditions = (value: unknown): ClientCondition[] => {
   if (!Array.isArray(value)) {

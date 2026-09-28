@@ -55,6 +55,7 @@ export interface WebSocketAuth {
   clientContext?: Record<string, unknown>;
   clientConditions?: unknown[];
   waitTimers?: unknown[];
+  sdkVersion?: unknown;
   // Session-recovery handshake: ids of sessions the SDK held before a
   // reconnect, restored server-side into the new connection's socket data.
   flowSessionId?: string;

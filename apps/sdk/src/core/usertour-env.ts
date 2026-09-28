@@ -9,6 +9,12 @@ const getAssetsUri = () => {
   return getUsertourEnvVars('ASSETS_URI') || import.meta.env.VITE_ASSETS_URI;
 };
 
+/** The version built into this bundle; undefined only in a build without it. */
+export const getSdkVersion = (): string | undefined => {
+  // @ts-ignore: USERTOUR_APP_VERSION is injected by vite
+  return typeof USERTOUR_APP_VERSION !== 'undefined' ? USERTOUR_APP_VERSION : undefined;
+};
+
 export const getMainCss = () => {
   // @ts-ignore: USERTOUR_APP_MAIN_CSS is injected by vite
   const mainCss =

@@ -14,7 +14,7 @@ import { ProtocolServer } from './protocol-server';
 // Must match RUNTIME_HOST_PORT in scripts/static-host.mjs and the config.
 export const RUNTIME_HOST_URL = 'http://127.0.0.1:5191';
 
-const SDK_VERSION: string = JSON.parse(
+export const SDK_VERSION: string = JSON.parse(
   readFileSync(resolve(__dirname, '../../../../apps/sdk/package.json'), 'utf8'),
 ).version;
 export const SDK_BUNDLE_URL = `${RUNTIME_HOST_URL}/sdk-dist/${SDK_VERSION}/es2020/usertour.js`;
