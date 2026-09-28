@@ -53,6 +53,12 @@ describe('withDebugNamespace / withoutDebugNamespace', () => {
     expect(withDebugNamespace('usertour-widget:*', NS)).toBe('usertour-widget:*');
   });
 
+  test('removes the wildcard forms that open the gate too, so off stays off', () => {
+    expect(withoutDebugNamespace('socket.io-client:*,usertour-widget*,usertour-w*', NS)).toBe(
+      'socket.io-client:*',
+    );
+  });
+
   test('removes only our tokens and never the wildcard', () => {
     expect(withoutDebugNamespace('usertour-widget:*,socket.io-client:*', NS)).toBe(
       'socket.io-client:*',

@@ -53,9 +53,13 @@ export const withDebugNamespace = (storageValue: string, namespace: string): str
   return (tokens.includes(own) ? tokens : [...tokens, own]).join(',');
 };
 
-/** `localStorage.debug` with every token of the namespace removed; `*` stays. */
+/**
+ * `localStorage.debug` with every token that names the namespace removed —
+ * the same tokens that open the gate, wildcards included, so an off stays
+ * off across reloads; the global `*` stays, it is not ours to remove.
+ */
 export const withoutDebugNamespace = (storageValue: string, namespace: string): string => {
   return splitTokens(storageValue)
-    .filter((token) => token !== namespace && !token.startsWith(`${namespace}:`))
+    .filter((token) => token === '*' || !tokenNamesNamespace(token, namespace))
     .join(',');
 };
