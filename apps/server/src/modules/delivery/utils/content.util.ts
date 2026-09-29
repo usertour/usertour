@@ -432,15 +432,15 @@ export const isAllowedByAutoStartRulesSetting = (customContentVersion: CustomCon
     return true;
   }
 
-  const latestEvent = customContentVersion.session.latestEvent;
+  const latestSiblingEvent = customContentVersion.session.latestSiblingEvent;
 
   if (
-    latestEvent &&
+    latestSiblingEvent &&
     frequency &&
     frequency.atLeast &&
     !isGreaterThenDuration(
       now,
-      new Date(latestEvent.createdAt),
+      new Date(latestSiblingEvent.createdAt),
       frequency.atLeast.unit,
       frequency.atLeast.duration,
     )

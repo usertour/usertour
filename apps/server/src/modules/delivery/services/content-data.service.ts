@@ -92,7 +92,7 @@ type VersionWithSession = {
 };
 
 /**
- * Event with bizSession and content info for latest event calculation
+ * Event with bizSession and content info for the sibling-event calculation
  */
 type BizEventWithSessionAndContent = BizEventWithEvent & {
   bizSession: { contentId: string | null; content: { type: string } | null } | null;
@@ -817,8 +817,8 @@ export class ContentDataService {
       this.findEventsByContentIds(contentIds, bizUserId),
     ]);
 
-    // Process latestEvents and latestDismissedEvents from the same events data
-    const latestEvents = this.getLatestEventByContentType(events, contents);
+    // Process latestSiblingEvents and latestDismissedEvents from the same events data
+    const latestSiblingEvents = this.getLatestSiblingEventByContentType(events, contents);
     const latestDismissedEvents = this.getLatestDismissedEvents(events);
 
     const sessions = new Map<string, ContentSessionCollection>();
@@ -827,14 +827,14 @@ export class ContentDataService {
       const activeSession = activeSessions.get(contentId) || null;
       const totalSessions = totalCounts.get(contentId) ?? 0;
       const completedSessions = completedCounts.get(contentId) ?? 0;
-      const latestEvent = latestEvents.get(contentId);
+      const latestSiblingEvent = latestSiblingEvents.get(contentId);
       const latestDismissedEvent = latestDismissedEvents.get(contentId);
 
       sessions.set(contentId, {
         activeSession,
         totalSessions,
         completedSessions,
-        latestEvent,
+        latestSiblingEvent,
         latestDismissedEvent,
       });
     }
@@ -962,7 +962,7 @@ export class ContentDataService {
    * @param contents - The contents to find a reference event for, with their types
    * @returns Map of contentId to the latest event of another content of its type
    */
-  private getLatestEventByContentType(
+  private getLatestSiblingEventByContentType(
     events: BizEventWithSessionAndContent[],
     contents: ContentRef[],
   ): Map<string, BizEventWithEvent> {
@@ -977,13 +977,13 @@ export class ContentDataService {
     // — must still find the other contents' events, or its quiet period
     // never holds.
     for (const { id: contentId, type: contentType } of contents) {
-      const latestEvent = events.find(
+      const latestSiblingEvent = events.find(
         (event) =>
           event.bizSession?.contentId !== contentId &&
           event.bizSession?.content?.type === contentType,
       );
-      if (latestEvent) {
-        const { bizSession, ...bizEventWithEvent } = latestEvent;
+      if (latestSiblingEvent) {
+        const { bizSession, ...bizEventWithEvent } = latestSiblingEvent;
         latestEventMap.set(contentId, bizEventWithEvent);
       }
     }

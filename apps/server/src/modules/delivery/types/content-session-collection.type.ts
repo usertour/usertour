@@ -5,6 +5,7 @@ export type ContentSessionCollection = {
   activeSession?: BizSessionWithEvents;
   totalSessions: number;
   completedSessions: number;
-  latestEvent?: BizEventWithEvent; // Latest event across all same-type contents (for atLeast frequency check)
+  /** The user's latest event on ANOTHER content of the same type: the quiet period (`frequency.atLeast`) measures from it. */
+  latestSiblingEvent?: BizEventWithEvent;
   latestDismissedEvent?: BizEventWithEvent; // Latest dismissed event for current content (for every frequency check)
 };

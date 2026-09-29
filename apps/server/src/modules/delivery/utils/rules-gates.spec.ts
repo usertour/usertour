@@ -196,7 +196,7 @@ describe('isAllowedByAutoStartRulesSetting — the frequency gate', () => {
   });
 
   describe('atLeast — a cross-content quiet period, not a same-content gap', () => {
-    // latestEvent is "the latest event from OTHER content of the SAME type"
+    // latestSiblingEvent is "the latest event from OTHER content of the SAME type"
     // (content-data.service builds it that way), so this window measures how
     // recently the user saw something ELSE, not this content.
     const withAtLeast = (hours: number) => ({
@@ -206,12 +206,12 @@ describe('isAllowedByAutoStartRulesSetting — the frequency gate', () => {
     });
 
     it('blocks while another same-type content showed inside the window', () => {
-      const v = version({ frequency: withAtLeast(4) }, { latestEvent: eventAt(1 * HOUR) });
+      const v = version({ frequency: withAtLeast(4) }, { latestSiblingEvent: eventAt(1 * HOUR) });
       expect(isAllowedByAutoStartRulesSetting(v)).toBe(false);
     });
 
     it('allows once the quiet period has passed', () => {
-      const v = version({ frequency: withAtLeast(4) }, { latestEvent: eventAt(5 * HOUR) });
+      const v = version({ frequency: withAtLeast(4) }, { latestSiblingEvent: eventAt(5 * HOUR) });
       expect(isAllowedByAutoStartRulesSetting(v)).toBe(true);
     });
 
@@ -228,7 +228,7 @@ describe('isAllowedByAutoStartRulesSetting — the frequency gate', () => {
             atLeast: { duration: 4, unit: FrequencyUnits.HOURS },
           },
         },
-        { totalSessions: 0, latestEvent: eventAt(1 * HOUR) },
+        { totalSessions: 0, latestSiblingEvent: eventAt(1 * HOUR) },
       );
       expect(isAllowedByAutoStartRulesSetting(v)).toBe(false);
     });
@@ -266,7 +266,7 @@ describe('isAllowedByAutoStartRulesSetting — the frequency gate', () => {
           },
           startIfNotComplete: true,
         },
-        { completedSessions: 1, latestEvent: eventAt(99 * HOUR) },
+        { completedSessions: 1, latestSiblingEvent: eventAt(99 * HOUR) },
       );
       expect(isAllowedByAutoStartRulesSetting(v)).toBe(false);
     });
