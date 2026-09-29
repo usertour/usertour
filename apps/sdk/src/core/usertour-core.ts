@@ -1672,6 +1672,12 @@ export class UsertourCore extends Evented {
         return;
       }
 
+      // The reconnect handshake must carry this state before the report
+      // below can be lost to a disconnect: the server takes the handshake's
+      // conditions as they are and does not track them again, and the
+      // monitor reports changes only — a stale state would stand until the
+      // element toggled once more (ADR 0018 §6, as for a fired timer).
+      this.syncSocketCredentials();
       // Toggle client condition
       this.socketService.toggleClientCondition(
         {

@@ -221,30 +221,30 @@ test.describe('client-evaluated conditions', () => {
     expect(reports()).toHaveLength(1);
   });
 
-  // FINDING: the handshake carries the conditions from the credentials
-  // snapshot, which the core refreshes after a server message and after a
-  // wait timer fires — but not after a condition toggles. A reconnect then
-  // tells the server the condition is inactive although the page reported it
-  // active, and the monitor reports changes only, so the server never learns
-  // otherwise until the element toggles again. Fixme until the toggle handler
-  // syncs the credentials like the wait-timer one does (usertour-core.ts).
-  test.fixme(
-    'the tracked conditions and their state ride the reconnect handshake',
-    async ({ sdk, protocol }) => {
-      await setup(sdk);
-      const rule = elementRule('#cta', 'present');
-      const reports = await track(protocol, rule);
-      await expect.poll(() => reports().length).toBe(1);
+  // Regression: the handshake carries the conditions from the credentials
+  // snapshot, which the core refreshed after a server message and after a
+  // wait timer fired — but not after a condition toggled. A reconnect then
+  // told the server the condition was inactive although the page had
+  // reported it active, and since the monitor reports changes only, the
+  // server never learned otherwise until the element toggled again. The
+  // toggle handler syncs the credentials now, as the wait-timer one does.
+  test('the tracked conditions and their state ride the reconnect handshake', async ({
+    sdk,
+    protocol,
+  }) => {
+    await setup(sdk);
+    const rule = elementRule('#cta', 'present');
+    const reports = await track(protocol, rule);
+    await expect.poll(() => reports().length).toBe(1);
 
-      protocol.dropTransport();
-      await protocol.waitForDisconnect(protocol.connections[0]);
-      await sdk.advance(3_000);
-      await protocol.waitForConnections(2);
-      expect(protocol.connections[1].auth.clientConditions).toEqual([
-        expect.objectContaining({ ...CONTENT, conditionId: rule.id, isActive: true }),
-      ]);
-    },
-  );
+    protocol.dropTransport();
+    await protocol.waitForDisconnect(protocol.connections[0]);
+    await sdk.advance(3_000);
+    await protocol.waitForConnections(2);
+    expect(protocol.connections[1].auth.clientConditions).toEqual([
+      expect.objectContaining({ ...CONTENT, conditionId: rule.id, isActive: true }),
+    ]);
+  });
 });
 
 test.describe('wait timers', () => {
