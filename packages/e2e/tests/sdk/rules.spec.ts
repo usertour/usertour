@@ -170,24 +170,23 @@ test.describe('client-evaluated conditions', () => {
     });
   }
 
-  // FINDING: text-input `any` is true whenever the input exists, empty or not
-  // (usertour-rules-evaluator.ts isActiveRulesByTextInput), while the same
-  // operator on an attribute means "has a non-empty value". Pinned as the
-  // attribute semantics; fixme until the evaluator is aligned.
-  test.fixme(
-    'text-input any: true for a filled input, false once it is cleared',
-    async ({ sdk, protocol }) => {
-      await setup(sdk);
-      await sdk.page.fill('#email', 'x');
-      const reports = await track(protocol, textInputRule('#email', 'any'));
-      await expect.poll(() => reports().length).toBe(1);
-      expect(reports()[0].isActive).toBe(true);
-      await sdk.page.fill('#email', '');
-      await sdk.advance(1_000);
-      await expect.poll(() => reports().length).toBe(2);
-      expect(reports()[1].isActive).toBe(false);
-    },
-  );
+  // Regression: text-input `any` was true whenever the input existed, empty
+  // or not, while the same operator on an attribute means "has a non-empty
+  // value". The evaluator reads the value now, as `empty` always did.
+  test('text-input any: true for a filled input, false once it is cleared', async ({
+    sdk,
+    protocol,
+  }) => {
+    await setup(sdk);
+    await sdk.page.fill('#email', 'x');
+    const reports = await track(protocol, textInputRule('#email', 'any'));
+    await expect.poll(() => reports().length).toBe(1);
+    expect(reports()[0].isActive).toBe(true);
+    await sdk.page.fill('#email', '');
+    await sdk.advance(1_000);
+    await expect.poll(() => reports().length).toBe(2);
+    expect(reports()[1].isActive).toBe(false);
+  });
 
   test('text-fill: true once the user typed something new and paused for a second', async ({
     sdk,
