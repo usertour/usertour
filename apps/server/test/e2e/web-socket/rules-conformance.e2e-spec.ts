@@ -1225,14 +1225,14 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
       ).toBe(false);
     });
 
-    // Finding, pinned: the check that decides whether a tree is worth
-    // tracking (`filterActivatedContentWithoutClientConditions`) keeps only
-    // user-attr, segment, content, time and page leaves. An event leaf is
-    // dropped, so a group it alone satisfies reads as false, and the tree's
-    // browser leaf is never tracked: the content cannot start on that page.
-    // At the top level the same rule survives, since a list left empty by
-    // the filter counts as eligible.
-    it.skip('an event leaf that alone satisfies its OR group still gets the tree’s browser leaf tracked', async () => {
+    // Regression: the check that decides whether a tree is worth tracking
+    // (`filterActivatedContentWithoutClientConditions`) judged the tree on
+    // user-attr, segment, content, time and page leaves only. An event leaf
+    // was dropped, so a group it alone satisfied read as false and the
+    // tree's browser leaf was never tracked: the content could not start on
+    // that page. At the top level the same rule survived, since a list left
+    // empty by the filter counts as eligible.
+    it('an event leaf that alone satisfies its OR group still gets the tree’s browser leaf tracked', async () => {
       const { projectId, environment, plan } = await fresh();
       const signup = await buildEvent(prisma, { projectId, codeName: 'signed_up' });
       const beta = await buildSegment(prisma, {

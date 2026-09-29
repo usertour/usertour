@@ -640,11 +640,15 @@ export const filterActivatedContentWithoutClientConditions = (
     return [];
   }
 
-  // Define the condition types to filter by (server-side only conditions)
+  // The leaves the server has already answered. The tree is judged on these
+  // alone before its browser leaves are handed out for tracking; a leaf
+  // missing here is dropped from that judgement, so a group it alone
+  // satisfies reads as false and the browser leaves are never tracked.
   const allowedConditionTypes = [
     RulesType.USER_ATTR,
     RulesType.SEGMENT,
     RulesType.CONTENT,
+    RulesType.EVENT,
     RulesType.TIME,
     RulesType.CURRENT_PAGE,
   ];
