@@ -735,14 +735,13 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
       );
     });
 
-    // FINDING: the quiet period (`atLeast`) is measured against the latest event
-    // of another content of the same type, but that other content's type is
-    // looked up from the user's events — so a flow the user has never had an
-    // event for gets no latest event and the quiet period never applies to it.
-    // A brand-new flow starts right after another one was dismissed. Pinned
-    // here as the intended behaviour; skipped until the derivation is fixed
-    // (content-data.service getLatestEventByContentType).
-    it.skip('the quiet period holds a flow back while another flow was shown recently', async () => {
+    // Regression: the quiet period (`atLeast`) is measured against the latest
+    // event of another content of the same type, and that content's own type
+    // used to be looked up from the user's events — so a flow the user had
+    // never had an event for found no reference event and its quiet period
+    // never held: a brand-new flow started right after another one was
+    // dismissed. The type comes from the content row now.
+    it('the quiet period holds a flow back while another flow was shown recently', async () => {
       const { projectId, environment, plan } = await fresh();
       const user = await buildBizUser(prisma, {
         environmentId: environment.id,
