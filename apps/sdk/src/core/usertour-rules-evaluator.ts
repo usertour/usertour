@@ -317,8 +317,10 @@ export class RulesEvaluator extends Evented {
         return elValue.search(compareValue) !== -1;
       case StringConditionLogic.UNMATCH:
         return elValue.search(compareValue) === -1;
+      // `any` and `empty` are each other's negation, as on an attribute: the
+      // input must hold a non-empty value, not merely exist.
       case StringConditionLogic.ANY:
-        return true;
+        return !isEmptyString(elValue);
       case StringConditionLogic.EMPTY:
         return isEmptyString(elValue);
       default:
