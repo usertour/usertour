@@ -20,6 +20,7 @@ import {
   useSettingsForm,
 } from '@usertour/ui';
 import { AttributeDataTypeIcon } from '@usertour/business-components';
+import { isBucketingDataType } from '@usertour/helpers';
 import { useUpdateAttributeMutation } from '@usertour/hooks';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
 import { type Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
@@ -40,6 +41,8 @@ const schema = z.object({
     String(BizAttributeTypes.Boolean),
     String(BizAttributeTypes.DateTime),
     String(BizAttributeTypes.List),
+    String(BizAttributeTypes.RandomAB),
+    String(BizAttributeTypes.RandomNumber),
   ]),
   bizType: z.enum([
     String(AttributeBizTypes.User),
@@ -97,7 +100,34 @@ const DATA_TYPE_OPTIONS = [
     labelKey: 'settings.attributes.form.dataTypes.dateTime',
   },
   { value: String(BizAttributeTypes.List), labelKey: 'settings.attributes.form.dataTypes.list' },
+  {
+    value: String(BizAttributeTypes.RandomAB),
+    labelKey: 'settings.attributes.form.dataTypes.randomAB',
+  },
+  {
+    value: String(BizAttributeTypes.RandomNumber),
+    labelKey: 'settings.attributes.form.dataTypes.randomNumber',
+  },
 ] as const;
+
+// A bucketing type is locked at creation, in both directions (ADR 0020 §1):
+// the dropdown never offers it, and an attribute that has it never opens one.
+const DATA_TYPE_CHOICES = DATA_TYPE_OPTIONS.filter(
+  (option) => !isBucketingDataType(Number(option.value)),
+);
+
+// The Data type hint describes the selected type where it behaves unlike the
+// rest: a bucketing type is assigned by Usertour and locked after creation.
+const dataTypeTooltip = (t: (key: string) => string, dataType: number): string => {
+  const generic = t('settings.attributes.form.dataTypeTooltip');
+  if (dataType === BizAttributeTypes.RandomAB) {
+    return `${generic} ${t('settings.attributes.form.dataTypeHints.randomAB')}`;
+  }
+  if (dataType === BizAttributeTypes.RandomNumber) {
+    return `${generic} ${t('settings.attributes.form.dataTypeHints.randomNumber')}`;
+  }
+  return generic;
+};
 
 const toFormValues = (attribute: Attribute): FormValues => ({
   bizType: String(attribute.bizType) as FormValues['bizType'],
@@ -111,6 +141,7 @@ export const AttributeEditDialog = (props: AttributeEditDialogProps) => {
   const { attribute, open, onOpenChange, onSubmit } = props;
   const { invoke: updateAttribute } = useUpdateAttributeMutation();
   const { t } = useTranslation();
+  const isBucketing = isBucketingDataType(attribute.dataType);
 
   const state = useSettingsForm<FormValues>({
     schema,
@@ -198,52 +229,65 @@ export const AttributeEditDialog = (props: AttributeEditDialogProps) => {
                   <FormLabel className="flex flex-row">
                     {t('settings.attributes.form.dataTypeLabel')}
                     <QuestionTooltip className="inline ml-1">
-                      {t('settings.attributes.form.dataTypeTooltip')}
+                      {dataTypeTooltip(t, attribute.dataType)}
                     </QuestionTooltip>
                   </FormLabel>
-                  {/* modal={false}: outer Dialog already provides the
-                      focus trap, so the dropdown skips its own — avoids
-                      cascading aria-hidden onto the (still-focused)
-                      trigger button. */}
-                  <DropdownMenu modal={false}>
-                    <FormControl>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-72 justify-between font-normal"
-                        >
-                          {selected ? (
-                            <span className="flex items-center gap-1.5">
-                              <AttributeDataTypeIcon
-                                dataType={Number(selected.value)}
-                                className="h-4 w-4 shrink-0 text-muted-foreground"
-                              />
-                              {t(selected.labelKey)}
-                            </span>
-                          ) : (
-                            t('settings.attributes.form.dataTypePlaceholder')
-                          )}
-                          <CaretSortIcon className="h-4 w-4 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                    </FormControl>
-                    <DropdownMenuContent align="start" className="w-72">
-                      {DATA_TYPE_OPTIONS.map((option) => (
-                        <DropdownMenuItem
-                          key={option.value}
-                          className="gap-1.5"
-                          onSelect={() => field.onChange(option.value)}
-                        >
-                          <AttributeDataTypeIcon
-                            dataType={Number(option.value)}
-                            className="h-4 w-4 shrink-0 text-muted-foreground"
-                          />
-                          {t(option.labelKey)}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {/* A Random number's upper bound is a parameter of the
+                      type: same row as on creation, read-only like the type. */}
+                  <div className="flex w-72 gap-2">
+                    {/* modal={false}: outer Dialog already provides the
+                        focus trap, so the dropdown skips its own — avoids
+                        cascading aria-hidden onto the (still-focused)
+                        trigger button. */}
+                    <DropdownMenu modal={false}>
+                      <FormControl>
+                        <DropdownMenuTrigger asChild disabled={isBucketing}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="min-w-0 flex-1 justify-between font-normal"
+                          >
+                            {selected ? (
+                              <span className="flex min-w-0 items-center gap-1.5">
+                                <AttributeDataTypeIcon
+                                  dataType={Number(selected.value)}
+                                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                                />
+                                <span className="truncate">{t(selected.labelKey)}</span>
+                              </span>
+                            ) : (
+                              t('settings.attributes.form.dataTypePlaceholder')
+                            )}
+                            <CaretSortIcon className="h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </FormControl>
+                      <DropdownMenuContent align="start" className="w-72">
+                        {DATA_TYPE_CHOICES.map((option) => (
+                          <DropdownMenuItem
+                            key={option.value}
+                            className="gap-1.5"
+                            onSelect={() => field.onChange(option.value)}
+                          >
+                            <AttributeDataTypeIcon
+                              dataType={Number(option.value)}
+                              className="h-4 w-4 shrink-0 text-muted-foreground"
+                            />
+                            {t(option.labelKey)}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    {attribute.dataType === BizAttributeTypes.RandomNumber && (
+                      <Input
+                        aria-label={t('settings.attributes.form.randomMaxLabel')}
+                        className="h-8 w-24 shrink-0"
+                        disabled
+                        readOnly
+                        value={attribute.randomMax ?? ''}
+                      />
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               );

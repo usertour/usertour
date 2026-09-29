@@ -880,24 +880,24 @@ export class ObjectSyncService {
               dataType,
             );
           }
+          // One transaction per record: the upsert takes the entity row FOR
+          // UPDATE (ADR 0017 §4), which only holds inside a transaction.
           if (isUser) {
-            await this.biz.upsertBizUsers(
-              this.prisma,
-              pair.local.externalId,
-              values,
-              environmentId,
-              {
+            await this.prisma.$transaction((tx) =>
+              this.biz.upsertBizUsers(tx, pair.local.externalId, values, environmentId, {
                 origin: provider,
-              },
+              }),
             );
           } else {
-            await this.biz.upsertBizCompanyAttributes(
-              this.prisma,
-              projectId,
-              environmentId,
-              pair.local.externalId,
-              values,
-              { origin: provider },
+            await this.prisma.$transaction((tx) =>
+              this.biz.upsertBizCompanyAttributes(
+                tx,
+                projectId,
+                environmentId,
+                pair.local.externalId,
+                values,
+                { origin: provider },
+              ),
             );
           }
         }

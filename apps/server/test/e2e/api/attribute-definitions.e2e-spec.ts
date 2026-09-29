@@ -93,7 +93,8 @@ describe('API v2 /attribute-definitions parity with v1 (e2e)', () => {
     const v2item = v2.body.results.find((a: { codeName: string }) => a.codeName === codeName);
     // v2 additively exposes `predefined` (v1 never did); parity holds on the
     // common fields, so compare without the v2-only addition.
-    const { predefined: _v2Only, ...v2common } = v2item;
+    // `predefined` and `randomMax` (ADR 0020) exist on v2 only.
+    const { predefined: _v2Only, randomMax: _v2OnlyRange, ...v2common } = v2item;
     expect(v1item).toBeDefined();
     expect(v2common).toEqual(v1item);
   });

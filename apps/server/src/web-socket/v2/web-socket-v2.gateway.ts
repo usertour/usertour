@@ -11,14 +11,25 @@ import { Server, Socket } from 'socket.io';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
 import { WebSocketThrottlerGuard } from './web-socket-throttler.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/modules/common/errors/errors';
+import { BaseError } from '@/modules/common/errors/base-error';
 import { WebSocketV2Service } from './web-socket-v2.service';
 import { SocketAuthData } from '@usertour/types';
+import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { ClientMessageDto } from './web-socket-v2.dto';
 import { buildExternalUserRoomId } from '../utils/websocket.util';
 import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 import { WebSocketMessageValidationPipe } from './web-socket-message-validation.pipe';
+
+/**
+ * Socket.IO forwards `err.data` with a handshake rejection, and it abandons
+ * the socket after any rejection — so the client must be told whether the
+ * fault is its own (bad credentials: give up until they change) or the
+ * server's (retry with backoff). ADR 0018 §2.
+ */
+const handshakeRejection = (error: BaseError, retryable: boolean): Error =>
+  Object.assign(error, { data: { code: error.code, retryable } });
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -33,6 +44,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     private readonly messageHandler: WebSocketV2MessageHandler,
     private readonly queueService: SocketMessageQueueService,
     private readonly socketDataService: SocketDataService,
+    private readonly validationPipe: WebSocketMessageValidationPipe,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -40,28 +52,34 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     this.server = server;
 
     server.use(async (socket: Socket, next) => {
+      const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
+
+      // Store token in socket.data for logging purposes
+      if (auth.token && typeof auth.token === 'string') {
+        socket.data.token = auth.token;
+      }
+
+      // A null result is a credential verdict (missing fields, unknown token,
+      // rejected identity); a throw is a server fault (database, Redis,
+      // session lookup). Only the former is the client's to fix.
+      let socketData: SocketData | null;
       try {
-        const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
-
-        // Store token in socket.data for logging purposes
-        if (auth.token && typeof auth.token === 'string') {
-          socket.data.token = auth.token;
-        }
-
-        // Initialize and validate client data
-        const socketData = await this.service.initializeSocketData(
-          auth as unknown as SocketAuthData,
+        socketData = await this.service.initializeSocketData(auth as unknown as SocketAuthData);
+      } catch (error: unknown) {
+        this.logger.error(
+          `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
         );
-        if (!socketData) {
-          return next(new SDKAuthenticationError());
-        }
+        return next(handshakeRejection(new ServiceUnavailableError(), true));
+      }
+      if (!socketData) {
+        return next(handshakeRejection(new SDKAuthenticationError(), false));
+      }
 
-        // Store client data in Redis using socket ID
-        const success = await this.socketDataService.set(socket, socketData);
-        if (!success) {
-          return next(new SDKAuthenticationError());
-        }
-
+      // A rejected socket never reaches handleDisconnect, so nothing may be
+      // stored for it before the handshake is sure to succeed: the capacity
+      // check comes first, and a failure after the store deletes it again.
+      let stored = false;
+      try {
         // Build room ID and check capacity
         const room = buildExternalUserRoomId(socketData.environment.id, socketData.externalUserId);
         const socketsInRoom = await this.server.in(room).fetchSockets();
@@ -69,17 +87,34 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
           this.logger.warn(
             `Room ${room} has reached maximum capacity (100 sockets). Rejecting connection for socket ${socket.id}`,
           );
-          return next(new ServiceUnavailableError('Room capacity exceeded'));
+          return next(
+            handshakeRejection(new ServiceUnavailableError('Room capacity exceeded'), true),
+          );
+        }
+
+        // Store client data in Redis using socket ID
+        stored = await this.socketDataService.set(socket, socketData);
+        if (!stored) {
+          return next(handshakeRejection(new ServiceUnavailableError(), true));
         }
 
         // Join user room for targeted messaging
         await socket.join(room);
 
-        this.logger.log(`Socket ${socket.id} authenticated for user ${socketData.externalUserId}`);
+        // The version names the bundle this connection runs: after a release,
+        // the lines still saying the previous one are the pages not yet reloaded.
+        this.logger.log(
+          `Socket ${socket.id} authenticated for user ${socketData.externalUserId} (sdk ${socketData.sdkVersion ?? 'unknown'})`,
+        );
         return next();
       } catch (error: unknown) {
-        this.logger.error(`Auth error: ${(error as Error)?.message ?? 'Unknown error'}`);
-        return next(new SDKAuthenticationError());
+        this.logger.error(
+          `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
+        );
+        if (stored) {
+          await this.socketDataService.delete(socket).catch(() => undefined);
+        }
+        return next(handshakeRejection(new ServiceUnavailableError(), true));
       }
     });
   }
@@ -120,8 +155,25 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   @UseGuards(WebSocketThrottlerGuard)
   async handleClientMessage(
     @ConnectedSocket() socket: Socket,
-    @MessageBody(WebSocketMessageValidationPipe) message: ClientMessageDto,
+    @MessageBody() raw: unknown,
   ): Promise<any> {
+    // The guard marked this message object if it is over the limit.
+    if (WebSocketThrottlerGuard.consumeRefusal(raw)) {
+      return false;
+    }
+    // Validated here rather than by a parameter pipe: a pipe that throws
+    // leaves the message without an acknowledgement, and the SDK then takes
+    // a malformed message for a network failure and resends it (ADR 0018
+    // §4). A refused message is answered `false` like any other refusal.
+    let message: ClientMessageDto;
+    try {
+      message = await this.validationPipe.transform(raw);
+    } catch (error) {
+      this.logger.warn(
+        `Refused client message from socket ${socket.id}: ${(error as Error).message}`,
+      );
+      return false;
+    }
     const { kind, payload, requestId } = message;
 
     this.logger.debug(

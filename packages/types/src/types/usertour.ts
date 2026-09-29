@@ -5,17 +5,25 @@ export interface Usertour {
 
   init: (token: string) => void;
 
-  identify: (userId: string, attributes?: Attributes, opts?: IdentifyOptions) => Promise<void>;
+  identify: (
+    userId: string,
+    attributes?: Attributes,
+    opts?: IdentifyOptions,
+  ) => Promise<AttributesWriteResult>;
 
   // No identity-token option: anonymous ids are minted client-side by the
   // SDK, so a backend can never sign one — the server exempts them by format.
-  identifyAnonymous: (attributes?: Attributes) => Promise<void>;
+  identifyAnonymous: (attributes?: Attributes) => Promise<AttributesWriteResult>;
 
-  updateUser: (attributes: Attributes, opts?: IdentifyOptions) => Promise<void>;
+  updateUser: (attributes: Attributes, opts?: IdentifyOptions) => Promise<AttributesWriteResult>;
 
-  group: (groupId: string, attributes?: Attributes, opts?: GroupOptions) => Promise<void>;
+  group: (
+    groupId: string,
+    attributes?: Attributes,
+    opts?: GroupOptions,
+  ) => Promise<AttributesWriteResult>;
 
-  updateGroup: (attributes: Attributes, opts?: GroupOptions) => Promise<void>;
+  updateGroup: (attributes: Attributes, opts?: GroupOptions) => Promise<AttributesWriteResult>;
 
   track(name: string, attributes?: EventAttributes, opts?: TrackOptions): Promise<void>;
 
@@ -67,6 +75,13 @@ export interface Usertour {
   setBaseZIndex(baseZIndex: number): void;
   setTargetMissingSeconds(seconds: number): void;
 
+  /**
+   * Turn the SDK's console logging on or off. Off by default; effective at
+   * once and remembered for future page loads until switched off. The same
+   * gate opens for one page load with `?usertour_debug=1` in the URL.
+   */
+  setDebug(enabled: boolean): void;
+
   // setServerEndpoint(serverEndpoint: string | null | undefined): void;
 
   disableEvalJs(): void;
@@ -84,25 +99,95 @@ export interface Usertour {
   isResourceCenterOpen: () => boolean;
 }
 
+/**
+ * Attribute values (ADR 0017): a literal, `null` to remove the attribute, a
+ * `Date` (sent as ISO 8601 UTC), or exactly one operation object.
+ */
 export interface Attributes {
-  [name: string]: AttributeLiteralOrList | AttributeChange;
+  [name: string]: AttributeValue | AttributeOperation | LegacyAttributeChange;
 }
 
 type AttributeLiteral = string | number | boolean | null | undefined;
 type AttributeLiteralOrList = AttributeLiteral | AttributeLiteral[];
+type AttributeValue = AttributeLiteralOrList | Date;
 
-interface AttributeChange {
-  set?: AttributeLiteralOrList;
-  set_once?: AttributeLiteralOrList;
-  add?: string | number;
-  subtract?: string | number;
+/**
+ * Pins the type of the attribute definition when this write creates it. It
+ * never retypes an existing definition — a conflicting `data_type` is
+ * rejected; change the type in the attribute settings instead.
+ */
+type AttributeDataType = 'string' | 'boolean' | 'number' | 'datetime' | 'list';
+
+/** Exactly one operation per attribute. */
+type AttributeOperation =
+  | {
+      /** Set the value (same as a literal), optionally pinning `data_type`. */
+      set: AttributeValue;
+      data_type?: AttributeDataType;
+      set_once?: never;
+      add?: never;
+      union?: never;
+      remove?: never;
+    }
+  | {
+      /** Set the value only when the attribute has no value yet. */
+      set_once: AttributeValue;
+      data_type?: AttributeDataType;
+      set?: never;
+      add?: never;
+      union?: never;
+      remove?: never;
+    }
+  | {
+      /** Add to a Number attribute (negative to subtract); a missing value starts at 0. */
+      add: number;
+      set?: never;
+      set_once?: never;
+      union?: never;
+      remove?: never;
+      data_type?: never;
+    }
+  | {
+      /** Append the value(s) not yet present to a List attribute; a missing list starts empty. */
+      union: AttributeLiteralOrList;
+      set?: never;
+      set_once?: never;
+      add?: never;
+      remove?: never;
+      data_type?: never;
+    }
+  | {
+      /** Remove every matching value from a List attribute; a missing attribute stays undefined. */
+      remove: AttributeLiteralOrList;
+      set?: never;
+      set_once?: never;
+      add?: never;
+      union?: never;
+      data_type?: never;
+    };
+
+/**
+ * Operation spellings the SDK still translates for compatibility. Each one
+ * is deprecated; the SDK rewrites it and logs a warning.
+ */
+interface LegacyAttributeChange {
+  /** @deprecated Use `{ add: -n }`. */
+  subtract?: number;
+  /** @deprecated Use `{ union: values }` — lists are deduplicated sets. */
   append?: AttributeLiteralOrList;
+  /** @deprecated Use `{ union: values }` — list order is never observable. */
   prepend?: AttributeLiteralOrList;
-  remove?: AttributeLiteralOrList;
-  data_type?: AttributeDataType;
 }
 
-type AttributeDataType = 'string' | 'boolean' | 'number' | 'datetime' | 'list';
+/**
+ * What an identify / update call reports back: the write succeeded, and
+ * `rejected` names any attribute the server refused (a value that does not
+ * fit the attribute's type, an operation written incorrectly, a
+ * system-generated attribute) with the reason. Every other key was written.
+ */
+export interface AttributesWriteResult {
+  rejected: Array<{ codeName: string; reason: string }>;
+}
 
 export type IdentifyOptions = {
   /**
@@ -121,12 +206,14 @@ export interface GroupOptions {
   membership?: Attributes;
 }
 
+/** Events are immutable facts: a literal, a `Date`, or `{set, data_type}` only. */
 export interface EventAttributes {
-  [name: string]: AttributeLiteral | EventAttributeChange;
+  [name: string]: AttributeValue | EventAttributeChange;
 }
 
 interface EventAttributeChange {
-  set?: AttributeLiteral;
+  set: AttributeValue;
+  /** Pins the type of a new event attribute definition; never retypes an existing one. */
   data_type?: AttributeDataType;
 }
 

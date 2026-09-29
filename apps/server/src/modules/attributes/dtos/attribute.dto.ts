@@ -24,6 +24,10 @@ export class AttributeDTO extends BaseDTO {
   @Field(() => Int)
   dataType: number;
 
+  /** Upper bound of a Random number attribute (ADR 0020); meaningless for other types. */
+  @Field(() => Int, { nullable: true })
+  randomMax?: number | null;
+
   @Field(() => Boolean)
   predefined: boolean;
 

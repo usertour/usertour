@@ -7,6 +7,7 @@ import {
 import { executeUserCode } from '@usertour/helpers';
 import { logger, timerManager } from '@/utils';
 
+const log = logger.scope('live-chat');
 // ============================================================================
 // Callbacks — the manager notifies the owner when provider state changes
 // ============================================================================
@@ -108,8 +109,8 @@ export class UsertourLiveChatManager {
    */
   open(block: ResourceCenterLiveChatBlock): boolean {
     if (!this.isProviderAvailable(block.liveChatProvider)) {
-      logger.warn(
-        `Live chat provider "${block.liveChatProvider}" is not detected on this page — install the provider's script on the host page, or the chat cannot open.`,
+      log.warn(
+        `Live chat provider "${block.liveChatProvider}" was not detected on this page; install its script on the host page or the chat cannot open`,
       );
       return false;
     }
@@ -133,7 +134,7 @@ export class UsertourLiveChatManager {
   executeCustomCode(block: ResourceCenterLiveChatBlock): void {
     if (block.liveChatProvider !== LiveChatProvider.CUSTOM) return;
     if (this.callbacks.isEvalJsDisabled?.()) {
-      logger.warn('JavaScript evaluation is disabled. Skipping custom live chat code.');
+      log.warn('JavaScript evaluation is disabled; the custom live chat code was skipped');
       return;
     }
     if (block.customLiveChatCode) {
@@ -341,7 +342,7 @@ export class UsertourLiveChatManager {
         if (Date.now() - startedAt > UsertourLiveChatManager.HUBSPOT_READY_TIMEOUT_MS) {
           timerManager.clearInterval(timerId);
           if (!disposed) {
-            logger.warn('HubSpot live chat did not become ready in time; restoring the UI.');
+            log.warn('HubSpot live chat did not become ready in time; restoring the UI');
             onClose();
           }
         }

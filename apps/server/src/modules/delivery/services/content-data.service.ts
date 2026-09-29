@@ -21,8 +21,10 @@ import {
   ThemeVariation,
 } from '@usertour/types';
 import {
+  bucketValue,
   buildConfig,
   isArray,
+  isBucketingDataType,
   isVersionDataLocalizable,
   matchTranslationByLocale,
   mergeLocalizedEditorContents,
@@ -90,10 +92,44 @@ type VersionWithSession = {
 };
 
 /**
- * Event with bizSession and content info for latest event calculation
+ * Event with bizSession and content info for the sibling-event calculation
  */
 type BizEventWithSessionAndContent = BizEventWithEvent & {
   bizSession: { contentId: string | null; content: { type: string } | null } | null;
+};
+
+/** A content the session fan-out runs for: its id, and its type as the content row says. */
+type ContentRef = { id: string; type: ContentDataType };
+
+/** The distinct contents behind a list of versions, each with its type. */
+const contentRefsOf = (versions: VersionWithStepsAndContent[]): ContentRef[] => {
+  const refs = new Map<string, ContentRef>();
+  for (const version of versions) {
+    if (!refs.has(version.content.id)) {
+      refs.set(version.content.id, {
+        id: version.content.id,
+        type: version.content.type as ContentDataType,
+      });
+    }
+  }
+  return [...refs.values()];
+};
+
+/**
+ * The stored value, or — for a bucketing definition the backfill has not
+ * reached, or that a row was born without — the value it derives to (ADR
+ * 0020 §3). The SDK evaluates its own conditions on what this returns, so it
+ * must see what the server's evaluation sees.
+ */
+const storedOrBucketed = (attr: Attribute, externalId: string, data: unknown): unknown => {
+  const stored = data ? getAttributeValue(data, attr.codeName) : null;
+  if (stored !== null && stored !== undefined) {
+    return stored;
+  }
+  if (!isBucketingDataType(attr.dataType)) {
+    return null;
+  }
+  return bucketValue(attr, externalId) ?? null;
 };
 
 /**
@@ -171,9 +207,9 @@ export class ContentDataService {
       }
 
       // Step 2: Find session data and attributes in parallel
-      const contentIds = versions.map((v) => v.content.id);
+      const contents = contentRefsOf(versions);
       const [sessions, attributes] = await Promise.all([
-        this.findSessions(contentIds, bizUser.id),
+        this.findSessions(contents, bizUser.id),
         this.findAttributes(environment),
       ]);
 
@@ -242,15 +278,13 @@ export class ContentDataService {
       return;
     }
 
-    const unionContentIds = [
-      ...new Set(versionsByType.flat().map((version) => version.content.id)),
-    ];
-    if (unionContentIds.length === 0) {
+    const unionContents = contentRefsOf(versionsByType.flat());
+    if (unionContents.length === 0) {
       return;
     }
 
     // Bypass the memo on this single canonical fetch — we ARE the writer.
-    const fullMap = await this.findSessionsFromDB(unionContentIds, bizUser.id);
+    const fullMap = await this.findSessionsFromDB(unionContents, bizUser.id);
     this.cache.memoSet(this.cache.memoKeys.toggleSessions(bizUser.id), fullMap);
   }
 
@@ -458,10 +492,7 @@ export class ContentDataService {
     }
 
     if (attr.bizType === AttributeBizType.USER) {
-      if (bizUser?.data) {
-        return getAttributeValue(bizUser.data, attr.codeName);
-      }
-      return null;
+      return storedOrBucketed(attr, bizUser.externalId, bizUser.data);
     }
 
     if (attr.bizType === AttributeBizType.COMPANY || attr.bizType === AttributeBizType.MEMBERSHIP) {
@@ -500,7 +531,7 @@ export class ContentDataService {
       }
 
       if (attr.bizType === AttributeBizType.COMPANY) {
-        return getAttributeValue(bizCompany.data, attr.codeName);
+        return storedOrBucketed(attr, bizCompany.externalId, bizCompany.data);
       }
 
       if (attr.bizType === AttributeBizType.MEMBERSHIP) {
@@ -747,9 +778,10 @@ export class ContentDataService {
    * callers outside the toggleContents pre-fetch path working unchanged.
    */
   private async findSessions(
-    contentIds: string[],
+    contents: ContentRef[],
     bizUserId: string,
   ): Promise<Map<string, ContentSessionCollection>> {
+    const contentIds = contents.map((content) => content.id);
     const prefetched = this.cache.peekMemo<Map<string, ContentSessionCollection>>(
       this.cache.memoKeys.toggleSessions(bizUserId),
     );
@@ -765,7 +797,7 @@ export class ContentDataService {
       }
       return subset;
     }
-    return this.findSessionsFromDB(contentIds, bizUserId);
+    return this.findSessionsFromDB(contents, bizUserId);
   }
 
   /**
@@ -774,9 +806,10 @@ export class ContentDataService {
    * outside the toggleContents pre-fetch flow.
    */
   private async findSessionsFromDB(
-    contentIds: string[],
+    contents: ContentRef[],
     bizUserId: string,
   ): Promise<Map<string, ContentSessionCollection>> {
+    const contentIds = contents.map((content) => content.id);
     const [activeSessions, totalCounts, completedCounts, events] = await Promise.all([
       this.findSessionsByContent(contentIds, bizUserId, 0),
       this.findSessionCounts(contentIds, bizUserId),
@@ -784,8 +817,8 @@ export class ContentDataService {
       this.findEventsByContentIds(contentIds, bizUserId),
     ]);
 
-    // Process latestEvents and latestDismissedEvents from the same events data
-    const latestEvents = this.getLatestEventByContentType(events, contentIds);
+    // Process latestSiblingEvents and latestDismissedEvents from the same events data
+    const latestSiblingEvents = this.getLatestSiblingEventByContentType(events, contents);
     const latestDismissedEvents = this.getLatestDismissedEvents(events);
 
     const sessions = new Map<string, ContentSessionCollection>();
@@ -794,14 +827,14 @@ export class ContentDataService {
       const activeSession = activeSessions.get(contentId) || null;
       const totalSessions = totalCounts.get(contentId) ?? 0;
       const completedSessions = completedCounts.get(contentId) ?? 0;
-      const latestEvent = latestEvents.get(contentId);
+      const latestSiblingEvent = latestSiblingEvents.get(contentId);
       const latestDismissedEvent = latestDismissedEvents.get(contentId);
 
       sessions.set(contentId, {
         activeSession,
         totalSessions,
         completedSessions,
-        latestEvent,
+        latestSiblingEvent,
         latestDismissedEvent,
       });
     }
@@ -923,45 +956,34 @@ export class ContentDataService {
   }
 
   /**
-   * Get latest event for each contentId from other contents with the same contentType
-   * @param events - Array of events with bizSession and content info, ordered by createdAt desc
-   * @param contentIds - Array of content IDs to find latest events for
-   * @returns Map of contentId to latest event from other contents with same contentType
+   * For each content, the user's latest event on ANOTHER content of the same
+   * type: what the quiet period (`frequency.atLeast`) measures from.
+   * @param events - The user's events on these contents, ordered by createdAt desc
+   * @param contents - The contents to find a reference event for, with their types
+   * @returns Map of contentId to the latest event of another content of its type
    */
-  private getLatestEventByContentType(
+  private getLatestSiblingEventByContentType(
     events: BizEventWithSessionAndContent[],
-    contentIds: string[],
+    contents: ContentRef[],
   ): Map<string, BizEventWithEvent> {
     const latestEventMap = new Map<string, BizEventWithEvent>();
 
-    if (contentIds.length === 0 || events.length === 0) {
+    if (contents.length === 0 || events.length === 0) {
       return latestEventMap;
     }
 
-    // Build contentId -> contentType map
-    const contentTypeMap = new Map<string, ContentDataType>();
-    for (const event of events) {
-      const contentId = event.bizSession?.contentId;
-      const contentType = event.bizSession?.content?.type as ContentDataType | undefined;
-      if (contentId && contentType && !contentTypeMap.has(contentId)) {
-        contentTypeMap.set(contentId, contentType);
-      }
-    }
-
-    // For each contentId, find the first event from other contents with same contentType
-    for (const contentId of contentIds) {
-      const contentType = contentTypeMap.get(contentId);
-      if (!contentType) {
-        continue;
-      }
-
-      const latestEvent = events.find(
+    // The type comes from the content row, never from the user's events: a
+    // content the user has no event for yet — every content, the first time
+    // — must still find the other contents' events, or its quiet period
+    // never holds.
+    for (const { id: contentId, type: contentType } of contents) {
+      const latestSiblingEvent = events.find(
         (event) =>
           event.bizSession?.contentId !== contentId &&
           event.bizSession?.content?.type === contentType,
       );
-      if (latestEvent) {
-        const { bizSession, ...bizEventWithEvent } = latestEvent;
+      if (latestSiblingEvent) {
+        const { bizSession, ...bizEventWithEvent } = latestSiblingEvent;
         latestEventMap.set(contentId, bizEventWithEvent);
       }
     }

@@ -6,6 +6,7 @@ import { uuidV4 } from '@usertour/helpers';
 import { ConditionWaitTimer } from '@usertour/types';
 import { MAX_WAIT_SECONDS, SDKClientEvents } from '@usertour/constants';
 
+const log = logger.scope('wait-timer');
 // === Interfaces ===
 /**
  * Options for wait timer monitoring
@@ -31,6 +32,8 @@ interface WaitTimerItem extends ConditionWaitTimer {
   timerId: string;
   startTime: number;
   isActive: boolean;
+  /** Set once the timer fired; the record stays so a reconnect can declare it (ADR 0018 §6). */
+  fired?: boolean;
 }
 
 /**
@@ -90,9 +93,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     // Report timer started
     this.reportWaitTimerStateChange(condition, 'started');
 
-    logger.info(
-      `Wait timer started for versionId: ${condition.versionId}, waitTime: ${condition.waitTime}s`,
-    );
+    log.debug(`Wait timer started (version ${condition.versionId}, ${condition.waitTime}s)`);
   }
 
   /**
@@ -118,7 +119,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     // Report timer cancelled
     this.reportWaitTimerStateChange(waitTimerItem, 'cancelled');
 
-    logger.info(`Wait timer cancelled for versionId: ${versionId}`);
+    log.debug(`Wait timer cancelled (version ${versionId})`);
   }
 
   // === Status Queries ===
@@ -137,6 +138,25 @@ export class ConditionWaitTimersMonitor extends Evented {
     }
 
     return activeTimers;
+  }
+
+  /**
+   * Every timer the SDK knows — running ones and fired ones — in the shape
+   * the handshake declares them: `activated` marks a fired timer.
+   */
+  getWaitTimers(): ConditionWaitTimer[] {
+    const timers: ConditionWaitTimer[] = [];
+    for (const waitTimerItem of this.waitTimers.values()) {
+      const { contentId, contentType, versionId, waitTime } = waitTimerItem;
+      timers.push({
+        contentId,
+        contentType,
+        versionId,
+        waitTime,
+        activated: waitTimerItem.fired === true,
+      });
+    }
+    return timers;
   }
 
   /**
@@ -192,16 +212,17 @@ export class ConditionWaitTimersMonitor extends Evented {
       return; // Timer not found or already cancelled
     }
 
-    // Mark as inactive
+    // Mark as inactive but keep the record: the handshake declares fired
+    // timers too, so a reconnect does not forget the wait already served.
+    // It leaves the map on cancel (the server's cancel, a restart of the
+    // same version, or cleanup).
     waitTimerItem.isActive = false;
-
-    // Remove from map
-    this.waitTimers.delete(versionId);
+    waitTimerItem.fired = true;
 
     // Report timer fired
     this.reportWaitTimerStateChange(waitTimerItem, 'fired');
 
-    logger.info(`Wait timer fired for versionId: ${versionId}`);
+    log.debug(`Wait timer fired (version ${versionId})`);
   }
 
   /**
@@ -217,7 +238,7 @@ export class ConditionWaitTimersMonitor extends Evented {
     }
 
     this.waitTimers.clear();
-    logger.info('All wait timers cleared');
+    log.debug('All wait timers cleared');
   }
 
   // === Event Reporting ===
@@ -236,13 +257,11 @@ export class ConditionWaitTimersMonitor extends Evented {
         state,
       };
 
-      // Emit event for external listeners
+      // Emit event for external listeners; the log line is the caller's — one
+      // per timer for start / fire / cancel, one summary for clearing all.
       this.trigger(SDKClientEvents.WAIT_TIMER_STATE_CHANGED, eventData);
-
-      // Log for debugging
-      logger.info(`Wait timer ${state}:`, eventData);
     } catch (error) {
-      logger.error(`Error reporting wait timer ${state}:`, error);
+      log.error(`Failed to report the wait timer state (${state})`, error);
     }
   }
 

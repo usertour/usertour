@@ -27,3 +27,12 @@ export const trackerSystemReservedEventAttributes: EventAttributes[] = [
   ...trackerSystemMetadataAttributes,
   ...systemClientContextAttributes,
 ];
+
+/**
+ * Random bucketing attributes (ADR 0020). A Random A/B attribute holds one of
+ * these two values; a Random number attribute holds an integer in
+ * `[1, randomMax]`, with `randomMax` bounded below and above.
+ */
+export const RANDOM_AB_VALUES = ['A', 'B'] as const;
+export const RANDOM_NUMBER_RANGE_MIN = 2;
+export const RANDOM_NUMBER_RANGE_MAX = 10000;

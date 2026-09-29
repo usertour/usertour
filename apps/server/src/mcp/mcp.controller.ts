@@ -2,6 +2,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { Controller, Delete, Get, Post, Req, Res, UseFilters, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 
+import { protoKeyPath } from '@/api/shared/proto-key';
 import { AuthedApiToken } from '@/modules/api-token/services/api-token-auth.service';
 import { OpenAPIExceptionFilter } from '@/modules/common/filters/openapi-exception.filter';
 
@@ -36,6 +37,20 @@ export class McpController {
   @Post()
   async handle(@Req() req: Request, @Res() res: Response): Promise<void> {
     const token = (req as Request & { apiToken: AuthedApiToken }).apiToken;
+
+    // Tool arguments are parsed by the SDK with the v2 zod schemas, whose
+    // records drop an own `__proto__` key before any rule sees it. Refused
+    // on the raw body, as the v2 pipe refuses it (JSON-RPC invalid params).
+    const protoKey = protoKeyPath(req.body);
+    if (protoKey) {
+      const id = (req.body as { id?: unknown } | undefined)?.id ?? null;
+      res.status(400).json({
+        jsonrpc: '2.0',
+        id,
+        error: { code: -32602, message: `"__proto__" is not a valid key (at ${protoKey})` },
+      });
+      return;
+    }
 
     const server = this.mcp.createServer(token);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });

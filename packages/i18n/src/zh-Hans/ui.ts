@@ -508,6 +508,15 @@ const translations = {
         codeNameLabel: '代码名',
         codeNameTooltip: '代码中引用该属性的标识符,例如「billing_plan」。',
         codeNamePlaceholder: '请输入代码名',
+        dataTypeHints: {
+          randomAB:
+            '随机 A/B:Usertour 给每个用户或公司均匀分配「A」或「B」。不能通过代码设置,创建后类型不可更改。',
+          randomNumber:
+            '随机数字:Usertour 给每个用户或公司均匀分配一个 1 到你填写的上限(2–10000)之间的整数。不能通过代码设置,创建后类型和上限都不可更改。',
+        },
+        randomMaxLabel: '上限',
+        randomMaxPlaceholder: '上限',
+        randomMaxInvalid: '请输入 2 到 10000 之间的上限。',
         bizTypes: {
           user: '用户',
           company: '公司',

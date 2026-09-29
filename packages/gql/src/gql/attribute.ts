@@ -22,6 +22,7 @@ export const updateAttribute = gql`
       displayName
       projectId
       dataType
+      randomMax
       description
       createdAt
       predefined
@@ -40,6 +41,7 @@ export const listAttributes = gql`
       displayName
       projectId
       dataType
+      randomMax
       description
       createdAt
       predefined

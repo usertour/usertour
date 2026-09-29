@@ -65,12 +65,24 @@ import { Logger } from '@nestjs/common';
               ]
             : []),
         ],
-        // Engine-level query event so SQL inside $transaction(callback) is also visible.
-        // Middleware cannot intercept transactional operations.
-        prismaOptions:
-          process.env.ENABLE_PRISMA_LOGGING === 'true'
-            ? { log: [{ emit: 'event', level: 'query' }] }
-            : undefined,
+        prismaOptions: {
+          // An interactive transaction waits 2s for a pool connection and
+          // may run 5s by default, while a plain query waits the pool's 10s.
+          // The identify and group writes run inside one since ADR 0017 (the
+          // row lock needs it) and must not fail sooner than a plain query
+          // would when the pool is busy: on the socket path the failure the
+          // SDK can recover from is the queue's 10s timeout (no answer, so
+          // the write is replayed), not a Prisma error (answered `false`,
+          // which the SDK takes for a refusal). Both limits therefore sit
+          // above the queue's budget.
+          transactionOptions: { maxWait: 10_000, timeout: 15_000 },
+          // Engine-level query event so SQL inside $transaction(callback) is also visible.
+          // Middleware cannot intercept transactional operations.
+          log:
+            process.env.ENABLE_PRISMA_LOGGING === 'true'
+              ? [{ emit: 'event', level: 'query' }]
+              : undefined,
+        },
       },
     }),
     LoggerModule.forRootAsync({

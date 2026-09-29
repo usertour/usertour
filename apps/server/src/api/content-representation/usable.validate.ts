@@ -11,20 +11,21 @@ import { collectRuleIssues } from './condition-validate';
 import { stepCapabilities } from './contract-map';
 import { matchesOembedProvider } from '@/modules/utilities/utils/embed-resolve.util';
 import {
+  BizAttributeTypes,
+  ContentActionsItemType,
+  ContentDataType,
+  LauncherActionType,
+  ResourceCenterBlockType,
+  StepContentType,
   type AnnouncementData,
   type BannerData,
   type ChecklistData,
-  ContentActionsItemType,
-  ContentDataType,
   type ContentEditorRoot,
   type ElementSelectorPropsData,
-  LauncherActionType,
   type LauncherData,
   type ResourceCenterData,
-  ResourceCenterBlockType,
   type RulesCondition,
   type Step,
-  StepContentType,
 } from '@usertour/types';
 import { BANNER_EMBED_PLACEMENTS_REQUIRING_ELEMENT } from '@usertour/constants';
 
@@ -578,6 +579,24 @@ function collectEmbedResolutionWarnings(
 // Expected bound-attribute data type per question element type: numeric answers
 // (nps / ratings / scale) need Number; text and single-select store String;
 // multi-select stores a List. Mirrors the answer payload the runtime writes.
+/**
+ * Whether an answer of one type lands in an attribute of another. The upsert
+ * coerces losslessly (ADR 0017 §3): a number or a boolean stringifies, any
+ * scalar wraps into a one-element list; everything else is refused.
+ */
+const answerFits = (answer: number, attribute: number): boolean => {
+  if (answer === attribute) {
+    return true;
+  }
+  if (attribute === BizAttributeTypes.List) {
+    return true;
+  }
+  if (attribute === BizAttributeTypes.String) {
+    return answer === BizAttributeTypes.Number || answer === BizAttributeTypes.Boolean;
+  }
+  return false;
+};
+
 const QUESTION_BIND_TYPE: Record<string, { type: number; label: string }> = {
   nps: { type: 1, label: 'number' },
   'star-rating': { type: 1, label: 'number' },
@@ -660,15 +679,19 @@ function collectBindIssues(
       );
       continue;
     }
-    // Type fit: a mismatched bind also captures nothing at runtime (the upsert
-    // rejects the value) — same silent-no-op class as a dangling codeName.
+    // Type fit: an answer the upsert cannot coerce into the attribute is
+    // refused at runtime — same silent-no-op class as a dangling codeName.
     const expected =
       type === 'multiple-choice'
         ? d.allowMultiple
           ? { type: 4, label: 'list' }
           : { type: 2, label: 'string' }
         : QUESTION_BIND_TYPE[type];
-    if (expected && typeof attr.dataType === 'number' && attr.dataType !== expected.type) {
+    if (
+      expected &&
+      typeof attr.dataType === 'number' &&
+      !answerFits(expected.type, attr.dataType)
+    ) {
       warn(
         base,
         `A ${type} question binds to attribute "${d.selectedAttribute}", whose data type does not match the answer (${expected.label} expected) — the answer records as a response but the attribute silently captures nothing. Bind a ${expected.label}-typed attribute.`,

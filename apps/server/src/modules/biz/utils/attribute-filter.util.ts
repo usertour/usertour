@@ -3,6 +3,7 @@ import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-t
 import { Prisma } from '@prisma/client';
 import { endOfDay, startOfDay, subDays } from 'date-fns';
 import { BizAttributeTypes } from '@usertour/types';
+import { effectiveDataType } from '@usertour/helpers';
 
 export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   const { data = {} } = condition;
@@ -11,7 +12,9 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
   if (!attr) {
     return false;
   }
-  if (attr.dataType === BizAttributeTypes.String) {
+  // A bucketing attribute (ADR 0020) filters as the type it resembles.
+  const dataType = effectiveDataType(attr.dataType);
+  if (dataType === BizAttributeTypes.String) {
     switch (logic) {
       case 'is':
         return { data: { path: [attr.codeName], equals: value } };
@@ -59,7 +62,7 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
       // return { data: { path: [attr.codeName], not: "" } };
     }
   }
-  if (attr.dataType === BizAttributeTypes.Number) {
+  if (dataType === BizAttributeTypes.Number) {
     const intValue = Number(value);
     const intValue2 = Number(value2);
     switch (logic) {
@@ -103,7 +106,7 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
       // return { data: { path: [attr.codeName], not: "" } };
     }
   }
-  if (attr.dataType === BizAttributeTypes.Boolean) {
+  if (dataType === BizAttributeTypes.Boolean) {
     switch (logic) {
       case 'true':
         return { data: { path: [attr.codeName], equals: true } };
@@ -127,7 +130,30 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
       // return { data: { path: [attr.codeName], not: "" } };
     }
   }
-  if (attr.dataType === BizAttributeTypes.List) {
+  if (dataType === BizAttributeTypes.List) {
+    // Emptiness needs no operand, so it is answered before the operand
+    // guard below — behind it, `is empty` / `has any value` on a list never
+    // matched anyone. An emptied list (`[]`) is empty, as the client-side
+    // evaluator already reads it.
+    if (logic === 'empty') {
+      return {
+        OR: [
+          { data: { path: [attr.codeName], equals: '' } },
+          { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
+          { data: { path: [attr.codeName], equals: [] } },
+        ],
+      };
+    }
+    if (logic === 'any') {
+      return {
+        AND: [
+          { data: { path: [attr.codeName], not: '' } },
+          { data: { path: [attr.codeName], not: Prisma.AnyNull } },
+          { data: { path: [attr.codeName], not: [] } },
+        ],
+      };
+    }
+
     // Filter out empty values from listValues
     const filteredValues = listValues.filter(
       (value) => value !== null && value !== undefined && value !== '',
@@ -165,25 +191,9 @@ export const createFilterItem = (condition: any, attributes: Attribute[]) => {
             })),
           },
         };
-      case 'empty':
-        return {
-          OR: [
-            { data: { path: [attr.codeName], equals: '' } },
-            { data: { path: [attr.codeName], equals: Prisma.AnyNull } },
-          ],
-        };
-      // return { data: { path: [attr.codeName], equals: "" } };
-      case 'any':
-        return {
-          AND: [
-            { data: { path: [attr.codeName], not: '' } },
-            { data: { path: [attr.codeName], not: Prisma.AnyNull } },
-          ],
-        };
-      // return { data: { path: [attr.codeName], not: "" } };
     }
   }
-  if (attr.dataType === BizAttributeTypes.DateTime) {
+  if (dataType === BizAttributeTypes.DateTime) {
     const now = new Date();
     let dateValue: Date | undefined;
     if (value && !Number.isNaN(new Date(value).getTime())) {

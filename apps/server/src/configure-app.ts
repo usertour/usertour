@@ -1,4 +1,4 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { type ArgumentMetadata, INestApplication, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 
 /**
@@ -75,9 +75,35 @@ export function configureApp(app: INestApplication): void {
   app.enableCors({ exposedHeaders: ['WWW-Authenticate'] });
   app.use(cookieParser());
   app.useGlobalPipes(
-    new ValidationPipe({
+    new ClassDtoValidationPipe({
       transform: true,
       transformOptions: { enableImplicitConversion: true },
     }),
   );
 }
+
+/**
+ * The class-validator / class-transformer pipe for the class DTOs (v1 REST).
+ * A zod DTO (v2) is validated by its own pipe and carries no property
+ * metadata, so class-transformer has nothing to convert on it — but it
+ * throws on a body key named `constructor` and drops keys that shadow other
+ * Object.prototype members, which attribute payloads may legitimately use.
+ * Zod DTOs therefore bypass this pipe entirely.
+ */
+class ClassDtoValidationPipe extends ValidationPipe {
+  protected toValidate(metadata: ArgumentMetadata): boolean {
+    if (isZodDto(metadata.metatype)) {
+      return false;
+    }
+    return super.toValidate(metadata);
+  }
+}
+
+// nestjs-zod marks every class from createZodDto with a static `isZodDto`;
+// its own detector lives on a subpath this tsconfig cannot resolve.
+const isZodDto = (metatype: unknown): boolean => {
+  return (
+    typeof metatype === 'function' &&
+    (metatype as unknown as { isZodDto?: boolean }).isZodDto === true
+  );
+};

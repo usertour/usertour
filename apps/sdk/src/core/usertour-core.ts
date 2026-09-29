@@ -5,7 +5,14 @@ import {
   WidgetZIndex,
 } from '@usertour/constants';
 import { AssetAttributes } from '@usertour/frame';
-import { isConditionsActived, isEmptyString, isNullish, storage, uuidV4 } from '@usertour/helpers';
+import {
+  isConditionsActived,
+  isEmptyString,
+  isNullish,
+  normalizeLegacyAttributeWrites,
+  storage,
+  uuidV4,
+} from '@usertour/helpers';
 import {
   contentStartReason,
   SDKSettingsMode,
@@ -56,6 +63,19 @@ import {
   ServerMessageHandlerContext,
 } from './server-message-handlers';
 
+const log = logger.scope('core');
+
+/**
+ * The keys the server refused. They leave the local cache (ADR 0020 §6):
+ * what the server holds for them is unknown here, and a stale literal would
+ * make the next call carrying the key look unchanged and go unsent. A company
+ * acknowledgement names refused keys without their scope, so a refused key
+ * leaves the company and the membership cache alike; the same-named key the
+ * other scope accepted is then sent once more, which costs one upsert.
+ */
+const refusedCodeNames = (rejected: UserTourTypes.AttributesWriteResult['rejected']): string[] => {
+  return rejected.map((entry) => entry.codeName);
+};
 interface AppStartOptions {
   environmentId?: string;
   mode: SDKSettingsMode;
@@ -186,7 +206,7 @@ export class UsertourCore extends Evented {
     userId: string,
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.IdentifyOptions,
-  ): Promise<void> {
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     // Ensure the SDK has been initialized before calling identify
     this.ensureInit();
 
@@ -228,8 +248,8 @@ export class UsertourCore extends Evented {
       if (this.externalCompanyId) {
         const claims = decodeTokenClaims(opts.token);
         if (claims && claims.companyId == null) {
-          logger.warn(
-            'identify() received an identity token without a companyId claim while a company is set; the next reconnect will be rejected under enforcement',
+          log.warn(
+            'identify() received an identity token without a companyId claim while a company is set; with enforcement on, the next reconnect will be rejected',
           );
         }
       }
@@ -240,34 +260,45 @@ export class UsertourCore extends Evented {
     // connect when needed, and any failure surfaces through the EMIT_TIMEOUT
     // applied to the upsert below.
     this.socketService.setAuth(externalUserId, this.startOptions.token, this.identityToken);
+    // setAuth keeps only the identity; the rest of the handshake — company,
+    // sessions, client conditions, timers — is synced from here, so a new
+    // user starts clean (reset() ran above) and the same user keeps its own.
+    this.syncSocketCredentials();
 
+    const userAttributes = this.normalizeAttributes(attributes);
     const result = await this.socketService.upsertUser(
       {
         externalUserId,
-        attributes,
+        attributes: userAttributes,
       },
       { batch: true },
     );
-    if (!result) {
+    if (!result.ok) {
+      // Unconfirmed keys leave the cache so the next call carrying them is
+      // sent, and a resend of this write cannot land over a newer value.
+      this.attributeManager.forgetUserAttributes(Object.keys(userAttributes ?? {}));
       throw new Error(ErrorMessages.FAILED_TO_IDENTIFY_USER);
     }
 
     // Only update attributes after successful API call so updateUser's
     // change-detection guard remains accurate after retries.
-    if (attributes) {
-      this.attributeManager.setUserAttributes(attributes);
+    if (userAttributes) {
+      this.attributeManager.setUserAttributes(userAttributes, refusedCodeNames(result.rejected));
     }
     this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
       userId: externalUserId,
-      attributes,
+      attributes: userAttributes,
     });
+    return this.reportRejected(result.rejected);
   }
 
   /**
    * Creates and identifies an anonymous user
    * @param attributes - Optional user attributes
    */
-  async identifyAnonymous(attributes?: UserTourTypes.Attributes): Promise<void> {
+  async identifyAnonymous(
+    attributes?: UserTourTypes.Attributes,
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     // Ensure the SDK has been initialized before calling identifyAnonymous
     this.ensureInit();
 
@@ -288,7 +319,7 @@ export class UsertourCore extends Evented {
       userId = `anon-${uuidV4()}`;
       storage.setLocalStorage(key, { userId });
     }
-    await this.identify(userId, attributes);
+    return await this.identify(userId, attributes);
   }
 
   /**
@@ -299,7 +330,7 @@ export class UsertourCore extends Evented {
   async updateUser(
     attributes: UserTourTypes.Attributes,
     opts?: UserTourTypes.IdentifyOptions,
-  ): Promise<void> {
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     // Ensure the SDK has been initialized before calling updateUser
     const externalUserId = this.ensureIdentify();
 
@@ -310,24 +341,28 @@ export class UsertourCore extends Evented {
       this.applyIdentityToken(opts.token);
     }
 
-    // Check if attributes have actually changed to avoid unnecessary API calls
-    if (!this.attributeManager.userAttrsChanged(attributes)) {
-      return; // No changes detected, skip the update
+    // Check if attributes have actually changed to avoid unnecessary API calls.
+    // A key carrying an operation object always counts as changed.
+    const userAttributes = this.normalizeAttributes(attributes) ?? {};
+    if (!this.attributeManager.userAttrsChanged(userAttributes)) {
+      return { rejected: [] }; // No changes detected, skip the update
     }
     // First call API with new attributes
     const result = await this.socketService.upsertUser(
       {
         externalUserId,
-        attributes,
+        attributes: userAttributes,
       },
       { batch: true },
     );
-    if (!result) {
+    if (!result.ok) {
+      this.attributeManager.forgetUserAttributes(Object.keys(userAttributes));
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_USER);
     }
 
     // Only update local state after successful API call
-    this.attributeManager.setUserAttributes(attributes);
+    this.attributeManager.setUserAttributes(userAttributes, refusedCodeNames(result.rejected));
+    return this.reportRejected(result.rejected);
   }
 
   /**
@@ -340,7 +375,7 @@ export class UsertourCore extends Evented {
     companyId: string,
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.GroupOptions,
-  ): Promise<void> {
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     // Ensure the SDK has been initialized before calling group
     const externalUserId = this.ensureIdentify();
 
@@ -371,17 +406,19 @@ export class UsertourCore extends Evented {
       this.applyIdentityToken(opts.token);
     }
 
+    const companyAttributes = this.normalizeAttributes(attributes);
+    const membershipAttributes = this.normalizeAttributes(opts?.membership);
     const result = await this.socketService.upsertCompany(
       {
         externalUserId,
         externalCompanyId,
-        attributes,
-        membership: opts?.membership,
+        attributes: companyAttributes,
+        membership: membershipAttributes,
         token: this.identityToken,
       },
       { batch: true },
     );
-    if (!result) {
+    if (!result.ok) {
       // Roll back the optimistic identity state: a server-rejected membership
       // claim left in place would ride every reconnect handshake (rejected
       // companyId + non-matching token) and kill the whole connection.
@@ -398,15 +435,23 @@ export class UsertourCore extends Evented {
       // the reconnect auth while this upsert was in flight, and the tokenless
       // failure path has no other sync. Idempotent and cheap.
       this.syncSocketCredentials();
+      this.forgetCompanyWrite(externalCompanyId, companyAttributes, membershipAttributes);
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
-    if (attributes) {
-      this.attributeManager.setCompanyAttributes(attributes);
+    // Cached only while the core is still on this company: a later group()
+    // may have moved on, and this answer would land in that company's cache.
+    if (this.externalCompanyId === externalCompanyId) {
+      const refused = refusedCodeNames(result.rejected);
+      this.attributeManager.setCompanyAttributes(companyAttributes ?? {}, refused);
+      this.attributeManager.setMembershipAttributes(membershipAttributes ?? {}, refused);
     }
-    if (opts?.membership) {
-      this.attributeManager.setMembershipAttributes(opts.membership);
-    }
+    // The reconnect credentials must carry the new company now, not after
+    // the next server message (which a company with nothing to show never
+    // sends): the handshake evaluates on them, and a failed write for this
+    // company is replayed only while they name it.
+    this.syncSocketCredentials();
+    return this.reportRejected(result.rejected);
   }
 
   /**
@@ -417,7 +462,7 @@ export class UsertourCore extends Evented {
   async updateGroup(
     attributes?: UserTourTypes.Attributes,
     opts?: UserTourTypes.GroupOptions,
-  ): Promise<void> {
+  ): Promise<UserTourTypes.AttributesWriteResult> {
     const externalUserId = this.ensureIdentify();
     const externalCompanyId = this.ensureGroup();
 
@@ -429,13 +474,17 @@ export class UsertourCore extends Evented {
       this.applyIdentityToken(opts.token);
     }
 
-    // Check if attributes have actually changed to avoid unnecessary API calls
-    const hasCompanyChanged = attributes && this.attributeManager.companyAttrsChanged(attributes);
+    // Check if attributes have actually changed to avoid unnecessary API calls.
+    // A key carrying an operation object always counts as changed.
+    const companyAttributes = this.normalizeAttributes(attributes);
+    const membershipAttributes = this.normalizeAttributes(opts?.membership);
+    const hasCompanyChanged =
+      companyAttributes && this.attributeManager.companyAttrsChanged(companyAttributes);
     const hasMembershipChanged =
-      opts?.membership && this.attributeManager.membershipAttrsChanged(opts.membership);
+      membershipAttributes && this.attributeManager.membershipAttrsChanged(membershipAttributes);
 
     if (!hasCompanyChanged && !hasMembershipChanged) {
-      return; // No changes detected, skip the update
+      return { rejected: [] }; // No changes detected, skip the update
     }
 
     // First call API with new attributes
@@ -443,28 +492,80 @@ export class UsertourCore extends Evented {
       {
         externalUserId,
         externalCompanyId,
-        attributes,
-        membership: opts?.membership,
+        attributes: companyAttributes,
+        membership: membershipAttributes,
         token: this.identityToken,
       },
       { batch: true },
     );
-    if (!result) {
+    if (!result.ok) {
       // Same rollback rule as group(): a rejected claim must not stay on the
       // reconnect auth (compare-and-restore, concurrency-safe).
       if (opts?.token) {
         this.rollbackIdentityToken(opts.token, previousIdentityToken);
       }
+      this.forgetCompanyWrite(externalCompanyId, companyAttributes, membershipAttributes);
       throw new Error(ErrorMessages.FAILED_TO_UPDATE_COMPANY);
     }
 
-    // Only update local state after successful API call
-    if (attributes) {
-      this.attributeManager.setCompanyAttributes(attributes);
+    // Only update local state after successful API call, and only while the
+    // core is still on this company (same rule as group()).
+    if (this.externalCompanyId === externalCompanyId) {
+      const refused = refusedCodeNames(result.rejected);
+      this.attributeManager.setCompanyAttributes(companyAttributes ?? {}, refused);
+      this.attributeManager.setMembershipAttributes(membershipAttributes ?? {}, refused);
     }
-    if (opts?.membership) {
-      this.attributeManager.setMembershipAttributes(opts.membership);
+    return this.reportRejected(result.rejected);
+  }
+
+  /**
+   * A company write the server did not confirm: its keys leave the caches
+   * (see forgetUserAttributes) — unless the core has moved to another
+   * company, whose caches this write never touched.
+   */
+  private forgetCompanyWrite(
+    externalCompanyId: string,
+    companyAttributes: UserTourTypes.Attributes | undefined,
+    membershipAttributes: UserTourTypes.Attributes | undefined,
+  ): void {
+    if (this.externalCompanyId !== externalCompanyId) {
+      return;
     }
+    this.attributeManager.forgetCompanyAttributes(Object.keys(companyAttributes ?? {}));
+    this.attributeManager.forgetMembershipAttributes(Object.keys(membershipAttributes ?? {}));
+  }
+
+  /**
+   * Keys the server refused on an upsert (ADR 0020 §6): every other key was
+   * written, so the call resolves — but a host that never looks at the
+   * return value should still see why a value is missing.
+   */
+  private reportRejected(
+    rejected: UserTourTypes.AttributesWriteResult['rejected'],
+  ): UserTourTypes.AttributesWriteResult {
+    for (const { codeName, reason } of rejected) {
+      log.warn(`Attribute "${codeName}" was not written: ${reason}`);
+    }
+    return { rejected };
+  }
+
+  /**
+   * Rewrite deprecated operation spellings (`subtract`, `append`, `prepend`)
+   * into the current vocabulary before sending, warning for each rewritten
+   * key on every call (ADR 0017 §6). The server accepts only the current
+   * vocabulary.
+   */
+  private normalizeAttributes(
+    attributes?: UserTourTypes.Attributes,
+  ): UserTourTypes.Attributes | undefined {
+    if (!attributes) {
+      return attributes;
+    }
+    return normalizeLegacyAttributeWrites(attributes, ({ codeName, from, to }) => {
+      log.warn(
+        `Attribute "${codeName}": the ${from} operation is deprecated; it was sent as ${to}`,
+      );
+    }) as UserTourTypes.Attributes;
   }
 
   // === Public API: Event Tracking ===
@@ -555,6 +656,18 @@ export class UsertourCore extends Evented {
   }
 
   // === Public API: Configuration ===
+  /**
+   * Open or close the SDK's console logging (ADR 0019 §3). Effective at once
+   * and persisted for future loads until switched off.
+   */
+  setDebug(enabled: boolean) {
+    if (enabled) {
+      logger.enabled();
+    } else {
+      logger.disable();
+    }
+  }
+
   /**
    * Sets the base z-index for UI elements
    * @param baseZIndex - The base z-index value to set
@@ -700,7 +813,7 @@ export class UsertourCore extends Evented {
     if (this.socketService.isConnected()) {
       const clientContext = getClientContext();
       this.socketService.updateClientContext(clientContext).catch((err) => {
-        logger.error('Failed to sync clientContext after setUrlFilter:', err);
+        log.error('Failed to send the client context after setUrlFilter()', err);
       });
     }
   }
@@ -919,6 +1032,11 @@ export class UsertourCore extends Evented {
     this.cleanupConditionsMonitor();
     // Cleanup wait timer monitor
     this.cleanupWaitTimerMonitor();
+    // The session ends here: the socket disconnects and forgets its
+    // credentials and failed writes, so a transport blip cannot reconnect
+    // as the user who just left and evaluate for them; the next identify()
+    // starts a fresh connection (ADR 0018 §1).
+    this.socketService.disconnect();
     // Cleanup tracker monitor
     this.cleanupTrackerMonitor();
     // Stop URL monitor
@@ -949,7 +1067,10 @@ export class UsertourCore extends Evented {
    */
   private setupUIManagerInitialization() {
     this.once(SDKClientEvents.DOM_LOADED, () => {
-      this.ensureUIManagerInitialized();
+      // A final failure is already reported by the critical line; an
+      // unhandled rejection would print a second one and get filed by the
+      // host's error tracker.
+      this.ensureUIManagerInitialized().catch(() => undefined);
     });
   }
 
@@ -981,6 +1102,44 @@ export class UsertourCore extends Evented {
    */
   private initializeSocketEventListeners(): void {
     this.socketService.onQueue(WebSocketEvents.SERVER_MESSAGE, this.handleServerMessage);
+    // Connection recovery (ADR 0018): the replay decisions are made against
+    // where the core is now — the company from the moment group() was
+    // called — not against credentials the server has yet to confirm.
+    this.socketService.setTargetResolver(() => ({
+      externalUserId: this.externalUserId,
+      externalCompanyId: this.externalCompanyId,
+    }));
+    // Fold a replayed write into the attribute cache exactly as the original
+    // call would have.
+    this.socketService.onWriteReplayed((write) => {
+      // A replay answered after the core moved on — identify() of another
+      // user, group() of another company, reset() — must not land in the
+      // cache of where the core is now.
+      if (write.params.externalUserId !== this.externalUserId) {
+        return;
+      }
+      // A replay is answered like a direct call: the keys the server refused
+      // leave the cache and are reported.
+      const refused = refusedCodeNames(write.rejected);
+      if (write.kind === 'user') {
+        this.attributeManager.setUserAttributes(write.params.attributes ?? {}, refused);
+        // The identify() this write came from rejected on its timeout, so
+        // its success event never fired; a shared-link start still waits
+        // for one.
+        this.trigger(SDKClientEvents.USER_IDENTIFIED_SUCCEEDED, {
+          userId: write.params.externalUserId,
+          attributes: write.params.attributes,
+        });
+        this.reportRejected(write.rejected);
+        return;
+      }
+      if (write.params.externalCompanyId !== this.externalCompanyId) {
+        return;
+      }
+      this.attributeManager.setCompanyAttributes(write.params.attributes ?? {}, refused);
+      this.attributeManager.setMembershipAttributes(write.params.membership ?? {}, refused);
+      this.reportRejected(write.rejected);
+    });
   }
 
   // === Message Handling ===
@@ -1122,7 +1281,7 @@ export class UsertourCore extends Evented {
   private async setFlowSession(session: CustomContentSession): Promise<boolean> {
     // Check if this session has been dismissed (terminal state check)
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring setFlowSession for dismissed session: ${session.id}`);
+      log.debug(`Ignoring SetFlowSession for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1196,7 +1355,7 @@ export class UsertourCore extends Evented {
   private async setChecklistSession(session: CustomContentSession): Promise<boolean> {
     // Check if this session has been dismissed (terminal state check)
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring setChecklistSession for dismissed session: ${session.id}`);
+      log.debug(`Ignoring SetChecklistSession for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1229,7 +1388,7 @@ export class UsertourCore extends Evented {
    */
   private async setBannerSession(session: CustomContentSession): Promise<boolean> {
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring setBannerSession for dismissed session: ${session.id}`);
+      log.debug(`Ignoring SetBannerSession for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1286,7 +1445,7 @@ export class UsertourCore extends Evented {
    */
   private async setResourceCenterSession(session: CustomContentSession): Promise<boolean> {
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring setResourceCenterSession for dismissed session: ${session.id}`);
+      log.debug(`Ignoring SetResourceCenterSession for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1353,7 +1512,7 @@ export class UsertourCore extends Evented {
   private async addLauncher(session: CustomContentSession): Promise<boolean> {
     // Check if this session has been dismissed (terminal state check)
     if (this.isSessionDismissed(session.id)) {
-      logger.info(`Ignoring addLauncher for dismissed session: ${session.id}`);
+      log.debug(`Ignoring AddLauncher for a dismissed session (${session.id})`);
       return false;
     }
 
@@ -1513,6 +1672,12 @@ export class UsertourCore extends Evented {
         return;
       }
 
+      // The reconnect handshake must carry this state before the report
+      // below can be lost to a disconnect: the server takes the handshake's
+      // conditions as they are and does not track them again, and the
+      // monitor reports changes only — a stale state would stand until the
+      // element toggled once more (ADR 0018 §6, as for a fired timer).
+      this.syncSocketCredentials();
       // Toggle client condition
       this.socketService.toggleClientCondition(
         {
@@ -1542,6 +1707,11 @@ export class UsertourCore extends Evented {
           return;
         }
 
+        // The reconnect handshake must declare this timer as fired before
+        // the report below can be lost to a disconnect: the server neither
+        // re-issues a timer it holds nor starts content on one it thinks is
+        // still running (ADR 0018 §6).
+        this.syncSocketCredentials();
         // Handle timer firing - could trigger next step or other actions
         const result = await this.socketService.fireConditionWaitTimer(
           {
@@ -1550,8 +1720,8 @@ export class UsertourCore extends Evented {
           { batch: true },
         );
         if (!result) {
-          logger.error(
-            `Failed to fire wait timer for versionId: ${changeEvent.condition.versionId}`,
+          log.error(
+            `Failed to report the fired wait timer (version ${changeEvent.condition.versionId})`,
           );
         }
       },
@@ -1737,6 +1907,9 @@ export class UsertourCore extends Evented {
     const bannerSessionId = this.activatedBanner?.getSessionId();
     const resourceCenterSessionId = this.activatedResourceCenter?.getSessionId();
     const launchers = this.launchers.map((l) => l.getContentId());
+    // Running and fired wait timers travel with the handshake so a reconnect
+    // neither restarts nor forgets them (ADR 0018 §6).
+    const waitTimers = this.waitTimerMonitor?.getWaitTimers() ?? [];
     this.socketService.updateCredentials({
       clientConditions,
       clientContext,
@@ -1749,6 +1922,7 @@ export class UsertourCore extends Evented {
       bannerSessionId,
       resourceCenterSessionId,
       launchers,
+      waitTimers,
     });
   }
 

@@ -27,27 +27,71 @@ import {
   ClientCondition,
   WebSocketEvents,
   ClientMessageKind,
+  RejectedAttributeWrite,
   SocketAuthData,
+  UpsertAck,
 } from '@usertour/types';
 import { Socket, logger, timerManager } from '@/utils';
-import { getWsUri } from '@/core/usertour-env';
+import { getSdkVersion, getWsUri } from '@/core/usertour-env';
 import { WEBSOCKET_NAMESPACES_V2 } from '@usertour/constants';
 import { getClientContext } from '@/core/usertour-helper';
-import { uuidV4 } from '@usertour/helpers';
+import {
+  ConnectionSignal,
+  ConnectionState,
+  isRetryableHandshakeError,
+  reconnectDelayMs,
+  reduceConnection,
+  ReplayRegistry,
+  uuidV4,
+  WriteTarget,
+} from '@usertour/helpers';
 
+const log = logger.scope('socket');
 // === Interfaces ===
 // Batch options interface for consistency
 export interface BatchOptions {
   batch?: boolean;
 }
 
+/** A write resent after a reconnect that the server answered: what was sent, and the keys it refused. */
+export type ReplayedWrite =
+  | { kind: 'user'; params: UpsertUserDto; rejected: RejectedAttributeWrite[] }
+  | { kind: 'company'; params: UpsertCompanyDto; rejected: RejectedAttributeWrite[] };
+
+/** Outcome of one emit: whether the server answered at all, and what it said. */
+interface EmitOutcome {
+  acknowledged: boolean;
+  result: boolean;
+  /** Attribute keys the server refused on an upsert (ADR 0020 §6); empty otherwise. */
+  rejected: RejectedAttributeWrite[];
+}
+
+/** What an upsert reports to the core: written or not, and which keys were refused. */
+export interface UpsertOutcome {
+  ok: boolean;
+  rejected: RejectedAttributeWrite[];
+}
+
+/**
+ * Read a client-message acknowledgement. Upserts answer `{ ok, rejected }`
+ * (ADR 0020 §6); everything else — and a server predating this — answers a
+ * bare boolean, which reads as "nothing rejected".
+ */
+const readAck = (raw: unknown): { result: boolean; rejected: RejectedAttributeWrite[] } => {
+  if (raw !== null && typeof raw === 'object') {
+    const ack = raw as Partial<UpsertAck>;
+    return { result: ack.ok === true, rejected: Array.isArray(ack.rejected) ? ack.rejected : [] };
+  }
+  return { result: raw === true, rejected: [] };
+};
+
 /**
  * Socket service interface for type safety and testing
  */
 export interface IUsertourSocket {
   // User and Company operations
-  upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<boolean>;
-  upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<boolean>;
+  upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<UpsertOutcome>;
+  upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<UpsertOutcome>;
 
   // Event tracking
   trackEvent(params: TrackEventDto, options?: BatchOptions): Promise<boolean>;
@@ -103,6 +147,10 @@ export interface IUsertourSocket {
   // Auth management
   updateCredentials(authInfo: Partial<SocketAuthData>): void;
 
+  // Connection recovery (ADR 0018)
+  onWriteReplayed(listener: (write: ReplayedWrite) => void): void;
+  setTargetResolver(resolve: () => WriteTarget): void;
+
   // Event management with acknowledgment support
   on(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
   onQueue(event: string, handler: (message: unknown) => boolean | Promise<boolean>): void;
@@ -131,11 +179,33 @@ export class UsertourSocket implements IUsertourSocket {
   // Tracks an in-flight `socket.connect()`; prevents duplicate connect
   // attempts and lets `disconnect()` cancel the pending CONNECT_TIMEOUT.
   private connecting = false;
+  // Credentials replaced while an attempt was in flight on the previous ones:
+  // a refusal of that attempt is not the last word (ADR 0018 §1).
+  private credentialsChangedInFlight = false;
+  // Where the core is now; the credentials lag behind it while a group() is
+  // in flight (see `targetNow`).
+  private targetResolver: (() => WriteTarget) | null = null;
   // Reference to the active `connect` listener so we can detach it on
   // success, timeout, or external cancel.
   private connectListener: (() => void) | null = null;
   // Promise chain for serializing event handlers (especially SERVER_MESSAGE)
   private eventHandlerQueues = new Map<string, Promise<boolean>>();
+  // === Connection recovery (ADR 0018) ===
+  // Socket.IO abandons a socket after a handshake rejection or a server-side
+  // disconnect; the state machine in @usertour/helpers decides when the SDK
+  // has to reconnect by hand, replay, or re-evaluate.
+  private connectionState: ConnectionState = 'idle';
+  private reconnectAttempt = 0;
+  // Whether the current credential set was ever connected: a connect after a
+  // rejection then counts as a reconnect and gets its evaluation.
+  private hadConnected = false;
+  private readonly RECONNECT_TIMEOUT_ID = 'socket-reconnect';
+  // The UpsertUser / UpsertCompany writes that failed for a transport reason
+  // and are resent after a reconnect. Every timing rule — which keys, for
+  // whom, how often, how long — lives in the registry (ADR 0018 §4); this
+  // service only reports sends and outcomes to it.
+  private readonly replay = new ReplayRegistry<UpsertUserDto | UpsertCompanyDto>();
+  private writeReplayedListener: ((write: ReplayedWrite) => void) | null = null;
 
   // === Constructor ===
   constructor() {
@@ -145,12 +215,33 @@ export class UsertourSocket implements IUsertourSocket {
       namespace: WEBSOCKET_NAMESPACES_V2,
       socketConfig: {
         autoConnect: false,
-        // Use function for auth to ensure latest info on reconnection
+        // Use function for auth to ensure latest info on reconnection. The
+        // bundle's version rides every handshake so the server can tell
+        // which SDK a connection runs.
         auth: (cb) => {
-          cb(this.authCredentials || {});
+          cb(this.authCredentials ? { ...this.authCredentials, sdkVersion: getSdkVersion() } : {});
         },
       },
     });
+
+    this.socket.on('connect', () => {
+      this.hadConnected = true;
+      this.applyConnectionSignal({ type: 'connect' });
+    });
+    this.socket.on('disconnect', (reason: string) =>
+      this.applyConnectionSignal({ type: 'disconnect', reason }),
+    );
+    this.socket.on('connect_error', (error: unknown) =>
+      this.applyConnectionSignal(
+        {
+          type: 'connect_error',
+          retryable: isRetryableHandshakeError(error),
+          // false once Socket.IO gave the socket up (a handshake rejection)
+          active: this.socket.isActive(),
+        },
+        error,
+      ),
+    );
   }
 
   // === Connection Management ===
@@ -170,13 +261,37 @@ export class UsertourSocket implements IUsertourSocket {
    *    current socket, then starts a fresh connect with the new credentials.
    */
   setAuth(externalUserId: string, token: string, identityToken?: string): void {
-    if (this.requiresReconnect(externalUserId, token)) {
-      logger.info('Auth credentials changed, reconnecting socket...');
+    const identityChanged = this.requiresReconnect(externalUserId, token);
+    if (identityChanged) {
+      log.info('Credentials changed; reconnecting');
       this.resetBatchState();
       this.cancelConnecting();
+      // A pending write belongs to the previous identity: never replay it
+      // onto the next one (ADR 0001's isolation rule).
+      this.replay.reset();
+      this.clearReconnect();
       this.socket.disconnect();
+      // Nor may a message buffered while offline go out on the next
+      // identity's connection.
+      this.socket.discardBuffered();
+      // A disconnected socket emits no 'disconnect' for this call; the new
+      // identity starts from idle either way, so its first connect is a
+      // first connect, not a reconnect — with a fresh backoff.
+      this.connectionState = 'idle';
+      this.reconnectAttempt = 0;
+      this.hadConnected = false;
     }
+    // The same identity with another identity token: the previous one may
+    // have been refused, or an attempt may be in flight on it.
+    const identityTokenChanged =
+      !identityChanged &&
+      this.authCredentials !== undefined &&
+      this.authCredentials.identityToken !== identityToken;
 
+    // Only the identity lives here. Everything else the handshake declares
+    // — company, sessions, client conditions, timers — is the core's state,
+    // and the core syncs it right after this call: a fresh identity must not
+    // inherit the previous one's, and the same identity gets its own back.
     this.authCredentials = {
       externalUserId,
       token,
@@ -184,6 +299,28 @@ export class UsertourSocket implements IUsertourSocket {
       clientContext: getClientContext(),
     };
 
+    if (identityTokenChanged) {
+      this.reconnectForIdentityToken();
+    } else {
+      this.ensureConnecting();
+    }
+  }
+
+  /**
+   * A refreshed identity token must be able to revive a dead socket: Socket.IO
+   * stops reconnecting once the server's auth middleware refused a handshake
+   * (the previous token expired, say), so merely storing the new token would
+   * strand the SDK offline until a page reload. Restart the attempt on the
+   * new credentials; when one is in flight on the old ones, its refusal
+   * starts the next (ADR 0018 §1).
+   */
+  private reconnectForIdentityToken(): void {
+    if (this.socket.isConnected()) {
+      return;
+    }
+    log.info('Identity token changed while disconnected; reconnecting');
+    this.credentialsChangedInFlight = true;
+    this.cancelConnecting();
     this.ensureConnecting();
   }
 
@@ -197,9 +334,13 @@ export class UsertourSocket implements IUsertourSocket {
    * timer hanging once cleared.
    */
   private ensureConnecting(): void {
+    this.applyConnectionSignal({ type: 'connect_requested', hadConnected: this.hadConnected });
     if (this.socket.isConnected() || this.connecting) {
       return;
     }
+    // A connect requested now supersedes the manual reconnect timer; left
+    // armed, it would open a second socket for the same page.
+    this.clearReconnect();
     this.connecting = true;
 
     const onConnect = () => this.cancelConnecting();
@@ -211,7 +352,11 @@ export class UsertourSocket implements IUsertourSocket {
       () => this.cancelConnecting(),
       this.CONNECT_TIMEOUT,
     );
-    this.socket.connect();
+    // Not started when an attempt is already in flight: that one carries
+    // the credentials it began with, so a refusal must start another.
+    if (this.socket.connect()) {
+      this.credentialsChangedInFlight = false;
+    }
   }
 
   /**
@@ -234,18 +379,28 @@ export class UsertourSocket implements IUsertourSocket {
    * Disconnect socket and clear auth credentials
    */
   disconnect(): void {
-    logger.info('Disconnecting socket and clearing credentials...');
+    log.info('Disconnecting and clearing credentials');
     // Clear event handler queues to prevent memory leaks
     this.eventHandlerQueues.clear();
 
     // Cancel any in-flight connect (clears CONNECT_TIMEOUT + connect listener)
     this.cancelConnecting();
 
+    // Nothing to resend or retry for a connection we are closing on purpose;
+    // the next credentials start from scratch: first connect, first backoff.
+    this.replay.reset();
+    this.clearReconnect();
+    this.connectionState = 'idle';
+    this.reconnectAttempt = 0;
+    this.hadConnected = false;
+
     // Clear batch state and pending timeout
     this.resetBatchState();
 
-    // Disconnect the socket
+    // Disconnect the socket; what was buffered for it belongs to the session
+    // that just ended.
     this.socket.disconnect();
+    this.socket.discardBuffered();
 
     // Clear auth credentials
     this.authCredentials = undefined;
@@ -308,20 +463,33 @@ export class UsertourSocket implements IUsertourSocket {
    * Returns false on error, logs the error, and never throws
    */
   private async emitClientMessage(kind: ClientMessageKind, payload: any = {}): Promise<boolean> {
-    if (!this.socket) return false;
+    const outcome = await this.emitClientMessageWithOutcome(kind, payload);
+    return outcome.result;
+  }
+
+  /**
+   * Emit and report whether the server answered at all: a `false` from the
+   * server is a verdict, a timeout or a closed socket is not — the replay
+   * registry needs the difference (ADR 0018 §4).
+   */
+  private async emitClientMessageWithOutcome(
+    kind: ClientMessageKind,
+    payload: any = {},
+  ): Promise<EmitOutcome> {
+    if (!this.socket) return { acknowledged: false, result: false, rejected: [] };
     try {
       // EMIT_TIMEOUT bounds the await: when the socket is buffering during a
       // slow or failed connect, we surface that as a falsy result (caught
       // below) instead of hanging the caller indefinitely.
-      const result = await this.socket.emitWithAck<boolean | undefined>(
+      const raw = await this.socket.emitWithAck<unknown>(
         WebSocketEvents.CLIENT_MESSAGE,
         { kind, payload, requestId: uuidV4() },
         this.EMIT_TIMEOUT,
       );
-      return result ?? false;
+      return { acknowledged: true, ...readAck(raw) };
     } catch (error) {
-      logger.error(`Failed to emit ${kind}:`, error);
-      return false;
+      log.error(`Failed to send ${kind}`, error);
+      return { acknowledged: false, result: false, rejected: [] };
     }
   }
 
@@ -333,7 +501,19 @@ export class UsertourSocket implements IUsertourSocket {
     payload: any,
     options?: BatchOptions,
   ): Promise<boolean> {
-    if (!this.socket) return false;
+    const outcome = await this.sendClientMessageWithOutcome(kind, payload, options);
+    return outcome.result;
+  }
+
+  /**
+   * Send a client message with batch support, reporting the emit outcome
+   */
+  private async sendClientMessageWithOutcome(
+    kind: ClientMessageKind,
+    payload: any,
+    options?: BatchOptions,
+  ): Promise<EmitOutcome> {
+    if (!this.socket) return { acknowledged: false, result: false, rejected: [] };
 
     // For batch messages, clear any pending timeout and ensure batch is started.
     // BEGIN_BATCH is fire-and-forget: TCP/Socket.IO ordering guarantees the
@@ -349,7 +529,7 @@ export class UsertourSocket implements IUsertourSocket {
     }
 
     // Send the message
-    const result = await this.emitClientMessage(kind, payload);
+    const outcome = await this.emitClientMessageWithOutcome(kind, payload);
 
     // Schedule batch end after message is sent (regardless of success/failure)
     // endBatchInternal triggers toggleContents which is needed even if some messages fail
@@ -361,16 +541,58 @@ export class UsertourSocket implements IUsertourSocket {
       );
     }
 
-    return result;
+    return outcome;
   }
 
   // === User and Company Operations ===
-  async upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<boolean> {
-    return await this.sendClientMessage(ClientMessageKind.UPSERT_USER, params, options);
+  async upsertUser(params: UpsertUserDto, options?: BatchOptions): Promise<UpsertOutcome> {
+    return await this.sendPendingWrite('user', ClientMessageKind.UPSERT_USER, params, options);
   }
 
-  async upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<boolean> {
-    return await this.sendClientMessage(ClientMessageKind.UPSERT_COMPANY, params, options);
+  async upsertCompany(params: UpsertCompanyDto, options?: BatchOptions): Promise<UpsertOutcome> {
+    return await this.sendPendingWrite(
+      'company',
+      ClientMessageKind.UPSERT_COMPANY,
+      params,
+      options,
+    );
+  }
+
+  /**
+   * Send one of the two replayable writes and report the send and its
+   * outcome to the replay registry, which decides what a later connect
+   * resends (ADR 0018 §4).
+   */
+  private async sendPendingWrite(
+    kind: ReplayedWrite['kind'],
+    messageKind: ClientMessageKind,
+    params: UpsertUserDto | UpsertCompanyDto,
+    options?: BatchOptions,
+  ): Promise<UpsertOutcome> {
+    const ticket = this.replay.sent(kind, params);
+    const outcome = await this.sendClientMessageWithOutcome(messageKind, params, options);
+    if (!outcome.acknowledged) {
+      this.replay.failed(kind, ticket, params);
+    }
+    return { ok: outcome.result, rejected: outcome.rejected };
+  }
+
+  /**
+   * The user and company the session is on now. Asked of the core when it
+   * registered a resolver: the core moves to a company the moment group()
+   * is called, while the credentials follow only once the server confirmed
+   * it — and in between, on a reconnect, the buffered group() goes out
+   * first, so a write for the company being left must already count as
+   * left (ADR 0018 §4).
+   */
+  private targetNow(): WriteTarget {
+    if (this.targetResolver) {
+      return this.targetResolver();
+    }
+    return {
+      externalUserId: this.authCredentials?.externalUserId,
+      externalCompanyId: this.authCredentials?.externalCompanyId,
+    };
   }
 
   // === Event Tracking ===
@@ -505,7 +727,7 @@ export class UsertourSocket implements IUsertourSocket {
       }
       return null;
     } catch (error) {
-      logger.error(`Failed to request ${kind}:`, error);
+      log.error(`Failed to request ${kind}`, error);
       return null;
     }
   }
@@ -560,7 +782,7 @@ export class UsertourSocket implements IUsertourSocket {
         const result = await handler(message);
         callback?.(result);
       } catch (error) {
-        logger.error(`Failed to process ${event}:`, error, message);
+        log.error(`Failed to handle ${event}`, error, message);
         callback?.(false);
       }
     });
@@ -587,7 +809,7 @@ export class UsertourSocket implements IUsertourSocket {
 
       // Process message asynchronously in queue
       this.executeHandlerInOrder(event, () => handler(message)).catch((error) => {
-        logger.error(`Failed to process ${event}:`, error, message);
+        log.error(`Failed to handle ${event}`, error, message);
       });
     });
   }
@@ -610,11 +832,11 @@ export class UsertourSocket implements IUsertourSocket {
     const newTask = lastTask
       .then(() => Promise.resolve(handler()))
       .catch((err) => {
-        logger.warn(`Previous ${event} handler failed, continuing with next:`, err?.message);
+        log.warn(`The ${event} handler failed; retrying it once`, err?.message);
         return Promise.resolve(handler());
       })
       .catch((err) => {
-        logger.error(`${event} handler execution failed:`, err);
+        log.error(`Failed to run the ${event} handler`, err);
         return false;
       });
 
@@ -639,13 +861,174 @@ export class UsertourSocket implements IUsertourSocket {
     this.socket?.once(event, handler);
   }
 
+  // === Connection Recovery (ADR 0018) ===
+  onWriteReplayed(listener: (write: ReplayedWrite) => void): void {
+    this.writeReplayedListener = listener;
+  }
+
+  /**
+   * Feed a socket signal through the state machine and run what it decides.
+   * `error` is the handshake rejection, when the signal came from one.
+   */
+  private applyConnectionSignal(signal: ConnectionSignal, error?: unknown): void {
+    const previous = this.connectionState;
+    const { state, actions } = reduceConnection(previous, signal);
+    this.connectionState = state;
+    if (state !== previous) {
+      log.debug(`Connection ${previous} → ${state} on ${signal.type}`);
+    }
+    if (signal.type === 'connect_error') {
+      // A first connection that fails stays `connecting`, so this is the
+      // only trace of a server that cannot be reached at all.
+      const message = (error as { message?: unknown } | undefined)?.message;
+      log.debug(
+        `Connection attempt failed${typeof message === 'string' ? ` (${message})` : ''}${signal.retryable ? '' : '; not retryable'}`,
+      );
+    }
+    if (signal.type === 'connect') {
+      log.info(previous === 'reconnecting' ? 'Reconnected' : 'Connected');
+    }
+    // Always visible (ADR 0019 §2): the SDK has stopped reconnecting and the
+    // host has no promise or event to learn that from. Not when the refusal
+    // judged credentials the host has since replaced: the next attempt
+    // starts right below, and the SDK has not stopped.
+    if (state === 'rejected' && previous !== 'rejected' && !this.credentialsChangedInFlight) {
+      const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
+      log.critical(
+        `Connection rejected by the server${typeof code === 'string' ? ` (${code})` : ''}: the environment token or identity token was refused. Usertour content will not show on this page until init() or identify() is called with valid credentials.`,
+        error,
+      );
+    }
+
+    if (signal.type === 'connect') {
+      this.reconnectAttempt = 0;
+      this.clearReconnect();
+      this.credentialsChangedInFlight = false;
+    }
+    for (const action of actions) {
+      switch (action) {
+        case 'schedule_reconnect':
+          this.scheduleReconnect();
+          break;
+        case 'stop':
+          this.clearReconnect();
+          // The attempt is over: a later identify() must be able to start
+          // one instead of finding this one still "in flight".
+          this.cancelConnecting();
+          // The refusal judged credentials the host has since replaced.
+          if (this.credentialsChangedInFlight) {
+            log.info('Credentials changed during the refused attempt; connecting again');
+            this.ensureConnecting();
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    if (actions.includes('replay') || actions.includes('evaluate')) {
+      void this.recoverAfterConnect(actions.includes('evaluate'));
+    }
+  }
+
+  /**
+   * Manual reconnect with backoff, for the two cases Socket.IO abandons: a
+   * handshake rejection the server called retryable, and a server-initiated
+   * disconnect. Once a manual connect succeeds, Socket.IO's own manager
+   * handles later transport drops again.
+   */
+  private scheduleReconnect(): void {
+    const delay = reconnectDelayMs(this.reconnectAttempt);
+    this.reconnectAttempt += 1;
+    log.info(`Reconnecting in ${delay} ms (attempt ${this.reconnectAttempt})`);
+    timerManager.setTimeout(
+      this.RECONNECT_TIMEOUT_ID,
+      () => {
+        // Active covers connected and in flight: a host call may have
+        // started the connection meanwhile.
+        if (this.socket.isActive() || !this.authCredentials) {
+          return;
+        }
+        this.socket.connect();
+      },
+      delay,
+    );
+  }
+
+  private clearReconnect(): void {
+    timerManager.clearTimeout(this.RECONNECT_TIMEOUT_ID);
+  }
+
+  /**
+   * After a connect: resend the writes that failed while offline, then — on
+   * a reconnect — ask for one evaluation so the page learns what changed
+   * server-side meanwhile. A replayed write is batched and ends its own batch,
+   * so the explicit END_BATCH is only sent when nothing was replayed.
+   */
+  private async recoverAfterConnect(evaluate: boolean): Promise<void> {
+    const replayed = await this.replayPendingWrites();
+    if (evaluate && !replayed) {
+      await this.emitClientMessage(ClientMessageKind.END_BATCH);
+    }
+  }
+
+  private async replayPendingWrites(): Promise<boolean> {
+    let replayed = false;
+    for (const kind of ['user', 'company'] as const) {
+      const started = this.replay.startReplay(
+        kind,
+        this.targetNow(),
+        this.authCredentials?.identityToken,
+      );
+      for (const reason of started.dropped) {
+        log.warn(`Dropped a pending ${kind} write: ${reason}`);
+      }
+      if (started.kind === 'nothing') {
+        continue;
+      }
+      if (started.kind === 'refused') {
+        log.warn(`Dropped the pending ${kind} write: ${started.reason}`);
+        continue;
+      }
+      const messageKind =
+        kind === 'user' ? ClientMessageKind.UPSERT_USER : ClientMessageKind.UPSERT_COMPANY;
+      const outcome = await this.sendClientMessageWithOutcome(messageKind, started.write, {
+        batch: true,
+      });
+      if (!outcome.acknowledged) {
+        continue; // counted as an attempt when it started; kept for the next connect
+      }
+      const fold = this.replay.replayAnswered(
+        kind,
+        started.ticket,
+        started.write,
+        this.targetNow(),
+      );
+      replayed = true;
+      // The core folds the replay into its cache only when the session is
+      // still the one the write was for.
+      if (outcome.result && fold) {
+        this.writeReplayedListener?.({
+          kind,
+          params: started.write,
+          rejected: outcome.rejected,
+        } as ReplayedWrite);
+      }
+    }
+    return replayed;
+  }
+
+  /** Where the core is now, for the replay decisions (see `targetNow`). */
+  setTargetResolver(resolve: () => WriteTarget): void {
+    this.targetResolver = resolve;
+  }
+
   // === Auth Management ===
   /**
    * Updates socket authentication credentials
    */
   updateCredentials(authInfo: Partial<SocketAuthData>): void {
     if (!this.socket) {
-      logger.warn('Socket not initialized. Cannot update auth.');
+      log.warn('Cannot update credentials before the socket exists');
       return;
     }
 
@@ -661,15 +1044,8 @@ export class UsertourSocket implements IUsertourSocket {
       ...authInfo,
     };
 
-    // A refreshed identity token must be able to revive a dead socket:
-    // Socket.IO stops auto-reconnecting once a handshake is rejected by the
-    // server's auth middleware (e.g. the previous token expired), so merely
-    // storing the new token would strand the SDK offline until a full page
-    // reload. Restart the connect attempt with the updated credentials.
-    if (identityTokenChanged && !this.socket.isConnected()) {
-      logger.info('Identity token changed while disconnected, reconnecting socket...');
-      this.cancelConnecting();
-      this.ensureConnecting();
+    if (identityTokenChanged) {
+      this.reconnectForIdentityToken();
     }
   }
 }

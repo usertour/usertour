@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge, Tooltip, TooltipContent, TooltipTrigger } from '@usertour/ui';
+import { effectiveDataType } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import { AttributeDataType } from '@usertour/types';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -93,8 +94,9 @@ const ListCell = ({ value }: { value: unknown }) => {
   return hoverTooltip(trigger, items.join(', '));
 };
 
+// Bucketing attributes render as the type they resemble (ADR 0020 §4).
 export const renderAttributeCell = (value: unknown, dataType: number): React.ReactNode => {
-  switch (dataType) {
+  switch (effectiveDataType(dataType)) {
     case AttributeDataType.String:
       return <StringCell value={value} />;
     case AttributeDataType.Number:
@@ -116,7 +118,7 @@ type CellStyle = {
 };
 
 export const getCellStyleForType = (dataType: number): CellStyle => {
-  switch (dataType) {
+  switch (effectiveDataType(dataType)) {
     case AttributeDataType.Number:
       return { container: 'min-w-[100px] max-w-[140px]', align: 'right' };
     case AttributeDataType.Boolean:

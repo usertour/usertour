@@ -4,7 +4,7 @@ import {
   SocketOptions as SocketIOOptions,
   io,
 } from 'socket.io-client';
-import { autoBind } from '@/utils';
+import { autoBind } from './auto-bind';
 
 // Configuration options for Socket connection
 interface SocketOptions {
@@ -122,10 +122,28 @@ export class Socket {
   }
 
   /**
-   * Connect the socket (if disconnected)
+   * Start a connection unless one is open or in flight: Socket.IO's own
+   * `connect()` on an active socket sends a second CONNECT and the server
+   * opens a second socket for the same page.
+   * @returns Whether this call started an attempt
    */
-  connect(): void {
+  connect(): boolean {
+    if (this.socket.active) {
+      return false;
+    }
     this.socket.connect();
+    return true;
+  }
+
+  /**
+   * Drop the packets buffered while disconnected. Socket.IO keeps them
+   * across a manual disconnect and sends them on the next connection, which
+   * may belong to another identity — the server books them to whoever is
+   * connected.
+   */
+  discardBuffered(): void {
+    this.socket.sendBuffer = [];
+    this.socket.receiveBuffer = [];
   }
 
   /**
@@ -134,5 +152,14 @@ export class Socket {
    */
   isConnected(): boolean {
     return this.socket.connected;
+  }
+
+  /**
+   * Whether Socket.IO will still reconnect this socket by itself. False once
+   * it abandoned the socket — after a handshake rejection or a server-side
+   * disconnect — in which case only an explicit `connect()` revives it.
+   */
+  isActive(): boolean {
+    return this.socket.active;
   }
 }

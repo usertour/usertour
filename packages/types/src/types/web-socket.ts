@@ -27,8 +27,20 @@ export interface SocketAuthData {
    */
   identityToken?: string;
   clientConditions?: ClientCondition[];
+  /**
+   * Wait timers the SDK holds — running and already fired — restored into
+   * the connection's socket data on (re)connect so a reconnect neither
+   * restarts a running timer nor forgets a fired one (ADR 0018 §6).
+   */
+  waitTimers?: ConditionWaitTimer[];
   launchers?: string[];
   token?: string;
+  /**
+   * The version of the SDK bundle making the connection, as built into it;
+   * absent from bundles that predate the field. Recorded per connection,
+   * never acted on.
+   */
+  sdkVersion?: string;
   flowSessionId?: string;
   checklistSessionId?: string;
   bannerSessionId?: string;
@@ -147,6 +159,22 @@ export type UpsertUserDto = {
   externalUserId: string;
   attributes?: Record<string, any>;
 };
+
+/** One attribute key the server refused on an upsert, with the reason (ADR 0020 §6). */
+export interface RejectedAttributeWrite {
+  codeName: string;
+  reason: string;
+}
+
+/**
+ * Acknowledgement of UpsertUser / UpsertCompany: the accepted keys were
+ * written; `rejected` names the ones that were not. A server predating this
+ * acknowledges a bare `true`, which reads as "nothing rejected".
+ */
+export interface UpsertAck {
+  ok: true;
+  rejected: RejectedAttributeWrite[];
+}
 
 /**
  * Upsert company request
