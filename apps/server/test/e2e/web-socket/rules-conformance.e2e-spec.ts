@@ -5,13 +5,19 @@ import {
   AttributeBizTypes,
   AttributeDataType,
   BizEvents,
+  ContentConditionLogic,
   ContentDataType,
   ContentPriority,
   EventAttributes,
+  EventCountLogic,
+  EventScope,
+  EventTimeLogic,
+  EventTimeUnit,
   Frequency,
   FrequencyUnits,
   ServerMessageKind,
 } from '@usertour/types';
+import { DEFAULT_CHECKLIST_DATA } from '@usertour/constants';
 import { AnnouncementService } from '@/modules/delivery/services/announcement.service';
 import { initialization } from '@/modules/projects/utils/project-initialization.util';
 import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
@@ -95,6 +101,49 @@ const group = (operators: Join, conditions: Cond[]): Cond => ({
   type: 'group',
   operators,
   conditions,
+});
+/** "The user did this event": at least once, ever, unless the options say otherwise. */
+const eventRule = (
+  eventId: string,
+  data: Record<string, unknown> = {},
+  operators: Join = 'and',
+): Cond => ({
+  id: ruleId('event'),
+  type: 'event',
+  data: {
+    eventId,
+    countLogic: EventCountLogic.AT_LEAST,
+    count: 1,
+    timeLogic: EventTimeLogic.AT_ANY_POINT_IN_TIME,
+    scope: EventScope.BY_CURRENT_USER_IN_ANY_COMPANY,
+    ...data,
+  },
+  operators,
+});
+/** A filter on the event's own attributes, nested in an event leaf. */
+const eventAttrRule = (attrId: string, value: string): Cond => ({
+  id: ruleId('event-attr'),
+  type: 'event-attr',
+  data: { attrId, logic: 'is', value },
+  operators: 'and',
+});
+/** "The user has seen / completed / is in another content." */
+const contentRule = (
+  contentId: string,
+  logic: ContentConditionLogic,
+  operators: Join = 'and',
+): Cond => ({
+  id: ruleId('content'),
+  type: 'content',
+  data: { contentId, logic },
+  operators,
+});
+/** A checklist task's completion condition: the task itself was clicked. */
+const taskClickedRule = (): Cond => ({
+  id: ruleId('task'),
+  type: 'task-is-clicked',
+  data: {},
+  operators: 'and',
 });
 
 type Every = { unit: FrequencyUnits; duration: number; times?: number };
@@ -289,6 +338,26 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
         createdAt: new Date(Date.now() - ageMs),
       },
     });
+  };
+
+  /** Events a host tracked for a user, with no session: what an event leaf counts. */
+  const seedTrackedEvents = async (
+    eventId: string,
+    user: any,
+    count: number,
+    ageMs: number,
+    data?: Record<string, unknown>,
+  ) => {
+    for (let i = 0; i < count; i++) {
+      await prisma.bizEvent.create({
+        data: {
+          eventId,
+          bizUserId: user.id,
+          createdAt: new Date(Date.now() - ageMs),
+          ...(data ? { data: data as Prisma.InputJsonValue } : {}),
+        },
+      });
+    }
   };
 
   type ToggleInput = {
@@ -875,6 +944,428 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
       expect(ids).toContain(targeted.content.id);
       expect(ids).not.toContain(excluded.content.id);
       expect(ids).not.toContain(scheduled.content.id);
+    });
+  });
+
+  // The leaves only the server can answer — what the user did, what they
+  // saw, which segment they are in — and the trees a real start rule is
+  // made of, each against the rows the runtime reads. Every content a
+  // scenario toggles is seeded before its first toggle: the runtime caches
+  // the published list per environment and type for a while.
+  describe('server-side leaves and composite trees', () => {
+    const DAY = 24 * 60 * 60 * 1000;
+    const HOUR = 60 * 60 * 1000;
+
+    it('an event leaf counts the user’s events in its window', async () => {
+      const { projectId, environment } = await fresh();
+      const signup = await buildEvent(prisma, { projectId, codeName: 'signed_up' });
+      // Signed up at least twice in the last seven days.
+      const { content, user: recent } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [
+          eventRule(signup.id, {
+            count: 2,
+            timeLogic: EventTimeLogic.IN_THE_LAST,
+            windowValue: 7,
+            timeUnit: EventTimeUnit.DAYS,
+          }),
+        ],
+      });
+      const stale = await buildBizUser(prisma, { environmentId: environment.id });
+      const once = await buildBizUser(prisma, { environmentId: environment.id });
+      await seedTrackedEvents(signup.id, recent, 2, DAY);
+      await seedTrackedEvents(signup.id, stale, 2, 10 * DAY);
+      await seedTrackedEvents(signup.id, once, 1, DAY);
+
+      expect((await started(environment, recent, content, ContentDataType.FLOW)).active).toBe(true);
+      expect((await started(environment, stale, content, ContentDataType.FLOW)).active).toBe(false);
+      expect((await started(environment, once, content, ContentDataType.FLOW)).active).toBe(false);
+    });
+
+    it('an event leaf’s attribute filter counts only the events that match it', async () => {
+      const { projectId, environment } = await fresh();
+      const signup = await buildEvent(prisma, { projectId, codeName: 'signed_up' });
+      const planAtSignup = await buildAttribute(prisma, {
+        projectId,
+        codeName: 'plan_at_signup',
+        displayName: 'Plan at signup',
+        dataType: AttributeDataType.String,
+        bizType: AttributeBizTypes.Event,
+      });
+      // Only a signup on the pro plan counts.
+      const { content, user: free } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [
+          eventRule(signup.id, { whereConditions: [eventAttrRule(planAtSignup.id, 'pro')] }),
+        ],
+      });
+      const pro = await buildBizUser(prisma, { environmentId: environment.id });
+      await seedTrackedEvents(signup.id, free, 1, DAY, { plan_at_signup: 'free' });
+      await seedTrackedEvents(signup.id, pro, 1, DAY, { plan_at_signup: 'pro' });
+
+      expect((await started(environment, free, content, ContentDataType.FLOW)).active).toBe(false);
+      expect((await started(environment, pro, content, ContentDataType.FLOW)).active).toBe(true);
+    });
+
+    it('a content leaf reads the user’s history with another content: unseen, then completed', async () => {
+      const { projectId, environment } = await fresh();
+      // The intro never auto-starts here; it is what the other rules look at.
+      const intro = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [],
+        opts: { enabledAutoStartRules: false },
+      });
+      const fresher = intro.user;
+      const viewer = await buildBizUser(prisma, { environmentId: environment.id });
+      const finisher = await buildBizUser(prisma, { environmentId: environment.id });
+      const followUp = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [contentRule(intro.content.id, ContentConditionLogic.UNSEEN)],
+        user: fresher,
+      });
+      const reward = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [contentRule(intro.content.id, ContentConditionLogic.COMPLETED)],
+        user: fresher,
+      });
+      // The viewer saw a step of the intro; the finisher saw it through.
+      await seedEndedSession(
+        projectId,
+        intro.content,
+        viewer,
+        intro.version,
+        HOUR,
+        BizEvents.FLOW_STEP_SEEN,
+      );
+      await seedEndedSession(
+        projectId,
+        intro.content,
+        finisher,
+        intro.version,
+        HOUR,
+        BizEvents.FLOW_STEP_SEEN,
+      );
+      await seedEndedSession(
+        projectId,
+        intro.content,
+        finisher,
+        intro.version,
+        HOUR,
+        BizEvents.FLOW_COMPLETED,
+      );
+
+      // Never saw the intro: the follow-up starts, the reward does not.
+      const fresh1 = await started(environment, fresher, followUp.content, ContentDataType.FLOW);
+      expect(fresh1.active).toBe(true);
+      expect(await fresh1.activeSession(reward.content.id)).toBeNull();
+      // Seen is neither unseen nor completed: nothing starts.
+      const seen = await started(environment, viewer, followUp.content, ContentDataType.FLOW);
+      expect(seen.active).toBe(false);
+      expect(await seen.activeSession(reward.content.id)).toBeNull();
+      // Completed: the reward starts, the follow-up does not.
+      const done = await started(environment, finisher, reward.content, ContentDataType.FLOW);
+      expect(done.active).toBe(true);
+      expect(await done.activeSession(followUp.content.id)).toBeNull();
+    });
+
+    it('a segment leaf follows a condition segment live', async () => {
+      const { projectId, environment, plan } = await fresh();
+      // A segment defined by a condition is re-asked on every evaluation.
+      const proUsers = await buildSegment(prisma, {
+        projectId,
+        environmentId: environment.id,
+        bizType: SegmentBizType.USER,
+        dataType: SegmentDataType.CONDITION,
+        data: [attrRule(plan.id, 'pro')] as unknown as Prisma.InputJsonValue,
+      });
+      const { content, user } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [segmentRule(proUsers.id)],
+        userData: { plan: 'free' },
+      });
+      expect((await started(environment, user, content, ContentDataType.FLOW)).active).toBe(false);
+      await prisma.bizUser.update({ where: { id: user.id }, data: { data: { plan: 'pro' } } });
+      expect((await started(environment, user, content, ContentDataType.FLOW)).active).toBe(true);
+    });
+
+    it('a segment leaf follows a manual segment by its membership rows, `is` and `is not`', async () => {
+      const { projectId, environment } = await fresh();
+      const invited = await buildSegment(prisma, {
+        projectId,
+        environmentId: environment.id,
+        bizType: SegmentBizType.USER,
+        dataType: SegmentDataType.MANUAL,
+      });
+      const { content, user } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [segmentRule(invited.id)],
+      });
+      expect((await started(environment, user, content, ContentDataType.FLOW)).active).toBe(false);
+      await prisma.bizUserOnSegment.create({ data: { segmentId: invited.id, bizUserId: user.id } });
+      expect((await started(environment, user, content, ContentDataType.FLOW)).active).toBe(true);
+
+      // `is not`, in its own project: the member is excluded, a stranger passes.
+      const other = await fresh();
+      const list = await buildSegment(prisma, {
+        projectId: other.projectId,
+        environmentId: other.environment.id,
+        bizType: SegmentBizType.USER,
+        dataType: SegmentDataType.MANUAL,
+      });
+      const notListed = await seed({
+        projectId: other.projectId,
+        environment: other.environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [{ ...segmentRule(list.id), data: { segmentId: list.id, logic: 'not' } }],
+      });
+      const member = await buildBizUser(prisma, { environmentId: other.environment.id });
+      await prisma.bizUserOnSegment.create({ data: { segmentId: list.id, bizUserId: member.id } });
+      expect(
+        (await started(other.environment, notListed.user, notListed.content, ContentDataType.FLOW))
+          .active,
+      ).toBe(true);
+      expect(
+        (await started(other.environment, member, notListed.content, ContentDataType.FLOW)).active,
+      ).toBe(false);
+    });
+
+    it('a two-group tree: the server leaves resolve, the nested browser leaf is tracked, and it starts once reported', async () => {
+      const { projectId, environment, plan } = await fresh();
+      const signup = await buildEvent(prisma, { projectId, codeName: 'signed_up' });
+      const beta = await buildSegment(prisma, {
+        projectId,
+        environmentId: environment.id,
+        bizType: SegmentBizType.USER,
+        dataType: SegmentDataType.MANUAL,
+      });
+      const element = elementRule('and');
+      // (in beta OR signed up) AND (on the pro plan AND on /app AND #cta present).
+      // A list's join is its first member's operator: the two groups say
+      // `and`, the leaves inside the first say `or`.
+      const tree = [
+        group('and', [segmentRule(beta.id, 'or'), eventRule(signup.id, {}, 'or')]),
+        group('and', [attrRule(plan.id, 'pro'), urlRule(['https://example.com/app*']), element]),
+      ];
+      const { content, version, user } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: tree,
+        userData: { plan: 'pro' },
+      });
+      const stranger = await buildBizUser(prisma, {
+        environmentId: environment.id,
+        data: { plan: 'pro' },
+      });
+      const elsewhere = await buildBizUser(prisma, {
+        environmentId: environment.id,
+        data: { plan: 'pro' },
+      });
+      // The user and the one on another page are in beta; the stranger is not.
+      await prisma.bizUserOnSegment.create({ data: { segmentId: beta.id, bizUserId: user.id } });
+      await prisma.bizUserOnSegment.create({
+        data: { segmentId: beta.id, bizUserId: elsewhere.id },
+      });
+
+      // Every server leaf holds; the browser leaf, a level down, is tracked.
+      const first = await started(environment, user, content, ContentDataType.FLOW);
+      expect(first.active).toBe(false);
+      expect(first.kinds).toEqual([ServerMessageKind.TRACK_CLIENT_CONDITION]);
+      expect(first.pushed[0].payload).toMatchObject({
+        contentId: content.id,
+        condition: { id: element.id },
+      });
+      const reported = (isActive: boolean) => [
+        {
+          contentId: content.id,
+          contentType: ContentDataType.FLOW,
+          versionId: version.id,
+          conditionId: element.id,
+          isActive,
+        },
+      ];
+      expect(
+        (
+          await started(environment, user, content, ContentDataType.FLOW, {
+            clientConditions: reported(true),
+          })
+        ).active,
+      ).toBe(true);
+
+      // The reported leaf does not carry a tree whose OR group fails …
+      expect(
+        (
+          await started(environment, stranger, content, ContentDataType.FLOW, {
+            clientConditions: reported(true),
+          })
+        ).active,
+      ).toBe(false);
+      // … nor one whose AND group fails on the page.
+      expect(
+        (
+          await started(environment, elsewhere, content, ContentDataType.FLOW, {
+            pageUrl: 'https://example.com/settings',
+            clientConditions: reported(true),
+          })
+        ).active,
+      ).toBe(false);
+    });
+
+    // Finding, pinned: the check that decides whether a tree is worth
+    // tracking (`filterActivatedContentWithoutClientConditions`) keeps only
+    // user-attr, segment, content, time and page leaves. An event leaf is
+    // dropped, so a group it alone satisfies reads as false, and the tree's
+    // browser leaf is never tracked: the content cannot start on that page.
+    // At the top level the same rule survives, since a list left empty by
+    // the filter counts as eligible.
+    it.skip('an event leaf that alone satisfies its OR group still gets the tree’s browser leaf tracked', async () => {
+      const { projectId, environment, plan } = await fresh();
+      const signup = await buildEvent(prisma, { projectId, codeName: 'signed_up' });
+      const beta = await buildSegment(prisma, {
+        projectId,
+        environmentId: environment.id,
+        bizType: SegmentBizType.USER,
+        dataType: SegmentDataType.MANUAL,
+      });
+      const element = elementRule('and');
+      const { content, user } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [
+          group('and', [segmentRule(beta.id, 'or'), eventRule(signup.id, {}, 'or')]),
+          group('and', [attrRule(plan.id, 'pro'), element]),
+        ],
+        userData: { plan: 'pro' },
+      });
+      // Signed up, not in beta: the OR group holds on the event alone.
+      await seedTrackedEvents(signup.id, user, 1, 1000);
+      const first = await started(environment, user, content, ContentDataType.FLOW);
+      expect(first.active).toBe(false);
+      expect(first.kinds).toEqual([ServerMessageKind.TRACK_CLIENT_CONDITION]);
+    });
+
+    it('a composed hide rule (attribute OR event) hides a live session on either leaf and releases it', async () => {
+      const { projectId, environment, plan, tier } = await fresh();
+      const flagged = await buildEvent(prisma, { projectId, codeName: 'churn_risk_flagged' });
+      const { content, version, user } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [attrRule(plan.id, 'pro')],
+        opts: {
+          hideRules: [attrRule(tier.id, 'blocked', 'or'), eventRule(flagged.id, {}, 'or')],
+        },
+        userData: { plan: 'pro', tier: 'gold' },
+      });
+      const running = await started(environment, user, content, ContentDataType.FLOW);
+      expect(running.active).toBe(true);
+      const session = await running.activeSession(content.id);
+
+      // The host flagged the user: the event leaf turns true on the live session.
+      await seedTrackedEvents(flagged.id, user, 1, 0);
+      const hidden = await toggle(environment, user, [ContentDataType.FLOW], {
+        on: running.connection,
+      });
+      expect(hidden.kinds).toContain(ServerMessageKind.UNSET_FLOW_SESSION);
+      expect(hidden.after.flowSession).toBeFalsy();
+      expect((await hidden.activeSession(content.id))?.versionId).toBe(version.id);
+
+      // The flag is withdrawn: the same session resumes.
+      await prisma.bizEvent.deleteMany({ where: { eventId: flagged.id, bizUserId: user.id } });
+      const resumed = await toggle(environment, user, [ContentDataType.FLOW], {
+        on: hidden.connection,
+      });
+      expect(resumed.kinds).toContain(ServerMessageKind.SET_FLOW_SESSION);
+      expect(
+        resumed.pushed.find((message) => message.kind === ServerMessageKind.SET_FLOW_SESSION)
+          ?.payload,
+      ).toMatchObject({ id: session?.id });
+
+      // The other leaf alone hides it too.
+      await prisma.bizUser.update({
+        where: { id: user.id },
+        data: { data: { plan: 'pro', tier: 'blocked' } },
+      });
+      const hiddenAgain = await toggle(environment, user, [ContentDataType.FLOW], {
+        on: resumed.connection,
+      });
+      expect(hiddenAgain.kinds).toContain(ServerMessageKind.UNSET_FLOW_SESSION);
+    });
+
+    it('a checklist task completed by “the task was clicked” completes on the click, not before', async () => {
+      const { projectId, environment, plan } = await fresh();
+      const task = {
+        id: 'task-invite',
+        name: 'Invite your team',
+        isCompleted: false,
+        clickedActions: [],
+        completeConditions: [taskClickedRule()],
+        onlyShowTask: false,
+        onlyShowTaskConditions: [],
+      };
+      const { content, version, user } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.CHECKLIST,
+        autoStartRules: [attrRule(plan.id, 'pro')],
+        data: { ...DEFAULT_CHECKLIST_DATA, items: [task] },
+        userData: { plan: 'pro' },
+      });
+      const running = await started(environment, user, content, ContentDataType.CHECKLIST);
+      expect(running.active).toBe(true);
+      const session = await running.activeSession(content.id);
+
+      // Nothing clicked yet: another toggle completes nothing.
+      const idle = await toggle(environment, user, [ContentDataType.CHECKLIST], {
+        on: running.connection,
+      });
+      expect(idle.kinds).not.toContain(ServerMessageKind.CHECKLIST_TASK_COMPLETED);
+
+      // The widget reported the click: the tracked event is what the next
+      // evaluation reads.
+      const clicked = await prisma.event.findFirst({
+        where: { projectId, codeName: BizEvents.CHECKLIST_TASK_CLICKED },
+      });
+      await prisma.bizEvent.create({
+        data: {
+          eventId: clicked?.id as string,
+          bizUserId: user.id,
+          bizSessionId: session?.id,
+          contentId: content.id,
+          versionId: version.id,
+          data: { [EventAttributes.CHECKLIST_TASK_ID]: task.id },
+        },
+      });
+      const next = await toggle(environment, user, [ContentDataType.CHECKLIST], {
+        on: idle.connection,
+      });
+      expect(
+        next.pushed.find((message) => message.kind === ServerMessageKind.CHECKLIST_TASK_COMPLETED)
+          ?.payload,
+      ).toMatchObject({ sessionId: session?.id, taskId: task.id });
+      expect(
+        await prisma.bizEvent.count({
+          where: {
+            bizSessionId: session?.id,
+            event: { codeName: BizEvents.CHECKLIST_TASK_COMPLETED },
+          },
+        }),
+      ).toBe(1);
     });
   });
 });
