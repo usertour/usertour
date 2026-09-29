@@ -38,6 +38,12 @@ interface PopperContentProps {
   collisionPadding?: number | Partial<Record<Side, number>>;
   sticky?: 'partial' | 'always';
   hideWhenDetached?: boolean;
+  /**
+   * Keep the content inside the collision boundary (the viewport unless `collisionBoundary` is
+   * set) on both axes, whether or not `avoidCollisions` lets it flip. When no side has room, it
+   * overlaps the reference rather than render off-screen.
+   */
+  keepInViewport?: boolean;
   dir?: string;
   globalStyle?: string;
   updatePositionStrategy?: 'optimized' | 'always';
@@ -80,6 +86,7 @@ export const usePopperContent = (
     collisionPadding: collisionPaddingProp = 0,
     sticky = 'partial',
     hideWhenDetached = false,
+    keepInViewport = false,
     width = 'auto',
     updatePositionStrategy = 'optimized',
   } = props;
@@ -114,6 +121,29 @@ export const usePopperContent = (
     altBoundary: hasExplicitBoundaries,
   };
 
+  const shiftLimiter = sticky === 'partial' ? limitShift() : undefined;
+  const collisionMiddleware = keepInViewport
+    ? [
+        // The side is chosen first, and only on whether the content fits beside the reference.
+        // A shift that ran first would already have pulled the content inside the boundary, and
+        // flip would never see the overflow that should move it to the other side.
+        avoidCollisions && flip({ ...detectOverflowOptions, crossAxis: false }),
+        // Then the content slides back inside on both axes. On the side axis that overlaps the
+        // reference when no side has room; the limiter stops it at the reference's far edge, so
+        // it stays on the reference instead of pinning to the viewport once that scrolls away.
+        shift({ mainAxis: true, crossAxis: true, limiter: shiftLimiter, ...detectOverflowOptions }),
+      ]
+    : [
+        avoidCollisions &&
+          shift({
+            mainAxis: true,
+            crossAxis: false,
+            limiter: shiftLimiter,
+            ...detectOverflowOptions,
+          }),
+        avoidCollisions && flip({ ...detectOverflowOptions }),
+      ];
+
   // Source fix: override platform.getElementRects so that when the reference is detached from the
   // DOM we supply the last known reference rect instead of reading getBoundingClientRect (which
   // returns 0,0). This prevents (0,0) from ever being fed into the position pipeline and avoids
@@ -146,14 +176,7 @@ export const usePopperContent = (
         mainAxis: sideOffset + arrowHeight,
         alignmentAxis: alignOffset,
       }),
-      avoidCollisions &&
-        shift({
-          mainAxis: true,
-          crossAxis: false,
-          limiter: sticky === 'partial' ? limitShift() : undefined,
-          ...detectOverflowOptions,
-        }),
-      avoidCollisions && flip({ ...detectOverflowOptions }),
+      ...collisionMiddleware,
       size({
         ...detectOverflowOptions,
       }),
@@ -191,6 +214,13 @@ export const usePopperContent = (
   const arrowX = middlewareData.arrow?.x;
   const arrowY = middlewareData.arrow?.y;
   const baseSide = OPPOSITE_SIDE[placedSide];
+  // Pushed along its side axis, the content no longer sits beside the reference's edge, so an
+  // arrow would point into the reference rather than at it.
+  const sideAxisShift =
+    placedSide === 'top' || placedSide === 'bottom'
+      ? middlewareData.shift?.y
+      : middlewareData.shift?.x;
+  const arrowHidden = Math.abs(sideAxisShift ?? 0) >= 1;
 
   const composedRefs = useComposedRefs((node: any) => refs.setFloating(node));
 
@@ -214,6 +244,7 @@ export const usePopperContent = (
     placedSide,
     arrowX,
     arrowY,
+    arrowHidden,
     baseSide,
     middlewareData,
   };

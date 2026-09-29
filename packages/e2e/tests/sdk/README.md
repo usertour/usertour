@@ -45,6 +45,9 @@ fixtures and never starts the SDK.
 - `flow.spec.ts`, `content-types.spec.ts` — the content lifecycle: a pushed
   session rendered, navigated, ended; checklists, banners, launchers, resource
   centers; what each reports back.
+- `tooltip-placement.spec.ts` — where a flow tooltip lands when its target
+  leaves it no room: kept on screen, and a target taller than the viewport
+  scrolled to its top.
 - `messages.spec.ts` — the message framing (batches), `track()`, unknown server
   messages, the UI failing to initialise.
 - `content.ts` — the sessions the server pushes, reduced to what the widgets

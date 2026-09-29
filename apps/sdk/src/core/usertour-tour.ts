@@ -461,7 +461,10 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (customScrollIntoView) {
       customScrollIntoView(el);
     } else {
-      smoothScroll(el, { block: 'center' });
+      // Centering a target taller than the viewport would scroll its top edge, and a tooltip
+      // placed along it, out of view; such a target is scrolled to its top instead.
+      const isTallerThanViewport = el.getBoundingClientRect().height > window.innerHeight;
+      smoothScroll(el, { block: isTallerThanViewport ? 'start' : 'center' });
     }
 
     // Update store

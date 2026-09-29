@@ -42,6 +42,7 @@ interface PopperContentProps {
   collisionPadding?: number | Partial<Record<Side, number>>;
   sticky?: 'partial' | 'always';
   hideWhenDetached?: boolean;
+  keepInViewport?: boolean;
   dir?: string;
   globalStyle?: string;
   updatePositionStrategy?: 'optimized' | 'always';
@@ -240,6 +241,7 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
     placedSide,
     arrowX,
     arrowY,
+    arrowHidden,
     baseSide,
     middlewareData,
   } = popperData;
@@ -279,7 +281,9 @@ const PopperContentPotal = forwardRef<HTMLDivElement, PopperContentProps>((props
               bottom: 'rotate(180deg)',
               left: 'translateY(50%) rotate(-90deg) translateX(50%)',
             }[placedSide] as string,
-            ...(middlewareData.customHide?.referenceHidden ? hiddenStyle : { opacity: 1 }),
+            ...(middlewareData.customHide?.referenceHidden || arrowHidden
+              ? hiddenStyle
+              : { opacity: 1 }),
           }}
         >
           <ArrowPrimitive.Root

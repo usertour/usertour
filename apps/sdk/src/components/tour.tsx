@@ -34,6 +34,9 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { UsertourTour } from '@/core/usertour-tour';
 import { off, on } from '@/utils';
 
+// The gap a tooltip keeps from the viewport's edges when it has to be pushed back inside.
+const TOOLTIP_VIEWPORT_PADDING = 8;
+
 // Base props that are shared between TourPopper and TourModal
 type TourBaseProps = {
   openState: boolean;
@@ -247,7 +250,11 @@ const TourPopper = (props: TourPopperProps) => {
         hideWhenDetached={true}
         sideOffset={currentStep.setting.sideOffset}
         alignOffset={currentStep.setting.alignOffset}
+        // `alignType` decides only whether the tooltip may flip to the other side; either way
+        // it is kept on screen.
         avoidCollisions={currentStep.setting.alignType === 'auto'}
+        keepInViewport={true}
+        collisionPadding={TOOLTIP_VIEWPORT_PADDING}
         side={side}
         align={align}
         width={`${width}px`}

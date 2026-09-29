@@ -6,6 +6,9 @@ type Box = { x: number; y: number; width: number; height: number };
 // tooltip by sideOffset (0 in these cases) + arrow height, so the arrow fills
 // the gap exactly.
 const EXPECTED_GAP = 10;
+// The margin a tooltip keeps from the viewport's edges when it is pushed back
+// inside (TOOLTIP_VIEWPORT_PADDING in the SDK's tour component).
+const VIEWPORT_PADDING = 8;
 const TOLERANCE = 1;
 
 const centerX = (b: Box) => b.x + b.width / 2;
@@ -60,11 +63,26 @@ for (const side of Object.keys(SIDES) as Side[]) {
   });
 }
 
-test('a right-placed tooltip on an item of a fixed, scrollable sidebar sits beside the item', async ({
+test('a right-placed tooltip on an item of a fixed, scrollable sidebar sits beside the item, pushed down onto the screen', async ({
   gallery,
 }) => {
   await gallery.open('tooltip-fixed-sidebar');
-  await expectBeside(gallery, 'right');
+  const tip = await gallery.landedTooltipBox();
+  const target = (await gallery.target.boundingBox()) as Box;
+
+  // The item sits near the top of the rail: centered on it, the tooltip would
+  // start above the viewport, so it slides down to the viewport's margin,
+  // still beside the item and still across from its middle.
+  await expect(gallery.tooltip).toHaveAttribute('data-usertour-popper-data-placement', 'right');
+  expect(
+    Math.abs(SIDES.right.gap(target, tip) - EXPECTED_GAP),
+    'gap to the right of the item',
+  ).toBeLessThanOrEqual(TOLERANCE);
+  expect(Math.abs(tip.y - VIEWPORT_PADDING), 'top at the viewport margin').toBeLessThanOrEqual(
+    TOLERANCE,
+  );
+  expect(centerY(target), 'across from the item').toBeGreaterThan(tip.y);
+  expect(centerY(target), 'across from the item').toBeLessThan(tip.y + tip.height);
 });
 
 test('a tooltip follows its target when content inserted above pushes the target down', async ({
