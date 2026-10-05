@@ -1,5 +1,7 @@
 <a href="https://www.usertour.io"><img src="./assets/hero.png" alt="Usertour" /></a>
 
+[![Deploy to Railyard](https://app.railyard.run/deploy/badge)](https://app.railyard.run/deploy?repo=https://github.com/usertour/usertour)
+
 <div align="center">
   <h1 align="center">
     <img alt="usertour logo" height="60" src="./assets/logo.svg">
