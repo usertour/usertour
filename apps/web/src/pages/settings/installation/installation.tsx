@@ -30,7 +30,7 @@ import {
   buildSelfHostedEnvVars,
 } from './snippet';
 
-const INSTALL_DOCS_HREF = 'https://docs.usertour.io/developers/usertourjs-installation/';
+const INSTALL_DOCS_HREF = 'https://docs.usertour.io/developers/usertourjs-reference/installation';
 
 /**
  * Settings → Installation: a field-style setup form. Environment + token are
