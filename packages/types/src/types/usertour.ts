@@ -128,6 +128,9 @@ type AttributeOperation =
       add?: never;
       union?: never;
       remove?: never;
+      subtract?: never;
+      append?: never;
+      prepend?: never;
     }
   | {
       /** Set the value only when the attribute has no value yet. */
@@ -137,6 +140,9 @@ type AttributeOperation =
       add?: never;
       union?: never;
       remove?: never;
+      subtract?: never;
+      append?: never;
+      prepend?: never;
     }
   | {
       /** Add to a Number attribute (negative to subtract); a missing value starts at 0. */
@@ -146,6 +152,9 @@ type AttributeOperation =
       union?: never;
       remove?: never;
       data_type?: never;
+      subtract?: never;
+      append?: never;
+      prepend?: never;
     }
   | {
       /** Append the value(s) not yet present to a List attribute; a missing list starts empty. */
@@ -155,6 +164,9 @@ type AttributeOperation =
       add?: never;
       remove?: never;
       data_type?: never;
+      subtract?: never;
+      append?: never;
+      prepend?: never;
     }
   | {
       /** Remove every matching value from a List attribute; a missing attribute stays undefined. */
@@ -164,20 +176,53 @@ type AttributeOperation =
       add?: never;
       union?: never;
       data_type?: never;
+      subtract?: never;
+      append?: never;
+      prepend?: never;
     };
 
 /**
- * Operation spellings the SDK still translates for compatibility. Each one
- * is deprecated; the SDK rewrites it and logs a warning.
+ * Operation spellings the SDK still translates for compatibility — exactly
+ * one per attribute, like `AttributeOperation`. Each one is deprecated; the
+ * SDK rewrites it and logs a warning.
  */
-interface LegacyAttributeChange {
-  /** @deprecated Use `{ add: -n }`. */
-  subtract?: number;
-  /** @deprecated Use `{ union: values }` — lists are deduplicated sets. */
-  append?: AttributeLiteralOrList;
-  /** @deprecated Use `{ union: values }` — list order is never observable. */
-  prepend?: AttributeLiteralOrList;
-}
+type LegacyAttributeChange =
+  | {
+      /** @deprecated Use `{ add: -n }`. */
+      subtract: number;
+      append?: never;
+      prepend?: never;
+      set?: never;
+      set_once?: never;
+      add?: never;
+      union?: never;
+      remove?: never;
+      data_type?: never;
+    }
+  | {
+      /** @deprecated Use `{ union: values }` — lists are deduplicated sets. */
+      append: AttributeLiteralOrList;
+      subtract?: never;
+      prepend?: never;
+      set?: never;
+      set_once?: never;
+      add?: never;
+      union?: never;
+      remove?: never;
+      data_type?: never;
+    }
+  | {
+      /** @deprecated Use `{ union: values }` — list order is never observable. */
+      prepend: AttributeLiteralOrList;
+      subtract?: never;
+      append?: never;
+      set?: never;
+      set_once?: never;
+      add?: never;
+      union?: never;
+      remove?: never;
+      data_type?: never;
+    };
 
 /**
  * What an identify / update call reports back: the write succeeded, and
