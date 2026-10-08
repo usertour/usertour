@@ -1,5 +1,5 @@
 import { UserTourTypes } from '@usertour/types';
-import { isEqual } from '@usertour/helpers';
+import { attributeCacheChanged, attributeDataEqual, mergeAttributeCache } from '@usertour/helpers';
 import { Evented } from '@/utils/evented';
 
 import { autoBind } from '@/utils';
@@ -7,6 +7,13 @@ import { autoBind } from '@/utils';
 /**
  * Simple manager for user, company, and membership attributes
  * Extends Evented to provide event notification capabilities
+ *
+ * The cache exists only for change detection: it holds the literals this
+ * page already sent and the server accepted. A key written with an operation
+ * object ({add}, {union}, …) is always sent and never cached — the server
+ * computes its value, which the client cannot know (ADR 0017 §6). A key the
+ * server refused leaves the cache (ADR 0020 §6): what the server holds for
+ * it is unknown here too.
  */
 export class UsertourAttributeManager extends Evented {
   // === Properties ===
@@ -31,8 +38,7 @@ export class UsertourAttributeManager extends Evented {
     currentAttributes: UserTourTypes.Attributes,
     newAttributes: UserTourTypes.Attributes,
   ): boolean {
-    const mergedAttributes = { ...currentAttributes, ...newAttributes };
-    return !isEqual(currentAttributes, mergedAttributes);
+    return attributeCacheChanged(currentAttributes, newAttributes);
   }
 
   /**
@@ -64,48 +70,76 @@ export class UsertourAttributeManager extends Evented {
 
   // === Attribute Setters ===
   /**
-   * Set user attributes
-   * @param attributes - User attributes to set
-   * @returns True if attributes were actually changed and updated
+   * Fold an answered user write into the cache: the literals the server
+   * accepted are cached, the keys it refused leave the cache.
+   * @param attributes - The attributes the write carried
+   * @param refused - The keys the server refused
+   * @returns True if the cache changed
    */
-  setUserAttributes(attributes: UserTourTypes.Attributes): boolean {
-    if (!this.hasAttributesChanged(this.userAttributes, attributes)) {
-      return false; // No changes detected
+  setUserAttributes(
+    attributes: UserTourTypes.Attributes,
+    refused: readonly string[] = [],
+  ): boolean {
+    const next = mergeAttributeCache(this.userAttributes, attributes, refused);
+    if (attributeDataEqual(this.userAttributes, next)) {
+      return false;
     }
-
-    this.userAttributes = { ...this.userAttributes, ...attributes };
-
+    this.userAttributes = next;
     return true;
   }
 
   /**
-   * Set company attributes
-   * @param attributes - Company attributes to set
-   * @returns True if attributes were actually changed and updated
+   * Fold an answered company write into the cache, as for the user.
+   * @param attributes - The attributes the write carried
+   * @param refused - The keys the server refused
+   * @returns True if the cache changed
    */
-  setCompanyAttributes(attributes: UserTourTypes.Attributes): boolean {
-    if (!this.hasAttributesChanged(this.companyAttributes, attributes)) {
-      return false; // No changes detected
+  setCompanyAttributes(
+    attributes: UserTourTypes.Attributes,
+    refused: readonly string[] = [],
+  ): boolean {
+    const next = mergeAttributeCache(this.companyAttributes, attributes, refused);
+    if (attributeDataEqual(this.companyAttributes, next)) {
+      return false;
     }
-
-    this.companyAttributes = { ...this.companyAttributes, ...attributes };
-
+    this.companyAttributes = next;
     return true;
   }
 
   /**
-   * Set membership attributes
-   * @param attributes - Membership attributes to set
-   * @returns True if attributes were actually changed and updated
+   * Fold an answered membership write into the cache, as for the user.
+   * @param attributes - The attributes the write carried
+   * @param refused - The keys the server refused
+   * @returns True if the cache changed
    */
-  setMembershipAttributes(attributes: UserTourTypes.Attributes): boolean {
-    if (!this.hasAttributesChanged(this.membershipAttributes, attributes)) {
-      return false; // No changes detected
+  setMembershipAttributes(
+    attributes: UserTourTypes.Attributes,
+    refused: readonly string[] = [],
+  ): boolean {
+    const next = mergeAttributeCache(this.membershipAttributes, attributes, refused);
+    if (attributeDataEqual(this.membershipAttributes, next)) {
+      return false;
     }
-
-    this.membershipAttributes = { ...this.membershipAttributes, ...attributes };
-
+    this.membershipAttributes = next;
     return true;
+  }
+
+  /**
+   * The keys of a write the server did not confirm leave the cache: what it
+   * holds for them is unknown, and a stale literal would make the next call
+   * carrying them look unchanged and go unsent — while a resend of the write
+   * that failed offline would then land its stale value (ADR 0018 §4).
+   */
+  forgetUserAttributes(codeNames: readonly string[]): void {
+    this.userAttributes = mergeAttributeCache(this.userAttributes, {}, codeNames);
+  }
+
+  forgetCompanyAttributes(codeNames: readonly string[]): void {
+    this.companyAttributes = mergeAttributeCache(this.companyAttributes, {}, codeNames);
+  }
+
+  forgetMembershipAttributes(codeNames: readonly string[]): void {
+    this.membershipAttributes = mergeAttributeCache(this.membershipAttributes, {}, codeNames);
   }
 
   // === Attribute Getters ===

@@ -98,12 +98,13 @@ export const AttributeListContent = (props: AttributeListContentProps) => {
     },
     {
       header: t('settings.attributes.columns.dataType'),
-      headerClassName: 'w-28 hidden sm:table-cell',
+      // Wide enough for the longest label ("Random number") on one line.
+      headerClassName: 'w-40 hidden sm:table-cell',
       className: 'hidden sm:table-cell',
       cell: (attribute) => {
         const key = DATA_TYPE_I18N_KEY[attribute.dataType];
         return (
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5 whitespace-nowrap">
             <AttributeDataTypeIcon
               dataType={attribute.dataType}
               className="h-4 w-4 shrink-0 text-muted-foreground"

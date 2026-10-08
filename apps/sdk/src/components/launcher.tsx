@@ -14,6 +14,8 @@ import {
   LauncherActionType,
   LauncherData,
   LauncherPositionType,
+  LauncherTriggerElement,
+  LauncherTriggerEvent,
   RulesCondition,
   ThemeTypesSetting,
   UserTourTypes,
@@ -52,6 +54,29 @@ type LauncherHandlers = {
 };
 
 // Hooks
+
+/** How long a hover tooltip waits after the pointer leaves before closing. */
+const TOOLTIP_CLOSE_GRACE_MS = 100;
+
+/**
+ * Whether the pointer is still on the tooltip or on an element that opens it
+ * (the launcher and/or the target, as the launcher is configured). Leaving
+ * any of them only closes the tooltip when the pointer is on none of them.
+ */
+const isPointerOnTooltipOrTrigger = (
+  data: LauncherData,
+  popper: HTMLElement | null,
+  launcher: HTMLElement | null,
+  target: HTMLElement | null,
+) => {
+  const { triggerElement } = data.behavior;
+  return [
+    popper,
+    triggerElement !== LauncherTriggerElement.TARGET ? launcher : null,
+    triggerElement !== LauncherTriggerElement.LAUNCHER ? target : null,
+  ].some((element) => element?.matches(':hover'));
+};
+
 const useLauncherHandlers = (
   data: LauncherData,
   actionType: LauncherActionType,
@@ -59,6 +84,8 @@ const useLauncherHandlers = (
   handleActivate: () => void,
   handleActions: (actions: RulesCondition[]) => void,
   popperRef: React.RefObject<HTMLDivElement>,
+  launcherRef: React.RefObject<HTMLDivElement>,
+  triggerRef: React.RefObject<HTMLElement>,
 ): LauncherHandlers => {
   return useMemo(
     () => ({
@@ -81,14 +108,21 @@ const useLauncherHandlers = (
       handleMouseLeave: () => {
         if (actionType === LauncherActionType.SHOW_TOOLTIP) {
           setTimeout(() => {
-            if (!popperRef.current?.matches(':hover')) {
+            if (
+              !isPointerOnTooltipOrTrigger(
+                data,
+                popperRef.current,
+                launcherRef.current,
+                triggerRef.current,
+              )
+            ) {
               setOpen(false);
             }
-          }, 100);
+          }, TOOLTIP_CLOSE_GRACE_MS);
         }
       },
     }),
-    [data, actionType, setOpen, handleActivate, handleActions, popperRef],
+    [data, actionType, setOpen, handleActivate, handleActions, popperRef, launcherRef, triggerRef],
   );
 };
 
@@ -117,24 +151,45 @@ const useClickOutside = (
 
 const usePopperMouseLeave = (
   popperRef: React.RefObject<HTMLDivElement>,
-  actionType: LauncherActionType,
+  launcherRef: React.RefObject<HTMLDivElement>,
+  triggerRef: React.RefObject<HTMLElement>,
+  data: LauncherData,
+  open: boolean,
   setOpen: (open: boolean) => void,
 ) => {
   useEffect(() => {
     const popper = popperRef.current;
-    if (!popper) return;
+    const { actionType, triggerEvent } = data.behavior;
+    // Only a hover launcher closes when the pointer leaves its tooltip; a click
+    // launcher's tooltip stays open until a click outside it. Bound while open:
+    // before that the tooltip is not rendered and popperRef is still null.
+    if (
+      !open ||
+      !popper ||
+      actionType !== LauncherActionType.SHOW_TOOLTIP ||
+      triggerEvent !== LauncherTriggerEvent.HOVERED
+    ) {
+      return;
+    }
 
+    let closeTimer: ReturnType<typeof setTimeout> | undefined;
     const handlePopperMouseLeave = () => {
-      if (actionType === LauncherActionType.SHOW_TOOLTIP) {
-        setOpen(false);
-      }
+      clearTimeout(closeTimer);
+      // Same rule as leaving the launcher; also covers entering the tooltip's
+      // own iframe, which can report a leave.
+      closeTimer = setTimeout(() => {
+        if (!isPointerOnTooltipOrTrigger(data, popper, launcherRef.current, triggerRef.current)) {
+          setOpen(false);
+        }
+      }, TOOLTIP_CLOSE_GRACE_MS);
     };
 
     on(popper, 'mouseleave', handlePopperMouseLeave);
     return () => {
+      clearTimeout(closeTimer);
       off(popper, 'mouseleave', handlePopperMouseLeave);
     };
-  }, [actionType, setOpen]);
+  }, [open, data, popperRef, launcherRef, triggerRef, setOpen]);
 };
 
 // Custom hook to extract store state
@@ -247,10 +302,12 @@ const LauncherWidgetCore = ({
     handleActivate,
     handleActions,
     popperRef,
+    launcherRef,
+    triggerRef,
   );
   useEventHandlers(data, launcherRef, triggerRef, handlers);
   useClickOutside(open, popperRef, setOpen);
-  usePopperMouseLeave(popperRef, actionType, setOpen);
+  usePopperMouseLeave(popperRef, launcherRef, triggerRef, data, open, setOpen);
 
   return (
     <LinkDecoratorContext.Provider value={linkUrlDecorator || null}>

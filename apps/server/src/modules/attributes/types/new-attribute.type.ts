@@ -6,4 +6,6 @@ export type NewAttribute = {
   codeName: string;
   description?: string;
   dataType: number;
+  /** Upper bound of a Random number attribute (ADR 0020); ignored for other types. */
+  randomMax?: number;
 };

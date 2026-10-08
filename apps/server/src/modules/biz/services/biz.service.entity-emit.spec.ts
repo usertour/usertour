@@ -76,3 +76,41 @@ describe('BizService.withEntityChangeEmit', () => {
     expect(emitter.emit).not.toHaveBeenCalled();
   });
 });
+
+describe('BizService.previousAttributesOf', () => {
+  const previousAttributesOf = (
+    current: Record<string, unknown>,
+    merged: Record<string, unknown>,
+  ) =>
+    (
+      new BizService({} as never, {} as never, {} as never, {} as never) as never as {
+        previousAttributesOf: (
+          current: Record<string, unknown>,
+          merged: Record<string, unknown>,
+        ) => Record<string, unknown>;
+      }
+    ).previousAttributesOf(current, merged);
+
+  it('records the value before a change and null before an addition', () => {
+    expect(previousAttributesOf({ plan: 'free' }, { plan: 'pro', seats: 3 })).toEqual({
+      plan: 'free',
+      seats: null,
+    });
+  });
+
+  it('records the removed value of an attribute named like an Object.prototype member', () => {
+    // `'constructor' in {}` is true through the prototype: the removal must
+    // be judged on own keys, or the webhook loses the old value.
+    const current = JSON.parse('{"constructor":"acme","valueOf":"plain","toString":["x"]}');
+    expect(previousAttributesOf(current, {})).toEqual({
+      constructor: 'acme',
+      valueOf: 'plain',
+      toString: ['x'],
+    });
+    expect(previousAttributesOf({}, current)).toEqual({
+      constructor: null,
+      valueOf: null,
+      toString: null,
+    });
+  });
+});

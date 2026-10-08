@@ -1,0 +1,37 @@
+/*
+ * A careless host stylesheet, applied with `?host=hostile`. Every rule is a
+ * global one real sites ship (legacy box model, the 62.5% rem trick,
+ * responsive-embed iframes, reset-style svg sizing, heavy button styles);
+ * none of them should reach into the widget.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: content-box;
+}
+html {
+  font-size: 62.5%;
+}
+body {
+  font-size: 1.8rem;
+  line-height: 2;
+  letter-spacing: 0.05em;
+}
+iframe {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 3px solid #999;
+}
+img,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+button {
+  padding: 12px 24px;
+  border: 2px solid #000;
+  background: #ff0;
+  font-size: 2rem;
+}

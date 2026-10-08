@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { missingBucketValues } from '@usertour/helpers';
 import { PrismaService } from 'nestjs-prisma';
 
 import {
   AnnouncementData,
+  BizAttributeTypes,
   ClientContext,
   ContentDataType,
   ResourceCenterBlockType,
@@ -12,6 +14,7 @@ import {
 import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
 
 import { BizService } from '@/modules/biz/services/biz.service';
+import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
 import { SegmentDataType } from '@/modules/biz/constants/segment-data-type.constant';
 import {
@@ -206,6 +209,28 @@ export class ContentDiagnosisService {
   ) {}
 
   /**
+   * The user's attributes as evaluation sees them: a bucketing value the
+   * backfill has not written yet is derived in place (ADR 0020 §3), so the
+   * report never shows null for a value the server evaluates on.
+   */
+  private async userAttributesOf(
+    projectId: string,
+    bizUser: { externalId: string; data: unknown },
+  ): Promise<Record<string, unknown>> {
+    const stored = (bizUser.data as Record<string, unknown>) ?? {};
+    const definitions = await this.prisma.attribute.findMany({
+      where: {
+        projectId,
+        bizType: AttributeBizType.USER,
+        deleted: false,
+        dataType: { in: [BizAttributeTypes.RandomAB, BizAttributeTypes.RandomNumber] },
+      },
+      select: { id: true, codeName: true, dataType: true, randomMax: true },
+    });
+    return { ...missingBucketValues(definitions, bizUser.externalId, stored), ...stored };
+  }
+
+  /**
    * Does this end-user belong to ANY company? Without it, a company-scoped
    * condition with no `companyId` supplied reads as `unknown` (undecidable) —
    * correct for a user who HAS companies, badly wrong for one who has none: the
@@ -324,7 +349,7 @@ export class ContentDiagnosisService {
           activeSlotHeldByContentId,
           autoStartRules: target.config.autoStartRules ?? [],
           hideRules: target.config.hideRules ?? [],
-          userAttributes: (bizUser.data as Record<string, unknown>) ?? {},
+          userAttributes: await this.userAttributesOf(environment.projectId, bizUser),
         };
       }
     }
@@ -390,7 +415,7 @@ export class ContentDiagnosisService {
       );
       facts.startRulesActive = matched;
       facts.autoStartRules = stamped;
-      facts.userAttributes = (input.bizUser.data as Record<string, unknown>) ?? {};
+      facts.userAttributes = await this.userAttributesOf(environment.projectId, input.bizUser);
       const seen = await this.announcementService.getSeenAnnouncementIds(input.bizUser.id, [
         contentId,
       ]);

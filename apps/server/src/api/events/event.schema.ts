@@ -1,5 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+import { eventAttributeWriteValue } from '../shared/attribute-value';
 import { codeName } from '../shared/codename';
 import { ApiObjectType } from '../shared/object-type';
 
@@ -61,10 +62,11 @@ export const trackEventBody = z
       'The event code name. An unknown name creates the event definition on first use; built-in Usertour event names are refused.',
     ),
     attributes: z
-      .record(codeName, z.any())
+      .record(codeName, eventAttributeWriteValue)
       .optional()
       .describe(
-        'Event attribute values. Unknown attribute names register on the event definition automatically.',
+        'Event attribute values: a literal, or {set, data_type} to pin the type of a new attribute. ' +
+          'Unknown attribute names register on the event definition automatically.',
       ),
     occurredAt: z
       .string()

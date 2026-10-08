@@ -1,18 +1,12 @@
+import type { ArgumentMetadata } from '@nestjs/common';
 import { createZodValidationPipe } from 'nestjs-zod';
 
 import { ValidationError } from '@/modules/common/errors/errors';
 
+import { protoKeyPath } from './proto-key';
 import { zodIssuesToValidationIssues } from './zod-issues';
 
-/**
- * v2 request validation pipe. On a zod failure it throws the shared
- * {@link ValidationError} (code E1017) so the OpenAPIExceptionFilter renders the
- * documented error envelope — keeping v2 validation errors code-aligned with v1.
- *
- * The nestjs-zod coupling lives here (in the v2 module), so the shared exception
- * filter stays generic and zod-agnostic.
- */
-export const ApiValidationPipe = createZodValidationPipe({
+const ZodPipe = createZodValidationPipe({
   createValidationException: (error: unknown) => {
     // Report EVERY schema issue (with its path), not just the first — so a
     // client fixes the whole request in one round-trip.
@@ -22,3 +16,25 @@ export const ApiValidationPipe = createZodValidationPipe({
       : new ValidationError('Validation error');
   },
 });
+
+/**
+ * v2 request validation pipe. On a zod failure it throws the shared
+ * {@link ValidationError} (code E1017) so the OpenAPIExceptionFilter renders the
+ * documented error envelope — keeping v2 validation errors code-aligned with v1.
+ *
+ * The nestjs-zod coupling lives here (in the v2 module), so the shared exception
+ * filter stays generic and zod-agnostic.
+ */
+export class ApiValidationPipe extends ZodPipe {
+  transform(value: unknown, metadata: ArgumentMetadata) {
+    if (metadata.type === 'body') {
+      const path = protoKeyPath(value);
+      if (path) {
+        throw ValidationError.fromIssues([
+          { path, message: '"__proto__" is not a valid key', rule: 'schema' },
+        ]);
+      }
+    }
+    return super.transform(value, metadata);
+  }
+}

@@ -36,16 +36,29 @@ import type { SegmentDeletion } from '../types/segment-deletion.type';
 import type { SegmentUserMembership } from '../types/segment-user-membership.type';
 import type { SegmentUserRemoval } from '../types/segment-user-removal.type';
 import { getDefaultColumns } from '@/modules/projects/utils/project-initialization.util';
-import { BizAttributeTypes, ColumnSetting } from '@usertour/types';
+import {
+  BizAttributeTypes,
+  ColumnSetting,
+  CompanyAttributes,
+  RejectedAttributeWrite,
+  UserAttributes,
+} from '@usertour/types';
 import { IntegrationSource } from '@/modules/integrations/constants/integration-source.constant';
 import isEqual from 'fast-deep-equal';
 import {
+  applyAttributeWrite,
+  ATTRIBUTE_DELETE,
+  attributeDataEqual,
+  AttributeWrite,
   capitalizeFirstLetter,
-  filterNullAttributes,
+  coerceAttributeValue,
   getAttributeType,
   humanize,
+  inferWriteDataType,
+  isBucketingDataType,
   isNull,
-  isValidISO8601,
+  missingBucketValues,
+  parseAttributeWrite,
 } from '@usertour/helpers';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { ReferencesService } from '@/modules/references/services/references.service';
@@ -75,16 +88,28 @@ function normalizeSegmentColumns(raw: unknown): ColumnSetting[] {
 }
 
 /**
- * Result of `BizService.resolveAttributes`: the validated attribute payload,
- * the attribute-row map for downstream lookups, and a flag for cache
+ * Result of `BizService.resolveAttributeWrites`: the accepted writes, the
+ * attribute-row map for downstream lookups, and a flag for cache
  * invalidation.
  */
-interface ResolvedAttributes {
+/**
+ * Options of the entity upserts. `rejected` is a sink the caller may pass to
+ * learn which keys were refused (ADR 0020 §6) — the SDK acknowledgement
+ * carries them back so the host is not left believing they were written.
+ */
+export interface UpsertAttributeOptions {
+  origin?: string;
+  rejected?: RejectedAttributeWrite[];
+}
+
+interface ResolvedAttributeWrites {
   /**
-   * codeName → validated value. Null entries are passed through verbatim.
-   * Values that fail type / format validation are dropped (and logged).
+   * codeName → accepted write, values already coerced to the definition
+   * type. Rejected writes are dropped (and logged); removals are kept.
    */
-  outputData: Record<string, any>;
+  writes: Map<string, AttributeWrite>;
+  /** The keys dropped, with the reason — for the caller's acknowledgement. */
+  rejected: RejectedAttributeWrite[];
   /**
    * codeName → Attribute row (existing or just-created). Lets callers
    * resolve codeName → id without a second lookup, e.g. for
@@ -97,6 +122,23 @@ interface ResolvedAttributes {
    */
   catalogChanged: boolean;
 }
+
+/** Outcome of judging one write against its (possibly absent) definition. */
+type AttributeWriteVerdict =
+  | { ok: true; skip?: false; write: AttributeWrite; dataType: number }
+  | { ok: true; skip: true }
+  | { ok: false; reason: string };
+
+/**
+ * A lock order must agree across server instances, so it compares code
+ * points — never the locale-dependent `localeCompare`.
+ */
+const compareCodePoints = (left: string, right: string): number => {
+  if (left < right) {
+    return -1;
+  }
+  return left > right ? 1 : 0;
+};
 
 /**
  * Seed data for a NEW biz record. first/last_seen_at were historically written
@@ -186,12 +228,15 @@ export class BizService {
   ): Record<string, any> {
     const previous: Record<string, any> = {};
     for (const key of Object.keys(mergedData)) {
-      if (!isEqual(currentData[key], mergedData[key])) {
-        previous[key] = key in currentData ? currentData[key] : null;
+      // Own keys only: `constructor` on a plain object is Object.prototype's.
+      const had = Object.prototype.hasOwnProperty.call(currentData, key);
+      const before = had ? currentData[key] : undefined;
+      if (!isEqual(before, mergedData[key])) {
+        previous[key] = had ? before : null;
       }
     }
     for (const key of Object.keys(currentData)) {
-      if (!(key in mergedData)) {
+      if (!Object.prototype.hasOwnProperty.call(mergedData, key)) {
         previous[key] = currentData[key];
       }
     }
@@ -288,8 +333,29 @@ export class BizService {
     client?: Prisma.TransactionClient,
   ): Promise<{ id: string; externalId: string }[]> {
     const db = client ?? this.prisma;
+    // Bucketing values are born with the row (ADR 0020 §3); one definition
+    // query serves the whole batch.
+    const environment = await db.environment.findUnique({
+      where: { id: environmentId },
+      select: { projectId: true },
+    });
+    const bucketingDefinitions = environment
+      ? await db.attribute.findMany({
+          where: {
+            projectId: environment.projectId,
+            bizType: AttributeBizType.USER,
+            deleted: false,
+            dataType: { in: [BizAttributeTypes.RandomAB, BizAttributeTypes.RandomNumber] },
+          },
+          select: { id: true, codeName: true, dataType: true, randomMax: true },
+        })
+      : [];
     await db.bizUser.createMany({
-      data: missing.map((externalId) => ({ environmentId, externalId, data: {} })),
+      data: missing.map((externalId) => ({
+        environmentId,
+        externalId,
+        data: missingBucketValues(bucketingDefinitions, externalId, {}),
+      })),
       skipDuplicates: true,
     });
     const created = await db.bizUser.findMany({
@@ -908,52 +974,74 @@ export class BizService {
     }
   }
 
+  /**
+   * Must run inside a transaction: the BizUser row is taken FOR NO KEY UPDATE
+   * so the read-merge-write cannot lose a concurrent write (ADR 0017 §4).
+   * Every write locks — an unlocked literal write would read the whole jsonb
+   * and write it back over a concurrent `add`. NO KEY, because the row's key
+   * never changes here and an insert of a membership or an event takes KEY
+   * SHARE on it through the foreign key: FOR UPDATE would block that insert,
+   * and two writers locking user and company in opposite orders deadlocked.
+   */
   async upsertBizUsers(
     tx: Prisma.TransactionClient,
     externalUserId: string,
     attributes: Record<string, any>,
     environmentId: string,
-    options?: { origin?: string },
+    options?: UpsertAttributeOptions,
   ): Promise<BizUser | null> {
-    const environmenet = await tx.environment.findFirst({
+    const environment = await tx.environment.findFirst({
       where: { id: environmentId },
     });
-    if (!environmenet) {
+    if (!environment) {
       return null;
     }
-    const projectId = environmenet.projectId;
-    const insertAttribute = await this.insertBizAttributes(
+    const externalId = String(externalUserId);
+    const { writes, rejected } = await this.resolveEntityAttributeWrites(
       tx,
-      projectId,
+      environment.projectId,
       AttributeBizType.USER,
       attributes,
       options?.origin,
     );
+    options?.rejected?.push(...rejected);
 
+    await tx.$queryRaw`SELECT id FROM "BizUser" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR NO KEY UPDATE`;
     const user = await tx.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId },
+      where: { externalId, environmentId },
     });
     if (!user) {
       const created = await tx.bizUser.create({
         data: {
-          externalId: String(externalUserId),
+          externalId,
           environmentId,
-          // Null attributes filtered at birth: seeding them only manufactures a
-          // spurious `<entity>.updated` diff on the next identify.
-          data: seedSeenAttributes(filterNullAttributes(insertAttribute)),
+          // Writes apply first; the seen-at seed only fills what they left
+          // empty, so a `set_once` first_seen_at is the first value the row
+          // ever has and a null removes nothing the row was about to get.
+          // A null never reaches the row (it would only manufacture a
+          // spurious `<entity>.updated` diff on the next identify). Bucketing
+          // values are born with the row (ADR 0020 §3).
+          data: seedSeenAttributes(
+            this.applyAttributeWrites(
+              await this.bucketingSeed(
+                tx,
+                environment.projectId,
+                AttributeBizType.USER,
+                externalId,
+              ),
+              writes,
+            ),
+          ),
         },
       });
       this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
       return created;
     }
     const currentData = (user.data as Record<string, any>) || {};
-    const insertData = filterNullAttributes({
-      ...currentData,
-      ...insertAttribute,
-    });
+    const nextData = this.applyAttributeWrites(currentData, writes);
 
     // Only update if data has actually changed
-    if (isEqual(currentData, insertData)) {
+    if (attributeDataEqual(currentData, nextData)) {
       return user;
     }
 
@@ -962,14 +1050,14 @@ export class BizService {
         id: user.id,
       },
       data: {
-        data: insertData,
+        data: nextData,
       },
     });
     this.collectEntityChange({
       entity: 'user',
       action: 'updated',
       bizId: user.id,
-      previousAttributes: this.previousAttributesOf(currentData, insertData),
+      previousAttributes: this.previousAttributesOf(currentData, nextData),
     });
     return updated;
   }
@@ -981,6 +1069,7 @@ export class BizService {
     attributes: Record<string, any>,
     environmentId: string,
     membership: Record<string, any>,
+    options?: UpsertAttributeOptions,
   ): Promise<BizCompany | null> {
     const environmenet = await tx.environment.findFirst({
       where: { id: environmentId },
@@ -1002,11 +1091,12 @@ export class BizService {
       environmentId,
       externalCompanyId,
       attributes,
+      options,
     );
     if (!company) {
       return null;
     }
-    await this.upsertBizMembership(tx, projectId, company.id, user.id, membership || {});
+    await this.upsertBizMembership(tx, projectId, company.id, user.id, membership || {}, options);
 
     return company;
   }
@@ -1018,39 +1108,58 @@ export class BizService {
     attributes: Record<string, any>,
   ): Promise<BizCompany | null> {
     return await this.withEntityChangeEmit(environmentId, () =>
-      this.upsertBizCompanyAttributes(this.prisma, projectId, environmentId, companyId, attributes),
+      // A real transaction: upsertBizCompanyAttributes takes the row FOR NO KEY UPDATE.
+      this.prisma.$transaction((tx) =>
+        this.upsertBizCompanyAttributes(tx, projectId, environmentId, companyId, attributes),
+      ),
     );
   }
 
+  /** Must run inside a transaction — see upsertBizUsers. */
   async upsertBizCompanyAttributes(
     tx: Prisma.TransactionClient,
     projectId: string,
     environmentId: string,
     externalCompanyId: string,
     attributes: Record<string, any>,
-    options?: { origin?: string },
+    options?: UpsertAttributeOptions,
   ): Promise<BizCompany | null> {
-    const company = await tx.bizCompany.findFirst({
-      where: { externalId: String(externalCompanyId), environmentId },
-    });
-
-    const insertAttribute = await this.insertBizAttributes(
+    const externalId = String(externalCompanyId);
+    const { writes, rejected } = await this.resolveEntityAttributeWrites(
       tx,
       projectId,
       AttributeBizType.COMPANY,
       attributes,
       options?.origin,
     );
+    options?.rejected?.push(...rejected);
+
+    // Every member's page load calls group() on the same company row, and
+    // most of those calls change nothing. Read without the lock first and
+    // return when the writes would leave the row as it is — a no-op
+    // linearises at the moment of that read — so the row is only locked by a
+    // write that changes something, which re-reads under the lock.
+    const unlocked = await tx.bizCompany.findFirst({
+      where: { externalId, environmentId },
+    });
+    if (unlocked) {
+      const unlockedData = (unlocked.data as Record<string, any>) || {};
+      if (attributeDataEqual(unlockedData, this.applyAttributeWrites(unlockedData, writes))) {
+        return unlocked;
+      }
+    }
+
+    await tx.$queryRaw`SELECT id FROM "BizCompany" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR NO KEY UPDATE`;
+    const company = await tx.bizCompany.findFirst({
+      where: { externalId, environmentId },
+    });
 
     if (company) {
       const currentData = (company.data as Record<string, any>) || {};
-      const mergedData = filterNullAttributes({
-        ...currentData,
-        ...insertAttribute,
-      });
+      const nextData = this.applyAttributeWrites(currentData, writes);
 
       // Only update if data has actually changed
-      if (isEqual(currentData, mergedData)) {
+      if (attributeDataEqual(currentData, nextData)) {
         return company;
       }
 
@@ -1059,58 +1168,66 @@ export class BizService {
           id: company.id,
         },
         data: {
-          data: mergedData,
+          data: nextData,
         },
       });
       this.collectEntityChange({
         entity: 'company',
         action: 'updated',
         bizId: company.id,
-        previousAttributes: this.previousAttributesOf(currentData, mergedData),
+        previousAttributes: this.previousAttributesOf(currentData, nextData),
       });
       return updated;
     }
 
     const created = await tx.bizCompany.create({
       data: {
-        externalId: String(externalCompanyId),
+        externalId,
         environmentId,
-        // Null attributes filtered at birth: seeding them only manufactures a
-        // spurious `<entity>.updated` diff on the next identify.
-        data: seedSeenAttributes(filterNullAttributes(insertAttribute)),
+        // Same seeding rule as users: writes first, the seen-at seed fills
+        // the rest, nulls never reach the row, bucketing values are born
+        // with the row.
+        data: seedSeenAttributes(
+          this.applyAttributeWrites(
+            await this.bucketingSeed(tx, projectId, AttributeBizType.COMPANY, externalId),
+            writes,
+          ),
+        ),
       },
     });
     this.collectEntityChange({ entity: 'company', action: 'created', bizId: created.id });
     return created;
   }
 
+  /** Must run inside a transaction — see upsertBizUsers. */
   async upsertBizMembership(
     tx: Prisma.TransactionClient,
     projectId: string,
     bizCompanyId: string,
     bizUserId: string,
     membership: Record<string, any>,
+    options?: UpsertAttributeOptions,
   ): Promise<BizUserOnCompany> {
-    const insertAttribute = await this.insertBizAttributes(
+    const { writes, rejected } = await this.resolveEntityAttributeWrites(
       tx,
       projectId,
       AttributeBizType.MEMBERSHIP,
       membership,
+      options?.origin,
     );
+    options?.rejected?.push(...rejected);
 
+    await tx.$queryRaw`SELECT id FROM "BizUserOnCompany" WHERE "bizCompanyId" = ${bizCompanyId} AND "bizUserId" = ${bizUserId} FOR NO KEY UPDATE`;
     const relation = await tx.bizUserOnCompany.findFirst({
       where: { bizCompanyId, bizUserId },
     });
 
     if (relation) {
       const currentData = (relation.data as Record<string, any>) || {};
-      const mergedData = filterNullAttributes({
-        ...currentData,
-        ...insertAttribute,
-      });
+      const nextData = this.applyAttributeWrites(currentData, writes);
 
       // Only update if data has actually changed
-      if (isEqual(currentData, mergedData)) {
+      if (attributeDataEqual(currentData, nextData)) {
         return relation;
       }
 
@@ -1119,7 +1236,7 @@ export class BizService {
           id: relation.id,
         },
         data: {
-          data: mergedData,
+          data: nextData,
         },
       });
     }
@@ -1127,33 +1244,119 @@ export class BizService {
       data: {
         bizUserId,
         bizCompanyId,
-        data: insertAttribute,
+        // A null must not be stored on creation either: a JSON null would make
+        // set_once see a value where there is none.
+        data: this.applyAttributeWrites({}, writes),
       },
     });
   }
 
   /**
-   * Resolve User/Company/Membership attribute payload: auto-create unknown
-   * codeNames, validate values against declared dataTypes, and invalidate
-   * the project's Attribute cache when new rows were created.
+   * Resolve a User/Company/Membership attribute payload into per-codeName
+   * writes (ADR 0017): parse each value (literal / null / operation object),
+   * drop writes to provider-owned attributes, auto-create definitions for
+   * unknown codeNames, coerce values to the definition type, and invalidate
+   * the project's Attribute cache when the catalog changed. A rejected value
+   * is dropped and logged — the SDK contract is per key, never whole-message.
    */
-  async insertBizAttributes(
+  async resolveEntityAttributeWrites(
     tx: Prisma.TransactionClient,
     projectId: string,
     bizType: AttributeBizType,
     attributes: Record<string, any>,
     origin?: string,
-  ): Promise<Record<string, any>> {
-    const { outputData, catalogChanged } = await this.resolveAttributes(
+  ): Promise<{ writes: Map<string, AttributeWrite>; rejected: RejectedAttributeWrite[] }> {
+    const foreign = await this.withoutForeignOwnedAttributes(
       tx,
       projectId,
       bizType,
-      await this.withoutForeignOwnedAttributes(tx, projectId, bizType, attributes, origin),
+      attributes,
+      origin,
+    );
+    const { writes, rejected, catalogChanged } = await this.resolveAttributeWrites(
+      tx,
+      projectId,
+      bizType,
+      foreign.attributes,
     );
     if (catalogChanged) {
       await this.cache.invalidateDeferred(this.cache.keys.attrs(projectId));
     }
-    return outputData;
+    return { writes, rejected: [...foreign.rejected, ...rejected] };
+  }
+
+  /**
+   * Values of the project's bucketing definitions for an entity about to be
+   * born (ADR 0020 §3): derived, so seeding them at creation costs one small
+   * query and guarantees every row carries them from its first read.
+   */
+  private async bucketingSeed(
+    tx: Prisma.TransactionClient,
+    projectId: string,
+    bizType: AttributeBizType,
+    externalId: string,
+  ): Promise<Record<string, string | number>> {
+    const definitions = await tx.attribute.findMany({
+      where: {
+        projectId,
+        bizType,
+        deleted: false,
+        dataType: { in: [BizAttributeTypes.RandomAB, BizAttributeTypes.RandomNumber] },
+      },
+      select: { id: true, codeName: true, dataType: true, randomMax: true },
+    });
+    return missingBucketValues(definitions, externalId, {});
+  }
+
+  /**
+   * Apply resolved writes to the stored attribute object. A legacy JSON null
+   * counts as absent so set_once / add / union start from nothing.
+   */
+  private applyAttributeWrites(
+    current: Record<string, any>,
+    writes: Map<string, AttributeWrite>,
+  ): Record<string, any> {
+    const next: Record<string, any> = { ...current };
+    for (const [codeName, write] of writes) {
+      // Own keys only: a codeName such as `constructor` or `toString` would
+      // otherwise read Object.prototype's member as the stored value.
+      const own = Object.prototype.hasOwnProperty.call(next, codeName) ? next[codeName] : undefined;
+      const stored = isNull(own) ? undefined : own;
+      const value = applyAttributeWrite(stored, write);
+      if (value === ATTRIBUTE_DELETE) {
+        delete next[codeName];
+      } else {
+        next[codeName] = value;
+      }
+    }
+    return next;
+  }
+
+  /**
+   * Stamp last_seen_at — and first_seen_at when the row has none — on a user
+   * or company as one jsonb merge. The statement touches only its own two
+   * keys, so an attribute write that landed between the caller's read of the
+   * row and this write is never overwritten, and no lock is needed for it.
+   * An event path that instead wrote the row's data back whole lost such
+   * writes (ADR 0017 §4).
+   */
+  async touchSeenAttributes(
+    tx: Prisma.TransactionClient,
+    entity: 'user' | 'company',
+    id: string,
+    at: string,
+  ): Promise<void> {
+    const firstSeenKey =
+      entity === 'user' ? UserAttributes.FIRST_SEEN_AT : CompanyAttributes.FIRST_SEEN_AT;
+    const lastSeenKey =
+      entity === 'user' ? UserAttributes.LAST_SEEN_AT : CompanyAttributes.LAST_SEEN_AT;
+    const lastSeen = JSON.stringify({ [lastSeenKey]: at });
+    const firstSeen = JSON.stringify({ [firstSeenKey]: at });
+    if (entity === 'user') {
+      await tx.$executeRaw`UPDATE "BizUser" SET data = COALESCE(data, '{}'::jsonb) || ${lastSeen}::jsonb || CASE WHEN NULLIF(COALESCE(data, '{}'::jsonb) ->> ${firstSeenKey}, '') IS NULL THEN ${firstSeen}::jsonb ELSE '{}'::jsonb END, "updatedAt" = NOW() WHERE id = ${id}`;
+      return;
+    }
+    await tx.$executeRaw`UPDATE "BizCompany" SET data = COALESCE(data, '{}'::jsonb) || ${lastSeen}::jsonb || CASE WHEN NULLIF(COALESCE(data, '{}'::jsonb) ->> ${firstSeenKey}, '') IS NULL THEN ${firstSeen}::jsonb ELSE '{}'::jsonb END, "updatedAt" = NOW() WHERE id = ${id}`;
   }
 
   /**
@@ -1167,15 +1370,22 @@ export class BizService {
     eventId: string,
     attributes: Record<string, any>,
   ): Promise<Record<string, any>> {
-    const { outputData, attrMap, catalogChanged } = await this.resolveAttributes(
+    const { writes, attrMap, catalogChanged } = await this.resolveAttributeWrites(
       tx,
       projectId,
       AttributeBizType.EVENT,
       attributes,
     );
 
-    // Link only attributes whose value passed validation (i.e. ended up in
-    // outputData with a non-null value).
+    // An event has no prior value: every write lands on an empty slot, and a
+    // null stays a null on the event row (there is nothing to remove).
+    const outputData: Record<string, any> = {};
+    for (const [codeName, write] of writes) {
+      const value = applyAttributeWrite(undefined, write);
+      outputData[codeName] = value === ATTRIBUTE_DELETE ? null : value;
+    }
+
+    // Link only attributes that ended up with a non-null value.
     const linkIds = Object.keys(outputData)
       .filter((codeName) => outputData[codeName] != null)
       .map((codeName) => attrMap.get(codeName)?.id)
@@ -1200,10 +1410,10 @@ export class BizService {
     bizType: AttributeBizType,
     attributes: Record<string, any>,
     origin: string | undefined,
-  ): Promise<Record<string, any>> {
+  ): Promise<{ attributes: Record<string, any>; rejected: RejectedAttributeWrite[] }> {
     const codeNames = Object.keys(attributes);
     if (codeNames.length === 0) {
-      return attributes;
+      return { attributes, rejected: [] };
     }
     const owned = await tx.attribute.findMany({
       where: { projectId, bizType, codeName: { in: codeNames }, source: { not: 'internal' } },
@@ -1211,51 +1421,64 @@ export class BizService {
     });
     const foreign = owned.filter((attr) => attr.source !== origin);
     if (foreign.length === 0) {
-      return attributes;
+      return { attributes, rejected: [] };
     }
+    // Reported like any refused key (ADR 0020 §6): the SDK must not cache
+    // the value as written.
     const result = { ...attributes };
+    const rejected: RejectedAttributeWrite[] = [];
     for (const attr of foreign) {
       delete result[attr.codeName];
+      const reason = `owned by ${attr.source}; it is synced from an integration and cannot be written here`;
       this.logger.warn(
-        `Dropped write to "${attr.codeName}": the attribute is owned by ${attr.source} (writer: ${
-          origin ?? 'sdk/api'
-        }).`,
+        `Dropped write to "${attr.codeName}": ${reason} (writer: ${origin ?? 'sdk/api'}).`,
       );
+      rejected.push({ codeName: attr.codeName, reason });
     }
-    return result;
+    return { attributes: result, rejected };
   }
 
   /**
-   * Find-or-create Attribute rows for the given codeNames in one batched
-   * findMany + sequential creates for misses, then validate each value.
-   * Returns the attribute map so callers (e.g. AttributeOnEvent linking)
-   * can resolve codeName → id without a second round trip.
-   *
-   * Null inputs are passed through verbatim; rejected values (DateTime
-   * format / type mismatch) are dropped from outputData and logged.
+   * Parse every value, find-or-create Attribute rows for the codeNames that
+   * need one (one batched findMany + one createMany for the misses), and
+   * judge each write against its definition. Returns the accepted writes,
+   * the attribute map so callers (e.g. AttributeOnEvent linking) can resolve
+   * codeName → id without a second round trip, and whether the catalog
+   * changed. Rejected writes are dropped and logged.
    */
-  private async resolveAttributes(
+  private async resolveAttributeWrites(
     tx: Prisma.TransactionClient,
     projectId: string,
     bizType: AttributeBizType,
     attributes: Record<string, any>,
-  ): Promise<ResolvedAttributes> {
-    const outputData: Record<string, any> = {};
+  ): Promise<ResolvedAttributeWrites> {
+    const writes = new Map<string, AttributeWrite>();
     const attrMap = new Map<string, Attribute>();
-    const codeNames: string[] = [];
+    const rejected: RejectedAttributeWrite[] = [];
+    const pending = new Map<string, AttributeWrite>();
     for (const codeName in attributes) {
-      if (isNull(attributes[codeName])) {
-        outputData[codeName] = null;
-      } else {
-        codeNames.push(codeName);
+      // On a plain object `__proto__` is the prototype setter, not a property:
+      // assigning it would silently change the object instead of storing a
+      // value. Only the lenient SDK path can carry it (v2 validates names).
+      if (codeName === '__proto__') {
+        this.logger.warn(`Dropped attribute "${codeName}": not a valid attribute name.`);
+        rejected.push({ codeName, reason: 'not a valid attribute name' });
+        continue;
       }
+      const parsed = parseAttributeWrite(attributes[codeName]);
+      if (parsed.ok === false) {
+        this.logger.warn(`Dropped attribute "${codeName}": ${parsed.reason}.`);
+        rejected.push({ codeName, reason: parsed.reason });
+        continue;
+      }
+      pending.set(codeName, parsed.write);
     }
-    if (codeNames.length === 0) {
-      return { outputData, attrMap, catalogChanged: false };
+    if (pending.size === 0) {
+      return { writes, attrMap, rejected, catalogChanged: false };
     }
 
     const existing = await tx.attribute.findMany({
-      where: { projectId, bizType, codeName: { in: codeNames } },
+      where: { projectId, bizType, codeName: { in: [...pending.keys()] } },
     });
     for (const attr of existing) {
       attrMap.set(attr.codeName, attr);
@@ -1263,48 +1486,202 @@ export class BizService {
 
     const displayName = bizType === AttributeBizType.EVENT ? humanize : capitalizeFirstLetter;
     let catalogChanged = false;
-    for (const codeName of codeNames) {
-      let attr = attrMap.get(codeName);
+    // First pass: collect the soft-deleted definitions to restore and the
+    // missing ones to create.
+    const creations: Prisma.AttributeCreateManyInput[] = [];
+    const revivals: Attribute[] = [];
+    for (const [codeName, write] of pending) {
+      const attr = attrMap.get(codeName);
+      // A bucketing attribute's value is derived (ADR 0020 §5): every write to
+      // it is refused, a removal included — a null would leave the row without
+      // a value no backfill comes back for — and a write to a soft-deleted one
+      // does not revive it either, since the write itself goes nowhere.
+      if (attr && isBucketingDataType(attr.dataType)) {
+        const reason = this.systemGeneratedReason(attr.dataType);
+        this.logger.warn(`Dropped attribute "${codeName}": ${reason}.`);
+        rejected.push({ codeName, reason });
+        pending.delete(codeName);
+        continue;
+      }
+      // A removal needs no definition: an unknown codeName has nothing to
+      // remove, a known one is removed regardless of its type.
+      if (write.kind === 'delete') {
+        writes.set(codeName, write);
+        pending.delete(codeName);
+        continue;
+      }
       // Data still arriving under a soft-deleted codeName means the attribute is
       // not dead: restore it (ADR 0016), keeping its data type — values that do
-      // not validate against it are dropped below like for any attribute.
+      // not fit it are dropped below like for any attribute.
       if (attr?.deleted) {
-        attr = await tx.attribute.update({ where: { id: attr.id }, data: { deleted: false } });
-        attrMap.set(codeName, attr);
-        catalogChanged = true;
+        revivals.push(attr);
+        continue;
       }
-      if (!attr) {
-        attr = await tx.attribute.create({
-          data: {
-            codeName,
-            dataType: getAttributeType(attributes[codeName]),
-            displayName: displayName(codeName),
-            projectId,
-            bizType,
-          },
-        });
-        attrMap.set(codeName, attr);
-        catalogChanged = true;
+      if (attr) {
+        continue;
       }
-      const result = this.validateAttrValue(attr, attributes[codeName]);
-      if (result.ok) {
-        outputData[codeName] = result.value;
+      const verdict = this.judgeAttributeWrite(bizType, undefined, write);
+      if (verdict.ok === false) {
+        this.logger.warn(`Dropped attribute "${codeName}": ${verdict.reason}.`);
+        rejected.push({ codeName, reason: verdict.reason });
+        pending.delete(codeName);
+        continue;
       }
+      if (verdict.skip === true) {
+        pending.delete(codeName);
+        continue;
+      }
+      creations.push({
+        codeName,
+        dataType: verdict.dataType,
+        displayName: displayName(codeName),
+        projectId,
+        bizType,
+      });
+    }
+    if (revivals.length > 0) {
+      // Two writes reviving the same definitions in opposite orders would
+      // deadlock on the row locks: one order for everyone.
+      revivals.sort((left, right) => compareCodePoints(left.codeName, right.codeName));
+      for (const attr of revivals) {
+        attrMap.set(
+          attr.codeName,
+          await tx.attribute.update({ where: { id: attr.id }, data: { deleted: false } }),
+        );
+      }
+      catalogChanged = true;
+    }
+    if (creations.length > 0) {
+      // Two writes can carry the same new codeName at once. Insert with
+      // skipDuplicates, in codeName order, so the loser neither aborts its
+      // transaction on the unique index nor deadlocks with the winner, then
+      // read back what exists: the winner's type is what every write is
+      // judged against.
+      creations.sort((left, right) => compareCodePoints(left.codeName, right.codeName));
+      await tx.attribute.createMany({ data: creations, skipDuplicates: true });
+      const created = await tx.attribute.findMany({
+        where: {
+          projectId,
+          bizType,
+          codeName: { in: creations.map((creation) => creation.codeName) },
+        },
+      });
+      for (const attr of created) {
+        attrMap.set(attr.codeName, attr);
+      }
+      catalogChanged = true;
+    }
+    // Second pass: judge every write against the definition it now has.
+    for (const [codeName, write] of pending) {
+      const verdict = this.judgeAttributeWrite(bizType, attrMap.get(codeName), write);
+      if (verdict.ok === false) {
+        this.logger.warn(`Dropped attribute "${codeName}": ${verdict.reason}.`);
+        rejected.push({ codeName, reason: verdict.reason });
+        continue;
+      }
+      if (verdict.skip === true) {
+        continue;
+      }
+      writes.set(codeName, verdict.write);
     }
 
-    return { outputData, attrMap, catalogChanged };
+    return { writes, attrMap, rejected, catalogChanged };
+  }
+
+  /** Why a write to a bucketing attribute is refused, for every path that refuses one. */
+  private systemGeneratedReason(dataType: number): string {
+    const name = BizAttributeTypes[dataType] ?? String(dataType);
+    return `system-generated attribute (${name}); its value cannot be set — use another attribute name`;
+  }
+
+  /**
+   * The one place the ADR 0017 acceptance rules live, shared by the lenient
+   * (drop + log) and the strict (throw) paths so they can never diverge:
+   * - events take literals or `{set, data_type}` only;
+   * - `add` needs a Number definition, `union` / `remove` a List one;
+   * - `remove` on an undefined attribute is a no-op that defines nothing;
+   * - `data_type` decides the type of a definition being created and never
+   *   retypes an existing one — a conflicting `data_type` is a mismatch;
+   * - a literal / `set` / `set_once` value must fit the target type without
+   *   loss (coerceAttributeValue), the target being the definition's type or,
+   *   for a definition about to be created, the write's own.
+   */
+  private judgeAttributeWrite(
+    bizType: AttributeBizType,
+    attr: Attribute | undefined,
+    write: AttributeWrite,
+  ): AttributeWriteVerdict {
+    if (bizType === AttributeBizType.EVENT && write.kind !== 'literal' && write.kind !== 'set') {
+      return {
+        ok: false,
+        reason: 'event attributes take a literal value or {set, data_type} only',
+      };
+    }
+    const target = attr ? attr.dataType : inferWriteDataType(write);
+    const targetName = BizAttributeTypes[target] ?? String(target);
+    // A bucketing attribute's value is derived by the system (ADR 0020 §5):
+    // the definition can be created, its values cannot be written.
+    if (attr && isBucketingDataType(attr.dataType)) {
+      return { ok: false, reason: this.systemGeneratedReason(attr.dataType) };
+    }
+    if (
+      attr &&
+      (write.kind === 'set' || write.kind === 'set_once') &&
+      write.dataType !== undefined &&
+      write.dataType !== attr.dataType
+    ) {
+      return {
+        ok: false,
+        reason: `type mismatch: defined as ${targetName}; data_type only applies when an attribute is first created — change the type in the attribute settings`,
+      };
+    }
+    switch (write.kind) {
+      case 'add':
+        if (target !== BizAttributeTypes.Number) {
+          return {
+            ok: false,
+            reason: `type mismatch: add needs a Number attribute, defined as ${targetName}`,
+          };
+        }
+        return { ok: true, write, dataType: target };
+      case 'union':
+      case 'remove':
+        if (!attr && write.kind === 'remove') {
+          return { ok: true, skip: true };
+        }
+        if (target !== BizAttributeTypes.List) {
+          return {
+            ok: false,
+            reason: `type mismatch: ${write.kind} needs a List attribute, defined as ${targetName}`,
+          };
+        }
+        return { ok: true, write, dataType: target };
+      case 'literal':
+      case 'set':
+      case 'set_once': {
+        if (target === BizAttributeTypes.Nil) {
+          return { ok: false, reason: 'unsupported value' };
+        }
+        const coerced = coerceAttributeValue(write.value, target);
+        if (!coerced.ok) {
+          return { ok: false, reason: `type mismatch: expected ${targetName}` };
+        }
+        return { ok: true, write: { ...write, value: coerced.value }, dataType: target };
+      }
+      default:
+        return { ok: false, reason: 'unsupported write' };
+    }
   }
 
   /**
    * Strict pre-check for the v2 REST / MCP write path (NOT the SDK identify
-   * path): reject attribute values whose type doesn't match the attribute's
-   * defined data type. The SDK ingestion path stays lenient — resolveAttributes
-   * drops + logs a bad value so a high-volume identify call never fails on one
-   * messy field. The public API has no UI to constrain types and no human to
-   * notice a dropped value, so here a mismatch throws (per the v2 principle:
-   * fulfill exactly or refuse — never silently discard). Unknown codeNames are
-   * ignored: resolveAttributes auto-creates them with a type inferred from the
-   * value, so no mismatch is possible.
+   * path): every value must parse and fit, or the request is refused. The SDK
+   * ingestion path stays lenient — resolveAttributeWrites drops + logs a bad
+   * value so a high-volume identify call never fails on one messy field. The
+   * public API has no UI to constrain types and no human to notice a dropped
+   * value, so here a rejection throws (per the v2 principle: fulfill exactly
+   * or refuse — never silently discard). Same rules, same judge, as the
+   * lenient path.
    */
   async assertAttributeValueTypes(
     environmentId: string,
@@ -1312,7 +1689,7 @@ export class BizService {
     attributes: Record<string, any> | undefined,
   ): Promise<void> {
     if (!attributes) return;
-    const codeNames = Object.keys(attributes).filter((c) => !isNull(attributes[c]));
+    const codeNames = Object.keys(attributes);
     if (codeNames.length === 0) return;
     const env = await this.prisma.environment.findUnique({
       where: { id: environmentId },
@@ -1322,6 +1699,8 @@ export class BizService {
     const defined = await this.prisma.attribute.findMany({
       where: { projectId: env.projectId, bizType, codeName: { in: codeNames } },
     });
+    // A null aimed at a provider-owned attribute is a write to it too: refused
+    // like any other value, not silently dropped.
     const owned = defined.filter((attr) => attr.source !== 'internal');
     if (owned.length > 0) {
       throw new ValidationError(
@@ -1332,41 +1711,32 @@ export class BizService {
           )} ${owned.length > 1 ? 'are' : 'is'} synced from an integration and cannot be written through the API.`,
       );
     }
+    const byCodeName = new Map(defined.map((attr) => [attr.codeName, attr]));
     const failures: string[] = [];
-    for (const attr of defined) {
-      if (!this.validateAttrValue(attr, attributes[attr.codeName]).ok) {
-        const expected = BizAttributeTypes[attr.dataType] ?? String(attr.dataType);
-        failures.push(`"${attr.codeName}" (expected ${expected})`);
+    for (const codeName of codeNames) {
+      const parsed = parseAttributeWrite(attributes[codeName]);
+      if (parsed.ok === false) {
+        failures.push(`"${codeName}" (${parsed.reason})`);
+        continue;
+      }
+      if (parsed.write.kind === 'delete') {
+        // Removing a derived value is a write to it (ADR 0020 §5).
+        const attr = byCodeName.get(codeName);
+        if (attr && isBucketingDataType(attr.dataType)) {
+          failures.push(`"${codeName}" (${this.systemGeneratedReason(attr.dataType)})`);
+        }
+        continue;
+      }
+      const verdict = this.judgeAttributeWrite(bizType, byCodeName.get(codeName), parsed.write);
+      if (verdict.ok === false) {
+        failures.push(`"${codeName}" (${verdict.reason})`);
       }
     }
     if (failures.length > 0) {
       throw new ValidationError(
-        `Attribute value type mismatch: ${failures.join(', ')}. Each value must match its attribute's defined data type.`,
+        `Attribute write${failures.length > 1 ? 's' : ''} rejected: ${failures.join(', ')}.`,
       );
     }
-  }
-
-  private validateAttrValue(
-    attr: Attribute,
-    value: unknown,
-  ): { ok: true; value: unknown } | { ok: false } {
-    const dataType = getAttributeType(value);
-    if (attr.dataType === BizAttributeTypes.DateTime) {
-      if (!isValidISO8601(value)) {
-        this.logger.error(
-          `Invalid DateTime format for attribute "${attr.codeName}". DateTime attributes must be in ISO 8601 format (UTC). Received: ${JSON.stringify(value)}. Example: "2024-12-12T00:00:00.000Z". Skipping this field.`,
-        );
-        return { ok: false };
-      }
-      return { ok: true, value };
-    }
-    if (attr.dataType !== dataType) {
-      this.logger.warn(
-        `Type mismatch for attribute "${attr.codeName}". Expected type: ${attr.dataType}, got: ${dataType}. Value: ${value}`,
-      );
-      return { ok: false };
-    }
-    return { ok: true, value };
   }
 
   // A retype is safe only if every stored value already validates as the new
@@ -1416,9 +1786,18 @@ export class BizService {
         `"${codeName}" has too many stored values to safely re-type. Clear its values, or delete and recreate the attribute with the intended type.`,
       );
     }
-    const fakeAttr = { codeName, dataType: newDataType } as Attribute;
+    // Shape fit, not coercion: a retype rewrites no stored value, so each one
+    // must already be what readers of the new type expect. Any string is a
+    // String — a stored ISO date-time included; every other type must match
+    // exactly.
+    const fits = (value: unknown): boolean => {
+      if (newDataType === BizAttributeTypes.String) {
+        return typeof value === 'string';
+      }
+      return getAttributeType(value) === newDataType;
+    };
     const conflicts = rows.filter(
-      (r) => !this.validateAttrValue(fakeAttr, (r.data as Record<string, unknown>)?.[codeName]).ok,
+      (r) => !fits((r.data as Record<string, unknown>)?.[codeName]),
     ).length;
     if (conflicts > 0) {
       const expected = BizAttributeTypes[newDataType] ?? String(newDataType);
@@ -1475,12 +1854,25 @@ export class BizService {
 
     // The socket-connect creation IS the user's birth — notify user.created
     // here (empty attributes) so the later identify upsert reads as an update.
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+      select: { projectId: true },
+    });
     return await this.withEntityChangeEmit(environmentId, async () => {
       const created = await this.prisma.bizUser.create({
         data: {
           externalId: String(externalUserId),
           environmentId,
-          data: seedSeenAttributes({}),
+          data: seedSeenAttributes(
+            environment
+              ? await this.bucketingSeed(
+                  this.prisma,
+                  environment.projectId,
+                  AttributeBizType.USER,
+                  String(externalUserId),
+                )
+              : {},
+          ),
         },
       });
       this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
@@ -1499,7 +1891,7 @@ export class BizService {
     }>,
   ) {
     // No runInScope wrap: the only cache write inside this $transaction is
-    // `invalidateDeferred(attrs(projectId))`, fired by insertBizAttributes
+    // `invalidateDeferred(attrs(projectId))`, fired by resolveEntityAttributeWrites
     // when the SDK upsert payload introduces a previously-unseen attribute
     // codeName. A mid-tx invalidate races with concurrent cross-pod readers
     // that could fill the cache from pre-commit DB state — but the freshly
@@ -1517,31 +1909,31 @@ export class BizService {
           throw new UnknownError('Failed to upsert user');
         }
 
-        // Handle companies/companies and memberships
-        if (companies) {
-          for (const company of companies) {
-            await this.upsertBizCompanies(
-              tx,
-              company.id,
-              externalUserId,
-              company.attributes || {},
-              environmentId,
-              {},
-            );
-          }
-        }
-
-        if (memberships) {
-          for (const membership of memberships) {
-            await this.upsertBizCompanies(
-              tx,
-              membership.company.id,
-              externalUserId,
-              membership.company.attributes || {},
-              environmentId,
-              membership.attributes || {},
-            );
-          }
+        // Companies and memberships in one order by company id: two requests
+        // locking the same company rows in different orders would deadlock.
+        // The sort is stable, so a company listed under both keeps its
+        // company-then-membership sequence.
+        const steps = [
+          ...(companies ?? []).map((company) => ({
+            companyId: company.id,
+            attributes: company.attributes || {},
+            membership: {},
+          })),
+          ...(memberships ?? []).map((membership) => ({
+            companyId: membership.company.id,
+            attributes: membership.company.attributes || {},
+            membership: membership.attributes || {},
+          })),
+        ].sort((left, right) => compareCodePoints(left.companyId, right.companyId));
+        for (const step of steps) {
+          await this.upsertBizCompanies(
+            tx,
+            step.companyId,
+            externalUserId,
+            step.attributes,
+            environmentId,
+            step.membership,
+          );
         }
 
         return user;

@@ -10,12 +10,13 @@ import { UsertourResourceCenter } from '@/core/usertour-resource-center';
 import { logger } from '@/utils';
 import '../index.css';
 
+const log = logger.scope('widget');
 /**
  * Error handler for widget errors
  * Logs the error but does not crash the customer's site
  */
 const handleWidgetError = (error: Error, info: React.ErrorInfo) => {
-  logger.error('Widget error:', error, info.componentStack);
+  log.error('A widget threw while rendering', error, info.componentStack);
 };
 
 // Extract widgets into a constant to improve readability

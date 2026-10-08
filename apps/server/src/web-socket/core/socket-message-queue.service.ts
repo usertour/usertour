@@ -44,13 +44,16 @@ export class SocketMessageQueueService {
     // If no queue exists, use a resolved Promise (executes immediately)
     const lastTask = this.queues.get(socketId) || Promise.resolve();
 
-    // Create a new task that waits for the last task to complete
-    // Use .then() and .catch() to ensure execution continues even if previous task failed
+    // A failed or timed-out predecessor must not block the socket, so its
+    // rejection is absorbed and this task runs regardless. This task's own
+    // failure — its timeout included — propagates as it is: running it a
+    // second time while the first run may still be executing would apply
+    // a write twice (an `add` doubled, ADR 0017 §5).
+    const run = () => this.withTimeout(task(), timeoutMs, socketId);
     const newTask = lastTask
-      .then(() => this.withTimeout(task(), timeoutMs, socketId))
-      .catch((err) => {
-        this.logger.warn(`Previous task failed for socket ${socketId}, retrying:`, err?.message);
-        return this.withTimeout(task(), timeoutMs, socketId);
+      .then(run, (err) => {
+        this.logger.warn(`Previous task failed for socket ${socketId}; continuing:`, err?.message);
+        return run();
       })
       .catch((err) => {
         this.logger.error(`Task execution failed for socket ${socketId}:`, err?.message);
@@ -60,8 +63,11 @@ export class SocketMessageQueueService {
     // Update the queue with the new task (this becomes the "last task" for next message)
     this.queues.set(socketId, newTask);
 
-    // Cleanup: Remove from queue when this is the last task and it's done
-    newTask.finally(() => {
+    // Cleanup: Remove from queue when this is the last task and it's done.
+    // Observed on both outcomes, not through `.finally()`: that derived
+    // promise rejects along with the task and, unobserved, would surface as
+    // an unhandled rejection on every task failure.
+    const settle = () => {
       if (this.queues.get(socketId) === newTask) {
         // This is still the last task, meaning no new tasks were added
         this.queues.delete(socketId);
@@ -69,7 +75,8 @@ export class SocketMessageQueueService {
       }
       // If queues.get(socketId) !== newTask, it means new tasks were added
       // We don't delete in this case to keep the chain
-    });
+    };
+    newTask.then(settle, settle);
 
     return newTask;
   }

@@ -1,4 +1,4 @@
-import { autoBind } from '@/utils';
+import { autoBind } from './auto-bind';
 
 /**
  * A generic store class that manages state and notifies subscribers of changes

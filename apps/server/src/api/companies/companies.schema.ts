@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
+import { attributeWriteValue } from '../shared/attribute-value';
 import { codeName as codeNameSchema } from '../shared/codename';
 import { createdAtRangeFields } from '@/modules/common/utils/query-filters.util';
 import { ApiObjectType } from '../shared/object-type';
@@ -28,11 +29,16 @@ export const upsertCompanyBody = z
   .object({
     // Attribute keys are codeNames a write may CREATE → strict v2 codeName rule.
     attributes: z
-      .record(codeNameSchema, z.any())
+      .record(codeNameSchema, attributeWriteValue)
       .optional()
       .describe(
-        'Custom attributes to set on the company (merged into existing attributes). Attributes with an unknown codeName AUTO-CREATE a definition (dataType inferred from the value) — a mistyped key silently creates a new attribute instead of updating the real one. Each key must ' +
-          'be a valid codeName: start with a letter, then letters/digits/underscores, 2–100 chars.',
+        'Custom attributes to write on the company (merged into existing attributes). Each value ' +
+          'is a literal, null (remove), or one operation object — {set}, {set_once}, {add}, ' +
+          '{union}, {remove}. Values are coerced losslessly to the definition type; a value that ' +
+          'does not fit is rejected. Attributes with an unknown codeName AUTO-CREATE a definition ' +
+          '(type inferred from the value, or pinned with `data_type`) — a mistyped key silently ' +
+          'creates a new attribute instead of updating the real one. Each key must be a valid ' +
+          'codeName: start with a letter, then letters/digits/underscores, 2–100 chars.',
       ),
   })
   .strict();
@@ -42,12 +48,13 @@ export const upsertMembershipBody = z
   .object({
     // Attribute keys are codeNames a write may CREATE → strict v2 codeName rule.
     attributes: z
-      .record(codeNameSchema, z.any())
+      .record(codeNameSchema, attributeWriteValue)
       .optional()
       .describe(
-        "Custom attributes to set on the membership (e.g. the user's role in the company). Each " +
-          'key must be a valid codeName: start with a letter, then letters/digits/underscores, ' +
-          '2–100 chars.',
+        "Custom attributes to write on the membership (e.g. the user's role in the company). Each " +
+          'value is a literal, null (remove), or one operation object — {set}, {set_once}, {add}, ' +
+          '{union}, {remove}. Each key must be a valid codeName: start with a letter, then ' +
+          'letters/digits/underscores, 2–100 chars.',
       ),
   })
   .strict();

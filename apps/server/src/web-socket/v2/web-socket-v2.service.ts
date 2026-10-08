@@ -6,7 +6,9 @@ import { PrismaService } from 'nestjs-prisma';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import {
   UpsertUserDto,
+  UpsertAck,
   UpsertCompanyDto,
+  RejectedAttributeWrite,
   GoToStepDto,
   ClickChecklistTaskDto,
   HideChecklistDto,
@@ -58,7 +60,13 @@ import { AnnouncementService } from '@/modules/delivery/services/announcement.se
 import { ContentDataService } from '@/modules/delivery/services/content-data.service';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { IdentityVerificationService } from '@/modules/common/services/identity-verification.service';
-import { buildExternalUserRoomId, getSocketId } from '../utils/websocket.util';
+import {
+  buildExternalUserRoomId,
+  getSocketId,
+  sanitizeClientConditions,
+  sanitizeSdkVersion,
+  sanitizeWaitTimers,
+} from '../utils/websocket.util';
 import {
   assignClientContext,
   buildAnnouncementSeenEventData,
@@ -125,7 +133,10 @@ export class WebSocketV2Service {
    * @returns Initialized SocketData or null if validation fails
    */
   async initializeSocketData(auth: SocketAuthData): Promise<SocketData | null> {
-    const { externalUserId, externalCompanyId, clientContext, clientConditions = [], token } = auth;
+    const { externalUserId, externalCompanyId, clientContext, token } = auth;
+    // Client-declared, so taken only where well formed (a malformed entry
+    // would throw in every later evaluation of this connection).
+    const clientConditions = sanitizeClientConditions(auth.clientConditions);
 
     // Validate required fields
     if (!externalUserId || !token) {
@@ -160,13 +171,17 @@ export class WebSocketV2Service {
       ? await this.bizService.getBizCompany(externalCompanyId, environmentId)
       : null;
 
-    // Build base socket data
+    // Build base socket data. Wait timers come back from the client on a
+    // reconnect (ADR 0018 §6), client-declared like clientConditions: a
+    // running timer keeps its remaining time on the SDK's clock, a fired one
+    // is honoured on the first evaluation.
     const socketData: SocketData = {
       environment,
       externalUserId,
       clientContext,
+      sdkVersion: sanitizeSdkVersion(auth.sdkVersion),
       externalCompanyId,
-      waitTimers: [],
+      waitTimers: sanitizeWaitTimers(auth.waitTimers),
       clientConditions,
       bizUserId: bizUser.id,
       bizCompanyId: bizCompany?.id,
@@ -244,7 +259,7 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business users
    */
-  async upsertBizUsers(context: WebSocketContext, data: UpsertUserDto): Promise<boolean> {
+  async upsertBizUsers(context: WebSocketContext, data: UpsertUserDto): Promise<UpsertAck | false> {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
@@ -263,21 +278,26 @@ export class WebSocketV2Service {
       return false;
     }
 
-    // No transaction ON PURPOSE (contrast the company path below):
-    // upsertBizUsers' only ENTITY write is its final statement — a failure
-    // before it leaves no committed entity change for the emit contract to
-    // lose, and the earlier attribute-definition inserts are idempotent
-    // scaffolding outside that contract. The company path needs atomicity
-    // because it makes TWO entity-relevant writes (company, then membership).
+    // A real transaction: upsertBizUsers takes the BizUser row FOR NO KEY UPDATE so
+    // its read-merge-write cannot lose a concurrent write (ADR 0017 §4); the
+    // lock only exists inside a transaction.
+    const rejected: RejectedAttributeWrite[] = [];
     const bizUser = await this.bizService.withEntityChangeEmit(environment.id, () =>
-      this.bizService.upsertBizUsers(this.prisma, externalUserId, attributes, environment.id),
+      this.prisma.$transaction((tx) =>
+        this.bizService.upsertBizUsers(tx, externalUserId, attributes, environment.id, {
+          rejected,
+        }),
+      ),
     );
     if (!bizUser) {
       await this.socketDataService.delete(socket);
       this.logger.error(`Failed to upsert business user ${externalUserId} for socket ${socket.id}`);
       return false;
     }
-    return await this.updateSocketData(socket, { externalUserId, bizUserId: bizUser.id });
+    const stored = await this.updateSocketData(socket, { externalUserId, bizUserId: bizUser.id });
+    // The acknowledgement names the keys that were refused (ADR 0020 §6): the
+    // accepted ones are written, the host learns about the rest.
+    return stored ? { ok: true, rejected } : false;
   }
 
   /**
@@ -286,7 +306,10 @@ export class WebSocketV2Service {
    * @param data - The data to upsert
    * @returns The upserted business companies
    */
-  async upsertBizCompanies(context: WebSocketContext, data: UpsertCompanyDto): Promise<boolean> {
+  async upsertBizCompanies(
+    context: WebSocketContext,
+    data: UpsertCompanyDto,
+  ): Promise<UpsertAck | false> {
     const { socket, socketData } = context;
     const { environment } = socketData;
 
@@ -316,6 +339,7 @@ export class WebSocketV2Service {
       return false;
     }
 
+    const rejected: RejectedAttributeWrite[] = [];
     const bizCompany = await this.bizService.withEntityChangeEmit(environment.id, () =>
       // A REAL transaction, not this.prisma: upsertBizCompanies is
       // multi-statement (company upsert + membership upsert), and the
@@ -331,6 +355,7 @@ export class WebSocketV2Service {
           attributes,
           environment.id,
           membership,
+          { rejected },
         ),
       ),
     );
@@ -342,7 +367,11 @@ export class WebSocketV2Service {
       );
       return false;
     }
-    return await this.updateSocketData(socket, { externalCompanyId, bizCompanyId: bizCompany.id });
+    const stored = await this.updateSocketData(socket, {
+      externalCompanyId,
+      bizCompanyId: bizCompany.id,
+    });
+    return stored ? { ok: true, rejected } : false;
   }
 
   /**

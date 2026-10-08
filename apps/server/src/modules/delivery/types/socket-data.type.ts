@@ -16,6 +16,8 @@ export interface SocketData {
   externalCompanyId?: string;
   bizCompanyId?: string;
   clientContext: ClientContext;
+  /** The SDK bundle version the connection declared; absent from older bundles. */
+  sdkVersion?: string;
   clientConditions?: ClientCondition[];
   waitTimers?: ConditionWaitTimer[];
   flowSession?: CustomContentSession;

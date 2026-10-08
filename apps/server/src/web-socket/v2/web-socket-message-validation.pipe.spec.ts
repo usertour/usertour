@@ -135,6 +135,47 @@ describe('WebSocketMessageValidationPipe', () => {
     });
   });
 
+  describe('Attribute maps', () => {
+    it('passes the maps through untouched, prototype-named keys included', async () => {
+      const attributes = {
+        constructor: 'acme',
+        toString: { add: 1 },
+        valueOf: 'v',
+        hasOwnProperty: { set_once: 'h' },
+        plan: 'pro',
+      };
+      const result = await pipe.transform({
+        kind: ClientMessageKind.UPSERT_USER,
+        payload: { externalUserId: 'u1', attributes },
+      });
+      expect(result.payload).toEqual({ externalUserId: 'u1', attributes });
+    });
+
+    it('passes a membership map through on UpsertCompany', async () => {
+      const membership = { constructor: 'admin', role: 'owner' };
+      const result = await pipe.transform({
+        kind: ClientMessageKind.UPSERT_COMPANY,
+        payload: { externalUserId: 'u1', externalCompanyId: 'c1', membership },
+      });
+      expect((result.payload as { membership: unknown }).membership).toEqual(membership);
+    });
+
+    it('rejects a map that is not an object', async () => {
+      await expect(
+        pipe.transform({
+          kind: ClientMessageKind.UPSERT_USER,
+          payload: { externalUserId: 'u1', attributes: 'plan=pro' },
+        }),
+      ).rejects.toThrow('attributes must be an object');
+      await expect(
+        pipe.transform({
+          kind: ClientMessageKind.UPSERT_COMPANY,
+          payload: { externalUserId: 'u1', externalCompanyId: 'c1', membership: ['x'] },
+        }),
+      ).rejects.toThrow('membership must be an object');
+    });
+  });
+
   describe('UpsertCompany payload validation', () => {
     it('should reject missing required fields', async () => {
       await expect(

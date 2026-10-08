@@ -2,6 +2,7 @@ import { contentStartReason, SDKSettingsMode, UserTourTypes } from '@usertour/ty
 import { UsertourCore } from './core/usertour-core';
 import { logger, window } from '@/utils';
 
+const log = logger.scope('api');
 type WindowWithUsertour = UserTourTypes.WindowWithUsertour;
 
 const w: WindowWithUsertour =
@@ -39,7 +40,7 @@ function neutralizeLeftoverStubs(
   for (const key of Object.keys(record)) {
     if (typeof record[key] === 'function' && !(key in api)) {
       record[key] = () => {
-        logger.warn(`usertour.js: '${key}' is not supported by this SDK build — call ignored`);
+        log.warn(`${key}() is not supported by this SDK build; the call was ignored`);
         // The loader stubs returned a pending Promise for deferred methods —
         // keep host-side `.then()` chains from throwing on the replacement.
         return Promise.resolve();
@@ -58,7 +59,7 @@ function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueIte
     return;
   }
 
-  logger.info(`Processing ${stubQueue.length} items in the queue`);
+  log.debug(`Replaying ${stubQueue.length} call(s) queued before the SDK loaded`);
 
   // Clear the queue immediately to prevent double processing
   if (w.USERTOURJS_QUEUE) {
@@ -77,7 +78,7 @@ function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueIte
 
       // Type-safe method check
       if (!(methodName in usertour) || typeof usertour[methodName] !== 'function') {
-        logger.error(`usertour.js: Invalid method '${methodName}' in queue`);
+        log.warn(`Queued call to unknown method ${methodName}() was dropped`);
         deferred?.reject?.(new Error(`Invalid method: ${methodName}`));
         continue;
       }
@@ -94,12 +95,12 @@ function processStubQueue(usertour: UserTourTypes.Usertour, stubQueue?: QueueIte
         }
       }
     } catch (error) {
-      logger.error(`Error processing queue item for method '${method}':`, error);
+      log.error(`Queued call to ${method}() failed`, error);
       deferred?.reject?.(error);
     }
   }
 
-  logger.info('Queue processed successfully');
+  log.debug('Queued calls replayed');
 }
 
 /**
@@ -184,7 +185,11 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
 
     remount: () => {
       // Intentionally empty - reserved for future remount functionality
-      logger.warn('remount method is not yet implemented');
+      log.warn('remount() is not implemented yet; the call was ignored');
+    },
+
+    setDebug: (enabled: boolean) => {
+      app.setDebug(enabled);
     },
 
     setBaseZIndex: (baseZIndex: number) => {
@@ -245,12 +250,12 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
 
     on: (eventName: string, _listener: (...args: any[]) => void) => {
       // Intentionally empty - reserved for future event system
-      logger.warn('on method is not yet implemented', { eventName });
+      log.warn('on() is not implemented yet; the call was ignored', { eventName });
     },
 
     off: (eventName: string, _listener: (...args: any[]) => void) => {
       // Intentionally empty - reserved for future event system
-      logger.warn('off method is not yet implemented', { eventName });
+      log.warn('off() is not implemented yet; the call was ignored', { eventName });
     },
   };
 }

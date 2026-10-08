@@ -26,6 +26,7 @@ import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
 
+const log = logger.scope('flow');
 /**
  * Tour-specific options for buildStoreData
  */
@@ -74,7 +75,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       // Check and update theme settings if needed
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
-      logger.error('Error in tour checking:', error);
+      log.error('Failed to check the flow state', error);
       // Optionally handle the error or rethrow
       throw error;
     }
@@ -334,7 +335,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Set up element watcher
     const storeData = await this.buildStoreData();
     if (!storeData) {
-      logger.error('Store not found', { step });
+      log.warn('Flow store is missing; closing the flow', { step });
       await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
@@ -356,7 +357,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Build store data and get step information
     const storeData = await this.buildStoreData();
     if (!storeData) {
-      logger.error('Store not found', { step });
+      log.warn('Flow store is missing; closing the flow', { step });
       await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
@@ -380,7 +381,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     const options = useStepOverride ? { stepOverride: step } : undefined;
     const storeData = await this.buildStoreData(options);
     if (!storeData) {
-      logger.error('Store not found', { step });
+      log.warn('Flow store is missing; closing the flow', { step });
       await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
@@ -408,7 +409,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
     // Create new watcher
     if (!step.target) {
-      logger.error('Step target not found', { step });
+      log.warn('Step has no target element configured; closing the flow', { step });
       this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }
@@ -496,6 +497,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     const behavior = store.themeSettings?.tooltip?.missingTargetBehavior;
+    log.warn(
+      `Step target element was not found on the page; ${
+        behavior === MissingTooltipTargetBehavior.USE_BUBBLE
+          ? 'showing the step as a bubble'
+          : 'closing the flow'
+      }`,
+      { target: step.target },
+    );
 
     if (behavior === MissingTooltipTargetBehavior.USE_BUBBLE) {
       // Convert tooltip to bubble, use stepOverride to ensure correct styles
@@ -584,6 +593,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     if (isTimeout) {
+      log.warn('Step target element stayed hidden past the timeout; closing the flow', {
+        target: currentStep?.target,
+      });
       await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
       return;
     }
