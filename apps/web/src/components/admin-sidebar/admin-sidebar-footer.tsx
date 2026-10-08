@@ -14,7 +14,7 @@ const AdminSidebarFooter = () => {
       <AdminSidebarFooterTextItemTemplate>{t('nav.resources')}</AdminSidebarFooterTextItemTemplate>
       <AdminSidebarFooterLinkItemTemplate
         target="_blank"
-        href="https://docs.usertour.io/developers/usertourjs-installation/"
+        href="https://docs.usertour.io/developers/usertourjs-reference/installation"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
