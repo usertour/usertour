@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { RegionErrorBoundary } from '@/components/region-error-boundary';
 import { AdminLayoutNewContent, ShellHelmet } from './components/admin-layout';
 import { AdminLayoutSurface } from './components/admin-surface';
 import { AdminMainNewNav } from './components/admin-main-nav';
@@ -14,7 +15,9 @@ export const AdminShell = ({ surface = 'default' }: AdminShellProps) => {
       <div className="flex h-[100dvh] w-full">
         <AdminMainNewNav />
         <AdminLayoutNewContent surface={surface}>
-          <Outlet />
+          <RegionErrorBoundary>
+            <Outlet />
+          </RegionErrorBoundary>
         </AdminLayoutNewContent>
       </div>
     </>
