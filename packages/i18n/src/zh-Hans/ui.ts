@@ -4576,6 +4576,10 @@ const translations = {
     updating: '正在更新到最新版本…',
     description: '出了点问题,刷新通常就能解决。',
     reload: '刷新',
+    projects: {
+      description: '暂时没能加载你的项目,重试通常就能解决。',
+      retry: '重试',
+    },
   },
   error: {
     forbidden: '您无权访问此页面。',

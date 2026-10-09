@@ -4792,6 +4792,10 @@ const translations = {
     updating: 'Updating to the latest version…',
     description: 'Something went wrong. Reloading usually fixes it.',
     reload: 'Reload',
+    projects: {
+      description: "We couldn't load your projects. Retrying usually fixes it.",
+      retry: 'Retry',
+    },
   },
   error: {
     forbidden: 'You are not authorized to access this page.',

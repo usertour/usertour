@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { useUserProjects } from '@/hooks/use-active-project';
+import { ProjectsUnavailable } from '@/routes/projects-unavailable';
 import { AuthCard } from '@/pages/authentication/components/auth-card';
 
 type MemberProject = Project & { capabilities?: Capability[] };
@@ -39,8 +40,10 @@ export const IntegrationInstall = () => {
   const returnUrl = params.get('returnUrl') ?? '';
   const failed = params.get('error') !== null;
 
-  const projects = useUserProjects() as MemberProject[];
-  const manageable = useMemo(() => projects.filter(canManageIntegrations), [projects]);
+  // Three-state: undefined means the server did not report the list. This
+  // page sits outside AdminProvidersOutlet, so it answers that case itself.
+  const projects = useUserProjects() as MemberProject[] | undefined;
+  const manageable = useMemo(() => (projects ?? []).filter(canManageIntegrations), [projects]);
   const [projectId, setProjectId] = useState('');
   useEffect(() => {
     if (!projectId && manageable.length > 0) {
@@ -88,6 +91,12 @@ export const IntegrationInstall = () => {
         }
       />
     );
+  }
+
+  // Only now does the project list matter: an invalid link or a failed
+  // callback is reported above regardless of it.
+  if (projects === undefined) {
+    return <ProjectsUnavailable />;
   }
 
   const handleContinue = async () => {

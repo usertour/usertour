@@ -25,12 +25,14 @@ import { useLogout } from '@/hooks/use-logout';
 interface AppContextProps {
   environment: Environment | null;
   setEnvironment: React.Dispatch<React.SetStateAction<Environment | null>>;
-  project: Project | null;
+  /** `undefined` while the project list is unknown; `null` when none is active. */
+  project: Project | null | undefined;
   userInfo: UserProfile | null | undefined;
   refetch: () => Promise<unknown>;
   handleLogout: () => Promise<void>;
   signOutAndRedirect: (to?: string) => Promise<void>;
-  projects: Project[];
+  /** `undefined` while the server has not reported the list — never read it as empty. */
+  projects: Project[] | undefined;
   isViewOnly: boolean;
   /** Capabilities the current user holds on the active project. */
   capabilities: Capability[];

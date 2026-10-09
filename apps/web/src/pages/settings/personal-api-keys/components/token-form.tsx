@@ -78,6 +78,9 @@ interface TokenFormFieldsProps {
  */
 export const TokenFormFields = ({ control, autoSelectSingleEnvironment }: TokenFormFieldsProps) => {
   const { projects } = useAppContext();
+  // Inside the settings shell the list is always known; the fallback only
+  // satisfies the three-state type.
+  const knownProjects = projects ?? [];
   const { t } = useTranslation();
   // Portal the combobox popup inside the dialog so it stays clickable/scrollable
   // (a body-portaled popup is dead under the dialog's react-remove-scroll).
@@ -94,9 +97,9 @@ export const TokenFormFields = ({ control, autoSelectSingleEnvironment }: TokenF
   // dead write access). Mirrors the OAuth consent grid. `capabilities` is the
   // server-computed set the whole Settings gate already relies on; undefined
   // (no project chosen, or projects still loading) leaves the grid unrestricted.
-  const selectedProject = projects.find((p) => (p as { id?: string }).id === selectedProjectId) as
-    | (Project & { capabilities?: Capability[] })
-    | undefined;
+  const selectedProject = knownProjects.find(
+    (p) => (p as { id?: string }).id === selectedProjectId,
+  ) as (Project & { capabilities?: Capability[] }) | undefined;
   const availableScopes = selectedProject?.capabilities;
 
   // A single-environment project is unambiguous — pre-check its only environment once
@@ -165,7 +168,7 @@ export const TokenFormFields = ({ control, autoSelectSingleEnvironment }: TokenF
                     // Reset env selection — environments belong to the previous project.
                     setValue('environmentIds', [], { shouldValidate: true });
                   }}
-                  options={projects.map((project) => ({
+                  options={knownProjects.map((project) => ({
                     value: project.id ?? '',
                     label: project.name ?? '',
                   }))}

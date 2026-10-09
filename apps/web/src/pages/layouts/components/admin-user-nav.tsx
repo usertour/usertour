@@ -102,8 +102,11 @@ export const AdminUserNav = () => {
     }
   };
 
-  const activeProject = projects.find((p) => p.actived);
-  const otherProjects = projects.filter((p) => !p.actived);
+  // Inside the admin shell the list is always known (AdminProvidersOutlet
+  // gates on it); the fallback only satisfies the three-state type.
+  const knownProjects = projects ?? [];
+  const activeProject = knownProjects.find((p) => p.actived);
+  const otherProjects = knownProjects.filter((p) => !p.actived);
 
   return (
     <DropdownMenu>

@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { Navigate, Outlet, useParams } from 'react-router-dom';
+import { ProjectsUnavailable } from '@/routes/projects-unavailable';
 import usertour from 'usertour.js';
 import { AdminLayoutSurface, SURFACE_BODY_CLASSNAMES } from './admin-surface';
 import { UpgradePlanBanner } from './upgrade-plan-banner';
@@ -106,6 +107,12 @@ export const AdminProvidersOutlet = () => {
   const { project, userInfo } = useAppContext();
   useUserTracking(userInfo);
   const projectId = project?.id;
+
+  // The project list is unknown — the server could not report it. Stay put
+  // and offer a retry; redirecting would read an outage as "no projects".
+  if (project === undefined) {
+    return <ProjectsUnavailable />;
+  }
 
   // No active project — either the user has zero memberships or none of
   // their existing memberships is `actived`. Send them to /select-project

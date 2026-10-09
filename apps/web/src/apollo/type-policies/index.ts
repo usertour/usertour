@@ -1,5 +1,6 @@
 import { initialI18n, initialUser } from '@/apollo/state';
 import { FieldPolicy, TypePolicies } from '@apollo/client';
+import { keepKnownList } from './keep-known-list';
 
 // Shared shape for every infinite-scroll accumulator field.
 //
@@ -71,6 +72,13 @@ const accumulatorMerge = <TEdge>(keyArgs: string[]): FieldPolicy<ConnectionShape
 // queryBizCompanyEvents) are different operations — they back the
 // activity feed and DO want accumulation.
 export const TypePolicy: TypePolicies = {
+  // `me.projects` is resolved by its own query; when only that query fails,
+  // the user still arrives and the list comes as null. Keep what we knew.
+  User: {
+    fields: {
+      projects: { merge: keepKnownList },
+    },
+  },
   Query: {
     fields: {
       localUser: {

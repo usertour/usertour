@@ -19,6 +19,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useActiveUserProjectMutation, useCreateOwnedProjectMutation } from '@usertour/hooks';
 import { Project } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
+import { ProjectsUnavailable } from '@/routes/projects-unavailable';
 import { AuthCard } from './authentication/components/auth-card';
 
 // /select-project is the destination for any authenticated user whose
@@ -27,11 +28,18 @@ import { AuthCard } from './authentication/components/auth-card';
 // exist but none is `actived` (residual data inconsistency, race on
 // transfer, etc.). The page surfaces the ambiguity instead of having the
 // server silently bootstrap or pick a project on the user's behalf.
+//
+// An unknown list (the server could not report it) is neither case: the
+// create form must not appear on the strength of an outage.
 export const SelectProject = () => {
   const { projects, userInfo } = useAppContext();
 
   if (!userInfo?.id) {
     return null;
+  }
+
+  if (projects === undefined) {
+    return <ProjectsUnavailable />;
   }
 
   if (projects.length === 0) {
