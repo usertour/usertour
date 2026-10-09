@@ -26,7 +26,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { document } from '@/utils';
+import { document, isHTMLElement } from '@/utils';
 
 type BannerWidgetStore = {
   openState: boolean;
@@ -93,12 +93,12 @@ const resolveBannerPlacement = (
     case BannerEmbedPlacement.BOTTOM_OF_PAGE:
       return { parent: document.body, insertMode: 'append' };
     case BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT:
-      if (targetElement instanceof HTMLElement) {
+      if (isHTMLElement(targetElement)) {
         return { parent: targetElement, insertMode: 'prepend' };
       }
       return null;
     case BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT:
-      if (targetElement instanceof HTMLElement) {
+      if (isHTMLElement(targetElement)) {
         return { parent: targetElement, insertMode: 'append' };
       }
       return null;

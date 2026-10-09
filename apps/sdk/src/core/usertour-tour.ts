@@ -20,7 +20,7 @@ import {
   CustomStoreDataContext,
 } from '@/core/usertour-component';
 import { UsertourTrigger } from '@/core/usertour-trigger';
-import { logger } from '@/utils';
+import { isElement, logger } from '@/utils';
 import { createQuestionAnswerEventData, rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
@@ -425,7 +425,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
     // Handle element found
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
-      if (el instanceof Element) {
+      if (isElement(el)) {
         this.handleElementFound(el, step, store);
       }
     });
@@ -437,7 +437,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
     // Handle element changed
     this.watcher.on(SDKClientEvents.ELEMENT_CHANGED, (el) => {
-      if (el instanceof Element) {
+      if (isElement(el)) {
         this.handleElementChanged(el, step);
       }
     });

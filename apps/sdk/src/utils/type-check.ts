@@ -1,17 +1,22 @@
+import {
+  isElement as isElementOfAnyRealm,
+  isHTMLElement as isHTMLElementOfAnyRealm,
+} from '@usertour/dom';
+
 /**
- * Checks if `value` is classified as an `Element`.
+ * Checks if `value` is classified as an `Element`, from this window or a frame's.
  * @param value The param to check if it is an Element
  */
 export function isElement<T>(value: T | Element): value is Element {
-  return value instanceof Element;
+  return isElementOfAnyRealm(value);
 }
 
 /**
- * Checks if `value` is classified as an `HTMLElement`.
+ * Checks if `value` is classified as an `HTMLElement`, from this window or a frame's.
  * @param value The param to check if it is an HTMLElement
  */
 export function isHTMLElement<T>(value: T | HTMLElement): value is HTMLElement {
-  return value instanceof HTMLElement;
+  return isHTMLElementOfAnyRealm(value);
 }
 
 /**

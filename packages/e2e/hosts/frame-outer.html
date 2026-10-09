@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Lesson</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font: 14px/1.4 system-ui, sans-serif;
+        color: #1f2937;
+      }
+      #inner {
+        position: absolute;
+        left: 80px;
+        top: 120px;
+        width: 640px;
+        height: 420px;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- A lesson page that embeds the activity in its own frame: two levels of frame offset. -->
+    <h1>Lesson</h1>
+    <iframe id="inner" src="/frame-activity.html" title="Lesson activity"></iframe>
+  </body>
+</html>

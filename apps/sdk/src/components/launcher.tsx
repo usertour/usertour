@@ -24,6 +24,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { useEventHandlers } from '../hooks/use-event-handlers';
 import { document } from '../utils/globals';
 import { on, off } from '../utils/listener';
+import { isElement } from '../utils/type-check';
 import { UsertourLauncher } from '@/core/usertour-launcher';
 import { AssetAttributes } from '@usertour/frame';
 
@@ -281,7 +282,7 @@ const LauncherWidgetCore = ({
 
   const triggerRef = useMemo(() => {
     const ref = { current: null as HTMLElement | null };
-    if (el instanceof Element) {
+    if (isElement(el)) {
       ref.current = el as HTMLElement;
     }
     return ref;

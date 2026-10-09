@@ -1,5 +1,6 @@
 import { platform } from '@floating-ui/dom';
 import type { Rect } from '@floating-ui/dom';
+import { isElement } from '@usertour/dom';
 
 /** Ref-like object to store the last known reference rect (e.g. React.useRef<Rect | null>) */
 export type LastReferenceRectRef = { current: Rect | null };
@@ -23,7 +24,7 @@ export function createPlatformWithDetachedReferenceFallback(
     async getElementRects(args: GetElementRectsArgs) {
       const result = await platform.getElementRects(args);
       const ref = args.reference;
-      if (ref instanceof Element) {
+      if (isElement(ref)) {
         if (ref.isConnected) {
           lastReferenceRectRef.current = result.reference;
         } else if (lastReferenceRectRef.current != null) {

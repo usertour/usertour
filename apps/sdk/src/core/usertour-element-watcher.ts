@@ -1,8 +1,7 @@
 import { isVisibleNode } from '@usertour/dom';
-import { finderV2 } from '@usertour/finder';
 import { ElementSelectorPropsData } from '@usertour/types';
 import { document, Evented } from '@/utils';
-import { isVisible } from '@/core/usertour-helper';
+import { findTargetElement, isVisible } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { SDKClientEvents } from '@usertour/constants';
 import { uuidV4 } from '@usertour/helpers';
@@ -198,8 +197,9 @@ export class UsertourElementWatcher extends Evented {
       return false;
     }
 
-    // Check if element is still in DOM
-    if (!document.body.contains(this.element)) {
+    // Check if element is still in a displayed DOM: its own document's, which
+    // for an element inside a frame is not this page's
+    if (!this.element.isConnected || !this.element.ownerDocument.defaultView) {
       return false;
     }
 
@@ -226,13 +226,10 @@ export class UsertourElementWatcher extends Evented {
   }
 
   /**
-   * Finds the target element using finderV2
+   * Finds the target element in the page and its same-origin frames
    * @returns Found element or null if not found
    */
   private findElementBySelector(): Element | null {
-    if (!document?.body) {
-      return null;
-    }
-    return finderV2(this.target, document.body);
+    return findTargetElement(this.target);
   }
 }

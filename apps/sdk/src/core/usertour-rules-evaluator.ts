@@ -1,4 +1,3 @@
-import { finderV2 } from '@usertour/finder';
 import {
   RulesCondition,
   ElementConditionLogic,
@@ -13,6 +12,7 @@ import { evaluateRulesConditions, isEmptyString } from '@usertour/helpers';
 import {
   getClientContext,
   convertToAttributeEvaluationOptions,
+  findTargetElement,
   isVisible,
 } from '@/core/usertour-helper';
 import { customInputRegistry } from './registries/custom-input-registry';
@@ -263,7 +263,7 @@ export class RulesEvaluator extends Evented {
     if (!document || !data?.elementData) {
       return false;
     }
-    const el = finderV2(data.elementData, document);
+    const el = findTargetElement(data.elementData);
     const isPresent = el ? await isVisible(el) : false;
 
     switch (data.logic) {
@@ -293,7 +293,7 @@ export class RulesEvaluator extends Evented {
       return false;
     }
     const { elementData, logic, value } = data;
-    const el = finderV2(elementData, document);
+    const el = findTargetElement(elementData);
     if (!el || !isTextInputElement(el)) {
       return false;
     }
@@ -337,7 +337,7 @@ export class RulesEvaluator extends Evented {
       return false;
     }
 
-    const el = finderV2(data.elementData, document);
+    const el = findTargetElement(data.elementData);
     if (!el || !isTextInputElement(el)) {
       return false;
     }
