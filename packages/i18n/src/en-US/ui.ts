@@ -4788,6 +4788,9 @@ const translations = {
     description: "We couldn't find that page.",
     backHome: 'Back to home',
   },
+  queryError: {
+    title: "Something couldn't be loaded",
+  },
   appError: {
     updating: 'Updating to the latest version…',
     description: 'Something went wrong. Reloading usually fixes it.',

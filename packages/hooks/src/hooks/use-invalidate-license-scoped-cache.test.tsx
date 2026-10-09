@@ -8,7 +8,7 @@ import {
   InMemoryCache,
   Observable,
 } from '@apollo/client';
-import { getUserInfo, globalConfig } from '@usertour/gql';
+import { MeDocument, globalConfig } from '@usertour/gql';
 import { useInvalidateLicenseScopedCache } from './gql';
 
 // Regression test for the bug class where mutating an admin-side license or
@@ -97,7 +97,7 @@ describe('useInvalidateLicenseScopedCache', () => {
 
     expect(spy).toHaveBeenCalledTimes(1);
     const args = spy.mock.calls[0][0] as { include: unknown[] };
-    expect(args.include).toEqual(expect.arrayContaining([getUserInfo, globalConfig]));
+    expect(args.include).toEqual(expect.arrayContaining([MeDocument, globalConfig]));
   });
 
   it('returns a stable function across renders (same Apollo client)', () => {

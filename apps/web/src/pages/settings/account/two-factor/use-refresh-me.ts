@@ -1,5 +1,5 @@
 import { useApolloClient } from '@apollo/client';
-import { getUserInfo } from '@usertour/gql';
+import { MeDocument } from '@usertour/gql';
 
 /**
  * Force-refresh the `me` query after a 2FA state change so guards that
@@ -15,6 +15,6 @@ import { getUserInfo } from '@usertour/gql';
 export const useRefreshMe = () => {
   const apollo = useApolloClient();
   return async () => {
-    await apollo.refetchQueries({ include: [getUserInfo] }).catch(() => undefined);
+    await apollo.refetchQueries({ include: [MeDocument] }).catch(() => undefined);
   };
 };

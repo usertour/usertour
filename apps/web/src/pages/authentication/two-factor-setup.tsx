@@ -11,7 +11,7 @@ import {
   useStartTwoFactorSetupMutation,
   useStartTwoFactorSetupWithChallengeMutation,
 } from '@usertour/hooks';
-import { getUserInfo } from '@usertour/gql';
+import { MeDocument } from '@usertour/gql';
 import { useApolloClient } from '@apollo/client';
 import { AuthCard } from './components/auth-card';
 import { resolveNextPath } from './components/use-auth-after-login';
@@ -95,7 +95,7 @@ export const TwoFactorSetup = () => {
         setRecoveryCodes(codes);
         apollo.cache.evict({ fieldName: 'me' });
         apollo.cache.gc();
-        await apollo.refetchQueries({ include: [getUserInfo] }).catch(() => undefined);
+        await apollo.refetchQueries({ include: [MeDocument] }).catch(() => undefined);
       }
       setStage('codes');
     } catch (error) {

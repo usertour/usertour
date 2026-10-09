@@ -1,37 +1,6 @@
 import { gql } from '@apollo/client';
 
-export const getUserInfo = gql`
-  query me {
-    me {
-      id
-      name
-      avatarUrl
-      email
-      createdAt
-      updatedAt
-      isOAuthUser
-      isSystemAdmin
-      twoFactorEnabled
-      twoFactorAvailable
-      projects {
-        id
-        role
-        capabilities
-        actived
-        allowedEnvironmentIds
-        project {
-          id
-          name
-          logoUrl
-          subscriptionId
-          customerId
-        }
-      }
-    }
-  }
-`;
-
-// Returns the fields `getUserInfo` (`me`) reads so Apollo's normalized
+// Returns the fields the `me` query reads so Apollo's normalized
 // cache auto-merges the updated User entity by __typename:id; the
 // AppContext facade then re-emits without a manual refetch.
 export const updateUser = gql`

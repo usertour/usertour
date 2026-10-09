@@ -6,6 +6,7 @@ import { AppProvider } from '@/contexts/app-context';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { ThemedToaster } from '@/components/themed-toaster';
 import { ApolloProvider } from '@apollo/client';
+import { QueryErrorNotifier } from '@/apollo/query-error-notifier';
 import type { CaptureResult } from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import React from 'react';
@@ -81,12 +82,14 @@ async function bootstrap() {
       <ThemeProvider>
         <PostHogProvider apiKey={posthogKey} options={options}>
           <ApolloProvider client={client}>
-            <HelmetProvider>
-              <AppProvider>
-                <App />
-                <ThemedToaster />
-              </AppProvider>
-            </HelmetProvider>
+            <QueryErrorNotifier>
+              <HelmetProvider>
+                <AppProvider>
+                  <App />
+                  <ThemedToaster />
+                </AppProvider>
+              </HelmetProvider>
+            </QueryErrorNotifier>
           </ApolloProvider>
         </PostHogProvider>
       </ThemeProvider>

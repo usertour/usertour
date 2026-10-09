@@ -1,0 +1,28 @@
+query me {
+  me {
+    id
+    name
+    avatarUrl
+    email
+    createdAt
+    updatedAt
+    isOAuthUser
+    isSystemAdmin
+    twoFactorEnabled
+    twoFactorAvailable
+    projects {
+      id
+      role
+      capabilities
+      actived
+      allowedEnvironmentIds
+      project {
+        id
+        name
+        logoUrl
+        subscriptionId
+        customerId
+      }
+    }
+  }
+}

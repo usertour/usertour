@@ -4572,6 +4572,9 @@ const translations = {
     description: '我们找不到该页面。',
     backHome: '返回首页',
   },
+  queryError: {
+    title: '有内容没能加载',
+  },
   appError: {
     updating: '正在更新到最新版本…',
     description: '出了点问题,刷新通常就能解决。',

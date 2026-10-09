@@ -54,7 +54,6 @@ import {
   getProjectLicenseInfo,
   updateProjectLicense,
   getContent,
-  getUserInfo,
   createContentVersion,
   deleteBizUser,
   deleteBizUserOnSegment,
@@ -87,6 +86,7 @@ import {
   getProjectSsoLogin,
   getProjectSsoSettings,
   updateProjectSsoSettings,
+  MeDocument,
 } from '@usertour/gql';
 
 import type {
@@ -1309,7 +1309,7 @@ export const useInvalidateLicenseScopedCache = () => {
     apollo.cache.evict({ fieldName: 'me' });
     apollo.cache.evict({ fieldName: 'globalConfig' });
     apollo.cache.gc();
-    await apollo.refetchQueries({ include: [getUserInfo, globalConfig] }).catch(() => undefined);
+    await apollo.refetchQueries({ include: [MeDocument, globalConfig] }).catch(() => undefined);
   }, [apollo]);
 };
 

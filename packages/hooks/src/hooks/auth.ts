@@ -1,4 +1,4 @@
-import { QueryHookOptions, useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import {
   acceptInvite,
   confirmTwoFactorSetup,
@@ -7,7 +7,6 @@ import {
   createOwnedProject,
   disableTwoFactor,
   getInvite,
-  getUserInfo,
   login,
   logout,
   regenerateRecoveryCodes,
@@ -20,15 +19,28 @@ import {
   startTwoFactorSetupWithChallenge,
   verifyTwoFactor,
 } from '@usertour/gql';
+import { MeDocument, type MeQuery, type MeQueryVariables } from '@usertour/gql';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
 
 // Session / identity ---------------------------------------------------------
 
-export const useGetUserInfoQuery = (uid?: string, options?: QueryHookOptions) => {
-  const { data, refetch, loading, error } = useQuery(getUserInfo, {
+/** The signed-in user as the `me` query delivers them. */
+export type CurrentUser = MeQuery['me'];
+
+export const useGetUserInfoQuery = (
+  uid?: string,
+  options?: TypedQueryOptions<MeQuery, MeQueryVariables>,
+) => {
+  const { data, refetch, loading, refreshing, error } = useTypedQuery(MeDocument, {
     skip: !uid,
+    // The one query that wants partial data: the user can resolve while
+    // `projects` fails, and the session must not read as a failure. The
+    // caller renders a failed project list in place (ADR 0021 §5).
+    errorPolicy: 'all',
+    notifyOnError: false,
     ...options,
   });
-  return { data: data?.me, refetch, loading, error };
+  return { data: data?.me, refetch, loading, refreshing, error };
 };
 
 export const useLogoutMutation = () => {
