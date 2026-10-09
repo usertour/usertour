@@ -698,9 +698,14 @@ export const useUpdateProjectMutation = () => {
 // Builder related hooks
 export const useGetContentLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(GetContentDocument);
+  // A failure rejects, as a mutation's invoke does: the builder must tell a
+  // content that failed to load from one that is gone.
   const invoke = useCallback(
     async (contentId: string) => {
       const response = await query({ variables: { contentId } });
+      if (response.error) {
+        throw response.error;
+      }
       return response.data?.getContent;
     },
     [query],

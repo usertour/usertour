@@ -14,6 +14,7 @@ import { WebBuilderLoading } from '@/pages/contents/components/builder/component
 import { useListsLoading } from '@/pages/contents/components/builder/hooks/use-lists-loading';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Unavailable } from '@/components/unavailable';
 
 export interface WebBuilderProps {
   contentId: string;
@@ -30,10 +31,21 @@ export interface WebBuilderProps {
 // Banner is a single view with no sub-routes. The URL is the view's source of
 // truth.
 function WebBuilderContent() {
-  const { ready } = useBuilderInit();
+  const { ready, failed, retry } = useBuilderInit();
   const listsLoading = useListsLoading();
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { t } = useTranslation();
+
+  if (failed) {
+    return (
+      <Unavailable
+        backdrop
+        title={t('appError.content.title')}
+        description={t('appError.content.description')}
+        onRetry={retry}
+      />
+    );
+  }
 
   if (!ready || listsLoading) {
     return <WebBuilderLoading message={t('contentBuilder.loadingBuilder')} />;

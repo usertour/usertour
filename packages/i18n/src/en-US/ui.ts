@@ -4795,10 +4795,23 @@ const translations = {
     updating: 'Updating to the latest version…',
     description: 'Something went wrong. Reloading usually fixes it.',
     reload: 'Reload',
+    retry: 'Retry',
+    tryAgain: 'Try again',
     projects: {
       title: "Your projects couldn't be loaded",
       description: "We couldn't load your projects. Retrying usually fixes it.",
-      retry: 'Retry',
+    },
+    environments: {
+      title: "Your environments couldn't be loaded",
+      description: "We couldn't load the environments of this project. Retrying usually fixes it.",
+    },
+    content: {
+      title: "This content couldn't be loaded",
+      description: "We couldn't load this content. Retrying usually fixes it.",
+    },
+    network: {
+      title: "Can't reach the server",
+      description: 'Check your connection. The page keeps what it already loaded.',
     },
   },
   error: {

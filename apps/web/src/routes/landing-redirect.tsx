@@ -2,6 +2,8 @@ import { Navigate } from 'react-router-dom';
 import { storage } from '@usertour/helpers';
 import { StorageKeys } from '@usertour/constants';
 import { useAppContext } from '@/contexts/app-context';
+import { useTranslation } from 'react-i18next';
+import { Unavailable } from '@/components/unavailable';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
 import { FullPageSpinner } from './full-page-spinner';
 
@@ -9,10 +11,24 @@ import { FullPageSpinner } from './full-page-spinner';
 // Order: in-memory context env > last-used env from localStorage > primary env > first env.
 export const LandingRedirect = () => {
   const { environment, userInfo } = useAppContext();
-  const { environmentList, loading } = useEnvironmentList();
+  const { environmentList, loading, error, refetch } = useEnvironmentList();
+  const { t } = useTranslation('ui');
 
   if (environment?.id) {
     return <Navigate to={`/env/${environment.id}/flows`} replace />;
+  }
+
+  // The environment list decides where the app lands; without it there is
+  // nowhere to go, and a spinner that never resolves is not an answer.
+  if (error && !environmentList) {
+    return (
+      <Unavailable
+        backdrop
+        title={t('appError.environments.title')}
+        description={t('appError.environments.description')}
+        onRetry={refetch}
+      />
+    );
   }
 
   if (loading || !environmentList) {

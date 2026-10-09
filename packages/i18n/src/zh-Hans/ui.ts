@@ -4579,10 +4579,23 @@ const translations = {
     updating: '正在更新到最新版本…',
     description: '出了点问题,刷新通常就能解决。',
     reload: '刷新',
+    retry: '重试',
+    tryAgain: '再试一次',
     projects: {
       title: '项目加载失败',
       description: '暂时没能加载你的项目,重试通常就能解决。',
-      retry: '重试',
+    },
+    environments: {
+      title: '环境加载失败',
+      description: '暂时没能加载这个项目的环境,重试通常就能解决。',
+    },
+    content: {
+      title: '内容加载失败',
+      description: '暂时没能加载这条内容,重试通常就能解决。',
+    },
+    network: {
+      title: '连不上服务器',
+      description: '请检查网络连接。页面会保留已经加载的内容。',
     },
   },
   error: {
