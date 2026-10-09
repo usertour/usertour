@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Navigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +20,7 @@ import { getErrorMessage } from '@usertour/helpers';
 import { useActiveUserProjectMutation, useCreateOwnedProjectMutation } from '@usertour/hooks';
 import { Project } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
+import { activeProjectOf } from '@/hooks/project-memberships';
 import { ProjectsUnavailable } from '@/routes/projects-unavailable';
 import { AuthCard } from './authentication/components/auth-card';
 
@@ -30,7 +32,9 @@ import { AuthCard } from './authentication/components/auth-card';
 // server silently bootstrap or pick a project on the user's behalf.
 //
 // An unknown list (the server could not report it) is neither case: the
-// create form must not appear on the strength of an outage.
+// create form must not appear on the strength of an outage. And once a
+// project is active — the list recovered after a retry here, or the address
+// was typed by hand — the user belongs in the app, not on this page.
 export const SelectProject = () => {
   const { projects, userInfo } = useAppContext();
 
@@ -40,6 +44,10 @@ export const SelectProject = () => {
 
   if (projects === undefined) {
     return <ProjectsUnavailable />;
+  }
+
+  if (activeProjectOf(projects)) {
+    return <Navigate to="/" replace />;
   }
 
   if (projects.length === 0) {

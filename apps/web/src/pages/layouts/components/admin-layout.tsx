@@ -111,7 +111,7 @@ export const AdminProvidersOutlet = () => {
   // The project list is unknown — the server could not report it. Stay put
   // and offer a retry; redirecting would read an outage as "no projects".
   if (project === undefined) {
-    return <ProjectsUnavailable />;
+    return <ProjectsUnavailable backdrop />;
   }
 
   // No active project — either the user has zero memberships or none of

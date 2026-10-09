@@ -2,11 +2,23 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LoadingButton } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
+import { AuthCard } from '@/pages/authentication/components/auth-card';
+import { AuthBackdrop } from '@/pages/layouts/auth';
+
+export interface ProjectsUnavailableProps {
+  /**
+   * Draw the auth backdrop around the card. The admin shell passes it, since
+   * the shell cannot draw without a project and this card stands in for it;
+   * pages already under the auth layout leave it out.
+   */
+  backdrop?: boolean;
+}
 
 // Shown when the server could not report the user's projects: the `projects`
 // field of `me` failed while the user itself resolved. Unknown is not none —
 // nothing here redirects, and nothing offers to create a project.
-export const ProjectsUnavailable = () => {
+export const ProjectsUnavailable = (props: ProjectsUnavailableProps) => {
+  const { backdrop = false } = props;
   const { t } = useTranslation('ui');
   const { refetch } = useAppContext();
   const [retrying, setRetrying] = useState(false);
@@ -22,14 +34,19 @@ export const ProjectsUnavailable = () => {
     }
   };
 
-  return (
-    <div className="flex h-full min-h-[60vh] w-full flex-col items-center justify-center gap-4 px-4 text-center">
-      <p className="text-sm text-muted-foreground">{t('appError.projects.description')}</p>
-      <LoadingButton type="button" loading={retrying} onClick={retry}>
-        {t('appError.projects.retry')}
-      </LoadingButton>
-    </div>
+  const card = (
+    <AuthCard
+      title={t('appError.projects.title')}
+      description={t('appError.projects.description')}
+      footer={
+        <LoadingButton type="button" className="w-full" loading={retrying} onClick={retry}>
+          {t('appError.projects.retry')}
+        </LoadingButton>
+      }
+    />
   );
+
+  return backdrop ? <AuthBackdrop>{card}</AuthBackdrop> : card;
 };
 
 ProjectsUnavailable.displayName = 'ProjectsUnavailable';

@@ -4793,6 +4793,7 @@ const translations = {
     description: 'Something went wrong. Reloading usually fixes it.',
     reload: 'Reload',
     projects: {
+      title: "Your projects couldn't be loaded",
       description: "We couldn't load your projects. Retrying usually fixes it.",
       retry: 'Retry',
     },

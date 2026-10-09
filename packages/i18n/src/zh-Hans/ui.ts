@@ -4577,6 +4577,7 @@ const translations = {
     description: '出了点问题,刷新通常就能解决。',
     reload: '刷新',
     projects: {
+      title: '项目加载失败',
       description: '暂时没能加载你的项目,重试通常就能解决。',
       retry: '重试',
     },
