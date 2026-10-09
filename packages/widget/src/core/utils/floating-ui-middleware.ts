@@ -1,5 +1,6 @@
 import { hide } from '@floating-ui/react-dom';
 import type { Middleware } from '@floating-ui/dom';
+import { getBoundaryAcrossFrames } from '@usertour/dom';
 import type { Side } from '@usertour/types';
 
 export interface CustomHideDetectOverflowOptions {
@@ -12,6 +13,8 @@ export interface CustomHideDetectOverflowOptions {
 /**
  * Custom hide middleware: wraps Floating UI's hide with referenceHidden, and also treats
  * invalid reference rect (0 width/height or 0,0,0,0) as hidden so the floating element is hidden.
+ * A reference inside a same-origin frame is clipped in the top window's space, which
+ * replaces the caller's boundaries.
  */
 export function createCustomHideMiddleware(
   detectOverflowOptions: CustomHideDetectOverflowOptions,
@@ -26,11 +29,14 @@ export function createCustomHideMiddleware(
     async fn(state) {
       const { rects } = state;
       const { boundary, padding, altBoundary } = detectOverflowOptions;
+      const frameBoundary = await getBoundaryAcrossFrames(state);
       const originalHide = hide({
         strategy: 'referenceHidden',
         padding,
-        boundary: boundary.length > 0 ? boundary : undefined,
-        altBoundary,
+        ...(frameBoundary ?? {
+          boundary: boundary.length > 0 ? boundary : undefined,
+          altBoundary,
+        }),
       });
       const originalResult = await originalHide.fn(state);
       const { width, height, x, y } = rects.reference;

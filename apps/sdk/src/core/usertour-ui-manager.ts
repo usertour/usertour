@@ -5,6 +5,7 @@ import { ExternalStore } from '@/utils/store';
 import { document, loadStylesheet, logger } from '@/utils';
 import { ErrorMessages } from '@/types/error-messages';
 import { getMainCss } from '@/core/usertour-env';
+import { UI_CONTAINER_ID } from '@/core/usertour-helper';
 import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
@@ -42,7 +43,7 @@ export class UsertourUIManager extends Evented {
   constructor(config: UIManagerConfig = {}) {
     super();
     this.config = {
-      containerId: 'usertour-widget',
+      containerId: UI_CONTAINER_ID,
       maxRetries: 60,
       retryDelay: 1000,
       ...config,

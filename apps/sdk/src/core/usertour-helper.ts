@@ -1,4 +1,6 @@
-import { computePosition, hide } from '@floating-ui/dom';
+import { computePosition, hide, type Middleware } from '@floating-ui/dom';
+import { getBoundaryAcrossFrames, getSameOriginFrameDocuments } from '@usertour/dom';
+import { finderV2 } from '@usertour/finder';
 import {
   RulesCondition,
   RulesType,
@@ -11,13 +13,46 @@ import {
   ContentEditorElementType,
   ContentEditorRoot,
   ContentEditorButtonElement,
+  ElementSelectorPropsData,
 } from '@usertour/types';
 import { document, location, window } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
 
+/** The id of the element the SDK mounts its UI in; the frames under it are never targets. */
+export const UI_CONTAINER_ID = 'usertour-widget';
+
 // ============================================================================
 // Element Visibility and Interaction Functions
 // ============================================================================
+
+/**
+ * The roots a target selector is resolved in, in order: the page, then each
+ * same-origin frame in document order, nested ones included. The SDK's own
+ * frames are skipped.
+ */
+export const getTargetSearchRoots = (): Element[] => {
+  if (!document?.body) {
+    return [];
+  }
+  const isUsertourFrame = (frame: HTMLIFrameElement) =>
+    frame.closest(`#${UI_CONTAINER_ID}`) !== null;
+  const frameBodies = getSameOriginFrameDocuments(document, isUsertourFrame)
+    .map((frameDocument) => frameDocument.body)
+    .filter((body): body is HTMLElement => body !== null);
+  return [document.body, ...frameBodies];
+};
+
+/** Resolve a target selector in the page and in its same-origin frames. */
+export const findTargetElement = (target: ElementSelectorPropsData): HTMLElement | null =>
+  finderV2(target, getTargetSearchRoots());
+
+/** Floating UI's `hide`, clipping a reference inside a same-origin frame in the top window's space. */
+const hideAcrossFrames: Middleware = {
+  name: 'hide',
+  async fn(state) {
+    return hide({ ...(await getBoundaryAcrossFrames(state)) }).fn(state);
+  },
+};
 
 /**
  * Check if an element is visible in the viewport
@@ -30,7 +65,7 @@ export const isVisible = async (el: HTMLElement) => {
   }
   const { middlewareData } = await computePosition(el, document.body, {
     strategy: 'fixed',
-    middleware: [hide()],
+    middleware: [hideAcrossFrames],
   });
   if (middlewareData?.hide?.referenceHidden) {
     return false;

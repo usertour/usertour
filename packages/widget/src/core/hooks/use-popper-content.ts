@@ -13,6 +13,7 @@ import {
 import type { Rect, Placement, SideObject } from '@floating-ui/dom';
 import { createPlatformWithDetachedReferenceFallback } from '../utils/floating-ui-platform';
 import { createCustomHideMiddleware } from '../utils/floating-ui-middleware';
+import { getBoundaryAcrossFrames } from '@usertour/dom';
 import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
@@ -164,8 +165,10 @@ export const usePopperContent = (
         name: 'overflowState',
         async fn(state) {
           if (setOverflow) {
+            // A reference inside a same-origin frame is clipped in the top window's space
             const overflow = await detectOverflow(state, {
               elementContext: 'reference',
+              ...(await getBoundaryAcrossFrames(state)),
             });
             setOverflow(overflow);
           }

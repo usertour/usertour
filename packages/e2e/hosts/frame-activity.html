@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Lesson activity</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font: 14px/1.4 system-ui, sans-serif;
+        color: #1f2937;
+      }
+      #activity-submit {
+        position: absolute;
+        left: 420px;
+        top: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      A lesson activity the runtime host embeds in an <iframe> (tests/sdk/iframe-targeting.spec.ts).
+      Its button sits well away from the frame's top-left corner, so a tooltip
+      positioned or a visibility judged without the frame's offset is visibly wrong.
+    -->
+    <h1>Lesson activity</h1>
+    <button id="activity-submit" type="button">Submit answer</button>
+  </body>
+</html>

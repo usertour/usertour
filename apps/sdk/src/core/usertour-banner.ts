@@ -10,7 +10,7 @@ import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-compo
 import { rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { isEqual } from '@usertour/helpers';
 import { isVisibleNode } from '@usertour/dom';
-import { logger } from '@/utils';
+import { isElement, logger } from '@/utils';
 import { ActionSource } from '@/core/action-handlers';
 import { UsertourElementWatcher } from './usertour-element-watcher';
 import { CommonActionHandler, BannerActionHandler } from '@/core/action-handlers';
@@ -229,7 +229,7 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     this.watcher.setTargetMissingSeconds(BANNER_TARGET_MISSING_SECONDS);
 
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
-      if (el instanceof Element) {
+      if (isElement(el)) {
         this.setStoreData({
           ...(this.pendingWatcherStore ?? store),
           openState: true,
@@ -243,7 +243,7 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     });
 
     this.watcher.on(SDKClientEvents.ELEMENT_CHANGED, (el) => {
-      if (el instanceof Element) {
+      if (isElement(el)) {
         this.updateStore({ targetElement: el });
       }
     });
