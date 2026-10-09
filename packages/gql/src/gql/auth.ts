@@ -105,14 +105,6 @@ export const resetUserPassword = gql`
   }
 `;
 
-export const updateUserPassword = gql`
-  mutation resetUserPassword($email: String!) {
-    resetUserPassword(data: { email: $email }) {
-      success
-    }
-  }
-`;
-
 export const resetUserPasswordByCode = gql`
   mutation resetUserPasswordByCode($code: String!, $password: String!) {
     resetUserPasswordByCode(data: { code: $code, password: $password }) {

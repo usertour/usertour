@@ -12,20 +12,6 @@ export const createPortalSession = gql`
   }
 `;
 
-export const getSubscriptionPlans = gql`
-  query getSubscriptionPlans {
-    getSubscriptionPlans {
-      id
-      name
-      price
-      features
-      interval
-      currency
-      description
-    }
-  }
-`;
-
 export const getSubscriptionByProjectId = gql`
   query getSubscriptionByProjectId($projectId: String!) {
     getSubscriptionByProjectId(projectId: $projectId) {

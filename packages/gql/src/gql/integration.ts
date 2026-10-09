@@ -173,28 +173,33 @@ export const DisconnectIntegrationOAuth = gql`
 `;
 
 // CRM object mappings (ADR 0013 §4-6).
-const MAPPING_FIELDS = `
-  id
-  createdAt
-  updatedAt
-  integrationId
-  remoteObject
-  localObject
-  matchStrategy
-  matchRemoteField
-  inboundFields
-  outboundFields
-  enabled
-  lastFullSyncAt
-  fullSyncStartedAt
-  matchedCount
-  unresolvedCount
+const MAPPING_FIELDS = gql`
+  fragment IntegrationObjectMappingFields on IntegrationObjectMapping {
+    id
+    createdAt
+    updatedAt
+    integrationId
+    remoteObject
+    localObject
+    matchStrategy
+    matchRemoteField
+    inboundFields
+    outboundFields
+    enabled
+    lastFullSyncAt
+    fullSyncStartedAt
+    matchedCount
+    unresolvedCount
+  }
 `;
 
 export const ListIntegrationObjectMappings = gql`
   query ListIntegrationObjectMappings($integrationId: String!) {
-    listIntegrationObjectMappings(integrationId: $integrationId) { ${MAPPING_FIELDS} }
+    listIntegrationObjectMappings(integrationId: $integrationId) {
+      ...IntegrationObjectMappingFields
+    }
   }
+  ${MAPPING_FIELDS}
 `;
 
 export const ListIntegrationSyncRuns = gql`
@@ -235,8 +240,11 @@ export const ListIntegrationRemoteProperties = gql`
 
 export const UpsertIntegrationObjectMapping = gql`
   mutation UpsertIntegrationObjectMapping($data: UpsertIntegrationObjectMappingInput!) {
-    upsertIntegrationObjectMapping(data: $data) { ${MAPPING_FIELDS} }
+    upsertIntegrationObjectMapping(data: $data) {
+      ...IntegrationObjectMappingFields
+    }
   }
+  ${MAPPING_FIELDS}
 `;
 
 export const DeleteIntegrationObjectMapping = gql`
@@ -249,8 +257,11 @@ export const DeleteIntegrationObjectMapping = gql`
 // the card can show "in progress" without a refetch.
 export const RunIntegrationObjectMappingSync = gql`
   mutation RunIntegrationObjectMappingSync($data: IntegrationObjectMappingIdInput!) {
-    runIntegrationObjectMappingSync(data: $data) { ${MAPPING_FIELDS} }
+    runIntegrationObjectMappingSync(data: $data) {
+      ...IntegrationObjectMappingFields
+    }
   }
+  ${MAPPING_FIELDS}
 `;
 
 export const UpdateIntegrationEvents = gql`

@@ -23,7 +23,7 @@ We studied the data layer of a large open-source React product with the same sta
 
 ### 1. Documents are generated with their result types
 
-GraphQL Code Generator runs in `packages/gql` with the `typescript`, `typescript-operations` and `typed-document-node` plugins, reading `apps/server/src/schema.graphql` and the operation files under `packages/gql/src`, and writing `packages/gql/src/generated/graphql.ts`. Every operation becomes a `TypedDocumentNode<Result, Variables>`; `useQuery` and `useMutation` infer both from it. CI regenerates and fails on a diff, so a schema change that is not reflected in the generated file cannot merge.
+GraphQL Code Generator runs in `packages/gql` with the `typescript`, `typescript-operations` and `typed-document-node` plugins, reading the server's SDL and the operation files under `packages/gql/src`, and writing two files: `src/generated/schema.ts` (every schema type) and `src/generated/operations.ts` (each operation's result and variables types and its `TypedDocumentNode<Result, Variables>`, importing the schema types rather than re-emitting the inputs they use). `useQuery` and `useMutation` infer result and variables from the document. The SDL itself is not committed: the server writes it on boot, and `pnpm --filter @usertour/server schema:emit` builds the same file from the resolver classes' metadata without a database, so CI can regenerate from a clean checkout. CI regenerates and fails on a diff, so a schema or document change that is not reflected in the generated files cannot merge.
 
 No React hooks are generated. Hooks are where the rules of §2 live; generating one hook per operation would reinstate 183 places to decide query state.
 

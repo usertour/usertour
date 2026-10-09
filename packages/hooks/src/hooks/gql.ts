@@ -46,7 +46,6 @@ import {
   updateSegment,
   createCheckoutSession,
   createPortalSession,
-  getSubscriptionPlans,
   getSubscriptionByProjectId,
   getSubscriptionUsage,
   globalConfig,
@@ -584,12 +583,6 @@ export const useCreatePortalSessionMutation = () => {
     [mutation],
   );
   return { invoke, loading, error };
-};
-
-export const useGetSubscriptionPlansQuery = () => {
-  const { data, loading, error, refetch } = useQuery(getSubscriptionPlans);
-  const plans = data?.getSubscriptionPlans ?? [];
-  return { plans, loading, error, refetch };
 };
 
 export const useGetSubscriptionByProjectIdQuery = (

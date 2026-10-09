@@ -21,3 +21,7 @@ export * from './gql/sso';
 export * from './gql/identity-verification';
 export * from './gql/webhook';
 export * from './gql/references';
+
+// Generated with GraphQL Code Generator from the server schema (ADR 0021): schema types, operation result/variables types, and a TypedDocumentNode per operation.
+export * from './generated/schema';
+export * from './generated/operations';

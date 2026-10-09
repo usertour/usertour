@@ -110,8 +110,15 @@ jobs:
       - name: Build the shared packages
         run: pnpm build:deps
       - name: Generate the Prisma client
-        if: env.SERVER == 'true'
+        # The schema emit below loads the server's modules, which import the client.
+        if: env.SERVER == 'true' || env.WEB == 'true'
         run: pnpm --filter @usertour/server prisma:generate
+      - name: GraphQL schema and typed documents are current
+        # The schema follows the server; the documents live in packages/gql (web filter).
+        if: env.SERVER == 'true' || env.WEB == 'true'
+        run: |
+          pnpm gql:generate
+          git diff --exit-code -- packages/gql/src/generated
       - name: Type check (server)
         if: env.SERVER == 'true'
         run: pnpm --filter @usertour/server exec tsc --noEmit -p tsconfig.json
