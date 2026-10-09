@@ -1,8 +1,9 @@
-/* eslint-disable no-console */
 import { Observable } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
-
+import type { GraphQLFormattedError } from 'graphql';
+import posthog from 'posthog-js';
 import { apiUrl } from '@/utils/env';
+import { reportNetworkFailure } from '../network-errors';
 
 let isRefreshing = false;
 let pendingRequests: (() => void)[] = [];
@@ -23,9 +24,35 @@ const refreshToken = async (): Promise<boolean> => {
   }
 };
 
+// Every error the server raises on purpose carries a code from its catalogue
+// (E0003 … E1046): validation, permission, not found, conflict, a limit. Those
+// are outcomes a page or a mutation site presents to the user; the link stays
+// out of it. E0000 is the server's "something it did not expect", and an
+// error with no code never came through the catalogue at all — those are the
+// ones to report.
+const UNKNOWN_SERVER_ERROR = 'E0000';
+const isExpectedCode = (code: unknown): boolean =>
+  typeof code === 'string' && /^E\d{4}$/.test(code) && code !== UNKNOWN_SERVER_ERROR;
+
+const report = (error: GraphQLFormattedError, operationName: string): void => {
+  if (!posthog.__loaded) {
+    return;
+  }
+  const code = error.extensions?.code;
+  const captured = new Error(error.message);
+  captured.name = typeof code === 'string' ? code : 'GraphQLError';
+  posthog.captureException(captured, {
+    operationName,
+    graphqlPath: error.path?.join('.'),
+    graphqlCode: code,
+  });
+};
+
 /**
- * Error link handles authentication errors and attempts to refresh tokens
- * Uses @apollo/client/link/error as recommended by Apollo
+ * Error link: session handling, classification and reporting (ADR 0021 §4).
+ * It never shows a query error itself — the query layer surfaces those with
+ * context — and it hands network failures to the notifier through
+ * reportNetworkFailure.
  */
 export const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
   if (graphQLErrors) {
@@ -37,15 +64,12 @@ export const errorLink = onError(({ graphQLErrors, networkError, operation, forw
         // Already on auth page, don't retry
         return;
       }
-
       if (!isRefreshing) {
         isRefreshing = true;
-
         return new Observable((observer) => {
           refreshToken()
             .then((success) => {
               isRefreshing = false;
-
               if (success) {
                 // Retry all pending requests
                 for (const callback of pendingRequests) {
@@ -67,7 +91,6 @@ export const errorLink = onError(({ graphQLErrors, networkError, operation, forw
             });
         });
       }
-
       // Another refresh is in progress, queue this request
       return new Observable((observer) => {
         pendingRequests.push(() => {
@@ -83,13 +106,23 @@ export const errorLink = onError(({ graphQLErrors, networkError, operation, forw
       // shared across tabs, per-tab React state isn't). Navigate to root so
       // AppContext re-initialises from the current cookies and LandingRedirect
       // picks an environment the user actually has access to.
-      if (window.location.pathname.startsWith('/auth')) return;
+      if (window.location.pathname.startsWith('/auth')) {
+        return;
+      }
       window.location.href = '/';
       return;
     }
+
+    for (const graphQLError of graphQLErrors) {
+      if (!isExpectedCode(graphQLError.extensions?.code)) {
+        report(graphQLError, operation.operationName);
+      }
+    }
+    return;
   }
 
   if (networkError) {
     console.error(`[Network error]: ${networkError}`);
+    reportNetworkFailure({ operationName: operation.operationName, error: networkError });
   }
 });
