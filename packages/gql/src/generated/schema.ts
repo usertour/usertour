@@ -116,11 +116,10 @@ export type AnalyticsOrder = {
 };
 
 /** Properties by which content connections can be ordered. */
-export enum AnalyticsOrderField {
-  CreatedAt = 'createdAt',
-  Id = 'id',
-  UpdatedAt = 'updatedAt'
-}
+export type AnalyticsOrderField =
+  | 'createdAt'
+  | 'id'
+  | 'updatedAt';
 
 export type AnalyticsQuery = {
   contentId: Scalars['String']['input'];
@@ -216,9 +215,8 @@ export type AuditLogOrder = {
   field: AuditLogOrderField;
 };
 
-export enum AuditLogOrderField {
-  CreatedAt = 'createdAt'
-}
+export type AuditLogOrderField =
+  | 'createdAt';
 
 export type AuditLogQuery = {
   action?: InputMaybe<Scalars['String']['input']>;
@@ -318,11 +316,10 @@ export type BizOrder = {
 };
 
 /** Properties by which content connections can be ordered. */
-export enum BizOrderField {
-  CreatedAt = 'createdAt',
-  Id = 'id',
-  UpdatedAt = 'updatedAt'
-}
+export type BizOrderField =
+  | 'createdAt'
+  | 'id'
+  | 'updatedAt';
 
 export type BizQuery = {
   companyId?: InputMaybe<Scalars['String']['input']>;
@@ -530,12 +527,11 @@ export type ContentOrder = {
 };
 
 /** Properties by which content connections can be ordered. */
-export enum ContentOrderField {
-  CreatedAt = 'createdAt',
-  Id = 'id',
-  PublishedAt = 'publishedAt',
-  UpdatedAt = 'updatedAt'
-}
+export type ContentOrderField =
+  | 'createdAt'
+  | 'id'
+  | 'publishedAt'
+  | 'updatedAt';
 
 export type ContentPublishRecord = {
   __typename?: 'ContentPublishRecord';
@@ -1821,10 +1817,9 @@ export type OEmbed = {
 };
 
 /** Possible directions in which to order a list of items when provided an `orderBy` argument. */
-export enum OrderDirection {
-  Asc = 'asc',
-  Desc = 'desc'
-}
+export type OrderDirection =
+  | 'asc'
+  | 'desc';
 
 export type PageInfo = {
   __typename?: 'PageInfo';
@@ -2406,12 +2401,11 @@ export type ResetPasswordInput = {
 };
 
 /** User role */
-export enum Role {
-  Admin = 'ADMIN',
-  Editor = 'EDITOR',
-  Owner = 'OWNER',
-  Viewer = 'VIEWER'
-}
+export type Role =
+  | 'ADMIN'
+  | 'EDITOR'
+  | 'OWNER'
+  | 'VIEWER';
 
 export type Segment = {
   __typename?: 'Segment';
@@ -2431,16 +2425,14 @@ export type Segment = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
-export enum SegmentBizType {
-  Company = 'COMPANY',
-  User = 'USER'
-}
+export type SegmentBizType =
+  | 'COMPANY'
+  | 'USER';
 
-export enum SegmentDataType {
-  All = 'ALL',
-  Condition = 'CONDITION',
-  Manual = 'MANUAL'
-}
+export type SegmentDataType =
+  | 'ALL'
+  | 'CONDITION'
+  | 'MANUAL';
 
 export type SessionQuery = {
   contentId?: InputMaybe<Scalars['String']['input']>;
@@ -2483,10 +2475,9 @@ export type SsoProviderModel = {
 };
 
 /** SSO identity provider protocol */
-export enum SsoProviderType {
-  Oidc = 'OIDC',
-  Saml = 'SAML'
-}
+export type SsoProviderType =
+  | 'OIDC'
+  | 'SAML';
 
 export type StartIntegrationOAuthInput = {
   environmentId: Scalars['String']['input'];

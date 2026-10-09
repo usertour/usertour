@@ -1,0 +1,27 @@
+mutation createCheckoutSession($data: CreateCheckoutSessionRequest!) {
+  createCheckoutSession(data: $data)
+}
+
+mutation createPortalSession($projectId: String!) {
+  createPortalSession(projectId: $projectId)
+}
+
+query getSubscriptionByProjectId($projectId: String!) {
+  getSubscriptionByProjectId(projectId: $projectId) {
+    projectId
+    subscriptionId
+    lookupKey
+    planType
+    interval
+    status
+    isTrial
+    cancelAt
+    overridePlan
+    createdAt
+    updatedAt
+  }
+}
+
+query getSubscriptionUsage($projectId: String!) {
+  getSubscriptionUsage(projectId: $projectId)
+}

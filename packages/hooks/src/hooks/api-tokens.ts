@@ -1,10 +1,13 @@
-import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
+import { NetworkStatus, useMutation } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
 import {
-  ApiTokens,
-  CreateApiToken,
-  DeleteApiToken,
-  RotateApiToken,
-  UpdateApiToken,
+  ApiTokensDocument,
+  type ApiTokensQuery,
+  type ApiTokensQueryVariables,
+  CreateApiTokenDocument,
+  DeleteApiTokenDocument,
+  RotateApiTokenDocument,
+  UpdateApiTokenDocument,
 } from '@usertour/gql';
 
 export interface ApiToken {
@@ -45,8 +48,10 @@ export interface CreatedApiToken {
   apiToken: ApiToken;
 }
 
-export const useListApiTokensQuery = (options?: QueryHookOptions) => {
-  const { data, loading, error, refetch, networkStatus } = useQuery(ApiTokens, {
+export const useListApiTokensQuery = (
+  options?: TypedQueryOptions<ApiTokensQuery, ApiTokensQueryVariables>,
+) => {
+  const { data, loading, error, refetch, networkStatus } = useTypedQuery(ApiTokensDocument, {
     notifyOnNetworkStatusChange: true,
     ...options,
   });
@@ -56,20 +61,20 @@ export const useListApiTokensQuery = (options?: QueryHookOptions) => {
 };
 
 export const useCreateApiTokenMutation = () => {
-  const [mutation, { loading, error }] = useMutation(CreateApiToken, {
+  const [mutation, { loading, error }] = useMutation(CreateApiTokenDocument, {
     refetchQueries: ['ApiTokens'],
   });
   // Returns the freshly-minted plaintext token (shown once) plus the record, or
   // null on failure. The API only surfaces the secret at creation time.
   const invoke = async (input: CreateApiTokenInput): Promise<CreatedApiToken | null> => {
     const response = await mutation({ variables: { input } });
-    return response.data?.createApiToken ?? null;
+    return (response.data?.createApiToken as CreatedApiToken | undefined) ?? null;
   };
   return { invoke, loading, error };
 };
 
 export const useUpdateApiTokenMutation = () => {
-  const [mutation, { loading, error }] = useMutation(UpdateApiToken, {
+  const [mutation, { loading, error }] = useMutation(UpdateApiTokenDocument, {
     refetchQueries: ['ApiTokens'],
   });
   // Returns the updated record, or null on failure.
@@ -83,7 +88,7 @@ export const useUpdateApiTokenMutation = () => {
 export const useRotateApiTokenMutation = () => {
   // Rotating mints a new secret on the same record; the plaintext is shown
   // once (like create). Refetch so the masked tail updates in the list.
-  const [mutation, { loading, error }] = useMutation(RotateApiToken, {
+  const [mutation, { loading, error }] = useMutation(RotateApiTokenDocument, {
     refetchQueries: ['ApiTokens'],
   });
   const invoke = async (id: string): Promise<CreatedApiToken | null> => {
@@ -95,7 +100,7 @@ export const useRotateApiTokenMutation = () => {
 
 export const useDeleteApiTokenMutation = () => {
   // Hard delete; refetch evicts the row from the list.
-  const [mutation, { loading, error }] = useMutation(DeleteApiToken, {
+  const [mutation, { loading, error }] = useMutation(DeleteApiTokenDocument, {
     refetchQueries: ['ApiTokens'],
   });
   const invoke = async (id: string): Promise<boolean> => {

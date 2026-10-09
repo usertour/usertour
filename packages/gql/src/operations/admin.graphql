@@ -1,0 +1,221 @@
+query AdminSettings {
+  adminSettings {
+    instanceId
+    projectCount
+    projectsUsingInstanceLicense
+    isOverProjectLimit
+    licenseInfo {
+      payload {
+        plan
+        sub
+        scope
+        instanceId
+        projectId
+        projectLimit
+        iat
+        exp
+        issuer
+        features
+      }
+      isValid
+      isExpired
+      error
+      daysRemaining
+    }
+  }
+}
+
+query AdminInstanceSettings {
+  adminInstanceSettings {
+    id
+    instanceId
+    name
+    contactEmail
+    allowUserRegistration
+    require2FA
+    allowProjectLevelSubscriptionManagement
+    createdAt
+    updatedAt
+  }
+}
+
+mutation UpdateInstanceLicense($license: String!) {
+  updateInstanceLicense(license: $license) {
+    id
+    instanceId
+  }
+}
+
+mutation UpdateInstanceGeneralSettings(
+  $name: String
+  $contactEmail: String
+  $allowProjectLevelSubscriptionManagement: Boolean
+) {
+  updateInstanceGeneralSettings(
+    name: $name
+    contactEmail: $contactEmail
+    allowProjectLevelSubscriptionManagement: $allowProjectLevelSubscriptionManagement
+  ) {
+    id
+    instanceId
+    name
+    contactEmail
+    allowUserRegistration
+    allowProjectLevelSubscriptionManagement
+  }
+}
+
+mutation UpdateInstanceAuthenticationSettings($allowUserRegistration: Boolean!) {
+  updateInstanceAuthenticationSettings(allowUserRegistration: $allowUserRegistration) {
+    id
+    instanceId
+    allowUserRegistration
+  }
+}
+
+mutation UpdateInstanceRequire2FA($value: Boolean!) {
+  updateInstanceRequire2FA(value: $value) {
+    id
+    instanceId
+    require2FA
+  }
+}
+
+query AdminUsers(
+  $query: String
+  $page: Int
+  $pageSize: Int
+  $status: String
+  $role: String
+) {
+  adminUsers(
+    query: $query
+    page: $page
+    pageSize: $pageSize
+    status: $status
+    role: $role
+  ) {
+    items {
+      id
+      name
+      email
+      createdAt
+      isSystemAdmin
+      disabled
+      projectCount
+    }
+    total
+    page
+    pageSize
+  }
+}
+
+mutation AdminCreateUser(
+  $name: String!
+  $email: String!
+  $password: String!
+) {
+  adminCreateUser(name: $name, email: $email, password: $password) {
+    id
+    name
+    email
+  }
+}
+
+mutation UpdateUserSystemAdmin($userId: String!, $isSystemAdmin: Boolean!) {
+  updateUserSystemAdmin(userId: $userId, isSystemAdmin: $isSystemAdmin) {
+    id
+    isSystemAdmin
+  }
+}
+
+mutation UpdateUserDisabled($userId: String!, $disabled: Boolean!) {
+  updateUserDisabled(userId: $userId, disabled: $disabled) {
+    id
+    disabled
+  }
+}
+
+query AdminProjects(
+  $query: String
+  $page: Int
+  $pageSize: Int
+  $usesInstanceLicense: String
+) {
+  adminProjects(
+    query: $query
+    page: $page
+    pageSize: $pageSize
+    usesInstanceLicense: $usesInstanceLicense
+  ) {
+    items {
+      id
+      name
+      createdAt
+      ownerName
+      ownerEmail
+      memberCount
+      usesInstanceLicense
+      licenseSource
+    }
+    total
+    page
+    pageSize
+  }
+}
+
+mutation AdminCreateProject($name: String!, $ownerUserId: String!) {
+  adminCreateProject(name: $name, ownerUserId: $ownerUserId) {
+    id
+    name
+  }
+}
+
+mutation UpdateProjectUsesInstanceLicense(
+  $projectId: String!
+  $enabled: Boolean!
+) {
+  updateProjectUsesInstanceLicense(projectId: $projectId, enabled: $enabled)
+}
+
+query AdminProjectMembers($projectId: String!) {
+  adminProjectMembers(projectId: $projectId) {
+    id
+    userId
+    name
+    email
+    role
+    isOwner
+  }
+}
+
+mutation AdminAddProjectMember(
+  $projectId: String!
+  $userId: String!
+  $role: String!
+) {
+  adminAddProjectMember(projectId: $projectId, userId: $userId, role: $role)
+}
+
+mutation AdminChangeProjectMemberRole(
+  $projectId: String!
+  $userId: String!
+  $role: String!
+) {
+  adminChangeProjectMemberRole(
+    projectId: $projectId
+    userId: $userId
+    role: $role
+  )
+}
+
+mutation AdminTransferProjectOwnership(
+  $projectId: String!
+  $userId: String!
+) {
+  adminTransferProjectOwnership(projectId: $projectId, userId: $userId)
+}
+
+mutation AdminRemoveProjectMember($projectId: String!, $userId: String!) {
+  adminRemoveProjectMember(projectId: $projectId, userId: $userId)
+}

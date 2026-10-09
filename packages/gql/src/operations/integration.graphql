@@ -1,0 +1,216 @@
+query ListIntegrations($environmentId: String!) {
+  listIntegrations(environmentId: $environmentId) {
+    id
+    createdAt
+    updatedAt
+    environmentId
+    provider
+    keyTail
+    config
+    enabled
+    consecutiveFailures
+    cooldownUntil
+    autoDisabledAt
+    inboundEnabled
+    inboundConfig
+    inboundUrl
+    connected
+    remoteAccountId
+    remoteAccountLabel
+  }
+}
+
+query QueryIntegrationMessages($integrationId: String!, $first: Int, $after: String) {
+  queryIntegrationMessages(integrationId: $integrationId, first: $first, after: $after) {
+    totalCount
+    edges {
+      cursor
+      node {
+        id
+        createdAt
+        updatedAt
+        topic
+        status
+        payload
+        deliveries {
+          id
+          createdAt
+          attempt
+          success
+          responseStatus
+          responseBody
+          error
+          durationMs
+        }
+      }
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+  }
+}
+
+mutation UpsertIntegration($data: UpsertIntegrationInput!) {
+  upsertIntegration(data: $data) {
+    id
+    createdAt
+    updatedAt
+    environmentId
+    provider
+    keyTail
+    config
+    enabled
+    consecutiveFailures
+    cooldownUntil
+    autoDisabledAt
+    inboundEnabled
+    inboundConfig
+    inboundUrl
+    connected
+    remoteAccountId
+    remoteAccountLabel
+  }
+}
+
+mutation UpdateIntegrationInbound($data: UpdateIntegrationInboundInput!) {
+  updateIntegrationInbound(data: $data) {
+    id
+    updatedAt
+    inboundEnabled
+    inboundConfig
+    inboundUrl
+  }
+}
+
+mutation RotateIntegrationInboundToken($data: IntegrationIdInput!) {
+  rotateIntegrationInboundToken(data: $data) {
+    id
+    updatedAt
+    inboundUrl
+  }
+}
+
+query QueryIntegrationSyncedSegments($integrationId: String!) {
+  queryIntegrationSyncedSegments(integrationId: $integrationId) {
+    id
+    createdAt
+    sourceCohortId
+    sourceCohortName
+    segmentId
+    segmentName
+    lastSyncedAt
+    memberCount
+    unresolvedCount
+  }
+}
+
+mutation DeleteIntegration($data: IntegrationIdInput!) {
+  deleteIntegration(data: $data) {
+    id
+  }
+}
+
+mutation SendIntegrationTestEvent($data: IntegrationIdInput!) {
+  sendIntegrationTestEvent(data: $data) {
+    id
+  }
+}
+
+mutation StartIntegrationOAuth($data: StartIntegrationOAuthInput!) {
+  startIntegrationOAuth(data: $data) {
+    url
+  }
+}
+
+mutation DisconnectIntegrationOAuth($data: IntegrationIdInput!) {
+  disconnectIntegrationOAuth(data: $data) {
+    id
+    updatedAt
+    enabled
+    connected
+    remoteAccountId
+    remoteAccountLabel
+    consecutiveFailures
+    cooldownUntil
+    autoDisabledAt
+  }
+}
+
+fragment IntegrationObjectMappingFields on IntegrationObjectMapping {
+  id
+  createdAt
+  updatedAt
+  integrationId
+  remoteObject
+  localObject
+  matchStrategy
+  matchRemoteField
+  inboundFields
+  outboundFields
+  enabled
+  lastFullSyncAt
+  fullSyncStartedAt
+  matchedCount
+  unresolvedCount
+}
+
+query ListIntegrationObjectMappings($integrationId: String!) {
+  listIntegrationObjectMappings(integrationId: $integrationId) {
+    ...IntegrationObjectMappingFields
+  }
+}
+
+query ListIntegrationSyncRuns($integrationId: String!, $limit: Int) {
+  listIntegrationSyncRuns(integrationId: $integrationId, limit: $limit) {
+    id
+    kind
+    status
+    mappingId
+    remoteObject
+    localObject
+    startedAt
+    finishedAt
+    records
+    matchedCount
+    unresolvedCount
+    error
+    remoteIds
+  }
+}
+
+query ListIntegrationRemoteProperties($integrationId: String!, $remoteObject: String!) {
+  listIntegrationRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
+    name
+    label
+    type
+    fieldType
+    groupName
+    readOnly
+    hubspotDefined
+  }
+}
+
+mutation UpsertIntegrationObjectMapping($data: UpsertIntegrationObjectMappingInput!) {
+  upsertIntegrationObjectMapping(data: $data) {
+    ...IntegrationObjectMappingFields
+  }
+}
+
+mutation DeleteIntegrationObjectMapping($data: IntegrationObjectMappingIdInput!) {
+  deleteIntegrationObjectMapping(data: $data)
+}
+
+mutation RunIntegrationObjectMappingSync($data: IntegrationObjectMappingIdInput!) {
+  runIntegrationObjectMappingSync(data: $data) {
+    ...IntegrationObjectMappingFields
+  }
+}
+
+mutation UpdateIntegrationEvents($data: UpdateIntegrationEventsInput!) {
+  updateIntegrationEvents(data: $data) {
+    id
+    updatedAt
+    config
+  }
+}

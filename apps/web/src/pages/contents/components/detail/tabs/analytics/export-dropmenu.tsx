@@ -16,6 +16,7 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useAppContext } from '@/contexts/app-context';
 import { buildExportPayload } from './export-csv.utils';
 import { useTranslation } from 'react-i18next';
+import type { AnalyticsOrder, AnalyticsQuery } from '@usertour/gql';
 
 type ExportDropdownMenuProps = {
   children: ReactNode;
@@ -77,17 +78,18 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         const result = await refetch({
           first: pageSize,
           after: currentCursor,
-          query,
-          orderBy,
+          query: query as AnalyticsQuery,
+          orderBy: orderBy as AnalyticsOrder,
         });
 
         const sessions =
-          result.data?.listSessionsDetail?.edges?.map((edge: { node: BizSession }) => edge.node) ||
-          [];
+          (result.data?.listSessionsDetail?.edges?.map((edge) => edge.node) as
+            | BizSession[]
+            | undefined) || [];
         allSessions = [...allSessions, ...sessions];
 
         const lastEdge = result.data?.listSessionsDetail?.edges?.slice(-1)[0];
-        currentCursor = lastEdge?.cursor;
+        currentCursor = lastEdge?.cursor ?? null;
 
         if (!currentCursor || !result.data?.listSessionsDetail?.edges?.length) {
           break;

@@ -1,0 +1,48 @@
+mutation createLocalization($data: CreateLocalizationInput!) {
+  createLocalization(data: $data) {
+    id
+  }
+}
+
+mutation updateLocalization($data: UpdateLocalizationInput!) {
+  updateLocalization(data: $data) {
+    id
+    locale
+    name
+    projectId
+    code
+    createdAt
+    isDefault
+  }
+}
+
+query listLocalizations($projectId: String!) {
+  listLocalizations(projectId: $projectId) {
+    id
+    locale
+    name
+    projectId
+    code
+    createdAt
+    isDefault
+  }
+}
+
+mutation deleteLocalization($id: ID!) {
+  deleteLocalization(data: { id: $id }) {
+    id
+  }
+}
+
+mutation setDefaultLocalization($id: String!) {
+  setDefaultLocalization(id: $id) {
+    id
+  }
+}
+
+mutation translateLocalizationUnits($data: TranslateLocalizationUnitsInput!) {
+  translateLocalizationUnits(data: $data) {
+    path
+    translatedText
+  }
+}

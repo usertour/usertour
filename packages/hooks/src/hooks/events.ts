@@ -1,12 +1,18 @@
-import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
-import {
-  createEvent,
-  deleteEvent,
-  listAttributeOnEvents,
-  listEvents,
-  updateEvent,
-} from '@usertour/gql';
+import { NetworkStatus, useMutation } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type { Event } from '@usertour/types';
+import {
+  CreateEventDocument,
+  DeleteEventDocument,
+  ListAttributeOnEventsDocument,
+  type ListAttributeOnEventsQuery,
+  type ListAttributeOnEventsQueryVariables,
+  ListEventsDocument,
+  type ListEventsQuery,
+  type ListEventsQueryVariables,
+  UpdateEventDocument,
+} from '@usertour/gql';
 
 export interface CreateEventInput {
   projectId: string;
@@ -25,7 +31,7 @@ export interface UpdateEventInput {
 }
 
 export const useCreateEventMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createEvent, {
+  const [mutation, { loading, error }] = useMutation(CreateEventDocument, {
     // Server response only carries `{ id }`; refetch the list by
     // operation name so the new row appears without each caller having
     // to thread `refetch` props down.
@@ -41,7 +47,7 @@ export const useCreateEventMutation = () => {
 export const useUpdateEventMutation = () => {
   // Apollo's normalized cache merges the response into the existing
   // Event entity by `__typename:id`; no `update` callback needed.
-  const [mutation, { loading, error }] = useMutation(updateEvent);
+  const [mutation, { loading, error }] = useMutation(UpdateEventDocument);
   const invoke = async (data: UpdateEventInput): Promise<boolean> => {
     const response = await mutation({ variables: { data } });
     return !!response.data?.updateEvent?.id;
@@ -50,7 +56,7 @@ export const useUpdateEventMutation = () => {
 };
 
 export const useDeleteEventMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteEvent, {
+  const [mutation, { loading, error }] = useMutation(DeleteEventDocument, {
     update(cache, { data }) {
       const id = data?.deleteEvent?.id;
       if (!id) {
@@ -69,9 +75,12 @@ export const useDeleteEventMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useListEventsQuery = (projectId: string | undefined, options?: QueryHookOptions) => {
-  const { data, refetch, loading, error, networkStatus } = useQuery(listEvents, {
-    variables: { projectId, bizType: 0 },
+export const useListEventsQuery = (
+  projectId: string | undefined,
+  options?: TypedQueryOptions<ListEventsQuery, ListEventsQueryVariables>,
+) => {
+  const { data, refetch, loading, error, networkStatus } = useTypedQuery(ListEventsDocument, {
+    variables: { projectId: projectId!, bizType: 0 },
     notifyOnNetworkStatusChange: true,
     skip: !projectId,
     ...options,
@@ -83,10 +92,10 @@ export const useListEventsQuery = (projectId: string | undefined, options?: Quer
 
 export const useListAttributeOnEventsQuery = (
   eventId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListAttributeOnEventsQuery, ListAttributeOnEventsQueryVariables>,
 ) => {
-  const { data, loading, error } = useQuery(listAttributeOnEvents, {
-    variables: { eventId },
+  const { data, loading, error } = useTypedQuery(ListAttributeOnEventsDocument, {
+    variables: { eventId: eventId! },
     skip: !eventId,
     ...options,
   });

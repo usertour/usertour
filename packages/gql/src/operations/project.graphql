@@ -1,0 +1,47 @@
+mutation updateProject($projectId: String!, $name: String, $logoUrl: String) {
+  updateProject(projectId: $projectId, name: $name, logoUrl: $logoUrl) {
+    id
+    name
+    logoUrl
+  }
+}
+
+query GetProjectConfig($projectId: String!) {
+  getProjectConfig(projectId: $projectId) {
+    removeBranding
+    customCss
+    auditLogs
+    auditLogRetentionDays
+    ssoOidc
+    ssoSaml
+    webhooks
+    integrations
+    crmIntegrations
+    planType
+  }
+}
+
+query GetProjectLicenseInfo($projectId: String!) {
+  getProjectLicenseInfo(projectId: $projectId) {
+    payload {
+      plan
+      sub
+      projectId
+      iat
+      exp
+      issuer
+      features
+    }
+    isValid
+    isExpired
+    error
+    daysRemaining
+  }
+}
+
+mutation UpdateProjectLicense($projectId: String!, $license: String!) {
+  updateProjectLicense(projectId: $projectId, license: $license) {
+    id
+    name
+  }
+}

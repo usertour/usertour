@@ -1,8 +1,8 @@
 import { useMutation } from '@apollo/client';
-import { changePassword, updateEmail, updateUser } from '@usertour/gql';
+import { ChangeEmailDocument, ChangePasswordDocument, UpdateUserDocument } from '@usertour/gql';
 
 export const useUpdateUserMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateUser);
+  const [mutation, { loading, error }] = useMutation(UpdateUserDocument);
   // `avatarUrl` is intentionally optional: omitting it from the variables
   // makes the server-side Prisma `update` skip the column rather than
   // overwriting it. Defaulting to `''` here (the previous shape) silently
@@ -21,7 +21,7 @@ export const useUpdateUserMutation = () => {
 export const useUpdateEmailMutation = () => {
   // GraphQL operation is named `changeEmail`; the document export is
   // `updateEmail` because that's how it surfaces in the user-settings UI.
-  const [mutation, { loading, error }] = useMutation(updateEmail);
+  const [mutation, { loading, error }] = useMutation(ChangeEmailDocument);
   const invoke = async (email: string, password: string): Promise<boolean> => {
     const response = await mutation({ variables: { email, password } });
     return !!response.data?.changeEmail?.id;
@@ -30,7 +30,7 @@ export const useUpdateEmailMutation = () => {
 };
 
 export const useChangePasswordMutation = () => {
-  const [mutation, { loading, error }] = useMutation(changePassword);
+  const [mutation, { loading, error }] = useMutation(ChangePasswordDocument);
   const invoke = async (oldPassword: string, newPassword: string): Promise<boolean> => {
     const response = await mutation({ variables: { oldPassword, newPassword } });
     return !!response.data?.changePassword?.id;

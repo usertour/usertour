@@ -4,6 +4,7 @@ import {
   type NetworkStatus,
   type OperationVariables,
   type QueryHookOptions,
+  type QueryResult,
   type TypedDocumentNode,
   useQuery,
 } from '@apollo/client';
@@ -22,6 +23,18 @@ export interface TypedQueryOptions<TData, TVariables extends OperationVariables>
   notifyOnError?: boolean;
 }
 
+/**
+ * The options a caller may forward into any typed hook without knowing its
+ * document: the generic-free subset of Apollo's query options. Wrappers that
+ * take an injected hook (cursor pagination, entity tables) type their
+ * pass-through with this, so it stays assignable to every hook's own
+ * `TypedQueryOptions<Query, Variables>`.
+ */
+export type ForwardedQueryOptions = Pick<
+  QueryHookOptions,
+  'fetchPolicy' | 'skip' | 'notifyOnNetworkStatusChange' | 'pollInterval' | 'refetchWritePolicy'
+>;
+
 export interface TypedQueryResult<TData, TVariables extends OperationVariables> {
   data: TData | undefined;
   error: ApolloError | undefined;
@@ -30,6 +43,12 @@ export interface TypedQueryResult<TData, TVariables extends OperationVariables> 
   refreshing: boolean;
   networkStatus: NetworkStatus;
   refetch: (variables?: Partial<TVariables>) => Promise<ApolloQueryResult<TData>>;
+  /** Cursor pagination: the next page is merged by the cache's type policy. */
+  fetchMore: QueryResult<TData, TVariables>['fetchMore'];
+  /** The data of the previous variables while new ones load. */
+  previousData: TData | undefined;
+  startPolling: QueryResult<TData, TVariables>['startPolling'];
+  stopPolling: QueryResult<TData, TVariables>['stopPolling'];
 }
 
 /**
@@ -49,7 +68,17 @@ export const useTypedQuery = <TData, TVariables extends OperationVariables>(
 ): TypedQueryResult<TData, TVariables> => {
   const { notifyOnError = true, ...queryOptions } = options;
   const notify = useQueryErrorNotifier();
-  const { data, error, loading, networkStatus, refetch } = useQuery<TData, TVariables>(document, {
+  const {
+    data,
+    error,
+    loading,
+    networkStatus,
+    refetch,
+    fetchMore,
+    previousData,
+    startPolling,
+    stopPolling,
+  } = useQuery<TData, TVariables>(document, {
     errorPolicy: 'none',
     notifyOnNetworkStatusChange: true,
     ...queryOptions,
@@ -73,5 +102,9 @@ export const useTypedQuery = <TData, TVariables extends OperationVariables>(
     refreshing: loading && hasData,
     networkStatus,
     refetch,
+    fetchMore,
+    previousData,
+    startPolling,
+    stopPolling,
   };
 };

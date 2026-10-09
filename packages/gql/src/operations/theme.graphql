@@ -1,0 +1,85 @@
+query getTheme($themeId: String!) {
+  getTheme(themeId: $themeId) {
+    id
+    name
+    projectId
+    createdAt
+    updatedAt
+    settings
+    isDefault
+    isSystem
+    variations
+  }
+}
+
+mutation createTheme(
+  $name: String!
+  $projectId: String!
+  $settings: JSON!
+  $isDefault: Boolean!
+) {
+  createTheme(
+    data: {
+      name: $name
+      projectId: $projectId
+      settings: $settings
+      isDefault: $isDefault
+    }
+  ) {
+    id
+  }
+}
+
+mutation updateTheme(
+  $id: String!
+  $name: String!
+  $settings: JSON
+  $isDefault: Boolean
+  $variations: JSON
+) {
+  updateTheme(
+    data: { id: $id, name: $name, settings: $settings, isDefault: $isDefault, variations: $variations }
+  ) {
+    id
+    name
+    projectId
+    createdAt
+    updatedAt
+    settings
+    isDefault
+    isSystem
+    variations
+  }
+}
+
+mutation copyTheme($id: String!, $name: String!) {
+  copyTheme(data: { id: $id, name: $name }) {
+    id
+  }
+}
+
+mutation deleteTheme($id: String!) {
+  deleteTheme(data: { id: $id }) {
+    id
+  }
+}
+
+query listThemes($projectId: String!) {
+  listThemes(projectId: $projectId) {
+    id
+    name
+    projectId
+    createdAt
+    updatedAt
+    settings
+    isDefault
+    isSystem
+    variations
+  }
+}
+
+mutation setDefaultTheme($themeId: String!) {
+  setDefaultTheme(themeId: $themeId) {
+    id
+  }
+}

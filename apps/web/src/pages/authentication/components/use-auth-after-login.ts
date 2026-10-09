@@ -2,11 +2,13 @@ import { useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { broadcastAuthSwitch } from '@/utils/auth-channel';
 
+// The shape every auth mutation (login, sign-up, accept-invite) answers with,
+// as the schema types it: the challenge is null when no second factor is due.
 export type AuthMutationResult =
   | {
-      requiresTwoFactor?: boolean;
-      requiresTwoFactorSetup?: boolean;
-      twoFactorChallenge?: string;
+      requiresTwoFactor?: boolean | null;
+      requiresTwoFactorSetup?: boolean | null;
+      twoFactorChallenge?: string | null;
     }
   | null
   | undefined;

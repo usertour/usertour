@@ -1,0 +1,92 @@
+query getTeamMembers($projectId: String!) {
+  getTeamMembers(projectId: $projectId) {
+    id
+    role
+    allowedEnvironmentIds
+    createdAt
+    user {
+      id
+      name
+      email
+      avatarUrl
+      twoFactorEnabled
+    }
+  }
+}
+
+query getInvites($projectId: String!) {
+  getInvites(projectId: $projectId) {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+}
+
+mutation inviteTeamMember(
+  $projectId: String!
+  $name: String!
+  $email: String!
+  $role: Role!
+  $allowedEnvironmentIds: [String!]
+) {
+  inviteTeamMember(
+    data: {
+      name: $name
+      projectId: $projectId
+      email: $email
+      role: $role
+      allowedEnvironmentIds: $allowedEnvironmentIds
+    }
+  )
+}
+
+mutation cancelInvite($projectId: String!, $inviteId: String!) {
+  cancelInvite(data: { projectId: $projectId, inviteId: $inviteId } )
+}
+
+mutation removeTeamMember($projectId: String!, $userId: String!) {
+  removeTeamMember(data: { projectId: $projectId, userId: $userId } )
+}
+
+mutation changeTeamMemberRole(
+  $projectId: String!
+  $userId: String!
+  $role: Role!
+  $allowedEnvironmentIds: [String!]
+) {
+  changeTeamMemberRole(
+    data: {
+      projectId: $projectId
+      userId: $userId
+      role: $role
+      allowedEnvironmentIds: $allowedEnvironmentIds
+    }
+  )
+}
+
+mutation transferProjectOwnership($projectId: String!, $userId: String!) {
+  transferProjectOwnership(data: { projectId: $projectId, userId: $userId })
+}
+
+query getInvite($inviteId: String!) {
+  getInvite(inviteId: $inviteId) {
+    id
+    email
+    role
+    recipientExists
+    requireSso
+    user {
+      name
+    }
+    project {
+      id
+      name
+    }
+  }
+}
+
+mutation activeUserProject($userId: String!, $projectId: String!) {
+  activeUserProject(data: { userId: $userId, projectId: $projectId })
+}

@@ -282,7 +282,9 @@ const PlanCard = (props: PlanCardProps) => {
     if (currentPlanType && currentPlanType.toLowerCase() !== 'hobby') {
       try {
         const url = await createPortalSession(projectId);
-        window.location.href = url;
+        if (url) {
+          window.location.href = url;
+        }
       } catch (error) {
         console.error('Failed to create portal session:', error);
         // TODO: Add error notification
@@ -297,7 +299,9 @@ const PlanCard = (props: PlanCardProps) => {
         planType: plan.name.toLowerCase(),
         interval: isYearly ? 'yearly' : 'monthly',
       });
-      window.location.href = url;
+      if (url) {
+        window.location.href = url;
+      }
     } catch (error) {
       console.error('Failed to create checkout session:', error);
       // TODO: Add error notification
@@ -725,11 +729,15 @@ const Pricing = ({ projectId }: { projectId: string }) => {
           planType: PlanType.STARTER,
           interval: isYearly ? 'yearly' : 'monthly',
         });
-        window.location.href = url;
+        if (url) {
+          window.location.href = url;
+        }
       } else {
         // For other plans, create portal session for management
         const url = await createPortalSession(projectId);
-        window.location.href = url;
+        if (url) {
+          window.location.href = url;
+        }
       }
     } catch (error) {
       console.error('Failed to create session:', error);

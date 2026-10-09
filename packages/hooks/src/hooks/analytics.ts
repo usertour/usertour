@@ -1,6 +1,16 @@
-import { type QueryHookOptions, useQuery } from '@apollo/client';
-import { queryContentAnalytics, queryTrackerUsers } from '@usertour/gql';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type { AnalyticsData, PageInfo } from '@usertour/types';
+import {
+  type AnalyticsOrder,
+  type AnalyticsQuery,
+  QueryContentAnalyticsDocument,
+  type QueryContentAnalyticsQuery,
+  type QueryContentAnalyticsQueryVariables,
+  QueryTrackerUsersDocument,
+  type QueryTrackerUsersQuery,
+  type QueryTrackerUsersQueryVariables,
+} from '@usertour/gql';
 
 // Domain wrapper for `queryContentAnalytics`. The date-range / preset
 // UI state lives in the apps/web `AnalyticsUIContext`; this wrapper
@@ -13,7 +23,7 @@ interface UseQueryContentAnalyticsArgs {
   startDate?: string;
   endDate?: string;
   timezone: string;
-  options?: QueryHookOptions;
+  options?: TypedQueryOptions<QueryContentAnalyticsQuery, QueryContentAnalyticsQueryVariables>;
 }
 
 export const useQueryContentAnalyticsQuery = ({
@@ -26,12 +36,13 @@ export const useQueryContentAnalyticsQuery = ({
 }: UseQueryContentAnalyticsArgs) => {
   const isDateRangeComplete = Boolean(startDate && endDate);
 
-  const { data, loading, refetch, error } = useQuery(queryContentAnalytics, {
+  const { data, loading, refetch, error } = useTypedQuery(QueryContentAnalyticsDocument, {
+    // skip guards the three below.
     variables: {
-      environmentId,
+      environmentId: environmentId!,
       contentId,
-      startDate,
-      endDate,
+      startDate: startDate!,
+      endDate: endDate!,
       timezone,
     },
     skip: !environmentId || !isDateRangeComplete,
@@ -46,7 +57,7 @@ export const useQueryContentAnalyticsQuery = ({
   };
 };
 
-// ---- queryTrackerUsers (cursor pagination) ----
+// ---- QueryTrackerUsersDocument (cursor pagination) ----
 
 interface TrackerUserNode {
   id: string;
@@ -83,7 +94,7 @@ interface UseQueryTrackerUsersArgs {
   after?: string | null;
   query: TrackerUsersQueryVariables;
   orderBy?: { field: string; direction: 'asc' | 'desc' };
-  options?: QueryHookOptions;
+  options?: TypedQueryOptions<QueryTrackerUsersQuery, QueryTrackerUsersQueryVariables>;
 }
 
 export const useQueryTrackerUsersQuery = ({
@@ -93,12 +104,12 @@ export const useQueryTrackerUsersQuery = ({
   orderBy = { field: 'createdAt', direction: 'desc' },
   options,
 }: UseQueryTrackerUsersArgs) => {
-  const { data, loading, refetch } = useQuery(queryTrackerUsers, {
-    variables: { first, after, query, orderBy },
+  const { data, loading, refetch } = useTypedQuery(QueryTrackerUsersDocument, {
+    variables: { first, after, query: query as AnalyticsQuery, orderBy: orderBy as AnalyticsOrder },
     ...options,
   });
   const result = data?.queryTrackerUsers;
-  const edges: TrackerUserEdge[] = result?.edges ?? [];
+  const edges = (result?.edges ?? []) as TrackerUserEdge[];
   return {
     edges,
     users: edges.map((edge) => edge.node),

@@ -1,17 +1,6 @@
-import { type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
-import {
-  createContent,
-  duplicateContent,
-  getContent,
-  getContentVersion,
-  listContentPublishRecords,
-  listContentVersions,
-  listVersionLocalizations,
-  publishedContentVersion,
-  queryContent,
-  restoreContentVersion,
-  unpublishedContentVersion,
-} from '@usertour/gql';
+import { useMutation } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type {
   Content,
   ContentDataType,
@@ -21,6 +10,34 @@ import type {
 } from '@usertour/types';
 import { useMemo } from 'react';
 import { useCursorFetchMore } from './use-cursor-fetch-more';
+import {
+  type ContentOrder,
+  type ContentQuery,
+  CreateContentDocument,
+  type CreateContentMutationVariables,
+  DuplicateContentDocument,
+  GetContentDocument,
+  type GetContentQuery,
+  type GetContentQueryVariables,
+  GetContentVersionDocument,
+  type GetContentVersionQuery,
+  type GetContentVersionQueryVariables,
+  ListContentPublishRecordsDocument,
+  type ListContentPublishRecordsQuery,
+  type ListContentPublishRecordsQueryVariables,
+  ListContentVersionsDocument,
+  type ListContentVersionsQuery,
+  type ListContentVersionsQueryVariables,
+  ListVersionLocalizationsDocument,
+  type ListVersionLocalizationsQuery,
+  type ListVersionLocalizationsQueryVariables,
+  PublishedContentVersionDocument,
+  QueryContentDocument,
+  type QueryContentQuery,
+  type QueryContentQueryVariables,
+  RestoreContentVersionDocument,
+  UnpublishedContentVersionDocument,
+} from '@usertour/gql';
 
 // Domain wrappers for content-detail / version / localization queries.
 // Lives outside the catch-all `gql.ts` per the convention established
@@ -31,24 +48,27 @@ import { useCursorFetchMore } from './use-cursor-fetch-more';
 // The wrappers map `data?.<field>` into the nicely-named return shape
 // so call sites read like business code, not GraphQL.
 
-export const useGetContentQuery = (contentId: string | undefined, options?: QueryHookOptions) => {
-  const { data, loading, refetch, error } = useQuery(getContent, {
-    variables: { contentId },
+export const useGetContentQuery = (
+  contentId: string | undefined,
+  options?: TypedQueryOptions<GetContentQuery, GetContentQueryVariables>,
+) => {
+  const { data, loading, refetch, error } = useTypedQuery(GetContentDocument, {
+    variables: { contentId: contentId! },
     skip: !contentId,
     ...options,
   });
 
-  const content: Content | null = data?.getContent ?? null;
+  const content = (data?.getContent ?? null) as Content | null;
 
   return { content, loading, refetch, error };
 };
 
 export const useGetContentVersionQuery = (
   versionId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetContentVersionQuery, GetContentVersionQueryVariables>,
 ) => {
-  const { data, previousData, loading, refetch, error } = useQuery(getContentVersion, {
-    variables: { versionId },
+  const { data, previousData, loading, refetch, error } = useTypedQuery(GetContentVersionDocument, {
+    variables: { versionId: versionId! },
     skip: !versionId,
     ...options,
   });
@@ -59,28 +79,35 @@ export const useGetContentVersionQuery = (
   // `if (!version) return null` (detail's settings/content panels) don't unmount
   // and flash the whole content area. The forked version copies the prior
   // config, so the held-over frame is visually identical until the new one lands.
-  const version: ContentVersion | null =
-    data?.getContentVersion ?? previousData?.getContentVersion ?? null;
+  const version = (data?.getContentVersion ??
+    previousData?.getContentVersion ??
+    null) as ContentVersion | null;
 
   return { version, loading, refetch, error };
 };
 
 export const useListVersionLocalizationsQuery = (
   versionId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    ListVersionLocalizationsQuery,
+    ListVersionLocalizationsQueryVariables
+  >,
 ) => {
-  const { data, previousData, loading, refetch, error } = useQuery(listVersionLocalizations, {
-    variables: { versionId },
-    skip: !versionId,
-    ...options,
-  });
+  const { data, previousData, loading, refetch, error } = useTypedQuery(
+    ListVersionLocalizationsDocument,
+    {
+      variables: { versionId: versionId! },
+      skip: !versionId,
+      ...options,
+    },
+  );
 
   // Fall back to the previous version's rows while a version switch loads —
   // same pattern as useGetContentVersionQuery above. Editing a published
   // version forks a draft whose rows are verbatim clones, and rendering an
   // empty list during the swap reads as every locale flipping to disabled.
-  const contentLocalizationList: VersionOnLocalization[] =
-    (data ?? previousData)?.listVersionLocalizations ?? [];
+  const contentLocalizationList = ((data ?? previousData)?.listVersionLocalizations ??
+    []) as VersionOnLocalization[];
 
   return { contentLocalizationList, loading, refetch, error };
 };
@@ -108,21 +135,11 @@ interface QueryContentVariables {
   [key: string]: unknown;
 }
 
-type ContentEdge = { cursor: string; node: Content };
-type ContentPageInfo = { endCursor: string | null; hasNextPage: boolean };
-type QueryContentData = {
-  queryContent: {
-    totalCount: number;
-    edges: ContentEdge[];
-    pageInfo: ContentPageInfo;
-  };
-};
-
 interface UseListContentsArgs {
   query: QueryContentVariables;
   orderBy?: { field: string; direction: 'asc' | 'desc' };
   pageSize?: number;
-  options?: QueryHookOptions;
+  options?: TypedQueryOptions<QueryContentQuery, QueryContentQueryVariables>;
 }
 
 export const useListContentsQuery = ({
@@ -131,18 +148,16 @@ export const useListContentsQuery = ({
   pageSize = CONTENT_LIST_PAGE_SIZE,
   options,
 }: UseListContentsArgs) => {
-  const { data, loading, networkStatus, fetchMore, refetch } = useQuery<QueryContentData>(
-    queryContent,
-    {
-      variables: { first: pageSize, query, orderBy },
-      notifyOnNetworkStatusChange: true,
-      ...options,
-    },
-  );
+  const { data, loading, networkStatus, fetchMore, refetch } = useTypedQuery(QueryContentDocument, {
+    variables: { first: pageSize, query: query as ContentQuery, orderBy: orderBy as ContentOrder },
+    notifyOnNetworkStatusChange: true,
+    ...options,
+  });
 
   const connection = data?.queryContent;
+  // Wire shape and domain Content differ on optionality; the hook is the boundary.
   const contents = useMemo(
-    () => connection?.edges?.map((edge) => edge.node) ?? [],
+    () => (connection?.edges?.map((edge) => edge.node) ?? []) as unknown as Content[],
     [connection?.edges],
   );
   const totalCount = connection?.totalCount ?? 0;
@@ -178,24 +193,14 @@ export const useListContentsQuery = ({
 
 const VERSION_LIST_PAGE_SIZE = 20;
 
-type VersionEdge = { cursor: string; node: ContentVersion };
-type VersionPageInfo = { endCursor: string | null; hasNextPage: boolean };
-type ListContentVersionsData = {
-  listContentVersions: {
-    totalCount: number;
-    edges: VersionEdge[];
-    pageInfo: VersionPageInfo;
-  };
-};
-
 export const useListContentVersionsQuery = (
   contentId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListContentVersionsQuery, ListContentVersionsQueryVariables>,
 ) => {
-  const { data, loading, networkStatus, fetchMore, refetch } = useQuery<ListContentVersionsData>(
-    listContentVersions,
+  const { data, loading, networkStatus, fetchMore, refetch } = useTypedQuery(
+    ListContentVersionsDocument,
     {
-      variables: { contentId, first: VERSION_LIST_PAGE_SIZE },
+      variables: { contentId: contentId!, first: VERSION_LIST_PAGE_SIZE },
       notifyOnNetworkStatusChange: true,
       skip: !contentId,
       ...options,
@@ -204,7 +209,7 @@ export const useListContentVersionsQuery = (
 
   const connection = data?.listContentVersions;
   const versionList = useMemo(
-    () => connection?.edges?.map((edge) => edge.node) ?? [],
+    () => (connection?.edges?.map((edge) => edge.node) ?? []) as ContentVersion[],
     [connection?.edges],
   );
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
@@ -238,14 +243,6 @@ export const useListContentVersionsQuery = (
   };
 };
 
-interface ListContentPublishRecordsData {
-  listContentPublishRecords: {
-    totalCount: number;
-    edges: { cursor: string; node: ContentPublishRecord }[];
-    pageInfo: { endCursor?: string | null; hasNextPage?: boolean };
-  };
-}
-
 const PUBLISH_HISTORY_PAGE_SIZE = 20;
 
 /** Per-content publish history (cursor pagination; cache merge owned by the
@@ -254,19 +251,24 @@ const PUBLISH_HISTORY_PAGE_SIZE = 20;
 export const useListContentPublishRecordsQuery = (
   contentId: string | undefined,
   environmentId?: string,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    ListContentPublishRecordsQuery,
+    ListContentPublishRecordsQueryVariables
+  >,
 ) => {
-  const { data, loading, networkStatus, fetchMore, refetch } =
-    useQuery<ListContentPublishRecordsData>(listContentPublishRecords, {
-      variables: { contentId, environmentId, first: PUBLISH_HISTORY_PAGE_SIZE },
+  const { data, loading, networkStatus, fetchMore, refetch } = useTypedQuery(
+    ListContentPublishRecordsDocument,
+    {
+      variables: { contentId: contentId!, environmentId, first: PUBLISH_HISTORY_PAGE_SIZE },
       notifyOnNetworkStatusChange: true,
       skip: !contentId,
       ...options,
-    });
+    },
+  );
 
   const connection = data?.listContentPublishRecords;
   const recordList = useMemo(
-    () => connection?.edges?.map((edge) => edge.node) ?? [],
+    () => (connection?.edges?.map((edge) => edge.node) ?? []) as ContentPublishRecord[],
     [connection?.edges],
   );
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
@@ -312,11 +314,11 @@ export interface CreateContentInput {
 export const useCreateContentMutation = () => {
   // Refresh the list so the new row appears — Apollo can't materialise
   // a new edge from a mutation response.
-  const [mutation, { loading, error }] = useMutation(createContent, {
+  const [mutation, { loading, error }] = useMutation(CreateContentDocument, {
     refetchQueries: ['queryContent'],
   });
   const invoke = async (input: CreateContentInput): Promise<Content | undefined> => {
-    const response = await mutation({ variables: input });
+    const response = await mutation({ variables: input as CreateContentMutationVariables });
     return response.data?.createContent as Content | undefined;
   };
   return { invoke, loading, error };
@@ -328,12 +330,12 @@ export interface DuplicateContentInput {
 }
 
 export const useDuplicateContentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(duplicateContent, {
+  const [mutation, { loading, error }] = useMutation(DuplicateContentDocument, {
     refetchQueries: ['queryContent'],
   });
   const invoke = async (
     input: DuplicateContentInput,
-  ): Promise<{ id: string; name: string } | undefined> => {
+  ): Promise<{ id: string; name: string | null } | undefined> => {
     const response = await mutation({ variables: input });
     return response.data?.duplicateContent;
   };
@@ -344,7 +346,7 @@ export const usePublishContentVersionMutation = () => {
   // Publish flips `Content.contentOnEnvironments[].published` —
   // refetch the owning content so list cell + detail header reflect
   // the new state.
-  const [mutation, { loading, error }] = useMutation(publishedContentVersion, {
+  const [mutation, { loading, error }] = useMutation(PublishedContentVersionDocument, {
     refetchQueries: ['getContent', 'queryContent', 'listContentPublishRecords'],
   });
   const invoke = async (versionId: string, environmentId: string): Promise<boolean> => {
@@ -355,7 +357,7 @@ export const usePublishContentVersionMutation = () => {
 };
 
 export const useUnpublishContentVersionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(unpublishedContentVersion, {
+  const [mutation, { loading, error }] = useMutation(UnpublishedContentVersionDocument, {
     refetchQueries: ['getContent', 'queryContent', 'listContentPublishRecords'],
   });
   const invoke = async (contentId: string, environmentId: string): Promise<boolean> => {
@@ -369,7 +371,7 @@ export const useRestoreContentVersionMutation = () => {
   // Restore creates a new editable version + flips
   // `Content.editedVersionId` — refresh both the content and the
   // version-history list so the restored draft surfaces immediately.
-  const [mutation, { loading, error }] = useMutation(restoreContentVersion, {
+  const [mutation, { loading, error }] = useMutation(RestoreContentVersionDocument, {
     refetchQueries: ['getContent', 'listContentVersions'],
   });
   const invoke = async (versionId: string): Promise<boolean> => {

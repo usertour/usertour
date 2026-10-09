@@ -1,8 +1,8 @@
 import { NetworkStatus } from '@apollo/client';
-import type { QueryHookOptions } from '@apollo/client';
 import type { PaginationState } from '@tanstack/react-table';
 import type { PageInfo, Pagination } from '@usertour/types';
 import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import type { ForwardedQueryOptions } from '@usertour/hooks';
 
 // Unified primitive for table-style cursor pagination across the
 // admin app — replaces `useBizListCursor` and `useBizSessions`,
@@ -51,7 +51,7 @@ export interface UseListQueryArgs<TQuery> {
   query: TQuery;
   pagination: Pagination;
   orderBy?: OrderBy;
-  options?: QueryHookOptions;
+  options?: ForwardedQueryOptions;
 }
 
 export interface UseListQueryResult<TRow> {
@@ -84,7 +84,7 @@ export interface UseCursorPaginationArgs<TRow, TQuery> {
    *  `SHARED_CACHE_QUERY_OPTIONS` when the consumer wants the query
    *  to participate in the normalized cache. Merged into the
    *  internal `{ skip, notifyOnNetworkStatusChange: true }` defaults. */
-  options?: QueryHookOptions;
+  options?: ForwardedQueryOptions;
 }
 
 export interface UseCursorPaginationResult<TRow> {
@@ -179,9 +179,9 @@ export function useCursorPagination<TRow, TQuery>(
         const lastSize = totalCount - (liveCount - 1) * pageSize;
         next = { last: lastSize > 0 ? lastSize : pageSize };
       } else if (committedPageInfo && pageIndex > committedPagination.pageIndex) {
-        next = { first: pageSize, after: committedPageInfo.endCursor };
+        next = { first: pageSize, after: committedPageInfo.endCursor ?? undefined };
       } else if (committedPageInfo && pageIndex < committedPagination.pageIndex) {
-        next = { last: pageSize, before: committedPageInfo.startCursor };
+        next = { last: pageSize, before: committedPageInfo.startCursor ?? undefined };
       } else {
         next = { first: pageSize };
       }

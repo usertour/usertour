@@ -1,26 +1,29 @@
-import { useMutation, useQuery } from '@apollo/client';
-import {
-  acceptInvite,
-  confirmTwoFactorSetup,
-  confirmTwoFactorSetupWithChallenge,
-  createMagicLink,
-  createOwnedProject,
-  disableTwoFactor,
-  getInvite,
-  login,
-  logout,
-  regenerateRecoveryCodes,
-  resendMagicLink,
-  resetUserPassword,
-  resetUserPasswordByCode,
-  setupSystemAdmin as setupSystemAdminMutation,
-  signUp,
-  startTwoFactorSetup,
-  startTwoFactorSetupWithChallenge,
-  verifyTwoFactor,
-} from '@usertour/gql';
-import { MeDocument, type MeQuery, type MeQueryVariables } from '@usertour/gql';
+import { useMutation } from '@apollo/client';
+
 import { type TypedQueryOptions, useTypedQuery } from '../query';
+import {
+  AcceptInviteDocument,
+  ConfirmTwoFactorSetupDocument,
+  ConfirmTwoFactorSetupWithChallengeDocument,
+  CreateMagicLinkDocument,
+  CreateOwnedProjectDocument,
+  DisableTwoFactorDocument,
+  GetInviteDocument,
+  LoginDocument,
+  LogoutDocument,
+  MeDocument,
+  MeQuery,
+  MeQueryVariables,
+  RegenerateRecoveryCodesDocument,
+  ResendMagicLinkDocument,
+  ResetUserPasswordByCodeDocument,
+  ResetUserPasswordDocument,
+  SetupSystemAdminDocument as setupSystemAdminMutation,
+  SignUpDocument,
+  StartTwoFactorSetupDocument,
+  StartTwoFactorSetupWithChallengeDocument,
+  VerifyTwoFactorDocument,
+} from '@usertour/gql';
 
 // Session / identity ---------------------------------------------------------
 
@@ -44,7 +47,7 @@ export const useGetUserInfoQuery = (
 };
 
 export const useLogoutMutation = () => {
-  const [mutation, { loading, error }] = useMutation(logout);
+  const [mutation, { loading, error }] = useMutation(LogoutDocument);
   const invoke = async () => {
     const response = await mutation();
     return response.data?.logout;
@@ -53,7 +56,7 @@ export const useLogoutMutation = () => {
 };
 
 export const useCreateOwnedProjectMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createOwnedProject);
+  const [mutation, { loading, error }] = useMutation(CreateOwnedProjectDocument);
   const invoke = async (name: string) => {
     const response = await mutation({ variables: { name } });
     return response.data?.createOwnedProject as { id: string; name: string } | undefined;
@@ -70,7 +73,7 @@ export type LoginMutationVariables = {
 };
 
 export const useLoginMutation = () => {
-  const [mutation, { loading, error }] = useMutation(login);
+  const [mutation, { loading, error }] = useMutation(LoginDocument);
   const invoke = async (variables: LoginMutationVariables) => {
     const response = await mutation({ variables });
     return response.data?.login;
@@ -86,7 +89,7 @@ export type SignupMutationVariables = {
 };
 
 export const useSignupMutation = () => {
-  const [mutation, { loading, error }] = useMutation(signUp);
+  const [mutation, { loading, error }] = useMutation(SignUpDocument);
   const invoke = async (variables: SignupMutationVariables) => {
     const response = await mutation({ variables });
     return response.data?.signup;
@@ -101,7 +104,7 @@ export type AcceptInviteMutationVariables = {
 };
 
 export const useAcceptInviteMutation = () => {
-  const [mutation, { loading, error }] = useMutation(acceptInvite);
+  const [mutation, { loading, error }] = useMutation(AcceptInviteDocument);
   const invoke = async (variables: AcceptInviteMutationVariables) => {
     const response = await mutation({ variables });
     return response.data?.acceptInvite;
@@ -110,7 +113,7 @@ export const useAcceptInviteMutation = () => {
 };
 
 export const useCreateMagicLinkMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createMagicLink);
+  const [mutation, { loading, error }] = useMutation(CreateMagicLinkDocument);
   const invoke = async (email: string) => {
     const response = await mutation({ variables: { email } });
     return response.data?.createMagicLink as { id: string; email: string } | undefined;
@@ -119,7 +122,7 @@ export const useCreateMagicLinkMutation = () => {
 };
 
 export const useResendMagicLinkMutation = () => {
-  const [mutation, { loading, error }] = useMutation(resendMagicLink);
+  const [mutation, { loading, error }] = useMutation(ResendMagicLinkDocument);
   const invoke = async (id: string) => {
     const response = await mutation({ variables: { id } });
     return response.data?.resendMagicLink as { id: string; email: string } | undefined;
@@ -130,7 +133,7 @@ export const useResendMagicLinkMutation = () => {
 // Invite ---------------------------------------------------------------------
 
 export const useGetInviteQuery = (inviteId: string) => {
-  const { data, loading, error } = useQuery(getInvite, {
+  const { data, loading, error } = useTypedQuery(GetInviteDocument, {
     variables: { inviteId },
   });
   return { data: data?.getInvite, loading, error };
@@ -156,7 +159,7 @@ export const useSetupSystemAdminMutation = () => {
 // Password reset -------------------------------------------------------------
 
 export const useResetUserPasswordMutation = () => {
-  const [mutation, { loading, error }] = useMutation(resetUserPassword);
+  const [mutation, { loading, error }] = useMutation(ResetUserPasswordDocument);
   const invoke = async (email: string) => {
     const response = await mutation({ variables: { email } });
     return response.data?.resetUserPassword as { success: boolean } | undefined;
@@ -165,7 +168,7 @@ export const useResetUserPasswordMutation = () => {
 };
 
 export const useResetUserPasswordByCodeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(resetUserPasswordByCode);
+  const [mutation, { loading, error }] = useMutation(ResetUserPasswordByCodeDocument);
   const invoke = async (code: string, password: string) => {
     const response = await mutation({ variables: { code, password } });
     return response.data?.resetUserPasswordByCode;
@@ -182,7 +185,7 @@ export type TwoFactorSetupPayload = {
 };
 
 export const useStartTwoFactorSetupMutation = () => {
-  const [mutation, { loading, error }] = useMutation(startTwoFactorSetup);
+  const [mutation, { loading, error }] = useMutation(StartTwoFactorSetupDocument);
   const invoke = async (): Promise<TwoFactorSetupPayload | undefined> => {
     const response = await mutation();
     return response.data?.startTwoFactorSetup;
@@ -191,7 +194,7 @@ export const useStartTwoFactorSetupMutation = () => {
 };
 
 export const useStartTwoFactorSetupWithChallengeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(startTwoFactorSetupWithChallenge);
+  const [mutation, { loading, error }] = useMutation(StartTwoFactorSetupWithChallengeDocument);
   const invoke = async (challengeToken: string): Promise<TwoFactorSetupPayload | undefined> => {
     const response = await mutation({ variables: { challengeToken } });
     return response.data?.startTwoFactorSetupWithChallenge;
@@ -200,7 +203,7 @@ export const useStartTwoFactorSetupWithChallengeMutation = () => {
 };
 
 export const useConfirmTwoFactorSetupMutation = () => {
-  const [mutation, { loading, error }] = useMutation(confirmTwoFactorSetup);
+  const [mutation, { loading, error }] = useMutation(ConfirmTwoFactorSetupDocument);
   const invoke = async (secret: string, code: string): Promise<string[] | undefined> => {
     const response = await mutation({ variables: { secret, code } });
     return response.data?.confirmTwoFactorSetup?.recoveryCodes;
@@ -209,7 +212,7 @@ export const useConfirmTwoFactorSetupMutation = () => {
 };
 
 export const useConfirmTwoFactorSetupWithChallengeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(confirmTwoFactorSetupWithChallenge);
+  const [mutation, { loading, error }] = useMutation(ConfirmTwoFactorSetupWithChallengeDocument);
   const invoke = async (variables: { secret: string; code: string; challengeToken: string }) => {
     const response = await mutation({ variables });
     return response.data?.confirmTwoFactorSetupWithChallenge;
@@ -218,7 +221,7 @@ export const useConfirmTwoFactorSetupWithChallengeMutation = () => {
 };
 
 export const useVerifyTwoFactorMutation = () => {
-  const [mutation, { loading, error }] = useMutation(verifyTwoFactor);
+  const [mutation, { loading, error }] = useMutation(VerifyTwoFactorDocument);
   const invoke = async (variables: {
     challengeToken: string;
     code: string;
@@ -231,7 +234,7 @@ export const useVerifyTwoFactorMutation = () => {
 };
 
 export const useDisableTwoFactorMutation = () => {
-  const [mutation, { loading, error }] = useMutation(disableTwoFactor);
+  const [mutation, { loading, error }] = useMutation(DisableTwoFactorDocument);
   const invoke = async (code: string, isRecoveryCode = false): Promise<boolean> => {
     const response = await mutation({ variables: { code, isRecoveryCode } });
     return !!response.data?.disableTwoFactor;
@@ -240,7 +243,7 @@ export const useDisableTwoFactorMutation = () => {
 };
 
 export const useRegenerateRecoveryCodesMutation = () => {
-  const [mutation, { loading, error }] = useMutation(regenerateRecoveryCodes);
+  const [mutation, { loading, error }] = useMutation(RegenerateRecoveryCodesDocument);
   const invoke = async (code: string, isRecoveryCode = false): Promise<string[] | undefined> => {
     const response = await mutation({ variables: { code, isRecoveryCode } });
     return response.data?.regenerateRecoveryCodes?.recoveryCodes;

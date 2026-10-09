@@ -8,8 +8,9 @@ import {
   InMemoryCache,
   Observable,
 } from '@apollo/client';
-import { MeDocument, globalConfig } from '@usertour/gql';
+
 import { useInvalidateLicenseScopedCache } from './gql';
+import { GlobalConfigDocument, MeDocument } from '@usertour/gql';
 
 // Regression test for the bug class where mutating an admin-side license or
 // instance-setting field did not invalidate `me` / `globalConfig` in the
@@ -97,7 +98,7 @@ describe('useInvalidateLicenseScopedCache', () => {
 
     expect(spy).toHaveBeenCalledTimes(1);
     const args = spy.mock.calls[0][0] as { include: unknown[] };
-    expect(args.include).toEqual(expect.arrayContaining([MeDocument, globalConfig]));
+    expect(args.include).toEqual(expect.arrayContaining([MeDocument, GlobalConfigDocument]));
   });
 
   it('returns a stable function across renders (same Apollo client)', () => {

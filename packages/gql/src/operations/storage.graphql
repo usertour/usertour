@@ -1,0 +1,6 @@
+mutation createPresignedUrl($fileName: String!, $storageType: String!) {
+  createPresignedUrl(data: { fileName: $fileName, storageType: $storageType }) {
+    signedUrl
+    cdnUrl
+  }
+}

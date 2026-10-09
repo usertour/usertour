@@ -1,13 +1,22 @@
-import { useQuery, type QueryHookOptions } from '@apollo/client';
-import { queryContent } from '@usertour/gql';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type { ContentDataType } from '@usertour/types';
+import {
+  type ContentOrder,
+  QueryContentDocument,
+  type QueryContentQuery,
+  type QueryContentQueryVariables,
+} from '@usertour/gql';
 
 interface UseContentCountOptions {
   environmentId?: string;
   type?: ContentDataType | string;
   published?: boolean;
   skip?: boolean;
-  options?: Omit<QueryHookOptions, 'variables' | 'skip'>;
+  options?: Omit<
+    TypedQueryOptions<QueryContentQuery, QueryContentQueryVariables>,
+    'variables' | 'skip'
+  >;
 }
 
 // Default orderBy required by the GraphQL query
@@ -25,11 +34,12 @@ export const useContentCount = ({
   options,
 }: UseContentCountOptions) => {
   const effectiveSkip = skip || !environmentId;
-  const { data, loading, error, refetch } = useQuery(queryContent, {
+  const { data, loading, error, refetch } = useTypedQuery(QueryContentDocument, {
     variables: {
       first: 1, // Minimal fetch, we only need totalCount
-      query: { environmentId, type, published },
-      orderBy: DEFAULT_ORDER_BY,
+      // effectiveSkip guards environmentId.
+      query: { environmentId: environmentId!, type, published },
+      orderBy: DEFAULT_ORDER_BY as ContentOrder,
     },
     skip: effectiveSkip,
     // Use cache-and-network so draft count is always fresh when e.g. in Published view

@@ -1,7 +1,7 @@
 import { useApolloClient } from '@apollo/client';
-import { createPresignedUrl } from '@usertour/gql';
+import { CreatePresignedUrlDocument } from '@usertour/gql';
 
-// Presigned-URL upload. getPresignedUrl asks the API (createPresignedUrl
+// Presigned-URL upload. getPresignedUrl asks the API (CreatePresignedUrlDocument
 // mutation) for a signed S3 PUT URL + its CDN URL, then PUTs the file straight
 // to storage. Imperative (called from upload handlers), so it uses the Apollo
 // client directly rather than a render-time useMutation.
@@ -10,7 +10,7 @@ export const useAws = () => {
 
   const getPresignedUrl = async (fileName: string, storageType = 'S3') => {
     const { data } = await client.mutate({
-      mutation: createPresignedUrl,
+      mutation: CreatePresignedUrlDocument,
       variables: { fileName, storageType },
     });
     return data?.createPresignedUrl;

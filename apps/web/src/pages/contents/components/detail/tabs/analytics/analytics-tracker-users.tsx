@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@usertour/ui';
 import { useApolloClient } from '@apollo/client';
-import { queryTrackerUsers } from '@usertour/gql';
+
 import { useQueryTrackerUsersQuery } from '@usertour/hooks';
 import { ContentDataType } from '@usertour/types';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
@@ -33,6 +33,7 @@ import { endOfDay, startOfDay, formatDistanceToNow } from 'date-fns';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { QueryTrackerUsersDocument } from '@usertour/gql';
 
 interface TrackerUserNode {
   id: string;
@@ -168,7 +169,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
 
       while (true) {
         const result: any = await client.query({
-          query: queryTrackerUsers,
+          query: QueryTrackerUsersDocument,
           variables: {
             first: chunkSize,
             after,

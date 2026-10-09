@@ -27,7 +27,7 @@ export const useRemoveCompaniesFromSegment = () => {
       try {
         const ret = await removeMutation({ data });
         if (ret.data?.deleteBizCompanyOnSegment?.success) {
-          return { success: true, count: ret.data.deleteBizCompanyOnSegment.count };
+          return { success: true, count: ret.data.deleteBizCompanyOnSegment.count ?? undefined };
         }
         return { success: false, error: t('companies.toast.segments.removeFailed') };
       } catch (error) {

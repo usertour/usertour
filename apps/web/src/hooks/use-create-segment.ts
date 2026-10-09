@@ -2,6 +2,7 @@ import { useCreateSegmentMutation } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { CreateSegmentFormValues } from '@/components/segments/segment-form-schema';
+import type { CreatSegment } from '@usertour/gql';
 
 interface CreateSegmentResult {
   success: boolean;
@@ -23,7 +24,7 @@ export const useCreateSegment = () => {
           data: [],
           environmentId,
         };
-        const ret = await createMutation({ data });
+        const ret = await createMutation({ data: data as CreatSegment });
 
         if (!ret.data?.createSegment?.id) {
           return { success: false, error: 'Create operation failed' };

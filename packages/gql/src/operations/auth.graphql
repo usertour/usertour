@@ -1,0 +1,153 @@
+mutation createMagicLink($email: String!) {
+  createMagicLink(data: { email: $email }) {
+    id
+    email
+  }
+}
+
+mutation resendMagicLink($id: String!) {
+  resendMagicLink(data: { id: $id }) {
+    id
+    email
+  }
+}
+
+mutation SignOut {
+  signOut @client
+}
+
+mutation Login($email: String!, $password: String!, $inviteCode: String) {
+  login(data: { email: $email, password: $password, inviteCode: $inviteCode }) {
+    accessToken
+    refreshToken
+    requiresTwoFactor
+    requiresTwoFactorSetup
+    twoFactorChallenge
+    user {
+      id
+      email
+    }
+  }
+}
+
+mutation signUp(
+  $code: String!
+  $password: String!
+  $userName: String!
+  $companyName: String!
+) {
+  signup(
+    data: {
+      code: $code
+      password: $password
+      userName: $userName
+      companyName: $companyName
+    }
+  ) {
+    accessToken
+    refreshToken
+    requiresTwoFactor
+    requiresTwoFactorSetup
+    twoFactorChallenge
+    user {
+      id
+      email
+    }
+  }
+}
+
+mutation acceptInvite($code: String!, $password: String!, $userName: String!) {
+  acceptInvite(data: { code: $code, password: $password, userName: $userName }) {
+    accessToken
+    refreshToken
+    requiresTwoFactor
+    requiresTwoFactorSetup
+    twoFactorChallenge
+    user {
+      id
+      email
+    }
+  }
+}
+
+mutation setupSystemAdmin($name: String!, $email: String!, $password: String!) {
+  setupSystemAdmin(data: { name: $name, email: $email, password: $password }) {
+    accessToken
+    refreshToken
+    user {
+      id
+      email
+    }
+  }
+}
+
+mutation resetUserPassword($email: String!) {
+  resetUserPassword(data: { email: $email }) {
+    success
+  }
+}
+
+mutation resetUserPasswordByCode($code: String!, $password: String!) {
+  resetUserPasswordByCode(data: { code: $code, password: $password }) {
+    success
+  }
+}
+
+mutation StartTwoFactorSetup {
+  startTwoFactorSetup {
+    secret
+    otpauthUri
+    qrDataUri
+  }
+}
+
+mutation StartTwoFactorSetupWithChallenge($challengeToken: String!) {
+  startTwoFactorSetupWithChallenge(challengeToken: $challengeToken) {
+    secret
+    otpauthUri
+    qrDataUri
+  }
+}
+
+mutation ConfirmTwoFactorSetup($secret: String!, $code: String!) {
+  confirmTwoFactorSetup(data: { secret: $secret, code: $code }) {
+    recoveryCodes
+  }
+}
+
+mutation ConfirmTwoFactorSetupWithChallenge(
+  $secret: String!
+  $code: String!
+  $challengeToken: String!
+) {
+  confirmTwoFactorSetupWithChallenge(
+    data: { secret: $secret, code: $code, challengeToken: $challengeToken }
+  ) {
+    recoveryCodes
+    auth {
+      accessToken
+      refreshToken
+      requiresTwoFactor
+      requiresTwoFactorSetup
+    }
+  }
+}
+
+mutation VerifyTwoFactor($challengeToken: String!, $code: String!, $isRecoveryCode: Boolean) {
+  verifyTwoFactor(
+    data: { challengeToken: $challengeToken, code: $code, isRecoveryCode: $isRecoveryCode }
+  ) {
+    accessToken
+    refreshToken
+  }
+}
+
+mutation DisableTwoFactor($code: String!, $isRecoveryCode: Boolean) {
+  disableTwoFactor(data: { code: $code, isRecoveryCode: $isRecoveryCode })
+}
+
+mutation RegenerateRecoveryCodes($code: String!, $isRecoveryCode: Boolean) {
+  regenerateRecoveryCodes(data: { code: $code, isRecoveryCode: $isRecoveryCode }) {
+    recoveryCodes
+  }
+}

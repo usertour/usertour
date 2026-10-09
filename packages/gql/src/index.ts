@@ -1,27 +1,5 @@
-export * from './gql/storage';
-export * from './gql/content';
-export * from './gql/user';
-export * from './gql/environment';
-export * from './gql/auth';
-export * from './gql/theme';
-export * from './gql/attribute';
-export * from './gql/event';
-export * from './gql/segment';
-export * from './gql/statistics';
-export * from './gql/utilities';
-export * from './gql/localizations';
-export * from './gql/team';
-export * from './gql/subscription';
-export * from './gql/api';
-export * from './gql/project';
-export * from './gql/integration';
-export * from './gql/admin';
-export * from './gql/audit';
-export * from './gql/sso';
-export * from './gql/identity-verification';
-export * from './gql/webhook';
-export * from './gql/references';
-
-// Generated with GraphQL Code Generator from the server schema (ADR 0021): schema types, operation result/variables types, and a TypedDocumentNode per operation.
+// Generated with GraphQL Code Generator from the server schema and the
+// operation files under src/operations (ADR 0021): schema types, operation
+// result/variables types, and a TypedDocumentNode per operation.
 export * from './generated/schema';
 export * from './generated/operations';

@@ -1,17 +1,25 @@
 import { useCallback } from 'react';
-import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
-import {
-  CreateWebhook,
-  DeleteWebhook,
-  GetWebhook,
-  ListWebhooks,
-  QueryWebhookMessages,
-  ResendWebhookMessage,
-  RotateWebhookSecret,
-  SendWebhookTestEvent,
-  UpdateWebhook,
-} from '@usertour/gql';
+import { NetworkStatus, useMutation } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type { OutboundDelivery, OutboundMessage, OutboundMessageStatus } from './outbound-message';
+import {
+  CreateWebhookDocument,
+  DeleteWebhookDocument,
+  GetWebhookDocument,
+  type GetWebhookQuery,
+  type GetWebhookQueryVariables,
+  ListWebhooksDocument,
+  type ListWebhooksQuery,
+  type ListWebhooksQueryVariables,
+  QueryWebhookMessagesDocument,
+  type QueryWebhookMessagesQuery,
+  type QueryWebhookMessagesQueryVariables,
+  ResendWebhookMessageDocument,
+  RotateWebhookSecretDocument,
+  SendWebhookTestEventDocument,
+  UpdateWebhookDocument,
+} from '@usertour/gql';
 
 export interface Webhook {
   id: string;
@@ -56,8 +64,11 @@ export interface UpdateWebhookInput {
   description?: string;
 }
 
-export const useListWebhooksQuery = (environmentId: string, options?: QueryHookOptions) => {
-  const { data, loading, error, refetch, networkStatus } = useQuery(ListWebhooks, {
+export const useListWebhooksQuery = (
+  environmentId: string,
+  options?: TypedQueryOptions<ListWebhooksQuery, ListWebhooksQueryVariables>,
+) => {
+  const { data, loading, error, refetch, networkStatus } = useTypedQuery(ListWebhooksDocument, {
     variables: { environmentId },
     notifyOnNetworkStatusChange: true,
     skip: !environmentId,
@@ -68,8 +79,11 @@ export const useListWebhooksQuery = (environmentId: string, options?: QueryHookO
   return { webhooks, loading, error, refetch, isRefetching };
 };
 
-export const useGetWebhookQuery = (id: string, options?: QueryHookOptions) => {
-  const { data, loading, error, refetch } = useQuery(GetWebhook, {
+export const useGetWebhookQuery = (
+  id: string,
+  options?: TypedQueryOptions<GetWebhookQuery, GetWebhookQueryVariables>,
+) => {
+  const { data, loading, error, refetch } = useTypedQuery(GetWebhookDocument, {
     variables: { id },
     skip: !id,
     ...options,
@@ -81,18 +95,19 @@ export const useGetWebhookQuery = (id: string, options?: QueryHookOptions) => {
 export const useQueryWebhookMessagesQuery = (
   webhookId: string,
   pagination: { first?: number; after?: string },
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<QueryWebhookMessagesQuery, QueryWebhookMessagesQueryVariables>,
 ) => {
-  const { data, loading, error, refetch, networkStatus } = useQuery(QueryWebhookMessages, {
-    variables: { webhookId, ...pagination },
-    notifyOnNetworkStatusChange: true,
-    skip: !webhookId,
-    ...options,
-  });
+  const { data, loading, error, refetch, networkStatus } = useTypedQuery(
+    QueryWebhookMessagesDocument,
+    {
+      variables: { webhookId, ...pagination },
+      notifyOnNetworkStatusChange: true,
+      skip: !webhookId,
+      ...options,
+    },
+  );
   const connection = data?.queryWebhookMessages;
-  const messages = (connection?.edges ?? []).map(
-    (edge: { node: WebhookMessage }) => edge.node,
-  ) as WebhookMessage[];
+  const messages = (connection?.edges ?? []).map((edge) => edge.node) as WebhookMessage[];
   return {
     messages,
     totalCount: connection?.totalCount as number | undefined,
@@ -107,7 +122,7 @@ export const useQueryWebhookMessagesQuery = (
 };
 
 export const useCreateWebhookMutation = () => {
-  const [mutation, { loading, error }] = useMutation(CreateWebhook, {
+  const [mutation, { loading, error }] = useMutation(CreateWebhookDocument, {
     refetchQueries: ['ListWebhooks'],
   });
   const invoke = useCallback(
@@ -123,7 +138,7 @@ export const useCreateWebhookMutation = () => {
 export const useUpdateWebhookMutation = () => {
   // No refetch: the mutation returns every field the server may change (incl.
   // the breaker reset), so the normalized cache propagates it.
-  const [mutation, { loading, error }] = useMutation(UpdateWebhook);
+  const [mutation, { loading, error }] = useMutation(UpdateWebhookDocument);
   const invoke = useCallback(
     async (input: UpdateWebhookInput): Promise<Webhook | null> => {
       const response = await mutation({ variables: { data: input } });
@@ -136,7 +151,7 @@ export const useUpdateWebhookMutation = () => {
 
 export const useDeleteWebhookMutation = () => {
   // Hard delete; refetch evicts the row from the list.
-  const [mutation, { loading, error }] = useMutation(DeleteWebhook, {
+  const [mutation, { loading, error }] = useMutation(DeleteWebhookDocument, {
     refetchQueries: ['ListWebhooks'],
   });
   const invoke = useCallback(
@@ -152,7 +167,7 @@ export const useDeleteWebhookMutation = () => {
 export const useSendWebhookTestEventMutation = () => {
   // Enqueues a single-attempt test message; the outcome lands in the delivery
   // log, so consumers refetch it after a short delay rather than via cache.
-  const [mutation, { loading, error }] = useMutation(SendWebhookTestEvent);
+  const [mutation, { loading, error }] = useMutation(SendWebhookTestEventDocument);
   const invoke = useCallback(
     async (id: string): Promise<boolean> => {
       const response = await mutation({ variables: { data: { id } } });
@@ -168,7 +183,7 @@ export const useRotateWebhookSecretMutation = () => {
   // up server-side.
   // No refetch: the mutation returns id + secret + updatedAt, which is the
   // full set of fields rotation changes — the cache merges them in place.
-  const [mutation, { loading, error }] = useMutation(RotateWebhookSecret);
+  const [mutation, { loading, error }] = useMutation(RotateWebhookSecretDocument);
   const invoke = useCallback(
     async (id: string): Promise<string | null> => {
       const response = await mutation({ variables: { data: { id } } });
@@ -182,7 +197,7 @@ export const useRotateWebhookSecretMutation = () => {
 export const useResendWebhookMessageMutation = () => {
   // Re-queues the stored payload as a single attempt; the outcome lands in the
   // message log, so consumers refetch it after a short delay.
-  const [mutation, { loading, error }] = useMutation(ResendWebhookMessage);
+  const [mutation, { loading, error }] = useMutation(ResendWebhookMessageDocument);
   const invoke = useCallback(
     async (webhookId: string, messageId: string): Promise<boolean> => {
       const response = await mutation({ variables: { data: { webhookId, messageId } } });

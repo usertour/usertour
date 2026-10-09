@@ -1,24 +1,7 @@
 import { useCallback } from 'react';
-import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
-import {
-  DeleteIntegration,
-  DeleteIntegrationObjectMapping,
-  DisconnectIntegrationOAuth,
-  ListIntegrationRemoteProperties,
-  ListIntegrationObjectMappings,
-  ListIntegrationSyncRuns,
-  ListIntegrations,
-  QueryIntegrationMessages,
-  RunIntegrationObjectMappingSync,
-  QueryIntegrationSyncedSegments,
-  RotateIntegrationInboundToken,
-  SendIntegrationTestEvent,
-  StartIntegrationOAuth,
-  UpdateIntegrationInbound,
-  UpsertIntegration,
-  UpsertIntegrationObjectMapping,
-  UpdateIntegrationEvents,
-} from '@usertour/gql';
+import { NetworkStatus, useMutation } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type {
   SyncInboundField,
   SyncLocalObject,
@@ -28,6 +11,37 @@ import type {
   IntegrationConfig,
 } from '@usertour/types';
 import type { OutboundMessage } from './outbound-message';
+import {
+  DeleteIntegrationDocument,
+  DeleteIntegrationObjectMappingDocument,
+  DisconnectIntegrationOAuthDocument,
+  ListIntegrationObjectMappingsDocument,
+  type ListIntegrationObjectMappingsQuery,
+  type ListIntegrationObjectMappingsQueryVariables,
+  ListIntegrationRemotePropertiesDocument,
+  type ListIntegrationRemotePropertiesQuery,
+  type ListIntegrationRemotePropertiesQueryVariables,
+  ListIntegrationsDocument,
+  type ListIntegrationsQuery,
+  type ListIntegrationsQueryVariables,
+  ListIntegrationSyncRunsDocument,
+  type ListIntegrationSyncRunsQuery,
+  type ListIntegrationSyncRunsQueryVariables,
+  QueryIntegrationMessagesDocument,
+  type QueryIntegrationMessagesQuery,
+  type QueryIntegrationMessagesQueryVariables,
+  QueryIntegrationSyncedSegmentsDocument,
+  type QueryIntegrationSyncedSegmentsQuery,
+  type QueryIntegrationSyncedSegmentsQueryVariables,
+  RotateIntegrationInboundTokenDocument,
+  RunIntegrationObjectMappingSyncDocument,
+  SendIntegrationTestEventDocument,
+  StartIntegrationOAuthDocument,
+  UpdateIntegrationEventsDocument,
+  UpdateIntegrationInboundDocument,
+  UpsertIntegrationDocument,
+  UpsertIntegrationObjectMappingDocument,
+} from '@usertour/gql';
 
 export interface Integration {
   id: string;
@@ -87,8 +101,11 @@ export interface UpsertIntegrationInput {
   enabled?: boolean;
 }
 
-export const useListIntegrationsQuery = (environmentId: string, options?: QueryHookOptions) => {
-  const { data, loading, error, refetch, networkStatus } = useQuery(ListIntegrations, {
+export const useListIntegrationsQuery = (
+  environmentId: string,
+  options?: TypedQueryOptions<ListIntegrationsQuery, ListIntegrationsQueryVariables>,
+) => {
+  const { data, loading, error, refetch, networkStatus } = useTypedQuery(ListIntegrationsDocument, {
     variables: { environmentId },
     notifyOnNetworkStatusChange: true,
     skip: !environmentId,
@@ -102,18 +119,22 @@ export const useListIntegrationsQuery = (environmentId: string, options?: QueryH
 export const useQueryIntegrationMessagesQuery = (
   integrationId: string,
   pagination: { first?: number; after?: string },
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    QueryIntegrationMessagesQuery,
+    QueryIntegrationMessagesQueryVariables
+  >,
 ) => {
-  const { data, loading, error, refetch, networkStatus } = useQuery(QueryIntegrationMessages, {
-    variables: { integrationId, ...pagination },
-    notifyOnNetworkStatusChange: true,
-    skip: !integrationId,
-    ...options,
-  });
+  const { data, loading, error, refetch, networkStatus } = useTypedQuery(
+    QueryIntegrationMessagesDocument,
+    {
+      variables: { integrationId, ...pagination },
+      notifyOnNetworkStatusChange: true,
+      skip: !integrationId,
+      ...options,
+    },
+  );
   const connection = data?.queryIntegrationMessages;
-  const messages = (connection?.edges ?? []).map(
-    (edge: { node: OutboundMessage }) => edge.node,
-  ) as OutboundMessage[];
+  const messages = (connection?.edges ?? []).map((edge) => edge.node) as OutboundMessage[];
   return {
     messages,
     totalCount: connection?.totalCount as number | undefined,
@@ -131,7 +152,7 @@ export const useUpsertIntegrationMutation = () => {
   // Refetch the list: a first configure INSERTS a row the normalized cache
   // can't materialize from the mutation response; later writes ride the
   // returned full field set either way.
-  const [mutation, { loading, error }] = useMutation(UpsertIntegration, {
+  const [mutation, { loading, error }] = useMutation(UpsertIntegrationDocument, {
     refetchQueries: ['ListIntegrations'],
   });
   const invoke = useCallback(
@@ -146,7 +167,7 @@ export const useUpsertIntegrationMutation = () => {
 
 export const useDeleteIntegrationMutation = () => {
   // Hard delete; refetch evicts the row from the list.
-  const [mutation, { loading, error }] = useMutation(DeleteIntegration, {
+  const [mutation, { loading, error }] = useMutation(DeleteIntegrationDocument, {
     refetchQueries: ['ListIntegrations'],
   });
   const invoke = useCallback(
@@ -161,10 +182,13 @@ export const useDeleteIntegrationMutation = () => {
 
 export const useQueryIntegrationSyncedSegmentsQuery = (
   integrationId: string,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    QueryIntegrationSyncedSegmentsQuery,
+    QueryIntegrationSyncedSegmentsQueryVariables
+  >,
 ) => {
-  const { data, loading, error, refetch, networkStatus } = useQuery(
-    QueryIntegrationSyncedSegments,
+  const { data, loading, error, refetch, networkStatus } = useTypedQuery(
+    QueryIntegrationSyncedSegmentsDocument,
     {
       variables: { integrationId },
       notifyOnNetworkStatusChange: true,
@@ -187,7 +211,7 @@ export const useQueryIntegrationSyncedSegmentsQuery = (
 /** Timeline events of a sync provider (ADR 0013 §8): the switch and the selected milestone set. */
 export const useUpdateIntegrationEventsMutation = () => {
   // Returns the changed fields on an existing row, so the normalized cache merges — no refetch.
-  const [mutation, { loading, error }] = useMutation(UpdateIntegrationEvents);
+  const [mutation, { loading, error }] = useMutation(UpdateIntegrationEventsDocument);
   const invoke = useCallback(
     async (input: {
       id: string;
@@ -205,7 +229,7 @@ export const useUpdateIntegrationEventsMutation = () => {
 export const useUpdateIntegrationInboundMutation = () => {
   // Returns the changed fields on an EXISTING row (inbound settings only live
   // on configured integrations), so the normalized cache merges — no refetch.
-  const [mutation, { loading, error }] = useMutation(UpdateIntegrationInbound);
+  const [mutation, { loading, error }] = useMutation(UpdateIntegrationInboundDocument);
   const invoke = useCallback(
     async (input: {
       id: string;
@@ -222,7 +246,7 @@ export const useUpdateIntegrationInboundMutation = () => {
 };
 
 export const useRotateIntegrationInboundTokenMutation = () => {
-  const [mutation, { loading, error }] = useMutation(RotateIntegrationInboundToken);
+  const [mutation, { loading, error }] = useMutation(RotateIntegrationInboundTokenDocument);
   const invoke = useCallback(
     async (id: string): Promise<Integration | null> => {
       const response = await mutation({ variables: { data: { id } } });
@@ -236,7 +260,7 @@ export const useRotateIntegrationInboundTokenMutation = () => {
 export const useSendIntegrationTestEventMutation = () => {
   // Enqueues a single-attempt test message; the outcome lands in the message
   // log, so consumers refetch it after a short delay rather than via cache.
-  const [mutation, { loading, error }] = useMutation(SendIntegrationTestEvent);
+  const [mutation, { loading, error }] = useMutation(SendIntegrationTestEventDocument);
   const invoke = useCallback(
     async (id: string): Promise<boolean> => {
       const response = await mutation({ variables: { data: { id } } });
@@ -251,7 +275,7 @@ export const useStartIntegrationOAuthMutation = () => {
   // Returns the URL the browser must navigate to next: the provider's authorize
   // URL, or — for a provider-initiated install — the provider's returnUrl
   // carrying our state.
-  const [mutation, { loading, error }] = useMutation(StartIntegrationOAuth);
+  const [mutation, { loading, error }] = useMutation(StartIntegrationOAuthDocument);
   const invoke = useCallback(
     async (input: {
       environmentId: string;
@@ -267,7 +291,7 @@ export const useStartIntegrationOAuthMutation = () => {
 };
 
 export const useDisconnectIntegrationOAuthMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DisconnectIntegrationOAuth);
+  const [mutation, { loading, error }] = useMutation(DisconnectIntegrationOAuthDocument);
   const invoke = useCallback(
     async (id: string): Promise<Integration | null> => {
       const response = await mutation({ variables: { data: { id } } });
@@ -342,10 +366,13 @@ export interface UpsertIntegrationObjectMappingInput {
 
 export const useListIntegrationObjectMappingsQuery = (
   integrationId: string,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    ListIntegrationObjectMappingsQuery,
+    ListIntegrationObjectMappingsQueryVariables
+  >,
 ) => {
-  const { data, loading, error, refetch, startPolling, stopPolling } = useQuery(
-    ListIntegrationObjectMappings,
+  const { data, loading, error, refetch, startPolling, stopPolling } = useTypedQuery(
+    ListIntegrationObjectMappingsDocument,
     {
       variables: { integrationId },
       skip: !integrationId,
@@ -364,10 +391,10 @@ export const useListIntegrationObjectMappingsQuery = (
 
 export const useListIntegrationSyncRunsQuery = (
   integrationId: string,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListIntegrationSyncRunsQuery, ListIntegrationSyncRunsQueryVariables>,
 ) => {
-  const { data, loading, error, refetch, startPolling, stopPolling } = useQuery(
-    ListIntegrationSyncRuns,
+  const { data, loading, error, refetch, startPolling, stopPolling } = useTypedQuery(
+    ListIntegrationSyncRunsDocument,
     {
       variables: { integrationId },
       skip: !integrationId,
@@ -387,9 +414,12 @@ export const useListIntegrationSyncRunsQuery = (
 export const useListIntegrationRemotePropertiesQuery = (
   integrationId: string,
   remoteObject: SyncRemoteObject,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    ListIntegrationRemotePropertiesQuery,
+    ListIntegrationRemotePropertiesQueryVariables
+  >,
 ) => {
-  const { data, loading, error, refetch } = useQuery(ListIntegrationRemoteProperties, {
+  const { data, loading, error, refetch } = useTypedQuery(ListIntegrationRemotePropertiesDocument, {
     variables: { integrationId, remoteObject },
     skip: !integrationId,
     fetchPolicy: 'network-only',
@@ -406,7 +436,7 @@ export const useListIntegrationRemotePropertiesQuery = (
 export const useUpsertIntegrationObjectMappingMutation = () => {
   // A first save INSERTS a row the cache can't materialize from the response;
   // later saves ride the returned full field set.
-  const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMapping, {
+  const [mutation, { loading, error }] = useMutation(UpsertIntegrationObjectMappingDocument, {
     // Attributes change ownership with the mapping (provider marks).
     refetchQueries: ['ListIntegrationObjectMappings', 'listAttributes'],
   });
@@ -426,7 +456,7 @@ export const useUpsertIntegrationObjectMappingMutation = () => {
 };
 
 export const useDeleteIntegrationObjectMappingMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMapping, {
+  const [mutation, { loading, error }] = useMutation(DeleteIntegrationObjectMappingDocument, {
     // Attributes change ownership with the mapping (provider marks).
     refetchQueries: ['ListIntegrationObjectMappings', 'listAttributes'],
   });
@@ -441,7 +471,7 @@ export const useDeleteIntegrationObjectMappingMutation = () => {
 };
 
 export const useRunIntegrationObjectMappingSyncMutation = () => {
-  const [mutation, { loading, error }] = useMutation(RunIntegrationObjectMappingSync);
+  const [mutation, { loading, error }] = useMutation(RunIntegrationObjectMappingSyncDocument);
   const invoke = useCallback(
     async (input: {
       integrationId: string;

@@ -46,7 +46,7 @@ export const useAddUsersToSegment = () => {
           toast({
             variant: 'success',
             title: t('users.toast.segments.usersAdded', {
-              count: ret.data.createBizUserOnSegment.count,
+              count: ret.data.createBizUserOnSegment.count ?? 0,
               segmentName: segment.name,
             }),
           });

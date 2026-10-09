@@ -10,6 +10,10 @@
 // the committed output is stale.
 const sharedConfig = {
   useTypeImports: true,
+  // Enums as string-literal unions: the dashboard's domain types carry the
+  // same values as plain strings, and a union meets them at the hook boundary
+  // without a cast through unknown.
+  enumsAsTypes: true,
   scalars: {
     DateTime: 'string',
     JSON: 'unknown',
