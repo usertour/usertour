@@ -47,7 +47,7 @@ export const PersonalApiKeysList = () => {
 
   const projectNameById = useMemo(() => {
     const index: Record<string, string> = {};
-    for (const project of projects) {
+    for (const project of projects ?? []) {
       if (project.id) {
         index[project.id] = project.name ?? project.id;
       }
