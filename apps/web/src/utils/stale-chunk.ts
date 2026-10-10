@@ -9,6 +9,7 @@ const STALE_CHUNK_MESSAGES = [
   'Failed to fetch dynamically imported module', // Chromium / Firefox
   'error loading dynamically imported module', // Firefox (alt)
   'Importing a module script failed', // Safari
+  'Unable to preload CSS', // Vite's preload helper, for a chunk's stylesheet
 ];
 
 export const isStaleChunkError = (error: unknown): boolean => {

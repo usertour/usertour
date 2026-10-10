@@ -63,11 +63,14 @@ const options = {
 };
 
 // Vite fires this when a dynamic import's module preload fails — typically a
-// chunk rotated out by a fresh deploy. Recover by reloading (guarded against
-// loops) before the error reaches the router. preventDefault stops Vite's
-// default throw.
-window.addEventListener('vite:preloadError', (event) => {
-  event.preventDefault();
+// chunk rotated out by a fresh deploy. Start the reload here (guarded against
+// loops), and let Vite go on to throw the original error: the import then
+// rejects with "Failed to fetch dynamically imported module", which the error
+// boundaries recognise as a stale chunk. Calling preventDefault instead would
+// make the import resolve with `undefined`, so the lazy loader's
+// `module.Component` throws a TypeError that reads like a real crash and gets
+// reported, while the reload is still on its way.
+window.addEventListener('vite:preloadError', () => {
   reloadForStaleChunkOnce();
 });
 
