@@ -78,7 +78,8 @@ const useActivityFeedQuery = (
 
   return {
     events,
-    loading: loading && !loadingMore,
+    // In-flight `loading` (a reload keeps the rows); a fetch-more is `loadingMore` instead.
+    loading: (loading || refreshing) && !loadingMore,
     loadingMore,
     totalCount,
     hasNextPage,

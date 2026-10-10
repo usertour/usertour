@@ -11,7 +11,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryErrorNotifierProvider } from '../notifier';
-import { useTypedQuery } from '../use-typed-query';
+import { NOTIFIES_OWN_FAILURES, useTypedQuery } from '../use-typed-query';
 
 type PingQuery = { ping: { id: string; value: string } | null };
 const PingDocument = gql`
@@ -23,15 +23,28 @@ const PingDocument = gql`
   }
 ` as TypedDocumentNode<PingQuery, Record<string, never>>;
 
-type Reply = { data?: unknown; errors?: { message: string; path?: string[] }[] };
+type Reply = {
+  data?: unknown;
+  errors?: { message: string; path?: string[] }[];
+  networkError?: Error;
+};
 
-const harness = (replies: Reply[]) => {
+// Replies are a fixed sequence, or a function the test steers (so a polling
+// test can hold a state as long as it needs instead of racing a timer).
+const harness = (replies: Reply[] | (() => Reply)) => {
   let call = 0;
+  let lastContext: Record<string, unknown> = {};
   const link = new ApolloLink(
-    () =>
+    (operation) =>
       new Observable((observer) => {
-        const reply = replies[Math.min(call, replies.length - 1)];
+        lastContext = operation.getContext();
+        const reply =
+          typeof replies === 'function' ? replies() : replies[Math.min(call, replies.length - 1)];
         call += 1;
+        if (reply.networkError) {
+          observer.error(reply.networkError);
+          return;
+        }
         observer.next(reply as never);
         observer.complete();
       }),
@@ -43,7 +56,7 @@ const harness = (replies: Reply[]) => {
       <QueryErrorNotifierProvider notify={notify}>{children}</QueryErrorNotifierProvider>
     </ApolloProvider>
   );
-  return { wrapper, notify, client };
+  return { wrapper, notify, client, calls: () => call, lastContext: () => lastContext };
 };
 
 const ok = { data: { ping: { __typename: 'Ping', id: 'p1', value: 'pong' } } };
@@ -73,6 +86,70 @@ describe('useTypedQuery', () => {
     rerender();
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify.mock.calls[0][0].operationName).toBe('ping');
+  });
+
+  it('surfaces the failure again when the user refetches into it', async () => {
+    const { wrapper, notify } = harness([partial, partial]);
+    const { result } = renderHook(() => useTypedQuery(PingDocument), { wrapper });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(notify).toHaveBeenCalledTimes(1);
+
+    await result.current.refetch().catch(() => undefined);
+    await waitFor(() => expect(notify).toHaveBeenCalledTimes(2));
+  });
+
+  it('surfaces a failing poll once, and again once it has recovered', async () => {
+    let server: Reply = partial;
+    const { wrapper, notify, calls } = harness(() => server);
+    const { result } = renderHook(() => useTypedQuery(PingDocument), { wrapper });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(notify).toHaveBeenCalledTimes(1);
+
+    // Still failing: however many polls go by, that is the one notice.
+    result.current.startPolling(20);
+    const seen = calls();
+    await waitFor(() => expect(calls()).toBeGreaterThanOrEqual(seen + 3));
+    expect(notify).toHaveBeenCalledTimes(1);
+
+    server = ok;
+    await waitFor(() => expect(result.current.data?.ping?.value).toBe('pong'));
+    expect(notify).toHaveBeenCalledTimes(1);
+
+    server = partial;
+    await waitFor(() => expect(notify).toHaveBeenCalledTimes(2));
+    result.current.stopPolling();
+  });
+
+  it('marks its operations as notifying their own failures', async () => {
+    const { wrapper, lastContext } = harness([ok]);
+    const { result } = renderHook(() => useTypedQuery(PingDocument), { wrapper });
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    expect(lastContext()[NOTIFIES_OWN_FAILURES]).toBe(true);
+  });
+
+  it('surfaces a network failure once, and a failing poll no more than that', async () => {
+    const { wrapper, notify, calls } = harness([{ networkError: new Error('Failed to fetch') }]);
+    const { result } = renderHook(() => useTypedQuery(PingDocument), { wrapper });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.error?.networkError).toBeTruthy();
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify.mock.calls[0][0].error.networkError).toBeTruthy();
+
+    result.current.startPolling(20);
+    await waitFor(() => expect(calls()).toBeGreaterThanOrEqual(3));
+    expect(notify).toHaveBeenCalledTimes(1);
+    result.current.stopPolling();
+  });
+
+  it('surfaces a failed fetchMore, which rejects without touching the query', async () => {
+    const { wrapper, notify } = harness([ok, { networkError: new Error('Failed to fetch') }]);
+    const { result } = renderHook(() => useTypedQuery(PingDocument), { wrapper });
+    await waitFor(() => expect(result.current.data).toBeDefined());
+
+    await expect(result.current.fetchMore({ variables: {} })).rejects.toBeDefined();
+    expect(result.current.error).toBeUndefined();
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify.mock.calls[0][0].error.networkError).toBeTruthy();
   });
 
   it('does not notify when the caller renders the failure in place', async () => {

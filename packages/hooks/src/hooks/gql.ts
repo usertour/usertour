@@ -222,14 +222,17 @@ export const useCompanyListQuery = ({
 }) => {
   // See `useContentListQuery` — `...options` first, `variables` last,
   // so caller can't accidentally clobber wrapper-composed variables.
-  const { data, refetch, loading, error, networkStatus } = useTypedQuery(QueryBizCompanyDocument, {
-    ...options,
-    variables: {
-      ...pagination,
-      query,
-      orderBy: orderBy as BizOrder,
+  const { data, refetch, loading, refreshing, error, networkStatus } = useTypedQuery(
+    QueryBizCompanyDocument,
+    {
+      ...options,
+      variables: {
+        ...pagination,
+        query,
+        orderBy: orderBy as BizOrder,
+      },
     },
-  });
+  );
 
   const bizCompanyList = data?.queryBizCompany;
   const contents = (bizCompanyList?.edges?.map((edge) => ({ ...edge.node })) ??
@@ -240,7 +243,17 @@ export const useCompanyListQuery = ({
   // networkStatus pass-through so callers can derive `isRefetching`
   // (NetworkStatus.refetch === 4). Opt-in: callers pass
   // `options.notifyOnNetworkStatusChange: true` to make it meaningful.
-  return { contents, pageInfo, totalCount, refetch, loading, error, networkStatus };
+  // `loading` is the in-flight flag: the tables and reload buttons behind
+  // this list gate on it, and a reload keeps the rows while it runs.
+  return {
+    contents,
+    pageInfo,
+    totalCount,
+    refetch,
+    loading: loading || refreshing,
+    error,
+    networkStatus,
+  };
 };
 
 type UseUserListQueryProps = {
@@ -265,14 +278,17 @@ export const useUserListQuery = ({
 }) => {
   // See `useContentListQuery` — `...options` first, `variables` last,
   // so caller can't accidentally clobber wrapper-composed variables.
-  const { data, refetch, loading, error, networkStatus } = useTypedQuery(QueryBizUserDocument, {
-    ...options,
-    variables: {
-      ...pagination,
-      query,
-      orderBy: orderBy as BizOrder,
+  const { data, refetch, loading, refreshing, error, networkStatus } = useTypedQuery(
+    QueryBizUserDocument,
+    {
+      ...options,
+      variables: {
+        ...pagination,
+        query,
+        orderBy: orderBy as BizOrder,
+      },
     },
-  });
+  );
 
   const bizUserList = data?.queryBizUser;
   const contents = (bizUserList?.edges?.map((edge) => ({
@@ -282,8 +298,17 @@ export const useUserListQuery = ({
   const pageInfo = bizUserList?.pageInfo;
   const totalCount = bizUserList?.totalCount || 0;
 
-  // See useCompanyListQuery — same networkStatus opt-in pattern.
-  return { contents, pageInfo, totalCount, refetch, loading, error, networkStatus };
+  // See useCompanyListQuery — same networkStatus opt-in pattern, same
+  // in-flight `loading`.
+  return {
+    contents,
+    pageInfo,
+    totalCount,
+    refetch,
+    loading: loading || refreshing,
+    error,
+    networkStatus,
+  };
 };
 
 export const useSegmentListQuery = (
@@ -499,23 +524,27 @@ export const useQuerySessionsByExternalIdQuery = (
     direction: 'desc',
   },
 ) => {
-  const { data, loading, error, refetch } = useTypedQuery(QuerySessionsByExternalIdDocument, {
-    variables: {
-      query,
-      orderBy: orderBy as AnalyticsOrder,
-      ...pagination,
+  const { data, loading, refreshing, error, refetch } = useTypedQuery(
+    QuerySessionsByExternalIdDocument,
+    {
+      variables: {
+        query,
+        orderBy: orderBy as AnalyticsOrder,
+        ...pagination,
+      },
+      // Reload goes through `refetch()`; without this the refetch window
+      // has `loading: false`, so the UI gets no in-flight signal.
+      notifyOnNetworkStatusChange: true,
     },
-    // Reload goes through `refetch()`; without this the refetch window
-    // has `loading: false`, so the UI gets no in-flight signal.
-    notifyOnNetworkStatusChange: true,
-  });
+  );
 
   const sessions =
     (data?.querySessionsByExternalId?.edges?.map((edge: any) => edge.node) as BizSession[]) || [];
   const pageInfo = data?.querySessionsByExternalId?.pageInfo;
   const totalCount = data?.querySessionsByExternalId?.totalCount || 0;
 
-  return { sessions, pageInfo, totalCount, loading, error, refetch };
+  // In-flight `loading`: the reload button and the accumulator gate on it.
+  return { sessions, pageInfo, totalCount, loading: loading || refreshing, error, refetch };
 };
 
 export const useQueryContentQuestionAnalyticsQuery = (

@@ -124,7 +124,7 @@ export const useQueryIntegrationMessagesQuery = (
     QueryIntegrationMessagesQueryVariables
   >,
 ) => {
-  const { data, loading, error, refetch, networkStatus } = useTypedQuery(
+  const { data, loading, refreshing, error, refetch, networkStatus } = useTypedQuery(
     QueryIntegrationMessagesDocument,
     {
       variables: { integrationId, ...pagination },
@@ -141,7 +141,8 @@ export const useQueryIntegrationMessagesQuery = (
     pageInfo: connection?.pageInfo as
       | { endCursor: string | null; hasNextPage: boolean }
       | undefined,
-    loading,
+    // In-flight `loading`: the accumulator and the reload button gate on it.
+    loading: loading || refreshing,
     error,
     refetch,
     isRefetching: networkStatus === NetworkStatus.refetch,
@@ -187,7 +188,7 @@ export const useQueryIntegrationSyncedSegmentsQuery = (
     QueryIntegrationSyncedSegmentsQueryVariables
   >,
 ) => {
-  const { data, loading, error, refetch, networkStatus } = useTypedQuery(
+  const { data, loading, refreshing, error, refetch, networkStatus } = useTypedQuery(
     QueryIntegrationSyncedSegmentsDocument,
     {
       variables: { integrationId },
@@ -201,7 +202,8 @@ export const useQueryIntegrationSyncedSegmentsQuery = (
     | undefined;
   return {
     syncedSegments,
-    loading,
+    // In-flight `loading`: the cohort list's reload button gates on it.
+    loading: loading || refreshing,
     error,
     refetch,
     isRefetching: networkStatus === NetworkStatus.refetch,

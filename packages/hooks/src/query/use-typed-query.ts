@@ -1,7 +1,7 @@
 import {
-  type ApolloError,
+  ApolloError,
   type ApolloQueryResult,
-  type NetworkStatus,
+  NetworkStatus,
   type OperationVariables,
   type QueryHookOptions,
   type QueryResult,
@@ -9,8 +9,16 @@ import {
   useQuery,
 } from '@apollo/client';
 import { getOperationName } from '@apollo/client/utilities';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useQueryErrorNotifier } from './notifier';
+
+/**
+ * Set on the context of every operation `useTypedQuery` sends: this observer
+ * reports its own failures, network ones included, so an error link that
+ * announces network failures for the operations nobody else watches
+ * (mutations, lazy queries) leaves these alone.
+ */
+export const NOTIFIES_OWN_FAILURES = 'notifiesOwnFailures';
 
 export interface TypedQueryOptions<TData, TVariables extends OperationVariables>
   extends QueryHookOptions<TData, TVariables> {
@@ -82,17 +90,55 @@ export const useTypedQuery = <TData, TVariables extends OperationVariables>(
     errorPolicy: 'none',
     notifyOnNetworkStatusChange: true,
     ...queryOptions,
+    context: { ...queryOptions.context, [NOTIFIES_OWN_FAILURES]: true },
   });
 
-  const reported = useRef<ApolloError | undefined>(undefined);
+  // A failure is surfaced once per failure. A re-render of the same error is
+  // not a new one, and neither is a poll that fails again with the same
+  // message: a failing installation check must not toast every tick. A
+  // failure the user asked for — a refetch, a new filter, the next page — is
+  // surfaced again, and a settled answer without error clears the slate. A
+  // network failure follows the same rules; the notifier folds every query an
+  // outage took down into one notice.
+  const operationName = getOperationName(document) ?? 'query';
+  const reported = useRef<{ error: ApolloError; message: string } | undefined>(undefined);
+  const inFlight = useRef<NetworkStatus | undefined>(undefined);
   const takenOver = !notifyOnError || queryOptions.onError !== undefined;
   useEffect(() => {
-    if (!error || takenOver || reported.current === error) {
+    if (loading) {
+      inFlight.current = networkStatus;
       return;
     }
-    reported.current = error;
-    notify({ operationName: getOperationName(document) ?? 'query', error });
-  }, [error, takenOver, notify, document]);
+    if (!error) {
+      reported.current = undefined;
+      return;
+    }
+    const last = reported.current;
+    const sameError = last?.error === error;
+    const samePoll = inFlight.current === NetworkStatus.poll && last?.message === error.message;
+    if (takenOver || sameError || samePoll) {
+      return;
+    }
+    reported.current = { error, message: error.message };
+    notify({ operationName, error });
+  }, [error, loading, networkStatus, takenOver, notify, operationName]);
+
+  // A failed fetchMore only rejects its promise; Apollo never writes it into
+  // the query's `error`, so the effect above cannot see it. Nothing in this
+  // layer repeats a page request on its own, so every failure is surfaced (a
+  // caller that retries by itself owns that loop), and then rethrown for the
+  // caller. Cast back to Apollo's generic signature: the wrapper only passes
+  // the arguments through.
+  const fetchMoreNotifying = useCallback(
+    (...args: Parameters<typeof fetchMore>) =>
+      fetchMore(...args).catch((failure: unknown) => {
+        if (!takenOver && failure instanceof ApolloError) {
+          notify({ operationName, error: failure });
+        }
+        throw failure;
+      }),
+    [fetchMore, takenOver, notify, operationName],
+  ) as typeof fetchMore;
 
   const hasData = data !== undefined;
   return {
@@ -102,7 +148,7 @@ export const useTypedQuery = <TData, TVariables extends OperationVariables>(
     refreshing: loading && hasData,
     networkStatus,
     refetch,
-    fetchMore,
+    fetchMore: fetchMoreNotifying,
     previousData,
     startPolling,
     stopPolling,

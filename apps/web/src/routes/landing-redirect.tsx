@@ -11,7 +11,10 @@ import { FullPageSpinner } from './full-page-spinner';
 // Order: in-memory context env > last-used env from localStorage > primary env > first env.
 export const LandingRedirect = () => {
   const { environment, userInfo } = useAppContext();
-  const { environmentList, loading, error, refetch } = useEnvironmentList();
+  // The failure is drawn below. This is the index route, outside the shell:
+  // the list's other observers (the env switcher, the pages) are not mounted
+  // here, so nothing else announces it.
+  const { environmentList, loading, error, refetch } = useEnvironmentList({ notifyOnError: false });
   const { t } = useTranslation('ui');
 
   if (environment?.id) {
@@ -23,7 +26,7 @@ export const LandingRedirect = () => {
   if (error && !environmentList) {
     return (
       <Unavailable
-        backdrop
+        frame="backdrop"
         title={t('appError.environments.title')}
         description={t('appError.environments.description')}
         onRetry={refetch}

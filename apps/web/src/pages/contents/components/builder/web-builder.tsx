@@ -39,7 +39,7 @@ function WebBuilderContent() {
   if (failed) {
     return (
       <Unavailable
-        backdrop
+        frame="backdrop"
         title={t('appError.content.title')}
         description={t('appError.content.description')}
         onRetry={retry}

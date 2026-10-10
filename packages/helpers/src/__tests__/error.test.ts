@@ -31,6 +31,10 @@ describe('serverErrorMessage', () => {
       ],
     };
     expect(serverErrorMessage(transport)).toBeUndefined();
+    const unknown = {
+      graphQLErrors: [{ message: 'Unknown error', extensions: { code: 'E0000' } }],
+    };
+    expect(serverErrorMessage(unknown)).toBeUndefined();
     expect(serverErrorMessage({ graphQLErrors: [{ message: 'x' }] })).toBeUndefined();
     expect(serverErrorMessage(new Error('network'))).toBeUndefined();
   });

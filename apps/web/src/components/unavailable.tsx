@@ -10,11 +10,12 @@ export interface UnavailableProps {
   /** Re-run the query that failed. The view stays up until it answers. */
   onRetry: () => unknown;
   /**
-   * Draw the auth backdrop around the card: for states that stand in for the
-   * whole shell (no project, no environment, the builder's content). Inside
-   * the shell the card is centred in the region it replaces.
+   * What surrounds the card. `backdrop`: the auth backdrop, for states that
+   * stand in for the whole shell (no environment, the builder's content).
+   * `region`: centred in the shell region it replaces. `card`: the card alone,
+   * for a layout that already frames its content (the auth layout).
    */
-  backdrop?: boolean;
+  frame?: 'backdrop' | 'region' | 'card';
 }
 
 /**
@@ -23,7 +24,7 @@ export interface UnavailableProps {
  * none: nothing here redirects, and nothing offers to create.
  */
 export const Unavailable = (props: UnavailableProps) => {
-  const { title, description, onRetry, backdrop = false } = props;
+  const { title, description, onRetry, frame = 'region' } = props;
   const { t } = useTranslation('ui');
   const [retrying, setRetrying] = useState(false);
 
@@ -50,8 +51,11 @@ export const Unavailable = (props: UnavailableProps) => {
     />
   );
 
-  if (backdrop) {
+  if (frame === 'backdrop') {
     return <AuthBackdrop>{card}</AuthBackdrop>;
+  }
+  if (frame === 'card') {
+    return card;
   }
   return (
     <div className="flex min-h-[60vh] w-full items-center justify-center px-4">

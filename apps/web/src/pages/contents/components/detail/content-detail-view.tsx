@@ -46,7 +46,9 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
     loading: contentLoading,
     error: contentError,
     refetch,
-  } = useContentDetail(contentId);
+    // The failure is drawn below when there is no content; with content on
+    // screen the header's and tabs' observers announce a failed refresh.
+  } = useContentDetail(contentId, { notifyOnError: false });
   const { versionList, loading: versionListLoading } = useContentVersionList(contentId);
   const { themeList, loading: themeLoading } = useThemeList();
   const { segmentList, loading: segmentLoading } = useSegmentList(

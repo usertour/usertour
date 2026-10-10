@@ -2,6 +2,7 @@ import { Observable } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 import type { GraphQLFormattedError } from 'graphql';
 import posthog from 'posthog-js';
+import { NOTIFIES_OWN_FAILURES } from '@usertour/hooks';
 import { apiUrl } from '@/utils/env';
 import { reportNetworkFailure } from '../network-errors';
 
@@ -123,6 +124,10 @@ export const errorLink = onError(({ graphQLErrors, networkError, operation, forw
 
   if (networkError) {
     console.error(`[Network error]: ${networkError}`);
-    reportNetworkFailure({ operationName: operation.operationName, error: networkError });
+    // A watched query reports its own network failure (and knows whether it
+    // was a poll); the link announces the rest: mutations, lazy queries.
+    if (!operation.getContext()[NOTIFIES_OWN_FAILURES]) {
+      reportNetworkFailure({ operationName: operation.operationName, error: networkError });
+    }
   }
 });

@@ -285,8 +285,13 @@ function firstGraphQLError(error: unknown): ServerGraphQLError | undefined {
   return (error as { graphQLErrors?: ServerGraphQLError[] } | null | undefined)?.graphQLErrors?.[0];
 }
 
-/** Catalogue codes look like E0048; a transport code ("Internal Server Error") does not. */
+// Catalogue codes look like E0048. E0000 is the server's "something it did
+// not expect" and carries only a generic sentence; a transport code
+// ("Internal Server Error") never came through the catalogue at all.
 const CATALOGUE_CODE = /^E\d{4}$/;
+const UNKNOWN_SERVER_ERROR = 'E0000';
+const isCatalogueCode = (code: string): boolean =>
+  CATALOGUE_CODE.test(code) && code !== UNKNOWN_SERVER_ERROR;
 
 /**
  * The code the server's error catalogue attached to a failed GraphQL
@@ -312,7 +317,7 @@ export function serverErrorMessage(error: unknown): string | undefined {
   const { message, extensions } = first;
   if (
     typeof extensions?.code !== 'string' ||
-    !CATALOGUE_CODE.test(extensions.code) ||
+    !isCatalogueCode(extensions.code) ||
     typeof message !== 'string'
   ) {
     return undefined;

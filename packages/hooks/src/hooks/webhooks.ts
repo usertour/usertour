@@ -97,7 +97,7 @@ export const useQueryWebhookMessagesQuery = (
   pagination: { first?: number; after?: string },
   options?: TypedQueryOptions<QueryWebhookMessagesQuery, QueryWebhookMessagesQueryVariables>,
 ) => {
-  const { data, loading, error, refetch, networkStatus } = useTypedQuery(
+  const { data, loading, refreshing, error, refetch, networkStatus } = useTypedQuery(
     QueryWebhookMessagesDocument,
     {
       variables: { webhookId, ...pagination },
@@ -114,7 +114,8 @@ export const useQueryWebhookMessagesQuery = (
     pageInfo: connection?.pageInfo as
       | { endCursor: string | null; hasNextPage: boolean }
       | undefined,
-    loading,
+    // In-flight `loading`: the accumulator and the reload button gate on it.
+    loading: loading || refreshing,
     error,
     refetch,
     isRefetching: networkStatus === NetworkStatus.refetch,

@@ -7,7 +7,12 @@ import { useAppContext } from '@/contexts/app-context';
 // `useDeleteEnvironmentsMutation` — without it the global no-cache
 // default would isolate this query and leave a deleted env still
 // visible in the picker.
-export const useEnvironmentList = () => {
+export interface UseEnvironmentListOptions {
+  /** `false` for the one caller that draws the failure itself (ADR 0021 §5). */
+  notifyOnError?: boolean;
+}
+
+export const useEnvironmentList = (options?: UseEnvironmentListOptions) => {
   const { project } = useAppContext();
-  return useGetUserEnvironmentsQuery(project?.id, SHARED_CACHE_QUERY_OPTIONS);
+  return useGetUserEnvironmentsQuery(project?.id, { ...SHARED_CACHE_QUERY_OPTIONS, ...options });
 };

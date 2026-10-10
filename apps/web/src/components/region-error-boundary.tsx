@@ -50,8 +50,10 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
     return { failed: true };
   }
 
-  componentDidUpdate(prevProps: BoundaryProps): void {
-    if (this.state.failed && prevProps.resetKey !== this.props.resetKey) {
+  componentDidUpdate(prevProps: BoundaryProps, prevState: BoundaryState): void {
+    // Only a failure that predates this update resets: a page that crashes on
+    // its first render changes the key and fails in the same update.
+    if (prevState.failed && this.state.failed && prevProps.resetKey !== this.props.resetKey) {
       this.setState({ failed: false });
     }
   }

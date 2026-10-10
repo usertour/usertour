@@ -86,6 +86,8 @@ export const AuditLogList = () => {
     useListAuditLogsQuery(project?.id, auditFilter, {
       ...SHARED_CACHE_QUERY_OPTIONS,
       skip: !entitled,
+      // The empty-state slot below carries the failure; no toast on top.
+      notifyOnError: false,
     });
   const { t } = useTranslation();
   // `selected` is retained after close so the dialog animates out with its

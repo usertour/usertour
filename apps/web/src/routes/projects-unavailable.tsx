@@ -18,7 +18,7 @@ export const ProjectsUnavailable = (props: ProjectsUnavailableProps) => {
       title={t('appError.projects.title')}
       description={t('appError.projects.description')}
       onRetry={refetch}
-      backdrop={backdrop}
+      frame={backdrop ? 'backdrop' : 'card'}
     />
   );
 };

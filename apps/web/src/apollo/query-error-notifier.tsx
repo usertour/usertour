@@ -17,7 +17,8 @@ export interface QueryErrorNotifierProps {
 // How this application shows a failed query (ADR 0021 §2): one destructive
 // toast carrying the server's message, de-duplicated per operation. Pages
 // that render a failure in place opt out at the query (`notifyOnError: false`).
-// A network failure reported by the error link is shown the same way, once.
+// A network failure is one notice for every operation the outage took down,
+// whether a watched query reported it or the error link did for a mutation.
 export const QueryErrorNotifier = (props: QueryErrorNotifierProps) => {
   const { children } = props;
   const { toast } = useToast();
@@ -34,8 +35,23 @@ export const QueryErrorNotifier = (props: QueryErrorNotifierProps) => {
     return false;
   }, []);
 
+  const showNetworkFailure = useCallback(() => {
+    if (shownRecently(NETWORK_KEY)) {
+      return;
+    }
+    toast({
+      variant: 'destructive',
+      title: t('appError.network.title'),
+      description: t('appError.network.description'),
+    });
+  }, [shownRecently, toast, t]);
+
   const notify = useCallback(
     (failure: QueryFailure) => {
+      if (failure.error.networkError) {
+        showNetworkFailure();
+        return;
+      }
       if (shownRecently(failure.operationName)) {
         return;
       }
@@ -45,23 +61,10 @@ export const QueryErrorNotifier = (props: QueryErrorNotifierProps) => {
         description: getErrorMessage(failure.error),
       });
     },
-    [shownRecently, toast, t],
+    [showNetworkFailure, shownRecently, toast, t],
   );
 
-  useEffect(
-    () =>
-      onNetworkFailure(() => {
-        if (shownRecently(NETWORK_KEY)) {
-          return;
-        }
-        toast({
-          variant: 'destructive',
-          title: t('appError.network.title'),
-          description: t('appError.network.description'),
-        });
-      }),
-    [shownRecently, toast, t],
-  );
+  useEffect(() => onNetworkFailure(showNetworkFailure), [showNetworkFailure]);
 
   return <QueryErrorNotifierProvider notify={notify}>{children}</QueryErrorNotifierProvider>;
 };
