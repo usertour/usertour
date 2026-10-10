@@ -30,6 +30,8 @@ const Fallback = (props: FallbackProps) => {
 Fallback.displayName = 'RegionErrorBoundary.Fallback';
 
 interface BoundaryProps {
+  /** A change of this value while failed re-mounts the children; healthy children never re-mount. */
+  resetKey: string;
   children: ReactNode;
 }
 
@@ -46,6 +48,12 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
 
   static getDerivedStateFromError(): BoundaryState {
     return { failed: true };
+  }
+
+  componentDidUpdate(prevProps: BoundaryProps): void {
+    if (this.state.failed && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ failed: false });
+    }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
@@ -74,11 +82,17 @@ export interface RegionErrorBoundaryProps {
   children: ReactNode;
 }
 
-/** A region boundary that also resets when the route changes, so navigating away from a crashed page recovers it. */
+/**
+ * A region boundary that also resets when the route changes, so navigating
+ * away from a crashed page recovers it. The route is a reset key, not a React
+ * key: nested routes under one layout (a builder view, a detail tab) change
+ * the path without the region having failed, and keying would re-mount the
+ * whole region — the builder's store and undo history with it.
+ */
 export const RegionErrorBoundary = (props: RegionErrorBoundaryProps) => {
   const { children } = props;
   const { pathname } = useLocation();
-  return <Boundary key={pathname}>{children}</Boundary>;
+  return <Boundary resetKey={pathname}>{children}</Boundary>;
 };
 
 RegionErrorBoundary.displayName = 'RegionErrorBoundary';
