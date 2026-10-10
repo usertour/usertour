@@ -508,6 +508,7 @@ const translations = {
         codeNameLabel: '代码名',
         codeNameTooltip: '代码中引用该属性的标识符,例如「billing_plan」。',
         codeNamePlaceholder: '请输入代码名',
+        codeNameTaken: '该代码名已被其他属性使用',
         dataTypeHints: {
           randomAB:
             '随机 A/B:Usertour 给每个用户或公司均匀分配「A」或「B」。不能通过代码设置,创建后类型不可更改。',
@@ -569,6 +570,7 @@ const translations = {
         codeNameLabel: '代码名',
         codeNameTooltip: '代码中引用该事件的标识符,例如「user_signed_up」。',
         codeNamePlaceholder: '请输入代码名',
+        codeNameTaken: '该代码名已被其他事件使用',
         attributesLabel: '事件属性',
         attributesTooltip: '该事件 payload 中包含的属性,例如「plan_name」「price」。',
         attributesPlaceholder: '请选择属性',
@@ -645,6 +647,7 @@ const translations = {
         codeTooltip:
           '与用户的 locale_code 属性匹配。优先精确匹配，否则按主语言匹配——locale_code 为 fr-CA 的用户会命中代码为 fr 的本地化。',
         codePlaceholder: '请输入代码',
+        codeTaken: '该代码已被其他本地化使用',
       },
     },
     themes: {

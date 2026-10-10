@@ -275,3 +275,23 @@ function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
 export function getErrorMessage(error: unknown) {
   return toErrorWithMessage(error).message;
 }
+
+/**
+ * The code the server's error catalogue attached to a failed GraphQL
+ * operation, when it attached one. A network failure or a thrown string
+ * carries none.
+ */
+export function serverErrorCode(error: unknown): string | undefined {
+  const graphQLErrors = (
+    error as { graphQLErrors?: { extensions?: { code?: unknown } }[] } | null | undefined
+  )?.graphQLErrors;
+  const code = graphQLErrors?.[0]?.extensions?.code;
+  return typeof code === 'string' ? code : undefined;
+}
+
+const RESOURCE_ALREADY_EXISTS = 'E0048';
+
+/** The server refused a create because the identifier is already taken. */
+export function isResourceAlreadyExistsError(error: unknown): boolean {
+  return serverErrorCode(error) === RESOURCE_ALREADY_EXISTS;
+}

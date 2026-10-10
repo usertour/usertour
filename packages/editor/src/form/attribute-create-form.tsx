@@ -29,7 +29,11 @@ import {
 import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour/icons';
 import { AttributeDataTypeIcon } from '@usertour/business-components';
 import { RANDOM_NUMBER_RANGE_MAX, RANDOM_NUMBER_RANGE_MIN } from '@usertour/constants';
-import { isBucketingDataType, isValidRandomMax } from '@usertour/helpers';
+import {
+  isBucketingDataType,
+  isResourceAlreadyExistsError,
+  isValidRandomMax,
+} from '@usertour/helpers';
 import { CreateAttributeMutationVariables, useCreateAttributeMutation } from '@usertour/hooks';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import * as React from 'react';
@@ -245,6 +249,10 @@ export const AttributeCreateForm = ({
         title: t('settings.attributes.form.createSuccess'),
       });
     } catch (error) {
+      if (isResourceAlreadyExistsError(error)) {
+        form.setError('codeName', { message: t('settings.attributes.form.codeNameTaken') });
+        return;
+      }
       console.error('Create attribute failed:', error);
       showError(t('settings.attributes.form.createFailed'));
     } finally {
@@ -415,7 +423,7 @@ export const AttributeCreateForm = ({
                   control={form.control}
                   name="displayName"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="w-72">
                       <FormLabel className="flex flex-row">
                         {t('settings.attributes.form.displayNameLabel')}
                         <QuestionTooltip className="ml-1">
@@ -438,7 +446,7 @@ export const AttributeCreateForm = ({
                   control={form.control}
                   name="codeName"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="w-72">
                       <FormLabel className="flex flex-row">
                         {t('settings.attributes.form.codeNameLabel')}
                         <QuestionTooltip className="ml-1">

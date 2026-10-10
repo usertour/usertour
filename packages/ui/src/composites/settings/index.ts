@@ -14,7 +14,7 @@ export { ResourceListBody } from './resource-list-body';
 export type { ResourceListBodyProps } from './resource-list-body';
 export { ResourceListPage } from './resource-list-page';
 export type { ResourceListPageProps } from './resource-list-page';
-export { useSettingsForm } from './use-settings-form';
+export { SettingsFormFieldError, useSettingsForm } from './use-settings-form';
 export type { UseSettingsFormOptions, UseSettingsFormResult } from './use-settings-form';
 export { SettingsFormSection } from './settings-form-section';
 export type { SettingsFormSectionProps } from './settings-form-section';
