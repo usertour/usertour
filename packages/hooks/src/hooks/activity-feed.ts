@@ -37,7 +37,7 @@ const useActivityFeedQuery = (
   query: ActivityFeedQueryVariables,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, networkStatus, fetchMore, refetch } = useTypedQuery(gqlQuery, {
+  const { data, loading, refreshing, networkStatus, fetchMore, refetch } = useTypedQuery(gqlQuery, {
     variables: {
       first: PAGE_SIZE,
       query,
@@ -63,7 +63,7 @@ const useActivityFeedQuery = (
   // typePolicy replaces the accumulator with the fresh page 1 instead
   // of leaving stale events on top.
   const { loadingMore, fetchNextPage: loadMore } = useCursorFetchMore({
-    loading,
+    loading: loading || refreshing,
     networkStatus,
     hasNextPage,
     endCursor,

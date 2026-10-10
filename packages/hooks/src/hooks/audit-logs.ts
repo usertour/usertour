@@ -63,7 +63,7 @@ export const useListAuditLogsQuery = (
   options?: TypedQueryOptions<ListAuditLogsQuery, ListAuditLogsQueryVariables>,
 ) => {
   const query = filter && Object.values(filter).some((v) => v != null) ? filter : undefined;
-  const { data, loading, networkStatus, error, refetch, fetchMore } = useTypedQuery(
+  const { data, loading, refreshing, networkStatus, error, refetch, fetchMore } = useTypedQuery(
     ListAuditLogsDocument,
     {
       variables: {
@@ -88,7 +88,7 @@ export const useListAuditLogsQuery = (
   const totalCount = connection?.totalCount ?? 0;
 
   const { loadingMore, fetchNextPage } = useCursorFetchMore({
-    loading,
+    loading: loading || refreshing,
     networkStatus,
     hasNextPage,
     endCursor,

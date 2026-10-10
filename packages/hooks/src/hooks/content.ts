@@ -148,11 +148,18 @@ export const useListContentsQuery = ({
   pageSize = CONTENT_LIST_PAGE_SIZE,
   options,
 }: UseListContentsArgs) => {
-  const { data, loading, networkStatus, fetchMore, refetch } = useTypedQuery(QueryContentDocument, {
-    variables: { first: pageSize, query: query as ContentQuery, orderBy: orderBy as ContentOrder },
-    notifyOnNetworkStatusChange: true,
-    ...options,
-  });
+  const { data, loading, refreshing, networkStatus, fetchMore, refetch } = useTypedQuery(
+    QueryContentDocument,
+    {
+      variables: {
+        first: pageSize,
+        query: query as ContentQuery,
+        orderBy: orderBy as ContentOrder,
+      },
+      notifyOnNetworkStatusChange: true,
+      ...options,
+    },
+  );
 
   const connection = data?.queryContent;
   // Wire shape and domain Content differ on optionality; the hook is the boundary.
@@ -170,7 +177,7 @@ export const useListContentsQuery = ({
   // duplicate / publish / unpublish) replace the accumulator with a
   // fresh page 1 instead of leaving it stale.
   const { loadingMore, fetchNextPage } = useCursorFetchMore({
-    loading,
+    loading: loading || refreshing,
     networkStatus,
     hasNextPage,
     endCursor,
@@ -197,7 +204,7 @@ export const useListContentVersionsQuery = (
   contentId: string | undefined,
   options?: TypedQueryOptions<ListContentVersionsQuery, ListContentVersionsQueryVariables>,
 ) => {
-  const { data, loading, networkStatus, fetchMore, refetch } = useTypedQuery(
+  const { data, loading, refreshing, networkStatus, fetchMore, refetch } = useTypedQuery(
     ListContentVersionsDocument,
     {
       variables: { contentId: contentId!, first: VERSION_LIST_PAGE_SIZE },
@@ -224,7 +231,7 @@ export const useListContentVersionsQuery = (
   // second cache-and-network consumer of the same cell would collapse
   // the accumulator to page 1.
   const { loadingMore, fetchNextPage } = useCursorFetchMore({
-    loading,
+    loading: loading || refreshing,
     networkStatus,
     hasNextPage,
     endCursor,
@@ -256,7 +263,7 @@ export const useListContentPublishRecordsQuery = (
     ListContentPublishRecordsQueryVariables
   >,
 ) => {
-  const { data, loading, networkStatus, fetchMore, refetch } = useTypedQuery(
+  const { data, loading, refreshing, networkStatus, fetchMore, refetch } = useTypedQuery(
     ListContentPublishRecordsDocument,
     {
       variables: { contentId: contentId!, environmentId, first: PUBLISH_HISTORY_PAGE_SIZE },
@@ -276,7 +283,7 @@ export const useListContentPublishRecordsQuery = (
   const totalCount = connection?.totalCount ?? 0;
 
   const { loadingMore, fetchNextPage } = useCursorFetchMore({
-    loading,
+    loading: loading || refreshing,
     networkStatus,
     hasNextPage,
     endCursor,
