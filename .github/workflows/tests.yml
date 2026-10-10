@@ -128,6 +128,10 @@ jobs:
       - name: Type check (e2e)
         if: env.E2E == 'true'
         run: pnpm --filter @usertour/e2e typecheck
+      - name: Type check (web)
+        # A schema or document change is a dashboard compile error (ADR 0021).
+        if: env.WEB == 'true'
+        run: pnpm --filter @usertour/web exec tsc --noEmit -p tsconfig.json
       - name: Unit tests (helpers)
         if: env.SHARED == 'true'
         run: pnpm --filter @usertour/helpers test
@@ -137,6 +141,9 @@ jobs:
       - name: Unit tests (web)
         if: env.WEB == 'true'
         run: pnpm --filter @usertour/web test
+      - name: Unit tests (hooks)
+        if: env.WEB == 'true'
+        run: pnpm --filter @usertour/hooks test
 
   # The server's end-to-end suites against a real Postgres and Redis: the
   # HTTP API, GraphQL, the socket protocol, the rules conformance.
