@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -36,8 +37,11 @@ export const WebhookRowActions = (props: WebhookRowActionsProps) => {
       } else {
         toast({ variant: 'destructive', title: t('settings.webhooks.deleteFailure') });
       }
-    } catch {
-      toast({ variant: 'destructive', title: t('settings.webhooks.deleteFailure') });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: serverErrorMessage(error) ?? t('settings.webhooks.deleteFailure'),
+      });
     }
   };
 

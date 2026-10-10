@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { EyeOpenIcon } from '@radix-ui/react-icons';
@@ -45,8 +46,11 @@ export const ApiRowActions = (props: ApiRowActionsProps) => {
       } else {
         toast({ variant: 'destructive', title: t('settings.api.deleteFailure') });
       }
-    } catch {
-      toast({ variant: 'destructive', title: t('settings.api.deleteFailure') });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: serverErrorMessage(error) ?? t('settings.api.deleteFailure'),
+      });
     }
   };
 

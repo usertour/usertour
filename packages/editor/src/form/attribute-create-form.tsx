@@ -33,6 +33,7 @@ import {
   isBucketingDataType,
   isResourceAlreadyExistsError,
   isValidRandomMax,
+  serverErrorMessage,
 } from '@usertour/helpers';
 import { CreateAttributeMutationVariables, useCreateAttributeMutation } from '@usertour/hooks';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
@@ -254,7 +255,7 @@ export const AttributeCreateForm = ({
         return;
       }
       console.error('Create attribute failed:', error);
-      showError(t('settings.attributes.form.createFailed'));
+      showError(serverErrorMessage(error) ?? t('settings.attributes.form.createFailed'));
     } finally {
       setIsLoading(false);
     }

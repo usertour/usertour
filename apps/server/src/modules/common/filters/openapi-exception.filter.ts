@@ -17,6 +17,7 @@ import {
   MissingApiKeyError,
 } from '../errors/errors';
 import { resolveMcpOrigin } from '../utils/resolve-origin.util';
+import { resolveMessageLocale } from '../utils/request-locale.util';
 
 /**
  * Domain BaseErrors (thrown below the API layer, no HTTP status of their own)
@@ -96,7 +97,7 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
     else if (exception instanceof BaseError && DOMAIN_ERROR_STATUS[exception.code]) {
       status = DOMAIN_ERROR_STATUS[exception.code];
       errorCode = exception.code;
-      message = exception.getMessage((request.headers['accept-language'] as string) ?? 'en');
+      message = exception.getMessage(resolveMessageLocale(request.headers['accept-language']));
     }
     // Handle other errors
     else {
@@ -148,7 +149,6 @@ export class OpenAPIExceptionFilter implements ExceptionFilter {
 
   // Get error message with language support
   private getErrorMessage(error: OpenAPIError, request: Request): string {
-    const acceptLanguage = request.headers['accept-language'];
-    return error.getMessage(acceptLanguage);
+    return error.getMessage(resolveMessageLocale(request.headers['accept-language']));
   }
 }

@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import { useAppContext } from '@/contexts/app-context';
 import {
   UserAvatar,
@@ -95,7 +96,7 @@ export const AdminUserNav = () => {
       } catch (error) {
         toast({
           variant: 'destructive',
-          title: t('userNav.switchProjectFailed'),
+          title: serverErrorMessage(error) ?? t('userNav.switchProjectFailed'),
         });
         console.error(error);
       }

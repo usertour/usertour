@@ -1,4 +1,4 @@
-import { isResourceAlreadyExistsError, serverErrorCode } from '../error';
+import { isResourceAlreadyExistsError, serverErrorCode, serverErrorMessage } from '../error';
 
 const failedWith = (code: unknown) => ({ graphQLErrors: [{ extensions: { code } }] });
 
@@ -13,6 +13,26 @@ describe('serverErrorCode', () => {
     expect(serverErrorCode(null)).toBeUndefined();
     expect(serverErrorCode({ graphQLErrors: [] })).toBeUndefined();
     expect(serverErrorCode(failedWith(48))).toBeUndefined();
+  });
+});
+
+describe('serverErrorMessage', () => {
+  test('is the server sentence when the error carries a catalogue code', () => {
+    const error = {
+      graphQLErrors: [{ message: '该标识的资源已存在', extensions: { code: 'E0048' } }],
+    };
+    expect(serverErrorMessage(error)).toBe('该标识的资源已存在');
+  });
+
+  test('is undefined for a transport code, a missing code, or no GraphQL error', () => {
+    const transport = {
+      graphQLErrors: [
+        { message: 'Internal Server Error', extensions: { code: 'Internal Server Error' } },
+      ],
+    };
+    expect(serverErrorMessage(transport)).toBeUndefined();
+    expect(serverErrorMessage({ graphQLErrors: [{ message: 'x' }] })).toBeUndefined();
+    expect(serverErrorMessage(new Error('network'))).toBeUndefined();
   });
 });
 

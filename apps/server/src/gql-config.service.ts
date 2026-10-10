@@ -6,6 +6,7 @@ import { STATUS_CODES } from 'node:http';
 import { GraphQLError } from 'graphql';
 import { BaseError } from '@/modules/common/errors/base-error';
 import { ValidationError } from '@/modules/common/errors/errors';
+import { requestLocale } from '@/modules/common/utils/request-locale.util';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
@@ -50,7 +51,7 @@ export class GqlConfigService implements GqlOptionsFactory {
         // Handle BaseError instances
         if (isGraphQLError && originalError instanceof BaseError) {
           return {
-            message: originalError.getMessage('en'),
+            message: originalError.getMessage(requestLocale.get()),
             extensions: {
               code: originalError.code,
               // Machine-readable context the client acts on (optional).
@@ -79,7 +80,7 @@ export class GqlConfigService implements GqlOptionsFactory {
           const validationError = new ValidationError(message);
 
           return {
-            message: validationError.getMessage('en'),
+            message: validationError.getMessage(requestLocale.get()),
             extensions: {
               code: validationError.code,
             },

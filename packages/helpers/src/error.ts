@@ -276,17 +276,48 @@ export function getErrorMessage(error: unknown) {
   return toErrorWithMessage(error).message;
 }
 
+interface ServerGraphQLError {
+  message?: unknown;
+  extensions?: { code?: unknown };
+}
+
+function firstGraphQLError(error: unknown): ServerGraphQLError | undefined {
+  return (error as { graphQLErrors?: ServerGraphQLError[] } | null | undefined)?.graphQLErrors?.[0];
+}
+
+/** Catalogue codes look like E0048; a transport code ("Internal Server Error") does not. */
+const CATALOGUE_CODE = /^E\d{4}$/;
+
 /**
  * The code the server's error catalogue attached to a failed GraphQL
  * operation, when it attached one. A network failure or a thrown string
  * carries none.
  */
 export function serverErrorCode(error: unknown): string | undefined {
-  const graphQLErrors = (
-    error as { graphQLErrors?: { extensions?: { code?: unknown } }[] } | null | undefined
-  )?.graphQLErrors;
-  const code = graphQLErrors?.[0]?.extensions?.code;
+  const code = firstGraphQLError(error)?.extensions?.code;
   return typeof code === 'string' ? code : undefined;
+}
+
+/**
+ * What the server said about a failed operation, in the language the
+ * request asked for — present only when the error came through the
+ * catalogue. A network failure or a 500 has nothing worth showing;
+ * callers fall back to their own copy.
+ */
+export function serverErrorMessage(error: unknown): string | undefined {
+  const first = firstGraphQLError(error);
+  if (!first) {
+    return undefined;
+  }
+  const { message, extensions } = first;
+  if (
+    typeof extensions?.code !== 'string' ||
+    !CATALOGUE_CODE.test(extensions.code) ||
+    typeof message !== 'string'
+  ) {
+    return undefined;
+  }
+  return message;
 }
 
 const RESOURCE_ALREADY_EXISTS = 'E0048';

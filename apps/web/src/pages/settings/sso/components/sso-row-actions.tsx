@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Delete2Icon, RiEditLine, RiFileCopyLine } from '@usertour/icons';
@@ -35,8 +36,11 @@ export const SsoRowActions = (props: SsoRowActionsProps) => {
       } else {
         toast({ variant: 'destructive', title: t('settings.sso.deleteFailure') });
       }
-    } catch {
-      toast({ variant: 'destructive', title: t('settings.sso.deleteFailure') });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: serverErrorMessage(error) ?? t('settings.sso.deleteFailure'),
+      });
     }
   };
 
