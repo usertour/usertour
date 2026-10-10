@@ -62,7 +62,13 @@ const useActivityFeedQuery = (
   // button (`refetch`) is the no-cursor base fetch path — the
   // typePolicy replaces the accumulator with the fresh page 1 instead
   // of leaving stale events on top.
-  const { loadingMore, fetchNextPage: loadMore } = useCursorFetchMore({
+  // The feed loads more from a button, not a sentinel: every click is the
+  // user asking, failed page or not, so it goes through `retryNextPage`.
+  const {
+    loadingMore,
+    pageFailed,
+    retryNextPage: loadMore,
+  } = useCursorFetchMore({
     loading: loading || refreshing,
     networkStatus,
     hasNextPage,
@@ -81,6 +87,7 @@ const useActivityFeedQuery = (
     // In-flight `loading` (a reload keeps the rows); a fetch-more is `loadingMore` instead.
     loading: (loading || refreshing) && !loadingMore,
     loadingMore,
+    pageFailed,
     totalCount,
     hasNextPage,
     refetch,

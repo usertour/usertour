@@ -87,7 +87,7 @@ export const useListAuditLogsQuery = (
   const endCursor = connection?.pageInfo?.endCursor ?? null;
   const totalCount = connection?.totalCount ?? 0;
 
-  const { loadingMore, fetchNextPage } = useCursorFetchMore({
+  const { loadingMore, pageFailed, fetchNextPage, retryNextPage } = useCursorFetchMore({
     loading: loading || refreshing,
     networkStatus,
     hasNextPage,
@@ -110,7 +110,9 @@ export const useListAuditLogsQuery = (
     // first load, like version history).
     loading: loading && !loadingMore,
     loadingMore,
+    pageFailed,
     fetchNextPage,
+    retryNextPage,
     refetch,
     // Surfaced so the page can render a load-error state — a swallowed server
     // rejection (e.g. an entitlement drop the cached config hasn't caught up

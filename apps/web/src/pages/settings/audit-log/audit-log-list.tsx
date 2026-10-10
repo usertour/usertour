@@ -19,6 +19,7 @@ import {
   useGetProjectConfigQuery,
   useListAuditLogsQuery,
 } from '@usertour/hooks';
+import { LoadMoreFailed } from '@/components/load-more-failed';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
@@ -82,13 +83,21 @@ export const AuditLogList = () => {
     [filters],
   );
 
-  const { auditLogs, loading, loadingMore, hasNextPage, fetchNextPage, error } =
-    useListAuditLogsQuery(project?.id, auditFilter, {
-      ...SHARED_CACHE_QUERY_OPTIONS,
-      skip: !entitled,
-      // The empty-state slot below carries the failure; no toast on top.
-      notifyOnError: false,
-    });
+  const {
+    auditLogs,
+    loading,
+    loadingMore,
+    pageFailed,
+    hasNextPage,
+    fetchNextPage,
+    retryNextPage,
+    error,
+  } = useListAuditLogsQuery(project?.id, auditFilter, {
+    ...SHARED_CACHE_QUERY_OPTIONS,
+    skip: !entitled,
+    // The empty-state slot below carries the failure; no toast on top.
+    notifyOnError: false,
+  });
   const { t } = useTranslation();
   // `selected` is retained after close so the dialog animates out with its
   // content still mounted; `detailOpen` alone drives visibility.
@@ -110,7 +119,7 @@ export const AuditLogList = () => {
   const scrollRoot = useScrollRoot();
   const [sentryRef, { rootRef }] = useInfiniteScroll({
     loading: loading || loadingMore,
-    hasNextPage,
+    hasNextPage: hasNextPage && !pageFailed,
     onLoadMore: fetchNextPage,
     rootMargin: '0px 0px 100px 0px',
   });
@@ -209,6 +218,7 @@ export const AuditLogList = () => {
         footer={
           <div ref={sentryRef} className="flex h-10 items-center justify-center">
             {loadingMore && <SpinnerIcon className="h-5 w-5 animate-spin text-primary" />}
+            {pageFailed && <LoadMoreFailed onRetry={retryNextPage} />}
             {!hasNextPage &&
               auditLogs.length > 0 &&
               (retentionDays > 0 ? (

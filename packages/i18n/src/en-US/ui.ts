@@ -2111,6 +2111,7 @@ const translations = {
   common: {
     appTitle: 'Usertour App',
     selectPlaceholder: 'Select…',
+    loadMoreFailed: "Couldn't load more.",
     table: {
       selectAll: 'Select all',
       selectRow: 'Select row',

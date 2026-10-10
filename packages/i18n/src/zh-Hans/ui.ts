@@ -2006,6 +2006,7 @@ const translations = {
   common: {
     appTitle: 'Usertour App',
     selectPlaceholder: '请选择…',
+    loadMoreFailed: '加载更多失败。',
     table: {
       selectAll: '全选',
       selectRow: '选择此行',

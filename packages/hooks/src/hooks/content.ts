@@ -176,7 +176,7 @@ export const useListContentsQuery = ({
   // crucially, mutations' `refetchQueries: ['queryContent']` (create /
   // duplicate / publish / unpublish) replace the accumulator with a
   // fresh page 1 instead of leaving it stale.
-  const { loadingMore, fetchNextPage } = useCursorFetchMore({
+  const { loadingMore, pageFailed, fetchNextPage, retryNextPage } = useCursorFetchMore({
     loading: loading || refreshing,
     networkStatus,
     hasNextPage,
@@ -191,7 +191,9 @@ export const useListContentsQuery = ({
     hasNextPage,
     loading: loading && !loadingMore,
     loadingMore,
+    pageFailed,
     fetchNextPage,
+    retryNextPage,
     refetch,
   };
 };
@@ -230,7 +232,7 @@ export const useListContentVersionsQuery = (
   // typePolicy site: a base refetch (no `after`) replaces, so adding a
   // second cache-and-network consumer of the same cell would collapse
   // the accumulator to page 1.
-  const { loadingMore, fetchNextPage } = useCursorFetchMore({
+  const { loadingMore, pageFailed, fetchNextPage, retryNextPage } = useCursorFetchMore({
     loading: loading || refreshing,
     networkStatus,
     hasNextPage,
@@ -245,7 +247,9 @@ export const useListContentVersionsQuery = (
     hasNextPage,
     loading: loading && !loadingMore,
     loadingMore,
+    pageFailed,
     fetchNextPage,
+    retryNextPage,
     refetch,
   };
 };
@@ -282,7 +286,7 @@ export const useListContentPublishRecordsQuery = (
   const endCursor = connection?.pageInfo?.endCursor ?? null;
   const totalCount = connection?.totalCount ?? 0;
 
-  const { loadingMore, fetchNextPage } = useCursorFetchMore({
+  const { loadingMore, pageFailed, fetchNextPage, retryNextPage } = useCursorFetchMore({
     loading: loading || refreshing,
     networkStatus,
     hasNextPage,
@@ -302,7 +306,9 @@ export const useListContentPublishRecordsQuery = (
     hasNextPage,
     loading: loading && !loadingMore,
     loadingMore,
+    pageFailed,
     fetchNextPage,
+    retryNextPage,
     refetch,
   };
 };
