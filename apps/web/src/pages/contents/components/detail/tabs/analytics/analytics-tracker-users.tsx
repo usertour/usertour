@@ -23,9 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour/ui';
-import { useApolloClient } from '@apollo/client';
+import { type ApolloQueryResult, useApolloClient } from '@apollo/client';
 
-import { useQueryTrackerUsersQuery } from '@usertour/hooks';
+import { type TrackerUser, type TrackerUserEdge, useQueryTrackerUsersQuery } from '@usertour/hooks';
 import { ContentDataType } from '@usertour/types';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { DownloadIcon } from 'lucide-react';
@@ -33,25 +33,11 @@ import { endOfDay, startOfDay, formatDistanceToNow } from 'date-fns';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { QueryTrackerUsersDocument } from '@usertour/gql';
-
-interface TrackerUserNode {
-  id: string;
-  firstTrackedAt: string;
-  lastTrackedAt: string;
-  eventsCount: number;
-  companiesCount?: number;
-  bizUser: {
-    id: string;
-    externalId: string;
-    data: Record<string, any>;
-  };
-  bizCompany?: {
-    id: string;
-    externalId: string;
-    data: Record<string, any>;
-  } | null;
-}
+import {
+  QueryTrackerUsersDocument,
+  type QueryTrackerUsersQuery,
+  type QueryTrackerUsersQueryVariables,
+} from '@usertour/gql';
 
 const PAGE_SIZES = [10, 20, 30, 40, 50];
 
@@ -134,7 +120,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
     options: { skip: !dateRange?.from || !dateRange?.to || !environment?.id },
   });
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
-  const users = edges.map((e: { node: TrackerUserNode }) => e.node);
+  const users = edges.map((edge) => edge.node);
 
   const exportQuery = {
     environmentId: environment?.id ?? '',
@@ -163,12 +149,15 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
         description: t('contents.analytics.export.startingTrackerDescription'),
       });
 
-      const allUsers: TrackerUserNode[] = [];
+      const allUsers: TrackerUser[] = [];
       let after: string | null = null;
       const chunkSize = 200;
 
       while (true) {
-        const result: any = await client.query({
+        const result: ApolloQueryResult<QueryTrackerUsersQuery> = await client.query<
+          QueryTrackerUsersQuery,
+          QueryTrackerUsersQueryVariables
+        >({
           query: QueryTrackerUsersDocument,
           variables: {
             first: chunkSize,
@@ -179,11 +168,9 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
           fetchPolicy: 'network-only',
         });
 
-        const connection: any = result.data?.queryTrackerUsers;
-        const fetchedEdges = connection?.edges ?? [];
-        const fetchedUsers = fetchedEdges.map(
-          (edge: { node: TrackerUserNode }) => edge.node,
-        ) as TrackerUserNode[];
+        const connection = result.data?.queryTrackerUsers;
+        const fetchedEdges = (connection?.edges ?? []) as TrackerUserEdge[];
+        const fetchedUsers = fetchedEdges.map((edge) => edge.node);
         allUsers.push(...fetchedUsers);
 
         const nextPage = connection?.pageInfo?.hasNextPage;

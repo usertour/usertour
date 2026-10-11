@@ -1,22 +1,26 @@
+fragment IntegrationFields on Integration {
+  id
+  createdAt
+  updatedAt
+  environmentId
+  provider
+  keyTail
+  config
+  enabled
+  consecutiveFailures
+  cooldownUntil
+  autoDisabledAt
+  inboundEnabled
+  inboundConfig
+  inboundUrl
+  connected
+  remoteAccountId
+  remoteAccountLabel
+}
+
 query ListIntegrations($environmentId: String!) {
   listIntegrations(environmentId: $environmentId) {
-    id
-    createdAt
-    updatedAt
-    environmentId
-    provider
-    keyTail
-    config
-    enabled
-    consecutiveFailures
-    cooldownUntil
-    autoDisabledAt
-    inboundEnabled
-    inboundConfig
-    inboundUrl
-    connected
-    remoteAccountId
-    remoteAccountLabel
+    ...IntegrationFields
   }
 }
 
@@ -53,23 +57,7 @@ query QueryIntegrationMessages($integrationId: String!, $first: Int, $after: Str
 
 mutation UpsertIntegration($data: UpsertIntegrationInput!) {
   upsertIntegration(data: $data) {
-    id
-    createdAt
-    updatedAt
-    environmentId
-    provider
-    keyTail
-    config
-    enabled
-    consecutiveFailures
-    cooldownUntil
-    autoDisabledAt
-    inboundEnabled
-    inboundConfig
-    inboundUrl
-    connected
-    remoteAccountId
-    remoteAccountLabel
+    ...IntegrationFields
   }
 }
 

@@ -1,9 +1,13 @@
+fragment SigningSecretFields on EnvironmentSigningSecret {
+  id
+  secret
+  createdAt
+  lastUsedAt
+}
+
 query ListSigningSecrets($environmentId: String!) {
   listSigningSecrets(environmentId: $environmentId) {
-    id
-    secret
-    createdAt
-    lastUsedAt
+    ...SigningSecretFields
   }
 }
 
@@ -13,10 +17,7 @@ query GetSigningSecret($environmentId: String!, $signingSecretId: String!) {
 
 mutation CreateSigningSecret($environmentId: String!) {
   createSigningSecret(environmentId: $environmentId) {
-    id
-    secret
-    createdAt
-    lastUsedAt
+    ...SigningSecretFields
   }
 }
 

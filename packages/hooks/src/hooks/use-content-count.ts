@@ -20,7 +20,7 @@ interface UseContentCountOptions {
 }
 
 // Default orderBy required by the GraphQL query
-const DEFAULT_ORDER_BY = { field: 'createdAt', direction: 'desc' };
+const DEFAULT_ORDER_BY: ContentOrder = { field: 'createdAt', direction: 'desc' };
 
 /**
  * Lightweight hook to get content count without fetching full data.
@@ -39,7 +39,7 @@ export const useContentCount = ({
       first: 1, // Minimal fetch, we only need totalCount
       // effectiveSkip guards environmentId.
       query: { environmentId: environmentId!, type, published },
-      orderBy: DEFAULT_ORDER_BY as ContentOrder,
+      orderBy: DEFAULT_ORDER_BY,
     },
     skip: effectiveSkip,
     // Use cache-and-network so draft count is always fresh when e.g. in Published view

@@ -3,6 +3,7 @@ import { useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 import {
   AcceptInviteDocument,
+  type AcceptInviteMutationVariables,
   ConfirmTwoFactorSetupDocument,
   ConfirmTwoFactorSetupWithChallengeDocument,
   CreateMagicLinkDocument,
@@ -10,6 +11,7 @@ import {
   DisableTwoFactorDocument,
   GetInviteDocument,
   LoginDocument,
+  type LoginMutationVariables,
   LogoutDocument,
   MeDocument,
   MeQuery,
@@ -19,8 +21,11 @@ import {
   ResetUserPasswordByCodeDocument,
   ResetUserPasswordDocument,
   SetupSystemAdminDocument as setupSystemAdminMutation,
+  type SetupSystemAdminMutationVariables,
   SignUpDocument,
+  type SignUpMutationVariables,
   StartTwoFactorSetupDocument,
+  type StartTwoFactorSetupMutation,
   StartTwoFactorSetupWithChallengeDocument,
   VerifyTwoFactorDocument,
 } from '@usertour/gql';
@@ -59,18 +64,14 @@ export const useCreateOwnedProjectMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateOwnedProjectDocument);
   const invoke = async (name: string) => {
     const response = await mutation({ variables: { name } });
-    return response.data?.createOwnedProject as { id: string; name: string } | undefined;
+    return response.data?.createOwnedProject;
   };
   return { invoke, loading, error };
 };
 
 // Login / sign-up ------------------------------------------------------------
 
-export type LoginMutationVariables = {
-  email: string;
-  password: string;
-  inviteCode?: string;
-};
+export type { LoginMutationVariables };
 
 export const useLoginMutation = () => {
   const [mutation, { loading, error }] = useMutation(LoginDocument);
@@ -81,12 +82,7 @@ export const useLoginMutation = () => {
   return { invoke, loading, error };
 };
 
-export type SignupMutationVariables = {
-  code: string;
-  password: string;
-  userName: string;
-  companyName: string;
-};
+export type SignupMutationVariables = SignUpMutationVariables;
 
 export const useSignupMutation = () => {
   const [mutation, { loading, error }] = useMutation(SignUpDocument);
@@ -97,11 +93,7 @@ export const useSignupMutation = () => {
   return { invoke, loading, error };
 };
 
-export type AcceptInviteMutationVariables = {
-  code: string;
-  password: string;
-  userName: string;
-};
+export type { AcceptInviteMutationVariables };
 
 export const useAcceptInviteMutation = () => {
   const [mutation, { loading, error }] = useMutation(AcceptInviteDocument);
@@ -116,7 +108,7 @@ export const useCreateMagicLinkMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateMagicLinkDocument);
   const invoke = async (email: string) => {
     const response = await mutation({ variables: { email } });
-    return response.data?.createMagicLink as { id: string; email: string } | undefined;
+    return response.data?.createMagicLink;
   };
   return { invoke, loading, error };
 };
@@ -125,7 +117,7 @@ export const useResendMagicLinkMutation = () => {
   const [mutation, { loading, error }] = useMutation(ResendMagicLinkDocument);
   const invoke = async (id: string) => {
     const response = await mutation({ variables: { id } });
-    return response.data?.resendMagicLink as { id: string; email: string } | undefined;
+    return response.data?.resendMagicLink;
   };
   return { invoke, loading, error };
 };
@@ -141,11 +133,7 @@ export const useGetInviteQuery = (inviteId: string) => {
 
 // First-run system admin setup -----------------------------------------------
 
-export type SetupSystemAdminMutationVariables = {
-  name: string;
-  email: string;
-  password: string;
-};
+export type { SetupSystemAdminMutationVariables };
 
 export const useSetupSystemAdminMutation = () => {
   const [mutation, { loading, error }] = useMutation(setupSystemAdminMutation);
@@ -162,7 +150,7 @@ export const useResetUserPasswordMutation = () => {
   const [mutation, { loading, error }] = useMutation(ResetUserPasswordDocument);
   const invoke = async (email: string) => {
     const response = await mutation({ variables: { email } });
-    return response.data?.resetUserPassword as { success: boolean } | undefined;
+    return response.data?.resetUserPassword;
   };
   return { invoke, loading, error };
 };
@@ -178,11 +166,7 @@ export const useResetUserPasswordByCodeMutation = () => {
 
 // Two-factor authentication --------------------------------------------------
 
-export type TwoFactorSetupPayload = {
-  secret: string;
-  otpauthUri: string;
-  qrDataUri: string;
-};
+export type TwoFactorSetupPayload = StartTwoFactorSetupMutation['startTwoFactorSetup'];
 
 export const useStartTwoFactorSetupMutation = () => {
   const [mutation, { loading, error }] = useMutation(StartTwoFactorSetupDocument);

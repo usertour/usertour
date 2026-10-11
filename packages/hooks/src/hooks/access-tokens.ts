@@ -1,6 +1,7 @@
 import { NetworkStatus, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 import {
+  type AccessTokenFieldsFragment,
   CreateAccessTokenDocument,
   DeleteAccessTokenDocument,
   GetAccessTokenDocument,
@@ -14,12 +15,7 @@ import {
   type ProjectHasEnvironmentAccessTokensQueryVariables,
 } from '@usertour/gql';
 
-export interface AccessToken {
-  id: string;
-  name: string;
-  accessToken: string;
-  createdAt: string;
-}
+export type AccessToken = AccessTokenFieldsFragment;
 
 export const useCreateAccessTokenMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateAccessTokenDocument, {
@@ -49,7 +45,7 @@ export const useListAccessTokensQuery = (
   });
 
   const isRefetching = networkStatus === NetworkStatus.refetch;
-  const accessTokens = data?.listAccessTokens as AccessToken[] | undefined;
+  const accessTokens = data?.listAccessTokens;
   return { accessTokens, loading, error, refetch, isRefetching };
 };
 
@@ -76,7 +72,7 @@ export const useProjectHasEnvironmentAccessTokensQuery = (
     },
   );
 
-  const hasEnvironmentAccessTokens = data?.projectHasEnvironmentAccessTokens as boolean | undefined;
+  const hasEnvironmentAccessTokens = data?.projectHasEnvironmentAccessTokens;
   return { hasEnvironmentAccessTokens, loading, error, refetch };
 };
 

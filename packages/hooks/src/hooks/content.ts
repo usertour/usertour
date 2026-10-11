@@ -16,6 +16,7 @@ import {
   CreateContentDocument,
   type CreateContentMutationVariables,
   DuplicateContentDocument,
+  type DuplicateContentMutationVariables,
   GetContentDocument,
   type GetContentQuery,
   type GetContentQueryVariables,
@@ -315,14 +316,7 @@ export const useListContentPublishRecordsQuery = (
 
 // ---- mutations ----
 
-export interface CreateContentInput {
-  type: string;
-  name: string;
-  environmentId: string;
-  buildUrl?: string;
-  data?: unknown;
-  steps?: unknown[];
-}
+export type CreateContentInput = CreateContentMutationVariables;
 
 export const useCreateContentMutation = () => {
   // Refresh the list so the new row appears — Apollo can't materialise
@@ -331,16 +325,13 @@ export const useCreateContentMutation = () => {
     refetchQueries: ['queryContent'],
   });
   const invoke = async (input: CreateContentInput): Promise<Content | undefined> => {
-    const response = await mutation({ variables: input as CreateContentMutationVariables });
+    const response = await mutation({ variables: input });
     return response.data?.createContent as Content | undefined;
   };
   return { invoke, loading, error };
 };
 
-export interface DuplicateContentInput {
-  contentId: string;
-  name: string;
-}
+export type DuplicateContentInput = DuplicateContentMutationVariables;
 
 export const useDuplicateContentMutation = () => {
   const [mutation, { loading, error }] = useMutation(DuplicateContentDocument, {

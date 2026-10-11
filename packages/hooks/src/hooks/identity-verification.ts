@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { NetworkStatus, useLazyQuery, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
+import type { Refined } from './refined';
 import {
   CreateSigningSecretDocument,
   GetIdentityVerificationStatsDocument,
@@ -12,24 +13,17 @@ import {
   type ListSigningSecretsQueryVariables,
   RevokeSigningSecretDocument,
   SetRequireIdentityVerificationDocument,
+  type SigningSecretFieldsFragment,
   ValidateIdentityTokenDocument,
+  type ValidateIdentityTokenQuery,
 } from '@usertour/gql';
 
-export interface SigningSecret {
-  id: string;
-  /** Masked in list responses; full value only from create/get. */
-  secret: string;
-  createdAt: string;
-  lastUsedAt?: string | null;
-}
+/** `secret` is masked in list responses; the full value only comes from create/get. */
+export type SigningSecret = SigningSecretFieldsFragment;
 
-export interface IdentityVerificationStats {
-  subject: 'user' | 'company';
-  valid: number;
-  invalid: number;
-  missing: number;
-  anonymous: number;
-}
+/** Counters for one subject: 'user' or 'company'. */
+export type IdentityVerificationStats =
+  GetIdentityVerificationStatsQuery['getIdentityVerificationStats'][number];
 
 export const useListSigningSecretsQuery = (
   environmentId: string | undefined,
@@ -46,7 +40,7 @@ export const useListSigningSecretsQuery = (
   );
 
   const isRefetching = networkStatus === NetworkStatus.refetch;
-  const signingSecrets = data?.listSigningSecrets as SigningSecret[] | undefined;
+  const signingSecrets = data?.listSigningSecrets;
   return { signingSecrets, loading, error, refetch, isRefetching };
 };
 
@@ -62,7 +56,7 @@ export const useCreateSigningSecretMutation = () => {
   const invoke = useCallback(
     async (environmentId: string): Promise<SigningSecret | null> => {
       const response = await mutation({ variables: { environmentId } });
-      return (response.data?.createSigningSecret as SigningSecret | undefined) ?? null;
+      return response.data?.createSigningSecret ?? null;
     },
     [mutation],
   );
@@ -98,7 +92,7 @@ export const useGetSigningSecretLazyQuery = () => {
   const invoke = useCallback(
     async (environmentId: string, signingSecretId: string): Promise<string | null> => {
       const response = await query({ variables: { environmentId, signingSecretId } });
-      return (response.data?.getSigningSecret as string | undefined) ?? null;
+      return response.data?.getSigningSecret ?? null;
     },
     [query],
   );
@@ -119,20 +113,21 @@ export const useSetRequireIdentityVerificationMutation = () => {
   return { invoke, loading, error };
 };
 
-export interface IdentityTokenDiagnosis {
-  status:
-    | 'valid'
-    | 'expired'
-    | 'not_yet_valid'
-    | 'invalid_signature'
-    | 'wrong_algorithm'
-    | 'malformed'
-    | 'missing_subject'
-    | 'no_active_secret';
-  subject?: string | null;
-  companyId?: string | null;
-  expiresAt?: string | null;
-}
+export type IdentityTokenStatus =
+  | 'valid'
+  | 'expired'
+  | 'not_yet_valid'
+  | 'invalid_signature'
+  | 'wrong_algorithm'
+  | 'malformed'
+  | 'missing_subject'
+  | 'no_active_secret';
+
+/** `status` is a String on the wire; the server keeps it to the set above. */
+export type IdentityTokenDiagnosis = Refined<
+  ValidateIdentityTokenQuery['validateIdentityToken'],
+  { status: IdentityTokenStatus }
+>;
 
 export const useValidateIdentityTokenLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(ValidateIdentityTokenDocument, {
@@ -161,6 +156,6 @@ export const useGetIdentityVerificationStatsQuery = (
     skip: !environmentId,
     ...options,
   });
-  const stats = data?.getIdentityVerificationStats as IdentityVerificationStats[] | undefined;
+  const stats = data?.getIdentityVerificationStats;
   return { stats, loading, error, refetch };
 };

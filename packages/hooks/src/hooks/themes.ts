@@ -2,30 +2,27 @@ import { NetworkStatus, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
 import type { Theme, ThemeTypesSetting, ThemeVariation } from '@usertour/types';
+import type { Refined } from './refined';
 import {
   CopyThemeDocument,
   CreateThemeDocument,
+  type CreateThemeMutationVariables,
   DeleteThemeDocument,
   ListThemesDocument,
   type ListThemesQuery,
   type ListThemesQueryVariables,
   SetDefaultThemeDocument,
   UpdateThemeDocument,
+  type UpdateThemeMutationVariables,
 } from '@usertour/gql';
 
-export interface CreateThemeInput {
-  name: string;
-  projectId: string;
-  settings: unknown;
-  isDefault: boolean;
-}
+export type CreateThemeInput = CreateThemeMutationVariables;
 
-export interface UpdateThemeInput {
-  id: string;
-  name: string;
-  settings: ThemeTypesSetting;
-  variations: ThemeVariation[];
-}
+/** `settings` and `variations` travel as JSON; the builder owns their shape. */
+export type UpdateThemeInput = Refined<
+  UpdateThemeMutationVariables,
+  { settings: ThemeTypesSetting; variations: ThemeVariation[] }
+>;
 
 export const useCreateThemeMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateThemeDocument, {

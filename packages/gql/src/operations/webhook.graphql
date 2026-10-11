@@ -1,33 +1,27 @@
+fragment WebhookFields on Webhook {
+  id
+  createdAt
+  updatedAt
+  environmentId
+  url
+  topics
+  enabled
+  description
+  consecutiveFailures
+  cooldownUntil
+  autoDisabledAt
+}
+
 query ListWebhooks($environmentId: String!) {
   listWebhooks(environmentId: $environmentId) {
-    id
-    createdAt
-    updatedAt
-    environmentId
-    url
-    topics
-    enabled
-    description
-    consecutiveFailures
-    cooldownUntil
-    autoDisabledAt
+    ...WebhookFields
   }
 }
 
 query GetWebhook($id: String!) {
   getWebhook(id: $id) {
-    id
-    createdAt
-    updatedAt
-    environmentId
-    url
-    topics
-    enabled
+    ...WebhookFields
     secret
-    description
-    consecutiveFailures
-    cooldownUntil
-    autoDisabledAt
   }
 }
 
@@ -64,30 +58,13 @@ query QueryWebhookMessages($webhookId: String!, $first: Int, $after: String) {
 
 mutation CreateWebhook($data: CreateWebhookInput!) {
   createWebhook(data: $data) {
-    id
-    createdAt
-    updatedAt
-    environmentId
-    url
-    topics
-    enabled
-    description
+    ...WebhookFields
   }
 }
 
 mutation UpdateWebhook($data: UpdateWebhookInput!) {
   updateWebhook(data: $data) {
-    id
-    createdAt
-    updatedAt
-    environmentId
-    url
-    topics
-    enabled
-    description
-    consecutiveFailures
-    cooldownUntil
-    autoDisabledAt
+    ...WebhookFields
   }
 }
 

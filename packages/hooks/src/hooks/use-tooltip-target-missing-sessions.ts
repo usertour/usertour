@@ -1,40 +1,41 @@
 import { useCallback } from 'react';
 import { useLazyQuery } from '@apollo/client';
 
-import type { Pagination, BizSession } from '@usertour/types';
-import { type AnalyticsOrder, QueryTooltipTargetMissingSessionsDocument } from '@usertour/gql';
+import type { Pagination } from '@usertour/types';
+import type { Refined } from './refined';
+import {
+  type AnalyticsOrder,
+  QueryTooltipTargetMissingSessionsDocument,
+  type QueryTooltipTargetMissingSessionsQuery,
+  type TooltipTargetMissingQuery,
+} from '@usertour/gql';
 
-export interface TooltipTargetMissingQuery {
-  environmentId: string;
-  contentId: string;
-  startDate: string;
-  endDate: string;
-  timezone: string;
-  stepCvid: string;
-}
+export type { TooltipTargetMissingQuery };
 
-export interface StepAnalytics {
-  uniqueViews: number;
-  totalViews: number;
-  uniqueCompletions: number;
-  totalCompletions: number;
-  uniqueTooltipTargetMissingCount: number;
-  tooltipTargetMissingCount: number;
-}
+type ResponseWire = QueryTooltipTargetMissingSessionsQuery['queryTooltipTargetMissingSessions'];
+type SessionWire = NonNullable<ResponseWire['sessions']['edges']>[number]['node'];
+type EventWire = NonNullable<SessionWire['bizEvent']>[number];
 
-export interface TooltipTargetMissingResponse {
-  sessions: {
-    totalCount: number;
-    edges: Array<{ cursor: string; node: BizSession }>;
-    pageInfo: {
-      startCursor: string | null;
-      endCursor: string | null;
-      hasNextPage: boolean;
-      hasPreviousPage: boolean;
-    };
-  };
-  stepAnalytics: StepAnalytics;
-}
+/** One session of the report. `bizUser.data` and `bizEvent[].data` travel as JSON. */
+export type TooltipTargetMissingSession = Refined<
+  SessionWire,
+  {
+    bizUser: Refined<SessionWire['bizUser'], { data: Record<string, unknown> }>;
+    bizEvent: Array<Refined<EventWire, { data: Record<string, unknown> }>> | null;
+  }
+>;
+
+export type TooltipTargetMissingResponse = Refined<
+  ResponseWire,
+  {
+    sessions: Refined<
+      ResponseWire['sessions'],
+      { edges: Array<{ cursor: string; node: TooltipTargetMissingSession }> | null }
+    >;
+  }
+>;
+
+export type StepAnalytics = ResponseWire['stepAnalytics'];
 
 export const useQueryTooltipTargetMissingSessionsLazyQuery = () => {
   const [query, { loading }] = useLazyQuery(QueryTooltipTargetMissingSessionsDocument, {
@@ -45,17 +46,10 @@ export const useQueryTooltipTargetMissingSessionsLazyQuery = () => {
     async (
       queryParams: TooltipTargetMissingQuery,
       pagination: Pagination = { first: 10 },
-      orderBy: { field: string; direction: 'asc' | 'desc' } = {
-        field: 'createdAt',
-        direction: 'desc',
-      },
+      orderBy: AnalyticsOrder = { field: 'createdAt', direction: 'desc' },
     ): Promise<TooltipTargetMissingResponse | undefined> => {
       const response = await query({
-        variables: {
-          ...pagination,
-          query: queryParams,
-          orderBy: orderBy as AnalyticsOrder,
-        },
+        variables: { ...pagination, query: queryParams, orderBy },
       });
       return response.data?.queryTooltipTargetMissingSessions as
         | TooltipTargetMissingResponse

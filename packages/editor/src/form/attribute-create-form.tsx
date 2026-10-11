@@ -35,7 +35,7 @@ import {
   isValidRandomMax,
   serverErrorMessage,
 } from '@usertour/helpers';
-import { CreateAttributeMutationVariables, useCreateAttributeMutation } from '@usertour/hooks';
+import { CreateAttributeInput, useCreateAttributeMutation } from '@usertour/hooks';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import * as React from 'react';
 import { useEffect, useMemo } from 'react';
@@ -238,7 +238,7 @@ export const AttributeCreateForm = ({
         ...(selectedDataType === BizAttributeTypes.RandomNumber
           ? { randomMax: Number(randomMax) }
           : {}),
-      } as CreateAttributeMutationVariables;
+      } as CreateAttributeInput;
       const result = await invoke(data);
       if (!result?.id) {
         showError(t('settings.attributes.form.createFailed'));

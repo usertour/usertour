@@ -1,6 +1,12 @@
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { AnalyticsData, PageInfo } from '@usertour/types';
+import type {
+  AnalyticsViewsByBlock,
+  AnalyticsViewsByDay,
+  AnalyticsViewsByStep,
+  AnalyticsViewsByTask,
+} from '@usertour/types';
+import type { Refined } from './refined';
 import {
   type AnalyticsOrder,
   type AnalyticsQuery,
@@ -16,6 +22,17 @@ import {
 // UI state lives in the apps/web `AnalyticsUIContext`; this wrapper
 // is fetchPolicy-agnostic so callers can opt into shared-cache
 // participation as they need.
+
+/** The breakdowns travel as JSON; their rows are the analytics view types. */
+export type AnalyticsData = Refined<
+  QueryContentAnalyticsQuery['queryContentAnalytics'],
+  {
+    viewsByDay: AnalyticsViewsByDay[];
+    viewsByStep: AnalyticsViewsByStep[];
+    viewsByTask: AnalyticsViewsByTask[];
+    viewsByBlock: AnalyticsViewsByBlock[];
+  }
+>;
 
 interface UseQueryContentAnalyticsArgs {
   environmentId: string | undefined;
@@ -59,41 +76,31 @@ export const useQueryContentAnalyticsQuery = ({
 
 // ---- QueryTrackerUsersDocument (cursor pagination) ----
 
-interface TrackerUserNode {
-  id: string;
-  firstTrackedAt: string;
-  lastTrackedAt: string;
-  eventsCount: number;
-  bizUser: {
-    id: string;
-    externalId: string;
-    data: Record<string, unknown>;
-  };
-  bizCompany?: {
-    id: string;
-    externalId: string;
-    data: Record<string, unknown>;
-  } | null;
-}
+type TrackerUsersConnection = QueryTrackerUsersQuery['queryTrackerUsers'];
+type TrackerUserWire = NonNullable<TrackerUsersConnection['edges']>[number]['node'];
 
-interface TrackerUserEdge {
+/** One tracked user of the report. The user's and company's `data` travel as JSON. */
+export type TrackerUser = Refined<
+  TrackerUserWire,
+  {
+    bizUser: Refined<TrackerUserWire['bizUser'], { data: Record<string, unknown> }>;
+    bizCompany: Refined<
+      NonNullable<TrackerUserWire['bizCompany']>,
+      { data: Record<string, unknown> }
+    > | null;
+  }
+>;
+
+export interface TrackerUserEdge {
   cursor: string;
-  node: TrackerUserNode;
-}
-
-interface TrackerUsersQueryVariables {
-  environmentId: string;
-  contentId: string;
-  startDate?: string;
-  endDate?: string;
-  timezone?: string;
+  node: TrackerUser;
 }
 
 interface UseQueryTrackerUsersArgs {
   first?: number;
   after?: string | null;
-  query: TrackerUsersQueryVariables;
-  orderBy?: { field: string; direction: 'asc' | 'desc' };
+  query: AnalyticsQuery;
+  orderBy?: AnalyticsOrder;
   options?: TypedQueryOptions<QueryTrackerUsersQuery, QueryTrackerUsersQueryVariables>;
 }
 
@@ -105,7 +112,7 @@ export const useQueryTrackerUsersQuery = ({
   options,
 }: UseQueryTrackerUsersArgs) => {
   const { data, loading, refetch } = useTypedQuery(QueryTrackerUsersDocument, {
-    variables: { first, after, query: query as AnalyticsQuery, orderBy: orderBy as AnalyticsOrder },
+    variables: { first, after, query, orderBy },
     ...options,
   });
   const result = data?.queryTrackerUsers;
@@ -113,8 +120,8 @@ export const useQueryTrackerUsersQuery = ({
   return {
     edges,
     users: edges.map((edge) => edge.node),
-    pageInfo: result?.pageInfo as PageInfo | undefined,
-    totalCount: (result?.totalCount as number | undefined) ?? 0,
+    pageInfo: result?.pageInfo,
+    totalCount: result?.totalCount ?? 0,
     loading,
     refetch,
   };
