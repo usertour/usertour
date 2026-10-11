@@ -15,26 +15,38 @@ import { useBuilderStore } from '@/pages/contents/components/builder/core/access
 // fetchContentAndVersion); I4 single `ready` gate. The active sub-view is NOT
 // seeded here — it's URL-driven (each type's router seeds its edit buffer from
 // the route param on mount), so init just fetches, baselines, and unblocks.
-export const useBuilderInit = (): { ready: boolean } => {
+export const useBuilderInit = (): { ready: boolean; failed: boolean; retry: () => void } => {
   // contentId is immutable config — the Provider's identity.
   const { contentId } = useBuilderConfig();
   const { fetchContentAndVersion } = useBuilderMethods();
   const clearHistory = useBuilderStore((s) => s.clearHistory);
 
   const [ready, setReady] = useState(false);
+  // The load failed (the request did not answer), as opposed to the content
+  // being gone: the shell shows a retry instead of an empty canvas.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setReady(false);
+    setFailed(false);
 
     (async () => {
-      const loaded = await fetchContentAndVersion(contentId);
+      let loaded = false;
+      try {
+        loaded = await fetchContentAndVersion(contentId);
+      } catch {
+        if (!cancelled) {
+          setFailed(true);
+        }
+      }
       if (cancelled) {
         return;
       }
-      // I3: the freshly-fetched version is the undo origin. On fetch failure
-      // (e.g. soft-deleted) currentContent stays undefined and the dispatcher
-      // renders nothing — just unblock.
+      // I3: the freshly-fetched version is the undo origin. On a delivered
+      // null (e.g. soft-deleted) currentContent stays undefined and the
+      // dispatcher renders nothing — just unblock.
       if (loaded) {
         clearHistory();
       }
@@ -45,7 +57,9 @@ export const useBuilderInit = (): { ready: boolean } => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentId]);
+  }, [contentId, attempt]);
 
-  return { ready };
+  const retry = () => setAttempt((count) => count + 1);
+
+  return { ready, failed, retry };
 };

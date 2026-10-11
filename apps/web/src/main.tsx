@@ -6,6 +6,7 @@ import { AppProvider } from '@/contexts/app-context';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { ThemedToaster } from '@/components/themed-toaster';
 import { ApolloProvider } from '@apollo/client';
+import { QueryErrorNotifier } from '@/apollo/query-error-notifier';
 import type { CaptureResult } from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import React from 'react';
@@ -62,11 +63,14 @@ const options = {
 };
 
 // Vite fires this when a dynamic import's module preload fails — typically a
-// chunk rotated out by a fresh deploy. Recover by reloading (guarded against
-// loops) before the error reaches the router. preventDefault stops Vite's
-// default throw.
-window.addEventListener('vite:preloadError', (event) => {
-  event.preventDefault();
+// chunk rotated out by a fresh deploy. Start the reload here (guarded against
+// loops), and let Vite go on to throw the original error: the import then
+// rejects with "Failed to fetch dynamically imported module", which the error
+// boundaries recognise as a stale chunk. Calling preventDefault instead would
+// make the import resolve with `undefined`, so the lazy loader's
+// `module.Component` throws a TypeError that reads like a real crash and gets
+// reported, while the reload is still on its way.
+window.addEventListener('vite:preloadError', () => {
   reloadForStaleChunkOnce();
 });
 
@@ -81,12 +85,14 @@ async function bootstrap() {
       <ThemeProvider>
         <PostHogProvider apiKey={posthogKey} options={options}>
           <ApolloProvider client={client}>
-            <HelmetProvider>
-              <AppProvider>
-                <App />
-                <ThemedToaster />
-              </AppProvider>
-            </HelmetProvider>
+            <QueryErrorNotifier>
+              <HelmetProvider>
+                <AppProvider>
+                  <App />
+                  <ThemedToaster />
+                </AppProvider>
+              </HelmetProvider>
+            </QueryErrorNotifier>
           </ApolloProvider>
         </PostHogProvider>
       </ThemeProvider>

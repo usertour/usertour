@@ -251,7 +251,8 @@ export const UserDetailContent = (props: UserDetailContentProps) => {
     }
   };
 
-  if (userListLoading) {
+  // Unmount gate: `loading && !data`, so a refetch keeps the page up.
+  if (userListLoading && !contents?.length) {
     return <ContentLoading message={t('common.loading')} />;
   }
 

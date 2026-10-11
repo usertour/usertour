@@ -1,5 +1,6 @@
 import { ScrollArea } from '@usertour/ui';
 import { Outlet, useLocation } from 'react-router-dom';
+import { RegionErrorBoundary } from '@/components/region-error-boundary';
 import { AdminLayoutNewContent, ShellHelmet } from '@/pages/layouts/components/admin-layout';
 import { AdminMainNewNav } from '@/pages/layouts/components/admin-main-nav';
 import { AdminPanelSidebarNav, getAdminSurface } from './components/admin-sidebar-nav';
@@ -19,7 +20,9 @@ export const SystemAdminLayout = () => {
           <AdminPanelSidebarNav />
           <ScrollArea className="h-full w-full">
             <div className="mx-auto max-w-6xl">
-              <Outlet />
+              <RegionErrorBoundary>
+                <Outlet />
+              </RegionErrorBoundary>
             </div>
           </ScrollArea>
         </AdminLayoutNewContent>

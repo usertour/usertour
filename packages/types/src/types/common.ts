@@ -24,11 +24,12 @@ export type Pagination = {
   after?: string;
 };
 
+// Cursors are null on an empty page, as the schema types them.
 export type PageInfo = {
-  endCursor: string;
+  endCursor: string | null;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
-  startCursor: string;
+  startCursor: string | null;
 };
 
 // export interface Attributes {

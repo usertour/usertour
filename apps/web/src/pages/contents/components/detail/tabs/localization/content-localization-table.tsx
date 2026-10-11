@@ -19,7 +19,11 @@ import {
   useCreateContentVersionMutation,
   useUpdateVersionLocalizationMutation,
 } from '@usertour/hooks';
-import { countMissingTranslations, countMissingVersionDataTranslations } from '@usertour/helpers';
+import {
+  countMissingTranslations,
+  countMissingVersionDataTranslations,
+  serverErrorMessage,
+} from '@usertour/helpers';
 import {
   ContentDataType,
   ContentVersion,
@@ -126,10 +130,10 @@ export const ContentLocalizationTable = (props: ContentLocalizationTableProps) =
           title: t('contents.localization.toast.applySuccess'),
         });
       }
-    } catch (_) {
+    } catch (error) {
       toast({
         variant: 'destructive',
-        title: t('contents.localization.toast.applyFailure'),
+        title: serverErrorMessage(error) ?? t('contents.localization.toast.applyFailure'),
       });
     }
   };

@@ -1,7 +1,13 @@
-import { type QueryHookOptions, useQuery } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
 import { useMemo } from 'react';
-import { ListAuditLogs } from '@usertour/gql';
+
 import { useCursorFetchMore } from './use-cursor-fetch-more';
+import {
+  type AuditLogOrder,
+  ListAuditLogsDocument,
+  type ListAuditLogsQuery,
+  type ListAuditLogsQueryVariables,
+} from '@usertour/gql';
 
 const AUDIT_LOG_PAGE_SIZE = 50;
 // Newest first. Sent explicitly (not relying on the server default) so the order
@@ -32,11 +38,6 @@ export interface AuditLog {
   metadata: Record<string, unknown> | null;
 }
 
-interface AuditLogEdge {
-  cursor: string;
-  node: AuditLog;
-}
-
 /** Optional server-side filters (all combine with AND). Dates are ISO strings. */
 export interface AuditLogFilter {
   source?: string;
@@ -59,27 +60,35 @@ export interface AuditLogFilter {
 export const useListAuditLogsQuery = (
   projectId: string | undefined,
   filter?: AuditLogFilter,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListAuditLogsQuery, ListAuditLogsQueryVariables>,
 ) => {
   const query = filter && Object.values(filter).some((v) => v != null) ? filter : undefined;
-  const { data, loading, networkStatus, error, refetch, fetchMore } = useQuery(ListAuditLogs, {
-    variables: { projectId, first: AUDIT_LOG_PAGE_SIZE, orderBy: AUDIT_LOG_ORDER, query },
-    skip: !projectId,
-    notifyOnNetworkStatusChange: true,
-    ...options,
-  });
+  const { data, loading, refreshing, networkStatus, error, refetch, fetchMore } = useTypedQuery(
+    ListAuditLogsDocument,
+    {
+      variables: {
+        projectId: projectId!,
+        first: AUDIT_LOG_PAGE_SIZE,
+        orderBy: AUDIT_LOG_ORDER as AuditLogOrder,
+        query,
+      },
+      skip: !projectId,
+      notifyOnNetworkStatusChange: true,
+      ...options,
+    },
+  );
 
   const connection = data?.auditLogs;
   const auditLogs: AuditLog[] = useMemo(
-    () => (connection?.edges ?? []).map((edge: AuditLogEdge) => edge.node),
+    () => (connection?.edges ?? []).map((edge) => edge.node as AuditLog),
     [connection?.edges],
   );
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
   const endCursor = connection?.pageInfo?.endCursor ?? null;
   const totalCount = connection?.totalCount ?? 0;
 
-  const { loadingMore, fetchNextPage } = useCursorFetchMore({
-    loading,
+  const { loadingMore, pageFailed, fetchNextPage, retryNextPage } = useCursorFetchMore({
+    loading: loading || refreshing,
     networkStatus,
     hasNextPage,
     endCursor,
@@ -101,7 +110,9 @@ export const useListAuditLogsQuery = (
     // first load, like version history).
     loading: loading && !loadingMore,
     loadingMore,
+    pageFailed,
     fetchNextPage,
+    retryNextPage,
     refetch,
     // Surfaced so the page can render a load-error state — a swallowed server
     // rejection (e.g. an entitlement drop the cached config hasn't caught up

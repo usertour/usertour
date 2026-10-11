@@ -101,7 +101,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
                         </span>
                         {licenseInfo && (
                           <LicenseStatusBadge
-                            isValid={licenseInfo.isValid}
+                            isValid={licenseInfo.isValid ?? false}
                             isExpired={licenseInfo.isExpired}
                           />
                         )}

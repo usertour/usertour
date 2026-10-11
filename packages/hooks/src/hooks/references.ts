@@ -1,6 +1,11 @@
-import { type QueryHookOptions, useQuery } from '@apollo/client';
-import { listDefinitionReferences } from '@usertour/gql';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type { DefinitionReference, DefinitionReferenceKind } from '@usertour/types';
+import {
+  ListDefinitionReferencesDocument,
+  type ListDefinitionReferencesQuery,
+  type ListDefinitionReferencesQueryVariables,
+} from '@usertour/gql';
 
 /**
  * What still uses a definition. Always read from the network: it answers
@@ -10,10 +15,13 @@ export const useListDefinitionReferencesQuery = (
   projectId: string | undefined,
   kind: DefinitionReferenceKind,
   id: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    ListDefinitionReferencesQuery,
+    ListDefinitionReferencesQueryVariables
+  >,
 ) => {
-  const { data, loading, error } = useQuery(listDefinitionReferences, {
-    variables: { projectId, kind, id },
+  const { data, loading, error } = useTypedQuery(ListDefinitionReferencesDocument, {
+    variables: { projectId: projectId!, kind, id: id! },
     fetchPolicy: 'network-only',
     skip: !projectId || !id,
     ...options,

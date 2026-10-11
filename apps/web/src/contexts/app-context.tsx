@@ -1,5 +1,6 @@
 import { Environment } from '@usertour/types';
-import { Capability, GlobalConfig, type Project, UserProfile } from '@usertour/types';
+import type { CurrentUser } from '@usertour/hooks';
+import { Capability, GlobalConfig, type Project } from '@usertour/types';
 import { ReactNode, createContext, useContext, useState } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { useActiveProject, useUserProjects } from '@/hooks/use-active-project';
@@ -27,7 +28,7 @@ interface AppContextProps {
   setEnvironment: React.Dispatch<React.SetStateAction<Environment | null>>;
   /** `undefined` while the project list is unknown; `null` when none is active. */
   project: Project | null | undefined;
-  userInfo: UserProfile | null | undefined;
+  userInfo: CurrentUser | null | undefined;
   refetch: () => Promise<unknown>;
   handleLogout: () => Promise<void>;
   signOutAndRedirect: (to?: string) => Promise<void>;

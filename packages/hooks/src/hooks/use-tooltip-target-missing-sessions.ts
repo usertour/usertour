@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { useLazyQuery } from '@apollo/client';
-import { queryTooltipTargetMissingSessions } from '@usertour/gql';
+
 import type { Pagination, BizSession } from '@usertour/types';
+import { type AnalyticsOrder, QueryTooltipTargetMissingSessionsDocument } from '@usertour/gql';
 
 export interface TooltipTargetMissingQuery {
   environmentId: string;
@@ -36,7 +37,7 @@ export interface TooltipTargetMissingResponse {
 }
 
 export const useQueryTooltipTargetMissingSessionsLazyQuery = () => {
-  const [query, { loading }] = useLazyQuery(queryTooltipTargetMissingSessions, {
+  const [query, { loading }] = useLazyQuery(QueryTooltipTargetMissingSessionsDocument, {
     fetchPolicy: 'network-only',
   });
 
@@ -53,10 +54,12 @@ export const useQueryTooltipTargetMissingSessionsLazyQuery = () => {
         variables: {
           ...pagination,
           query: queryParams,
-          orderBy,
+          orderBy: orderBy as AnalyticsOrder,
         },
       });
-      return response.data?.queryTooltipTargetMissingSessions;
+      return response.data?.queryTooltipTargetMissingSessions as
+        | TooltipTargetMissingResponse
+        | undefined;
     },
     [query],
   );

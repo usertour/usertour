@@ -1,15 +1,16 @@
 import { useMutation } from '@apollo/client';
 import { useCallback } from 'react';
-import {
-  createLocalization,
-  deleteLocalization,
-  listVersionLocalizations,
-  setDefaultLocalization,
-  translateLocalizationUnits,
-  updateLocalization,
-  updateVersionLocalization,
-} from '@usertour/gql';
+
 import type { VersionOnLocalization } from '@usertour/types';
+import {
+  CreateLocalizationDocument,
+  DeleteLocalizationDocument,
+  ListVersionLocalizationsDocument,
+  SetDefaultLocalizationDocument,
+  TranslateLocalizationUnitsDocument,
+  UpdateLocalizationDocument,
+  UpdateVersionLocalizationDocument,
+} from '@usertour/gql';
 
 export interface CreateLocalizationInput {
   projectId: string;
@@ -26,7 +27,7 @@ export interface UpdateLocalizationInput {
 }
 
 export const useCreateLocalizationMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createLocalization, {
+  const [mutation, { loading, error }] = useMutation(CreateLocalizationDocument, {
     refetchQueries: ['listLocalizations'],
   });
   const invoke = async (input: CreateLocalizationInput): Promise<boolean> => {
@@ -38,7 +39,7 @@ export const useCreateLocalizationMutation = () => {
 
 export const useUpdateLocalizationMutation = () => {
   // Auto-merged by Apollo via __typename:id.
-  const [mutation, { loading, error }] = useMutation(updateLocalization);
+  const [mutation, { loading, error }] = useMutation(UpdateLocalizationDocument);
   const invoke = async (input: UpdateLocalizationInput): Promise<boolean> => {
     const response = await mutation({ variables: { data: input } });
     return !!response.data?.updateLocalization?.id;
@@ -47,7 +48,7 @@ export const useUpdateLocalizationMutation = () => {
 };
 
 export const useDeleteLocalizationMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteLocalization);
+  const [mutation, { loading, error }] = useMutation(DeleteLocalizationDocument);
   const invoke = async (id: string): Promise<boolean> => {
     const response = await mutation({
       variables: { id },
@@ -82,7 +83,7 @@ export const useUpdateVersionLocalizationMutation = () => {
   // In-place saves auto-merge into the `VersionOnLocalization:id` slot; a
   // first save CREATES the row, which the normalized cache can't place into
   // the version's list by itself — insert the ref there.
-  const [mutation, { loading, error }] = useMutation(updateVersionLocalization);
+  const [mutation, { loading, error }] = useMutation(UpdateVersionLocalizationDocument);
   const invoke = useCallback(
     async (input: UpdateVersionLocalizationInput): Promise<boolean> => {
       const response = await mutation({
@@ -93,7 +94,7 @@ export const useUpdateVersionLocalizationMutation = () => {
             return;
           }
           cache.updateQuery(
-            { query: listVersionLocalizations, variables: { versionId: input.versionId } },
+            { query: ListVersionLocalizationsDocument, variables: { versionId: input.versionId } },
             (existing: { listVersionLocalizations: VersionOnLocalization[] } | null) => {
               const rows = existing?.listVersionLocalizations;
               if (!rows || rows.some((row) => row.id === saved.id)) {
@@ -115,7 +116,7 @@ export const useSetDefaultLocalizationMutation = () => {
   // The mutation flips `isDefault` on two rows (the old default → false,
   // the new one → true). Server response only carries the new default's
   // id, so refetch the list to pick up the demoted previous default.
-  const [mutation, { loading, error }] = useMutation(setDefaultLocalization, {
+  const [mutation, { loading, error }] = useMutation(SetDefaultLocalizationDocument, {
     refetchQueries: ['listLocalizations'],
   });
   const invoke = async (id: string): Promise<boolean> => {
@@ -137,7 +138,7 @@ export interface TranslatedLocalizationUnit {
 }
 
 export const useTranslateLocalizationUnitsMutation = () => {
-  const [mutation, { loading, error }] = useMutation(translateLocalizationUnits);
+  const [mutation, { loading, error }] = useMutation(TranslateLocalizationUnitsDocument);
   const invoke = async (
     input: TranslateLocalizationUnitsInput,
   ): Promise<TranslatedLocalizationUnit[]> => {

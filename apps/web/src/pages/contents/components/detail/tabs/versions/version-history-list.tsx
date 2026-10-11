@@ -1,3 +1,4 @@
+import { LoadMoreFailed } from '@/components/load-more-failed';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
@@ -43,8 +44,16 @@ export const VersionHistoryList = () => {
   const { t } = useTranslation();
   const { contentId } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
-  const { versionList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
-    useContentVersionList(contentId);
+  const {
+    versionList,
+    totalCount,
+    hasNextPage,
+    loading,
+    loadingMore,
+    pageFailed,
+    fetchNextPage,
+    retryNextPage,
+  } = useContentVersionList(contentId);
 
   // Library-managed sentinel: handles "fire once per inView" semantics,
   // resize debounce, and auto-fill termination. `rootRef` must be wired
@@ -54,7 +63,7 @@ export const VersionHistoryList = () => {
   const scrollRoot = useScrollRoot();
   const [sentryRef, { rootRef }] = useInfiniteScroll({
     loading: loading || loadingMore,
-    hasNextPage,
+    hasNextPage: hasNextPage && !pageFailed,
     onLoadMore: fetchNextPage,
     rootMargin: '0px 0px 100px 0px',
   });
@@ -156,6 +165,7 @@ export const VersionHistoryList = () => {
         )}
       >
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
+        {pageFailed && <LoadMoreFailed onRetry={retryNextPage} />}
         {!hasNextPage && versionList.length > 20 && (
           <span className="text-xs text-muted-foreground">
             {t('contents.versions.endOfHistory')}

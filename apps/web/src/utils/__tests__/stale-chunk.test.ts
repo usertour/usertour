@@ -5,6 +5,7 @@ describe('isStaleChunkError', () => {
     'Failed to fetch dynamically imported module: https://app.usertour.io/assets/index-5f5afb90.js',
     'error loading dynamically imported module',
     'Importing a module script failed.',
+    'Unable to preload CSS for /assets/attributes-3f2a1c.css',
   ])('matches the stale-chunk wording: %s', (message) => {
     expect(isStaleChunkError(new Error(message))).toBe(true);
     expect(isStaleChunkError(message)).toBe(true); // also accepts a raw string

@@ -508,6 +508,7 @@ const translations = {
         codeNameLabel: '代码名',
         codeNameTooltip: '代码中引用该属性的标识符,例如「billing_plan」。',
         codeNamePlaceholder: '请输入代码名',
+        codeNameTaken: '该代码名已被其他属性使用',
         dataTypeHints: {
           randomAB:
             '随机 A/B:Usertour 给每个用户或公司均匀分配「A」或「B」。不能通过代码设置,创建后类型不可更改。',
@@ -569,6 +570,7 @@ const translations = {
         codeNameLabel: '代码名',
         codeNameTooltip: '代码中引用该事件的标识符,例如「user_signed_up」。',
         codeNamePlaceholder: '请输入代码名',
+        codeNameTaken: '该代码名已被其他事件使用',
         attributesLabel: '事件属性',
         attributesTooltip: '该事件 payload 中包含的属性,例如「plan_name」「price」。',
         attributesPlaceholder: '请选择属性',
@@ -645,6 +647,7 @@ const translations = {
         codeTooltip:
           '与用户的 locale_code 属性匹配。优先精确匹配，否则按主语言匹配——locale_code 为 fr-CA 的用户会命中代码为 fr 的本地化。',
         codePlaceholder: '请输入代码',
+        codeTaken: '该代码已被其他本地化使用',
       },
     },
     themes: {
@@ -2003,6 +2006,7 @@ const translations = {
   common: {
     appTitle: 'Usertour App',
     selectPlaceholder: '请选择…',
+    loadMoreFailed: '加载更多失败。',
     table: {
       selectAll: '全选',
       selectRow: '选择此行',
@@ -4572,14 +4576,30 @@ const translations = {
     description: '我们找不到该页面。',
     backHome: '返回首页',
   },
+  queryError: {
+    title: '有内容没能加载',
+  },
   appError: {
     updating: '正在更新到最新版本…',
     description: '出了点问题,刷新通常就能解决。',
     reload: '刷新',
+    retry: '重试',
+    tryAgain: '再试一次',
     projects: {
       title: '项目加载失败',
       description: '暂时没能加载你的项目,重试通常就能解决。',
-      retry: '重试',
+    },
+    environments: {
+      title: '环境加载失败',
+      description: '暂时没能加载这个项目的环境,重试通常就能解决。',
+    },
+    content: {
+      title: '内容加载失败',
+      description: '暂时没能加载这条内容,重试通常就能解决。',
+    },
+    network: {
+      title: '连不上服务器',
+      description: '请检查网络连接。页面会保留已经加载的内容。',
     },
   },
   error: {

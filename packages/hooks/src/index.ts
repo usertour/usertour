@@ -1,6 +1,8 @@
 export * from './hooks/use-open-selector';
 export { useDetectExtension } from './hooks/use-detect-extenson';
 export * from './hooks/auth';
+// The query layer (ADR 0021): typed documents in, one query state out.
+export * from './query';
 export * from './hooks/gql';
 // Domain-specific Apollo wrappers (kept out of the catch-all `gql.ts`).
 // New wrappers should land here, organised by settings section, rather

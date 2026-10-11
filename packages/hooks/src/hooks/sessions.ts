@@ -1,6 +1,16 @@
-import { type QueryHookOptions, useQuery } from '@apollo/client';
-import { listSessionsDetail, queryBizSession } from '@usertour/gql';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type { BizSession, PageInfo, Pagination } from '@usertour/types';
+import {
+  type AnalyticsOrder,
+  type AnalyticsQuery,
+  ListSessionsDetailDocument,
+  type ListSessionsDetailQuery,
+  type ListSessionsDetailQueryVariables,
+  QueryBizSessionDocument,
+  type QueryBizSessionQuery,
+  type QueryBizSessionQueryVariables,
+} from '@usertour/gql';
 
 // Domain wrapper for `queryBizSession`. The cursor-state book-keeping
 // the table needs (currentPageInfo / pageCount derivation) lives in the
@@ -19,7 +29,7 @@ interface UseQueryBizSessionsArgs {
   query: QueryBizSessionVariables;
   pagination?: Pagination;
   orderBy?: { field: string; direction: 'asc' | 'desc' };
-  options?: QueryHookOptions;
+  options?: TypedQueryOptions<QueryBizSessionQuery, QueryBizSessionQueryVariables>;
 }
 
 export const useQueryBizSessionsQuery = ({
@@ -31,12 +41,12 @@ export const useQueryBizSessionsQuery = ({
   // See `useContentListQuery` in `gql.ts` — `...options` first,
   // `variables` last, so caller can't accidentally clobber
   // wrapper-composed variables.
-  const { data, refetch, error, loading, networkStatus } = useQuery(queryBizSession, {
+  const { data, refetch, error, loading, networkStatus } = useTypedQuery(QueryBizSessionDocument, {
     ...options,
     variables: {
       ...pagination,
-      query,
-      orderBy,
+      query: query as AnalyticsQuery,
+      orderBy: orderBy as AnalyticsOrder,
     },
   });
 
@@ -45,15 +55,14 @@ export const useQueryBizSessionsQuery = ({
   // (`useUserListQuery` / `useCompanyListQuery`) so callers can plug
   // any of them into `useCursorPagination` without per-entity
   // adapters. `networkStatus` exposed for `isRefetching` derivation.
-  const contents: BizSession[] =
-    connection?.edges?.map((edge: { node: BizSession }) => edge.node) ?? [];
-  const pageInfo: PageInfo | undefined = connection?.pageInfo;
+  const contents = (connection?.edges?.map((edge) => edge.node) ?? []) as BizSession[];
+  const pageInfo = connection?.pageInfo as PageInfo | undefined;
   const totalCount: number = connection?.totalCount ?? 0;
 
   return { contents, pageInfo, totalCount, refetch, error, loading, networkStatus };
 };
 
-// ---- listSessionsDetail ----
+// ---- ListSessionsDetailDocument ----
 //
 // Heavier per-session payload than `queryBizSession` (includes
 // `bizUser.bizUsersOnCompany`, `bizEvent[]`, etc.) — used by the CSV
@@ -75,7 +84,7 @@ interface UseListSessionsDetailArgs {
   query: ListSessionsDetailVariables;
   pagination?: Pagination;
   orderBy?: { field: string; direction: 'asc' | 'desc' };
-  options?: QueryHookOptions;
+  options?: TypedQueryOptions<ListSessionsDetailQuery, ListSessionsDetailQueryVariables>;
 }
 
 export const useListSessionsDetailQuery = ({
@@ -84,11 +93,11 @@ export const useListSessionsDetailQuery = ({
   pagination = { first: 100 },
   options,
 }: UseListSessionsDetailArgs) => {
-  const { data, refetch, error, loading } = useQuery(listSessionsDetail, {
+  const { data, refetch, error, loading } = useTypedQuery(ListSessionsDetailDocument, {
     variables: {
       ...pagination,
-      query,
-      orderBy,
+      query: query as AnalyticsQuery,
+      orderBy: orderBy as AnalyticsOrder,
     },
     ...options,
   });

@@ -46,7 +46,7 @@ export const useAddCompaniesToManualSegment = () => {
           toast({
             variant: 'success',
             title: t('companies.toast.segments.companiesAdded', {
-              count: ret.data.createBizCompanyOnSegment.count,
+              count: ret.data.createBizCompanyOnSegment.count ?? 0,
               segmentName: segment.name,
             }),
           });

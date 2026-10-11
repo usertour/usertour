@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import { useAppContext } from '@/contexts/app-context';
 import {
   UserAvatar,
@@ -95,7 +96,7 @@ export const AdminUserNav = () => {
       } catch (error) {
         toast({
           variant: 'destructive',
-          title: t('userNav.switchProjectFailed'),
+          title: serverErrorMessage(error) ?? t('userNav.switchProjectFailed'),
         });
         console.error(error);
       }
@@ -115,7 +116,7 @@ export const AdminUserNav = () => {
           variant="ghost"
           className="flex p-0 text-sm rounded-full shadow-none dark:bg-transparent ring-transparent hover:bg-transparent focus:ring-0"
         >
-          <UserAvatar email={user?.email || ''} name={user?.name} size="md" />
+          <UserAvatar email={user?.email || ''} name={user?.name ?? undefined} size="md" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount side="right">

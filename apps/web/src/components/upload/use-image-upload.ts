@@ -1,10 +1,11 @@
 import { useCallback, useState } from 'react';
 
 import { useApolloClient } from '@apollo/client';
-import { createPresignedUrl } from '@usertour/gql';
+
 import { useToast } from '@usertour/ui';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { CreatePresignedUrlDocument } from '@usertour/gql';
 
 interface RcUploadOption {
   file: File | Blob | string;
@@ -36,7 +37,7 @@ export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps) => {
       const contentType = file.type;
 
       const { data } = await client.mutate({
-        mutation: createPresignedUrl,
+        mutation: CreatePresignedUrlDocument,
         variables: {
           fileName,
           storageType: 'S3',

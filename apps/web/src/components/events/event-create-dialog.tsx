@@ -15,9 +15,11 @@ import {
   Input,
   QuestionTooltip,
   SettingsDialogForm,
+  SettingsFormFieldError,
   useSettingsForm,
   useToast,
 } from '@usertour/ui';
+import { isResourceAlreadyExistsError } from '@usertour/helpers';
 import { useCreateEventMutation, useListAttributesQuery } from '@usertour/hooks';
 import { CloseIcon, PlusIcon } from '@usertour/icons';
 import { AttributeBizTypes, type Attribute } from '@usertour/types';
@@ -80,11 +82,19 @@ export const EventCreateDialog = ({
     schema,
     defaultValues,
     submit: async (values) => {
-      const id = await createEvent({
-        ...values,
-        projectId: project?.id ?? '',
-        attributeIds: eventsOnAttributes.map((attr) => attr.id),
-      });
+      let id: string | null;
+      try {
+        id = await createEvent({
+          ...values,
+          projectId: project?.id ?? '',
+          attributeIds: eventsOnAttributes.map((attr) => attr.id),
+        });
+      } catch (error) {
+        if (isResourceAlreadyExistsError(error)) {
+          throw new SettingsFormFieldError('codeName', t('settings.events.form.codeNameTaken'));
+        }
+        throw error;
+      }
       if (!id) {
         throw new Error(t('settings.events.createFailure'));
       }
@@ -147,7 +157,7 @@ export const EventCreateDialog = ({
               control={state.form.control}
               name="displayName"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="w-72">
                   <FormLabel className="flex flex-row">
                     {t('settings.events.form.displayNameLabel')}
                     <QuestionTooltip className="ml-1">
@@ -170,7 +180,7 @@ export const EventCreateDialog = ({
               control={state.form.control}
               name="codeName"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="w-72">
                   <FormLabel className="flex flex-row">
                     {t('settings.events.form.codeNameLabel')}
                     <QuestionTooltip className="ml-1">

@@ -1,0 +1,402 @@
+query getContent($contentId: String!) {
+  getContent(contentId: $contentId) {
+    id
+    name
+    buildUrl
+    config
+    environmentId
+    editedVersionId
+    publishedVersionId
+    published
+    deleted
+    publishedAt
+    createdAt
+    updatedAt
+    type
+    publishedVersion {
+      id
+      sequence
+      createdAt
+      updatedAt
+    }
+    editedVersion {
+      id
+      sequence
+      contentId
+      themeId
+      config
+      data
+      scheduledAt
+      createdAt
+      updatedAt
+      steps {
+        id
+        name
+        type
+        cvid
+        sequence
+        data
+        trigger
+        themeId
+        screenshot
+        target
+        setting
+        createdAt
+        updatedAt
+      }
+    }
+    steps {
+      id
+      name
+      cvid
+      type
+      trigger
+      sequence
+      data
+      themeId
+      screenshot
+      sequence
+      target
+      setting
+    }
+    contentOnEnvironments {
+      id
+      published
+      publishedAt
+      publishedVersionId
+      environmentId
+      environment {
+        id
+        name
+      }
+      publishedVersion {
+        id
+        sequence
+        createdAt
+        updatedAt
+      }
+    }
+  }
+}
+
+mutation createContent(
+  $type: String!
+  $name: String!
+  $environmentId: String!
+  $buildUrl: String
+  $data: JSON
+  $steps: [StepInput!]
+) {
+  createContent(
+    data: {
+      type: $type
+      name: $name
+      environmentId: $environmentId
+      buildUrl: $buildUrl
+      data: $data
+      steps: $steps
+    }
+  ) {
+    id
+    name
+    buildUrl
+    environmentId
+    editedVersionId
+    publishedVersionId
+    published
+    deleted
+    publishedAt
+    createdAt
+    updatedAt
+  }
+}
+
+query queryContent(
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+  $query: ContentQuery!
+  $orderBy: ContentOrder!
+) {
+  queryContent(
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+    query: $query
+    orderBy: $orderBy
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        id
+        name
+        buildUrl
+        type
+        environmentId
+        editedVersionId
+        publishedVersionId
+        published
+        deleted
+        publishedAt
+        createdAt
+        updatedAt
+        steps {
+          id
+          name
+          cvid
+          sequence
+        }
+        contentOnEnvironments {
+          id
+          published
+          publishedAt
+          publishedVersionId
+          environmentId
+          environment {
+            id
+            name
+          }
+        }
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+mutation updateContent($contentId: String!, $content: UpdateContentInput!) {
+  updateContent(data: { contentId: $contentId, content: $content }) {
+    id
+    name
+    buildUrl
+    environmentId
+    config
+    type
+    editedVersionId
+    publishedVersionId
+    published
+    publishedAt
+    updatedAt
+  }
+}
+
+mutation duplicateContent($contentId: String!, $name: String!) {
+  duplicateContent(data: { contentId: $contentId, name: $name }) {
+    id
+    name
+  }
+}
+
+mutation publishedContentVersion($versionId: String!, $environmentId: String!) {
+  publishedContentVersion(data: { versionId: $versionId, environmentId: $environmentId }) {
+    id
+  }
+}
+
+mutation restoreContentVersion($versionId: String!) {
+  restoreContentVersion(data: { versionId: $versionId }) {
+    id
+  }
+}
+
+mutation unpublishedContentVersion($contentId: String!, $environmentId: String!) {
+  unpublishedContentVersion(data: { contentId: $contentId, environmentId: $environmentId }) {
+    success
+  }
+}
+
+mutation deleteContent($contentId: String!) {
+  deleteContent(data: { contentId: $contentId }) {
+    success
+  }
+}
+
+mutation createContentVersion($data: ContentVersionInput!) {
+  createContentVersion(data: $data) {
+    id
+    sequence
+    contentId
+  }
+}
+
+mutation updateContentVersion(
+  $versionId: String!
+  $content: VersionInput!
+  $expectedUpdatedAt: DateTime
+) {
+  updateContentVersion(
+    data: { versionId: $versionId, content: $content, expectedUpdatedAt: $expectedUpdatedAt }
+  ) {
+    id
+    sequence
+    contentId
+    themeId
+    config
+    data
+    scheduledAt
+    createdAt
+    updatedAt
+    steps {
+      id
+      name
+      type
+      cvid
+      sequence
+      data
+      trigger
+      themeId
+      screenshot
+      target
+      setting
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+query getContentVersion($versionId: String!) {
+  getContentVersion(versionId: $versionId) {
+    id
+    sequence
+    contentId
+    themeId
+    config
+    createdAt
+    updatedAt
+    scheduledAt
+    publishedAt
+    data
+    steps {
+      id
+      name
+      type
+      cvid
+      sequence
+      data
+      trigger
+      themeId
+      screenshot
+      sequence
+      target
+      setting
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+query listContentVersions(
+  $contentId: String!
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+) {
+  listContentVersions(
+    contentId: $contentId
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        id
+        sequence
+        contentId
+        themeId
+        createdAt
+        updatedAt
+        config
+        updatedByUserId
+        updatedByName
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+query listContentPublishRecords(
+  $contentId: String!
+  $environmentId: String
+  $first: Int
+  $after: String
+) {
+  listContentPublishRecords(
+    contentId: $contentId
+    environmentId: $environmentId
+    first: $first
+    after: $after
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        id
+        createdAt
+        contentId
+        versionId
+        versionSequence
+        environmentId
+        environmentName
+        action
+        actorUserId
+        actorTokenId
+        actorName
+        actorTokenName
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+query listVersionLocalizations($versionId: String!) {
+  listVersionLocalizations(versionId: $versionId) {
+    id
+    createdAt
+    updatedAt
+    versionId
+    localizationId
+    enabled
+    localized
+    backup
+  }
+}
+
+mutation updateVersionLocalization($data: UpdateVersionLocalizationInput!) {
+  updateVersionLocalization(data: $data) {
+    id
+    createdAt
+    updatedAt
+    versionId
+    localizationId
+    enabled
+    localized
+    backup
+    # The save touches the owning draft's updatedAt; selecting it lets the
+    # normalized cache move the header's "Autosaved" without a refetch.
+    version {
+      id
+      updatedAt
+    }
+  }
+}

@@ -1,10 +1,17 @@
-import { NetworkStatus, type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
+import { NetworkStatus, useMutation } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
 import {
-  CreateAccessToken,
-  DeleteAccessToken,
-  GetAccessToken,
-  ListAccessTokens,
-  ProjectHasEnvironmentAccessTokens,
+  CreateAccessTokenDocument,
+  DeleteAccessTokenDocument,
+  GetAccessTokenDocument,
+  type GetAccessTokenQuery,
+  type GetAccessTokenQueryVariables,
+  ListAccessTokensDocument,
+  type ListAccessTokensQuery,
+  type ListAccessTokensQueryVariables,
+  ProjectHasEnvironmentAccessTokensDocument,
+  type ProjectHasEnvironmentAccessTokensQuery,
+  type ProjectHasEnvironmentAccessTokensQueryVariables,
 } from '@usertour/gql';
 
 export interface AccessToken {
@@ -15,7 +22,7 @@ export interface AccessToken {
 }
 
 export const useCreateAccessTokenMutation = () => {
-  const [mutation, { loading, error }] = useMutation(CreateAccessToken, {
+  const [mutation, { loading, error }] = useMutation(CreateAccessTokenDocument, {
     refetchQueries: ['ListAccessTokens'],
   });
   // Returns the freshly-minted secret so the caller can show it in the
@@ -32,10 +39,10 @@ export const useCreateAccessTokenMutation = () => {
 
 export const useListAccessTokensQuery = (
   environmentId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListAccessTokensQuery, ListAccessTokensQueryVariables>,
 ) => {
-  const { data, loading, error, refetch, networkStatus } = useQuery(ListAccessTokens, {
-    variables: { environmentId },
+  const { data, loading, error, refetch, networkStatus } = useTypedQuery(ListAccessTokensDocument, {
+    variables: { environmentId: environmentId! },
     skip: !environmentId,
     notifyOnNetworkStatusChange: true,
     ...options,
@@ -55,20 +62,26 @@ export const useListAccessTokensQuery = (
  */
 export const useProjectHasEnvironmentAccessTokensQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    ProjectHasEnvironmentAccessTokensQuery,
+    ProjectHasEnvironmentAccessTokensQueryVariables
+  >,
 ) => {
-  const { data, loading, error, refetch } = useQuery(ProjectHasEnvironmentAccessTokens, {
-    variables: { projectId },
-    skip: !projectId,
-    ...options,
-  });
+  const { data, loading, error, refetch } = useTypedQuery(
+    ProjectHasEnvironmentAccessTokensDocument,
+    {
+      variables: { projectId: projectId! },
+      skip: !projectId,
+      ...options,
+    },
+  );
 
   const hasEnvironmentAccessTokens = data?.projectHasEnvironmentAccessTokens as boolean | undefined;
   return { hasEnvironmentAccessTokens, loading, error, refetch };
 };
 
 export const useDeleteAccessTokenMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DeleteAccessToken);
+  const [mutation, { loading, error }] = useMutation(DeleteAccessTokenDocument);
   const invoke = async (environmentId: string, accessTokenId: string): Promise<boolean> => {
     const response = await mutation({
       variables: { environmentId, accessTokenId },
@@ -87,9 +100,9 @@ export const useDeleteAccessTokenMutation = () => {
 export const useGetAccessTokenQuery = (
   environmentId: string,
   accessTokenId: string,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetAccessTokenQuery, GetAccessTokenQueryVariables>,
 ) => {
-  const { data, loading, error } = useQuery(GetAccessToken, {
+  const { data, loading, error } = useTypedQuery(GetAccessTokenDocument, {
     variables: { environmentId, accessTokenId },
     ...options,
   });

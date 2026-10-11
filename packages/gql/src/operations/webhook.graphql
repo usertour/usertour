@@ -1,0 +1,119 @@
+query ListWebhooks($environmentId: String!) {
+  listWebhooks(environmentId: $environmentId) {
+    id
+    createdAt
+    updatedAt
+    environmentId
+    url
+    topics
+    enabled
+    description
+    consecutiveFailures
+    cooldownUntil
+    autoDisabledAt
+  }
+}
+
+query GetWebhook($id: String!) {
+  getWebhook(id: $id) {
+    id
+    createdAt
+    updatedAt
+    environmentId
+    url
+    topics
+    enabled
+    secret
+    description
+    consecutiveFailures
+    cooldownUntil
+    autoDisabledAt
+  }
+}
+
+query QueryWebhookMessages($webhookId: String!, $first: Int, $after: String) {
+  queryWebhookMessages(webhookId: $webhookId, first: $first, after: $after) {
+    totalCount
+    edges {
+      cursor
+      node {
+        id
+        createdAt
+        updatedAt
+        topic
+        status
+        payload
+        deliveries {
+          id
+          createdAt
+          attempt
+          success
+          responseStatus
+          responseBody
+          error
+          durationMs
+        }
+      }
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+  }
+}
+
+mutation CreateWebhook($data: CreateWebhookInput!) {
+  createWebhook(data: $data) {
+    id
+    createdAt
+    updatedAt
+    environmentId
+    url
+    topics
+    enabled
+    description
+  }
+}
+
+mutation UpdateWebhook($data: UpdateWebhookInput!) {
+  updateWebhook(data: $data) {
+    id
+    createdAt
+    updatedAt
+    environmentId
+    url
+    topics
+    enabled
+    description
+    consecutiveFailures
+    cooldownUntil
+    autoDisabledAt
+  }
+}
+
+mutation DeleteWebhook($data: WebhookIdInput!) {
+  deleteWebhook(data: $data) {
+    id
+  }
+}
+
+mutation RotateWebhookSecret($data: WebhookIdInput!) {
+  rotateWebhookSecret(data: $data) {
+    id
+    updatedAt
+    secret
+  }
+}
+
+mutation SendWebhookTestEvent($data: WebhookIdInput!) {
+  sendWebhookTestEvent(data: $data) {
+    id
+  }
+}
+
+mutation ResendWebhookMessage($data: WebhookMessageInput!) {
+  resendWebhookMessage(data: $data) {
+    id
+    status
+  }
+}

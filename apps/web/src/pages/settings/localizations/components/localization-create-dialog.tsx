@@ -13,9 +13,11 @@ import {
   type LocateItem,
   LocateSelect,
   SettingsDialogForm,
+  SettingsFormFieldError,
   useSettingsForm,
   QuestionTooltip,
 } from '@usertour/ui';
+import { isResourceAlreadyExistsError } from '@usertour/helpers';
 import { useCreateLocalizationMutation } from '@usertour/hooks';
 import { z } from 'zod';
 
@@ -47,7 +49,15 @@ export const LocalizationCreateDialog = (props: LocalizationCreateDialogProps) =
     schema,
     defaultValues: { locale: '', name: '', code: '' },
     submit: async (values) => {
-      const success = await createLocalization({ ...values, projectId: project?.id ?? '' });
+      let success: boolean;
+      try {
+        success = await createLocalization({ ...values, projectId: project?.id ?? '' });
+      } catch (error) {
+        if (isResourceAlreadyExistsError(error)) {
+          throw new SettingsFormFieldError('code', t('settings.localizations.form.codeTaken'));
+        }
+        throw error;
+      }
       if (!success) {
         throw new Error(t('settings.localizations.createFailure'));
       }

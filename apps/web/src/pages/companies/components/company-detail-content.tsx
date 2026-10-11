@@ -368,7 +368,8 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
     }
   };
 
-  if (companyListLoading) {
+  // Unmount gate: `loading && !data`, so a refetch keeps the page up.
+  if (companyListLoading && !contents?.length) {
     return <ContentLoading message={t('common.loading')} />;
   }
 

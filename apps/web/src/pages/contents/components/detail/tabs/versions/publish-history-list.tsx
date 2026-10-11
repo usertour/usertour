@@ -1,3 +1,4 @@
+import { LoadMoreFailed } from '@/components/load-more-failed';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useAppContext } from '@/contexts/app-context';
@@ -125,8 +126,16 @@ export const PublishHistoryList = () => {
   const { environmentList } = useEnvironmentList();
   // Server-side environment filter — client filtering would only see loaded pages.
   const [envFilter, setEnvFilter] = useState<string | undefined>(undefined);
-  const { recordList, totalCount, hasNextPage, loading, loadingMore, fetchNextPage } =
-    useListContentPublishRecordsQuery(contentId, envFilter);
+  const {
+    recordList,
+    totalCount,
+    hasNextPage,
+    loading,
+    loadingMore,
+    pageFailed,
+    fetchNextPage,
+    retryNextPage,
+  } = useListContentPublishRecordsQuery(contentId, envFilter);
 
   // Fixed-width dropdown (not pills): pills grow with env count × name length and
   // wrap into a mess; a select stays put no matter how many environments exist.
@@ -142,7 +151,7 @@ export const PublishHistoryList = () => {
   const scrollRoot = useScrollRoot();
   const [sentryRef, { rootRef }] = useInfiniteScroll({
     loading: loading || loadingMore,
-    hasNextPage,
+    hasNextPage: hasNextPage && !pageFailed,
     onLoadMore: fetchNextPage,
     rootMargin: '0px 0px 100px 0px',
   });
@@ -242,6 +251,7 @@ export const PublishHistoryList = () => {
         )}
       >
         {loadingMore && <SpinnerIcon className="animate-spin text-primary h-5 w-5" />}
+        {pageFailed && <LoadMoreFailed onRetry={retryNextPage} />}
         {!hasNextPage && recordList.length > 20 && (
           <span className="text-xs text-muted-foreground">
             {t('contents.publishHistory.endOfHistory')}

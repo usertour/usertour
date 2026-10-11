@@ -68,10 +68,16 @@ export const ContentListLayout = memo(
     const [searchParams, setSearchParams] = useSearchParams();
     const { t } = useTranslation();
     const { isViewOnly, environment } = useAppContext();
-    const { contents, hasNextPage, loadingMore, fetchNextPage, refetch, loading } = useContentList(
-      environment?.id,
-      contentType,
-    );
+    const {
+      contents,
+      hasNextPage,
+      loadingMore,
+      pageFailed,
+      fetchNextPage,
+      retryNextPage,
+      refetch,
+      loading,
+    } = useContentList(environment?.id, contentType);
 
     // Derive from URL so draft count is fetched on first paint when visiting ?published=1
     // (`useContentList` reads URL on every render so its `published` value also matches)
@@ -191,7 +197,9 @@ export const ContentListLayout = memo(
               hasNextPage={hasNextPage}
               loading={loading}
               loadingMore={loadingMore}
+              pageFailed={pageFailed}
               fetchNextPage={fetchNextPage}
+              retryNextPage={retryNextPage}
               refetch={refetch}
             />
           );
@@ -214,7 +222,9 @@ export const ContentListLayout = memo(
       contentType,
       hasNextPage,
       loadingMore,
+      pageFailed,
       fetchNextPage,
+      retryNextPage,
       refetch,
     ]);
 

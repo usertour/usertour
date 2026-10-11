@@ -1,0 +1,24 @@
+query queryOembedInfo($url: String!) {
+  queryOembedInfo(url: $url) {
+    html
+    width
+    height
+  }
+}
+
+query globalConfig {
+  globalConfig {
+    isSelfHostedMode
+    apiUrl
+    mcpServerUrl
+    ssoCallbackUrl
+    allowUserRegistration
+    allowProjectLevelSubscriptionManagement
+    needsSystemAdminSetup
+    require2FA
+    machineTranslationEnabled
+    allowPrivateNetworkEgress
+    authProviders
+    configuredOAuthProviders
+  }
+}

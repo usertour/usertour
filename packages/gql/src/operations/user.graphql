@@ -1,0 +1,60 @@
+query me {
+  me {
+    id
+    name
+    avatarUrl
+    email
+    createdAt
+    updatedAt
+    isOAuthUser
+    isSystemAdmin
+    twoFactorEnabled
+    twoFactorAvailable
+    projects {
+      id
+      role
+      capabilities
+      actived
+      allowedEnvironmentIds
+      project {
+        id
+        name
+        logoUrl
+        subscriptionId
+        customerId
+      }
+    }
+  }
+}
+
+mutation updateUser($name: String!, $avatarUrl: String) {
+  updateUser(data: { name: $name, avatarUrl: $avatarUrl }) {
+    id
+    name
+    avatarUrl
+  }
+}
+
+mutation changeEmail($email: String!, $password: String!) {
+  changeEmail(data: { email: $email, password: $password }) {
+    id
+    email
+  }
+}
+
+mutation changePassword($oldPassword: String!, $newPassword: String!) {
+  changePassword(data: { oldPassword: $oldPassword, newPassword: $newPassword }) {
+    id
+  }
+}
+
+mutation logout {
+  logout
+}
+
+mutation createOwnedProject($name: String!) {
+  createOwnedProject(data: { name: $name }) {
+    id
+    name
+  }
+}

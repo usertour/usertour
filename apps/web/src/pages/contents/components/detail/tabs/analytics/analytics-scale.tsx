@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import {
   Card,
   CardContent,
@@ -135,10 +136,10 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
         });
         onRollingWindowChange(false);
       }
-    } catch (_) {
+    } catch (error) {
       toast({
         variant: 'destructive',
-        title: t('contents.analytics.rollingWindow.updateFailed'),
+        title: serverErrorMessage(error) ?? t('contents.analytics.rollingWindow.updateFailed'),
       });
       onRollingWindowChange(false);
     }

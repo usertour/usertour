@@ -5,14 +5,17 @@ import { typeDefs } from './type-defs';
 
 let client: ApolloClient<any>;
 
+// errorPolicy 'none' (ADR 0021 §2): a partial response is an error and never
+// flows on as data. A query that wants partial data opts into 'all' itself
+// — today that is `me`, whose user must survive a failed `projects` field.
 const defaultOptions: DefaultOptions = {
   watchQuery: {
     fetchPolicy: 'no-cache',
-    errorPolicy: 'all',
+    errorPolicy: 'none',
   },
   query: {
     fetchPolicy: 'no-cache',
-    errorPolicy: 'all',
+    errorPolicy: 'none',
   },
 };
 

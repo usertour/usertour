@@ -25,6 +25,7 @@ import {
   type TooltipTargetMissingResponse,
 } from '@usertour/hooks';
 import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
+import { LoadMoreFailed } from '@/components/load-more-failed';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useAppContext } from '@/contexts/app-context';
 import type { DatePresetKey } from '@usertour/ui';
@@ -285,6 +286,8 @@ export const TooltipTargetMissingDialog = ({
   const [sessions, setSessions] = useState<BizSession[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo>({ endCursor: null, hasNextPage: false });
   const [loadingMore, setLoadingMore] = useState(false);
+  // The last page failed: the sentinel stays off until the user retries.
+  const [pageFailed, setPageFailed] = useState(false);
   const [isRefetching, setIsRefetching] = useState(false);
   const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null);
 
@@ -335,18 +338,20 @@ export const TooltipTargetMissingDialog = ({
     const queryParams = buildQueryParams();
     if (!queryParams || !pageInfo.endCursor || loadingMore) return;
 
+    setPageFailed(false);
     setLoadingMore(true);
     const result = await fetchSessions(queryParams, {
       first: PAGE_SIZE,
       after: pageInfo.endCursor,
     });
+    setPageFailed(!result);
     handleFetchResult(result, true);
     setLoadingMore(false);
   }, [buildQueryParams, pageInfo.endCursor, loadingMore, fetchSessions, handleFetchResult]);
 
   const [sentryRef, { rootRef }] = useInfiniteScroll({
     loading: loadingMore || loading || isRefetching,
-    hasNextPage: pageInfo.hasNextPage,
+    hasNextPage: pageInfo.hasNextPage && !pageFailed,
     onLoadMore: loadMore,
     rootMargin: '0px 0px 100px 0px',
   });
@@ -361,6 +366,7 @@ export const TooltipTargetMissingDialog = ({
     setIsRefetching(true);
     setSessions([]);
     setPageInfo({ endCursor: null, hasNextPage: false });
+    setPageFailed(false);
 
     const queryParams = {
       environmentId: environment.id,
@@ -454,8 +460,9 @@ export const TooltipTargetMissingDialog = ({
               </Table>
 
               {pageInfo.hasNextPage && (
-                <div ref={sentryRef} className="py-4">
+                <div ref={sentryRef} className="flex justify-center py-4">
                   {loadingMore && <LoadingSpinner size="sm" />}
+                  {pageFailed && <LoadMoreFailed onRetry={loadMore} />}
                 </div>
               )}
             </div>

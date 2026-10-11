@@ -2,6 +2,7 @@ import { ContentLoading } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';
 import { ScrollRootProvider } from '@/contexts/scroll-root-context';
+import { Unavailable } from '@/components/unavailable';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersionList } from '@/hooks/use-content-version-list';
 import { useSegmentList } from '@/hooks/use-segment-list';
@@ -40,7 +41,14 @@ const SEGMENT_BIZ_TYPES: readonly string[] = ['COMPANY', 'USER'];
 const ContentDetailViewInner = (props: ContentDetailViewProps) => {
   const { type, contentId, contentType } = props;
   const { environment } = useAppContext();
-  const { content, loading: contentLoading } = useContentDetail(contentId);
+  const {
+    content,
+    loading: contentLoading,
+    error: contentError,
+    refetch,
+    // The failure is drawn below when there is no content; with content on
+    // screen the header's and tabs' observers announce a failed refresh.
+  } = useContentDetail(contentId, { notifyOnError: false });
   const { versionList, loading: versionListLoading } = useContentVersionList(contentId);
   const { themeList, loading: themeLoading } = useThemeList();
   const { segmentList, loading: segmentLoading } = useSegmentList(
@@ -77,6 +85,18 @@ const ContentDetailViewInner = (props: ContentDetailViewProps) => {
 
   if (isLoading) {
     return <ContentLoading message={t('common.loading')} />;
+  }
+
+  // A failed load is an error, not an absence: only a delivered null means
+  // the content is gone.
+  if (contentError && !content) {
+    return (
+      <Unavailable
+        title={t('appError.content.title')}
+        description={t('appError.content.description')}
+        onRetry={refetch}
+      />
+    );
   }
 
   // Server returns null for soft-deleted (or otherwise inaccessible) content.

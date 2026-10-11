@@ -9,17 +9,24 @@
     "dev": "pnpm build:fast -- --watch",
     "clean": "rimraf dist .turbo",
     "typecheck": "tsc --noEmit",
+    "generate": "graphql-codegen --config codegen.cjs",
     "build:fast": "tsup src"
   },
   "dependencies": {
+    "@apollo/client": "^3.7.17",
+    "@graphql-typed-document-node/core": "3.2.0",
+    "graphql": "^16.9.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "@apollo/client": "^3.7.17"
+    "react-dom": "^18.2.0"
   },
   "peerDependencies": {
     "react": "^18.2.0"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "7.4.6",
+    "@graphql-codegen/typed-document-node": "7.1.1",
+    "@graphql-codegen/typescript": "6.1.2",
+    "@graphql-codegen/typescript-operations": "6.1.10",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
     "@typescript-eslint/eslint-plugin": "^5.59.0",

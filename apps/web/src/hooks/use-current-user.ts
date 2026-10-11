@@ -1,10 +1,10 @@
-import { useCurrentUserId, useGetUserInfoQuery } from '@usertour/hooks';
-import type { UserProfile } from '@usertour/types';
+import { type CurrentUser, useCurrentUserId, useGetUserInfoQuery } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { resolveUserInfo } from './resolve-user-info';
 
-// Thin wrapper over the Apollo `me` query. The three-state return is
-// decided by resolveUserInfo.
+// Thin wrapper over the `me` query. The three-state return is decided by
+// resolveUserInfo; the query itself runs through the query layer with
+// `errorPolicy: 'all'` (see useGetUserInfoQuery).
 //
 // SHARED_CACHE_QUERY_OPTIONS: AppProvider composes this hook four times
 // (direct + via useUserProjects/useActiveProject/useCapabilities).
@@ -27,12 +27,7 @@ export const useCurrentUser = () => {
     refetchWritePolicy: 'merge',
   });
 
-  const userInfo = resolveUserInfo<UserProfile>({
-    uid,
-    data: data as UserProfile | undefined,
-    loading,
-    error,
-  });
+  const userInfo = resolveUserInfo<CurrentUser>({ uid, data, loading, error });
 
   return { userInfo, loading, error, refetch };
 };

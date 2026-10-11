@@ -1,5 +1,5 @@
 import { NetworkStatus } from '@apollo/client';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Shared shape for accumulator-style cursor-paginated queries in
 // @usertour/hooks (`useListContentsQuery`,
@@ -7,11 +7,12 @@ import { useCallback, useRef } from 'react';
 // hand-rolling the same three pieces:
 //
 //   1. `loadingMore = networkStatus === NetworkStatus.fetchMore`
-//   2. A `fetchingRef` belt-and-braces idempotency guard around
-//      `fetchMore` — Apollo doesn't dedup `fetchMore` against
-//      identical variables, so a fast double-call would issue the
-//      same `after` cursor and the typePolicy accumulator would
-//      receive the page twice.
+//   2. An idempotency guard around `fetchMore`, one page request per
+//      list at a time — Apollo doesn't dedup `fetchMore` against
+//      identical variables, so a double-call (a fast sentinel, a reload
+//      or a filter switched away and back while the page is in flight)
+//      would issue the same `after` cursor, or an overlapping one, and
+//      the typePolicy accumulator would receive the rows twice.
 //   3. A `hasNextPage && !loading && endCursor` short-circuit.
 //
 // The merge itself stays at the cache layer (typePolicy
@@ -43,9 +44,18 @@ export interface UseCursorFetchMoreResult {
    *  alongside `loading` so consumers can keep the already-rendered
    *  list intact while a page is appending. */
   loadingMore: boolean;
+  /** The page this list would ask for next has failed. Until
+   *  `retryNextPage` or a reload, `fetchNextPage` does nothing: a sentinel
+   *  still in view would otherwise ask for the same page again and again.
+   *  Another list, or another page of this one, is not failed. */
+  pageFailed: boolean;
   /** Idempotent against rapid double-invocation while a request is in
-   *  flight. */
+   *  flight, and a no-op after a failure. Resolves either way: the
+   *  failure is `pageFailed`, and the query layer has already surfaced
+   *  it. */
   fetchNextPage: () => Promise<void>;
+  /** Clears the failure and asks for the page again — the user's call. */
+  retryNextPage: () => Promise<void>;
 }
 
 export const useCursorFetchMore = (args: UseCursorFetchMoreArgs): UseCursorFetchMoreResult => {
@@ -62,23 +72,55 @@ export const useCursorFetchMore = (args: UseCursorFetchMoreArgs): UseCursorFetch
   const buildVariablesRef = useRef(buildVariables);
   buildVariablesRef.current = buildVariables;
 
-  // Idempotency guard. See file header — Apollo's `fetchMore` is not
-  // deduped against identical variables, so this is the safety net
-  // when a UI trigger (button / sentinel) fires twice before the
-  // first response lands.
-  const fetchingRef = useRef(false);
+  // A page request is identified by its variables: the list's filter and
+  // the cursor, as the server sees them. A failure is kept per request, so
+  // a request for a list the user has left does not mark the one they are
+  // on. The in-flight guard is kept per list — the variables with the
+  // cursor blanked out — so one list has one page request at a time: a
+  // reload that moved the cursor while a page was in flight does not get a
+  // second, overlapping page, and a list the user has left does not block
+  // the one they are on.
+  const nextPageKey = endCursor ? JSON.stringify(buildVariables(endCursor)) : null;
+  const inFlight = useRef(new Set<string>());
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const pageFailed = nextPageKey !== null && failedKey === nextPageKey;
 
-  const fetchNextPage = useCallback(async () => {
-    if (!hasNextPage || loading || fetchingRef.current || !endCursor) {
+  // A reload is the user asking for the list afresh; the failure goes with it.
+  useEffect(() => {
+    if (networkStatus === NetworkStatus.refetch) {
+      setFailedKey(null);
+    }
+  }, [networkStatus]);
+
+  const request = useCallback(async () => {
+    if (!hasNextPage || loading || !endCursor) {
       return;
     }
-    fetchingRef.current = true;
+    const variables = buildVariablesRef.current(endCursor);
+    const listKey = JSON.stringify({ ...variables, after: undefined });
+    if (inFlight.current.has(listKey)) {
+      return;
+    }
+    inFlight.current.add(listKey);
     try {
-      await fetchMore({ variables: buildVariablesRef.current(endCursor) });
+      await fetchMore({ variables });
+    } catch {
+      // The query layer has surfaced it; here it only stops the next ask.
+      setFailedKey(JSON.stringify(variables));
     } finally {
-      fetchingRef.current = false;
+      inFlight.current.delete(listKey);
     }
   }, [endCursor, fetchMore, hasNextPage, loading]);
 
-  return { loadingMore, fetchNextPage };
+  const fetchNextPage = useCallback(
+    () => (pageFailed ? Promise.resolve() : request()),
+    [pageFailed, request],
+  );
+
+  const retryNextPage = useCallback(() => {
+    setFailedKey(null);
+    return request();
+  }, [request]);
+
+  return { loadingMore, pageFailed, fetchNextPage, retryNextPage };
 };

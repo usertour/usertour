@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { userTourToken } from '@/utils/env';
 import { cn } from '@usertour/tailwind';
-import { UserProfile } from '@usertour/types';
+import type { CurrentUser } from '@usertour/hooks';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -72,7 +72,9 @@ export const AdminLayoutNewContent = (props: AdminLayoutNewContentProps) => {
 
 AdminLayoutNewContent.displayName = 'AdminLayoutNewContent';
 
-const useUserTracking = (userInfo: UserProfile | null | undefined) => {
+// `projectId` is the active project: the `me` query never carried one, so the
+// group call below had been dead code behind a hand-written optional field.
+const useUserTracking = (userInfo: CurrentUser | null | undefined, projectId?: string) => {
   const posthog = usePostHog();
   const usertourInitialized = useRef(false);
 
@@ -92,10 +94,10 @@ const useUserTracking = (userInfo: UserProfile | null | undefined) => {
     posthog?.identify(userInfo.id, {
       email: userInfo.email,
     });
-    if (userInfo.projectId) {
-      posthog?.group('company', userInfo.projectId);
+    if (projectId) {
+      posthog?.group('company', projectId);
     }
-  }, [userInfo, posthog]);
+  }, [userInfo, projectId, posthog]);
 };
 
 // Outlet for the admin shell. Environment / subscription / event /
@@ -105,8 +107,8 @@ const useUserTracking = (userInfo: UserProfile | null | undefined) => {
 // at this layer.
 export const AdminProvidersOutlet = () => {
   const { project, userInfo } = useAppContext();
-  useUserTracking(userInfo);
   const projectId = project?.id;
+  useUserTracking(userInfo, projectId);
 
   // The project list is unknown — the server could not report it. Stay put
   // and offer a retry; redirecting would read an outage as "no projects".

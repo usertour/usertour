@@ -1,5 +1,11 @@
-import { type QueryHookOptions, useMutation, useQuery } from '@apollo/client';
-import { OAuthConnections, RevokeOAuthConnection } from '@usertour/gql';
+import { useMutation } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+import {
+  OAuthConnectionsDocument,
+  type OAuthConnectionsQuery,
+  type OAuthConnectionsQueryVariables,
+  RevokeOAuthConnectionDocument,
+} from '@usertour/gql';
 
 /** A "connected app" — one active OAuth grant the user approved. */
 export interface OAuthConnection {
@@ -15,8 +21,10 @@ export interface OAuthConnection {
 }
 
 /** List the current user's connected OAuth apps. */
-export const useOAuthConnectionsQuery = (options?: QueryHookOptions) => {
-  const { data, loading, refetch } = useQuery(OAuthConnections, options);
+export const useOAuthConnectionsQuery = (
+  options?: TypedQueryOptions<OAuthConnectionsQuery, OAuthConnectionsQueryVariables>,
+) => {
+  const { data, loading, refetch } = useTypedQuery(OAuthConnectionsDocument, options);
   return {
     connections: (data?.oauthConnections ?? []) as OAuthConnection[],
     loading,
@@ -26,7 +34,7 @@ export const useOAuthConnectionsQuery = (options?: QueryHookOptions) => {
 
 /** Revoke a connected app (kills its access tokens + refresh). */
 export const useRevokeOAuthConnectionMutation = () => {
-  const [mutate, { loading }] = useMutation(RevokeOAuthConnection);
+  const [mutate, { loading }] = useMutation(RevokeOAuthConnectionDocument);
   const revoke = async (id: string): Promise<boolean> => {
     const { data } = await mutate({ variables: { id } });
     return Boolean(data?.revokeOAuthConnection);

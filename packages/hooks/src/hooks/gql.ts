@@ -1,94 +1,6 @@
-import {
-  QueryHookOptions,
-  useApolloClient,
-  useMutation,
-  useQuery,
-  useLazyQuery,
-  NetworkStatus,
-} from '@apollo/client';
+import { useApolloClient, useMutation, useLazyQuery, NetworkStatus } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
 import { useCallback } from 'react';
-import {
-  activeUserProject,
-  cancelInvite,
-  changeTeamMemberRole as changeTeamMemberRoleMutation,
-  transferProjectOwnership as transferProjectOwnershipMutation,
-  createAttribute,
-  createBizCompanyOnSegment,
-  createBizUserOnSegment,
-  createEnvironments,
-  createSegment,
-  deleteAttribute,
-  deleteBizCompany,
-  deleteBizCompanyOnSegment,
-  deleteContent,
-  deleteEnvironments,
-  deleteSegment,
-  deleteSession,
-  endSession,
-  getInvites,
-  getTeamMembers,
-  getUserEnvironments,
-  verifyInstallation,
-  inviteTeamMember as inviteTeamMemberMutation,
-  listAttributes,
-  listSegment,
-  queryBizCompany,
-  queryBizUser,
-  queryContentQuestionAnalytics,
-  queryContent,
-  querySessionDetail,
-  querySessionsByExternalId,
-  removeTeamMember,
-  updateAttribute,
-  updateContent,
-  updateContentVersion,
-  updateEnvironments,
-  updateSegment,
-  createCheckoutSession,
-  createPortalSession,
-  getSubscriptionPlans,
-  getSubscriptionByProjectId,
-  getSubscriptionUsage,
-  globalConfig,
-  getProjectConfig,
-  updateProject,
-  getProjectLicenseInfo,
-  updateProjectLicense,
-  getContent,
-  getUserInfo,
-  createContentVersion,
-  deleteBizUser,
-  deleteBizUserOnSegment,
-  adminSettings,
-  adminInstanceSettings,
-  updateInstanceLicense,
-  updateInstanceGeneralSettings,
-  updateInstanceAuthenticationSettings,
-  adminUsers,
-  adminCreateUser,
-  updateUserSystemAdmin,
-  updateUserDisabled,
-  adminProjects,
-  adminCreateProject,
-  updateProjectUsesInstanceLicense,
-  adminProjectMembers,
-  adminAddProjectMember,
-  adminChangeProjectMemberRole,
-  adminTransferProjectOwnership,
-  adminRemoveProjectMember,
-  updateInstanceRequire2FA,
-  getTheme,
-  listLocalizations,
-  queryOembedInfo,
-  listProjectSsoProviders,
-  createOidcSsoProvider,
-  updateSsoProvider,
-  deleteSsoProvider,
-  getProjectSsoProviders,
-  getProjectSsoLogin,
-  getProjectSsoSettings,
-  updateProjectSsoSettings,
-} from '@usertour/gql';
 
 import type {
   Content,
@@ -104,12 +16,144 @@ import type {
   Environment,
   Subscription,
   GlobalConfig,
-  SessionQuery,
   ColumnSetting,
   RulesCondition,
   Theme,
   Localization,
+  ContentOmbedInfo,
+  ContentVersion,
+  BizCompany,
+  BizUser,
 } from '@usertour/types';
+import {
+  ActiveUserProjectDocument,
+  AdminAddProjectMemberDocument,
+  AdminChangeProjectMemberRoleDocument,
+  AdminCreateProjectDocument,
+  AdminCreateUserDocument,
+  AdminInstanceSettingsDocument,
+  AdminProjectMembersDocument,
+  AdminProjectsDocument,
+  AdminRemoveProjectMemberDocument,
+  AdminSettingsDocument,
+  AdminTransferProjectOwnershipDocument,
+  AdminUsersDocument,
+  type AnalyticsOrder,
+  type BizOrder,
+  CancelInviteDocument,
+  ChangeTeamMemberRoleDocument as changeTeamMemberRoleMutation,
+  type ContentOrder,
+  CreateAttributeDocument,
+  CreateBizCompanyOnSegmentDocument,
+  type CreateBizCompanyOnSegmentMutationVariables,
+  CreateBizUserOnSegmentDocument,
+  type CreateBizUserOnSegmentMutationVariables,
+  CreateCheckoutSessionDocument,
+  CreateContentVersionDocument,
+  CreateEnvironmentsDocument,
+  CreateOidcSsoProviderDocument,
+  CreatePortalSessionDocument,
+  CreateSegmentDocument,
+  type CreateSegmentMutationVariables,
+  DeleteAttributeDocument,
+  DeleteBizCompanyDocument,
+  DeleteBizCompanyOnSegmentDocument,
+  type DeleteBizCompanyOnSegmentMutationVariables,
+  DeleteBizUserDocument,
+  DeleteBizUserOnSegmentDocument,
+  DeleteContentDocument,
+  DeleteEnvironmentsDocument,
+  DeleteSegmentDocument,
+  DeleteSessionDocument,
+  DeleteSsoProviderDocument,
+  EndSessionDocument,
+  GetContentDocument,
+  GetInvitesDocument,
+  type GetInvitesQuery,
+  type GetInvitesQueryVariables,
+  GetProjectConfigDocument,
+  type GetProjectConfigQuery,
+  type GetProjectConfigQueryVariables,
+  GetProjectLicenseInfoDocument,
+  GetProjectSsoLoginDocument,
+  type GetProjectSsoLoginQuery,
+  type GetProjectSsoLoginQueryVariables,
+  GetProjectSsoProvidersDocument,
+  type GetProjectSsoProvidersQuery,
+  type GetProjectSsoProvidersQueryVariables,
+  GetProjectSsoSettingsDocument,
+  type GetProjectSsoSettingsQuery,
+  type GetProjectSsoSettingsQueryVariables,
+  GetSubscriptionByProjectIdDocument,
+  type GetSubscriptionByProjectIdQuery,
+  type GetSubscriptionByProjectIdQueryVariables,
+  GetSubscriptionUsageDocument,
+  type GetSubscriptionUsageQuery,
+  type GetSubscriptionUsageQueryVariables,
+  GetTeamMembersDocument,
+  type GetTeamMembersQuery,
+  type GetTeamMembersQueryVariables,
+  GetThemeDocument,
+  type GetThemeQuery,
+  type GetThemeQueryVariables,
+  GlobalConfigDocument,
+  InviteTeamMemberDocument as inviteTeamMemberMutation,
+  ListAttributesDocument,
+  type ListAttributesQuery,
+  type ListAttributesQueryVariables,
+  ListLocalizationsDocument,
+  type ListLocalizationsQuery,
+  type ListLocalizationsQueryVariables,
+  ListProjectSsoProvidersDocument,
+  type ListProjectSsoProvidersQuery,
+  type ListProjectSsoProvidersQueryVariables,
+  ListSegmentDocument,
+  type ListSegmentQuery,
+  type ListSegmentQueryVariables,
+  MeDocument,
+  QueryBizCompanyDocument,
+  type QueryBizCompanyQuery,
+  type QueryBizCompanyQueryVariables,
+  QueryBizUserDocument,
+  type QueryBizUserQuery,
+  type QueryBizUserQueryVariables,
+  QueryContentDocument,
+  type QueryContentQuery,
+  type QueryContentQueryVariables,
+  QueryContentQuestionAnalyticsDocument,
+  QueryOembedInfoDocument,
+  QuerySessionDetailDocument,
+  QuerySessionsByExternalIdDocument,
+  RemoveTeamMemberDocument,
+  type Role,
+  type SessionQuery,
+  TransferProjectOwnershipDocument as transferProjectOwnershipMutation,
+  UpdateAttributeDocument,
+  UpdateContentDocument,
+  UpdateContentVersionDocument,
+  UpdateEnvironmentsDocument,
+  type UpdateEnvironmentsMutationVariables,
+  UpdateInstanceAuthenticationSettingsDocument,
+  UpdateInstanceGeneralSettingsDocument,
+  UpdateInstanceLicenseDocument,
+  UpdateInstanceRequire2FaDocument,
+  UpdateProjectDocument,
+  UpdateProjectLicenseDocument,
+  UpdateProjectSsoSettingsDocument,
+  type UpdateProjectSsoSettingsMutationVariables,
+  UpdateProjectUsesInstanceLicenseDocument,
+  UpdateSegmentDocument,
+  UpdateSsoProviderDocument,
+  UpdateUserDisabledDocument,
+  UpdateUserSystemAdminDocument,
+  UserEnvironmentsDocument,
+  type UserEnvironmentsQuery,
+  type UserEnvironmentsQueryVariables,
+  VerifyInstallationDocument,
+  type VerifyInstallationQuery,
+  type VerifyInstallationQueryVariables,
+  type VersionInput,
+} from '@usertour/gql';
 
 type UseContentListQueryProps = {
   // Index signature mirrors the server's ContentQuery input — callers
@@ -119,7 +163,7 @@ type UseContentListQueryProps = {
     type?: ContentDataType;
     [key: string]: unknown;
   };
-  options?: QueryHookOptions;
+  options?: TypedQueryOptions<QueryContentQuery, QueryContentQueryVariables>;
   pagination?: Pagination;
   orderBy?: {
     field: string;
@@ -138,19 +182,20 @@ export const useContentListQuery = ({
   // pagination / query / orderBy the wrapper just composed. Defensive
   // but free: `useCursorPagination` already pipes caller-controlled
   // options straight into wrappers like this one.
-  const { data, refetch, error, loading } = useQuery(queryContent, {
+  const { data, refetch, error, loading } = useTypedQuery(QueryContentDocument, {
     ...options,
     variables: {
       ...pagination,
       query,
-      orderBy,
+      orderBy: orderBy as ContentOrder,
     },
   });
-  const contentList = data?.queryContent?.edges.map((e: any) => e.node);
+  const contentList = data?.queryContent?.edges?.map((edge) => edge.node);
   const pageInfo = data?.queryContent?.pageInfo;
   const totalCount = data?.queryContent?.totalCount;
 
-  const contents = contentList ? (contentList as Content[]) : [];
+  // Wire shape and domain Content differ on optionality; the hook is the boundary.
+  const contents = contentList ? (contentList as unknown as Content[]) : [];
 
   return { contents, pageInfo, totalCount, refetch, error, loading };
 };
@@ -172,27 +217,43 @@ export const useCompanyListQuery = ({
   orderBy = { field: 'createdAt', direction: 'desc' },
   pagination = { first: 10 },
   options,
-}: UseCompanyListQueryProps & { options?: QueryHookOptions }) => {
+}: UseCompanyListQueryProps & {
+  options?: TypedQueryOptions<QueryBizCompanyQuery, QueryBizCompanyQueryVariables>;
+}) => {
   // See `useContentListQuery` — `...options` first, `variables` last,
   // so caller can't accidentally clobber wrapper-composed variables.
-  const { data, refetch, loading, error, networkStatus } = useQuery(queryBizCompany, {
-    ...options,
-    variables: {
-      ...pagination,
-      query,
-      orderBy,
+  const { data, refetch, loading, refreshing, error, networkStatus } = useTypedQuery(
+    QueryBizCompanyDocument,
+    {
+      ...options,
+      variables: {
+        ...pagination,
+        query,
+        orderBy: orderBy as BizOrder,
+      },
     },
-  });
+  );
 
   const bizCompanyList = data?.queryBizCompany;
-  const contents = bizCompanyList?.edges?.map((e: any) => ({ ...e.node })) || [];
+  const contents = (bizCompanyList?.edges?.map((edge) => ({ ...edge.node })) ??
+    []) as unknown as BizCompany[];
   const pageInfo = bizCompanyList?.pageInfo;
   const totalCount = bizCompanyList?.totalCount || 0;
 
   // networkStatus pass-through so callers can derive `isRefetching`
   // (NetworkStatus.refetch === 4). Opt-in: callers pass
   // `options.notifyOnNetworkStatusChange: true` to make it meaningful.
-  return { contents, pageInfo, totalCount, refetch, loading, error, networkStatus };
+  // `loading` is the in-flight flag: the tables and reload buttons behind
+  // this list gate on it, and a reload keeps the rows while it runs.
+  return {
+    contents,
+    pageInfo,
+    totalCount,
+    refetch,
+    loading: loading || refreshing,
+    error,
+    networkStatus,
+  };
 };
 
 type UseUserListQueryProps = {
@@ -212,40 +273,56 @@ export const useUserListQuery = ({
   orderBy = { field: 'createdAt', direction: 'desc' },
   pagination = { first: 10 },
   options,
-}: UseUserListQueryProps & { options?: QueryHookOptions }) => {
+}: UseUserListQueryProps & {
+  options?: TypedQueryOptions<QueryBizUserQuery, QueryBizUserQueryVariables>;
+}) => {
   // See `useContentListQuery` — `...options` first, `variables` last,
   // so caller can't accidentally clobber wrapper-composed variables.
-  const { data, refetch, loading, error, networkStatus } = useQuery(queryBizUser, {
-    ...options,
-    variables: {
-      ...pagination,
-      query,
-      orderBy,
+  const { data, refetch, loading, refreshing, error, networkStatus } = useTypedQuery(
+    QueryBizUserDocument,
+    {
+      ...options,
+      variables: {
+        ...pagination,
+        query,
+        orderBy: orderBy as BizOrder,
+      },
     },
-  });
+  );
 
   const bizUserList = data?.queryBizUser;
-  const contents = bizUserList?.edges?.map((e: any) => ({ ...e.node, ...e.node.data })) || [];
+  const contents = (bizUserList?.edges?.map((edge) => ({
+    ...edge.node,
+    ...(edge.node.data as Record<string, unknown>),
+  })) ?? []) as unknown as BizUser[];
   const pageInfo = bizUserList?.pageInfo;
   const totalCount = bizUserList?.totalCount || 0;
 
-  // See useCompanyListQuery — same networkStatus opt-in pattern.
-  return { contents, pageInfo, totalCount, refetch, loading, error, networkStatus };
+  // See useCompanyListQuery — same networkStatus opt-in pattern, same
+  // in-flight `loading`.
+  return {
+    contents,
+    pageInfo,
+    totalCount,
+    refetch,
+    loading: loading || refreshing,
+    error,
+    networkStatus,
+  };
 };
 
 export const useSegmentListQuery = (
   environmentId: string,
   bizType: string[] = ['COMPANY', 'USER'],
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListSegmentQuery, ListSegmentQueryVariables>,
 ) => {
-  const { data, refetch, loading, error, networkStatus } = useQuery(listSegment, {
+  const { data, refetch, loading, error, networkStatus } = useTypedQuery(ListSegmentDocument, {
     variables: { environmentId },
     ...options,
   });
-  const segments =
-    data?.listSegment?.length > 0
-      ? data.listSegment.filter((item: Segment) => bizType.includes(item.bizType))
-      : [];
+  const segments = (data?.listSegment ?? []).filter((item) =>
+    bizType.includes(item.bizType as Segment['bizType']),
+  );
 
   // See useCompanyListQuery — same networkStatus opt-in pattern.
   return { segmentList: segments as Segment[], refetch, loading, error, networkStatus };
@@ -253,10 +330,10 @@ export const useSegmentListQuery = (
 
 export const useQueryTeamMemberListQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetTeamMembersQuery, GetTeamMembersQueryVariables>,
 ) => {
-  const { data, refetch, loading, error } = useQuery(getTeamMembers, {
-    variables: { projectId },
+  const { data, refetch, loading, error } = useTypedQuery(GetTeamMembersDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId,
     ...options,
   });
@@ -279,10 +356,10 @@ export const useQueryTeamMemberListQuery = (
 
 export const useQueryInviteListQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetInvitesQuery, GetInvitesQueryVariables>,
 ) => {
-  const { data, refetch, loading, error } = useQuery(getInvites, {
-    variables: { projectId },
+  const { data, refetch, loading, error } = useTypedQuery(GetInvitesDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId,
     ...options,
   });
@@ -313,7 +390,7 @@ export const useInviteTeamMemberMutation = () => {
       allowedEnvironmentIds?: string[],
     ): Promise<boolean> => {
       const response = await inviteTeamMember({
-        variables: { projectId, name, email, role, allowedEnvironmentIds },
+        variables: { projectId, name, email, role: role as Role, allowedEnvironmentIds },
       });
       return !!response.data?.inviteTeamMember;
     },
@@ -324,7 +401,7 @@ export const useInviteTeamMemberMutation = () => {
 };
 
 export const useCancelInviteMutation = () => {
-  const [mutation, { loading, error }] = useMutation(cancelInvite, {
+  const [mutation, { loading, error }] = useMutation(CancelInviteDocument, {
     refetchQueries: ['getInvites'],
   });
   const invoke = useCallback(
@@ -339,7 +416,7 @@ export const useCancelInviteMutation = () => {
 };
 
 export const useRemoveTeamMemberMutation = () => {
-  const [mutation, { loading, error }] = useMutation(removeTeamMember, {
+  const [mutation, { loading, error }] = useMutation(RemoveTeamMemberDocument, {
     refetchQueries: ['getTeamMembers'],
   });
   const invoke = useCallback(
@@ -368,7 +445,7 @@ export const useChangeTeamMemberRoleMutation = () => {
       allowedEnvironmentIds?: string[],
     ): Promise<boolean> => {
       const response = await mutation({
-        variables: { projectId, userId, role, allowedEnvironmentIds },
+        variables: { projectId, userId, role: role as Role, allowedEnvironmentIds },
       });
       return !!response.data?.changeTeamMemberRole;
     },
@@ -395,7 +472,7 @@ export const useTransferProjectOwnershipMutation = () => {
 };
 
 export const useActiveUserProjectMutation = () => {
-  const [mutation, { loading, error }] = useMutation(activeUserProject);
+  const [mutation, { loading, error }] = useMutation(ActiveUserProjectDocument);
   const invoke = useCallback(
     async (userId: string, projectId: string): Promise<boolean> => {
       const response = await mutation({ variables: { userId, projectId } });
@@ -407,7 +484,7 @@ export const useActiveUserProjectMutation = () => {
 };
 
 export const useDeleteSessionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteSession);
+  const [mutation, { loading, error }] = useMutation(DeleteSessionDocument);
   const invoke = useCallback(
     async (sessionId: string): Promise<boolean> => {
       const response = await mutation({ variables: { sessionId } });
@@ -419,7 +496,7 @@ export const useDeleteSessionMutation = () => {
 };
 
 export const useEndSessionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(endSession);
+  const [mutation, { loading, error }] = useMutation(EndSessionDocument);
   const invoke = useCallback(
     async (sessionId: string): Promise<boolean> => {
       const response = await mutation({ variables: { sessionId } });
@@ -431,7 +508,7 @@ export const useEndSessionMutation = () => {
 };
 
 export const useQuerySessionDetailQuery = (sessionId: string) => {
-  const { data, loading, error, refetch } = useQuery(querySessionDetail, {
+  const { data, loading, error, refetch } = useTypedQuery(QuerySessionDetailDocument, {
     variables: { sessionId },
   });
 
@@ -447,23 +524,27 @@ export const useQuerySessionsByExternalIdQuery = (
     direction: 'desc',
   },
 ) => {
-  const { data, loading, error, refetch } = useQuery(querySessionsByExternalId, {
-    variables: {
-      query,
-      orderBy,
-      ...pagination,
+  const { data, loading, refreshing, error, refetch } = useTypedQuery(
+    QuerySessionsByExternalIdDocument,
+    {
+      variables: {
+        query,
+        orderBy: orderBy as AnalyticsOrder,
+        ...pagination,
+      },
+      // Reload goes through `refetch()`; without this the refetch window
+      // has `loading: false`, so the UI gets no in-flight signal.
+      notifyOnNetworkStatusChange: true,
     },
-    // Reload goes through `refetch()`; without this the refetch window
-    // has `loading: false`, so the UI gets no in-flight signal.
-    notifyOnNetworkStatusChange: true,
-  });
+  );
 
   const sessions =
     (data?.querySessionsByExternalId?.edges?.map((edge: any) => edge.node) as BizSession[]) || [];
   const pageInfo = data?.querySessionsByExternalId?.pageInfo;
   const totalCount = data?.querySessionsByExternalId?.totalCount || 0;
 
-  return { sessions, pageInfo, totalCount, loading, error, refetch };
+  // In-flight `loading`: the reload button and the accumulator gate on it.
+  return { sessions, pageInfo, totalCount, loading: loading || refreshing, error, refetch };
 };
 
 export const useQueryContentQuestionAnalyticsQuery = (
@@ -473,7 +554,7 @@ export const useQueryContentQuestionAnalyticsQuery = (
   endDate: string,
   timezone: string,
 ) => {
-  const { data, loading, error, refetch } = useQuery(queryContentQuestionAnalytics, {
+  const { data, loading, error, refetch } = useTypedQuery(QueryContentQuestionAnalyticsDocument, {
     variables: { contentId, startDate, endDate, timezone, environmentId },
   });
   const questionAnalytics = data?.queryContentQuestionAnalytics as ContentQuestionAnalytics[];
@@ -481,7 +562,7 @@ export const useQueryContentQuestionAnalyticsQuery = (
 };
 
 export const useUpdateContentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateContent);
+  const [mutation, { loading, error }] = useMutation(UpdateContentDocument);
   const invoke = useCallback(
     async (contentId: string, content: Pick<Content, 'name' | 'config' | 'buildUrl'>) => {
       const response = await mutation({ variables: { contentId, content } });
@@ -493,7 +574,7 @@ export const useUpdateContentMutation = () => {
 };
 
 export const useUpdateContentVersionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateContentVersion);
+  const [mutation, { loading, error }] = useMutation(UpdateContentVersionDocument);
   const invoke = useCallback(
     async (
       versionId: string,
@@ -512,8 +593,10 @@ export const useUpdateContentVersionMutation = () => {
       // detail's scalar updates omit it.
       expectedUpdatedAt?: string,
     ) => {
-      const response = await mutation({ variables: { versionId, content, expectedUpdatedAt } });
-      return response.data?.updateContentVersion;
+      const response = await mutation({
+        variables: { versionId, content: content as VersionInput, expectedUpdatedAt },
+      });
+      return response.data?.updateContentVersion as ContentVersion | undefined;
     },
     [mutation],
   );
@@ -532,7 +615,7 @@ export type CreateAttributeMutationVariables = {
 };
 
 export const useCreateAttributeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createAttribute, {
+  const [mutation, { loading, error }] = useMutation(CreateAttributeDocument, {
     refetchQueries: ['listAttributes'],
   });
   const invoke = useCallback(
@@ -548,9 +631,9 @@ export const useCreateAttributeMutation = () => {
 export const useListAttributesQuery = (
   projectId: string,
   bizType: AttributeBizTypes,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListAttributesQuery, ListAttributesQueryVariables>,
 ) => {
-  const { data, loading, error, refetch } = useQuery(listAttributes, {
+  const { data, loading, error, refetch } = useTypedQuery(ListAttributesDocument, {
     variables: { projectId, bizType },
     ...options,
   });
@@ -559,13 +642,13 @@ export const useListAttributesQuery = (
 };
 
 export const useCreateCheckoutSessionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createCheckoutSession);
+  const [mutation, { loading, error }] = useMutation(CreateCheckoutSessionDocument);
   const invoke = useCallback(
     async (data: {
       projectId: string;
       planType: string;
       interval: string;
-    }): Promise<string> => {
+    }): Promise<string | undefined> => {
       const response = await mutation({ variables: { data } });
       return response.data?.createCheckoutSession;
     },
@@ -575,9 +658,9 @@ export const useCreateCheckoutSessionMutation = () => {
 };
 
 export const useCreatePortalSessionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createPortalSession);
+  const [mutation, { loading, error }] = useMutation(CreatePortalSessionDocument);
   const invoke = useCallback(
-    async (projectId: string): Promise<string> => {
+    async (projectId: string): Promise<string | undefined> => {
       const response = await mutation({ variables: { projectId } });
       return response.data?.createPortalSession;
     },
@@ -586,31 +669,29 @@ export const useCreatePortalSessionMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useGetSubscriptionPlansQuery = () => {
-  const { data, loading, error, refetch } = useQuery(getSubscriptionPlans);
-  const plans = data?.getSubscriptionPlans ?? [];
-  return { plans, loading, error, refetch };
-};
-
 export const useGetSubscriptionByProjectIdQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<
+    GetSubscriptionByProjectIdQuery,
+    GetSubscriptionByProjectIdQueryVariables
+  >,
 ) => {
-  const { data, loading, error, refetch } = useQuery(getSubscriptionByProjectId, {
-    variables: { projectId },
+  const { data, loading, error, refetch } = useTypedQuery(GetSubscriptionByProjectIdDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId,
     ...options,
   });
-  const subscription = data?.getSubscriptionByProjectId as Subscription | null;
+  // Wire shape and domain Subscription differ on optionality; the hook is the boundary.
+  const subscription = data?.getSubscriptionByProjectId as unknown as Subscription | null;
   return { subscription, loading, error, refetch };
 };
 
 export const useGetSubscriptionUsageQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetSubscriptionUsageQuery, GetSubscriptionUsageQueryVariables>,
 ) => {
-  const { data, loading, error, refetch } = useQuery(getSubscriptionUsage, {
-    variables: { projectId },
+  const { data, loading, error, refetch } = useTypedQuery(GetSubscriptionUsageDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId,
     ...options,
   });
@@ -619,7 +700,7 @@ export const useGetSubscriptionUsageQuery = (
 };
 
 export const useGlobalConfigQuery = () => {
-  const { data, loading, error } = useQuery(globalConfig);
+  const { data, loading, error } = useTypedQuery(GlobalConfigDocument);
   return {
     data: data?.globalConfig as GlobalConfig | undefined,
     loading,
@@ -628,7 +709,7 @@ export const useGlobalConfigQuery = () => {
 };
 
 export const useUpdateProjectMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateProject);
+  const [mutation, { loading, error }] = useMutation(UpdateProjectDocument);
   const invoke = useCallback(
     // Only the provided fields are updated; logoUrl null/empty clears the logo.
     async (
@@ -645,10 +726,15 @@ export const useUpdateProjectMutation = () => {
 
 // Builder related hooks
 export const useGetContentLazyQuery = () => {
-  const [query, { loading, error }] = useLazyQuery(getContent);
+  const [query, { loading, error }] = useLazyQuery(GetContentDocument);
+  // A failure rejects, as a mutation's invoke does: the builder must tell a
+  // content that failed to load from one that is gone.
   const invoke = useCallback(
     async (contentId: string) => {
       const response = await query({ variables: { contentId } });
+      if (response.error) {
+        throw response.error;
+      }
       return response.data?.getContent;
     },
     [query],
@@ -657,11 +743,11 @@ export const useGetContentLazyQuery = () => {
 };
 
 export const useQueryOembedInfoLazyQuery = () => {
-  const [query, { loading, error }] = useLazyQuery(queryOembedInfo);
+  const [query, { loading, error }] = useLazyQuery(QueryOembedInfoDocument);
   const invoke = useCallback(
     async (url: string) => {
       const response = await query({ variables: { url } });
-      return response.data?.queryOembedInfo;
+      return response.data?.queryOembedInfo as ContentOmbedInfo | undefined;
     },
     [query],
   );
@@ -672,7 +758,7 @@ export const useCreateContentVersionMutation = () => {
   // Forking the version inserts a new row at the top of the paginated
   // version-history list — Apollo's normalized cache can't materialise
   // a new edge from the mutation response, so refetch the list query.
-  const [mutation, { loading, error }] = useMutation(createContentVersion, {
+  const [mutation, { loading, error }] = useMutation(CreateContentVersionDocument, {
     refetchQueries: ['listContentVersions'],
   });
   const invoke = useCallback(
@@ -691,7 +777,7 @@ export const useCreateContentVersionMutation = () => {
 };
 
 export const useDeleteAttributeMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteAttribute);
+  const [mutation, { loading, error }] = useMutation(DeleteAttributeDocument);
   const invoke = useCallback(
     async (id: string): Promise<boolean> => {
       const response = await mutation({
@@ -709,7 +795,7 @@ export const useDeleteAttributeMutation = () => {
 };
 
 export const useDeleteSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteSegment);
+  const [mutation, { loading, error }] = useMutation(DeleteSegmentDocument);
   const invoke = useCallback(
     async (id: string): Promise<boolean> => {
       const response = await mutation({
@@ -731,13 +817,13 @@ export const useDeleteSegmentMutation = () => {
 // invoke handles both filter-condition saves and column-setting saves.
 //
 // Refresh path is `refetchQueries: ['listSegment']`, NOT Apollo
-// auto-merge. The updateSegment gql response only selects `{ id }`
+// auto-merge. The UpdateSegmentDocument gql response only selects `{ id }`
 // (see packages/gql/src/gql/segment.ts), so auto-merge into the cached
 // Segment entity is a no-op. To migrate to auto-merge later, expand
 // the gql response to mirror listSegment's selection set, then drop
 // refetchQueries here.
 export const useUpdateSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateSegment, {
+  const [mutation, { loading, error }] = useMutation(UpdateSegmentDocument, {
     refetchQueries: ['listSegment'],
   });
   const invoke = useCallback(
@@ -756,7 +842,7 @@ export const useUpdateSegmentMutation = () => {
 };
 
 export const useDeleteContentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteContent);
+  const [mutation, { loading, error }] = useMutation(DeleteContentDocument);
   const invoke = useCallback(
     async (contentId: string): Promise<boolean> => {
       const response = await mutation({
@@ -778,7 +864,7 @@ export const useDeleteContentMutation = () => {
 };
 
 export const useDeleteEnvironmentsMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteEnvironments);
+  const [mutation, { loading, error }] = useMutation(DeleteEnvironmentsDocument);
   const invoke = useCallback(
     async (id: string): Promise<boolean> => {
       const response = await mutation({
@@ -801,7 +887,7 @@ export interface CreateEnvironmentInput {
 }
 
 export const useCreateEnvironmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createEnvironments, {
+  const [mutation, { loading, error }] = useMutation(CreateEnvironmentsDocument, {
     refetchQueries: ['userEnvironments'],
   });
   const invoke = useCallback(
@@ -824,12 +910,12 @@ export const useUpdateEnvironmentMutation = () => {
   // setPrimary flips isPrimary on two rows; refetch covers the demoted one.
   // Plain rename auto-merges via __typename:id but we refetch anyway so
   // the caller doesn't need to know which path it took.
-  const [mutation, { loading, error }] = useMutation(updateEnvironments, {
+  const [mutation, { loading, error }] = useMutation(UpdateEnvironmentsDocument, {
     refetchQueries: ['userEnvironments'],
   });
   const invoke = useCallback(
     async (input: UpdateEnvironmentInput): Promise<boolean> => {
-      const response = await mutation({ variables: input });
+      const response = await mutation({ variables: input as UpdateEnvironmentsMutationVariables });
       return !!response.data?.updateEnvironments?.id;
     },
     [mutation],
@@ -848,7 +934,7 @@ export interface UpdateAttributeInput {
 
 export const useUpdateAttributeMutation = () => {
   // Auto-merged by Apollo via __typename:id.
-  const [mutation, { loading, error }] = useMutation(updateAttribute);
+  const [mutation, { loading, error }] = useMutation(UpdateAttributeDocument);
   const invoke = useCallback(
     async (data: UpdateAttributeInput): Promise<boolean> => {
       const response = await mutation({ variables: { data } });
@@ -861,10 +947,10 @@ export const useUpdateAttributeMutation = () => {
 
 export const useGetUserEnvironmentsQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<UserEnvironmentsQuery, UserEnvironmentsQueryVariables>,
 ) => {
-  const { data, refetch, loading, error, networkStatus } = useQuery(getUserEnvironments, {
-    variables: { projectId },
+  const { data, refetch, loading, error, networkStatus } = useTypedQuery(UserEnvironmentsDocument, {
+    variables: { projectId: projectId! },
     notifyOnNetworkStatusChange: true,
     skip: !projectId,
     ...options,
@@ -878,10 +964,10 @@ export const useGetUserEnvironmentsQuery = (
 
 export const useVerifyInstallationQuery = (
   environmentId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<VerifyInstallationQuery, VerifyInstallationQueryVariables>,
 ) => {
-  const { data, loading, error, refetch, stopPolling } = useQuery(verifyInstallation, {
-    variables: { environmentId },
+  const { data, loading, error, refetch, stopPolling } = useTypedQuery(VerifyInstallationDocument, {
+    variables: { environmentId: environmentId! },
     skip: !environmentId,
     ...options,
   });
@@ -897,7 +983,7 @@ export const useVerifyInstallationQuery = (
 };
 
 export const useDeleteBizUserMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteBizUser);
+  const [mutation, { loading, error }] = useMutation(DeleteBizUserDocument);
   const invoke = useCallback(
     async (data: {
       ids: string[];
@@ -937,7 +1023,7 @@ export const useDeleteBizUserOnSegmentMutation = () => {
   // in cache, but the segment's view of users needs to be refetched
   // because Apollo can't infer "this user is no longer in this segment"
   // from a count response.
-  const [mutation, { loading, error }] = useMutation(deleteBizUserOnSegment, {
+  const [mutation, { loading, error }] = useMutation(DeleteBizUserOnSegmentDocument, {
     refetchQueries: ['queryBizUser'],
   });
   const invoke = useCallback(
@@ -959,45 +1045,52 @@ export const useDeleteBizUserOnSegmentMutation = () => {
   return { invoke, loading, error };
 };
 
-// Generic data type lets callers pass the entity-specific shape
-// (`CreatSegment` for create, `CreateBizUserOnSegment` for add-to-segment,
-// etc.) without the wrapper having to know every server input type.
-type MutationVariables = { data: Record<string, unknown> };
-
 export const useCreateSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createSegment, {
+  const [mutation, { loading, error }] = useMutation(CreateSegmentDocument, {
     refetchQueries: ['listSegment'],
   });
-  const invoke = useCallback((variables: MutationVariables) => mutation({ variables }), [mutation]);
+  const invoke = useCallback(
+    (variables: CreateSegmentMutationVariables) => mutation({ variables }),
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useCreateBizUserOnSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createBizUserOnSegment, {
+  const [mutation, { loading, error }] = useMutation(CreateBizUserOnSegmentDocument, {
     refetchQueries: ['queryBizUser'],
   });
-  const invoke = useCallback((variables: MutationVariables) => mutation({ variables }), [mutation]);
+  const invoke = useCallback(
+    (variables: CreateBizUserOnSegmentMutationVariables) => mutation({ variables }),
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useCreateBizCompanyOnSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createBizCompanyOnSegment, {
+  const [mutation, { loading, error }] = useMutation(CreateBizCompanyOnSegmentDocument, {
     refetchQueries: ['queryBizCompany'],
   });
-  const invoke = useCallback((variables: MutationVariables) => mutation({ variables }), [mutation]);
+  const invoke = useCallback(
+    (variables: CreateBizCompanyOnSegmentMutationVariables) => mutation({ variables }),
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useDeleteBizCompanyOnSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteBizCompanyOnSegment, {
+  const [mutation, { loading, error }] = useMutation(DeleteBizCompanyOnSegmentDocument, {
     refetchQueries: ['queryBizCompany'],
   });
-  const invoke = useCallback((variables: MutationVariables) => mutation({ variables }), [mutation]);
+  const invoke = useCallback(
+    (variables: DeleteBizCompanyOnSegmentMutationVariables) => mutation({ variables }),
+    [mutation],
+  );
   return { invoke, loading, error };
 };
 
 export const useDeleteBizCompanyMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteBizCompany);
+  const [mutation, { loading, error }] = useMutation(DeleteBizCompanyDocument);
   const invoke = useCallback(
     async (data: {
       ids: string[];
@@ -1005,7 +1098,7 @@ export const useDeleteBizCompanyMutation = () => {
     }): Promise<{ success: boolean; count: number }> => {
       const response = await mutation({
         variables: { data },
-        // queryBizCompany returns BizConnection (paginated BizModel),
+        // QueryBizCompanyDocument returns BizConnection (paginated BizModel),
         // not BizCompany — companies are stored under `BizModel:{id}` in
         // the normalized cache. (Users use `BizUser`, the subclass.)
         //
@@ -1033,7 +1126,7 @@ export const useDeleteBizCompanyMutation = () => {
 
 // License related hooks
 export const useGetProjectLicenseInfoQuery = (projectId: string) => {
-  const { data, loading, error, refetch } = useQuery(getProjectLicenseInfo, {
+  const { data, loading, error, refetch } = useTypedQuery(GetProjectLicenseInfoDocument, {
     variables: { projectId },
     skip: !projectId,
   });
@@ -1048,10 +1141,10 @@ export const useGetProjectLicenseInfoQuery = (projectId: string) => {
 
 export const useGetProjectConfigQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetProjectConfigQuery, GetProjectConfigQueryVariables>,
 ) => {
-  const { data, loading, error, refetch } = useQuery(getProjectConfig, {
-    variables: { projectId },
+  const { data, loading, error, refetch } = useTypedQuery(GetProjectConfigDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId || options?.skip,
     ...options,
   });
@@ -1076,7 +1169,7 @@ export const useGetProjectConfigQuery = (
 };
 
 export const useUpdateProjectLicenseMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateProjectLicense);
+  const [mutation, { loading, error }] = useMutation(UpdateProjectLicenseDocument);
 
   const invoke = useCallback(
     async (projectId: string, license: string) => {
@@ -1093,17 +1186,17 @@ export const useUpdateProjectLicenseMutation = () => {
 
 // Admin related hooks
 export const useAdminSettingsQuery = () => {
-  const { data, loading, error, refetch } = useQuery(adminSettings);
+  const { data, loading, error, refetch } = useTypedQuery(AdminSettingsDocument);
   return { data: data?.adminSettings, loading, error, refetch };
 };
 
 export const useAdminInstanceSettingsQuery = () => {
-  const { data, loading, error, refetch } = useQuery(adminInstanceSettings);
+  const { data, loading, error, refetch } = useTypedQuery(AdminInstanceSettingsDocument);
   return { data: data?.adminInstanceSettings, loading, error, refetch };
 };
 
 export const useUpdateInstanceLicenseMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateInstanceLicense);
+  const [mutation, { loading, error }] = useMutation(UpdateInstanceLicenseDocument);
   const invoke = useCallback(
     async (license: string) => {
       const response = await mutation({ variables: { license } });
@@ -1115,7 +1208,7 @@ export const useUpdateInstanceLicenseMutation = () => {
 };
 
 export const useUpdateInstanceGeneralSettingsMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateInstanceGeneralSettings);
+  const [mutation, { loading, error }] = useMutation(UpdateInstanceGeneralSettingsDocument);
   const invoke = useCallback(
     async (
       name?: string,
@@ -1133,7 +1226,7 @@ export const useUpdateInstanceGeneralSettingsMutation = () => {
 };
 
 export const useUpdateInstanceAuthenticationSettingsMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateInstanceAuthenticationSettings);
+  const [mutation, { loading, error }] = useMutation(UpdateInstanceAuthenticationSettingsDocument);
   const invoke = useCallback(
     async (allowUserRegistration: boolean) => {
       const response = await mutation({ variables: { allowUserRegistration } });
@@ -1151,14 +1244,14 @@ export const useAdminUsersQuery = (
   status?: string,
   role?: string,
 ) => {
-  const { data, loading, error, refetch } = useQuery(adminUsers, {
+  const { data, loading, error, refetch } = useTypedQuery(AdminUsersDocument, {
     variables: { query, page, pageSize, status, role },
   });
   return { data: data?.adminUsers, loading, error, refetch };
 };
 
 export const useAdminCreateUserMutation = () => {
-  const [mutation, { loading, error }] = useMutation(adminCreateUser);
+  const [mutation, { loading, error }] = useMutation(AdminCreateUserDocument);
   const invoke = useCallback(
     async (name: string, email: string, password: string) => {
       const response = await mutation({ variables: { name, email, password } });
@@ -1170,7 +1263,7 @@ export const useAdminCreateUserMutation = () => {
 };
 
 export const useUpdateUserSystemAdminMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateUserSystemAdmin);
+  const [mutation, { loading, error }] = useMutation(UpdateUserSystemAdminDocument);
   const invoke = useCallback(
     async (userId: string, isSystemAdmin: boolean) => {
       const response = await mutation({ variables: { userId, isSystemAdmin } });
@@ -1182,7 +1275,7 @@ export const useUpdateUserSystemAdminMutation = () => {
 };
 
 export const useUpdateUserDisabledMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateUserDisabled);
+  const [mutation, { loading, error }] = useMutation(UpdateUserDisabledDocument);
   const invoke = useCallback(
     async (userId: string, disabled: boolean) => {
       const response = await mutation({ variables: { userId, disabled } });
@@ -1199,14 +1292,14 @@ export const useAdminProjectsQuery = (
   pageSize?: number,
   usesInstanceLicense?: string,
 ) => {
-  const { data, loading, error, refetch } = useQuery(adminProjects, {
+  const { data, loading, error, refetch } = useTypedQuery(AdminProjectsDocument, {
     variables: { query, page, pageSize, usesInstanceLicense },
   });
   return { data: data?.adminProjects, loading, error, refetch };
 };
 
 export const useAdminCreateProjectMutation = () => {
-  const [mutation, { loading, error }] = useMutation(adminCreateProject);
+  const [mutation, { loading, error }] = useMutation(AdminCreateProjectDocument);
   const invoke = useCallback(
     async (name: string, ownerUserId: string) => {
       const response = await mutation({ variables: { name, ownerUserId } });
@@ -1218,7 +1311,7 @@ export const useAdminCreateProjectMutation = () => {
 };
 
 export const useUpdateProjectUsesInstanceLicenseMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateProjectUsesInstanceLicense);
+  const [mutation, { loading, error }] = useMutation(UpdateProjectUsesInstanceLicenseDocument);
   const invoke = useCallback(
     async (projectId: string, enabled: boolean) => {
       const response = await mutation({ variables: { projectId, enabled } });
@@ -1230,7 +1323,7 @@ export const useUpdateProjectUsesInstanceLicenseMutation = () => {
 };
 
 export const useAdminProjectMembersQuery = (projectId: string) => {
-  const { data, loading, error, refetch } = useQuery(adminProjectMembers, {
+  const { data, loading, error, refetch } = useTypedQuery(AdminProjectMembersDocument, {
     variables: { projectId },
     skip: !projectId,
   });
@@ -1238,7 +1331,7 @@ export const useAdminProjectMembersQuery = (projectId: string) => {
 };
 
 export const useAdminAddProjectMemberMutation = () => {
-  const [mutation, { loading, error }] = useMutation(adminAddProjectMember);
+  const [mutation, { loading, error }] = useMutation(AdminAddProjectMemberDocument);
   const invoke = useCallback(
     async (projectId: string, userId: string, role: string) => {
       const response = await mutation({ variables: { projectId, userId, role } });
@@ -1250,7 +1343,7 @@ export const useAdminAddProjectMemberMutation = () => {
 };
 
 export const useAdminChangeProjectMemberRoleMutation = () => {
-  const [mutation, { loading, error }] = useMutation(adminChangeProjectMemberRole);
+  const [mutation, { loading, error }] = useMutation(AdminChangeProjectMemberRoleDocument);
   const invoke = useCallback(
     async (projectId: string, userId: string, role: string) => {
       const response = await mutation({ variables: { projectId, userId, role } });
@@ -1262,7 +1355,7 @@ export const useAdminChangeProjectMemberRoleMutation = () => {
 };
 
 export const useAdminTransferProjectOwnershipMutation = () => {
-  const [mutation, { loading, error }] = useMutation(adminTransferProjectOwnership);
+  const [mutation, { loading, error }] = useMutation(AdminTransferProjectOwnershipDocument);
   const invoke = useCallback(
     async (projectId: string, userId: string) => {
       const response = await mutation({ variables: { projectId, userId } });
@@ -1274,7 +1367,7 @@ export const useAdminTransferProjectOwnershipMutation = () => {
 };
 
 export const useAdminRemoveProjectMemberMutation = () => {
-  const [mutation, { loading, error }] = useMutation(adminRemoveProjectMember);
+  const [mutation, { loading, error }] = useMutation(AdminRemoveProjectMemberDocument);
   const invoke = useCallback(
     async (projectId: string, userId: string) => {
       const response = await mutation({ variables: { projectId, userId } });
@@ -1290,7 +1383,7 @@ export const useAdminRemoveProjectMemberMutation = () => {
 // ---------------------------------------------------------------------------
 
 export const useUpdateInstanceRequire2FAMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateInstanceRequire2FA);
+  const [mutation, { loading, error }] = useMutation(UpdateInstanceRequire2FaDocument);
   const invoke = useCallback(
     async (value: boolean) => {
       const response = await mutation({ variables: { value } });
@@ -1316,13 +1409,18 @@ export const useInvalidateLicenseScopedCache = () => {
     apollo.cache.evict({ fieldName: 'me' });
     apollo.cache.evict({ fieldName: 'globalConfig' });
     apollo.cache.gc();
-    await apollo.refetchQueries({ include: [getUserInfo, globalConfig] }).catch(() => undefined);
+    await apollo
+      .refetchQueries({ include: [MeDocument, GlobalConfigDocument] })
+      .catch(() => undefined);
   }, [apollo]);
 };
 
-export const useGetThemeQuery = (themeId: string | undefined, options?: QueryHookOptions) => {
-  const { data, refetch, loading, error } = useQuery(getTheme, {
-    variables: { themeId },
+export const useGetThemeQuery = (
+  themeId: string | undefined,
+  options?: TypedQueryOptions<GetThemeQuery, GetThemeQueryVariables>,
+) => {
+  const { data, refetch, loading, error } = useTypedQuery(GetThemeDocument, {
+    variables: { themeId: themeId! },
     skip: !themeId,
     ...options,
   });
@@ -1331,10 +1429,10 @@ export const useGetThemeQuery = (themeId: string | undefined, options?: QueryHoo
 
 export const useListLocalizationsQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListLocalizationsQuery, ListLocalizationsQueryVariables>,
 ) => {
-  const { data, refetch, loading, error } = useQuery(listLocalizations, {
-    variables: { projectId },
+  const { data, refetch, loading, error } = useTypedQuery(ListLocalizationsDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId,
     ...options,
   });
@@ -1405,10 +1503,10 @@ export type UpdateProjectSsoSettingsInput = Partial<{
 
 export const useListProjectSsoProvidersQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListProjectSsoProvidersQuery, ListProjectSsoProvidersQueryVariables>,
 ) => {
-  const { data, loading, error, refetch } = useQuery(listProjectSsoProviders, {
-    variables: { projectId },
+  const { data, loading, error, refetch } = useTypedQuery(ListProjectSsoProvidersDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId || options?.skip,
     ...options,
   });
@@ -1422,10 +1520,10 @@ export const useListProjectSsoProvidersQuery = (
 
 export const useGetProjectSsoProvidersQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetProjectSsoProvidersQuery, GetProjectSsoProvidersQueryVariables>,
 ) => {
-  const { data, loading, error, refetch } = useQuery(getProjectSsoProviders, {
-    variables: { projectId },
+  const { data, loading, error, refetch } = useTypedQuery(GetProjectSsoProvidersDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId || options?.skip,
     ...options,
   });
@@ -1439,10 +1537,10 @@ export const useGetProjectSsoProvidersQuery = (
 
 export const useGetProjectSsoLoginQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetProjectSsoLoginQuery, GetProjectSsoLoginQueryVariables>,
 ) => {
-  const { data, loading, error, refetch } = useQuery(getProjectSsoLogin, {
-    variables: { projectId },
+  const { data, loading, error, refetch } = useTypedQuery(GetProjectSsoLoginDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId || options?.skip,
     ...options,
   });
@@ -1458,7 +1556,7 @@ export const useGetProjectSsoLoginQuery = (
 };
 
 export const useCreateOidcSsoProviderMutation = () => {
-  const [mutation, { loading, error }] = useMutation(createOidcSsoProvider);
+  const [mutation, { loading, error }] = useMutation(CreateOidcSsoProviderDocument);
   const invoke = useCallback(
     async (projectId: string, input: CreateOidcSsoProviderInput): Promise<SsoProvider> => {
       const response = await mutation({ variables: { projectId, input } });
@@ -1470,7 +1568,7 @@ export const useCreateOidcSsoProviderMutation = () => {
 };
 
 export const useUpdateSsoProviderMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateSsoProvider);
+  const [mutation, { loading, error }] = useMutation(UpdateSsoProviderDocument);
   const invoke = useCallback(
     async (id: string, input: UpdateSsoProviderInput): Promise<SsoProvider> => {
       const response = await mutation({ variables: { id, input } });
@@ -1482,7 +1580,7 @@ export const useUpdateSsoProviderMutation = () => {
 };
 
 export const useDeleteSsoProviderMutation = () => {
-  const [mutation, { loading, error }] = useMutation(deleteSsoProvider);
+  const [mutation, { loading, error }] = useMutation(DeleteSsoProviderDocument);
   const invoke = useCallback(
     async (id: string): Promise<boolean> => {
       const response = await mutation({ variables: { id } });
@@ -1495,10 +1593,10 @@ export const useDeleteSsoProviderMutation = () => {
 
 export const useGetProjectSsoSettingsQuery = (
   projectId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<GetProjectSsoSettingsQuery, GetProjectSsoSettingsQueryVariables>,
 ) => {
-  const { data, loading, error, refetch } = useQuery(getProjectSsoSettings, {
-    variables: { projectId },
+  const { data, loading, error, refetch } = useTypedQuery(GetProjectSsoSettingsDocument, {
+    variables: { projectId: projectId! },
     skip: !projectId || options?.skip,
     ...options,
   });
@@ -1511,13 +1609,18 @@ export const useGetProjectSsoSettingsQuery = (
 };
 
 export const useUpdateProjectSsoSettingsMutation = () => {
-  const [mutation, { loading, error }] = useMutation(updateProjectSsoSettings);
+  const [mutation, { loading, error }] = useMutation(UpdateProjectSsoSettingsDocument);
   const invoke = useCallback(
     async (
       projectId: string,
       input: UpdateProjectSsoSettingsInput,
     ): Promise<ProjectSsoSettings> => {
-      const response = await mutation({ variables: { projectId, input } });
+      const response = await mutation({
+        variables: {
+          projectId,
+          input: input as UpdateProjectSsoSettingsMutationVariables['input'],
+        },
+      });
       return response.data?.updateProjectSsoSettings as ProjectSsoSettings;
     },
     [mutation],

@@ -1,16 +1,22 @@
-import { NetworkStatus, type QueryHookOptions, useQuery } from '@apollo/client';
-import { listSegment } from '@usertour/gql';
+import { NetworkStatus } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
 import type { Segment } from '@usertour/types';
+import {
+  ListSegmentDocument,
+  type ListSegmentQuery,
+  type ListSegmentQueryVariables,
+} from '@usertour/gql';
 
 // Domain wrapper for `listSegment`. Lives outside the catch-all
 // `gql.ts` per the convention established by `themes.ts` /
 // `access-tokens.ts` etc.
 export const useListSegmentsQuery = (
   environmentId: string | undefined,
-  options?: QueryHookOptions,
+  options?: TypedQueryOptions<ListSegmentQuery, ListSegmentQueryVariables>,
 ) => {
-  const { data, refetch, loading, error, networkStatus } = useQuery(listSegment, {
-    variables: { environmentId },
+  const { data, refetch, loading, error, networkStatus } = useTypedQuery(ListSegmentDocument, {
+    variables: { environmentId: environmentId! },
     skip: !environmentId,
     notifyOnNetworkStatusChange: true,
     ...options,

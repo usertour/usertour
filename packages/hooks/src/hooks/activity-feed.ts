@@ -1,8 +1,10 @@
-import { type DocumentNode, type QueryHookOptions, useQuery } from '@apollo/client';
-import { queryBizCompanyEvents, queryBizUserEvents } from '@usertour/gql';
+import { type DocumentNode, type QueryHookOptions } from '@apollo/client';
+import { useTypedQuery } from '../query';
+
 import type { BizEvent, PageInfo } from '@usertour/types';
 import { useMemo } from 'react';
 import { useCursorFetchMore } from './use-cursor-fetch-more';
+import { QueryBizCompanyEventsDocument, QueryBizUserEventsDocument } from '@usertour/gql';
 
 // Domain wrapper for `queryBizUserEvents` / `queryBizCompanyEvents`
 // activity-feed queries. Cursor pagination via Apollo's `fetchMore`
@@ -35,7 +37,7 @@ const useActivityFeedQuery = (
   query: ActivityFeedQueryVariables,
   options?: QueryHookOptions,
 ) => {
-  const { data, loading, networkStatus, fetchMore, refetch } = useQuery(gqlQuery, {
+  const { data, loading, refreshing, networkStatus, fetchMore, refetch } = useTypedQuery(gqlQuery, {
     variables: {
       first: PAGE_SIZE,
       query,
@@ -60,8 +62,14 @@ const useActivityFeedQuery = (
   // button (`refetch`) is the no-cursor base fetch path — the
   // typePolicy replaces the accumulator with the fresh page 1 instead
   // of leaving stale events on top.
-  const { loadingMore, fetchNextPage: loadMore } = useCursorFetchMore({
-    loading,
+  // The feed loads more from a button, not a sentinel: every click is the
+  // user asking, failed page or not, so it goes through `retryNextPage`.
+  const {
+    loadingMore,
+    pageFailed,
+    retryNextPage: loadMore,
+  } = useCursorFetchMore({
+    loading: loading || refreshing,
     networkStatus,
     hasNextPage,
     endCursor,
@@ -76,8 +84,10 @@ const useActivityFeedQuery = (
 
   return {
     events,
-    loading: loading && !loadingMore,
+    // In-flight `loading` (a reload keeps the rows); a fetch-more is `loadingMore` instead.
+    loading: (loading || refreshing) && !loadingMore,
     loadingMore,
+    pageFailed,
     totalCount,
     hasNextPage,
     refetch,
@@ -91,7 +101,7 @@ export const useUserActivityFeedQuery = (
   options?: QueryHookOptions,
 ) =>
   useActivityFeedQuery(
-    queryBizUserEvents,
+    QueryBizUserEventsDocument,
     'queryBizUserEvents',
     { environmentId, userId },
     options,
@@ -103,7 +113,7 @@ export const useCompanyActivityFeedQuery = (
   options?: QueryHookOptions,
 ) =>
   useActivityFeedQuery(
-    queryBizCompanyEvents,
+    QueryBizCompanyEventsDocument,
     'queryBizCompanyEvents',
     { environmentId, companyId },
     options,
