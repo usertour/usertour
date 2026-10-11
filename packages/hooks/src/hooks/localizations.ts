@@ -4,27 +4,21 @@ import { useCallback } from 'react';
 import type { VersionOnLocalization } from '@usertour/types';
 import {
   CreateLocalizationDocument,
+  type CreateLocalizationInput,
   DeleteLocalizationDocument,
   ListVersionLocalizationsDocument,
   SetDefaultLocalizationDocument,
   TranslateLocalizationUnitsDocument,
+  type TranslateLocalizationUnitsInput,
+  type TranslateLocalizationUnitsMutation,
   UpdateLocalizationDocument,
+  type UpdateLocalizationInput,
   UpdateVersionLocalizationDocument,
+  type UpdateVersionLocalizationInput as UpdateVersionLocalizationInputWire,
+  type VersionTranslationUnitInput,
 } from '@usertour/gql';
 
-export interface CreateLocalizationInput {
-  projectId: string;
-  locale: string;
-  name: string;
-  code: string;
-}
-
-export interface UpdateLocalizationInput {
-  id: string;
-  locale: string;
-  name: string;
-  code: string;
-}
+export type { CreateLocalizationInput, UpdateLocalizationInput };
 
 export const useCreateLocalizationMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateLocalizationDocument, {
@@ -63,21 +57,13 @@ export const useDeleteLocalizationMutation = () => {
 };
 
 /** One unit of a translation save: `null` clears it, a blank string keeps the stored text. */
-export interface VersionTranslationUnitChange {
-  path: string;
-  translation: string | null;
-}
+export type VersionTranslationUnitChange = VersionTranslationUnitInput;
 
-export interface UpdateVersionLocalizationInput {
-  contentId: string;
-  versionId: string;
-  /** The target locale's code. */
-  code: string;
-  /** Only the listed units are written; the server merges them into the stored row. */
-  translations?: VersionTranslationUnitChange[];
-  /** Omitted keeps the stored state. */
-  enabled?: boolean;
-}
+/**
+ * Only the listed `translations` are written; the server merges them into the
+ * stored row. `enabled` omitted keeps the stored state.
+ */
+export type UpdateVersionLocalizationInput = UpdateVersionLocalizationInputWire;
 
 export const useUpdateVersionLocalizationMutation = () => {
   // In-place saves auto-merge into the `VersionOnLocalization:id` slot; a
@@ -126,16 +112,10 @@ export const useSetDefaultLocalizationMutation = () => {
   return { invoke, loading, error };
 };
 
-export interface TranslateLocalizationUnitsInput {
-  versionId: string;
-  localizationId: string;
-  units: { path: string; sourceText: string }[];
-}
+export type { TranslateLocalizationUnitsInput };
 
-export interface TranslatedLocalizationUnit {
-  path: string;
-  translatedText: string;
-}
+export type TranslatedLocalizationUnit =
+  TranslateLocalizationUnitsMutation['translateLocalizationUnits'][number];
 
 export const useTranslateLocalizationUnitsMutation = () => {
   const [mutation, { loading, error }] = useMutation(TranslateLocalizationUnitsDocument);

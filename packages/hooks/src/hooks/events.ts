@@ -4,6 +4,7 @@ import { type TypedQueryOptions, useTypedQuery } from '../query';
 import type { Event } from '@usertour/types';
 import {
   CreateEventDocument,
+  type CreateEventInput,
   DeleteEventDocument,
   ListAttributeOnEventsDocument,
   type ListAttributeOnEventsQuery,
@@ -12,23 +13,10 @@ import {
   type ListEventsQuery,
   type ListEventsQueryVariables,
   UpdateEventDocument,
+  type UpdateEventInput,
 } from '@usertour/gql';
 
-export interface CreateEventInput {
-  projectId: string;
-  displayName: string;
-  codeName: string;
-  description: string;
-  attributeIds: string[];
-}
-
-export interface UpdateEventInput {
-  id: string;
-  displayName: string;
-  codeName: string;
-  description: string;
-  attributeIds: string[];
-}
+export type { CreateEventInput, UpdateEventInput };
 
 export const useCreateEventMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateEventDocument, {
@@ -99,8 +87,6 @@ export const useListAttributeOnEventsQuery = (
     skip: !eventId,
     ...options,
   });
-  const attributeOnEvents = data?.listAttributeOnEvents as
-    | { id: string; eventId: string; attributeId: string }[]
-    | undefined;
+  const attributeOnEvents = data?.listAttributeOnEvents;
   return { attributeOnEvents, loading, error };
 };

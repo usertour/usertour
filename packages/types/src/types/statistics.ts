@@ -66,13 +66,6 @@ export type AnalyticsViewsByBlock = {
   };
 };
 
-export type AnalyticsData = AnalyticsViews & {
-  viewsByDay: AnalyticsViewsByDay[];
-  viewsByStep: AnalyticsViewsByStep[];
-  viewsByTask: AnalyticsViewsByTask[];
-  viewsByBlock: AnalyticsViewsByBlock[];
-};
-
 export type BizSession = {
   id: string;
   externalId: string;

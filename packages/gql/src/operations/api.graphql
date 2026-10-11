@@ -1,29 +1,40 @@
+fragment AccessTokenFields on AccessToken {
+  id
+  name
+  accessToken
+  createdAt
+  isActive
+  expiresAt
+  lastUsedAt
+  description
+}
+
+fragment ApiTokenFields on ApiToken {
+  id
+  name
+  partialKey
+  scopes
+  projectIds
+  environmentIds
+  isActive
+  expiresAt
+  lastUsedAt
+  createdAt
+}
+
 query ProjectHasEnvironmentAccessTokens($projectId: String!) {
   projectHasEnvironmentAccessTokens(projectId: $projectId)
 }
 
 query ListAccessTokens($environmentId: String!) {
   listAccessTokens(environmentId: $environmentId) {
-    id
-    name
-    accessToken
-    createdAt
-    isActive
-    expiresAt
-    lastUsedAt
-    description
+    ...AccessTokenFields
   }
 }
 
 mutation CreateAccessToken($environmentId: String!, $input: CreateAccessTokenInput!) {
   createAccessToken(environmentId: $environmentId, input: $input) {
-    id
-    name
-    accessToken
-    createdAt
-    isActive
-    expiresAt
-    description
+    ...AccessTokenFields
   }
 }
 
@@ -37,16 +48,7 @@ query GetAccessToken($environmentId: String!, $accessTokenId: String!) {
 
 query ApiTokens {
   apiTokens {
-    id
-    name
-    partialKey
-    scopes
-    projectIds
-    environmentIds
-    isActive
-    expiresAt
-    lastUsedAt
-    createdAt
+    ...ApiTokenFields
   }
 }
 
@@ -54,31 +56,14 @@ mutation CreateApiToken($input: CreateApiTokenInput!) {
   createApiToken(input: $input) {
     token
     apiToken {
-      id
-      name
-      partialKey
-      scopes
-      projectIds
-      environmentIds
-      isActive
-      expiresAt
-      createdAt
+      ...ApiTokenFields
     }
   }
 }
 
 mutation UpdateApiToken($id: String!, $input: UpdateApiTokenInput!) {
   updateApiToken(id: $id, input: $input) {
-    id
-    name
-    partialKey
-    scopes
-    projectIds
-    environmentIds
-    isActive
-    expiresAt
-    lastUsedAt
-    createdAt
+    ...ApiTokenFields
   }
 }
 
@@ -86,16 +71,7 @@ mutation RotateApiToken($id: String!) {
   rotateApiToken(id: $id) {
     token
     apiToken {
-      id
-      name
-      partialKey
-      scopes
-      projectIds
-      environmentIds
-      isActive
-      expiresAt
-      lastUsedAt
-      createdAt
+      ...ApiTokenFields
     }
   }
 }

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useCursorFetchMore } from './use-cursor-fetch-more';
 import {
   type AuditLogOrder,
+  type AuditLogQuery,
   ListAuditLogsDocument,
   type ListAuditLogsQuery,
   type ListAuditLogsQueryVariables,
@@ -12,43 +13,17 @@ import {
 const AUDIT_LOG_PAGE_SIZE = 50;
 // Newest first. Sent explicitly (not relying on the server default) so the order
 // is unambiguous and the accumulator cache key is stable.
-const AUDIT_LOG_ORDER = { field: 'createdAt', direction: 'desc' };
+const AUDIT_LOG_ORDER: AuditLogOrder = { field: 'createdAt', direction: 'desc' };
 
-export interface AuditLog {
-  id: string;
-  createdAt: string;
-  source: string;
-  /** The human, when known (null for env access-token / system writes). */
-  actorUserId: string | null;
-  /** The credential used (ApiToken.id, or v1 AccessToken.id). */
-  actorTokenId: string | null;
-  /** Best-effort display name resolved at read time (null if the user was deleted). */
-  actorUserName: string | null;
-  /** Best-effort token name resolved at read time (null if the token was deleted). */
-  actorTokenName: string | null;
-  action: string;
-  operation: string;
-  resourceType: string;
-  resourceId: string;
-  /** Best-effort resource name/title from the snapshot (null when none). */
-  resourceName: string | null;
-  environmentId: string | null;
-  before: unknown;
-  after: unknown;
-  metadata: Record<string, unknown> | null;
-}
+/**
+ * One audit row. The actor is a user (`actorUserId`) or a credential
+ * (`actorTokenId`); the names and `resourceName` are resolved at read time and
+ * null when the referent is gone. `before`/`after`/`metadata` are JSON.
+ */
+export type AuditLog = NonNullable<ListAuditLogsQuery['auditLogs']['edges']>[number]['node'];
 
 /** Optional server-side filters (all combine with AND). Dates are ISO strings. */
-export interface AuditLogFilter {
-  source?: string;
-  action?: string;
-  resourceType?: string;
-  resourceId?: string;
-  environmentId?: string;
-  actorUserId?: string;
-  createdAtFrom?: string;
-  createdAtTo?: string;
-}
+export type AuditLogFilter = AuditLogQuery;
 
 /**
  * Owner-only project audit log (Activity page). Infinite-scroll cursor
@@ -69,7 +44,7 @@ export const useListAuditLogsQuery = (
       variables: {
         projectId: projectId!,
         first: AUDIT_LOG_PAGE_SIZE,
-        orderBy: AUDIT_LOG_ORDER as AuditLogOrder,
+        orderBy: AUDIT_LOG_ORDER,
         query,
       },
       skip: !projectId,
@@ -80,7 +55,7 @@ export const useListAuditLogsQuery = (
 
   const connection = data?.auditLogs;
   const auditLogs: AuditLog[] = useMemo(
-    () => (connection?.edges ?? []).map((edge) => edge.node as AuditLog),
+    () => (connection?.edges ?? []).map((edge) => edge.node),
     [connection?.edges],
   );
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;

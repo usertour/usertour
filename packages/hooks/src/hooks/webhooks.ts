@@ -2,9 +2,11 @@ import { useCallback } from 'react';
 import { NetworkStatus, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { OutboundDelivery, OutboundMessage, OutboundMessageStatus } from './outbound-message';
+import type { OutboundDelivery, OutboundMessage } from './outbound-message';
+import type { Refined } from './refined';
 import {
   CreateWebhookDocument,
+  type CreateWebhookInput,
   DeleteWebhookDocument,
   GetWebhookDocument,
   type GetWebhookQuery,
@@ -19,50 +21,29 @@ import {
   RotateWebhookSecretDocument,
   SendWebhookTestEventDocument,
   UpdateWebhookDocument,
+  type UpdateWebhookInput,
+  type WebhookFieldsFragment,
 } from '@usertour/gql';
 
-export interface Webhook {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  environmentId: string;
-  url: string;
-  /** Subscribed topics: "*", a family prefix ("event.tracked", "content", "user", "company"), or an exact topic. */
-  topics: string[];
-  enabled: boolean;
-  /** Plaintext on get/create/rotate; NULL on list/delete (masked); '' = stored value undecryptable. */
-  secret?: string | null;
-  description?: string | null;
-  /** Circuit-breaker streak: consecutive failed delivery attempts (any success resets). */
-  consecutiveFailures: number;
-  /** While in the future, deliveries are held and sent after the window (cooldown). */
-  cooldownUntil?: string | null;
-  /** Set when the SYSTEM disabled the endpoint after sustained failure. */
-  autoDisabledAt?: string | null;
-}
+/**
+ * `topics`: "*", a family prefix ("event.tracked", "content", "user",
+ * "company"), or an exact topic. On the wire it is a JSON scalar.
+ */
+export type Webhook = Refined<WebhookFieldsFragment, { topics: string[] }>;
+
+/**
+ * The detail read: the secret is plaintext here and on create/rotate, masked
+ * (null) on the list; '' = the stored value could not be decrypted.
+ */
+export type WebhookWithSecret = Refined<GetWebhookQuery['getWebhook'], { topics: string[] }>;
 
 // The message-log shapes are the shared outbound ledger's — identical for
 // both transports (see outbound-message.ts); these aliases keep the
 // webhook-flavored names the consumers import.
 export type WebhookDelivery = OutboundDelivery;
-export type WebhookMessageStatus = OutboundMessageStatus;
 export type WebhookMessage = OutboundMessage;
 
-export interface CreateWebhookInput {
-  environmentId: string;
-  url: string;
-  topics: string[];
-  enabled?: boolean;
-  description?: string;
-}
-
-export interface UpdateWebhookInput {
-  id: string;
-  url?: string;
-  topics?: string[];
-  enabled?: boolean;
-  description?: string;
-}
+export type { CreateWebhookInput, UpdateWebhookInput };
 
 export const useListWebhooksQuery = (
   environmentId: string,
@@ -88,7 +69,7 @@ export const useGetWebhookQuery = (
     skip: !id,
     ...options,
   });
-  const webhook = data?.getWebhook as Webhook | undefined;
+  const webhook = data?.getWebhook as WebhookWithSecret | undefined;
   return { webhook, loading, error, refetch };
 };
 
@@ -107,13 +88,11 @@ export const useQueryWebhookMessagesQuery = (
     },
   );
   const connection = data?.queryWebhookMessages;
-  const messages = (connection?.edges ?? []).map((edge) => edge.node) as WebhookMessage[];
+  const messages: WebhookMessage[] = (connection?.edges ?? []).map((edge) => edge.node);
   return {
     messages,
-    totalCount: connection?.totalCount as number | undefined,
-    pageInfo: connection?.pageInfo as
-      | { endCursor: string | null; hasNextPage: boolean }
-      | undefined,
+    totalCount: connection?.totalCount,
+    pageInfo: connection?.pageInfo,
     // In-flight `loading`: the accumulator and the reload button gate on it.
     loading: loading || refreshing,
     error,
@@ -188,7 +167,7 @@ export const useRotateWebhookSecretMutation = () => {
   const invoke = useCallback(
     async (id: string): Promise<string | null> => {
       const response = await mutation({ variables: { data: { id } } });
-      return (response.data?.rotateWebhookSecret?.secret as string | undefined) ?? null;
+      return response.data?.rotateWebhookSecret?.secret ?? null;
     },
     [mutation],
   );

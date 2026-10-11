@@ -11,10 +11,14 @@ import type {
   IntegrationConfig,
 } from '@usertour/types';
 import type { OutboundMessage } from './outbound-message';
+import type { Refined } from './refined';
 import {
   DeleteIntegrationDocument,
   DeleteIntegrationObjectMappingDocument,
   DisconnectIntegrationOAuthDocument,
+  type DisconnectIntegrationOAuthMutation,
+  type IntegrationFieldsFragment,
+  type IntegrationObjectMappingFieldsFragment,
   ListIntegrationObjectMappingsDocument,
   type ListIntegrationObjectMappingsQuery,
   type ListIntegrationObjectMappingsQueryVariables,
@@ -34,72 +38,48 @@ import {
   type QueryIntegrationSyncedSegmentsQuery,
   type QueryIntegrationSyncedSegmentsQueryVariables,
   RotateIntegrationInboundTokenDocument,
+  type RotateIntegrationInboundTokenMutation,
   RunIntegrationObjectMappingSyncDocument,
   SendIntegrationTestEventDocument,
   StartIntegrationOAuthDocument,
+  type StartIntegrationOAuthInput,
   UpdateIntegrationEventsDocument,
+  type UpdateIntegrationEventsInput,
+  type UpdateIntegrationEventsMutation,
   UpdateIntegrationInboundDocument,
+  type UpdateIntegrationInboundInput,
+  type UpdateIntegrationInboundMutation,
   UpsertIntegrationDocument,
+  type UpsertIntegrationInput as UpsertIntegrationInputWire,
   UpsertIntegrationObjectMappingDocument,
+  type UpsertIntegrationObjectMappingInput as UpsertIntegrationObjectMappingInputWire,
 } from '@usertour/gql';
 
-export interface Integration {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  environmentId: string;
-  provider: string;
-  /** Last four characters of the configured key — the key itself is never returned. */
-  keyTail: string;
-  config: IntegrationConfig;
-  enabled: boolean;
-  /** Circuit-breaker streak: consecutive failed delivery attempts (any success resets). */
-  consecutiveFailures: number;
-  /** While in the future, deliveries are held and sent after the window (cooldown). */
-  cooldownUntil?: string | null;
-  /** Set when the SYSTEM disabled the integration after sustained failure. */
-  autoDisabledAt?: string | null;
-  /** Inbound cohort sync switch (ADR 0012) — independent of `enabled`. */
-  inboundEnabled: boolean;
-  inboundConfig: IntegrationInboundConfig;
-  /** The receive URL (carries the token) — null until first inbound enable. */
-  inboundUrl?: string | null;
-  /** CRM providers (ADR 0013): whether an OAuth grant is stored. */
-  connected: boolean;
-  /** CRM providers: the connected provider account id (HubSpot hub id). */
-  remoteAccountId?: string | null;
-  /** CRM providers: display label for the connected account (HubSpot hub domain). */
-  remoteAccountLabel?: string | null;
-}
-
+/** Inbound cohort sync settings (ADR 0012); a JSON scalar on the wire. */
 export interface IntegrationInboundConfig {
   /** Member property holding the Usertour user id; absent = the provider's distinct id. */
   userIdProperty?: string;
 }
 
-/** One synced provider cohort and the segment mirroring it (ADR 0012). */
-export interface IntegrationSyncedSegment {
-  id: string;
-  createdAt: string;
-  sourceCohortId: string;
-  sourceCohortName: string;
-  segmentId: string;
-  segmentName: string;
-  lastSyncedAt?: string | null;
-  /** This environment's bridged members — several environments may feed one segment. */
-  memberCount: number;
-  /** Members whose wire object carried no extractable user id (skipped). */
-  unresolvedCount: number;
-}
+/**
+ * `keyTail` is the configured key's last four characters; the key itself is
+ * never returned. `consecutiveFailures`/`cooldownUntil`/`autoDisabledAt` are
+ * the circuit breaker. `inboundEnabled`/`inboundConfig`/`inboundUrl` are the
+ * inbound cohort sync (ADR 0012), independent of `enabled`. `connected`,
+ * `remoteAccountId`, `remoteAccountLabel` are the CRM OAuth grant (ADR 0013).
+ * `config` and `inboundConfig` travel as JSON.
+ */
+export type Integration = Refined<
+  IntegrationFieldsFragment,
+  { config: IntegrationConfig; inboundConfig: IntegrationInboundConfig }
+>;
 
-export interface UpsertIntegrationInput {
-  environmentId: string;
-  provider: string;
-  /** Required on first configure; omitted afterwards to keep the stored key. */
-  key?: string;
-  config?: IntegrationConfig;
-  enabled?: boolean;
-}
+/** One synced provider cohort and the segment mirroring it (ADR 0012). */
+export type IntegrationSyncedSegment =
+  QueryIntegrationSyncedSegmentsQuery['queryIntegrationSyncedSegments'][number];
+
+/** `key` is required on first configure and omitted afterwards to keep the stored key. */
+export type UpsertIntegrationInput = UpsertIntegrationInputWire;
 
 export const useListIntegrationsQuery = (
   environmentId: string,
@@ -134,13 +114,11 @@ export const useQueryIntegrationMessagesQuery = (
     },
   );
   const connection = data?.queryIntegrationMessages;
-  const messages = (connection?.edges ?? []).map((edge) => edge.node) as OutboundMessage[];
+  const messages: OutboundMessage[] = (connection?.edges ?? []).map((edge) => edge.node);
   return {
     messages,
-    totalCount: connection?.totalCount as number | undefined,
-    pageInfo: connection?.pageInfo as
-      | { endCursor: string | null; hasNextPage: boolean }
-      | undefined,
+    totalCount: connection?.totalCount,
+    pageInfo: connection?.pageInfo,
     // In-flight `loading`: the accumulator and the reload button gate on it.
     loading: loading || refreshing,
     error,
@@ -197,9 +175,7 @@ export const useQueryIntegrationSyncedSegmentsQuery = (
       ...options,
     },
   );
-  const syncedSegments = data?.queryIntegrationSyncedSegments as
-    | IntegrationSyncedSegment[]
-    | undefined;
+  const syncedSegments = data?.queryIntegrationSyncedSegments;
   return {
     syncedSegments,
     // In-flight `loading`: the cohort list's reload button gates on it.
@@ -215,13 +191,11 @@ export const useUpdateIntegrationEventsMutation = () => {
   // Returns the changed fields on an existing row, so the normalized cache merges — no refetch.
   const [mutation, { loading, error }] = useMutation(UpdateIntegrationEventsDocument);
   const invoke = useCallback(
-    async (input: {
-      id: string;
-      enabled?: boolean;
-      codeNames?: string[];
-    }): Promise<Integration | null> => {
+    async (
+      input: UpdateIntegrationEventsInput,
+    ): Promise<UpdateIntegrationEventsMutation['updateIntegrationEvents'] | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (response.data?.updateIntegrationEvents as Integration | undefined) ?? null;
+      return response.data?.updateIntegrationEvents ?? null;
     },
     [mutation],
   );
@@ -232,15 +206,13 @@ export const useUpdateIntegrationInboundMutation = () => {
   // Returns the changed fields on an EXISTING row (inbound settings only live
   // on configured integrations), so the normalized cache merges — no refetch.
   const [mutation, { loading, error }] = useMutation(UpdateIntegrationInboundDocument);
+  // An empty `userIdProperty` clears the override (back to the provider's distinct id).
   const invoke = useCallback(
-    async (input: {
-      id: string;
-      enabled?: boolean;
-      /** Empty string clears the override (back to the provider's distinct id). */
-      userIdProperty?: string;
-    }): Promise<Integration | null> => {
+    async (
+      input: UpdateIntegrationInboundInput,
+    ): Promise<UpdateIntegrationInboundMutation['updateIntegrationInbound'] | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (response.data?.updateIntegrationInbound as Integration | undefined) ?? null;
+      return response.data?.updateIntegrationInbound ?? null;
     },
     [mutation],
   );
@@ -250,9 +222,11 @@ export const useUpdateIntegrationInboundMutation = () => {
 export const useRotateIntegrationInboundTokenMutation = () => {
   const [mutation, { loading, error }] = useMutation(RotateIntegrationInboundTokenDocument);
   const invoke = useCallback(
-    async (id: string): Promise<Integration | null> => {
+    async (
+      id: string,
+    ): Promise<RotateIntegrationInboundTokenMutation['rotateIntegrationInboundToken'] | null> => {
       const response = await mutation({ variables: { data: { id } } });
-      return (response.data?.rotateIntegrationInboundToken as Integration | undefined) ?? null;
+      return response.data?.rotateIntegrationInboundToken ?? null;
     },
     [mutation],
   );
@@ -279,13 +253,9 @@ export const useStartIntegrationOAuthMutation = () => {
   // carrying our state.
   const [mutation, { loading, error }] = useMutation(StartIntegrationOAuthDocument);
   const invoke = useCallback(
-    async (input: {
-      environmentId: string;
-      provider: string;
-      returnUrl?: string;
-    }): Promise<string | null> => {
+    async (input: StartIntegrationOAuthInput): Promise<string | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (response.data?.startIntegrationOAuth as { url: string } | undefined)?.url ?? null;
+      return response.data?.startIntegrationOAuth?.url ?? null;
     },
     [mutation],
   );
@@ -295,9 +265,11 @@ export const useStartIntegrationOAuthMutation = () => {
 export const useDisconnectIntegrationOAuthMutation = () => {
   const [mutation, { loading, error }] = useMutation(DisconnectIntegrationOAuthDocument);
   const invoke = useCallback(
-    async (id: string): Promise<Integration | null> => {
+    async (
+      id: string,
+    ): Promise<DisconnectIntegrationOAuthMutation['disconnectIntegrationOAuth'] | null> => {
       const response = await mutation({ variables: { data: { id } } });
-      return (response.data?.disconnectIntegrationOAuth as Integration | undefined) ?? null;
+      return response.data?.disconnectIntegrationOAuth ?? null;
     },
     [mutation],
   );
@@ -308,63 +280,49 @@ export const useDisconnectIntegrationOAuthMutation = () => {
 // CRM object mappings (ADR 0013 §4-6)
 // ---------------------------------------------------------------------------
 
-export interface IntegrationObjectMapping {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  integrationId: string;
-  remoteObject: SyncRemoteObject;
-  localObject: SyncLocalObject;
-  matchStrategy: SyncMatchStrategy;
-  matchRemoteField?: string | null;
-  inboundFields: SyncInboundField[];
-  outboundFields: SyncOutboundField[];
-  enabled: boolean;
-  lastFullSyncAt?: string | null;
-  fullSyncStartedAt?: string | null;
-  matchedCount: number;
-  unresolvedCount: number;
-}
+/**
+ * The object kinds and match strategy are Strings on the wire that the server
+ * keeps to the sync vocabulary; the field lists travel as JSON.
+ */
+export type IntegrationObjectMapping = Refined<
+  IntegrationObjectMappingFieldsFragment,
+  {
+    remoteObject: SyncRemoteObject;
+    localObject: SyncLocalObject;
+    matchStrategy: SyncMatchStrategy;
+    inboundFields: SyncInboundField[];
+    outboundFields: SyncOutboundField[];
+  }
+>;
 
-/** One sync run: a full round over a mapping, or a journal poll's inbound changes. */
-export interface IntegrationSyncRun {
-  id: string;
-  kind: 'full' | 'journal';
-  status: 'running' | 'succeeded' | 'failed';
-  mappingId?: string | null;
-  remoteObject?: SyncRemoteObject | null;
-  localObject?: SyncLocalObject | null;
-  startedAt: string;
-  finishedAt?: string | null;
-  records: number;
-  matchedCount: number;
-  unresolvedCount: number;
-  error?: string | null;
-  /** Journal runs: the provider record ids touched, capped server-side. */
-  remoteIds?: string[] | null;
-}
+export type IntegrationSyncRunKind = 'full' | 'journal';
+export type IntegrationSyncRunStatus = 'running' | 'succeeded' | 'failed';
 
-export interface IntegrationRemoteProperty {
-  name: string;
-  label: string;
-  type: string;
-  fieldType: string;
-  groupName: string;
-  readOnly: boolean;
-  hubspotDefined: boolean;
-}
+/**
+ * One sync run: a full round over a mapping, or a journal poll's inbound
+ * changes. `kind`, `status` and the object kinds are Strings on the wire the
+ * server keeps to fixed sets; `remoteIds` (journal runs: the provider record
+ * ids touched, capped server-side) travels as JSON.
+ */
+export type IntegrationSyncRun = Refined<
+  ListIntegrationSyncRunsQuery['listIntegrationSyncRuns'][number],
+  {
+    kind: IntegrationSyncRunKind;
+    status: IntegrationSyncRunStatus;
+    remoteObject: SyncRemoteObject | null;
+    localObject: SyncLocalObject | null;
+    remoteIds: string[] | null;
+  }
+>;
 
-export interface UpsertIntegrationObjectMappingInput {
-  integrationId: string;
-  remoteObject: SyncRemoteObject;
-  localObject: SyncLocalObject;
-  matchStrategy: SyncMatchStrategy;
-  matchRemoteField?: string | null;
-  inboundFields: SyncInboundField[];
-  outboundFields: Array<{ local: string }>;
-  enabled?: boolean;
-  adoptExisting?: boolean;
-}
+export type IntegrationRemoteProperty =
+  ListIntegrationRemotePropertiesQuery['listIntegrationRemoteProperties'][number];
+
+/** The object kinds and match strategy are Strings on the wire; callers send the sync vocabulary. */
+export type UpsertIntegrationObjectMappingInput = Refined<
+  UpsertIntegrationObjectMappingInputWire,
+  { remoteObject: SyncRemoteObject; localObject: SyncLocalObject; matchStrategy: SyncMatchStrategy }
+>;
 
 export const useListIntegrationObjectMappingsQuery = (
   integrationId: string,
@@ -428,7 +386,7 @@ export const useListIntegrationRemotePropertiesQuery = (
     ...options,
   });
   return {
-    properties: data?.listIntegrationRemoteProperties as IntegrationRemoteProperty[] | undefined,
+    properties: data?.listIntegrationRemoteProperties,
     loading,
     error,
     refetch,

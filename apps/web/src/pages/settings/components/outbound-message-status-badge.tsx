@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import type { OutboundMessageStatus } from '@usertour/hooks';
 import { Badge } from '@usertour/ui';
 
 export interface OutboundMessageStatusBadgeProps {
-  status: OutboundMessageStatus;
+  /** PENDING | DELIVERED | FAILED, as the ledger records it. */
+  status: string;
 }
 
 /** DELIVERED → success, FAILED → destructive, PENDING → secondary. */

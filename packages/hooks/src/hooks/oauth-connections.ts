@@ -7,18 +7,11 @@ import {
   RevokeOAuthConnectionDocument,
 } from '@usertour/gql';
 
-/** A "connected app" — one active OAuth grant the user approved. */
-export interface OAuthConnection {
-  id: string;
-  clientName: string;
-  projectId: string;
-  projectName: string;
-  scopes: string[];
-  /** Environments this connection may act on; null = all environments. */
-  environmentNames: string[] | null;
-  createdAt: string;
-  lastUsedAt: string | null;
-}
+/**
+ * A "connected app" — one active OAuth grant the user approved.
+ * `environmentNames` null = all environments.
+ */
+export type OAuthConnection = OAuthConnectionsQuery['oauthConnections'][number];
 
 /** List the current user's connected OAuth apps. */
 export const useOAuthConnectionsQuery = (
@@ -26,7 +19,7 @@ export const useOAuthConnectionsQuery = (
 ) => {
   const { data, loading, refetch } = useTypedQuery(OAuthConnectionsDocument, options);
   return {
-    connections: (data?.oauthConnections ?? []) as OAuthConnection[],
+    connections: data?.oauthConnections ?? [],
     loading,
     refetch,
   };

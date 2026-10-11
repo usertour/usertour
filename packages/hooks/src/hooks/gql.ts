@@ -1,5 +1,6 @@
 import { useApolloClient, useMutation, useLazyQuery, NetworkStatus } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
+import type { Refined } from './refined';
 import { useCallback } from 'react';
 
 import type {
@@ -10,8 +11,9 @@ import type {
   TeamMember,
   BizSession,
   ContentQuestionAnalytics,
-  BizAttributeTypes,
   AttributeBizTypes,
+  BizAttributeTypes,
+  TeamMemberRole,
   Attribute,
   Environment,
   Subscription,
@@ -42,6 +44,14 @@ import {
   type BizOrder,
   CancelInviteDocument,
   ChangeTeamMemberRoleDocument as changeTeamMemberRoleMutation,
+  type CreateAttributeInput as CreateAttributeInputWire,
+  type CreateEnvironmentsMutationVariables,
+  type CreateOidcSsoProviderInput,
+  type ProjectSsoSettingsFieldsFragment,
+  type SsoProviderFieldsFragment,
+  type UpdateAttributeInput,
+  type UpdateProjectSsoSettingsInput as UpdateProjectSsoSettingsInputWire,
+  type UpdateSsoProviderInput,
   type ContentOrder,
   CreateAttributeDocument,
   CreateBizCompanyOnSegmentDocument,
@@ -140,7 +150,6 @@ import {
   UpdateProjectDocument,
   UpdateProjectLicenseDocument,
   UpdateProjectSsoSettingsDocument,
-  type UpdateProjectSsoSettingsMutationVariables,
   UpdateProjectUsesInstanceLicenseDocument,
   UpdateSegmentDocument,
   UpdateSsoProviderDocument,
@@ -339,14 +348,13 @@ export const useQueryTeamMemberListQuery = (
   });
 
   const teamMembers: TeamMember[] =
-    data?.getTeamMembers?.map((item: any) => ({
-      userId: item.user.id,
-      name: item.user.name,
-      email: item.user.email,
-      role: item.role,
+    data?.getTeamMembers?.map((item) => ({
+      userId: item.user?.id,
+      name: item.user?.name ?? '',
+      email: item.user?.email ?? '',
+      role: item.role as TeamMemberRole,
       allowedEnvironmentIds: item.allowedEnvironmentIds ?? null,
-      logo: item.user.logo,
-      twoFactorEnabled: item.user.twoFactorEnabled === true,
+      twoFactorEnabled: item.user?.twoFactorEnabled === true,
       isInvite: false,
       createdAt: item.createdAt,
     })) ?? [];
@@ -365,11 +373,11 @@ export const useQueryInviteListQuery = (
   });
 
   const invites: TeamMember[] =
-    data?.getInvites?.map((item: any) => ({
+    data?.getInvites?.map((item) => ({
       inviteId: item.id,
-      name: item.name,
-      email: item.email,
-      role: item.role,
+      name: item.name ?? '',
+      email: item.email ?? '',
+      role: item.role as TeamMemberRole,
       isInvite: true,
       createdAt: item.createdAt,
     })) ?? [];
@@ -603,23 +611,21 @@ export const useUpdateContentVersionMutation = () => {
   return { invoke, loading, error };
 };
 
-export type CreateAttributeMutationVariables = {
-  projectId: string;
-  description: string;
-  dataType: BizAttributeTypes;
-  bizType: AttributeBizTypes;
-  displayName: string;
-  codeName: string;
-  /** Upper bound of a Random number attribute (ADR 0020); required for that type only. */
-  randomMax?: number;
-};
+/**
+ * `bizType` and `dataType` are Ints on the wire; callers send the attribute enums.
+ * `randomMax` is the upper bound of a Random number attribute (ADR 0020); required for that type only.
+ */
+export type CreateAttributeInput = Refined<
+  CreateAttributeInputWire,
+  { bizType: AttributeBizTypes; dataType: BizAttributeTypes }
+>;
 
 export const useCreateAttributeMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateAttributeDocument, {
     refetchQueries: ['listAttributes'],
   });
   const invoke = useCallback(
-    async (data: CreateAttributeMutationVariables) => {
+    async (data: CreateAttributeInput) => {
       const response = await mutation({ variables: { data } });
       return response.data?.createAttribute;
     },
@@ -881,10 +887,7 @@ export const useDeleteEnvironmentsMutation = () => {
   return { invoke, loading, error };
 };
 
-export interface CreateEnvironmentInput {
-  name: string;
-  projectId: string;
-}
+export type CreateEnvironmentInput = CreateEnvironmentsMutationVariables;
 
 export const useCreateEnvironmentMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateEnvironmentsDocument, {
@@ -893,18 +896,14 @@ export const useCreateEnvironmentMutation = () => {
   const invoke = useCallback(
     async (input: CreateEnvironmentInput): Promise<string | undefined> => {
       const response = await mutation({ variables: input });
-      return response.data?.createEnvironments?.id as string | undefined;
+      return response.data?.createEnvironments?.id;
     },
     [mutation],
   );
   return { invoke, loading, error };
 };
 
-export interface UpdateEnvironmentInput {
-  id: string;
-  name?: string;
-  isPrimary?: boolean;
-}
+export type UpdateEnvironmentInput = UpdateEnvironmentsMutationVariables;
 
 export const useUpdateEnvironmentMutation = () => {
   // setPrimary flips isPrimary on two rows; refetch covers the demoted one.
@@ -915,7 +914,7 @@ export const useUpdateEnvironmentMutation = () => {
   });
   const invoke = useCallback(
     async (input: UpdateEnvironmentInput): Promise<boolean> => {
-      const response = await mutation({ variables: input as UpdateEnvironmentsMutationVariables });
+      const response = await mutation({ variables: input });
       return !!response.data?.updateEnvironments?.id;
     },
     [mutation],
@@ -923,14 +922,7 @@ export const useUpdateEnvironmentMutation = () => {
   return { invoke, loading, error };
 };
 
-export interface UpdateAttributeInput {
-  id: string;
-  bizType: number;
-  dataType: number;
-  codeName: string;
-  displayName: string;
-  description: string;
-}
+export type { UpdateAttributeInput };
 
 export const useUpdateAttributeMutation = () => {
   // Auto-merged by Apollo via __typename:id.
@@ -1448,58 +1440,25 @@ export const useListLocalizationsQuery = (
 // SSO (project-level OIDC identity providers)
 // ---------------------------------------------------------------------------
 
-export interface SsoProvider {
-  id: string;
-  projectId: string;
-  type: 'OIDC' | 'SAML';
-  name: string;
-  status: string;
-  issuer: string;
-  clientId: string;
-  authorizationUrl?: string | null;
-  tokenUrl?: string | null;
-  userInfoUrl?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export type SsoProvider = SsoProviderFieldsFragment;
 
-export interface PublicSsoProvider {
-  id: string;
-  name: string;
-  type: 'OIDC' | 'SAML';
-}
+export type PublicSsoProvider = GetProjectSsoProvidersQuery['getProjectSsoProviders'][number];
 
-export interface CreateOidcSsoProviderInput {
-  name: string;
-  issuer: string;
-  clientId: string;
-  clientSecret: string;
-  authorizationUrl?: string;
-  tokenUrl?: string;
-  userInfoUrl?: string;
-}
+export type { CreateOidcSsoProviderInput, UpdateSsoProviderInput };
 
-export type UpdateSsoProviderInput = Partial<
-  CreateOidcSsoProviderInput & {
-    status: string;
-  }
->;
+/** The roles JIT provisioning may hand out: a `Role` on the wire, kept to these two by the server. */
+export type SsoDefaultRole = Extract<Role, 'EDITOR' | 'VIEWER'>;
 
 // Project-level SSO settings: force-SSO enforcement + JIT provisioning policy.
-export interface ProjectSsoSettings {
-  projectId: string;
-  requireSso: boolean;
-  autoProvision: boolean;
-  defaultRole: 'EDITOR' | 'VIEWER';
-  allowedDomains: string[];
-}
+export type ProjectSsoSettings = Refined<
+  ProjectSsoSettingsFieldsFragment,
+  { defaultRole: SsoDefaultRole }
+>;
 
-export type UpdateProjectSsoSettingsInput = Partial<{
-  requireSso: boolean;
-  autoProvision: boolean;
-  defaultRole: 'EDITOR' | 'VIEWER';
-  allowedDomains: string[];
-}>;
+export type UpdateProjectSsoSettingsInput = Refined<
+  UpdateProjectSsoSettingsInputWire,
+  { defaultRole?: SsoDefaultRole | null }
+>;
 
 export const useListProjectSsoProvidersQuery = (
   projectId: string | undefined,
@@ -1511,7 +1470,7 @@ export const useListProjectSsoProvidersQuery = (
     ...options,
   });
   return {
-    providers: (data?.listProjectSsoProviders ?? []) as SsoProvider[],
+    providers: data?.listProjectSsoProviders ?? [],
     loading,
     error,
     refetch,
@@ -1528,7 +1487,7 @@ export const useGetProjectSsoProvidersQuery = (
     ...options,
   });
   return {
-    providers: (data?.getProjectSsoProviders ?? []) as PublicSsoProvider[],
+    providers: data?.getProjectSsoProviders ?? [],
     loading,
     error,
     refetch,
@@ -1546,9 +1505,9 @@ export const useGetProjectSsoLoginQuery = (
   });
   const login = data?.getProjectSsoLogin;
   return {
-    name: (login?.name ?? '') as string,
-    logoUrl: (login?.logoUrl ?? null) as string | null,
-    providers: (login?.providers ?? []) as PublicSsoProvider[],
+    name: login?.name ?? '',
+    logoUrl: login?.logoUrl ?? null,
+    providers: login?.providers ?? [],
     loading,
     error,
     refetch,
@@ -1560,7 +1519,7 @@ export const useCreateOidcSsoProviderMutation = () => {
   const invoke = useCallback(
     async (projectId: string, input: CreateOidcSsoProviderInput): Promise<SsoProvider> => {
       const response = await mutation({ variables: { projectId, input } });
-      return response.data?.createOidcSsoProvider as SsoProvider;
+      return response.data!.createOidcSsoProvider;
     },
     [mutation],
   );
@@ -1572,7 +1531,7 @@ export const useUpdateSsoProviderMutation = () => {
   const invoke = useCallback(
     async (id: string, input: UpdateSsoProviderInput): Promise<SsoProvider> => {
       const response = await mutation({ variables: { id, input } });
-      return response.data?.updateSsoProvider as SsoProvider;
+      return response.data!.updateSsoProvider;
     },
     [mutation],
   );
@@ -1615,13 +1574,8 @@ export const useUpdateProjectSsoSettingsMutation = () => {
       projectId: string,
       input: UpdateProjectSsoSettingsInput,
     ): Promise<ProjectSsoSettings> => {
-      const response = await mutation({
-        variables: {
-          projectId,
-          input: input as UpdateProjectSsoSettingsMutationVariables['input'],
-        },
-      });
-      return response.data?.updateProjectSsoSettings as ProjectSsoSettings;
+      const response = await mutation({ variables: { projectId, input } });
+      return response.data!.updateProjectSsoSettings as ProjectSsoSettings;
     },
     [mutation],
   );

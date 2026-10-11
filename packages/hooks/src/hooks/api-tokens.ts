@@ -1,52 +1,32 @@
 import { NetworkStatus, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 import {
+  type ApiTokenFieldsFragment,
   ApiTokensDocument,
   type ApiTokensQuery,
   type ApiTokensQueryVariables,
   CreateApiTokenDocument,
+  type CreateApiTokenInput as CreateApiTokenInputWire,
+  type CreateApiTokenMutation,
   DeleteApiTokenDocument,
   RotateApiTokenDocument,
   UpdateApiTokenDocument,
+  type UpdateApiTokenInput as UpdateApiTokenInputWire,
 } from '@usertour/gql';
 
-export interface ApiToken {
-  id: string;
-  name: string;
-  /** Trailing characters of the secret, for display only. */
-  partialKey: string;
-  scopes: string[];
-  projectIds: string[];
-  /** Environments this token may act on; null/absent = all environments. */
-  environmentIds: string[] | null;
-  isActive: boolean;
-  expiresAt: string | null;
-  lastUsedAt: string | null;
-  createdAt: string;
-}
+export type ApiToken = ApiTokenFieldsFragment;
 
-export interface CreateApiTokenInput {
-  name: string;
-  projectIds: string[];
-  scopes: string[];
-  /** Environments this token may act on. Omit → all (the form sends an explicit set). */
-  environmentIds?: string[];
-  expiresAt?: string | null;
-}
+/** `environmentIds` omitted = all environments; the form sends an explicit set. */
+export type CreateApiTokenInput = CreateApiTokenInputWire;
 
-export interface UpdateApiTokenInput {
-  name?: string;
-  projectIds?: string[];
-  scopes?: string[];
-  /** Three-state: absent = keep, null = clear (back to "all environments"), array = replace. */
-  environmentIds?: string[] | null;
-}
+/**
+ * `environmentIds` is three-state: absent = keep, null = clear (back to "all
+ * environments"), array = replace.
+ */
+export type UpdateApiTokenInput = UpdateApiTokenInputWire;
 
-export interface CreatedApiToken {
-  /** The full plaintext token (`utp_…`). Shown once at creation. */
-  token: string;
-  apiToken: ApiToken;
-}
+/** The plaintext token (`utp_…`) is shown once, at creation. */
+export type CreatedApiToken = CreateApiTokenMutation['createApiToken'];
 
 export const useListApiTokensQuery = (
   options?: TypedQueryOptions<ApiTokensQuery, ApiTokensQueryVariables>,
@@ -56,7 +36,7 @@ export const useListApiTokensQuery = (
     ...options,
   });
   const isRefetching = networkStatus === NetworkStatus.refetch;
-  const apiTokens = data?.apiTokens as ApiToken[] | undefined;
+  const apiTokens = data?.apiTokens;
   return { apiTokens, loading, error, refetch, isRefetching };
 };
 
@@ -68,7 +48,7 @@ export const useCreateApiTokenMutation = () => {
   // null on failure. The API only surfaces the secret at creation time.
   const invoke = async (input: CreateApiTokenInput): Promise<CreatedApiToken | null> => {
     const response = await mutation({ variables: { input } });
-    return (response.data?.createApiToken as CreatedApiToken | undefined) ?? null;
+    return response.data?.createApiToken ?? null;
   };
   return { invoke, loading, error };
 };
@@ -80,7 +60,7 @@ export const useUpdateApiTokenMutation = () => {
   // Returns the updated record, or null on failure.
   const invoke = async (id: string, input: UpdateApiTokenInput): Promise<ApiToken | null> => {
     const response = await mutation({ variables: { id, input } });
-    return (response.data?.updateApiToken as ApiToken | undefined) ?? null;
+    return response.data?.updateApiToken ?? null;
   };
   return { invoke, loading, error };
 };

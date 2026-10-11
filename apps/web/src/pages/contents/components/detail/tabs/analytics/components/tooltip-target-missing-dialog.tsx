@@ -23,8 +23,9 @@ import {
   useQueryTooltipTargetMissingSessionsLazyQuery,
   type StepAnalytics,
   type TooltipTargetMissingResponse,
+  type TooltipTargetMissingSession,
 } from '@usertour/hooks';
-import type { BizSession, BizEvent, AnalyticsViewsByStep } from '@usertour/types';
+import type { AnalyticsViewsByStep } from '@usertour/types';
 import { LoadMoreFailed } from '@/components/load-more-failed';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useAppContext } from '@/contexts/app-context';
@@ -55,9 +56,9 @@ interface PageInfo {
 const PAGE_SIZE = 10;
 
 // Extract event data from session
-const getEventData = (session: BizSession) => {
+const getEventData = (session: TooltipTargetMissingSession) => {
   const event = session.bizEvent?.find(
-    (e: BizEvent) => e.event?.codeName === BizEvents.TOOLTIP_TARGET_MISSING,
+    (candidate) => candidate.event?.codeName === BizEvents.TOOLTIP_TARGET_MISSING,
   );
   if (!event) return { url: '-', time: session.createdAt };
   const url = (event.data?.[EventAttributes.PAGE_URL] as string) || '-';
@@ -199,14 +200,14 @@ const SessionRow = ({
   session,
   environmentId,
 }: {
-  session: BizSession;
+  session: TooltipTargetMissingSession;
   environmentId: string;
 }) => {
   const navigate = useNavigate();
   const { url, time } = getEventData(session);
   const bizUser = session.bizUser;
-  const email = bizUser?.data?.email || '';
-  const name = bizUser?.data?.name || '';
+  const email = (bizUser?.data?.email as string | undefined) || '';
+  const name = (bizUser?.data?.name as string | undefined) || '';
   const externalId = bizUser?.externalId || '';
   const primaryText = name || email || externalId;
   const showExternalIdOnSecondLine = externalId && (email || name);
@@ -283,7 +284,7 @@ export const TooltipTargetMissingDialog = ({
     globalSelectedPreset,
   );
 
-  const [sessions, setSessions] = useState<BizSession[]>([]);
+  const [sessions, setSessions] = useState<TooltipTargetMissingSession[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo>({ endCursor: null, hasNextPage: false });
   const [loadingMore, setLoadingMore] = useState(false);
   // The last page failed: the sentinel stays off until the user retries.
@@ -320,7 +321,7 @@ export const TooltipTargetMissingDialog = ({
     (data: TooltipTargetMissingResponse | undefined, append = false) => {
       if (!data) return;
       const { sessions: sessionsData, stepAnalytics } = data;
-      const newSessions = sessionsData.edges.map((edge: { node: BizSession }) => edge.node);
+      const newSessions = (sessionsData.edges ?? []).map((edge) => edge.node);
       setSessions((prev) => (append ? [...prev, ...newSessions] : newSessions));
       setPageInfo({
         endCursor: sessionsData.pageInfo.endCursor || null,
