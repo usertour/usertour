@@ -3,7 +3,6 @@ import { NetworkStatus, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
 import type { OutboundDelivery, OutboundMessage } from './outbound-message';
-import type { Refined } from './refined';
 import {
   CreateWebhookDocument,
   type CreateWebhookInput,
@@ -27,15 +26,15 @@ import {
 
 /**
  * `topics`: "*", a family prefix ("event.tracked", "content", "user",
- * "company"), or an exact topic. On the wire it is a JSON scalar.
+ * "company"), or an exact topic.
  */
-export type Webhook = Refined<WebhookFieldsFragment, { topics: string[] }>;
+export type Webhook = WebhookFieldsFragment;
 
 /**
  * The detail read: the secret is plaintext here and on create/rotate, masked
  * (null) on the list; '' = the stored value could not be decrypted.
  */
-export type WebhookWithSecret = Refined<GetWebhookQuery['getWebhook'], { topics: string[] }>;
+export type WebhookWithSecret = GetWebhookQuery['getWebhook'];
 
 // The message-log shapes are the shared outbound ledger's — identical for
 // both transports (see outbound-message.ts); these aliases keep the
@@ -56,7 +55,7 @@ export const useListWebhooksQuery = (
     ...options,
   });
   const isRefetching = networkStatus === NetworkStatus.refetch;
-  const webhooks = data?.listWebhooks as Webhook[] | undefined;
+  const webhooks = data?.listWebhooks;
   return { webhooks, loading, error, refetch, isRefetching };
 };
 
@@ -69,7 +68,7 @@ export const useGetWebhookQuery = (
     skip: !id,
     ...options,
   });
-  const webhook = data?.getWebhook as WebhookWithSecret | undefined;
+  const webhook = data?.getWebhook;
   return { webhook, loading, error, refetch };
 };
 
@@ -108,7 +107,7 @@ export const useCreateWebhookMutation = () => {
   const invoke = useCallback(
     async (input: CreateWebhookInput): Promise<Webhook | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (response.data?.createWebhook as Webhook | undefined) ?? null;
+      return response.data?.createWebhook ?? null;
     },
     [mutation],
   );
@@ -122,7 +121,7 @@ export const useUpdateWebhookMutation = () => {
   const invoke = useCallback(
     async (input: UpdateWebhookInput): Promise<Webhook | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (response.data?.updateWebhook as Webhook | undefined) ?? null;
+      return response.data?.updateWebhook ?? null;
     },
     [mutation],
   );

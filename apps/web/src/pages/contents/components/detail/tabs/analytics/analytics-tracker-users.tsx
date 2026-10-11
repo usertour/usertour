@@ -25,7 +25,7 @@ import {
 } from '@usertour/ui';
 import { type ApolloQueryResult, useApolloClient } from '@apollo/client';
 
-import { type TrackerUser, type TrackerUserEdge, useQueryTrackerUsersQuery } from '@usertour/hooks';
+import { type TrackerUser, useQueryTrackerUsersQuery } from '@usertour/hooks';
 import { ContentDataType } from '@usertour/types';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { DownloadIcon } from 'lucide-react';
@@ -169,7 +169,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
         });
 
         const connection = result.data?.queryTrackerUsers;
-        const fetchedEdges = (connection?.edges ?? []) as TrackerUserEdge[];
+        const fetchedEdges = connection?.edges ?? [];
         const fetchedUsers = fetchedEdges.map((edge) => edge.node);
         allUsers.push(...fetchedUsers);
 

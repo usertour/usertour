@@ -16,17 +16,21 @@ import { createTestApp } from '../create-test-app';
 
 const LIST_MAPPINGS = `query ($integrationId: String!) {
   listIntegrationObjectMappings(integrationId: $integrationId) {
-    id remoteObject localObject matchStrategy matchRemoteField inboundFields outboundFields enabled
+    id remoteObject localObject matchStrategy matchRemoteField enabled
+    inboundFields { remote local }
+    outboundFields { local remote }
   }
 }`;
-const LIST_REMOTE = `query ($integrationId: String!, $remoteObject: String!) {
+const LIST_REMOTE = `query ($integrationId: String!, $remoteObject: SyncRemoteObject!) {
   listIntegrationRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
     name label type fieldType readOnly hubspotDefined
   }
 }`;
 const UPSERT = `mutation ($data: UpsertIntegrationObjectMappingInput!) {
   upsertIntegrationObjectMapping(data: $data) {
-    id remoteObject localObject matchStrategy matchRemoteField inboundFields outboundFields enabled
+    id remoteObject localObject matchStrategy matchRemoteField enabled
+    inboundFields { remote local }
+    outboundFields { local remote }
   }
 }`;
 const DELETE = `mutation ($data: IntegrationObjectMappingIdInput!) {

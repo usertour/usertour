@@ -16,6 +16,8 @@ const sharedConfig = {
   scalars: {
     DateTime: 'string',
     JSON: 'unknown',
+    // Free-form objects (user and company attributes, event properties).
+    JSONObject: 'Record<string, unknown>',
     JWT: 'string',
   },
 };

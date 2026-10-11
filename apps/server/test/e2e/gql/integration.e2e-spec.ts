@@ -8,7 +8,7 @@ import { buildAuthorizedUser, teardownProject } from './_support';
 import { createTestApp } from '../create-test-app';
 
 const UPSERT_INTEGRATION = `mutation ($data: UpsertIntegrationInput!) {
-  upsertIntegration(data: $data) { id environmentId provider keyTail config enabled autoDisabledAt }
+  upsertIntegration(data: $data) { id environmentId provider keyTail config { region } enabled autoDisabledAt }
 }`;
 const DELETE_INTEGRATION =
   'mutation ($data: IntegrationIdInput!) { deleteIntegration(data: $data) { id } }';

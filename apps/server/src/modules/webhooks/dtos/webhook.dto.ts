@@ -1,5 +1,4 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import GraphQLJSON from 'graphql-type-json';
 
 /**
  * GraphQL projection of a Webhook row. `secret` is a queryable field, but the
@@ -25,7 +24,7 @@ export class WebhookDTO {
   url: string;
 
   /** Subscribed topics: "*", a family prefix ("event.tracked", "content", "user", "company"), or an exact topic. */
-  @Field(() => GraphQLJSON)
+  @Field(() => [String])
   topics: string[];
 
   @Field(() => Boolean)

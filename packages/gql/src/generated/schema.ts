@@ -11,6 +11,8 @@ export type Scalars = {
   DateTime: { input: string; output: string; }
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: { input: unknown; output: unknown; }
+  /** The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
+  JSONObject: { input: Record<string, unknown>; output: Record<string, unknown>; }
   /** A field whose value is a JSON Web Token (JWT): https://jwt.io/introduction. */
   JWT: { input: string; output: string; }
 };
@@ -158,7 +160,7 @@ export type Attribute = {
   id: Scalars['ID']['output'];
   predefined: Scalars['Boolean']['output'];
   projectId: Scalars['String']['output'];
-  randomMax?: Maybe<Scalars['Int']['output']>;
+  randomMax: Scalars['Int']['output'];
   source: Scalars['String']['output'];
   sourceId?: Maybe<Scalars['String']['output']>;
   /** Identifies the date and time when the object was last updated. */
@@ -244,7 +246,7 @@ export type Auth = {
 
 export type BizCompanyOnSegmentInput = {
   bizCompanyId: Scalars['String']['input'];
-  data?: InputMaybe<Scalars['JSON']['input']>;
+  data?: InputMaybe<Scalars['JSONObject']['input']>;
   segmentId: Scalars['String']['input'];
 };
 
@@ -264,7 +266,7 @@ export type BizEvent = {
   bizUserId: Scalars['String']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
-  data?: Maybe<Scalars['JSON']['output']>;
+  data?: Maybe<Scalars['JSONObject']['output']>;
   event?: Maybe<Events>;
   eventId: Scalars['String']['output'];
   id: Scalars['ID']['output'];
@@ -295,7 +297,7 @@ export type BizModel = {
   __typename?: 'BizModel';
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
-  data?: Maybe<Scalars['JSON']['output']>;
+  data?: Maybe<Scalars['JSONObject']['output']>;
   environmentId: Scalars['String']['output'];
   externalId: Scalars['String']['output'];
   id: Scalars['ID']['output'];
@@ -340,7 +342,7 @@ export type BizSession = {
   contentId: Scalars['String']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
-  data?: Maybe<Scalars['JSON']['output']>;
+  data?: Maybe<Scalars['JSONObject']['output']>;
   id: Scalars['ID']['output'];
   progress: Scalars['Int']['output'];
   state: Scalars['Int']['output'];
@@ -367,7 +369,7 @@ export type BizUser = {
   bizUsersOnCompany?: Maybe<Array<BizUserOnCompanyModel>>;
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
-  data?: Maybe<Scalars['JSON']['output']>;
+  data?: Maybe<Scalars['JSONObject']['output']>;
   environmentId: Scalars['String']['output'];
   externalId: Scalars['String']['output'];
   id: Scalars['ID']['output'];
@@ -396,7 +398,7 @@ export type BizUserOnCompanyModel = {
   bizUserId: Scalars['String']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
-  data?: Maybe<Scalars['JSON']['output']>;
+  data?: Maybe<Scalars['JSONObject']['output']>;
   id: Scalars['ID']['output'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
@@ -404,7 +406,7 @@ export type BizUserOnCompanyModel = {
 
 export type BizUserOnSegmentInput = {
   bizUserId: Scalars['String']['input'];
-  data?: InputMaybe<Scalars['JSON']['input']>;
+  data?: InputMaybe<Scalars['JSONObject']['input']>;
   segmentId: Scalars['String']['input'];
 };
 
@@ -466,7 +468,7 @@ export type Content = {
   publishedVersion?: Maybe<Version>;
   publishedVersionId?: Maybe<Scalars['String']['output']>;
   steps?: Maybe<Array<Step>>;
-  type?: Maybe<Scalars['String']['output']>;
+  type: Scalars['String']['output'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -801,16 +803,26 @@ export type IdentityTokenDiagnosisModel = {
   __typename?: 'IdentityTokenDiagnosisModel';
   companyId?: Maybe<Scalars['String']['output']>;
   expiresAt?: Maybe<Scalars['DateTime']['output']>;
-  status: Scalars['String']['output'];
+  status: IdentityTokenStatus;
   subject?: Maybe<Scalars['String']['output']>;
 };
+
+export type IdentityTokenStatus =
+  | 'expired'
+  | 'invalid_signature'
+  | 'malformed'
+  | 'missing_subject'
+  | 'no_active_secret'
+  | 'not_yet_valid'
+  | 'valid'
+  | 'wrong_algorithm';
 
 export type IdentityVerificationStats = {
   __typename?: 'IdentityVerificationStats';
   anonymous: Scalars['Int']['output'];
   invalid: Scalars['Int']['output'];
   missing: Scalars['Int']['output'];
-  subject: Scalars['String']['output'];
+  subject: SignatureSubject;
   valid: Scalars['Int']['output'];
 };
 
@@ -860,7 +872,7 @@ export type InstanceSetting = {
 export type Integration = {
   __typename?: 'Integration';
   autoDisabledAt?: Maybe<Scalars['DateTime']['output']>;
-  config: Scalars['JSON']['output'];
+  config: IntegrationConfig;
   connected: Scalars['Boolean']['output'];
   consecutiveFailures: Scalars['Int']['output'];
   cooldownUntil?: Maybe<Scalars['DateTime']['output']>;
@@ -868,7 +880,7 @@ export type Integration = {
   enabled: Scalars['Boolean']['output'];
   environmentId: Scalars['String']['output'];
   id: Scalars['String']['output'];
-  inboundConfig: Scalars['JSON']['output'];
+  inboundConfig: IntegrationInboundConfig;
   inboundEnabled: Scalars['Boolean']['output'];
   inboundUrl?: Maybe<Scalars['String']['output']>;
   keyTail: Scalars['String']['output'];
@@ -878,8 +890,14 @@ export type Integration = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
+export type IntegrationConfig = {
+  __typename?: 'IntegrationConfig';
+  events?: Maybe<IntegrationTimelineEvents>;
+  region?: Maybe<IntegrationRegion>;
+};
+
 export type IntegrationConfigInput = {
-  region?: InputMaybe<Scalars['String']['input']>;
+  region?: InputMaybe<IntegrationRegion>;
 };
 
 export type IntegrationDelivery = {
@@ -898,13 +916,18 @@ export type IntegrationIdInput = {
   id: Scalars['String']['input'];
 };
 
+export type IntegrationInboundConfig = {
+  __typename?: 'IntegrationInboundConfig';
+  userIdProperty?: Maybe<Scalars['String']['output']>;
+};
+
 export type IntegrationMessage = {
   __typename?: 'IntegrationMessage';
   createdAt: Scalars['DateTime']['output'];
   deliveries: Array<IntegrationDelivery>;
   id: Scalars['String']['output'];
   payload: Scalars['JSON']['output'];
-  status: Scalars['String']['output'];
+  status: OutboundMessageStatus;
   topic: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -933,15 +956,15 @@ export type IntegrationObjectMapping = {
   enabled: Scalars['Boolean']['output'];
   fullSyncStartedAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['String']['output'];
-  inboundFields: Scalars['JSON']['output'];
+  inboundFields: Array<SyncInboundField>;
   integrationId: Scalars['String']['output'];
   lastFullSyncAt?: Maybe<Scalars['DateTime']['output']>;
-  localObject: Scalars['String']['output'];
+  localObject: SyncLocalObject;
   matchRemoteField?: Maybe<Scalars['String']['output']>;
-  matchStrategy: Scalars['String']['output'];
+  matchStrategy: SyncMatchStrategy;
   matchedCount: Scalars['Int']['output'];
-  outboundFields: Scalars['JSON']['output'];
-  remoteObject: Scalars['String']['output'];
+  outboundFields: Array<SyncOutboundField>;
+  remoteObject: SyncRemoteObject;
   unresolvedCount: Scalars['Int']['output'];
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -950,6 +973,10 @@ export type IntegrationObjectMappingIdInput = {
   id: Scalars['String']['input'];
   integrationId: Scalars['String']['input'];
 };
+
+export type IntegrationRegion =
+  | 'EU'
+  | 'US';
 
 export type IntegrationRemoteProperty = {
   __typename?: 'IntegrationRemoteProperty';
@@ -967,17 +994,26 @@ export type IntegrationSyncRun = {
   error?: Maybe<Scalars['String']['output']>;
   finishedAt?: Maybe<Scalars['DateTime']['output']>;
   id: Scalars['String']['output'];
-  kind: Scalars['String']['output'];
-  localObject?: Maybe<Scalars['String']['output']>;
+  kind: IntegrationSyncRunKind;
+  localObject?: Maybe<SyncLocalObject>;
   mappingId?: Maybe<Scalars['String']['output']>;
   matchedCount: Scalars['Int']['output'];
   records: Scalars['Int']['output'];
-  remoteIds?: Maybe<Scalars['JSON']['output']>;
-  remoteObject?: Maybe<Scalars['String']['output']>;
+  remoteIds?: Maybe<Array<Scalars['String']['output']>>;
+  remoteObject?: Maybe<SyncRemoteObject>;
   startedAt: Scalars['DateTime']['output'];
-  status: Scalars['String']['output'];
+  status: IntegrationSyncRunStatus;
   unresolvedCount: Scalars['Int']['output'];
 };
+
+export type IntegrationSyncRunKind =
+  | 'full'
+  | 'journal';
+
+export type IntegrationSyncRunStatus =
+  | 'failed'
+  | 'running'
+  | 'succeeded';
 
 export type IntegrationSyncedSegment = {
   __typename?: 'IntegrationSyncedSegment';
@@ -990,6 +1026,12 @@ export type IntegrationSyncedSegment = {
   sourceCohortId: Scalars['String']['output'];
   sourceCohortName: Scalars['String']['output'];
   unresolvedCount: Scalars['Int']['output'];
+};
+
+export type IntegrationTimelineEvents = {
+  __typename?: 'IntegrationTimelineEvents';
+  codeNames: Array<Scalars['String']['output']>;
+  enabled: Scalars['Boolean']['output'];
 };
 
 export type Invite = {
@@ -1138,7 +1180,7 @@ export type Mutation = {
   inviteTeamMember: Scalars['Boolean']['output'];
   login: Auth;
   logout: Scalars['Boolean']['output'];
-  publishedContentVersion: Version;
+  publishedContentVersion: Content;
   regenerateRecoveryCodes: TwoFactorEnableResult;
   removeTeamMember: Scalars['Boolean']['output'];
   resendMagicLink: Register;
@@ -1821,6 +1863,11 @@ export type OrderDirection =
   | 'asc'
   | 'desc';
 
+export type OutboundMessageStatus =
+  | 'DELIVERED'
+  | 'FAILED'
+  | 'PENDING';
+
 export type PageInfo = {
   __typename?: 'PageInfo';
   endCursor?: Maybe<Scalars['String']['output']>;
@@ -1862,7 +1909,7 @@ export type ProjectSsoSettingsModel = {
   __typename?: 'ProjectSsoSettingsModel';
   allowedDomains: Array<Scalars['String']['output']>;
   autoProvision: Scalars['Boolean']['output'];
-  defaultRole: Role;
+  defaultRole: SsoDefaultRole;
   projectId: Scalars['String']['output'];
   requireSso: Scalars['Boolean']['output'];
 };
@@ -2139,7 +2186,7 @@ export type QueryListIntegrationObjectMappingsArgs = {
 
 export type QueryListIntegrationRemotePropertiesArgs = {
   integrationId: Scalars['String']['input'];
-  remoteObject: Scalars['String']['input'];
+  remoteObject: SyncRemoteObject;
 };
 
 
@@ -2417,7 +2464,7 @@ export type Segment = {
   dataType: SegmentDataType;
   environmentId?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
   projectId?: Maybe<Scalars['String']['output']>;
   source?: Maybe<Scalars['String']['output']>;
   sourceId?: Maybe<Scalars['String']['output']>;
@@ -2449,12 +2496,20 @@ export type SetupSystemAdminInput = {
   password: Scalars['String']['input'];
 };
 
+export type SignatureSubject =
+  | 'company'
+  | 'user';
+
 export type SignupInput = {
   code: Scalars['String']['input'];
   companyName: Scalars['String']['input'];
   password: Scalars['String']['input'];
   userName: Scalars['String']['input'];
 };
+
+export type SsoDefaultRole =
+  | 'EDITOR'
+  | 'VIEWER';
 
 export type SsoProviderModel = {
   __typename?: 'SsoProviderModel';
@@ -2495,7 +2550,7 @@ export type Step = {
   id: Scalars['ID']['output'];
   name?: Maybe<Scalars['String']['output']>;
   screenshot?: Maybe<Scalars['JSON']['output']>;
-  sequence?: Maybe<Scalars['Int']['output']>;
+  sequence: Scalars['Int']['output'];
   setting?: Maybe<Scalars['JSON']['output']>;
   target?: Maybe<Scalars['JSON']['output']>;
   themeId?: Maybe<Scalars['String']['output']>;
@@ -2568,14 +2623,38 @@ export type SubscriptionPlanModel = {
   updatedAt: Scalars['DateTime']['output'];
 };
 
+export type SyncInboundField = {
+  __typename?: 'SyncInboundField';
+  local: Scalars['String']['output'];
+  remote: Scalars['String']['output'];
+};
+
 export type SyncInboundFieldInput = {
   local: Scalars['String']['input'];
   remote: Scalars['String']['input'];
 };
 
+export type SyncLocalObject =
+  | 'company'
+  | 'user';
+
+export type SyncMatchStrategy =
+  | 'email'
+  | 'remoteField';
+
+export type SyncOutboundField = {
+  __typename?: 'SyncOutboundField';
+  local: Scalars['String']['output'];
+  remote: Scalars['String']['output'];
+};
+
 export type SyncOutboundFieldInput = {
   local: Scalars['String']['input'];
 };
+
+export type SyncRemoteObject =
+  | 'company'
+  | 'contact';
 
 export type Theme = {
   __typename?: 'Theme';
@@ -2700,7 +2779,7 @@ export type UpdateEnvironmentInput = {
 };
 
 export type UpdateEventInput = {
-  attributeIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  attributeIds: Array<Scalars['String']['input']>;
   codeName?: InputMaybe<Scalars['String']['input']>;
   deleted?: InputMaybe<Scalars['Boolean']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -2731,7 +2810,7 @@ export type UpdateLocalizationInput = {
 export type UpdateProjectSsoSettingsInput = {
   allowedDomains?: InputMaybe<Array<Scalars['String']['input']>>;
   autoProvision?: InputMaybe<Scalars['Boolean']['input']>;
-  defaultRole?: InputMaybe<Role>;
+  defaultRole?: InputMaybe<SsoDefaultRole>;
   requireSso?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
@@ -2795,11 +2874,11 @@ export type UpsertIntegrationObjectMappingInput = {
   enabled?: InputMaybe<Scalars['Boolean']['input']>;
   inboundFields: Array<SyncInboundFieldInput>;
   integrationId: Scalars['String']['input'];
-  localObject: Scalars['String']['input'];
+  localObject: SyncLocalObject;
   matchRemoteField?: InputMaybe<Scalars['String']['input']>;
-  matchStrategy: Scalars['String']['input'];
+  matchStrategy: SyncMatchStrategy;
   outboundFields: Array<SyncOutboundFieldInput>;
-  remoteObject: Scalars['String']['input'];
+  remoteObject: SyncRemoteObject;
 };
 
 export type User = {
@@ -2844,7 +2923,7 @@ export type VerifyTwoFactorInput = {
 export type Version = {
   __typename?: 'Version';
   config?: Maybe<Scalars['JSON']['output']>;
-  contentId?: Maybe<Scalars['String']['output']>;
+  contentId: Scalars['String']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
   createdByUserId?: Maybe<Scalars['String']['output']>;
@@ -2889,13 +2968,13 @@ export type VersionInput = {
 
 export type VersionOnLocalization = {
   __typename?: 'VersionOnLocalization';
-  backup?: Maybe<Scalars['JSON']['output']>;
+  backup: Scalars['JSON']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
   enabled: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   localizationId: Scalars['String']['output'];
-  localized?: Maybe<Scalars['JSON']['output']>;
+  localized: Scalars['JSON']['output'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
   version?: Maybe<Version>;
@@ -2924,7 +3003,7 @@ export type Webhook = {
   environmentId: Scalars['String']['output'];
   id: Scalars['String']['output'];
   secret?: Maybe<Scalars['String']['output']>;
-  topics: Scalars['JSON']['output'];
+  topics: Array<Scalars['String']['output']>;
   updatedAt: Scalars['DateTime']['output'];
   url: Scalars['String']['output'];
 };
@@ -2951,7 +3030,7 @@ export type WebhookMessage = {
   deliveries: Array<WebhookDelivery>;
   id: Scalars['String']['output'];
   payload: Scalars['JSON']['output'];
-  status: Scalars['String']['output'];
+  status: OutboundMessageStatus;
   topic: Scalars['String']['output'];
   updatedAt: Scalars['DateTime']['output'];
 };

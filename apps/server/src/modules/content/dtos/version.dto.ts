@@ -35,7 +35,7 @@ export class VersionDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   themeId?: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   contentId: string;
 
   @Field(() => [StepDTO], { nullable: true })

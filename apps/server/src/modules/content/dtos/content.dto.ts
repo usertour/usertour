@@ -16,7 +16,7 @@ export class ContentDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   buildUrl?: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   type: string;
 
   @Field(() => GraphQLJSON, { nullable: true })

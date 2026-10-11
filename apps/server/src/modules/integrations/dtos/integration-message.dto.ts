@@ -1,7 +1,10 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { OutboundMessageStatus } from '@prisma/client';
 import GraphQLJSON from 'graphql-type-json';
 
 import { IntegrationDeliveryDTO } from './integration-delivery.dto';
+
+registerEnumType(OutboundMessageStatus, { name: 'OutboundMessageStatus' });
 
 /**
  * GraphQL projection of an outbound message addressed to an integration, with
@@ -22,9 +25,8 @@ export class IntegrationMessageDTO {
   @Field(() => String)
   topic: string;
 
-  /** PENDING | DELIVERED | FAILED */
-  @Field(() => String)
-  status: string;
+  @Field(() => OutboundMessageStatus)
+  status: OutboundMessageStatus;
 
   @Field(() => GraphQLJSON)
   payload: unknown;

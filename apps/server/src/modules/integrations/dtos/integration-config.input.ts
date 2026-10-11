@@ -1,10 +1,12 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsIn, IsOptional } from 'class-validator';
+import type { IntegrationRegion as IntegrationRegionValue } from '@usertour/types';
+import { IsOptional } from 'class-validator';
+
+import { IntegrationRegion } from '../types/integration-region.type';
 
 @InputType()
 export class IntegrationConfigInput {
-  @Field(() => String, { nullable: true })
+  @Field(() => IntegrationRegion, { nullable: true })
   @IsOptional()
-  @IsIn(['US', 'EU'])
-  region?: 'US' | 'EU';
+  region?: IntegrationRegionValue;
 }

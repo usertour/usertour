@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { NetworkStatus, useLazyQuery, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
-import type { Refined } from './refined';
 import {
   CreateSigningSecretDocument,
   GetIdentityVerificationStatsDocument,
@@ -113,21 +112,8 @@ export const useSetRequireIdentityVerificationMutation = () => {
   return { invoke, loading, error };
 };
 
-export type IdentityTokenStatus =
-  | 'valid'
-  | 'expired'
-  | 'not_yet_valid'
-  | 'invalid_signature'
-  | 'wrong_algorithm'
-  | 'malformed'
-  | 'missing_subject'
-  | 'no_active_secret';
-
-/** `status` is a String on the wire; the server keeps it to the set above. */
-export type IdentityTokenDiagnosis = Refined<
-  ValidateIdentityTokenQuery['validateIdentityToken'],
-  { status: IdentityTokenStatus }
->;
+export type IdentityTokenDiagnosis = ValidateIdentityTokenQuery['validateIdentityToken'];
+export type IdentityTokenStatus = IdentityTokenDiagnosis['status'];
 
 export const useValidateIdentityTokenLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(ValidateIdentityTokenDocument, {
@@ -137,7 +123,7 @@ export const useValidateIdentityTokenLazyQuery = () => {
   const invoke = useCallback(
     async (environmentId: string, token: string): Promise<IdentityTokenDiagnosis | null> => {
       const response = await query({ variables: { environmentId, token } });
-      return (response.data?.validateIdentityToken as IdentityTokenDiagnosis | undefined) ?? null;
+      return response.data?.validateIdentityToken ?? null;
     },
     [query],
   );

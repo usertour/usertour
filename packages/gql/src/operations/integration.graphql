@@ -5,13 +5,21 @@ fragment IntegrationFields on Integration {
   environmentId
   provider
   keyTail
-  config
+  config {
+    region
+    events {
+      enabled
+      codeNames
+    }
+  }
   enabled
   consecutiveFailures
   cooldownUntil
   autoDisabledAt
   inboundEnabled
-  inboundConfig
+  inboundConfig {
+    userIdProperty
+  }
   inboundUrl
   connected
   remoteAccountId
@@ -66,7 +74,9 @@ mutation UpdateIntegrationInbound($data: UpdateIntegrationInboundInput!) {
     id
     updatedAt
     inboundEnabled
-    inboundConfig
+    inboundConfig {
+      userIdProperty
+    }
     inboundUrl
   }
 }
@@ -134,8 +144,14 @@ fragment IntegrationObjectMappingFields on IntegrationObjectMapping {
   localObject
   matchStrategy
   matchRemoteField
-  inboundFields
-  outboundFields
+  inboundFields {
+    remote
+    local
+  }
+  outboundFields {
+    local
+    remote
+  }
   enabled
   lastFullSyncAt
   fullSyncStartedAt
@@ -167,7 +183,7 @@ query ListIntegrationSyncRuns($integrationId: String!, $limit: Int) {
   }
 }
 
-query ListIntegrationRemoteProperties($integrationId: String!, $remoteObject: String!) {
+query ListIntegrationRemoteProperties($integrationId: String!, $remoteObject: SyncRemoteObject!) {
   listIntegrationRemoteProperties(integrationId: $integrationId, remoteObject: $remoteObject) {
     name
     label
@@ -199,6 +215,12 @@ mutation UpdateIntegrationEvents($data: UpdateIntegrationEventsInput!) {
   updateIntegrationEvents(data: $data) {
     id
     updatedAt
-    config
+    config {
+      region
+      events {
+        enabled
+        codeNames
+      }
+    }
   }
 }

@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
+import type { OutboundMessageStatus } from '@usertour/gql';
 import { Badge } from '@usertour/ui';
 
 export interface OutboundMessageStatusBadgeProps {
-  /** PENDING | DELIVERED | FAILED, as the ledger records it. */
-  status: string;
+  status: OutboundMessageStatus;
 }
 
 /** DELIVERED → success, FAILED → destructive, PENDING → secondary. */

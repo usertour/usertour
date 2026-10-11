@@ -514,6 +514,19 @@ describe('GraphQL biz (e2e)', () => {
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
     });
+
+    it('rejects an explicit null name as invalid input, not as a database failure', async () => {
+      const seg = await buildSegment(prisma, { projectId, environmentId, bizType: 1, dataType: 3 });
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: UpdateSegment!) { updateSegment(data: $data) { id } }',
+        variables: { data: { id: seg.id, name: null } },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+
+      const row = await prisma.segment.findUnique({ where: { id: seg.id } });
+      expect(row?.name).toBe(seg.name);
+    });
   });
 
   // ── deleteSegment ────────────────────────────────────────────────────────

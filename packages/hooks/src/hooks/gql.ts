@@ -50,7 +50,7 @@ import {
   type ProjectSsoSettingsFieldsFragment,
   type SsoProviderFieldsFragment,
   type UpdateAttributeInput,
-  type UpdateProjectSsoSettingsInput as UpdateProjectSsoSettingsInputWire,
+  type UpdateProjectSsoSettingsInput,
   type UpdateSsoProviderInput,
   type ContentOrder,
   CreateAttributeDocument,
@@ -1446,19 +1446,13 @@ export type PublicSsoProvider = GetProjectSsoProvidersQuery['getProjectSsoProvid
 
 export type { CreateOidcSsoProviderInput, UpdateSsoProviderInput };
 
-/** The roles JIT provisioning may hand out: a `Role` on the wire, kept to these two by the server. */
-export type SsoDefaultRole = Extract<Role, 'EDITOR' | 'VIEWER'>;
+/** The roles JIT provisioning may hand out: EDITOR or VIEWER. */
+export type SsoDefaultRole = ProjectSsoSettings['defaultRole'];
 
 // Project-level SSO settings: force-SSO enforcement + JIT provisioning policy.
-export type ProjectSsoSettings = Refined<
-  ProjectSsoSettingsFieldsFragment,
-  { defaultRole: SsoDefaultRole }
->;
+export type ProjectSsoSettings = ProjectSsoSettingsFieldsFragment;
 
-export type UpdateProjectSsoSettingsInput = Refined<
-  UpdateProjectSsoSettingsInputWire,
-  { defaultRole?: SsoDefaultRole | null }
->;
+export type { UpdateProjectSsoSettingsInput };
 
 export const useListProjectSsoProvidersQuery = (
   projectId: string | undefined,
@@ -1560,7 +1554,7 @@ export const useGetProjectSsoSettingsQuery = (
     ...options,
   });
   return {
-    settings: data?.getProjectSsoSettings as ProjectSsoSettings | undefined,
+    settings: data?.getProjectSsoSettings,
     loading,
     error,
     refetch,
@@ -1575,7 +1569,7 @@ export const useUpdateProjectSsoSettingsMutation = () => {
       input: UpdateProjectSsoSettingsInput,
     ): Promise<ProjectSsoSettings> => {
       const response = await mutation({ variables: { projectId, input } });
-      return response.data!.updateProjectSsoSettings as ProjectSsoSettings;
+      return response.data!.updateProjectSsoSettings;
     },
     [mutation],
   );

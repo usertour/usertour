@@ -2,16 +2,8 @@ import { useCallback } from 'react';
 import { NetworkStatus, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type {
-  SyncInboundField,
-  SyncLocalObject,
-  SyncMatchStrategy,
-  SyncOutboundField,
-  SyncRemoteObject,
-  IntegrationConfig,
-} from '@usertour/types';
+import type { SyncRemoteObject } from '@usertour/types';
 import type { OutboundMessage } from './outbound-message';
-import type { Refined } from './refined';
 import {
   DeleteIntegrationDocument,
   DeleteIntegrationObjectMappingDocument,
@@ -52,14 +44,8 @@ import {
   UpsertIntegrationDocument,
   type UpsertIntegrationInput as UpsertIntegrationInputWire,
   UpsertIntegrationObjectMappingDocument,
-  type UpsertIntegrationObjectMappingInput as UpsertIntegrationObjectMappingInputWire,
+  type UpsertIntegrationObjectMappingInput,
 } from '@usertour/gql';
-
-/** Inbound cohort sync settings (ADR 0012); a JSON scalar on the wire. */
-export interface IntegrationInboundConfig {
-  /** Member property holding the Usertour user id; absent = the provider's distinct id. */
-  userIdProperty?: string;
-}
 
 /**
  * `keyTail` is the configured key's last four characters; the key itself is
@@ -67,12 +53,8 @@ export interface IntegrationInboundConfig {
  * the circuit breaker. `inboundEnabled`/`inboundConfig`/`inboundUrl` are the
  * inbound cohort sync (ADR 0012), independent of `enabled`. `connected`,
  * `remoteAccountId`, `remoteAccountLabel` are the CRM OAuth grant (ADR 0013).
- * `config` and `inboundConfig` travel as JSON.
  */
-export type Integration = Refined<
-  IntegrationFieldsFragment,
-  { config: IntegrationConfig; inboundConfig: IntegrationInboundConfig }
->;
+export type Integration = IntegrationFieldsFragment;
 
 /** One synced provider cohort and the segment mirroring it (ADR 0012). */
 export type IntegrationSyncedSegment =
@@ -92,7 +74,7 @@ export const useListIntegrationsQuery = (
     ...options,
   });
   const isRefetching = networkStatus === NetworkStatus.refetch;
-  const integrations = data?.listIntegrations as Integration[] | undefined;
+  const integrations = data?.listIntegrations;
   return { integrations, loading, error, refetch, isRefetching };
 };
 
@@ -137,7 +119,7 @@ export const useUpsertIntegrationMutation = () => {
   const invoke = useCallback(
     async (input: UpsertIntegrationInput): Promise<Integration | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (response.data?.upsertIntegration as Integration | undefined) ?? null;
+      return response.data?.upsertIntegration ?? null;
     },
     [mutation],
   );
@@ -280,49 +262,19 @@ export const useDisconnectIntegrationOAuthMutation = () => {
 // CRM object mappings (ADR 0013 §4-6)
 // ---------------------------------------------------------------------------
 
-/**
- * The object kinds and match strategy are Strings on the wire that the server
- * keeps to the sync vocabulary; the field lists travel as JSON.
- */
-export type IntegrationObjectMapping = Refined<
-  IntegrationObjectMappingFieldsFragment,
-  {
-    remoteObject: SyncRemoteObject;
-    localObject: SyncLocalObject;
-    matchStrategy: SyncMatchStrategy;
-    inboundFields: SyncInboundField[];
-    outboundFields: SyncOutboundField[];
-  }
->;
-
-export type IntegrationSyncRunKind = 'full' | 'journal';
-export type IntegrationSyncRunStatus = 'running' | 'succeeded' | 'failed';
+export type IntegrationObjectMapping = IntegrationObjectMappingFieldsFragment;
 
 /**
  * One sync run: a full round over a mapping, or a journal poll's inbound
- * changes. `kind`, `status` and the object kinds are Strings on the wire the
- * server keeps to fixed sets; `remoteIds` (journal runs: the provider record
- * ids touched, capped server-side) travels as JSON.
+ * changes. `remoteIds` is the provider record ids a journal run touched,
+ * capped server-side.
  */
-export type IntegrationSyncRun = Refined<
-  ListIntegrationSyncRunsQuery['listIntegrationSyncRuns'][number],
-  {
-    kind: IntegrationSyncRunKind;
-    status: IntegrationSyncRunStatus;
-    remoteObject: SyncRemoteObject | null;
-    localObject: SyncLocalObject | null;
-    remoteIds: string[] | null;
-  }
->;
+export type IntegrationSyncRun = ListIntegrationSyncRunsQuery['listIntegrationSyncRuns'][number];
 
 export type IntegrationRemoteProperty =
   ListIntegrationRemotePropertiesQuery['listIntegrationRemoteProperties'][number];
 
-/** The object kinds and match strategy are Strings on the wire; callers send the sync vocabulary. */
-export type UpsertIntegrationObjectMappingInput = Refined<
-  UpsertIntegrationObjectMappingInputWire,
-  { remoteObject: SyncRemoteObject; localObject: SyncLocalObject; matchStrategy: SyncMatchStrategy }
->;
+export type { UpsertIntegrationObjectMappingInput };
 
 export const useListIntegrationObjectMappingsQuery = (
   integrationId: string,
@@ -340,7 +292,7 @@ export const useListIntegrationObjectMappingsQuery = (
     },
   );
   return {
-    mappings: data?.listIntegrationObjectMappings as IntegrationObjectMapping[] | undefined,
+    mappings: data?.listIntegrationObjectMappings,
     loading,
     error,
     refetch,
@@ -362,7 +314,7 @@ export const useListIntegrationSyncRunsQuery = (
     },
   );
   return {
-    runs: data?.listIntegrationSyncRuns as IntegrationSyncRun[] | undefined,
+    runs: data?.listIntegrationSyncRuns,
     loading,
     error,
     refetch,
@@ -405,10 +357,7 @@ export const useUpsertIntegrationObjectMappingMutation = () => {
       input: UpsertIntegrationObjectMappingInput,
     ): Promise<IntegrationObjectMapping | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (
-        (response.data?.upsertIntegrationObjectMapping as IntegrationObjectMapping | undefined) ??
-        null
-      );
+      return response.data?.upsertIntegrationObjectMapping ?? null;
     },
     [mutation],
   );
@@ -438,10 +387,7 @@ export const useRunIntegrationObjectMappingSyncMutation = () => {
       id: string;
     }): Promise<IntegrationObjectMapping | null> => {
       const response = await mutation({ variables: { data: input } });
-      return (
-        (response.data?.runIntegrationObjectMappingSync as IntegrationObjectMapping | undefined) ??
-        null
-      );
+      return response.data?.runIntegrationObjectMappingSync ?? null;
     },
     [mutation],
   );

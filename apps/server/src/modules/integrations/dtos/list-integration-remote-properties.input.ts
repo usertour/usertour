@@ -1,5 +1,8 @@
 import { ArgsType, Field } from '@nestjs/graphql';
-import { IsIn, IsString } from 'class-validator';
+import type { SyncRemoteObject as SyncRemoteObjectValue } from '@usertour/types';
+import { IsString } from 'class-validator';
+
+import { SyncRemoteObject } from '../types/sync-remote-object.type';
 
 @ArgsType()
 export class ListIntegrationRemotePropertiesArgs {
@@ -7,7 +10,6 @@ export class ListIntegrationRemotePropertiesArgs {
   @IsString()
   integrationId: string;
 
-  @Field(() => String)
-  @IsIn(['contact', 'company'])
-  remoteObject: string;
+  @Field(() => SyncRemoteObject)
+  remoteObject: SyncRemoteObjectValue;
 }

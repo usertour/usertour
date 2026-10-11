@@ -127,7 +127,7 @@ export class ContentResolver {
     return await this.contentService.restoreContentVersion(versionId, { userId: user.id });
   }
 
-  @Mutation(() => VersionDTO)
+  @Mutation(() => ContentDTO)
   @RequirePermission({ capability: Capability.ContentPublish, scope: ScopeKind.Content })
   @AuditWeb({
     action: 'update',

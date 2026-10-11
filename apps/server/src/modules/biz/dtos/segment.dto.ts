@@ -22,8 +22,8 @@ export class SegmentDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   environmentId?: string;
 
-  @Field(() => String, { nullable: true })
-  name?: string;
+  @Field(() => String)
+  name: string;
 
   @Field(() => GraphQLJSON, { nullable: true })
   columns?: JsonValue;

@@ -1,8 +1,8 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { Role } from '@prisma/client';
-import { IsArray, IsBoolean, IsIn, IsOptional } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional } from 'class-validator';
 
 import type { ProjectSsoSettingsChanges } from '../types/project-sso-settings-changes.type';
+import { SsoDefaultRole } from '../types/sso-default-role.type';
 
 /**
  * Project-level SSO settings patch. All fields optional — only the provided
@@ -26,10 +26,9 @@ export class UpdateProjectSsoSettingsInput implements ProjectSsoSettingsChanges 
   // Role assigned to JIT-provisioned users. Restricted to EDITOR or VIEWER —
   // ADMIN (team management) is never granted automatically, OWNER is
   // transfer-only. See ADR 0014.
-  @Field(() => Role, { nullable: true })
+  @Field(() => SsoDefaultRole, { nullable: true })
   @IsOptional()
-  @IsIn([Role.EDITOR, Role.VIEWER])
-  defaultRole?: Role;
+  defaultRole?: SsoDefaultRole;
 
   // Optional unverified email-domain allow-list for JIT. Empty = trust the IdP.
   @Field(() => [String], { nullable: true })
