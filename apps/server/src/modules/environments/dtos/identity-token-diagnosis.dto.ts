@@ -1,6 +1,6 @@
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 
-import { IdentityTokenStatus } from '@/modules/common/types/identity-token-diagnosis.type';
+import { IdentityTokenStatus } from '@/modules/common/types/identity-token-status.type';
 
 registerEnumType(IdentityTokenStatus, { name: 'IdentityTokenStatus' });
 

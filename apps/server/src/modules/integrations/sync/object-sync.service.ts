@@ -1,5 +1,3 @@
-import type { IntegrationSyncRunKind } from '../types/integration-sync-run-kind.type';
-import type { IntegrationSyncRunStatus } from '../types/integration-sync-run-status.type';
 import { randomUUID } from 'node:crypto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
@@ -32,6 +30,8 @@ import type {
   SyncObjectUpdateEnvelope,
   IntegrationMessageEnvelope,
 } from '../types/integrations.type';
+import type { IntegrationSyncRunKind } from '../types/integration-sync-run-kind.type';
+import type { IntegrationSyncRunStatus } from '../types/integration-sync-run-status.type';
 import {
   batchUpdateHubspotObjects,
   ensureHubspotProperty,
@@ -440,8 +440,8 @@ export class ObjectSyncService {
       take: Math.min(Math.max(limit, 1), 200),
       include: { mapping: { select: { remoteObject: true, localObject: true } } },
     });
-    // The columns are Strings; this service is their only writer and writes
-    // the vocabulary, so the rows are read back as it.
+    // The columns are Strings; the sync services are their only writers and
+    // write the vocabulary, so the rows are read back as it.
     return runs.map((run) => ({
       id: run.id,
       kind: run.kind as IntegrationSyncRunKind,
