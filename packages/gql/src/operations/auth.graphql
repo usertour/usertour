@@ -30,19 +30,9 @@ mutation Login($email: String!, $password: String!, $inviteCode: String) {
   }
 }
 
-mutation signUp(
-  $code: String!
-  $password: String!
-  $userName: String!
-  $companyName: String!
-) {
+mutation signUp($code: String!, $password: String!, $userName: String!, $companyName: String!) {
   signup(
-    data: {
-      code: $code
-      password: $password
-      userName: $userName
-      companyName: $companyName
-    }
+    data: { code: $code, password: $password, userName: $userName, companyName: $companyName }
   ) {
     accessToken
     refreshToken

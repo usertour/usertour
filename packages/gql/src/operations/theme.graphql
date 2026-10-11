@@ -12,19 +12,9 @@ query getTheme($themeId: String!) {
   }
 }
 
-mutation createTheme(
-  $name: String!
-  $projectId: String!
-  $settings: JSON!
-  $isDefault: Boolean!
-) {
+mutation createTheme($name: String!, $projectId: String!, $settings: JSON!, $isDefault: Boolean!) {
   createTheme(
-    data: {
-      name: $name
-      projectId: $projectId
-      settings: $settings
-      isDefault: $isDefault
-    }
+    data: { name: $name, projectId: $projectId, settings: $settings, isDefault: $isDefault }
   ) {
     id
   }
@@ -38,7 +28,13 @@ mutation updateTheme(
   $variations: JSON
 ) {
   updateTheme(
-    data: { id: $id, name: $name, settings: $settings, isDefault: $isDefault, variations: $variations }
+    data: {
+      id: $id
+      name: $name
+      settings: $settings
+      isDefault: $isDefault
+      variations: $variations
+    }
   ) {
     id
     name

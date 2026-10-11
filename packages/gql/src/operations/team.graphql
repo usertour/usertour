@@ -43,11 +43,11 @@ mutation inviteTeamMember(
 }
 
 mutation cancelInvite($projectId: String!, $inviteId: String!) {
-  cancelInvite(data: { projectId: $projectId, inviteId: $inviteId } )
+  cancelInvite(data: { projectId: $projectId, inviteId: $inviteId })
 }
 
 mutation removeTeamMember($projectId: String!, $userId: String!) {
-  removeTeamMember(data: { projectId: $projectId, userId: $userId } )
+  removeTeamMember(data: { projectId: $projectId, userId: $userId })
 }
 
 mutation changeTeamMemberRole(

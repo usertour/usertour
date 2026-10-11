@@ -81,20 +81,8 @@ mutation UpdateInstanceRequire2FA($value: Boolean!) {
   }
 }
 
-query AdminUsers(
-  $query: String
-  $page: Int
-  $pageSize: Int
-  $status: String
-  $role: String
-) {
-  adminUsers(
-    query: $query
-    page: $page
-    pageSize: $pageSize
-    status: $status
-    role: $role
-  ) {
+query AdminUsers($query: String, $page: Int, $pageSize: Int, $status: String, $role: String) {
+  adminUsers(query: $query, page: $page, pageSize: $pageSize, status: $status, role: $role) {
     items {
       id
       name
@@ -110,11 +98,7 @@ query AdminUsers(
   }
 }
 
-mutation AdminCreateUser(
-  $name: String!
-  $email: String!
-  $password: String!
-) {
+mutation AdminCreateUser($name: String!, $email: String!, $password: String!) {
   adminCreateUser(name: $name, email: $email, password: $password) {
     id
     name
@@ -136,12 +120,7 @@ mutation UpdateUserDisabled($userId: String!, $disabled: Boolean!) {
   }
 }
 
-query AdminProjects(
-  $query: String
-  $page: Int
-  $pageSize: Int
-  $usesInstanceLicense: String
-) {
+query AdminProjects($query: String, $page: Int, $pageSize: Int, $usesInstanceLicense: String) {
   adminProjects(
     query: $query
     page: $page
@@ -171,10 +150,7 @@ mutation AdminCreateProject($name: String!, $ownerUserId: String!) {
   }
 }
 
-mutation UpdateProjectUsesInstanceLicense(
-  $projectId: String!
-  $enabled: Boolean!
-) {
+mutation UpdateProjectUsesInstanceLicense($projectId: String!, $enabled: Boolean!) {
   updateProjectUsesInstanceLicense(projectId: $projectId, enabled: $enabled)
 }
 
@@ -189,30 +165,15 @@ query AdminProjectMembers($projectId: String!) {
   }
 }
 
-mutation AdminAddProjectMember(
-  $projectId: String!
-  $userId: String!
-  $role: String!
-) {
+mutation AdminAddProjectMember($projectId: String!, $userId: String!, $role: String!) {
   adminAddProjectMember(projectId: $projectId, userId: $userId, role: $role)
 }
 
-mutation AdminChangeProjectMemberRole(
-  $projectId: String!
-  $userId: String!
-  $role: String!
-) {
-  adminChangeProjectMemberRole(
-    projectId: $projectId
-    userId: $userId
-    role: $role
-  )
+mutation AdminChangeProjectMemberRole($projectId: String!, $userId: String!, $role: String!) {
+  adminChangeProjectMemberRole(projectId: $projectId, userId: $userId, role: $role)
 }
 
-mutation AdminTransferProjectOwnership(
-  $projectId: String!
-  $userId: String!
-) {
+mutation AdminTransferProjectOwnership($projectId: String!, $userId: String!) {
   adminTransferProjectOwnership(projectId: $projectId, userId: $userId)
 }
 

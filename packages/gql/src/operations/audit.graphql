@@ -5,13 +5,7 @@ query ListAuditLogs(
   $query: AuditLogQuery
   $orderBy: AuditLogOrder
 ) {
-  auditLogs(
-    projectId: $projectId
-    first: $first
-    after: $after
-    query: $query
-    orderBy: $orderBy
-  ) {
+  auditLogs(projectId: $projectId, first: $first, after: $after, query: $query, orderBy: $orderBy) {
     totalCount
     edges {
       cursor

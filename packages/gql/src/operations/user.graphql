@@ -43,9 +43,7 @@ mutation changeEmail($email: String!, $password: String!) {
 }
 
 mutation changePassword($oldPassword: String!, $newPassword: String!) {
-  changePassword(
-    data: { oldPassword: $oldPassword, newPassword: $newPassword }
-  ) {
+  changePassword(data: { oldPassword: $oldPassword, newPassword: $newPassword }) {
     id
   }
 }
