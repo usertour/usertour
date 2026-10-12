@@ -45,7 +45,7 @@ export interface ElementPickerHostProps {
   children?: ReactNode;
   // Pick entry URL — the content's buildUrl. A pick opens (or reuses) a tab on
   // it; the user can navigate before picking, so it only needs to reach the app.
-  buildUrl?: string;
+  buildUrl?: string | null;
   // Content id, so a newly entered buildUrl can be persisted as the team-shared
   // default.
   contentId?: string;

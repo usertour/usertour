@@ -132,7 +132,7 @@ function FlowStartEditor({
   );
 
   const handleSelectStep = useCallback(
-    (step: Step) => {
+    (step: Pick<Step, 'cvid'>) => {
       onChange(writeData(condition, { stepCvid: step.cvid }));
     },
     [condition, onChange],

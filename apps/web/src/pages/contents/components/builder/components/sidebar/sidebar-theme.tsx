@@ -56,7 +56,7 @@ export const SidebarTheme = () => {
             value: theme.id,
             label: theme.name,
           }))}
-          value={currentVersion.themeId}
+          value={currentVersion.themeId ?? undefined}
           onChange={handleThemeChange}
           placeholder={t('contentBuilder.shared.theme.selectPlaceholder')}
           className="w-full bg-surface dark:bg-surface-raised/50 shadow-none hover:bg-muted"

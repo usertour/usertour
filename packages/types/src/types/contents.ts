@@ -120,14 +120,14 @@ export type Step = {
   // null = explicitly "inherit the flow theme". Must be null, not undefined:
   // undefined drops out of the save payload and never clears a saved theme.
   themeId?: string | null;
-  target?: ElementSelectorPropsData;
-  screenshot?: StepScreenshot;
+  target: ElementSelectorPropsData;
+  screenshot?: StepScreenshot | null;
   createdAt?: string;
   updatedAt?: string;
-  trigger?: StepTrigger[];
+  trigger?: StepTrigger[] | null;
   sequence: number;
   setting: StepSettings;
-  data?: any;
+  data: any;
 };
 
 // ============================================================================
@@ -139,12 +139,12 @@ export type ContentVersion = {
   createdAt: string;
   updatedAt: string;
   contentId: string;
-  themeId: string;
-  config: ContentConfigObject;
+  themeId: string | null;
+  config: ContentConfigObject | null;
   data: any;
   sequence: number;
-  type: string;
-  steps?: Step[];
+  /** Absent on list rows; null when the server did not load the steps. */
+  steps?: Step[] | null;
   scheduledAt?: string | null;
   /** Non-null = frozen (stamped on first publish, never cleared; forks don't inherit it). */
   publishedAt?: string | null;
@@ -171,17 +171,24 @@ export type ContentPublishRecord = {
   actorTokenName?: string | null;
 };
 
+/** The identity and timestamps of a version, as a content's relations carry it. */
+export type ContentVersionSummary = Pick<
+  ContentVersion,
+  'id' | 'sequence' | 'createdAt' | 'updatedAt'
+>;
+
 export type ContentOnEnvironment = {
+  id: string;
   environment: {
     id: string;
     name: string;
   };
   environmentId: string;
-  contentId: string;
   published: boolean;
-  publishedAt: Date;
+  publishedAt: string;
   publishedVersionId: string;
-  publishedVersion: ContentVersion;
+  /** Loaded by the content detail query only. */
+  publishedVersion?: ContentVersionSummary;
 };
 
 /** A content's config object (the server's `ContentConfig` scalar). */
@@ -195,22 +202,23 @@ export type ContentConfig = {
 
 export type Content = {
   id: string;
-  name?: string;
+  name: string;
   type: ContentDataType;
-  config?: ContentConfig;
-  publishedVersion?: ContentVersion;
-  editedVersion?: ContentVersion;
-  buildUrl?: string;
-  published?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  publishedAt?: string;
-  environmentId?: string;
-  editedVersionId?: string;
-  publishedVersionId?: string;
-  deleted?: boolean;
-  steps?: Step[];
-  contentOnEnvironments?: ContentOnEnvironment[];
+  config: ContentConfig | null;
+  buildUrl: string | null;
+  published: boolean;
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  environmentId: string;
+  editedVersionId: string | null;
+  publishedVersionId: string | null;
+  /** Relations: present when the document selected them (the list query carries steps and contentOnEnvironments, the detail query all four). */
+  publishedVersion?: ContentVersionSummary | null;
+  editedVersion?: ContentVersion | null;
+  steps?: Pick<Step, 'id' | 'name' | 'type' | 'cvid' | 'sequence'>[] | null;
+  contentOnEnvironments?: ContentOnEnvironment[] | null;
 };
 
 // ============================================================================

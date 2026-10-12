@@ -13,6 +13,7 @@ import type {
   RichTextNode,
   Step,
   StepTrigger,
+  ElementSelectorPropsData,
 } from '@usertour/types';
 import {
   ContentDataType,
@@ -242,7 +243,9 @@ export const duplicateTriggers = (triggers: StepTrigger[]): StepTrigger[] => {
  * @param target - The target object to process
  * @returns A new target object with regenerated action condition IDs, or undefined if target is undefined
  */
-export const duplicateTarget = (target: Step['target']): Step['target'] => {
+export const duplicateTarget = (
+  target: ElementSelectorPropsData | undefined,
+): ElementSelectorPropsData | undefined => {
   if (!target) {
     return undefined;
   }

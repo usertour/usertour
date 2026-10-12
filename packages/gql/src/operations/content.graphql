@@ -1,18 +1,54 @@
+fragment StepFields on Step {
+  id
+  name
+  type
+  cvid
+  sequence
+  data
+  trigger
+  themeId
+  screenshot
+  target
+  setting
+  createdAt
+  updatedAt
+}
+
+fragment ContentVersionFields on Version {
+  id
+  sequence
+  contentId
+  themeId
+  config
+  data
+  scheduledAt
+  publishedAt
+  createdAt
+  updatedAt
+  steps {
+    ...StepFields
+  }
+}
+
+fragment ContentFields on Content {
+  id
+  name
+  buildUrl
+  config
+  type
+  environmentId
+  editedVersionId
+  publishedVersionId
+  published
+  deleted
+  publishedAt
+  createdAt
+  updatedAt
+}
+
 query getContent($contentId: String!) {
   getContent(contentId: $contentId) {
-    id
-    name
-    buildUrl
-    config
-    environmentId
-    editedVersionId
-    publishedVersionId
-    published
-    deleted
-    publishedAt
-    createdAt
-    updatedAt
-    type
+    ...ContentFields
     publishedVersion {
       id
       sequence
@@ -20,44 +56,14 @@ query getContent($contentId: String!) {
       updatedAt
     }
     editedVersion {
-      id
-      sequence
-      contentId
-      themeId
-      config
-      data
-      scheduledAt
-      createdAt
-      updatedAt
-      steps {
-        id
-        name
-        type
-        cvid
-        sequence
-        data
-        trigger
-        themeId
-        screenshot
-        target
-        setting
-        createdAt
-        updatedAt
-      }
+      ...ContentVersionFields
     }
     steps {
       id
       name
-      cvid
       type
-      trigger
+      cvid
       sequence
-      data
-      themeId
-      screenshot
-      sequence
-      target
-      setting
     }
     contentOnEnvironments {
       id
@@ -97,17 +103,7 @@ mutation createContent(
       steps: $steps
     }
   ) {
-    id
-    name
-    buildUrl
-    environmentId
-    editedVersionId
-    publishedVersionId
-    published
-    deleted
-    publishedAt
-    createdAt
-    updatedAt
+    ...ContentFields
   }
 }
 
@@ -131,21 +127,11 @@ query queryContent(
     edges {
       cursor
       node {
-        id
-        name
-        buildUrl
-        type
-        environmentId
-        editedVersionId
-        publishedVersionId
-        published
-        deleted
-        publishedAt
-        createdAt
-        updatedAt
+        ...ContentFields
         steps {
           id
           name
+          type
           cvid
           sequence
         }
@@ -173,17 +159,7 @@ query queryContent(
 
 mutation updateContent($contentId: String!, $content: UpdateContentInput!) {
   updateContent(data: { contentId: $contentId, content: $content }) {
-    id
-    name
-    buildUrl
-    environmentId
-    config
-    type
-    editedVersionId
-    publishedVersionId
-    published
-    publishedAt
-    updatedAt
+    ...ContentFields
   }
 }
 
@@ -234,61 +210,13 @@ mutation updateContentVersion(
   updateContentVersion(
     data: { versionId: $versionId, content: $content, expectedUpdatedAt: $expectedUpdatedAt }
   ) {
-    id
-    sequence
-    contentId
-    themeId
-    config
-    data
-    scheduledAt
-    createdAt
-    updatedAt
-    steps {
-      id
-      name
-      type
-      cvid
-      sequence
-      data
-      trigger
-      themeId
-      screenshot
-      target
-      setting
-      createdAt
-      updatedAt
-    }
+    ...ContentVersionFields
   }
 }
 
 query getContentVersion($versionId: String!) {
   getContentVersion(versionId: $versionId) {
-    id
-    sequence
-    contentId
-    themeId
-    config
-    createdAt
-    updatedAt
-    scheduledAt
-    publishedAt
-    data
-    steps {
-      id
-      name
-      type
-      cvid
-      sequence
-      data
-      trigger
-      themeId
-      screenshot
-      sequence
-      target
-      setting
-      createdAt
-      updatedAt
-    }
+    ...ContentVersionFields
   }
 }
 

@@ -1,5 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsNotEmpty } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsNotEmpty, ValidateNested } from 'class-validator';
 
 import { UpdateContentInput } from './update-content.input';
 
@@ -9,6 +10,9 @@ export class ContentUpdateInput {
   @IsNotEmpty()
   contentId: string;
 
+  // Validated as a nested object so UpdateContentInput's own rules run.
   @Field(() => UpdateContentInput, { nullable: false })
+  @ValidateNested()
+  @Type(() => UpdateContentInput)
   content: UpdateContentInput;
 }

@@ -523,7 +523,7 @@ export type Content = {
   editedVersionId?: Maybe<Scalars['String']['output']>;
   environmentId: Scalars['String']['output'];
   id: Scalars['ID']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
   projectId?: Maybe<Scalars['String']['output']>;
   published: Scalars['Boolean']['output'];
   publishedAt: Scalars['DateTime']['output'];
@@ -2554,7 +2554,7 @@ export type Segment = {
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   projectId?: Maybe<Scalars['String']['output']>;
-  source?: Maybe<Scalars['String']['output']>;
+  source: Scalars['String']['output'];
   sourceId?: Maybe<Scalars['String']['output']>;
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
@@ -2634,13 +2634,13 @@ export type Step = {
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
   cvid: Scalars['String']['output'];
-  data?: Maybe<Scalars['JSON']['output']>;
+  data: Scalars['JSON']['output'];
   id: Scalars['ID']['output'];
-  name?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
   screenshot?: Maybe<Scalars['StepScreenshot']['output']>;
   sequence: Scalars['Int']['output'];
-  setting?: Maybe<Scalars['StepSettings']['output']>;
-  target?: Maybe<Scalars['StepTarget']['output']>;
+  setting: Scalars['StepSettings']['output'];
+  target: Scalars['StepTarget']['output'];
   themeId?: Maybe<Scalars['String']['output']>;
   trigger?: Maybe<Array<Scalars['StepTrigger']['output']>>;
   type: Scalars['String']['output'];
@@ -2661,13 +2661,13 @@ export type StepAnalytics = {
 
 export type StepInput = {
   cvid?: InputMaybe<Scalars['String']['input']>;
-  data?: InputMaybe<Scalars['JSON']['input']>;
+  data: Scalars['JSON']['input'];
   id?: InputMaybe<Scalars['String']['input']>;
-  name?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
   screenshot?: InputMaybe<Scalars['StepScreenshot']['input']>;
   sequence?: InputMaybe<Scalars['Int']['input']>;
-  setting?: InputMaybe<Scalars['StepSettings']['input']>;
-  target?: InputMaybe<Scalars['StepTarget']['input']>;
+  setting: Scalars['StepSettings']['input'];
+  target: Scalars['StepTarget']['input'];
   themeId?: InputMaybe<Scalars['String']['input']>;
   trigger?: InputMaybe<Array<Scalars['StepTrigger']['input']>>;
   type: Scalars['String']['input'];

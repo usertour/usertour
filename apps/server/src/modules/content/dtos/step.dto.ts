@@ -10,8 +10,8 @@ import { StepTriggerScalar } from './step-trigger.scalar';
 
 @ObjectType('Step')
 export class StepDTO extends BaseDTO {
-  @Field(() => String, { nullable: true })
-  name?: string;
+  @Field(() => String)
+  name: string;
 
   @Field(() => String)
   type: string;
@@ -31,11 +31,11 @@ export class StepDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   contentId?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  data?: JsonValue;
+  @Field(() => GraphQLJSON)
+  data: JsonValue;
 
-  @Field(() => StepTargetScalar, { nullable: true })
-  target?: JsonValue;
+  @Field(() => StepTargetScalar)
+  target: JsonValue;
 
   @Field(() => [StepTriggerScalar], { nullable: true })
   trigger?: JsonArray;
@@ -43,6 +43,6 @@ export class StepDTO extends BaseDTO {
   @Field(() => StepScreenshotScalar, { nullable: true })
   screenshot?: JsonValue;
 
-  @Field(() => StepSettingsScalar, { nullable: true })
-  setting?: JsonValue;
+  @Field(() => StepSettingsScalar)
+  setting: JsonValue;
 }

@@ -53,13 +53,13 @@ export const useGetContentQuery = (
     ...options,
   });
 
-  const content = (data?.getContent ?? null) as Content | null;
+  const content: Content | null = data?.getContent ?? null;
 
   return { content, loading, refetch, error };
 };
 
 export const useGetContentVersionQuery = (
-  versionId: string | undefined,
+  versionId: string | null | undefined,
   options?: TypedQueryOptions<GetContentVersionQuery, GetContentVersionQueryVariables>,
 ) => {
   const { data, previousData, loading, refetch, error } = useTypedQuery(GetContentVersionDocument, {
@@ -74,15 +74,14 @@ export const useGetContentVersionQuery = (
   // `if (!version) return null` (detail's settings/content panels) don't unmount
   // and flash the whole content area. The forked version copies the prior
   // config, so the held-over frame is visually identical until the new one lands.
-  const version = (data?.getContentVersion ??
-    previousData?.getContentVersion ??
-    null) as ContentVersion | null;
+  const version: ContentVersion | null =
+    data?.getContentVersion ?? previousData?.getContentVersion ?? null;
 
   return { version, loading, refetch, error };
 };
 
 export const useListVersionLocalizationsQuery = (
-  versionId: string | undefined,
+  versionId: string | null | undefined,
   options?: TypedQueryOptions<
     ListVersionLocalizationsQuery,
     ListVersionLocalizationsQueryVariables
@@ -149,9 +148,8 @@ export const useListContentsQuery = ({
   );
 
   const connection = data?.queryContent;
-  // Wire shape and domain Content differ on optionality; the hook is the boundary.
-  const contents = useMemo(
-    () => (connection?.edges?.map((edge) => edge.node) ?? []) as unknown as Content[],
+  const contents = useMemo<Content[]>(
+    () => connection?.edges?.map((edge) => edge.node) ?? [],
     [connection?.edges],
   );
   const totalCount = connection?.totalCount ?? 0;
@@ -187,6 +185,11 @@ export const useListContentsQuery = ({
 
 // ---- listContentVersions: cursor pagination with fetchMore ----
 
+/** A row of the version history: the version without its steps and data. */
+export type ContentVersionListItem = NonNullable<
+  ListContentVersionsQuery['listContentVersions']['edges']
+>[number]['node'];
+
 const VERSION_LIST_PAGE_SIZE = 20;
 
 export const useListContentVersionsQuery = (
@@ -204,8 +207,8 @@ export const useListContentVersionsQuery = (
   );
 
   const connection = data?.listContentVersions;
-  const versionList = useMemo(
-    () => (connection?.edges?.map((edge) => edge.node) ?? []) as ContentVersion[],
+  const versionList = useMemo<ContentVersionListItem[]>(
+    () => connection?.edges?.map((edge) => edge.node) ?? [],
     [connection?.edges],
   );
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;
@@ -312,7 +315,7 @@ export const useCreateContentMutation = () => {
   });
   const invoke = async (input: CreateContentInput): Promise<Content | undefined> => {
     const response = await mutation({ variables: input });
-    return response.data?.createContent as Content | undefined;
+    return response.data?.createContent;
   };
   return { invoke, loading, error };
 };
