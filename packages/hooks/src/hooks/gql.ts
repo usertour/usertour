@@ -6,14 +6,12 @@ import type {
   Content,
   Pagination,
   TeamMember,
-  BizSession,
   AttributeBizTypes,
   GlobalConfig,
   ColumnSetting,
   RulesCondition,
   ContentOmbedInfo,
   ContentVersion,
-  BizUser,
 } from '@usertour/types';
 import {
   ActiveUserProjectDocument,
@@ -29,7 +27,9 @@ import {
   AdminTransferProjectOwnershipDocument,
   AdminUsersDocument,
   type AnalyticsOrder,
+  type BizModelFieldsFragment,
   type BizOrder,
+  type BizUserFieldsFragment,
   CancelInviteDocument,
   ChangeTeamMemberRoleDocument as changeTeamMemberRoleMutation,
   type CreateAttributeInput as CreateAttributeInputWire,
@@ -250,6 +250,15 @@ type UseUserListQueryProps = {
   orderBy?: BizOrder;
 };
 
+/** A user as the user list returns it (the `BizUserFields` fragment). */
+export type BizUser = BizUserFieldsFragment;
+
+/** A user's membership of a company, as the user list returns it. */
+export type BizUserOnCompany = NonNullable<BizUser['bizUsersOnCompany']>[number];
+
+/** A company as the company list returns it (the `BizModelFields` fragment; companies are `BizModel` on the wire). */
+export type BizCompany = BizModelFieldsFragment;
+
 export const useUserListQuery = ({
   query,
   orderBy = { field: 'createdAt', direction: 'desc' },
@@ -273,10 +282,10 @@ export const useUserListQuery = ({
   );
 
   const bizUserList = data?.queryBizUser;
-  const contents = (bizUserList?.edges?.map((edge) => ({
-    ...edge.node,
-    ...edge.node.data,
-  })) ?? []) as unknown as BizUser[];
+  // The attributes are spread next to the entity fields as they always were;
+  // the table reads them from `data`, so nothing reads the spread copies.
+  const contents: BizUser[] =
+    bizUserList?.edges?.map((edge) => ({ ...edge.node, ...edge.node.data })) ?? [];
   const pageInfo = bizUserList?.pageInfo;
   const totalCount = bizUserList?.totalCount || 0;
 
@@ -491,7 +500,7 @@ export const useQuerySessionDetailQuery = (sessionId: string) => {
     variables: { sessionId },
   });
 
-  const session = data?.querySessionDetail as BizSession;
+  const session = data?.querySessionDetail;
   return { session, loading, error, refetch };
 };
 
@@ -514,8 +523,7 @@ export const useQuerySessionsByExternalIdQuery = (
     },
   );
 
-  const sessions =
-    (data?.querySessionsByExternalId?.edges?.map((edge: any) => edge.node) as BizSession[]) || [];
+  const sessions = data?.querySessionsByExternalId?.edges?.map((edge) => edge.node) ?? [];
   const pageInfo = data?.querySessionsByExternalId?.pageInfo;
   const totalCount = data?.querySessionsByExternalId?.totalCount || 0;
 

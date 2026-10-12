@@ -312,7 +312,7 @@ describe('GraphQL biz (e2e)', () => {
         query: `query ($query: BizEventQuery!, $orderBy: BizOrder!, $first: Int) {
           queryBizUserEvents(query: $query, orderBy: $orderBy, first: $first) {
             totalCount
-            edges { node { id eventId bizUserId event { id codeName } } }
+            edges { node { id eventId bizUserId event { id codeName } bizUser { id } } }
           }
         }`,
         variables: {
@@ -328,6 +328,8 @@ describe('GraphQL biz (e2e)', () => {
       expect(node.eventId).toBe(event.id);
       expect(node.bizUserId).toBe(bizUser.id);
       expect(node.event).toMatchObject({ id: event.id, codeName: 'user_signed_in' });
+      // The dashboard's feed selects the user; the resolver has to load it.
+      expect(node.bizUser).toMatchObject({ id: bizUser.id });
     });
 
     it('returns no events for a user without any', async () => {

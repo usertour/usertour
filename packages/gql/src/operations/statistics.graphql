@@ -43,48 +43,7 @@ query queryBizSession(
     edges {
       cursor
       node {
-        id
-        createdAt
-        progress
-        data
-        bizUserId
-        state
-        contentId
-        bizUser {
-          id
-          externalId
-          data
-        }
-        bizCompany {
-          id
-          externalId
-          data
-        }
-        bizEvent {
-          data
-          createdAt
-          eventId
-          event {
-            id
-            codeName
-          }
-        }
-        version {
-          id
-          sequence
-          data
-          steps {
-            id
-            name
-            cvid
-            type
-            sequence
-            data
-          }
-        }
-        content {
-          type
-        }
+        ...BizSessionFields
       }
     }
     pageInfo {
@@ -143,26 +102,10 @@ query listSessionsDetail(
           sequence
         }
         bizUser {
-          externalId
-          data
-          bizUsersOnCompany {
-            id
-            data
-            bizCompany {
-              id
-              externalId
-              data
-            }
-          }
+          ...BizUserFields
         }
         bizEvent {
-          data
-          createdAt
-          eventId
-          event {
-            id
-            codeName
-          }
+          ...BizEventFields
         }
       }
     }
@@ -251,58 +194,7 @@ query querySessionsByExternalId(
     edges {
       cursor
       node {
-        id
-        createdAt
-        progress
-        data
-        bizUserId
-        state
-        contentId
-        content {
-          id
-          name
-          buildUrl
-          environmentId
-          editedVersionId
-          publishedVersionId
-          published
-          deleted
-          publishedAt
-          createdAt
-          updatedAt
-          type
-        }
-        version {
-          id
-          sequence
-          data
-        }
-        bizUser {
-          id
-          externalId
-          environmentId
-          data
-          bizUsersOnCompany {
-            id
-            data
-            bizCompany {
-              id
-              externalId
-              data
-            }
-          }
-        }
-        bizEvent {
-          id
-          eventId
-          createdAt
-          data
-          event {
-            id
-            codeName
-            displayName
-          }
-        }
+        ...BizSessionFields
       }
     }
     pageInfo {

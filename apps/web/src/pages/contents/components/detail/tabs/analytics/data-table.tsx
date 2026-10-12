@@ -34,7 +34,7 @@ import { useEventList } from '@/hooks/use-event-list';
 import type { PaginationState } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { BizSession } from '@usertour/types';
+import { type BizSession } from '@usertour/hooks';
 import { buildColumns } from './columns';
 import { DataTablePagination } from './data-table-pagination';
 import { SessionActionDropdownMenu } from '@/components/sessions/session-action-dropmenu';

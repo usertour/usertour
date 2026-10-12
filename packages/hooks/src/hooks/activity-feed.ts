@@ -1,10 +1,18 @@
-import { type DocumentNode, type QueryHookOptions } from '@apollo/client';
-import { useTypedQuery } from '../query';
+import type { NetworkStatus } from '@apollo/client';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { BizEvent, PageInfo } from '@usertour/types';
 import { useMemo } from 'react';
-import { useCursorFetchMore } from './use-cursor-fetch-more';
-import { QueryBizCompanyEventsDocument, QueryBizUserEventsDocument } from '@usertour/gql';
+import { type UseCursorFetchMoreArgs, useCursorFetchMore } from './use-cursor-fetch-more';
+import {
+  type BizEventFieldsFragment,
+  type BizEventQuery,
+  QueryBizCompanyEventsDocument,
+  type QueryBizCompanyEventsQuery,
+  type QueryBizCompanyEventsQueryVariables,
+  QueryBizUserEventsDocument,
+  type QueryBizUserEventsQuery,
+  type QueryBizUserEventsQueryVariables,
+} from '@usertour/gql';
 
 // Domain wrapper for `queryBizUserEvents` / `queryBizCompanyEvents`
 // activity-feed queries. Cursor pagination via Apollo's `fetchMore`
@@ -15,39 +23,34 @@ import { QueryBizCompanyEventsDocument, QueryBizUserEventsDocument } from '@user
 
 const PAGE_SIZE = 20;
 
-interface ActivityFeedEdge {
-  node: BizEvent;
-}
+/** An event as the activity feeds return it (the `BizEventFields` fragment). */
+export type BizEvent = BizEventFieldsFragment;
 
-interface ActivityFeedConnection {
-  edges: ActivityFeedEdge[];
-  pageInfo: PageInfo;
-  totalCount: number;
-}
+/** Both feed queries select the same connection. */
+type ActivityFeedConnection = QueryBizUserEventsQuery['queryBizUserEvents'];
 
-interface ActivityFeedQueryVariables {
-  environmentId: string;
-  userId?: string;
-  companyId?: string;
-}
+/** An event as the feeds list it: the event with the user and company it belongs to. */
+export type ActivityFeedEvent = NonNullable<ActivityFeedConnection['edges']>[number]['node'];
 
-const useActivityFeedQuery = (
-  gqlQuery: DocumentNode,
-  queryKey: string,
-  query: ActivityFeedQueryVariables,
-  options?: QueryHookOptions,
+const feedVariables = (query: BizEventQuery): QueryBizUserEventsQueryVariables => ({
+  first: PAGE_SIZE,
+  query,
+  orderBy: { field: 'createdAt', direction: 'desc' },
+});
+
+/** The feed's paging and return shape, over whichever feed query ran. */
+const useActivityFeed = (
+  query: BizEventQuery,
+  result: {
+    loading: boolean;
+    refreshing: boolean;
+    networkStatus: NetworkStatus;
+    fetchMore: UseCursorFetchMoreArgs['fetchMore'];
+    refetch: () => Promise<unknown>;
+  },
+  connection: ActivityFeedConnection | null | undefined,
 ) => {
-  const { data, loading, refreshing, networkStatus, fetchMore, refetch } = useTypedQuery(gqlQuery, {
-    variables: {
-      first: PAGE_SIZE,
-      query,
-      orderBy: { field: 'createdAt', direction: 'desc' },
-    },
-    notifyOnNetworkStatusChange: true,
-    ...options,
-  });
-
-  const connection = data?.[queryKey] as ActivityFeedConnection | undefined;
+  const { loading, refreshing, networkStatus, fetchMore, refetch } = result;
   const events = useMemo(
     () => connection?.edges?.map((edge) => edge.node) ?? [],
     [connection?.edges],
@@ -74,12 +77,7 @@ const useActivityFeedQuery = (
     hasNextPage,
     endCursor,
     fetchMore,
-    buildVariables: (after) => ({
-      first: PAGE_SIZE,
-      after,
-      query,
-      orderBy: { field: 'createdAt', direction: 'desc' },
-    }),
+    buildVariables: (after) => ({ ...feedVariables(query), after }),
   });
 
   return {
@@ -98,23 +96,27 @@ const useActivityFeedQuery = (
 export const useUserActivityFeedQuery = (
   environmentId: string,
   userId: string,
-  options?: QueryHookOptions,
-) =>
-  useActivityFeedQuery(
-    QueryBizUserEventsDocument,
-    'queryBizUserEvents',
-    { environmentId, userId },
-    options,
-  );
+  options?: TypedQueryOptions<QueryBizUserEventsQuery, QueryBizUserEventsQueryVariables>,
+) => {
+  const query = { environmentId, userId };
+  const result = useTypedQuery(QueryBizUserEventsDocument, {
+    variables: feedVariables(query),
+    notifyOnNetworkStatusChange: true,
+    ...options,
+  });
+  return useActivityFeed(query, result, result.data?.queryBizUserEvents);
+};
 
 export const useCompanyActivityFeedQuery = (
   environmentId: string,
   companyId: string,
-  options?: QueryHookOptions,
-) =>
-  useActivityFeedQuery(
-    QueryBizCompanyEventsDocument,
-    'queryBizCompanyEvents',
-    { environmentId, companyId },
-    options,
-  );
+  options?: TypedQueryOptions<QueryBizCompanyEventsQuery, QueryBizCompanyEventsQueryVariables>,
+) => {
+  const query = { environmentId, companyId };
+  const result = useTypedQuery(QueryBizCompanyEventsDocument, {
+    variables: feedVariables(query),
+    notifyOnNetworkStatusChange: true,
+    ...options,
+  });
+  return useActivityFeed(query, result, result.data?.queryBizCompanyEvents);
+};

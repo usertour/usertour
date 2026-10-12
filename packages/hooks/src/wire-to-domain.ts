@@ -5,8 +5,8 @@
  * hooks hand to the dashboard. A server or document change that makes the
  * two disagree fails `tsc` on that line, naming the field. Entities whose
  * domain type still differs from the wire on nullability or carries fields
- * the server never sends (Content, ContentVersion, BizSession, BizUser,
- * GlobalConfig, the oEmbed info) are not listed. An entity leaves
+ * the server never sends (Content, ContentVersion, GlobalConfig, the oEmbed
+ * info) are not listed. An entity leaves
  * the list once the dashboard reads it through a derived type instead.
  */
 import type {
@@ -17,7 +17,6 @@ import type {
   ListEventsQuery,
   ListLocalizationsQuery,
   ListVersionLocalizationsQuery,
-  QueryBizCompanyQuery,
   QueryBizSessionQuery,
   QueryContentQuestionAnalyticsQuery,
   UpdateVersionLocalizationMutation,
@@ -25,7 +24,6 @@ import type {
 } from '@usertour/gql';
 import type {
   Attribute,
-  BizCompany,
   ContentPublishRecord,
   ContentQuestionAnalytics,
   DefinitionReference,
@@ -48,7 +46,6 @@ type Node<Connection extends { edges?: readonly { node: unknown }[] | null }> = 
 >;
 
 export const attribute: Attribute = {} as Item<Result<ListAttributesQuery>>;
-export const bizCompany: BizCompany = {} as Node<Result<QueryBizCompanyQuery>>;
 export const contentPublishRecord: ContentPublishRecord = {} as Node<
   Result<ListContentPublishRecordsQuery>
 >;

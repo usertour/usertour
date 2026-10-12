@@ -1,3 +1,88 @@
+fragment BizModelFields on BizModel {
+  id
+  createdAt
+  externalId
+  environmentId
+  data
+}
+
+fragment BizUserFields on BizUser {
+  id
+  createdAt
+  externalId
+  environmentId
+  data
+  bizUsersOnCompany {
+    id
+    data
+    bizCompany {
+      ...BizModelFields
+    }
+  }
+}
+
+fragment BizEventFields on BizEvent {
+  id
+  createdAt
+  eventId
+  data
+  bizUserId
+  bizSessionId
+  bizCompanyId
+  event {
+    id
+    codeName
+    displayName
+    predefined
+  }
+}
+
+fragment BizSessionFields on BizSession {
+  id
+  createdAt
+  progress
+  data
+  bizUserId
+  state
+  contentId
+  content {
+    id
+    name
+    buildUrl
+    environmentId
+    editedVersionId
+    publishedVersionId
+    published
+    deleted
+    publishedAt
+    createdAt
+    updatedAt
+    type
+  }
+  version {
+    id
+    sequence
+    data
+    steps {
+      id
+      name
+      cvid
+      type
+      sequence
+      data
+    }
+  }
+  bizUser {
+    ...BizUserFields
+  }
+  bizCompany {
+    ...BizModelFields
+  }
+  bizEvent {
+    ...BizEventFields
+  }
+}
+
 mutation createSegment($data: CreatSegment!) {
   createSegment(data: $data) {
     id
@@ -55,20 +140,7 @@ query queryBizUser(
     edges {
       cursor
       node {
-        id
-        createdAt
-        externalId
-        environmentId
-        data
-        bizUsersOnCompany {
-          id
-          data
-          bizCompany {
-            id
-            externalId
-            data
-          }
-        }
+        ...BizUserFields
       }
     }
     pageInfo {
@@ -100,11 +172,7 @@ query queryBizCompany(
     edges {
       cursor
       node {
-        id
-        createdAt
-        externalId
-        environmentId
-        data
+        ...BizModelFields
       }
     }
     pageInfo {
@@ -168,65 +236,7 @@ mutation endSession($sessionId: String!) {
 
 query querySessionDetail($sessionId: String!) {
   querySessionDetail(sessionId: $sessionId) {
-    id
-    state
-    createdAt
-    contentId
-    data
-    progress
-    content {
-      id
-      name
-      buildUrl
-      environmentId
-      editedVersionId
-      publishedVersionId
-      published
-      deleted
-      publishedAt
-      createdAt
-      updatedAt
-      type
-    }
-    version {
-      id
-      sequence
-      data
-      steps {
-        id
-        name
-        cvid
-        type
-        sequence
-        data
-      }
-    }
-    bizUser {
-      id
-      externalId
-      environmentId
-      data
-      bizUsersOnCompany {
-        id
-        data
-        bizCompany {
-          id
-          externalId
-          data
-        }
-      }
-    }
-    bizEvent {
-      id
-      eventId
-      createdAt
-      data
-      event {
-        id
-        codeName
-        displayName
-      }
-    }
+    ...BizSessionFields
   }
 }
 
@@ -250,23 +260,12 @@ query queryBizUserEvents(
     edges {
       cursor
       node {
-        id
-        createdAt
-        eventId
-        data
-        bizUserId
-        bizSessionId
-        bizCompanyId
+        ...BizEventFields
         bizCompany {
-          id
-          externalId
-          data
+          ...BizModelFields
         }
-        event {
-          id
-          codeName
-          displayName
-          predefined
+        bizUser {
+          ...BizModelFields
         }
       }
     }
@@ -299,28 +298,12 @@ query queryBizCompanyEvents(
     edges {
       cursor
       node {
-        id
-        createdAt
-        eventId
-        data
-        bizUserId
-        bizSessionId
-        bizCompanyId
+        ...BizEventFields
         bizCompany {
-          id
-          externalId
-          data
+          ...BizModelFields
         }
         bizUser {
-          id
-          externalId
-          data
-        }
-        event {
-          id
-          codeName
-          displayName
-          predefined
+          ...BizModelFields
         }
       }
     }

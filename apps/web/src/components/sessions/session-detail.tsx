@@ -1,11 +1,12 @@
 import { Fragment } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge } from '@usertour/ui';
-import { BizEvent } from '@usertour/types';
+import { type BizEvent } from '@usertour/hooks';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
 import { cn } from '@usertour/tailwind';
 import { QuestionStarRating } from '../question';
 import type { QuestionWithAnswer } from '@/utils/session';
 import { useTranslation } from 'react-i18next';
+import { attributeNumber, attributeText, attributeTextList } from '@/utils/attributes';
 
 // Get color based on score and type
 const getDarkBarColor = (score: number, type: 'NPS' | 'SCALE') => {
@@ -52,31 +53,30 @@ const NotAnswered = () => null;
  * Used for displaying answers in both SessionResponse and activity feed
  */
 const QuestionAnswer = ({ answerEvent }: { answerEvent: BizEvent }) => {
-  switch (answerEvent.data.question_type) {
+  const data = answerEvent.data ?? {};
+  const numberAnswer = attributeNumber(data.number_answer) ?? 0;
+  switch (data.question_type) {
     case ContentEditorElementType.STAR_RATING:
       return (
         <div className="flex flex-row gap-0.5 items-center">
-          <span className="pr-2">{answerEvent.data.number_answer}</span>
-          <QuestionStarRating
-            maxLength={answerEvent.data.number_answer}
-            score={answerEvent.data.number_answer}
-          />
+          <span className="pr-2">{numberAnswer}</span>
+          <QuestionStarRating maxLength={numberAnswer} score={numberAnswer} />
         </div>
       );
     case ContentEditorElementType.SCALE:
-      return <ScaleAnswer value={answerEvent.data.number_answer} type="SCALE" />;
+      return <ScaleAnswer value={numberAnswer} type="SCALE" />;
     case ContentEditorElementType.NPS:
-      return <ScaleAnswer value={answerEvent.data.number_answer} type="NPS" />;
+      return <ScaleAnswer value={numberAnswer} type="NPS" />;
     case ContentEditorElementType.MULTIPLE_CHOICE:
       return (
         <MultipleChoiceAnswer
-          answers={answerEvent.data.text_answer || answerEvent.data.list_answer}
+          answers={attributeText(data.text_answer) || attributeTextList(data.list_answer)}
         />
       );
     case ContentEditorElementType.MULTI_LINE_TEXT:
-      return <TextAnswer text={answerEvent.data.text_answer} />;
+      return <TextAnswer text={attributeText(data.text_answer)} />;
     default:
-      return <TextAnswer text={answerEvent.data.text_answer} />;
+      return <TextAnswer text={attributeText(data.text_answer)} />;
   }
 };
 

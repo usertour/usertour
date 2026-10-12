@@ -1,4 +1,9 @@
-import { useListAttributesQuery, useUserListQuery } from '@usertour/hooks';
+import {
+  useListAttributesQuery,
+  useUserListQuery,
+  type BizUser,
+  type BizUserOnCompany,
+} from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';
@@ -22,13 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour/ui';
-import {
-  AttributeBizTypes,
-  AttributeDataType,
-  type BizUser,
-  type BizUserOnCompany,
-  UserAttributes,
-} from '@usertour/types';
+import { AttributeBizTypes, AttributeDataType, UserAttributes } from '@usertour/types';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserSessions } from './sessions/user-sessions';

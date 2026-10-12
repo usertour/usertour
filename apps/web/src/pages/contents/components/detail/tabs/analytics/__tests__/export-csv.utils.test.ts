@@ -1,14 +1,13 @@
 import {
   Attribute,
   AttributeBizTypes,
-  BizEvent,
   BizEvents,
-  BizSession,
   ContentDataType,
   ContentVersion,
   EventAttributes,
   contentStartReason,
 } from '@usertour/types';
+import { type BizEvent, type SessionExportRow } from '@usertour/hooks';
 
 const mockExtractQuestionData = jest.fn(() => [] as unknown[]);
 jest.mock('@usertour/helpers', () => ({
@@ -35,7 +34,7 @@ const createEvent = (codeName: BizEvents, data: Record<string, unknown> = {}): B
     event: { codeName },
   }) as BizEvent;
 
-const createSession = (overrides: Partial<BizSession> = {}): BizSession =>
+const createSession = (overrides: Partial<SessionExportRow> = {}): SessionExportRow =>
   ({
     createdAt: '2026-03-05T10:27:41.000Z',
     progress: 50,
@@ -54,7 +53,7 @@ const createSession = (overrides: Partial<BizSession> = {}): BizSession =>
     },
     version: { sequence: 1 },
     ...overrides,
-  }) as BizSession;
+  }) as SessionExportRow;
 
 describe('buildExportPayload', () => {
   beforeEach(() => {
@@ -259,6 +258,47 @@ describe('buildExportPayload', () => {
     expect(payload.rows[0][step2Index]).toBe(1);
   });
 
+  it('exports a single-choice text answer and a zero rating as the page shows them', () => {
+    mockExtractQuestionData.mockReturnValue([
+      { type: 'multiple-choice', data: { cvid: 'q-choice', name: 'Plan?' } },
+      { type: 'nps', data: { cvid: 'q-nps', name: 'Score?' } },
+    ] as unknown[]);
+
+    const session = createSession({
+      bizEvent: [
+        createEvent(BizEvents.QUESTION_ANSWERED, {
+          [EventAttributes.QUESTION_CVID]: 'q-choice',
+          question_type: 'multiple-choice',
+          text_answer: 'Starter',
+        }),
+        createEvent(BizEvents.QUESTION_ANSWERED, {
+          [EventAttributes.QUESTION_CVID]: 'q-nps',
+          question_type: 'nps',
+          number_answer: 0,
+        }),
+      ],
+    });
+
+    const payload = buildExportPayload({
+      sessions: [session],
+      contentType: ContentDataType.FLOW,
+      contentName: 'Flow',
+      includeAllAttributes: false,
+      version: {
+        sequence: 1,
+        steps: [{ sequence: 0, name: 'Intro', data: {} }],
+      } as unknown as ContentVersion,
+    });
+
+    const choiceIndex = payload.headers.indexOf('Question (multiple-choice): Plan?');
+    const npsIndex = payload.headers.indexOf('Question (nps): Score?');
+    expect(choiceIndex).toBeGreaterThan(-1);
+    expect(npsIndex).toBeGreaterThan(-1);
+    // A single choice is stored as text, not as a list; a zero score is a score.
+    expect(payload.rows[0][choiceIndex]).toBe('Starter');
+    expect(payload.rows[0][npsIndex]).toBe('0');
+  });
+
   it('exports checklist state as Completed and Dismissed for corresponding events', () => {
     const version = {
       sequence: 1,
@@ -297,8 +337,6 @@ describe('buildExportPayload', () => {
         bizUsersOnCompany: [
           {
             id: 'uoc-1',
-            bizCompanyId: 'company-1-id',
-            bizUserId: 'user-2',
             data: {},
             bizCompany: {
               id: 'company-1-id',
@@ -310,8 +348,6 @@ describe('buildExportPayload', () => {
           },
           {
             id: 'uoc-2',
-            bizCompanyId: 'company-2-id',
-            bizUserId: 'user-2',
             data: {},
             bizCompany: {
               id: 'company-2-id',

@@ -17,8 +17,8 @@ const sharedConfig = {
     // Serialised as ISO text; a Date sent in a variable serialises to the same.
     DateTime: { input: 'string | Date', output: 'string' },
     JSON: 'unknown',
-    // Free-form objects (user and company attributes, event properties).
-    JSONObject: 'Record<string, unknown>',
+    // The stored attribute bags (user, company, membership, event).
+    JSONObject: '@usertour/types#StoredAttributes',
     JWT: 'string',
     // Named scalars: the server declares what a JSON, Int or String field
     // carries, and each name maps to the domain type that describes it.
@@ -34,6 +34,8 @@ const sharedConfig = {
     LocalizedContent: '@usertour/types#LocalizedContent',
     RulesCondition: '@usertour/types#RulesCondition',
     SegmentColumn: '@usertour/types#ColumnSetting',
+    // Shaped per content type; the reader narrows it.
+    SessionState: 'unknown',
     StepScreenshot: '@usertour/types#StepScreenshot',
     StepSettings: '@usertour/types#StepSettings',
     StepTarget: '@usertour/types#ElementSelectorPropsData',

@@ -3,9 +3,7 @@ import { extractQuestionData } from '@usertour/helpers';
 import {
   Attribute,
   AttributeBizTypes,
-  BizEvent,
   BizEvents,
-  BizSession,
   ChecklistData,
   ContentDataType,
   ContentVersion,
@@ -13,7 +11,9 @@ import {
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
+import { type BizEvent, type SessionExportRow } from '@usertour/hooks';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
+import { attributeText } from '@/utils/attributes';
 
 type DateRange = {
   from?: Date;
@@ -21,7 +21,7 @@ type DateRange = {
 };
 
 type BuildExportPayloadArgs = {
-  sessions: BizSession[];
+  sessions: SessionExportRow[];
   contentType?: ContentDataType;
   contentName?: string;
   includeAllAttributes: boolean;
@@ -134,7 +134,7 @@ const toCSVCell = (value: unknown) => {
   return normalizedValue;
 };
 
-const getLastActivityAt = (session: BizSession) => {
+const getLastActivityAt = (session: SessionExportRow) => {
   if (!session.bizEvent || session.bizEvent.length === 0) {
     return session.createdAt;
   }
@@ -158,7 +158,7 @@ const getLatestEventCreatedAt = (events: BizEvent[], codeNames: BizEvents[]) => 
   }, matchedEvents[0].createdAt);
 };
 
-const getCompletedAt = (session: BizSession, contentType?: ContentDataType) => {
+const getCompletedAt = (session: SessionExportRow, contentType?: ContentDataType) => {
   const events = session.bizEvent || [];
   if (events.length === 0) {
     return '';
@@ -179,7 +179,7 @@ const getCompletedAt = (session: BizSession, contentType?: ContentDataType) => {
   return getLatestEventCreatedAt(events, [BizEvents.FLOW_COMPLETED]);
 };
 
-const getState = (session: BizSession, contentType?: ContentDataType) => {
+const getState = (session: SessionExportRow, contentType?: ContentDataType) => {
   const events = session.bizEvent || [];
   if (events.length === 0) {
     return contentType === ContentDataType.CHECKLIST ? 'Active' : 'In Progress';
@@ -218,20 +218,19 @@ const getState = (session: BizSession, contentType?: ContentDataType) => {
   return 'In Progress';
 };
 
-const getQuestionAnswer = (answerEvent: BizEvent) => {
-  switch (answerEvent.data.question_type) {
+const getQuestionAnswer = (answerEvent: BizEvent): string => {
+  const data = answerEvent.data ?? {};
+  switch (data.question_type) {
     case ContentEditorElementType.STAR_RATING:
     case ContentEditorElementType.SCALE:
     case ContentEditorElementType.NPS:
-      return answerEvent.data.number_answer;
+      return attributeText(data.number_answer);
     case ContentEditorElementType.MULTIPLE_CHOICE:
-      return Array.isArray(answerEvent.data.list_answer)
-        ? answerEvent.data.list_answer.join('; ')
-        : answerEvent.data.list_answer;
+      return attributeText(data.list_answer) || attributeText(data.text_answer);
     case ContentEditorElementType.MULTI_LINE_TEXT:
-      return (answerEvent.data.text_answer || '').replace(/\n/g, ' ');
+      return attributeText(data.text_answer).replace(/\n/g, ' ');
     default:
-      return (answerEvent.data.text_answer || '').replace(/\n/g, ' ');
+      return attributeText(data.text_answer).replace(/\n/g, ' ');
   }
 };
 
@@ -375,8 +374,9 @@ const buildQuestionAnswers = (events: BizEvent[]) => {
   const questionAnswers = new Map<string, string>();
 
   for (const event of events) {
-    if (event.data?.[EventAttributes.QUESTION_CVID]) {
-      questionAnswers.set(event.data[EventAttributes.QUESTION_CVID], getQuestionAnswer(event));
+    const questionCvid = attributeText(event.data?.[EventAttributes.QUESTION_CVID]);
+    if (questionCvid) {
+      questionAnswers.set(questionCvid, getQuestionAnswer(event));
     }
   }
 
@@ -417,7 +417,7 @@ const buildFilename = (contentName: string | undefined, dateRange?: DateRange) =
 };
 
 const buildRows = (args: {
-  sessions: BizSession[];
+  sessions: SessionExportRow[];
   contentType?: ContentDataType;
   userAttributes: Attribute[];
   maxCompanies: number;
@@ -438,8 +438,8 @@ const buildRows = (args: {
 
     const baseRow = [
       session.bizUser?.externalId || '',
-      session.bizUser?.data?.name || '',
-      session.bizUser?.data?.email || '',
+      attributeText(session.bizUser?.data?.name),
+      attributeText(session.bizUser?.data?.email),
     ];
 
     const userAttributeValues = userAttributes.map((attr) => {
@@ -450,7 +450,10 @@ const buildRows = (args: {
     const companies = session.bizUser?.bizUsersOnCompany || [];
     const companyValues = Array.from({ length: maxCompanies }, (_, i) => {
       const company = companies[i];
-      return [company?.bizCompany?.externalId || '', company?.bizCompany?.data?.name || ''];
+      return [
+        company?.bizCompany?.externalId || '',
+        attributeText(company?.bizCompany?.data?.name),
+      ];
     }).flat();
 
     const activatedCount = events.filter(
