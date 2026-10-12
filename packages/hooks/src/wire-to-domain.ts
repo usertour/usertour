@@ -6,8 +6,8 @@
  * two disagree fails `tsc` on that line, naming the field. Entities whose
  * domain type still differs from the wire on nullability or carries fields
  * the server never sends (Content, ContentVersion, Segment, BizSession,
- * BizUser, Theme, GlobalConfig, the oEmbed info) are not listed; each joins
- * the list when its domain type becomes a derivation of the documents.
+ * BizUser, GlobalConfig, the oEmbed info) are not listed. An entity leaves
+ * the list once the dashboard reads it through a derived type instead.
  */
 import type {
   GetSubscriptionByProjectIdQuery,

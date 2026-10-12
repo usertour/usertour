@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useListThemesQuery } from '@usertour/hooks';
+import { useListThemesQuery, type Theme } from '@usertour/hooks';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { NewItemButton, SettingsPage } from '@usertour/ui';
 import { ThemeListSkeleton } from './components/theme-list-skeleton';
-import type { Theme } from '@usertour/types';
 import { ThemeCreateDialog } from './components/theme-create-dialog';
 import { ThemeCardPreview } from './components/theme-card-preview';
 

@@ -19,9 +19,8 @@ import {
   Input,
   useToast,
 } from '@usertour/ui';
-import { useCopyThemeMutation } from '@usertour/hooks';
+import { useCopyThemeMutation, type Theme } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
-import { Theme } from '@usertour/types';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';

@@ -3,11 +3,11 @@
 import { LoadMoreFailed } from '@/components/load-more-failed';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useThemeList } from '@/hooks/use-theme-list';
-import { useGetContentVersionQuery } from '@usertour/hooks';
+import { useGetContentVersionQuery, type Theme } from '@usertour/hooks';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
+import { Content, ContentDataType, ContentVersion, Step } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

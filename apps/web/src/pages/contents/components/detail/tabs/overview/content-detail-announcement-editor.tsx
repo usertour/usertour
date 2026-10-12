@@ -7,7 +7,7 @@ import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { isVersionPublished } from '@/utils/content';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws, useContentListQuery } from '@usertour/hooks';
+import { useAws, useContentListQuery, type Theme } from '@usertour/hooks';
 import { ContentEditor, type ContentEditorRoot } from '@usertour/editor';
 import { ContentEditorSerialize } from '@usertour/widget';
 import { buildConfig, convertSettings, convertToCssVars } from '@usertour/helpers';
@@ -21,7 +21,6 @@ import {
   ContentEditorElementType,
   RulesCondition,
   RulesType,
-  Theme,
 } from '@usertour/types';
 import { DEFAULT_ANNOUNCEMENT_DATA, DEFAULT_POPUP_CONFIG } from '@usertour/constants';
 import {

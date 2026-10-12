@@ -1,11 +1,10 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useCanUseCustomCss } from '@/hooks/use-should-show-made-with';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery, type Theme } from '@usertour/hooks';
 import { StorageKeys, defaultSettings } from '@usertour/constants';
 import { validateConditions } from '@usertour/business-components';
 import {
   AttributeBizTypes,
-  type Theme,
   ThemeDetailPreviewType,
   type ThemeTypesSetting,
   type ThemeVariation,

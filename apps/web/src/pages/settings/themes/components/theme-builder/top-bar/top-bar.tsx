@@ -7,7 +7,7 @@ import {
   EditableTitle,
 } from '@usertour/ui';
 import { RiArrowRightSLine, RiShieldCheckFill } from '@usertour/icons';
-import type { Theme } from '@usertour/types';
+import type { Theme } from '@usertour/hooks';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ThemeEditDropdownMenu } from '../../theme-edit-dropdown-menu';

@@ -1,14 +1,18 @@
+fragment ThemeFields on Theme {
+  id
+  name
+  projectId
+  createdAt
+  updatedAt
+  settings
+  isDefault
+  isSystem
+  variations
+}
+
 query getTheme($themeId: String!) {
   getTheme(themeId: $themeId) {
-    id
-    name
-    projectId
-    createdAt
-    updatedAt
-    settings
-    isDefault
-    isSystem
-    variations
+    ...ThemeFields
   }
 }
 
@@ -41,15 +45,7 @@ mutation updateTheme(
       variations: $variations
     }
   ) {
-    id
-    name
-    projectId
-    createdAt
-    updatedAt
-    settings
-    isDefault
-    isSystem
-    variations
+    ...ThemeFields
   }
 }
 
@@ -67,15 +63,7 @@ mutation deleteTheme($id: String!) {
 
 query listThemes($projectId: String!) {
   listThemes(projectId: $projectId) {
-    id
-    name
-    projectId
-    createdAt
-    updatedAt
-    settings
-    isDefault
-    isSystem
-    variations
+    ...ThemeFields
   }
 }
 

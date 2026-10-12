@@ -8,10 +8,9 @@ import {
   DropdownMenuTrigger,
   useToast,
 } from '@usertour/ui';
-import { useSetDefaultThemeMutation } from '@usertour/hooks';
+import { useSetDefaultThemeMutation, type Theme } from '@usertour/hooks';
 import { CopyIcon, Delete2Icon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { Theme } from '@usertour/types';
 import { ReactNode, useState } from 'react';
 import { ThemeDeleteDialog } from './theme-delete-dialog';
 import { ThemeDuplicateDialog } from './theme-duplicate-dialog';

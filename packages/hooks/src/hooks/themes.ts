@@ -1,19 +1,25 @@
 import { NetworkStatus, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { Theme } from '@usertour/types';
 import {
   CopyThemeDocument,
   CreateThemeDocument,
   type CreateThemeMutationVariables,
   DeleteThemeDocument,
+  GetThemeDocument,
+  type GetThemeQuery,
+  type GetThemeQueryVariables,
   ListThemesDocument,
   type ListThemesQuery,
   type ListThemesQueryVariables,
   SetDefaultThemeDocument,
+  type ThemeFieldsFragment,
   UpdateThemeDocument,
   type UpdateThemeMutationVariables,
 } from '@usertour/gql';
+
+/** A theme as the theme queries and the update return it (the `ThemeFields` fragment). */
+export type Theme = ThemeFieldsFragment;
 
 export type CreateThemeInput = CreateThemeMutationVariables;
 
@@ -89,6 +95,18 @@ export const useListThemesQuery = (
     ...options,
   });
   const isRefetching = networkStatus === NetworkStatus.refetch;
-  const themeList = data?.listThemes as Theme[] | null;
+  const themeList = data?.listThemes ?? null;
   return { themeList, refetch, loading, error, isRefetching };
+};
+
+export const useGetThemeQuery = (
+  themeId: string | undefined,
+  options?: TypedQueryOptions<GetThemeQuery, GetThemeQueryVariables>,
+) => {
+  const { data, refetch, loading, error } = useTypedQuery(GetThemeDocument, {
+    variables: { themeId: themeId! },
+    skip: !themeId,
+    ...options,
+  });
+  return { theme: data?.getTheme, refetch, loading, error };
 };
