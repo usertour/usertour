@@ -10,18 +10,22 @@ mutation updateSegment($data: UpdateSegment!) {
   }
 }
 
+fragment SegmentFields on Segment {
+  id
+  bizType
+  name
+  environmentId
+  dataType
+  data
+  columns
+  createdAt
+  source
+  sourceId
+}
+
 query listSegment($environmentId: String!) {
   listSegment(environmentId: $environmentId) {
-    id
-    bizType
-    name
-    environmentId
-    dataType
-    data
-    columns
-    createdAt
-    source
-    sourceId
+    ...SegmentFields
   }
 }
 

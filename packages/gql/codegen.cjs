@@ -32,6 +32,7 @@ const sharedConfig = {
     ContentQuestionAnalytics: '@usertour/types#ContentQuestionAnalytics',
     ContentType: '@usertour/types#ContentDataType',
     LocalizedContent: '@usertour/types#LocalizedContent',
+    RulesCondition: '@usertour/types#RulesCondition',
     SegmentColumn: '@usertour/types#ColumnSetting',
     StepScreenshot: '@usertour/types#StepScreenshot',
     StepSettings: '@usertour/types#StepSettings',

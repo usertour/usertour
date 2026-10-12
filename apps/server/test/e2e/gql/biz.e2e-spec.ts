@@ -492,7 +492,10 @@ describe('GraphQL biz (e2e)', () => {
 
     it('updates the data filter and persists it', async () => {
       const seg = await buildSegment(prisma, { projectId, environmentId, bizType: 1, dataType: 2 });
-      const data = { logic: 'and', subConditions: [] };
+      // A condition list, as the dashboard sends it: `data` is `[RulesCondition!]`.
+      const data = [
+        { id: 'c1', type: 'user-attr', data: { attrId: 'attr-1', logic: 'is', value: 'x' } },
+      ];
       const res = await graphql(app, {
         token,
         query: `mutation ($data: UpdateSegment!) {

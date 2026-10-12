@@ -5,7 +5,6 @@ import { useCallback } from 'react';
 import type {
   Content,
   Pagination,
-  Segment,
   TeamMember,
   BizSession,
   AttributeBizTypes,
@@ -108,6 +107,7 @@ import {
   ListSegmentDocument,
   type ListSegmentQuery,
   type ListSegmentQueryVariables,
+  type SegmentBizType,
   MeDocument,
   QueryBizCompanyDocument,
   type QueryBizCompanyQuery,
@@ -295,19 +295,17 @@ export const useUserListQuery = ({
 
 export const useSegmentListQuery = (
   environmentId: string,
-  bizType: string[] = ['COMPANY', 'USER'],
+  bizType: SegmentBizType[] = ['COMPANY', 'USER'],
   options?: TypedQueryOptions<ListSegmentQuery, ListSegmentQueryVariables>,
 ) => {
   const { data, refetch, loading, error, networkStatus } = useTypedQuery(ListSegmentDocument, {
     variables: { environmentId },
     ...options,
   });
-  const segments = (data?.listSegment ?? []).filter((item) =>
-    bizType.includes(item.bizType as Segment['bizType']),
-  );
+  const segments = (data?.listSegment ?? []).filter((item) => bizType.includes(item.bizType));
 
   // See useCompanyListQuery — same networkStatus opt-in pattern.
-  return { segmentList: segments as Segment[], refetch, loading, error, networkStatus };
+  return { segmentList: segments, refetch, loading, error, networkStatus };
 };
 
 export const useQueryTeamMemberListQuery = (
@@ -777,7 +775,7 @@ export const useDeleteSegmentMutation = () => {
 //
 // Refresh path is `refetchQueries: ['listSegment']`, NOT Apollo
 // auto-merge. The UpdateSegmentDocument gql response only selects `{ id }`
-// (see packages/gql/src/gql/segment.ts), so auto-merge into the cached
+// (`updateSegment` in packages/gql/src/operations/segment.graphql), so auto-merge into the cached
 // Segment entity is a no-op. To migrate to auto-merge later, expand
 // the gql response to mirror listSegment's selection set, then drop
 // refetchQueries here.

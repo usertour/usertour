@@ -1,9 +1,8 @@
-import { useCreateBizUserOnSegmentMutation } from '@usertour/hooks';
+import { useCreateBizUserOnSegmentMutation, type Segment } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Segment } from '@usertour/types';
 
 /**
  * Adds users to manual segments. Owns the toast triage; the wrapper

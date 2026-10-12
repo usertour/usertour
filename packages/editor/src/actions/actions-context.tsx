@@ -1,5 +1,6 @@
 import { RulesZIndexOffset, WebZIndex } from '@usertour/constants';
-import type { Attribute, Content, ContentVersion, Segment, Step } from '@usertour/types';
+import type { Attribute, Content, ContentVersion, Step } from '@usertour/types';
+import type { Segment } from '@usertour/hooks';
 import { createContext, useContext } from 'react';
 
 // Translator signature — small subset of i18next's `t` that this component

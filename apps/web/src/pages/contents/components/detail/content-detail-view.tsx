@@ -1,3 +1,4 @@
+import type { SegmentBizType } from '@usertour/gql';
 import { ContentLoading } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';
@@ -29,7 +30,7 @@ export interface ContentDetailViewProps {
 // bizType filter for the segment hook. Module-level constant keeps
 // the reference stable across renders so `useSegmentList`'s `useMemo`
 // deps don't re-compute the filtered list every paint.
-const SEGMENT_BIZ_TYPES: readonly string[] = ['COMPANY', 'USER'];
+const SEGMENT_BIZ_TYPES: readonly SegmentBizType[] = ['COMPANY', 'USER'];
 
 // Inner component that pulls server data via hooks. Replaces the
 // previous `ContentDetailProviderWrapper` + `useContentDetailProviderWrapper`

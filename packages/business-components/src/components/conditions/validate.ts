@@ -1,4 +1,5 @@
-import type { Attribute, Content, Event, RulesCondition, Segment } from '@usertour/types';
+import type { Attribute, Content, Event, RulesCondition } from '@usertour/types';
+import type { Segment } from '@usertour/hooks';
 import type { ValidateContext, ValidationError } from './schema-types';
 import { validateConditionByType } from './validators';
 

@@ -1,9 +1,8 @@
-import { useCreateBizCompanyOnSegmentMutation } from '@usertour/hooks';
+import { useCreateBizCompanyOnSegmentMutation, type Segment } from '@usertour/hooks';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Segment } from '@usertour/types';
 
 /**
  * Mirror of `useAddUsersToSegment` for the company side. Toast triage

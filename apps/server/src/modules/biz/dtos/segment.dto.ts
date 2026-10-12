@@ -1,11 +1,11 @@
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import GraphQLJSON from 'graphql-type-json';
 
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
 import { SegmentBizType } from '../constants/segment-biz-type.constant';
 import { SegmentDataType } from '../constants/segment-data-type.constant';
+import { RulesConditionScalar } from './rules-condition.scalar';
 import { SegmentColumnScalar } from './segment-column.scalar';
 
 registerEnumType(SegmentDataType, {
@@ -37,7 +37,8 @@ export class SegmentDTO extends BaseDTO {
   @Field(() => SegmentDataType)
   dataType: number;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  /** The condition list of a CONDITION segment; empty or null for the other kinds. */
+  @Field(() => [RulesConditionScalar], { nullable: true })
   data?: JsonValue;
 
   /** 'internal' for hand-made segments; a provider id when synced (ADR 0012). */

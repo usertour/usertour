@@ -1,12 +1,15 @@
 import { NetworkStatus } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { Segment } from '@usertour/types';
 import {
   ListSegmentDocument,
   type ListSegmentQuery,
   type ListSegmentQueryVariables,
+  type SegmentFieldsFragment,
 } from '@usertour/gql';
+
+/** A segment as the segment list returns it (the `SegmentFields` fragment). */
+export type Segment = SegmentFieldsFragment;
 
 // Domain wrapper for `listSegment`. Lives outside the catch-all
 // `gql.ts` per the convention established by `themes.ts` /
@@ -23,7 +26,7 @@ export const useListSegmentsQuery = (
   });
 
   return {
-    segmentList: data?.listSegment as Segment[] | undefined,
+    segmentList: data?.listSegment,
     refetch,
     loading,
     error,
