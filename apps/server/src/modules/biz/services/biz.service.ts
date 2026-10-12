@@ -2186,6 +2186,7 @@ export class BizService {
             include: {
               event: true,
               bizCompany: true,
+              bizUser: true,
             },
             orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
             ...args,

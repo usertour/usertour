@@ -7,9 +7,15 @@ import { useSaveCompanySegmentFilter } from '@/hooks/use-save-company-segment-fi
 import { UserDetailContent } from '@/pages/users/components/user-detail-content';
 import { CompanyDetailContent } from '@/pages/companies/components/company-detail-content';
 import type { CursorListQueryFn } from '@/hooks/use-cursor-pagination';
-import { type Attribute, AttributeBizTypes, type BizCompany, type BizUser } from '@usertour/types';
+import { type Attribute, AttributeBizTypes } from '@usertour/types';
 import type { BizOrder, SegmentBizType } from '@usertour/gql';
-import { useUserListQuery, useCompanyListQuery, type Segment } from '@usertour/hooks';
+import {
+  useUserListQuery,
+  useCompanyListQuery,
+  type Segment,
+  type BizCompany,
+  type BizUser,
+} from '@usertour/hooks';
 import { userListState, companyListState } from './entity-list-state';
 import { Group2LineIcon } from '@usertour/icons';
 import type { ComponentType, ReactElement } from 'react';

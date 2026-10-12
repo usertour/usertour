@@ -1,9 +1,10 @@
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { BizSession, Pagination } from '@usertour/types';
+import type { Pagination } from '@usertour/types';
 import {
   type AnalyticsOrder,
   type AnalyticsQuery,
+  type BizSessionFieldsFragment,
   ListSessionsDetailDocument,
   type ListSessionsDetailQuery,
   type ListSessionsDetailQueryVariables,
@@ -11,6 +12,14 @@ import {
   type QueryBizSessionQuery,
   type QueryBizSessionQueryVariables,
 } from '@usertour/gql';
+
+/** A session as the session list, the user's session list and the session detail return it (the `BizSessionFields` fragment). */
+export type BizSession = BizSessionFieldsFragment;
+
+/** A session row of the CSV export: the counts and events, without the content and the steps. */
+export type SessionExportRow = NonNullable<
+  ListSessionsDetailQuery['listSessionsDetail']['edges']
+>[number]['node'];
 
 // Domain wrapper for `queryBizSession`. The cursor-state book-keeping
 // the table needs (currentPageInfo / pageCount derivation) lives in the
@@ -47,7 +56,7 @@ export const useQueryBizSessionsQuery = ({
   // (`useUserListQuery` / `useCompanyListQuery`) so callers can plug
   // any of them into `useCursorPagination` without per-entity
   // adapters. `networkStatus` exposed for `isRefetching` derivation.
-  const contents = (connection?.edges?.map((edge) => edge.node) ?? []) as BizSession[];
+  const contents = connection?.edges?.map((edge) => edge.node) ?? [];
   const pageInfo = connection?.pageInfo;
   const totalCount: number = connection?.totalCount ?? 0;
 

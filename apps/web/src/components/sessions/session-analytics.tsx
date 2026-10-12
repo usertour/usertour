@@ -1,15 +1,10 @@
 import { Badge } from '@usertour/ui';
-import {
-  BizEvents,
-  BizSession,
-  ChecklistData,
-  ContentDataType,
-  ContentVersion,
-  Event,
-} from '@usertour/types';
+import { BizEvents, ChecklistData, ContentDataType, Event } from '@usertour/types';
+import { type BizSession } from '@usertour/hooks';
 import { getProgressStatus } from '@/utils/session';
 import { cn } from '@usertour/tailwind';
 import { useTranslation } from 'react-i18next';
+import { attributeNumber, attributeText } from '@/utils/attributes';
 
 type StatusVariant = 'active' | 'completed' | 'dismissed' | 'seen' | 'activated';
 
@@ -123,8 +118,8 @@ export const FlowProgressCell = ({
 
   const stepDisplay = lastSeenBizEvent
     ? formatFlowStepDisplay(
-        lastSeenBizEvent?.data?.flow_step_number,
-        lastSeenBizEvent?.data?.flow_step_name,
+        attributeNumber(lastSeenBizEvent?.data?.flow_step_number),
+        attributeText(lastSeenBizEvent?.data?.flow_step_name) || null,
         t,
       )
     : '';
@@ -150,7 +145,11 @@ export const ChecklistProgressCell = ({
   original,
   eventList,
   version,
-}: { original: BizSession; eventList: Event[]; version: ContentVersion }) => {
+}: {
+  original: BizSession;
+  eventList: Event[];
+  version: Pick<NonNullable<BizSession['version']>, 'data'>;
+}) => {
   const { t } = useTranslation();
   const { bizEvent, progress } = original;
   const data = version?.data as ChecklistData;

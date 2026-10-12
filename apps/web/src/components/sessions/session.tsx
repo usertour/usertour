@@ -1,18 +1,14 @@
 import { CancelIcon, CheckmarkIcon, ClickIcon, EyeNoneIcon } from '@usertour/icons';
 import { TooltipContent, Tooltip, TooltipTrigger, TooltipProvider } from '@usertour/ui';
 import { PlayIcon } from '@usertour/icons';
-import {
-  BizEvents,
-  BizSession,
-  ChecklistData,
-  ChecklistItemType,
-  ContentVersion,
-} from '@usertour/types';
+import { BizEvents, ChecklistData, ChecklistItemType } from '@usertour/types';
+import { type BizSession } from '@usertour/hooks';
 import { Event } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
 import { isUndefined } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
 import { useTranslation } from 'react-i18next';
+import { attributeNumber, attributeText } from '@/utils/attributes';
 
 /**
  * Format flow step display text from event data
@@ -145,7 +141,11 @@ const ChecklistProgressColumn = ({
   original,
   eventList,
   version,
-}: { original: BizSession; eventList: Event[]; version: ContentVersion }) => {
+}: {
+  original: BizSession;
+  eventList: Event[];
+  version: Pick<NonNullable<BizSession['version']>, 'data'>;
+}) => {
   const { t } = useTranslation();
   const { bizEvent, progress } = original;
   const data = version?.data as ChecklistData;
@@ -199,7 +199,11 @@ const ChecklistItemsColumn = ({
   original,
   eventList,
   version,
-}: { original: BizSession; eventList: Event[]; version: ContentVersion }) => {
+}: {
+  original: BizSession;
+  eventList: Event[];
+  version: Pick<NonNullable<BizSession['version']>, 'data'>;
+}) => {
   const { t } = useTranslation();
   const { bizEvent } = original;
   const data = version?.data as ChecklistData;
@@ -335,8 +339,8 @@ const FlowProgressColumn = ({
         {lastSeenBizEvent && (
           <div className="text-left text-muted-foreground truncate">
             {formatFlowStepDisplay(
-              lastSeenBizEvent?.data?.flow_step_number,
-              lastSeenBizEvent?.data?.flow_step_name,
+              attributeNumber(lastSeenBizEvent?.data?.flow_step_number),
+              attributeText(lastSeenBizEvent?.data?.flow_step_name) || null,
               t,
             )}
           </div>

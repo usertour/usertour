@@ -8,8 +8,11 @@ import {
 import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
-import { useGetContentVersionQuery, useListSessionsDetailQuery } from '@usertour/hooks';
-import type { BizSession } from '@usertour/types';
+import {
+  useGetContentVersionQuery,
+  useListSessionsDetailQuery,
+  type SessionExportRow,
+} from '@usertour/hooks';
 import { endOfDay, startOfDay } from 'date-fns';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useAttributeList } from '@/hooks/use-attribute-list';
@@ -73,7 +76,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
       const pageSize = 100;
       const totalPages = Math.ceil(totalCount / pageSize);
-      let allSessions: BizSession[] = [];
+      let allSessions: SessionExportRow[] = [];
       let currentCursor: string | null = null;
 
       for (let i = 0; i < totalPages; i++) {
@@ -84,10 +87,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           orderBy,
         });
 
-        const sessions =
-          (result.data?.listSessionsDetail?.edges?.map((edge) => edge.node) as
-            | BizSession[]
-            | undefined) || [];
+        const sessions = result.data?.listSessionsDetail?.edges?.map((edge) => edge.node) ?? [];
         allSessions = [...allSessions, ...sessions];
 
         const lastEdge = result.data?.listSessionsDetail?.edges?.slice(-1)[0];

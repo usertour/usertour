@@ -1,14 +1,14 @@
 import { AttributeBizTypes, BizAttributeTypes } from './attribute';
 import { ContentVersion } from './contents';
 import { RulesType, RulesCondition } from './config';
-import { BizSession } from './statistics';
+import { RuntimeBizSession } from './statistics';
 import { PlanType } from './subscription';
 import { RuntimeTheme } from './theme';
 import { Attributes } from './usertour';
 
 export type ContentSession = {
   contentId: string;
-  latestSession?: BizSession;
+  latestSession?: RuntimeBizSession;
   totalSessions: number;
   dismissedSessions: number;
   completedSessions: number;

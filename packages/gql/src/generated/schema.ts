@@ -9,6 +9,7 @@ import type { BizAttributeTypes } from '@usertour/types';
 import type { ContentConfig } from '@usertour/types';
 import type { ContentQuestionAnalytics } from '@usertour/types';
 import type { ContentDataType } from '@usertour/types';
+import type { StoredAttributes } from '@usertour/types';
 import type { LocalizedContent } from '@usertour/types';
 import type { RulesCondition } from '@usertour/types';
 import type { ColumnSetting } from '@usertour/types';
@@ -51,7 +52,7 @@ export type Scalars = {
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: { input: unknown; output: unknown; }
   /** The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
-  JSONObject: { input: Record<string, unknown>; output: Record<string, unknown>; }
+  JSONObject: { input: StoredAttributes; output: StoredAttributes; }
   /** A field whose value is a JSON Web Token (JWT): https://jwt.io/introduction. */
   JWT: { input: string; output: string; }
   /** A version's translated payload: the flow steps or the type-specific data, per translation unit. */
@@ -60,6 +61,8 @@ export type Scalars = {
   RulesCondition: { input: RulesCondition; output: RulesCondition; }
   /** One column setting of a segment's list view. */
   SegmentColumn: { input: ColumnSetting; output: ColumnSetting; }
+  /** A session's state object, shaped per content type (a checklist's item states, for one). */
+  SessionState: { input: unknown; output: unknown; }
   /** A step's screenshot object. */
   StepScreenshot: { input: StepScreenshot; output: StepScreenshot; }
   /** A step's layout settings: size, placement, backdrop and completion flags. */
@@ -401,7 +404,7 @@ export type BizSession = {
   contentId: Scalars['String']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
-  data?: Maybe<Scalars['JSONObject']['output']>;
+  data?: Maybe<Scalars['SessionState']['output']>;
   id: Scalars['ID']['output'];
   progress: Scalars['Int']['output'];
   state: Scalars['Int']['output'];

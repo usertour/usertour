@@ -1,11 +1,12 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery, type BizUser } from '@usertour/hooks';
 import { useTranslation } from 'react-i18next';
-import { AttributeBizTypes, BizUser } from '@usertour/types';
+import { AttributeBizTypes } from '@usertour/types';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Table, TableBody, TableHead, TableHeader, TableRow, DefaultAvatar } from '@usertour/ui';
 import { MembershipRow } from '@/components/membership-row';
+import { attributeText } from '@/utils/attributes';
 
 interface UserCompaniesTabProps {
   bizUser: BizUser;
@@ -55,8 +56,8 @@ export const UserCompaniesTab = ({ bizUser, environmentId }: UserCompaniesTabPro
             const identity = (
               <div className="flex items-center gap-2 min-w-0">
                 <DefaultAvatar
-                  seed={company.externalId || company.data?.name || ''}
-                  name={company.data?.name}
+                  seed={company.externalId || attributeText(company.data?.name)}
+                  name={attributeText(company.data?.name)}
                   size="sm"
                 />
                 <Link

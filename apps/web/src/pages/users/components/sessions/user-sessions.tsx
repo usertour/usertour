@@ -1,4 +1,4 @@
-import { BizSession, ContentDataType, Event, PageInfo } from '@usertour/types';
+import { ContentDataType, Event, PageInfo } from '@usertour/types';
 import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +27,11 @@ import {
   SessionStatusBadge,
 } from '@/components/sessions/session-analytics';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { useListEventsQuery, useQuerySessionsByExternalIdQuery } from '@usertour/hooks';
+import {
+  useListEventsQuery,
+  useQuerySessionsByExternalIdQuery,
+  type BizSession,
+} from '@usertour/hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@usertour/tailwind';
 import {

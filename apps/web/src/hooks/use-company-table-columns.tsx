@@ -2,7 +2,7 @@
 
 import { ColumnDef, Table } from '@tanstack/react-table';
 import { Checkbox, DefaultAvatar } from '@usertour/ui';
-import { BizCompany } from '@usertour/types';
+import { type BizCompany } from '@usertour/hooks';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTableColumnHeader } from '@/components/segments/table';

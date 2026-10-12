@@ -2,13 +2,8 @@
 
 import { useAppContext } from '@/contexts/app-context';
 import { ColumnDef, Row } from '@tanstack/react-table';
-import {
-  type BizSession,
-  type Content,
-  ContentDataType,
-  type ContentVersion,
-  type Event,
-} from '@usertour/types';
+import { type Content, ContentDataType, type ContentVersion, type Event } from '@usertour/types';
+import { type BizSession } from '@usertour/hooks';
 import { format, formatDistanceToNow } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import {
@@ -28,6 +23,7 @@ import {
 } from '@usertour/ui';
 import { Link } from 'react-router-dom';
 import type { TFunction } from 'i18next';
+import { attributeText } from '@/utils/attributes';
 
 // Per-row content / version / event data is identical across all 20
 // rows in the table — they're all sessions for the same content. The
@@ -117,13 +113,14 @@ const UserCell = (props: { row: Row<BizSession> }) => {
 
   const bizUser = row.original.bizUser;
   const bizCompany = row.original.bizCompany;
-  const email = bizUser?.data?.email || '';
-  const name = bizUser?.data?.name || '';
+  const email = attributeText(bizUser?.data?.email);
+  const name = attributeText(bizUser?.data?.name);
   const externalId = bizUser?.externalId || '';
 
   const primaryText = name || email || externalId;
   const showEmail = email && primaryText !== email ? email : null;
-  const companyName = bizCompany?.data?.name || bizCompany?.externalId || bizCompany?.id || '';
+  const companyName =
+    attributeText(bizCompany?.data?.name) || bizCompany?.externalId || bizCompany?.id || '';
 
   const secondaryParts: React.ReactNode[] = [];
   if (showEmail) {
