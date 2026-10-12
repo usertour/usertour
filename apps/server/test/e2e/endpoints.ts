@@ -613,7 +613,7 @@ export const ENDPOINTS: Endpoint[] = [
     op: 'query',
     // Allow direction skipped: reaches the provider's API.
     denyOnly: true,
-    doc: 'query($i:String!,$o:String!){listIntegrationRemoteProperties(integrationId:$i,remoteObject:$o){__typename}}',
+    doc: 'query($i:String!,$o:SyncRemoteObject!){listIntegrationRemoteProperties(integrationId:$i,remoteObject:$o){__typename}}',
     vars: (s) => ({ i: s.integrationId, o: 'contact' }),
   },
   {
