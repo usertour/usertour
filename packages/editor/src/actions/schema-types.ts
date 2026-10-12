@@ -1,11 +1,5 @@
-import type {
-  Attribute,
-  Content,
-  ContentVersion,
-  RulesCondition,
-  Segment,
-  Step,
-} from '@usertour/types';
+import type { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
+import type { Segment } from '@usertour/hooks';
 import type { ComponentType } from 'react';
 
 // Validation context — passed to validate() so it can cross-check against the

@@ -10,6 +10,7 @@ import type { ContentConfig } from '@usertour/types';
 import type { ContentQuestionAnalytics } from '@usertour/types';
 import type { ContentDataType } from '@usertour/types';
 import type { LocalizedContent } from '@usertour/types';
+import type { RulesCondition } from '@usertour/types';
 import type { ColumnSetting } from '@usertour/types';
 import type { StepScreenshot } from '@usertour/types';
 import type { StepSettings } from '@usertour/types';
@@ -55,6 +56,8 @@ export type Scalars = {
   JWT: { input: string; output: string; }
   /** A version's translated payload: the flow steps or the type-specific data, per translation unit. */
   LocalizedContent: { input: LocalizedContent; output: LocalizedContent; }
+  /** One rule of a condition list: its type, operator and operands, with nested groups. */
+  RulesCondition: { input: RulesCondition; output: RulesCondition; }
   /** One column setting of a segment's list view. */
   SegmentColumn: { input: ColumnSetting; output: ColumnSetting; }
   /** A step's screenshot object. */
@@ -649,7 +652,7 @@ export type CopyThemeInput = {
 export type CreatSegment = {
   bizType: SegmentBizType;
   columns?: InputMaybe<Array<Scalars['SegmentColumn']['input']>>;
-  data?: InputMaybe<Scalars['JSON']['input']>;
+  data?: InputMaybe<Array<Scalars['RulesCondition']['input']>>;
   dataType: SegmentDataType;
   environmentId?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
@@ -2542,7 +2545,7 @@ export type Segment = {
   columns?: Maybe<Array<Scalars['SegmentColumn']['output']>>;
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
-  data?: Maybe<Scalars['JSON']['output']>;
+  data?: Maybe<Array<Scalars['RulesCondition']['output']>>;
   dataType: SegmentDataType;
   environmentId?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
@@ -2900,7 +2903,7 @@ export type UpdateProjectSsoSettingsInput = {
 
 export type UpdateSegment = {
   columns?: InputMaybe<Array<Scalars['SegmentColumn']['input']>>;
-  data?: InputMaybe<Scalars['JSON']['input']>;
+  data?: InputMaybe<Array<Scalars['RulesCondition']['input']>>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
 };

@@ -8,12 +8,11 @@ import {
 } from '@usertour/ui';
 import { PlusIcon } from '@usertour/icons';
 import { Table } from '@tanstack/react-table';
-import type { Segment } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { useSegmentListQuery } from '@usertour/hooks';
+import { useSegmentListQuery, type Segment } from '@usertour/hooks';
 import { isSyncedSegment } from '@/utils/segment';
 import type { EntityConfig } from './entity-config';
 

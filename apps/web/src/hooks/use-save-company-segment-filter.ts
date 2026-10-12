@@ -1,9 +1,9 @@
-import { useUpdateSegmentMutation } from '@usertour/hooks';
+import { useUpdateSegmentMutation, type Segment } from '@usertour/hooks';
 import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CurrentConditions, Segment } from '@usertour/types';
+import { CurrentConditions } from '@usertour/types';
 
 interface UseSaveCompanySegmentFilterArgs {
   currentSegment: Segment | undefined;

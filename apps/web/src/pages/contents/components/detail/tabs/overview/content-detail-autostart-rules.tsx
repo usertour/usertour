@@ -1,3 +1,4 @@
+import type { SegmentBizType } from '@usertour/gql';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useEventList } from '@/hooks/use-event-list';
 import { useSegmentList } from '@/hooks/use-segment-list';
@@ -40,7 +41,7 @@ export enum ContentDetailAutoStartRulesType {
 // constant so the array reference stays stable across renders — same
 // reference across renders matches `useSegmentList`'s useMemo deps so
 // the filtered list doesn't recompute every paint.
-const AUTOSTART_SEGMENT_BIZ_TYPES: readonly string[] = ['COMPANY', 'USER'];
+const AUTOSTART_SEGMENT_BIZ_TYPES: readonly SegmentBizType[] = ['COMPANY', 'USER'];
 
 const coerceEnabledForPersist = (flag: boolean, conds: RulesCondition[]) =>
   flag && conds.length > 0;

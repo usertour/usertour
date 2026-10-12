@@ -3,7 +3,8 @@
 import { CLIENT_EVALUABLE_CONDITION_TYPES, Conditions } from '@usertour/business-components';
 import { BooleanField, Label, SelectField, type SelectFieldOption, TextField } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
-import type { Attribute, Content, ContentVersion, Segment, Step } from '@usertour/types';
+import type { Attribute, Content, ContentVersion, Step } from '@usertour/types';
+import type { Segment } from '@usertour/hooks';
 import { RulesCondition, ButtonSemanticType } from '@usertour/types';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';

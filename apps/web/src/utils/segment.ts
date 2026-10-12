@@ -1,4 +1,5 @@
-import type { Segment } from '@usertour/types';
+import type { SegmentBizType } from '@usertour/gql';
+import type { Segment } from '@usertour/hooks';
 import { catalogEntryForSource } from '@usertour/constants';
 
 /** True for a segment materialized by inbound cohort sync (ADR 0012). */
@@ -25,7 +26,10 @@ export const syncedSegmentProvider = (
  * Return segments ordered by dataType groups: ALL -> CONDITION -> MANUAL.
  * Preserves original order within each group (assumes input is already time-ordered).
  */
-export const filterSegmentsByTypeOrder = (list: Segment[], bizType: string[]): Segment[] => {
+export const filterSegmentsByTypeOrder = (
+  list: Segment[],
+  bizType: readonly SegmentBizType[],
+): Segment[] => {
   if (!Array.isArray(list) || list.length === 0) return [];
 
   const base = list.filter((item) => Array.isArray(bizType) && bizType.includes(item.bizType));

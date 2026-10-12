@@ -21,7 +21,7 @@ import {
   useToast,
 } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { Segment } from '@usertour/types';
+import type { Segment } from '@usertour/hooks';
 import { useUpdateSegment } from '@/hooks/use-update-segment';
 import { useUpdateCompanySegment } from '@/hooks/use-update-company-segment';
 import { editSegmentFormSchema, EditSegmentFormValues } from './segment-form-schema';

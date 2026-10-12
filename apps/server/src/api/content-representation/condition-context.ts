@@ -44,7 +44,7 @@ export async function loadConditionContext(
   ]);
   return {
     attributes: attributes as unknown as ValidateContext['attributes'],
-    segments: segments as unknown as ValidateContext['segments'],
+    segments,
     contents: contents.map((c) => ({
       id: c.id,
       name: c.name,

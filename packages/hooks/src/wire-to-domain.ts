@@ -5,8 +5,8 @@
  * hooks hand to the dashboard. A server or document change that makes the
  * two disagree fails `tsc` on that line, naming the field. Entities whose
  * domain type still differs from the wire on nullability or carries fields
- * the server never sends (Content, ContentVersion, Segment, BizSession,
- * BizUser, GlobalConfig, the oEmbed info) are not listed. An entity leaves
+ * the server never sends (Content, ContentVersion, BizSession, BizUser,
+ * GlobalConfig, the oEmbed info) are not listed. An entity leaves
  * the list once the dashboard reads it through a derived type instead.
  */
 import type {
