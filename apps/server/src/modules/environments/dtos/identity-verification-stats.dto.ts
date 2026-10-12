@@ -1,4 +1,8 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
+
+import { SignatureSubject } from '@/modules/common/types/signature-subject.type';
+
+registerEnumType(SignatureSubject, { name: 'SignatureSubject' });
 
 /**
  * Aggregated signature verification counters for one subject (user/company)
@@ -7,8 +11,8 @@ import { Field, Int, ObjectType } from '@nestjs/graphql';
  */
 @ObjectType('IdentityVerificationStats')
 export class IdentityVerificationStatsDTO {
-  @Field()
-  subject: string;
+  @Field(() => SignatureSubject)
+  subject: SignatureSubject;
 
   @Field(() => Int)
   valid: number;

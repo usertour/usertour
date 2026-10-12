@@ -3,14 +3,14 @@ import { BizModelDTO } from '@/modules/biz/dtos/biz.dto';
 import { EventsDTO } from '@/modules/events/dtos/events.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonObject } from '@prisma/client/runtime/library';
-import GraphQLJSON from 'graphql-type-json';
+import { GraphQLJSONObject } from 'graphql-type-json';
 
 @ObjectType('BizEvent')
 export class BizEventDTO extends BaseDTO {
   @Field(() => String)
   eventId: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   data?: JsonObject;
 
   @Field(() => String)

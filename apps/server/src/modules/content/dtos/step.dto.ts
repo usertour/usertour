@@ -21,8 +21,8 @@ export class StepDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   themeId?: string;
 
-  @Field(() => Number, { nullable: true })
-  sequence?: number;
+  @Field(() => Number)
+  sequence: number;
 
   @Field(() => String, { nullable: true })
   contentId?: string;

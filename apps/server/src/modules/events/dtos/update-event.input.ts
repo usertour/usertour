@@ -13,4 +13,8 @@ export class UpdateEventInput
 {
   @Field(() => String)
   id: string;
+
+  /** The full set of attributes the event carries; the update replaces the stored set. */
+  @Field(() => [String])
+  attributeIds: string[];
 }

@@ -12,7 +12,7 @@ const UPSERT_INTEGRATION = `mutation ($data: UpsertIntegrationInput!) {
   upsertIntegration(data: $data) { id environmentId inboundEnabled inboundUrl }
 }`;
 const UPDATE_INBOUND = `mutation ($data: UpdateIntegrationInboundInput!) {
-  updateIntegrationInbound(data: $data) { id inboundEnabled inboundConfig inboundUrl }
+  updateIntegrationInbound(data: $data) { id inboundEnabled inboundConfig { userIdProperty } inboundUrl }
 }`;
 const ROTATE_INBOUND = `mutation ($data: IntegrationIdInput!) {
   rotateIntegrationInboundToken(data: $data) { id inboundUrl }

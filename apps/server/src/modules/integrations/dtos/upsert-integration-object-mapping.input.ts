@@ -1,15 +1,22 @@
 import { Field, InputType } from '@nestjs/graphql';
+import type {
+  SyncLocalObject as SyncLocalObjectValue,
+  SyncMatchStrategy as SyncMatchStrategyValue,
+  SyncRemoteObject as SyncRemoteObjectValue,
+} from '@usertour/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsIn,
   IsOptional,
   IsString,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 
+import { SyncLocalObject } from '../types/sync-local-object.type';
+import { SyncMatchStrategy } from '../types/sync-match-strategy.type';
+import { SyncRemoteObject } from '../types/sync-remote-object.type';
 import { SyncInboundFieldInput } from './sync-inbound-field.input';
 import { SyncOutboundFieldInput } from './sync-outbound-field.input';
 
@@ -19,17 +26,14 @@ export class UpsertIntegrationObjectMappingInput {
   @IsString()
   integrationId: string;
 
-  @Field(() => String)
-  @IsIn(['contact', 'company'])
-  remoteObject: string;
+  @Field(() => SyncRemoteObject)
+  remoteObject: SyncRemoteObjectValue;
 
-  @Field(() => String)
-  @IsIn(['user', 'company'])
-  localObject: string;
+  @Field(() => SyncLocalObject)
+  localObject: SyncLocalObjectValue;
 
-  @Field(() => String)
-  @IsIn(['email', 'remoteField'])
-  matchStrategy: string;
+  @Field(() => SyncMatchStrategy)
+  matchStrategy: SyncMatchStrategyValue;
 
   @Field(() => String, { nullable: true })
   @IsOptional()

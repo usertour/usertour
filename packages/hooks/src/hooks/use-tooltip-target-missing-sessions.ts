@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { useLazyQuery } from '@apollo/client';
 
 import type { Pagination } from '@usertour/types';
-import type { Refined } from './refined';
 import {
   type AnalyticsOrder,
   QueryTooltipTargetMissingSessionsDocument,
@@ -12,30 +11,15 @@ import {
 
 export type { TooltipTargetMissingQuery };
 
-type ResponseWire = QueryTooltipTargetMissingSessionsQuery['queryTooltipTargetMissingSessions'];
-type SessionWire = NonNullable<ResponseWire['sessions']['edges']>[number]['node'];
-type EventWire = NonNullable<SessionWire['bizEvent']>[number];
+export type TooltipTargetMissingResponse =
+  QueryTooltipTargetMissingSessionsQuery['queryTooltipTargetMissingSessions'];
 
-/** One session of the report. `bizUser.data` and `bizEvent[].data` travel as JSON. */
-export type TooltipTargetMissingSession = Refined<
-  SessionWire,
-  {
-    bizUser: Refined<SessionWire['bizUser'], { data: Record<string, unknown> }>;
-    bizEvent: Array<Refined<EventWire, { data: Record<string, unknown> }>> | null;
-  }
->;
+/** One session of the report. */
+export type TooltipTargetMissingSession = NonNullable<
+  TooltipTargetMissingResponse['sessions']['edges']
+>[number]['node'];
 
-export type TooltipTargetMissingResponse = Refined<
-  ResponseWire,
-  {
-    sessions: Refined<
-      ResponseWire['sessions'],
-      { edges: Array<{ cursor: string; node: TooltipTargetMissingSession }> | null }
-    >;
-  }
->;
-
-export type StepAnalytics = ResponseWire['stepAnalytics'];
+export type StepAnalytics = TooltipTargetMissingResponse['stepAnalytics'];
 
 export const useQueryTooltipTargetMissingSessionsLazyQuery = () => {
   const [query, { loading }] = useLazyQuery(QueryTooltipTargetMissingSessionsDocument, {
@@ -51,9 +35,7 @@ export const useQueryTooltipTargetMissingSessionsLazyQuery = () => {
       const response = await query({
         variables: { ...pagination, query: queryParams, orderBy },
       });
-      return response.data?.queryTooltipTargetMissingSessions as
-        | TooltipTargetMissingResponse
-        | undefined;
+      return response.data?.queryTooltipTargetMissingSessions;
     },
     [query],
   );

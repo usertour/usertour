@@ -706,7 +706,7 @@ describe('GraphQL content (e2e)', () => {
       const res = await graphql(app, {
         token,
         query: `mutation ($data: VersionIdInput!) {
-          publishedContentVersion(data: $data) { id contentId }
+          publishedContentVersion(data: $data) { id }
         }`,
         variables: { data: { versionId: version.id, environmentId } },
       });

@@ -30,6 +30,8 @@ import type {
   SyncObjectUpdateEnvelope,
   IntegrationMessageEnvelope,
 } from '../types/integrations.type';
+import type { IntegrationSyncRunKind } from '../types/integration-sync-run-kind.type';
+import type { IntegrationSyncRunStatus } from '../types/integration-sync-run-status.type';
 import {
   batchUpdateHubspotObjects,
   ensureHubspotProperty,
@@ -57,11 +59,11 @@ export const SYNC_PAGE_JOB = 'page';
 /** GraphQL-facing projection of a sync run. */
 export interface IntegrationSyncRunView {
   id: string;
-  kind: string;
-  status: string;
+  kind: IntegrationSyncRunKind;
+  status: IntegrationSyncRunStatus;
   mappingId: string | null;
-  remoteObject: string | null;
-  localObject: string | null;
+  remoteObject: SyncRemoteObject | null;
+  localObject: SyncLocalObject | null;
   startedAt: Date;
   finishedAt: Date | null;
   records: number;
@@ -438,13 +440,15 @@ export class ObjectSyncService {
       take: Math.min(Math.max(limit, 1), 200),
       include: { mapping: { select: { remoteObject: true, localObject: true } } },
     });
+    // The columns are Strings; the sync services are their only writers and
+    // write the vocabulary, so the rows are read back as it.
     return runs.map((run) => ({
       id: run.id,
-      kind: run.kind,
-      status: run.status,
+      kind: run.kind as IntegrationSyncRunKind,
+      status: run.status as IntegrationSyncRunStatus,
       mappingId: run.mappingId,
-      remoteObject: run.mapping?.remoteObject ?? null,
-      localObject: run.mapping?.localObject ?? null,
+      remoteObject: (run.mapping?.remoteObject as SyncRemoteObject | undefined) ?? null,
+      localObject: (run.mapping?.localObject as SyncLocalObject | undefined) ?? null,
       startedAt: run.startedAt,
       finishedAt: run.finishedAt,
       records: run.records,

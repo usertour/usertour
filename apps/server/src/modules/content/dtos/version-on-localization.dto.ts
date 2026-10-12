@@ -7,10 +7,10 @@ import { VersionDTO } from './version.dto';
 
 @ObjectType('VersionOnLocalization')
 export class VersionOnLocalizationDTO extends BaseDTO {
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSON)
   localized: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSON)
   backup: JsonValue;
 
   @Field(() => String)

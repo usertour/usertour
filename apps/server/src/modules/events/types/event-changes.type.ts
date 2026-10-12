@@ -5,6 +5,7 @@ export type EventChanges = {
   codeName?: string;
   description?: string;
   deleted?: boolean;
-  attributeIds?: string[];
+  /** The full set the event carries; an update replaces the stored set. */
+  attributeIds: string[];
   eventId?: string;
 };

@@ -77,24 +77,11 @@ export const useQueryContentAnalyticsQuery = ({
 // ---- QueryTrackerUsersDocument (cursor pagination) ----
 
 type TrackerUsersConnection = QueryTrackerUsersQuery['queryTrackerUsers'];
-type TrackerUserWire = NonNullable<TrackerUsersConnection['edges']>[number]['node'];
 
-/** One tracked user of the report. The user's and company's `data` travel as JSON. */
-export type TrackerUser = Refined<
-  TrackerUserWire,
-  {
-    bizUser: Refined<TrackerUserWire['bizUser'], { data: Record<string, unknown> }>;
-    bizCompany: Refined<
-      NonNullable<TrackerUserWire['bizCompany']>,
-      { data: Record<string, unknown> }
-    > | null;
-  }
->;
+export type TrackerUserEdge = NonNullable<TrackerUsersConnection['edges']>[number];
 
-export interface TrackerUserEdge {
-  cursor: string;
-  node: TrackerUser;
-}
+/** One tracked user of the report. */
+export type TrackerUser = TrackerUserEdge['node'];
 
 interface UseQueryTrackerUsersArgs {
   first?: number;
@@ -116,7 +103,7 @@ export const useQueryTrackerUsersQuery = ({
     ...options,
   });
   const result = data?.queryTrackerUsers;
-  const edges = (result?.edges ?? []) as TrackerUserEdge[];
+  const edges = result?.edges ?? [];
   return {
     edges,
     users: edges.map((edge) => edge.node),

@@ -9,7 +9,16 @@ import { AttributeDTO } from './attribute.dto';
 export class CreateAttributeInput
   extends OmitType(
     AttributeDTO,
-    ['id', 'createdAt', 'updatedAt', 'predefined', 'description', 'source', 'sourceId'],
+    [
+      'id',
+      'createdAt',
+      'updatedAt',
+      'predefined',
+      'description',
+      'randomMax',
+      'source',
+      'sourceId',
+    ],
     InputType,
   )
   implements NewAttribute

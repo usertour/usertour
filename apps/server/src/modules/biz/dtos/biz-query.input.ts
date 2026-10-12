@@ -21,6 +21,7 @@ export class BizQuery implements BizFilter {
   @Field(() => String, { nullable: true })
   search?: string;
 
+  /** The segment condition list. */
   @Field(() => GraphQLJSON, { nullable: true })
   data?: JsonObject;
 }
