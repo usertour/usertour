@@ -21,10 +21,9 @@ import {
   ProgressBarType,
   Side,
   Step,
-  Theme,
 } from '@usertour/types';
 import { forwardRef, useState } from 'react';
-import { useAws } from '@usertour/hooks';
+import { useAws, type Theme } from '@usertour/hooks';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 

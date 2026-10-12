@@ -3,7 +3,7 @@ import { ContentVersion } from './contents';
 import { RulesType, RulesCondition } from './config';
 import { BizSession } from './statistics';
 import { PlanType } from './subscription';
-import { Theme } from './theme';
+import { RuntimeTheme } from './theme';
 import { Attributes } from './usertour';
 
 export type ContentSession = {
@@ -72,7 +72,7 @@ export interface SDKConfig {
 
 export interface GetProjectSettingsResponse {
   config: SDKConfig;
-  themes: Theme[];
+  themes: RuntimeTheme[];
 }
 
 /**

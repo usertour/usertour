@@ -31,9 +31,9 @@ import {
   LauncherDataType,
   ResourceCenterData,
   Step,
-  Theme,
   ThemeTypesSetting,
 } from '@usertour/types';
+import type { Theme } from '@usertour/hooks';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

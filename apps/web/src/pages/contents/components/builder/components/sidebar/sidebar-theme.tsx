@@ -4,7 +4,7 @@ import { BUILDER_Z } from '@usertour/constants';
 import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
 import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
 import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
-import { Theme } from '@usertour/types';
+import type { Theme } from '@usertour/hooks';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 

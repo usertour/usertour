@@ -16,8 +16,8 @@ import {
   LauncherActionType,
   LauncherData,
   LauncherPositionType,
-  Theme,
 } from '@usertour/types';
+import type { Theme } from '@usertour/hooks';
 import { forwardRef, useMemo, useRef } from 'react';
 import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';
 import { useAttributeList } from '@/hooks/use-attribute-list';

@@ -12,7 +12,6 @@ import type {
   GlobalConfig,
   ColumnSetting,
   RulesCondition,
-  Theme,
   ContentOmbedInfo,
   ContentVersion,
   BizUser,
@@ -95,9 +94,6 @@ import {
   GetTeamMembersDocument,
   type GetTeamMembersQuery,
   type GetTeamMembersQueryVariables,
-  GetThemeDocument,
-  type GetThemeQuery,
-  type GetThemeQueryVariables,
   GlobalConfigDocument,
   InviteTeamMemberDocument as inviteTeamMemberMutation,
   ListAttributesDocument,
@@ -1362,18 +1358,6 @@ export const useInvalidateLicenseScopedCache = () => {
       .refetchQueries({ include: [MeDocument, GlobalConfigDocument] })
       .catch(() => undefined);
   }, [apollo]);
-};
-
-export const useGetThemeQuery = (
-  themeId: string | undefined,
-  options?: TypedQueryOptions<GetThemeQuery, GetThemeQueryVariables>,
-) => {
-  const { data, refetch, loading, error } = useTypedQuery(GetThemeDocument, {
-    variables: { themeId: themeId! },
-    skip: !themeId,
-    ...options,
-  });
-  return { theme: data?.getTheme as Theme | undefined, refetch, loading, error };
 };
 
 export const useListLocalizationsQuery = (

@@ -1,5 +1,5 @@
 import { useThemeList } from '@/hooks/use-theme-list';
-import { Theme } from '@usertour/types';
+import type { Theme } from '@usertour/hooks';
 import { mergeThemeDefaultSettings } from '@usertour/helpers';
 import { useMemo } from 'react';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
