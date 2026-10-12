@@ -1,0 +1,71 @@
+/**
+ * Wire-to-domain assertions (ADR 0021).
+ *
+ * Each constant assigns an operation's result type to the domain type the
+ * hooks hand to the dashboard. A server or document change that makes the
+ * two disagree fails `tsc` on that line, naming the field. Entities whose
+ * domain type still differs from the wire on nullability or carries fields
+ * the server never sends (Content, ContentVersion, Segment, BizSession,
+ * BizUser, Theme, GlobalConfig, the oEmbed info) are not listed; each joins
+ * the list when its domain type becomes a derivation of the documents.
+ */
+import type {
+  GetSubscriptionByProjectIdQuery,
+  ListAttributesQuery,
+  ListContentPublishRecordsQuery,
+  ListDefinitionReferencesQuery,
+  ListEventsQuery,
+  ListLocalizationsQuery,
+  ListVersionLocalizationsQuery,
+  QueryBizCompanyQuery,
+  QueryBizSessionQuery,
+  QueryContentQuestionAnalyticsQuery,
+  UpdateVersionLocalizationMutation,
+  UserEnvironmentsQuery,
+} from '@usertour/gql';
+import type {
+  Attribute,
+  BizCompany,
+  ContentPublishRecord,
+  ContentQuestionAnalytics,
+  DefinitionReference,
+  Environment,
+  Event,
+  Localization,
+  PageInfo,
+  Subscription,
+  VersionOnLocalization,
+} from '@usertour/types';
+
+/** The one field an operation's result carries. */
+type Result<Operation> = NonNullable<
+  Omit<Operation, '__typename'>[keyof Omit<Operation, '__typename'>]
+>;
+/** The constraints make a changed shape a compile error here rather than a silent `never`. */
+type Item<List extends readonly unknown[]> = NonNullable<List[number]>;
+type Node<Connection extends { edges?: readonly { node: unknown }[] | null }> = NonNullable<
+  NonNullable<Connection['edges']>[number]['node']
+>;
+
+export const attribute: Attribute = {} as Item<Result<ListAttributesQuery>>;
+export const bizCompany: BizCompany = {} as Node<Result<QueryBizCompanyQuery>>;
+export const contentPublishRecord: ContentPublishRecord = {} as Node<
+  Result<ListContentPublishRecordsQuery>
+>;
+// Both sides are the domain type while the codegen mapping holds; this line fails when the mapping goes.
+export const contentQuestionAnalytics: ContentQuestionAnalytics = {} as Item<
+  Result<QueryContentQuestionAnalyticsQuery>
+>;
+export const definitionReference: DefinitionReference = {} as Item<
+  Result<ListDefinitionReferencesQuery>
+>;
+export const environment: Environment = {} as Item<Result<UserEnvironmentsQuery>>;
+export const event: Event = {} as Item<Result<ListEventsQuery>>;
+export const localization: Localization = {} as Item<Result<ListLocalizationsQuery>>;
+export const pageInfo: PageInfo = {} as NonNullable<Result<QueryBizSessionQuery>['pageInfo']>;
+export const subscription: Subscription = {} as Result<GetSubscriptionByProjectIdQuery>;
+export const versionOnLocalization: VersionOnLocalization = {} as Item<
+  Result<ListVersionLocalizationsQuery>
+>;
+export const savedVersionOnLocalization: VersionOnLocalization =
+  {} as Result<UpdateVersionLocalizationMutation>;

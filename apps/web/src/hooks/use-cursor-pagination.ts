@@ -42,15 +42,15 @@ import type { ForwardedQueryOptions } from '@usertour/hooks';
 // in @usertour/hooks per ADR 0002 and lets the table treat each
 // entity's response uniformly.
 
-export interface OrderBy {
-  field: string;
-  direction: 'asc' | 'desc';
-}
-
-export interface UseListQueryArgs<TQuery> {
+/**
+ * `TOrder` is the entity's generated order input (`BizOrder`,
+ * `AnalyticsOrder`, …): its `field` is the server's enum, so a column the
+ * server cannot sort by is a compile error at the wrapper.
+ */
+export interface UseListQueryArgs<TQuery, TOrder> {
   query: TQuery;
   pagination: Pagination;
-  orderBy?: OrderBy;
+  orderBy?: TOrder;
   options?: ForwardedQueryOptions;
 }
 
@@ -67,17 +67,19 @@ export interface UseListQueryResult<TRow> {
  *  `useCursorPagination` can drive. Each entity (user / company /
  *  session / ...) exposes one of these, returning a list of rows
  *  alongside the relay-style `pageInfo` / `totalCount`. */
-export type CursorListQueryFn<TRow, TQuery = { environmentId: string; [key: string]: unknown }> = (
-  args: UseListQueryArgs<TQuery>,
-) => UseListQueryResult<TRow>;
+export type CursorListQueryFn<
+  TRow,
+  TOrder,
+  TQuery = { environmentId: string; [key: string]: unknown },
+> = (args: UseListQueryArgs<TQuery, TOrder>) => UseListQueryResult<TRow>;
 
-export interface UseCursorPaginationArgs<TRow, TQuery> {
+export interface UseCursorPaginationArgs<TRow, TQuery, TOrder> {
   query: TQuery;
-  orderBy?: OrderBy;
+  orderBy?: TOrder;
   /** Default page size for the initial pagination state. */
   defaultPageSize?: number;
   /** Per-entity Apollo wrapper from @usertour/hooks. */
-  useListQuery: (args: UseListQueryArgs<TQuery>) => UseListQueryResult<TRow>;
+  useListQuery: (args: UseListQueryArgs<TQuery, TOrder>) => UseListQueryResult<TRow>;
   /** Skip the underlying query (e.g. context not ready). */
   skip?: boolean;
   /** Extra Apollo options forwarded to the wrapper — typically
@@ -100,8 +102,8 @@ export interface UseCursorPaginationResult<TRow> {
 
 const DEFAULT_PAGE_SIZE = 20;
 
-export function useCursorPagination<TRow, TQuery>(
-  args: UseCursorPaginationArgs<TRow, TQuery>,
+export function useCursorPagination<TRow, TQuery, TOrder>(
+  args: UseCursorPaginationArgs<TRow, TQuery, TOrder>,
 ): UseCursorPaginationResult<TRow> {
   const { query, orderBy, defaultPageSize = DEFAULT_PAGE_SIZE, useListQuery, skip, options } = args;
 

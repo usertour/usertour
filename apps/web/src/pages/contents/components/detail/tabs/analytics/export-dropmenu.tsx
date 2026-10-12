@@ -41,14 +41,16 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   // window to the exact moment the date picker was opened, narrowing
   // the export against the visible totalCount and missing sessions
   // near the boundary days.
-  const query = {
+  const hasDateRange = Boolean(dateRange?.from && dateRange?.to);
+  const query: AnalyticsQuery = {
     environmentId: environment?.id ?? '',
     contentId,
-    startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : undefined,
-    endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
+    // The trigger is disabled until the range is complete.
+    startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '',
+    endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '',
     timezone,
   };
-  const orderBy = { field: 'createdAt', direction: 'desc' as const };
+  const orderBy: AnalyticsOrder = { field: 'createdAt', direction: 'desc' };
   // `skip: true` — the export handler calls `refetch` imperatively in a
   // cursor loop instead of letting Apollo auto-fetch.
   const { refetch } = useListSessionsDetailQuery({
@@ -78,8 +80,8 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
         const result = await refetch({
           first: pageSize,
           after: currentCursor,
-          query: query as AnalyticsQuery,
-          orderBy: orderBy as AnalyticsOrder,
+          query,
+          orderBy,
         });
 
         const sessions =
@@ -137,7 +139,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild disabled={isExporting}>
+      <DropdownMenuTrigger asChild disabled={isExporting || !hasDateRange}>
         {children}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="z-[101]">

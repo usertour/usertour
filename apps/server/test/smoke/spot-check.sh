@@ -95,7 +95,7 @@ mutual() {
   hit ELSEWHERE "$label  [B→A]" "$body_a"
 }
 
-section "R-tier QUERIES — in-project (30 endpoints, safe)"
+section "R-tier QUERIES — in-project (31 endpoints, safe)"
 run_endpoint 'projects.getProjectConfig' \
   "{\"query\":\"query(\$p:String!){getProjectConfig(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
@@ -142,13 +142,16 @@ run_endpoint 'localizations.listLocalizations' \
   "{\"query\":\"query(\$p:String!){listLocalizations(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
 run_endpoint 'attributes.listAttributes' \
-  "{\"query\":\"query(\$b:Int!,\$p:String!){listAttributes(bizType:\$b,projectId:\$p){__typename}}\",\"variables\":{\"b\":1,\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+  "{\"query\":\"query(\$b:AttributeBizType!,\$p:String!){listAttributes(bizType:\$b,projectId:\$p){__typename}}\",\"variables\":{\"b\":1,\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
 run_endpoint 'themes.getTheme' \
   "{\"query\":\"query(\$t:String!){getTheme(themeId:\$t){__typename}}\",\"variables\":{\"t\":\"${SMOKE_THEME_ID}\"}}"
 
 run_endpoint 'themes.listThemes' \
   "{\"query\":\"query(\$p:String!){listThemes(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+run_endpoint 'references.listDefinitionReferences' \
+  "{\"query\":\"query(\$p:String!,\$k:String!,\$i:String!){listDefinitionReferences(projectId:\$p,kind:\$k,id:\$i){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\",\"k\":\"attribute\",\"i\":\"${SMOKE_ATTRIBUTE_ID}\"}}"
 
 run_endpoint 'events.listEvents' \
   "{\"query\":\"query(\$p:String!){listEvents(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
@@ -187,7 +190,7 @@ run_endpoint 'subscription.getSubscriptionUsage' \
   "{\"query\":\"query(\$p:String!){getSubscriptionUsage(projectId:\$p)}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
 section "O-tier QUERIES — in-project (0 endpoints, safe)"
-section "Cross-project mutual QUERIES (36 endpoints × 2 directions, safe)"
+section "Cross-project mutual QUERIES (37 endpoints × 2 directions, safe)"
 mutual 'projects.getProjectConfig' \
   "{\"query\":\"query(\$p:String!){getProjectConfig(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
   "{\"query\":\"query(\$p:String!){getProjectConfig(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
@@ -249,8 +252,8 @@ mutual 'localizations.listLocalizations' \
   "{\"query\":\"query(\$p:String!){listLocalizations(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
 mutual 'attributes.listAttributes' \
-  "{\"query\":\"query(\$b:Int!,\$p:String!){listAttributes(bizType:\$b,projectId:\$p){__typename}}\",\"variables\":{\"b\":1,\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
-  "{\"query\":\"query(\$b:Int!,\$p:String!){listAttributes(bizType:\$b,projectId:\$p){__typename}}\",\"variables\":{\"b\":1,\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+  "{\"query\":\"query(\$b:AttributeBizType!,\$p:String!){listAttributes(bizType:\$b,projectId:\$p){__typename}}\",\"variables\":{\"b\":1,\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
+  "{\"query\":\"query(\$b:AttributeBizType!,\$p:String!){listAttributes(bizType:\$b,projectId:\$p){__typename}}\",\"variables\":{\"b\":1,\"p\":\"${SMOKE_PROJECT_ID}\"}}"
 
 mutual 'themes.getTheme' \
   "{\"query\":\"query(\$t:String!){getTheme(themeId:\$t){__typename}}\",\"variables\":{\"t\":\"${SMOKE_B_THEME_ID}\"}}" \
@@ -259,6 +262,10 @@ mutual 'themes.getTheme' \
 mutual 'themes.listThemes' \
   "{\"query\":\"query(\$p:String!){listThemes(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \
   "{\"query\":\"query(\$p:String!){listThemes(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\"}}"
+
+mutual 'references.listDefinitionReferences' \
+  "{\"query\":\"query(\$p:String!,\$k:String!,\$i:String!){listDefinitionReferences(projectId:\$p,kind:\$k,id:\$i){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\",\"k\":\"attribute\",\"i\":\"${SMOKE_B_ATTRIBUTE_ID}\"}}" \
+  "{\"query\":\"query(\$p:String!,\$k:String!,\$i:String!){listDefinitionReferences(projectId:\$p,kind:\$k,id:\$i){__typename}}\",\"variables\":{\"p\":\"${SMOKE_PROJECT_ID}\",\"k\":\"attribute\",\"i\":\"${SMOKE_ATTRIBUTE_ID}\"}}"
 
 mutual 'events.listEvents' \
   "{\"query\":\"query(\$p:String!){listEvents(projectId:\$p){__typename}}\",\"variables\":{\"p\":\"${SMOKE_B_PROJECT_ID}\"}}" \

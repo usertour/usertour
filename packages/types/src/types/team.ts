@@ -1,9 +1,11 @@
+import { Role } from './permission';
+
 export type TeamMember = {
   inviteId?: string;
   userId?: string;
   name: string;
   email: string;
-  role: TeamMemberRole;
+  role: Role;
   createdAt: string;
   isInvite?: boolean;
   /** Undefined on pending-invite rows (no account yet). */
@@ -14,10 +16,3 @@ export type TeamMember = {
    */
   allowedEnvironmentIds?: string[] | null;
 };
-
-export enum TeamMemberRole {
-  ADMIN = 'ADMIN',
-  EDITOR = 'EDITOR',
-  VIEWER = 'VIEWER',
-  OWNER = 'OWNER',
-}

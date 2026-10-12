@@ -10,7 +10,7 @@ import {
 
 interface UseContentCountOptions {
   environmentId?: string;
-  type?: ContentDataType | string;
+  type?: ContentDataType;
   published?: boolean;
   skip?: boolean;
   options?: Omit<

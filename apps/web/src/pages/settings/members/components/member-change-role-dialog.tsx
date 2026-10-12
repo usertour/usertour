@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
 import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
-import { type TeamMember, TeamMemberRole } from '@usertour/types';
+import { type TeamMember, Role } from '@usertour/types';
 import { z } from 'zod';
 import { MemberRoleFields, memberRoleFieldsSchema } from './member-role-fields';
 
@@ -46,7 +46,7 @@ export const MemberChangeRoleDialog = (props: MemberChangeRoleDialogProps) => {
         projectId,
         data.userId,
         role,
-        role === TeamMemberRole.EDITOR ? allowedEnvironmentIds : undefined,
+        role === Role.EDITOR ? allowedEnvironmentIds : undefined,
       );
       if (!success) {
         throw new Error(t('settings.team.changeRole.failure'));

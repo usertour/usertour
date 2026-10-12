@@ -789,7 +789,7 @@ export const ENDPOINTS: Endpoint[] = [
     key: 'attributes.listAttributes',
     tier: 'R',
     op: 'query',
-    doc: 'query($b:Int!,$p:String!){listAttributes(bizType:$b,projectId:$p){__typename}}',
+    doc: 'query($b:AttributeBizType!,$p:String!){listAttributes(bizType:$b,projectId:$p){__typename}}',
     vars: (s) => ({ b: 1, p: s.projectId }),
   },
 

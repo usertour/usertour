@@ -17,7 +17,7 @@ import { RequirePermission } from '@/modules/auth/permission/require-permission.
 import { ScopeKind } from '@/modules/auth/permission/scope-resolver.registry';
 import { Capability } from '@usertour/types';
 import { BizSessionDTO } from './dtos/biz-session.dto';
-import GraphQLJSON from 'graphql-type-json';
+import { ContentQuestionAnalyticsScalar } from './dtos/content-question-analytics.scalar';
 
 @Resolver()
 @UseGuards(PermissionGuard)
@@ -39,7 +39,7 @@ export class AnalyticsResolver {
     );
   }
 
-  @Query(() => GraphQLJSON)
+  @Query(() => [ContentQuestionAnalyticsScalar], { nullable: true })
   @RequirePermission({ capability: Capability.AnalyticsRead, scope: ScopeKind.Content })
   async queryContentQuestionAnalytics(
     @Args()

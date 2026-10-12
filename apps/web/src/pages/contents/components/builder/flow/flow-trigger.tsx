@@ -247,8 +247,8 @@ export const FlowBuilderTrigger = () => {
   return (
     <TriggerProvider>
       <FlowBuilderTriggerHeader />
-      <FlowBuilderTriggerBody attributes={attributes} loading={loading} />
-      <FlowBuilderTriggerFooter attributes={attributes} />
+      <FlowBuilderTriggerBody attributes={attributes ?? []} loading={loading} />
+      <FlowBuilderTriggerFooter attributes={attributes ?? []} />
     </TriggerProvider>
   );
 };

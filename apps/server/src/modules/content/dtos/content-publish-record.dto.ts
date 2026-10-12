@@ -1,4 +1,8 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql';
+
+import { ContentPublishAction } from '../types/content-publish-action.type';
+
+registerEnumType(ContentPublishAction, { name: 'ContentPublishAction' });
 
 /**
  * One publish / unpublish event for the per-content "Publish history" panel.
@@ -30,9 +34,8 @@ export class ContentPublishRecordDTO {
   @Field(() => String, { nullable: true })
   environmentName?: string | null;
 
-  /** publish | unpublish */
-  @Field(() => String)
-  action: string;
+  @Field(() => ContentPublishAction)
+  action: ContentPublishAction;
 
   @Field(() => String, { nullable: true })
   actorUserId?: string | null;

@@ -2,6 +2,7 @@ import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useCreateContentVersionMutation, useUpdateContentVersionMutation } from '@usertour/hooks';
+import type { VersionInput } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour/ui';
@@ -49,12 +50,7 @@ export const useContentVersionUpdate = () => {
   // begin/endSaving obligation around its own write, since the data / theme /
   // scheduledAt writes can overlap and a shared bool can't model that.
   const updateEditableVersion = useCallback(
-    async (payload: {
-      themeId?: string;
-      data?: unknown;
-      config?: unknown;
-      scheduledAt?: Date | null;
-    }) => {
+    async (payload: VersionInput) => {
       if (!version || !content) return;
       try {
         const editableVersionId = await ensureEditableVersionId();

@@ -15,6 +15,7 @@
   "dependencies": {
     "@apollo/client": "^3.7.17",
     "@graphql-typed-document-node/core": "3.2.0",
+    "@usertour/types": "workspace:^",
     "graphql": "^16.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

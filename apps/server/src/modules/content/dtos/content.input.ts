@@ -5,10 +5,12 @@ import GraphQLJSON from 'graphql-type-json';
 
 import type { NewContent } from '../types/new-content.type';
 import { StepInput } from './step.input';
+import { ContentTypeScalar } from './content-type.scalar';
+import { VersionConfigScalar } from './version-config.scalar';
 
 @InputType()
 export class ContentInput implements NewContent {
-  @Field(() => String, { nullable: false })
+  @Field(() => ContentTypeScalar)
   type: string;
 
   @Field({ nullable: true })
@@ -24,7 +26,8 @@ export class ContentInput implements NewContent {
   @Field({ nullable: true })
   themeId?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  // The first version's config: createContent writes it to the version row.
+  @Field(() => VersionConfigScalar, { nullable: true })
   config?: JsonValue;
 
   @Field(() => GraphQLJSON, { nullable: true })

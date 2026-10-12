@@ -134,14 +134,6 @@ export type Step = {
 // Content Types
 // ============================================================================
 
-export type ContentConfig = {
-  name?: string;
-  enabledAutoStartRules?: boolean;
-  enabledHideRules?: boolean;
-  autoStartRules?: string;
-  hideRules?: string;
-};
-
 export type ContentVersion = {
   id: string;
   createdAt: string;
@@ -192,17 +184,20 @@ export type ContentOnEnvironment = {
   publishedVersion: ContentVersion;
 };
 
+/** A content's config object (the server's `ContentConfig` scalar). */
+export type ContentConfig = {
+  rollWindowConfig?: {
+    nps: number;
+    rate: number;
+    scale: number;
+  };
+};
+
 export type Content = {
   id: string;
   name?: string;
   type: ContentDataType;
-  config?: {
-    rollWindowConfig?: {
-      nps: number;
-      rate: number;
-      scale: number;
-    };
-  };
+  config?: ContentConfig;
   publishedVersion?: ContentVersion;
   editedVersion?: ContentVersion;
   buildUrl?: string;

@@ -1,8 +1,12 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
+
+import { SubscriptionPlanType } from '../types/subscription-plan-type.type';
+
+registerEnumType(SubscriptionPlanType, { name: 'SubscriptionPlanType' });
 
 @ObjectType('SubscriptionModel')
 export class SubscriptionDTO extends BaseDTO {
@@ -15,8 +19,8 @@ export class SubscriptionDTO extends BaseDTO {
   @Field(() => String)
   lookupKey: string;
 
-  @Field(() => String)
-  planType: string;
+  @Field(() => SubscriptionPlanType)
+  planType: SubscriptionPlanType;
 
   @Field(() => String)
   interval: string;

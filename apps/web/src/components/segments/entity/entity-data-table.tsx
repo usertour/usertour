@@ -31,6 +31,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { EntityDataTableToolbar } from './entity-data-table-toolbar';
 import type { EntityConfig } from './entity-config';
+import type { BizOrder } from '@usertour/gql';
 
 interface EntityRow {
   id: string;
@@ -81,7 +82,7 @@ export function EntityDataTable<TRow extends EntityRow>({
     pagination,
     setPagination,
     totalCount,
-  } = useCursorPagination<TRow, typeof effectiveQuery>({
+  } = useCursorPagination<TRow, typeof effectiveQuery, BizOrder>({
     query: effectiveQuery,
     useListQuery: config.useListQuery,
     skip: !environmentId,

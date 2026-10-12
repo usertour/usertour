@@ -38,7 +38,7 @@ const buildClient = () => {
 const wrapper =
   (client: ApolloClient<unknown>) =>
   ({ children }: { children: React.ReactNode }) =>
-    React.createElement(ApolloProvider, { client }, children);
+    React.createElement(ApolloProvider, { client, children });
 
 describe('useInvalidateLicenseScopedCache', () => {
   // Apollo's real refetchQueries logs an invariant warning when it can't find

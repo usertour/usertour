@@ -1,13 +1,7 @@
 import { useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type {
-  Content,
-  ContentDataType,
-  ContentPublishRecord,
-  ContentVersion,
-  VersionOnLocalization,
-} from '@usertour/types';
+import type { Content, ContentVersion } from '@usertour/types';
 import { useMemo } from 'react';
 import { useCursorFetchMore } from './use-cursor-fetch-more';
 import {
@@ -107,8 +101,7 @@ export const useListVersionLocalizationsQuery = (
   // same pattern as useGetContentVersionQuery above. Editing a published
   // version forks a draft whose rows are verbatim clones, and rendering an
   // empty list during the swap reads as every locale flipping to disabled.
-  const contentLocalizationList = ((data ?? previousData)?.listVersionLocalizations ??
-    []) as VersionOnLocalization[];
+  const contentLocalizationList = (data ?? previousData)?.listVersionLocalizations ?? [];
 
   return { contentLocalizationList, loading, refetch, error };
 };
@@ -129,16 +122,9 @@ const CONTENT_LIST_PAGE_SIZE = 20;
 // `fetchNextPage`'s identity.
 const DEFAULT_CONTENT_ORDER_BY = { field: 'createdAt', direction: 'desc' } as const;
 
-interface QueryContentVariables {
-  environmentId: string;
-  type?: ContentDataType;
-  published?: boolean;
-  [key: string]: unknown;
-}
-
 interface UseListContentsArgs {
-  query: QueryContentVariables;
-  orderBy?: { field: string; direction: 'asc' | 'desc' };
+  query: ContentQuery;
+  orderBy?: ContentOrder;
   pageSize?: number;
   options?: TypedQueryOptions<QueryContentQuery, QueryContentQueryVariables>;
 }
@@ -154,8 +140,8 @@ export const useListContentsQuery = ({
     {
       variables: {
         first: pageSize,
-        query: query as ContentQuery,
-        orderBy: orderBy as ContentOrder,
+        query,
+        orderBy,
       },
       notifyOnNetworkStatusChange: true,
       ...options,
@@ -280,7 +266,7 @@ export const useListContentPublishRecordsQuery = (
 
   const connection = data?.listContentPublishRecords;
   const recordList = useMemo(
-    () => (connection?.edges?.map((edge) => edge.node) ?? []) as ContentPublishRecord[],
+    () => connection?.edges?.map((edge) => edge.node) ?? [],
     [connection?.edges],
   );
   const hasNextPage = connection?.pageInfo?.hasNextPage ?? false;

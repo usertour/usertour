@@ -80,7 +80,7 @@ query getContent($contentId: String!) {
 }
 
 mutation createContent(
-  $type: String!
+  $type: ContentType!
   $name: String!
   $environmentId: String!
   $buildUrl: String

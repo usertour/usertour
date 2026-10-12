@@ -1,11 +1,16 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
+
+import { ReferenceReferrerKind } from '../types/reference-referrer-kind.type';
+import { ReferenceSegmentBizType } from '../types/reference-segment-biz-type.type';
 import { DefinitionReferenceLocationDTO } from './definition-reference-location.dto';
+
+registerEnumType(ReferenceReferrerKind, { name: 'ReferenceReferrerKind' });
+registerEnumType(ReferenceSegmentBizType, { name: 'ReferenceSegmentBizType' });
 
 @ObjectType('DefinitionReference')
 export class DefinitionReferenceDTO {
-  /** content, segment or theme. */
-  @Field(() => String)
-  referrerKind: string;
+  @Field(() => ReferenceReferrerKind)
+  referrerKind: keyof typeof ReferenceReferrerKind;
 
   @Field(() => String)
   id: string;
@@ -16,9 +21,9 @@ export class DefinitionReferenceDTO {
   @Field(() => String, { nullable: true })
   contentType?: string;
 
-  /** user or company, for a segment referrer. */
-  @Field(() => String, { nullable: true })
-  segmentBizType?: string;
+  /** For a segment referrer: whose segment list it lives in. */
+  @Field(() => ReferenceSegmentBizType, { nullable: true })
+  segmentBizType?: keyof typeof ReferenceSegmentBizType;
 
   @Field(() => [DefinitionReferenceLocationDTO])
   locations: DefinitionReferenceLocationDTO[];
