@@ -11,6 +11,7 @@ query getSubscriptionByProjectId($projectId: String!) {
     projectId
     subscriptionId
     lookupKey
+    id
     planType
     interval
     status

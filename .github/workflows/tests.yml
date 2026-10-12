@@ -132,6 +132,10 @@ jobs:
         # A schema or document change is a dashboard compile error (ADR 0021).
         if: env.WEB == 'true'
         run: pnpm --filter @usertour/web exec tsc --noEmit -p tsconfig.json
+      - name: Type check (hooks)
+        # Also holds the wire-to-domain assertions (packages/hooks/src/wire-to-domain.ts).
+        if: env.WEB == 'true'
+        run: pnpm --filter @usertour/hooks typecheck
       - name: Unit tests (helpers)
         if: env.SHARED == 'true'
         run: pnpm --filter @usertour/helpers test

@@ -83,7 +83,7 @@ describe('mapContentAnalytics (pure)', () => {
   });
 
   it('checklist: starts/completions + panel opens + task rows; non-array domain signals normalize to []', () => {
-    // Checklist path: viewsByStep comes back as `false`, viewsByDay as null.
+    // Checklist path: viewsByStep comes back as `null`, as does viewsByDay when empty.
     const raw = {
       ...rawCounts,
       uniqueOpens: 7,
@@ -91,7 +91,7 @@ describe('mapContentAnalytics (pure)', () => {
       viewsByDay: [
         { date: new Date('2026-07-01T00:00:00Z'), ...rawCounts, uniqueOpens: 3, totalOpens: 6 },
       ],
-      viewsByStep: false,
+      viewsByStep: null,
       viewsByTask: [
         { name: 'T1', taskId: 't1', analytics: { ...rawCounts, uniqueClicks: 7, totalClicks: 9 } },
       ],

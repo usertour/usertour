@@ -1,7 +1,6 @@
 import { NetworkStatus, useMutation } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { Event } from '@usertour/types';
 import {
   CreateEventDocument,
   type CreateEventInput,
@@ -74,7 +73,7 @@ export const useListEventsQuery = (
     ...options,
   });
   const isRefetching = networkStatus === NetworkStatus.refetch;
-  const eventList = data?.listEvents as Event[] | undefined;
+  const eventList = data?.listEvents;
   return { eventList, refetch, loading, error, isRefetching };
 };
 

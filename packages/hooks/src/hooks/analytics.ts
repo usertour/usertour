@@ -1,12 +1,5 @@
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type {
-  AnalyticsViewsByBlock,
-  AnalyticsViewsByDay,
-  AnalyticsViewsByStep,
-  AnalyticsViewsByTask,
-} from '@usertour/types';
-import type { Refined } from './refined';
 import {
   type AnalyticsOrder,
   type AnalyticsQuery,
@@ -23,16 +16,8 @@ import {
 // is fetchPolicy-agnostic so callers can opt into shared-cache
 // participation as they need.
 
-/** The breakdowns travel as JSON; their rows are the analytics view types. */
-export type AnalyticsData = Refined<
-  QueryContentAnalyticsQuery['queryContentAnalytics'],
-  {
-    viewsByDay: AnalyticsViewsByDay[];
-    viewsByStep: AnalyticsViewsByStep[];
-    viewsByTask: AnalyticsViewsByTask[];
-    viewsByBlock: AnalyticsViewsByBlock[];
-  }
->;
+/** The counts plus the breakdowns, each a list of its analytics view type or null when there is none. */
+export type AnalyticsData = QueryContentAnalyticsQuery['queryContentAnalytics'];
 
 interface UseQueryContentAnalyticsArgs {
   environmentId: string | undefined;
@@ -67,7 +52,7 @@ export const useQueryContentAnalyticsQuery = ({
   });
 
   return {
-    analyticsData: data?.queryContentAnalytics as AnalyticsData | undefined,
+    analyticsData: data?.queryContentAnalytics,
     loading,
     refetch,
     error,

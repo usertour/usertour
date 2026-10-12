@@ -1,8 +1,9 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import GraphQLJSON from 'graphql-type-json';
 
 import type { NewTheme } from '../types/new-theme.type';
+import { ThemeSettingsScalar } from './theme-settings.scalar';
+import { ThemeVariationScalar } from './theme-variation.scalar';
 
 @InputType()
 export class CreateThemeInput implements NewTheme {
@@ -15,9 +16,9 @@ export class CreateThemeInput implements NewTheme {
   @Field(() => String)
   projectId: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => ThemeSettingsScalar, { nullable: true })
   settings: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [ThemeVariationScalar], { nullable: true })
   variations?: JsonValue;
 }

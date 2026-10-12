@@ -6,6 +6,7 @@ import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
 import { SegmentBizType } from '../constants/segment-biz-type.constant';
 import { SegmentDataType } from '../constants/segment-data-type.constant';
+import { SegmentColumnScalar } from './segment-column.scalar';
 
 registerEnumType(SegmentDataType, {
   name: 'SegmentDataType',
@@ -25,7 +26,7 @@ export class SegmentDTO extends BaseDTO {
   @Field(() => String)
   name: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [SegmentColumnScalar], { nullable: true })
   columns?: JsonValue;
 
   //1,bizUser，2 bizCompany

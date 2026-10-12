@@ -87,6 +87,21 @@ export class GqlConfigService implements GqlOptionsFactory {
           };
         }
 
+        // A document the schema rejects (a variable declared as a type the
+        // server no longer has, a selection that no longer exists). Every
+        // dashboard build validates its documents against the schema it was
+        // built from, so this is a stale build talking to a newer server; the
+        // code lets the dashboard reload itself. The message stays masked.
+        if (formattedError.extensions?.code === 'GRAPHQL_VALIDATION_FAILED') {
+          return {
+            message: STATUS_CODES[HttpStatus.BAD_REQUEST],
+            extensions: {
+              status: HttpStatus.BAD_REQUEST,
+              code: 'GRAPHQL_VALIDATION_FAILED',
+            },
+          };
+        }
+
         // Log unknown errors (excluding BaseError and HttpException which are handled above)
         if (
           isGraphQLError &&

@@ -1,30 +1,20 @@
 import { useApolloClient, useMutation, useLazyQuery, NetworkStatus } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
-import type { Refined } from './refined';
 import { useCallback } from 'react';
 
 import type {
   Content,
-  ContentDataType,
   Pagination,
   Segment,
   TeamMember,
   BizSession,
-  ContentQuestionAnalytics,
   AttributeBizTypes,
-  BizAttributeTypes,
-  TeamMemberRole,
-  Attribute,
-  Environment,
-  Subscription,
   GlobalConfig,
   ColumnSetting,
   RulesCondition,
   Theme,
-  Localization,
   ContentOmbedInfo,
   ContentVersion,
-  BizCompany,
   BizUser,
 } from '@usertour/types';
 import {
@@ -53,12 +43,14 @@ import {
   type UpdateProjectSsoSettingsInput,
   type UpdateSsoProviderInput,
   type ContentOrder,
+  type ContentQuery,
   CreateAttributeDocument,
   CreateBizCompanyOnSegmentDocument,
   type CreateBizCompanyOnSegmentMutationVariables,
   CreateBizUserOnSegmentDocument,
   type CreateBizUserOnSegmentMutationVariables,
   CreateCheckoutSessionDocument,
+  type ContentVersionInput,
   CreateContentVersionDocument,
   CreateEnvironmentsDocument,
   CreateOidcSsoProviderDocument,
@@ -140,6 +132,7 @@ import {
   TransferProjectOwnershipDocument as transferProjectOwnershipMutation,
   UpdateAttributeDocument,
   UpdateContentDocument,
+  type UpdateContentInput,
   UpdateContentVersionDocument,
   UpdateEnvironmentsDocument,
   type UpdateEnvironmentsMutationVariables,
@@ -165,19 +158,10 @@ import {
 } from '@usertour/gql';
 
 type UseContentListQueryProps = {
-  // Index signature mirrors the server's ContentQuery input — callers
-  // pass `published` / etc. in addition to the always-required keys.
-  query: {
-    environmentId: string;
-    type?: ContentDataType;
-    [key: string]: unknown;
-  };
+  query: ContentQuery;
   options?: TypedQueryOptions<QueryContentQuery, QueryContentQueryVariables>;
   pagination?: Pagination;
-  orderBy?: {
-    field: string;
-    direction: 'asc' | 'desc';
-  };
+  orderBy?: ContentOrder;
 };
 
 export const useContentListQuery = ({
@@ -196,7 +180,7 @@ export const useContentListQuery = ({
     variables: {
       ...pagination,
       query,
-      orderBy: orderBy as ContentOrder,
+      orderBy,
     },
   });
   const contentList = data?.queryContent?.edges?.map((edge) => edge.node);
@@ -215,10 +199,7 @@ type UseCompanyListQueryProps = {
     [key: string]: any;
   };
   pagination?: Pagination;
-  orderBy?: {
-    field: string;
-    direction: 'asc' | 'desc';
-  };
+  orderBy?: BizOrder;
 };
 
 export const useCompanyListQuery = ({
@@ -238,14 +219,13 @@ export const useCompanyListQuery = ({
       variables: {
         ...pagination,
         query,
-        orderBy: orderBy as BizOrder,
+        orderBy,
       },
     },
   );
 
   const bizCompanyList = data?.queryBizCompany;
-  const contents = (bizCompanyList?.edges?.map((edge) => ({ ...edge.node })) ??
-    []) as unknown as BizCompany[];
+  const contents = bizCompanyList?.edges?.map((edge) => ({ ...edge.node })) ?? [];
   const pageInfo = bizCompanyList?.pageInfo;
   const totalCount = bizCompanyList?.totalCount || 0;
 
@@ -271,10 +251,7 @@ type UseUserListQueryProps = {
     [key: string]: any;
   };
   pagination?: Pagination;
-  orderBy?: {
-    field: string;
-    direction: 'asc' | 'desc';
-  };
+  orderBy?: BizOrder;
 };
 
 export const useUserListQuery = ({
@@ -294,7 +271,7 @@ export const useUserListQuery = ({
       variables: {
         ...pagination,
         query,
-        orderBy: orderBy as BizOrder,
+        orderBy,
       },
     },
   );
@@ -302,7 +279,7 @@ export const useUserListQuery = ({
   const bizUserList = data?.queryBizUser;
   const contents = (bizUserList?.edges?.map((edge) => ({
     ...edge.node,
-    ...(edge.node.data as Record<string, unknown>),
+    ...edge.node.data,
   })) ?? []) as unknown as BizUser[];
   const pageInfo = bizUserList?.pageInfo;
   const totalCount = bizUserList?.totalCount || 0;
@@ -352,7 +329,7 @@ export const useQueryTeamMemberListQuery = (
       userId: item.user?.id,
       name: item.user?.name ?? '',
       email: item.user?.email ?? '',
-      role: item.role as TeamMemberRole,
+      role: item.role,
       allowedEnvironmentIds: item.allowedEnvironmentIds ?? null,
       twoFactorEnabled: item.user?.twoFactorEnabled === true,
       isInvite: false,
@@ -377,7 +354,7 @@ export const useQueryInviteListQuery = (
       inviteId: item.id,
       name: item.name ?? '',
       email: item.email ?? '',
-      role: item.role as TeamMemberRole,
+      role: item.role,
       isInvite: true,
       createdAt: item.createdAt,
     })) ?? [];
@@ -394,11 +371,11 @@ export const useInviteTeamMemberMutation = () => {
       projectId: string,
       name: string,
       email: string,
-      role: string,
+      role: Role,
       allowedEnvironmentIds?: string[],
     ): Promise<boolean> => {
       const response = await inviteTeamMember({
-        variables: { projectId, name, email, role: role as Role, allowedEnvironmentIds },
+        variables: { projectId, name, email, role, allowedEnvironmentIds },
       });
       return !!response.data?.inviteTeamMember;
     },
@@ -449,11 +426,11 @@ export const useChangeTeamMemberRoleMutation = () => {
     async (
       projectId: string,
       userId: string,
-      role: string,
+      role: Role,
       allowedEnvironmentIds?: string[],
     ): Promise<boolean> => {
       const response = await mutation({
-        variables: { projectId, userId, role: role as Role, allowedEnvironmentIds },
+        variables: { projectId, userId, role, allowedEnvironmentIds },
       });
       return !!response.data?.changeTeamMemberRole;
     },
@@ -527,17 +504,14 @@ export const useQuerySessionDetailQuery = (sessionId: string) => {
 export const useQuerySessionsByExternalIdQuery = (
   query: SessionQuery,
   pagination: Pagination = { first: 10 },
-  orderBy: { field: string; direction: 'asc' | 'desc' } = {
-    field: 'createdAt',
-    direction: 'desc',
-  },
+  orderBy: AnalyticsOrder = { field: 'createdAt', direction: 'desc' },
 ) => {
   const { data, loading, refreshing, error, refetch } = useTypedQuery(
     QuerySessionsByExternalIdDocument,
     {
       variables: {
         query,
-        orderBy: orderBy as AnalyticsOrder,
+        orderBy,
         ...pagination,
       },
       // Reload goes through `refetch()`; without this the refetch window
@@ -565,14 +539,14 @@ export const useQueryContentQuestionAnalyticsQuery = (
   const { data, loading, error, refetch } = useTypedQuery(QueryContentQuestionAnalyticsDocument, {
     variables: { contentId, startDate, endDate, timezone, environmentId },
   });
-  const questionAnalytics = data?.queryContentQuestionAnalytics as ContentQuestionAnalytics[];
+  const questionAnalytics = data?.queryContentQuestionAnalytics;
   return { questionAnalytics, loading, error, refetch };
 };
 
 export const useUpdateContentMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpdateContentDocument);
   const invoke = useCallback(
-    async (contentId: string, content: Pick<Content, 'name' | 'config' | 'buildUrl'>) => {
+    async (contentId: string, content: UpdateContentInput) => {
       const response = await mutation({ variables: { contentId, content } });
       return response.data?.updateContent;
     },
@@ -586,15 +560,10 @@ export const useUpdateContentVersionMutation = () => {
   const invoke = useCallback(
     async (
       versionId: string,
-      content: {
-        data?: unknown;
-        config?: unknown;
-        themeId?: string;
-        scheduledAt?: Date | null;
-        // Builder's whole-version save: the full step list, each carrying its
-        // front-end cvid. Server upserts by cvid. detail omits this.
-        steps?: unknown[];
-      },
+      // The builder's whole-version save sends `steps` (the full list, each
+      // carrying its front-end cvid; the server upserts by cvid). detail
+      // omits it and only touches the scalar fields.
+      content: VersionInput,
       // Optimistic-lock baseline (the version's updatedAt the caller last
       // loaded). The builder's whole-version save sends it so a concurrent
       // save by someone else is rejected instead of silently overwritten;
@@ -602,7 +571,7 @@ export const useUpdateContentVersionMutation = () => {
       expectedUpdatedAt?: string,
     ) => {
       const response = await mutation({
-        variables: { versionId, content: content as VersionInput, expectedUpdatedAt },
+        variables: { versionId, content, expectedUpdatedAt },
       });
       return response.data?.updateContentVersion as ContentVersion | undefined;
     },
@@ -611,14 +580,8 @@ export const useUpdateContentVersionMutation = () => {
   return { invoke, loading, error };
 };
 
-/**
- * `bizType` and `dataType` are Ints on the wire; callers send the attribute enums.
- * `randomMax` is the upper bound of a Random number attribute (ADR 0020); required for that type only.
- */
-export type CreateAttributeInput = Refined<
-  CreateAttributeInputWire,
-  { bizType: AttributeBizTypes; dataType: BizAttributeTypes }
->;
+/** `randomMax` is the upper bound of a Random number attribute (ADR 0020); required for that type only. */
+export type CreateAttributeInput = CreateAttributeInputWire;
 
 export const useCreateAttributeMutation = () => {
   const [mutation, { loading, error }] = useMutation(CreateAttributeDocument, {
@@ -643,7 +606,7 @@ export const useListAttributesQuery = (
     variables: { projectId, bizType },
     ...options,
   });
-  const attributes = data?.listAttributes as Attribute[];
+  const attributes = data?.listAttributes;
   return { attributes, loading, error, refetch };
 };
 
@@ -687,8 +650,7 @@ export const useGetSubscriptionByProjectIdQuery = (
     skip: !projectId,
     ...options,
   });
-  // Wire shape and domain Subscription differ on optionality; the hook is the boundary.
-  const subscription = data?.getSubscriptionByProjectId as unknown as Subscription | null;
+  const subscription = data?.getSubscriptionByProjectId ?? null;
   return { subscription, loading, error, refetch };
 };
 
@@ -768,12 +730,7 @@ export const useCreateContentVersionMutation = () => {
     refetchQueries: ['listContentVersions'],
   });
   const invoke = useCallback(
-    async (data: {
-      versionId: string;
-      config?: unknown;
-      data?: unknown;
-      themeId?: string;
-    }) => {
+    async (data: ContentVersionInput) => {
       const response = await mutation({ variables: { data } });
       return response.data?.createContentVersion;
     },
@@ -949,7 +906,7 @@ export const useGetUserEnvironmentsQuery = (
   });
 
   const isRefetching = networkStatus === NetworkStatus.refetch;
-  const environmentList = data?.userEnvironments as Environment[] | null;
+  const environmentList = data?.userEnvironments ?? null;
 
   return { environmentList, refetch, loading, error, isRefetching };
 };
@@ -1429,7 +1386,7 @@ export const useListLocalizationsQuery = (
     ...options,
   });
   return {
-    localizationList: data?.listLocalizations as Localization[] | undefined,
+    localizationList: data?.listLocalizations,
     refetch,
     loading,
     error,

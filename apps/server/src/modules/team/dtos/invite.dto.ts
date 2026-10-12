@@ -2,6 +2,7 @@ import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { ProjectDTO } from '@/modules/projects/dtos/project.dto';
 import { UserDTO } from '@/modules/users/dtos/user.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
+import { Role } from '@prisma/client';
 
 @ObjectType('Invite')
 export class InviteDTO extends BaseDTO {
@@ -19,8 +20,8 @@ export class InviteDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   name?: string;
 
-  @Field(() => String, { nullable: false })
-  role: string;
+  @Field(() => Role, { nullable: false })
+  role: Role;
 
   @Field(() => String, { nullable: true })
   userId?: string;

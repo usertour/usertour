@@ -14,11 +14,39 @@ const sharedConfig = {
   // without a cast through unknown.
   enumsAsTypes: true,
   scalars: {
-    DateTime: 'string',
+    // Serialised as ISO text; a Date sent in a variable serialises to the same.
+    DateTime: { input: 'string | Date', output: 'string' },
     JSON: 'unknown',
     // Free-form objects (user and company attributes, event properties).
     JSONObject: 'Record<string, unknown>',
     JWT: 'string',
+    // Named scalars: the server declares what a JSON, Int or String field
+    // carries, and each name maps to the domain type that describes it.
+    AnalyticsViewsByBlock: '@usertour/types#AnalyticsViewsByBlock',
+    AnalyticsViewsByDay: '@usertour/types#AnalyticsViewsByDay',
+    AnalyticsViewsByStep: '@usertour/types#AnalyticsViewsByStep',
+    AnalyticsViewsByTask: '@usertour/types#AnalyticsViewsByTask',
+    AttributeBizType: '@usertour/types#AttributeBizTypes',
+    AttributeDataType: '@usertour/types#BizAttributeTypes',
+    ContentConfig: '@usertour/types#ContentConfig',
+    ContentQuestionAnalytics: '@usertour/types#ContentQuestionAnalytics',
+    ContentType: '@usertour/types#ContentDataType',
+    LocalizedContent: '@usertour/types#LocalizedContent',
+    SegmentColumn: '@usertour/types#ColumnSetting',
+    StepScreenshot: '@usertour/types#StepScreenshot',
+    StepSettings: '@usertour/types#StepSettings',
+    StepTarget: '@usertour/types#ElementSelectorPropsData',
+    StepTrigger: '@usertour/types#StepTrigger',
+    ThemeSettings: '@usertour/types#ThemeTypesSetting',
+    ThemeVariation: '@usertour/types#ThemeVariation',
+    VersionConfig: '@usertour/types#ContentConfigObject',
+  },
+  // Enums the domain declares as TypeScript enums: the generated types use
+  // those enums instead of a string-literal union, so a value flows from a
+  // document into domain code without a cast.
+  enumValues: {
+    Role: '@usertour/types#Role',
+    SubscriptionPlanType: '@usertour/types#PlanType',
   },
 };
 

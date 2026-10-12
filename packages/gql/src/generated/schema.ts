@@ -1,3 +1,23 @@
+import type { Role } from '@usertour/types';
+import type { PlanType as SubscriptionPlanType } from '@usertour/types';
+import type { AnalyticsViewsByBlock } from '@usertour/types';
+import type { AnalyticsViewsByDay } from '@usertour/types';
+import type { AnalyticsViewsByStep } from '@usertour/types';
+import type { AnalyticsViewsByTask } from '@usertour/types';
+import type { AttributeBizTypes } from '@usertour/types';
+import type { BizAttributeTypes } from '@usertour/types';
+import type { ContentConfig } from '@usertour/types';
+import type { ContentQuestionAnalytics } from '@usertour/types';
+import type { ContentDataType } from '@usertour/types';
+import type { LocalizedContent } from '@usertour/types';
+import type { ColumnSetting } from '@usertour/types';
+import type { StepScreenshot } from '@usertour/types';
+import type { StepSettings } from '@usertour/types';
+import type { ElementSelectorPropsData } from '@usertour/types';
+import type { StepTrigger } from '@usertour/types';
+import type { ThemeTypesSetting } from '@usertour/types';
+import type { ThemeVariation } from '@usertour/types';
+import type { ContentConfigObject } from '@usertour/types';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 /** All built-in and custom scalars, mapped to their actual values */
@@ -7,14 +27,50 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** One resource center block's click counts. */
+  AnalyticsViewsByBlock: { input: AnalyticsViewsByBlock; output: AnalyticsViewsByBlock; }
+  /** One day's view and completion counts. */
+  AnalyticsViewsByDay: { input: AnalyticsViewsByDay; output: AnalyticsViewsByDay; }
+  /** One step's view and completion counts. */
+  AnalyticsViewsByStep: { input: AnalyticsViewsByStep; output: AnalyticsViewsByStep; }
+  /** One checklist task's view and completion counts. */
+  AnalyticsViewsByTask: { input: AnalyticsViewsByTask; output: AnalyticsViewsByTask; }
+  /** The integer that encodes what an attribute describes: 1 user, 2 company, 3 membership, 4 event. */
+  AttributeBizType: { input: AttributeBizTypes; output: AttributeBizTypes; }
+  /** The integer that encodes an attribute value type: 1 number, 2 string, 3 boolean, 4 list, 5 datetime, 6 random A/B, 7 random number. */
+  AttributeDataType: { input: BizAttributeTypes; output: BizAttributeTypes; }
+  /** A content's config object (the roll-window settings). */
+  ContentConfig: { input: ContentConfig; output: ContentConfig; }
+  /** One question's response analytics: the question, its answer counts and the daily averages. */
+  ContentQuestionAnalytics: { input: ContentQuestionAnalytics; output: ContentQuestionAnalytics; }
+  /** The content type word: flow, checklist, launcher, banner, tracker, resource-center or announcement. */
+  ContentType: { input: ContentDataType; output: ContentDataType; }
   /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
-  DateTime: { input: string; output: string; }
+  DateTime: { input: string | Date; output: string; }
   /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSON: { input: unknown; output: unknown; }
   /** The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
   JSONObject: { input: Record<string, unknown>; output: Record<string, unknown>; }
   /** A field whose value is a JSON Web Token (JWT): https://jwt.io/introduction. */
   JWT: { input: string; output: string; }
+  /** A version's translated payload: the flow steps or the type-specific data, per translation unit. */
+  LocalizedContent: { input: LocalizedContent; output: LocalizedContent; }
+  /** One column setting of a segment's list view. */
+  SegmentColumn: { input: ColumnSetting; output: ColumnSetting; }
+  /** A step's screenshot object. */
+  StepScreenshot: { input: StepScreenshot; output: StepScreenshot; }
+  /** A step's layout settings: size, placement, backdrop and completion flags. */
+  StepSettings: { input: StepSettings; output: StepSettings; }
+  /** A step's element target: the selector strategy and its screenshot reference. */
+  StepTarget: { input: ElementSelectorPropsData; output: ElementSelectorPropsData; }
+  /** One trigger of a step: its conditions and the actions they fire. */
+  StepTrigger: { input: StepTrigger; output: StepTrigger; }
+  /** A theme's settings object: the per-surface styling the builder edits. */
+  ThemeSettings: { input: ThemeTypesSetting; output: ThemeTypesSetting; }
+  /** One conditional variation of a theme: its conditions and settings overrides. */
+  ThemeVariation: { input: ThemeVariation; output: ThemeVariation; }
+  /** A version's config object: start and hide rules, auto-start and the type-specific settings. */
+  VersionConfig: { input: ContentConfigObject; output: ContentConfigObject; }
 };
 
 export type AcceptInviteInput = {
@@ -106,10 +162,10 @@ export type Analytics = {
   totalViews: Scalars['Int']['output'];
   uniqueCompletions: Scalars['Int']['output'];
   uniqueViews: Scalars['Int']['output'];
-  viewsByBlock?: Maybe<Scalars['JSON']['output']>;
-  viewsByDay?: Maybe<Scalars['JSON']['output']>;
-  viewsByStep?: Maybe<Scalars['JSON']['output']>;
-  viewsByTask?: Maybe<Scalars['JSON']['output']>;
+  viewsByBlock?: Maybe<Array<Scalars['AnalyticsViewsByBlock']['output']>>;
+  viewsByDay?: Maybe<Array<Scalars['AnalyticsViewsByDay']['output']>>;
+  viewsByStep?: Maybe<Array<Scalars['AnalyticsViewsByStep']['output']>>;
+  viewsByTask?: Maybe<Array<Scalars['AnalyticsViewsByTask']['output']>>;
 };
 
 export type AnalyticsOrder = {
@@ -150,11 +206,11 @@ export type ApiToken = {
 
 export type Attribute = {
   __typename?: 'Attribute';
-  bizType: Scalars['Int']['output'];
+  bizType: Scalars['AttributeBizType']['output'];
   codeName: Scalars['String']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
-  dataType: Scalars['Int']['output'];
+  dataType: Scalars['AttributeDataType']['output'];
   description: Scalars['String']['output'];
   displayName: Scalars['String']['output'];
   id: Scalars['ID']['output'];
@@ -452,7 +508,7 @@ export type ConfirmTwoFactorSetupInput = {
 export type Content = {
   __typename?: 'Content';
   buildUrl?: Maybe<Scalars['String']['output']>;
-  config?: Maybe<Scalars['JSON']['output']>;
+  config?: Maybe<Scalars['ContentConfig']['output']>;
   contentOnEnvironments?: Maybe<Array<ContentOnEnvironment>>;
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
@@ -468,7 +524,7 @@ export type Content = {
   publishedVersion?: Maybe<Version>;
   publishedVersionId?: Maybe<Scalars['String']['output']>;
   steps?: Maybe<Array<Step>>;
-  type: Scalars['String']['output'];
+  type: Scalars['ContentType']['output'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
 };
@@ -498,13 +554,13 @@ export type ContentIdInput = {
 
 export type ContentInput = {
   buildUrl?: InputMaybe<Scalars['String']['input']>;
-  config?: InputMaybe<Scalars['JSON']['input']>;
+  config?: InputMaybe<Scalars['VersionConfig']['input']>;
   data?: InputMaybe<Scalars['JSON']['input']>;
   environmentId?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   steps?: InputMaybe<Array<StepInput>>;
   themeId?: InputMaybe<Scalars['String']['input']>;
-  type: Scalars['String']['input'];
+  type: Scalars['ContentType']['input'];
 };
 
 export type ContentOnEnvironment = {
@@ -535,9 +591,13 @@ export type ContentOrderField =
   | 'publishedAt'
   | 'updatedAt';
 
+export type ContentPublishAction =
+  | 'publish'
+  | 'unpublish';
+
 export type ContentPublishRecord = {
   __typename?: 'ContentPublishRecord';
-  action: Scalars['String']['output'];
+  action: ContentPublishAction;
   actorName?: Maybe<Scalars['String']['output']>;
   actorTokenId?: Maybe<Scalars['String']['output']>;
   actorTokenName?: Maybe<Scalars['String']['output']>;
@@ -568,7 +628,7 @@ export type ContentQuery = {
   environmentId: Scalars['String']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
   published?: InputMaybe<Scalars['Boolean']['input']>;
-  type?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['ContentType']['input']>;
 };
 
 export type ContentUpdateInput = {
@@ -577,7 +637,7 @@ export type ContentUpdateInput = {
 };
 
 export type ContentVersionInput = {
-  config?: InputMaybe<Scalars['JSON']['input']>;
+  config?: InputMaybe<Scalars['VersionConfig']['input']>;
   versionId: Scalars['String']['input'];
 };
 
@@ -588,7 +648,7 @@ export type CopyThemeInput = {
 
 export type CreatSegment = {
   bizType: SegmentBizType;
-  columns?: InputMaybe<Scalars['JSON']['input']>;
+  columns?: InputMaybe<Array<Scalars['SegmentColumn']['input']>>;
   data?: InputMaybe<Scalars['JSON']['input']>;
   dataType: SegmentDataType;
   environmentId?: InputMaybe<Scalars['String']['input']>;
@@ -612,9 +672,9 @@ export type CreateApiTokenInput = {
 };
 
 export type CreateAttributeInput = {
-  bizType: Scalars['Int']['input'];
+  bizType: Scalars['AttributeBizType']['input'];
   codeName: Scalars['String']['input'];
-  dataType: Scalars['Int']['input'];
+  dataType: Scalars['AttributeDataType']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
   displayName: Scalars['String']['input'];
   projectId: Scalars['String']['input'];
@@ -675,8 +735,8 @@ export type CreateThemeInput = {
   isDefault: Scalars['Boolean']['input'];
   name: Scalars['String']['input'];
   projectId: Scalars['String']['input'];
-  settings?: InputMaybe<Scalars['JSON']['input']>;
-  variations?: InputMaybe<Scalars['JSON']['input']>;
+  settings?: InputMaybe<Scalars['ThemeSettings']['input']>;
+  variations?: InputMaybe<Array<Scalars['ThemeVariation']['input']>>;
 };
 
 export type CreateWebhookInput = {
@@ -699,15 +759,15 @@ export type DefinitionReference = {
   id: Scalars['String']['output'];
   locations: Array<DefinitionReferenceLocation>;
   name: Scalars['String']['output'];
-  referrerKind: Scalars['String']['output'];
-  segmentBizType?: Maybe<Scalars['String']['output']>;
+  referrerKind: ReferenceReferrerKind;
+  segmentBizType?: Maybe<ReferenceSegmentBizType>;
 };
 
 export type DefinitionReferenceLocation = {
   __typename?: 'DefinitionReferenceLocation';
   step?: Maybe<Scalars['Int']['output']>;
-  surface: Scalars['String']['output'];
-  version?: Maybe<Scalars['String']['output']>;
+  surface: ReferenceSurface;
+  version?: Maybe<ReferenceVersion>;
 };
 
 export type DeleteAttributeInput = {
@@ -773,7 +833,7 @@ export type Events = {
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
   deleted?: Maybe<Scalars['Boolean']['output']>;
-  description?: Maybe<Scalars['String']['output']>;
+  description: Scalars['String']['output'];
   displayName: Scalars['String']['output'];
   eventId?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
@@ -1048,7 +1108,7 @@ export type Invite = {
   projectId?: Maybe<Scalars['String']['output']>;
   recipientExists: Scalars['Boolean']['output'];
   requireSso: Scalars['Boolean']['output'];
-  role: Scalars['String']['output'];
+  role: Role;
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
   user?: Maybe<User>;
@@ -1989,7 +2049,7 @@ export type Query = {
   queryBizUserEvents: BizEventConnection;
   queryContent: ContentConnection;
   queryContentAnalytics: Analytics;
-  queryContentQuestionAnalytics: Scalars['JSON']['output'];
+  queryContentQuestionAnalytics?: Maybe<Array<Scalars['ContentQuestionAnalytics']['output']>>;
   queryIntegrationMessages: IntegrationMessageConnection;
   queryIntegrationSyncedSegments: Array<IntegrationSyncedSegment>;
   queryOembedInfo: OEmbed;
@@ -2141,7 +2201,7 @@ export type QueryListAttributeOnEventsArgs = {
 
 
 export type QueryListAttributesArgs = {
-  bizType: Scalars['Int']['input'];
+  bizType: Scalars['AttributeBizType']['input'];
   projectId: Scalars['String']['input'];
 };
 
@@ -2419,6 +2479,33 @@ export type QueryVerifyInstallationArgs = {
   environmentId: Scalars['String']['input'];
 };
 
+export type ReferenceReferrerKind =
+  | 'content'
+  | 'segment'
+  | 'theme';
+
+export type ReferenceSegmentBizType =
+  | 'company'
+  | 'user';
+
+export type ReferenceSurface =
+  | 'contentBody'
+  | 'hideRules'
+  | 'questionBinding'
+  | 'segmentConditions'
+  | 'startRules'
+  | 'stepContent'
+  | 'stepTheme'
+  | 'stepTrigger'
+  | 'themeVariations'
+  | 'versionSettings'
+  | 'versionTheme';
+
+export type ReferenceVersion =
+  | 'draft'
+  | 'draftAndPublished'
+  | 'published';
+
 export type Register = {
   __typename?: 'Register';
   /** Identifies the date and time when the object was created. */
@@ -2447,17 +2534,12 @@ export type ResetPasswordInput = {
   email: Scalars['String']['input'];
 };
 
-/** User role */
-export type Role =
-  | 'ADMIN'
-  | 'EDITOR'
-  | 'OWNER'
-  | 'VIEWER';
+export { Role };
 
 export type Segment = {
   __typename?: 'Segment';
   bizType: SegmentBizType;
-  columns?: Maybe<Scalars['JSON']['output']>;
+  columns?: Maybe<Array<Scalars['SegmentColumn']['output']>>;
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
   data?: Maybe<Scalars['JSON']['output']>;
@@ -2549,12 +2631,12 @@ export type Step = {
   data?: Maybe<Scalars['JSON']['output']>;
   id: Scalars['ID']['output'];
   name?: Maybe<Scalars['String']['output']>;
-  screenshot?: Maybe<Scalars['JSON']['output']>;
+  screenshot?: Maybe<Scalars['StepScreenshot']['output']>;
   sequence: Scalars['Int']['output'];
-  setting?: Maybe<Scalars['JSON']['output']>;
-  target?: Maybe<Scalars['JSON']['output']>;
+  setting?: Maybe<Scalars['StepSettings']['output']>;
+  target?: Maybe<Scalars['StepTarget']['output']>;
   themeId?: Maybe<Scalars['String']['output']>;
-  trigger?: Maybe<Scalars['JSON']['output']>;
+  trigger?: Maybe<Array<Scalars['StepTrigger']['output']>>;
   type: Scalars['String']['output'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
@@ -2576,12 +2658,12 @@ export type StepInput = {
   data?: InputMaybe<Scalars['JSON']['input']>;
   id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  screenshot?: InputMaybe<Scalars['JSON']['input']>;
+  screenshot?: InputMaybe<Scalars['StepScreenshot']['input']>;
   sequence?: InputMaybe<Scalars['Int']['input']>;
-  setting?: InputMaybe<Scalars['JSON']['input']>;
-  target?: InputMaybe<Scalars['JSON']['input']>;
+  setting?: InputMaybe<Scalars['StepSettings']['input']>;
+  target?: InputMaybe<Scalars['StepTarget']['input']>;
   themeId?: InputMaybe<Scalars['String']['input']>;
-  trigger?: InputMaybe<Scalars['JSON']['input']>;
+  trigger?: InputMaybe<Array<Scalars['StepTrigger']['input']>>;
   type: Scalars['String']['input'];
 };
 
@@ -2601,7 +2683,7 @@ export type SubscriptionModel = {
   isTrial: Scalars['Boolean']['output'];
   lookupKey: Scalars['String']['output'];
   overridePlan?: Maybe<Scalars['JSON']['output']>;
-  planType: Scalars['String']['output'];
+  planType: SubscriptionPlanType;
   projectId: Scalars['String']['output'];
   status: Scalars['String']['output'];
   subscriptionId: Scalars['String']['output'];
@@ -2622,6 +2704,8 @@ export type SubscriptionPlanModel = {
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
 };
+
+export { SubscriptionPlanType };
 
 export type SyncInboundField = {
   __typename?: 'SyncInboundField';
@@ -2665,10 +2749,10 @@ export type Theme = {
   isSystem: Scalars['Boolean']['output'];
   name: Scalars['String']['output'];
   projectId: Scalars['String']['output'];
-  settings: Scalars['JSON']['output'];
+  settings: Scalars['ThemeSettings']['output'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
-  variations?: Maybe<Scalars['JSON']['output']>;
+  variations?: Maybe<Array<Scalars['ThemeVariation']['output']>>;
 };
 
 export type TooltipTargetMissingQuery = {
@@ -2758,9 +2842,9 @@ export type UpdateApiTokenInput = {
 };
 
 export type UpdateAttributeInput = {
-  bizType?: InputMaybe<Scalars['Int']['input']>;
+  bizType?: InputMaybe<Scalars['AttributeBizType']['input']>;
   codeName?: InputMaybe<Scalars['String']['input']>;
-  dataType?: InputMaybe<Scalars['Int']['input']>;
+  dataType?: InputMaybe<Scalars['AttributeDataType']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   displayName?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['String']['input'];
@@ -2768,7 +2852,7 @@ export type UpdateAttributeInput = {
 
 export type UpdateContentInput = {
   buildUrl?: InputMaybe<Scalars['String']['input']>;
-  config?: InputMaybe<Scalars['JSON']['input']>;
+  config?: InputMaybe<Scalars['ContentConfig']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2815,7 +2899,7 @@ export type UpdateProjectSsoSettingsInput = {
 };
 
 export type UpdateSegment = {
-  columns?: InputMaybe<Scalars['JSON']['input']>;
+  columns?: InputMaybe<Array<Scalars['SegmentColumn']['input']>>;
   data?: InputMaybe<Scalars['JSON']['input']>;
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
@@ -2836,8 +2920,8 @@ export type UpdateThemeInput = {
   id: Scalars['String']['input'];
   isDefault?: InputMaybe<Scalars['Boolean']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
-  settings?: InputMaybe<Scalars['JSON']['input']>;
-  variations?: InputMaybe<Scalars['JSON']['input']>;
+  settings?: InputMaybe<Scalars['ThemeSettings']['input']>;
+  variations?: InputMaybe<Array<Scalars['ThemeVariation']['input']>>;
 };
 
 export type UpdateUserInput = {
@@ -2922,7 +3006,7 @@ export type VerifyTwoFactorInput = {
 
 export type Version = {
   __typename?: 'Version';
-  config?: Maybe<Scalars['JSON']['output']>;
+  config?: Maybe<Scalars['VersionConfig']['output']>;
   contentId: Scalars['String']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
@@ -2959,7 +3043,7 @@ export type VersionIdInput = {
 };
 
 export type VersionInput = {
-  config?: InputMaybe<Scalars['JSON']['input']>;
+  config?: InputMaybe<Scalars['VersionConfig']['input']>;
   data?: InputMaybe<Scalars['JSON']['input']>;
   scheduledAt?: InputMaybe<Scalars['DateTime']['input']>;
   steps?: InputMaybe<Array<StepInput>>;
@@ -2968,13 +3052,13 @@ export type VersionInput = {
 
 export type VersionOnLocalization = {
   __typename?: 'VersionOnLocalization';
-  backup: Scalars['JSON']['output'];
+  backup: Scalars['LocalizedContent']['output'];
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime']['output'];
   enabled: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
   localizationId: Scalars['String']['output'];
-  localized: Scalars['JSON']['output'];
+  localized: Scalars['LocalizedContent']['output'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime']['output'];
   version?: Maybe<Version>;

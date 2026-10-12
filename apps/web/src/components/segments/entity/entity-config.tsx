@@ -15,6 +15,7 @@ import {
   type Segment,
   type Segment as SegmentType,
 } from '@usertour/types';
+import type { BizOrder } from '@usertour/gql';
 import { useUserListQuery, useCompanyListQuery } from '@usertour/hooks';
 import { userListState, companyListState } from './entity-list-state';
 import { Group2LineIcon } from '@usertour/icons';
@@ -31,7 +32,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 export type EntityKind = 'user' | 'company';
 
-export type EntityListQueryFn<TRow> = CursorListQueryFn<TRow>;
+export type EntityListQueryFn<TRow> = CursorListQueryFn<TRow, BizOrder>;
 
 export interface EntityAddToManualSegmentHookResult {
   add: (ids: string[], segment: SegmentType) => Promise<boolean>;

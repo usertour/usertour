@@ -1,12 +1,12 @@
 import { useMutation } from '@apollo/client';
 import { useCallback } from 'react';
 
-import type { VersionOnLocalization } from '@usertour/types';
 import {
   CreateLocalizationDocument,
   type CreateLocalizationInput,
   DeleteLocalizationDocument,
   ListVersionLocalizationsDocument,
+  type ListVersionLocalizationsQuery,
   SetDefaultLocalizationDocument,
   TranslateLocalizationUnitsDocument,
   type TranslateLocalizationUnitsInput,
@@ -75,13 +75,13 @@ export const useUpdateVersionLocalizationMutation = () => {
       const response = await mutation({
         variables: { data: input },
         update(cache, { data }) {
-          const saved = data?.updateVersionLocalization as VersionOnLocalization | undefined;
+          const saved = data?.updateVersionLocalization;
           if (!saved) {
             return;
           }
           cache.updateQuery(
             { query: ListVersionLocalizationsDocument, variables: { versionId: input.versionId } },
-            (existing: { listVersionLocalizations: VersionOnLocalization[] } | null) => {
+            (existing: ListVersionLocalizationsQuery | null) => {
               const rows = existing?.listVersionLocalizations;
               if (!rows || rows.some((row) => row.id === saved.id)) {
                 return existing ?? undefined;

@@ -1,9 +1,12 @@
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 
+import { AttributeBizTypeScalar } from './attribute-biz-type.scalar';
+import { AttributeDataTypeScalar } from './attribute-data-type.scalar';
+
 @ObjectType('Attribute')
 export class AttributeDTO extends BaseDTO {
-  @Field(() => Int)
+  @Field(() => AttributeBizTypeScalar)
   bizType: number;
 
   @Field(() => String)
@@ -21,7 +24,7 @@ export class AttributeDTO extends BaseDTO {
   @Field(() => String)
   description: string;
 
-  @Field(() => Int)
+  @Field(() => AttributeDataTypeScalar)
   dataType: number;
 
   /** Upper bound of a Random number attribute (ADR 0020); meaningless for other types. */

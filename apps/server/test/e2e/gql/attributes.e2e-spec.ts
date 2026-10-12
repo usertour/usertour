@@ -249,7 +249,7 @@ describe('GraphQL attributes (e2e)', () => {
 
       const res = await graphql(app, {
         token,
-        query: `query ($projectId: String!, $bizType: Int!) {
+        query: `query ($projectId: String!, $bizType: AttributeBizType!) {
           listAttributes(projectId: $projectId, bizType: $bizType) {
             id bizType projectId
           }
@@ -273,7 +273,7 @@ describe('GraphQL attributes (e2e)', () => {
 
       const res = await graphql(app, {
         token,
-        query: `query ($projectId: String!, $bizType: Int!) {
+        query: `query ($projectId: String!, $bizType: AttributeBizType!) {
           listAttributes(projectId: $projectId, bizType: $bizType) { id }
         }`,
         variables: { projectId, bizType: 0 },
@@ -288,7 +288,7 @@ describe('GraphQL attributes (e2e)', () => {
       // so the filtered list is empty.
       const res = await graphql(app, {
         token,
-        query: `query ($projectId: String!, $bizType: Int!) {
+        query: `query ($projectId: String!, $bizType: AttributeBizType!) {
           listAttributes(projectId: $projectId, bizType: $bizType) { id }
         }`,
         variables: { projectId, bizType: 4 },

@@ -552,7 +552,7 @@ export class AnalyticsService {
           completeEvent,
           tooltipTargetMissingEvent,
         )
-      : false;
+      : null;
     const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
     const viewsByBlock = await this.aggregationBlocksByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
@@ -593,12 +593,12 @@ export class AnalyticsService {
       },
     });
     if (!content) {
-      return false;
+      return null;
     }
 
     const versionId = resolveContentVersionId(content, environmentId);
     if (!versionId) {
-      return false;
+      return null;
     }
     const version = await this.prisma.version.findUnique({
       where: { id: versionId },
@@ -606,7 +606,7 @@ export class AnalyticsService {
     });
 
     if (!version) {
-      return false;
+      return null;
     }
 
     const environment = await this.prisma.environment.findUnique({

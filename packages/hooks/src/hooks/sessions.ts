@@ -1,6 +1,6 @@
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { BizSession, PageInfo, Pagination } from '@usertour/types';
+import type { BizSession, Pagination } from '@usertour/types';
 import {
   type AnalyticsOrder,
   type AnalyticsQuery,
@@ -17,18 +17,10 @@ import {
 // apps/web caller — same split as `useContentListQuery` /
 // `useContentList`.
 
-interface QueryBizSessionVariables {
-  environmentId: string;
-  contentId: string;
-  startDate?: string;
-  endDate?: string;
-  timezone?: string;
-}
-
 interface UseQueryBizSessionsArgs {
-  query: QueryBizSessionVariables;
+  query: AnalyticsQuery;
   pagination?: Pagination;
-  orderBy?: { field: string; direction: 'asc' | 'desc' };
+  orderBy?: AnalyticsOrder;
   options?: TypedQueryOptions<QueryBizSessionQuery, QueryBizSessionQueryVariables>;
 }
 
@@ -45,8 +37,8 @@ export const useQueryBizSessionsQuery = ({
     ...options,
     variables: {
       ...pagination,
-      query: query as AnalyticsQuery,
-      orderBy: orderBy as AnalyticsOrder,
+      query,
+      orderBy,
     },
   });
 
@@ -56,7 +48,7 @@ export const useQueryBizSessionsQuery = ({
   // any of them into `useCursorPagination` without per-entity
   // adapters. `networkStatus` exposed for `isRefetching` derivation.
   const contents = (connection?.edges?.map((edge) => edge.node) ?? []) as BizSession[];
-  const pageInfo = connection?.pageInfo as PageInfo | undefined;
+  const pageInfo = connection?.pageInfo;
   const totalCount: number = connection?.totalCount ?? 0;
 
   return { contents, pageInfo, totalCount, refetch, error, loading, networkStatus };
@@ -72,18 +64,10 @@ export const useQueryBizSessionsQuery = ({
 // handler then calls `refetch({ first, after, query, orderBy })`
 // page by page.
 
-interface ListSessionsDetailVariables {
-  environmentId: string;
-  contentId: string;
-  startDate?: string;
-  endDate?: string;
-  timezone?: string;
-}
-
 interface UseListSessionsDetailArgs {
-  query: ListSessionsDetailVariables;
+  query: AnalyticsQuery;
   pagination?: Pagination;
-  orderBy?: { field: string; direction: 'asc' | 'desc' };
+  orderBy?: AnalyticsOrder;
   options?: TypedQueryOptions<ListSessionsDetailQuery, ListSessionsDetailQueryVariables>;
 }
 
@@ -96,8 +80,8 @@ export const useListSessionsDetailQuery = ({
   const { data, refetch, error, loading } = useTypedQuery(ListSessionsDetailDocument, {
     variables: {
       ...pagination,
-      query: query as AnalyticsQuery,
-      orderBy: orderBy as AnalyticsOrder,
+      query,
+      orderBy,
     },
     ...options,
   });

@@ -36,13 +36,16 @@ export type LocalizedFlowContent = Record<string, ContentEditorRoot[]>;
  */
 export type LocalizedVersionData = Record<string, unknown>;
 
+/** A version's translated payload (the server's `LocalizedContent` scalar): the flow steps or the type-specific data. */
+export type LocalizedContent = LocalizedFlowContent | LocalizedVersionData;
+
 export type VersionOnLocalization = {
   id: string;
   versionId: string;
   enabled: boolean;
   localizationId: string;
-  localized: LocalizedFlowContent | LocalizedVersionData | null;
-  backup: LocalizedFlowContent | LocalizedVersionData | null;
+  localized: LocalizedContent | null;
+  backup: LocalizedContent | null;
   updatedAt: string;
   createdAt: string;
   /**

@@ -11,6 +11,7 @@ import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';
 import { DownloadIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { AnalyticsQuery } from '@usertour/gql';
 
 const PAGE_SIZE = 10;
 
@@ -25,16 +26,18 @@ export const AnalyticsSessions = () => {
   // render, so the next useQuery fires with the new query AND a
   // fresh cursor in one round trip. `useMemo` keeps the reference
   // stable across renders that don't actually change the shape.
-  const query = useMemo(
+  const query = useMemo<AnalyticsQuery>(
     () => ({
       environmentId: environment?.id ?? '',
       contentId,
-      startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : undefined,
-      endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
+      // skip guards the environment and the two dates.
+      startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '',
+      endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '',
       timezone,
     }),
     [environment?.id, contentId, dateRange?.from, dateRange?.to, timezone],
   );
+  const hasDateRange = Boolean(dateRange?.from && dateRange?.to);
 
   const {
     rows: bizSessions,
@@ -49,7 +52,7 @@ export const AnalyticsSessions = () => {
     query,
     useListQuery: useQueryBizSessionsQuery,
     defaultPageSize: PAGE_SIZE,
-    skip: !environment?.id,
+    skip: !environment?.id || !hasDateRange,
     options: SHARED_CACHE_QUERY_OPTIONS,
   });
 

@@ -86,7 +86,7 @@ export class ApiAnalyticsService {
       range.domainEndDate,
       range.timezone,
     );
-    // Domain returns `false` when no version exists yet — no questions, not an error.
+    // Domain returns `null` when no version exists yet — no questions, not an error.
     return {
       results: Array.isArray(raw)
         ? mapQuestionAnalytics(raw, range.timezone, resolveRollingWindows(content.config))

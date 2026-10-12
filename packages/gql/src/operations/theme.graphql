@@ -12,7 +12,12 @@ query getTheme($themeId: String!) {
   }
 }
 
-mutation createTheme($name: String!, $projectId: String!, $settings: JSON!, $isDefault: Boolean!) {
+mutation createTheme(
+  $name: String!
+  $projectId: String!
+  $settings: ThemeSettings!
+  $isDefault: Boolean!
+) {
   createTheme(
     data: { name: $name, projectId: $projectId, settings: $settings, isDefault: $isDefault }
   ) {
@@ -23,9 +28,9 @@ mutation createTheme($name: String!, $projectId: String!, $settings: JSON!, $isD
 mutation updateTheme(
   $id: String!
   $name: String!
-  $settings: JSON
+  $settings: ThemeSettings
   $isDefault: Boolean
-  $variations: JSON
+  $variations: [ThemeVariation!]
 ) {
   updateTheme(
     data: {

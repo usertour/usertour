@@ -3,6 +3,8 @@
 // chunk on its next lazy import and throws "Failed to fetch dynamically imported
 // module". Reloading pulls the fresh index.html (and the new chunk names), so we
 // recover automatically instead of showing the router's raw error page.
+// The Apollo error link reloads the same way when the server rejects one of
+// this build's GraphQL documents: a schema moved on under a stale build.
 
 // Per-engine wording for the same failure.
 const STALE_CHUNK_MESSAGES = [

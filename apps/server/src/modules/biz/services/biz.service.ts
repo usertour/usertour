@@ -422,10 +422,11 @@ export class BizService {
     if (updates.columns !== undefined) {
       data.columns = normalizeSegmentColumns(updates.columns);
     }
-    return await this.prisma.segment.update({
+    const updated = await this.prisma.segment.update({
       where: { id },
       data,
     });
+    return { ...updated, columns: normalizeSegmentColumns(updated.columns) };
   }
 
   /**

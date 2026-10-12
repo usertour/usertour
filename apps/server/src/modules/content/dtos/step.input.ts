@@ -4,6 +4,10 @@ import { IsNotEmpty } from 'class-validator';
 import GraphQLJSON from 'graphql-type-json';
 
 import type { StepDraft } from '../types/step-draft.type';
+import { StepScreenshotScalar } from './step-screenshot.scalar';
+import { StepSettingsScalar } from './step-settings.scalar';
+import { StepTargetScalar } from './step-target.scalar';
+import { StepTriggerScalar } from './step-trigger.scalar';
 
 @InputType()
 export class StepInput implements StepDraft {
@@ -29,14 +33,14 @@ export class StepInput implements StepDraft {
   @IsNotEmpty()
   type: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => StepScreenshotScalar, { nullable: true })
   screenshot?: JsonValue;
 
   @Field({ nullable: true })
   @IsNotEmpty()
   themeId?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => StepSettingsScalar, { nullable: true })
   setting?: JsonValue;
 
   @IsNotEmpty()
@@ -44,10 +48,10 @@ export class StepInput implements StepDraft {
   data?: JsonValue;
 
   @IsNotEmpty()
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [StepTriggerScalar], { nullable: true })
   trigger?: JsonValue;
 
   @IsNotEmpty()
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => StepTargetScalar, { nullable: true })
   target?: JsonValue;
 }

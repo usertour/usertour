@@ -9,8 +9,11 @@ export class EventsDTO extends BaseDTO {
   @Field(() => String)
   codeName: string;
 
-  @Field(() => String, { nullable: true })
-  description?: string;
+  // Non-optional on purpose: the Prisma column defaults to '', so a stored
+  // event always has a description. CreateEventInput overrides this field
+  // back to optional — creation may omit it and take the default.
+  @Field(() => String)
+  description: string;
 
   @Field(() => Boolean, { nullable: true })
   deleted?: boolean;

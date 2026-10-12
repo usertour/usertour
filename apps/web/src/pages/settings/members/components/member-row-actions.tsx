@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeftRightIcon } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
 import { Delete2Icon, EditIcon } from '@usertour/icons';
-import { Capability, type TeamMember, TeamMemberRole } from '@usertour/types';
+import { Capability, type TeamMember, Role } from '@usertour/types';
 import { ResourceRowActions, type ResourceRowActionItem } from '@usertour/ui';
 import { MemberCancelInviteDialog } from './member-cancel-invite-dialog';
 import { MemberChangeRoleDialog } from './member-change-role-dialog';
@@ -24,7 +24,7 @@ export const MemberRowActions = (props: MemberRowActionsProps) => {
   const [transferOwnerOpen, setTransferOwnerOpen] = useState(false);
 
   const projectId = project?.id as string;
-  const isOwner = data.role === TeamMemberRole.OWNER;
+  const isOwner = data.role === Role.OWNER;
   const canManage = can(Capability.TeamManage);
   // Only the OWNER can hand the project on; an ADMIN never sees the entry.
   const canTransfer = can(Capability.TeamTransferOwnership);

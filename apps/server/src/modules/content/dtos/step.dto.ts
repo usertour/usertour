@@ -3,6 +3,10 @@ import { JsonArray, JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
+import { StepScreenshotScalar } from './step-screenshot.scalar';
+import { StepSettingsScalar } from './step-settings.scalar';
+import { StepTargetScalar } from './step-target.scalar';
+import { StepTriggerScalar } from './step-trigger.scalar';
 
 @ObjectType('Step')
 export class StepDTO extends BaseDTO {
@@ -30,15 +34,15 @@ export class StepDTO extends BaseDTO {
   @Field(() => GraphQLJSON, { nullable: true })
   data?: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => StepTargetScalar, { nullable: true })
   target?: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [StepTriggerScalar], { nullable: true })
   trigger?: JsonArray;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => StepScreenshotScalar, { nullable: true })
   screenshot?: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => StepSettingsScalar, { nullable: true })
   setting?: JsonValue;
 }

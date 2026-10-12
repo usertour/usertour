@@ -22,7 +22,7 @@ mutation updateAttribute($data: UpdateAttributeInput!) {
   }
 }
 
-query listAttributes($projectId: String!, $bizType: Int!) {
+query listAttributes($projectId: String!, $bizType: AttributeBizType!) {
   listAttributes(projectId: $projectId, bizType: $bizType) {
     id
     bizType

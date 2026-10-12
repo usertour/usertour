@@ -19,25 +19,25 @@ import {
   FormMessage,
   Label,
 } from '@usertour/ui';
-import { TeamMemberRole } from '@usertour/types';
+import { Role } from '@usertour/types';
 import { z } from 'zod';
 
 // Owner is granted via the transfer-ownership flow, never here.
 export const INVITABLE_ROLE_OPTIONS = [
-  { value: TeamMemberRole.ADMIN, i18nKey: 'settings.team.roles.admin' },
-  { value: TeamMemberRole.EDITOR, i18nKey: 'settings.team.roles.editor' },
-  { value: TeamMemberRole.VIEWER, i18nKey: 'settings.team.roles.viewer' },
+  { value: Role.ADMIN, i18nKey: 'settings.team.roles.admin' },
+  { value: Role.EDITOR, i18nKey: 'settings.team.roles.editor' },
+  { value: Role.VIEWER, i18nKey: 'settings.team.roles.viewer' },
 ] as const;
 
 const ROLE_DESCRIPTION_KEYS: Record<string, string> = {
-  [TeamMemberRole.ADMIN]: 'settings.team.roleDescriptions.admin',
-  [TeamMemberRole.EDITOR]: 'settings.team.roleDescriptions.editor',
-  [TeamMemberRole.VIEWER]: 'settings.team.roleDescriptions.viewer',
+  [Role.ADMIN]: 'settings.team.roleDescriptions.admin',
+  [Role.EDITOR]: 'settings.team.roleDescriptions.editor',
+  [Role.VIEWER]: 'settings.team.roleDescriptions.viewer',
 };
 
 /** The role + publish-whitelist fields shared by the invite and change-role dialogs. */
 export const memberRoleFieldsSchema = z.object({
-  role: z.string(),
+  role: z.nativeEnum(Role),
   // EDITOR only: environments the member may publish to. Ignored for other
   // roles (the server clears it); an empty list is a valid "publishes nowhere".
   allowedEnvironmentIds: z.array(z.string()),
@@ -109,7 +109,7 @@ export const MemberRoleFields = (props: MemberRoleFieldsProps) => {
           );
         }}
       />
-      {role === TeamMemberRole.EDITOR ? (
+      {role === Role.EDITOR ? (
         <FormField
           control={control}
           name="allowedEnvironmentIds"

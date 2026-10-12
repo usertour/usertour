@@ -1,6 +1,6 @@
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { DefinitionReference, DefinitionReferenceKind } from '@usertour/types';
+import type { DefinitionReferenceKind } from '@usertour/types';
 import {
   ListDefinitionReferencesDocument,
   type ListDefinitionReferencesQuery,
@@ -26,6 +26,6 @@ export const useListDefinitionReferencesQuery = (
     skip: !projectId || !id,
     ...options,
   });
-  const references = data?.listDefinitionReferences as DefinitionReference[] | undefined;
+  const references = data?.listDefinitionReferences;
   return { references, loading, error };
 };
