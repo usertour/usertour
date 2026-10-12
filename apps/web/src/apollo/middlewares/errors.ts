@@ -4,6 +4,7 @@ import type { GraphQLFormattedError } from 'graphql';
 import posthog from 'posthog-js';
 import { NOTIFIES_OWN_FAILURES } from '@usertour/hooks';
 import { apiUrl } from '@/utils/env';
+import { reloadForStaleChunkOnce } from '@/utils/stale-chunk';
 import { reportNetworkFailure } from '../network-errors';
 
 let isRefreshing = false;
@@ -112,6 +113,14 @@ export const errorLink = onError(({ graphQLErrors, networkError, operation, forw
       }
       window.location.href = '/';
       return;
+    }
+
+    if (error.extensions?.code === 'GRAPHQL_VALIDATION_FAILED') {
+      // Every document was validated against the schema at build time, so a
+      // document the server rejects now means the server moved on and this
+      // tab runs a stale build. Reload for the current one, under the same
+      // loop guard as a rotated chunk; the error still reaches the caller.
+      reloadForStaleChunkOnce();
     }
 
     for (const graphQLError of graphQLErrors) {
