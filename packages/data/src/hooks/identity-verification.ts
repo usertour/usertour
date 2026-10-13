@@ -15,7 +15,7 @@ import {
   type SigningSecretFieldsFragment,
   ValidateIdentityTokenDocument,
   type ValidateIdentityTokenQuery,
-} from '@usertour/gql';
+} from '../graphql';
 
 /** `secret` is masked in list responses; the full value only comes from create/get. */
 export type SigningSecret = SigningSecretFieldsFragment;

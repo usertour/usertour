@@ -28,7 +28,7 @@ import {
   type StartTwoFactorSetupMutation,
   StartTwoFactorSetupWithChallengeDocument,
   VerifyTwoFactorDocument,
-} from '@usertour/gql';
+} from '../graphql';
 
 // Session / identity ---------------------------------------------------------
 

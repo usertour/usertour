@@ -8,7 +8,7 @@ import { UserDetailContent } from '@/pages/users/components/user-detail-content'
 import { CompanyDetailContent } from '@/pages/companies/components/company-detail-content';
 import type { CursorListQueryFn } from '@/hooks/use-cursor-pagination';
 import { type Attribute, AttributeBizTypes } from '@usertour/types';
-import type { BizOrder, SegmentBizType } from '@usertour/gql';
+import type { BizOrder, SegmentBizType } from '@usertour/data';
 import {
   useUserListQuery,
   useCompanyListQuery,

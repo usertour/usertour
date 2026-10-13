@@ -34,7 +34,6 @@
     "@usertour/business-components": "workspace:^",
     "@usertour/constants": "workspace:^",
     "@usertour/editor": "workspace:^",
-    "@usertour/gql": "workspace:^",
     "@usertour/helpers": "workspace:^",
     "@usertour/data": "workspace:^",
     "@usertour/i18n": "workspace:^",

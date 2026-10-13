@@ -1,5 +1,5 @@
 import { useApolloClient } from '@apollo/client';
-import { CreatePresignedUrlDocument } from '@usertour/gql';
+import { CreatePresignedUrlDocument } from '../graphql';
 
 // Presigned-URL upload. getPresignedUrl asks the API (CreatePresignedUrlDocument
 // mutation) for a signed S3 PUT URL + its CDN URL, then PUTs the file straight

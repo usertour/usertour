@@ -13,7 +13,7 @@ import {
   type ListEventsQueryVariables,
   UpdateEventDocument,
   type UpdateEventInput,
-} from '@usertour/gql';
+} from '../graphql';
 
 export type { CreateEventInput, UpdateEventInput };
 

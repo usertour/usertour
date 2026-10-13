@@ -2,7 +2,7 @@ import { useCreateSegmentMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { CreateSegmentFormValues } from '@/components/segments/segment-form-schema';
-import type { CreatSegment } from '@usertour/gql';
+import type { CreatSegment } from '@usertour/data';
 
 interface CreateCompanySegmentResult {
   success: boolean;

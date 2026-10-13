@@ -11,7 +11,7 @@ import {
   QueryBizSessionDocument,
   type QueryBizSessionQuery,
   type QueryBizSessionQueryVariables,
-} from '@usertour/gql';
+} from '../graphql';
 
 /** A session as the session list, the user's session list and the session detail return it (the `BizSessionFields` fragment). */
 export type BizSession = BizSessionFieldsFragment;

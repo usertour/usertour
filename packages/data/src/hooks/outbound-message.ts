@@ -1,4 +1,4 @@
-import type { QueryWebhookMessagesQuery } from '@usertour/gql';
+import type { QueryWebhookMessagesQuery } from '../graphql';
 
 /**
  * The outbound delivery ledger's read-side shapes, shared by both transports

@@ -32,7 +32,7 @@ import {
   type QueryContentQueryVariables,
   RestoreContentVersionDocument,
   UnpublishedContentVersionDocument,
-} from '@usertour/gql';
+} from '../graphql';
 
 // Domain wrappers for content-detail / version / localization queries.
 // Lives outside the catch-all `gql.ts` per the convention established

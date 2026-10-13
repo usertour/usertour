@@ -19,7 +19,7 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useAppContext } from '@/contexts/app-context';
 import { buildExportPayload } from './export-csv.utils';
 import { useTranslation } from 'react-i18next';
-import type { AnalyticsOrder, AnalyticsQuery } from '@usertour/gql';
+import type { AnalyticsOrder, AnalyticsQuery } from '@usertour/data';
 
 type ExportDropdownMenuProps = {
   children: ReactNode;

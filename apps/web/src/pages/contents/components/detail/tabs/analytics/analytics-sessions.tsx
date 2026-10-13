@@ -11,7 +11,7 @@ import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';
 import { DownloadIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { AnalyticsQuery } from '@usertour/gql';
+import type { AnalyticsQuery } from '@usertour/data';
 
 const PAGE_SIZE = 10;
 

@@ -37,7 +37,7 @@ import {
   QueryTrackerUsersDocument,
   type QueryTrackerUsersQuery,
   type QueryTrackerUsersQueryVariables,
-} from '@usertour/gql';
+} from '@usertour/data';
 
 const PAGE_SIZES = [10, 20, 30, 40, 50];
 

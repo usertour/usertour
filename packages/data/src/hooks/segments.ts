@@ -6,7 +6,7 @@ import {
   type ListSegmentQuery,
   type ListSegmentQueryVariables,
   type SegmentFieldsFragment,
-} from '@usertour/gql';
+} from '../graphql';
 
 /** A segment as the segment list returns it (the `SegmentFields` fragment). */
 export type Segment = SegmentFieldsFragment;

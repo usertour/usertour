@@ -7,7 +7,7 @@ import {
   QueryTooltipTargetMissingSessionsDocument,
   type QueryTooltipTargetMissingSessionsQuery,
   type TooltipTargetMissingQuery,
-} from '@usertour/gql';
+} from '../graphql';
 
 export type { TooltipTargetMissingQuery };
 

@@ -1,4 +1,23 @@
 export * from './hooks/auth';
+// The generated contract (ADR 0021) stays inside the package: the hooks read
+// it through `./graphql`, and the dashboard gets the domain types the hooks
+// export. The pieces below are the exceptions the dashboard still reads raw —
+// input types and enums it builds variables with, and three documents it
+// runs through Apollo itself. Each document here is a hook the dashboard
+// does not have yet; wrapping it removes the export.
+export type {
+  AnalyticsOrder,
+  AnalyticsQuery,
+  BizOrder,
+  ContentVersionInput,
+  CreatSegment,
+  OutboundMessageStatus,
+  QueryTrackerUsersQuery,
+  QueryTrackerUsersQueryVariables,
+  SegmentBizType,
+  VersionInput,
+} from './graphql';
+export { CreatePresignedUrlDocument, MeDocument, QueryTrackerUsersDocument } from './graphql';
 // The query layer (ADR 0021): typed documents in, one query state out.
 export * from './query';
 export * from './hooks/gql';

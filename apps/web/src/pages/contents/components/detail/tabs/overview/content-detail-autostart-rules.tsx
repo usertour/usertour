@@ -1,4 +1,4 @@
-import type { SegmentBizType } from '@usertour/gql';
+import type { SegmentBizType } from '@usertour/data';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useEventList } from '@/hooks/use-event-list';
 import { useSegmentList } from '@/hooks/use-segment-list';

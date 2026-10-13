@@ -31,7 +31,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { EntityDataTableToolbar } from './entity-data-table-toolbar';
 import type { EntityConfig } from './entity-config';
-import type { BizOrder } from '@usertour/gql';
+import type { BizOrder } from '@usertour/data';
 
 interface EntityRow {
   id: string;

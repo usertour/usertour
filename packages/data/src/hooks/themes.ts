@@ -16,7 +16,7 @@ import {
   type ThemeFieldsFragment,
   UpdateThemeDocument,
   type UpdateThemeMutationVariables,
-} from '@usertour/gql';
+} from '../graphql';
 
 /** A theme as the theme queries and the update return it (the `ThemeFields` fragment). */
 export type Theme = ThemeFieldsFragment;

@@ -1,4 +1,4 @@
-import type { SegmentBizType } from '@usertour/gql';
+import type { SegmentBizType } from '@usertour/data';
 import type { Segment } from '@usertour/data';
 import { catalogEntryForSource } from '@usertour/constants';
 

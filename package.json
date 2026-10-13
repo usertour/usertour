@@ -24,7 +24,7 @@
     "format:fix": "biome format . --write",
     "check": "biome check .",
     "check:fix": "biome check . --write",
-    "gql:generate": "pnpm --filter @usertour/server schema:emit && pnpm --filter @usertour/gql generate",
+    "gql:generate": "pnpm --filter @usertour/server schema:emit && pnpm --filter @usertour/data generate",
     "prepare": "husky install"
   },
   "devDependencies": {

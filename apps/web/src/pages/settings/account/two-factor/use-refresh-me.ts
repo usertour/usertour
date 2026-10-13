@@ -1,5 +1,5 @@
 import { useApolloClient } from '@apollo/client';
-import { MeDocument } from '@usertour/gql';
+import { MeDocument } from '@usertour/data';
 
 /**
  * Force-refresh the `me` query after a 2FA state change so guards that

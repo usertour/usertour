@@ -11,7 +11,7 @@ import {
   useStartTwoFactorSetupMutation,
   useStartTwoFactorSetupWithChallengeMutation,
 } from '@usertour/data';
-import { MeDocument } from '@usertour/gql';
+import { MeDocument } from '@usertour/data';
 import { useApolloClient } from '@apollo/client';
 import { AuthCard } from './components/auth-card';
 import { resolveNextPath } from './components/use-auth-after-login';

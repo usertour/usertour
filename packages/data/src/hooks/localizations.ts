@@ -16,7 +16,7 @@ import {
   UpdateVersionLocalizationDocument,
   type UpdateVersionLocalizationInput as UpdateVersionLocalizationInputWire,
   type VersionTranslationUnitInput,
-} from '@usertour/gql';
+} from '../graphql';
 
 export type { CreateLocalizationInput, UpdateLocalizationInput };
 

@@ -9,7 +9,7 @@ import {
   QueryTrackerUsersDocument,
   type QueryTrackerUsersQuery,
   type QueryTrackerUsersQueryVariables,
-} from '@usertour/gql';
+} from '../graphql';
 
 // Domain wrapper for `queryContentAnalytics`. The date-range / preset
 // UI state lives in the apps/web `AnalyticsUIContext`; this wrapper

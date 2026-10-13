@@ -5,7 +5,7 @@ import {
   type OAuthConnectionsQuery,
   type OAuthConnectionsQueryVariables,
   RevokeOAuthConnectionDocument,
-} from '@usertour/gql';
+} from '../graphql';
 
 /**
  * A "connected app" — one active OAuth grant the user approved.

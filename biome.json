@@ -75,7 +75,7 @@
       "locate.ts",
       "webfonts.ts",
       "integrations/zapier/**",
-      "packages/gql/src/generated/**"
+      "packages/data/src/generated/**"
     ]
   }
 }

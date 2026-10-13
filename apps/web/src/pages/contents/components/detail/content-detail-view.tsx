@@ -1,4 +1,4 @@
-import type { SegmentBizType } from '@usertour/gql';
+import type { SegmentBizType } from '@usertour/data';
 import { ContentLoading } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { ContentDetailUIProvider } from '@/contexts/content-detail-ui-context';

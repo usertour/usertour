@@ -5,7 +5,7 @@ import { useApolloClient } from '@apollo/client';
 import { useToast } from '@usertour/ui';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { CreatePresignedUrlDocument } from '@usertour/gql';
+import { CreatePresignedUrlDocument } from '@usertour/data';
 
 interface RcUploadOption {
   file: File | Blob | string;

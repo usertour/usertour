@@ -10,14 +10,16 @@
     "clean": "rimraf dist .turbo",
     "typecheck": "tsc --noEmit",
     "build:fast": "tsup src",
+    "generate": "graphql-codegen --config codegen.cjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@apollo/client": "^3.7.17",
-    "@usertour/gql": "workspace:^",
+    "@graphql-typed-document-node/core": "3.2.0",
     "@usertour/types": "workspace:^",
     "@usertour/constants": "workspace:^",
+    "graphql": "^16.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-use": "^17.4.0"
@@ -26,6 +28,10 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
+    "@graphql-codegen/cli": "7.4.6",
+    "@graphql-codegen/typed-document-node": "7.1.1",
+    "@graphql-codegen/typescript": "6.1.2",
+    "@graphql-codegen/typescript-operations": "6.1.10",
     "@testing-library/react": "^14.3.1",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
