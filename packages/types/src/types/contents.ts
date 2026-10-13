@@ -248,6 +248,7 @@ export type ContentModalPlacementData = {
 // Other Types
 // ============================================================================
 
+/** An oEmbed answer as the server relays it: pixel sizes as numbers, 0 when the provider sent none. */
 export type ContentOmbedInfo = {
   html: string;
   width: number;

@@ -3,7 +3,7 @@ import { Button } from '@usertour/ui';
 import { Table } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { BulkRemoveFromSegmentDialog } from '..';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { useTranslation } from 'react-i18next';
 import type { EntityConfig } from './entity-config';

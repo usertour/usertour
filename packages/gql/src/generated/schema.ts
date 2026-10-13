@@ -854,15 +854,15 @@ export type GlobalConfig = {
   allowPrivateNetworkEgress: Scalars['Boolean']['output'];
   allowProjectLevelSubscriptionManagement: Scalars['Boolean']['output'];
   allowUserRegistration: Scalars['Boolean']['output'];
-  apiUrl?: Maybe<Scalars['String']['output']>;
+  apiUrl: Scalars['String']['output'];
   authProviders: Array<Scalars['String']['output']>;
   configuredOAuthProviders: Array<Scalars['String']['output']>;
   isSelfHostedMode: Scalars['Boolean']['output'];
   machineTranslationEnabled: Scalars['Boolean']['output'];
-  mcpServerUrl?: Maybe<Scalars['String']['output']>;
+  mcpServerUrl: Scalars['String']['output'];
   needsSystemAdminSetup: Scalars['Boolean']['output'];
   require2FA: Scalars['Boolean']['output'];
-  ssoCallbackUrl?: Maybe<Scalars['String']['output']>;
+  ssoCallbackUrl: Scalars['String']['output'];
 };
 
 export type IdentityTokenDiagnosisModel = {
@@ -1919,9 +1919,9 @@ export type OAuthConnection = {
 
 export type OEmbed = {
   __typename?: 'OEmbed';
-  height: Scalars['String']['output'];
+  height: Scalars['Int']['output'];
   html: Scalars['String']['output'];
-  width: Scalars['String']['output'];
+  width: Scalars['Int']['output'];
 };
 
 /** Possible directions in which to order a list of items when provided an `orderBy` argument. */

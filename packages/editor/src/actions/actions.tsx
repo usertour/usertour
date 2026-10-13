@@ -1,5 +1,5 @@
 import type { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 import { useMemo } from 'react';
 import { ActionList } from './action-list';
 import { ActionsProvider, type ActionsTranslator } from './actions-context';

@@ -10,7 +10,7 @@ import {
   useConfirmTwoFactorSetupWithChallengeMutation,
   useStartTwoFactorSetupMutation,
   useStartTwoFactorSetupWithChallengeMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { MeDocument } from '@usertour/gql';
 import { useApolloClient } from '@apollo/client';
 import { AuthCard } from './components/auth-card';

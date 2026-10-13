@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsDialogForm, useSettingsForm } from '@usertour/ui';
-import { useChangeTeamMemberRoleMutation } from '@usertour/hooks';
+import { useChangeTeamMemberRoleMutation } from '@usertour/data';
 import { type TeamMember, Role } from '@usertour/types';
 import { z } from 'zod';
 import { MemberRoleFields, memberRoleFieldsSchema } from './member-role-fields';

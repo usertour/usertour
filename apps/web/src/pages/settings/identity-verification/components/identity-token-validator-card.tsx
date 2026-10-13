@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Badge, Button, Input, useToast } from '@usertour/ui';
-import { type IdentityTokenDiagnosis, useValidateIdentityTokenLazyQuery } from '@usertour/hooks';
+import { type IdentityTokenDiagnosis, useValidateIdentityTokenLazyQuery } from '@usertour/data';
 
 export interface IdentityTokenValidatorCardProps {
   environmentId: string;

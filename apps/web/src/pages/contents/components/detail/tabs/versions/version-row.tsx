@@ -1,6 +1,6 @@
 import { Badge, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import type { ContentVersionListItem } from '@usertour/hooks';
+import type { ContentVersionListItem } from '@usertour/data';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { ContentVersionAction } from './content-version-action';

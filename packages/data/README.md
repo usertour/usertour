@@ -1,4 +1,4 @@
-# @usertour/hooks
+# @usertour/data
 
 GraphQL data-access hooks for the Usertour monorepo.
 
@@ -11,7 +11,7 @@ The architectural _why_ (boundary, rejected alternatives, triggers to revisit) l
 1. **Apollo wrappers** for GraphQL `DocumentNode`s from `@usertour/gql`. Each wrapper calls `useQuery` / `useMutation` / `useLazyQuery`, decodes the nested response shape, and returns a uniform signature:
    - **Queries** → `{ data, loading, error, refetch }`
    - **Mutations** → `{ invoke, loading, error }` where `invoke(args)` resolves with the unwrapped result
-2. **Cross-app React utilities** that depend only on React and on the wrappers above. Examples: `useDetectExtension`, `useTooltipTargetMissingSessions`.
+2. **Cross-app React utilities** that depend only on React and on the wrappers above. Example: `useTooltipTargetMissingSessions`.
 
 ## What does NOT go here
 

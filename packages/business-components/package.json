@@ -21,7 +21,7 @@
     "@usertour/gql": "workspace:^",
     "@usertour/icons": "workspace:^",
     "@usertour/react-use-size": "workspace:^",
-    "@usertour/hooks": "workspace:^",
+    "@usertour/data": "workspace:^",
     "@usertour/widget": "workspace:^",
     "@usertour/helpers": "workspace:^",
     "@usertour/tailwind": "workspace:^",

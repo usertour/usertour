@@ -3,7 +3,7 @@ import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { Card, CardContent, CardHeader, CardTitle, QuestionTooltip } from '@usertour/ui';
 import { AnalyticsGrowthIcon, AnalyticsUserIcon } from '@usertour/icons';
-import type { AnalyticsData } from '@usertour/hooks';
+import type { AnalyticsData } from '@usertour/data';
 import { ContentDataType } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsViewsSkeleton } from './analytics-skeleton';

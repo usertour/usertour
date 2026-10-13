@@ -25,7 +25,7 @@ import {
   SettingsDialogForm,
   useSettingsForm,
 } from '@usertour/ui';
-import { useInviteTeamMemberMutation } from '@usertour/hooks';
+import { useInviteTeamMemberMutation } from '@usertour/data';
 import { Role } from '@usertour/types';
 import { z } from 'zod';
 import { MemberRoleFields, memberRoleFieldsSchema } from './member-role-fields';

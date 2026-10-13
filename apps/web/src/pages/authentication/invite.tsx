@@ -5,7 +5,7 @@ import {
   useGetInviteQuery,
   useGetProjectSsoProvidersQuery,
   useGlobalConfigQuery,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { NotFound } from '@/routes/not-found';
 import { AuthCard } from './components/auth-card';
 import { SsoProviderButtons } from './components/sso-provider-buttons';

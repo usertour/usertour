@@ -1,5 +1,5 @@
 import { RiJavascriptFill, RiNpmjsFill } from '@usertour/icons';
-import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
+import { useGetUserEnvironmentsQuery } from '@usertour/data';
 import {
   InlineAlert,
   Label,

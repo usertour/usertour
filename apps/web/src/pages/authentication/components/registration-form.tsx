@@ -19,7 +19,7 @@ import * as z from 'zod';
 import { Link, useParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { useAcceptInviteMutation, useSignupMutation } from '@usertour/hooks';
+import { useAcceptInviteMutation, useSignupMutation } from '@usertour/data';
 import { useAuthAfterLogin } from './use-auth-after-login';
 
 interface SignUpFormProps {

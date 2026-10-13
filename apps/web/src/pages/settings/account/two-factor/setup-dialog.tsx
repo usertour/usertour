@@ -16,7 +16,7 @@ import {
   type TwoFactorSetupPayload,
   useConfirmTwoFactorSetupMutation,
   useStartTwoFactorSetupMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { downloadRecoveryCodes } from './download-codes';

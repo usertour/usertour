@@ -12,7 +12,7 @@ import {
   SettingsDialogForm,
   useSettingsForm,
 } from '@usertour/ui';
-import { useUpdateEnvironmentMutation } from '@usertour/hooks';
+import { useUpdateEnvironmentMutation } from '@usertour/data';
 import { Environment } from '@usertour/types';
 import { z } from 'zod';
 

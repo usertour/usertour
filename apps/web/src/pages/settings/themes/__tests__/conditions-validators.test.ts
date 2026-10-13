@@ -23,7 +23,7 @@ import {
   parseISOToParts,
 } from '../../../../../../../packages/business-components/src/components/conditions/types/time/utils';
 import type { Attribute, Content, RulesCondition } from '@usertour/types';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 
 // Pure-data tests — these mirror what the editors emit so a bad commit can't
 // silently slip a malformed condition past the save handler.

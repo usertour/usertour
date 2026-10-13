@@ -1,5 +1,5 @@
 import { ColorPicker } from '@usertour/ui';
-import { useCurrentUserId } from '@usertour/hooks';
+import { useCurrentUserId } from '@usertour/data';
 import { useTranslation } from 'react-i18next';
 
 type ThemeSelectColorProps = {

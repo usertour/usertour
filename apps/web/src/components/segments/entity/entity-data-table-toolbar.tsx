@@ -12,7 +12,7 @@ import { DataTableViewOptions } from '../table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { useListAttributesQuery, useUpdateSegmentMutation, type Segment } from '@usertour/hooks';
+import { useListAttributesQuery, useUpdateSegmentMutation, type Segment } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { isSyncedSegment } from '@/utils/segment';

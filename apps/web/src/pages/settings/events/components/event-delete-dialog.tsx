@@ -1,5 +1,5 @@
 import { Event } from '@usertour/types';
-import { useDeleteEventMutation } from '@usertour/hooks';
+import { useDeleteEventMutation } from '@usertour/data';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { Trans, useTranslation } from 'react-i18next';
 import { localizeDefinitionReferenceError } from '@/utils/definition-references';

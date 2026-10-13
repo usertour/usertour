@@ -2,7 +2,7 @@ import { NetworkStatus } from '@apollo/client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Shared shape for accumulator-style cursor-paginated queries in
-// @usertour/hooks (`useListContentsQuery`,
+// @usertour/data (`useListContentsQuery`,
 // `useListContentVersionsQuery`, the activity-feed wrapper). Each was
 // hand-rolling the same three pieces:
 //

@@ -1,4 +1,4 @@
-import { useDeleteBizCompanyOnSegmentMutation } from '@usertour/hooks';
+import { useDeleteBizCompanyOnSegmentMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

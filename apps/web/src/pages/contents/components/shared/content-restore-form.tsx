@@ -10,7 +10,7 @@ import {
   DialogTitle,
   useToast,
 } from '@usertour/ui';
-import { useRestoreContentVersionMutation } from '@usertour/hooks';
+import { useRestoreContentVersionMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentVersion } from '@usertour/types';
 import * as React from 'react';

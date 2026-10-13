@@ -2,7 +2,7 @@ import { CancelIcon, CheckmarkIcon, ClickIcon, EyeNoneIcon } from '@usertour/ico
 import { TooltipContent, Tooltip, TooltipTrigger, TooltipProvider } from '@usertour/ui';
 import { PlayIcon } from '@usertour/icons';
 import { BizEvents, ChecklistData, ChecklistItemType } from '@usertour/types';
-import { type BizSession } from '@usertour/hooks';
+import { type BizSession } from '@usertour/data';
 import { Event } from '@usertour/types';
 import { getProgressStatus } from '@/utils/session';
 import { isUndefined } from '@usertour/helpers';

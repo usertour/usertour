@@ -31,7 +31,7 @@
     "@usertour/ui": "workspace:^",
     "@usertour/types": "workspace:^",
     "@usertour/business-components": "workspace:^",
-    "@usertour/hooks": "workspace:^",
+    "@usertour/data": "workspace:^",
     "@hookform/resolvers": "^5.4.0",
     "react-hook-form": "^7.55.0",
     "zod": "^4.4.3",

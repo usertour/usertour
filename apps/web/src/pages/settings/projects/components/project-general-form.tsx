@@ -17,7 +17,7 @@ import {
   useSettingsForm,
   useToast,
 } from '@usertour/ui';
-import { useUpdateProjectMutation } from '@usertour/hooks';
+import { useUpdateProjectMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { ImageUploadWidget } from '@/components/upload';
 import * as z from 'zod';

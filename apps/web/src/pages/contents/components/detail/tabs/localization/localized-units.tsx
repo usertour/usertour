@@ -4,7 +4,7 @@ import {
   type LocalizedEmbedResolutions,
   getErrorMessage,
 } from '@usertour/helpers';
-import { useAws, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
+import { useAws, useQueryOembedInfoLazyQuery } from '@usertour/data';
 import { ImageEditIcon, RiSparkling2Line, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import type { ContentEditorEmebedElement, ResourceCenterData } from '@usertour/types';

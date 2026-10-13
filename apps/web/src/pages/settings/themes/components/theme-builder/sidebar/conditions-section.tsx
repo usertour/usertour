@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/data';
 import { WebZIndex } from '@usertour/constants';
 import { Conditions } from '@usertour/business-components';
 import { QuestionTooltip } from '@usertour/ui';

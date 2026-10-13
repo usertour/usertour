@@ -1,5 +1,7 @@
 # 0002: Hook organization and the `@usertour/hooks` boundary
 
+> Note (2026-10): the package described here was renamed to `@usertour/data`, and `useDetectExtension` / `useChecklistPreviewAnimation` have since left it. The text keeps the names of the time.
+
 - **Date:** 2026-05-17
 - **Status:** Accepted
 

@@ -23,7 +23,7 @@ import {
   useListAttributeOnEventsQuery,
   useListAttributesQuery,
   useUpdateEventMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { AttributeBizTypes } from '@usertour/types';
 import { CloseIcon, PlusIcon } from '@usertour/icons';
 import { type Attribute, type Event } from '@usertour/types';

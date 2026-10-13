@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useCurrentSegment } from '@/hooks/use-current-segment';
 import { filterSegmentsByTypeOrder } from '@/utils/segment';
-import { useListSegmentsQuery } from '@usertour/hooks';
+import { useListSegmentsQuery } from '@usertour/data';
 import { ScrollArea } from '@usertour/ui';
 import { useMemo } from 'react';
 import { EntityListContent } from './entity-list-content';

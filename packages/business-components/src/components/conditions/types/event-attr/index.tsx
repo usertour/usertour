@@ -1,5 +1,5 @@
 import { EventTrackerIcon } from '@usertour/icons';
-import { useListAttributeOnEventsQuery } from '@usertour/hooks';
+import { useListAttributeOnEventsQuery } from '@usertour/data';
 import {
   type Attribute,
   AttributeBizTypes,

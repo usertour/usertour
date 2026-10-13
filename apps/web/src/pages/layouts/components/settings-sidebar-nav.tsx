@@ -9,7 +9,7 @@ import {
   AdminSidebarHeaderTemplate,
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { useAppContext } from '@/contexts/app-context';
-import { useProjectHasEnvironmentAccessTokensQuery } from '@usertour/hooks';
+import { useProjectHasEnvironmentAccessTokensQuery } from '@usertour/data';
 import { Capability } from '@usertour/types';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useTranslation } from 'react-i18next';

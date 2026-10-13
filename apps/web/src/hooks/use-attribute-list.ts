@@ -1,4 +1,4 @@
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/data';
 import { AttributeBizTypes } from '@usertour/types';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';

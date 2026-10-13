@@ -1,4 +1,4 @@
-import { useGetThemeQuery, useUpdateThemeMutation } from '@usertour/hooks';
+import { useGetThemeQuery, useUpdateThemeMutation } from '@usertour/data';
 import { useToast, ContentLoading } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import type { ThemeTypesSetting, ThemeVariation } from '@usertour/types';

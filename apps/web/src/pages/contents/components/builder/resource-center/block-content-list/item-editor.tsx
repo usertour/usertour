@@ -16,7 +16,7 @@ import { RiArrowLeftSLine } from '@usertour/icons';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import {
   type ContentListItem,
   LauncherIconSource,

@@ -2,7 +2,7 @@ import { Observable } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 import type { GraphQLFormattedError } from 'graphql';
 import posthog from 'posthog-js';
-import { NOTIFIES_OWN_FAILURES } from '@usertour/hooks';
+import { NOTIFIES_OWN_FAILURES } from '@usertour/data';
 import { apiUrl } from '@/utils/env';
 import { reloadForStaleChunkOnce } from '@/utils/stale-chunk';
 import { reportNetworkFailure } from '../network-errors';

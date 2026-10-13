@@ -17,7 +17,7 @@ import * as z from 'zod';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { Link } from 'react-router-dom';
-import { useCreateMagicLinkMutation } from '@usertour/hooks';
+import { useCreateMagicLinkMutation } from '@usertour/data';
 import { useAppContext } from '@/contexts/app-context';
 import { AuthCard } from './components/auth-card';
 import {

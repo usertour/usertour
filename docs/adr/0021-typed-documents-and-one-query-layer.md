@@ -7,7 +7,7 @@
 
 The dashboard (`apps/web`) talks to the server through GraphQL, and the path from a server response to a rendered component is built by hand at every step.
 
-**The contract is transcribed, not generated.** `packages/gql` holds 190 hand-written documents across 27 files; `packages/hooks` wraps them in 183 hand-written hooks; the result shapes are hand-maintained TypeScript types in `@usertour/types`. No document carries a result type (`TypedDocumentNode` appears nowhere in the repository). What the schema says about nullability and shape never reaches the type checker: `UserProfile` does not even declare the `projects` array the `me` query returns, and a comment next to the access calls it "pragmatic loose access". The gap is papered over at the call sites — 26 `as unknown as` casts and 35 `Record<string, unknown>` reads in `apps/web/src`.
+**The contract is transcribed, not generated.** `packages/gql` holds 190 hand-written documents across 27 files; `packages/data` wraps them in 183 hand-written hooks; the result shapes are hand-maintained TypeScript types in `@usertour/types`. No document carries a result type (`TypedDocumentNode` appears nowhere in the repository). What the schema says about nullability and shape never reaches the type checker: `UserProfile` does not even declare the `projects` array the `me` query returns, and a comment next to the access calls it "pragmatic loose access". The gap is papered over at the call sites — 26 `as unknown as` casts and 35 `Record<string, unknown>` reads in `apps/web/src`.
 
 **Query state is decided per component.** The Apollo client sets `errorPolicy: 'all'` for every query, so a partially successful response is handed on as data. Each page then combines `loading`, `data` and `error` on its own: 38 `if (loading)` gates, 21 `loading && !data` guards (a rule people have to remember, because a broadcast refetch flips `loading` on a query that still has data), and the near-universal `list ?? []`. 157 hooks return `error`; 3 call sites read it. The effect is that a failed query renders as an **empty state** — "No events yet" — with no sign that anything failed. Mutations are the exception: 74 `try { … } catch { toast(getErrorMessage(error)) }` sites make their failures visible, by copy and paste.
 
@@ -29,7 +29,7 @@ No React hooks are generated. Hooks are where the rules of §2 live; generating 
 
 ### 2. One query layer decides loading, error, empty and ready
 
-A small set of generic hooks in `@usertour/hooks` — a list hook and a detail hook, taking a typed document, its variables and a few options — is the only way a page reads from the server. ADR 0002 already names that package the GraphQL data-access layer; this ADR replaces the per-operation wrappers it describes with these generic hooks, and replaces their uniform `{ data, loading, error, refetch }` signature with one discriminated state:
+A small set of generic hooks in `@usertour/data` — a list hook and a detail hook, taking a typed document, its variables and a few options — is the only way a page reads from the server. ADR 0002 already names that package the GraphQL data-access layer; this ADR replaces the per-operation wrappers it describes with these generic hooks, and replaces their uniform `{ data, loading, error, refetch }` signature with one discriminated state:
 
 | State | Meaning | Decided by |
 |---|---|---|
@@ -38,7 +38,7 @@ A small set of generic hooks in `@usertour/hooks` — a list hook and a detail h
 | `empty` | the server answered with nothing | a delivered empty list or a delivered `null` |
 | `ready` | data, with a `refreshing` flag while a refetch is in flight | everything else |
 
-The rules live here once: the `loading && !data` guard is the layer's definition of loading, not a convention; `errorPolicy` is `none` for a query unless it opts into `'all'` explicitly, so a partial response is an error and never flows as data; a failed query is logged and surfaced to the user once, with the operation named, unless the caller passes `onError` to take over; `empty` exists only when the server delivered emptiness. Surfacing an error needs a toast and translated copy, which the shared package does not import: the layer takes a notifier from a provider the application mounts (`apps/web` supplies its toast and `t`), and logs when none is mounted. `packages/business-components` and `packages/editor` consume the hooks package too and get the same layer through the same provider.
+The rules live here once: the `loading && !data` guard is the layer's definition of loading, not a convention; `errorPolicy` is `none` for a query unless it opts into `'all'` explicitly, so a partial response is an error and never flows as data; a failed query is logged and surfaced to the user once, with the operation named, unless the caller passes `onError` to take over; `empty` exists only when the server delivered emptiness. Surfacing an error needs a toast and translated copy, which the shared package does not import: the layer takes a notifier from a provider the application mounts (`apps/web` supplies its toast and `t`), and logs when none is mounted. `packages/business-components` and `packages/editor` consume the data package too and get the same layer through the same provider.
 
 The app-wide `errorPolicy` default flips from `'all'` to `'none'` when the first slice of §3 lands. Hooks not yet migrated then receive `data: undefined` plus `error` on failure — the same empty rendering they produce today — but partial data stops flowing as truth from that point on.
 
@@ -66,7 +66,7 @@ Making the URL the single source of truth for the active project and environment
 
 - A schema change that affects a selected field is a compile error in the dashboard, not a runtime surprise. Nullability in particular becomes visible: `data.me.projects` is `Array | null` to the type checker, and `?? []` has to be written knowingly.
 - A failed query is seen — once, named — instead of rendering as nothing. The three queries of §5 fail in place with a retry.
-- The guards and casts in Context disappear as slices land; `packages/hooks` shrinks to the mutation wrappers and whatever has not migrated yet.
+- The guards and casts in Context disappear as slices land; `packages/data` shrinks to the mutation wrappers and whatever has not migrated yet.
 - The migration is broad (190 documents, 183 hooks) but mechanical, reviewable per slice, and reversible per slice; nothing changes shape on the wire.
 - Two things get stricter and may surface latent bugs: `errorPolicy: 'none'` makes any partial response an error (today it is silently accepted), and the CI drift check blocks schema changes that forget to regenerate. Both are the point.
 
@@ -94,14 +94,14 @@ Catches the symptom at write time, not the cause. The cast and the fallback are 
 
 ## Triggers to Revisit
 
-- A consumer of `packages/hooks` needs different error presentation than the application's toast (an embedded editor, a second dashboard): the notifier provider is the seam; if it is not enough, split the layer's state decision from its notification.
+- A consumer of `packages/data` needs different error presentation than the application's toast (an embedded editor, a second dashboard): the notifier provider is the seam; if it is not enough, split the layer's state decision from its notification.
 - The migration of §3 stalls with both worlds alive for more than two releases: the half-state is worse than either end; decide to finish or revert the slices.
 - Apollo is replaced or the server stops publishing `schema.graphql`.
 - When the migration completes, revisit ADR 0006's split between the `no-cache` default and `SHARED_CACHE_QUERY_OPTIONS`: with one layer, one fetch policy per hook kind may be enough.
 
 ## References
 
-- ADR 0002 — hook organization and the `@usertour/hooks` boundary; §2 keeps its layer placement and replaces its per-operation wrappers and their uniform signature
+- ADR 0002 — hook organization and the `@usertour/data` boundary; §2 keeps its layer placement and replaces its per-operation wrappers and their uniform signature
 - ADR 0005, ADR 0006 — Apollo cache strategy, normalized cache and mutation updates
 - ADR 0015 — server layering (the schema this generates from)
 - PR #544 — an unreported project list is unknown, not empty (the hand-made instance of §2 and §5)

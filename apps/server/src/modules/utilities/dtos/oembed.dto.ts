@@ -1,13 +1,15 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('OEmbed')
 export class OEmbedDTO {
   @Field(() => String)
   html: string;
 
-  @Field(() => String)
-  width: string;
+  // The provider's pixel sizes, coerced to numbers by the service (some
+  // providers send them as strings); 0 when the provider sent none.
+  @Field(() => Int)
+  width: number;
 
-  @Field(() => String)
-  height: string;
+  @Field(() => Int)
+  height: number;
 }

@@ -1,5 +1,5 @@
 import type { Attribute, Content, Event, RulesCondition } from '@usertour/types';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 import { useMemo } from 'react';
 import { ConditionList } from './condition-list';
 import { ConditionsProvider, type ConditionsTranslator } from './conditions-context';

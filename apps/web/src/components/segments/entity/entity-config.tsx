@@ -15,7 +15,7 @@ import {
   type Segment,
   type BizCompany,
   type BizUser,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { userListState, companyListState } from './entity-list-state';
 import { Group2LineIcon } from '@usertour/icons';
 import type { ComponentType, ReactElement } from 'react';

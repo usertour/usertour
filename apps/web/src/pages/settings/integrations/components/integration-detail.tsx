@@ -18,7 +18,7 @@ import {
   useSendIntegrationTestEventMutation,
   useUpdateIntegrationInboundMutation,
   useUpsertIntegrationMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   RiDeleteBinLine,
   RiFileCopyLine,

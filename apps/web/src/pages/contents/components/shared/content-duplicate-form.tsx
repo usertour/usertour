@@ -20,7 +20,7 @@ import {
   Input,
   useToast,
 } from '@usertour/ui';
-import { useDuplicateContentMutation } from '@usertour/hooks';
+import { useDuplicateContentMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { Content, ContentDataType } from '@usertour/types';
 import * as React from 'react';

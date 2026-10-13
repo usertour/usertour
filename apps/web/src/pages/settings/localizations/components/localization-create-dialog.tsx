@@ -18,7 +18,7 @@ import {
   QuestionTooltip,
 } from '@usertour/ui';
 import { isResourceAlreadyExistsError } from '@usertour/helpers';
-import { useCreateLocalizationMutation } from '@usertour/hooks';
+import { useCreateLocalizationMutation } from '@usertour/data';
 import { z } from 'zod';
 
 interface LocalizationCreateDialogProps {

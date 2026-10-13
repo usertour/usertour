@@ -12,7 +12,7 @@ import {
   useGetContentVersionQuery,
   useListSessionsDetailQuery,
   type SessionExportRow,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { endOfDay, startOfDay } from 'date-fns';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useAttributeList } from '@/hooks/use-attribute-list';

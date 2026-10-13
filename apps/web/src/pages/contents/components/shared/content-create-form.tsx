@@ -19,7 +19,7 @@ import {
   Input,
   useToast,
 } from '@usertour/ui';
-import { useCreateContentMutation } from '@usertour/hooks';
+import { useCreateContentMutation } from '@usertour/data';
 import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/helpers';
 import { ContentDataType } from '@usertour/types';
 import {

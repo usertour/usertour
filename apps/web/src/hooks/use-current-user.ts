@@ -1,4 +1,4 @@
-import { type CurrentUser, useCurrentUserId, useGetUserInfoQuery } from '@usertour/hooks';
+import { type CurrentUser, useCurrentUserId, useGetUserInfoQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { resolveUserInfo } from './resolve-user-info';
 

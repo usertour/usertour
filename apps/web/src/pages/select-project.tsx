@@ -17,7 +17,7 @@ import {
 } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useActiveUserProjectMutation, useCreateOwnedProjectMutation } from '@usertour/hooks';
+import { useActiveUserProjectMutation, useCreateOwnedProjectMutation } from '@usertour/data';
 import { Project } from '@usertour/types';
 import { useAppContext } from '@/contexts/app-context';
 import { activeProjectOf } from '@/hooks/project-memberships';

@@ -18,7 +18,7 @@ import { resolveEditableVersionId } from '@/utils/content';
 import {
   useCreateContentVersionMutation,
   useUpdateVersionLocalizationMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   countMissingTranslations,
   countMissingVersionDataTranslations,

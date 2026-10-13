@@ -11,7 +11,7 @@ import {
   LoadingButton,
 } from '@usertour/ui';
 import type { CurrentConditions } from '@usertour/types';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 import { useAppContext } from '@/contexts/app-context';
 import type { EntityConfig } from './entity-config';
 

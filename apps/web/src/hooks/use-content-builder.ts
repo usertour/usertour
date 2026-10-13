@@ -3,7 +3,7 @@ import { resolveEditableVersionId } from '@/utils/content';
 import { Content } from '@usertour/types';
 import { useToast } from '@usertour/ui';
 import { useNavigate } from 'react-router-dom';
-import { useCreateContentVersionMutation } from '@usertour/hooks';
+import { useCreateContentVersionMutation } from '@usertour/data';
 
 export const useContentBuilder = () => {
   const navigate = useNavigate();

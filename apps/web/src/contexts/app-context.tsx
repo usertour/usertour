@@ -1,5 +1,5 @@
 import { Environment } from '@usertour/types';
-import type { CurrentUser } from '@usertour/hooks';
+import type { CurrentUser } from '@usertour/data';
 import { Capability, GlobalConfig, type Project } from '@usertour/types';
 import { ReactNode, createContext, useContext, useState } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';

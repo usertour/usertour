@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, Button, QuestionTooltip } from '@usertour/ui';
 import { useMemo } from 'react';
 import { endOfDay, startOfDay } from 'date-fns';
-import { useQueryBizSessionsQuery } from '@usertour/hooks';
+import { useQueryBizSessionsQuery } from '@usertour/data';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useAppContext } from '@/contexts/app-context';
 import { useCursorPagination } from '@/hooks/use-cursor-pagination';

@@ -25,7 +25,7 @@ import {
   SettingsDialogForm,
   useSettingsForm,
 } from '@usertour/ui';
-import { useCreateEnvironmentMutation } from '@usertour/hooks';
+import { useCreateEnvironmentMutation } from '@usertour/data';
 import { z } from 'zod';
 
 interface EnvironmentCreateDialogProps {

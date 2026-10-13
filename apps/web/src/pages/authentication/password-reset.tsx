@@ -17,7 +17,7 @@ import * as z from 'zod';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { useParams } from 'react-router-dom';
-import { useResetUserPasswordByCodeMutation } from '@usertour/hooks';
+import { useResetUserPasswordByCodeMutation } from '@usertour/data';
 import { useAppContext } from '@/contexts/app-context';
 import { AuthCard } from './components/auth-card';
 

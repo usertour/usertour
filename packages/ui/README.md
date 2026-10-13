@@ -3,7 +3,7 @@
 Single home for Usertour's L1 UI components — shadcn-style primitives plus
 the composition layer built on top of them. No business knowledge — anything
 that imports `@usertour/types` business types, `@usertour/contexts`, or
-`@usertour/hooks` mutations belongs further up the layering (see
+`@usertour/data` mutations belongs further up the layering (see
 `docs/architecture/packages.md` and `docs/conventions/module-boundaries.md`).
 
 ## Layout

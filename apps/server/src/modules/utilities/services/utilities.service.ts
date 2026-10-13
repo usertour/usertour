@@ -1,4 +1,5 @@
 import { oEmbedProviders } from '../constants/oembed-providers.constant';
+import { toPixels } from '../utils/oembed-size.util';
 import { isMatchUrlPattern } from '@usertour/helpers';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -77,12 +78,12 @@ export class UtilitiesService {
       if (resp.data) {
         return {
           html: resp.data.html,
-          width: resp.data.width,
-          height: resp.data.height,
+          width: toPixels(resp.data.width),
+          height: toPixels(resp.data.height),
         };
       }
     }
-    return { html: '', width: '', height: '' };
+    return { html: '', width: 0, height: 0 };
   }
 
   private getAuthProviders(): string[] {

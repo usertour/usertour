@@ -4,7 +4,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useCursorPagination } from '@/hooks/use-cursor-pagination';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useReactiveVar } from '@apollo/client';
-import { useListAttributesQuery, type Segment } from '@usertour/hooks';
+import { useListAttributesQuery, type Segment } from '@usertour/data';
 import {
   ColumnFiltersState,
   SortingState,

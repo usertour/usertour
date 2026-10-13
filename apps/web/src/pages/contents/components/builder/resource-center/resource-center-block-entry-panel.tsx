@@ -17,7 +17,7 @@ import { Callout } from '@/pages/contents/components/builder/shared/callout';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';

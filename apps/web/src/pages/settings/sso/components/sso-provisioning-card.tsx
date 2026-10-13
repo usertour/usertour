@@ -17,7 +17,7 @@ import {
   Switch,
   useSettingsForm,
 } from '@usertour/ui';
-import { type ProjectSsoSettings, useUpdateProjectSsoSettingsMutation } from '@usertour/hooks';
+import { type ProjectSsoSettings, useUpdateProjectSsoSettingsMutation } from '@usertour/data';
 import * as z from 'zod';
 
 // Auto-provisioning never hands out ADMIN (team management); a JIT-created

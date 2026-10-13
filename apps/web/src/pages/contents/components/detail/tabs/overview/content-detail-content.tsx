@@ -33,7 +33,7 @@ import {
   Step,
   ThemeTypesSetting,
 } from '@usertour/types';
-import type { Theme } from '@usertour/hooks';
+import type { Theme } from '@usertour/data';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

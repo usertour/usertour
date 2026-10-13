@@ -2,7 +2,7 @@ import { serverErrorMessage } from '@usertour/helpers';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Delete2Icon, RiEditLine, RiFileCopyLine } from '@usertour/icons';
-import { type SsoProvider, useDeleteSsoProviderMutation } from '@usertour/hooks';
+import { type SsoProvider, useDeleteSsoProviderMutation } from '@usertour/data';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';

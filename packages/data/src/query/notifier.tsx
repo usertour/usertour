@@ -17,7 +17,7 @@ const QueryErrorNotifierContext = createContext<QueryErrorNotifier>(logFailure);
 
 export interface QueryErrorNotifierProviderProps {
   /**
-   * How the application shows a failed query to the user. The hooks package
+   * How the application shows a failed query to the user. The data package
    * imports no toast and no translations (ADR 0002); the application mounts
    * this once with its own (ADR 0021 §2).
    */

@@ -1,6 +1,6 @@
 import { serverErrorMessage } from '@usertour/helpers';
 import type { LocalizationTranslationUnit } from '@usertour/helpers';
-import { useUpdateVersionLocalizationMutation } from '@usertour/hooks';
+import { useUpdateVersionLocalizationMutation } from '@usertour/data';
 import { useToast } from '@usertour/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

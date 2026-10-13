@@ -4,7 +4,7 @@ import { CLIENT_EVALUABLE_CONDITION_TYPES, Conditions } from '@usertour/business
 import { BooleanField, Label, SelectField, type SelectFieldOption, TextField } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
 import type { Attribute, Content, ContentVersion, Step } from '@usertour/types';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 import { RulesCondition, ButtonSemanticType } from '@usertour/types';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { WarningIcon } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
-import { type AccessToken, useListAccessTokensQuery } from '@usertour/hooks';
+import { type AccessToken, useListAccessTokensQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { ApiCreateDialog } from './components/api-create-dialog';
 import { ApiRowActions } from './components/api-row-actions';

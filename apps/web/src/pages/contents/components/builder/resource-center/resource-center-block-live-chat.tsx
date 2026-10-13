@@ -19,7 +19,7 @@ import { PopperEditorMini } from '@usertour/editor';
 import { CodeEditor } from '@usertour/ui';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { Trans, useTranslation } from 'react-i18next';
 import {
   LauncherIconSource,

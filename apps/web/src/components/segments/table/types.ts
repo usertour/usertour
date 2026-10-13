@@ -2,7 +2,7 @@
 
 import { ColumnDef, Table, Updater } from '@tanstack/react-table';
 import { ColumnSetting } from '@usertour/types';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 
 // Generic table props interface
 export interface DataTableProps<TData> {

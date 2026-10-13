@@ -1,4 +1,4 @@
-import { useGetContentLazyQuery } from '@usertour/hooks';
+import { useGetContentLazyQuery } from '@usertour/data';
 import { useCallback } from 'react';
 import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
 import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';

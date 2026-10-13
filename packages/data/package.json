@@ -1,5 +1,5 @@
 {
-  "name": "@usertour/hooks",
+  "name": "@usertour/data",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -17,7 +17,6 @@
     "@apollo/client": "^3.7.17",
     "@usertour/gql": "workspace:^",
     "@usertour/types": "workspace:^",
-    "@usertour/helpers": "workspace:^",
     "@usertour/constants": "workspace:^",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -3,7 +3,7 @@ import { isEqual } from 'lodash';
 import { useCallback, useMemo, useRef } from 'react';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
-import { useAws } from '@usertour/hooks';
+import { useAws } from '@usertour/data';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { LauncherContentMain } from '@/pages/contents/components/builder/launcher/components/launcher-content';
 import { PlusIcon } from '@usertour/icons';

@@ -4,7 +4,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentList } from '@/hooks/use-content-list';
 import { EmptyPlaceholder } from '@/components/segments/ui';
 import { ArrowRightIcon } from '@usertour/icons';
-import { useContentCount } from '@usertour/hooks';
+import { useContentCount } from '@usertour/data';
 import { getQueryType } from '@/utils/content';
 import { DataTable } from './data-table';
 import { useState, useCallback, useMemo, ReactNode, memo, useEffect } from 'react';

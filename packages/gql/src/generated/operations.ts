@@ -1391,12 +1391,12 @@ export type QueryOembedInfoQueryVariables = Exact<{
 }>;
 
 
-export type QueryOembedInfoQuery = { queryOembedInfo: { html: string, width: string, height: string } };
+export type QueryOembedInfoQuery = { queryOembedInfo: { html: string, width: number, height: number } };
 
 export type GlobalConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GlobalConfigQuery = { globalConfig: { isSelfHostedMode: boolean, apiUrl: string | null, mcpServerUrl: string | null, ssoCallbackUrl: string | null, allowUserRegistration: boolean, allowProjectLevelSubscriptionManagement: boolean, needsSystemAdminSetup: boolean, require2FA: boolean, machineTranslationEnabled: boolean, allowPrivateNetworkEgress: boolean, authProviders: Array<string>, configuredOAuthProviders: Array<string> } };
+export type GlobalConfigQuery = { globalConfig: { isSelfHostedMode: boolean, apiUrl: string, mcpServerUrl: string, ssoCallbackUrl: string, allowUserRegistration: boolean, allowProjectLevelSubscriptionManagement: boolean, needsSystemAdminSetup: boolean, require2FA: boolean, machineTranslationEnabled: boolean, allowPrivateNetworkEgress: boolean, authProviders: Array<string>, configuredOAuthProviders: Array<string> } };
 
 export type WebhookFieldsFragment = { id: string, createdAt: string, updatedAt: string, environmentId: string, url: string, topics: Array<string>, enabled: boolean, description: string | null, consecutiveFailures: number, cooldownUntil: string | null, autoDisabledAt: string | null };
 

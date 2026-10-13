@@ -20,7 +20,7 @@ import {
   type SsoProvider,
   useCreateOidcSsoProviderMutation,
   useUpdateSsoProviderMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { z } from 'zod';

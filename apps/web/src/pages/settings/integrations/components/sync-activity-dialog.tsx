@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { type IntegrationSyncRun, useListIntegrationSyncRunsQuery } from '@usertour/hooks';
+import { type IntegrationSyncRun, useListIntegrationSyncRunsQuery } from '@usertour/data';
 import { RiRefreshLine } from '@usertour/icons';
 import {
   Badge,

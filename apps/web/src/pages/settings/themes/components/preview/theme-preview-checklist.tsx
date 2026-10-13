@@ -1,4 +1,4 @@
-import { useChecklistPreviewAnimation } from '@usertour/hooks';
+import { useChecklistPreviewAnimation } from '@/hooks/use-checklist-preview-animation';
 import {
   ChecklistContainer,
   ChecklistDismiss,

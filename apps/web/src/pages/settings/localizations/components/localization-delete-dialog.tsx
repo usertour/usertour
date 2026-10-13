@@ -1,4 +1,4 @@
-import { useDeleteLocalizationMutation } from '@usertour/hooks';
+import { useDeleteLocalizationMutation } from '@usertour/data';
 import { Localization } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { Trans, useTranslation } from 'react-i18next';

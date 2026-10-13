@@ -17,7 +17,7 @@ import {
 } from '@usertour/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCreateAccessTokenMutation } from '@usertour/hooks';
+import { useCreateAccessTokenMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useAppContext } from '@/contexts/app-context';
 import { ApiKeyDialog } from './api-key-dialog';

@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
   useToast,
 } from '@usertour/ui';
-import { useUpdateProjectSsoSettingsMutation } from '@usertour/hooks';
+import { useUpdateProjectSsoSettingsMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 
 interface SsoEnforcementCardProps {

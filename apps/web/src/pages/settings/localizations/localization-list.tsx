@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useListLocalizationsQuery } from '@usertour/hooks';
+import { useListLocalizationsQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { Localization } from '@usertour/types';

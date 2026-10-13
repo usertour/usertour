@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useGetProjectConfigQuery, useListIntegrationsQuery } from '@usertour/hooks';
+import { useGetProjectConfigQuery, useListIntegrationsQuery } from '@usertour/data';
 import { Button, SettingsPage, Skeleton } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';

@@ -1,4 +1,4 @@
-import { useUpdateSegmentMutation, type Segment } from '@usertour/hooks';
+import { useUpdateSegmentMutation, type Segment } from '@usertour/data';
 import { conditionsIsSame, getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback, useEffect, useState } from 'react';

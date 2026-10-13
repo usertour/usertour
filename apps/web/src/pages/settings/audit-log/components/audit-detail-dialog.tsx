@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle } from '@usertour/ui';
-import type { AuditLog } from '@usertour/hooks';
+import type { AuditLog } from '@usertour/data';
 import { actorLabel } from '../format';
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (

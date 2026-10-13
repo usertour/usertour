@@ -1,6 +1,6 @@
 import { createOpenpicker, OpenpickerError } from '@openpicker/sdk';
 import { ElementPickerProvider, type PickElementFunction } from '@usertour/business-components';
-import { useUpdateContentMutation } from '@usertour/hooks';
+import { useUpdateContentMutation } from '@usertour/data';
 import { SpinnerIcon } from '@usertour/icons';
 import {
   Button,

@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useListAttributesQuery, type BizUser } from '@usertour/hooks';
+import { useListAttributesQuery, type BizUser } from '@usertour/data';
 import { useTranslation } from 'react-i18next';
 import { AttributeBizTypes } from '@usertour/types';
 import { useState } from 'react';

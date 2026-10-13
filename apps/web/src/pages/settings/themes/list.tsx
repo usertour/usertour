@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useListThemesQuery, type Theme } from '@usertour/hooks';
+import { useListThemesQuery, type Theme } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { NewItemButton, SettingsPage } from '@usertour/ui';
 import { ThemeListSkeleton } from './components/theme-list-skeleton';

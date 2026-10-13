@@ -1,5 +1,5 @@
 import { getErrorMessage } from '@usertour/helpers';
-import { type QueryFailure, QueryErrorNotifierProvider } from '@usertour/hooks';
+import { type QueryFailure, QueryErrorNotifierProvider } from '@usertour/data';
 import { useToast } from '@usertour/ui';
 import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

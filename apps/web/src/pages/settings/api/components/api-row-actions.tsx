@@ -7,7 +7,7 @@ import {
   type AccessToken,
   useDeleteAccessTokenMutation,
   useGetAccessTokenQuery,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { ApiKeyDialog } from './api-key-dialog';
