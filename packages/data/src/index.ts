@@ -21,6 +21,7 @@ export * from './hooks/gql';
 // New wrappers should land here, organised by settings section, rather
 // than growing `gql.ts` further.
 export * from './hooks/themes';
+export * from './hooks/utilities';
 export * from './hooks/storage';
 export * from './hooks/localizations';
 export * from './hooks/account';

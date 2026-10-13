@@ -1,5 +1,4 @@
-import type { SegmentBizType } from '@usertour/data';
-import { useListSegmentsQuery, type Segment } from '@usertour/data';
+import { useListSegmentsQuery, type SegmentBizType, type Segment } from '@usertour/data';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';

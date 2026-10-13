@@ -10,8 +10,8 @@ import {
   useConfirmTwoFactorSetupWithChallengeMutation,
   useStartTwoFactorSetupMutation,
   useStartTwoFactorSetupWithChallengeMutation,
+  useRefreshMe,
 } from '@usertour/data';
-import { useRefreshMe } from '@usertour/data';
 import { useApolloClient } from '@apollo/client';
 import { AuthCard } from './components/auth-card';
 import { resolveNextPath } from './components/use-auth-after-login';

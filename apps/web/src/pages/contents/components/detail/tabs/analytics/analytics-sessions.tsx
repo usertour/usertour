@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, Button, QuestionTooltip } from '@usertour/ui';
 import { useMemo } from 'react';
 import { endOfDay, startOfDay } from 'date-fns';
-import { useQueryBizSessionsQuery } from '@usertour/data';
+import { useQueryBizSessionsQuery, type AnalyticsQuery } from '@usertour/data';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useAppContext } from '@/contexts/app-context';
 import { useCursorPagination } from '@/hooks/use-cursor-pagination';
@@ -11,7 +11,6 @@ import { BizSessionsDataTable } from './data-table';
 import { ExportDropdownMenu } from './export-dropmenu';
 import { DownloadIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { AnalyticsQuery } from '@usertour/data';
 
 const PAGE_SIZE = 10;
 

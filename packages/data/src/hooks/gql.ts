@@ -7,10 +7,8 @@ import type {
   Pagination,
   TeamMember,
   AttributeBizTypes,
-  GlobalConfig,
   ColumnSetting,
   RulesCondition,
-  ContentOmbedInfo,
   ContentVersion,
 } from '@usertour/types';
 import {
@@ -115,7 +113,6 @@ import {
   type QueryContentQuery,
   type QueryContentQueryVariables,
   QueryContentQuestionAnalyticsDocument,
-  QueryOembedInfoDocument,
   QuerySessionDetailDocument,
   QuerySessionsByExternalIdDocument,
   RemoveTeamMemberDocument,
@@ -654,12 +651,6 @@ export const useGetSubscriptionUsageQuery = (
   return { usage, loading, error, refetch };
 };
 
-export const useGlobalConfigQuery = () => {
-  const { data, loading, error } = useTypedQuery(GlobalConfigDocument);
-  const globalConfig: GlobalConfig | undefined = data?.globalConfig;
-  return { data: globalConfig, loading, error };
-};
-
 export const useUpdateProjectMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpdateProjectDocument);
   const invoke = useCallback(
@@ -688,18 +679,6 @@ export const useGetContentLazyQuery = () => {
         throw response.error;
       }
       return response.data?.getContent;
-    },
-    [query],
-  );
-  return { invoke, loading, error };
-};
-
-export const useQueryOembedInfoLazyQuery = () => {
-  const [query, { loading, error }] = useLazyQuery(QueryOembedInfoDocument);
-  const invoke = useCallback(
-    async (url: string): Promise<ContentOmbedInfo | undefined> => {
-      const response = await query({ variables: { url } });
-      return response.data?.queryOembedInfo;
     },
     [query],
   );

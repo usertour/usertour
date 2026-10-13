@@ -1,0 +1,91 @@
+fragment BizEventFields on BizEvent {
+  id
+  createdAt
+  eventId
+  data
+  bizUserId
+  bizSessionId
+  bizCompanyId
+  event {
+    id
+    codeName
+    displayName
+    predefined
+  }
+}
+
+query queryBizUserEvents(
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+  $query: BizEventQuery!
+  $orderBy: BizOrder!
+) {
+  queryBizUserEvents(
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+    query: $query
+    orderBy: $orderBy
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        ...BizEventFields
+        bizCompany {
+          ...BizModelFields
+        }
+        bizUser {
+          ...BizModelFields
+        }
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+query queryBizCompanyEvents(
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+  $query: BizEventQuery!
+  $orderBy: BizOrder!
+) {
+  queryBizCompanyEvents(
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+    query: $query
+    orderBy: $orderBy
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        ...BizEventFields
+        bizCompany {
+          ...BizModelFields
+        }
+        bizUser {
+          ...BizModelFields
+        }
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}

@@ -1,0 +1,46 @@
+fragment ApiTokenFields on ApiToken {
+  id
+  name
+  partialKey
+  scopes
+  projectIds
+  environmentIds
+  isActive
+  expiresAt
+  lastUsedAt
+  createdAt
+}
+
+query ApiTokens {
+  apiTokens {
+    ...ApiTokenFields
+  }
+}
+
+mutation CreateApiToken($input: CreateApiTokenInput!) {
+  createApiToken(input: $input) {
+    token
+    apiToken {
+      ...ApiTokenFields
+    }
+  }
+}
+
+mutation UpdateApiToken($id: String!, $input: UpdateApiTokenInput!) {
+  updateApiToken(id: $id, input: $input) {
+    ...ApiTokenFields
+  }
+}
+
+mutation RotateApiToken($id: String!) {
+  rotateApiToken(id: $id) {
+    token
+    apiToken {
+      ...ApiTokenFields
+    }
+  }
+}
+
+mutation DeleteApiToken($id: String!) {
+  deleteApiToken(id: $id)
+}

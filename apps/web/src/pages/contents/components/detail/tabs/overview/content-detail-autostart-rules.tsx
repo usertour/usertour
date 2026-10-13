@@ -1,4 +1,4 @@
-import type { SegmentBizType } from '@usertour/data';
+import { useContentListQuery, type SegmentBizType } from '@usertour/data';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useEventList } from '@/hooks/use-event-list';
 import { useSegmentList } from '@/hooks/use-segment-list';
@@ -13,7 +13,6 @@ import {
   Conditions,
   validateConditions,
 } from '@usertour/business-components';
-import { useContentListQuery } from '@usertour/data';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
 import isEqual from 'fast-deep-equal';

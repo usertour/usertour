@@ -12,6 +12,8 @@ import {
   useGetContentVersionQuery,
   useListSessionsDetailQuery,
   type SessionExportRow,
+  type AnalyticsOrder,
+  type AnalyticsQuery,
 } from '@usertour/data';
 import { endOfDay, startOfDay } from 'date-fns';
 import { useContentDetail } from '@/hooks/use-content-detail';
@@ -19,7 +21,6 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useAppContext } from '@/contexts/app-context';
 import { buildExportPayload } from './export-csv.utils';
 import { useTranslation } from 'react-i18next';
-import type { AnalyticsOrder, AnalyticsQuery } from '@usertour/data';
 
 type ExportDropdownMenuProps = {
   children: ReactNode;

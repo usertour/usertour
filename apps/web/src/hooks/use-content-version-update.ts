@@ -1,8 +1,11 @@
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
-import { useCreateContentVersionMutation, useUpdateContentVersionMutation } from '@usertour/data';
-import type { VersionInput } from '@usertour/data';
+import {
+  useCreateContentVersionMutation,
+  useUpdateContentVersionMutation,
+  type VersionInput,
+} from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';
 import { useToast } from '@usertour/ui';
