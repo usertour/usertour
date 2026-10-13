@@ -6,7 +6,7 @@ import {
   QueryContentDocument,
   type QueryContentQuery,
   type QueryContentQueryVariables,
-} from '@usertour/gql';
+} from '../graphql';
 
 interface UseContentCountOptions {
   environmentId?: string;

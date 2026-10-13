@@ -4,7 +4,8 @@ import {
   type LocalizedEmbedResolutions,
   getErrorMessage,
 } from '@usertour/helpers';
-import { useAws, useQueryOembedInfoLazyQuery } from '@usertour/data';
+import { useQueryOembedInfoLazyQuery } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { ImageEditIcon, RiSparkling2Line, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import type { ContentEditorEmebedElement, ResourceCenterData } from '@usertour/types';
@@ -327,7 +328,7 @@ const DestinationUnitRow = (props: UnitRowProps) => {
 const ImageUnitRow = (props: UnitRowProps) => {
   const { unit, disabled, outdated, onOutdatedResolved, onUnitChange } = props;
   const { t } = useTranslation();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const [remoteImageUrl, setRemoteImageUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
 

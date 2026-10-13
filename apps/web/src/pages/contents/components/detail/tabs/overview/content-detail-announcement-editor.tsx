@@ -7,7 +7,8 @@ import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { isVersionPublished } from '@/utils/content';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws, useContentListQuery, type Theme } from '@usertour/data';
+import { useContentListQuery, type Theme } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { ContentEditor, type ContentEditorRoot } from '@usertour/editor';
 import { ContentEditorSerialize } from '@usertour/widget';
 import { buildConfig, convertSettings, convertToCssVars } from '@usertour/helpers';
@@ -473,7 +474,7 @@ const AnnouncementContentColumn = () => {
   const { version } = useContentVersion(content?.editedVersionId);
   const { isViewOnly, project, environment } = useAppContext();
   const { attributeList } = useAttributeList();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const { themeList } = useThemeList();
   const getOembedInfo = useOembedInfo();
 

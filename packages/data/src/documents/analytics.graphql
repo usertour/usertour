@@ -23,38 +23,6 @@ query queryContentAnalytics(
   }
 }
 
-query queryBizSession(
-  $first: Int
-  $last: Int
-  $after: String
-  $before: String
-  $query: AnalyticsQuery!
-  $orderBy: AnalyticsOrder!
-) {
-  queryBizSession(
-    first: $first
-    last: $last
-    after: $after
-    before: $before
-    query: $query
-    orderBy: $orderBy
-  ) {
-    totalCount
-    edges {
-      cursor
-      node {
-        ...BizSessionFields
-      }
-    }
-    pageInfo {
-      startCursor
-      endCursor
-      hasNextPage
-      hasPreviousPage
-    }
-  }
-}
-
 query queryContentQuestionAnalytics(
   $environmentId: String!
   $contentId: String!
@@ -69,53 +37,6 @@ query queryContentQuestionAnalytics(
     endDate: $endDate
     timezone: $timezone
   )
-}
-
-query listSessionsDetail(
-  $first: Int
-  $last: Int
-  $after: String
-  $before: String
-  $query: AnalyticsQuery!
-  $orderBy: AnalyticsOrder!
-) {
-  listSessionsDetail(
-    first: $first
-    last: $last
-    after: $after
-    before: $before
-    query: $query
-    orderBy: $orderBy
-  ) {
-    totalCount
-    edges {
-      cursor
-      node {
-        id
-        createdAt
-        progress
-        data
-        bizUserId
-        state
-        contentId
-        version {
-          sequence
-        }
-        bizUser {
-          ...BizUserFields
-        }
-        bizEvent {
-          ...BizEventFields
-        }
-      }
-    }
-    pageInfo {
-      startCursor
-      endCursor
-      hasNextPage
-      hasPreviousPage
-    }
-  }
 }
 
 query queryTooltipTargetMissingSessions(
@@ -170,38 +91,6 @@ query queryTooltipTargetMissingSessions(
       totalCompletions
       uniqueTooltipTargetMissingCount
       tooltipTargetMissingCount
-    }
-  }
-}
-
-query querySessionsByExternalId(
-  $first: Int
-  $last: Int
-  $after: String
-  $before: String
-  $query: SessionQuery!
-  $orderBy: AnalyticsOrder!
-) {
-  querySessionsByExternalId(
-    first: $first
-    last: $last
-    after: $after
-    before: $before
-    query: $query
-    orderBy: $orderBy
-  ) {
-    totalCount
-    edges {
-      cursor
-      node {
-        ...BizSessionFields
-      }
-    }
-    pageInfo {
-      startCursor
-      endCursor
-      hasNextPage
-      hasPreviousPage
     }
   }
 }

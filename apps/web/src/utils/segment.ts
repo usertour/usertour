@@ -1,5 +1,4 @@
-import type { SegmentBizType } from '@usertour/gql';
-import type { Segment } from '@usertour/data';
+import type { SegmentBizType, Segment } from '@usertour/data';
 import { catalogEntryForSource } from '@usertour/constants';
 
 /** True for a segment materialized by inbound cohort sync (ADR 0012). */

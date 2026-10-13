@@ -12,7 +12,7 @@ import {
   QueryBizUserEventsDocument,
   type QueryBizUserEventsQuery,
   type QueryBizUserEventsQueryVariables,
-} from '@usertour/gql';
+} from '../graphql';
 
 // Domain wrapper for `queryBizUserEvents` / `queryBizCompanyEvents`
 // activity-feed queries. Cursor pagination via Apollo's `fetchMore`

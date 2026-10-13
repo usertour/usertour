@@ -12,7 +12,7 @@ import {
   RotateApiTokenDocument,
   UpdateApiTokenDocument,
   type UpdateApiTokenInput as UpdateApiTokenInputWire,
-} from '@usertour/gql';
+} from '../graphql';
 
 export type ApiToken = ApiTokenFieldsFragment;
 

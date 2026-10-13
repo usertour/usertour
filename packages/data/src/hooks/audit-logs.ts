@@ -8,7 +8,7 @@ import {
   ListAuditLogsDocument,
   type ListAuditLogsQuery,
   type ListAuditLogsQueryVariables,
-} from '@usertour/gql';
+} from '../graphql';
 
 const AUDIT_LOG_PAGE_SIZE = 50;
 // Newest first. Sent explicitly (not relying on the server default) so the order

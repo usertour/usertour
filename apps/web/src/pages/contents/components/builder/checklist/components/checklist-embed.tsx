@@ -20,12 +20,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
 
 export const ChecklistEmbed = () => {
   const { data: localData, currentItem, updateData: updateLocalData } = useChecklistEditor();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const theme = useCurrentTheme({ fallbackToDefault: true });
   const { shouldShowMadeWith = true } = useBuilderConfig();
   const projectId = useProjectId();

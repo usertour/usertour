@@ -12,10 +12,6 @@ mutation resendMagicLink($id: String!) {
   }
 }
 
-mutation SignOut {
-  signOut @client
-}
-
 mutation Login($email: String!, $password: String!, $inviteCode: String) {
   login(data: { email: $email, password: $password, inviteCode: $inviteCode }) {
     accessToken

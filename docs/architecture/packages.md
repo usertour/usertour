@@ -39,7 +39,7 @@ doesn't relitigate the basics.
                                 │
                        ┌────────▼─────────┐
                        │ L2 Infrastructure│
-                       │   data · gql     │
+                       │       data       │
                        │  i18n · finder   │
                        │     widget       │
                        └────────┬─────────┘
@@ -190,7 +190,6 @@ segments and reaches the data layer — it belongs in L3, not L1.
 Data access, internationalization, runtime engines.
 
 - `@usertour/data` — the dashboard's data layer: typed GraphQL documents in, domain-typed hooks out (renamed from `@usertour/hooks`)
-- `@usertour/gql` — GraphQL operations and generated types
 - `@usertour/i18n` — translation bundles
 - `@usertour/finder` — element finder utility
 - `@usertour/assets` — static asset references

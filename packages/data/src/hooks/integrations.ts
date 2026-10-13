@@ -45,7 +45,7 @@ import {
   type UpsertIntegrationInput as UpsertIntegrationInputWire,
   UpsertIntegrationObjectMappingDocument,
   type UpsertIntegrationObjectMappingInput,
-} from '@usertour/gql';
+} from '../graphql';
 
 /**
  * `keyTail` is the configured key's last four characters; the key itself is

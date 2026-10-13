@@ -11,7 +11,14 @@ import {
   QueryBizSessionDocument,
   type QueryBizSessionQuery,
   type QueryBizSessionQueryVariables,
-} from '@usertour/gql';
+  DeleteSessionDocument,
+  EndSessionDocument,
+  QuerySessionDetailDocument,
+  QuerySessionsByExternalIdDocument,
+  type SessionQuery,
+} from '../graphql';
+import { useCallback } from 'react';
+import { useMutation } from '@apollo/client';
 
 /** A session as the session list, the user's session list and the session detail return it (the `BizSessionFields` fragment). */
 export type BizSession = BizSessionFieldsFragment;
@@ -95,4 +102,64 @@ export const useListSessionsDetailQuery = ({
     ...options,
   });
   return { data, refetch, error, loading };
+};
+
+export const useDeleteSessionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteSessionDocument);
+  const invoke = useCallback(
+    async (sessionId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { sessionId } });
+      return !!response.data?.deleteSession;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useEndSessionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(EndSessionDocument);
+  const invoke = useCallback(
+    async (sessionId: string): Promise<boolean> => {
+      const response = await mutation({ variables: { sessionId } });
+      return !!response.data?.endSession;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useQuerySessionDetailQuery = (sessionId: string) => {
+  const { data, loading, error, refetch } = useTypedQuery(QuerySessionDetailDocument, {
+    variables: { sessionId },
+  });
+
+  const session = data?.querySessionDetail;
+  return { session, loading, error, refetch };
+};
+
+export const useQuerySessionsByExternalIdQuery = (
+  query: SessionQuery,
+  pagination: Pagination = { first: 10 },
+  orderBy: AnalyticsOrder = { field: 'createdAt', direction: 'desc' },
+) => {
+  const { data, loading, refreshing, error, refetch } = useTypedQuery(
+    QuerySessionsByExternalIdDocument,
+    {
+      variables: {
+        query,
+        orderBy,
+        ...pagination,
+      },
+      // Reload goes through `refetch()`; without this the refetch window
+      // has `loading: false`, so the UI gets no in-flight signal.
+      notifyOnNetworkStatusChange: true,
+    },
+  );
+
+  const sessions = data?.querySessionsByExternalId?.edges?.map((edge) => edge.node) ?? [];
+  const pageInfo = data?.querySessionsByExternalId?.pageInfo;
+  const totalCount = data?.querySessionsByExternalId?.totalCount || 0;
+
+  // In-flight `loading`: the reload button and the accumulator gate on it.
+  return { sessions, pageInfo, totalCount, loading: loading || refreshing, error, refetch };
 };

@@ -13,7 +13,7 @@ import {
   ProjectHasEnvironmentAccessTokensDocument,
   type ProjectHasEnvironmentAccessTokensQuery,
   type ProjectHasEnvironmentAccessTokensQueryVariables,
-} from '@usertour/gql';
+} from '../graphql';
 
 export type AccessToken = AccessTokenFieldsFragment;
 

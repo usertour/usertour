@@ -1,4 +1,3 @@
-import { initialI18n, initialUser } from '@/apollo/state';
 import { FieldPolicy, TypePolicies } from '@apollo/client';
 import { keepKnownList } from './keep-known-list';
 
@@ -81,30 +80,6 @@ export const TypePolicy: TypePolicies = {
   },
   Query: {
     fields: {
-      localUser: {
-        read(existing) {
-          if (!existing) {
-            return initialUser();
-          }
-          return existing;
-        },
-        merge(existing, incoming) {
-          return { ...existing, ...incoming };
-        },
-      },
-
-      i18n: {
-        read(existing) {
-          if (!existing) {
-            return initialI18n();
-          }
-          return existing;
-        },
-        merge(existing, incoming) {
-          return { ...existing, ...incoming };
-        },
-      },
-
       // Infinite-scroll pagination, accumulator semantics.
       //
       // `keyArgs` lists **top-level GraphQL field arguments**, not

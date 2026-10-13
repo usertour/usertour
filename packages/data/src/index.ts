@@ -1,4 +1,19 @@
 export * from './hooks/auth';
+// The generated contract (ADR 0021) stays inside the package: the hooks read
+// it through `./graphql`, and the dashboard gets the domain types the hooks
+// export. The input types and enums below are the exception: the dashboard
+// builds variables with them. No document leaves the package; an operation
+// the dashboard needs is a hook here.
+export type {
+  AnalyticsOrder,
+  AnalyticsQuery,
+  BizOrder,
+  ContentVersionInput,
+  CreatSegment,
+  OutboundMessageStatus,
+  SegmentBizType,
+  VersionInput,
+} from './graphql';
 // The query layer (ADR 0021): typed documents in, one query state out.
 export * from './query';
 export * from './hooks/gql';
@@ -6,6 +21,7 @@ export * from './hooks/gql';
 // New wrappers should land here, organised by settings section, rather
 // than growing `gql.ts` further.
 export * from './hooks/themes';
+export * from './hooks/utilities';
 export * from './hooks/storage';
 export * from './hooks/localizations';
 export * from './hooks/account';

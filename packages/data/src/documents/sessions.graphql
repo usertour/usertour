@@ -1,0 +1,170 @@
+fragment BizSessionFields on BizSession {
+  id
+  createdAt
+  progress
+  data
+  bizUserId
+  state
+  contentId
+  content {
+    id
+    name
+    buildUrl
+    environmentId
+    editedVersionId
+    publishedVersionId
+    published
+    deleted
+    publishedAt
+    createdAt
+    updatedAt
+    type
+  }
+  version {
+    id
+    sequence
+    data
+    steps {
+      id
+      name
+      cvid
+      type
+      sequence
+      data
+    }
+  }
+  bizUser {
+    ...BizUserFields
+  }
+  bizCompany {
+    ...BizModelFields
+  }
+  bizEvent {
+    ...BizEventFields
+  }
+}
+
+mutation deleteSession($sessionId: String!) {
+  deleteSession(sessionId: $sessionId)
+}
+
+mutation endSession($sessionId: String!) {
+  endSession(sessionId: $sessionId)
+}
+
+query querySessionDetail($sessionId: String!) {
+  querySessionDetail(sessionId: $sessionId) {
+    ...BizSessionFields
+  }
+}
+
+query queryBizSession(
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+  $query: AnalyticsQuery!
+  $orderBy: AnalyticsOrder!
+) {
+  queryBizSession(
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+    query: $query
+    orderBy: $orderBy
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        ...BizSessionFields
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+query listSessionsDetail(
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+  $query: AnalyticsQuery!
+  $orderBy: AnalyticsOrder!
+) {
+  listSessionsDetail(
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+    query: $query
+    orderBy: $orderBy
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        id
+        createdAt
+        progress
+        data
+        bizUserId
+        state
+        contentId
+        version {
+          sequence
+        }
+        bizUser {
+          ...BizUserFields
+        }
+        bizEvent {
+          ...BizEventFields
+        }
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+query querySessionsByExternalId(
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+  $query: SessionQuery!
+  $orderBy: AnalyticsOrder!
+) {
+  querySessionsByExternalId(
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+    query: $query
+    orderBy: $orderBy
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        ...BizSessionFields
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}

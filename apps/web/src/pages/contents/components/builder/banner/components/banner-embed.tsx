@@ -15,7 +15,7 @@ import { useProjectId } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { useTranslation } from 'react-i18next';
 import { BrowserPreview } from '@/pages/contents/components/builder/banner/components/browser-preview';
 
@@ -77,7 +77,7 @@ export const BannerEmbed = () => {
   const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null);
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
   const { t } = useTranslation();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const projectId = useProjectId();
   const { attributeList } = useAttributeList();
   const getOembedInfo = useOembedInfo();

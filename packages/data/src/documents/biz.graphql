@@ -1,0 +1,116 @@
+fragment BizEventFields on BizEvent {
+  id
+  createdAt
+  eventId
+  data
+  bizUserId
+  bizSessionId
+  bizCompanyId
+  event {
+    id
+    codeName
+    displayName
+    predefined
+  }
+}
+
+fragment BizModelFields on BizModel {
+  id
+  createdAt
+  externalId
+  environmentId
+  data
+}
+
+fragment BizUserFields on BizUser {
+  id
+  createdAt
+  externalId
+  environmentId
+  data
+  bizUsersOnCompany {
+    id
+    data
+    bizCompany {
+      ...BizModelFields
+    }
+  }
+}
+
+query queryBizUser(
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+  $query: BizQuery!
+  $orderBy: BizOrder!
+) {
+  queryBizUser(
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+    query: $query
+    orderBy: $orderBy
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        ...BizUserFields
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+query queryBizCompany(
+  $first: Int
+  $last: Int
+  $after: String
+  $before: String
+  $query: BizQuery!
+  $orderBy: BizOrder!
+) {
+  queryBizCompany(
+    first: $first
+    last: $last
+    after: $after
+    before: $before
+    query: $query
+    orderBy: $orderBy
+  ) {
+    totalCount
+    edges {
+      cursor
+      node {
+        ...BizModelFields
+      }
+    }
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
+  }
+}
+
+mutation deleteBizUser($data: BizUserOrCompanyIdsInput!) {
+  deleteBizUser(data: $data) {
+    success
+    count
+  }
+}
+
+mutation deleteBizCompany($data: BizUserOrCompanyIdsInput!) {
+  deleteBizCompany(data: $data) {
+    success
+    count
+  }
+}

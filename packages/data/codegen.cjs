@@ -1,9 +1,10 @@
 // GraphQL Code Generator — typed documents for the dashboard (ADR 0021).
 //
 // Schema: the SDL the server emits from its resolvers (`pnpm --filter
-// @usertour/server schema:emit`; the file itself is gitignored) plus the
-// dashboard's client-only schema (`@client` fields). Documents: the .graphql
-// operation files under src/operations. Output: two files — the schema types,
+// @usertour/server schema:emit`; the file itself is gitignored). Documents: the .graphql
+// operation files in src/documents, named after the entity or the hook module
+// that owns them (a document named like a module in src/hooks is that module's).
+// Output: two files — the schema types,
 // and each operation's result and variables types with its TypedDocumentNode.
 // `pnpm gql:generate` at the repo root runs both steps; CI fails when the
 // committed output is stale.
@@ -55,8 +56,8 @@ const sharedConfig = {
 
 /** @type {import('@graphql-codegen/cli').CodegenConfig} */
 module.exports = {
-  schema: ['../../apps/server/src/schema.graphql', '../../apps/web/src/apollo/type-defs/index.ts'],
-  documents: ['src/operations/**/*.graphql'],
+  schema: ['../../apps/server/src/schema.graphql'],
+  documents: ['src/documents/**/*.graphql'],
   generates: {
     // Schema types: every object, input, enum and scalar of the schema.
     'src/generated/schema.ts': {

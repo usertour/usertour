@@ -67,7 +67,6 @@ jobs:
               - 'packages/ui/**'
               - 'packages/business-components/**'
               - 'packages/editor/**'
-              - 'packages/gql/**'
               - 'packages/data/**'
               - 'packages/icons/**'
               - 'packages/i18n/**'
@@ -114,11 +113,11 @@ jobs:
         if: env.SERVER == 'true' || env.WEB == 'true'
         run: pnpm --filter @usertour/server prisma:generate
       - name: GraphQL schema and typed documents are current
-        # The schema follows the server; the documents live in packages/gql (web filter).
+        # The schema follows the server; the documents live in packages/data (web filter).
         if: env.SERVER == 'true' || env.WEB == 'true'
         run: |
           pnpm gql:generate
-          git diff --exit-code -- packages/gql/src/generated
+          git diff --exit-code -- packages/data/src/generated
       - name: Type check (server)
         if: env.SERVER == 'true'
         run: pnpm --filter @usertour/server exec tsc --noEmit -p tsconfig.json

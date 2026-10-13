@@ -22,7 +22,7 @@ import {
   UpdateWebhookDocument,
   type UpdateWebhookInput,
   type WebhookFieldsFragment,
-} from '@usertour/gql';
+} from '../graphql';
 
 /**
  * `topics`: "*", a family prefix ("event.tracked", "content", "user",

@@ -23,9 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour/ui';
-import { type ApolloQueryResult, useApolloClient } from '@apollo/client';
 
-import { type TrackerUser, useQueryTrackerUsersQuery } from '@usertour/data';
+import { useFetchAllTrackerUsers, useQueryTrackerUsersQuery } from '@usertour/data';
 import { ContentDataType } from '@usertour/types';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { DownloadIcon } from 'lucide-react';
@@ -33,11 +32,6 @@ import { endOfDay, startOfDay, formatDistanceToNow } from 'date-fns';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  QueryTrackerUsersDocument,
-  type QueryTrackerUsersQuery,
-  type QueryTrackerUsersQueryVariables,
-} from '@usertour/gql';
 
 const PAGE_SIZES = [10, 20, 30, 40, 50];
 
@@ -92,7 +86,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
   const { dateRange, timezone } = useAnalyticsUI();
   const { environment } = useAppContext();
   const { content } = useContentDetail(contentId);
-  const client = useApolloClient();
+  const fetchAllTrackerUsers = useFetchAllTrackerUsers();
   const { toast } = useToast();
   const { t } = useTranslation();
   // Announcements reuse this event-driven viewer list (ANNOUNCEMENT_SEEN
@@ -149,37 +143,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
         description: t('contents.analytics.export.startingTrackerDescription'),
       });
 
-      const allUsers: TrackerUser[] = [];
-      let after: string | null = null;
-      const chunkSize = 200;
-
-      while (true) {
-        const result: ApolloQueryResult<QueryTrackerUsersQuery> = await client.query<
-          QueryTrackerUsersQuery,
-          QueryTrackerUsersQueryVariables
-        >({
-          query: QueryTrackerUsersDocument,
-          variables: {
-            first: chunkSize,
-            after,
-            query: exportQuery,
-            orderBy: { field: 'createdAt', direction: 'desc' },
-          },
-          fetchPolicy: 'network-only',
-        });
-
-        const connection = result.data?.queryTrackerUsers;
-        const fetchedEdges = connection?.edges ?? [];
-        const fetchedUsers = fetchedEdges.map((edge) => edge.node);
-        allUsers.push(...fetchedUsers);
-
-        const nextPage = connection?.pageInfo?.hasNextPage;
-        const endCursor = connection?.pageInfo?.endCursor;
-        if (!nextPage || !endCursor || fetchedEdges.length === 0) {
-          break;
-        }
-        after = endCursor;
-      }
+      const allUsers = await fetchAllTrackerUsers(exportQuery);
 
       // Both exports share the identity columns; only the trailing metric
       // columns differ (an announcement is seen once per user, so it exports a
@@ -254,7 +218,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
       setIsExporting(false);
     }
   }, [
-    client,
+    fetchAllTrackerUsers,
     content?.name,
     dateRange?.from,
     dateRange?.to,

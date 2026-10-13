@@ -1,5 +1,5 @@
 import { Content, ContentDataType, Environment, Step } from '@usertour/types';
-import type { ContentVersionInput } from '@usertour/gql';
+import type { ContentVersionInput } from '@usertour/data';
 
 /**
  * Convert content list type (plural) to ContentDataType enum

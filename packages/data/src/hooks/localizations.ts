@@ -16,7 +16,11 @@ import {
   UpdateVersionLocalizationDocument,
   type UpdateVersionLocalizationInput as UpdateVersionLocalizationInputWire,
   type VersionTranslationUnitInput,
-} from '@usertour/gql';
+  ListLocalizationsDocument,
+  type ListLocalizationsQuery,
+  type ListLocalizationsQueryVariables,
+} from '../graphql';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
 
 export type { CreateLocalizationInput, UpdateLocalizationInput };
 
@@ -126,4 +130,21 @@ export const useTranslateLocalizationUnitsMutation = () => {
     return response.data?.translateLocalizationUnits ?? [];
   };
   return { invoke, loading, error };
+};
+
+export const useListLocalizationsQuery = (
+  projectId: string | undefined,
+  options?: TypedQueryOptions<ListLocalizationsQuery, ListLocalizationsQueryVariables>,
+) => {
+  const { data, refetch, loading, error } = useTypedQuery(ListLocalizationsDocument, {
+    variables: { projectId: projectId! },
+    skip: !projectId,
+    ...options,
+  });
+  return {
+    localizationList: data?.listLocalizations,
+    refetch,
+    loading,
+    error,
+  };
 };

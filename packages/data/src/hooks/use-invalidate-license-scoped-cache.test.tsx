@@ -10,7 +10,7 @@ import {
 } from '@apollo/client';
 
 import { useInvalidateLicenseScopedCache } from './gql';
-import { GlobalConfigDocument, MeDocument } from '@usertour/gql';
+import { GlobalConfigDocument, MeDocument } from '../graphql';
 
 // Regression test for the bug class where mutating an admin-side license or
 // instance-setting field did not invalidate `me` / `globalConfig` in the

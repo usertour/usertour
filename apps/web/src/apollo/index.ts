@@ -1,7 +1,6 @@
 import { ApolloClient, DefaultOptions, InMemoryCache } from '@apollo/client';
 import initCache from './cache';
 import link from './middlewares';
-import { typeDefs } from './type-defs';
 
 let client: ApolloClient<any>;
 
@@ -28,7 +27,6 @@ export const getApolloClient = async (): Promise<ApolloClient<any>> => {
     link,
     cache,
     connectToDevTools: import.meta.env.MODE === 'development',
-    typeDefs,
     defaultOptions: defaultOptions,
   });
 

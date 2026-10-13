@@ -1,5 +1,5 @@
 import { useMutation } from '@apollo/client';
-import { ChangeEmailDocument, ChangePasswordDocument, UpdateUserDocument } from '@usertour/gql';
+import { ChangeEmailDocument, ChangePasswordDocument, UpdateUserDocument } from '../graphql';
 
 export const useUpdateUserMutation = () => {
   const [mutation, { loading, error }] = useMutation(UpdateUserDocument);

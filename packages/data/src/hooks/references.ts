@@ -5,7 +5,7 @@ import {
   ListDefinitionReferencesDocument,
   type ListDefinitionReferencesQuery,
   type ListDefinitionReferencesQueryVariables,
-} from '@usertour/gql';
+} from '../graphql';
 
 /**
  * What still uses a definition. Always read from the network: it answers

@@ -23,7 +23,8 @@ import {
 import { forwardRef, useState } from 'react';
 
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
-import { useAws, type Theme } from '@usertour/data';
+import { type Theme } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { GoogleFontCss } from '@usertour/business-components';
 
@@ -61,7 +62,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       projectId,
     } = props;
     const [data, setData] = useState<any>(currentStep.data);
-    const { upload } = useAws();
+    const { upload } = useUpload();
     const getOembedInfo = useOembedInfo();
     const { globalStyle, themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(
       theme?.settings,

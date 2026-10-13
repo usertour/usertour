@@ -1129,11 +1129,6 @@ export type InviteTeamMemberInput = {
   role: Role;
 };
 
-export type Lang = {
-  __typename?: 'Lang';
-  lng: Scalars['String']['output'];
-};
-
 export type LicenseInfo = {
   __typename?: 'LicenseInfo';
   daysRemaining?: Maybe<Scalars['Int']['output']>;
@@ -1152,11 +1147,6 @@ export type LicensePayload = {
   plan: Scalars['String']['output'];
   projectId: Scalars['String']['output'];
   sub: Scalars['String']['output'];
-};
-
-export type LocalUser = {
-  __typename?: 'LocalUser';
-  isLoggedIn: Scalars['Boolean']['output'];
 };
 
 export type Localization = {
@@ -1185,7 +1175,6 @@ export type MagicLinkInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  UpdateLocalUser?: Maybe<Scalars['Boolean']['output']>;
   acceptInvite: Auth;
   activeUserProject: Scalars['Boolean']['output'];
   adminAddProjectMember: Scalars['Boolean']['output'];
@@ -1266,7 +1255,6 @@ export type Mutation = {
   setDefaultTheme: Theme;
   setRequireIdentityVerification: Environment;
   setupSystemAdmin: Auth;
-  signOut?: Maybe<Scalars['Boolean']['output']>;
   signup: Auth;
   startIntegrationOAuth: IntegrationOAuthStart;
   startTwoFactorSetup: TwoFactorSetupPayload;
@@ -1286,7 +1274,6 @@ export type Mutation = {
   updateInstanceRequire2FA: InstanceSetting;
   updateIntegrationEvents: Integration;
   updateIntegrationInbound: Integration;
-  updateLanguage?: Maybe<Scalars['Boolean']['output']>;
   updateLocalization: Localization;
   updateProject: Project;
   updateProjectLicense: Project;
@@ -1303,11 +1290,6 @@ export type Mutation = {
   upsertIntegration: Integration;
   upsertIntegrationObjectMapping: IntegrationObjectMapping;
   verifyTwoFactor: Auth;
-};
-
-
-export type MutationUpdateLocalUserArgs = {
-  isLoggedIn: Scalars['Boolean']['input'];
 };
 
 
@@ -1813,11 +1795,6 @@ export type MutationUpdateIntegrationInboundArgs = {
 };
 
 
-export type MutationUpdateLanguageArgs = {
-  language: Scalars['String']['input'];
-};
-
-
 export type MutationUpdateLocalizationArgs = {
   data: UpdateLocalizationInput;
 };
@@ -2024,7 +2001,6 @@ export type Query = {
   globalConfig: GlobalConfig;
   hello: Scalars['String']['output'];
   helloWorld: Scalars['String']['output'];
-  i18n: Lang;
   listAccessTokens: Array<AccessToken>;
   listAttributeOnEvents: Array<AttributeOnEvent>;
   listAttributes: Array<Attribute>;
@@ -2044,7 +2020,6 @@ export type Query = {
   listThemes: Array<Theme>;
   listVersionLocalizations: Array<VersionOnLocalization>;
   listWebhooks: Array<Webhook>;
-  localUser: LocalUser;
   me: User;
   oauthConnections: Array<OAuthConnection>;
   projectHasEnvironmentAccessTokens: Scalars['Boolean']['output'];

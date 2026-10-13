@@ -26,7 +26,7 @@ import type {
   UpdateContentVersionMutation,
   UpdateVersionLocalizationMutation,
   UserEnvironmentsQuery,
-} from '@usertour/gql';
+} from './graphql';
 import type {
   Attribute,
   Content,
