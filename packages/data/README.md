@@ -8,7 +8,7 @@ The architectural _why_ (boundary, rejected alternatives, triggers to revisit) l
 
 ## What goes here
 
-1. **Apollo wrappers** for the GraphQL documents generated into `src/generated` from the `.graphql` files next to each hook module. Each wrapper calls `useQuery` / `useMutation` / `useLazyQuery`, decodes the nested response shape, and returns a uniform signature:
+1. **Apollo wrappers** for the GraphQL documents generated into `src/generated` from the `.graphql` files in `src/hooks`, named after the entity or the hook module that owns them. Each wrapper calls `useQuery` / `useMutation` / `useLazyQuery`, decodes the nested response shape, and returns a uniform signature:
    - **Queries** → `{ data, loading, error, refetch }`
    - **Mutations** → `{ invoke, loading, error }` where `invoke(args)` resolves with the unwrapped result
 2. **Cross-app React utilities** that depend only on React and on the wrappers above. Example: `useTooltipTargetMissingSessions`.
@@ -73,6 +73,15 @@ pnpm dev          # watch mode
 pnpm typecheck    # tsc --noEmit
 pnpm test         # vitest
 ```
+
+After editing a `.graphql` file, regenerate the contract from the repo root
+(it emits the server's schema first, then runs the generator here):
+
+```bash
+pnpm gql:generate
+```
+
+CI fails when the committed `src/generated` is stale.
 
 ## License
 

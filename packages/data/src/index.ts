@@ -3,8 +3,10 @@ export * from './hooks/auth';
 // it through `./graphql`, and the dashboard gets the domain types the hooks
 // export. The pieces below are the exceptions the dashboard still reads raw —
 // input types and enums it builds variables with, and three documents it
-// runs through Apollo itself. Each document here is a hook the dashboard
-// does not have yet; wrapping it removes the export.
+// runs through Apollo itself. MeDocument and QueryTrackerUsersDocument are
+// hooks the dashboard does not have yet; CreatePresignedUrlDocument already
+// has one (`useAws` in hooks/storage.ts) that the image upload does not use.
+// Wrapping or switching removes the export.
 export type {
   AnalyticsOrder,
   AnalyticsQuery,

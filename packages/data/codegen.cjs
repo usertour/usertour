@@ -3,7 +3,8 @@
 // Schema: the SDL the server emits from its resolvers (`pnpm --filter
 // @usertour/server schema:emit`; the file itself is gitignored) plus the
 // dashboard's client-only schema (`@client` fields). Documents: the .graphql
-// operation files next to the hook modules under src/hooks. Output: two files — the schema types,
+// operation files in src/hooks, named after the entity or the hook module that
+// owns them. Output: two files — the schema types,
 // and each operation's result and variables types with its TypedDocumentNode.
 // `pnpm gql:generate` at the repo root runs both steps; CI fails when the
 // committed output is stale.
