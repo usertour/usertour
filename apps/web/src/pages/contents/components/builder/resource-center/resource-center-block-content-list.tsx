@@ -110,11 +110,11 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
   const { t } = useTranslation();
   const [addOpen, setAddOpen] = useState(false);
 
-  const { contents: flowContents, loading: flowsLoading } = useContentListQuery({
+  const { contents: flowContents = [], loading: flowsLoading } = useContentListQuery({
     query: { environmentId, type: ContentDataType.FLOW },
   });
 
-  const { contents: checklistContents, loading: checklistsLoading } = useContentListQuery({
+  const { contents: checklistContents = [], loading: checklistsLoading } = useContentListQuery({
     query: { environmentId, type: ContentDataType.CHECKLIST },
   });
 
@@ -569,13 +569,13 @@ export const ResourceCenterBlockContentList = () => {
   const environmentId = useEnvironmentId();
   const { t } = useTranslation();
 
-  const { contents: flowContents } = useContentListQuery({
+  const { contents: flowContents = [] } = useContentListQuery({
     query: {
       environmentId,
       type: ContentDataType.FLOW,
     },
   });
-  const { contents: checklistContents } = useContentListQuery({
+  const { contents: checklistContents = [] } = useContentListQuery({
     query: {
       environmentId,
       type: ContentDataType.CHECKLIST,

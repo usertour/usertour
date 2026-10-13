@@ -21,7 +21,7 @@ export const useActionsSaveGate = () => {
     (list: RulesCondition[]) =>
       validateActions(list, {
         attributes: attributeList ?? undefined,
-        contents: contents ?? undefined,
+        contents,
         currentVersion: currentVersion ?? undefined,
         currentStep: currentStep ?? undefined,
       }),

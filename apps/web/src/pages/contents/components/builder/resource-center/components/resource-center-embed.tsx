@@ -132,10 +132,10 @@ export const ResourceCenterEmbed = () => {
   const { t } = useTranslation();
 
   // Query flows and checklists for content list block preview
-  const { contents: flowContents } = useContentListQuery({
+  const { contents: flowContents = [] } = useContentListQuery({
     query: { environmentId, type: ContentDataType.FLOW },
   });
-  const { contents: checklistContents } = useContentListQuery({
+  const { contents: checklistContents = [] } = useContentListQuery({
     query: { environmentId, type: ContentDataType.CHECKLIST },
   });
 

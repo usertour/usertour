@@ -31,7 +31,7 @@ export const useConditionsSaveGate = () => {
       validateConditions(list, {
         attributes: attributeList ?? undefined,
         segments: segmentList,
-        contents: contents ?? undefined,
+        contents,
         events: eventList ?? undefined,
       }),
     [attributeList, segmentList, contents, eventList],

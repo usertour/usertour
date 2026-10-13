@@ -35,7 +35,7 @@ export interface ContentBubbleProps {
   zIndex: number;
   currentIndex: number;
   onChange: (value: ContentEditorRoot[]) => void;
-  contents: Content[];
+  contents: Content[] | undefined;
   currentContent: Content | undefined;
   createStep: (
     currentVersion: ContentVersion,
