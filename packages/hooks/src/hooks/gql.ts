@@ -179,12 +179,9 @@ export const useContentListQuery = ({
       orderBy,
     },
   });
-  const contentList = data?.queryContent?.edges?.map((edge) => edge.node);
+  const contents: Content[] = data?.queryContent?.edges?.map((edge) => edge.node) ?? [];
   const pageInfo = data?.queryContent?.pageInfo;
   const totalCount = data?.queryContent?.totalCount;
-
-  // Wire shape and domain Content differ on optionality; the hook is the boundary.
-  const contents = contentList ? (contentList as unknown as Content[]) : [];
 
   return { contents, pageInfo, totalCount, refetch, error, loading };
 };
@@ -571,11 +568,11 @@ export const useUpdateContentVersionMutation = () => {
       // save by someone else is rejected instead of silently overwritten;
       // detail's scalar updates omit it.
       expectedUpdatedAt?: string,
-    ) => {
+    ): Promise<ContentVersion | undefined> => {
       const response = await mutation({
         variables: { versionId, content, expectedUpdatedAt },
       });
-      return response.data?.updateContentVersion as ContentVersion | undefined;
+      return response.data?.updateContentVersion;
     },
     [mutation],
   );

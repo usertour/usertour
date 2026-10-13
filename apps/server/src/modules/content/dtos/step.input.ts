@@ -25,9 +25,9 @@ export class StepInput implements StepDraft {
   @IsNotEmpty()
   sequence?: number;
 
-  @Field({ nullable: true })
+  @Field()
   @IsNotEmpty()
-  name?: string;
+  name: string;
 
   @Field()
   @IsNotEmpty()
@@ -40,18 +40,20 @@ export class StepInput implements StepDraft {
   @IsNotEmpty()
   themeId?: string;
 
-  @Field(() => StepSettingsScalar, { nullable: true })
-  setting?: JsonValue;
+  // setting, data and target are required: their columns are non-null, and a
+  // JSON null would pass the database only to fail the non-null output field.
+  @Field(() => StepSettingsScalar)
+  setting: JsonValue;
 
   @IsNotEmpty()
-  @Field(() => GraphQLJSON, { nullable: true })
-  data?: JsonValue;
+  @Field(() => GraphQLJSON)
+  data: JsonValue;
 
   @IsNotEmpty()
   @Field(() => [StepTriggerScalar], { nullable: true })
   trigger?: JsonValue;
 
   @IsNotEmpty()
-  @Field(() => StepTargetScalar, { nullable: true })
-  target?: JsonValue;
+  @Field(() => StepTargetScalar)
+  target: JsonValue;
 }

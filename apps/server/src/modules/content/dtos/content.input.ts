@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsString, ValidateIf } from 'class-validator';
 import GraphQLJSON from 'graphql-type-json';
 
 import type { NewContent } from '../types/new-content.type';
@@ -13,7 +13,12 @@ export class ContentInput implements NewContent {
   @Field(() => ContentTypeScalar)
   type: string;
 
+  // The model's name is non-null (the column defaults to ''); creation may
+  // omit it, but an explicit null is rejected rather than handed to the
+  // database. UpdateContentInput declares the same rule for updates.
   @Field({ nullable: true })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsString()
   name?: string;
 
   @Field(() => String, { nullable: true })

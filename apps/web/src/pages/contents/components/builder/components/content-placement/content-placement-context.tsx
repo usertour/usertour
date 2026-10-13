@@ -5,8 +5,8 @@ export interface ContentPlacementContextValue {
   target: ElementSelectorPropsData | undefined;
   onTargetChange: (value: Partial<ElementSelectorPropsData>) => void;
   isShowError?: boolean;
-  screenshot?: StepScreenshot;
-  buildUrl?: string;
+  screenshot?: StepScreenshot | null;
+  buildUrl?: string | null;
   token?: string;
   subTitle?: string;
   onScreenChange?: (screenshot: StepScreenshot) => void;

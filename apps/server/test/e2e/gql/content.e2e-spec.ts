@@ -155,6 +155,29 @@ describe('GraphQL content (e2e)', () => {
       expect(version).toMatchObject({ contentId: content.id, sequence: 0 });
     });
 
+    it('rejects an explicit null name as invalid input, not as a database failure', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentInput!) { createContent(data: $data) { id } }',
+        variables: {
+          data: {
+            name: null,
+            type: 'flow',
+            environmentId,
+            config: sampleConfig,
+            data: {},
+            buildUrl: 'https://null-name.test',
+          },
+        },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+
+      const rows = await prisma.content.findMany({
+        where: { environmentId, buildUrl: 'https://null-name.test' },
+      });
+      expect(rows).toEqual([]);
+    });
+
     it('errors for an unknown environment', async () => {
       const res = await graphql(app, {
         token,
@@ -243,6 +266,19 @@ describe('GraphQL content (e2e)', () => {
         variables: { data: { contentId: 'does-not-exist', content: { name: 'x' } } },
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+
+    it('rejects an explicit null name as invalid input, not as a database failure', async () => {
+      const created = gqlData(await createContent('Keep me')).createContent;
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentUpdateInput!) { updateContent(data: $data) { id } }',
+        variables: { data: { contentId: created.id, content: { name: null } } },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+
+      const row = await prisma.content.findUnique({ where: { id: created.id } });
+      expect(row?.name).toBe('Keep me');
     });
   });
 
@@ -598,6 +634,45 @@ describe('GraphQL content (e2e)', () => {
       // The blind write was refused — the row is untouched.
       const row = await prisma.version.findUnique({ where: { id: version.id } });
       expect(row?.data).not.toEqual({ x: 1 });
+    });
+
+    it('rejects a step whose setting is null before anything is written', async () => {
+      const { version } = await seedContent();
+      const step = {
+        cvid: 'step-null-setting',
+        sequence: 0,
+        name: 'Step',
+        type: 'modal',
+        data: [],
+        target: {},
+        setting: { width: 300 },
+      };
+      const query =
+        'mutation ($data: VersionUpdateInput!) { updateContentVersion(data: $data) { id } }';
+
+      // The complete step saves; the same step with a null setting is refused by
+      // the schema, so the row keeps the saved setting instead of a JSON null the
+      // non-null output field could never return.
+      const saved = await graphql(app, {
+        token,
+        query,
+        variables: { data: { versionId: version.id, content: { steps: [step] } } },
+      });
+      expect(saved.body.errors).toBeUndefined();
+
+      const res = await graphql(app, {
+        token,
+        query,
+        variables: {
+          data: { versionId: version.id, content: { steps: [{ ...step, setting: null }] } },
+        },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+
+      const row = await prisma.step.findUnique({
+        where: { versionId_cvid: { versionId: version.id, cvid: step.cvid } },
+      });
+      expect(row?.setting).toEqual({ width: 300 });
     });
 
     it('saves when expectedUpdatedAt matches the current version', async () => {

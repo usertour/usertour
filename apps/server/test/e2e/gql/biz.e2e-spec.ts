@@ -520,6 +520,21 @@ describe('GraphQL biz (e2e)', () => {
       expect(res.body.errors?.length).toBeGreaterThan(0);
     });
 
+    it('rejects an explicit null source on creation as invalid input, not as a database failure', async () => {
+      const name = 'Null source';
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: CreatSegment!) { createSegment(data: $data) { id } }',
+        variables: {
+          data: { name, environmentId, bizType: 'USER', dataType: 'MANUAL', source: null },
+        },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+
+      const rows = await prisma.segment.findMany({ where: { environmentId, name } });
+      expect(rows).toEqual([]);
+    });
+
     it('rejects an explicit null name as invalid input, not as a database failure', async () => {
       const seg = await buildSegment(prisma, { projectId, environmentId, bizType: 1, dataType: 3 });
       const res = await graphql(app, {

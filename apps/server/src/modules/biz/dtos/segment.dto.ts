@@ -42,8 +42,8 @@ export class SegmentDTO extends BaseDTO {
   data?: JsonValue;
 
   /** 'internal' for hand-made segments; a provider id when synced (ADR 0012). */
-  @Field(() => String, { nullable: true })
-  source?: string;
+  @Field(() => String)
+  source: string;
 
   /** The provider-side cohort id backing a synced segment. */
   @Field(() => String, { nullable: true })

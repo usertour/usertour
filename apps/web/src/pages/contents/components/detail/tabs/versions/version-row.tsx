@@ -1,16 +1,16 @@
 import { Badge, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import { ContentVersion } from '@usertour/types';
+import type { ContentVersionListItem } from '@usertour/hooks';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { ContentVersionAction } from './content-version-action';
 
 export type VersionRowChip =
   | { kind: 'draft' }
-  | { kind: 'live'; environmentName: string; publishedAt?: Date };
+  | { kind: 'live'; environmentName: string; publishedAt?: string };
 
 interface VersionRowProps {
-  version: ContentVersion;
+  version: ContentVersionListItem;
   chips?: VersionRowChip[];
   showCreatedLabel?: boolean;
   createdDisplay?: 'relative' | 'absolute' | 'timeOnly';

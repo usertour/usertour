@@ -116,7 +116,7 @@ const withFrequencyDefault = (
 };
 
 export const buildConfig = (
-  config: ContentConfigObject | undefined,
+  config: ContentConfigObject | null | undefined,
   contentType: ContentDataType | undefined,
 ): ContentConfigObject => ({
   ...defaultContentConfig,

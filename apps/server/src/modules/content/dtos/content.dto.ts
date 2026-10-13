@@ -11,8 +11,8 @@ import { ContentTypeScalar } from './content-type.scalar';
 
 @ObjectType('Content')
 export class ContentDTO extends BaseDTO {
-  @Field(() => String, { nullable: true })
-  name?: string;
+  @Field(() => String)
+  name: string;
 
   @Field(() => String, { nullable: true })
   buildUrl?: string;

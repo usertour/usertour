@@ -69,7 +69,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   // const [open, setOpen] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...defaultValues, buildUrl: content?.buildUrl },
+    defaultValues: { ...defaultValues, buildUrl: content.buildUrl ?? '' },
     mode: 'onChange',
   });
   const token = getAuthToken();
