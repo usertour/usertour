@@ -16,12 +16,19 @@ export type {
 } from './graphql';
 // The query layer (ADR 0021): typed documents in, one query state out.
 export * from './query';
-export * from './hooks/gql';
-// Domain-specific Apollo wrappers (kept out of the catch-all `gql.ts`).
-// New wrappers should land here, organised by settings section, rather
-// than growing `gql.ts` further.
+// Domain wrappers, one module per domain, each owning the document of its name
+// under src/documents.
+export * from './hooks/admin';
+export * from './hooks/attributes';
+export * from './hooks/biz';
+export * from './hooks/environments';
+export * from './hooks/project';
+export * from './hooks/sso';
+export * from './hooks/subscription';
+export * from './hooks/team';
 export * from './hooks/themes';
 export * from './hooks/utilities';
+export { useInvalidateLicenseScopedCache } from './hooks/use-invalidate-license-scoped-cache';
 export * from './hooks/storage';
 export * from './hooks/localizations';
 export * from './hooks/account';

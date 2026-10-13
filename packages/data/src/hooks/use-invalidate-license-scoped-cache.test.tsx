@@ -9,7 +9,7 @@ import {
   Observable,
 } from '@apollo/client';
 
-import { useInvalidateLicenseScopedCache } from './gql';
+import { useInvalidateLicenseScopedCache } from './use-invalidate-license-scoped-cache';
 import { GlobalConfigDocument, MeDocument } from '../graphql';
 
 // Regression test for the bug class where mutating an admin-side license or

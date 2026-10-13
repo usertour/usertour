@@ -24,9 +24,7 @@ import { useCallback } from 'react';
 /** A segment as the segment list returns it (the `SegmentFields` fragment). */
 export type Segment = SegmentFieldsFragment;
 
-// Domain wrapper for `listSegment`. Lives outside the catch-all
-// `gql.ts` per the convention established by `themes.ts` /
-// `access-tokens.ts` etc.
+// Domain wrapper for `listSegment`.
 //
 // `segmentList` is undefined until the list has loaded, never an empty
 // array standing in for it: the conditions validator reads undefined as

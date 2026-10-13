@@ -42,8 +42,6 @@ import {
 } from '../graphql';
 
 // Domain wrappers for content-detail / version / localization queries.
-// Lives outside the catch-all `gql.ts` per the convention established
-// by `themes.ts` / `access-tokens.ts` etc.
 //
 // All wrappers stay fetchPolicy-agnostic — callers (typically apps/web)
 // pass `SHARED_CACHE_QUERY_OPTIONS` when they want cache participation.
@@ -114,7 +112,7 @@ export const useListVersionLocalizationsQuery = (
 
 // ---- queryContent: cursor pagination with fetchMore + accumulator ----
 //
-// `useContentListQuery` (in `gql.ts`) still exists for builder /
+// `useContentListQuery` (below) still exists for builder /
 // resource-center consumers that fetch a one-shot bounded slice
 // (`first: 100/1000`). This wrapper is the infinite-scroll shape —
 // callers (the apps/web content list page) trigger `fetchNextPage`
