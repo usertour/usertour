@@ -1,5 +1,4 @@
 import { useGetContentLazyQuery } from '@usertour/hooks';
-import type { Content, ContentVersion } from '@usertour/types';
 import { useCallback } from 'react';
 import type { BuilderProviderMethods } from '@/pages/contents/components/builder/core/types';
 import type { BuilderStore } from '@/pages/contents/components/builder/core/builder-store';
@@ -33,7 +32,7 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
       if (!contentId) {
         return false;
       }
-      const content = (await getContent(contentId)) as Content | null;
+      const content = await getContent(contentId);
       if (!content) {
         return false;
       }
@@ -47,8 +46,8 @@ export const useContentLoader = (args: UseContentLoaderArgs): UseContentLoaderRe
       // backupVersion the pristine baseline for dirty-diffing — they must
       // not share references. setCurrentVersionFromServer bypasses the
       // patch-capturing public setter so the load doesn't enter undo history.
-      state.setCurrentVersionFromServer(structuredClone(version) as ContentVersion);
-      state.setBackupVersion(structuredClone(version) as ContentVersion);
+      state.setCurrentVersionFromServer(structuredClone(version));
+      state.setBackupVersion(structuredClone(version));
       return true;
     },
     [getContent, store],

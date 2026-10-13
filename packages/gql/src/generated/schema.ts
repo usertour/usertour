@@ -741,7 +741,7 @@ export type CreateThemeInput = {
   isDefault: Scalars['Boolean']['input'];
   name: Scalars['String']['input'];
   projectId: Scalars['String']['input'];
-  settings?: InputMaybe<Scalars['ThemeSettings']['input']>;
+  settings: Scalars['ThemeSettings']['input'];
   variations?: InputMaybe<Array<Scalars['ThemeVariation']['input']>>;
 };
 

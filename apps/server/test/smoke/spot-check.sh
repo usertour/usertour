@@ -527,10 +527,10 @@ run_endpoint_per_role 'attributes.deleteAttribute' \
   "{\"query\":\"mutation(\$d:DeleteAttributeInput!){deleteAttribute(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_ATTRIBUTE_FOR_OWNER_DELETE_ID}\"}}}"
 
 run_endpoint_per_role 'themes.createTheme' \
-  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-admin\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}"
+  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"settings\":{}}}}" \
+  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-admin\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"settings\":{}}}}" \
+  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"settings\":{}}}}" \
+  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"settings\":{}}}}"
 
 run_endpoint 'themes.updateTheme' \
   "{\"query\":\"mutation(\$d:UpdateThemeInput!){updateTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_THEME_ID}\"}}}"
@@ -800,8 +800,8 @@ mutual 'attributes.deleteAttribute' \
   "{\"query\":\"mutation(\$d:DeleteAttributeInput!){deleteAttribute(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_ATTRIBUTE_FOR_OWNER_DELETE_ID}\"}}}"
 
 mutual 'themes.createTheme' \
-  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_B_PROJECT_ID}\"}}}" \
-  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\"}}}"
+  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_B_PROJECT_ID}\",\"settings\":{}}}}" \
+  "{\"query\":\"mutation(\$d:CreateThemeInput!){createTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"isDefault\":false,\"name\":\"e2e-theme-owner\",\"projectId\":\"${SMOKE_PROJECT_ID}\",\"settings\":{}}}}"
 
 mutual 'themes.updateTheme' \
   "{\"query\":\"mutation(\$d:UpdateThemeInput!){updateTheme(data:\$d){__typename}}\",\"variables\":{\"d\":{\"id\":\"${SMOKE_B_THEME_ID}\"}}}" \

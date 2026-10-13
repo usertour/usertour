@@ -62,6 +62,18 @@ describe('GraphQL themes (e2e)', () => {
       const row = await prisma.theme.findUnique({ where: { id: theme.id } });
       expect(row).toMatchObject({ name: 'Brand A', projectId, isDefault: false });
     });
+
+    it('refuses a null settings before anything is written', async () => {
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: CreateThemeInput!) { createTheme(data: $data) { id } }',
+        variables: { data: { name: 'Null settings', isDefault: false, projectId, settings: null } },
+      });
+      expect(res.body.errors?.length).toBeGreaterThan(0);
+
+      const rows = await prisma.theme.findMany({ where: { projectId, name: 'Null settings' } });
+      expect(rows).toEqual([]);
+    });
   });
 
   describe('getTheme / listThemes', () => {
@@ -97,6 +109,25 @@ describe('GraphQL themes (e2e)', () => {
   });
 
   describe('updateTheme', () => {
+    it('rejects an explicit null name, isDefault or settings as invalid input, not as a database failure', async () => {
+      const created = gqlData(await createTheme('Keep settings')).createTheme;
+      for (const patch of [{ name: null }, { isDefault: null }, { settings: null }]) {
+        const res = await graphql(app, {
+          token,
+          query: 'mutation ($data: UpdateThemeInput!) { updateTheme(data: $data) { id } }',
+          variables: { data: { id: created.id, ...patch } },
+        });
+        expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+      }
+
+      const row = await prisma.theme.findUnique({ where: { id: created.id } });
+      expect(row).toMatchObject({
+        name: 'Keep settings',
+        isDefault: false,
+        settings: { primaryColor: '#ffffff' },
+      });
+    });
+
     it('updates the name and persists it', async () => {
       const created = gqlData(await createTheme('Before')).createTheme;
       const res = await graphql(app, {

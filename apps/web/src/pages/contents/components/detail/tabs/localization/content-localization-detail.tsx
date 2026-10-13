@@ -435,7 +435,7 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
             onApply={handleImportTranslations}
           />
           <LocalizationTransferActions
-            contentName={content.name ?? ''}
+            contentName={content.name}
             localeCode={localization.code}
             importDisabled={disabled}
             buildUnits={buildTransferUnits}
@@ -604,7 +604,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
             onApply={handleImportTranslations}
           />
           <LocalizationTransferActions
-            contentName={content.name ?? ''}
+            contentName={content.name}
             localeCode={localization.code}
             importDisabled={disabled}
             buildUnits={buildTransferUnits}

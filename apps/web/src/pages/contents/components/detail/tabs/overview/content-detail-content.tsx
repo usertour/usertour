@@ -259,7 +259,7 @@ const ContentDetailContentStep = ({
             })}
           </ContentBadge>
           <ContentBadge>
-            {t('contents.overview.step.theme', { name: currentTheme.name ?? '' })}
+            {t('contents.overview.step.theme', { name: currentTheme.name })}
           </ContentBadge>
           <ContentBadge>
             {!currentStep.setting.skippable && t('contents.overview.step.notSkippable')}
@@ -287,7 +287,7 @@ const ContentDetailContentStep = ({
     <div key={index}>
       <ContentPreviewCard
         themeSettings={currentTheme.settings}
-        title={`${index + 1}. ${currentStep.name ?? ''}`}
+        title={`${index + 1}. ${currentStep.name}`}
         badges={badges}
         updatedAt={currentStep.updatedAt}
         onEdit={onEdit}
@@ -348,7 +348,7 @@ const LauncherContentPreview = ({
         })}
       </ContentBadge>
       <ContentBadge>
-        {t('contents.overview.launcher.theme', { name: currentTheme.name ?? '' })}
+        {t('contents.overview.launcher.theme', { name: currentTheme.name })}
       </ContentBadge>
       {data.type === LauncherDataType.ICON && data.iconType && (
         <ContentBadge>
@@ -366,7 +366,7 @@ const LauncherContentPreview = ({
   return (
     <ContentPreviewCard
       themeSettings={currentTheme.settings}
-      title={content.name ?? ''}
+      title={content.name}
       badges={badges}
       updatedAt={currentVersion.updatedAt}
       onEdit={onEdit}
@@ -434,7 +434,7 @@ const ChecklistContentPreview = ({
         <ContentBadge>{t('contents.overview.checklist.allowDismiss')}</ContentBadge>
       )}
       <ContentBadge>
-        {t('contents.overview.checklist.theme', { name: currentTheme.name ?? '' })}
+        {t('contents.overview.checklist.theme', { name: currentTheme.name })}
       </ContentBadge>
       <ContentBadge>
         {t('contents.overview.checklist.items', { count: data.items.length })}
@@ -445,7 +445,7 @@ const ChecklistContentPreview = ({
   return (
     <ContentPreviewCard
       themeSettings={currentTheme.settings}
-      title={content.name ?? ''}
+      title={content.name}
       badges={badges}
       updatedAt={currentVersion.updatedAt}
       onEdit={onEdit}
@@ -551,7 +551,7 @@ const BannerContentPreview = ({
         </ContentBadge>
       )}
       <ContentBadge textClassName={bannerBadgeTextClassName}>
-        {t('contents.overview.banner.theme', { name: currentTheme.name ?? '' })}
+        {t('contents.overview.banner.theme', { name: currentTheme.name })}
       </ContentBadge>
     </>
   );
@@ -559,7 +559,7 @@ const BannerContentPreview = ({
   return (
     <ContentPreviewCard
       themeSettings={currentTheme.settings}
-      title={content.name ?? ''}
+      title={content.name}
       badges={badges}
       updatedAt={currentVersion.updatedAt}
       onEdit={onEdit}
@@ -613,7 +613,7 @@ const ResourceCenterContentPreview = ({
         {t('contents.overview.resourceCenter.tabs', { count: data.tabs?.length ?? 0 })}
       </ContentBadge>
       <ContentBadge>
-        {t('contents.overview.resourceCenter.theme', { name: currentTheme.name ?? '' })}
+        {t('contents.overview.resourceCenter.theme', { name: currentTheme.name })}
       </ContentBadge>
     </>
   );
@@ -621,7 +621,7 @@ const ResourceCenterContentPreview = ({
   return (
     <ContentPreviewCard
       themeSettings={currentTheme.settings}
-      title={content.name ?? ''}
+      title={content.name}
       badges={badges}
       updatedAt={currentVersion.updatedAt}
       onEdit={onEdit}

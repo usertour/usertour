@@ -214,7 +214,7 @@ export type Content = {
   environmentId: string;
   editedVersionId: string | null;
   publishedVersionId: string | null;
-  /** Relations: present when the document selected them (the list query carries steps and contentOnEnvironments, the detail query all four). */
+  /** Relations: present when the document selected them (the list query carries steps and contentOnEnvironments, the detail query publishedVersion, editedVersion and contentOnEnvironments). */
   publishedVersion?: ContentVersionSummary | null;
   editedVersion?: ContentVersion | null;
   steps?: Pick<Step, 'id' | 'name' | 'type' | 'cvid' | 'sequence'>[] | null;
