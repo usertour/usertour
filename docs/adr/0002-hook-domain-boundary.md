@@ -25,7 +25,7 @@ Without a written rule, the same three new helpers could also be filed in any of
 `@usertour/data` is **the GraphQL data-access layer**. Its only first-class contents are:
 
 1. **Apollo wrappers** — hooks that take a GraphQL `DocumentNode` from `@usertour/gql`, call `useQuery` / `useMutation` / `useLazyQuery`, decode the nested response shape, and return a uniform call signature (`{ data, loading, error, refetch }` for queries, `{ invoke, loading, error }` for mutations).
-2. **Cross-app React utilities** that depend only on React itself and the wrappers above. Examples already present: `useDetectExtension`, `useTooltipTargetMissingSessions`, `useChecklistPreviewAnimation`.
+2. **Cross-app React utilities** that depend only on React itself and the wrappers above. Example already present: `useTooltipTargetMissingSessions`.
 
 The package **must not depend on**:
 

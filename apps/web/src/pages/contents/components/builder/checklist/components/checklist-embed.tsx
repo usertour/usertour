@@ -1,6 +1,6 @@
 import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useChecklistPreviewAnimation } from '@usertour/data';
+import { useChecklistPreviewAnimation } from '@/hooks/use-checklist-preview-animation';
 import {
   ChecklistContainer,
   ChecklistDismiss,

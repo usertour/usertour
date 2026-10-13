@@ -1,5 +1,3 @@
-export * from './hooks/use-open-selector';
-export { useDetectExtension } from './hooks/use-detect-extenson';
 export * from './hooks/auth';
 // The query layer (ADR 0021): typed documents in, one query state out.
 export * from './query';
@@ -27,7 +25,6 @@ export * from './hooks/sessions';
 export * from './hooks/analytics';
 export * from './hooks/references';
 export * from './hooks/use-tooltip-target-missing-sessions';
-export * from './hooks/use-checklist-preview-animation';
 export { useContentCount } from './hooks/use-content-count';
 export { useCurrentUserId } from './hooks/use-current-user-id';
 export * from './hooks/use-cursor-fetch-more';
