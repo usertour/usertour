@@ -14,7 +14,7 @@ import {
   SettingsFormSection,
   useSettingsForm,
 } from '@usertour/ui';
-import { useUpdateUserMutation } from '@usertour/hooks';
+import { useUpdateUserMutation } from '@usertour/data';
 import * as z from 'zod';
 
 const profileSchema = z.object({

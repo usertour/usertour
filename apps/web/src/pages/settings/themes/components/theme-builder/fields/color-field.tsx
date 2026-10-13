@@ -5,7 +5,7 @@ import {
   ColorPickerPanel,
   CompactColorButton,
 } from '@usertour/ui';
-import { useCurrentUserId } from '@usertour/hooks';
+import { useCurrentUserId } from '@usertour/data';
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBuilderContext } from '../builder-context';

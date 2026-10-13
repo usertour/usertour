@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour/ui';
 import { PlaneIcon } from '@usertour/icons';
-import type { ContentVersionListItem } from '@usertour/hooks';
+import type { ContentVersionListItem } from '@usertour/data';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContentPublishForm } from '../../../shared/content-publish-form';

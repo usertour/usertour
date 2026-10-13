@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
   useToast,
 } from '@usertour/ui';
-import { useSetDefaultThemeMutation, type Theme } from '@usertour/hooks';
+import { useSetDefaultThemeMutation, type Theme } from '@usertour/data';
 import { CopyIcon, Delete2Icon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { ReactNode, useState } from 'react';

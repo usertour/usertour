@@ -21,7 +21,7 @@ import { format } from 'date-fns';
 import { useState, useMemo } from 'react';
 import { cn } from '@usertour/tailwind';
 import { ArrowRightIcon } from '@usertour/icons';
-import { useUpdateContentMutation } from '@usertour/hooks';
+import { useUpdateContentMutation } from '@usertour/data';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 import { ContentEditorElementType } from '@usertour/editor';
 import { QuestionStarRating } from '@/components/question';

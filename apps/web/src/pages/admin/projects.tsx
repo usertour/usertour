@@ -9,7 +9,7 @@ import {
   useAdminChangeProjectMemberRoleMutation,
   useAdminTransferProjectOwnershipMutation,
   useAdminRemoveProjectMemberMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   useToast,
   Separator,

@@ -7,7 +7,7 @@ import {
   EventAttributes,
   contentStartReason,
 } from '@usertour/types';
-import { type BizEvent, type SessionExportRow } from '@usertour/hooks';
+import { type BizEvent, type SessionExportRow } from '@usertour/data';
 
 const mockExtractQuestionData = jest.fn(() => [] as unknown[]);
 jest.mock('@usertour/helpers', () => ({

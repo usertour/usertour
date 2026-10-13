@@ -18,7 +18,7 @@ import {
   QuestionMarkCircledIcon,
   ZoomInIcon,
 } from '@usertour/icons';
-import { useDeleteSessionMutation, useEndSessionMutation, type BizSession } from '@usertour/hooks';
+import { useDeleteSessionMutation, useEndSessionMutation, type BizSession } from '@usertour/data';
 import { Fragment, ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';

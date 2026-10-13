@@ -189,7 +189,7 @@ segments and reaches the data layer — it belongs in L3, not L1.
 
 Data access, internationalization, runtime engines.
 
-- `@usertour/hooks` — Apollo / React hooks
+- `@usertour/data` — the dashboard's data layer: typed GraphQL documents in, domain-typed hooks out (renamed from `@usertour/hooks`)
 - `@usertour/gql` — GraphQL operations and generated types
 - `@usertour/i18n` — translation bundles
 - `@usertour/finder` — element finder utility
@@ -243,7 +243,7 @@ The layering above is the target. Current state has a few honest gaps:
 |---|---|---|
 | `@usertour/business-components` | Internally mixes L3 (Conditions chip editor) and L4 (GoogleFontCss, settings-domain components). Accepted as a deliberate "business components" grouping — splitting Conditions into a separate package would scatter the business-UI surface area without a real consumer that wants one but not the other. | None planned. Internal subdirectories (`conditions/` / `settings/` / `theme/`) already segment by concern. |
 | `@usertour/editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
-| L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling `@usertour/hooks` (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
+| L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling `@usertour/data` (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
 
 ## Decision tree
 

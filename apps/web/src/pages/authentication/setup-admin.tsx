@@ -13,7 +13,7 @@ import {
 } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useSetupSystemAdminMutation } from '@usertour/hooks';
+import { useSetupSystemAdminMutation } from '@usertour/data';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router-dom';

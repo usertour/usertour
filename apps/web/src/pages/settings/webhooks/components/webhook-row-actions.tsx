@@ -2,7 +2,7 @@ import { serverErrorMessage } from '@usertour/helpers';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { type Webhook, useDeleteWebhookMutation } from '@usertour/hooks';
+import { type Webhook, useDeleteWebhookMutation } from '@usertour/data';
 import { Delete2Icon, EditIcon, RiEyeLine } from '@usertour/icons';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';

@@ -36,7 +36,7 @@
     "@usertour/editor": "workspace:^",
     "@usertour/gql": "workspace:^",
     "@usertour/helpers": "workspace:^",
-    "@usertour/hooks": "workspace:^",
+    "@usertour/data": "workspace:^",
     "@usertour/i18n": "workspace:^",
     "@usertour/icons": "workspace:^",
     "@usertour/react-use-rect": "workspace:^",

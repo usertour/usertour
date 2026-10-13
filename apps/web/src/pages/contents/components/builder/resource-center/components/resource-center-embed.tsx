@@ -12,7 +12,7 @@ import {
   useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour/widget';
 import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
-import { useContentListQuery } from '@usertour/hooks';
+import { useContentListQuery } from '@usertour/data';
 import {
   ContentDataType,
   ContentEditorElementType,
@@ -34,7 +34,7 @@ import {
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { useAws } from '@usertour/hooks';
+import { useAws } from '@usertour/data';
 
 // Inline content editing in the preview is limited to these element types.
 const ENABLED_ELEMENT_TYPES = [

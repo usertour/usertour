@@ -22,7 +22,7 @@ import { Fragment, useState, useEffect } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@usertour/tailwind';
-import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/hooks';
+import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/data';
 import { INTEGRATION_CATALOG, PLAN_FEATURES } from '@usertour/constants';
 import { resolvePlanFeatures } from '@usertour/helpers';
 import { Capability, PlanType, type PlanFeatures } from '@usertour/types';

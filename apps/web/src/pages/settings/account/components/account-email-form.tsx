@@ -15,7 +15,7 @@ import {
   SettingsFormSection,
   useSettingsForm,
 } from '@usertour/ui';
-import { useUpdateEmailMutation } from '@usertour/hooks';
+import { useUpdateEmailMutation } from '@usertour/data';
 import * as z from 'zod';
 
 const emailSchema = z.object({

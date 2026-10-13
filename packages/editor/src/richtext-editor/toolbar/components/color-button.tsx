@@ -2,7 +2,7 @@
 
 import { EDITOR_RICH_ACTION_CONTENT } from '@usertour/constants';
 import { PopoverArrow, ColorPickerPanel } from '@usertour/ui';
-import { useCurrentUserId } from '@usertour/hooks';
+import { useCurrentUserId } from '@usertour/data';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSlate } from 'slate-react';

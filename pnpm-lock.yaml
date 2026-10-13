@@ -665,9 +665,9 @@ importers:
       '@usertour/helpers':
         specifier: workspace:^
         version: link:../../packages/helpers
-      '@usertour/hooks':
+      '@usertour/data':
         specifier: workspace:^
-        version: link:../../packages/hooks
+        version: link:../../packages/data
       '@usertour/i18n':
         specifier: workspace:^
         version: link:../../packages/i18n
@@ -909,9 +909,9 @@ importers:
       '@usertour/helpers':
         specifier: workspace:^
         version: link:../helpers
-      '@usertour/hooks':
+      '@usertour/data':
         specifier: workspace:^
-        version: link:../hooks
+        version: link:../data
       '@usertour/icons':
         specifier: workspace:^
         version: link:../icons
@@ -1092,9 +1092,9 @@ importers:
       '@usertour/helpers':
         specifier: workspace:^
         version: link:../helpers
-      '@usertour/hooks':
+      '@usertour/data':
         specifier: workspace:^
-        version: link:../hooks
+        version: link:../data
       '@usertour/icons':
         specifier: workspace:^
         version: link:../icons
@@ -1417,7 +1417,7 @@ importers:
         specifier: ^5.0.2
         version: 5.3.3
 
-  packages/hooks:
+  packages/data:
     dependencies:
       '@apollo/client':
         specifier: ^3.7.17

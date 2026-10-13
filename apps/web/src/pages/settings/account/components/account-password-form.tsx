@@ -12,7 +12,7 @@ import {
   SettingsFormSection,
   useSettingsForm,
 } from '@usertour/ui';
-import { useChangePasswordMutation } from '@usertour/hooks';
+import { useChangePasswordMutation } from '@usertour/data';
 import * as z from 'zod';
 
 // Bounds match the auth module's password schema (registration / reset)

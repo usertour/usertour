@@ -1,4 +1,4 @@
-# @usertour/hooks
+# @usertour/data
 
 GraphQL data-access hooks for the Usertour monorepo.
 

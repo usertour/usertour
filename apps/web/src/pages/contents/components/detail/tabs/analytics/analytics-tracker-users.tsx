@@ -25,7 +25,7 @@ import {
 } from '@usertour/ui';
 import { type ApolloQueryResult, useApolloClient } from '@apollo/client';
 
-import { type TrackerUser, useQueryTrackerUsersQuery } from '@usertour/hooks';
+import { type TrackerUser, useQueryTrackerUsersQuery } from '@usertour/data';
 import { ContentDataType } from '@usertour/types';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { DownloadIcon } from 'lucide-react';

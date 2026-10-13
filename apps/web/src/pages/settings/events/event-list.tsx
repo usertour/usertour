@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useListEventsQuery } from '@usertour/hooks';
+import { useListEventsQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { EventCreateDialog } from '@/components/events/event-create-dialog';
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';

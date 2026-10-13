@@ -5,7 +5,7 @@ import { ContentEditorSerialize, useSettingsStyles } from '@usertour/widget';
 import { GoogleFontCss } from '@usertour/business-components';
 import { ScaledPreviewContainer, Button } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import type { Theme } from '@usertour/hooks';
+import type { Theme } from '@usertour/data';
 import { PREVIEW_BASIC } from '@usertour/constants';
 import { memo, MouseEvent, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

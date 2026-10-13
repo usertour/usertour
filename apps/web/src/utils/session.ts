@@ -1,6 +1,6 @@
 import { flowReasonTitleMap } from '@usertour/constants';
 import { Attribute, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
-import { type BizEvent, type BizSession } from '@usertour/hooks';
+import { type BizEvent, type BizSession } from '@usertour/data';
 import {
   ContentEditorElementType,
   type ContentEditorRoot,

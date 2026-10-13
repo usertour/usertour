@@ -9,7 +9,7 @@ import {
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, PLUSIcon } from '@usertour/icons';
 import { IntegrationSourceMark } from '@usertour/business-components';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 import { Fragment, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';

@@ -1,4 +1,4 @@
-import type { CurrentUser } from '@usertour/hooks';
+import type { CurrentUser } from '@usertour/data';
 import type { Capability, Project } from '@usertour/types';
 
 /** One of the user's project memberships, as the `me` query delivers it. */

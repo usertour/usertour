@@ -19,7 +19,7 @@ import {
   useGetProjectConfigQuery,
   useGetProjectSsoSettingsQuery,
   useListProjectSsoProvidersQuery,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { SsoEnforcementCard } from './components/sso-enforcement-card';

@@ -1,6 +1,6 @@
 import { INTEGRATION_CATALOG } from '@usertour/constants';
 import { getErrorMessage } from '@usertour/helpers';
-import { useGetUserEnvironmentsQuery, useStartIntegrationOAuthMutation } from '@usertour/hooks';
+import { useGetUserEnvironmentsQuery, useStartIntegrationOAuthMutation } from '@usertour/data';
 import { Capability, type Project } from '@usertour/types';
 import { Button, ComboboxSelect, LoadingButton, useToast } from '@usertour/ui';
 import { useEffect, useMemo, useState } from 'react';

@@ -1,6 +1,6 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useCanUseCustomCss } from '@/hooks/use-should-show-made-with';
-import { useListAttributesQuery, type Theme } from '@usertour/hooks';
+import { useListAttributesQuery, type Theme } from '@usertour/data';
 import { StorageKeys, defaultSettings } from '@usertour/constants';
 import { validateConditions } from '@usertour/business-components';
 import {
@@ -9,7 +9,7 @@ import {
   type ThemeTypesSetting,
   type ThemeVariation,
 } from '@usertour/types';
-import { useCurrentUserId } from '@usertour/hooks';
+import { useCurrentUserId } from '@usertour/data';
 import { useToast, CompactPanel } from '@usertour/ui';
 import { getErrorMessage } from '@usertour/helpers';
 import { deepmerge } from 'deepmerge-ts';

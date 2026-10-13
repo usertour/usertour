@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { DestructiveConfirmDialog, useToast } from '@usertour/ui';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 import { useRemoveUsersFromSegment } from '@/hooks/use-remove-users-from-segment';
 import { useRemoveCompaniesFromSegment } from '@/hooks/use-remove-companies-from-segment';
 import { segmentNamespace, segmentSubject } from './segment-i18n';

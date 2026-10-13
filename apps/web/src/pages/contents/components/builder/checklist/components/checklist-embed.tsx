@@ -1,6 +1,6 @@
 import { BUILDER_Z } from '@usertour/constants';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useChecklistPreviewAnimation } from '@usertour/hooks';
+import { useChecklistPreviewAnimation } from '@usertour/data';
 import {
   ChecklistContainer,
   ChecklistDismiss,
@@ -20,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws } from '@usertour/hooks';
+import { useAws } from '@usertour/data';
 import { useChecklistEditor } from '@/pages/contents/components/builder/checklist/use-checklist-editor';
 
 export const ChecklistEmbed = () => {

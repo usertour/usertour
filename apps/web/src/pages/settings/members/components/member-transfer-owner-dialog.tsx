@@ -2,7 +2,7 @@
 
 import type { TeamMember } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
-import { useTransferProjectOwnershipMutation } from '@usertour/hooks';
+import { useTransferProjectOwnershipMutation } from '@usertour/data';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface MemberTransferOwnerDialogProps {

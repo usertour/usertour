@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { IdentityVerificationStats } from '@usertour/hooks';
+import type { IdentityVerificationStats } from '@usertour/data';
 
 export interface IdentityVerificationCoverageCardProps {
   stats: IdentityVerificationStats[] | undefined;

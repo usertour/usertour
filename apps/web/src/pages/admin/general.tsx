@@ -1,7 +1,7 @@
 import {
   useAdminInstanceSettingsQuery,
   useUpdateInstanceGeneralSettingsMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   useToast,
   Separator,

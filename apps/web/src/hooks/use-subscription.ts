@@ -3,7 +3,7 @@ import {
   useGetProjectConfigQuery,
   useGetSubscriptionByProjectIdQuery,
   useGetSubscriptionUsageQuery,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { type PlanFeatures, PlanType, type Subscription } from '@usertour/types';
 import { useCallback, useMemo } from 'react';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';

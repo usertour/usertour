@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { getErrorMessage } from '@usertour/helpers';
-import { useUpdateEnvironmentMutation } from '@usertour/hooks';
+import { useUpdateEnvironmentMutation } from '@usertour/data';
 import { Delete2Icon, EditIcon, RiStarLine } from '@usertour/icons';
 import { Environment } from '@usertour/types';
 import { ResourceRowActions, useToast } from '@usertour/ui';

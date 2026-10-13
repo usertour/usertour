@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { userTourToken } from '@/utils/env';
 import { cn } from '@usertour/tailwind';
-import type { CurrentUser } from '@usertour/hooks';
+import type { CurrentUser } from '@usertour/data';
 import { usePostHog } from 'posthog-js/react';
 import { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';

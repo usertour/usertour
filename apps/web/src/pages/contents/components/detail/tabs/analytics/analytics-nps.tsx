@@ -17,7 +17,7 @@ import { PieChart, Pie, Cell } from 'recharts';
 import { useState, useMemo } from 'react';
 import { cn } from '@usertour/tailwind';
 import { ArrowRightIcon } from '@usertour/icons';
-import { useUpdateContentMutation } from '@usertour/hooks';
+import { useUpdateContentMutation } from '@usertour/data';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 import { useTranslation } from 'react-i18next';
 

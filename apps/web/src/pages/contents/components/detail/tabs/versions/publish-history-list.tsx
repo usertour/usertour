@@ -18,7 +18,7 @@ import {
   Separator,
 } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
-import { useListContentPublishRecordsQuery } from '@usertour/hooks';
+import { useListContentPublishRecordsQuery } from '@usertour/data';
 import { cn } from '@usertour/tailwind';
 import type { ContentPublishRecord } from '@usertour/types';
 import { format } from 'date-fns';

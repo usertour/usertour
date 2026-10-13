@@ -29,7 +29,7 @@ import {
   useCreateContentVersionMutation,
   useOpenSelector,
   useUpdateContentMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { getAuthToken, getErrorMessage } from '@usertour/helpers';
 import { BuilderType, Content } from '@usertour/types';
 import { useCallback } from 'react';

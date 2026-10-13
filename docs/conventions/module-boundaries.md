@@ -8,7 +8,7 @@ packages follows them. The server has its own layering — see
 
 A component or hook with **zero business types** (doesn't import from
 `@usertour/types` other than enums, doesn't touch app contexts, doesn't
-call `@usertour/gql` or `@usertour/hooks`'s mutation wrappers) belongs in
+call `@usertour/gql` or `@usertour/data`'s mutation wrappers) belongs in
 `packages/ui/`.
 
 Examples already there: `Button`, `SelectPopover`, `DateTimePicker`,
@@ -72,7 +72,7 @@ an actual cross-app use case).
 ## Hooks follow the same axis
 
 - Pure GraphQL wrappers (`useDeleteSegmentMutation` shape, returning
-  `{ invoke, loading, error }`) → `packages/hooks/`.
+  `{ invoke, loading, error }`) → `packages/data/`.
 - Anything that touches `useToast`, an app context, `useNavigate`, or
   wraps a GraphQL hook with UX behaviour → `apps/web/src/hooks/`.
 

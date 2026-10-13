@@ -1,7 +1,7 @@
 import { catalogEntryForSource } from '@usertour/constants';
 import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, SegmentIcon } from '@usertour/icons';
 import type { RulesCondition } from '@usertour/types';
-import type { Segment } from '@usertour/hooks';
+import type { Segment } from '@usertour/data';
 import { type ReactNode, useMemo } from 'react';
 import {
   useConditionsContext,

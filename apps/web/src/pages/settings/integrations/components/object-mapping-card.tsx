@@ -11,7 +11,7 @@ import {
   useListIntegrationObjectMappingsQuery,
   useListIntegrationSyncRunsQuery,
   useRunIntegrationObjectMappingSyncMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   RiDeleteBinLine,
   RiMore2Line,

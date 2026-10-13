@@ -1,4 +1,4 @@
-import { useGlobalConfigQuery } from '@usertour/hooks';
+import { useGlobalConfigQuery } from '@usertour/data';
 
 // Thin facade over the Apollo `globalConfig` query so consumers don't
 // have to remember the wrapper name and the field name stays consistent

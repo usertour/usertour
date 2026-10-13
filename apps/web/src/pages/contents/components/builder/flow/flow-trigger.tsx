@@ -18,7 +18,7 @@ import {
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 import { useSeedStepFromRoute } from '@/pages/contents/components/builder/flow/use-seed-step-from-route';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/data';
 
 const FlowBuilderTriggerHeader = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);

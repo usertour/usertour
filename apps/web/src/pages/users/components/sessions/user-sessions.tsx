@@ -31,7 +31,7 @@ import {
   useListEventsQuery,
   useQuerySessionsByExternalIdQuery,
   type BizSession,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@usertour/tailwind';
 import {

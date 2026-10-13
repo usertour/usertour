@@ -12,7 +12,7 @@ import {
   useQuerySessionDetailQuery,
   type BizEvent,
   type BizSession,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import {
   type Attribute,

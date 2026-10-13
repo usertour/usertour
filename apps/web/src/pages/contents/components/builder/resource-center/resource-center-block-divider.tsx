@@ -16,7 +16,7 @@ import { useContentList } from '@/pages/contents/components/builder/hooks/use-co
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
 import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';

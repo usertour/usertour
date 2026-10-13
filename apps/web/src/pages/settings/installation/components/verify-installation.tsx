@@ -1,5 +1,5 @@
 import { RiCheckboxCircleFill, SpinnerIcon } from '@usertour/icons';
-import { useVerifyInstallationQuery } from '@usertour/hooks';
+import { useVerifyInstallationQuery } from '@usertour/data';
 import { Button } from '@usertour/ui';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';

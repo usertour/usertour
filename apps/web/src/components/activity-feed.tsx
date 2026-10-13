@@ -36,7 +36,7 @@ import {
   useCompanyActivityFeedQuery,
   useUserActivityFeedQuery,
   type BizEvent,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { sortEventDataEntries, getFieldValue } from '@/utils/session';
 import { QuestionAnswer } from '@/components/sessions/session-detail';

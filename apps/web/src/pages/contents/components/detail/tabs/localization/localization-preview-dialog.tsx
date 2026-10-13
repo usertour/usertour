@@ -3,7 +3,7 @@ import { GoogleFontCss } from '@usertour/business-components';
 import { PREVIEW_BASIC, defaultSettings } from '@usertour/constants';
 import { RiArrowLeftSLine, RiArrowRightSLine, RiEyeLine } from '@usertour/icons';
 import type { AnnouncementData, ContentVersion, PopupAnnouncement, Step } from '@usertour/types';
-import type { Theme } from '@usertour/hooks';
+import type { Theme } from '@usertour/data';
 import { AnnouncementDistribution, AnnouncementPopupStyle, ContentDataType } from '@usertour/types';
 import {
   Button,

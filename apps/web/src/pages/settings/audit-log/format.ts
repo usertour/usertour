@@ -1,4 +1,4 @@
-import type { AuditLog } from '@usertour/hooks';
+import type { AuditLog } from '@usertour/data';
 
 /** Truncate an opaque id for display (forensic fallback when no name resolved). */
 export const shortId = (id: string | null | undefined): string | null =>

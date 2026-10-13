@@ -39,7 +39,7 @@ import {
 import { Conditions } from '@usertour/business-components';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
-import { useContentListQuery, useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
+import { useContentListQuery, useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import {
   ContentDataType,
   ContentListItem,

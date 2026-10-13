@@ -8,7 +8,7 @@ import { useContentPublishState } from '@/hooks/use-content-publish-state';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { isVersionPublished } from '@/utils/content';
 import { EnterIcon } from '@radix-ui/react-icons';
-import { useUpdateContentMutation } from '@usertour/hooks';
+import { useUpdateContentMutation } from '@usertour/data';
 import { PlaneIcon, RiArrowRightSLine, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { ContentDataType, ContentTypeName } from '@usertour/types';

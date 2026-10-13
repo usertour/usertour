@@ -20,7 +20,7 @@ import {
   useToast,
 } from '@usertour/ui';
 import { isResourceAlreadyExistsError } from '@usertour/helpers';
-import { useCreateEventMutation, useListAttributesQuery } from '@usertour/hooks';
+import { useCreateEventMutation, useListAttributesQuery } from '@usertour/data';
 import { CloseIcon, PlusIcon } from '@usertour/icons';
 import { AttributeBizTypes, type Attribute } from '@usertour/types';
 import { z } from 'zod';

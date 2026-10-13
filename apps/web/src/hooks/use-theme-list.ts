@@ -1,4 +1,4 @@
-import { useListThemesQuery } from '@usertour/hooks';
+import { useListThemesQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';
 

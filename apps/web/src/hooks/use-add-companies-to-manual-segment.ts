@@ -1,4 +1,4 @@
-import { useCreateBizCompanyOnSegmentMutation, type Segment } from '@usertour/hooks';
+import { useCreateBizCompanyOnSegmentMutation, type Segment } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';

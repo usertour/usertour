@@ -1,4 +1,4 @@
-import { useListVersionLocalizationsQuery } from '@usertour/hooks';
+import { useListVersionLocalizationsQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
 // Thin app-level wrapper. Replaces `useContentLocalizationListContext`.

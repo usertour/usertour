@@ -5,7 +5,7 @@ import { useContentLocalizations } from '@/hooks/use-content-localizations';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useLocalizationList } from '@/hooks/use-localization-list';
 import { resolveEditableVersionId } from '@/utils/content';
-import { useCreateContentVersionMutation, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
+import { useCreateContentVersionMutation, useQueryOembedInfoLazyQuery } from '@usertour/data';
 import {
   type LocalizedEmbedResolutions,
   applyContentsTranslationUnits,

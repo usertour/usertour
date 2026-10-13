@@ -1,7 +1,7 @@
 // Bind to user attribute component for question editors
 
 import { BooleanField, ComboboxSelect } from '@usertour/ui';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/data';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,4 +1,4 @@
-/** A user as the runtime's `latestSession` carries it. The dashboard types users from its documents (`BizUser` in `@usertour/hooks`). */
+/** A user as the runtime's `latestSession` carries it. The dashboard types users from its documents (`BizUser` in `@usertour/data`). */
 export type RuntimeBizUser = {
   id: string;
   externalId: string;

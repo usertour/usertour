@@ -1,4 +1,4 @@
-import { useGetContentQuery } from '@usertour/hooks';
+import { useGetContentQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 
 // Thin app-level wrapper that bakes in cache participation so the ~23

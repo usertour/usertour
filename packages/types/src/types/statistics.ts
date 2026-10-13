@@ -69,7 +69,7 @@ export type AnalyticsViewsByBlock = {
 /**
  * A session as the runtime receives it: `latestSession` of a content over the
  * socket. The dashboard types sessions from its documents (`BizSession` in
- * `@usertour/hooks`).
+ * `@usertour/data`).
  */
 export type RuntimeBizSession = {
   id: string;

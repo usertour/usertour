@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Separator, SettingsCard, SettingsCardStack } from '@usertour/ui';
-import { useGetIdentityVerificationStatsQuery, useListSigningSecretsQuery } from '@usertour/hooks';
+import { useGetIdentityVerificationStatsQuery, useListSigningSecretsQuery } from '@usertour/data';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { SigningSecretCard } from './components/signing-secret-card';

@@ -1,4 +1,4 @@
-import { useContentListQuery } from '@usertour/hooks';
+import { useContentListQuery } from '@usertour/data';
 import { useEnvironmentId } from '@/pages/contents/components/builder/core';
 
 // Builder-local wrapper over the shared `useContentListQuery`. The

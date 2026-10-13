@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '@usertour/ui';
-import { useAws } from '@usertour/hooks';
+import { useAws } from '@usertour/data';
 import { useTranslation } from 'react-i18next';
 import type { RcUploadOption } from '@/pages/contents/components/builder/components/icon-picker/types';
 

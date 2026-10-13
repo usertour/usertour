@@ -1,4 +1,4 @@
-import { useDeleteThemeMutation, type Theme } from '@usertour/hooks';
+import { useDeleteThemeMutation, type Theme } from '@usertour/data';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { localizeDefinitionReferenceError } from '@/utils/definition-references';

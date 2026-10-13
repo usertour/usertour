@@ -6,7 +6,7 @@ import {
   type Integration,
   type IntegrationObjectMapping,
   useUpsertIntegrationObjectMappingMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { RiAlertLine, RiCloseLine } from '@usertour/icons';
 import {
   Badge,

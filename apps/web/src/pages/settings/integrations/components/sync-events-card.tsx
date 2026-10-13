@@ -4,7 +4,7 @@ import {
   type Integration,
   useListIntegrationObjectMappingsQuery,
   useUpdateIntegrationEventsMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { Checkbox, Switch, useToast } from '@usertour/ui';
 import { type IntegrationCatalogEntry, SYNC_TIMELINE_EVENTS } from '@usertour/constants';
 import { useAppContext } from '@/contexts/app-context';

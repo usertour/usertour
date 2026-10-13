@@ -35,7 +35,7 @@ import {
   isValidRandomMax,
   serverErrorMessage,
 } from '@usertour/helpers';
-import { CreateAttributeInput, useCreateAttributeMutation } from '@usertour/hooks';
+import { CreateAttributeInput, useCreateAttributeMutation } from '@usertour/data';
 import { Attribute, AttributeBizTypes, BizAttributeTypes } from '@usertour/types';
 import * as React from 'react';
 import { useEffect, useMemo } from 'react';

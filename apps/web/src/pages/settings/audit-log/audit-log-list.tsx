@@ -18,7 +18,7 @@ import {
   type AuditLogFilter,
   useGetProjectConfigQuery,
   useListAuditLogsQuery,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { LoadMoreFailed } from '@/components/load-more-failed';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';

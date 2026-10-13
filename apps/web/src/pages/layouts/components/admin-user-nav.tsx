@@ -32,7 +32,7 @@ import {
   RiSunLine,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { useActiveUserProjectMutation } from '@usertour/hooks';
+import { useActiveUserProjectMutation } from '@usertour/data';
 import isHotkey from 'is-hotkey';
 import { usePostHog } from 'posthog-js/react';
 import { useNavigate } from 'react-router-dom';

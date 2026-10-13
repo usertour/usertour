@@ -7,7 +7,7 @@ import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { isVersionPublished } from '@/utils/content';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws, useContentListQuery, type Theme } from '@usertour/hooks';
+import { useAws, useContentListQuery, type Theme } from '@usertour/data';
 import { ContentEditor, type ContentEditorRoot } from '@usertour/editor';
 import { ContentEditorSerialize } from '@usertour/widget';
 import { buildConfig, convertSettings, convertToCssVars } from '@usertour/helpers';

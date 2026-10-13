@@ -1,7 +1,7 @@
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
-import { useCreateContentVersionMutation, useUpdateContentVersionMutation } from '@usertour/hooks';
+import { useCreateContentVersionMutation, useUpdateContentVersionMutation } from '@usertour/data';
 import type { VersionInput } from '@usertour/gql';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentConfigObject } from '@usertour/types';

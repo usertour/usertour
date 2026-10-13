@@ -1,4 +1,4 @@
-import { useQueryInviteListQuery, useQueryTeamMemberListQuery } from '@usertour/hooks';
+import { useQueryInviteListQuery, useQueryTeamMemberListQuery } from '@usertour/data';
 import { useCallback, useMemo } from 'react';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useActiveProject } from './use-active-project';

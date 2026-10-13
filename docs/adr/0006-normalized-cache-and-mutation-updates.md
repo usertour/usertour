@@ -10,7 +10,7 @@ ADR 0005 set up `SHARED_CACHE_QUERY_OPTIONS` (cache-first) as a per-call-site op
 
 1. Cross-tab / cross-device freshness becoming a recurring UX bug.
 2. Manual `refetch()` count growing past ~50.
-3. A new app consuming `@usertour/hooks` under a different Apollo default.
+3. A new app consuming `@usertour/data` under a different Apollo default.
 
 Trigger #2 has fired: `grep -rEn "\brefetch\(\)" apps/web/src` returns **59 call sites** today (2026-05-29). The v0.8.4 release also concentrated heavy refactor work into `settings/*` and `pages/{users,companies}/*` — a second pass over the same files for cache mechanics is exactly what we want to avoid.
 
@@ -23,7 +23,7 @@ A real reconnaissance pass (rather than estimation) shows that the cache-write s
 | `pages/contents/*` (content builder, detail, preview) | Reads via the old contexts → does not write (one `network-only` in `analytics-tracker-users`) |
 | `pages/integrations/*`, admin, auth | no-cache → does not write |
 | `SHARED_CACHE_QUERY_OPTIONS` callers (settings + segments/entity + facade + user-sessions + detail-content lookups) | cache-and-network → **writes** |
-| `packages/hooks` internals (`use-content-count`, `use-tooltip-target-missing-sessions`, `analytics-tracker-users`) | **writes** |
+| `packages/data` internals (`use-content-count`, `use-tooltip-target-missing-sessions`, `analytics-tracker-users`) | **writes** |
 
 `addTypename` is invisible to no-cache callers — flipping it globally has zero behavior change for the entire content-builder / contents / integrations / admin surface. The smoke-and-change surface coincides with the area v0.8.4 already refactored, plus three isolated wrappers.
 
@@ -122,6 +122,6 @@ Delay this until a future version where it can have a dedicated sprint.
 
 - `apps/web/src/apollo/cache/index.ts` — addTypename flip + persist key.
 - `apps/web/src/apollo/type-policies/index.ts` — typePolicies for normalized cache + paginated lists.
-- `packages/hooks/src/hooks/*.ts` — mutation wrappers carrying their `update` callbacks.
+- `packages/data/src/hooks/*.ts` — mutation wrappers carrying their `update` callbacks.
 - [Apollo cache: mutations and refetch](../conventions/apollo-cache-mutations.md) — the living convention derived from this ADR: edit mutations return their changed fields (no refetch), and the exceptions where the cache still can't propagate alone.
 - ADR 0005 — preserved as `Superseded by 0006`.

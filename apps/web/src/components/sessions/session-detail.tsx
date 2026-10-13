@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge } from '@usertour/ui';
-import { type BizEvent } from '@usertour/hooks';
+import { type BizEvent } from '@usertour/data';
 import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
 import { cn } from '@usertour/tailwind';
 import { QuestionStarRating } from '../question';

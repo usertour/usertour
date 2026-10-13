@@ -19,7 +19,7 @@ import {
   Input,
   useToast,
 } from '@usertour/ui';
-import { useCopyThemeMutation, type Theme } from '@usertour/hooks';
+import { useCopyThemeMutation, type Theme } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import * as React from 'react';
 import { useEffect } from 'react';

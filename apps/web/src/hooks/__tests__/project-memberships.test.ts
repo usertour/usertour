@@ -1,4 +1,4 @@
-import type { CurrentUser } from '@usertour/hooks';
+import type { CurrentUser } from '@usertour/data';
 import type { Project } from '@usertour/types';
 import { activeProjectOf, projectsFromProfile } from '../project-memberships';
 

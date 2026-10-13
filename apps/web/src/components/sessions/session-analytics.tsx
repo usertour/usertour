@@ -1,6 +1,6 @@
 import { Badge } from '@usertour/ui';
 import { BizEvents, ChecklistData, ContentDataType, Event } from '@usertour/types';
-import { type BizSession } from '@usertour/hooks';
+import { type BizSession } from '@usertour/data';
 import { getProgressStatus } from '@/utils/session';
 import { cn } from '@usertour/tailwind';
 import { useTranslation } from 'react-i18next';

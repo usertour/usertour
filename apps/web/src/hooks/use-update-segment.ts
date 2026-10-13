@@ -1,4 +1,4 @@
-import { useUpdateSegmentMutation } from '@usertour/hooks';
+import { useUpdateSegmentMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { EditSegmentFormValues } from '@/components/segments/segment-form-schema';

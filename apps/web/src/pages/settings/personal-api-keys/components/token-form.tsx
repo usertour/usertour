@@ -14,7 +14,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@usertour/ui';
-import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
+import { useGetUserEnvironmentsQuery } from '@usertour/data';
 import type { Capability, Project } from '@usertour/types';
 import { useRef, useEffect } from 'react';
 import { type Control, useFormContext, useWatch } from 'react-hook-form';

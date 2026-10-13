@@ -3,7 +3,7 @@ import {
   isHttpUrl,
   isSafeDestinationUrl,
 } from '@usertour/helpers';
-import type { VersionTranslationUnitChange } from '@usertour/hooks';
+import type { VersionTranslationUnitChange } from '@usertour/data';
 
 /** Unit path → the translation the server is known to hold. */
 export type TranslationBaseline = ReadonlyMap<string, string>;

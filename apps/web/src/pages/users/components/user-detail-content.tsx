@@ -3,7 +3,7 @@ import {
   useUserListQuery,
   type BizUser,
   type BizUserOnCompany,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useTranslation } from 'react-i18next';
 import { CalendarIcon, EnvelopeClosedIcon, IdCardIcon } from '@radix-ui/react-icons';

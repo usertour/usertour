@@ -3,7 +3,7 @@ import { useSubscription } from '@/hooks/use-subscription';
 import { MACHINE_TRANSLATION_UNITS_PER_BATCH } from '@usertour/constants';
 import { getErrorMessage } from '@usertour/helpers';
 import type { LocalizationTranslationUnit } from '@usertour/helpers';
-import { useTranslateLocalizationUnitsMutation } from '@usertour/hooks';
+import { useTranslateLocalizationUnitsMutation } from '@usertour/data';
 import { RiSparkling2Line, SpinnerIcon } from '@usertour/icons';
 import { PlanType } from '@usertour/types';
 import { Button, Tooltip, TooltipContent, TooltipTrigger, useToast } from '@usertour/ui';

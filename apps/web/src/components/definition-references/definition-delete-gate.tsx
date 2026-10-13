@@ -1,4 +1,4 @@
-import { useListDefinitionReferencesQuery } from '@usertour/hooks';
+import { useListDefinitionReferencesQuery } from '@usertour/data';
 import type { DefinitionReferenceKind } from '@usertour/types';
 import type { ReactNode } from 'react';
 import { useAppContext } from '@/contexts/app-context';

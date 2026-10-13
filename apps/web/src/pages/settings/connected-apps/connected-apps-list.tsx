@@ -21,7 +21,7 @@ import {
   type OAuthConnection,
   useOAuthConnectionsQuery,
   useRevokeOAuthConnectionMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 

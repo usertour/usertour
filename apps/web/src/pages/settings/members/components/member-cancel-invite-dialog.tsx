@@ -2,7 +2,7 @@
 
 import type { TeamMember } from '@usertour/types';
 import { DestructiveConfirmDialog } from '@usertour/ui';
-import { useCancelInviteMutation } from '@usertour/hooks';
+import { useCancelInviteMutation } from '@usertour/data';
 import { Trans, useTranslation } from 'react-i18next';
 
 interface MemberCancelInviteDialogProps {

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { SpinnerIcon } from '@usertour/icons';
-import { useGetProjectSsoLoginQuery } from '@usertour/hooks';
+import { useGetProjectSsoLoginQuery } from '@usertour/data';
 import { AuthCard } from './components/auth-card';
 import { SsoProviderButtons } from './components/sso-provider-buttons';
 

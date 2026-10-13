@@ -1,6 +1,6 @@
 import { useApolloClient } from '@apollo/client';
 import { UID_COOKIE } from '@usertour/constants';
-import { useLogoutMutation } from '@usertour/hooks';
+import { useLogoutMutation } from '@usertour/data';
 import { removeAuthToken } from '@usertour/helpers';
 import { useCallback } from 'react';
 import { broadcastAuthSwitch } from '@/utils/auth-channel';

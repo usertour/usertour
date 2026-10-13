@@ -2,7 +2,7 @@ import { NetworkStatus } from '@apollo/client';
 import type { PaginationState } from '@tanstack/react-table';
 import type { PageInfo, Pagination } from '@usertour/types';
 import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
-import type { ForwardedQueryOptions } from '@usertour/hooks';
+import type { ForwardedQueryOptions } from '@usertour/data';
 
 // Unified primitive for table-style cursor pagination across the
 // admin app — replaces `useBizListCursor` and `useBizSessions`,
@@ -39,7 +39,7 @@ import type { ForwardedQueryOptions } from '@usertour/hooks';
 // Per-entity Apollo wrappers (e.g. `useQueryBizSessionsQuery`) are
 // injected via the `useListQuery` arg, same shape as the old
 // `useBizListCursor` accepted; that keeps the data layer ownership
-// in @usertour/hooks per ADR 0002 and lets the table treat each
+// in @usertour/data per ADR 0002 and lets the table treat each
 // entity's response uniformly.
 
 /**
@@ -78,7 +78,7 @@ export interface UseCursorPaginationArgs<TRow, TQuery, TOrder> {
   orderBy?: TOrder;
   /** Default page size for the initial pagination state. */
   defaultPageSize?: number;
-  /** Per-entity Apollo wrapper from @usertour/hooks. */
+  /** Per-entity Apollo wrapper from @usertour/data. */
   useListQuery: (args: UseListQueryArgs<TQuery, TOrder>) => UseListQueryResult<TRow>;
   /** Skip the underlying query (e.g. context not ready). */
   skip?: boolean;

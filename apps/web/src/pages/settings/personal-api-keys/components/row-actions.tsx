@@ -6,7 +6,7 @@ import {
   type ApiToken,
   useDeleteApiTokenMutation,
   useRotateApiTokenMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { EditDialog } from './edit-dialog';
 

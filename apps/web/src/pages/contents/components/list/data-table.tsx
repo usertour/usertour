@@ -3,7 +3,7 @@
 import { LoadMoreFailed } from '@/components/load-more-failed';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useThemeList } from '@/hooks/use-theme-list';
-import { useGetContentVersionQuery, type Theme } from '@usertour/hooks';
+import { useGetContentVersionQuery, type Theme } from '@usertour/data';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';

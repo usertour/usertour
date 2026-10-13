@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
   useToast,
 } from '@usertour/ui';
-import { useDisableTwoFactorMutation } from '@usertour/hooks';
+import { useDisableTwoFactorMutation } from '@usertour/data';
 import { RiSparklingFill } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { RegenerateDialog } from './regenerate-dialog';

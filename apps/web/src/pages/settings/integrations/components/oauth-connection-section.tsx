@@ -7,7 +7,7 @@ import {
   type Integration,
   useDisconnectIntegrationOAuthMutation,
   useStartIntegrationOAuthMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { RiHistoryLine, RiLinkM, RiLinkUnlinkM, RiMore2Line } from '@usertour/icons';
 import {
   Badge,

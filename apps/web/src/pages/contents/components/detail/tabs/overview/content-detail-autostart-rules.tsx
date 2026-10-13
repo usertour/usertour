@@ -13,7 +13,7 @@ import {
   Conditions,
   validateConditions,
 } from '@usertour/business-components';
-import { useContentListQuery } from '@usertour/hooks';
+import { useContentListQuery } from '@usertour/data';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
 import isEqual from 'fast-deep-equal';

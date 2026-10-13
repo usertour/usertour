@@ -3,7 +3,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { ColumnDef, Row } from '@tanstack/react-table';
 import { type Content, ContentDataType, type ContentVersion, type Event } from '@usertour/types';
-import { type BizSession } from '@usertour/hooks';
+import { type BizSession } from '@usertour/data';
 import { format, formatDistanceToNow } from 'date-fns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import {

@@ -5,7 +5,7 @@ import {
   type BizCompany,
   type BizUser,
   type BizUserOnCompany,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CalendarIcon, IdCardIcon, ReloadIcon } from '@radix-ui/react-icons';
 import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';

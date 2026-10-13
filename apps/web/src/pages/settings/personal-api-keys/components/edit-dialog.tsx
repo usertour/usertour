@@ -10,7 +10,7 @@ import {
 } from '@usertour/ui';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiToken, useUpdateApiTokenMutation } from '@usertour/hooks';
+import { type ApiToken, useUpdateApiTokenMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';

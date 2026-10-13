@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { useListSegmentsQuery, type Segment } from '@usertour/hooks';
+import { useListSegmentsQuery, type Segment } from '@usertour/data';
 import { isSyncedSegment } from '@/utils/segment';
 import type { EntityConfig } from './entity-config';
 

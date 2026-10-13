@@ -1,5 +1,5 @@
 import { validateConditions } from '@usertour/business-components';
-import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useAttributeList } from '@/hooks/use-attribute-list';

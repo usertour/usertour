@@ -24,7 +24,7 @@ import {
   type StepAnalytics,
   type TooltipTargetMissingResponse,
   type TooltipTargetMissingSession,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import type { AnalyticsViewsByStep } from '@usertour/types';
 import { LoadMoreFailed } from '@/components/load-more-failed';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
