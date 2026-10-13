@@ -87,6 +87,20 @@ export class GqlConfigService implements GqlOptionsFactory {
           };
         }
 
+        // A variable the schema rejects (a null for a non-nullable input field,
+        // a value of the wrong type): the request's own input is wrong, so it
+        // is a validation error like one the pipe raises, and the message
+        // names the variable path the client has to fix.
+        if (formattedError.extensions?.code === 'BAD_USER_INPUT') {
+          const validationError = new ValidationError(formattedError.message);
+          return {
+            message: validationError.getMessage(requestLocale.get()),
+            extensions: {
+              code: validationError.code,
+            },
+          };
+        }
+
         // A document the schema rejects (a variable declared as a type the
         // server no longer has, a selection that no longer exists). Every
         // dashboard build validates its documents against the schema it was

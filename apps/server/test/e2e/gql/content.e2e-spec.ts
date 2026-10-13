@@ -667,7 +667,7 @@ describe('GraphQL content (e2e)', () => {
           data: { versionId: version.id, content: { steps: [{ ...step, setting: null }] } },
         },
       });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
 
       const row = await prisma.step.findUnique({
         where: { versionId_cvid: { versionId: version.id, cvid: step.cvid } },
