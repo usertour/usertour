@@ -10,7 +10,7 @@ import {
   useStepWidth,
 } from '@usertour/widget';
 import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@usertour/editor';
-import { GoogleFontCss } from '@usertour/business-components';
+import { GoogleFontCss } from '@/components/google-font-css';
 import {
   Attribute,
   Content,

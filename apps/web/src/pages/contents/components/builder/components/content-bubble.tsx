@@ -26,7 +26,7 @@ import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 import { type Theme } from '@usertour/data';
 import { useUpload } from '@/hooks/use-upload';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { GoogleFontCss } from '@usertour/business-components';
+import { GoogleFontCss } from '@/components/google-font-css';
 
 export interface ContentBubbleProps {
   currentStep: Step;

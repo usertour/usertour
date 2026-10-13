@@ -14,7 +14,7 @@ packages:
   - "packages/license"
   - "packages/helpers"
   - "packages/types"
-  - "packages/business-components"
+  - "packages/conditions"
   - "packages/editor"
   - "packages/finder"
   - "packages/i18n"

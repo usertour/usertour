@@ -12,7 +12,7 @@ import {
  * the write API accepting inputs the builder never offers and the runtime
  * silently ignores):
  *  - the builder's per-container `filterItems` (packages/editor,
- *    packages/business-components, apps/web builder components);
+ *    packages/conditions, apps/web builder components);
  *  - the server's v2/MCP write guards (apps/server content-versions service,
  *    via the representation-name adapter in content-representation/contract-map);
  *  - the authoring guide / schema descriptions.

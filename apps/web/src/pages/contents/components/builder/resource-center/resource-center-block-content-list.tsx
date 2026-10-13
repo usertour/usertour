@@ -36,7 +36,7 @@ import {
   RiSettings3Line,
   SpinnerIcon,
 } from '@usertour/icons';
-import { Conditions } from '@usertour/business-components';
+import { Conditions } from '@usertour/conditions';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { useContentListQuery, useListEventsQuery, useListSegmentsQuery } from '@usertour/data';

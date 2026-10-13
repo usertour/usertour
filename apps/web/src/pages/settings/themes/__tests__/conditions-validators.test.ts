@@ -16,12 +16,12 @@ import {
   validateTextInput,
   validateTime,
   validateUserAttr,
-} from '../../../../../../../packages/business-components/src/components/conditions/validators';
-import { validateConditions } from '../../../../../../../packages/business-components/src/components/conditions/validate';
+} from '../../../../../../../packages/conditions/src/components/conditions/validators';
+import { validateConditions } from '../../../../../../../packages/conditions/src/components/conditions/validate';
 import {
   partsToISO,
   parseISOToParts,
-} from '../../../../../../../packages/business-components/src/components/conditions/types/time/utils';
+} from '../../../../../../../packages/conditions/src/components/conditions/types/time/utils';
 import type { Attribute, Content, RulesCondition } from '@usertour/types';
 import type { Segment } from '@usertour/data';
 

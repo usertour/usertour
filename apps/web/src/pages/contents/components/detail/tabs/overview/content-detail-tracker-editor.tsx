@@ -5,7 +5,7 @@ import { EventCreateDialog } from '@/components/events/event-create-dialog';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
-import { CLIENT_EVALUABLE_CONDITION_TYPES } from '@usertour/business-components';
+import { CLIENT_EVALUABLE_CONDITION_TYPES } from '@usertour/conditions';
 import { buildConfig } from '@usertour/helpers';
 import { Event, RulesCondition } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';

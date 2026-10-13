@@ -1,5 +1,7 @@
 # 0004: Collapse per-atom packages into `@usertour/ui`
 
+> Note (2026-10): `@usertour/business-components` has since been renamed to `@usertour/conditions`; the text keeps the name of the time.
+
 - **Date:** 2026-05-27
 - **Status:** Accepted (Phases 1–4 landed)
 

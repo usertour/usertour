@@ -5,7 +5,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { Attribute, AttributeBizTypes } from '@usertour/types';
 import { Badge, ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
-import { AttributeDataTypeIcon, IntegrationSourceMark } from '@usertour/business-components';
+import { AttributeDataTypeIcon, IntegrationSourceMark } from '@usertour/conditions';
 import { RiShieldCheckFill } from '@usertour/icons';
 import { catalogEntryForSource } from '@usertour/constants';
 import { AttributeRowActions } from './attribute-row-actions';

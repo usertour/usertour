@@ -27,7 +27,7 @@ import {
   useToast,
 } from '@usertour/ui';
 import { CompanyIcon, EventIcon2, SpinnerIcon, UserIcon, UserIcon2 } from '@usertour/icons';
-import { AttributeDataTypeIcon } from '@usertour/business-components';
+import { AttributeDataTypeIcon } from '@usertour/conditions';
 import { RANDOM_NUMBER_RANGE_MAX, RANDOM_NUMBER_RANGE_MIN } from '@usertour/constants';
 import {
   isBucketingDataType,

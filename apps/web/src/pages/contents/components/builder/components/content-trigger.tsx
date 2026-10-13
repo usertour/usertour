@@ -6,7 +6,7 @@ import {
   ConditionWait,
   Conditions,
   validateConditions,
-} from '@usertour/business-components';
+} from '@usertour/conditions';
 import { Actions, validateActions } from '@usertour/editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';

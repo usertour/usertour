@@ -26,7 +26,7 @@ Anything that depends on the consuming app. Hard rules:
 |---|---|
 | depends on `react-router-dom` or app URL strings | `apps/<app>/src/...` next to its callers |
 | is a UI primitive with no business knowledge | `@usertour/ui` (`packages/components/ui`) |
-| is a business UI component shared across 2+ apps | `@usertour/business-components` |
+| is a business UI component shared across 2+ apps | `@usertour/conditions` |
 | is a hook scoped to one feature in one app | `apps/<app>/src/pages/<feature>/components/` |
 
 ## Adding a new hook — decision tree

@@ -16,7 +16,7 @@ import { useContentList } from '@/pages/contents/components/builder/hooks/use-co
 import { Actions, PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
-import { Conditions } from '@usertour/business-components';
+import { Conditions } from '@usertour/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import {
   ContentDataType,

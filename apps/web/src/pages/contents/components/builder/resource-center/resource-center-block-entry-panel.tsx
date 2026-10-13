@@ -16,7 +16,7 @@ import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
-import { Conditions } from '@usertour/business-components';
+import { Conditions } from '@usertour/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';

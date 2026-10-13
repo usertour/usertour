@@ -1,4 +1,4 @@
-import { PickElementButton, type PickElementResult } from '@usertour/business-components';
+import { PickElementButton, type PickElementResult } from '@usertour/conditions';
 import { BUILDER_Z } from '@usertour/constants';
 import { Input, Label, QuestionTooltip } from '@usertour/ui';
 import { ChangeEvent, useCallback, useState } from 'react';
