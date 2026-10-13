@@ -8,7 +8,7 @@ The architectural _why_ (boundary, rejected alternatives, triggers to revisit) l
 
 ## What goes here
 
-1. **Apollo wrappers** for the GraphQL documents generated into `src/generated` from the `.graphql` files in `src/hooks`, named after the entity or the hook module that owns them. Each wrapper calls `useQuery` / `useMutation` / `useLazyQuery`, decodes the nested response shape, and returns a uniform signature:
+1. **Apollo wrappers** for the GraphQL documents generated into `src/generated` from the `.graphql` files in `src/documents`, named after the entity or the hook module that owns them (a document named like a module in `src/hooks` is that module's). Each wrapper calls `useQuery` / `useMutation` / `useLazyQuery`, decodes the nested response shape, and returns a uniform signature:
    - **Queries** → `{ data, loading, error, refetch }`
    - **Mutations** → `{ invoke, loading, error }` where `invoke(args)` resolves with the unwrapped result
 2. **Cross-app React utilities** that depend only on React and on the wrappers above. Example: `useTooltipTargetMissingSessions`.

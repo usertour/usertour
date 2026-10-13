@@ -765,7 +765,7 @@ export const useDeleteSegmentMutation = () => {
 //
 // Refresh path is `refetchQueries: ['listSegment']`, NOT Apollo
 // auto-merge. The UpdateSegmentDocument gql response only selects `{ id }`
-// (`updateSegment` in packages/data/src/hooks/segments.graphql), so auto-merge into the cached
+// (`updateSegment` in packages/data/src/documents/segments.graphql), so auto-merge into the cached
 // Segment entity is a no-op. To migrate to auto-merge later, expand
 // the gql response to mirror listSegment's selection set, then drop
 // refetchQueries here.
