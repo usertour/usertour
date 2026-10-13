@@ -1,16 +1,8 @@
-import { useApolloClient, useMutation, useLazyQuery, NetworkStatus } from '@apollo/client';
+import { useApolloClient, useMutation, NetworkStatus } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 import { useCallback } from 'react';
 
-import type {
-  Content,
-  Pagination,
-  TeamMember,
-  AttributeBizTypes,
-  ColumnSetting,
-  RulesCondition,
-  ContentVersion,
-} from '@usertour/types';
+import type { Pagination, TeamMember, AttributeBizTypes } from '@usertour/types';
 import {
   ActiveUserProjectDocument,
   AdminAddProjectMemberDocument,
@@ -24,13 +16,10 @@ import {
   AdminSettingsDocument,
   AdminTransferProjectOwnershipDocument,
   AdminUsersDocument,
-  type AnalyticsOrder,
   type BizModelFieldsFragment,
   type BizOrder,
   type BizUserFieldsFragment,
   CancelInviteDocument,
-  ChangeTeamMemberRoleDocument as changeTeamMemberRoleMutation,
-  type CreateAttributeInput as CreateAttributeInputWire,
   type CreateEnvironmentsMutationVariables,
   type CreateOidcSsoProviderInput,
   type ProjectSsoSettingsFieldsFragment,
@@ -38,34 +27,16 @@ import {
   type UpdateAttributeInput,
   type UpdateProjectSsoSettingsInput,
   type UpdateSsoProviderInput,
-  type ContentOrder,
-  type ContentQuery,
   CreateAttributeDocument,
-  CreateBizCompanyOnSegmentDocument,
-  type CreateBizCompanyOnSegmentMutationVariables,
-  CreateBizUserOnSegmentDocument,
-  type CreateBizUserOnSegmentMutationVariables,
   CreateCheckoutSessionDocument,
-  type ContentVersionInput,
-  CreateContentVersionDocument,
   CreateEnvironmentsDocument,
   CreateOidcSsoProviderDocument,
   CreatePortalSessionDocument,
-  CreateSegmentDocument,
-  type CreateSegmentMutationVariables,
   DeleteAttributeDocument,
   DeleteBizCompanyDocument,
-  DeleteBizCompanyOnSegmentDocument,
-  type DeleteBizCompanyOnSegmentMutationVariables,
   DeleteBizUserDocument,
-  DeleteBizUserOnSegmentDocument,
-  DeleteContentDocument,
   DeleteEnvironmentsDocument,
-  DeleteSegmentDocument,
-  DeleteSessionDocument,
   DeleteSsoProviderDocument,
-  EndSessionDocument,
-  GetContentDocument,
   GetInvitesDocument,
   type GetInvitesQuery,
   type GetInvitesQueryVariables,
@@ -73,9 +44,6 @@ import {
   type GetProjectConfigQuery,
   type GetProjectConfigQueryVariables,
   GetProjectLicenseInfoDocument,
-  GetProjectSsoLoginDocument,
-  type GetProjectSsoLoginQuery,
-  type GetProjectSsoLoginQueryVariables,
   GetProjectSsoProvidersDocument,
   type GetProjectSsoProvidersQuery,
   type GetProjectSsoProvidersQueryVariables,
@@ -92,13 +60,9 @@ import {
   type GetTeamMembersQuery,
   type GetTeamMembersQueryVariables,
   GlobalConfigDocument,
-  InviteTeamMemberDocument as inviteTeamMemberMutation,
   ListAttributesDocument,
   type ListAttributesQuery,
   type ListAttributesQueryVariables,
-  ListLocalizationsDocument,
-  type ListLocalizationsQuery,
-  type ListLocalizationsQueryVariables,
   ListProjectSsoProvidersDocument,
   type ListProjectSsoProvidersQuery,
   type ListProjectSsoProvidersQueryVariables,
@@ -109,20 +73,9 @@ import {
   QueryBizUserDocument,
   type QueryBizUserQuery,
   type QueryBizUserQueryVariables,
-  QueryContentDocument,
-  type QueryContentQuery,
-  type QueryContentQueryVariables,
-  QueryContentQuestionAnalyticsDocument,
-  QuerySessionDetailDocument,
-  QuerySessionsByExternalIdDocument,
   RemoveTeamMemberDocument,
   type Role,
-  type SessionQuery,
-  TransferProjectOwnershipDocument as transferProjectOwnershipMutation,
   UpdateAttributeDocument,
-  UpdateContentDocument,
-  type UpdateContentInput,
-  UpdateContentVersionDocument,
   UpdateEnvironmentsDocument,
   type UpdateEnvironmentsMutationVariables,
   UpdateInstanceAuthenticationSettingsDocument,
@@ -133,7 +86,6 @@ import {
   UpdateProjectLicenseDocument,
   UpdateProjectSsoSettingsDocument,
   UpdateProjectUsesInstanceLicenseDocument,
-  UpdateSegmentDocument,
   UpdateSsoProviderDocument,
   UpdateUserDisabledDocument,
   UpdateUserSystemAdminDocument,
@@ -143,48 +95,11 @@ import {
   VerifyInstallationDocument,
   type VerifyInstallationQuery,
   type VerifyInstallationQueryVariables,
-  type VersionInput,
+  ChangeTeamMemberRoleDocument as changeTeamMemberRoleMutation,
+  type CreateAttributeInput as CreateAttributeInputWire,
+  InviteTeamMemberDocument as inviteTeamMemberMutation,
+  TransferProjectOwnershipDocument as transferProjectOwnershipMutation,
 } from '../graphql';
-
-type UseContentListQueryProps = {
-  query: ContentQuery;
-  options?: TypedQueryOptions<QueryContentQuery, QueryContentQueryVariables>;
-  pagination?: Pagination;
-  orderBy?: ContentOrder;
-};
-
-export const useContentListQuery = ({
-  query,
-  orderBy = { field: 'createdAt', direction: 'desc' },
-  pagination = { first: 1000 },
-  options,
-}: UseContentListQueryProps) => {
-  // `...options` spread BEFORE `variables` — a caller-supplied
-  // `options.variables` would otherwise silently overwrite the
-  // pagination / query / orderBy the wrapper just composed. Defensive
-  // but free: `useCursorPagination` already pipes caller-controlled
-  // options straight into wrappers like this one.
-  const { data, refetch, error, loading } = useTypedQuery(QueryContentDocument, {
-    ...options,
-    variables: {
-      ...pagination,
-      query,
-      orderBy,
-    },
-  });
-  // `contents` is undefined until the list has loaded, never an empty array
-  // standing in for it: the conditions validator reads undefined as "not
-  // loaded, skip the existence check" and an array as "loaded, look the
-  // content up", so an empty stand-in would reject every content condition
-  // during the load. A loaded list with no rows is `[]`.
-  const contents: Content[] | undefined = data
-    ? (data.queryContent.edges?.map((edge) => edge.node) ?? [])
-    : undefined;
-  const pageInfo = data?.queryContent?.pageInfo;
-  const totalCount = data?.queryContent?.totalCount;
-
-  return { contents, pageInfo, totalCount, refetch, error, loading };
-};
 
 type UseCompanyListQueryProps = {
   query: {
@@ -453,117 +368,6 @@ export const useActiveUserProjectMutation = () => {
   return { invoke, loading, error };
 };
 
-export const useDeleteSessionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DeleteSessionDocument);
-  const invoke = useCallback(
-    async (sessionId: string): Promise<boolean> => {
-      const response = await mutation({ variables: { sessionId } });
-      return !!response.data?.deleteSession;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useEndSessionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(EndSessionDocument);
-  const invoke = useCallback(
-    async (sessionId: string): Promise<boolean> => {
-      const response = await mutation({ variables: { sessionId } });
-      return !!response.data?.endSession;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useQuerySessionDetailQuery = (sessionId: string) => {
-  const { data, loading, error, refetch } = useTypedQuery(QuerySessionDetailDocument, {
-    variables: { sessionId },
-  });
-
-  const session = data?.querySessionDetail;
-  return { session, loading, error, refetch };
-};
-
-export const useQuerySessionsByExternalIdQuery = (
-  query: SessionQuery,
-  pagination: Pagination = { first: 10 },
-  orderBy: AnalyticsOrder = { field: 'createdAt', direction: 'desc' },
-) => {
-  const { data, loading, refreshing, error, refetch } = useTypedQuery(
-    QuerySessionsByExternalIdDocument,
-    {
-      variables: {
-        query,
-        orderBy,
-        ...pagination,
-      },
-      // Reload goes through `refetch()`; without this the refetch window
-      // has `loading: false`, so the UI gets no in-flight signal.
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-
-  const sessions = data?.querySessionsByExternalId?.edges?.map((edge) => edge.node) ?? [];
-  const pageInfo = data?.querySessionsByExternalId?.pageInfo;
-  const totalCount = data?.querySessionsByExternalId?.totalCount || 0;
-
-  // In-flight `loading`: the reload button and the accumulator gate on it.
-  return { sessions, pageInfo, totalCount, loading: loading || refreshing, error, refetch };
-};
-
-export const useQueryContentQuestionAnalyticsQuery = (
-  environmentId: string,
-  contentId: string,
-  startDate: string,
-  endDate: string,
-  timezone: string,
-) => {
-  const { data, loading, error, refetch } = useTypedQuery(QueryContentQuestionAnalyticsDocument, {
-    variables: { contentId, startDate, endDate, timezone, environmentId },
-  });
-  const questionAnalytics = data?.queryContentQuestionAnalytics;
-  return { questionAnalytics, loading, error, refetch };
-};
-
-export const useUpdateContentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(UpdateContentDocument);
-  const invoke = useCallback(
-    async (contentId: string, content: UpdateContentInput) => {
-      const response = await mutation({ variables: { contentId, content } });
-      return response.data?.updateContent;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useUpdateContentVersionMutation = () => {
-  const [mutation, { loading, error }] = useMutation(UpdateContentVersionDocument);
-  const invoke = useCallback(
-    async (
-      versionId: string,
-      // The builder's whole-version save sends `steps` (the full list, each
-      // carrying its front-end cvid; the server upserts by cvid). detail
-      // omits it and only touches the scalar fields.
-      content: VersionInput,
-      // Optimistic-lock baseline (the version's updatedAt the caller last
-      // loaded). The builder's whole-version save sends it so a concurrent
-      // save by someone else is rejected instead of silently overwritten;
-      // detail's scalar updates omit it.
-      expectedUpdatedAt?: string,
-    ): Promise<ContentVersion | undefined> => {
-      const response = await mutation({
-        variables: { versionId, content, expectedUpdatedAt },
-      });
-      return response.data?.updateContentVersion;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
 /** `randomMax` is the upper bound of a Random number attribute (ADR 0020); required for that type only. */
 export type CreateAttributeInput = CreateAttributeInputWire;
 
@@ -667,41 +471,6 @@ export const useUpdateProjectMutation = () => {
   return { invoke, loading, error };
 };
 
-// Builder related hooks
-export const useGetContentLazyQuery = () => {
-  const [query, { loading, error }] = useLazyQuery(GetContentDocument);
-  // A failure rejects, as a mutation's invoke does: the builder must tell a
-  // content that failed to load from one that is gone.
-  const invoke = useCallback(
-    async (contentId: string) => {
-      const response = await query({ variables: { contentId } });
-      if (response.error) {
-        throw response.error;
-      }
-      return response.data?.getContent;
-    },
-    [query],
-  );
-  return { invoke, loading, error };
-};
-
-export const useCreateContentVersionMutation = () => {
-  // Forking the version inserts a new row at the top of the paginated
-  // version-history list — Apollo's normalized cache can't materialise
-  // a new edge from the mutation response, so refetch the list query.
-  const [mutation, { loading, error }] = useMutation(CreateContentVersionDocument, {
-    refetchQueries: ['listContentVersions'],
-  });
-  const invoke = useCallback(
-    async (data: ContentVersionInput) => {
-      const response = await mutation({ variables: { data } });
-      return response.data?.createContentVersion;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
 export const useDeleteAttributeMutation = () => {
   const [mutation, { loading, error }] = useMutation(DeleteAttributeDocument);
   const invoke = useCallback(
@@ -714,75 +483,6 @@ export const useDeleteAttributeMutation = () => {
         },
       });
       return !!response.data?.deleteAttribute?.id;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useDeleteSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DeleteSegmentDocument);
-  const invoke = useCallback(
-    async (id: string): Promise<boolean> => {
-      const response = await mutation({
-        variables: { id },
-        update(cache) {
-          cache.evict({ id: cache.identify({ __typename: 'Segment', id }) });
-          cache.gc();
-        },
-      });
-      return !!response.data?.deleteSegment?.success;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-// Server's UpdateSegment input picks { name, data, id, columns } from
-// Segment — all optional except id. Wrapper mirrors that so the same
-// invoke handles both filter-condition saves and column-setting saves.
-//
-// Refresh path is `refetchQueries: ['listSegment']`, NOT Apollo
-// auto-merge. The UpdateSegmentDocument gql response only selects `{ id }`
-// (`updateSegment` in packages/data/src/documents/segments.graphql), so auto-merge into the cached
-// Segment entity is a no-op. To migrate to auto-merge later, expand
-// the gql response to mirror listSegment's selection set, then drop
-// refetchQueries here.
-export const useUpdateSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(UpdateSegmentDocument, {
-    refetchQueries: ['listSegment'],
-  });
-  const invoke = useCallback(
-    async (data: {
-      id: string;
-      name?: string;
-      data?: RulesCondition[];
-      columns?: ColumnSetting[];
-    }): Promise<boolean> => {
-      const response = await mutation({ variables: { data } });
-      return !!response.data?.updateSegment?.id;
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useDeleteContentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DeleteContentDocument);
-  const invoke = useCallback(
-    async (contentId: string): Promise<boolean> => {
-      const response = await mutation({
-        variables: { contentId },
-        // Server returns `{ success }` only — there's no `id` on the
-        // payload for auto-merge, so do the eviction ourselves. All
-        // observers of the Content slot (list view, detail view, etc.)
-        // see the row disappear without a manual refetch.
-        update(cache) {
-          cache.evict({ id: cache.identify({ __typename: 'Content', id: contentId }) });
-          cache.gc();
-        },
-      });
-      return !!response.data?.deleteContent?.success;
     },
     [mutation],
   );
@@ -925,77 +625,6 @@ export const useDeleteBizUserMutation = () => {
         count: response.data?.deleteBizUser?.count ?? 0,
       };
     },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useDeleteBizUserOnSegmentMutation = () => {
-  // Removes a relationship, not the user itself — the user entity stays
-  // in cache, but the segment's view of users needs to be refetched
-  // because Apollo can't infer "this user is no longer in this segment"
-  // from a count response.
-  const [mutation, { loading, error }] = useMutation(DeleteBizUserOnSegmentDocument, {
-    refetchQueries: ['queryBizUser'],
-  });
-  const invoke = useCallback(
-    async (data: {
-      bizUserIds: string[];
-      segmentId: string;
-    }): Promise<{
-      success: boolean;
-      count: number;
-    }> => {
-      const response = await mutation({ variables: { data } });
-      return {
-        success: !!response.data?.deleteBizUserOnSegment?.success,
-        count: response.data?.deleteBizUserOnSegment?.count ?? 0,
-      };
-    },
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useCreateSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(CreateSegmentDocument, {
-    refetchQueries: ['listSegment'],
-  });
-  const invoke = useCallback(
-    (variables: CreateSegmentMutationVariables) => mutation({ variables }),
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useCreateBizUserOnSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(CreateBizUserOnSegmentDocument, {
-    refetchQueries: ['queryBizUser'],
-  });
-  const invoke = useCallback(
-    (variables: CreateBizUserOnSegmentMutationVariables) => mutation({ variables }),
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useCreateBizCompanyOnSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(CreateBizCompanyOnSegmentDocument, {
-    refetchQueries: ['queryBizCompany'],
-  });
-  const invoke = useCallback(
-    (variables: CreateBizCompanyOnSegmentMutationVariables) => mutation({ variables }),
-    [mutation],
-  );
-  return { invoke, loading, error };
-};
-
-export const useDeleteBizCompanyOnSegmentMutation = () => {
-  const [mutation, { loading, error }] = useMutation(DeleteBizCompanyOnSegmentDocument, {
-    refetchQueries: ['queryBizCompany'],
-  });
-  const invoke = useCallback(
-    (variables: DeleteBizCompanyOnSegmentMutationVariables) => mutation({ variables }),
     [mutation],
   );
   return { invoke, loading, error };
@@ -1327,23 +956,6 @@ export const useInvalidateLicenseScopedCache = () => {
   }, [apollo]);
 };
 
-export const useListLocalizationsQuery = (
-  projectId: string | undefined,
-  options?: TypedQueryOptions<ListLocalizationsQuery, ListLocalizationsQueryVariables>,
-) => {
-  const { data, refetch, loading, error } = useTypedQuery(ListLocalizationsDocument, {
-    variables: { projectId: projectId! },
-    skip: !projectId,
-    ...options,
-  });
-  return {
-    localizationList: data?.listLocalizations,
-    refetch,
-    loading,
-    error,
-  };
-};
-
 // ---------------------------------------------------------------------------
 // SSO (project-level OIDC identity providers)
 // ---------------------------------------------------------------------------
@@ -1390,26 +1002,6 @@ export const useGetProjectSsoProvidersQuery = (
   });
   return {
     providers: data?.getProjectSsoProviders ?? [],
-    loading,
-    error,
-    refetch,
-  };
-};
-
-export const useGetProjectSsoLoginQuery = (
-  projectId: string | undefined,
-  options?: TypedQueryOptions<GetProjectSsoLoginQuery, GetProjectSsoLoginQueryVariables>,
-) => {
-  const { data, loading, error, refetch } = useTypedQuery(GetProjectSsoLoginDocument, {
-    variables: { projectId: projectId! },
-    skip: !projectId || options?.skip,
-    ...options,
-  });
-  const login = data?.getProjectSsoLogin;
-  return {
-    name: login?.name ?? '',
-    logoUrl: login?.logoUrl ?? null,
-    providers: login?.providers ?? [],
     loading,
     error,
     refetch,

@@ -302,22 +302,3 @@ query listVersionLocalizations($versionId: String!) {
     backup
   }
 }
-
-mutation updateVersionLocalization($data: UpdateVersionLocalizationInput!) {
-  updateVersionLocalization(data: $data) {
-    id
-    createdAt
-    updatedAt
-    versionId
-    localizationId
-    enabled
-    localized
-    backup
-    # The save touches the owning draft's updatedAt; selecting it lets the
-    # normalized cache move the header's "Autosaved" without a refetch.
-    version {
-      id
-      updatedAt
-    }
-  }
-}

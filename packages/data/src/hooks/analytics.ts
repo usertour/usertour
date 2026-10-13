@@ -11,6 +11,7 @@ import {
   QueryTrackerUsersDocument,
   type QueryTrackerUsersQuery,
   type QueryTrackerUsersQueryVariables,
+  QueryContentQuestionAnalyticsDocument,
 } from '../graphql';
 
 // Domain wrapper for `queryContentAnalytics`. The date-range / preset
@@ -140,4 +141,18 @@ export const useFetchAllTrackerUsers = () => {
     },
     [client],
   );
+};
+
+export const useQueryContentQuestionAnalyticsQuery = (
+  environmentId: string,
+  contentId: string,
+  startDate: string,
+  endDate: string,
+  timezone: string,
+) => {
+  const { data, loading, error, refetch } = useTypedQuery(QueryContentQuestionAnalyticsDocument, {
+    variables: { contentId, startDate, endDate, timezone, environmentId },
+  });
+  const questionAnalytics = data?.queryContentQuestionAnalytics;
+  return { questionAnalytics, loading, error, refetch };
 };

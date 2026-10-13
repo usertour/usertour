@@ -29,6 +29,9 @@ import {
   type StartTwoFactorSetupMutation,
   StartTwoFactorSetupWithChallengeDocument,
   VerifyTwoFactorDocument,
+  GetProjectSsoLoginDocument,
+  type GetProjectSsoLoginQuery,
+  type GetProjectSsoLoginQueryVariables,
 } from '../graphql';
 
 // Session / identity ---------------------------------------------------------
@@ -251,4 +254,24 @@ export const useRegenerateRecoveryCodesMutation = () => {
     return response.data?.regenerateRecoveryCodes?.recoveryCodes;
   };
   return { invoke, loading, error };
+};
+
+export const useGetProjectSsoLoginQuery = (
+  projectId: string | undefined,
+  options?: TypedQueryOptions<GetProjectSsoLoginQuery, GetProjectSsoLoginQueryVariables>,
+) => {
+  const { data, loading, error, refetch } = useTypedQuery(GetProjectSsoLoginDocument, {
+    variables: { projectId: projectId! },
+    skip: !projectId || options?.skip,
+    ...options,
+  });
+  const login = data?.getProjectSsoLogin;
+  return {
+    name: login?.name ?? '',
+    logoUrl: login?.logoUrl ?? null,
+    providers: login?.providers ?? [],
+    loading,
+    error,
+    refetch,
+  };
 };

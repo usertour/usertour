@@ -1,8 +1,8 @@
-import { useMutation } from '@apollo/client';
+import { useMutation, useLazyQuery } from '@apollo/client';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
-import type { Content, ContentVersion } from '@usertour/types';
-import { useMemo } from 'react';
+import type { Content, ContentVersion, Pagination } from '@usertour/types';
+import { useMemo, useCallback } from 'react';
 import { useCursorFetchMore } from './use-cursor-fetch-more';
 import {
   type ContentOrder,
@@ -32,6 +32,13 @@ import {
   type QueryContentQueryVariables,
   RestoreContentVersionDocument,
   UnpublishedContentVersionDocument,
+  type ContentVersionInput,
+  CreateContentVersionDocument,
+  DeleteContentDocument,
+  UpdateContentDocument,
+  type UpdateContentInput,
+  UpdateContentVersionDocument,
+  type VersionInput,
 } from '../graphql';
 
 // Domain wrappers for content-detail / version / localization queries.
@@ -371,5 +378,139 @@ export const useRestoreContentVersionMutation = () => {
     const response = await mutation({ variables: { versionId } });
     return !!response.data?.restoreContentVersion?.id;
   };
+  return { invoke, loading, error };
+};
+
+type UseContentListQueryProps = {
+  query: ContentQuery;
+  options?: TypedQueryOptions<QueryContentQuery, QueryContentQueryVariables>;
+  pagination?: Pagination;
+  orderBy?: ContentOrder;
+};
+
+export const useContentListQuery = ({
+  query,
+  orderBy = { field: 'createdAt', direction: 'desc' },
+  pagination = { first: 1000 },
+  options,
+}: UseContentListQueryProps) => {
+  // `...options` spread BEFORE `variables` — a caller-supplied
+  // `options.variables` would otherwise silently overwrite the
+  // pagination / query / orderBy the wrapper just composed. Defensive
+  // but free: `useCursorPagination` already pipes caller-controlled
+  // options straight into wrappers like this one.
+  const { data, refetch, error, loading } = useTypedQuery(QueryContentDocument, {
+    ...options,
+    variables: {
+      ...pagination,
+      query,
+      orderBy,
+    },
+  });
+  // `contents` is undefined until the list has loaded, never an empty array
+  // standing in for it: the conditions validator reads undefined as "not
+  // loaded, skip the existence check" and an array as "loaded, look the
+  // content up", so an empty stand-in would reject every content condition
+  // during the load. A loaded list with no rows is `[]`.
+  const contents: Content[] | undefined = data
+    ? (data.queryContent.edges?.map((edge) => edge.node) ?? [])
+    : undefined;
+  const pageInfo = data?.queryContent?.pageInfo;
+  const totalCount = data?.queryContent?.totalCount;
+
+  return { contents, pageInfo, totalCount, refetch, error, loading };
+};
+
+export const useUpdateContentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateContentDocument);
+  const invoke = useCallback(
+    async (contentId: string, content: UpdateContentInput) => {
+      const response = await mutation({ variables: { contentId, content } });
+      return response.data?.updateContent;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useUpdateContentVersionMutation = () => {
+  const [mutation, { loading, error }] = useMutation(UpdateContentVersionDocument);
+  const invoke = useCallback(
+    async (
+      versionId: string,
+      // The builder's whole-version save sends `steps` (the full list, each
+      // carrying its front-end cvid; the server upserts by cvid). detail
+      // omits it and only touches the scalar fields.
+      content: VersionInput,
+      // Optimistic-lock baseline (the version's updatedAt the caller last
+      // loaded). The builder's whole-version save sends it so a concurrent
+      // save by someone else is rejected instead of silently overwritten;
+      // detail's scalar updates omit it.
+      expectedUpdatedAt?: string,
+    ): Promise<ContentVersion | undefined> => {
+      const response = await mutation({
+        variables: { versionId, content, expectedUpdatedAt },
+      });
+      return response.data?.updateContentVersion;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+// Builder related hooks
+export const useGetContentLazyQuery = () => {
+  const [query, { loading, error }] = useLazyQuery(GetContentDocument);
+  // A failure rejects, as a mutation's invoke does: the builder must tell a
+  // content that failed to load from one that is gone.
+  const invoke = useCallback(
+    async (contentId: string) => {
+      const response = await query({ variables: { contentId } });
+      if (response.error) {
+        throw response.error;
+      }
+      return response.data?.getContent;
+    },
+    [query],
+  );
+  return { invoke, loading, error };
+};
+
+export const useCreateContentVersionMutation = () => {
+  // Forking the version inserts a new row at the top of the paginated
+  // version-history list — Apollo's normalized cache can't materialise
+  // a new edge from the mutation response, so refetch the list query.
+  const [mutation, { loading, error }] = useMutation(CreateContentVersionDocument, {
+    refetchQueries: ['listContentVersions'],
+  });
+  const invoke = useCallback(
+    async (data: ContentVersionInput) => {
+      const response = await mutation({ variables: { data } });
+      return response.data?.createContentVersion;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useDeleteContentMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteContentDocument);
+  const invoke = useCallback(
+    async (contentId: string): Promise<boolean> => {
+      const response = await mutation({
+        variables: { contentId },
+        // Server returns `{ success }` only — there's no `id` on the
+        // payload for auto-merge, so do the eviction ourselves. All
+        // observers of the Content slot (list view, detail view, etc.)
+        // see the row disappear without a manual refetch.
+        update(cache) {
+          cache.evict({ id: cache.identify({ __typename: 'Content', id: contentId }) });
+          cache.gc();
+        },
+      });
+      return !!response.data?.deleteContent?.success;
+    },
+    [mutation],
+  );
   return { invoke, loading, error };
 };

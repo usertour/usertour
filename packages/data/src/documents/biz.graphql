@@ -1,3 +1,19 @@
+fragment BizEventFields on BizEvent {
+  id
+  createdAt
+  eventId
+  data
+  bizUserId
+  bizSessionId
+  bizCompanyId
+  event {
+    id
+    codeName
+    displayName
+    predefined
+  }
+}
+
 fragment BizModelFields on BizModel {
   id
   createdAt
