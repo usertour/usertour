@@ -34,8 +34,9 @@ qualify yet — leave it in `apps/web` until the context is also lifted
 out.
 
 A business component that both consumers need but that is not part of
-editing conditions does not go here: there is no package for it today,
-so it stays with its first consumer until the second one appears.
+editing conditions does not go here. There is no package for it today;
+when one is needed, it gets its own package (`packages/editor` cannot
+reach into `apps/web`) rather than widening this one.
 
 Examples already there: `Conditions`, `ConditionCombobox`, the element
 picker.

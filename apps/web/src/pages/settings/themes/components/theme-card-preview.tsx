@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import * as SharedPopper from '@usertour/widget';
 import { ContentEditorSerialize, useSettingsStyles } from '@usertour/widget';
-import { GoogleFontCss } from '@/components/google-font-css';
+import { GoogleFontCss } from '@/components/themes/google-font-css';
 import { ScaledPreviewContainer, Button } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import type { Theme } from '@usertour/data';

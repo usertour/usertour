@@ -34,7 +34,7 @@ doesn't relitigate the basics.
                        ┌────────▼─────────┐
                        │    L3 Domain     │
                        │     editor       │
-                       │conditions│
+                       │    conditions    │
                        └────────┬─────────┘
                                 │
                        ┌────────▼─────────┐

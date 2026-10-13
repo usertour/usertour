@@ -11,20 +11,21 @@ editor (`packages/editor`).
 
 ## What goes here
 
-Anything that is part of editing or validating a rule's conditions and is
-needed by both consumers. The package knows the domain (`@usertour/types`,
-one list query from `@usertour/data`) but not the application: no router, no
-environment values, and no copy — the consumer passes `t` in.
+Anything that is part of editing or validating a rule's conditions. The
+package knows the domain (`@usertour/types`, one list query from
+`@usertour/data`) but not the application: no router, no environment
+values, and no copy — the consumer passes `t` in.
 
 ## What does NOT go here
 
 - A generic primitive with no domain knowledge → `@usertour/ui`.
-- A component only one consumer uses → that consumer, next to its callers.
+- A component that is not about conditions and that only one consumer uses → that consumer, next to its callers.
 - A hook over a GraphQL document → `@usertour/data`.
 
 ## Development
 
 ```bash
 pnpm typecheck    # tsc --noEmit
-pnpm build        # tsup, with type declarations
 ```
+
+The package's `main` is `src/index.ts`; consumers compile it from source.
