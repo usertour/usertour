@@ -20,7 +20,7 @@ import {
 import { SpinnerIcon } from '@usertour/icons';
 import { useListContentPublishRecordsQuery } from '@usertour/hooks';
 import { cn } from '@usertour/tailwind';
-import type { ContentPublishRecord, ContentVersion } from '@usertour/types';
+import type { ContentPublishRecord } from '@usertour/types';
 import { format } from 'date-fns';
 import { PlaneIcon } from '@usertour/icons';
 import type { TFunction } from 'i18next';
@@ -110,7 +110,7 @@ const PublishRecordRow = ({ record }: { record: ContentPublishRecord }) => {
           onSubmit={() => setOpenPublish(false)}
         />
         <ContentRestoreForm
-          version={restoreTarget as ContentVersion}
+          version={restoreTarget}
           open={openRestore}
           onOpenChange={setOpenRestore}
           onSubmit={() => setOpenRestore(false)}

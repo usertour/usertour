@@ -58,13 +58,6 @@ query getContent($contentId: String!) {
     editedVersion {
       ...ContentVersionFields
     }
-    steps {
-      id
-      name
-      type
-      cvid
-      sequence
-    }
     contentOnEnvironments {
       id
       published

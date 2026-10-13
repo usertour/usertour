@@ -161,7 +161,7 @@ function FlowStartEditor({
             ? [
                 {
                   heading: t('actions.types.flowStart.flow'),
-                  options: flows.map((flow) => ({ value: flow.id, label: flow.name ?? '' })),
+                  options: flows.map((flow) => ({ value: flow.id, label: flow.name })),
                 },
               ]
             : []),
@@ -171,7 +171,7 @@ function FlowStartEditor({
                   heading: t('actions.types.flowStart.checklist'),
                   options: checklists.map((checklist) => ({
                     value: checklist.id,
-                    label: checklist.name ?? '',
+                    label: checklist.name,
                   })),
                 },
               ]
@@ -201,7 +201,7 @@ function FlowStartEditor({
                 heading: t('actions.types.flowStart.steps'),
                 options: steps.map((step, index) => ({
                   value: step.cvid as string,
-                  label: `${index + 1}. ${step.name ?? ''}`,
+                  label: `${index + 1}. ${step.name}`,
                   leading: getStepTypeIcon(step.type),
                 })),
               },

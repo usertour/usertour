@@ -804,6 +804,7 @@ export const ENDPOINTS: Endpoint[] = [
         isDefault: false,
         name: role === 'ADMIN' ? 'e2e-theme-admin' : 'e2e-theme-owner',
         projectId: s.projectId,
+        settings: {},
       },
     }),
   },

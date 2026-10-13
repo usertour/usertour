@@ -49,7 +49,7 @@ const ContentPreviewFooter = ({
     <div className="flex flex-none flex-col gap-1 px-4 py-3">
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-          {content.name ?? ''}
+          {content.name}
         </span>
         <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium">
           <span

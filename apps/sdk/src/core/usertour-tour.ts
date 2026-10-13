@@ -322,10 +322,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   /**
    * Displays a tooltip step in the tour
    * This method handles:
-   * 1. Validating the step and its target
-   * 2. Setting up the element watcher
-   * 3. Handling element found and timeout events
-   * 4. Updating the store with the new state
+   * 1. Setting up the element watcher
+   * 2. Handling element found and timeout events
+   * 3. Updating the store with the new state
    *
    * @param step - The step to display as a tooltip
    * @throws Will close the tour if validation fails or target is missing
@@ -408,11 +407,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     // Create new watcher
-    if (!step.target) {
-      log.warn('Step has no target element configured; closing the flow', { step });
-      this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
-      return;
-    }
     this.watcher = new UsertourElementWatcher(step.target);
 
     // Priority: API setting > Theme setting > Default (6 seconds)

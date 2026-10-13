@@ -16,7 +16,9 @@ export class CreateThemeInput implements NewTheme {
   @Field(() => String)
   projectId: string;
 
-  @Field(() => ThemeSettingsScalar, { nullable: true })
+  // Required: the column is non-null, and a JSON null would pass the database
+  // only to fail the non-null output field.
+  @Field(() => ThemeSettingsScalar)
   settings: JsonValue;
 
   @Field(() => [ThemeVariationScalar], { nullable: true })
