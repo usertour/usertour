@@ -23,7 +23,8 @@ import {
   Step,
 } from '@usertour/types';
 import { forwardRef, useState } from 'react';
-import { useAws, type Theme } from '@usertour/data';
+import { type Theme } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 
@@ -62,7 +63,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings);
     const { shouldShowMadeWith = true } = useBuilderConfig();
 
-    const { upload } = useAws();
+    const { upload } = useUpload();
 
     const handleEditorValueChange = (value: any) => {
       setData(value);

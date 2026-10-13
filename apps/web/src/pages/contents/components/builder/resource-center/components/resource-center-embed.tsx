@@ -34,7 +34,7 @@ import {
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { useAws } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 
 // Inline content editing in the preview is limited to these element types.
 const ENABLED_ELEMENT_TYPES = [
@@ -68,7 +68,7 @@ const ResourceCenterEmbedContent = (props: ResourceCenterEmbedContentProps) => {
   const { messageEditSlots } = props;
   const { currentPage } = useWidgetResourceCenterContext();
   const { data: localData, updateBlock } = useResourceCenterEditor();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const projectId = useProjectId();
   const { attributeList } = useAttributeList();
   const getOembedInfo = useOembedInfo();
@@ -121,7 +121,7 @@ const ResourceCenterEmbedContent = (props: ResourceCenterEmbedContentProps) => {
 
 export const ResourceCenterEmbed = () => {
   const { data: localData, updateBlock } = useResourceCenterEditor();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const theme = useCurrentTheme({ fallbackToDefault: true });
   const [expanded, setExpanded] = useState(true);
   const { shouldShowMadeWith = true } = useBuilderConfig();

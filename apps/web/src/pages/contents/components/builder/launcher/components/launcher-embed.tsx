@@ -3,7 +3,7 @@ import { isEqual } from 'lodash';
 import { useCallback, useMemo, useRef } from 'react';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
-import { useAws } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { useLauncherEditor } from '@/pages/contents/components/builder/launcher/use-launcher-editor';
 import { LauncherContentMain } from '@/pages/contents/components/builder/launcher/components/launcher-content';
 import { PlusIcon } from '@usertour/icons';
@@ -18,7 +18,7 @@ export const LauncherBuilderEmbed = () => {
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const theme = useCurrentTheme({ fallbackToDefault: true });
   const { data, updateDataTooltip, launcherTarget, launcherTooltip } = useLauncherEditor();
-  const { upload } = useAws();
+  const { upload } = useUpload();
 
   // The target / tooltip sub-views edit drafts in UI state; overlay them on the
   // saved data so the preview reflects in-flight edits.

@@ -1,3 +1,5 @@
+import { type ApolloQueryResult, useApolloClient } from '@apollo/client';
+import { useCallback } from 'react';
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 
 import {
@@ -97,4 +99,45 @@ export const useQueryTrackerUsersQuery = ({
     loading,
     refetch,
   };
+};
+
+/**
+ * Every tracked user of the report, fetched page by page for an export.
+ * Imperative (called from the export handler), so it reads through the
+ * Apollo client; `network-only` so a cached page cannot shorten the file.
+ */
+export const useFetchAllTrackerUsers = () => {
+  const client = useApolloClient();
+  return useCallback(
+    async (
+      query: AnalyticsQuery,
+      orderBy: AnalyticsOrder = { field: 'createdAt', direction: 'desc' },
+      pageSize = 200,
+    ): Promise<TrackerUser[]> => {
+      const users: TrackerUser[] = [];
+      let after: string | null = null;
+      while (true) {
+        // Annotated: `after` is narrowed by the loop's assignment below, which
+        // would make the result's type depend on itself.
+        const result: ApolloQueryResult<QueryTrackerUsersQuery> = await client.query<
+          QueryTrackerUsersQuery,
+          QueryTrackerUsersQueryVariables
+        >({
+          query: QueryTrackerUsersDocument,
+          variables: { first: pageSize, after, query, orderBy },
+          fetchPolicy: 'network-only',
+        });
+        const connection = result.data?.queryTrackerUsers;
+        const edges = connection?.edges ?? [];
+        users.push(...edges.map((edge) => edge.node));
+        const endCursor = connection?.pageInfo?.endCursor;
+        if (!connection?.pageInfo?.hasNextPage || !endCursor || edges.length === 0) {
+          break;
+        }
+        after = endCursor;
+      }
+      return users;
+    },
+    [client],
+  );
 };

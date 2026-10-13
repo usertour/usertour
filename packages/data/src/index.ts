@@ -1,12 +1,9 @@
 export * from './hooks/auth';
 // The generated contract (ADR 0021) stays inside the package: the hooks read
 // it through `./graphql`, and the dashboard gets the domain types the hooks
-// export. The pieces below are the exceptions the dashboard still reads raw —
-// input types and enums it builds variables with, and three documents it
-// runs through Apollo itself. MeDocument and QueryTrackerUsersDocument are
-// hooks the dashboard does not have yet; CreatePresignedUrlDocument already
-// has one (`useAws` in hooks/storage.ts) that the image upload does not use.
-// Wrapping or switching removes the export.
+// export. The input types and enums below are the exception: the dashboard
+// builds variables with them. No document leaves the package; an operation
+// the dashboard needs is a hook here.
 export type {
   AnalyticsOrder,
   AnalyticsQuery,
@@ -14,12 +11,9 @@ export type {
   ContentVersionInput,
   CreatSegment,
   OutboundMessageStatus,
-  QueryTrackerUsersQuery,
-  QueryTrackerUsersQueryVariables,
   SegmentBizType,
   VersionInput,
 } from './graphql';
-export { CreatePresignedUrlDocument, MeDocument, QueryTrackerUsersDocument } from './graphql';
 // The query layer (ADR 0021): typed documents in, one query state out.
 export * from './query';
 export * from './hooks/gql';

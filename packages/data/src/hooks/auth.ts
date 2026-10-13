@@ -1,4 +1,5 @@
-import { useMutation } from '@apollo/client';
+import { useApolloClient, useMutation } from '@apollo/client';
+import { useCallback } from 'react';
 
 import { type TypedQueryOptions, useTypedQuery } from '../query';
 import {
@@ -49,6 +50,23 @@ export const useGetUserInfoQuery = (
     ...options,
   });
   return { data: data?.me, refetch, loading, refreshing, error };
+};
+
+/**
+ * Refetch `me` after a change the guards derive from (the 2FA state).
+ * Callers await it, so the cache is current by the time they continue.
+ *
+ * Refetch only, deliberately not `cache.evict`: evicting drops the whole `me`
+ * entry to undefined for the duration of the refetch, which unmounts
+ * whatever gates on `!userInfo` (the account forms on the settings page) and
+ * discards its unsaved input. A refetch updates the fields while keeping the
+ * entry populated.
+ */
+export const useRefreshMe = () => {
+  const client = useApolloClient();
+  return useCallback(async () => {
+    await client.refetchQueries({ include: [MeDocument] }).catch(() => undefined);
+  }, [client]);
 };
 
 export const useLogoutMutation = () => {
