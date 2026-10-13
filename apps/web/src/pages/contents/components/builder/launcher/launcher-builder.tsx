@@ -39,7 +39,7 @@ const useRegisterLauncherSaveValidator = () => {
       return (
         validateActions(actions, {
           attributes: attributeList ?? undefined,
-          contents: contents ?? undefined,
+          contents,
           currentVersion: currentVersion ?? undefined,
           currentStep: undefined,
         }).length === 0

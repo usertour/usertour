@@ -34,7 +34,7 @@ export interface ContentPopperProps {
   currentVersion: ContentVersion | undefined;
   zIndex: number;
   onChange: (value: ContentEditorRoot[]) => void;
-  contents: Content[];
+  contents: Content[] | undefined;
   triggerRef?: React.RefObject<any> | undefined;
   currentIndex: number;
   currentContent: Content | undefined;

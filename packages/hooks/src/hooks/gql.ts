@@ -175,7 +175,14 @@ export const useContentListQuery = ({
       orderBy,
     },
   });
-  const contents: Content[] = data?.queryContent?.edges?.map((edge) => edge.node) ?? [];
+  // `contents` is undefined until the list has loaded, never an empty array
+  // standing in for it: the conditions validator reads undefined as "not
+  // loaded, skip the existence check" and an array as "loaded, look the
+  // content up", so an empty stand-in would reject every content condition
+  // during the load. A loaded list with no rows is `[]`.
+  const contents: Content[] | undefined = data
+    ? (data.queryContent.edges?.map((edge) => edge.node) ?? [])
+    : undefined;
   const pageInfo = data?.queryContent?.pageInfo;
   const totalCount = data?.queryContent?.totalCount;
 

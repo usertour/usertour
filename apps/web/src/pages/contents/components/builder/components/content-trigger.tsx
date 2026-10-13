@@ -23,7 +23,7 @@ interface ContentTriggerProps {
   attributeList: Attribute[] | undefined;
   currentVersion: ContentVersion | undefined;
   currentContent: Content | undefined;
-  contents: Content[];
+  contents: Content[] | undefined;
   currentStep: Step;
   token: string;
   showError: boolean;
