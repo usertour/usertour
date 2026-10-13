@@ -39,7 +39,7 @@ import {
 import { Conditions } from '@usertour/business-components';
 import { PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
-import { useContentListQuery, useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { useContentListQuery, useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
 import {
   ContentDataType,
   ContentListItem,
@@ -105,7 +105,7 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
   const [addOpen, setAddOpen] = useState(false);

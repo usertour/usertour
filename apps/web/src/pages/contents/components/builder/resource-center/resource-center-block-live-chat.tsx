@@ -19,7 +19,7 @@ import { PopperEditorMini } from '@usertour/editor';
 import { CodeEditor } from '@usertour/ui';
 import type { Descendant } from '@usertour/editor';
 import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
 import { Trans, useTranslation } from 'react-i18next';
 import {
   LauncherIconSource,
@@ -133,7 +133,7 @@ const BlockLiveChatBody = () => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 

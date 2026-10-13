@@ -104,10 +104,6 @@ import {
   ListProjectSsoProvidersDocument,
   type ListProjectSsoProvidersQuery,
   type ListProjectSsoProvidersQueryVariables,
-  ListSegmentDocument,
-  type ListSegmentQuery,
-  type ListSegmentQueryVariables,
-  type SegmentBizType,
   MeDocument,
   QueryBizCompanyDocument,
   type QueryBizCompanyQuery,
@@ -297,21 +293,6 @@ export const useUserListQuery = ({
     error,
     networkStatus,
   };
-};
-
-export const useSegmentListQuery = (
-  environmentId: string,
-  bizType: SegmentBizType[] = ['COMPANY', 'USER'],
-  options?: TypedQueryOptions<ListSegmentQuery, ListSegmentQueryVariables>,
-) => {
-  const { data, refetch, loading, error, networkStatus } = useTypedQuery(ListSegmentDocument, {
-    variables: { environmentId },
-    ...options,
-  });
-  const segments = (data?.listSegment ?? []).filter((item) => bizType.includes(item.bizType));
-
-  // See useCompanyListQuery — same networkStatus opt-in pattern.
-  return { segmentList: segments, refetch, loading, error, networkStatus };
 };
 
 export const useQueryTeamMemberListQuery = (

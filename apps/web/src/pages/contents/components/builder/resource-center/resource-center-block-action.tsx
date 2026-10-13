@@ -17,7 +17,7 @@ import { Actions, PopperEditorMini } from '@usertour/editor';
 import type { Descendant } from '@usertour/editor';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
 import {
   ContentDataType,
   LauncherIconSource,
@@ -69,7 +69,7 @@ const BlockActionBody = () => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 

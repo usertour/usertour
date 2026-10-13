@@ -1,9 +1,8 @@
-import { NetworkStatus } from '@apollo/client';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useCurrentSegment } from '@/hooks/use-current-segment';
 import { filterSegmentsByTypeOrder } from '@/utils/segment';
-import { useSegmentListQuery } from '@usertour/hooks';
+import { useListSegmentsQuery } from '@usertour/hooks';
 import { ScrollArea } from '@usertour/ui';
 import { useMemo } from 'react';
 import { EntityListContent } from './entity-list-content';
@@ -24,7 +23,7 @@ export function EntityListPage<TRow extends EntityRow>({ config }: EntityListPag
   const envId = environment?.id;
 
   // Single source of truth for the page's segment list. Sidebar + content
-  // both read from this — two parallel `useSegmentListQuery` calls were
+  // both read from this — two parallel `useListSegmentsQuery` calls were
   // causing the right-pane to miss freshly created segments on click,
   // because Apollo's notification didn't always propagate to both
   // subscribers in the same commit.
@@ -32,15 +31,11 @@ export function EntityListPage<TRow extends EntityRow>({ config }: EntityListPag
     segmentList: rawSegmentList,
     loading: segmentsLoading,
     refetch: refetchSegments,
-    networkStatus: segmentsNetworkStatus,
-  } = useSegmentListQuery(envId ?? '', config.segmentBizType, {
-    ...SHARED_CACHE_QUERY_OPTIONS,
-    skip: !envId,
-    notifyOnNetworkStatusChange: true,
-  });
+    isRefetching: segmentsIsRefetching,
+  } = useListSegmentsQuery(envId, SHARED_CACHE_QUERY_OPTIONS);
   // Group as ALL → CONDITION → MANUAL so the system segment pins to the top.
   const segmentList = useMemo(
-    () => filterSegmentsByTypeOrder(rawSegmentList, config.segmentBizType),
+    () => filterSegmentsByTypeOrder(rawSegmentList ?? [], config.segmentBizType),
     [rawSegmentList, config.segmentBizType],
   );
   const currentSegment = useCurrentSegment(segmentList);
@@ -65,7 +60,7 @@ export function EntityListPage<TRow extends EntityRow>({ config }: EntityListPag
           environmentId={envId}
           currentSegment={currentSegment}
           refetchSegments={refetchSegments}
-          segmentsIsRefetching={segmentsNetworkStatus === NetworkStatus.refetch}
+          segmentsIsRefetching={segmentsIsRefetching}
         />
       </ScrollArea>
     </>
