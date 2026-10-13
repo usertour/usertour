@@ -34,20 +34,17 @@ Anything that depends on the consuming app. Hard rules:
 ```
 Is the helper an Apollo wrapper for a GraphQL DocumentNode?
 ├─ YES — which domain does it belong to?
-│   ├─ Domain file already exists → add to hooks/<domain>.ts
-│   └─ Domain file does not exist
-│       ├─ ≥5 same-domain hooks already piled in gql.ts, or the domain
-│       │  already has a document of its own under src/documents
-│       │     → create hooks/<domain>.ts, migrate all same-domain hooks together
-│       │       (re-export from src/index.ts; do not change public API)
-│       └─ otherwise → append to gql.ts for now, mark "// TODO domain split"
+│   ├─ Domain module already exists → add to hooks/<domain>.ts, its
+│   │  operation to documents/<domain>.graphql
+│   └─ Domain module does not exist → create both, named alike
+│       (`export *` it from src/index.ts; the public API is the union)
 │
 └─ NO — is it a cross-app React utility (no router, no app env, no UI)?
     ├─ YES → its own file `hooks/use-<name>.ts`, re-export explicitly from src/index.ts
     └─ NO  → does not belong in this package; return to the consuming app
 ```
 
-The "5-hook threshold" is a rule of thumb, not a hard limit. The intent is: don't create a 30-line domain file for a single mutation, and don't append the 6th auth hook to a 1300-line catch-all. Use judgment near the boundary.
+A module for a single mutation is fine: the unit is the domain, not the line count.
 
 ## Current domain files
 
@@ -55,30 +52,37 @@ A module with a document of its name under `src/documents` owns that document; a
 
 | File | Domain |
 |---|---|
-| `hooks/auth.ts` | Login, sign-up (magic-link + invite + setup-admin), password reset, invite query, logout, current user, SSO login lookup, 2FA setup / verify / disable / regenerate, refreshing `me` |
-| `hooks/account.ts` | The signed-in user's profile, email and password |
 | `hooks/access-tokens.ts` | Environment access tokens |
-| `hooks/api-tokens.ts` | Personal API tokens |
-| `hooks/oauth-connections.ts` | Connected OAuth apps |
+| `hooks/account.ts` | The signed-in user's profile, email and password |
 | `hooks/activity-feed.ts` | A user's or company's event feed |
+| `hooks/admin.ts` | System administration: instance settings, users, projects |
 | `hooks/analytics.ts` | Content analytics, question analytics, tracker users (page and export) |
+| `hooks/api-tokens.ts` | Personal API tokens |
+| `hooks/attributes.ts` | Attribute definitions |
 | `hooks/audit-logs.ts` | Audit log |
+| `hooks/auth.ts` | Login, sign-up (magic-link + invite + setup-admin), password reset, invite query, logout, current user, SSO login lookup, 2FA setup / verify / disable / regenerate, refreshing `me` |
+| `hooks/biz.ts` | An environment's users and companies |
 | `hooks/content.ts` | Contents, versions, publish records, the builder's content list and version writes |
+| `hooks/environments.ts` | Environments and the installation check |
 | `hooks/events.ts` | Event definitions |
 | `hooks/identity-verification.ts` | Identity verification settings |
 | `hooks/integrations.ts` | Integrations and their object mappings |
 | `hooks/localizations.ts` | Localizations and version translations |
+| `hooks/oauth-connections.ts` | Connected OAuth apps |
 | `hooks/outbound-message.ts` | Outbound messages |
+| `hooks/project.ts` | The project's settings, config and license |
 | `hooks/references.ts` | Definition references (what a deletion would break) |
 | `hooks/segments.ts` | Segments and segment membership |
 | `hooks/sessions.ts` | Sessions: list, detail, export rows, end and delete |
+| `hooks/sso.ts` | SSO providers and the project's SSO settings |
 | `hooks/storage.ts` | Presigned upload URLs |
+| `hooks/subscription.ts` | Billing sessions and the subscription |
+| `hooks/team.ts` | Members, invites and the active project |
 | `hooks/themes.ts` | Themes |
 | `hooks/utilities.ts` | The deployment's public configuration, oEmbed lookup |
 | `hooks/webhooks.ts` | Webhooks |
-| `hooks/gql.ts` | **Transitional bucket.** The existing hooks for admin, attributes, environments, projects, SSO settings, subscription, team, users and companies (`biz`), plus a few cross-cutting helpers. Adding a hook for one of these domains is the moment to extract it: create the module and move the domain's hooks with it (the decision tree above). |
 
-When a new domain is extracted from `gql.ts`, add a row here and update [ADR 0002](../../docs/adr/0002-hook-domain-boundary.md)'s implementation-reference section.
+Cross-cutting hooks that read no document of their own (`use-content-count`, `use-current-user-id`, `use-cursor-fetch-more`, `use-tooltip-target-missing-sessions`, `use-invalidate-license-scoped-cache`) live beside the modules as `hooks/use-<name>.ts`. When a new domain module is added, add a row here.
 
 ## House rules
 
