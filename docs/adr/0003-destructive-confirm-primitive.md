@@ -1,5 +1,7 @@
 # 0003: Destructive confirmation as a single primitive
 
+> Note (2026-10): `@usertour/hooks` has since been renamed to `@usertour/data`; the text keeps the name of the time.
+
 - **Date:** 2026-05-25
 - **Status:** Accepted
 
@@ -90,7 +92,7 @@ Treat the original primitive as a delete-only convenience; let `MemberRemoveDial
 Have `DestructiveConfirmDialog` call `useTranslation` internally and own the default copy (title `'Are you absolutely sure?'`, description templated on `{{resource}}` / `{{name}}`, etc.). Consumers pass `resourceLabel`, `name`, and the rest comes free.
 
 - **Costs:** `@usertour/ui`'s `src/index.ts` header explicitly states "composition UI primitives — no business knowledge". i18n is business state in the sense that matters here: it depends on the consumer's `react-i18next` provider, on the consumer's i18n key tree, and (for `react-i18next`) on the consumer's `<Trans>` component for inline formatting like the bold name. Adding `useTranslation` to `@usertour/ui` would force every consumer of any primitive in this package to provide an i18n provider, even those (tests, Storybook future) that have no such provider.
-- **Rejected because:** would invalidate `@usertour/ui`'s stated invariant, the same boundary ADR 0002 protects for `@usertour/data`. The consumer-passes-strings approach costs ~8 extra lines per consumer (a `<Trans>` wrapper) and keeps the primitive package free of i18n dependency.
+- **Rejected because:** would invalidate `@usertour/ui`'s stated invariant, the same boundary ADR 0002 protects for `@usertour/hooks`. The consumer-passes-strings approach costs ~8 extra lines per consumer (a `<Trans>` wrapper) and keeps the primitive package free of i18n dependency.
 
 ### Alt-C: Build a `DestructiveConfirmDialog` in `@usertour/business-components` instead
 

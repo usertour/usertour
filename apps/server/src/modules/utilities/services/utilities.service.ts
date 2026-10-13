@@ -1,4 +1,5 @@
 import { oEmbedProviders } from '../constants/oembed-providers.constant';
+import { toPixels } from '../utils/oembed-size.util';
 import { isMatchUrlPattern } from '@usertour/helpers';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -12,12 +13,6 @@ import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 import { LicenseService } from '@/modules/license/services/license.service';
 import { AiService } from '@/modules/ai/services/ai.service';
 import { configuredOAuthProviders } from '@/modules/integrations/sync/oauth-app-config';
-
-/** An oEmbed size as a whole number of pixels: providers send numbers or numeric strings, and omit the field. */
-const toPixels = (value: unknown): number => {
-  const parsed = Number.parseInt(String(value ?? ''), 10);
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
 
 @Injectable()
 export class UtilitiesService {

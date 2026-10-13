@@ -39,7 +39,7 @@ doesn't relitigate the basics.
                                 │
                        ┌────────▼─────────┐
                        │ L2 Infrastructure│
-                       │   hooks · gql    │
+                       │   data · gql     │
                        │  i18n · finder   │
                        │     widget       │
                        └────────┬─────────┘

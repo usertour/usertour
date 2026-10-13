@@ -28,4 +28,3 @@ export * from './hooks/use-tooltip-target-missing-sessions';
 export { useContentCount } from './hooks/use-content-count';
 export { useCurrentUserId } from './hooks/use-current-user-id';
 export * from './hooks/use-cursor-fetch-more';
-export * from './hooks/storage';

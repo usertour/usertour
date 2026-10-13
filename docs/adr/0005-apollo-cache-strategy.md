@@ -1,5 +1,7 @@
 # 0005: Apollo cache strategy — `no-cache` default + `SHARED_CACHE_QUERY_OPTIONS` opt-in
 
+> Note (2026-10): `@usertour/hooks` has since been renamed to `@usertour/data`; the text keeps the name of the time.
+
 - **Date:** 2026-05-29
 - **Status:** Superseded by [0006](./0006-normalized-cache-and-mutation-updates.md)
 
@@ -71,9 +73,9 @@ The opt-in is per-call-site: every consumer that needs to participate in the sha
 - The data is sensitive to cross-tab / cross-device changes and stale cache is unacceptable. In that case opt that specific call site into `fetchPolicy: 'cache-and-network'` directly, not `SHARED_CACHE_QUERY_OPTIONS` (which intentionally avoids network on revisit).
 - The query is meant to be one-shot fresh on each invocation (some admin / debug surfaces). Leave it on the global `no-cache` default.
 
-### Wrappers in `@usertour/data` accept `QueryHookOptions`
+### Wrappers in `@usertour/hooks` accept `QueryHookOptions`
 
-All list-style wrappers in `@usertour/data` take an optional `options?: QueryHookOptions` second parameter so call sites can pass `SHARED_CACHE_QUERY_OPTIONS` (or any other override) without modifying the wrapper. Existing fixed options inside the wrapper (`notifyOnNetworkStatusChange`, `skip`) come after `...options` only when they should be unoverridable; otherwise spread `options` last so the caller wins.
+All list-style wrappers in `@usertour/hooks` take an optional `options?: QueryHookOptions` second parameter so call sites can pass `SHARED_CACHE_QUERY_OPTIONS` (or any other override) without modifying the wrapper. Existing fixed options inside the wrapper (`notifyOnNetworkStatusChange`, `skip`) come after `...options` only when they should be unoverridable; otherwise spread `options` last so the caller wins.
 
 ## Consequences
 
@@ -126,7 +128,7 @@ Reopen this decision if any of the following holds:
 
 - **Cross-tab / cross-device freshness becomes a recurring UX bug.** If users report stale settings data after edits from another tab often enough that per-call-site `cache-and-network` overrides become widespread, consider promoting `cache-and-network` to the default for `SHARED_CACHE_QUERY_OPTIONS` and accepting the network cost.
 - **Manual `refetch()` calls become a maintenance burden.** If the count of `await refetch()` calls scattered across mutations grows past ~50 and the "did this mutation refresh that list?" question takes more than a few seconds to answer per code review, the full Apollo idiom (C above) starts being worth the migration cost. At that point: flip `addTypename: true`, audit existing queries for typename safety, write `update(cache)` callbacks for the high-frequency mutations, and drop the `SHARED_CACHE_QUERY_OPTIONS` opt-in.
-- **A new app (admin portal, internal tool) wants a different Apollo config.** If `@usertour/data` ends up consumed by an app with a different default `fetchPolicy`, the assumptions baked into `SHARED_CACHE_QUERY_OPTIONS` (counter-default opt-in) no longer hold and the constant needs to either move into apps/web only or be re-expressed at the wrapper level.
+- **A new app (admin portal, internal tool) wants a different Apollo config.** If `@usertour/hooks` ends up consumed by an app with a different default `fetchPolicy`, the assumptions baked into `SHARED_CACHE_QUERY_OPTIONS` (counter-default opt-in) no longer hold and the constant needs to either move into apps/web only or be re-expressed at the wrapper level.
 
 ## References
 

@@ -1,16 +1,18 @@
-# 0002: Hook organization and the `@usertour/data` boundary
+# 0002: Hook organization and the `@usertour/hooks` boundary
+
+> Note (2026-10): the package described here was renamed to `@usertour/data`, and `useDetectExtension` / `useChecklistPreviewAnimation` have since left it. The text keeps the names of the time.
 
 - **Date:** 2026-05-17
 - **Status:** Accepted
 
 ## Context
 
-`packages/data/src/hooks/gql.ts` had grown to 1306 lines and ~102 exports, all in a single file. The exports are Apollo `useQuery` / `useMutation` wrappers that decode the GraphQL response shape, type-cast the result, and present a uniform call signature to callers. They span at least eight distinct business domains: auth (login, sign-up, password reset, magic link), 2FA, content, users / companies, segments, themes, billing / subscription, integrations, and system admin.
+`packages/hooks/src/hooks/gql.ts` had grown to 1306 lines and ~102 exports, all in a single file. The exports are Apollo `useQuery` / `useMutation` wrappers that decode the GraphQL response shape, type-cast the result, and present a uniform call signature to callers. They span at least eight distinct business domains: auth (login, sign-up, password reset, magic link), 2FA, content, users / companies, segments, themes, billing / subscription, integrations, and system admin.
 
 Two pressures showed up during the v0.7.8 auth + router refactor:
 
 1. **The file resists navigation.** Adding a new hook means scrolling through 1300 lines to find the right neighborhood or, more commonly, appending to the bottom. Domain locality has decayed: 2FA, billing, and integration hooks sit interleaved by commit order rather than topic.
-2. **The boundary of the package is unstated.** During the refactor, three new "post-login routing" helpers were drafted — `useAuthAfterLogin`, `SocialProviders`, `AuthCard`. None of them are Apollo wrappers; they depend on `react-router-dom`, on apps/web's `apiUrl`, and on the literal `/auth/2fa` / `?next=` / `?challenge=` URL contracts. Without a written boundary, contributors plausibly file these under "hooks shared across the app" and place them in `@usertour/data`, dragging in `react-router-dom` and apps/web-private route strings.
+2. **The boundary of the package is unstated.** During the refactor, three new "post-login routing" helpers were drafted — `useAuthAfterLogin`, `SocialProviders`, `AuthCard`. None of them are Apollo wrappers; they depend on `react-router-dom`, on apps/web's `apiUrl`, and on the literal `/auth/2fa` / `?next=` / `?challenge=` URL contracts. Without a written boundary, contributors plausibly file these under "hooks shared across the app" and place them in `@usertour/hooks`, dragging in `react-router-dom` and apps/web-private route strings.
 
 At the same time, the repo has three other plausible homes for shared code that this decision must distinguish from:
 
@@ -22,10 +24,10 @@ Without a written rule, the same three new helpers could also be filed in any of
 
 ## Decision
 
-`@usertour/data` is **the GraphQL data-access layer**. Its only first-class contents are:
+`@usertour/hooks` is **the GraphQL data-access layer**. Its only first-class contents are:
 
 1. **Apollo wrappers** — hooks that take a GraphQL `DocumentNode` from `@usertour/gql`, call `useQuery` / `useMutation` / `useLazyQuery`, decode the nested response shape, and return a uniform call signature (`{ data, loading, error, refetch }` for queries, `{ invoke, loading, error }` for mutations).
-2. **Cross-app React utilities** that depend only on React itself and the wrappers above. Example already present: `useTooltipTargetMissingSessions`.
+2. **Cross-app React utilities** that depend only on React itself and the wrappers above. Examples already present: `useDetectExtension`, `useTooltipTargetMissingSessions`, `useChecklistPreviewAnimation`.
 
 The package **must not depend on**:
 
@@ -34,7 +36,7 @@ The package **must not depend on**:
 - App-specific URL string contracts (`/auth/2fa`, `?next=`, `/api/auth/${provider}`)
 - App-specific UI components or styling decisions
 
-Within the package, hooks are organized **by business domain**, one file per domain. `gql.ts` is the legacy single-file location and is treated as a transitional bucket: existing hooks live there until their domain is extracted; new hooks should land in a domain file from the outset. The public API is preserved across moves by re-exporting each domain file from `packages/data/src/index.ts` (`export * from './hooks/<domain>'`).
+Within the package, hooks are organized **by business domain**, one file per domain. `gql.ts` is the legacy single-file location and is treated as a transitional bucket: existing hooks live there until their domain is extracted; new hooks should land in a domain file from the outset. The public API is preserved across moves by re-exporting each domain file from `packages/hooks/src/index.ts` (`export * from './hooks/<domain>'`).
 
 The first domain split was performed in this same change set: `hooks/auth.ts` now contains the auth / sign-up / magic-link / invite / setup-admin / password-reset / 2FA cluster — 16 hooks and 4 types, 212 lines. `gql.ts` shrank to 1140 lines.
 
@@ -43,15 +45,15 @@ The first domain split was performed in this same change set: `hooks/auth.ts` no
 **Good:**
 
 - Each domain file is bounded (`auth.ts` is 212 lines, well under a "scrollable" threshold). Domain locality is restored: all 2FA wrappers are adjacent, all login / sign-up wrappers are adjacent, and a contributor adding `useDisableTwoFactorMutation` finds the right neighborhood immediately.
-- The package's dependency graph stays narrow. `@usertour/data` currently lists `@apollo/client`, `@usertour/gql`, `@usertour/types`, `@usertour/helpers`, `@usertour/constants`, `react`, `react-dom`, `react-use` — and nothing else. Future contributors can add a hook without expanding this set.
+- The package's dependency graph stays narrow. `@usertour/hooks` currently lists `@apollo/client`, `@usertour/gql`, `@usertour/types`, `@usertour/helpers`, `@usertour/constants`, `react`, `react-dom`, `react-use` — and nothing else. Future contributors can add a hook without expanding this set.
 - The boundary makes "this hook would be reused by the builder app" a real, testable claim — it must work without router, without `apiUrl`, without UI dependencies. Helpers that fail those tests stay in the consuming app.
-- Public API is stable across moves. Callers continue to `import { useLoginMutation } from '@usertour/data'` regardless of which internal file backs it.
+- Public API is stable across moves. Callers continue to `import { useLoginMutation } from '@usertour/hooks'` regardless of which internal file backs it.
 
 **Bad / Accepted:**
 
 - Each new hook now requires one extra classification step ("which domain?"). For genuinely cross-cutting hooks (rare), placement is a judgment call documented case-by-case in code review.
-- `gql.ts` still holds ~85 hooks across the remaining domains until follow-up splits. Until then, contributors must read this ADR (and the `packages/data/README.md` decision tree) to know that new hooks should not append to `gql.ts` by default.
-- The package layout convention is opt-in to maintain: nothing in the build pipeline catches a contributor putting a router-dependent hook in `@usertour/data`. Periodic review of new exports is the only enforcement.
+- `gql.ts` still holds ~85 hooks across the remaining domains until follow-up splits. Until then, contributors must read this ADR (and the `packages/hooks/README.md` decision tree) to know that new hooks should not append to `gql.ts` by default.
+- The package layout convention is opt-in to maintain: nothing in the build pipeline catches a contributor putting a router-dependent hook in `@usertour/hooks`. Periodic review of new exports is the only enforcement.
 
 ## Alternatives Considered
 
@@ -62,12 +64,12 @@ Annotate `gql.ts` with `// ====== Auth ======` style comment blocks; instruct co
 - **Costs:** comment markers don't bind tooling; `// ====== Auth ======` is invisible to import auto-suggest, file-symbol search, IDE outline density, and to a contributor who scrolls to the bottom and appends. The file is already 1306 lines — the next 200 lines push it to where most editors collapse the outline.
 - **Rejected because:** doesn't solve the real problem (size and navigation) and relies on a discipline that the existing 1306 lines show has not been sustained.
 
-### Alt-B: Put `useAuthAfterLogin`, `SocialProviders`, `AuthCard` in `@usertour/data`
+### Alt-B: Put `useAuthAfterLogin`, `SocialProviders`, `AuthCard` in `@usertour/hooks`
 
-The three new helpers were drafted alongside the auth hook wrappers. Filing them in `@usertour/data` keeps "all auth things" in one package.
+The three new helpers were drafted alongside the auth hook wrappers. Filing them in `@usertour/hooks` keeps "all auth things" in one package.
 
 - **Costs:** `useAuthAfterLogin` depends on `react-router-dom` (`useNavigate`, `useSearchParams`) and on literal URL strings (`/auth/2fa`, `/auth/2fa/setup`, `?next=`, `?challenge=`) defined in `apps/web/src/routes/auth-guard.tsx`. `SocialProviders` depends on `apiUrl` from `apps/web/src/utils/env` and on the backend's `/api/auth/${provider}?inviteCode=...` URL shape. `AuthCard` is a Card with auth-specific typography (`text-2xl tracking-tight` centered header) and a skeleton sized for the auth form's 4-row layout — no other shell in the app uses the same shape.
-- **Rejected because:** moving them in would add `react-router-dom` to `@usertour/data`'s dependency surface and bind every consumer (including future non-web React apps that have no router or different routes) to apps/web's private URL contracts. The package's role is data access, not app routing.
+- **Rejected because:** moving them in would add `react-router-dom` to `@usertour/hooks`'s dependency surface and bind every consumer (including future non-web React apps that have no router or different routes) to apps/web's private URL contracts. The package's role is data access, not app routing.
 
 ### Alt-C: Put them in `@usertour/ui`
 
@@ -103,8 +105,8 @@ Reopen this decision when any of:
 
 The first split (auth domain) is on `feat/v0.7.8`:
 
-- New file: `packages/data/src/hooks/auth.ts` — 13 hooks moved out of `gql.ts` + 3 new wrappers (`useResetUserPasswordMutation`, `useCreateMagicLinkMutation`, `useResendMagicLinkMutation`) that replace raw `useMutation(documentNode)` calls in three `apps/web` callsites.
-- Modified: `packages/data/src/index.ts` — added `export * from './hooks/auth'` before the existing `export * from './hooks/gql'`. Public API surface is unchanged.
-- Modified: `packages/data/src/hooks/gql.ts` — removed 16 hooks + 4 types + 13 DocumentNode imports + 1 `useCallback` import (no longer referenced).
+- New file: `packages/hooks/src/hooks/auth.ts` — 13 hooks moved out of `gql.ts` + 3 new wrappers (`useResetUserPasswordMutation`, `useCreateMagicLinkMutation`, `useResendMagicLinkMutation`) that replace raw `useMutation(documentNode)` calls in three `apps/web` callsites.
+- Modified: `packages/hooks/src/index.ts` — added `export * from './hooks/auth'` before the existing `export * from './hooks/gql'`. Public API surface is unchanged.
+- Modified: `packages/hooks/src/hooks/gql.ts` — removed 16 hooks + 4 types + 13 DocumentNode imports + 1 `useCallback` import (no longer referenced).
 
-The day-to-day "where does this new hook go" decision tree, the current list of domain files, and the in-package house style (mutation vs query return shapes, naming) live in `packages/data/README.md`, which links back to this ADR for the architectural _why_.
+The day-to-day "where does this new hook go" decision tree, the current list of domain files, and the in-package house style (mutation vs query return shapes, naming) live in `packages/hooks/README.md`, which links back to this ADR for the architectural _why_.

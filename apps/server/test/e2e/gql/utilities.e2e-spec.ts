@@ -108,9 +108,8 @@ describe('GraphQL utilities (e2e)', () => {
       for (const provider of config.configuredOAuthProviders) {
         expect(typeof provider).toBe('string');
       }
-      // Over HTTP, apiUrl is always a string: configured API_URL or derived
-      // from the request (resolveOrigin). The schema stays nullable only for
-      // the req-less legacy websocket transport.
+      // apiUrl is always a string: configured API_URL, derived from the
+      // request (resolveOrigin), or '' without a request.
       expect(typeof config.apiUrl).toBe('string');
     });
 
