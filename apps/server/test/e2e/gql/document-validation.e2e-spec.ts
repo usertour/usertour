@@ -8,7 +8,9 @@ import { createTestApp } from '../create-test-app';
  * a masked message. The dashboard's error link reloads the tab on that code:
  * every build validates its documents against the schema it was built from,
  * so the code only ever means a stale build is talking to a newer server.
- * The formatter masks every other unknown error, so this pins the exception.
+ * A variable the schema rejects is the request's own mistake and answers as
+ * a validation error (E1017) whose message names the variable. The formatter
+ * masks every other unknown error, so this pins the two exceptions.
  */
 describe('GraphQL document validation (e2e)', () => {
   let app: INestApplication;
@@ -32,6 +34,17 @@ describe('GraphQL document validation (e2e)', () => {
     expect(res.body.errors).toHaveLength(1);
     expect(res.body.errors[0].extensions.code).toBe('GRAPHQL_VALIDATION_FAILED');
     expect(res.body.errors[0].message).toBe('Bad Request');
+  });
+
+  it('a variable the schema rejects is a validation error that names the variable', async () => {
+    const res = await graphql(app, {
+      query:
+        'query($b:AttributeBizType!,$p:String!){listAttributes(bizType:$b,projectId:$p){__typename}}',
+      variables: { b: 'user', p: 'project' },
+    });
+    expect(res.body.errors).toHaveLength(1);
+    expect(res.body.errors[0].extensions.code).toBe('E1017');
+    expect(res.body.errors[0].message).toContain('Variable "$b"');
   });
 
   it('a selection the schema does not have', async () => {

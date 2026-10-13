@@ -69,7 +69,7 @@ describe('GraphQL themes (e2e)', () => {
         query: 'mutation ($data: CreateThemeInput!) { createTheme(data: $data) { id } }',
         variables: { data: { name: 'Null settings', isDefault: false, projectId, settings: null } },
       });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
 
       const rows = await prisma.theme.findMany({ where: { projectId, name: 'Null settings' } });
       expect(rows).toEqual([]);
