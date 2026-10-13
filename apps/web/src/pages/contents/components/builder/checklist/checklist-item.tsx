@@ -18,7 +18,7 @@ import { useContentList } from '@/pages/contents/components/builder/hooks/use-co
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/business-components';
 import { Actions } from '@usertour/editor';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
 import { ChecklistItemType, ContentDataType, RulesCondition, RulesType } from '@usertour/types';
 import { useId, useLayoutEffect } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
@@ -64,7 +64,7 @@ const ChecklistItemBody = () => {
   const projectId = useProjectId();
   const formPrefix = useId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 

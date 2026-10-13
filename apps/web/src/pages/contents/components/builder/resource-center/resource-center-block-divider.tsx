@@ -16,7 +16,7 @@ import { useContentList } from '@/pages/contents/components/builder/hooks/use-co
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
 import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/hooks';
 import { RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
@@ -55,7 +55,7 @@ const BlockDividerBody = () => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 

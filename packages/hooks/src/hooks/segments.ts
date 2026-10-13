@@ -14,6 +14,12 @@ export type Segment = SegmentFieldsFragment;
 // Domain wrapper for `listSegment`. Lives outside the catch-all
 // `gql.ts` per the convention established by `themes.ts` /
 // `access-tokens.ts` etc.
+//
+// `segmentList` is undefined until the list has loaded, never an empty
+// array standing in for it: the conditions validator reads undefined as
+// "not loaded, skip the existence check" and an array as "loaded, look the
+// segment up", so an empty stand-in would reject every segment condition
+// during the load. Callers filter by bizType themselves.
 export const useListSegmentsQuery = (
   environmentId: string | undefined,
   options?: TypedQueryOptions<ListSegmentQuery, ListSegmentQueryVariables>,

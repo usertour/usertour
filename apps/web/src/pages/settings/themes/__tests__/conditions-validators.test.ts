@@ -153,6 +153,13 @@ describe('validateSegment', () => {
   it('passes when segmentId resolves', () => {
     expect(validateSegment({ segmentId: 'seg-1' }, [segment])).toBeUndefined();
   });
+
+  it('skips the existence check while the list has not loaded (undefined, not an empty array)', () => {
+    expect(validateSegment({ segmentId: 'seg-1' }, undefined)).toBeUndefined();
+    expect(validateSegment({ segmentId: 'seg-1' }, [])).toEqual({
+      key: 'conditions.errors.segment.selectSegment',
+    });
+  });
 });
 
 describe('validateContent', () => {
@@ -172,6 +179,13 @@ describe('validateContent', () => {
 
   it('passes when contentId resolves', () => {
     expect(validateContent({ contentId: 'flow-1' }, [content])).toBeUndefined();
+  });
+
+  it('skips the existence check while the list has not loaded (undefined, not an empty array)', () => {
+    expect(validateContent({ contentId: 'flow-1' }, undefined)).toBeUndefined();
+    expect(validateContent({ contentId: 'flow-1' }, [])).toEqual({
+      key: 'conditions.errors.content.selectContent',
+    });
   });
 });
 

@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { useSegmentListQuery, type Segment } from '@usertour/hooks';
+import { useListSegmentsQuery, type Segment } from '@usertour/hooks';
 import { isSyncedSegment } from '@/utils/segment';
 import type { EntityConfig } from './entity-config';
 
@@ -33,18 +33,18 @@ export const EntityAddToManualSegment = (props: EntityAddToManualSegmentProps) =
   const { t } = useTranslation();
   const { environment } = useAppContext();
   const { collectSelectedIds, hasSelection } = useTableSelection(table);
-  const { segmentList } = useSegmentListQuery(environment?.id ?? '', config.segmentBizType, {
-    ...SHARED_CACHE_QUERY_OPTIONS,
-    skip: !environment?.id,
-  });
+  const { segmentList } = useListSegmentsQuery(environment?.id, SHARED_CACHE_QUERY_OPTIONS);
   // Synced segments are excluded as targets: their membership mirrors a
   // provider cohort and hand-adds are rejected server-side (ADR 0012).
   const manualSegments = useMemo(
     () =>
       segmentList?.filter(
-        (segment) => segment.dataType === 'MANUAL' && !isSyncedSegment(segment),
+        (segment) =>
+          config.segmentBizType.includes(segment.bizType) &&
+          segment.dataType === 'MANUAL' &&
+          !isSyncedSegment(segment),
       ) ?? [],
-    [segmentList],
+    [segmentList, config.segmentBizType],
   );
   const { add, isAdding } = config.useAddToManualSegment();
 
