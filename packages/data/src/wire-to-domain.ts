@@ -3,17 +3,16 @@
  *
  * Each constant assigns an operation's result type to the domain type the
  * hooks hand to the dashboard. A server or document change that makes the
- * two disagree fails `tsc` on that line, naming the field. Entities whose
- * domain type still differs from the wire on nullability or carries fields
- * the server never sends (GlobalConfig, the oEmbed info) are not listed. An
- * entity leaves the list once the dashboard reads it through a derived type
- * instead.
+ * two disagree fails `tsc` on that line, naming the field. Every entity the
+ * dashboard reads through a hand-written type is listed; an entity leaves
+ * the list once the dashboard reads it through a derived type instead.
  */
 import type {
   CreateContentMutation,
   GetContentQuery,
   GetContentVersionQuery,
   GetSubscriptionByProjectIdQuery,
+  GlobalConfigQuery,
   ListAttributesQuery,
   ListContentPublishRecordsQuery,
   ListDefinitionReferencesQuery,
@@ -23,6 +22,7 @@ import type {
   QueryBizSessionQuery,
   QueryContentQuery,
   QueryContentQuestionAnalyticsQuery,
+  QueryOembedInfoQuery,
   UpdateContentVersionMutation,
   UpdateVersionLocalizationMutation,
   UserEnvironmentsQuery,
@@ -30,12 +30,14 @@ import type {
 import type {
   Attribute,
   Content,
+  ContentOmbedInfo,
   ContentPublishRecord,
   ContentQuestionAnalytics,
   ContentVersion,
   DefinitionReference,
   Environment,
   Event,
+  GlobalConfig,
   Localization,
   PageInfo,
   Step,
@@ -72,6 +74,8 @@ export const definitionReference: DefinitionReference = {} as Item<
 >;
 export const environment: Environment = {} as Item<Result<UserEnvironmentsQuery>>;
 export const event: Event = {} as Item<Result<ListEventsQuery>>;
+export const globalConfig: GlobalConfig = {} as Result<GlobalConfigQuery>;
+export const oembedInfo: ContentOmbedInfo = {} as Result<QueryOembedInfoQuery>;
 export const localization: Localization = {} as Item<Result<ListLocalizationsQuery>>;
 export const pageInfo: PageInfo = {} as NonNullable<Result<QueryBizSessionQuery>['pageInfo']>;
 export const subscription: Subscription = {} as Result<GetSubscriptionByProjectIdQuery>;

@@ -54,7 +54,7 @@ export type SDKSettings = {
 export type GlobalConfig = {
   isSelfHostedMode: boolean;
   /** Full public MCP endpoint, shown verbatim on Settings → MCP. */
-  mcpServerUrl?: string;
+  mcpServerUrl: string;
   apiUrl: string;
   ssoCallbackUrl: string;
   allowUserRegistration: boolean;

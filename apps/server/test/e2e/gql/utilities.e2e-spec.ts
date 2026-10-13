@@ -203,7 +203,7 @@ describe('GraphQL utilities (e2e)', () => {
         variables: { url: 'https://example.invalid/not-an-embed' },
       });
       const oembed = gqlData(res).queryOembedInfo;
-      expect(oembed).toEqual({ html: '', width: '', height: '' });
+      expect(oembed).toEqual({ html: '', width: 0, height: 0 });
     });
 
     it('errors gracefully for a provider url that is unreachable', async () => {

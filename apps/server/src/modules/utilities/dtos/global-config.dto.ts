@@ -5,14 +5,16 @@ export class GlobalConfigDTO {
   @Field(() => Boolean)
   isSelfHostedMode: boolean;
 
-  @Field(() => String, { nullable: true })
+  // The three URLs are always strings: the config falls back to '' when the
+  // environment does not set them, and the resolver derives the rest.
+  @Field(() => String)
   apiUrl: string;
 
   /** Full public MCP endpoint (Settings -> MCP shows it verbatim). */
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   mcpServerUrl: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   ssoCallbackUrl: string;
 
   @Field(() => Boolean)

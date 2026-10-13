@@ -13,6 +13,12 @@ import { LicenseService } from '@/modules/license/services/license.service';
 import { AiService } from '@/modules/ai/services/ai.service';
 import { configuredOAuthProviders } from '@/modules/integrations/sync/oauth-app-config';
 
+/** An oEmbed size as a whole number of pixels: providers send numbers or numeric strings, and omit the field. */
+const toPixels = (value: unknown): number => {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 @Injectable()
 export class UtilitiesService {
   constructor(
@@ -77,12 +83,12 @@ export class UtilitiesService {
       if (resp.data) {
         return {
           html: resp.data.html,
-          width: resp.data.width,
-          height: resp.data.height,
+          width: toPixels(resp.data.width),
+          height: toPixels(resp.data.height),
         };
       }
     }
-    return { html: '', width: '', height: '' };
+    return { html: '', width: 0, height: 0 };
   }
 
   private getAuthProviders(): string[] {

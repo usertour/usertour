@@ -656,11 +656,8 @@ export const useGetSubscriptionUsageQuery = (
 
 export const useGlobalConfigQuery = () => {
   const { data, loading, error } = useTypedQuery(GlobalConfigDocument);
-  return {
-    data: data?.globalConfig as GlobalConfig | undefined,
-    loading,
-    error,
-  };
+  const globalConfig: GlobalConfig | undefined = data?.globalConfig;
+  return { data: globalConfig, loading, error };
 };
 
 export const useUpdateProjectMutation = () => {
@@ -700,9 +697,9 @@ export const useGetContentLazyQuery = () => {
 export const useQueryOembedInfoLazyQuery = () => {
   const [query, { loading, error }] = useLazyQuery(QueryOembedInfoDocument);
   const invoke = useCallback(
-    async (url: string) => {
+    async (url: string): Promise<ContentOmbedInfo | undefined> => {
       const response = await query({ variables: { url } });
-      return response.data?.queryOembedInfo as ContentOmbedInfo | undefined;
+      return response.data?.queryOembedInfo;
     },
     [query],
   );
