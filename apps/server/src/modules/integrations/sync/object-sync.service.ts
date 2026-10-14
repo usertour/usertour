@@ -880,25 +880,24 @@ export class ObjectSyncService {
               dataType,
             );
           }
-          // One transaction per record: the upsert takes the entity row FOR
-          // UPDATE (ADR 0017 §4), which only holds inside a transaction.
+          // One write per record, each applied in a transaction of its own
+          // under the entity row lock (ADR 0017 §4); a record that changes
+          // nothing opens none.
           if (isUser) {
-            await this.prisma.$transaction((tx) =>
-              this.biz.upsertBizUsers(tx, pair.local.externalId, values, environmentId, {
-                origin: provider,
-              }),
-            );
+            await this.biz.upsertBizUser(environmentId, pair.local.externalId, values, {
+              origin: provider,
+            });
           } else {
-            await this.prisma.$transaction((tx) =>
-              this.biz.upsertBizCompanyAttributes(
-                tx,
-                projectId,
-                environmentId,
-                pair.local.externalId,
-                values,
-                { origin: provider },
-              ),
+            const plan = await this.biz.planBizCompanyUpsert(
+              projectId,
+              environmentId,
+              pair.local.externalId,
+              values,
+              { origin: provider },
             );
+            if (!plan.unchanged) {
+              await this.prisma.$transaction((tx) => this.biz.applyBizCompanyUpsert(tx, plan));
+            }
           }
         }
       },

@@ -58,6 +58,7 @@ import {
   isBucketingDataType,
   isNull,
   missingBucketValues,
+  type BucketingAttribute,
   parseAttributeWrite,
 } from '@usertour/helpers';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
@@ -100,6 +101,48 @@ function normalizeSegmentColumns(raw: unknown): ColumnSetting[] {
 export interface UpsertAttributeOptions {
   origin?: string;
   rejected?: RejectedAttributeWrite[];
+}
+
+/** A bucketing definition as a newborn row's seed reads it (ADR 0020 §3). */
+type BucketingDefinition = BucketingAttribute & { codeName: string };
+
+/**
+ * An entity write resolved before any transaction (ADR 0017 §4): the accepted
+ * writes, the row as read without the lock, and — when no row existed at
+ * that read — the bucketing definitions a newborn row is seeded from.
+ * `unchanged` says the writes would leave `current` as it is, so the write
+ * needs no transaction: the no-op linearises at the unlocked read.
+ */
+interface EntityUpsertPlan {
+  environmentId: string;
+  projectId: string;
+  externalId: string;
+  writes: Map<string, AttributeWrite>;
+  bucketingDefinitions: BucketingDefinition[] | undefined;
+  unchanged: boolean;
+}
+
+export interface UserUpsertPlan extends EntityUpsertPlan {
+  current: BizUser | null;
+}
+
+export interface CompanyUpsertPlan extends EntityUpsertPlan {
+  current: BizCompany | null;
+}
+
+export interface MembershipUpsertPlan {
+  projectId: string;
+  writes: Map<string, AttributeWrite>;
+  /** Known only when both rows existed at planning time. */
+  current: BizUserOnCompany | null;
+  unchanged: boolean;
+}
+
+/** A group() write: the company and the calling user's membership in it. */
+export interface CompanyGroupPlan {
+  user: BizUser;
+  company: CompanyUpsertPlan;
+  membership: MembershipUpsertPlan;
 }
 
 interface ResolvedAttributeWrites {
@@ -974,68 +1017,118 @@ export class BizService {
     }
   }
 
+  // ── Entity writes: planned outside the transaction, applied under the row lock
+  //
+  // ADR 0017 §4, revised: the row lock protects the read-merge-write of the
+  // attribute jsonb and nothing else. What a write needs that the lock does not
+  // protect — the project, the resolved writes (definitions auto-created,
+  // foreign-owned keys dropped), the bucketing definitions a newborn row is
+  // seeded from — is computed before the transaction opens, and a write that
+  // would leave the row as it is opens none: the no-op linearises at its
+  // unlocked read. The hot path is identify, where one user's concurrent
+  // identical identifies used to queue on the lock, each holding it for the
+  // whole resolution, until the tail hit the transaction timeout.
+
   /**
-   * Must run inside a transaction: the BizUser row is taken FOR NO KEY UPDATE
-   * so the read-merge-write cannot lose a concurrent write (ADR 0017 §4).
-   * Every write locks — an unlocked literal write would read the whole jsonb
-   * and write it back over a concurrent `add`. NO KEY, because the row's key
-   * never changes here and an insert of a membership or an event takes KEY
-   * SHARE on it through the foreign key: FOR UPDATE would block that insert,
-   * and two writers locking user and company in opposite orders deadlocked.
+   * The user write an identify asks for, resolved without a lock. Null when
+   * the environment does not exist. A caller already inside a transaction
+   * passes its `tx` as the client: planning through `this.prisma` there would
+   * borrow a second pooled connection while the transaction holds one, and
+   * read past the transaction's own uncommitted writes.
    */
-  async upsertBizUsers(
-    tx: Prisma.TransactionClient,
+  async planBizUserUpsert(
+    environmentId: string,
     externalUserId: string,
     attributes: Record<string, any>,
-    environmentId: string,
     options?: UpsertAttributeOptions,
-  ): Promise<BizUser | null> {
-    const environment = await tx.environment.findFirst({
+    client: Prisma.TransactionClient = this.prisma,
+  ): Promise<UserUpsertPlan | null> {
+    const environment = await client.environment.findFirst({
       where: { id: environmentId },
+      select: { projectId: true },
     });
     if (!environment) {
       return null;
     }
     const externalId = String(externalUserId);
     const { writes, rejected } = await this.resolveEntityAttributeWrites(
-      tx,
+      client,
       environment.projectId,
       AttributeBizType.USER,
       attributes,
       options?.origin,
     );
     options?.rejected?.push(...rejected);
+    const current = await client.bizUser.findFirst({ where: { externalId, environmentId } });
+    return {
+      environmentId,
+      projectId: environment.projectId,
+      externalId,
+      writes,
+      bucketingDefinitions: current
+        ? undefined
+        : await this.bucketingDefinitions(client, environment.projectId, AttributeBizType.USER),
+      current,
+      unchanged: current !== null && this.leavesUnchanged(current.data, writes),
+    };
+  }
 
+  /**
+   * Must run inside a transaction: takes the user row FOR NO KEY UPDATE, reads
+   * it under the lock and applies the plan — creating the row when none exists.
+   * Every write locks — an unlocked literal write would read the whole jsonb
+   * and write it back over a concurrent `add`. NO KEY, because the row's key
+   * never changes here and an insert of a membership or an event takes KEY
+   * SHARE on it through the foreign key: FOR UPDATE would block that insert,
+   * and two writers locking user and company in opposite orders deadlocked.
+   */
+  async applyBizUserUpsert(tx: Prisma.TransactionClient, plan: UserUpsertPlan): Promise<BizUser> {
+    const { environmentId, externalId, writes } = plan;
+    if (!plan.current) {
+      // The lock can only hold a row that exists, and two first identifies of
+      // the same user would both see none and both insert. The row is inserted
+      // with ON CONFLICT DO NOTHING instead: the one that inserts is done, the
+      // other goes on to lock and merge into what the first inserted.
+      const definitions =
+        plan.bucketingDefinitions ??
+        (await this.bucketingDefinitions(tx, plan.projectId, AttributeBizType.USER));
+      const inserted = await tx.bizUser.createMany({
+        data: [
+          {
+            externalId,
+            environmentId,
+            // Writes apply first; the seen-at seed only fills what they left
+            // empty, so a `set_once` first_seen_at is the first value the row
+            // ever has and a null removes nothing the row was about to get.
+            // A null never reaches the row (it would only manufacture a
+            // spurious `<entity>.updated` diff on the next identify). Bucketing
+            // values are born with the row (ADR 0020 §3).
+            data: seedSeenAttributes(
+              this.applyAttributeWrites(missingBucketValues(definitions, externalId, {}), writes),
+            ),
+          },
+        ],
+        skipDuplicates: true,
+      });
+      if (inserted.count === 1) {
+        const created = await tx.bizUser.findFirstOrThrow({
+          where: { externalId, environmentId },
+        });
+        this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
+        return created;
+      }
+    }
     await tx.$queryRaw`SELECT id FROM "BizUser" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR NO KEY UPDATE`;
     const user = await tx.bizUser.findFirst({
       where: { externalId, environmentId },
     });
     if (!user) {
-      const created = await tx.bizUser.create({
-        data: {
-          externalId,
-          environmentId,
-          // Writes apply first; the seen-at seed only fills what they left
-          // empty, so a `set_once` first_seen_at is the first value the row
-          // ever has and a null removes nothing the row was about to get.
-          // A null never reaches the row (it would only manufacture a
-          // spurious `<entity>.updated` diff on the next identify). Bucketing
-          // values are born with the row (ADR 0020 §3).
-          data: seedSeenAttributes(
-            this.applyAttributeWrites(
-              await this.bucketingSeed(
-                tx,
-                environment.projectId,
-                AttributeBizType.USER,
-                externalId,
-              ),
-              writes,
-            ),
-          ),
-        },
+      // The row the plan saw is gone since: born again by the insert above.
+      return await this.applyBizUserUpsert(tx, {
+        ...plan,
+        current: null,
+        bucketingDefinitions: undefined,
       });
-      this.collectEntityChange({ entity: 'user', action: 'created', bizId: created.id });
-      return created;
     }
     const currentData = (user.data as Record<string, any>) || {};
     const nextData = this.applyAttributeWrites(currentData, writes);
@@ -1062,193 +1155,343 @@ export class BizService {
     return updated;
   }
 
-  async upsertBizCompanies(
-    tx: Prisma.TransactionClient,
-    externalCompanyId: string,
+  /**
+   * A user write on its own: planned outside a transaction, applied in a
+   * transaction of its own; a write that changes nothing opens none. Null when
+   * the environment does not exist.
+   */
+  async upsertBizUser(
+    environmentId: string,
     externalUserId: string,
     attributes: Record<string, any>,
-    environmentId: string,
-    membership: Record<string, any>,
     options?: UpsertAttributeOptions,
-  ): Promise<BizCompany | null> {
-    const environmenet = await tx.environment.findFirst({
-      where: { id: environmentId },
-    });
-    if (!environmenet) {
+  ): Promise<BizUser | null> {
+    const plan = await this.planBizUserUpsert(environmentId, externalUserId, attributes, options);
+    if (!plan) {
       return null;
     }
-    const user = await tx.bizUser.findFirst({
-      where: { externalId: String(externalUserId), environmentId },
-    });
-    if (!user) {
-      return null;
+    if (plan.unchanged) {
+      return plan.current;
     }
-
-    const projectId = environmenet.projectId;
-    const company = await this.upsertBizCompanyAttributes(
-      tx,
-      projectId,
-      environmentId,
-      externalCompanyId,
-      attributes,
-      options,
-    );
-    if (!company) {
-      return null;
-    }
-    await this.upsertBizMembership(tx, projectId, company.id, user.id, membership || {}, options);
-
-    return company;
+    return await this.prisma.$transaction((tx) => this.applyBizUserUpsert(tx, plan));
   }
 
-  async upsertBizCompany(
-    projectId: string,
-    environmentId: string,
-    companyId: string,
-    attributes: Record<string, any>,
-  ): Promise<BizCompany | null> {
-    return await this.withEntityChangeEmit(environmentId, () =>
-      // A real transaction: upsertBizCompanyAttributes takes the row FOR NO KEY UPDATE.
-      this.prisma.$transaction((tx) =>
-        this.upsertBizCompanyAttributes(tx, projectId, environmentId, companyId, attributes),
-      ),
-    );
-  }
-
-  /** Must run inside a transaction — see upsertBizUsers. */
-  async upsertBizCompanyAttributes(
-    tx: Prisma.TransactionClient,
+  /** The company write a group() asks for, resolved without a lock. */
+  async planBizCompanyUpsert(
     projectId: string,
     environmentId: string,
     externalCompanyId: string,
     attributes: Record<string, any>,
     options?: UpsertAttributeOptions,
-  ): Promise<BizCompany | null> {
+  ): Promise<CompanyUpsertPlan> {
     const externalId = String(externalCompanyId);
     const { writes, rejected } = await this.resolveEntityAttributeWrites(
-      tx,
+      this.prisma,
       projectId,
       AttributeBizType.COMPANY,
       attributes,
       options?.origin,
     );
     options?.rejected?.push(...rejected);
-
     // Every member's page load calls group() on the same company row, and
-    // most of those calls change nothing. Read without the lock first and
-    // return when the writes would leave the row as it is — a no-op
-    // linearises at the moment of that read — so the row is only locked by a
-    // write that changes something, which re-reads under the lock.
-    const unlocked = await tx.bizCompany.findFirst({
+    // most of those calls change nothing: the unlocked read decides that
+    // without ever taking the lock.
+    const current = await this.prisma.bizCompany.findFirst({
       where: { externalId, environmentId },
     });
-    if (unlocked) {
-      const unlockedData = (unlocked.data as Record<string, any>) || {};
-      if (attributeDataEqual(unlockedData, this.applyAttributeWrites(unlockedData, writes))) {
-        return unlocked;
+    return {
+      environmentId,
+      projectId,
+      externalId,
+      writes,
+      bucketingDefinitions: current
+        ? undefined
+        : await this.bucketingDefinitions(this.prisma, projectId, AttributeBizType.COMPANY),
+      current,
+      unchanged: current !== null && this.leavesUnchanged(current.data, writes),
+    };
+  }
+
+  /** Must run inside a transaction — the company counterpart of applyBizUserUpsert. */
+  async applyBizCompanyUpsert(
+    tx: Prisma.TransactionClient,
+    plan: CompanyUpsertPlan,
+  ): Promise<BizCompany> {
+    const { environmentId, externalId, writes } = plan;
+    if (!plan.current) {
+      // Same as the user: a row that does not exist cannot be locked, so it
+      // is inserted with ON CONFLICT DO NOTHING first.
+      const definitions =
+        plan.bucketingDefinitions ??
+        (await this.bucketingDefinitions(tx, plan.projectId, AttributeBizType.COMPANY));
+      const inserted = await tx.bizCompany.createMany({
+        data: [
+          {
+            externalId,
+            environmentId,
+            // Same seeding rule as users: writes first, the seen-at seed fills
+            // the rest, nulls never reach the row, bucketing values are born
+            // with the row.
+            data: seedSeenAttributes(
+              this.applyAttributeWrites(missingBucketValues(definitions, externalId, {}), writes),
+            ),
+          },
+        ],
+        skipDuplicates: true,
+      });
+      if (inserted.count === 1) {
+        const created = await tx.bizCompany.findFirstOrThrow({
+          where: { externalId, environmentId },
+        });
+        this.collectEntityChange({ entity: 'company', action: 'created', bizId: created.id });
+        return created;
       }
     }
-
     await tx.$queryRaw`SELECT id FROM "BizCompany" WHERE "environmentId" = ${environmentId} AND "externalId" = ${externalId} FOR NO KEY UPDATE`;
     const company = await tx.bizCompany.findFirst({
       where: { externalId, environmentId },
     });
-
-    if (company) {
-      const currentData = (company.data as Record<string, any>) || {};
-      const nextData = this.applyAttributeWrites(currentData, writes);
-
-      // Only update if data has actually changed
-      if (attributeDataEqual(currentData, nextData)) {
-        return company;
-      }
-
-      const updated = await tx.bizCompany.update({
-        where: {
-          id: company.id,
-        },
-        data: {
-          data: nextData,
-        },
+    if (!company) {
+      // The row the plan saw is gone since: born again by the insert above.
+      return await this.applyBizCompanyUpsert(tx, {
+        ...plan,
+        current: null,
+        bucketingDefinitions: undefined,
       });
-      this.collectEntityChange({
-        entity: 'company',
-        action: 'updated',
-        bizId: company.id,
-        previousAttributes: this.previousAttributesOf(currentData, nextData),
-      });
-      return updated;
     }
 
-    const created = await tx.bizCompany.create({
+    const currentData = (company.data as Record<string, any>) || {};
+    const nextData = this.applyAttributeWrites(currentData, writes);
+
+    // Only update if data has actually changed
+    if (attributeDataEqual(currentData, nextData)) {
+      return company;
+    }
+
+    const updated = await tx.bizCompany.update({
+      where: {
+        id: company.id,
+      },
       data: {
-        externalId,
-        environmentId,
-        // Same seeding rule as users: writes first, the seen-at seed fills
-        // the rest, nulls never reach the row, bucketing values are born
-        // with the row.
-        data: seedSeenAttributes(
-          this.applyAttributeWrites(
-            await this.bucketingSeed(tx, projectId, AttributeBizType.COMPANY, externalId),
-            writes,
-          ),
-        ),
+        data: nextData,
       },
     });
-    this.collectEntityChange({ entity: 'company', action: 'created', bizId: created.id });
-    return created;
+    this.collectEntityChange({
+      entity: 'company',
+      action: 'updated',
+      bizId: company.id,
+      previousAttributes: this.previousAttributesOf(currentData, nextData),
+    });
+    return updated;
   }
 
-  /** Must run inside a transaction — see upsertBizUsers. */
-  async upsertBizMembership(
-    tx: Prisma.TransactionClient,
+  /**
+   * A company write on its own (the REST company endpoints): planned outside
+   * a transaction, applied in one of its own; a no-op opens none.
+   */
+  async upsertBizCompany(
     projectId: string,
-    bizCompanyId: string,
-    bizUserId: string,
+    environmentId: string,
+    companyId: string,
+    attributes: Record<string, any>,
+    options?: UpsertAttributeOptions,
+  ): Promise<BizCompany | null> {
+    return await this.withEntityChangeEmit(environmentId, async () => {
+      const plan = await this.planBizCompanyUpsert(
+        projectId,
+        environmentId,
+        companyId,
+        attributes,
+        options,
+      );
+      if (plan.unchanged) {
+        return plan.current;
+      }
+      return await this.prisma.$transaction((tx) => this.applyBizCompanyUpsert(tx, plan));
+    });
+  }
+
+  /**
+   * The membership write, resolved without a lock. The unlocked read needs the
+   * two rows' ids; a membership whose company or user is about to be born has
+   * none yet and is applied unconditionally.
+   */
+  async planBizMembershipUpsert(
+    projectId: string,
     membership: Record<string, any>,
     options?: UpsertAttributeOptions,
-  ): Promise<BizUserOnCompany> {
+    rows?: { bizCompanyId: string; bizUserId: string },
+  ): Promise<MembershipUpsertPlan> {
     const { writes, rejected } = await this.resolveEntityAttributeWrites(
-      tx,
+      this.prisma,
       projectId,
       AttributeBizType.MEMBERSHIP,
       membership,
       options?.origin,
     );
     options?.rejected?.push(...rejected);
+    const current = rows ? await this.prisma.bizUserOnCompany.findFirst({ where: rows }) : null;
+    return {
+      projectId,
+      writes,
+      current,
+      unchanged: current !== null && this.leavesUnchanged(current.data, writes),
+    };
+  }
 
+  /** Must run inside a transaction — the membership counterpart of applyBizUserUpsert. */
+  async applyBizMembershipUpsert(
+    tx: Prisma.TransactionClient,
+    plan: MembershipUpsertPlan,
+    bizCompanyId: string,
+    bizUserId: string,
+  ): Promise<BizUserOnCompany> {
+    const { writes } = plan;
+    if (!plan.current) {
+      // Same as the user: a row that does not exist cannot be locked, so it
+      // is inserted with ON CONFLICT DO NOTHING first.
+      const inserted = await tx.bizUserOnCompany.createMany({
+        data: [
+          {
+            bizUserId,
+            bizCompanyId,
+            // A null must not be stored on creation either: a JSON null would
+            // make set_once see a value where there is none.
+            data: this.applyAttributeWrites({}, writes),
+          },
+        ],
+        skipDuplicates: true,
+      });
+      if (inserted.count === 1) {
+        return await tx.bizUserOnCompany.findFirstOrThrow({ where: { bizCompanyId, bizUserId } });
+      }
+    }
     await tx.$queryRaw`SELECT id FROM "BizUserOnCompany" WHERE "bizCompanyId" = ${bizCompanyId} AND "bizUserId" = ${bizUserId} FOR NO KEY UPDATE`;
     const relation = await tx.bizUserOnCompany.findFirst({
       where: { bizCompanyId, bizUserId },
     });
-
-    if (relation) {
-      const currentData = (relation.data as Record<string, any>) || {};
-      const nextData = this.applyAttributeWrites(currentData, writes);
-
-      // Only update if data has actually changed
-      if (attributeDataEqual(currentData, nextData)) {
-        return relation;
-      }
-
-      return await tx.bizUserOnCompany.update({
-        where: {
-          id: relation.id,
-        },
-        data: {
-          data: nextData,
-        },
-      });
-    }
-    return await tx.bizUserOnCompany.create({
-      data: {
-        bizUserId,
+    if (!relation) {
+      // The row the plan saw is gone since: born again by the insert above.
+      return await this.applyBizMembershipUpsert(
+        tx,
+        { ...plan, current: null },
         bizCompanyId,
-        // A null must not be stored on creation either: a JSON null would make
-        // set_once see a value where there is none.
-        data: this.applyAttributeWrites({}, writes),
+        bizUserId,
+      );
+    }
+
+    const currentData = (relation.data as Record<string, any>) || {};
+    const nextData = this.applyAttributeWrites(currentData, writes);
+
+    // Only update if data has actually changed
+    if (attributeDataEqual(currentData, nextData)) {
+      return relation;
+    }
+
+    return await tx.bizUserOnCompany.update({
+      where: {
+        id: relation.id,
+      },
+      data: {
+        data: nextData,
       },
     });
+  }
+
+  /**
+   * The group() write — the company and the calling user's membership in it —
+   * resolved without a lock. Null when the environment or the user does not
+   * exist.
+   */
+  async planBizCompanyGroup(
+    environmentId: string,
+    externalCompanyId: string,
+    externalUserId: string,
+    attributes: Record<string, any>,
+    membership: Record<string, any>,
+    options?: UpsertAttributeOptions,
+  ): Promise<CompanyGroupPlan | null> {
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId },
+      select: { projectId: true },
+    });
+    if (!environment) {
+      return null;
+    }
+    const user = await this.prisma.bizUser.findFirst({
+      where: { externalId: String(externalUserId), environmentId },
+    });
+    if (!user) {
+      return null;
+    }
+    const company = await this.planBizCompanyUpsert(
+      environment.projectId,
+      environmentId,
+      externalCompanyId,
+      attributes,
+      options,
+    );
+    const membershipPlan = await this.planBizMembershipUpsert(
+      environment.projectId,
+      membership || {},
+      options,
+      company.current ? { bizCompanyId: company.current.id, bizUserId: user.id } : undefined,
+    );
+    return { user, company, membership: membershipPlan };
+  }
+
+  /**
+   * Must run inside a transaction: the company and the membership commit
+   * together, each part skipped when its plan found nothing to change.
+   */
+  async applyBizCompanyGroup(
+    tx: Prisma.TransactionClient,
+    plan: CompanyGroupPlan,
+  ): Promise<BizCompany> {
+    const company =
+      plan.company.unchanged && plan.company.current
+        ? plan.company.current
+        : await this.applyBizCompanyUpsert(tx, plan.company);
+    if (!plan.membership.unchanged) {
+      await this.applyBizMembershipUpsert(tx, plan.membership, company.id, plan.user.id);
+    }
+    return company;
+  }
+
+  /**
+   * A group() write on its own: planned outside a transaction, applied in one
+   * of its own; a write that changes neither the company nor the membership
+   * opens none. Null when the environment or the user does not exist.
+   */
+  async upsertBizCompanyGroup(
+    environmentId: string,
+    externalCompanyId: string,
+    externalUserId: string,
+    attributes: Record<string, any>,
+    membership: Record<string, any>,
+    options?: UpsertAttributeOptions,
+  ): Promise<BizCompany | null> {
+    const plan = await this.planBizCompanyGroup(
+      environmentId,
+      externalCompanyId,
+      externalUserId,
+      attributes,
+      membership,
+      options,
+    );
+    if (!plan) {
+      return null;
+    }
+    if (plan.company.unchanged && plan.membership.unchanged) {
+      return plan.company.current;
+    }
+    return await this.prisma.$transaction((tx) => this.applyBizCompanyGroup(tx, plan));
+  }
+
+  /** Whether the writes leave the stored attribute object as it is. */
+  private leavesUnchanged(stored: unknown, writes: Map<string, AttributeWrite>): boolean {
+    const currentData = (stored as Record<string, any>) || {};
+    return attributeDataEqual(currentData, this.applyAttributeWrites(currentData, writes));
   }
 
   /**
@@ -1286,17 +1529,16 @@ export class BizService {
   }
 
   /**
-   * Values of the project's bucketing definitions for an entity about to be
-   * born (ADR 0020 §3): derived, so seeding them at creation costs one small
-   * query and guarantees every row carries them from its first read.
+   * The project's bucketing definitions, which a newborn entity's seed derives
+   * its values from (ADR 0020 §3). Read with the write's plan so the
+   * transaction does not; one small query only when the row may be born.
    */
-  private async bucketingSeed(
-    tx: Prisma.TransactionClient,
+  private async bucketingDefinitions(
+    client: Prisma.TransactionClient,
     projectId: string,
     bizType: AttributeBizType,
-    externalId: string,
-  ): Promise<Record<string, string | number>> {
-    const definitions = await tx.attribute.findMany({
+  ): Promise<BucketingDefinition[]> {
+    return await client.attribute.findMany({
       where: {
         projectId,
         bizType,
@@ -1305,7 +1547,6 @@ export class BizService {
       },
       select: { id: true, codeName: true, dataType: true, randomMax: true },
     });
-    return missingBucketValues(definitions, externalId, {});
   }
 
   /**
@@ -1843,7 +2084,7 @@ export class BizService {
   /**
    * Ensure a user exists by external ID, creating if necessary
    * Used during socket connection to guarantee user exists
-   * Does not handle attributes - use upsertBizUsers for that
+   * Does not handle attributes - use upsertBizUser for that
    * Note: Caller must validate environmentId exists before calling
    */
   async ensureBizUser(externalUserId: string, environmentId: string): Promise<BizUser> {
@@ -1865,11 +2106,14 @@ export class BizService {
           environmentId,
           data: seedSeenAttributes(
             environment
-              ? await this.bucketingSeed(
-                  this.prisma,
-                  environment.projectId,
-                  AttributeBizType.USER,
+              ? missingBucketValues(
+                  await this.bucketingDefinitions(
+                    this.prisma,
+                    environment.projectId,
+                    AttributeBizType.USER,
+                  ),
                   String(externalUserId),
+                  {},
                 )
               : {},
           ),
@@ -1890,55 +2134,83 @@ export class BizService {
       attributes?: Record<string, any>;
     }>,
   ) {
-    // No runInScope wrap: the only cache write inside this $transaction is
-    // `invalidateDeferred(attrs(projectId))`, fired by resolveEntityAttributeWrites
-    // when the SDK upsert payload introduces a previously-unseen attribute
-    // codeName. A mid-tx invalidate races with concurrent cross-pod readers
-    // that could fill the cache from pre-commit DB state — but the freshly
-    // created Attribute has no existing condition referencing it (admin
-    // couldn't have configured a rule against a codeName that didn't
-    // exist yet), so an `attrs` cache slice missing this row produces no
-    // observable effect on toggleContents output. The 5-minute TTL self-
-    // heals before any new admin-configured rule could reference it.
-    return await this.withEntityChangeEmit(environmentId, () =>
-      this.prisma.$transaction(async (tx) => {
-        // First upsert the user with attributes
-        const user = await this.upsertBizUsers(tx, externalUserId, attributes || {}, environmentId);
+    // No runInScope wrap: the only cache write here is
+    // `invalidateDeferred(attrs(projectId))`, fired while planning when the
+    // payload introduces a previously-unseen attribute codeName — before the
+    // transaction, so no reader can fill the cache from pre-commit state.
+    return await this.withEntityChangeEmit(environmentId, async () => {
+      const userPlan = await this.planBizUserUpsert(
+        environmentId,
+        externalUserId,
+        attributes || {},
+      );
+      if (!userPlan) {
+        throw new UnknownError('Failed to upsert user');
+      }
 
-        if (!user) {
-          throw new UnknownError('Failed to upsert user');
+      // Companies and memberships in one order by company id: two requests
+      // locking the same company rows in different orders would deadlock.
+      // The sort is stable, so a company listed under both keeps its
+      // company-then-membership sequence.
+      const steps = [
+        ...(companies ?? []).map((company) => ({
+          companyId: company.id,
+          attributes: company.attributes || {},
+          membership: {},
+        })),
+        ...(memberships ?? []).map((membership) => ({
+          companyId: membership.company.id,
+          attributes: membership.company.attributes || {},
+          membership: membership.attributes || {},
+        })),
+      ].sort((left, right) => compareCodePoints(left.companyId, right.companyId));
+
+      // Every plan before the transaction, like the user's; the membership
+      // read needs both rows, so one whose user or company is about to be
+      // born is applied unconditionally.
+      const groups: Array<Omit<CompanyGroupPlan, 'user'>> = [];
+      for (const step of steps) {
+        const company = await this.planBizCompanyUpsert(
+          userPlan.projectId,
+          environmentId,
+          step.companyId,
+          step.attributes,
+        );
+        const membership = await this.planBizMembershipUpsert(
+          userPlan.projectId,
+          step.membership,
+          undefined,
+          company.current && userPlan.current
+            ? { bizCompanyId: company.current.id, bizUserId: userPlan.current.id }
+            : undefined,
+        );
+        groups.push({ company, membership });
+      }
+
+      if (
+        userPlan.unchanged &&
+        groups.every((group) => group.company.unchanged && group.membership.unchanged)
+      ) {
+        return userPlan.current;
+      }
+      // Inside the transaction every company and membership is applied, not
+      // only the ones the plans saw change: a company listed twice in one
+      // request is merged in order under the lock, where the second write
+      // sees the first, instead of being judged against the snapshot the
+      // first write already moved on from. The apply re-reads under the lock
+      // and skips a write that changes nothing.
+      return await this.prisma.$transaction(async (tx) => {
+        const user =
+          userPlan.unchanged && userPlan.current
+            ? userPlan.current
+            : await this.applyBizUserUpsert(tx, userPlan);
+        for (const group of groups) {
+          const company = await this.applyBizCompanyUpsert(tx, group.company);
+          await this.applyBizMembershipUpsert(tx, group.membership, company.id, user.id);
         }
-
-        // Companies and memberships in one order by company id: two requests
-        // locking the same company rows in different orders would deadlock.
-        // The sort is stable, so a company listed under both keeps its
-        // company-then-membership sequence.
-        const steps = [
-          ...(companies ?? []).map((company) => ({
-            companyId: company.id,
-            attributes: company.attributes || {},
-            membership: {},
-          })),
-          ...(memberships ?? []).map((membership) => ({
-            companyId: membership.company.id,
-            attributes: membership.company.attributes || {},
-            membership: membership.attributes || {},
-          })),
-        ].sort((left, right) => compareCodePoints(left.companyId, right.companyId));
-        for (const step of steps) {
-          await this.upsertBizCompanies(
-            tx,
-            step.companyId,
-            externalUserId,
-            step.attributes,
-            environmentId,
-            step.membership,
-          );
-        }
-
         return user;
-      }),
-    );
+      });
+    });
   }
 
   async getBizCompany(
@@ -2064,8 +2336,9 @@ export class BizService {
 
   /**
    * Upsert a single membership (user<->company link) by their already-resolved
-   * internal rows, wrapping the shared {@link upsertBizMembership} in a tx. The
-   * caller resolves the BizUser/BizCompany first (so it can 404 the right one).
+   * internal rows. The caller resolves the BizUser/BizCompany first (so it can
+   * 404 the right one); the write is planned outside a transaction and applied
+   * in one of its own, none when it changes nothing.
    */
   async upsertBizCompanyMembership(
     projectId: string,
@@ -2073,8 +2346,15 @@ export class BizService {
     bizUserId: string,
     attributes: Record<string, any>,
   ): Promise<BizUserOnCompany> {
+    const plan = await this.planBizMembershipUpsert(projectId, attributes, undefined, {
+      bizCompanyId,
+      bizUserId,
+    });
+    if (plan.unchanged && plan.current) {
+      return plan.current;
+    }
     return await this.prisma.$transaction((tx) =>
-      this.upsertBizMembership(tx, projectId, bizCompanyId, bizUserId, attributes),
+      this.applyBizMembershipUpsert(tx, plan, bizCompanyId, bizUserId),
     );
   }
 
