@@ -30,7 +30,7 @@
     "@usertour/tailwind": "workspace:*",
     "@usertour/ui": "workspace:^",
     "@usertour/types": "workspace:^",
-    "@usertour/business-components": "workspace:^",
+    "@usertour/conditions": "workspace:^",
     "@usertour/data": "workspace:^",
     "@hookform/resolvers": "^5.4.0",
     "react-hook-form": "^7.55.0",

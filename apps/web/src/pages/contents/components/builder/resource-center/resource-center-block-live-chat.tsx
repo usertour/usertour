@@ -18,7 +18,7 @@ import { Callout } from '@/pages/contents/components/builder/shared/callout';
 import { PopperEditorMini } from '@usertour/editor';
 import { CodeEditor } from '@usertour/ui';
 import type { Descendant } from '@usertour/editor';
-import { Conditions } from '@usertour/business-components';
+import { Conditions } from '@usertour/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { Trans, useTranslation } from 'react-i18next';
 import {

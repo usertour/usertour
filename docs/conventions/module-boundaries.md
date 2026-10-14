@@ -20,19 +20,26 @@ If a primitive needs a small utility (e.g. a hash helper) that lives in
 the app today, **inline it into the primitive** or move it to
 `@usertour/helpers`; don't reach back into `apps/web/...`.
 
-## 2. Multi-app business components → `@usertour/business-components`
+## 2. The conditions editor → `@usertour/conditions`
 
-If the component imports business types (`Segment`, `Content`,
-`IntegrationModel`, etc.) **AND** is used by more than one app (`web`,
-`builder`, `extension`), it goes in `packages/business-components/`.
+The `Conditions` component, its condition types and validators, the
+element picker it picks targets with, and the small domain widgets its
+condition types render live in `packages/conditions/`, because both the
+dashboard (`apps/web`) and the content editor (`packages/editor`) edit
+conditions.
 
 This package may not import from `apps/...`. If a candidate component
 needs `apps/web` context (e.g. `useSegmentListContext`), it doesn't
 qualify yet — leave it in `apps/web` until the context is also lifted
 out.
 
-Examples already there: `Conditions`, `ConditionCombobox`, integration
-config cards.
+A business component that both consumers need but that is not part of
+editing conditions does not go here. There is no package for it today;
+when one is needed, it gets its own package (`packages/editor` cannot
+reach into `apps/web`) rather than widening this one.
+
+Examples already there: `Conditions`, `ConditionCombobox`, the element
+picker.
 
 ## 3. Web-only business components → `apps/web/src/components/<domain>/`
 
@@ -63,7 +70,7 @@ The default is **start local, promote on demand**:
 | Currently | Reuse appears at | Move to |
 |---|---|---|
 | `pages/<route>/components/` | a second route in `apps/web` | `apps/web/src/components/<domain>/` |
-| `apps/web/src/components/<domain>/` | builder or extension | `@usertour/business-components` (must first decouple from `apps/web` contexts) |
+| `apps/web/src/components/<domain>/` | `packages/editor` | `@usertour/conditions` if it is part of editing conditions, otherwise a new package (must first decouple from `apps/web` contexts) |
 | anywhere | becomes business-agnostic | `@usertour/ui` |
 
 Don't promote on speculation. Wait for evidence (a second consumer, or

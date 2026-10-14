@@ -1,4 +1,4 @@
-import { validateConditions } from '@usertour/business-components';
+import { validateConditions } from '@usertour/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';

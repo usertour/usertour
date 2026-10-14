@@ -35,6 +35,14 @@ export type {
 } from './components/conditions/schema-types';
 export type { ConditionsTranslator } from './components/conditions/conditions-context';
 export {
+  AttributeDataTypeIcon,
+  type AttributeDataTypeIconProps,
+} from './components/attributes/attribute-data-type-icon';
+export {
+  IntegrationSourceMark,
+  type IntegrationSourceMarkProps,
+} from './components/integrations/integration-source-mark';
+export {
   ElementPickerProvider,
   useElementPicker,
   PickElementButton,
@@ -45,15 +53,3 @@ export type {
   PickElementResult,
   PickElementButtonProps,
 } from './components/element-picker';
-export { GoogleFontCss } from './components/theme/google-font';
-export {
-  AttributeDataTypeIcon,
-  type AttributeDataTypeIconProps,
-} from './components/attributes/attribute-data-type-icon';
-export {
-  IntegrationSourceMark,
-  type IntegrationSourceMarkProps,
-} from './components/integrations/integration-source-mark';
-// Generic composition UI primitives live in @usertour/ui —
-// import them from there directly. Examples: ComboboxSelect, DateTimePicker,
-// ErrorTooltip, ScaledPreviewContainer, LoadingContainer, LocateSelect.

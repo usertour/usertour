@@ -1,6 +1,6 @@
 // Button popover content component
 
-import { CLIENT_EVALUABLE_CONDITION_TYPES, Conditions } from '@usertour/business-components';
+import { CLIENT_EVALUABLE_CONDITION_TYPES, Conditions } from '@usertour/conditions';
 import { BooleanField, Label, SelectField, type SelectFieldOption, TextField } from '@usertour/ui';
 import { EDITOR_SELECT } from '@usertour/constants';
 import type { Attribute, Content, ContentVersion, Step } from '@usertour/types';

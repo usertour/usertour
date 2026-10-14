@@ -14,7 +14,7 @@ import { isTimeConditionDataV2, isTimeConditionDataLegacy } from './conditions/t
 
 // Internal validity predicates backing `hasError`. They only flag whether a
 // condition is incomplete — user-facing messaging lives in the i18n'd
-// validators in @usertour/business-components.
+// validators in @usertour/conditions.
 
 const isValidSelector = (selector: ElementSelectorPropsData) => {
   if (!selector) {

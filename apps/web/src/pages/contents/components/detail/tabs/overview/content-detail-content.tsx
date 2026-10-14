@@ -17,7 +17,7 @@ import {
 } from '@usertour/ui';
 import { stepIsReachable } from '@/pages/contents/components/builder/utils/content-validate';
 import { AddIcon, EditIcon, EyeNoneIcon } from '@usertour/icons';
-import { GoogleFontCss } from '@usertour/business-components';
+import { GoogleFontCss } from '@/components/themes/google-font-css';
 import {
   BannerData,
   BannerEmbedPlacement,

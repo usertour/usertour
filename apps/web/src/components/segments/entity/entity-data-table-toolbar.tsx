@@ -2,7 +2,7 @@
 
 import { Table } from '@tanstack/react-table';
 import { WebZIndex } from '@usertour/constants';
-import { Conditions, validateConditions } from '@usertour/business-components';
+import { Conditions, validateConditions } from '@usertour/conditions';
 import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
 import { AttributeBizTypes, ColumnSetting, RulesCondition } from '@usertour/types';

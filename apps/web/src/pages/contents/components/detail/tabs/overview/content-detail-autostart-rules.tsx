@@ -12,7 +12,7 @@ import {
   ConditionWait,
   Conditions,
   validateConditions,
-} from '@usertour/business-components';
+} from '@usertour/conditions';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
 import isEqual from 'fast-deep-equal';
