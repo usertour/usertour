@@ -2,8 +2,9 @@ import { RulesZIndexOffset, WebZIndex } from '@usertour/constants';
 import { createContext, useContext } from 'react';
 
 // The base z-index of the rules editor (conditions or actions) the caller is
-// rendered in. Standalone pickers render outside any editor and fall back to
-// the dashboard's rules layer.
+// rendered in. Without a provider it is the dashboard's rules layer; a host
+// stacked above that layer (the builder sidebar) sets its own around the
+// standalone pickers it renders.
 const RulesZIndexContext = createContext<number | undefined>(undefined);
 
 export const RulesZIndexProvider = RulesZIndexContext.Provider;

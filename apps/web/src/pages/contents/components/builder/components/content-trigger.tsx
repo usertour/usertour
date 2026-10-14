@@ -8,6 +8,7 @@ import {
   validateConditions,
 } from '@/components/conditions';
 import { Actions, validateActions } from '@/components/editor';
+import { RulesZIndexProvider } from '@/components/rules';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -147,7 +148,9 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               onElementChange={onRulesConditionElementChange}
               baseZIndex={BUILDER_Z.rules}
             />
-            <ConditionWait defaultValue={wait} onValueChange={onWaitChange} disabled={false} />
+            <RulesZIndexProvider value={BUILDER_Z.rules}>
+              <ConditionWait defaultValue={wait} onValueChange={onWaitChange} disabled={false} />
+            </RulesZIndexProvider>
             <Label>{t('contentBuilder.flow.actionWhenTriggered')}</Label>
             <Actions
               baseZIndex={BUILDER_Z.popover}
