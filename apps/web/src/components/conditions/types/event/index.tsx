@@ -9,7 +9,7 @@ import {
 } from '@usertour/types';
 import { useMemo } from 'react';
 import { ConditionList } from '../../condition-list';
-import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
+import { useConditionsContext } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateConditions } from '../../validate';
 import { validateEvent } from '../../validators';
@@ -18,6 +18,7 @@ import { ConditionInlineSelect } from '../../ui/condition-inline-select';
 import { Input } from '@usertour/ui';
 import { EventScopeContext } from './event-scope-context';
 import { useTranslation } from 'react-i18next';
+import { summaryTextClass } from '@/components/rules';
 
 export interface EventData {
   eventId?: string;
@@ -96,7 +97,6 @@ const findEvent = (events: Event[] | undefined, id: string | undefined): Event |
 
 function EventSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const { events } = useConditionsContext();
   const data = readData(condition);
   const event = findEvent(events, data.eventId);

@@ -84,6 +84,16 @@ A module with a document of its name under `src/documents` owns that document; a
 
 Cross-cutting hooks that read no document of their own (`use-content-count`, `use-current-user-id`, `use-cursor-fetch-more`, `use-tooltip-target-missing-sessions`, `use-invalidate-license-scoped-cache`) live beside the modules as `hooks/use-<name>.ts`. When a new domain module is added, add a row here.
 
+## The rest of `src`
+
+| Path | What it is |
+|---|---|
+| `documents/` | The `.graphql` operations, one file per hook module (or per entity when modules share). The only hand-written GraphQL. |
+| `generated/` | What the generator emits from the documents and the server's schema: the schema types and the typed `*Document` constants. Committed; CI fails when stale. |
+| `graphql.ts` | The barrel over `generated/`. Internal to the package: the hooks import documents from it, the dashboard never does. |
+| `query/` | The one query layer every wrapper goes through (`useTypedQuery`): loading and error rules, `errorPolicy`, the notifier the application mounts so a failed query can toast in its language. The `why` is ADR 0021. |
+| `wire-to-domain.ts` | One assignment per hand-written entity type, from an operation's result type to it. A server or document change that breaks the pair fails `tsc` on that line. |
+
 ## House rules
 
 - **Naming.** `useXxxQuery` for queries, `useXxxMutation` for mutations, `useXxxLazyQuery` for `useLazyQuery`. The verb matches the underlying Apollo hook so consumers can predict the return shape.

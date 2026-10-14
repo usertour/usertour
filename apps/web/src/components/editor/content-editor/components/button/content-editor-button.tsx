@@ -196,14 +196,13 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
       !isEmpty &&
       validateActions(actions, {
         attributes,
-        contents: contentList,
         currentVersion,
         currentStep,
       }).length > 0;
     const kind: typeof errorKind = isEmpty ? 'empty' : hasIncompleteAction ? 'incomplete' : null;
     setErrorKind(kind);
     setIsShowError(kind !== null && !isOpen);
-  }, [element?.data?.actions, isOpen, attributes, contentList, currentVersion, currentStep]);
+  }, [element?.data?.actions, isOpen, attributes, currentVersion, currentStep]);
 
   return (
     <EditorErrorTooltip open={isShowError}>

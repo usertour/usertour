@@ -3,6 +3,7 @@
 // render in, and the provider the editors set it with.
 
 export { RulesZIndexProvider, useRulesZIndex } from './z-index';
+export { summaryTextClass } from './summary-text';
 export { RulesPopover, RulesPopoverTrigger, RulesPopoverContent } from './rules-popover';
 export {
   RulesDropdownMenu,

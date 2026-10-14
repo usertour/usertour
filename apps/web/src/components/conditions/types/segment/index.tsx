@@ -3,7 +3,7 @@ import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, SegmentIcon } from '@
 import type { RulesCondition } from '@usertour/types';
 import type { Segment } from '@usertour/data';
 import { type ReactNode, useMemo } from 'react';
-import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
+import { useConditionsContext } from '../../conditions-context';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateSegment } from '../../validators';
@@ -11,6 +11,7 @@ import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/conditio
 import { IntegrationSourceMark } from '@/components/integrations/integration-source-mark';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
+import { summaryTextClass } from '@/components/rules';
 
 export interface SegmentData {
   logic?: string;
@@ -74,7 +75,6 @@ const leadingFor = (segment: Segment, t: TFunction): ReactNode => {
 
 function SegmentSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const { segments } = useConditionsContext();
   const data = readData(condition);
   const segment = findSegment(segments, data.segmentId);

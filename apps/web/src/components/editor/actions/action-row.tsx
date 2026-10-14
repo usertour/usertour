@@ -82,7 +82,6 @@ export function ActionRow({ condition, onChange, onRemove, autoOpen, onAutoOpene
   const validateContext: ValidateContext = {
     attributes: ctx.attributes,
     segments: ctx.segments,
-    contents: ctx.contents,
     currentContent: ctx.currentContent,
     currentVersion: ctx.currentVersion,
     currentStep: ctx.currentStep,

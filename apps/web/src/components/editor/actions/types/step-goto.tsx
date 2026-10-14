@@ -23,7 +23,7 @@ import {
   StepContentType,
 } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
-import { useActionsContext, useSummaryTextClass } from '../actions-context';
+import { useActionsContext } from '../actions-context';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';
 import {
@@ -31,6 +31,7 @@ import {
   RulesDropdownMenuContent,
   RulesDropdownMenuItem,
   RulesDropdownMenuTrigger,
+  summaryTextClass,
 } from '@/components/rules';
 import { useTranslation } from 'react-i18next';
 
@@ -77,7 +78,6 @@ const findStep = (
 
 function StepGotoSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const { currentVersion } = useActionsContext();
   const data = readData(condition);
   const { step, index } = findStep(currentVersion, data.stepCvid);

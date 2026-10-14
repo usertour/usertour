@@ -96,13 +96,12 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
       setLocalActions(next);
       const failures = validateActions(next, {
         attributes: attributeList,
-        contents,
         currentVersion,
         currentStep,
       });
       onActionsChange(next, failures.length > 0);
     },
-    [attributeList, contents, currentVersion, currentStep, onActionsChange],
+    [attributeList, currentVersion, currentStep, onActionsChange],
   );
 
   // Live recomputation of "is some action incomplete?" — used to decide
@@ -115,12 +114,11 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
     return (
       validateActions(localActions, {
         attributes: attributeList,
-        contents,
         currentVersion,
         currentStep,
       }).length > 0
     );
-  }, [localActions, attributeList, contents, currentVersion, currentStep]);
+  }, [localActions, attributeList, currentVersion, currentStep]);
 
   return (
     <>

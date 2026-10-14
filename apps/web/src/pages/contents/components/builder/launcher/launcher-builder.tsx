@@ -1,7 +1,6 @@
 'use client';
 
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { validateActions } from '@/components/editor';
 import { type LauncherData, LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';
@@ -24,7 +23,6 @@ const useRegisterLauncherSaveValidator = () => {
   const { setAutoSaveValidator } = useBuilderMethods();
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { attributeList } = useAttributeList();
-  const { contents } = useContentList();
 
   useEffect(() => {
     setAutoSaveValidator((version) => {
@@ -39,14 +37,13 @@ const useRegisterLauncherSaveValidator = () => {
       return (
         validateActions(actions, {
           attributes: attributeList ?? undefined,
-          contents,
           currentVersion: currentVersion ?? undefined,
           currentStep: undefined,
         }).length === 0
       );
     });
     return () => setAutoSaveValidator(null);
-  }, [setAutoSaveValidator, attributeList, contents, currentVersion]);
+  }, [setAutoSaveValidator, attributeList, currentVersion]);
 };
 
 // The Launcher builder — a descendant `<Routes>` under the builder route's

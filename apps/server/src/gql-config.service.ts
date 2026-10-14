@@ -76,27 +76,29 @@ export class GqlConfigService implements GqlOptionsFactory {
             message = response?.message || httpException.message || 'Bad Request';
           }
 
-          // Create ValidationError to match BaseError format
-          const validationError = new ValidationError(message);
-
+          // The user reads the catalogue's message in the request's language;
+          // the pipe's own text (which field, which rule) is for the developer.
+          const validationError = new ValidationError();
           return {
             message: validationError.getMessage(requestLocale.get()),
             extensions: {
               code: validationError.code,
+              reason: message,
             },
           };
         }
 
         // A variable the schema rejects (a null for a non-nullable input field,
         // a value of the wrong type): the request's own input is wrong, so it
-        // is a validation error like one the pipe raises, and the message
-        // names the variable path the client has to fix.
+        // is a validation error like one the pipe raises. The engine's text,
+        // which names the variable path, goes to the developer as the reason.
         if (formattedError.extensions?.code === 'BAD_USER_INPUT') {
-          const validationError = new ValidationError(formattedError.message);
+          const validationError = new ValidationError();
           return {
             message: validationError.getMessage(requestLocale.get()),
             extensions: {
               code: validationError.code,
+              reason: formattedError.message,
             },
           };
         }

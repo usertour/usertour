@@ -8,10 +8,10 @@ import {
   type Step,
 } from '@usertour/types';
 import { useCallback, useMemo } from 'react';
-import { useActionsContext, useSummaryTextClass } from '../actions-context';
+import { useActionsContext } from '../actions-context';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';
-import { useRulesZIndex } from '@/components/rules';
+import { useRulesZIndex, summaryTextClass } from '@/components/rules';
 import { useTranslation } from 'react-i18next';
 
 interface FlowStartData {
@@ -47,7 +47,6 @@ const getStepTypeIcon = (type: string) => {
 
 function FlowStartSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const { contents } = useActionsContext();
   const data = readData(condition);
   const content = contents?.find((entry) => entry.id === data.contentId);

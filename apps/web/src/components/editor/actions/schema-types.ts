@@ -8,7 +8,6 @@ import type { ComponentType } from 'react';
 export interface ValidateContext {
   attributes?: Attribute[];
   segments?: Segment[];
-  contents?: Content[];
   currentContent?: Content;
   currentVersion?: ContentVersion;
   currentStep?: Step;

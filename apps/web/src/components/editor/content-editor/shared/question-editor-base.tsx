@@ -115,7 +115,6 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
     }
     const failures = validateActions(actions, {
       attributes,
-      contents: contentList,
       currentVersion,
       currentStep,
     });
@@ -126,7 +125,7 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
       isValid: false,
       errorMessage: t('actions.errors.question.incomplete'),
     };
-  }, [localData, attributes, contentList, currentVersion, currentStep, t]);
+  }, [localData, attributes, currentVersion, currentStep, t]);
 
   // Validation result — element-specific validate runs first so a missing
   // name / invalid range surfaces with its own message ahead of any

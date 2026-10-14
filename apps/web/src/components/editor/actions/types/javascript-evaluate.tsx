@@ -1,10 +1,10 @@
 import { RiCodeLine } from '@usertour/icons';
 import { ContentActionsItemType, type RulesCondition } from '@usertour/types';
 import { CodeEditor } from '@usertour/ui';
-import { useSummaryTextClass } from '../actions-context';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';
 import { useTranslation } from 'react-i18next';
+import { summaryTextClass } from '@/components/rules';
 
 interface JavascriptEvaluateData {
   value?: string;
@@ -28,7 +28,6 @@ const SUMMARY_MAX_LENGTH = 50;
 
 function JavascriptEvaluateSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const value = (data.value ?? '').trim();
 
