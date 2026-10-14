@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { IsBoolean, IsObject, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsObject, IsString, ValidateIf } from 'class-validator';
 
 import type { NewTheme } from '../types/new-theme.type';
 import { ThemeSettingsScalar } from './theme-settings.scalar';
@@ -25,6 +25,10 @@ export class CreateThemeInput implements NewTheme {
   @IsObject()
   settings: JsonValue;
 
+  // May be omitted; when sent it is the array, never null — no writer clears
+  // variations, and the REST schema takes an array only.
   @Field(() => [ThemeVariationScalar], { nullable: true })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsArray()
   variations?: JsonValue;
 }

@@ -1,6 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { IsNotEmpty, IsString, ValidateIf } from 'class-validator';
+import { IsNotEmpty, IsObject, IsString, ValidateIf } from 'class-validator';
 import GraphQLJSON from 'graphql-type-json';
 
 import type { NewContent } from '../types/new-content.type';
@@ -33,7 +33,10 @@ export class ContentInput implements NewContent {
   themeId?: string;
 
   // The first version's config: createContent writes it to the version row.
+  // May be omitted; when sent it is the object, never null.
   @Field(() => VersionConfigScalar, { nullable: true })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsObject()
   config?: JsonValue;
 
   @Field(() => GraphQLJSON, { nullable: true })

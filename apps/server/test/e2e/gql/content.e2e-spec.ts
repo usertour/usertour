@@ -268,17 +268,21 @@ describe('GraphQL content (e2e)', () => {
       expect(res.body.errors?.length).toBeGreaterThan(0);
     });
 
-    it('rejects an explicit null name as invalid input, not as a database failure', async () => {
+    it('rejects an explicit null name or config as invalid input', async () => {
       const created = gqlData(await createContent('Keep me')).createContent;
-      const res = await graphql(app, {
-        token,
-        query: 'mutation ($data: ContentUpdateInput!) { updateContent(data: $data) { id } }',
-        variables: { data: { contentId: created.id, content: { name: null } } },
-      });
-      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+      // A stored config, so the row assertion tells a refused null from a written one.
+      await prisma.content.update({ where: { id: created.id }, data: { config: { keep: true } } });
+      for (const patch of [{ name: null }, { config: null }]) {
+        const res = await graphql(app, {
+          token,
+          query: 'mutation ($data: ContentUpdateInput!) { updateContent(data: $data) { id } }',
+          variables: { data: { contentId: created.id, content: patch } },
+        });
+        expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+      }
 
       const row = await prisma.content.findUnique({ where: { id: created.id } });
-      expect(row?.name).toBe('Keep me');
+      expect(row).toMatchObject({ name: 'Keep me', config: { keep: true } });
     });
   });
 

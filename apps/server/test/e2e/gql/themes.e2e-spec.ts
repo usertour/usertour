@@ -109,9 +109,14 @@ describe('GraphQL themes (e2e)', () => {
   });
 
   describe('updateTheme', () => {
-    it('rejects an explicit null name, isDefault or settings as invalid input, not as a database failure', async () => {
+    it('rejects an explicit null name, isDefault, settings or variations as invalid input', async () => {
       const created = gqlData(await createTheme('Keep settings')).createTheme;
-      for (const patch of [{ name: null }, { isDefault: null }, { settings: null }]) {
+      for (const patch of [
+        { name: null },
+        { isDefault: null },
+        { settings: null },
+        { variations: null },
+      ]) {
         const res = await graphql(app, {
           token,
           query: 'mutation ($data: UpdateThemeInput!) { updateTheme(data: $data) { id } }',
