@@ -5,10 +5,10 @@ import { EventsDTO } from './events.dto';
 
 @InputType()
 export class UpdateEventInput
-  extends PartialType(
-    OmitType(EventsDTO, ['projectId', 'createdAt', 'updatedAt', 'predefined']),
-    InputType,
-  )
+  extends PartialType(OmitType(EventsDTO, ['projectId', 'createdAt', 'updatedAt', 'predefined']), {
+    decorator: InputType,
+    skipNullProperties: false,
+  })
   implements EventChanges
 {
   @Field(() => String)

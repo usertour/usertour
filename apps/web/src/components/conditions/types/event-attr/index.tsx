@@ -7,7 +7,7 @@ import {
   type RulesCondition,
 } from '@usertour/types';
 import { useMemo } from 'react';
-import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
+import { useConditionsContext } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
@@ -22,7 +22,7 @@ import {
   operatorsFor,
   splitOperatorTemplate,
 } from '../user-attr/operator-mappings';
-import { useRulesZIndex } from '@/components/rules';
+import { useRulesZIndex, summaryTextClass } from '@/components/rules';
 import { useTranslation } from 'react-i18next';
 
 export interface EventAttrData {
@@ -45,7 +45,6 @@ const writeData = (condition: RulesCondition, patch: Partial<EventAttrData>): Ru
 
 function EventAttrSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const { attributes } = useConditionsContext();
   const eventId = useEventScope();
   const data = readData(condition);

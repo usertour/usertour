@@ -2,13 +2,13 @@ import type { Attribute, Content, ContentVersion, RulesCondition, Step } from '@
 import type { Segment } from '@usertour/data';
 import type { ComponentType } from 'react';
 
-// Validation context — passed to validate() so it can cross-check against the
-// live attribute / content / step lists. Returning a translation key marks
-// the action invalid; returning undefined means valid.
+// Validation context — handed to validate() for schemas that need to
+// cross-check against the live lists; the current schemas decide from the
+// condition alone. Returning a translation key marks the action invalid;
+// returning undefined means valid.
 export interface ValidateContext {
   attributes?: Attribute[];
   segments?: Segment[];
-  contents?: Content[];
   currentContent?: Content;
   currentVersion?: ContentVersion;
   currentStep?: Step;

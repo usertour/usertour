@@ -39,10 +39,3 @@ export function useActionsContext(): ActionsContextValue {
   }
   return ctx;
 }
-
-// Class for the text portion of a chip Summary. Mirrors conditions —
-// wraps long content so the user can read the full value without opening
-// the editor.
-export function useSummaryTextClass(): string {
-  return 'min-w-0 whitespace-normal break-words';
-}

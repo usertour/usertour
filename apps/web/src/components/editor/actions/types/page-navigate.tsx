@@ -4,11 +4,11 @@ import { serializeMini as serializeMiniWidget } from '@usertour/widget/src/seria
 import type { DescendantNode } from '@usertour/widget/src/serialize/types';
 import { ContentActionsItemType, type RulesCondition } from '@usertour/types';
 import type { Descendant } from 'slate';
-import { useActionsContext, useSummaryTextClass } from '../actions-context';
+import { useActionsContext } from '../actions-context';
 import { PopperEditorMini } from '../../richtext-editor/editor';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';
-import { useRulesZIndex } from '@/components/rules';
+import { useRulesZIndex, summaryTextClass } from '@/components/rules';
 import { useTranslation } from 'react-i18next';
 
 interface PageNavigateData {
@@ -48,7 +48,6 @@ const serializeAll = (value: Descendant[] | undefined): string =>
 
 function PageNavigateSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const serialized = serializeAll(data.value).trim();
   const hasValue = serialized.length > 0 && serialized !== 'https://';

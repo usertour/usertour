@@ -1,7 +1,6 @@
 import { TextInputIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
-import { useSummaryTextClass } from '../../conditions-context';
 import { FORM_CONTROL_PICK_TARGETS } from '@/components/element-picker';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
@@ -9,6 +8,7 @@ import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextInput } from '../../validators';
 import { Input } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
+import { summaryTextClass } from '@/components/rules';
 
 export interface TextInputData {
   elementData?: ElementSelectorPropsData;
@@ -57,7 +57,6 @@ const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean 
 
 function TextInputSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const operator = OPERATOR_KEYS.find((o) => o.value === data.logic) ?? OPERATOR_KEYS[0];
   const elSelected = isElementSelected(data.elementData);

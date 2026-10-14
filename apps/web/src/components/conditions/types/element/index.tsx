@@ -1,12 +1,12 @@
 import { ElementIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
-import { useSummaryTextClass } from '../../conditions-context';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateElement } from '../../validators';
 import { useTranslation } from 'react-i18next';
+import { summaryTextClass } from '@/components/rules';
 
 export interface ElementData {
   elementData?: ElementSelectorPropsData;
@@ -48,7 +48,6 @@ const OPERATOR_KEYS = [
 
 function ElementSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const operator = OPERATOR_KEYS.find((o) => o.value === data.logic) ?? OPERATOR_KEYS[0];
   const selected = isElementSelected(data.elementData);

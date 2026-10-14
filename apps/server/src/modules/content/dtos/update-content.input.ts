@@ -1,26 +1,26 @@
 import { Field, InputType, PartialType, PickType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { IsString, ValidateIf } from 'class-validator';
+import { IsObject, ValidateIf } from 'class-validator';
 
 import type { ContentChanges } from '../types/content-changes.type';
 import { ContentConfigScalar } from './content-config.scalar';
 import { ContentInput } from './content.input';
 
+// A patch. `skipNullProperties: false` keeps ContentInput's string check on
+// `name` when it is sent, so a null for the non-nullable column is rejected
+// rather than handed to the database.
 @InputType()
 export class UpdateContentInput
-  extends PartialType(PickType(ContentInput, ['buildUrl']), InputType)
+  extends PartialType(PickType(ContentInput, ['buildUrl', 'name']), {
+    decorator: InputType,
+    skipNullProperties: false,
+  })
   implements ContentChanges
 {
-  // Declared here rather than picked: PartialType marks a picked field
-  // optional in a way that also skips null, and the column is not nullable,
-  // so an explicit null is rejected rather than handed to the database.
-  @Field(() => String, { nullable: true })
-  @ValidateIf((_, value) => value !== undefined)
-  @IsString()
-  name?: string;
-
   // The content row's own config, unlike ContentInput.config, which seeds the
-  // first version.
+  // first version. May be omitted; when sent it is the object, never null.
   @Field(() => ContentConfigScalar, { nullable: true })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsObject()
   config?: JsonValue;
 }

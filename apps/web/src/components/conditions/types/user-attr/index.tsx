@@ -6,7 +6,7 @@ import {
   type RulesCondition,
 } from '@usertour/types';
 import { type ReactNode, useMemo } from 'react';
-import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
+import { useConditionsContext } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
@@ -25,7 +25,7 @@ import {
   operatorsFor,
   splitOperatorTemplate,
 } from './operator-mappings';
-import { useRulesZIndex } from '@/components/rules';
+import { useRulesZIndex, summaryTextClass } from '@/components/rules';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 
@@ -70,7 +70,6 @@ const attributeEntityIcon = (bizType: number): ReactNode => {
 
 function UserAttrSummary({ condition }: { condition: RulesCondition }) {
   const { t } = useTranslation();
-  const summaryTextClass = useSummaryTextClass();
   const { attributes } = useConditionsContext();
   const data = readData(condition);
   const attribute = findAttribute(attributes, data.attrId);
