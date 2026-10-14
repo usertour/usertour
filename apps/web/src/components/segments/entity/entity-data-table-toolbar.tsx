@@ -151,7 +151,6 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
             attributes={filteredAttributes}
             disabled={isViewOnly}
             baseZIndex={WebZIndex.RULES}
-            t={t}
             addLabelKey="conditions.actions.addFilter"
             // The bar only mounts empty through the toolbar's "Add filter"
             // button, so jump straight into the type menu — one click flow.

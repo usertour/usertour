@@ -9,7 +9,7 @@ import {
   useSettingsStyles,
   useStepWidth,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@/components/editor';
+import { ContentEditor } from '@/components/editor';
 import { GoogleFontCss } from '@/components/themes/google-font-css';
 import {
   Attribute,
@@ -18,6 +18,8 @@ import {
   ProgressBarPosition,
   ProgressBarType,
   Step,
+  ContentEditorElementType,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { forwardRef, useState } from 'react';
 import { type Theme } from '@usertour/data';

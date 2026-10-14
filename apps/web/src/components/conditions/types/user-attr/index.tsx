@@ -6,12 +6,7 @@ import {
   type RulesCondition,
 } from '@usertour/types';
 import { type ReactNode, useMemo } from 'react';
-import {
-  useConditionsContext,
-  useConditionsT,
-  useConditionsZIndex,
-  useSummaryTextClass,
-} from '../../conditions-context';
+import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
@@ -30,6 +25,9 @@ import {
   operatorsFor,
   splitOperatorTemplate,
 } from './operator-mappings';
+import { useRulesZIndex } from '@/components/rules';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 export interface UserAttrData {
   attrId?: string;
@@ -71,7 +69,7 @@ const attributeEntityIcon = (bizType: number): ReactNode => {
 };
 
 function UserAttrSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const { attributes } = useConditionsContext();
   const data = readData(condition);
@@ -180,10 +178,7 @@ const attributeDataTypeIcon = (dataType: number): ReactNode => (
 
 // The provider mark for attributes owned by a CRM integration; nothing for
 // the rest, so plain rows keep their layout.
-const attributeSourceMark = (
-  attribute: Attribute,
-  t: ReturnType<typeof useConditionsT>,
-): ReactNode => (
+const attributeSourceMark = (attribute: Attribute, t: TFunction): ReactNode => (
   <IntegrationSourceMark
     source={attribute.source}
     labelFor={(provider) => t('conditions.types.userAttr.syncedFrom', { provider })}
@@ -191,9 +186,9 @@ const attributeSourceMark = (
 );
 
 function UserAttrEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const { attributes } = useConditionsContext();
-  const { popover: popoverZIndex } = useConditionsZIndex();
+  const { popover: popoverZIndex } = useRulesZIndex();
   const data = readData(condition);
   const attribute = findAttribute(attributes, data.attrId);
 

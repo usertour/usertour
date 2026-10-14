@@ -1,7 +1,8 @@
 import { CloseCircleIcon } from '@usertour/icons';
 import type { RulesCondition } from '@usertour/types';
-import { useActionsT, useSummaryTextClass } from '../actions-context';
+import { useSummaryTextClass } from '../actions-context';
 import type { ActionTypeSchema } from '../schema-types';
+import { useTranslation } from 'react-i18next';
 
 // Shared factory for the four dismiss variants — flow / launcher / checklist
 // / banner. The persisted data shape is the same (empty object), only the
@@ -16,7 +17,7 @@ interface DismissSchemaConfig {
 
 function buildSummary(summaryKey: string) {
   const Summary = ({ condition: _condition }: { condition: RulesCondition }) => {
-    const t = useActionsT();
+    const { t } = useTranslation();
     const summaryTextClass = useSummaryTextClass();
     return (
       <span className="inline-flex min-w-0 items-center gap-2">

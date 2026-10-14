@@ -2,21 +2,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { forwardRef } from 'react';
-import { useConditionsZIndex } from '../conditions-context';
+import { useRulesZIndex } from './z-index';
 
 // Re-export the trigger as-is; only the Content needs the z-index injection.
-export const ConditionPopover = Popover;
-export const ConditionPopoverTrigger = PopoverTrigger;
+export const RulesPopover = Popover;
+export const RulesPopoverTrigger = PopoverTrigger;
 
 type ContentProps = Omit<ComponentPropsWithoutRef<typeof PopoverContent>, 'style'> & {
   children: ReactNode;
 };
 
-// Wraps shadcn PopoverContent with the conditions z-index from context so
+// Wraps shadcn PopoverContent with the rules z-index from context so
 // nested popovers stack above sibling popovers / dropdowns predictably.
-export const ConditionPopoverContent = forwardRef<HTMLDivElement, ContentProps>(
+export const RulesPopoverContent = forwardRef<HTMLDivElement, ContentProps>(
   ({ className, children, sideOffset = 6, align = 'start', ...props }, ref) => {
-    const { popover } = useConditionsZIndex();
+    const { popover } = useRulesZIndex();
     return (
       <PopoverContent
         ref={ref}
@@ -31,4 +31,4 @@ export const ConditionPopoverContent = forwardRef<HTMLDivElement, ContentProps>(
     );
   },
 );
-ConditionPopoverContent.displayName = 'ConditionPopoverContent';
+RulesPopoverContent.displayName = 'RulesPopoverContent';

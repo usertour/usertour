@@ -1,11 +1,12 @@
+import { isRestrictedType } from '@usertour/helpers';
 import {
+  ContentActionsItemType,
+  Step,
   ContentEditorButtonElement,
   ContentEditorElementType,
   ContentEditorQuestionElement,
   ContentEditorRoot,
-} from '@/components/editor';
-import { isRestrictedType } from '@usertour/helpers';
-import { ContentActionsItemType, Step } from '@usertour/types';
+} from '@usertour/types';
 
 export const stepIsReachable = (steps: Step[], currentStep: Step) => {
   if (steps.indexOf(currentStep) === 0) {

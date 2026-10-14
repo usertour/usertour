@@ -2,10 +2,12 @@ import { TimeIcon } from '@usertour/icons';
 import type { RulesCondition, TimeConditionData } from '@usertour/types';
 import { format } from 'date-fns';
 import { DateTimePicker } from '@usertour/ui';
-import { useConditionsT, useConditionsZIndex, useSummaryTextClass } from '../../conditions-context';
+import { useSummaryTextClass } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTime } from '../../validators';
 import { EMPTY_PARSED, type ParsedTime, formatPretty, readParts, writeData } from './utils';
+import { useRulesZIndex } from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 // We persist in the V2 ISO 8601 format. Reads tolerate the legacy MM/dd/yyyy
 // shape so existing data is upgraded transparently on first edit. The pure
@@ -15,7 +17,7 @@ import { EMPTY_PARSED, type ParsedTime, formatPretty, readParts, writeData } fro
 // ---------- Summary ----------
 
 function TimeSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const { start, end } = readParts(condition.data as TimeConditionData | undefined);
 
@@ -77,8 +79,8 @@ const dateToParts = (d: Date | undefined): ParsedTime => {
 };
 
 function TimeEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
-  const { popover: popoverZIndex } = useConditionsZIndex();
+  const { t } = useTranslation();
+  const { popover: popoverZIndex } = useRulesZIndex();
   const { start, end } = readParts(condition.data as TimeConditionData | undefined);
 
   const commit = (next: { start?: ParsedTime; end?: ParsedTime }) => {

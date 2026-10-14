@@ -121,7 +121,6 @@ export const ButtonPopoverContent = memo(
           filterItems={actionItems}
           contents={contentList}
           createStep={createStep}
-          t={t}
         />
 
         <div className="flex flex-col space-y-2">
@@ -143,7 +142,6 @@ export const ButtonPopoverContent = memo(
               // client-evaluable subset applies (capability matrix, shared with the
               // server's write guard).
               filterItems={CLIENT_EVALUABLE_CONDITION_TYPES}
-              t={t}
             />
           )}
         </div>
@@ -164,7 +162,6 @@ export const ButtonPopoverContent = memo(
               token={token}
               baseZIndex={zIndex}
               filterItems={CLIENT_EVALUABLE_CONDITION_TYPES}
-              t={t}
             />
           )}
         </div>

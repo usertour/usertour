@@ -3,14 +3,15 @@ import { cn } from '@usertour/tailwind';
 import { cuid } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback, useRef } from 'react';
-import { useConditionsContext, useConditionsT } from './conditions-context';
+import { useConditionsContext } from './conditions-context';
 import { listAvailableSchemas } from './registry';
 import {
-  ConditionDropdownMenu,
-  ConditionDropdownMenuContent,
-  ConditionDropdownMenuItem,
-  ConditionDropdownMenuTrigger,
-} from './ui';
+  RulesDropdownMenu,
+  RulesDropdownMenuContent,
+  RulesDropdownMenuItem,
+  RulesDropdownMenuTrigger,
+} from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   // Called when the user picks a type from the dropdown. The caller appends
@@ -50,7 +51,7 @@ export function AddConditionDropdown({
   defaultOpen,
   onMenuClose,
 }: Props) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const { filterItems: ctxFilter, disabled, isHorizontal, addLabelKey } = useConditionsContext();
   const filterItems = filterItemsOverride ?? ctxFilter;
   const schemas = listAvailableSchemas(filterItems).filter((s) =>
@@ -79,8 +80,8 @@ export function AddConditionDropdown({
   );
 
   return (
-    <ConditionDropdownMenu defaultOpen={defaultOpen} onOpenChange={handleOpenChange}>
-      <ConditionDropdownMenuTrigger asChild disabled={disabled}>
+    <RulesDropdownMenu defaultOpen={defaultOpen} onOpenChange={handleOpenChange}>
+      <RulesDropdownMenuTrigger asChild disabled={disabled}>
         {/* Inline link rather than a ghost button — Add condition reads
             as a lighter "extra action" beneath the chip rows, not as
             another chip-height sibling. In horizontal flex-wrap rows
@@ -98,12 +99,12 @@ export function AddConditionDropdown({
           <PlusIcon className="h-3.5 w-3.5" />
           {t(addLabelKey)}
         </button>
-      </ConditionDropdownMenuTrigger>
-      <ConditionDropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+      </RulesDropdownMenuTrigger>
+      <RulesDropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
         {schemas.map((schema) => {
           const Icon = schema.Icon;
           return (
-            <ConditionDropdownMenuItem
+            <RulesDropdownMenuItem
               key={schema.type}
               onSelect={() => {
                 pendingSchemaRef.current = schema;
@@ -111,10 +112,10 @@ export function AddConditionDropdown({
             >
               <Icon className="h-3.5 w-3.5" />
               {t(schema.labelKey)}
-            </ConditionDropdownMenuItem>
+            </RulesDropdownMenuItem>
           );
         })}
-      </ConditionDropdownMenuContent>
-    </ConditionDropdownMenu>
+      </RulesDropdownMenuContent>
+    </RulesDropdownMenu>
   );
 }

@@ -23,15 +23,16 @@ import {
   StepContentType,
 } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
-import { useActionsContext, useActionsT, useSummaryTextClass } from '../actions-context';
+import { useActionsContext, useSummaryTextClass } from '../actions-context';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';
 import {
-  ActionDropdownMenu,
-  ActionDropdownMenuContent,
-  ActionDropdownMenuItem,
-  ActionDropdownMenuTrigger,
-} from '../ui';
+  RulesDropdownMenu,
+  RulesDropdownMenuContent,
+  RulesDropdownMenuItem,
+  RulesDropdownMenuTrigger,
+} from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 interface StepGotoData {
   stepCvid?: string;
@@ -75,7 +76,7 @@ const findStep = (
 };
 
 function StepGotoSummary({ condition }: { condition: RulesCondition }) {
-  const t = useActionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const { currentVersion } = useActionsContext();
   const data = readData(condition);
@@ -108,7 +109,7 @@ function StepGotoEditor({
   onChange: (next: RulesCondition) => void;
   onClose: () => void;
 }) {
-  const t = useActionsT();
+  const { t } = useTranslation();
   const { currentVersion, currentStep, createStep } = useActionsContext();
   const data = readData(condition);
 
@@ -158,14 +159,14 @@ function StepGotoEditor({
   );
 
   return (
-    <ActionDropdownMenu
+    <RulesDropdownMenu
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
         if (!next) onClose();
       }}
     >
-      <ActionDropdownMenuTrigger asChild>
+      <RulesDropdownMenuTrigger asChild>
         <button
           type="button"
           className="flex h-9 w-full items-center justify-between rounded-md border border-input/60 bg-background dark:bg-surface-raised/50 px-2 text-sm shadow-sm"
@@ -175,8 +176,8 @@ function StepGotoEditor({
             <span>{t('actions.types.stepGoto.prefix')}</span>
           </span>
         </button>
-      </ActionDropdownMenuTrigger>
-      <ActionDropdownMenuContent align="start" className="w-[var(--radix-popper-anchor-width)]">
+      </RulesDropdownMenuTrigger>
+      <RulesDropdownMenuContent align="start" className="w-[var(--radix-popper-anchor-width)]">
         <DropdownMenuRadioGroup value={data.stepCvid}>
           <ScrollArea className={cn(availableSteps.length > 9 ? 'h-72' : '')}>
             {availableSteps.map((step) => {
@@ -203,22 +204,22 @@ function StepGotoEditor({
                   {t('actions.types.stepGoto.addNewStep')}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.BUBBLE)}>
+                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.BUBBLE)}>
                     <RiMessage2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.bubble')}
-                  </ActionDropdownMenuItem>
-                  <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.TOOLTIP)}>
+                  </RulesDropdownMenuItem>
+                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.TOOLTIP)}>
                     <RiChat2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.tooltip')}
-                  </ActionDropdownMenuItem>
-                  <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.MODAL)}>
+                  </RulesDropdownMenuItem>
+                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.MODAL)}>
                     <RiWindow2Line className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.modal')}
-                  </ActionDropdownMenuItem>
-                  <ActionDropdownMenuItem onSelect={() => handleCreate(StepContentType.HIDDEN)}>
+                  </RulesDropdownMenuItem>
+                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.HIDDEN)}>
                     <RiEyeOffLine className="h-4 w-4 shrink-0" />
                     {t('actions.types.stepGoto.hidden')}
-                  </ActionDropdownMenuItem>
+                  </RulesDropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             )}
@@ -236,7 +237,7 @@ function StepGotoEditor({
                     )}
                   >
                     {currentVersion?.steps?.map((step, stepIndex) => (
-                      <ActionDropdownMenuItem
+                      <RulesDropdownMenuItem
                         key={step.cvid}
                         onSelect={() => step.cvid && handleDuplicate(step.cvid)}
                       >
@@ -250,7 +251,7 @@ function StepGotoEditor({
                             </Badge>
                           )}
                         </div>
-                      </ActionDropdownMenuItem>
+                      </RulesDropdownMenuItem>
                     ))}
                   </ScrollArea>
                 </DropdownMenuSubContent>
@@ -258,8 +259,8 @@ function StepGotoEditor({
             )}
           </ScrollArea>
         </DropdownMenuRadioGroup>
-      </ActionDropdownMenuContent>
-    </ActionDropdownMenu>
+      </RulesDropdownMenuContent>
+    </RulesDropdownMenu>
   );
 }
 

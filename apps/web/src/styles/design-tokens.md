@@ -271,7 +271,7 @@ not just styled primitives):
 | Layout tokens            | `panelClass` / `headerClass` / `bodyClass` / `pillClass` / etc.            |
 
 **Conditions surface** — lives in `apps/web/src/components/conditions/ui/`.
-Only the runtime-context-needing wrappers stay here; plain styled
+Only the conditions-specific composition stays here; plain styled
 primitives went away in favor of atomic variants:
 
 | Wrapper                         | Why it's still needed                                                 |
@@ -279,9 +279,16 @@ primitives went away in favor of atomic variants:
 | `ConditionSelect`               | DropdownMenu-based select (avoids Radix-Select-in-Popover layer trap) |
 | `ConditionInlineSelect`         | Link-style picker: ghost + `text-primary` + chevron                   |
 | `ConditionCombobox`             | cmdk + popover, anchored to `--radix-popper-anchor-width`             |
-| `ConditionPopover{,Content}`    | Popover with z-index injection from ConditionsContext                 |
-| `ConditionDropdownMenu{,Content,Item}` | DropdownMenu with z-index injection from ConditionsContext     |
-| `ConditionErrorTooltip*`        | Error tooltip with z-index injection + `text-sm` override             |
+
+**Rules chrome** — `apps/web/src/components/rules/`, shared by the
+conditions and actions editors; the z-index comes from the editor's
+`RulesZIndexProvider`:
+
+| Wrapper                             | Why it's still needed                                      |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `RulesPopover{,Content}`            | Popover with z-index injection                             |
+| `RulesDropdownMenu{,Content,Item}`  | DropdownMenu with z-index injection                        |
+| `RulesErrorTooltip*`                | Error tooltip with z-index injection + `text-sm` override  |
 
 **Theme-builder local wrappers** that intentionally aren't shared
 because they couple to app-level state:

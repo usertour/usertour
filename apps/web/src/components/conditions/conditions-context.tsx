@@ -1,16 +1,6 @@
-import { RulesZIndexOffset, WebZIndex } from '@usertour/constants';
 import type { Attribute, Content, Event } from '@usertour/types';
 import type { Segment } from '@usertour/data';
 import { createContext, useContext } from 'react';
-
-// Translator signature — the small subset of i18next's `t` that this
-// component tree relies on; consumers pass the one from `useTranslation()`.
-export type ConditionsTranslator = (
-  key: string,
-  options?: Record<string, unknown> & { count?: number },
-) => string;
-
-const fallbackTranslate: ConditionsTranslator = (key) => key;
 
 interface ConditionsContextValue {
   attributes?: Attribute[];
@@ -28,15 +18,11 @@ interface ConditionsContextValue {
   narrow?: boolean;
   filterItems: string[];
   disabled: boolean;
-  baseZIndex: number;
   saveBuildUrl?: () => boolean;
   onElementChange?: (conditionIndex: number, type: string) => void;
   // Project token — required by the element selector to authorize the
   // browser-extension handshake when picking an element.
   token?: string;
-  // Translator. When omitted, keys pass through unchanged so the tree still
-  // renders something (useful for tests / runtime contexts without i18n).
-  t: ConditionsTranslator;
   // i18n key for the "Add condition" trigger label. Lets consumers in
   // filter-shaped contexts (segment toolbars, data-table filters) say
   // "Add filter" without changing the verb everywhere else.
@@ -55,13 +41,6 @@ export function useConditionsContext(): ConditionsContextValue {
   return ctx;
 }
 
-// Convenience hook so type editors don't have to destructure the whole context
-// just to read the translator.
-export function useConditionsT(): ConditionsTranslator {
-  const ctx = useContext(ConditionsContext);
-  return ctx?.t ?? fallbackTranslate;
-}
-
 // Class for the text portion of a chip Summary. Both modes wrap long
 // content so the user can read the full value without opening the editor.
 // We use `break-words` (overflow-wrap: break-word) rather than `break-all`:
@@ -70,17 +49,4 @@ export function useConditionsT(): ConditionsTranslator {
 // readable instead of being chopped mid-word at the line edge.
 export function useSummaryTextClass(): string {
   return 'min-w-0 whitespace-normal break-words';
-}
-
-// z-index helper. Matches v1 useRulesZIndex offsets so popovers / dropdowns
-// stack consistently with the rest of the surrounding chrome.
-export function useConditionsZIndex() {
-  const ctx = useContext(ConditionsContext);
-  const baseZIndex = ctx?.baseZIndex ?? WebZIndex.RULES;
-  return {
-    popover: baseZIndex + RulesZIndexOffset.POPOVER,
-    dropdown: baseZIndex + RulesZIndexOffset.DROPDOWN,
-    combobox: baseZIndex + RulesZIndexOffset.COMBOBOX,
-    error: baseZIndex + RulesZIndexOffset.ERROR,
-  };
 }

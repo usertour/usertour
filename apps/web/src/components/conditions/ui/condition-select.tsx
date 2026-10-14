@@ -2,11 +2,11 @@ import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour/tailwind';
 import { CompactPopoverTrigger } from '@usertour/ui';
 import {
-  ConditionDropdownMenu,
-  ConditionDropdownMenuContent,
-  ConditionDropdownMenuItem,
-  ConditionDropdownMenuTrigger,
-} from './condition-dropdown-menu';
+  RulesDropdownMenu,
+  RulesDropdownMenuContent,
+  RulesDropdownMenuItem,
+  RulesDropdownMenuTrigger,
+} from '@/components/rules';
 
 // Built on Radix DropdownMenu rather than Radix Select on purpose: when this
 // trigger sits inside a chip-editor Popover, Radix Select's dismiss layer
@@ -43,8 +43,8 @@ export function ConditionSelect({
 }: Props) {
   const selected = options.find((o) => o.value === value);
   return (
-    <ConditionDropdownMenu>
-      <ConditionDropdownMenuTrigger asChild>
+    <RulesDropdownMenu>
+      <RulesDropdownMenuTrigger asChild>
         <CompactPopoverTrigger
           id={id}
           disabled={disabled}
@@ -55,8 +55,8 @@ export function ConditionSelect({
           </span>
           <CaretSortIcon className="h-4 w-4 shrink-0 opacity-50" />
         </CompactPopoverTrigger>
-      </ConditionDropdownMenuTrigger>
-      <ConditionDropdownMenuContent
+      </RulesDropdownMenuTrigger>
+      <RulesDropdownMenuContent
         align="start"
         sideOffset={4}
         // Anchor the menu to at least the trigger's width via Radix Popper's
@@ -67,16 +67,16 @@ export function ConditionSelect({
         className="min-w-[var(--radix-popper-anchor-width)]"
       >
         {options.map((opt) => (
-          <ConditionDropdownMenuItem
+          <RulesDropdownMenuItem
             key={opt.value}
             onSelect={() => onChange(opt.value)}
             className="pr-8"
           >
             <span className="flex-1 truncate">{opt.label}</span>
             {value === opt.value && <CheckIcon className="ml-auto h-3.5 w-3.5" />}
-          </ConditionDropdownMenuItem>
+          </RulesDropdownMenuItem>
         ))}
-      </ConditionDropdownMenuContent>
-    </ConditionDropdownMenu>
+      </RulesDropdownMenuContent>
+    </RulesDropdownMenu>
   );
 }

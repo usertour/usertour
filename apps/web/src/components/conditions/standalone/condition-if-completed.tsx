@@ -1,15 +1,13 @@
 import { Checkbox, Label, QuestionTooltip } from '@usertour/ui';
 import type { ContentDataType } from '@usertour/types';
 import { useId } from 'react';
-import type { ConditionsTranslator } from '../conditions-context';
-import { resolveTranslator } from './translator';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   defaultValue: boolean;
   onCheckedChange: (checked: boolean) => void;
   contentType: ContentDataType;
   disabled?: boolean;
-  t?: ConditionsTranslator;
 }
 
 // "Only start if not complete" toggle. Controlled.
@@ -18,9 +16,8 @@ export function ConditionIfCompleted({
   onCheckedChange,
   contentType,
   disabled,
-  t: tProp,
 }: Props) {
-  const t = resolveTranslator(tProp);
+  const { t } = useTranslation();
   const id = useId();
   return (
     <div className="flex items-center gap-2">

@@ -99,7 +99,6 @@ const BlockDividerBody = () => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

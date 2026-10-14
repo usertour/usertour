@@ -2,15 +2,16 @@ import { PlusIcon } from '@usertour/icons';
 import { cuid } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback, useRef } from 'react';
-import { useActionsContext, useActionsT } from './actions-context';
+import { useActionsContext } from './actions-context';
 import { getMutuallyExcluded } from './mutex';
 import { listAvailableSchemas } from './registry';
 import {
-  ActionDropdownMenu,
-  ActionDropdownMenuContent,
-  ActionDropdownMenuItem,
-  ActionDropdownMenuTrigger,
-} from './ui';
+  RulesDropdownMenu,
+  RulesDropdownMenuContent,
+  RulesDropdownMenuItem,
+  RulesDropdownMenuTrigger,
+} from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   // Called when the user picks a type. The caller appends the new condition
@@ -27,7 +28,7 @@ interface Props {
 // action's auto-opened popover and immediately closes it (matches
 // AddConditionDropdown).
 export function AddActionDropdown({ onSelect, existingTypes }: Props) {
-  const t = useActionsT();
+  const { t } = useTranslation();
   const { filterItems, disabled, addLabelKey } = useActionsContext();
   const excluded = getMutuallyExcluded(existingTypes);
   const schemas = listAvailableSchemas(filterItems).filter((schema) => {
@@ -58,8 +59,8 @@ export function AddActionDropdown({ onSelect, existingTypes }: Props) {
   if (schemas.length === 0) return null;
 
   return (
-    <ActionDropdownMenu onOpenChange={handleOpenChange}>
-      <ActionDropdownMenuTrigger asChild disabled={disabled}>
+    <RulesDropdownMenu onOpenChange={handleOpenChange}>
+      <RulesDropdownMenuTrigger asChild disabled={disabled}>
         <button
           type="button"
           disabled={disabled}
@@ -68,12 +69,12 @@ export function AddActionDropdown({ onSelect, existingTypes }: Props) {
           <PlusIcon className="h-3.5 w-3.5" />
           {t(addLabelKey)}
         </button>
-      </ActionDropdownMenuTrigger>
-      <ActionDropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+      </RulesDropdownMenuTrigger>
+      <RulesDropdownMenuContent align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
         {schemas.map((schema) => {
           const Icon = schema.Icon;
           return (
-            <ActionDropdownMenuItem
+            <RulesDropdownMenuItem
               key={schema.type}
               onSelect={() => {
                 pendingSchemaRef.current = schema;
@@ -81,10 +82,10 @@ export function AddActionDropdown({ onSelect, existingTypes }: Props) {
             >
               <Icon className="h-3.5 w-3.5" />
               {t(schema.labelKey)}
-            </ActionDropdownMenuItem>
+            </RulesDropdownMenuItem>
           );
         })}
-      </ActionDropdownMenuContent>
-    </ActionDropdownMenu>
+      </RulesDropdownMenuContent>
+    </RulesDropdownMenu>
   );
 }

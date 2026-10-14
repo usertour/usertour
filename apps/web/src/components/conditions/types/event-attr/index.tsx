@@ -7,12 +7,7 @@ import {
   type RulesCondition,
 } from '@usertour/types';
 import { useMemo } from 'react';
-import {
-  useConditionsContext,
-  useConditionsT,
-  useConditionsZIndex,
-  useSummaryTextClass,
-} from '../../conditions-context';
+import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
@@ -27,6 +22,8 @@ import {
   operatorsFor,
   splitOperatorTemplate,
 } from '../user-attr/operator-mappings';
+import { useRulesZIndex } from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 export interface EventAttrData {
   attrId?: string;
@@ -47,7 +44,7 @@ const writeData = (condition: RulesCondition, patch: Partial<EventAttrData>): Ru
 // ---------- Summary ----------
 
 function EventAttrSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const { attributes } = useConditionsContext();
   const eventId = useEventScope();
@@ -147,9 +144,9 @@ interface EditorProps {
 }
 
 function EventAttrEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const { attributes } = useConditionsContext();
-  const { popover: popoverZIndex } = useConditionsZIndex();
+  const { popover: popoverZIndex } = useRulesZIndex();
   const eventId = useEventScope();
   const data = readData(condition);
 

@@ -11,7 +11,7 @@ import {
   ResourceCenterFooter,
   useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorRoot } from '@/components/editor';
+import { ContentEditor } from '@/components/editor';
 import { useContentListQuery } from '@usertour/data';
 import {
   ContentDataType,
@@ -22,6 +22,7 @@ import {
   ResourceCenterRichTextBlock,
   ResourceCenterSubPageBlock,
   type ResourceCenterTab,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';

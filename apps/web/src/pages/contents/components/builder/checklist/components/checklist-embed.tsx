@@ -13,8 +13,12 @@ import {
   ChecklistRoot,
   PopperMadeWith,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorRoot } from '@/components/editor';
-import { ChecklistInitialDisplay, ContentEditorElementType } from '@usertour/types';
+import { ContentEditor } from '@/components/editor';
+import {
+  ChecklistInitialDisplay,
+  ContentEditorElementType,
+  ContentEditorRoot,
+} from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBuilderConfig, useProjectId } from '@/pages/contents/components/builder/core';

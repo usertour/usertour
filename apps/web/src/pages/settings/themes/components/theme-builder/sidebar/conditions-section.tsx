@@ -45,7 +45,6 @@ export const ConditionsSection = (props: ConditionsSectionProps) => {
         attributes={attributeList || []}
         disabled={disabled}
         baseZIndex={WebZIndex.RULES}
-        t={t}
       />
     </div>
   );

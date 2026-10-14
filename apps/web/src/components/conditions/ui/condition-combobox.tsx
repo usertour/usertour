@@ -1,6 +1,6 @@
 import { ComboboxSelect } from '@usertour/ui';
 import { type ReactNode } from 'react';
-import { useConditionsZIndex } from '../conditions-context';
+import { useRulesZIndex } from '@/components/rules';
 
 export interface ConditionComboboxItem {
   value: string;
@@ -65,7 +65,7 @@ export function ConditionCombobox({
   groups,
   variant = 'default',
 }: Props) {
-  const { popover } = useConditionsZIndex();
+  const { popover } = useRulesZIndex();
 
   return (
     <ComboboxSelect

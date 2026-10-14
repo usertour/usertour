@@ -173,7 +173,6 @@ export const LauncherBehavior = () => {
               attributes={attributeList}
               contents={contents}
               filterItems={[...CONTENT_ACTION_CAPABILITIES[ContentDataType.LAUNCHER].actions]}
-              t={t}
             />
           </TabsContent>
         </Tabs>

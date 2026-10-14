@@ -1,11 +1,11 @@
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { cn } from '@usertour/tailwind';
 import {
-  ConditionDropdownMenu,
-  ConditionDropdownMenuContent,
-  ConditionDropdownMenuItem,
-  ConditionDropdownMenuTrigger,
-} from './condition-dropdown-menu';
+  RulesDropdownMenu,
+  RulesDropdownMenuContent,
+  RulesDropdownMenuItem,
+  RulesDropdownMenuTrigger,
+} from '@/components/rules';
 
 export interface ConditionInlineSelectOption {
   value: string;
@@ -40,8 +40,8 @@ export function ConditionInlineSelect({
 }: Props) {
   const selected = options.find((o) => o.value === value);
   return (
-    <ConditionDropdownMenu>
-      <ConditionDropdownMenuTrigger asChild>
+    <RulesDropdownMenu>
+      <RulesDropdownMenuTrigger asChild>
         <button
           id={id}
           type="button"
@@ -54,14 +54,14 @@ export function ConditionInlineSelect({
           <span>{selected?.label ?? ''}</span>
           <ChevronDownIcon className="h-3.5 w-3.5 opacity-70" />
         </button>
-      </ConditionDropdownMenuTrigger>
-      <ConditionDropdownMenuContent align="start" sideOffset={4}>
+      </RulesDropdownMenuTrigger>
+      <RulesDropdownMenuContent align="start" sideOffset={4}>
         {options.map((opt) => (
-          <ConditionDropdownMenuItem key={opt.value} onSelect={() => onChange(opt.value)}>
+          <RulesDropdownMenuItem key={opt.value} onSelect={() => onChange(opt.value)}>
             {opt.label}
-          </ConditionDropdownMenuItem>
+          </RulesDropdownMenuItem>
         ))}
-      </ConditionDropdownMenuContent>
-    </ConditionDropdownMenu>
+      </RulesDropdownMenuContent>
+    </RulesDropdownMenu>
   );
 }
