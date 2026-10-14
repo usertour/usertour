@@ -96,6 +96,30 @@ describe('GraphQL events (e2e)', () => {
   });
 
   describe('updateEvent', () => {
+    it('rejects an explicit null for a non-nullable column as invalid input, not as a database failure', async () => {
+      const created = gqlData(await createEvent(codeName('null'), 'Keep')).createEvent;
+      for (const patch of [
+        { displayName: null },
+        { codeName: null },
+        { description: null },
+        { deleted: null },
+      ]) {
+        const res = await graphql(app, {
+          token,
+          query: 'mutation ($data: UpdateEventInput!) { updateEvent(data: $data) { id } }',
+          variables: { data: { id: created.id, attributeIds: [], ...patch } },
+        });
+        expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+      }
+
+      const row = await prisma.event.findUnique({ where: { id: created.id } });
+      expect(row).toMatchObject({
+        displayName: 'Keep',
+        codeName: created.codeName,
+        deleted: false,
+      });
+    });
+
     it('updates fields (echoing the immutable codeName) and persists them', async () => {
       const created = gqlData(await createEvent(codeName('upd'), 'Before')).createEvent;
       const res = await graphql(app, {

@@ -135,6 +135,31 @@ describe('GraphQL attributes (e2e)', () => {
   });
 
   describe('updateAttribute', () => {
+    it('rejects an explicit null for a non-nullable column as invalid input, not as a database failure', async () => {
+      const created = gqlData(await createAttribute({ displayName: 'Keep' })).createAttribute;
+      for (const patch of [
+        { displayName: null },
+        { codeName: null },
+        { description: null },
+        { bizType: null },
+        { dataType: null },
+      ]) {
+        const res = await graphql(app, {
+          token,
+          query: 'mutation ($data: UpdateAttributeInput!) { updateAttribute(data: $data) { id } }',
+          variables: { data: { id: created.id, ...patch } },
+        });
+        expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+      }
+
+      const row = await prisma.attribute.findUnique({ where: { id: created.id } });
+      expect(row).toMatchObject({
+        displayName: 'Keep',
+        codeName: created.codeName,
+        description: 'a description',
+      });
+    });
+
     it('updates fields and persists them', async () => {
       const created = gqlData(
         await createAttribute({ displayName: 'Before', dataType: DATA_STRING }),

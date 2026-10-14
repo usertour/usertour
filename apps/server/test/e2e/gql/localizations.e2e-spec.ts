@@ -153,6 +153,22 @@ describe('GraphQL localizations (e2e)', () => {
   });
 
   describe('updateLocalization', () => {
+    it('rejects an explicit null name, locale or code as invalid input, not as a database failure', async () => {
+      const created = gqlData(await createLocalization()).createLocalization;
+      for (const patch of [{ name: null }, { locale: null }, { code: null }]) {
+        const res = await graphql(app, {
+          token,
+          query:
+            'mutation ($data: UpdateLocalizationInput!) { updateLocalization(data: $data) { id } }',
+          variables: { data: { id: created.id, ...patch } },
+        });
+        expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+      }
+
+      const row = await prisma.localization.findUnique({ where: { id: created.id } });
+      expect(row).toMatchObject({ name: created.name, locale: created.locale, code: created.code });
+    });
+
     it('updates the name and persists it', async () => {
       const created = gqlData(await createLocalization()).createLocalization;
       const newName = tag();

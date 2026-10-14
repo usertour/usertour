@@ -4,10 +4,10 @@ import { IsNotEmpty } from 'class-validator';
 import { ContentInput } from './content.input';
 
 @InputType()
-export class ContentDuplicateInput extends PartialType(
-  PickType(ContentInput, ['name']),
-  InputType,
-) {
+export class ContentDuplicateInput extends PartialType(PickType(ContentInput, ['name']), {
+  decorator: InputType,
+  skipNullProperties: false,
+}) {
   @Field()
   @IsNotEmpty()
   contentId: string;

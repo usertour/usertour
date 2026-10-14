@@ -285,6 +285,16 @@ describe('GraphQL content (e2e)', () => {
   // ── duplicateContent ─────────────────────────────────────────────
 
   describe('duplicateContent', () => {
+    it('rejects an explicit null name as invalid input', async () => {
+      const { content } = await seedContent();
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: ContentDuplicateInput!) { duplicateContent(data: $data) { id } }',
+        variables: { data: { contentId: content.id, name: null } },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+    });
+
     it('deep-copies a content + its steps into a new row', async () => {
       const { content, version } = await seedContent();
       await buildStep(prisma, { versionId: version.id, sequence: 0, type: 'tooltip', name: 's0' });
