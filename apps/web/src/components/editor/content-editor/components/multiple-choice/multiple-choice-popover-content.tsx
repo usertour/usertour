@@ -119,7 +119,6 @@ export const MultipleChoicePopoverContent = memo(
           attributes={attributes}
           contents={contentList}
           createStep={createStep}
-          t={t}
         />
 
         <div className="space-y-2">

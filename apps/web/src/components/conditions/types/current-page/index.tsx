@@ -1,9 +1,10 @@
 import { PagesIcon } from '@usertour/icons';
 import type { RulesCondition } from '@usertour/types';
-import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
+import { useSummaryTextClass } from '../../conditions-context';
 import { ListInput } from '../../primitives/list-input';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateCurrentPage } from '../../validators';
+import { useTranslation } from 'react-i18next';
 
 export interface CurrentPageData {
   includes?: string[];
@@ -24,7 +25,7 @@ const cleanList = (values: string[] | undefined): string[] =>
 // ---------- Summary ----------
 
 function CurrentPageSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const includes = cleanList(data.includes);
@@ -78,7 +79,7 @@ interface EditorProps {
 }
 
 function CurrentPageEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const data = readData(condition);
 
   return (

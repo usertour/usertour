@@ -4,10 +4,12 @@ import { serializeMini as serializeMiniWidget } from '@usertour/widget/src/seria
 import type { DescendantNode } from '@usertour/widget/src/serialize/types';
 import { ContentActionsItemType, type RulesCondition } from '@usertour/types';
 import type { Descendant } from 'slate';
-import { useActionsContext, useActionsT, useSummaryTextClass } from '../actions-context';
+import { useActionsContext, useSummaryTextClass } from '../actions-context';
 import { PopperEditorMini } from '../../richtext-editor/editor';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';
+import { useRulesZIndex } from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 interface PageNavigateData {
   openType?: 'same' | 'new';
@@ -45,7 +47,7 @@ const serializeAll = (value: Descendant[] | undefined): string =>
   (value ?? []).map((node) => serializeMini(node)).join('');
 
 function PageNavigateSummary({ condition }: { condition: RulesCondition }) {
-  const t = useActionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const serialized = serializeAll(data.value).trim();
@@ -92,8 +94,9 @@ function PageNavigateEditor({
   onChange: (next: RulesCondition) => void;
   onClose: () => void;
 }) {
-  const t = useActionsT();
-  const { attributes, baseZIndex } = useActionsContext();
+  const { t } = useTranslation();
+  const { attributes } = useActionsContext();
+  const { base: baseZIndex } = useRulesZIndex();
   const data = readData(condition);
   const value = data.value ?? DEFAULT_VALUE;
   const openType = data.openType ?? 'same';

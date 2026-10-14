@@ -133,7 +133,6 @@ const ChecklistItemBody = () => {
               attributes={attributeList}
               contents={contents}
               token={token}
-              t={t}
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -148,7 +147,6 @@ const ChecklistItemBody = () => {
               events={eventList}
               token={token}
               baseZIndex={BUILDER_Z.rules}
-              t={t}
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -173,7 +171,6 @@ const ChecklistItemBody = () => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

@@ -1,7 +1,7 @@
 import { GroupIcon } from '@usertour/icons';
 import type { RulesCondition } from '@usertour/types';
-import { useConditionsT } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
+import { useTranslation } from 'react-i18next';
 
 // `group` is structurally different from leaf condition types — its UI is a
 // recursive list, not a popover. ConditionRow detects type === 'group' and
@@ -10,7 +10,7 @@ import type { ConditionTypeSchema } from '../../schema-types';
 // mounted by the row.
 
 const GroupSummary = ({ condition }: { condition: RulesCondition }) => {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const count = condition.conditions?.length ?? 0;
   return (
     <span className="inline-flex items-center gap-2">

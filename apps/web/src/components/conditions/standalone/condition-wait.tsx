@@ -1,31 +1,23 @@
 import { QuestionTooltip, Input } from '@usertour/ui';
 import { type ChangeEvent, useEffect, useState } from 'react';
-import type { ConditionsTranslator } from '../conditions-context';
 import {
-  ConditionErrorTooltip,
-  ConditionErrorTooltipAnchor,
-  ConditionErrorTooltipContent,
-} from '../ui/condition-error-tooltip';
-import { resolveTranslator } from './translator';
+  RulesErrorTooltip,
+  RulesErrorTooltipAnchor,
+  RulesErrorTooltipContent,
+} from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   defaultValue: number;
   onValueChange: (value: number) => void;
   maxSeconds?: number;
   disabled?: boolean;
-  t?: ConditionsTranslator;
 }
 
 // "Wait N seconds before starting" input. Local error state when value
 // exceeds maxSeconds — onValueChange only fires on valid input.
-export function ConditionWait({
-  defaultValue,
-  onValueChange,
-  maxSeconds = 300,
-  disabled,
-  t: tProp,
-}: Props) {
-  const t = resolveTranslator(tProp);
+export function ConditionWait({ defaultValue, onValueChange, maxSeconds = 300, disabled }: Props) {
+  const { t } = useTranslation();
   const [openError, setOpenError] = useState(false);
   const [inputValue, setInputValue] = useState<number>(defaultValue ?? 0);
 
@@ -52,10 +44,10 @@ export function ConditionWait({
   };
 
   return (
-    <ConditionErrorTooltip open={openError}>
+    <RulesErrorTooltip open={openError}>
       <div className="flex items-center gap-2">
         <span className="text-sm">{t('conditions.standalone.wait.before')}</span>
-        <ConditionErrorTooltipAnchor asChild>
+        <RulesErrorTooltipAnchor asChild>
           <Input
             variant="compact-surface"
             type="text"
@@ -64,18 +56,18 @@ export function ConditionWait({
             disabled={disabled}
             className="w-16"
           />
-        </ConditionErrorTooltipAnchor>
+        </RulesErrorTooltipAnchor>
         <span className="text-sm text-muted-foreground">
           {t('conditions.standalone.wait.suffix')}
         </span>
         <QuestionTooltip>{t('conditions.standalone.wait.tooltip')}</QuestionTooltip>
-        <ConditionErrorTooltipContent className="w-60">
+        <RulesErrorTooltipContent className="w-60">
           {t('conditions.standalone.wait.error', {
             max: maxSeconds,
             minutes: Math.floor(maxSeconds / 60),
           })}
-        </ConditionErrorTooltipContent>
+        </RulesErrorTooltipContent>
       </div>
-    </ConditionErrorTooltip>
+    </RulesErrorTooltip>
   );
 }

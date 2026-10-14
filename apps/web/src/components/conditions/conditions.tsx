@@ -2,7 +2,8 @@ import type { Attribute, Content, Event, RulesCondition } from '@usertour/types'
 import type { Segment } from '@usertour/data';
 import { useMemo } from 'react';
 import { ConditionList } from './condition-list';
-import { ConditionsProvider, type ConditionsTranslator } from './conditions-context';
+import { RulesZIndexProvider } from '@/components/rules';
+import { ConditionsProvider } from './conditions-context';
 import { DEFAULT_CONDITION_TYPES } from './registry';
 
 interface ConditionsProps {
@@ -36,10 +37,6 @@ interface ConditionsProps {
   disabled?: boolean;
   baseZIndex: number;
 
-  // Optional translator. If omitted, translation keys pass through unchanged.
-  // Apps wire this with the `t` from `useTranslation()`.
-  t?: ConditionsTranslator;
-
   // Override for the "Add condition" trigger label. Filter-shaped contexts
   // (segment / data-table filtering) pass `'conditions.actions.addFilter'`
   // so the verb reads as "Add filter" — gating contexts (autostart, button
@@ -55,8 +52,6 @@ interface ConditionsProps {
   autoOpenAddMenu?: boolean;
   onAddMenuClose?: (selected: boolean) => void;
 }
-
-const defaultTranslator: ConditionsTranslator = (key) => key;
 
 // New conditions editor. Drop-in replacement for v1 `Rules` at the API level
 // (data shape unchanged), with a controlled-state contract, schema-driven
@@ -81,12 +76,10 @@ export function Conditions({
   token,
   disabled = false,
   baseZIndex,
-  t,
   addLabelKey = 'conditions.actions.addCondition',
   autoOpenAddMenu,
   onAddMenuClose,
 }: ConditionsProps) {
-  const translator = t ?? defaultTranslator;
   const value = useMemo(
     () => ({
       attributes,
@@ -99,11 +92,9 @@ export function Conditions({
       narrow,
       filterItems,
       disabled,
-      baseZIndex,
       saveBuildUrl,
       onElementChange,
       token,
-      t: translator,
       addLabelKey,
     }),
     [
@@ -117,23 +108,23 @@ export function Conditions({
       narrow,
       filterItems,
       disabled,
-      baseZIndex,
       saveBuildUrl,
       onElementChange,
       token,
-      translator,
       addLabelKey,
     ],
   );
 
   return (
-    <ConditionsProvider value={value}>
-      <ConditionList
-        conditions={conditions}
-        onChange={onChange}
-        autoOpenAddMenu={autoOpenAddMenu}
-        onAddMenuClose={onAddMenuClose}
-      />
-    </ConditionsProvider>
+    <RulesZIndexProvider value={baseZIndex}>
+      <ConditionsProvider value={value}>
+        <ConditionList
+          conditions={conditions}
+          onChange={onChange}
+          autoOpenAddMenu={autoOpenAddMenu}
+          onAddMenuClose={onAddMenuClose}
+        />
+      </ConditionsProvider>
+    </RulesZIndexProvider>
   );
 }

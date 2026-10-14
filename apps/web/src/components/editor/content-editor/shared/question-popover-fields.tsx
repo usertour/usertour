@@ -73,7 +73,6 @@ export const ContentActionsField = memo<ContentActionsFieldProps>(
           attributes={attributes}
           contents={contentList}
           createStep={createStep}
-          t={t}
         />
       </>
     );

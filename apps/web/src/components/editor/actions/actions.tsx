@@ -2,7 +2,8 @@ import type { Attribute, Content, ContentVersion, RulesCondition, Step } from '@
 import type { Segment } from '@usertour/data';
 import { useMemo } from 'react';
 import { ActionList } from './action-list';
-import { ActionsProvider, type ActionsTranslator } from './actions-context';
+import { RulesZIndexProvider } from '@/components/rules';
+import { ActionsProvider } from './actions-context';
 import { DEFAULT_ACTION_TYPES } from './registry';
 // Side-effect import: each schema module calls registerActionSchema() at
 // module-load time. Importing the barrel here is the single point that
@@ -45,15 +46,10 @@ interface ActionsProps {
   disabled?: boolean;
   baseZIndex: number;
 
-  // Optional translator. If omitted, translation keys pass through unchanged.
-  t?: ActionsTranslator;
-
   // Override the "Add action" trigger label, e.g., contexts where the verb
   // shouldn't be "Add action" (button click → "Add button action").
   addLabelKey?: string;
 }
-
-const defaultTranslator: ActionsTranslator = (key) => key;
 
 // New actions editor. Drop-in replacement for v1 `ContentActions` at the
 // data shape level (RulesCondition[] with ContentActionsItemType.* — SDK
@@ -74,10 +70,8 @@ export function Actions({
   filterItems = DEFAULT_ACTION_TYPES,
   disabled = false,
   baseZIndex,
-  t,
   addLabelKey = 'actions.actions.addAction',
 }: ActionsProps) {
-  const translator = t ?? defaultTranslator;
   const value = useMemo(
     () => ({
       attributes,
@@ -90,8 +84,6 @@ export function Actions({
       token,
       filterItems,
       disabled,
-      baseZIndex,
-      t: translator,
       addLabelKey,
     }),
     [
@@ -105,15 +97,15 @@ export function Actions({
       token,
       filterItems,
       disabled,
-      baseZIndex,
-      translator,
       addLabelKey,
     ],
   );
 
   return (
-    <ActionsProvider value={value}>
-      <ActionList conditions={conditions} onChange={onChange} />
-    </ActionsProvider>
+    <RulesZIndexProvider value={baseZIndex}>
+      <ActionsProvider value={value}>
+        <ActionList conditions={conditions} onChange={onChange} />
+      </ActionsProvider>
+    </RulesZIndexProvider>
   );
 }

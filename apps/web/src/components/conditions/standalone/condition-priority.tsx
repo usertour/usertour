@@ -1,15 +1,13 @@
 import { QuestionTooltip } from '@usertour/ui';
 import { ContentPriority } from '@usertour/types';
 import { useMemo } from 'react';
-import type { ConditionsTranslator } from '../conditions-context';
 import { ConditionInlineSelect } from '../ui/condition-inline-select';
-import { resolveTranslator } from './translator';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   defaultValue?: ContentPriority;
   onChange: (value: ContentPriority) => void;
   disabled?: boolean;
-  t?: ConditionsTranslator;
 }
 
 const PRIORITY_KEYS = [
@@ -26,9 +24,8 @@ export function ConditionPriority({
   defaultValue = ContentPriority.MEDIUM,
   onChange,
   disabled,
-  t: tProp,
 }: Props) {
-  const t = resolveTranslator(tProp);
+  const { t } = useTranslation();
   const options = useMemo(
     () => PRIORITY_KEYS.map((p) => ({ value: p.value, label: t(p.labelKey) })),
     [t],

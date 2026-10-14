@@ -42,7 +42,6 @@ export const ContentPlacementActions = ({
         attributes={attributeList}
         contents={contents}
         createStep={createStep}
-        t={t}
       />
     </div>
   );

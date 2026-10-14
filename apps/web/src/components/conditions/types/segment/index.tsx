@@ -3,16 +3,14 @@ import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, SegmentIcon } from '@
 import type { RulesCondition } from '@usertour/types';
 import type { Segment } from '@usertour/data';
 import { type ReactNode, useMemo } from 'react';
-import {
-  useConditionsContext,
-  useConditionsT,
-  useSummaryTextClass,
-} from '../../conditions-context';
+import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateSegment } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
 import { IntegrationSourceMark } from '@/components/integrations/integration-source-mark';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 export interface SegmentData {
   logic?: string;
@@ -32,7 +30,7 @@ const findSegment = (
   segmentId: string | undefined,
 ): Segment | undefined => segments?.find((s) => s.id === segmentId);
 
-const labelForBizType = (segment: Segment | undefined, t: ReturnType<typeof useConditionsT>) => {
+const labelForBizType = (segment: Segment | undefined, t: TFunction) => {
   if (!segment || segment.bizType === 'USER') return t('conditions.types.segment.user');
   if (segment.bizType === 'COMPANY') return t('conditions.types.segment.company');
   return t('conditions.types.segment.user');
@@ -42,10 +40,7 @@ const labelForBizType = (segment: Segment | undefined, t: ReturnType<typeof useC
  * The synced-provider mark for a segment fed by inbound cohort sync
  * (`source` names the provider), or undefined for ordinary segments.
  */
-const syncedMark = (
-  segment: Segment,
-  t: ReturnType<typeof useConditionsT>,
-): ReactNode | undefined => {
+const syncedMark = (segment: Segment, t: TFunction): ReactNode | undefined => {
   if (!catalogEntryForSource(segment.source)) {
     return undefined;
   }
@@ -60,7 +55,7 @@ const syncedMark = (
 // Every row carries a leading mark so the column stays aligned: the sidebar's
 // per-dataType icon vocabulary, with the provider logo taking over for synced
 // segments.
-const leadingFor = (segment: Segment, t: ReturnType<typeof useConditionsT>): ReactNode => {
+const leadingFor = (segment: Segment, t: TFunction): ReactNode => {
   const synced = syncedMark(segment, t);
   if (synced) {
     return synced;
@@ -78,7 +73,7 @@ const leadingFor = (segment: Segment, t: ReturnType<typeof useConditionsT>): Rea
 // ---------- Summary ----------
 
 function SegmentSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const { segments } = useConditionsContext();
   const data = readData(condition);
@@ -116,7 +111,7 @@ interface EditorProps {
 }
 
 function SegmentEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const { segments } = useConditionsContext();
   const data = readData(condition);
 

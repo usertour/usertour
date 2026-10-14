@@ -1,6 +1,6 @@
 import { TaskClickedIcon } from '@usertour/icons';
-import { useConditionsT } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
+import { useTranslation } from 'react-i18next';
 
 // Task-is-clicked has no configurable data — the chip is purely declarative
 // ("checklist task is clicked"). The schema omits Editor, which tells
@@ -9,7 +9,7 @@ import type { ConditionTypeSchema } from '../../schema-types';
 // non-interactive row.
 
 const Summary = () => {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   return (
     <span className="inline-flex items-center gap-2">
       <TaskClickedIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />

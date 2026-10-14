@@ -164,7 +164,6 @@ const BlockActionBody = () => {
               attributes={attributeList}
               contents={contents}
               token={token}
-              t={t}
             />
           </div>
 
@@ -191,7 +190,6 @@ const BlockActionBody = () => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

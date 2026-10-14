@@ -9,7 +9,7 @@ import {
   useSettingsStyles,
   useStepWidth,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@/components/editor';
+import { ContentEditor } from '@/components/editor';
 import {
   Attribute,
   AvatarType,
@@ -19,6 +19,8 @@ import {
   ProgressBarType,
   Step,
   StepContentType,
+  ContentEditorElementType,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { forwardRef, useState } from 'react';
 

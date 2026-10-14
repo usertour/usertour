@@ -1,11 +1,12 @@
 import { ElementIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
-import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
+import { useSummaryTextClass } from '../../conditions-context';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateElement } from '../../validators';
+import { useTranslation } from 'react-i18next';
 
 export interface ElementData {
   elementData?: ElementSelectorPropsData;
@@ -46,7 +47,7 @@ const OPERATOR_KEYS = [
 // ---------- Summary ----------
 
 function ElementSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const operator = OPERATOR_KEYS.find((o) => o.value === data.logic) ?? OPERATOR_KEYS[0];
@@ -80,7 +81,7 @@ interface EditorProps {
 }
 
 function ElementEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const data = readData(condition);
   const elementData = data.elementData ?? DEFAULT_ELEMENT_DATA;
 

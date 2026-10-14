@@ -1,6 +1,6 @@
 import { Button, Input } from '@usertour/ui';
 import { RiAddLine, RiCloseLine } from '@usertour/icons';
-import { useConditionsT } from '../conditions-context';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   values: string[];
@@ -19,7 +19,7 @@ export function ListInput({
   placeholder,
   addLabelKey = 'conditions.actions.addValue',
 }: Props) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const items = values.length === 0 ? [''] : values;
 
   const handleChange = (index: number, value: string) => {

@@ -1,16 +1,6 @@
-import { RulesZIndexOffset, WebZIndex } from '@usertour/constants';
 import type { Attribute, Content, ContentVersion, Step } from '@usertour/types';
 import type { Segment } from '@usertour/data';
 import { createContext, useContext } from 'react';
-
-// Translator signature — the small subset of i18next's `t` that this
-// component tree relies on; consumers pass the one from `useTranslation()`.
-export type ActionsTranslator = (
-  key: string,
-  options?: Record<string, unknown> & { count?: number },
-) => string;
-
-const fallbackTranslate: ActionsTranslator = (key) => key;
 
 interface ActionsContextValue {
   attributes?: Attribute[];
@@ -32,8 +22,6 @@ interface ActionsContextValue {
   ) => Promise<Step | undefined>;
   filterItems: string[];
   disabled: boolean;
-  baseZIndex: number;
-  t: ActionsTranslator;
   // i18n key for the "Add action" trigger label. Lets consumers in
   // event-shaped contexts (button click, multiple choice option) override
   // verb wording without touching every consumer.
@@ -52,29 +40,9 @@ export function useActionsContext(): ActionsContextValue {
   return ctx;
 }
 
-// Convenience hook so type editors don't have to destructure the whole
-// context just to read the translator.
-export function useActionsT(): ActionsTranslator {
-  const ctx = useContext(ActionsContext);
-  return ctx?.t ?? fallbackTranslate;
-}
-
 // Class for the text portion of a chip Summary. Mirrors conditions —
 // wraps long content so the user can read the full value without opening
 // the editor.
 export function useSummaryTextClass(): string {
   return 'min-w-0 whitespace-normal break-words';
-}
-
-// z-index helper. Matches the Conditions component offsets so popovers /
-// dropdowns stack consistently with the rest of the surrounding chrome.
-export function useActionsZIndex() {
-  const ctx = useContext(ActionsContext);
-  const baseZIndex = ctx?.baseZIndex ?? WebZIndex.RULES;
-  return {
-    popover: baseZIndex + RulesZIndexOffset.POPOVER,
-    dropdown: baseZIndex + RulesZIndexOffset.DROPDOWN,
-    combobox: baseZIndex + RulesZIndexOffset.COMBOBOX,
-    error: baseZIndex + RulesZIndexOffset.ERROR,
-  };
 }

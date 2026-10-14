@@ -3,20 +3,21 @@ import { cn } from '@usertour/tailwind';
 import type { RulesCondition } from '@usertour/types';
 import isEqual from 'fast-deep-equal';
 import { useEffect, useState } from 'react';
-import { useConditionsContext, useConditionsT } from './conditions-context';
+import { useConditionsContext } from './conditions-context';
 import { ConditionEditor } from './condition-editor';
 import { ConditionList } from './condition-list';
 import { getConditionSchema } from './registry';
 import type { ValidateContext } from './schema-types';
 import { Button } from '@usertour/ui';
 import {
-  ConditionErrorTooltip,
-  ConditionErrorTooltipAnchor,
-  ConditionErrorTooltipContent,
-  ConditionPopover,
-  ConditionPopoverContent,
-  ConditionPopoverTrigger,
-} from './ui';
+  RulesErrorTooltip,
+  RulesErrorTooltipAnchor,
+  RulesErrorTooltipContent,
+  RulesPopover,
+  RulesPopoverContent,
+  RulesPopoverTrigger,
+} from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   condition: RulesCondition;
@@ -63,7 +64,7 @@ export function ConditionRow({
   filterItems,
 }: Props) {
   const ctx = useConditionsContext();
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const { disabled, isHorizontal } = ctx;
   const [open, setOpen] = useState(false);
   // Draft is the in-flight edit. While the editor is open, the schema's
@@ -234,18 +235,18 @@ export function ConditionRow({
   // Nest the editor Popover INSIDE the error Popover (mirrors v1
   // RulesUserAttribute: <RulesError><RulesErrorAnchor><RulesPopover>...).
   // Both popovers come from the same Radix Popover module and share a
-  // React context — having ErrorTooltip outside means ConditionPopover
-  // gets to be the nearest provider for ConditionPopoverTrigger /
-  // ConditionPopoverContent, while ErrorTooltipAnchor stays bound to the
+  // React context — having ErrorTooltip outside means RulesPopover
+  // gets to be the nearest provider for RulesPopoverTrigger /
+  // RulesPopoverContent, while ErrorTooltipAnchor stays bound to the
   // outer ErrorTooltip. Putting them the other way round bound the editor
   // trigger to the error popover and clicking the chip wouldn't open
   // anything.
   return (
-    <ConditionErrorTooltip open={showError}>
-      <ConditionErrorTooltipAnchor asChild>
+    <RulesErrorTooltip open={showError}>
+      <RulesErrorTooltipAnchor asChild>
         <div className={cn(CHIP_OUTER, errorKey ? CHIP_INVALID : '', widthClass)}>
-          <ConditionPopover open={open} onOpenChange={handleOpenChange}>
-            <ConditionPopoverTrigger asChild>
+          <RulesPopover open={open} onOpenChange={handleOpenChange}>
+            <RulesPopoverTrigger asChild>
               <button
                 type="button"
                 disabled={disabled}
@@ -256,8 +257,8 @@ export function ConditionRow({
               >
                 <Summary condition={visibleCondition} />
               </button>
-            </ConditionPopoverTrigger>
-            <ConditionPopoverContent
+            </RulesPopoverTrigger>
+            <RulesPopoverContent
               align="start"
               sideOffset={6}
               className={schema.editorWidthClassName ?? 'w-[300px]'}
@@ -268,8 +269,8 @@ export function ConditionRow({
                 onChange={setDraft}
                 onClose={() => handleOpenChange(false)}
               />
-            </ConditionPopoverContent>
-          </ConditionPopover>
+            </RulesPopoverContent>
+          </RulesPopover>
           {!disabled && (
             <button
               type="button"
@@ -281,12 +282,12 @@ export function ConditionRow({
             </button>
           )}
         </div>
-      </ConditionErrorTooltipAnchor>
+      </RulesErrorTooltipAnchor>
       {errorKey && (
-        <ConditionErrorTooltipContent side="right" sideOffset={8}>
+        <RulesErrorTooltipContent side="right" sideOffset={8}>
           {t(errorKey)}
-        </ConditionErrorTooltipContent>
+        </RulesErrorTooltipContent>
       )}
-    </ConditionErrorTooltip>
+    </RulesErrorTooltip>
   );
 }

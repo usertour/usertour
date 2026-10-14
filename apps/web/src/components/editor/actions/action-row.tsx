@@ -3,18 +3,19 @@ import { cn } from '@usertour/tailwind';
 import { isEqual } from '@usertour/helpers';
 import type { RulesCondition } from '@usertour/types';
 import { useEffect, useRef, useState } from 'react';
-import { useActionsContext, useActionsT } from './actions-context';
+import { useActionsContext } from './actions-context';
 import { ActionEditor } from './action-editor';
 import { getActionSchema } from './registry';
 import type { ValidateContext } from './schema-types';
 import {
-  ActionErrorTooltip,
-  ActionErrorTooltipAnchor,
-  ActionErrorTooltipContent,
-  ActionPopover,
-  ActionPopoverContent,
-  ActionPopoverTrigger,
-} from './ui';
+  RulesErrorTooltip,
+  RulesErrorTooltipAnchor,
+  RulesErrorTooltipContent,
+  RulesPopover,
+  RulesPopoverContent,
+  RulesPopoverTrigger,
+} from '@/components/rules';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   condition: RulesCondition;
@@ -40,7 +41,7 @@ const CHIP_INVALID = 'border-destructive/70 hover:border-destructive';
 // (only when the draft differs).
 export function ActionRow({ condition, onChange, onRemove, autoOpen, onAutoOpened }: Props) {
   const ctx = useActionsContext();
-  const t = useActionsT();
+  const { t } = useTranslation();
   const { disabled } = ctx;
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<RulesCondition>(condition);
@@ -160,16 +161,16 @@ export function ActionRow({ condition, onChange, onRemove, autoOpen, onAutoOpene
   const showError = Boolean(errorKey) && !open;
   const visibleCondition = open ? draft : condition;
 
-  // Editor Popover is nested INSIDE the error Popover so ActionPopover wins
+  // Editor Popover is nested INSIDE the error Popover so RulesPopover wins
   // as the nearest Popover provider for trigger/content — same wiring as
   // ConditionRow. Reverse nesting would bind the editor trigger to the
   // error popover and clicking the chip wouldn't open anything.
   return (
-    <ActionErrorTooltip open={showError}>
-      <ActionErrorTooltipAnchor asChild>
+    <RulesErrorTooltip open={showError}>
+      <RulesErrorTooltipAnchor asChild>
         <div className={cn(CHIP_OUTER, errorKey ? CHIP_INVALID : '', 'w-full')}>
-          <ActionPopover open={open} onOpenChange={handleOpenChange}>
-            <ActionPopoverTrigger asChild>
+          <RulesPopover open={open} onOpenChange={handleOpenChange}>
+            <RulesPopoverTrigger asChild>
               <button
                 type="button"
                 disabled={disabled}
@@ -177,8 +178,8 @@ export function ActionRow({ condition, onChange, onRemove, autoOpen, onAutoOpene
               >
                 <Summary condition={visibleCondition} />
               </button>
-            </ActionPopoverTrigger>
-            <ActionPopoverContent
+            </RulesPopoverTrigger>
+            <RulesPopoverContent
               align="start"
               sideOffset={6}
               className={schema.editorWidthClassName ?? 'w-[320px]'}
@@ -189,8 +190,8 @@ export function ActionRow({ condition, onChange, onRemove, autoOpen, onAutoOpene
                 onChange={updateDraft}
                 onClose={() => handleOpenChange(false)}
               />
-            </ActionPopoverContent>
-          </ActionPopover>
+            </RulesPopoverContent>
+          </RulesPopover>
           {!disabled && (
             <button
               type="button"
@@ -202,12 +203,12 @@ export function ActionRow({ condition, onChange, onRemove, autoOpen, onAutoOpene
             </button>
           )}
         </div>
-      </ActionErrorTooltipAnchor>
+      </RulesErrorTooltipAnchor>
       {errorKey && (
-        <ActionErrorTooltipContent side="right" sideOffset={8}>
+        <RulesErrorTooltipContent side="right" sideOffset={8}>
           {t(errorKey)}
-        </ActionErrorTooltipContent>
+        </RulesErrorTooltipContent>
       )}
-    </ActionErrorTooltip>
+    </RulesErrorTooltip>
   );
 }

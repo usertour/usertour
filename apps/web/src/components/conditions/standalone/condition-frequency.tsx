@@ -10,14 +10,13 @@ import {
 import { DEFAULT_FREQUENCY } from '@usertour/helpers';
 import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import isEqual from 'fast-deep-equal';
-import type { ConditionsTranslator } from '../conditions-context';
 import {
-  ConditionErrorTooltip,
-  ConditionErrorTooltipAnchor,
-  ConditionErrorTooltipContent,
-} from '../ui/condition-error-tooltip';
+  RulesErrorTooltip,
+  RulesErrorTooltipAnchor,
+  RulesErrorTooltipContent,
+} from '@/components/rules';
 import { ConditionInlineSelect } from '../ui/condition-inline-select';
-import { resolveTranslator } from './translator';
+import { useTranslation } from 'react-i18next';
 
 const FREQUENCY_KEYS = [
   { value: Frequency.ONCE, labelKey: 'conditions.standalone.frequency.units.once' },
@@ -38,7 +37,6 @@ interface Props {
   showAtLeast?: boolean;
   contentType?: ContentDataType;
   disabled?: boolean;
-  t?: ConditionsTranslator;
 }
 
 // Composite frequency picker. Layout:
@@ -51,9 +49,8 @@ export function ConditionFrequency({
   showAtLeast = true,
   contentType = ContentDataType.FLOW,
   disabled,
-  t: tProp,
 }: Props) {
-  const t = resolveTranslator(tProp);
+  const { t } = useTranslation();
   // DEFAULT_FREQUENCY is only a display fallback for a missing defaultValue;
   // the persisted default is owned by buildConfig in @usertour/helpers.
   // The `every` window is also filled when the given value lacks it (a stored
@@ -129,7 +126,6 @@ export function ConditionFrequency({
           frequency={Frequency.MULTIPLE}
           contentType={contentType}
           disabled={disabled}
-          t={t}
         />
       )}
       {data.frequency === Frequency.UNLIMITED && (
@@ -140,7 +136,6 @@ export function ConditionFrequency({
           frequency={Frequency.UNLIMITED}
           contentType={contentType}
           disabled={disabled}
-          t={t}
         />
       )}
 
@@ -151,7 +146,6 @@ export function ConditionFrequency({
           unitOptions={unitOptions}
           contentType={contentType}
           disabled={disabled}
-          t={t}
         />
       )}
     </div>
@@ -165,7 +159,6 @@ interface EveryProps {
   frequency: Frequency;
   contentType: ContentDataType;
   disabled?: boolean;
-  t: ConditionsTranslator;
 }
 
 function FrequencyEvery({
@@ -175,8 +168,8 @@ function FrequencyEvery({
   frequency,
   contentType,
   disabled,
-  t,
 }: EveryProps) {
+  const { t } = useTranslation();
   const [openError, setOpenError] = useState(false);
   // Local override for `times` while the user is mid-typing an invalid
   // (< 2) value in MULTIPLE mode. We mirror v1 RulesFrequencyEvery here:
@@ -213,8 +206,8 @@ function FrequencyEvery({
   if (frequency === Frequency.MULTIPLE) {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <ConditionErrorTooltip open={openError}>
-          <ConditionErrorTooltipAnchor asChild>
+        <RulesErrorTooltip open={openError}>
+          <RulesErrorTooltipAnchor asChild>
             <Input
               variant="compact-surface"
               type="text"
@@ -223,11 +216,11 @@ function FrequencyEvery({
               disabled={disabled}
               className="w-16"
             />
-          </ConditionErrorTooltipAnchor>
-          <ConditionErrorTooltipContent>
+          </RulesErrorTooltipAnchor>
+          <RulesErrorTooltipContent>
             {t('conditions.standalone.frequency.atLeastTwo')}
-          </ConditionErrorTooltipContent>
-        </ConditionErrorTooltip>
+          </RulesErrorTooltipContent>
+        </RulesErrorTooltip>
         <span className="text-sm">{t('conditions.standalone.frequency.timesComma')}</span>
         <Input
           variant="compact-surface"
@@ -290,17 +283,10 @@ interface AtLeastProps {
   unitOptions: { value: string; label: string }[];
   contentType: ContentDataType;
   disabled?: boolean;
-  t: ConditionsTranslator;
 }
 
-function FrequencyAtLeast({
-  value,
-  onChange,
-  unitOptions,
-  contentType,
-  disabled,
-  t,
-}: AtLeastProps) {
+function FrequencyAtLeast({ value, onChange, unitOptions, contentType, disabled }: AtLeastProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-sm">{t('conditions.standalone.frequency.atLeast')}</span>

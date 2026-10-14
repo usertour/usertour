@@ -9,15 +9,12 @@ import {
 } from '@usertour/icons';
 import { ContentDataType, type Content, type RulesCondition } from '@usertour/types';
 import { useMemo, type ComponentType } from 'react';
-import {
-  useConditionsContext,
-  useConditionsT,
-  useSummaryTextClass,
-} from '../../conditions-context';
+import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateContent } from '../../validators';
 import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/condition-combobox';
+import { useTranslation } from 'react-i18next';
 
 export interface ContentData {
   contentId?: string;
@@ -77,7 +74,7 @@ const contentTypeLabelKey = (content: Content | undefined): string => {
 // ---------- Summary ----------
 
 function ContentSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const { contents } = useConditionsContext();
   const data = readData(condition);
@@ -114,7 +111,7 @@ interface EditorProps {
 }
 
 function ContentEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const { contents } = useConditionsContext();
   const data = readData(condition);
 

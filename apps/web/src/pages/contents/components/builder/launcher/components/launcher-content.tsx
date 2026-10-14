@@ -9,13 +9,14 @@ import {
   LauncherPopperContentPotal,
   LauncherRoot,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorRoot } from '@/components/editor';
+import { ContentEditor } from '@/components/editor';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 import {
   ContentDataType,
   LauncherActionType,
   LauncherData,
   LauncherPositionType,
+  ContentEditorRoot,
 } from '@usertour/types';
 import type { Theme } from '@usertour/data';
 import { forwardRef, useMemo, useRef } from 'react';

@@ -2,22 +2,22 @@ import { cn } from '@usertour/tailwind';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { forwardRef } from 'react';
 import { ErrorTooltip, ErrorTooltipAnchor, ErrorTooltipContent } from '@usertour/ui';
-import { useConditionsZIndex } from '../conditions-context';
+import { useRulesZIndex } from './z-index';
 
 // Re-export the open-state shell and the anchor — they don't need wrapping.
-export const ConditionErrorTooltip = ErrorTooltip;
-export const ConditionErrorTooltipAnchor = ErrorTooltipAnchor;
+export const RulesErrorTooltip = ErrorTooltip;
+export const RulesErrorTooltipAnchor = ErrorTooltipAnchor;
 
 type ContentProps = ComponentPropsWithoutRef<typeof ErrorTooltipContent>;
 
-// Wraps shared ErrorTooltipContent with conditions defaults: text-sm (matches
+// Wraps shared ErrorTooltipContent with the rules editors' defaults: text-sm (matches
 // the 12px rhythm of chips, inputs, and inline-sentence rows — the shared
 // default of text-sm reads two tiers too large in this context) and the
-// conditions z-index from context so the bubble stacks above the editor
+// rules z-index from context so the bubble stacks above the editor
 // popover that owns it. zIndex prop still wins if a caller passes one.
-export const ConditionErrorTooltipContent = forwardRef<HTMLDivElement, ContentProps>(
+export const RulesErrorTooltipContent = forwardRef<HTMLDivElement, ContentProps>(
   ({ className, children, zIndex, ...props }, ref) => {
-    const { error: defaultZIndex } = useConditionsZIndex();
+    const { error: defaultZIndex } = useRulesZIndex();
     return (
       <ErrorTooltipContent
         ref={ref}
@@ -30,4 +30,4 @@ export const ConditionErrorTooltipContent = forwardRef<HTMLDivElement, ContentPr
     );
   },
 );
-ConditionErrorTooltipContent.displayName = 'ConditionErrorTooltipContent';
+RulesErrorTooltipContent.displayName = 'RulesErrorTooltipContent';

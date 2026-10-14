@@ -9,11 +9,7 @@ import {
 } from '@usertour/types';
 import { useMemo } from 'react';
 import { ConditionList } from '../../condition-list';
-import {
-  useConditionsContext,
-  useConditionsT,
-  useSummaryTextClass,
-} from '../../conditions-context';
+import { useConditionsContext, useSummaryTextClass } from '../../conditions-context';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateConditions } from '../../validate';
 import { validateEvent } from '../../validators';
@@ -21,6 +17,7 @@ import { ConditionCombobox, type ConditionComboboxItem } from '../../ui/conditio
 import { ConditionInlineSelect } from '../../ui/condition-inline-select';
 import { Input } from '@usertour/ui';
 import { EventScopeContext } from './event-scope-context';
+import { useTranslation } from 'react-i18next';
 
 export interface EventData {
   eventId?: string;
@@ -98,7 +95,7 @@ const findEvent = (events: Event[] | undefined, id: string | undefined): Event |
 // ---------- Summary ----------
 
 function EventSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const { events } = useConditionsContext();
   const data = readData(condition);
@@ -173,7 +170,7 @@ interface EditorProps {
 }
 
 function EventEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const { events } = useConditionsContext();
   const data = readData(condition);
 

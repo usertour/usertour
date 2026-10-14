@@ -5,8 +5,9 @@ import type { RulesCondition } from '@usertour/types';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { AddConditionDropdown } from './add-condition-dropdown';
 import { ConditionRow } from './condition-row';
-import { useConditionsContext, useConditionsT } from './conditions-context';
+import { useConditionsContext } from './conditions-context';
 import { getConditionSchema } from './registry';
+import { useTranslation } from 'react-i18next';
 
 type Logic = 'and' | 'or';
 
@@ -71,7 +72,7 @@ interface LogicTogglerProps {
 // weight — so we shrink it one tier (rounded-md / h-6 / text-[11px]) to
 // reinforce that AND/OR is grammar, subordinate to the chip it links.
 function LogicToggler({ logic, onToggle, disabled, isHorizontal }: LogicTogglerProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -106,7 +107,7 @@ export function ConditionList({
   onAddMenuClose,
 }: Props) {
   const { isHorizontal, isShowIf, disabled, narrow } = useConditionsContext();
-  const t = useConditionsT();
+  const { t } = useTranslation();
   // Memoize the id-backfill so the same cuid sticks across rerenders for a
   // given conditions reference. Otherwise legacy data missing ids would get
   // a fresh cuid every render — the React key would change, ConditionRow

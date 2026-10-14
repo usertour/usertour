@@ -1,13 +1,14 @@
 import { TextInputIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
-import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
+import { useSummaryTextClass } from '../../conditions-context';
 import { FORM_CONTROL_PICK_TARGETS } from '@/components/element-picker';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextInput } from '../../validators';
 import { Input } from '@usertour/ui';
+import { useTranslation } from 'react-i18next';
 
 export interface TextInputData {
   elementData?: ElementSelectorPropsData;
@@ -55,7 +56,7 @@ const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean 
 // ---------- Summary ----------
 
 function TextInputSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const operator = OPERATOR_KEYS.find((o) => o.value === data.logic) ?? OPERATOR_KEYS[0];
@@ -95,7 +96,7 @@ interface EditorProps {
 }
 
 function TextInputEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const data = readData(condition);
   const elementData = data.elementData ?? DEFAULT_ELEMENT_DATA;
 

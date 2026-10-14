@@ -146,14 +146,8 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               filterItems={CLIENT_EVALUABLE_CONDITION_TYPES}
               onElementChange={onRulesConditionElementChange}
               baseZIndex={BUILDER_Z.rules}
-              t={t}
             />
-            <ConditionWait
-              defaultValue={wait}
-              onValueChange={onWaitChange}
-              disabled={false}
-              t={t}
-            />
+            <ConditionWait defaultValue={wait} onValueChange={onWaitChange} disabled={false} />
             <Label>{t('contentBuilder.flow.actionWhenTriggered')}</Label>
             <Actions
               baseZIndex={BUILDER_Z.popover}
@@ -165,7 +159,6 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               contents={contents}
               createStep={createStep}
               token={token}
-              t={t}
             />
           </ContentErrorAnchor>
           <ContentErrorContent

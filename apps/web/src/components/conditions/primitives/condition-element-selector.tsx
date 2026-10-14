@@ -1,10 +1,10 @@
 import { Button, Input, QuestionTooltip } from '@usertour/ui';
 import type { ElementSelectorPropsData } from '@usertour/types';
 import { type ChangeEvent, useCallback, useMemo, useState } from 'react';
-import { useConditionsT } from '../conditions-context';
 import { ConditionSelect } from '../ui/condition-select';
 import type { PickElementResult } from '@/components/element-picker';
 import { PickElementButton } from '@/components/element-picker';
+import { useTranslation } from 'react-i18next';
 
 export interface ConditionElementSelectorProps {
   data: ElementSelectorPropsData;
@@ -25,7 +25,7 @@ export function ConditionElementSelector({
   onDataChange,
   pickMustMatch,
 }: ConditionElementSelectorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const [innerData, setInnerData] = useState<ElementSelectorPropsData>(data);
   // Match count reported by the last visual pick — transient hint guiding
   // the user to the "if multiple matches" select; cleared on manual edits.

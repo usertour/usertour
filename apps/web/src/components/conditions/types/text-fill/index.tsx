@@ -1,10 +1,11 @@
 import { TextFillIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
-import { useConditionsT, useSummaryTextClass } from '../../conditions-context';
+import { useSummaryTextClass } from '../../conditions-context';
 import { FORM_CONTROL_PICK_TARGETS } from '@/components/element-picker';
 import { ConditionElementSelector } from '../../primitives/condition-element-selector';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextFill } from '../../validators';
+import { useTranslation } from 'react-i18next';
 
 export interface TextFillData {
   elementData?: ElementSelectorPropsData;
@@ -35,7 +36,7 @@ const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean 
 // ---------- Summary ----------
 
 function TextFillSummary({ condition }: { condition: RulesCondition }) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const summaryTextClass = useSummaryTextClass();
   const data = readData(condition);
   const elSelected = isElementSelected(data.elementData);
@@ -67,7 +68,7 @@ interface EditorProps {
 }
 
 function TextFillEditor({ condition, onChange }: EditorProps) {
-  const t = useConditionsT();
+  const { t } = useTranslation();
   const data = readData(condition);
   const elementData = data.elementData ?? DEFAULT_ELEMENT_DATA;
 

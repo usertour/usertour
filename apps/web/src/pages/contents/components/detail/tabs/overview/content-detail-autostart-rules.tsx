@@ -258,7 +258,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
             disabled={disabled}
             baseZIndex={WebZIndex.RULES}
             events={eventList}
-            t={t}
             {...(filterItems ? { filterItems } : {})}
           />
         </div>
@@ -275,7 +274,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               defaultValue={localSetting.wait ?? 0}
               onValueChange={(value) => updateSettings({ wait: value })}
               disabled={disabled}
-              t={t}
             />
           )}
           {showFrequency && (
@@ -285,7 +283,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               contentType={contentType}
               showAtLeast={showAtLeast}
               disabled={disabled}
-              t={t}
             />
           )}
           {showIfCompleted && localSetting.frequency?.frequency !== Frequency.ONCE && (
@@ -294,7 +291,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               contentType={contentType}
               onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
               disabled={disabled}
-              t={t}
             />
           )}
           {showPriority && (
@@ -302,7 +298,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
               defaultValue={localSetting.priority ?? ContentPriority.MEDIUM}
               disabled={disabled}
-              t={t}
             />
           )}
         </>
