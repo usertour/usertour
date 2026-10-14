@@ -13,10 +13,10 @@ import {
 } from '@usertour/ui';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
-import { Actions, PopperEditorMini } from '@usertour/editor';
-import type { Descendant } from '@usertour/editor';
+import { Actions, PopperEditorMini } from '@/components/editor';
+import type { Descendant } from '@/components/editor';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
-import { Conditions } from '@usertour/conditions';
+import { Conditions } from '@/components/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import {
   ContentDataType,

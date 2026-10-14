@@ -13,9 +13,9 @@ import {
   Switch,
 } from '@usertour/ui';
 import { RiArrowLeftSLine } from '@usertour/icons';
-import { PopperEditorMini } from '@usertour/editor';
-import type { Descendant } from '@usertour/editor';
-import { Conditions } from '@usertour/conditions';
+import { PopperEditorMini } from '@/components/editor';
+import type { Descendant } from '@/components/editor';
+import { Conditions } from '@/components/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import {
   type ContentListItem,

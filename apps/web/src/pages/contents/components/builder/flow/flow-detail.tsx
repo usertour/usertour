@@ -47,7 +47,7 @@ import { ContentWidth } from '@/pages/contents/components/builder/components/con
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useThemeList } from '@/hooks/use-theme-list';
-import { ContentEditorRoot } from '@usertour/editor';
+import { ContentEditorRoot } from '@/components/editor';
 import { hasMissingRequiredData } from '@usertour/helpers';
 import { PlusIcon, RiArrowLeftSLine } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';

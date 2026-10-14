@@ -1,4 +1,4 @@
-import { validateActions } from '@usertour/editor';
+import { validateActions } from '@/components/editor';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useAttributeList } from '@/hooks/use-attribute-list';

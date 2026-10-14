@@ -4,7 +4,7 @@ import { ChevronDownIcon, ChevronUpIcon, CopyIcon } from '@radix-ui/react-icons'
 import { Attribute, AttributeBizTypes, AttributeDataType } from '@usertour/types';
 import { TableCell, TableRow, Button, TruncatedText } from '@usertour/ui';
 import { cn } from '@usertour/tailwind';
-import { AttributeTypeChip } from '@/components/attribute-type-chip';
+import { AttributeTypeChip } from '@/components/attributes/attribute-type-chip';
 import { formatAttributeValue } from '@/utils/common';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 

@@ -3,7 +3,7 @@ import {
   ContentEditorElementType,
   ContentEditorQuestionElement,
   ContentEditorRoot,
-} from '@usertour/editor';
+} from '@/components/editor';
 import { isRestrictedType } from '@usertour/helpers';
 import { ContentActionsItemType, Step } from '@usertour/types';
 

@@ -14,7 +14,7 @@ import {
   TabsTrigger,
 } from '@usertour/ui';
 import { RiArrowDownSLine, RiSettings3Line, TooltipIcon } from '@usertour/icons';
-import { Actions } from '@usertour/editor';
+import { Actions } from '@/components/editor';
 import { useTranslation } from 'react-i18next';
 import {
   ContentDataType,

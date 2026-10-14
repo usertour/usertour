@@ -26,7 +26,7 @@ Anything that depends on the consuming app. Hard rules:
 |---|---|
 | depends on `react-router-dom` or app URL strings | `apps/<app>/src/...` next to its callers |
 | is a UI primitive with no business knowledge | `@usertour/ui` (`packages/components/ui`) |
-| is part of editing or validating conditions (shared by `apps/web` and `packages/editor`) | `@usertour/conditions` |
+| is a business UI component (the editor and the conditions editor included) | `apps/web/src/components/<domain>/` |
 | is a hook scoped to one feature in one app | `apps/<app>/src/pages/<feature>/components/` |
 
 ## Adding a new hook — decision tree

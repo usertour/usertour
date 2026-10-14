@@ -9,7 +9,7 @@ import { ChecklistBuilder } from '@/pages/contents/components/builder/checklist'
 import { FlowBuilder } from '@/pages/contents/components/builder/flow';
 import { LauncherBuilder } from '@/pages/contents/components/builder/launcher';
 import { ResourceCenterBuilder } from '@/pages/contents/components/builder/resource-center';
-import { ElementPickerHost } from '@/components/element-picker-host';
+import { ElementPickerHost } from '@/components/element-picker/element-picker-host';
 import { WebBuilderLoading } from '@/pages/contents/components/builder/components/web-builder-loading';
 import { useListsLoading } from '@/pages/contents/components/builder/hooks/use-lists-loading';
 import type { ReactNode } from 'react';

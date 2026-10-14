@@ -10,9 +10,10 @@ import {
   EventAttributes,
   contentEndReason,
   contentStartReason,
+  ContentEditorElementType,
 } from '@usertour/types';
 import { type BizEvent, type SessionExportRow } from '@usertour/data';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
+import { contentTypesConfig } from '@/components/editor/utils/config';
 import { attributeText } from '@/utils/attributes';
 
 type DateRange = {

@@ -65,8 +65,6 @@ jobs:
             web:
               - 'apps/web/**'
               - 'packages/ui/**'
-              - 'packages/conditions/**'
-              - 'packages/editor/**'
               - 'packages/data/**'
               - 'packages/icons/**'
               - 'packages/i18n/**'

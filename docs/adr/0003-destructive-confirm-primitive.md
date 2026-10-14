@@ -1,6 +1,6 @@
 # 0003: Destructive confirmation as a single primitive
 
-> Note (2026-10): `@usertour/hooks` has since been renamed to `@usertour/data` and `@usertour/business-components` to `@usertour/conditions`; the text keeps the names of the time.
+> Note (2026-10): `@usertour/hooks` has since been renamed to `@usertour/data` and `@usertour/business-components` to `@usertour/conditions`, since folded into `apps/web/src/components/` together with `@usertour/editor`; the text keeps the names of the time.
 
 - **Date:** 2026-05-25
 - **Status:** Accepted

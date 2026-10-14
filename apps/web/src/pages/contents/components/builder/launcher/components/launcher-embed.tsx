@@ -1,4 +1,4 @@
-import { ContentEditorRoot } from '@usertour/editor';
+import { ContentEditorRoot } from '@/components/editor';
 import { isEqual } from 'lodash';
 import { useCallback, useMemo, useRef } from 'react';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';

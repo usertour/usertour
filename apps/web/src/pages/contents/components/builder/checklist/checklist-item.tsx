@@ -16,8 +16,8 @@ import {
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
-import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/conditions';
-import { Actions } from '@usertour/editor';
+import { Conditions, DEFAULT_CONDITION_TYPES } from '@/components/conditions';
+import { Actions } from '@/components/editor';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { ChecklistItemType, ContentDataType, RulesCondition, RulesType } from '@usertour/types';
 import { useId, useLayoutEffect } from 'react';

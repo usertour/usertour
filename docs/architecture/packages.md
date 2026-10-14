@@ -33,8 +33,8 @@ doesn't relitigate the basics.
                                 │
                        ┌────────▼─────────┐
                        │    L3 Domain     │
-                       │     editor       │
-                       │    conditions    │
+                       │ editor·conditions│
+                       │  (in apps/web)   │
                        └────────┬─────────┘
                                 │
                        ┌────────▼─────────┐
@@ -182,8 +182,8 @@ React components with no business knowledge:
 without knowing what context that is. It accepts data via props, never
 reaches for app state, never queries the data layer.
 
-**Counter-example**: the `Conditions` chip editor knows about rules /
-segments and reaches the data layer — it belongs in L3, not L1.
+**Counter-example**: the `Conditions` editor knows about rules /
+segments and reaches the data layer — it is L3, not L1.
 
 ## L2 — Infrastructure (cross-cutting concerns)
 
@@ -202,17 +202,26 @@ business workflow".
 ## L3 — Domain modules
 
 Reusable modules carrying business knowledge but not bound to a specific
-page or flow.
+page or flow. This layer has no standalone package: every domain module
+has exactly one consumer, the dashboard, so they live in
+`apps/web/src/components/<domain>/` (see
+[module boundaries](../conventions/module-boundaries.md)). The two
+largest were workspace packages until 2026-10 and were folded in for
+that reason:
 
-- `@usertour/editor` — ContentEditor framework + rich-text
-  editor (PopperEditor, PopperEditorMini, CodeEditor) + Actions chip
-  editor + business element popovers (button / multi-choice / NPS / scale /
-  star-rating). **ContentEditor and rich editor are an integral unit; they
-  do not split into smaller packages.**
-- `@usertour/conditions` — the conditions editor (L3): the `Conditions`
-  component, its condition types and validators, the element picker it
-  picks targets with, and the two domain widgets its condition types
-  render (attribute data-type icon, integration source mark).
+- `components/editor/` (ex `@usertour/editor`) — the ContentEditor
+  framework, the rich-text editor (PopperEditor, PopperEditorMini), the
+  Actions chip editor and the business element popovers (button /
+  multi-choice / NPS / scale / star-rating). **ContentEditor and rich
+  editor are an integral unit; they do not split.**
+- `components/conditions/` (ex `@usertour/conditions`) — the `Conditions`
+  component, its condition types and validators. The element picker it
+  picks targets with and the widgets its condition types render sit in
+  their own domain folders (`element-picker/`, `attributes/`,
+  `integrations/`).
+
+A domain module becomes a package again only when a second consumer
+outside `apps/web` appears — not before.
 
 **Rule of thumb**: knows about content elements, rules, segments,
 attributes — but does not know which page is rendering it.
@@ -241,7 +250,7 @@ The layering above is the target. Current state has a few honest gaps:
 
 | Package | Drift | Resolution path |
 |---|---|---|
-| `@usertour/editor` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
+| `components/editor/` | L3, but contains business element popovers that look like L4 glue. The current consensus is that ContentEditor and its element popovers are an integral unit; they live together. | No action; document as a deliberate integration. |
 | L1 hook leakage (historical) | Some L1 components used to read user identity via `useCurrentUserId()` directly, pulling `@usertour/data` (Apollo) into the UI tree. `ColorPickerPanel` was promoted to L1 by inverting that into a `userId` prop. | Case-by-case; invert offending hooks to props at the L1 boundary. |
 
 ## Decision tree
@@ -255,7 +264,7 @@ Does it use React?
     ├── Single shadcn-style primitive? → @usertour/ui/src/primitives/
     ├── Composes primitives, no business concept? → @usertour/ui/src/composites/
     ├── Cross-cutting (data / context / i18n / runtime)? → L2
-    ├── Business knowledge, reusable across pages? → L3
+    ├── Business knowledge, reusable across pages? → L3 (apps/web/src/components/<domain>/)
     ├── Bound to a specific page or flow? → L4
     └── App entry point? → L5
 ```

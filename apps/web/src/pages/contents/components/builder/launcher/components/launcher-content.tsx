@@ -9,7 +9,7 @@ import {
   LauncherPopperContentPotal,
   LauncherRoot,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
+import { ContentEditor, ContentEditorRoot } from '@/components/editor';
 import { getEmptyDataForType } from '@/pages/contents/components/builder/utils/default-data';
 import {
   ContentDataType,

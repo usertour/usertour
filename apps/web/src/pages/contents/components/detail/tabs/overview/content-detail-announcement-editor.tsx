@@ -9,7 +9,7 @@ import { isVersionPublished } from '@/utils/content';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useContentListQuery, type Theme } from '@usertour/data';
 import { useUpload } from '@/hooks/use-upload';
-import { ContentEditor, type ContentEditorRoot } from '@usertour/editor';
+import { ContentEditor, type ContentEditorRoot } from '@/components/editor';
 import { ContentEditorSerialize } from '@usertour/widget';
 import { buildConfig, convertSettings, convertToCssVars } from '@usertour/helpers';
 import { cn } from '@usertour/tailwind';
