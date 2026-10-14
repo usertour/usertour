@@ -12,7 +12,7 @@ import {
   contentStartReason,
 } from '@usertour/types';
 import { type BizEvent, type SessionExportRow } from '@usertour/data';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
+import { ContentEditorElementType, contentTypesConfig } from '@/components/editor';
 import { attributeText } from '@/utils/attributes';
 
 type DateRange = {

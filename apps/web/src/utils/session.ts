@@ -5,7 +5,7 @@ import {
   ContentEditorElementType,
   type ContentEditorRoot,
   contentTypesConfig,
-} from '@usertour/editor';
+} from '@/components/editor';
 import { formatDistanceStrict } from 'date-fns';
 import { extractQuestionData } from '@usertour/helpers';
 import { attributeNumber, attributeText } from '@/utils/attributes';

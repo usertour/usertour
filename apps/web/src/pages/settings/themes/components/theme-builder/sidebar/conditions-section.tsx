@@ -1,7 +1,7 @@
 import { useAppContext } from '@/contexts/app-context';
 import { useListAttributesQuery } from '@usertour/data';
 import { WebZIndex } from '@usertour/constants';
-import { Conditions } from '@usertour/conditions';
+import { Conditions } from '@/components/conditions';
 import { QuestionTooltip } from '@usertour/ui';
 import { AttributeBizTypes, type RulesCondition } from '@usertour/types';
 import { Trans, useTranslation } from 'react-i18next';

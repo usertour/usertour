@@ -15,7 +15,7 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
-import { Conditions } from '@usertour/conditions';
+import { Conditions } from '@/components/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';

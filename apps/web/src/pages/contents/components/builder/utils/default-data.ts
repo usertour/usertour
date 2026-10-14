@@ -1,5 +1,5 @@
 import { ContentEditorRoot } from '@usertour/types';
-import { EmptyGroup, EmptyColumn, EmptyText } from '@usertour/editor';
+import { EmptyGroup, EmptyColumn, EmptyText } from '@/components/editor';
 
 const defaultTooltipContent = [
   {

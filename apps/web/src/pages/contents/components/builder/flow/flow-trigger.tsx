@@ -5,7 +5,7 @@ import { useContentList } from '@/pages/contents/components/builder/hooks/use-co
 import { RiAddCircleLine, RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { hasError } from '@usertour/helpers';
-import { validateActions } from '@usertour/editor';
+import { validateActions } from '@/components/editor';
 import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { useCallback, useEffect } from 'react';

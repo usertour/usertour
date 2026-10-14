@@ -13,7 +13,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useContentVersionUpdate } from '@/hooks/use-content-version-update';
-import { ElementPickerHost } from '@/components/element-picker-host';
+import { ElementPickerHost } from '@/components/element-picker/element-picker-host';
 
 const getContentTypeLabel = (contentType: ContentDataType, t: TFunction): string => {
   if (contentType === ContentDataType.RESOURCE_CENTER) {

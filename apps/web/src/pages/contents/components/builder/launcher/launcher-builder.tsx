@@ -2,7 +2,7 @@
 
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
-import { validateActions } from '@usertour/editor';
+import { validateActions } from '@/components/editor';
 import { type LauncherData, LauncherActionType } from '@usertour/types';
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';

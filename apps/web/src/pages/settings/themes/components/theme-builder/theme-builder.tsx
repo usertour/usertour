@@ -2,7 +2,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useCanUseCustomCss } from '@/hooks/use-should-show-made-with';
 import { useListAttributesQuery, useCurrentUserId, type Theme } from '@usertour/data';
 import { StorageKeys, defaultSettings } from '@usertour/constants';
-import { validateConditions } from '@usertour/conditions';
+import { validateConditions } from '@/components/conditions';
 import {
   AttributeBizTypes,
   ThemeDetailPreviewType,

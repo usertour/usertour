@@ -9,7 +9,7 @@ import {
   useSettingsStyles,
   useStepWidth,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@usertour/editor';
+import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@/components/editor';
 import { GoogleFontCss } from '@/components/themes/google-font-css';
 import {
   Attribute,

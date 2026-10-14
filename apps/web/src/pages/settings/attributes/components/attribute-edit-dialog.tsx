@@ -19,7 +19,7 @@ import {
   SettingsDialogForm,
   useSettingsForm,
 } from '@usertour/ui';
-import { AttributeDataTypeIcon } from '@usertour/conditions';
+import { AttributeDataTypeIcon } from '@/components/attributes/attribute-data-type-icon';
 import { isBucketingDataType } from '@usertour/helpers';
 import { useUpdateAttributeMutation } from '@usertour/data';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';

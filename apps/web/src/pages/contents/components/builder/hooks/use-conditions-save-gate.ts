@@ -1,4 +1,4 @@
-import { validateConditions } from '@usertour/conditions';
+import { validateConditions } from '@/components/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';

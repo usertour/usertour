@@ -4,7 +4,7 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useSize } from '@usertour/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour/widget';
-import { ContentEditor } from '@usertour/editor';
+import { ContentEditor } from '@/components/editor';
 import type { ContentEditorRoot } from '@usertour/types';
 import { ContentEditorElementType, ContentDataType, BannerEmbedPlacement } from '@usertour/types';
 import { isEqual } from 'lodash';

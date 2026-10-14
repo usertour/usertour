@@ -14,9 +14,9 @@ import {
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
-import { PopperEditorMini } from '@usertour/editor';
-import type { Descendant } from '@usertour/editor';
-import { Conditions } from '@usertour/conditions';
+import { PopperEditorMini } from '@/components/editor';
+import type { Descendant } from '@/components/editor';
+import { Conditions } from '@/components/conditions';
 import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';

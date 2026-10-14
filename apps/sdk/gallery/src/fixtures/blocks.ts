@@ -6,7 +6,7 @@ import {
 } from '@usertour/types';
 import { button, paragraph, row } from './content';
 
-// Question blocks as the builder seeds them (packages/editor/src/utils/config.ts),
+// Question blocks as the builder seeds them (apps/web/src/components/editor/utils/config.ts),
 // filled in the way an author would.
 
 const options = [

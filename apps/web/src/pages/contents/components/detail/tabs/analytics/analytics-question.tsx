@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour/ui';
-import { ContentEditorElementType } from '@usertour/editor';
+import { ContentEditorElementType } from '@/components/editor';
 import { useQueryContentQuestionAnalyticsQuery } from '@usertour/data';
 import { endOfDay, format, startOfDay } from 'date-fns';
 import { AnswerCount, ContentQuestionAnalytics } from '@usertour/types';

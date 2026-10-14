@@ -23,7 +23,7 @@ import { cn } from '@usertour/tailwind';
 import { ArrowRightIcon } from '@usertour/icons';
 import { useUpdateContentMutation } from '@usertour/data';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
-import { ContentEditorElementType } from '@usertour/editor';
+import { ContentEditorElementType } from '@/components/editor';
 import { QuestionStarRating } from '@/components/question';
 import { useTranslation } from 'react-i18next';
 

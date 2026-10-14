@@ -6,8 +6,8 @@ import {
   ConditionWait,
   Conditions,
   validateConditions,
-} from '@usertour/conditions';
-import { Actions, validateActions } from '@usertour/editor';
+} from '@/components/conditions';
+import { Actions, validateActions } from '@/components/editor';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

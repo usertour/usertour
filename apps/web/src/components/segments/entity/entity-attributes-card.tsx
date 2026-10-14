@@ -1,6 +1,6 @@
 import { CopyIcon } from '@radix-ui/react-icons';
 import { useTranslation } from 'react-i18next';
-import { IntegrationSourceMark } from '@usertour/conditions';
+import { IntegrationSourceMark } from '@/components/integrations/integration-source-mark';
 import { Button, Card, CardContent, CardHeader, CardTitle, TruncatedText } from '@usertour/ui';
 import { AttributeDataType } from '@usertour/types';
 import { formatAttributeValue } from '@/utils/common';
