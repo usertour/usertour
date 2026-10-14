@@ -3,10 +3,8 @@ import type { Attribute, Content, ContentVersion, Step } from '@usertour/types';
 import type { Segment } from '@usertour/data';
 import { createContext, useContext } from 'react';
 
-// Translator signature — small subset of i18next's `t` that this component
-// tree relies on. Consumers pass their own (e.g., the one from
-// `useTranslation()` in apps/web) so this package stays free of an i18n
-// dep at the type level.
+// Translator signature — the small subset of i18next's `t` that this
+// component tree relies on; consumers pass the one from `useTranslation()`.
 export type ActionsTranslator = (
   key: string,
   options?: Record<string, unknown> & { count?: number },

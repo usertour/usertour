@@ -7,7 +7,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { validateActions } from '../../actions';
+import { validateActions } from '../../actions/validate';
 import {
   EditorErrorTooltip,
   EditorErrorTooltipTrigger,

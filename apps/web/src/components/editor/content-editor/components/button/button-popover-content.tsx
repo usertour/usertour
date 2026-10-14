@@ -9,7 +9,7 @@ import { RulesCondition, ButtonSemanticType } from '@usertour/types';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Actions } from '../../../actions';
+import { Actions } from '../../../actions/actions';
 import type { ContentEditorButtonElement } from '../../../types/editor';
 import { BUTTON_STYLES } from '../../constants';
 import { ActionButtonsBase, MarginControls } from '../../shared';

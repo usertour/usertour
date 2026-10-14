@@ -1,11 +1,14 @@
 import { flowReasonTitleMap } from '@usertour/constants';
-import { Attribute, BizEvents, ContentDataType, EventAttributes } from '@usertour/types';
-import { type BizEvent, type BizSession } from '@usertour/data';
 import {
+  Attribute,
+  BizEvents,
+  ContentDataType,
+  EventAttributes,
   ContentEditorElementType,
   type ContentEditorRoot,
-  contentTypesConfig,
-} from '@/components/editor';
+} from '@usertour/types';
+import { type BizEvent, type BizSession } from '@usertour/data';
+import { contentTypesConfig } from '@/components/editor/utils/config';
 import { formatDistanceStrict } from 'date-fns';
 import { extractQuestionData } from '@usertour/helpers';
 import { attributeNumber, attributeText } from '@/utils/attributes';

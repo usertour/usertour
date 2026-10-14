@@ -4,7 +4,7 @@ import { Input, Label, QuestionTooltip, TextField } from '@usertour/ui';
 import { memo } from 'react';
 
 import { useTranslation } from 'react-i18next';
-import { Actions } from '../../actions';
+import { Actions } from '../../actions/actions';
 import type { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 
 // Types

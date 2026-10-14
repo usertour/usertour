@@ -16,7 +16,7 @@ import { BizAttributeTypes } from '@usertour/types';
 import { memo, useCallback, useMemo } from 'react';
 
 import { useTranslation } from 'react-i18next';
-import { Actions } from '../../../actions';
+import { Actions } from '../../../actions/actions';
 import type {
   ContentEditorMultipleChoiceElement,
   ContentEditorMultipleChoiceOption,

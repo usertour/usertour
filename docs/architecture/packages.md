@@ -209,11 +209,11 @@ has exactly one consumer, the dashboard, so they live in
 largest were workspace packages until 2026-10 and were folded in for
 that reason:
 
-- `components/editor/` (ex `@usertour/editor`) — ContentEditor framework
-  + rich-text editor (PopperEditor, PopperEditorMini, CodeEditor) +
-  Actions chip editor + business element popovers (button / multi-choice
-  / NPS / scale / star-rating). **ContentEditor and rich editor are an
-  integral unit; they do not split.**
+- `components/editor/` (ex `@usertour/editor`) — the ContentEditor
+  framework, the rich-text editor (PopperEditor, PopperEditorMini), the
+  Actions chip editor and the business element popovers (button /
+  multi-choice / NPS / scale / star-rating). **ContentEditor and rich
+  editor are an integral unit; they do not split.**
 - `components/conditions/` (ex `@usertour/conditions`) — the `Conditions`
   component, its condition types and validators. The element picker it
   picks targets with and the widgets its condition types render sit in

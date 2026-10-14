@@ -14,14 +14,7 @@ jest.mock('@usertour/helpers', () => ({
   extractQuestionData: () => mockExtractQuestionData(),
 }));
 
-jest.mock('@/components/editor', () => ({
-  ContentEditorElementType: {
-    STAR_RATING: 'star-rating',
-    SCALE: 'scale',
-    NPS: 'nps',
-    MULTIPLE_CHOICE: 'multiple-choice',
-    MULTI_LINE_TEXT: 'multi-line-text',
-  },
+jest.mock('@/components/editor/utils/config', () => ({
   contentTypesConfig: [],
 }));
 

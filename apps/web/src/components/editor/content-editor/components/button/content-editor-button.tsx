@@ -7,7 +7,7 @@ import { DEFAULT_BUTTON_SEMANTIC_TYPE } from '@usertour/constants';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { validateActions } from '../../../actions';
+import { validateActions } from '../../../actions/validate';
 import { useContentEditorContext } from '../../../contexts/content-editor-context';
 import {
   ContentEditorButtonElement,

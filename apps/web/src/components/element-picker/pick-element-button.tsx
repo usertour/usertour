@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { type PickElementResult, useElementPicker } from './element-picker-context';
 
 export interface PickElementButtonProps {
-  // Tooltip / accessible label — consumers pass their own t(...) so this
-  // package stays free of an i18n dep.
+  // Tooltip / accessible label, translated by the consumer.
   label: string;
   mustMatch?: string;
   onPicked: (result: PickElementResult) => void;
