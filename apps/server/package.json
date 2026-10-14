@@ -55,7 +55,7 @@
     "@devoxa/prisma-relay-cursor-connection": "3.1.1",
     "@golevelup/nestjs-stripe": "~0.8.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@nestjs/apollo": "12.1.0",
+    "@nestjs/apollo": "12.2.2",
     "@nestjs/axios": "3.0.2",
     "@nestjs/bullmq": "~10.2.3",
     "@nestjs/common": "10.3.7",

@@ -15,7 +15,8 @@ export class ContentInput implements NewContent {
 
   // The model's name is non-null (the column defaults to ''); creation may
   // omit it, but an explicit null is rejected rather than handed to the
-  // database. UpdateContentInput declares the same rule for updates.
+  // database. UpdateContentInput inherits the rule through PartialType with
+  // `skipNullProperties: false`.
   @Field({ nullable: true })
   @ValidateIf((_, value) => value !== undefined)
   @IsString()

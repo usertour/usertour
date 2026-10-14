@@ -9,7 +9,7 @@ import { createTestApp } from '../create-test-app';
  * every build validates its documents against the schema it was built from,
  * so the code only ever means a stale build is talking to a newer server.
  * A variable the schema rejects is the request's own mistake and answers as
- * a validation error (E1017) whose message names the variable. The formatter
+ * a validation error (E1017) whose `reason` names the variable. The formatter
  * masks every other unknown error, so this pins the two exceptions.
  */
 describe('GraphQL document validation (e2e)', () => {
@@ -44,7 +44,7 @@ describe('GraphQL document validation (e2e)', () => {
     });
     expect(res.body.errors).toHaveLength(1);
     expect(res.body.errors[0].extensions.code).toBe('E1017');
-    expect(res.body.errors[0].message).toContain('Variable "$b"');
+    expect(res.body.errors[0].extensions.reason).toContain('Variable "$b"');
   });
 
   it('a selection the schema does not have', async () => {
