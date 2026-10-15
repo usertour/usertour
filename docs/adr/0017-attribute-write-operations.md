@@ -68,6 +68,8 @@ Every user / company / membership write — **including pure literal writes** �
 
 Cost: one extra transaction round trip on the identify hot path; the lock waits only when the same entity is written concurrently. Ingest latency is to be watched after rollout.
 
+**Revised 2026-10-14.** The lock protects the read-merge-write and nothing else. Everything a write needs that the lock does not protect — the project, the resolved writes (definitions auto-created, foreign-owned keys dropped), the bucketing definitions a newborn row is seeded from — is computed before the transaction opens (`planBizUserUpsert` and its company / membership counterparts), and a write that would leave the row as it is opens no transaction at all: the no-op linearises at its unlocked read. `applyBizUserUpsert` and its counterparts are the locked part. A row that does not exist cannot be locked, and two first identifies of the same user used to both see none and both insert, the second failing on the unique index: a newborn row is now inserted with `ON CONFLICT DO NOTHING` before the lock, the writer that inserted is done and a concurrent one merges into what it inserted. composed writers (the REST user endpoint with its companies and memberships, a survey answer bound to an attribute) plan everything first and apply in one transaction. Why: with the PgBouncer pool no longer saturating, production still logged `Transaction already closed` on the identify path — one end user's few dozen concurrent, identical identifies queued on the row lock, each holding it for the whole resolution, until the tail crossed the 15 s transaction timeout; most of them were no-ops.
+
 ### 5. Idempotency
 
 Only `add` is non-idempotent. The SDK does not retry (`emitWithAck` has no retry configuration); a double count needs a lost ack *and* a customer-side retry. No idempotency key is introduced. Documentation says: for exact counts, track an event — the "occurred ≥ N times, optionally within a window" event condition already exists.
@@ -127,7 +129,7 @@ The rules live in the domain layer (`BizService` attribute resolution), not in t
 
 ## Triggers to Revisit
 
-- Ingest latency regresses measurably from the row lock → move the merge into a single jsonb statement (alternative above).
+- Ingest latency regresses measurably from the row lock → move the merge into a single jsonb statement (alternative above). The first regression (2026-10) was lock queueing, not the lock itself, and was answered by planning outside the transaction and skipping no-ops; the single-statement merge remains the next step if the locked span is still too long.
 - A real customer need for list order (ordered timelines, "last N") → add `append` (duplicates allowed) and `prepend` with a defined ordering; do not repurpose `union`.
 - Evidence of double-counted increments in production → introduce an idempotency key on the upsert message (`requestId` already travels with every message and is unused server-side).
 - Demand for `min` / `max` or epoch parsing → extend the per-attribute object; the shape accommodates new keys without a break.

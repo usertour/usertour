@@ -356,7 +356,7 @@ describe('CRM full sync (e2e)', () => {
       data: { data: { ...(before?.data as Record<string, unknown>), lifecycle_stage: 'customer' } },
     });
     await biz.withEntityChangeEmit(environmentId, () =>
-      biz.upsertBizUsers(prisma, 'u_ada', { lifecycle_stage: 'hacked', nps: 7 }, environmentId),
+      biz.upsertBizUser(environmentId, 'u_ada', { lifecycle_stage: 'hacked', nps: 7 }),
     );
     const ada = await prisma.bizUser.findFirst({ where: { environmentId, externalId: 'u_ada' } });
     expect((ada?.data as Record<string, unknown>).lifecycle_stage).toBe('customer');
