@@ -1442,19 +1442,19 @@ export class BizService {
 
   /**
    * Must run inside a transaction: the company and the membership commit
-   * together, each part skipped when its plan found nothing to change.
+   * together, and both are applied — not only the part the plan saw change.
+   * A part judged unchanged on the pre-transaction snapshot would otherwise
+   * be fixed at that snapshot while the other part lands after a concurrent
+   * write, leaving a mix no serial order produces. Each apply re-reads under
+   * its lock and skips a write that changes nothing, so an unchanged part
+   * costs one lock and one read.
    */
   async applyBizCompanyGroup(
     tx: Prisma.TransactionClient,
     plan: CompanyGroupPlan,
   ): Promise<BizCompany> {
-    const company =
-      plan.company.unchanged && plan.company.current
-        ? plan.company.current
-        : await this.applyBizCompanyUpsert(tx, plan.company);
-    if (!plan.membership.unchanged) {
-      await this.applyBizMembershipUpsert(tx, plan.membership, company.id, plan.user.id);
-    }
+    const company = await this.applyBizCompanyUpsert(tx, plan.company);
+    await this.applyBizMembershipUpsert(tx, plan.membership, company.id, plan.user.id);
     return company;
   }
 
@@ -2193,17 +2193,16 @@ export class BizService {
       ) {
         return userPlan.current;
       }
-      // Inside the transaction every company and membership is applied, not
-      // only the ones the plans saw change: a company listed twice in one
-      // request is merged in order under the lock, where the second write
-      // sees the first, instead of being judged against the snapshot the
-      // first write already moved on from. The apply re-reads under the lock
-      // and skips a write that changes nothing.
+      // Inside the transaction the user and every company and membership are
+      // applied, not only the parts the plans saw change: a company listed
+      // twice in one request is merged in order under the lock, where the
+      // second write sees the first, and a part judged unchanged on the
+      // snapshot is re-judged under the lock, so a concurrent write landing
+      // between the plan and the transaction cannot leave this request half
+      // applied. The apply re-reads under the lock and skips a write that
+      // changes nothing.
       return await this.prisma.$transaction(async (tx) => {
-        const user =
-          userPlan.unchanged && userPlan.current
-            ? userPlan.current
-            : await this.applyBizUserUpsert(tx, userPlan);
+        const user = await this.applyBizUserUpsert(tx, userPlan);
         for (const group of groups) {
           const company = await this.applyBizCompanyUpsert(tx, group.company);
           await this.applyBizMembershipUpsert(tx, group.membership, company.id, user.id);

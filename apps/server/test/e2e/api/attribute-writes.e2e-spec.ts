@@ -455,6 +455,81 @@ describe('API v2 attribute write operations (e2e)', () => {
       expect(company?.data).toMatchObject({ aw_dup_plan: 'free' });
     });
 
+    it('a group() applied after a concurrent group() takes both parts under the lock', async () => {
+      const biz = app.get(BizService);
+      await putUser('aw-mix-user', { name: 'Mix' });
+      await biz.upsertBizCompanyGroup(
+        fx.environmentId,
+        'aw-mix-co',
+        'aw-mix-user',
+        { aw_mix_plan: 'free' },
+        { aw_mix_role: 'admin' },
+      );
+      // A wants pro/admin: planned against the current rows, its membership
+      // part reads as unchanged. B commits enterprise/viewer before A applies.
+      // Serial order "B then A" leaves both parts A's; a part skipped on the
+      // stale snapshot would leave the membership B's.
+      const planA = await biz.planBizCompanyGroup(
+        fx.environmentId,
+        'aw-mix-co',
+        'aw-mix-user',
+        { aw_mix_plan: 'pro' },
+        { aw_mix_role: 'admin' },
+      );
+      if (!planA) {
+        throw new Error('the fixture environment or the user is missing');
+      }
+      await biz.upsertBizCompanyGroup(
+        fx.environmentId,
+        'aw-mix-co',
+        'aw-mix-user',
+        { aw_mix_plan: 'enterprise' },
+        { aw_mix_role: 'viewer' },
+      );
+      await prisma.$transaction((tx) => biz.applyBizCompanyGroup(tx, planA));
+
+      const company = await prisma.bizCompany.findFirst({
+        where: { environmentId: fx.environmentId, externalId: 'aw-mix-co' },
+      });
+      expect(company?.data).toMatchObject({ aw_mix_plan: 'pro' });
+      const membership = await prisma.bizUserOnCompany.findFirst({
+        where: { bizCompanyId: company?.id, bizUser: { externalId: 'aw-mix-user' } },
+      });
+      expect(membership?.data).toMatchObject({ aw_mix_role: 'admin' });
+    });
+
+    it('a composite request applied after concurrent writes takes its user part under the lock', async () => {
+      const biz = app.get(BizService);
+      await putUser('aw-mix-rest', { aw_mix_status: 'active' });
+      await putCompany('aw-mix-rest-co', { aw_mix_rest_plan: 'free' });
+      // A wants active/pro: planned, its user part reads as unchanged. B
+      // commits paused/enterprise between A's last plan and A's transaction.
+      // Serial order "B then A" leaves active/pro; a user part skipped on the
+      // stale snapshot would leave paused/pro.
+      const planMembership = biz.planBizMembershipUpsert.bind(biz);
+      const spy = jest
+        .spyOn(biz, 'planBizMembershipUpsert')
+        .mockImplementationOnce(async (...args) => {
+          const plan = await planMembership(...args);
+          await putUser('aw-mix-rest', { aw_mix_status: 'paused' }).expect(200);
+          await putCompany('aw-mix-rest-co', { aw_mix_rest_plan: 'enterprise' }).expect(200);
+          return plan;
+        });
+      try {
+        await biz.upsertUser('aw-mix-rest', fx.environmentId, { aw_mix_status: 'active' }, [
+          { id: 'aw-mix-rest-co', attributes: { aw_mix_rest_plan: 'pro' } },
+        ]);
+      } finally {
+        spy.mockRestore();
+      }
+
+      expect(await stored('aw-mix-rest')).toMatchObject({ aw_mix_status: 'active' });
+      const company = await prisma.bizCompany.findFirst({
+        where: { environmentId: fx.environmentId, externalId: 'aw-mix-rest-co' },
+      });
+      expect(company?.data).toMatchObject({ aw_mix_rest_plan: 'pro' });
+    });
+
     it('a locked user row does not block a membership insert that references it', async () => {
       await putUser('aw-lock-user', { aw_lock_hits: 0 });
       await putCompany('aw-lock-co', { aw_lock_plan: 'pro' });
