@@ -710,7 +710,7 @@ export class SystemAdminAlreadyInitializedError extends BaseError {
   code = 'E0026';
   messageDict = {
     en: 'A System Admin has already been set up for this instance.',
-    'zh-CN': '当前实例已经完成 System Admin 初始化。',
+    'zh-CN': '当前实例已经完成系统管理员初始化。',
   };
 }
 
@@ -718,7 +718,7 @@ export class SystemAdminSetupUnavailableError extends BaseError {
   code = 'E0027';
   messageDict = {
     en: 'System Admin setup is only available for self-hosted instances before initialization is complete.',
-    'zh-CN': 'System Admin 初始化仅适用于尚未完成初始化的 self-host 实例。',
+    'zh-CN': '系统管理员初始化仅适用于尚未完成初始化的 self-host 实例。',
   };
 }
 
@@ -1271,5 +1271,79 @@ export class IntegrationNotFoundError extends BaseError {
   messageDict = {
     en: 'Integration not found.',
     'zh-CN': '集成不存在。',
+  };
+}
+
+// System Admin surface: each refusal names what the admin changes to proceed.
+
+export class InstanceLicenseRequiredError extends BaseError {
+  code = 'E0064';
+  messageDict = {
+    en: 'This instance has no valid license. Upload one under System Admin → Subscription before assigning it to a project.',
+    'zh-CN': '当前实例没有有效的许可证。请先在「系统管理员 → 订阅」上传实例许可证，再为项目启用。',
+  };
+}
+
+export class LicenseInstanceMismatchError extends BaseError {
+  code = 'E0065';
+  messageDict = {
+    en: 'This license was issued for a different instance.',
+    'zh-CN': '该许可证是为其他实例签发的，不适用于当前实例。',
+  };
+}
+
+export class InvalidContactEmailError extends BaseError {
+  code = 'E0066';
+  messageDict = {
+    en: 'Please enter a valid contact email address.',
+    'zh-CN': '请输入有效的联系邮箱地址。',
+  };
+}
+
+export class LastSystemAdminError extends BaseError {
+  code = 'E0067';
+  messageDict = {
+    en: 'At least one active System Admin must remain. Make another user a System Admin first.',
+    'zh-CN': '实例至少需要保留一位处于启用状态的系统管理员。请先将其他用户设为系统管理员。',
+  };
+}
+
+export class ProjectNotFoundError extends BaseError {
+  code = 'E0068';
+  messageDict = {
+    en: 'Project not found.',
+    'zh-CN': '项目不存在。',
+  };
+}
+
+export class ProjectMemberNotFoundError extends BaseError {
+  code = 'E0069';
+  messageDict = {
+    en: 'This user is not a member of the project.',
+    'zh-CN': '该用户不是当前项目的成员。',
+  };
+}
+
+export class DisabledUserCannotJoinProjectError extends BaseError {
+  code = 'E0070';
+  messageDict = {
+    en: 'A disabled user cannot be added to a project. Enable the account first.',
+    'zh-CN': '已停用的用户无法加入项目。请先启用该账户。',
+  };
+}
+
+export class ProjectOwnerRequiresTransferError extends BaseError {
+  code = 'E0071';
+  messageDict = {
+    en: "The project owner's role can't be changed or removed here. Transfer ownership to another member first.",
+    'zh-CN': '项目所有者的角色不能直接更改或移除。请先将所有权转移给其他成员。',
+  };
+}
+
+export class ProjectMemberAlreadyExistsError extends BaseError {
+  code = 'E0072';
+  messageDict = {
+    en: 'This user is already a member of the project.',
+    'zh-CN': '该用户已经是当前项目的成员。',
   };
 }
