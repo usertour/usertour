@@ -121,11 +121,13 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
     if (failures.length === 0) {
       return { isValid: true };
     }
+    // A translation key, like every other errorMessage: the tooltip
+    // translates once at render.
     return {
       isValid: false,
-      errorMessage: t('actions.errors.question.incomplete'),
+      errorMessage: 'actions.errors.question.incomplete',
     };
-  }, [localData, attributes, currentVersion, currentStep, t]);
+  }, [localData, attributes, currentVersion, currentStep]);
 
   // Validation result — element-specific validate runs first so a missing
   // name / invalid range surfaces with its own message ahead of any
