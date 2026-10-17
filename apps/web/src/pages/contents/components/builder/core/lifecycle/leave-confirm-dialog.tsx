@@ -2,7 +2,6 @@
 
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -10,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  LoadingButton,
 } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
@@ -17,7 +17,9 @@ import { useTranslation } from 'react-i18next';
 // useBlocker has caught an attempted SPA navigation away from the
 // builder while there are unsaved local edits or an in-flight save.
 //
-// Save & Leave: await saveContent, then proceed with navigation.
+// Save & Leave: await saveContent, then proceed with navigation. While that
+// save runs (`leaving`) both leave buttons are disabled; Stay remains
+// available and cancels the leave along with the navigation.
 // Discard: navigate immediately, drop local edits.
 // Stay: cancel the navigation.
 //
@@ -27,13 +29,15 @@ import { useTranslation } from 'react-i18next';
 
 export interface LeaveConfirmDialogProps {
   open: boolean;
+  // Save & Leave in flight.
+  leaving: boolean;
   onSaveAndLeave: () => void;
   onDiscardAndLeave: () => void;
   onStay: () => void;
 }
 
 export const LeaveConfirmDialog = (props: LeaveConfirmDialogProps) => {
-  const { open, onSaveAndLeave, onDiscardAndLeave, onStay } = props;
+  const { open, leaving, onSaveAndLeave, onDiscardAndLeave, onStay } = props;
   const { t } = useTranslation();
   return (
     <AlertDialog open={open}>
@@ -46,12 +50,12 @@ export const LeaveConfirmDialog = (props: LeaveConfirmDialogProps) => {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onStay}>{t('contentBuilder.common.stay')}</AlertDialogCancel>
-          <Button variant="outline" onClick={onDiscardAndLeave}>
+          <Button variant="outline" disabled={leaving} onClick={onDiscardAndLeave}>
             {t('contentBuilder.common.discard')}
           </Button>
-          <AlertDialogAction onClick={onSaveAndLeave}>
+          <LoadingButton type="button" loading={leaving} onClick={onSaveAndLeave}>
             {t('contentBuilder.common.saveAndLeave')}
-          </AlertDialogAction>
+          </LoadingButton>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

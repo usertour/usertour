@@ -3,13 +3,24 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import { LicenseService } from '@/modules/license/services/license.service';
 import {
+  DisabledUserCannotJoinProjectError,
   EmailAlreadyRegistered,
   FeatureRequiresLicenseError,
   InstanceLicenseProjectLimitReachedError,
+  InstanceLicenseRequiredError,
+  InvalidContactEmailError,
   InvalidLicenseError,
+  LastSystemAdminError,
   LicenseExpiredError,
+  LicenseInstanceMismatchError,
   ParamsError,
+  ProjectMemberAlreadyExistsError,
+  ProjectMemberNotFoundError,
+  ProjectNotFoundError,
+  ProjectOwnerRequiresTransferError,
   SystemAdminMustEnable2FAFirstError,
+  UserNotFoundError,
+  ValidationError,
 } from '@/modules/common/errors/errors';
 import { LICENSE_FEATURE_TWO_FACTOR } from '@usertour/constants';
 import {
@@ -180,7 +191,7 @@ export class AdminService implements OnModuleInit {
 
     // Must match our instanceId
     if (payload.instanceId !== setting.instanceId) {
-      throw new ParamsError('License instanceId does not match this instance');
+      throw new LicenseInstanceMismatchError();
     }
 
     // Check expiration
@@ -204,7 +215,7 @@ export class AdminService implements OnModuleInit {
     const normalizedContactEmail = contactEmail?.trim().toLowerCase() || null;
 
     if (normalizedContactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedContactEmail)) {
-      throw new ParamsError('Invalid contact email');
+      throw new InvalidContactEmailError();
     }
 
     return this.prisma.instanceSetting.upsert({
@@ -382,7 +393,7 @@ export class AdminService implements OnModuleInit {
   async updateUserDisabled(userId: string, disabled: boolean) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new ParamsError('User not found');
+      throw new UserNotFoundError();
     }
 
     // Prevent disabling the last system admin
@@ -391,7 +402,7 @@ export class AdminService implements OnModuleInit {
         where: { isSystemAdmin: true, disabled: false },
       });
       if (systemAdminCount <= 1) {
-        throw new ParamsError('Cannot disable the last system admin');
+        throw new LastSystemAdminError();
       }
     }
 
@@ -404,7 +415,7 @@ export class AdminService implements OnModuleInit {
   async updateUserSystemAdmin(userId: string, isSystemAdmin: boolean) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new ParamsError('User not found');
+      throw new UserNotFoundError();
     }
 
     if (user.isSystemAdmin && !isSystemAdmin && !user.disabled) {
@@ -413,7 +424,7 @@ export class AdminService implements OnModuleInit {
       });
 
       if (systemAdminCount <= 1) {
-        throw new ParamsError('Cannot revoke the last system admin');
+        throw new LastSystemAdminError();
       }
     }
 
@@ -566,7 +577,7 @@ export class AdminService implements OnModuleInit {
       select: { id: true, usesInstanceLicense: true, license: true },
     });
     if (!project) {
-      throw new ParamsError('Project not found');
+      throw new ProjectNotFoundError();
     }
 
     if (!enabled) {
@@ -580,7 +591,7 @@ export class AdminService implements OnModuleInit {
     const instanceSetting = await this.getInstanceSetting();
     const instancePayload = await this.getValidInstanceLicensePayload(instanceSetting);
     if (!instancePayload) {
-      throw new ParamsError('No valid instance license found');
+      throw new InstanceLicenseRequiredError();
     }
 
     const projectPayload = await this.getValidProjectLicensePayload(project.id, project.license);
@@ -673,7 +684,7 @@ export class AdminService implements OnModuleInit {
       where: { id: ownerUserId },
     });
     if (!owner) {
-      throw new ParamsError('Owner user not found');
+      throw new UserNotFoundError();
     }
 
     const actived = await this.resolveInitialActiveState(ownerUserId);
@@ -735,7 +746,7 @@ export class AdminService implements OnModuleInit {
       where: { id: projectId },
     });
     if (!project) {
-      throw new ParamsError('Project not found');
+      throw new ProjectNotFoundError();
     }
 
     const members = await this.prisma.userOnProject.findMany({
@@ -759,26 +770,26 @@ export class AdminService implements OnModuleInit {
       where: { id: projectId },
     });
     if (!project) {
-      throw new ParamsError('Project not found');
+      throw new ProjectNotFoundError();
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new ParamsError('User not found');
+      throw new UserNotFoundError();
     }
     if (user.disabled) {
-      throw new ParamsError('Cannot add a disabled user to project');
+      throw new DisabledUserCannotJoinProjectError();
     }
 
     if (role !== Role.ADMIN && role !== Role.EDITOR && role !== Role.VIEWER) {
-      throw new ParamsError('Invalid project member role');
+      throw new ValidationError('Invalid project member role');
     }
 
     const existingMember = await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
     });
     if (existingMember) {
-      throw new ParamsError('User is already a member of this project');
+      throw new ProjectMemberAlreadyExistsError();
     }
 
     const actived = await this.resolveInitialActiveState(userId);
@@ -801,16 +812,16 @@ export class AdminService implements OnModuleInit {
    */
   async changeProjectMemberRole(projectId: string, userId: string, role: string) {
     if (role !== Role.ADMIN && role !== Role.EDITOR && role !== Role.VIEWER) {
-      throw new ParamsError('Invalid project member role');
+      throw new ValidationError('Invalid project member role');
     }
     const userOnProject = await this.prisma.userOnProject.findFirst({
       where: { userId, projectId },
     });
     if (!userOnProject) {
-      throw new ParamsError('Member not found in project');
+      throw new ProjectMemberNotFoundError();
     }
     if (userOnProject.role === Role.OWNER) {
-      throw new ParamsError('Use ownership transfer to change the project owner');
+      throw new ProjectOwnerRequiresTransferError();
     }
     await this.teamService.changeTeamMemberRole(userId, projectId, role);
     return this.prisma.userOnProject.findFirstOrThrow({ where: { userId, projectId } });
@@ -821,7 +832,7 @@ export class AdminService implements OnModuleInit {
       where: { userId, projectId },
     });
     if (!userOnProject) {
-      throw new ParamsError('Member not found in project');
+      throw new ProjectMemberNotFoundError();
     }
     await this.teamService.transferOwnership(projectId, userId);
     return this.prisma.userOnProject.findFirstOrThrow({ where: { userId, projectId } });
@@ -832,10 +843,10 @@ export class AdminService implements OnModuleInit {
       where: { userId, projectId },
     });
     if (!userOnProject) {
-      throw new ParamsError('Member not found in project');
+      throw new ProjectMemberNotFoundError();
     }
     if (userOnProject.role === Role.OWNER) {
-      throw new ParamsError('Cannot remove the project owner');
+      throw new ProjectOwnerRequiresTransferError();
     }
 
     return this.prisma.$transaction(async (tx) => {

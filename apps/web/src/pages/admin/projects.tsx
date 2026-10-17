@@ -669,10 +669,12 @@ const ProjectMembersModal = ({
 const ProjectListAction = ({
   project,
   isUnlimitedInstanceLicense,
+  hasValidInstanceLicense,
   onRefetch,
 }: {
   project: AdminProjectItem;
   isUnlimitedInstanceLicense: boolean;
+  hasValidInstanceLicense: boolean;
   onRefetch: () => void;
 }) => {
   const { t } = useTranslation();
@@ -681,6 +683,11 @@ const ProjectListAction = ({
   const { invoke: updateProjectUsesInstanceLicense, loading } =
     useUpdateProjectUsesInstanceLicenseMutation();
   const { toast } = useToast();
+
+  // Assigning the instance license needs one; releasing it never does, so a
+  // project still assigned after the license lapsed can be cleaned up.
+  const canToggleInstanceLicense =
+    !isUnlimitedInstanceLicense && (project.usesInstanceLicense || hasValidInstanceLicense);
 
   const handleToggleInstanceLicense = async () => {
     try {
@@ -712,7 +719,7 @@ const ProjectListAction = ({
           <DropdownMenuItem onClick={() => setMembersOpen(true)}>
             {t('admin.projects.viewMembers')}
           </DropdownMenuItem>
-          {!isUnlimitedInstanceLicense && (
+          {canToggleInstanceLicense && (
             <DropdownMenuItem disabled={loading} onClick={handleToggleInstanceLicense}>
               {project.usesInstanceLicense
                 ? t('admin.projects.stopUsingInstanceLicense')
@@ -1071,6 +1078,7 @@ export const AdminProjectsPage = () => {
                       <ProjectListAction
                         project={project}
                         isUnlimitedInstanceLicense={isUnlimitedInstanceLicense}
+                        hasValidInstanceLicense={hasValidInstanceLicense}
                         onRefetch={handleRefetchAll}
                       />
                     </TableCell>
