@@ -1,14 +1,8 @@
+import type { IdentityTokenStatus } from './identity-token-status.type';
+
 /** Console validator result (settings page "Validate token" tool). */
 export interface IdentityTokenDiagnosis {
-  status:
-    | 'valid'
-    | 'expired'
-    | 'not_yet_valid'
-    | 'invalid_signature'
-    | 'wrong_algorithm'
-    | 'malformed'
-    | 'missing_subject'
-    | 'no_active_secret';
+  status: IdentityTokenStatus;
   subject?: string;
   companyId?: string;
   expiresAt?: Date;

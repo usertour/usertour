@@ -2,17 +2,17 @@
 
 import { Table } from '@tanstack/react-table';
 import { WebZIndex } from '@usertour/constants';
-import { Conditions, validateConditions } from '@usertour/business-components';
+import { Conditions, validateConditions } from '@/components/conditions';
 import { useTranslation } from 'react-i18next';
 import { conditionsIsSame } from '@usertour/helpers';
-import { AttributeBizTypes, ColumnSetting, RulesCondition, Segment } from '@usertour/types';
+import { AttributeBizTypes, ColumnSetting, RulesCondition } from '@usertour/types';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useReactiveVar } from '@apollo/client';
 import { DataTableViewOptions } from '../table';
 import { CollapsibleSearch, useToast, Button } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { useListAttributesQuery, useUpdateSegmentMutation } from '@usertour/hooks';
+import { useListAttributesQuery, useUpdateSegmentMutation, type Segment } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useTableSelection } from '@/hooks/use-table-selection';
 import { isSyncedSegment } from '@/utils/segment';
@@ -151,7 +151,6 @@ export const EntityDataTableToolbar = (props: EntityDataTableToolbarProps) => {
             attributes={filteredAttributes}
             disabled={isViewOnly}
             baseZIndex={WebZIndex.RULES}
-            t={t}
             addLabelKey="conditions.actions.addFilter"
             // The bar only mounts empty through the toolbar's "Add filter"
             // button, so jump straight into the type menu — one click flow.

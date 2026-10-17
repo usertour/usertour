@@ -921,10 +921,18 @@ export class ValidationError extends OpenAPIError {
     'zh-CN': '验证错误',
   };
 
-  constructor(message: string, issues?: ValidationIssue[]) {
+  /**
+   * With a message, that text answers in every language (the REST and MCP
+   * surfaces name the exact issue). Without one, the catalogue entry answers
+   * in the request's language and the caller puts the specifics in the
+   * error's extensions (GraphQL's `reason`).
+   */
+  constructor(message?: string, issues?: ValidationIssue[]) {
     super();
-    this.messageDict.en = message;
-    this.messageDict['zh-CN'] = message;
+    if (message !== undefined) {
+      this.messageDict.en = message;
+      this.messageDict['zh-CN'] = message;
+    }
     if (issues?.length) {
       this.issues = issues;
     }

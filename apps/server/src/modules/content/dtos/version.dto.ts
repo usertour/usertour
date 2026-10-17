@@ -5,6 +5,7 @@ import GraphQLJSON from 'graphql-type-json';
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
 import { StepDTO } from './step.dto';
+import { VersionConfigScalar } from './version-config.scalar';
 
 @ObjectType('Version')
 export class VersionDTO extends BaseDTO {
@@ -35,13 +36,13 @@ export class VersionDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   themeId?: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String)
   contentId: string;
 
   @Field(() => [StepDTO], { nullable: true })
   steps?: [StepDTO];
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => VersionConfigScalar, { nullable: true })
   config?: JsonObject;
 
   @Field(() => GraphQLJSON, { nullable: true })

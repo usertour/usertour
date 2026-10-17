@@ -1,5 +1,5 @@
 import { useAppContext } from '@/contexts/app-context';
-import { useDeleteBizCompanyMutation } from '@usertour/hooks';
+import { useDeleteBizCompanyMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useCallback } from 'react';
 

@@ -1,5 +1,7 @@
 import { Field, InputType } from '@nestjs/graphql';
 
+import { ContentTypeScalar } from './content-type.scalar';
+
 @InputType()
 export class ContentQuery {
   @Field()
@@ -8,7 +10,7 @@ export class ContentQuery {
   @Field(() => String, { nullable: true })
   name?: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => ContentTypeScalar, { nullable: true })
   type?: string;
 
   @Field(() => Boolean, { nullable: true })

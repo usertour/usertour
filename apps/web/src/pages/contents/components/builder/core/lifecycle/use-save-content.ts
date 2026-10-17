@@ -1,5 +1,5 @@
 import { getErrorMessage, isEqual } from '@usertour/helpers';
-import { useUpdateContentVersionMutation } from '@usertour/hooks';
+import { useUpdateContentVersionMutation } from '@usertour/data';
 import { useToast } from '@usertour/ui';
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

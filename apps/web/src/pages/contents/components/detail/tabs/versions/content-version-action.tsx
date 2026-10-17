@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour/ui';
 import { PlaneIcon } from '@usertour/icons';
-import { ContentVersion } from '@usertour/types';
+import type { ContentVersionListItem } from '@usertour/data';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContentPublishForm } from '../../../shared/content-publish-form';
@@ -17,7 +17,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useVersionActionState } from './use-version-action-state';
 
 type ContentVersionActionProps = {
-  version: ContentVersion;
+  version: ContentVersionListItem;
 };
 export const ContentVersionAction = (props: ContentVersionActionProps) => {
   const { version } = props;

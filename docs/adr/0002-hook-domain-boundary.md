@@ -1,5 +1,7 @@
 # 0002: Hook organization and the `@usertour/hooks` boundary
 
+> Note (2026-10): the package described here was renamed to `@usertour/data`; `@usertour/gql` (the documents and the generated contract) was folded into it; and `useDetectExtension` / `useChecklistPreviewAnimation` have since left it; `@usertour/business-components` became `@usertour/conditions` and was then folded into `apps/web/src/components/` together with `@usertour/editor`. The text keeps the names of the time.
+
 - **Date:** 2026-05-17
 - **Status:** Accepted
 

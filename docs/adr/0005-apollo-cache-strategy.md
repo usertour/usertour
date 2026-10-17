@@ -1,5 +1,7 @@
 # 0005: Apollo cache strategy — `no-cache` default + `SHARED_CACHE_QUERY_OPTIONS` opt-in
 
+> Note (2026-10): `@usertour/hooks` has since been renamed to `@usertour/data`; the text keeps the name of the time.
+
 - **Date:** 2026-05-29
 - **Status:** Superseded by [0006](./0006-normalized-cache-and-mutation-updates.md)
 

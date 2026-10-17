@@ -36,10 +36,10 @@ import {
   RiSettings3Line,
   SpinnerIcon,
 } from '@usertour/icons';
-import { Conditions } from '@usertour/business-components';
-import { PopperEditorMini } from '@usertour/editor';
-import type { Descendant } from '@usertour/editor';
-import { useContentListQuery, useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { Conditions } from '@/components/conditions';
+import { PopperEditorMini } from '@/components/editor';
+import type { Descendant } from '@/components/editor';
+import { useContentListQuery, useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import {
   ContentDataType,
   ContentListItem,
@@ -105,16 +105,16 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
   const [addOpen, setAddOpen] = useState(false);
 
-  const { contents: flowContents, loading: flowsLoading } = useContentListQuery({
+  const { contents: flowContents = [], loading: flowsLoading } = useContentListQuery({
     query: { environmentId, type: ContentDataType.FLOW },
   });
 
-  const { contents: checklistContents, loading: checklistsLoading } = useContentListQuery({
+  const { contents: checklistContents = [], loading: checklistsLoading } = useContentListQuery({
     query: { environmentId, type: ContentDataType.CHECKLIST },
   });
 
@@ -531,7 +531,6 @@ const BlockContentListBody = (props: BlockContentListBodyProps) => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>
@@ -569,13 +568,13 @@ export const ResourceCenterBlockContentList = () => {
   const environmentId = useEnvironmentId();
   const { t } = useTranslation();
 
-  const { contents: flowContents } = useContentListQuery({
+  const { contents: flowContents = [] } = useContentListQuery({
     query: {
       environmentId,
       type: ContentDataType.FLOW,
     },
   });
-  const { contents: checklistContents } = useContentListQuery({
+  const { contents: checklistContents = [] } = useContentListQuery({
     query: {
       environmentId,
       type: ContentDataType.CHECKLIST,

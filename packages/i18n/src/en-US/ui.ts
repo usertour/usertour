@@ -543,6 +543,7 @@ const translations = {
         codeNameTooltip:
           'Code-friendly identifier used throughout Usertour to reference this attribute. e.g. "billing_plan".',
         codeNamePlaceholder: 'Enter code name',
+        codeNameTaken: 'This code name is already used by another attribute',
         dataTypeHints: {
           randomAB:
             'Random A/B: Usertour assigns every user or company "A" or "B", split evenly. It cannot be set from your code, and the type is locked after creation.',
@@ -606,6 +607,7 @@ const translations = {
         codeNameTooltip:
           'Code-friendly identifier used throughout Usertour to reference this event. e.g. "user_signed_up".',
         codeNamePlaceholder: 'Enter code name',
+        codeNameTaken: 'This code name is already used by another event',
         attributesLabel: 'Event attributes',
         attributesTooltip:
           'Attributes included in this event\'s payload schema. e.g. "plan_name", "price".',
@@ -690,6 +692,7 @@ const translations = {
         codeTooltip:
           "Matched against each user's locale_code attribute. An exact match wins; otherwise the primary language matches, so a user with fr-CA gets a localization coded fr.",
         codePlaceholder: 'Enter code',
+        codeTaken: 'This code is already used by another localization',
       },
     },
     themes: {
@@ -2108,6 +2111,7 @@ const translations = {
   common: {
     appTitle: 'Usertour App',
     selectPlaceholder: 'Select…',
+    loadMoreFailed: "Couldn't load more.",
     table: {
       selectAll: 'Select all',
       selectRow: 'Select row',
@@ -4788,10 +4792,31 @@ const translations = {
     description: "We couldn't find that page.",
     backHome: 'Back to home',
   },
+  queryError: {
+    title: "Something couldn't be loaded",
+  },
   appError: {
     updating: 'Updating to the latest version…',
     description: 'Something went wrong. Reloading usually fixes it.',
     reload: 'Reload',
+    retry: 'Retry',
+    tryAgain: 'Try again',
+    projects: {
+      title: "Your projects couldn't be loaded",
+      description: "We couldn't load your projects. Retrying usually fixes it.",
+    },
+    environments: {
+      title: "Your environments couldn't be loaded",
+      description: "We couldn't load the environments of this project. Retrying usually fixes it.",
+    },
+    content: {
+      title: "This content couldn't be loaded",
+      description: "We couldn't load this content. Retrying usually fixes it.",
+    },
+    network: {
+      title: "Can't reach the server",
+      description: 'Check your connection. The page keeps what it already loaded.',
+    },
   },
   error: {
     forbidden: 'You are not authorized to access this page.',

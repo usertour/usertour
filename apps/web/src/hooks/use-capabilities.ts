@@ -7,7 +7,10 @@ import { useActiveProject } from './use-active-project';
 // lacks every write capability, so "can't update content" is the
 // canonical equivalent.
 export const useCapabilities = () => {
-  const project = useActiveProject() as (Project & { capabilities?: Capability[] }) | null;
+  const project = useActiveProject() as
+    | (Project & { capabilities?: Capability[] })
+    | null
+    | undefined;
   // useMemo so the empty-fallback path doesn't allocate a fresh `[]`
   // every render and invalidate the `can` callback identity.
   const capabilities = useMemo<Capability[]>(

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
-import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
+import { useGetUserEnvironmentsQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import { CopyIcon } from '@radix-ui/react-icons';

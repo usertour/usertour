@@ -39,6 +39,6 @@ import type { QueryHookOptions } from '@apollo/client';
  * grep for `SHARED_CACHE_QUERY_OPTIONS`, drop every usage, then delete
  * this file.
  */
-export const SHARED_CACHE_QUERY_OPTIONS: QueryHookOptions = {
+export const SHARED_CACHE_QUERY_OPTIONS = {
   fetchPolicy: 'cache-and-network',
-};
+} as const satisfies QueryHookOptions;

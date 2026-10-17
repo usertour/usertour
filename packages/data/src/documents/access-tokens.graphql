@@ -1,0 +1,34 @@
+fragment AccessTokenFields on AccessToken {
+  id
+  name
+  accessToken
+  createdAt
+  isActive
+  expiresAt
+  lastUsedAt
+  description
+}
+
+query ProjectHasEnvironmentAccessTokens($projectId: String!) {
+  projectHasEnvironmentAccessTokens(projectId: $projectId)
+}
+
+query ListAccessTokens($environmentId: String!) {
+  listAccessTokens(environmentId: $environmentId) {
+    ...AccessTokenFields
+  }
+}
+
+mutation CreateAccessToken($environmentId: String!, $input: CreateAccessTokenInput!) {
+  createAccessToken(environmentId: $environmentId, input: $input) {
+    ...AccessTokenFields
+  }
+}
+
+mutation DeleteAccessToken($environmentId: String!, $accessTokenId: String!) {
+  deleteAccessToken(environmentId: $environmentId, accessTokenId: $accessTokenId)
+}
+
+query GetAccessToken($environmentId: String!, $accessTokenId: String!) {
+  getAccessToken(environmentId: $environmentId, accessTokenId: $accessTokenId)
+}

@@ -10,8 +10,8 @@ import {
   useSettingsStyles,
   useStepWidth,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@usertour/editor';
-import { GoogleFontCss } from '@usertour/business-components';
+import { ContentEditor } from '@/components/editor';
+import { GoogleFontCss } from '@/components/themes/google-font-css';
 import {
   Align,
   Attribute,
@@ -21,10 +21,12 @@ import {
   ProgressBarType,
   Side,
   Step,
-  Theme,
+  ContentEditorElementType,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { forwardRef, useState } from 'react';
-import { useAws } from '@usertour/hooks';
+import { type Theme } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 
@@ -35,7 +37,7 @@ export interface ContentPopperProps {
   currentVersion: ContentVersion | undefined;
   zIndex: number;
   onChange: (value: ContentEditorRoot[]) => void;
-  contents: Content[];
+  contents: Content[] | undefined;
   triggerRef?: React.RefObject<any> | undefined;
   currentIndex: number;
   currentContent: Content | undefined;
@@ -63,7 +65,7 @@ export const ContentPopper = forwardRef<HTMLDivElement, ContentPopperProps>(
     const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings);
     const { shouldShowMadeWith = true } = useBuilderConfig();
 
-    const { upload } = useAws();
+    const { upload } = useUpload();
 
     const handleEditorValueChange = (value: any) => {
       setData(value);

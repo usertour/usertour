@@ -5,7 +5,7 @@ import {
   useGetProjectLicenseInfoQuery,
   useInvalidateLicenseScopedCache,
   useUpdateProjectLicenseMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { CopyIcon } from 'lucide-react';
 import { useCopyToClipboard } from 'react-use';
 import { getErrorMessage } from '@usertour/helpers';
@@ -101,7 +101,7 @@ const SubscriptionPlan = ({ projectId }: { projectId: string }) => {
                         </span>
                         {licenseInfo && (
                           <LicenseStatusBadge
-                            isValid={licenseInfo.isValid}
+                            isValid={licenseInfo.isValid ?? false}
                             isExpired={licenseInfo.isExpired}
                           />
                         )}

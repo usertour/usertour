@@ -24,11 +24,12 @@ export type Pagination = {
   after?: string;
 };
 
+// Cursors are null on an empty page, as the schema types them.
 export type PageInfo = {
-  endCursor: string;
+  endCursor: string | null;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
-  startCursor: string;
+  startCursor: string | null;
 };
 
 // export interface Attributes {
@@ -53,7 +54,7 @@ export type SDKSettings = {
 export type GlobalConfig = {
   isSelfHostedMode: boolean;
   /** Full public MCP endpoint, shown verbatim on Settings → MCP. */
-  mcpServerUrl?: string;
+  mcpServerUrl: string;
   apiUrl: string;
   ssoCallbackUrl: string;
   allowUserRegistration: boolean;

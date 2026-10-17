@@ -1,7 +1,8 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { type Webhook, useDeleteWebhookMutation } from '@usertour/hooks';
+import { type Webhook, useDeleteWebhookMutation } from '@usertour/data';
 import { Delete2Icon, EditIcon, RiEyeLine } from '@usertour/icons';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { useAppContext } from '@/contexts/app-context';
@@ -36,8 +37,11 @@ export const WebhookRowActions = (props: WebhookRowActionsProps) => {
       } else {
         toast({ variant: 'destructive', title: t('settings.webhooks.deleteFailure') });
       }
-    } catch {
-      toast({ variant: 'destructive', title: t('settings.webhooks.deleteFailure') });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: serverErrorMessage(error) ?? t('settings.webhooks.deleteFailure'),
+      });
     }
   };
 

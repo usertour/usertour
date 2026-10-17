@@ -1,5 +1,5 @@
-import { validateConditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { validateConditions } from '@/components/conditions';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import type { RulesCondition } from '@usertour/types';
 import { useCallback } from 'react';
 import { useAttributeList } from '@/hooks/use-attribute-list';
@@ -23,15 +23,15 @@ export const useConditionsSaveGate = () => {
   const { contents } = useContentList();
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
 
   const validate = useCallback(
     (list: RulesCondition[]) =>
       validateConditions(list, {
         attributes: attributeList ?? undefined,
-        segments: segmentList ?? undefined,
-        contents: contents ?? undefined,
+        segments: segmentList,
+        contents,
         events: eventList ?? undefined,
       }),
     [attributeList, segmentList, contents, eventList],

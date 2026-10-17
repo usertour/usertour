@@ -120,39 +120,31 @@ export type Step = {
   // null = explicitly "inherit the flow theme". Must be null, not undefined:
   // undefined drops out of the save payload and never clears a saved theme.
   themeId?: string | null;
-  target?: ElementSelectorPropsData;
-  screenshot?: StepScreenshot;
+  target: ElementSelectorPropsData;
+  screenshot?: StepScreenshot | null;
   createdAt?: string;
   updatedAt?: string;
-  trigger?: StepTrigger[];
+  trigger?: StepTrigger[] | null;
   sequence: number;
   setting: StepSettings;
-  data?: any;
+  data: any;
 };
 
 // ============================================================================
 // Content Types
 // ============================================================================
 
-export type ContentConfig = {
-  name?: string;
-  enabledAutoStartRules?: boolean;
-  enabledHideRules?: boolean;
-  autoStartRules?: string;
-  hideRules?: string;
-};
-
 export type ContentVersion = {
   id: string;
   createdAt: string;
   updatedAt: string;
   contentId: string;
-  themeId: string;
-  config: ContentConfigObject;
+  themeId: string | null;
+  config: ContentConfigObject | null;
   data: any;
   sequence: number;
-  type: string;
-  steps?: Step[];
+  /** Absent on list rows; null when the server did not load the steps. */
+  steps?: Step[] | null;
   scheduledAt?: string | null;
   /** Non-null = frozen (stamped on first publish, never cleared; forks don't inherit it). */
   publishedAt?: string | null;
@@ -179,43 +171,54 @@ export type ContentPublishRecord = {
   actorTokenName?: string | null;
 };
 
+/** The identity and timestamps of a version, as a content's relations carry it. */
+export type ContentVersionSummary = Pick<
+  ContentVersion,
+  'id' | 'sequence' | 'createdAt' | 'updatedAt'
+>;
+
 export type ContentOnEnvironment = {
+  id: string;
   environment: {
     id: string;
     name: string;
   };
   environmentId: string;
-  contentId: string;
   published: boolean;
-  publishedAt: Date;
+  publishedAt: string;
   publishedVersionId: string;
-  publishedVersion: ContentVersion;
+  /** Loaded by the content detail query only. */
+  publishedVersion?: ContentVersionSummary;
+};
+
+/** A content's config object (the server's `ContentConfig` scalar). */
+export type ContentConfig = {
+  rollWindowConfig?: {
+    nps: number;
+    rate: number;
+    scale: number;
+  };
 };
 
 export type Content = {
   id: string;
-  name?: string;
+  name: string;
   type: ContentDataType;
-  config?: {
-    rollWindowConfig?: {
-      nps: number;
-      rate: number;
-      scale: number;
-    };
-  };
-  publishedVersion?: ContentVersion;
-  editedVersion?: ContentVersion;
-  buildUrl?: string;
-  published?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  publishedAt?: string;
-  environmentId?: string;
-  editedVersionId?: string;
-  publishedVersionId?: string;
-  deleted?: boolean;
-  steps?: Step[];
-  contentOnEnvironments?: ContentOnEnvironment[];
+  config: ContentConfig | null;
+  buildUrl: string | null;
+  published: boolean;
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
+  environmentId: string;
+  editedVersionId: string | null;
+  publishedVersionId: string | null;
+  /** Relations: present when the document selected them (the list query carries steps and contentOnEnvironments, the detail query publishedVersion, editedVersion and contentOnEnvironments). */
+  publishedVersion?: ContentVersionSummary | null;
+  editedVersion?: ContentVersion | null;
+  steps?: Pick<Step, 'id' | 'name' | 'type' | 'cvid' | 'sequence'>[] | null;
+  contentOnEnvironments?: ContentOnEnvironment[] | null;
 };
 
 // ============================================================================
@@ -245,6 +248,7 @@ export type ContentModalPlacementData = {
 // Other Types
 // ============================================================================
 
+/** An oEmbed answer as the server relays it: pixel sizes as numbers, 0 when the provider sent none. */
 export type ContentOmbedInfo = {
   html: string;
   width: number;

@@ -3,11 +3,8 @@ import Stripe from 'stripe';
 import { InjectStripeClient, StripeWebhookHandler } from '@golevelup/nestjs-stripe';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import type {
-  CreateSubscriptionParam,
-  SubscriptionInterval,
-  SubscriptionPlanType,
-} from '../types/subscription.type';
+import { CreateSubscriptionParam, SubscriptionInterval } from '../types/subscription.type';
+import type { SubscriptionPlanType } from '../types/subscription-plan-type.type';
 import { Subscription, Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { QUEUE_CHECK_CANCELED_SUBSCRIPTIONS } from '../constants/check-canceled-subscriptions-queue.constant';
@@ -469,7 +466,9 @@ export class SubscriptionService implements OnModuleInit {
     if (!subscription) {
       throw new ParamsError(`No subscription found for project ${projectId}`);
     }
-    return subscription;
+    // The column is a String; this service is its only writer and writes the
+    // plan vocabulary, so the row is read back as that vocabulary.
+    return { ...subscription, planType: subscription.planType as SubscriptionPlanType };
   }
 
   async getSubscriptionUsage(projectId: string) {

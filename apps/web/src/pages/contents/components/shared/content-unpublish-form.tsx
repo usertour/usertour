@@ -15,7 +15,7 @@ import {
   Checkbox,
   Label,
 } from '@usertour/ui';
-import { useUnpublishContentVersionMutation } from '@usertour/hooks';
+import { useUnpublishContentVersionMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { Content } from '@usertour/types';
 import * as React from 'react';

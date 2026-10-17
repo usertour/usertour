@@ -7,15 +7,16 @@ import { useSaveCompanySegmentFilter } from '@/hooks/use-save-company-segment-fi
 import { UserDetailContent } from '@/pages/users/components/user-detail-content';
 import { CompanyDetailContent } from '@/pages/companies/components/company-detail-content';
 import type { CursorListQueryFn } from '@/hooks/use-cursor-pagination';
+import { type Attribute, AttributeBizTypes } from '@usertour/types';
 import {
-  type Attribute,
-  AttributeBizTypes,
+  useUserListQuery,
+  useCompanyListQuery,
+  type BizOrder,
+  type SegmentBizType,
+  type Segment,
   type BizCompany,
   type BizUser,
-  type Segment,
-  type Segment as SegmentType,
-} from '@usertour/types';
-import { useUserListQuery, useCompanyListQuery } from '@usertour/hooks';
+} from '@usertour/data';
 import { userListState, companyListState } from './entity-list-state';
 import { Group2LineIcon } from '@usertour/icons';
 import type { ComponentType, ReactElement } from 'react';
@@ -31,10 +32,10 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 export type EntityKind = 'user' | 'company';
 
-export type EntityListQueryFn<TRow> = CursorListQueryFn<TRow>;
+export type EntityListQueryFn<TRow> = CursorListQueryFn<TRow, BizOrder>;
 
 export interface EntityAddToManualSegmentHookResult {
-  add: (ids: string[], segment: SegmentType) => Promise<boolean>;
+  add: (ids: string[], segment: Segment) => Promise<boolean>;
   isAdding: boolean;
 }
 
@@ -95,7 +96,7 @@ export interface EntityConfig<TRow> {
   attributeBizType: AttributeBizTypes; // for `useDynamicTableColumns` + table column derivation
   conditionAttributeFilter: (attr: Attribute) => boolean; // toolbar's Conditions input filter
   // Segment meta
-  segmentBizType: string[]; // ['USER'] | ['COMPANY']
+  segmentBizType: SegmentBizType[];
   groupIcon?: ReactElement;
   // Routing
   routeParamKey: 'userId' | 'companyId';

@@ -27,7 +27,7 @@ export interface DateTimePickerProps {
   // way above the default `z-50`; without this prop the calendar Portal
   // gets stuck below the parent (e.g., builder chrome at z=11003 pins the
   // calendar at z=50, hidden behind the conditions popover). Callers
-  // inside Conditions should pass `useConditionsZIndex().popover`.
+  // inside the rules editors should pass `useRulesZIndex().popover`.
   zIndex?: number;
 }
 

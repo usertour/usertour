@@ -15,7 +15,7 @@ import {
   useSettingsForm,
   QuestionTooltip,
 } from '@usertour/ui';
-import { useUpdateLocalizationMutation } from '@usertour/hooks';
+import { useUpdateLocalizationMutation } from '@usertour/data';
 import { Localization } from '@usertour/types';
 import { z } from 'zod';
 

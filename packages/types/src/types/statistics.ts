@@ -1,4 +1,4 @@
-import { BizCompany, BizEvent, BizUser } from './biz';
+import { RuntimeBizCompany, RuntimeBizEvent, RuntimeBizUser } from './biz';
 import { Content, ContentVersion, ElementSelectorPropsData } from './contents';
 
 export type ContentAnalytics = {
@@ -66,14 +66,12 @@ export type AnalyticsViewsByBlock = {
   };
 };
 
-export type AnalyticsData = AnalyticsViews & {
-  viewsByDay: AnalyticsViewsByDay[];
-  viewsByStep: AnalyticsViewsByStep[];
-  viewsByTask: AnalyticsViewsByTask[];
-  viewsByBlock: AnalyticsViewsByBlock[];
-};
-
-export type BizSession = {
+/**
+ * A session as the runtime receives it: `latestSession` of a content over the
+ * socket. The dashboard types sessions from its documents (`BizSession` in
+ * `@usertour/data`).
+ */
+export type RuntimeBizSession = {
   id: string;
   externalId: string;
   progress: number;
@@ -83,9 +81,9 @@ export type BizSession = {
   createdAt: string;
   bizUserId?: string;
   contentId?: string;
-  bizUser?: BizUser;
-  bizCompany?: BizCompany;
-  bizEvent?: BizEvent[];
+  bizUser?: RuntimeBizUser;
+  bizCompany?: RuntimeBizCompany;
+  bizEvent?: RuntimeBizEvent[];
   content?: Content;
   version?: ContentVersion;
 };

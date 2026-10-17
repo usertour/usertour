@@ -4,7 +4,7 @@ import { useAppContext } from '@/contexts/app-context';
 import { useCursorPagination } from '@/hooks/use-cursor-pagination';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useReactiveVar } from '@apollo/client';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery, type Segment, type BizOrder } from '@usertour/data';
 import {
   ColumnFiltersState,
   SortingState,
@@ -18,7 +18,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from '@tanstack/react-table';
-import { AttributeBizTypes, type Segment } from '@usertour/types';
+import { AttributeBizTypes } from '@usertour/types';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -81,7 +81,7 @@ export function EntityDataTable<TRow extends EntityRow>({
     pagination,
     setPagination,
     totalCount,
-  } = useCursorPagination<TRow, typeof effectiveQuery>({
+  } = useCursorPagination<TRow, typeof effectiveQuery, BizOrder>({
     query: effectiveQuery,
     useListQuery: config.useListQuery,
     skip: !environmentId,

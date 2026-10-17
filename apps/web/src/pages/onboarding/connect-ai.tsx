@@ -2,7 +2,7 @@ import { CopyableInput } from '@/components/copyable-input';
 import { ExternalLink } from '@/components/external-link';
 import { McpClientGuide } from '@/components/mcp-client-guide';
 import { useAppContext } from '@/contexts/app-context';
-import { useOAuthConnectionsQuery } from '@usertour/hooks';
+import { useOAuthConnectionsQuery } from '@usertour/data';
 import {
   RiArrowLeftLine,
   RiArrowRightLine,

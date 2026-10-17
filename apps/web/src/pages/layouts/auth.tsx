@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useTheme } from '@/contexts/theme-context';
 
@@ -38,11 +38,17 @@ const useForceLightTheme = () => {
   }, []);
 };
 
-// `wide` widens the card column for content-heavy steps (the post-signup
-// connect-AI page) while keeping the same backdrop language as every other
-// auth-flow screen — same gradient, grid and forced-light treatment, so the
-// signup → first-landing sequence reads as one visual family.
-export const AuthLayout = ({ wide = false }: { wide?: boolean }) => {
+export interface AuthBackdropProps {
+  /** Widen the card column for content-heavy steps (the post-signup connect-AI page). */
+  wide?: boolean;
+  children: ReactNode;
+}
+
+// The backdrop every pre-shell screen shares — gradient, grid and the forced
+// light treatment — so sign-in, sign-up, project selection and the states
+// that stand in for the shell read as one visual family.
+export const AuthBackdrop = (props: AuthBackdropProps) => {
+  const { wide = false, children } = props;
   useForceLightTheme();
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-700 via-indigo-800 to-indigo-950">
@@ -58,12 +64,18 @@ export const AuthLayout = ({ wide = false }: { wide?: boolean }) => {
           wide ? 'my-10 max-w-2xl px-4 md:px-0' : 'max-w-[480px] px-4 sm:px-0'
         }`}
       >
-        <div className="rounded-lg shadow-2xl shadow-black/50 ring-1 ring-white/10">
-          <Outlet />
-        </div>
+        <div className="rounded-lg shadow-2xl shadow-black/50 ring-1 ring-white/10">{children}</div>
       </div>
     </div>
   );
 };
+
+AuthBackdrop.displayName = 'AuthBackdrop';
+
+export const AuthLayout = ({ wide = false }: { wide?: boolean }) => (
+  <AuthBackdrop wide={wide}>
+    <Outlet />
+  </AuthBackdrop>
+);
 
 AuthLayout.displayName = 'AuthLayout';

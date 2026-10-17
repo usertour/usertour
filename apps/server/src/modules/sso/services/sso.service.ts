@@ -14,6 +14,7 @@ import { assertPublicHttpUrl } from '@/modules/common/utils/egress-guard.util';
 
 import type { NewOidcSsoProvider } from '../types/new-oidc-sso-provider.type';
 import type { ProjectSsoSettingsChanges } from '../types/project-sso-settings-changes.type';
+import { SsoDefaultRole } from '../types/sso-default-role.type';
 import type { SsoProviderChanges } from '../types/sso-provider-changes.type';
 
 /**
@@ -25,14 +26,14 @@ export interface ResolvedSsoSettings {
   projectId: string;
   requireSso: boolean;
   autoProvision: boolean;
-  defaultRole: Role;
+  defaultRole: SsoDefaultRole;
   allowedDomains: string[];
 }
 
 const DEFAULT_SETTINGS: Omit<ResolvedSsoSettings, 'projectId'> = {
   requireSso: false,
   autoProvision: false,
-  defaultRole: Role.EDITOR,
+  defaultRole: SsoDefaultRole.EDITOR,
   allowedDomains: [],
 };
 
@@ -54,7 +55,7 @@ export class SsoService {
 
   // Auto-provisioning never hands out team management (ADMIN) or ownership;
   // a JIT-created EDITOR starts with an empty publish whitelist.
-  private assertJitRole(role: Role): void {
+  private assertJitRole(role: Role): asserts role is SsoDefaultRole {
     if (role !== Role.EDITOR && role !== Role.VIEWER) {
       throw new ParamsError('SSO default role must be EDITOR or VIEWER');
     }
@@ -197,11 +198,13 @@ export class SsoService {
     if (!row) {
       return { projectId, ...DEFAULT_SETTINGS };
     }
+    const { defaultRole } = row;
+    this.assertJitRole(defaultRole);
     return {
       projectId,
       requireSso: row.requireSso,
       autoProvision: row.autoProvision,
-      defaultRole: row.defaultRole,
+      defaultRole,
       allowedDomains: row.allowedDomains,
     };
   }

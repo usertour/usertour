@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/data';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
-import { AttributeCreateForm } from '@usertour/editor';
+import { AttributeCreateForm } from '@/components/attributes/attribute-create-form';
 import { CompanyIcon, EventIcon2, UserIcon, UserIcon2 } from '@usertour/icons';
 import {
   Tabs,

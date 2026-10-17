@@ -65,10 +65,7 @@ jobs:
             web:
               - 'apps/web/**'
               - 'packages/ui/**'
-              - 'packages/business-components/**'
-              - 'packages/editor/**'
-              - 'packages/gql/**'
-              - 'packages/hooks/**'
+              - 'packages/data/**'
               - 'packages/icons/**'
               - 'packages/i18n/**'
               - 'packages/tailwind/**'
@@ -110,8 +107,15 @@ jobs:
       - name: Build the shared packages
         run: pnpm build:deps
       - name: Generate the Prisma client
-        if: env.SERVER == 'true'
+        # The schema emit below loads the server's modules, which import the client.
+        if: env.SERVER == 'true' || env.WEB == 'true'
         run: pnpm --filter @usertour/server prisma:generate
+      - name: GraphQL schema and typed documents are current
+        # The schema follows the server; the documents live in packages/data (web filter).
+        if: env.SERVER == 'true' || env.WEB == 'true'
+        run: |
+          pnpm gql:generate
+          git diff --exit-code -- packages/data/src/generated
       - name: Type check (server)
         if: env.SERVER == 'true'
         run: pnpm --filter @usertour/server exec tsc --noEmit -p tsconfig.json
@@ -121,6 +125,14 @@ jobs:
       - name: Type check (e2e)
         if: env.E2E == 'true'
         run: pnpm --filter @usertour/e2e typecheck
+      - name: Type check (web)
+        # A schema or document change is a dashboard compile error (ADR 0021).
+        if: env.WEB == 'true'
+        run: pnpm --filter @usertour/web exec tsc --noEmit -p tsconfig.json
+      - name: Type check (data)
+        # Also holds the wire-to-domain assertions (packages/data/src/wire-to-domain.ts).
+        if: env.WEB == 'true'
+        run: pnpm --filter @usertour/data typecheck
       - name: Unit tests (helpers)
         if: env.SHARED == 'true'
         run: pnpm --filter @usertour/helpers test
@@ -130,6 +142,9 @@ jobs:
       - name: Unit tests (web)
         if: env.WEB == 'true'
         run: pnpm --filter @usertour/web test
+      - name: Unit tests (data)
+        if: env.WEB == 'true'
+        run: pnpm --filter @usertour/data test
 
   # The server's end-to-end suites against a real Postgres and Redis: the
   # HTTP API, GraphQL, the socket protocol, the rules conformance.

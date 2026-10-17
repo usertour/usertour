@@ -4,7 +4,7 @@ import {
   useInvalidateLicenseScopedCache,
   useUpdateInstanceAuthenticationSettingsMutation,
   useUpdateInstanceRequire2FAMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   useToast,
   Separator,

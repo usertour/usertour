@@ -1,5 +1,4 @@
-import { useListSegmentsQuery } from '@usertour/hooks';
-import type { Segment } from '@usertour/types';
+import { useListSegmentsQuery, type SegmentBizType, type Segment } from '@usertour/data';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
@@ -16,13 +15,16 @@ import { filterSegmentsByTypeOrder } from '@/utils/segment';
 // The hook keeps the live two: filtered segmentList + currentSegment
 // derivation. `currentConditions` is dropped — D0's reactive var
 // (`entity-list-state.ts::currentConditionsVar`) is the live source.
-export const useSegmentList = (environmentId: string | undefined, bizType: readonly string[]) => {
+export const useSegmentList = (
+  environmentId: string | undefined,
+  bizType: readonly SegmentBizType[],
+) => {
   const result = useListSegmentsQuery(environmentId, SHARED_CACHE_QUERY_OPTIONS);
   const [searchParams] = useSearchParams();
 
   const segmentList = useMemo(() => {
     if (result.segmentList && result.segmentList.length > 0) {
-      return filterSegmentsByTypeOrder(result.segmentList, [...bizType]);
+      return filterSegmentsByTypeOrder(result.segmentList, bizType);
     }
     return undefined;
   }, [result.segmentList, bizType]);

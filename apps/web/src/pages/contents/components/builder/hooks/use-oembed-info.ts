@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useQueryOembedInfoLazyQuery } from '@usertour/hooks';
+import { useQueryOembedInfoLazyQuery } from '@usertour/data';
 import type { ContentOmbedInfo } from '@usertour/types';
 
 // Builder's oembed resolver, passed to ContentEditor's `getOembedInfo` prop.

@@ -1,4 +1,4 @@
-import { useGetProjectConfigQuery } from '@usertour/hooks';
+import { useGetProjectConfigQuery } from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useActiveProject } from './use-active-project';
 

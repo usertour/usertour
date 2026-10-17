@@ -17,7 +17,7 @@ import { buildAuthorizedUser, teardownProject } from './_support';
 import { createTestApp } from '../create-test-app';
 
 const UPDATE_EVENTS = `mutation ($data: UpdateIntegrationEventsInput!) {
-  updateIntegrationEvents(data: $data) { id config }
+  updateIntegrationEvents(data: $data) { id config { events { enabled codeNames } } }
 }`;
 
 const waitFor = async <T>(

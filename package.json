@@ -24,6 +24,7 @@
     "format:fix": "biome format . --write",
     "check": "biome check .",
     "check:fix": "biome check . --write",
+    "gql:generate": "pnpm --filter @usertour/server schema:emit && pnpm --filter @usertour/data generate",
     "prepare": "husky install"
   },
   "devDependencies": {
@@ -48,7 +49,7 @@
     "apps/server/prisma/schema.prisma": [
       "pnpm --filter @usertour/server exec prisma format --schema"
     ],
-    "*.{js,jsx,ts,tsx}": ["biome check --write --no-errors-on-unmatched"],
+    "*.{js,jsx,ts,tsx,graphql}": ["biome check --write --no-errors-on-unmatched"],
     "*.json": ["biome format --write --no-errors-on-unmatched"]
   }
 }

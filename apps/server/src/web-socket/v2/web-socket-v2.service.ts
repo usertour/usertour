@@ -278,16 +278,12 @@ export class WebSocketV2Service {
       return false;
     }
 
-    // A real transaction: upsertBizUsers takes the BizUser row FOR NO KEY UPDATE so
-    // its read-merge-write cannot lose a concurrent write (ADR 0017 §4); the
-    // lock only exists inside a transaction.
+    // The write is planned outside a transaction and applied in one of its
+    // own under the row lock (ADR 0017 §4); an identify that changes nothing
+    // opens none.
     const rejected: RejectedAttributeWrite[] = [];
     const bizUser = await this.bizService.withEntityChangeEmit(environment.id, () =>
-      this.prisma.$transaction((tx) =>
-        this.bizService.upsertBizUsers(tx, externalUserId, attributes, environment.id, {
-          rejected,
-        }),
-      ),
+      this.bizService.upsertBizUser(environment.id, externalUserId, attributes, { rejected }),
     );
     if (!bizUser) {
       await this.socketDataService.delete(socket);
@@ -341,22 +337,17 @@ export class WebSocketV2Service {
 
     const rejected: RejectedAttributeWrite[] = [];
     const bizCompany = await this.bizService.withEntityChangeEmit(environment.id, () =>
-      // A REAL transaction, not this.prisma: upsertBizCompanies is
-      // multi-statement (company upsert + membership upsert), and the
-      // post-commit emit contract ("all committed or all thrown") only holds
-      // when the statements share one transaction — otherwise a failure
-      // after the company write leaves a committed change that never emits
-      // company.updated.
-      this.prisma.$transaction((tx) =>
-        this.bizService.upsertBizCompanies(
-          tx,
-          externalCompanyId,
-          externalUserId,
-          attributes,
-          environment.id,
-          membership,
-          { rejected },
-        ),
+      // The company and the membership are planned outside a transaction and
+      // applied in one of their own, so the post-commit emit contract ("all
+      // committed or all thrown") holds; a group() that changes neither opens
+      // none.
+      this.bizService.upsertBizCompanyGroup(
+        environment.id,
+        externalCompanyId,
+        externalUserId,
+        attributes,
+        membership,
+        { rejected },
       ),
     );
 

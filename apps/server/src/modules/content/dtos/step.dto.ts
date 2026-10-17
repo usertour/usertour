@@ -3,11 +3,15 @@ import { JsonArray, JsonValue } from '@prisma/client/runtime/library';
 import GraphQLJSON from 'graphql-type-json';
 
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
+import { StepScreenshotScalar } from './step-screenshot.scalar';
+import { StepSettingsScalar } from './step-settings.scalar';
+import { StepTargetScalar } from './step-target.scalar';
+import { StepTriggerScalar } from './step-trigger.scalar';
 
 @ObjectType('Step')
 export class StepDTO extends BaseDTO {
-  @Field(() => String, { nullable: true })
-  name?: string;
+  @Field(() => String)
+  name: string;
 
   @Field(() => String)
   type: string;
@@ -21,24 +25,24 @@ export class StepDTO extends BaseDTO {
   @Field(() => String, { nullable: true })
   themeId?: string;
 
-  @Field(() => Number, { nullable: true })
-  sequence?: number;
+  @Field(() => Number)
+  sequence: number;
 
   @Field(() => String, { nullable: true })
   contentId?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  data?: JsonValue;
+  @Field(() => GraphQLJSON)
+  data: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  target?: JsonValue;
+  @Field(() => StepTargetScalar)
+  target: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [StepTriggerScalar], { nullable: true })
   trigger?: JsonArray;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => StepScreenshotScalar, { nullable: true })
   screenshot?: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
-  setting?: JsonValue;
+  @Field(() => StepSettingsScalar)
+  setting: JsonValue;
 }

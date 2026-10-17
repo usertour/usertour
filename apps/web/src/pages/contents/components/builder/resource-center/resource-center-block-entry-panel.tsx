@@ -14,10 +14,10 @@ import {
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
-import { PopperEditorMini } from '@usertour/editor';
-import type { Descendant } from '@usertour/editor';
-import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { PopperEditorMini } from '@/components/editor';
+import type { Descendant } from '@/components/editor';
+import { Conditions } from '@/components/conditions';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { LauncherIconSource, ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { isRichTextEmpty } from '@usertour/helpers';
 import { useTranslation } from 'react-i18next';
@@ -84,7 +84,7 @@ const EntryPanelBody = (props: EntryPanelSectionProps) => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 
@@ -194,7 +194,6 @@ const EntryPanelBody = (props: EntryPanelSectionProps) => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppContext } from '@/contexts/app-context';
 import { Delete2Icon, EditIcon, RiStarLine } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useSetDefaultLocalizationMutation } from '@usertour/hooks';
+import { useSetDefaultLocalizationMutation } from '@usertour/data';
 import { Localization } from '@usertour/types';
 import { ResourceRowActions, useToast } from '@usertour/ui';
 import { LocalizationDeleteDialog } from './localization-delete-dialog';

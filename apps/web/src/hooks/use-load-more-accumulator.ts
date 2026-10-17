@@ -113,7 +113,7 @@ export function useLoadMoreAccumulator<T>(
   const loadMore = useCallback(() => {
     if (!isLoadingMore && latestPageInfo?.hasNextPage) {
       setIsLoadingMore(true);
-      setAfterCursor(latestPageInfo.endCursor);
+      setAfterCursor(latestPageInfo.endCursor ?? undefined);
     }
   }, [isLoadingMore, latestPageInfo, setAfterCursor]);
 

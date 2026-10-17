@@ -34,7 +34,7 @@ export type ColorPickerPanelProps = {
   // context should pass the current user's id from useCurrentUserId() so
   // each operator gets their own swatch history. Kept as a prop (rather
   // than reading the user hook inside) so this component stays decoupled
-  // from @usertour/hooks (Apollo) and can live in @usertour/ui.
+  // from @usertour/data (Apollo) and can live in @usertour/ui.
   userId?: string | null;
   /** Visible text labels. All strings must be supplied by the caller via t(). */
   labels: ColorPickerPanelLabels;

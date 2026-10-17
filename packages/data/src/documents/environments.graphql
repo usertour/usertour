@@ -1,0 +1,41 @@
+query userEnvironments($projectId: String!) {
+  userEnvironments(projectId: $projectId) {
+    id
+    name
+    token
+    createdAt
+    isPrimary
+    requireIdentityVerification
+  }
+}
+
+query verifyInstallation($environmentId: String!) {
+  verifyInstallation(environmentId: $environmentId) {
+    installed
+    userCount
+  }
+}
+
+mutation createEnvironments($name: String!, $projectId: String!) {
+  createEnvironments(data: { name: $name, projectId: $projectId }) {
+    id
+    name
+    token
+    isPrimary
+  }
+}
+
+mutation updateEnvironments($id: String!, $name: String!, $isPrimary: Boolean) {
+  updateEnvironments(data: { id: $id, name: $name, isPrimary: $isPrimary }) {
+    id
+    name
+    token
+    isPrimary
+  }
+}
+
+mutation deleteEnvironments($id: String!) {
+  deleteEnvironments(data: { id: $id }) {
+    id
+  }
+}

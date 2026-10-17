@@ -1,5 +1,7 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
-import GraphQLJSON from 'graphql-type-json';
+
+import { IntegrationConfigDTO } from './integration-config.dto';
+import { IntegrationInboundConfigDTO } from './integration-inbound-config.dto';
 
 /**
  * GraphQL projection of an Integration row. The API key is deliberately NOT a
@@ -27,9 +29,8 @@ export class IntegrationDTO {
   @Field(() => String)
   keyTail: string;
 
-  /** Provider extras: { region?: 'US' | 'EU' }. */
-  @Field(() => GraphQLJSON)
-  config: unknown;
+  @Field(() => IntegrationConfigDTO)
+  config: IntegrationConfigDTO;
 
   @Field(() => Boolean)
   enabled: boolean;
@@ -50,9 +51,8 @@ export class IntegrationDTO {
   @Field(() => Boolean)
   inboundEnabled: boolean;
 
-  /** Inbound extras: { userIdProperty?: string }. */
-  @Field(() => GraphQLJSON)
-  inboundConfig: unknown;
+  @Field(() => IntegrationInboundConfigDTO)
+  inboundConfig: IntegrationInboundConfigDTO;
 
   /** The receive URL (carries the token) — null until first inbound enable. */
   @Field(() => String, { nullable: true })

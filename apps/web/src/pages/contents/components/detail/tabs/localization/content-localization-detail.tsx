@@ -5,7 +5,7 @@ import { useContentLocalizations } from '@/hooks/use-content-localizations';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { useLocalizationList } from '@/hooks/use-localization-list';
 import { resolveEditableVersionId } from '@/utils/content';
-import { useCreateContentVersionMutation, useQueryOembedInfoLazyQuery } from '@usertour/hooks';
+import { useCreateContentVersionMutation, useQueryOembedInfoLazyQuery } from '@usertour/data';
 import {
   type LocalizedEmbedResolutions,
   applyContentsTranslationUnits,
@@ -435,7 +435,7 @@ const FlowLocalizationMain = (props: LocalizationMainProps) => {
             onApply={handleImportTranslations}
           />
           <LocalizationTransferActions
-            contentName={content.name ?? ''}
+            contentName={content.name}
             localeCode={localization.code}
             importDisabled={disabled}
             buildUnits={buildTransferUnits}
@@ -604,7 +604,7 @@ const VersionDataLocalizationMain = (props: LocalizationMainProps) => {
             onApply={handleImportTranslations}
           />
           <LocalizationTransferActions
-            contentName={content.name ?? ''}
+            contentName={content.name}
             localeCode={localization.code}
             importDisabled={disabled}
             buildUnits={buildTransferUnits}

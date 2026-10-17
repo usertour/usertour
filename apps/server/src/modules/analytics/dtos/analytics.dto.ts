@@ -1,6 +1,10 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import GraphQLJSON from 'graphql-type-json';
+
+import { AnalyticsViewsByBlockScalar } from './analytics-views-by-block.scalar';
+import { AnalyticsViewsByDayScalar } from './analytics-views-by-day.scalar';
+import { AnalyticsViewsByStepScalar } from './analytics-views-by-step.scalar';
+import { AnalyticsViewsByTaskScalar } from './analytics-views-by-task.scalar';
 
 @ObjectType('Analytics')
 export class AnalyticsDTO {
@@ -16,7 +20,7 @@ export class AnalyticsDTO {
   @Field(() => Int)
   totalCompletions: number;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [AnalyticsViewsByDayScalar], { nullable: true })
   viewsByDay: JsonValue;
 
   // @Field(() => GraphQLJSON, { nullable: true })
@@ -28,12 +32,12 @@ export class AnalyticsDTO {
   // @Field(() => GraphQLJSON, { nullable: true })
   // totalCompletionByDay: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [AnalyticsViewsByStepScalar], { nullable: true })
   viewsByStep: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [AnalyticsViewsByTaskScalar], { nullable: true })
   viewsByTask: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [AnalyticsViewsByBlockScalar], { nullable: true })
   viewsByBlock: JsonValue;
 }

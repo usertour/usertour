@@ -12,7 +12,7 @@ import {
   useResendWebhookMessageMutation,
   useRotateWebhookSecretMutation,
   useSendWebhookTestEventMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   ArrowRightLeftIcon,
   RiEyeLine,

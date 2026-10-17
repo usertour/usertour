@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import {
   Card,
   CardContent,
@@ -16,7 +17,7 @@ import { PieChart, Pie, Cell } from 'recharts';
 import { useState, useMemo } from 'react';
 import { cn } from '@usertour/tailwind';
 import { ArrowRightIcon } from '@usertour/icons';
-import { useUpdateContentMutation } from '@usertour/hooks';
+import { useUpdateContentMutation } from '@usertour/data';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
 import { useTranslation } from 'react-i18next';
 
@@ -101,10 +102,10 @@ export const AnalyticsNPS = (props: AnalyticsNPSProps) => {
         });
         onRollingWindowChange(false);
       }
-    } catch (_) {
+    } catch (error) {
       toast({
         variant: 'destructive',
-        title: t('contents.analytics.rollingWindow.updateFailed'),
+        title: serverErrorMessage(error) ?? t('contents.analytics.rollingWindow.updateFailed'),
       });
       onRollingWindowChange(false);
     }

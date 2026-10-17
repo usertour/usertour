@@ -9,7 +9,7 @@ import {
   useSettingsStyles,
   useStepWidth,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@usertour/editor';
+import { ContentEditor } from '@/components/editor';
 import {
   Attribute,
   AvatarType,
@@ -18,15 +18,17 @@ import {
   ProgressBarPosition,
   ProgressBarType,
   Step,
-  Theme,
   StepContentType,
+  ContentEditorElementType,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { forwardRef, useState } from 'react';
 
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
-import { useAws } from '@usertour/hooks';
+import { type Theme } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { GoogleFontCss } from '@usertour/business-components';
+import { GoogleFontCss } from '@/components/themes/google-font-css';
 
 export interface ContentBubbleProps {
   currentStep: Step;
@@ -36,7 +38,7 @@ export interface ContentBubbleProps {
   zIndex: number;
   currentIndex: number;
   onChange: (value: ContentEditorRoot[]) => void;
-  contents: Content[];
+  contents: Content[] | undefined;
   currentContent: Content | undefined;
   createStep: (
     currentVersion: ContentVersion,
@@ -62,7 +64,7 @@ export const ContentBubble = forwardRef<HTMLDivElement, ContentBubbleProps>(
       projectId,
     } = props;
     const [data, setData] = useState<any>(currentStep.data);
-    const { upload } = useAws();
+    const { upload } = useUpload();
     const getOembedInfo = useOembedInfo();
     const { globalStyle, themeSetting, avatarUrl, avatarComponent } = useSettingsStyles(
       theme?.settings,

@@ -1,7 +1,9 @@
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import GraphQLJSON from 'graphql-type-json';
+
+import { ThemeSettingsScalar } from './theme-settings.scalar';
+import { ThemeVariationScalar } from './theme-variation.scalar';
 
 @ObjectType('Theme')
 export class ThemeDTO extends BaseDTO {
@@ -17,9 +19,9 @@ export class ThemeDTO extends BaseDTO {
   @Field(() => String)
   projectId: string;
 
-  @Field(() => GraphQLJSON)
+  @Field(() => ThemeSettingsScalar)
   settings: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => [ThemeVariationScalar], { nullable: true })
   variations?: JsonValue;
 }

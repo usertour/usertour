@@ -17,7 +17,7 @@ export class UpdateAttributeInput
       // of every condition written against the attribute.
       'randomMax',
     ]),
-    InputType,
+    { decorator: InputType, skipNullProperties: false },
   )
   implements AttributeChanges
 {

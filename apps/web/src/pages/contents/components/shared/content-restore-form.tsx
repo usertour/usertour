@@ -10,14 +10,14 @@ import {
   DialogTitle,
   useToast,
 } from '@usertour/ui';
-import { useRestoreContentVersionMutation } from '@usertour/hooks';
+import { useRestoreContentVersionMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { ContentVersion } from '@usertour/types';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface ContentRestoreFormProps {
-  version: ContentVersion;
+  version: Pick<ContentVersion, 'id' | 'sequence'>;
   onSubmit: (success: boolean) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;

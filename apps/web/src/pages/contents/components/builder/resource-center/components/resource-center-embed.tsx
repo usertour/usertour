@@ -11,8 +11,8 @@ import {
   ResourceCenterFooter,
   useResourceCenterContext as useWidgetResourceCenterContext,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorRoot } from '@usertour/editor';
-import { useContentListQuery } from '@usertour/hooks';
+import { ContentEditor } from '@/components/editor';
+import { useContentListQuery } from '@usertour/data';
 import {
   ContentDataType,
   ContentEditorElementType,
@@ -22,6 +22,7 @@ import {
   ResourceCenterRichTextBlock,
   ResourceCenterSubPageBlock,
   type ResourceCenterTab,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { isEqual } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
@@ -34,7 +35,7 @@ import {
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useResourceCenterEditor } from '@/pages/contents/components/builder/resource-center/use-resource-center-editor';
-import { useAws } from '@usertour/hooks';
+import { useUpload } from '@/hooks/use-upload';
 
 // Inline content editing in the preview is limited to these element types.
 const ENABLED_ELEMENT_TYPES = [
@@ -68,7 +69,7 @@ const ResourceCenterEmbedContent = (props: ResourceCenterEmbedContentProps) => {
   const { messageEditSlots } = props;
   const { currentPage } = useWidgetResourceCenterContext();
   const { data: localData, updateBlock } = useResourceCenterEditor();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const projectId = useProjectId();
   const { attributeList } = useAttributeList();
   const getOembedInfo = useOembedInfo();
@@ -121,7 +122,7 @@ const ResourceCenterEmbedContent = (props: ResourceCenterEmbedContentProps) => {
 
 export const ResourceCenterEmbed = () => {
   const { data: localData, updateBlock } = useResourceCenterEditor();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const theme = useCurrentTheme({ fallbackToDefault: true });
   const [expanded, setExpanded] = useState(true);
   const { shouldShowMadeWith = true } = useBuilderConfig();
@@ -132,10 +133,10 @@ export const ResourceCenterEmbed = () => {
   const { t } = useTranslation();
 
   // Query flows and checklists for content list block preview
-  const { contents: flowContents } = useContentListQuery({
+  const { contents: flowContents = [] } = useContentListQuery({
     query: { environmentId, type: ContentDataType.FLOW },
   });
-  const { contents: checklistContents } = useContentListQuery({
+  const { contents: checklistContents = [] } = useContentListQuery({
     query: { environmentId, type: ContentDataType.CHECKLIST },
   });
 

@@ -1103,12 +1103,21 @@ export class EventTrackingService {
     // Pre-process: update user attributes if needed
     // Use isNullish to handle falsy values like 0 (valid NPS score)
     if (bindToAttribute && !isNullish(answer)) {
-      await this.bizService.upsertBizUsers(
-        tx,
+      // Planned without the row lock like every entity write (ADR 0017 §4) but
+      // through this transaction — a second pooled connection from inside an
+      // open one can deadlock the pool, and the plan must see this batch's
+      // earlier writes — then applied here so the answer and its event commit
+      // together.
+      const plan = await this.bizService.planBizUserUpsert(
+        params.environment.id,
         externalUserId,
         { [bindToAttribute]: answer },
-        params.environment.id,
+        undefined,
+        tx,
       );
+      if (plan && !plan.unchanged) {
+        await this.bizService.applyBizUserUpsert(tx, plan);
+      }
     }
 
     // Track QUESTION_ANSWERED event

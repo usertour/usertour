@@ -1,14 +1,9 @@
 import { useThemeList } from '@/hooks/use-theme-list';
-import { GoogleFontCss } from '@usertour/business-components';
+import { GoogleFontCss } from '@/components/themes/google-font-css';
 import { PREVIEW_BASIC, defaultSettings } from '@usertour/constants';
 import { RiArrowLeftSLine, RiArrowRightSLine, RiEyeLine } from '@usertour/icons';
-import type {
-  AnnouncementData,
-  ContentVersion,
-  PopupAnnouncement,
-  Step,
-  Theme,
-} from '@usertour/types';
+import type { AnnouncementData, ContentVersion, PopupAnnouncement, Step } from '@usertour/types';
+import type { Theme } from '@usertour/data';
 import { AnnouncementDistribution, AnnouncementPopupStyle, ContentDataType } from '@usertour/types';
 import {
   Button,

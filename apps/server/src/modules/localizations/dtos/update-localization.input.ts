@@ -7,7 +7,7 @@ import { LocalizationDTO } from './localization.dto';
 export class UpdateLocalizationInput
   extends PartialType(
     OmitType(LocalizationDTO, ['projectId', 'createdAt', 'updatedAt', 'isDefault']),
-    InputType,
+    { decorator: InputType, skipNullProperties: false },
   )
   implements LocalizationChanges
 {

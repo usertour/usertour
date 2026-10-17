@@ -2,7 +2,7 @@ import {
   useAdminSettingsQuery,
   useInvalidateLicenseScopedCache,
   useUpdateInstanceLicenseMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { useToast, Separator, Button, Input, Textarea, Skeleton } from '@usertour/ui';
 import { useState } from 'react';
 import { useCopyToClipboard } from 'react-use';

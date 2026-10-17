@@ -1,16 +1,16 @@
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
 import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
-import GraphQLJSON from 'graphql-type-json';
 
 import { VersionDTO } from './version.dto';
+import { LocalizedContentScalar } from './localized-content.scalar';
 
 @ObjectType('VersionOnLocalization')
 export class VersionOnLocalizationDTO extends BaseDTO {
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => LocalizedContentScalar)
   localized: JsonValue;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => LocalizedContentScalar)
   backup: JsonValue;
 
   @Field(() => String)

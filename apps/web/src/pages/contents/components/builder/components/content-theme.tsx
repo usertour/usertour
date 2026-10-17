@@ -1,7 +1,7 @@
 import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
 import { BUILDER_Z } from '@usertour/constants';
 import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
-import { Theme } from '@usertour/types';
+import type { Theme } from '@usertour/data';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 

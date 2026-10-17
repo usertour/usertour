@@ -1,8 +1,8 @@
 import { NetworkStatus } from '@apollo/client';
-import type { QueryHookOptions } from '@apollo/client';
 import type { PaginationState } from '@tanstack/react-table';
 import type { PageInfo, Pagination } from '@usertour/types';
 import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import type { ForwardedQueryOptions } from '@usertour/data';
 
 // Unified primitive for table-style cursor pagination across the
 // admin app — replaces `useBizListCursor` and `useBizSessions`,
@@ -39,19 +39,19 @@ import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useStat
 // Per-entity Apollo wrappers (e.g. `useQueryBizSessionsQuery`) are
 // injected via the `useListQuery` arg, same shape as the old
 // `useBizListCursor` accepted; that keeps the data layer ownership
-// in @usertour/hooks per ADR 0002 and lets the table treat each
+// in @usertour/data per ADR 0002 and lets the table treat each
 // entity's response uniformly.
 
-export interface OrderBy {
-  field: string;
-  direction: 'asc' | 'desc';
-}
-
-export interface UseListQueryArgs<TQuery> {
+/**
+ * `TOrder` is the entity's generated order input (`BizOrder`,
+ * `AnalyticsOrder`, …): its `field` is the server's enum, so a column the
+ * server cannot sort by is a compile error at the wrapper.
+ */
+export interface UseListQueryArgs<TQuery, TOrder> {
   query: TQuery;
   pagination: Pagination;
-  orderBy?: OrderBy;
-  options?: QueryHookOptions;
+  orderBy?: TOrder;
+  options?: ForwardedQueryOptions;
 }
 
 export interface UseListQueryResult<TRow> {
@@ -67,24 +67,26 @@ export interface UseListQueryResult<TRow> {
  *  `useCursorPagination` can drive. Each entity (user / company /
  *  session / ...) exposes one of these, returning a list of rows
  *  alongside the relay-style `pageInfo` / `totalCount`. */
-export type CursorListQueryFn<TRow, TQuery = { environmentId: string; [key: string]: unknown }> = (
-  args: UseListQueryArgs<TQuery>,
-) => UseListQueryResult<TRow>;
+export type CursorListQueryFn<
+  TRow,
+  TOrder,
+  TQuery = { environmentId: string; [key: string]: unknown },
+> = (args: UseListQueryArgs<TQuery, TOrder>) => UseListQueryResult<TRow>;
 
-export interface UseCursorPaginationArgs<TRow, TQuery> {
+export interface UseCursorPaginationArgs<TRow, TQuery, TOrder> {
   query: TQuery;
-  orderBy?: OrderBy;
+  orderBy?: TOrder;
   /** Default page size for the initial pagination state. */
   defaultPageSize?: number;
-  /** Per-entity Apollo wrapper from @usertour/hooks. */
-  useListQuery: (args: UseListQueryArgs<TQuery>) => UseListQueryResult<TRow>;
+  /** Per-entity Apollo wrapper from @usertour/data. */
+  useListQuery: (args: UseListQueryArgs<TQuery, TOrder>) => UseListQueryResult<TRow>;
   /** Skip the underlying query (e.g. context not ready). */
   skip?: boolean;
   /** Extra Apollo options forwarded to the wrapper — typically
    *  `SHARED_CACHE_QUERY_OPTIONS` when the consumer wants the query
    *  to participate in the normalized cache. Merged into the
    *  internal `{ skip, notifyOnNetworkStatusChange: true }` defaults. */
-  options?: QueryHookOptions;
+  options?: ForwardedQueryOptions;
 }
 
 export interface UseCursorPaginationResult<TRow> {
@@ -100,8 +102,8 @@ export interface UseCursorPaginationResult<TRow> {
 
 const DEFAULT_PAGE_SIZE = 20;
 
-export function useCursorPagination<TRow, TQuery>(
-  args: UseCursorPaginationArgs<TRow, TQuery>,
+export function useCursorPagination<TRow, TQuery, TOrder>(
+  args: UseCursorPaginationArgs<TRow, TQuery, TOrder>,
 ): UseCursorPaginationResult<TRow> {
   const { query, orderBy, defaultPageSize = DEFAULT_PAGE_SIZE, useListQuery, skip, options } = args;
 
@@ -179,9 +181,9 @@ export function useCursorPagination<TRow, TQuery>(
         const lastSize = totalCount - (liveCount - 1) * pageSize;
         next = { last: lastSize > 0 ? lastSize : pageSize };
       } else if (committedPageInfo && pageIndex > committedPagination.pageIndex) {
-        next = { first: pageSize, after: committedPageInfo.endCursor };
+        next = { first: pageSize, after: committedPageInfo.endCursor ?? undefined };
       } else if (committedPageInfo && pageIndex < committedPagination.pageIndex) {
-        next = { last: pageSize, before: committedPageInfo.startCursor };
+        next = { last: pageSize, before: committedPageInfo.startCursor ?? undefined };
       } else {
         next = { first: pageSize };
       }

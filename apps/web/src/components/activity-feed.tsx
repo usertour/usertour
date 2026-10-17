@@ -1,4 +1,4 @@
-import { BizEvent, BizEvents, EventAttributes } from '@usertour/types';
+import { BizEvents, EventAttributes } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import {
@@ -31,7 +31,12 @@ import { cn } from '@usertour/tailwind';
 import { ReactNode, Fragment, memo, useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAttributeList } from '@/hooks/use-attribute-list';
-import { useCompanyActivityFeedQuery, useUserActivityFeedQuery } from '@usertour/hooks';
+import {
+  type ActivityFeedEvent,
+  useCompanyActivityFeedQuery,
+  useUserActivityFeedQuery,
+  type BizEvent,
+} from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { sortEventDataEntries, getFieldValue } from '@/utils/session';
 import { QuestionAnswer } from '@/components/sessions/session-detail';
@@ -39,8 +44,8 @@ import { useCopyWithToast } from '@/hooks/use-copy-with-toast';
 import type { Attribute } from '@usertour/types';
 
 // Group events by date (YYYY-MM-DD)
-function groupEventsByDate(events: BizEvent[]): Map<string, BizEvent[]> {
-  const groups = new Map<string, BizEvent[]>();
+function groupEventsByDate<Event extends BizEvent>(events: Event[]): Map<string, Event[]> {
+  const groups = new Map<string, Event[]>();
   for (const event of events) {
     const dateKey = format(new Date(event.createdAt), 'yyyy-MM-dd');
     const existing = groups.get(dateKey) || [];
@@ -167,7 +172,7 @@ function getFallbackSessionAttributeKey(event: BizEvent): EventAttributes | null
 }
 
 interface ActivityFeedRowProps {
-  event: BizEvent;
+  event: ActivityFeedEvent;
   environmentId?: string;
   isExpanded: boolean;
   /** Toggle handler receiving the event id, NOT a per-row inline
@@ -175,7 +180,7 @@ interface ActivityFeedRowProps {
    *  equality every render and erases the point of memoising the
    *  row. */
   onToggle: (eventId: string) => void;
-  renderTrailingContent?: (event: BizEvent) => ReactNode;
+  renderTrailingContent?: (event: ActivityFeedEvent) => ReactNode;
   /** Hoisted from the row so 20 visible rows don't each instantiate
    *  their own `useAttributeList` ObservableQuery; the list resolves
    *  it once and passes the same reference into every row. */
@@ -333,7 +338,7 @@ const ActivityFeedRow = memo(ActivityFeedRowBase);
 ActivityFeedRow.displayName = 'ActivityFeedRow';
 
 interface ActivityFeedListProps {
-  events: BizEvent[];
+  events: ActivityFeedEvent[];
   environmentId?: string;
   loading: boolean;
   /** Fetch-more in flight. Deliberately separate from `loading`, which stays
@@ -343,7 +348,7 @@ interface ActivityFeedListProps {
   hasMore: boolean;
   loadMore: () => void;
   emptyMessage?: string;
-  renderTrailingContent?: (event: BizEvent) => ReactNode;
+  renderTrailingContent?: (event: ActivityFeedEvent) => ReactNode;
 }
 
 export const ActivityFeedList = (props: ActivityFeedListProps) => {
@@ -444,7 +449,7 @@ export const ActivityFeedList = (props: ActivityFeedListProps) => {
 // Provider hop.
 interface ActivityFeedProps {
   environmentId?: string;
-  events: BizEvent[];
+  events: ActivityFeedEvent[];
   loading: boolean;
   loadingMore?: boolean;
   hasNextPage: boolean;
@@ -452,7 +457,7 @@ interface ActivityFeedProps {
   loadMore: () => void | Promise<void>;
   refetch: () => void;
   emptyMessage?: string;
-  renderTrailingContent?: (event: BizEvent) => ReactNode;
+  renderTrailingContent?: (event: ActivityFeedEvent) => ReactNode;
 }
 
 export const ActivityFeed = ({
@@ -517,7 +522,7 @@ interface UserActivityFeedProps {
   environmentId: string;
   userId: string;
   emptyMessage?: string;
-  renderTrailingContent?: (event: BizEvent) => ReactNode;
+  renderTrailingContent?: (event: ActivityFeedEvent) => ReactNode;
 }
 
 export const UserActivityFeed = (props: UserActivityFeedProps) => {
@@ -546,7 +551,7 @@ interface CompanyActivityFeedProps {
   environmentId: string;
   companyId: string;
   emptyMessage?: string;
-  renderTrailingContent?: (event: BizEvent) => ReactNode;
+  renderTrailingContent?: (event: ActivityFeedEvent) => ReactNode;
 }
 
 export const CompanyActivityFeed = (props: CompanyActivityFeedProps) => {

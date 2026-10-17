@@ -15,8 +15,8 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
-import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { Conditions } from '@/components/conditions';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { ResourceCenterBlockType, RulesCondition } from '@usertour/types';
 import { useTranslation } from 'react-i18next';
 import { useEnvironmentId, useProjectId } from '@/pages/contents/components/builder/core';
@@ -55,7 +55,7 @@ const BlockRichTextBody = () => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 
@@ -99,7 +99,6 @@ const BlockRichTextBody = () => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

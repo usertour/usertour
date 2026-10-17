@@ -1,0 +1,64 @@
+fragment SegmentFields on Segment {
+  id
+  bizType
+  name
+  environmentId
+  dataType
+  data
+  columns
+  createdAt
+  source
+  sourceId
+}
+
+mutation createSegment($data: CreatSegment!) {
+  createSegment(data: $data) {
+    id
+  }
+}
+
+mutation updateSegment($data: UpdateSegment!) {
+  updateSegment(data: $data) {
+    id
+  }
+}
+
+query listSegment($environmentId: String!) {
+  listSegment(environmentId: $environmentId) {
+    ...SegmentFields
+  }
+}
+
+mutation deleteSegment($id: ID!) {
+  deleteSegment(data: { id: $id }) {
+    success
+  }
+}
+
+mutation createBizUserOnSegment($data: CreateBizUserOnSegment!) {
+  createBizUserOnSegment(data: $data) {
+    success
+    count
+  }
+}
+
+mutation deleteBizUserOnSegment($data: DeleteBizUserOnSegment!) {
+  deleteBizUserOnSegment(data: $data) {
+    success
+    count
+  }
+}
+
+mutation createBizCompanyOnSegment($data: CreateBizCompanyOnSegment!) {
+  createBizCompanyOnSegment(data: $data) {
+    success
+    count
+  }
+}
+
+mutation deleteBizCompanyOnSegment($data: DeleteBizCompanyOnSegment!) {
+  deleteBizCompanyOnSegment(data: $data) {
+    success
+    count
+  }
+}

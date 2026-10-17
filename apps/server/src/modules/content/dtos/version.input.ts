@@ -4,13 +4,14 @@ import GraphQLJSON from 'graphql-type-json';
 
 import type { VersionDraft } from '../types/version-draft.type';
 import { StepInput } from './step.input';
+import { VersionConfigScalar } from './version-config.scalar';
 
 @InputType()
 export class VersionInput implements VersionDraft {
   @Field({ nullable: true })
   themeId?: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => VersionConfigScalar, { nullable: true })
   config?: JsonValue;
 
   @Field(() => GraphQLJSON, { nullable: true })

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Input, useToast } from '@usertour/ui';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useVerifyTwoFactorMutation } from '@usertour/hooks';
+import { useVerifyTwoFactorMutation } from '@usertour/data';
 import { AuthCard } from './components/auth-card';
 import { resolveNextPath } from './components/use-auth-after-login';
 

@@ -16,6 +16,8 @@ import { configureApp } from './configure-app';
 // Import tracer for OpenTelemetry
 import { startTracer } from './tracer';
 import { setTraceID } from '@/modules/common/middleware/set-trace-id.middleware';
+import { requestLocale, resolveMessageLocale } from '@/modules/common/utils/request-locale.util';
+import { NextFunction, Request, Response } from 'express';
 
 // import { AllExceptionsFilter } from './common/filter';
 
@@ -121,6 +123,13 @@ async function bootstrap() {
 
   // Add trace ID middleware
   app.use(setTraceID);
+
+  // Error messages answer in the request's language (Accept-Language).
+  // Apollo's formatError has no request in hand, so the locale rides on
+  // async context for the rest of the request.
+  app.use((req: Request, _res: Response, next: NextFunction) =>
+    requestLocale.run(resolveMessageLocale(req.headers['accept-language']), next),
+  );
 
   /**
    * Limit the number of user's requests

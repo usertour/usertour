@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   type DefaultValues,
   type FieldValues,
+  type Path,
   type SubmitHandler,
   type UseFormProps,
   type UseFormReturn,
@@ -11,6 +12,21 @@ import {
 import type { ZodType } from 'zod';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '../../primitives/use-toast';
+
+/**
+ * Thrown from `submit` when the server rejected one field (a taken code
+ * name, say): the hook writes `message` onto that field instead of toasting
+ * it, so the user sees which input to change.
+ */
+export class SettingsFormFieldError extends Error {
+  readonly field: string;
+
+  constructor(field: string, message: string) {
+    super(message);
+    this.name = 'SettingsFormFieldError';
+    this.field = field;
+  }
+}
 
 export interface UseSettingsFormOptions<TValues extends FieldValues> {
   // Input == Output: form values feed in raw, schema returns the same shape.
@@ -21,8 +37,9 @@ export interface UseSettingsFormOptions<TValues extends FieldValues> {
   defaultValues: DefaultValues<TValues>;
   /**
    * Called with the validated form values. Throwing — or returning a
-   * rejected promise — fires the destructive toast. A `void` resolution
-   * fires the success toast.
+   * rejected promise — fires the destructive toast; throwing a
+   * `SettingsFormFieldError` puts its message on that field instead. A
+   * `void` resolution fires the success toast.
    */
   submit: (values: TValues) => Promise<unknown>;
   /**
@@ -110,7 +127,11 @@ export function useSettingsForm<TValues extends FieldValues>({
         }
         onSuccess?.(values);
       } catch (error) {
-        toast({ variant: 'destructive', title: getErrorMessage(error) });
+        if (error instanceof SettingsFormFieldError) {
+          form.setError(error.field as Path<TValues>, { message: error.message });
+        } else {
+          toast({ variant: 'destructive', title: getErrorMessage(error) });
+        }
       } finally {
         setIsSubmitting(false);
       }

@@ -13,7 +13,7 @@ import {
   Checkbox,
   Label,
 } from '@usertour/ui';
-import { useGetContentVersionQuery, usePublishContentVersionMutation } from '@usertour/hooks';
+import { useGetContentVersionQuery, usePublishContentVersionMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import * as React from 'react';
 import { useCallback } from 'react';

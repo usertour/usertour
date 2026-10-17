@@ -22,7 +22,7 @@ import { Fragment, useState, useEffect } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@usertour/tailwind';
-import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/hooks';
+import { useCreateCheckoutSessionMutation, useCreatePortalSessionMutation } from '@usertour/data';
 import { INTEGRATION_CATALOG, PLAN_FEATURES } from '@usertour/constants';
 import { resolvePlanFeatures } from '@usertour/helpers';
 import { Capability, PlanType, type PlanFeatures } from '@usertour/types';
@@ -282,7 +282,9 @@ const PlanCard = (props: PlanCardProps) => {
     if (currentPlanType && currentPlanType.toLowerCase() !== 'hobby') {
       try {
         const url = await createPortalSession(projectId);
-        window.location.href = url;
+        if (url) {
+          window.location.href = url;
+        }
       } catch (error) {
         console.error('Failed to create portal session:', error);
         // TODO: Add error notification
@@ -297,7 +299,9 @@ const PlanCard = (props: PlanCardProps) => {
         planType: plan.name.toLowerCase(),
         interval: isYearly ? 'yearly' : 'monthly',
       });
-      window.location.href = url;
+      if (url) {
+        window.location.href = url;
+      }
     } catch (error) {
       console.error('Failed to create checkout session:', error);
       // TODO: Add error notification
@@ -725,11 +729,15 @@ const Pricing = ({ projectId }: { projectId: string }) => {
           planType: PlanType.STARTER,
           interval: isYearly ? 'yearly' : 'monthly',
         });
-        window.location.href = url;
+        if (url) {
+          window.location.href = url;
+        }
       } else {
         // For other plans, create portal session for management
         const url = await createPortalSession(projectId);
-        window.location.href = url;
+        if (url) {
+          window.location.href = url;
+        }
       }
     } catch (error) {
       console.error('Failed to create session:', error);

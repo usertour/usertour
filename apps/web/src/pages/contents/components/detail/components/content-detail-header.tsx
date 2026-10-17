@@ -8,7 +8,7 @@ import { useContentPublishState } from '@/hooks/use-content-publish-state';
 import { useContentVersion } from '@/hooks/use-content-version';
 import { isVersionPublished } from '@/utils/content';
 import { EnterIcon } from '@radix-ui/react-icons';
-import { useUpdateContentMutation } from '@usertour/hooks';
+import { useUpdateContentMutation } from '@usertour/data';
 import { PlaneIcon, RiArrowRightSLine, SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { ContentDataType, ContentTypeName } from '@usertour/types';
@@ -180,11 +180,7 @@ export const ContentDetailHeader = () => {
               {getContentTypeMeta(content.type).plural}
             </button>
             <RiArrowRightSLine className="h-4 w-4 shrink-0 text-muted-foreground/60" />
-            <EditableTitle
-              value={content.name ?? ''}
-              onRename={handleRename}
-              disabled={isViewOnly}
-            />
+            <EditableTitle value={content.name} onRename={handleRename} disabled={isViewOnly} />
           </div>
 
           <MainNav className="ml-6" />

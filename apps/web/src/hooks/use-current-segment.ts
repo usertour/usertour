@@ -1,4 +1,4 @@
-import type { Segment } from '@usertour/types';
+import type { Segment } from '@usertour/data';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 

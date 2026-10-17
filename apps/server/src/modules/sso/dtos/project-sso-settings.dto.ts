@@ -1,5 +1,8 @@
-import { Field, ObjectType } from '@nestjs/graphql';
-import { Role } from '@prisma/client';
+import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
+
+import { SsoDefaultRole } from '../types/sso-default-role.type';
+
+registerEnumType(SsoDefaultRole, { name: 'SsoDefaultRole' });
 
 /**
  * Project-level SSO settings (owner-only): force-SSO enforcement plus the JIT
@@ -17,8 +20,8 @@ export class ProjectSsoSettingsDTO {
   @Field()
   autoProvision: boolean;
 
-  @Field(() => Role)
-  defaultRole: Role;
+  @Field(() => SsoDefaultRole)
+  defaultRole: SsoDefaultRole;
 
   @Field(() => [String])
   allowedDomains: string[];

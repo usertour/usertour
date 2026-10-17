@@ -1,4 +1,4 @@
-import { useListContentsQuery } from '@usertour/hooks';
+import { useListContentsQuery } from '@usertour/data';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';

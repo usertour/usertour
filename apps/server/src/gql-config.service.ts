@@ -6,6 +6,7 @@ import { STATUS_CODES } from 'node:http';
 import { GraphQLError } from 'graphql';
 import { BaseError } from '@/modules/common/errors/base-error';
 import { ValidationError } from '@/modules/common/errors/errors';
+import { requestLocale } from '@/modules/common/utils/request-locale.util';
 
 @Injectable()
 export class GqlConfigService implements GqlOptionsFactory {
@@ -50,7 +51,7 @@ export class GqlConfigService implements GqlOptionsFactory {
         // Handle BaseError instances
         if (isGraphQLError && originalError instanceof BaseError) {
           return {
-            message: originalError.getMessage('en'),
+            message: originalError.getMessage(requestLocale.get()),
             extensions: {
               code: originalError.code,
               // Machine-readable context the client acts on (optional).
@@ -75,13 +76,44 @@ export class GqlConfigService implements GqlOptionsFactory {
             message = response?.message || httpException.message || 'Bad Request';
           }
 
-          // Create ValidationError to match BaseError format
-          const validationError = new ValidationError(message);
-
+          // The user reads the catalogue's message in the request's language;
+          // the pipe's own text (which field, which rule) is for the developer.
+          const validationError = new ValidationError();
           return {
-            message: validationError.getMessage('en'),
+            message: validationError.getMessage(requestLocale.get()),
             extensions: {
               code: validationError.code,
+              reason: message,
+            },
+          };
+        }
+
+        // A variable the schema rejects (a null for a non-nullable input field,
+        // a value of the wrong type): the request's own input is wrong, so it
+        // is a validation error like one the pipe raises. The engine's text,
+        // which names the variable path, goes to the developer as the reason.
+        if (formattedError.extensions?.code === 'BAD_USER_INPUT') {
+          const validationError = new ValidationError();
+          return {
+            message: validationError.getMessage(requestLocale.get()),
+            extensions: {
+              code: validationError.code,
+              reason: formattedError.message,
+            },
+          };
+        }
+
+        // A document the schema rejects (a variable declared as a type the
+        // server no longer has, a selection that no longer exists). Every
+        // dashboard build validates its documents against the schema it was
+        // built from, so this is a stale build talking to a newer server; the
+        // code lets the dashboard reload itself. The message stays masked.
+        if (formattedError.extensions?.code === 'GRAPHQL_VALIDATION_FAILED') {
+          return {
+            message: STATUS_CODES[HttpStatus.BAD_REQUEST],
+            extensions: {
+              status: HttpStatus.BAD_REQUEST,
+              code: 'GRAPHQL_VALIDATION_FAILED',
             },
           };
         }

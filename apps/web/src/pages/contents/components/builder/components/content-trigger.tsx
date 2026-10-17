@@ -6,8 +6,9 @@ import {
   ConditionWait,
   Conditions,
   validateConditions,
-} from '@usertour/business-components';
-import { Actions, validateActions } from '@usertour/editor';
+} from '@/components/conditions';
+import { Actions, validateActions } from '@/components/editor';
+import { RulesZIndexProvider } from '@/components/rules';
 import { Attribute, Content, ContentVersion, RulesCondition, Step } from '@usertour/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +24,7 @@ interface ContentTriggerProps {
   attributeList: Attribute[] | undefined;
   currentVersion: ContentVersion | undefined;
   currentContent: Content | undefined;
-  contents: Content[];
+  contents: Content[] | undefined;
   currentStep: Step;
   token: string;
   showError: boolean;
@@ -95,13 +96,12 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
       setLocalActions(next);
       const failures = validateActions(next, {
         attributes: attributeList,
-        contents,
         currentVersion,
         currentStep,
       });
       onActionsChange(next, failures.length > 0);
     },
-    [attributeList, contents, currentVersion, currentStep, onActionsChange],
+    [attributeList, currentVersion, currentStep, onActionsChange],
   );
 
   // Live recomputation of "is some action incomplete?" — used to decide
@@ -114,12 +114,11 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
     return (
       validateActions(localActions, {
         attributes: attributeList,
-        contents,
         currentVersion,
         currentStep,
       }).length > 0
     );
-  }, [localActions, attributeList, contents, currentVersion, currentStep]);
+  }, [localActions, attributeList, currentVersion, currentStep]);
 
   return (
     <>
@@ -146,14 +145,10 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               filterItems={CLIENT_EVALUABLE_CONDITION_TYPES}
               onElementChange={onRulesConditionElementChange}
               baseZIndex={BUILDER_Z.rules}
-              t={t}
             />
-            <ConditionWait
-              defaultValue={wait}
-              onValueChange={onWaitChange}
-              disabled={false}
-              t={t}
-            />
+            <RulesZIndexProvider value={BUILDER_Z.rules}>
+              <ConditionWait defaultValue={wait} onValueChange={onWaitChange} disabled={false} />
+            </RulesZIndexProvider>
             <Label>{t('contentBuilder.flow.actionWhenTriggered')}</Label>
             <Actions
               baseZIndex={BUILDER_Z.popover}
@@ -165,7 +160,6 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               contents={contents}
               createStep={createStep}
               token={token}
-              t={t}
             />
           </ContentErrorAnchor>
           <ContentErrorContent

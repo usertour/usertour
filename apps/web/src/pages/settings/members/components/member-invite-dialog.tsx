@@ -25,8 +25,8 @@ import {
   SettingsDialogForm,
   useSettingsForm,
 } from '@usertour/ui';
-import { useInviteTeamMemberMutation } from '@usertour/hooks';
-import { TeamMemberRole } from '@usertour/types';
+import { useInviteTeamMemberMutation } from '@usertour/data';
+import { Role } from '@usertour/types';
 import { z } from 'zod';
 import { MemberRoleFields, memberRoleFieldsSchema } from './member-role-fields';
 
@@ -47,7 +47,7 @@ type FormValues = z.infer<typeof schema>;
 const defaultValues: FormValues = {
   name: '',
   email: '',
-  role: TeamMemberRole.EDITOR,
+  role: Role.EDITOR,
   allowedEnvironmentIds: [],
 };
 
@@ -68,7 +68,7 @@ export const MemberInviteDialog = (props: MemberInviteDialogProps) => {
         name,
         email,
         role,
-        role === TeamMemberRole.EDITOR ? allowedEnvironmentIds : undefined,
+        role === Role.EDITOR ? allowedEnvironmentIds : undefined,
       );
       if (!success) {
         throw new Error(t('settings.team.invite.failure'));

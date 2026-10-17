@@ -1,5 +1,7 @@
 # 0006: Enable normalized cache + adopt mutation `update` callbacks
 
+> Note (2026-10): `@usertour/hooks` has since been renamed to `@usertour/data`; the text keeps the name of the time.
+
 - **Date:** 2026-05-29
 - **Status:** Accepted
 - **Supersedes:** [0005](./0005-apollo-cache-strategy.md)

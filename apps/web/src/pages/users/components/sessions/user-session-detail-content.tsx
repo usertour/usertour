@@ -10,14 +10,14 @@ import {
   useListAttributesQuery,
   useListEventsQuery,
   useQuerySessionDetailQuery,
-} from '@usertour/hooks';
+  type BizEvent,
+  type BizSession,
+} from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import {
   type Attribute,
   AttributeBizTypes,
-  type BizEvent,
   BizEvents,
-  type BizSession,
   ContentDataType,
   EventAttributes,
 } from '@usertour/types';
@@ -54,6 +54,7 @@ import {
   getStartReasonTitle,
   sortEventDataEntries,
 } from '@/utils/session';
+import { attributeText } from '@/utils/attributes';
 
 const START_EVENT_CODES = new Set<string>([
   BizEvents.FLOW_STARTED,
@@ -92,7 +93,12 @@ interface SessionDetailContentProps {
 
 const userDisplayName = (session: BizSession, fallback: string): string => {
   const bizUser = session.bizUser;
-  return bizUser?.data?.name || bizUser?.data?.email || bizUser?.externalId || fallback;
+  return (
+    attributeText(bizUser?.data?.name) ||
+    attributeText(bizUser?.data?.email) ||
+    bizUser?.externalId ||
+    fallback
+  );
 };
 
 const SessionIdentityHeader = ({

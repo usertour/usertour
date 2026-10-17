@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
   useToast,
 } from '@usertour/ui';
-import { useSetRequireIdentityVerificationMutation } from '@usertour/hooks';
+import { useSetRequireIdentityVerificationMutation } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 
 export interface IdentityVerificationEnforcementCardProps {

@@ -4,7 +4,7 @@ import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useSize } from '@usertour/react-use-size';
 import { BannerContainer, BannerPreview, BannerRoot } from '@usertour/widget';
-import { ContentEditor } from '@usertour/editor';
+import { ContentEditor } from '@/components/editor';
 import type { ContentEditorRoot } from '@usertour/types';
 import { ContentEditorElementType, ContentDataType, BannerEmbedPlacement } from '@usertour/types';
 import { isEqual } from 'lodash';
@@ -15,7 +15,7 @@ import { useProjectId } from '@/pages/contents/components/builder/core';
 import { useBannerEditor } from '@/pages/contents/components/builder/banner/use-banner-editor';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { useAws } from '@usertour/hooks';
+import { useUpload } from '@/hooks/use-upload';
 import { useTranslation } from 'react-i18next';
 import { BrowserPreview } from '@/pages/contents/components/builder/banner/components/browser-preview';
 
@@ -77,7 +77,7 @@ export const BannerEmbed = () => {
   const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null);
   const { data: localData, updateData: updateLocalData } = useBannerEditor();
   const { t } = useTranslation();
-  const { upload } = useAws();
+  const { upload } = useUpload();
   const projectId = useProjectId();
   const { attributeList } = useAttributeList();
   const getOembedInfo = useOembedInfo();

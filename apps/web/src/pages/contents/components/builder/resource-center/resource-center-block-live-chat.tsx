@@ -15,11 +15,11 @@ import {
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { Callout } from '@/pages/contents/components/builder/shared/callout';
-import { PopperEditorMini } from '@usertour/editor';
+import { PopperEditorMini } from '@/components/editor';
 import { CodeEditor } from '@usertour/ui';
-import type { Descendant } from '@usertour/editor';
-import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import type { Descendant } from '@/components/editor';
+import { Conditions } from '@/components/conditions';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { Trans, useTranslation } from 'react-i18next';
 import {
   LauncherIconSource,
@@ -133,7 +133,7 @@ const BlockLiveChatBody = () => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 
@@ -315,7 +315,6 @@ const BlockLiveChatBody = () => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

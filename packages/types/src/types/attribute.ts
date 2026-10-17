@@ -241,3 +241,18 @@ export enum EventAttributes {
   QUESTION_TYPE = 'question_type',
   TEXT_ANSWER = 'text_answer',
 }
+
+/** One stored attribute value: what the server keeps once an attribute write has resolved. */
+export type StoredAttributeValue =
+  | string
+  | number
+  | boolean
+  | null
+  | (string | number | boolean | null)[];
+
+/**
+ * The stored attributes of a user, company, membership or event,
+ * keyed by attribute code name (the server's `JSONObject` fields). The SDK's
+ * `Attributes` is the write side and may carry operations; this is the read side.
+ */
+export type StoredAttributes = Record<string, StoredAttributeValue>;

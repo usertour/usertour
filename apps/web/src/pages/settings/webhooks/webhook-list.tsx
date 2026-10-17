@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { WEBHOOK_EVENT_TOPIC_PREFIX, WEBHOOK_TOPIC_WILDCARD } from '@usertour/constants';
-import { type Webhook, useGetProjectConfigQuery, useListWebhooksQuery } from '@usertour/hooks';
+import { type Webhook, useGetProjectConfigQuery, useListWebhooksQuery } from '@usertour/data';
 import { Badge, NewItemButton, ResourceListPage, type ResourceTableColumn } from '@usertour/ui';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAppContext } from '@/contexts/app-context';

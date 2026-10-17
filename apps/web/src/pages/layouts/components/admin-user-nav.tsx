@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import { useAppContext } from '@/contexts/app-context';
 import {
   UserAvatar,
@@ -31,7 +32,7 @@ import {
   RiSunLine,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { useActiveUserProjectMutation } from '@usertour/hooks';
+import { useActiveUserProjectMutation } from '@usertour/data';
 import isHotkey from 'is-hotkey';
 import { usePostHog } from 'posthog-js/react';
 import { useNavigate } from 'react-router-dom';
@@ -95,15 +96,18 @@ export const AdminUserNav = () => {
       } catch (error) {
         toast({
           variant: 'destructive',
-          title: t('userNav.switchProjectFailed'),
+          title: serverErrorMessage(error) ?? t('userNav.switchProjectFailed'),
         });
         console.error(error);
       }
     }
   };
 
-  const activeProject = projects.find((p) => p.actived);
-  const otherProjects = projects.filter((p) => !p.actived);
+  // Inside the admin shell the list is always known (AdminProvidersOutlet
+  // gates on it); the fallback only satisfies the three-state type.
+  const knownProjects = projects ?? [];
+  const activeProject = knownProjects.find((p) => p.actived);
+  const otherProjects = knownProjects.filter((p) => !p.actived);
 
   return (
     <DropdownMenu>
@@ -112,7 +116,7 @@ export const AdminUserNav = () => {
           variant="ghost"
           className="flex p-0 text-sm rounded-full shadow-none dark:bg-transparent ring-transparent hover:bg-transparent focus:ring-0"
         >
-          <UserAvatar email={user?.email || ''} name={user?.name} size="md" />
+          <UserAvatar email={user?.email || ''} name={user?.name ?? undefined} size="md" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount side="right">

@@ -18,7 +18,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { SpinnerIcon } from '@usertour/icons';
-import { LoginMutationVariables, useLoginMutation } from '@usertour/hooks';
+import { LoginMutationVariables, useLoginMutation } from '@usertour/data';
 import { GlobalConfig } from '@usertour/types';
 import { SocialProviders } from './social-providers';
 import { useAuthAfterLogin } from './use-auth-after-login';

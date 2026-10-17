@@ -1,0 +1,150 @@
+import { useMutation } from '@apollo/client';
+import { useCallback } from 'react';
+
+import {
+  CreateLocalizationDocument,
+  type CreateLocalizationInput,
+  DeleteLocalizationDocument,
+  ListVersionLocalizationsDocument,
+  type ListVersionLocalizationsQuery,
+  SetDefaultLocalizationDocument,
+  TranslateLocalizationUnitsDocument,
+  type TranslateLocalizationUnitsInput,
+  type TranslateLocalizationUnitsMutation,
+  UpdateLocalizationDocument,
+  type UpdateLocalizationInput,
+  UpdateVersionLocalizationDocument,
+  type UpdateVersionLocalizationInput as UpdateVersionLocalizationInputWire,
+  type VersionTranslationUnitInput,
+  ListLocalizationsDocument,
+  type ListLocalizationsQuery,
+  type ListLocalizationsQueryVariables,
+} from '../graphql';
+import { type TypedQueryOptions, useTypedQuery } from '../query';
+
+export type { CreateLocalizationInput, UpdateLocalizationInput };
+
+export const useCreateLocalizationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(CreateLocalizationDocument, {
+    refetchQueries: ['listLocalizations'],
+  });
+  const invoke = async (input: CreateLocalizationInput): Promise<boolean> => {
+    const response = await mutation({ variables: { data: input } });
+    return !!response.data?.createLocalization?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useUpdateLocalizationMutation = () => {
+  // Auto-merged by Apollo via __typename:id.
+  const [mutation, { loading, error }] = useMutation(UpdateLocalizationDocument);
+  const invoke = async (input: UpdateLocalizationInput): Promise<boolean> => {
+    const response = await mutation({ variables: { data: input } });
+    return !!response.data?.updateLocalization?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export const useDeleteLocalizationMutation = () => {
+  const [mutation, { loading, error }] = useMutation(DeleteLocalizationDocument);
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({
+      variables: { id },
+      update(cache) {
+        cache.evict({ id: cache.identify({ __typename: 'Localization', id }) });
+        cache.gc();
+      },
+    });
+    return !!response.data?.deleteLocalization?.id;
+  };
+  return { invoke, loading, error };
+};
+
+/** One unit of a translation save: `null` clears it, a blank string keeps the stored text. */
+export type VersionTranslationUnitChange = VersionTranslationUnitInput;
+
+/**
+ * Only the listed `translations` are written; the server merges them into the
+ * stored row. `enabled` omitted keeps the stored state.
+ */
+export type UpdateVersionLocalizationInput = UpdateVersionLocalizationInputWire;
+
+export const useUpdateVersionLocalizationMutation = () => {
+  // In-place saves auto-merge into the `VersionOnLocalization:id` slot; a
+  // first save CREATES the row, which the normalized cache can't place into
+  // the version's list by itself — insert the ref there.
+  const [mutation, { loading, error }] = useMutation(UpdateVersionLocalizationDocument);
+  const invoke = useCallback(
+    async (input: UpdateVersionLocalizationInput): Promise<boolean> => {
+      const response = await mutation({
+        variables: { data: input },
+        update(cache, { data }) {
+          const saved = data?.updateVersionLocalization;
+          if (!saved) {
+            return;
+          }
+          cache.updateQuery(
+            { query: ListVersionLocalizationsDocument, variables: { versionId: input.versionId } },
+            (existing: ListVersionLocalizationsQuery | null) => {
+              const rows = existing?.listVersionLocalizations;
+              if (!rows || rows.some((row) => row.id === saved.id)) {
+                return existing ?? undefined;
+              }
+              return { listVersionLocalizations: [...rows, saved] };
+            },
+          );
+        },
+      });
+      return !!response.data?.updateVersionLocalization?.id;
+    },
+    [mutation],
+  );
+  return { invoke, loading, error };
+};
+
+export const useSetDefaultLocalizationMutation = () => {
+  // The mutation flips `isDefault` on two rows (the old default → false,
+  // the new one → true). Server response only carries the new default's
+  // id, so refetch the list to pick up the demoted previous default.
+  const [mutation, { loading, error }] = useMutation(SetDefaultLocalizationDocument, {
+    refetchQueries: ['listLocalizations'],
+  });
+  const invoke = async (id: string): Promise<boolean> => {
+    const response = await mutation({ variables: { id } });
+    return !!response.data?.setDefaultLocalization?.id;
+  };
+  return { invoke, loading, error };
+};
+
+export type { TranslateLocalizationUnitsInput };
+
+export type TranslatedLocalizationUnit =
+  TranslateLocalizationUnitsMutation['translateLocalizationUnits'][number];
+
+export const useTranslateLocalizationUnitsMutation = () => {
+  const [mutation, { loading, error }] = useMutation(TranslateLocalizationUnitsDocument);
+  const invoke = async (
+    input: TranslateLocalizationUnitsInput,
+  ): Promise<TranslatedLocalizationUnit[]> => {
+    const response = await mutation({ variables: { data: input } });
+    return response.data?.translateLocalizationUnits ?? [];
+  };
+  return { invoke, loading, error };
+};
+
+export const useListLocalizationsQuery = (
+  projectId: string | undefined,
+  options?: TypedQueryOptions<ListLocalizationsQuery, ListLocalizationsQueryVariables>,
+) => {
+  const { data, refetch, loading, error } = useTypedQuery(ListLocalizationsDocument, {
+    variables: { projectId: projectId! },
+    skip: !projectId,
+    ...options,
+  });
+  return {
+    localizationList: data?.listLocalizations,
+    refetch,
+    loading,
+    error,
+  };
+};

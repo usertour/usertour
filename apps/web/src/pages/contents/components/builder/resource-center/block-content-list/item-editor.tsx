@@ -13,10 +13,10 @@ import {
   Switch,
 } from '@usertour/ui';
 import { RiArrowLeftSLine } from '@usertour/icons';
-import { PopperEditorMini } from '@usertour/editor';
-import type { Descendant } from '@usertour/editor';
-import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { PopperEditorMini } from '@/components/editor';
+import type { Descendant } from '@/components/editor';
+import { Conditions } from '@/components/conditions';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import {
   type ContentListItem,
   LauncherIconSource,
@@ -72,7 +72,7 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 
@@ -203,7 +203,6 @@ export const ItemEditorBody = (props: ItemEditorBodyProps) => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

@@ -470,7 +470,7 @@ model Theme {
   project    Project   @relation(fields: [projectId], references: [id])
   projectId  String
   // settings  String
-  settings   Json?     @db.JsonB
+  settings   Json      @default("{}") @db.JsonB
   /// Conditional variations
   variations Json?     @db.JsonB
   steps      Step[]
@@ -481,14 +481,14 @@ model Content {
   id                    String                 @id @default(cuid())
   createdAt             DateTime               @default(now()) @db.Timestamptz(6)
   updatedAt             DateTime               @updatedAt @db.Timestamptz(6)
-  publishedAt           DateTime?              @default(now()) @db.Timestamptz(6)
-  name                  String?
+  publishedAt           DateTime               @default(now()) @db.Timestamptz(6)
+  name                  String                 @default("")
   buildUrl              String?
   type                  String                 @default("flow")
   published             Boolean                @default(false)
   deleted               Boolean                @default(false)
-  environment           Environment?           @relation(fields: [environmentId], references: [id])
-  environmentId         String?
+  environment           Environment            @relation(fields: [environmentId], references: [id])
+  environmentId         String
   project               Project?               @relation(fields: [projectId], references: [id])
   projectId             String?
   config                Json?                  @db.JsonB
@@ -598,12 +598,12 @@ model Step {
   updatedAt  DateTime @updatedAt @db.Timestamptz(6)
   sequence   Int      @default(0)
   cvid       String   @default(cuid())
-  name       String?
-  type       String?
-  target     Json?    @db.JsonB
-  data       Json?    @db.JsonB
+  name       String   @default("")
+  type       String
+  target     Json     @default("{}") @db.JsonB
+  data       Json     @default("[]") @db.JsonB
   trigger    Json?    @db.JsonB
-  setting    Json?    @db.JsonB
+  setting    Json     @default("{}") @db.JsonB
   screenshot Json?    @db.JsonB
   theme      Theme?   @relation(fields: [themeId], references: [id])
   themeId    String?
@@ -750,7 +750,7 @@ model Segment {
   bizType               Int                        @default(1)
   dataType              Int                        @default(1)
   /// Source of the segment (e.g., "mixpanel", "heap", etc.)
-  source                String?                    @default("internal")
+  source                String                     @default("internal")
   /// Source ID of the segment (e.g., "mixpanel_cohort_id")
   sourceId              String?
   environment           Environment?               @relation(fields: [environmentId], references: [id])

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import type { Integration } from '@usertour/hooks';
+import type { Integration } from '@usertour/data';
 import { Badge } from '@usertour/ui';
 
 export interface IntegrationStatusBadgeProps {

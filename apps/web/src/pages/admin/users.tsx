@@ -3,7 +3,7 @@ import {
   useUpdateUserSystemAdminMutation,
   useUpdateUserDisabledMutation,
   useAdminCreateUserMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   useToast,
   Separator,

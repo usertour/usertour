@@ -5,7 +5,7 @@ import {
   useGetInviteQuery,
   useGetProjectSsoProvidersQuery,
   useGlobalConfigQuery,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { NotFound } from '@/routes/not-found';
 import { AuthCard } from './components/auth-card';
 import { SsoProviderButtons } from './components/sso-provider-buttons';
@@ -65,7 +65,7 @@ export const Invite = () => {
         description={t('auth.resetPassword.description')}
       >
         <ResetPasswordForm
-          fixedEmail={invite.email}
+          fixedEmail={invite.email ?? undefined}
           onBack={() => setView('main')}
           onSuccess={() => setView('forgotSuccess')}
         />
@@ -115,14 +115,14 @@ export const Invite = () => {
         <SignInForm
           globalConfig={globalConfig}
           inviteCode={inviteCode}
-          fixedEmail={invite.email}
+          fixedEmail={invite.email ?? undefined}
           buttonText={t('auth.invite.joinButton')}
           onForgotPassword={() => setView('forgot')}
         />
       ) : (
         <SignUpForm
           inviteCode={inviteCode}
-          fixedEmail={invite.email}
+          fixedEmail={invite.email ?? undefined}
           buttonText={t('auth.invite.joinButton')}
         />
       )}

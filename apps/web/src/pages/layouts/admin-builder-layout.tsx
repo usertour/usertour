@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { RegionErrorBoundary } from '@/components/region-error-boundary';
 import { useEnvironmentSelection } from '@/hooks/use-environment-selection';
 import { ShellHelmet } from './components/admin-layout';
 
@@ -15,7 +16,9 @@ export const AdminBuilderLayout = () => {
     <>
       <ShellHelmet surface="canvas" />
       <div className="flex-col md:flex">
-        <Outlet />
+        <RegionErrorBoundary>
+          <Outlet />
+        </RegionErrorBoundary>
       </div>
     </>
   );

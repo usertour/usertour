@@ -1,6 +1,6 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { JsonObject } from '@prisma/client/runtime/library';
-import GraphQLJSON from 'graphql-type-json';
+import GraphQLJSON, { GraphQLJSONObject } from 'graphql-type-json';
 
 import { BaseDTO } from '@/modules/common/dtos/base.dto';
 
@@ -12,7 +12,7 @@ export class BizModelDTO extends BaseDTO {
   @Field(() => String)
   externalId: string;
 
-  @Field(() => GraphQLJSON, { nullable: true })
+  @Field(() => GraphQLJSONObject, { nullable: true })
   data?: JsonObject;
 
   // Populated only on membership-detail reads — explicitly nullable so the

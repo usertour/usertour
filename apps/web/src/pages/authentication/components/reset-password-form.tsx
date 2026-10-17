@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
-import { useResetUserPasswordMutation } from '@usertour/hooks';
+import { useResetUserPasswordMutation } from '@usertour/data';
 
 interface ResetPasswordFormProps {
   /**

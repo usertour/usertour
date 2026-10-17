@@ -7,7 +7,6 @@ import {
   EventCountLogic,
   EventTimeLogic,
   type RulesCondition,
-  type Segment,
   type TimeConditionData,
 } from '@usertour/types';
 import { isEmptyString, isNullish } from '../type-utils';
@@ -22,7 +21,8 @@ import { VALUELESS_OPERATORS, operatorsFor } from './operator-mappings';
 // segment / content / event lists for the project.
 export interface ValidateContext {
   attributes?: Attribute[];
-  segments?: Segment[];
+  /** Only existence is checked, so an id is all a segment has to carry. */
+  segments?: { id: string }[];
   contents?: Content[];
   events?: Event[];
 }
@@ -173,7 +173,7 @@ export function validateCurrentPage(
 
 export function validateSegment(
   data: SegmentShape | undefined,
-  segments: Segment[] | undefined,
+  segments: { id: string }[] | undefined,
 ): ValidationError | undefined {
   if (!data?.segmentId) return { key: 'conditions.errors.segment.selectSegment' };
   if (segments && !segments.find((s) => s.id === data.segmentId)) {

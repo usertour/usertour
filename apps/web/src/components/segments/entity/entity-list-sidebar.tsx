@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { SegmentSidebar } from '../layout';
 import { SegmentCreateDialog } from '..';
 import { useAppContext } from '@/contexts/app-context';
-import type { Segment } from '@usertour/types';
+import type { Segment } from '@usertour/data';
 import { useState } from 'react';
 import type { EntityConfig } from './entity-config';
 

@@ -5,7 +5,7 @@ import { useContentList } from '@/pages/contents/components/builder/hooks/use-co
 import { RiAddCircleLine, RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
 import { useTranslation } from 'react-i18next';
 import { hasError } from '@usertour/helpers';
-import { validateActions } from '@usertour/editor';
+import { validateActions } from '@/components/editor';
 import { AttributeBizTypes, Attribute, RulesCondition } from '@usertour/types';
 import { cuid } from '@usertour/helpers';
 import { useCallback, useEffect } from 'react';
@@ -18,7 +18,7 @@ import {
 import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow-editor';
 import { useSeedStepFromRoute } from '@/pages/contents/components/builder/flow/use-seed-step-from-route';
 import { useToken } from '@/pages/contents/components/builder/hooks/use-token';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/data';
 
 const FlowBuilderTriggerHeader = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);
@@ -247,8 +247,8 @@ export const FlowBuilderTrigger = () => {
   return (
     <TriggerProvider>
       <FlowBuilderTriggerHeader />
-      <FlowBuilderTriggerBody attributes={attributes} loading={loading} />
-      <FlowBuilderTriggerFooter attributes={attributes} />
+      <FlowBuilderTriggerBody attributes={attributes ?? []} loading={loading} />
+      <FlowBuilderTriggerFooter attributes={attributes ?? []} />
     </TriggerProvider>
   );
 };

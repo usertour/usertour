@@ -1,4 +1,4 @@
-import { useQueryContentAnalyticsQuery } from '@usertour/hooks';
+import { useQueryContentAnalyticsQuery } from '@usertour/data';
 import { endOfDay, startOfDay } from 'date-fns';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';

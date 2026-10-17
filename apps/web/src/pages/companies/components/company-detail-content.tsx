@@ -1,4 +1,11 @@
-import { useCompanyListQuery, useListAttributesQuery, useUserListQuery } from '@usertour/hooks';
+import {
+  useCompanyListQuery,
+  useListAttributesQuery,
+  useUserListQuery,
+  type BizCompany,
+  type BizUser,
+  type BizUserOnCompany,
+} from '@usertour/data';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CalendarIcon, IdCardIcon, ReloadIcon } from '@radix-ui/react-icons';
 import { MoreButton, SectionBreadcrumbHeader } from '@/components/section-breadcrumb-header';
@@ -7,9 +14,6 @@ import { useTranslation } from 'react-i18next';
 import {
   AttributeBizTypes,
   AttributeDataType,
-  type BizCompany,
-  type BizUser,
-  type BizUserOnCompany,
   CompanyAttributes,
   type PageInfo,
 } from '@usertour/types';
@@ -49,13 +53,14 @@ import { CompanyActivityFeed } from '@/components/activity-feed';
 import { useLoadMoreAccumulator } from '@/hooks/use-load-more-accumulator';
 import { useDerivedEntityAttributes } from '@/hooks/use-derived-entity-attributes';
 import { EntityAttributesCard } from '@/components/segments/entity/entity-attributes-card';
+import { attributeText } from '@/utils/attributes';
 
 const PAGE_SIZE = 10;
 
 type CompanyData = Record<string, unknown> | undefined;
 
 const companyDisplayName = (bizCompany: BizCompany, fallback: string): string => {
-  return bizCompany.data?.name || bizCompany.externalId || fallback;
+  return attributeText(bizCompany.data?.name) || bizCompany.externalId || fallback;
 };
 
 const getMembershipData = (user: BizUser, companyId: string): Record<string, unknown> | null => {
@@ -194,12 +199,12 @@ const CompanyUserList = ({ environmentId, companyId }: CompanyUserListProps) => 
                   >
                     <div className="flex items-center gap-2 hover:text-primary underline-offset-4 hover:underline min-w-0">
                       <DefaultAvatar
-                        seed={user.externalId || user.data?.email || ''}
-                        name={user.data?.name || ''}
+                        seed={user.externalId || attributeText(user.data?.email)}
+                        name={attributeText(user.data?.name)}
                         size="sm"
                       />
                       <div className="flex-1 min-w-0 truncate">
-                        {user.data?.email || user.externalId}
+                        {attributeText(user.data?.email) || user.externalId}
                       </div>
                     </div>
                   </Link>
@@ -368,7 +373,8 @@ const CompanyDetailContentInner = ({ environmentId, companyId }: CompanyDetailCo
     }
   };
 
-  if (companyListLoading) {
+  // Unmount gate: `loading && !data`, so a refetch keeps the page up.
+  if (companyListLoading && !contents?.length) {
     return <ContentLoading message={t('common.loading')} />;
   }
 

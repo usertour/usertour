@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { ArrowRightLeftIcon, Delete2Icon, EditIcon } from '@usertour/icons';
@@ -5,7 +6,7 @@ import {
   type ApiToken,
   useDeleteApiTokenMutation,
   useRotateApiTokenMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { DestructiveConfirmDialog, ResourceRowActions, useToast } from '@usertour/ui';
 import { EditDialog } from './edit-dialog';
 
@@ -49,8 +50,11 @@ export const RowActions = (props: RowActionsProps) => {
       } else {
         toast({ variant: 'destructive', title: t('settings.personalApiKeys.rotateFailure') });
       }
-    } catch {
-      toast({ variant: 'destructive', title: t('settings.personalApiKeys.rotateFailure') });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: serverErrorMessage(error) ?? t('settings.personalApiKeys.rotateFailure'),
+      });
     }
   };
 
@@ -63,8 +67,11 @@ export const RowActions = (props: RowActionsProps) => {
       } else {
         toast({ variant: 'destructive', title: t('settings.personalApiKeys.deleteFailure') });
       }
-    } catch {
-      toast({ variant: 'destructive', title: t('settings.personalApiKeys.deleteFailure') });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: serverErrorMessage(error) ?? t('settings.personalApiKeys.deleteFailure'),
+      });
     }
   };
 

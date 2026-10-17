@@ -13,11 +13,11 @@ import {
 } from '@usertour/ui';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
-import { Actions, PopperEditorMini } from '@usertour/editor';
-import type { Descendant } from '@usertour/editor';
+import { Actions, PopperEditorMini } from '@/components/editor';
+import type { Descendant } from '@/components/editor';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
-import { Conditions } from '@usertour/business-components';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { Conditions } from '@/components/conditions';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import {
   ContentDataType,
   LauncherIconSource,
@@ -69,7 +69,7 @@ const BlockActionBody = () => {
   const environmentId = useEnvironmentId();
   const projectId = useProjectId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 
@@ -164,7 +164,6 @@ const BlockActionBody = () => {
               attributes={attributeList}
               contents={contents}
               token={token}
-              t={t}
             />
           </div>
 
@@ -191,7 +190,6 @@ const BlockActionBody = () => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

@@ -15,7 +15,7 @@ import { useReactiveVar } from '@apollo/client';
 import { SegmentEditDialog } from '..';
 import { useAppContext } from '@/contexts/app-context';
 import { useTranslation } from 'react-i18next';
-import type { Segment } from '@usertour/types';
+import type { Segment } from '@usertour/data';
 import { isSyncedSegment, syncedSegmentProvider } from '@/utils/segment';
 import { EntityDataTable } from './entity-data-table';
 import { EntityEditDropdownMenu } from './entity-edit-dropdown-menu';

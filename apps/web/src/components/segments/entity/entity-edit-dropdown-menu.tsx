@@ -5,7 +5,7 @@ import {
   DropdownMenuTrigger,
 } from '@usertour/ui';
 import { Delete2Icon } from '@usertour/icons';
-import type { Segment } from '@usertour/types';
+import type { Segment } from '@usertour/data';
 import { ReactNode, useState } from 'react';
 import { SegmentDeleteDialog } from '..';
 import { useTranslation } from 'react-i18next';

@@ -613,7 +613,7 @@ export const ENDPOINTS: Endpoint[] = [
     op: 'query',
     // Allow direction skipped: reaches the provider's API.
     denyOnly: true,
-    doc: 'query($i:String!,$o:String!){listIntegrationRemoteProperties(integrationId:$i,remoteObject:$o){__typename}}',
+    doc: 'query($i:String!,$o:SyncRemoteObject!){listIntegrationRemoteProperties(integrationId:$i,remoteObject:$o){__typename}}',
     vars: (s) => ({ i: s.integrationId, o: 'contact' }),
   },
   {
@@ -789,7 +789,7 @@ export const ENDPOINTS: Endpoint[] = [
     key: 'attributes.listAttributes',
     tier: 'R',
     op: 'query',
-    doc: 'query($b:Int!,$p:String!){listAttributes(bizType:$b,projectId:$p){__typename}}',
+    doc: 'query($b:AttributeBizType!,$p:String!){listAttributes(bizType:$b,projectId:$p){__typename}}',
     vars: (s) => ({ b: 1, p: s.projectId }),
   },
 
@@ -804,6 +804,7 @@ export const ENDPOINTS: Endpoint[] = [
         isDefault: false,
         name: role === 'ADMIN' ? 'e2e-theme-admin' : 'e2e-theme-owner',
         projectId: s.projectId,
+        settings: {},
       },
     }),
   },
@@ -887,8 +888,7 @@ export const ENDPOINTS: Endpoint[] = [
     tier: 'W',
     op: 'mutation',
     doc: 'mutation($d:UpdateEventInput!){updateEvent(data:$d){__typename}}',
-    // attributeIds is GraphQL-nullable but service calls `.map` on it without
-    // a guard; passing undefined raises a TypeError → ISE.
+    // attributeIds is the full set the event carries, required on update.
     vars: (s) => ({ d: { id: s.eventId, attributeIds: [] } }),
   },
   {

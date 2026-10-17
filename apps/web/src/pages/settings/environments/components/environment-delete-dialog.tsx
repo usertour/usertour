@@ -1,6 +1,6 @@
 import { Environment } from '@usertour/types';
 import { getErrorMessage } from '@usertour/helpers';
-import { useDeleteEnvironmentsMutation } from '@usertour/hooks';
+import { useDeleteEnvironmentsMutation } from '@usertour/data';
 import { DestructiveConfirmDialog, useToast } from '@usertour/ui';
 import { Trans, useTranslation } from 'react-i18next';
 

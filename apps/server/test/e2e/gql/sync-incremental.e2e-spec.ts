@@ -149,7 +149,7 @@ describe('CRM incremental sync (e2e)', () => {
     });
 
     await biz.withEntityChangeEmit(environmentId, () =>
-      biz.upsertBizUsers(prisma, 'u_ada', { nps: 8 }, environmentId),
+      biz.upsertBizUser(environmentId, 'u_ada', { nps: 8 }),
     );
 
     const message = await waitFor(() =>
@@ -197,11 +197,11 @@ describe('CRM incremental sync (e2e)', () => {
     const before = await prisma.outboundMessage.count({ where: { integrationId } });
     await biz.withEntityChangeEmit(
       environmentId,
-      () => biz.upsertBizUsers(prisma, 'u_ada', { nps: 9 }, environmentId, { origin: 'hubspot' }),
+      () => biz.upsertBizUser(environmentId, 'u_ada', { nps: 9 }, { origin: 'hubspot' }),
       'hubspot',
     );
     await biz.withEntityChangeEmit(environmentId, () =>
-      biz.upsertBizUsers(prisma, 'u_ada', { plan: 'pro' }, environmentId),
+      biz.upsertBizUser(environmentId, 'u_ada', { plan: 'pro' }),
     );
     await new Promise((resolve) => setTimeout(resolve, 800));
     expect(await prisma.outboundMessage.count({ where: { integrationId } })).toBe(before);
@@ -222,7 +222,7 @@ describe('CRM incremental sync (e2e)', () => {
     jest.spyOn(hubspotCrmApi, 'batchUpdateHubspotObjects').mockResolvedValue();
 
     const grace = await biz.withEntityChangeEmit(environmentId, () =>
-      biz.upsertBizUsers(prisma, 'u_grace', { email: 'Grace@Example.com' }, environmentId),
+      biz.upsertBizUser(environmentId, 'u_grace', { email: 'Grace@Example.com' }),
     );
     await waitFor(async () => enqueue.mock.calls.length > 0);
     expect(enqueue).toHaveBeenCalledWith(

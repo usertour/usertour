@@ -11,7 +11,7 @@ import {
   useListIntegrationObjectMappingsQuery,
   useListIntegrationSyncRunsQuery,
   useRunIntegrationObjectMappingSyncMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import {
   RiDeleteBinLine,
   RiMore2Line,
@@ -30,11 +30,7 @@ import {
   Skeleton,
   useToast,
 } from '@usertour/ui';
-import {
-  SYNC_ROUND_STALE_MS,
-  type IntegrationCatalogEntry,
-  remotePropertyNameFor,
-} from '@usertour/constants';
+import { SYNC_ROUND_STALE_MS, type IntegrationCatalogEntry } from '@usertour/constants';
 import { AttributeBizTypes, type SyncLocalObject, type SyncRemoteObject } from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
@@ -324,8 +320,7 @@ export const ObjectMappingCard = (props: ObjectMappingCardProps) => {
             ) : (
               <div className="space-y-2">
                 {mapping.outboundFields.map((field) => {
-                  const remoteName =
-                    field.remote ?? remotePropertyNameFor(localObject, field.local);
+                  const remoteName = field.remote;
                   return (
                     <MappingPairRow
                       key={field.local}

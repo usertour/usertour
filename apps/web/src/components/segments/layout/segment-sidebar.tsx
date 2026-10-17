@@ -8,8 +8,8 @@ import {
 } from '@/components/admin-sidebar/admin-sidebar-template';
 import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@usertour/ui';
 import { Archive2LineIcon, Filter2LineIcon, GroupLineIcon, PLUSIcon } from '@usertour/icons';
-import { IntegrationSourceMark } from '@usertour/business-components';
-import { Segment } from '@usertour/types';
+import { IntegrationSourceMark } from '@/components/integrations/integration-source-mark';
+import type { Segment } from '@usertour/data';
 import { Fragment, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';

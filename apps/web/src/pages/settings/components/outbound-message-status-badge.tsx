@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { OutboundMessageStatus } from '@usertour/hooks';
+import type { OutboundMessageStatus } from '@usertour/data';
 import { Badge } from '@usertour/ui';
 
 export interface OutboundMessageStatusBadgeProps {

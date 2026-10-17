@@ -25,11 +25,8 @@ import {
   RadioGroupItem,
   useToast,
 } from '@usertour/ui';
-import {
-  useCreateContentVersionMutation,
-  useOpenSelector,
-  useUpdateContentMutation,
-} from '@usertour/hooks';
+import { useCreateContentVersionMutation, useUpdateContentMutation } from '@usertour/data';
+import { useOpenSelector } from '@/hooks/use-open-selector';
 import { getAuthToken, getErrorMessage } from '@usertour/helpers';
 import { BuilderType, Content } from '@usertour/types';
 import { useCallback } from 'react';
@@ -69,7 +66,7 @@ export const ContentEditForm = (props: ContentEditFormProps) => {
   // const [open, setOpen] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...defaultValues, buildUrl: content?.buildUrl },
+    defaultValues: { ...defaultValues, buildUrl: content.buildUrl ?? '' },
     mode: 'onChange',
   });
   const token = getAuthToken();

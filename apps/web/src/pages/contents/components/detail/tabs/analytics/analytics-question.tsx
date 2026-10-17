@@ -12,10 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '@usertour/ui';
-import { ContentEditorElementType } from '@usertour/editor';
-import { useQueryContentQuestionAnalyticsQuery } from '@usertour/hooks';
+import { useQueryContentQuestionAnalyticsQuery } from '@usertour/data';
 import { endOfDay, format, startOfDay } from 'date-fns';
-import { AnswerCount, ContentQuestionAnalytics } from '@usertour/types';
+import { AnswerCount, ContentQuestionAnalytics, ContentEditorElementType } from '@usertour/types';
 import { AnalyticsNPS } from './analytics-nps';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { AnalyticsScale } from './analytics-scale';

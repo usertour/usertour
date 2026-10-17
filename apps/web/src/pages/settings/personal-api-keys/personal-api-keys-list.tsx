@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@usertour/ui';
-import { type ApiToken, useListApiTokensQuery } from '@usertour/hooks';
+import { type ApiToken, useListApiTokensQuery } from '@usertour/data';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { CreateDialog } from './components/create-dialog';
@@ -47,7 +47,7 @@ export const PersonalApiKeysList = () => {
 
   const projectNameById = useMemo(() => {
     const index: Record<string, string> = {};
-    for (const project of projects) {
+    for (const project of projects ?? []) {
       if (project.id) {
         index[project.id] = project.name ?? project.id;
       }

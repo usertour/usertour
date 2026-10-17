@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, Button, QuestionTooltip } from '@usertour/ui';
 import { useMemo } from 'react';
 import { endOfDay, startOfDay } from 'date-fns';
-import { useQueryBizSessionsQuery } from '@usertour/hooks';
+import { useQueryBizSessionsQuery, type AnalyticsQuery } from '@usertour/data';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
 import { useAppContext } from '@/contexts/app-context';
 import { useCursorPagination } from '@/hooks/use-cursor-pagination';
@@ -25,16 +25,18 @@ export const AnalyticsSessions = () => {
   // render, so the next useQuery fires with the new query AND a
   // fresh cursor in one round trip. `useMemo` keeps the reference
   // stable across renders that don't actually change the shape.
-  const query = useMemo(
+  const query = useMemo<AnalyticsQuery>(
     () => ({
       environmentId: environment?.id ?? '',
       contentId,
-      startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : undefined,
-      endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
+      // skip guards the environment and the two dates.
+      startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '',
+      endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '',
       timezone,
     }),
     [environment?.id, contentId, dateRange?.from, dateRange?.to, timezone],
   );
+  const hasDateRange = Boolean(dateRange?.from && dateRange?.to);
 
   const {
     rows: bizSessions,
@@ -49,7 +51,7 @@ export const AnalyticsSessions = () => {
     query,
     useListQuery: useQueryBizSessionsQuery,
     defaultPageSize: PAGE_SIZE,
-    skip: !environment?.id,
+    skip: !environment?.id || !hasDateRange,
     options: SHARED_CACHE_QUERY_OPTIONS,
   });
 

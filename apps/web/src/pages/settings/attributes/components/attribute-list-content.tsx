@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useListAttributesQuery } from '@usertour/hooks';
+import { useListAttributesQuery } from '@usertour/data';
 import { useAppContext } from '@/contexts/app-context';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import { Attribute, AttributeBizTypes } from '@usertour/types';
 import { Badge, ResourceListBody, type ResourceTableColumn } from '@usertour/ui';
-import { AttributeDataTypeIcon, IntegrationSourceMark } from '@usertour/business-components';
+import { AttributeDataTypeIcon } from '@/components/attributes/attribute-data-type-icon';
+import { IntegrationSourceMark } from '@/components/integrations/integration-source-mark';
 import { RiShieldCheckFill } from '@usertour/icons';
 import { catalogEntryForSource } from '@usertour/constants';
 import { AttributeRowActions } from './attribute-row-actions';

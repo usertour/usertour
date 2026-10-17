@@ -1,15 +1,17 @@
 import { flowReasonTitleMap } from '@usertour/constants';
 import {
   Attribute,
-  BizEvent,
   BizEvents,
-  BizSession,
   ContentDataType,
   EventAttributes,
+  ContentEditorElementType,
+  type ContentEditorRoot,
 } from '@usertour/types';
-import { ContentEditorElementType, contentTypesConfig } from '@usertour/editor';
+import { type BizEvent, type BizSession } from '@usertour/data';
+import { contentTypesConfig } from '@/components/editor/utils/config';
 import { formatDistanceStrict } from 'date-fns';
 import { extractQuestionData } from '@usertour/helpers';
+import { attributeNumber, attributeText } from '@/utils/attributes';
 
 /**
  * Represents a question with its optional answer
@@ -39,7 +41,7 @@ export interface QuestionWithAnswer {
  * @param bizEvents - Array of business events
  * @returns Map of question cvid to the latest answer event
  */
-const buildAnswerMap = (bizEvents: BizEvent[] | undefined): Map<string, BizEvent> => {
+const buildAnswerMap = (bizEvents: BizEvent[] | null | undefined): Map<string, BizEvent> => {
   const answerMap = new Map<string, BizEvent>();
 
   if (!bizEvents?.length) {
@@ -51,7 +53,7 @@ const buildAnswerMap = (bizEvents: BizEvent[] | undefined): Map<string, BizEvent
       continue;
     }
 
-    const questionCvid = bizEvent.data?.[EventAttributes.QUESTION_CVID];
+    const questionCvid = attributeText(bizEvent.data?.[EventAttributes.QUESTION_CVID]);
     if (!questionCvid) {
       continue;
     }
@@ -93,12 +95,11 @@ export const getOrderedQuestionAnswers = (session: BizSession): QuestionWithAnsw
 
   for (let stepIndex = 0; stepIndex < sortedSteps.length; stepIndex++) {
     const step = sortedSteps[stepIndex];
-    if (!step.data) {
+    // The step's editor tree travels as JSON until Step is derived from its documents.
+    if (!Array.isArray(step.data)) {
       continue;
     }
-
-    // Extract questions from step data
-    const questions = extractQuestionData(step.data);
+    const questions = extractQuestionData(step.data as ContentEditorRoot[]);
 
     for (const questionElement of questions) {
       const cvid = questionElement.data?.cvid;
@@ -114,7 +115,7 @@ export const getOrderedQuestionAnswers = (session: BizSession): QuestionWithAnsw
           name: questionElement.data?.name ?? '',
           type: questionElement.type as ContentEditorElementType,
           stepIndex,
-          stepName: step.name,
+          stepName: step.name ?? undefined,
         },
         answer: answerEvent,
         isAnswered: answerEvent !== null,
@@ -133,23 +134,19 @@ export const getOrderedQuestionAnswers = (session: BizSession): QuestionWithAnsw
  * @returns Formatted string representation of the answer value
  */
 export const getQuestionAnswerValue = (answerEvent: BizEvent): string => {
-  const questionType = answerEvent.data?.question_type;
-
-  switch (questionType) {
+  const data = answerEvent.data ?? {};
+  switch (data.question_type) {
     case ContentEditorElementType.STAR_RATING:
     case ContentEditorElementType.SCALE:
     case ContentEditorElementType.NPS:
-      return answerEvent.data?.number_answer?.toString() || '';
+      return attributeText(data.number_answer);
     case ContentEditorElementType.MULTIPLE_CHOICE:
-      if (Array.isArray(answerEvent.data?.list_answer)) {
-        return answerEvent.data.list_answer.join('; ');
-      }
-      return answerEvent.data?.list_answer || answerEvent.data?.text_answer || '';
+      return attributeText(data.list_answer) || attributeText(data.text_answer);
     case ContentEditorElementType.MULTI_LINE_TEXT:
     case ContentEditorElementType.SINGLE_LINE_TEXT:
-      return (answerEvent.data?.text_answer || '').replace(/\n/g, ' ');
+      return attributeText(data.text_answer).replace(/\n/g, ' ');
     default:
-      return (answerEvent.data?.text_answer || '').replace(/\n/g, ' ');
+      return attributeText(data.text_answer).replace(/\n/g, ' ');
   }
 };
 
@@ -172,7 +169,7 @@ const FLOW_STEP_DISPLAY_EVENTS = [
  */
 export const getEventDisplaySuffix = (
   bizEvent: BizEvent,
-  session: { content?: { name?: string } } | null | undefined,
+  session: { content?: { name?: string | null } | null } | null | undefined,
 ): string => {
   const eventCodeName = bizEvent.event?.codeName;
 
@@ -184,11 +181,9 @@ export const getEventDisplaySuffix = (
   if (
     FLOW_STEP_DISPLAY_EVENTS.includes(eventCodeName as (typeof FLOW_STEP_DISPLAY_EVENTS)[number])
   ) {
-    const flowStepName = bizEvent.data?.[EventAttributes.FLOW_STEP_NAME];
-    const flowStepNumber = bizEvent.data?.[EventAttributes.FLOW_STEP_NUMBER];
-
-    const hasStepNumber = flowStepNumber !== undefined && flowStepNumber !== null;
-    const stepNumberDisplay = hasStepNumber ? `${Number(flowStepNumber) + 1}` : '';
+    const flowStepName = attributeText(bizEvent.data?.[EventAttributes.FLOW_STEP_NAME]);
+    const flowStepNumber = attributeNumber(bizEvent.data?.[EventAttributes.FLOW_STEP_NUMBER]);
+    const stepNumberDisplay = flowStepNumber === undefined ? '' : `${flowStepNumber + 1}`;
 
     if (stepNumberDisplay && flowStepName) {
       return `Step ${stepNumberDisplay}. ${flowStepName}`;
@@ -204,7 +199,7 @@ export const getEventDisplaySuffix = (
 
   // Handle QUESTION_ANSWERED event
   if (eventCodeName === BizEvents.QUESTION_ANSWERED) {
-    const questionName = bizEvent.data?.[EventAttributes.QUESTION_NAME];
+    const questionName = attributeText(bizEvent.data?.[EventAttributes.QUESTION_NAME]);
     const answerValue = getQuestionAnswerValue(bizEvent);
 
     if (questionName && answerValue) {
@@ -224,12 +219,12 @@ export const getEventDisplaySuffix = (
     eventCodeName === BizEvents.CHECKLIST_TASK_CLICKED ||
     eventCodeName === BizEvents.CHECKLIST_TASK_COMPLETED
   ) {
-    return bizEvent.data?.[EventAttributes.CHECKLIST_TASK_NAME] ?? '';
+    return attributeText(bizEvent.data?.[EventAttributes.CHECKLIST_TASK_NAME]);
   }
 
   // Handle resource center clicked event
   if (eventCodeName === BizEvents.RESOURCE_CENTER_CLICKED) {
-    return bizEvent.data?.[EventAttributes.RESOURCE_CENTER_BLOCK_NAME] ?? '';
+    return attributeText(bizEvent.data?.[EventAttributes.RESOURCE_CENTER_BLOCK_NAME]);
   }
 
   // Default: return session content name for other events
@@ -290,10 +285,10 @@ export const getStartReasonTitle = (
   }
   try {
     const reason =
-      startEvent?.data?.[EventAttributes.FLOW_START_REASON] ||
-      startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON] ||
-      startEvent?.data?.[EventAttributes.RESOURCE_CENTER_START_REASON] ||
-      startEvent?.data?.[EventAttributes.LAUNCHER_START_REASON];
+      attributeText(startEvent?.data?.[EventAttributes.FLOW_START_REASON]) ||
+      attributeText(startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON]) ||
+      attributeText(startEvent?.data?.[EventAttributes.RESOURCE_CENTER_START_REASON]) ||
+      attributeText(startEvent?.data?.[EventAttributes.LAUNCHER_START_REASON]);
     return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason || '';
   } catch (_) {
     return '';
@@ -322,9 +317,9 @@ export const getEndReasonTitle = (
   }
   try {
     const reason =
-      endEvent?.data?.[EventAttributes.FLOW_END_REASON] ||
-      endEvent?.data?.[EventAttributes.CHECKLIST_END_REASON] ||
-      endEvent?.data?.[EventAttributes.LAUNCHER_END_REASON];
+      attributeText(endEvent?.data?.[EventAttributes.FLOW_END_REASON]) ||
+      attributeText(endEvent?.data?.[EventAttributes.CHECKLIST_END_REASON]) ||
+      attributeText(endEvent?.data?.[EventAttributes.LAUNCHER_END_REASON]);
     return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason || '';
   } catch (_) {
     return '';

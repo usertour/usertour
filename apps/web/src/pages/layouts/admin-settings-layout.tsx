@@ -1,6 +1,7 @@
 import { ScrollArea } from '@usertour/ui';
 import { useState } from 'react';
 import { Outlet, useParams } from 'react-router-dom';
+import { RegionErrorBoundary } from '@/components/region-error-boundary';
 import { ScrollRootProvider } from '@/contexts/scroll-root-context';
 import { findSettingsSection } from '@/pages/settings/registry';
 import { AdminLayoutNewContent, ShellHelmet } from './components/admin-layout';
@@ -26,7 +27,9 @@ export const AdminSettingsLayout = () => {
           <ScrollArea className="h-full w-full " viewportRef={setScrollRoot}>
             <ScrollRootProvider value={scrollRoot}>
               <div className="mx-auto max-w-6xl">
-                <Outlet />
+                <RegionErrorBoundary>
+                  <Outlet />
+                </RegionErrorBoundary>
               </div>
             </ScrollRootProvider>
           </ScrollArea>

@@ -8,8 +8,13 @@ import {
 import { User, UserCog } from 'lucide-react';
 import { ReactNode, useState } from 'react';
 import { useAnalyticsUI } from '@/contexts/analytics-ui-context';
-import { useGetContentVersionQuery, useListSessionsDetailQuery } from '@usertour/hooks';
-import type { BizSession } from '@usertour/types';
+import {
+  useGetContentVersionQuery,
+  useListSessionsDetailQuery,
+  type SessionExportRow,
+  type AnalyticsOrder,
+  type AnalyticsQuery,
+} from '@usertour/data';
 import { endOfDay, startOfDay } from 'date-fns';
 import { useContentDetail } from '@/hooks/use-content-detail';
 import { useAttributeList } from '@/hooks/use-attribute-list';
@@ -40,14 +45,16 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
   // window to the exact moment the date picker was opened, narrowing
   // the export against the visible totalCount and missing sessions
   // near the boundary days.
-  const query = {
+  const hasDateRange = Boolean(dateRange?.from && dateRange?.to);
+  const query: AnalyticsQuery = {
     environmentId: environment?.id ?? '',
     contentId,
-    startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : undefined,
-    endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : undefined,
+    // The trigger is disabled until the range is complete.
+    startDate: dateRange?.from ? startOfDay(new Date(dateRange.from)).toISOString() : '',
+    endDate: dateRange?.to ? endOfDay(new Date(dateRange.to)).toISOString() : '',
     timezone,
   };
-  const orderBy = { field: 'createdAt', direction: 'desc' as const };
+  const orderBy: AnalyticsOrder = { field: 'createdAt', direction: 'desc' };
   // `skip: true` — the export handler calls `refetch` imperatively in a
   // cursor loop instead of letting Apollo auto-fetch.
   const { refetch } = useListSessionsDetailQuery({
@@ -70,7 +77,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
       const pageSize = 100;
       const totalPages = Math.ceil(totalCount / pageSize);
-      let allSessions: BizSession[] = [];
+      let allSessions: SessionExportRow[] = [];
       let currentCursor: string | null = null;
 
       for (let i = 0; i < totalPages; i++) {
@@ -81,13 +88,11 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
           orderBy,
         });
 
-        const sessions =
-          result.data?.listSessionsDetail?.edges?.map((edge: { node: BizSession }) => edge.node) ||
-          [];
+        const sessions = result.data?.listSessionsDetail?.edges?.map((edge) => edge.node) ?? [];
         allSessions = [...allSessions, ...sessions];
 
         const lastEdge = result.data?.listSessionsDetail?.edges?.slice(-1)[0];
-        currentCursor = lastEdge?.cursor;
+        currentCursor = lastEdge?.cursor ?? null;
 
         if (!currentCursor || !result.data?.listSessionsDetail?.edges?.length) {
           break;
@@ -135,7 +140,7 @@ export const ExportDropdownMenu = (props: ExportDropdownMenuProps) => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild disabled={isExporting}>
+      <DropdownMenuTrigger asChild disabled={isExporting || !hasDateRange}>
         {children}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="z-[101]">

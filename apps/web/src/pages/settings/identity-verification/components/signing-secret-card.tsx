@@ -28,7 +28,7 @@ import {
   useCreateSigningSecretMutation,
   useGetSigningSecretLazyQuery,
   useRevokeSigningSecretMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useAppContext } from '@/contexts/app-context';
 import { useCopyWithToast } from '@/hooks/use-copy-with-toast';

@@ -11,7 +11,7 @@ import {
   DialogTitle,
   useToast,
 } from '@usertour/ui';
-import { useRegenerateRecoveryCodesMutation } from '@usertour/hooks';
+import { useRegenerateRecoveryCodesMutation } from '@usertour/data';
 import { SpinnerIcon } from '@usertour/icons';
 import { getErrorMessage } from '@usertour/helpers';
 import { CodeField } from './code-field';

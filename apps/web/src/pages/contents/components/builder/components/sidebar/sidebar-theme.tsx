@@ -4,7 +4,7 @@ import { BUILDER_Z } from '@usertour/constants';
 import { Button, CompactSelect, QuestionTooltip } from '@usertour/ui';
 import { RiExternalLinkLine, RiPaletteLine } from '@usertour/icons';
 import { useDefaultTheme, useThemeList } from '@/hooks/use-theme-list';
-import { Theme } from '@usertour/types';
+import type { Theme } from '@usertour/data';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -56,7 +56,7 @@ export const SidebarTheme = () => {
             value: theme.id,
             label: theme.name,
           }))}
-          value={currentVersion.themeId}
+          value={currentVersion.themeId ?? undefined}
           onChange={handleThemeChange}
           placeholder={t('contentBuilder.shared.theme.selectPlaceholder')}
           className="w-full bg-surface dark:bg-surface-raised/50 shadow-none hover:bg-muted"

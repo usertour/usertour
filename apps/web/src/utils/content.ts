@@ -1,4 +1,5 @@
 import { Content, ContentDataType, Environment, Step } from '@usertour/types';
+import type { ContentVersionInput } from '@usertour/data';
 
 /**
  * Convert content list type (plural) to ContentDataType enum
@@ -72,11 +73,8 @@ export const isVersionPublished = (content: Content, versionId: string): boolean
  */
 export const resolveEditableVersionId = async (
   versionId: string,
-  createVersion: (data: {
-    versionId: string;
-    config?: unknown;
-  }) => Promise<{ id?: string } | null | undefined>,
-  config?: unknown,
+  createVersion: (data: ContentVersionInput) => Promise<{ id?: string } | null | undefined>,
+  config?: ContentVersionInput['config'],
 ): Promise<string> => {
   const created = await createVersion({ versionId, config });
   if (!created?.id) {

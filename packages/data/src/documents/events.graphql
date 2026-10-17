@@ -1,0 +1,43 @@
+mutation createEvent($data: CreateEventInput!) {
+  createEvent(data: $data) {
+    id
+  }
+}
+
+mutation updateEvent($data: UpdateEventInput!) {
+  updateEvent(data: $data) {
+    id
+    codeName
+    displayName
+    projectId
+    description
+    predefined
+    createdAt
+  }
+}
+
+query listEvents($projectId: String!) {
+  listEvents(projectId: $projectId) {
+    id
+    codeName
+    displayName
+    projectId
+    description
+    predefined
+    createdAt
+  }
+}
+
+mutation deleteEvent($id: ID!) {
+  deleteEvent(data: { id: $id }) {
+    id
+  }
+}
+
+query listAttributeOnEvents($eventId: String!) {
+  listAttributeOnEvents(eventId: $eventId) {
+    id
+    eventId
+    attributeId
+  }
+}

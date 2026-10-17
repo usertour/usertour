@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import type { OutboundMessage } from '@usertour/hooks';
+import type { OutboundMessage } from '@usertour/data';
 import { RiFileCopyLine } from '@usertour/icons';
 import {
   Badge,

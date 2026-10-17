@@ -1,21 +1,22 @@
-export type BizUser = {
+/** A user as the runtime's `latestSession` carries it. The dashboard types users from its documents (`BizUser` in `@usertour/data`). */
+export type RuntimeBizUser = {
   id: string;
   externalId: string;
   environmentId: string;
   data: any;
   createdAt: string;
-  bizUsersOnCompany?: BizUserOnCompany[];
+  bizUsersOnCompany?: RuntimeBizUserOnCompany[];
 };
 
-export type BizUserOnCompany = {
+export type RuntimeBizUserOnCompany = {
   id: string;
   bizCompanyId: string;
-  bizCompany: BizCompany;
+  bizCompany: RuntimeBizCompany;
   bizUserId: string;
   data: any;
 };
 
-export type BizCompany = {
+export type RuntimeBizCompany = {
   id: string;
   externalId: string;
   environmentId: string;
@@ -28,7 +29,7 @@ export type BizQuery = {
   data: JSON;
 };
 
-export type CustomEvent = {
+export type RuntimeCustomEvent = {
   id: string;
   createdAt: string;
   updatedAt: string;
@@ -40,16 +41,16 @@ export type CustomEvent = {
   projectId: string;
 };
 
-export type BizEvent = {
+export type RuntimeBizEvent = {
   id: string;
   createdAt: string;
   updatedAt: string;
   eventId: string;
-  event?: CustomEvent;
+  event?: RuntimeCustomEvent;
   data: any | null;
   bizUserId: string;
   bizSessionId?: string | null;
   bizCompanyId?: string | null;
-  bizCompany?: BizCompany;
-  bizUser?: BizUser;
+  bizCompany?: RuntimeBizCompany;
+  bizUser?: RuntimeBizUser;
 };

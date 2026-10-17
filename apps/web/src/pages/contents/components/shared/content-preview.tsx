@@ -50,8 +50,8 @@ import {
   ResourceCenterData,
   Step,
   StepContentType,
-  Theme,
 } from '@usertour/types';
+import type { Theme } from '@usertour/data';
 
 import { DEFAULT_ANNOUNCEMENT_DATA, DEFAULT_BANNER_DATA, PREVIEW_BASIC } from '@usertour/constants';
 import { useShouldShowMadeWith } from '@/hooks/use-should-show-made-with';

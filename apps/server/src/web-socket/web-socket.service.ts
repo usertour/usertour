@@ -1017,11 +1017,8 @@ export class WebSocketService {
     environment: Environment,
   ): Promise<UpsertUserResponse> {
     const { userId, attributes } = data;
-    // The row lock inside upsertBizUsers only holds within a transaction.
     return await this.bizService.withEntityChangeEmit(environment.id, () =>
-      this.prisma.$transaction((tx) =>
-        this.bizService.upsertBizUsers(tx, userId, attributes, environment.id),
-      ),
+      this.bizService.upsertBizUser(environment.id, userId, attributes),
     );
   }
 
@@ -1036,15 +1033,12 @@ export class WebSocketService {
   ): Promise<UpsertCompanyResponse> {
     const { companyId: externalCompanyId, userId: externalUserId, attributes, membership } = data;
     return await this.bizService.withEntityChangeEmit(environment.id, () =>
-      this.prisma.$transaction((tx) =>
-        this.bizService.upsertBizCompanies(
-          tx,
-          externalCompanyId,
-          externalUserId,
-          attributes,
-          environment.id,
-          membership,
-        ),
+      this.bizService.upsertBizCompanyGroup(
+        environment.id,
+        externalCompanyId,
+        externalUserId,
+        attributes,
+        membership,
       ),
     );
   }

@@ -1,5 +1,5 @@
 import { Attribute } from '@usertour/types';
-import { useDeleteAttributeMutation } from '@usertour/hooks';
+import { useDeleteAttributeMutation } from '@usertour/data';
 import { DestructiveConfirmDialog } from '@usertour/ui';
 import { Trans, useTranslation } from 'react-i18next';
 import { localizeDefinitionReferenceError } from '@/utils/definition-references';

@@ -1,12 +1,13 @@
 'use client';
 
+import { LoadMoreFailed } from '@/components/load-more-failed';
 import { useScrollRoot } from '@/contexts/scroll-root-context';
 import { useThemeList } from '@/hooks/use-theme-list';
-import { useGetContentVersionQuery } from '@usertour/hooks';
+import { useGetContentVersionQuery, type Theme } from '@usertour/data';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { SpinnerIcon } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { Content, ContentDataType, ContentVersion, Step, Theme } from '@usertour/types';
+import { Content, ContentDataType, ContentVersion, Step } from '@usertour/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -48,7 +49,7 @@ const ContentPreviewFooter = ({
     <div className="flex flex-none flex-col gap-1 px-4 py-3">
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-          {content.name ?? ''}
+          {content.name}
         </span>
         <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium">
           <span
@@ -286,13 +287,25 @@ interface DataTableProps {
   loading: boolean;
   /** True during `fetchMore` (NetworkStatus 3). */
   loadingMore: boolean;
+  /** The last page failed; the sentinel is off until `retryNextPage`. */
+  pageFailed: boolean;
   fetchNextPage: () => Promise<unknown>;
+  retryNextPage: () => Promise<unknown>;
   refetch: () => Promise<unknown>;
 }
 
 export function DataTable(props: DataTableProps) {
-  const { contents, contentType, hasNextPage, loading, loadingMore, fetchNextPage, refetch } =
-    props;
+  const {
+    contents,
+    contentType,
+    hasNextPage,
+    loading,
+    loadingMore,
+    pageFailed,
+    fetchNextPage,
+    retryNextPage,
+    refetch,
+  } = props;
   const { t } = useTranslation();
   // ScrollArea's Viewport, published by ContentList via ScrollRootProvider —
   // becomes the IntersectionObserver root so the sentinel triggers against
@@ -304,7 +317,7 @@ export function DataTable(props: DataTableProps) {
     // solely by the internal `fetchingRef` inside `fetchNextPage`,
     // which diverged from how `VersionHistoryList` wires the same lib.
     loading: loading || loadingMore,
-    hasNextPage,
+    hasNextPage: hasNextPage && !pageFailed,
     onLoadMore: fetchNextPage,
     rootMargin: '0px 0px 200px 0px',
   });
@@ -334,6 +347,8 @@ export function DataTable(props: DataTableProps) {
               <SpinnerIcon className="h-4 w-4 animate-spin" />
               {t('contents.listView.loadingMore')}
             </span>
+          ) : pageFailed ? (
+            <LoadMoreFailed onRetry={retryNextPage} />
           ) : (
             <span className="h-px w-full" aria-hidden />
           )}

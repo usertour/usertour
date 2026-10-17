@@ -1,9 +1,8 @@
-import { useCreateBizUserOnSegmentMutation } from '@usertour/hooks';
+import { useCreateBizUserOnSegmentMutation, type Segment } from '@usertour/data';
 import { getErrorMessage } from '@usertour/helpers';
 import { useToast } from '@usertour/ui';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Segment } from '@usertour/types';
 
 /**
  * Adds users to manual segments. Owns the toast triage; the wrapper
@@ -46,7 +45,7 @@ export const useAddUsersToSegment = () => {
           toast({
             variant: 'success',
             title: t('users.toast.segments.usersAdded', {
-              count: ret.data.createBizUserOnSegment.count,
+              count: ret.data.createBizUserOnSegment.count ?? 0,
               segmentName: segment.name,
             }),
           });

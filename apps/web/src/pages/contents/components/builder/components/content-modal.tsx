@@ -9,8 +9,8 @@ import {
   useSettingsStyles,
   useStepWidth,
 } from '@usertour/widget';
-import { ContentEditor, ContentEditorElementType, ContentEditorRoot } from '@usertour/editor';
-import { GoogleFontCss } from '@usertour/business-components';
+import { ContentEditor } from '@/components/editor';
+import { GoogleFontCss } from '@/components/themes/google-font-css';
 import {
   Attribute,
   Content,
@@ -18,10 +18,12 @@ import {
   ProgressBarPosition,
   ProgressBarType,
   Step,
-  Theme,
+  ContentEditorElementType,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { forwardRef, useState } from 'react';
-import { useAws } from '@usertour/hooks';
+import { type Theme } from '@usertour/data';
+import { useUpload } from '@/hooks/use-upload';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
 import { useBuilderConfig } from '@/pages/contents/components/builder/core';
 
@@ -33,7 +35,7 @@ export interface ContentModalProps {
   zIndex: number;
   currentIndex: number;
   onChange: (value: ContentEditorRoot[]) => void;
-  contents: Content[];
+  contents: Content[] | undefined;
   currentContent: Content | undefined;
   createStep: (
     currentVersion: ContentVersion,
@@ -59,7 +61,7 @@ export const ContentModal = forwardRef<HTMLDivElement, ContentModalProps>(
       projectId,
     } = props;
     const [data, setData] = useState<any>(currentStep.data);
-    const { upload } = useAws();
+    const { upload } = useUpload();
     const getOembedInfo = useOembedInfo();
     const { globalStyle, themeSetting } = useSettingsStyles(theme?.settings, { type: 'modal' });
     const { shouldShowMadeWith = true } = useBuilderConfig();

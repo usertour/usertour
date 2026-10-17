@@ -11,13 +11,12 @@ import {
   TooltipTrigger,
   useToast,
 } from '@usertour/ui';
-import { useDisableTwoFactorMutation } from '@usertour/hooks';
+import { useDisableTwoFactorMutation, useRefreshMe } from '@usertour/data';
 import { RiSparklingFill } from '@usertour/icons';
 import { useAppContext } from '@/contexts/app-context';
 import { RegenerateDialog } from './regenerate-dialog';
 import { SetupDialog } from './setup-dialog';
 import { StepUpDialog } from './step-up-dialog';
-import { useRefreshMe } from './use-refresh-me';
 
 export const AccountTwoFactor = () => {
   const { t } = useTranslation('ui');

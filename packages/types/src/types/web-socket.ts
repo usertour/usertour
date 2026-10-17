@@ -6,7 +6,7 @@ import { ContentConfigObject, RulesCondition } from './config';
 import { LauncherData } from './launcher';
 import { ResourceCenterData } from './resource-center';
 import { ClientContext, contentStartReason } from './sdk';
-import { Theme } from './theme';
+import { RuntimeTheme } from './theme';
 
 // ============================================================================
 // Core Interfaces and Enums
@@ -386,7 +386,7 @@ export type SessionAttribute = {
 /**
  * Session theme with optional attributes
  */
-export type SessionTheme = Pick<Theme, 'settings' | 'variations'> & {
+export type SessionTheme = Pick<RuntimeTheme, 'settings' | 'variations'> & {
   attributes?: SessionAttribute[];
 };
 

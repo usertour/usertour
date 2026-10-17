@@ -1,6 +1,6 @@
 # Module boundaries
 
-Where new code goes. Three rules; everything in `apps/web` and the shared
+Where new code goes. Two rules; everything in `apps/web` and the shared
 packages follows them. The server has its own layering — see
 [Server](#server-appsserver) at the end.
 
@@ -8,7 +8,7 @@ packages follows them. The server has its own layering — see
 
 A component or hook with **zero business types** (doesn't import from
 `@usertour/types` other than enums, doesn't touch app contexts, doesn't
-call `@usertour/gql` or `@usertour/hooks`'s mutation wrappers) belongs in
+call `@usertour/data`'s documents or mutation wrappers) belongs in
 `packages/ui/`.
 
 Examples already there: `Button`, `SelectPopover`, `DateTimePicker`,
@@ -20,35 +20,29 @@ If a primitive needs a small utility (e.g. a hash helper) that lives in
 the app today, **inline it into the primitive** or move it to
 `@usertour/helpers`; don't reach back into `apps/web/...`.
 
-## 2. Multi-app business components → `@usertour/business-components`
+## 2. Business components → `apps/web/src/components/<domain>/`
 
-If the component imports business types (`Segment`, `Content`,
-`IntegrationModel`, etc.) **AND** is used by more than one app (`web`,
-`builder`, `extension`), it goes in `packages/business-components/`.
-
-This package may not import from `apps/...`. If a candidate component
-needs `apps/web` context (e.g. `useSegmentListContext`), it doesn't
-qualify yet — leave it in `apps/web` until the context is also lifted
-out.
-
-Examples already there: `Conditions`, `ConditionCombobox`, integration
-config cards.
-
-## 3. Web-only business components → `apps/web/src/components/<domain>/`
-
-If a component is business-aware but **only the web app consumes it**,
-it lives in the web app's `components/` directory, organised by domain:
+A business-aware component has one consumer, the web app, so it lives in
+the web app's `components/` directory, organised by domain:
 
 ```
 apps/web/src/components/
   <domain>/             multi-page widgets for this domain
-                        (segments/, themes/, sessions/, admin-sidebar/, ...)
+                        (segments/, themes/, sessions/, admin-sidebar/,
+                         editor/, conditions/, element-picker/, ...)
   <single-file>.tsx     multi-page widget that doesn't (yet) need a folder
-                        (activity-feed.tsx, attribute-type-chip.tsx, ...)
+                        (activity-feed.tsx, ...)
 ```
 
 Promote a single file to a folder when **the second file in the same
 domain appears**. Don't pre-create empty domain folders.
+
+This is also where the content editor (`editor/`) and the conditions
+editor (`conditions/`) live. They were workspace packages until 2026-10;
+with the plugin plans gone they had no consumer but the web app, and a
+package boundary with one consumer only costs. A business component
+becomes a package again when a second consumer outside `apps/web` exists
+— not on speculation.
 
 ## Page-specific components → `apps/web/src/pages/<route>/components/`
 
@@ -63,7 +57,7 @@ The default is **start local, promote on demand**:
 | Currently | Reuse appears at | Move to |
 |---|---|---|
 | `pages/<route>/components/` | a second route in `apps/web` | `apps/web/src/components/<domain>/` |
-| `apps/web/src/components/<domain>/` | builder or extension | `@usertour/business-components` (must first decouple from `apps/web` contexts) |
+| `apps/web/src/components/<domain>/` | a consumer outside `apps/web` | a new workspace package (must first decouple from `apps/web` contexts) |
 | anywhere | becomes business-agnostic | `@usertour/ui` |
 
 Don't promote on speculation. Wait for evidence (a second consumer, or
@@ -72,7 +66,7 @@ an actual cross-app use case).
 ## Hooks follow the same axis
 
 - Pure GraphQL wrappers (`useDeleteSegmentMutation` shape, returning
-  `{ invoke, loading, error }`) → `packages/hooks/`.
+  `{ invoke, loading, error }`) → `packages/data/`.
 - Anything that touches `useToast`, an app context, `useNavigate`, or
   wraps a GraphQL hook with UX behaviour → `apps/web/src/hooks/`.
 

@@ -8,7 +8,12 @@ export type ThemeVariation = {
   settings: ThemeTypesSetting;
 };
 
-export type Theme = {
+/**
+ * A theme as the runtime receives it: the config payload's theme list and the
+ * base of a session's theme. The dashboard reads themes through its GraphQL
+ * documents and types them from those (`Theme` in `@usertour/data`).
+ */
+export type RuntimeTheme = {
   id: string;
   name: string;
   updatedAt: string;

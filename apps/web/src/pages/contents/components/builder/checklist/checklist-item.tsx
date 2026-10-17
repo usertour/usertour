@@ -16,9 +16,9 @@ import {
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { RiArrowLeftSLine, SpinnerIcon } from '@usertour/icons';
-import { Conditions, DEFAULT_CONDITION_TYPES } from '@usertour/business-components';
-import { Actions } from '@usertour/editor';
-import { useListEventsQuery, useSegmentListQuery } from '@usertour/hooks';
+import { Conditions, DEFAULT_CONDITION_TYPES } from '@/components/conditions';
+import { Actions } from '@/components/editor';
+import { useListEventsQuery, useListSegmentsQuery } from '@usertour/data';
 import { ChecklistItemType, ContentDataType, RulesCondition, RulesType } from '@usertour/types';
 import { useId, useLayoutEffect } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
@@ -64,7 +64,7 @@ const ChecklistItemBody = () => {
   const projectId = useProjectId();
   const formPrefix = useId();
   const { token } = useToken();
-  const { segmentList } = useSegmentListQuery(environmentId);
+  const { segmentList } = useListSegmentsQuery(environmentId);
   const { eventList } = useListEventsQuery(projectId);
   const { t } = useTranslation();
 
@@ -133,7 +133,6 @@ const ChecklistItemBody = () => {
               attributes={attributeList}
               contents={contents}
               token={token}
-              t={t}
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -148,7 +147,6 @@ const ChecklistItemBody = () => {
               events={eventList}
               token={token}
               baseZIndex={BUILDER_Z.rules}
-              t={t}
             />
           </div>
           <div className="flex flex-col space-y-2">
@@ -173,7 +171,6 @@ const ChecklistItemBody = () => {
                 events={eventList}
                 token={token}
                 baseZIndex={BUILDER_Z.rules}
-                t={t}
               />
             )}
           </div>

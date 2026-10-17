@@ -23,9 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@usertour/ui';
-import { useApolloClient } from '@apollo/client';
-import { queryTrackerUsers } from '@usertour/gql';
-import { useQueryTrackerUsersQuery } from '@usertour/hooks';
+
+import { useFetchAllTrackerUsers, useQueryTrackerUsersQuery } from '@usertour/data';
 import { ContentDataType } from '@usertour/types';
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 import { DownloadIcon } from 'lucide-react';
@@ -33,24 +32,6 @@ import { endOfDay, startOfDay, formatDistanceToNow } from 'date-fns';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-
-interface TrackerUserNode {
-  id: string;
-  firstTrackedAt: string;
-  lastTrackedAt: string;
-  eventsCount: number;
-  companiesCount?: number;
-  bizUser: {
-    id: string;
-    externalId: string;
-    data: Record<string, any>;
-  };
-  bizCompany?: {
-    id: string;
-    externalId: string;
-    data: Record<string, any>;
-  } | null;
-}
 
 const PAGE_SIZES = [10, 20, 30, 40, 50];
 
@@ -105,7 +86,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
   const { dateRange, timezone } = useAnalyticsUI();
   const { environment } = useAppContext();
   const { content } = useContentDetail(contentId);
-  const client = useApolloClient();
+  const fetchAllTrackerUsers = useFetchAllTrackerUsers();
   const { toast } = useToast();
   const { t } = useTranslation();
   // Announcements reuse this event-driven viewer list (ANNOUNCEMENT_SEEN
@@ -133,7 +114,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
     options: { skip: !dateRange?.from || !dateRange?.to || !environment?.id },
   });
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
-  const users = edges.map((e: { node: TrackerUserNode }) => e.node);
+  const users = edges.map((edge) => edge.node);
 
   const exportQuery = {
     environmentId: environment?.id ?? '',
@@ -162,36 +143,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
         description: t('contents.analytics.export.startingTrackerDescription'),
       });
 
-      const allUsers: TrackerUserNode[] = [];
-      let after: string | null = null;
-      const chunkSize = 200;
-
-      while (true) {
-        const result: any = await client.query({
-          query: queryTrackerUsers,
-          variables: {
-            first: chunkSize,
-            after,
-            query: exportQuery,
-            orderBy: { field: 'createdAt', direction: 'desc' },
-          },
-          fetchPolicy: 'network-only',
-        });
-
-        const connection: any = result.data?.queryTrackerUsers;
-        const fetchedEdges = connection?.edges ?? [];
-        const fetchedUsers = fetchedEdges.map(
-          (edge: { node: TrackerUserNode }) => edge.node,
-        ) as TrackerUserNode[];
-        allUsers.push(...fetchedUsers);
-
-        const nextPage = connection?.pageInfo?.hasNextPage;
-        const endCursor = connection?.pageInfo?.endCursor;
-        if (!nextPage || !endCursor || fetchedEdges.length === 0) {
-          break;
-        }
-        after = endCursor;
-      }
+      const allUsers = await fetchAllTrackerUsers(exportQuery);
 
       // Both exports share the identity columns; only the trailing metric
       // columns differ (an announcement is seen once per user, so it exports a
@@ -266,7 +218,7 @@ export const AnalyticsTrackerUsers = ({ contentId }: { contentId: string }) => {
       setIsExporting(false);
     }
   }, [
-    client,
+    fetchAllTrackerUsers,
     content?.name,
     dateRange?.from,
     dateRange?.to,

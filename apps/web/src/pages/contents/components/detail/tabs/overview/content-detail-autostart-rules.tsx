@@ -1,3 +1,4 @@
+import { useContentListQuery, type SegmentBizType } from '@usertour/data';
 import { useAttributeList } from '@/hooks/use-attribute-list';
 import { useEventList } from '@/hooks/use-event-list';
 import { useSegmentList } from '@/hooks/use-segment-list';
@@ -11,8 +12,7 @@ import {
   ConditionWait,
   Conditions,
   validateConditions,
-} from '@usertour/business-components';
-import { useContentListQuery } from '@usertour/hooks';
+} from '@/components/conditions';
 import { deepClone, getAuthToken } from '@usertour/helpers';
 import { conditionsIsSame } from '@usertour/helpers';
 import isEqual from 'fast-deep-equal';
@@ -40,7 +40,7 @@ export enum ContentDetailAutoStartRulesType {
 // constant so the array reference stays stable across renders — same
 // reference across renders matches `useSegmentList`'s useMemo deps so
 // the filtered list doesn't recompute every paint.
-const AUTOSTART_SEGMENT_BIZ_TYPES: readonly string[] = ['COMPANY', 'USER'];
+const AUTOSTART_SEGMENT_BIZ_TYPES: readonly SegmentBizType[] = ['COMPANY', 'USER'];
 
 const coerceEnabledForPersist = (flag: boolean, conds: RulesCondition[]) =>
   flag && conds.length > 0;
@@ -258,7 +258,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
             disabled={disabled}
             baseZIndex={WebZIndex.RULES}
             events={eventList}
-            t={t}
             {...(filterItems ? { filterItems } : {})}
           />
         </div>
@@ -275,7 +274,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               defaultValue={localSetting.wait ?? 0}
               onValueChange={(value) => updateSettings({ wait: value })}
               disabled={disabled}
-              t={t}
             />
           )}
           {showFrequency && (
@@ -285,7 +283,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               contentType={contentType}
               showAtLeast={showAtLeast}
               disabled={disabled}
-              t={t}
             />
           )}
           {showIfCompleted && localSetting.frequency?.frequency !== Frequency.ONCE && (
@@ -294,7 +291,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               contentType={contentType}
               onCheckedChange={(checked) => updateSettings({ startIfNotComplete: checked })}
               disabled={disabled}
-              t={t}
             />
           )}
           {showPriority && (
@@ -302,7 +298,6 @@ export const ContentDetailAutoStartRules = (props: ContentDetailAutoStartRulesPr
               onChange={(priority) => updateSettings({ priority: priority as ContentPriority })}
               defaultValue={localSetting.priority ?? ContentPriority.MEDIUM}
               disabled={disabled}
-              t={t}
             />
           )}
         </>

@@ -312,7 +312,7 @@ describe('GraphQL biz (e2e)', () => {
         query: `query ($query: BizEventQuery!, $orderBy: BizOrder!, $first: Int) {
           queryBizUserEvents(query: $query, orderBy: $orderBy, first: $first) {
             totalCount
-            edges { node { id eventId bizUserId event { id codeName } } }
+            edges { node { id eventId bizUserId event { id codeName } bizUser { id } } }
           }
         }`,
         variables: {
@@ -328,6 +328,8 @@ describe('GraphQL biz (e2e)', () => {
       expect(node.eventId).toBe(event.id);
       expect(node.bizUserId).toBe(bizUser.id);
       expect(node.event).toMatchObject({ id: event.id, codeName: 'user_signed_in' });
+      // The dashboard's feed selects the user; the resolver has to load it.
+      expect(node.bizUser).toMatchObject({ id: bizUser.id });
     });
 
     it('returns no events for a user without any', async () => {
@@ -492,7 +494,10 @@ describe('GraphQL biz (e2e)', () => {
 
     it('updates the data filter and persists it', async () => {
       const seg = await buildSegment(prisma, { projectId, environmentId, bizType: 1, dataType: 2 });
-      const data = { logic: 'and', subConditions: [] };
+      // A condition list, as the dashboard sends it: `data` is `[RulesCondition!]`.
+      const data = [
+        { id: 'c1', type: 'user-attr', data: { attrId: 'attr-1', logic: 'is', value: 'x' } },
+      ];
       const res = await graphql(app, {
         token,
         query: `mutation ($data: UpdateSegment!) {
@@ -513,6 +518,34 @@ describe('GraphQL biz (e2e)', () => {
         variables: { data: { id: 'does-not-exist', name: 'x' } },
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
+    });
+
+    it('rejects an explicit null source on creation as invalid input, not as a database failure', async () => {
+      const name = 'Null source';
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: CreatSegment!) { createSegment(data: $data) { id } }',
+        variables: {
+          data: { name, environmentId, bizType: 'USER', dataType: 'MANUAL', source: null },
+        },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+
+      const rows = await prisma.segment.findMany({ where: { environmentId, name } });
+      expect(rows).toEqual([]);
+    });
+
+    it('rejects an explicit null name as invalid input, not as a database failure', async () => {
+      const seg = await buildSegment(prisma, { projectId, environmentId, bizType: 1, dataType: 3 });
+      const res = await graphql(app, {
+        token,
+        query: 'mutation ($data: UpdateSegment!) { updateSegment(data: $data) { id } }',
+        variables: { data: { id: seg.id, name: null } },
+      });
+      expect(res.body.errors?.[0]?.extensions?.code).toBe('E1017');
+
+      const row = await prisma.segment.findUnique({ where: { id: seg.id } });
+      expect(row?.name).toBe(seg.name);
     });
   });
 

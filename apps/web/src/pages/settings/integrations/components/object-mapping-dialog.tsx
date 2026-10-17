@@ -6,7 +6,7 @@ import {
   type Integration,
   type IntegrationObjectMapping,
   useUpsertIntegrationObjectMappingMutation,
-} from '@usertour/hooks';
+} from '@usertour/data';
 import { RiAlertLine, RiCloseLine } from '@usertour/icons';
 import {
   Badge,
@@ -41,7 +41,7 @@ import type {
   SyncMatchStrategy,
   SyncRemoteObject,
 } from '@usertour/types';
-import { AttributeTypeChip } from '@/components/attribute-type-chip';
+import { AttributeTypeChip } from '@/components/attributes/attribute-type-chip';
 import {
   SYNC_HIGH_CHURN_ATTRIBUTES,
   MappingFieldChip,

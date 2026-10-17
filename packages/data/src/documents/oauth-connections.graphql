@@ -1,0 +1,16 @@
+query OAuthConnections {
+  oauthConnections {
+    id
+    clientName
+    projectId
+    projectName
+    scopes
+    environmentNames
+    createdAt
+    lastUsedAt
+  }
+}
+
+mutation RevokeOAuthConnection($id: String!) {
+  revokeOAuthConnection(id: $id)
+}

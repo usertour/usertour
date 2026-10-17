@@ -1,12 +1,9 @@
+import type { SubscriptionPlanType } from './subscription-plan-type.type';
+
 /**
  * Payment recurring interval
  */
 export type SubscriptionInterval = 'monthly' | 'yearly';
-
-/**
- * Subscription plan type
- */
-export type SubscriptionPlanType = 'hobby' | 'starter' | 'growth' | 'business';
 
 /**
  * Subscription status

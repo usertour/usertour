@@ -1,9 +1,7 @@
 import { useCallback, useState } from 'react';
 
-import { useApolloClient } from '@apollo/client';
-import { createPresignedUrl } from '@usertour/gql';
+import { useUpload } from '@/hooks/use-upload';
 import { useToast } from '@usertour/ui';
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
 interface RcUploadOption {
@@ -27,36 +25,8 @@ export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation();
-  const client = useApolloClient();
-
-  // Upload to AWS S3
-  const uploadToS3 = useCallback(
-    async (file: File): Promise<string> => {
-      const fileName = file.name;
-      const contentType = file.type;
-
-      const { data } = await client.mutate({
-        mutation: createPresignedUrl,
-        variables: {
-          fileName,
-          storageType: 'S3',
-        },
-      });
-
-      const { signedUrl, cdnUrl } = data?.createPresignedUrl ?? {};
-
-      if (!signedUrl || !cdnUrl) {
-        throw new Error(t('components.upload.generateUrlFailed'));
-      }
-
-      await axios.put(signedUrl, file, {
-        headers: { 'Content-Type': contentType },
-      });
-
-      return cdnUrl;
-    },
-    [client],
-  );
+  // Presigned-URL upload to S3; a failure falls back to base64 below.
+  const { upload: uploadToS3 } = useUpload();
 
   const handleUpload = useCallback(
     (option: RcUploadOption) => {

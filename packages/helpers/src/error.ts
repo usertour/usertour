@@ -14,7 +14,7 @@ import { isTimeConditionDataV2, isTimeConditionDataLegacy } from './conditions/t
 
 // Internal validity predicates backing `hasError`. They only flag whether a
 // condition is incomplete — user-facing messaging lives in the i18n'd
-// validators in @usertour/business-components.
+// validators in apps/web/src/components/conditions.
 
 const isValidSelector = (selector: ElementSelectorPropsData) => {
   if (!selector) {
@@ -274,4 +274,60 @@ function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
 
 export function getErrorMessage(error: unknown) {
   return toErrorWithMessage(error).message;
+}
+
+interface ServerGraphQLError {
+  message?: unknown;
+  extensions?: { code?: unknown };
+}
+
+function firstGraphQLError(error: unknown): ServerGraphQLError | undefined {
+  return (error as { graphQLErrors?: ServerGraphQLError[] } | null | undefined)?.graphQLErrors?.[0];
+}
+
+// Catalogue codes look like E0048. E0000 is the server's "something it did
+// not expect" and carries only a generic sentence; a transport code
+// ("Internal Server Error") never came through the catalogue at all.
+const CATALOGUE_CODE = /^E\d{4}$/;
+const UNKNOWN_SERVER_ERROR = 'E0000';
+const isCatalogueCode = (code: string): boolean =>
+  CATALOGUE_CODE.test(code) && code !== UNKNOWN_SERVER_ERROR;
+
+/**
+ * The code the server's error catalogue attached to a failed GraphQL
+ * operation, when it attached one. A network failure or a thrown string
+ * carries none.
+ */
+export function serverErrorCode(error: unknown): string | undefined {
+  const code = firstGraphQLError(error)?.extensions?.code;
+  return typeof code === 'string' ? code : undefined;
+}
+
+/**
+ * What the server said about a failed operation, in the language the
+ * request asked for — present only when the error came through the
+ * catalogue. A network failure or a 500 has nothing worth showing;
+ * callers fall back to their own copy.
+ */
+export function serverErrorMessage(error: unknown): string | undefined {
+  const first = firstGraphQLError(error);
+  if (!first) {
+    return undefined;
+  }
+  const { message, extensions } = first;
+  if (
+    typeof extensions?.code !== 'string' ||
+    !isCatalogueCode(extensions.code) ||
+    typeof message !== 'string'
+  ) {
+    return undefined;
+  }
+  return message;
+}
+
+const RESOURCE_ALREADY_EXISTS = 'E0048';
+
+/** The server refused a create because the identifier is already taken. */
+export function isResourceAlreadyExistsError(error: unknown): boolean {
+  return serverErrorCode(error) === RESOURCE_ALREADY_EXISTS;
 }

@@ -1,5 +1,6 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import type { LocalizationTranslationUnit } from '@usertour/helpers';
-import { useUpdateVersionLocalizationMutation } from '@usertour/hooks';
+import { useUpdateVersionLocalizationMutation } from '@usertour/data';
 import { useToast } from '@usertour/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -82,10 +83,10 @@ export const useLocalizationAutosave = (options: LocalizationAutosaveOptions) =>
         throw new Error('Translation save returned no row');
       }
       baselineRef.current = advanceTranslationBaseline(baseline, changes);
-    } catch (_) {
+    } catch (error) {
       toast({
         variant: 'destructive',
-        title: t('contents.localization.toast.saveFailure'),
+        title: serverErrorMessage(error) ?? t('contents.localization.toast.saveFailure'),
       });
     } finally {
       inFlightRef.current = false;

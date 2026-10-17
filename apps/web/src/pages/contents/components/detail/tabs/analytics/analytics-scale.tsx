@@ -1,3 +1,4 @@
+import { serverErrorMessage } from '@usertour/helpers';
 import {
   Card,
   CardContent,
@@ -15,14 +16,14 @@ import type {
   ContentQuestionAnalytics,
   Question,
 } from '@usertour/types';
+import { ContentEditorElementType } from '@usertour/types';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
 import { format } from 'date-fns';
 import { useState, useMemo } from 'react';
 import { cn } from '@usertour/tailwind';
 import { ArrowRightIcon } from '@usertour/icons';
-import { useUpdateContentMutation } from '@usertour/hooks';
+import { useUpdateContentMutation } from '@usertour/data';
 import { RollingWindowDialog } from './components/rolling-window-dialog';
-import { ContentEditorElementType } from '@usertour/editor';
 import { QuestionStarRating } from '@/components/question';
 import { useTranslation } from 'react-i18next';
 
@@ -135,10 +136,10 @@ export const AnalyticsScale = (props: AnalyticsScaleProps) => {
         });
         onRollingWindowChange(false);
       }
-    } catch (_) {
+    } catch (error) {
       toast({
         variant: 'destructive',
-        title: t('contents.analytics.rollingWindow.updateFailed'),
+        title: serverErrorMessage(error) ?? t('contents.analytics.rollingWindow.updateFailed'),
       });
       onRollingWindowChange(false);
     }

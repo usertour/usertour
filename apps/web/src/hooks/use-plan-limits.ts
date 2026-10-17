@@ -1,6 +1,6 @@
 import { isWithinLimit } from '@usertour/helpers';
 import type { PlanFeatures } from '@usertour/types';
-import { useGetUserEnvironmentsQuery } from '@usertour/hooks';
+import { useGetUserEnvironmentsQuery } from '@usertour/data';
 import { useGlobalConfig } from '@/hooks/use-global-config';
 import { useActiveProject } from '@/hooks/use-active-project';
 import { useMemberList } from '@/hooks/use-member-list';

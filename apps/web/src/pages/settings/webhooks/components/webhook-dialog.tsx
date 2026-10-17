@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { getErrorMessage } from '@usertour/helpers';
-import { type Webhook, useCreateWebhookMutation, useUpdateWebhookMutation } from '@usertour/hooks';
+import { type Webhook, useCreateWebhookMutation, useUpdateWebhookMutation } from '@usertour/data';
 import { SpinnerIcon } from '@usertour/icons';
 import {
   Button,
