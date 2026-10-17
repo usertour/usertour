@@ -102,6 +102,10 @@ const config: Config = {
     },
     jwt: {
       secret: process.env.JWT_SECRET || 'test',
+      // Signs and verifies refresh tokens. Defaults to the session secret, so
+      // an instance that sets nothing behaves as before; set JWT_REFRESH_SECRET
+      // to keep the two token kinds apart at the key level as well as by claim.
+      refreshSecret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'test',
       expiresIn: process.env.JWT_EXPIRATION_TIME || '1h',
       refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME || '7d',
     },
