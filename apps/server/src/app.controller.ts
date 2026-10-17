@@ -16,13 +16,4 @@ export class AppController {
   getHelloName(@Param('name') name: string): string {
     return this.appService.getHelloName(name);
   }
-
-  @Get('api/health')
-  @Public()
-  healthCheck() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-    };
-  }
 }
