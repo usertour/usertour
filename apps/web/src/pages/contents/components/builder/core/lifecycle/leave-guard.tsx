@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { useEvent } from 'react-use';
 import {
@@ -49,18 +50,60 @@ export const BuilderLeaveGuard = () => {
     return currentLocation.pathname !== nextLocation.pathname;
   });
 
+  // Save & Leave outlives its render: it reads the blocker through a ref so
+  // it acts on the blocker the router holds when the save returns (a later
+  // navigation attempt may have replaced the one it was clicked for).
+  const blockerRef = useRef(blocker);
+  blockerRef.current = blocker;
+
+  // Save & Leave in progress. The dialog disables both leave buttons while
+  // `leaving` is set. Each click takes the next attempt number, and the
+  // callback acts only if its number is still current when the save
+  // returns: Stay, unmount and a later click all move the number on, so a
+  // save that returns for an earlier click does nothing (a plain flag would
+  // let the earlier save navigate on behalf of the later click, whose own
+  // save is still queued behind it).
+  const [leaving, setLeaving] = useState(false);
+  const leaveAttemptRef = useRef(0);
+  const endLeave = () => {
+    leaveAttemptRef.current += 1;
+    setLeaving(false);
+  };
+  useEffect(() => {
+    return () => {
+      leaveAttemptRef.current += 1;
+    };
+  }, []);
+
   return (
     <LeaveConfirmDialog
       open={blocker.state === 'blocked'}
+      leaving={leaving}
       onSaveAndLeave={async () => {
+        const attempt = leaveAttemptRef.current + 1;
+        leaveAttemptRef.current = attempt;
+        setLeaving(true);
+        const saved = await saveContent();
+        if (leaveAttemptRef.current !== attempt) {
+          // Stay, unmount or a later Save & Leave superseded this click.
+          return;
+        }
+        endLeave();
         // Only leave if the save actually succeeded — otherwise stay put (the
         // error toast is already shown) so we don't silently drop the edits.
-        if (await saveContent()) {
-          blocker.proceed?.();
+        if (!saved) {
+          return;
+        }
+        const current = blockerRef.current;
+        if (current.state === 'blocked') {
+          current.proceed();
         }
       }}
       onDiscardAndLeave={() => blocker.proceed?.()}
-      onStay={() => blocker.reset?.()}
+      onStay={() => {
+        endLeave();
+        blocker.reset?.();
+      }}
     />
   );
 };
