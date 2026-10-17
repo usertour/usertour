@@ -39,6 +39,7 @@ import { IntegrationsModule } from '@/modules/integrations/integrations.module';
 import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
 import { LicenseModule } from '@/modules/license/license.module';
 import { CommonModule } from '@/modules/common/common.module';
+import { HealthModule } from '@/modules/health/health.module';
 import { AuditModule } from '@/modules/audit/audit.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { loggingMiddleware } from 'nestjs-prisma';
@@ -174,6 +175,7 @@ import { Logger } from '@nestjs/common';
     McpModule,
     OAuthModule,
     CommonModule,
+    HealthModule,
     AdminModule,
   ],
   controllers: [AppController],
