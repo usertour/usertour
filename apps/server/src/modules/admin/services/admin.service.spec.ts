@@ -3,12 +3,41 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'nestjs-prisma';
 import {
   FeatureRequiresLicenseError,
+  InstanceLicenseRequiredError,
   SystemAdminMustEnable2FAFirstError,
 } from '@/modules/common/errors/errors';
 import { LicenseService } from '@/modules/license/services/license.service';
 import { PasswordService } from '@/modules/auth/services/password.service';
 import { TeamService } from '@/modules/team/services/team.service';
 import { AdminService } from './admin.service';
+
+const buildService = async () => {
+  const prisma: any = {
+    user: { findUnique: jest.fn(), findMany: jest.fn() },
+    project: { findUnique: jest.fn(), update: jest.fn() },
+    instanceSetting: { upsert: jest.fn(), findUnique: jest.fn() },
+    refreshToken: { deleteMany: jest.fn() },
+    $transaction: jest.fn((cb: any) => cb(prisma)),
+  };
+  const license = {
+    hasFeature: jest.fn().mockResolvedValue(true),
+    validateLicense: jest.fn(),
+    getLicensePayload: jest.fn(),
+  } as unknown as jest.Mocked<LicenseService>;
+
+  const module: TestingModule = await Test.createTestingModule({
+    providers: [
+      AdminService,
+      { provide: PrismaService, useValue: prisma },
+      { provide: ConfigService, useValue: { get: jest.fn() } },
+      { provide: LicenseService, useValue: license },
+      { provide: PasswordService, useValue: {} },
+      { provide: TeamService, useValue: {} },
+    ],
+  }).compile();
+
+  return { service: module.get<AdminService>(AdminService), prisma, license };
+};
 
 // Focused regression for the Layer-A piece of "instance enforces 2FA":
 // flipping require2FA=true must, in the same transaction, kill the refresh
@@ -22,28 +51,7 @@ describe('AdminService.updateInstanceRequire2FA', () => {
   let license: jest.Mocked<LicenseService>;
 
   beforeEach(async () => {
-    prisma = {
-      user: { findUnique: jest.fn(), findMany: jest.fn() },
-      instanceSetting: { upsert: jest.fn(), findUnique: jest.fn() },
-      refreshToken: { deleteMany: jest.fn() },
-      $transaction: jest.fn((cb: any) => cb(prisma)),
-    };
-    license = {
-      hasFeature: jest.fn().mockResolvedValue(true),
-    } as any;
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AdminService,
-        { provide: PrismaService, useValue: prisma },
-        { provide: ConfigService, useValue: { get: jest.fn() } },
-        { provide: LicenseService, useValue: license },
-        { provide: PasswordService, useValue: {} },
-        { provide: TeamService, useValue: {} },
-      ],
-    }).compile();
-
-    service = module.get<AdminService>(AdminService);
+    ({ service, prisma, license } = await buildService());
   });
 
   const fullyLicensed = () => {
@@ -108,5 +116,41 @@ describe('AdminService.updateInstanceRequire2FA', () => {
         update: { require2FA: false },
       }),
     );
+  });
+});
+
+describe('AdminService.updateProjectUsesInstanceLicense', () => {
+  let service: AdminService;
+  let prisma: any;
+
+  beforeEach(async () => {
+    ({ service, prisma } = await buildService());
+    prisma.instanceSetting.findUnique.mockResolvedValue({ instanceId: 'inst', license: null });
+  });
+
+  const project = (usesInstanceLicense: boolean) =>
+    prisma.project.findUnique.mockResolvedValue({
+      id: 'project-1',
+      usesInstanceLicense,
+      license: null,
+    });
+
+  it('refuses to assign the instance license when the instance has none', async () => {
+    project(false);
+
+    await expect(
+      service.updateProjectUsesInstanceLicense('project-1', true),
+    ).rejects.toBeInstanceOf(InstanceLicenseRequiredError);
+    expect(prisma.project.update).not.toHaveBeenCalled();
+  });
+
+  it('releases the instance license without one, so a lapsed assignment can be cleaned up', async () => {
+    project(true);
+
+    await expect(service.updateProjectUsesInstanceLicense('project-1', false)).resolves.toBe(true);
+    expect(prisma.project.update).toHaveBeenCalledWith({
+      where: { id: 'project-1' },
+      data: { usesInstanceLicense: false },
+    });
   });
 });

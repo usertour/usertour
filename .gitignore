@@ -57,3 +57,6 @@ stats.html
 
 # generated (prisma-dbml-generator artifact; read by nothing in-repo)
 apps/server/prisma/dbml/
+
+# vite (bundled config it writes while loading vite.config.ts; left behind when the process is killed mid-load)
+*.timestamp-*.mjs
