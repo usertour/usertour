@@ -690,6 +690,23 @@ export class AuthService implements OnModuleInit {
         secret: this.configService.get('auth.jwt.refreshSecret'),
       });
 
+      // Only a refresh token names a stored row, and it names its own: by
+      // jti and by user. An access token verifies too whenever the refresh
+      // secret is the session secret (the default, see auth.jwt.refreshSecret)
+      // but carries no jti, and Prisma drops an undefined filter field, so
+      // the delete below would then consume every live refresh token on the
+      // instance instead of this one. The user filter means a token forged
+      // over a known jti with someone else's userId names no row either,
+      // whatever secret signed it.
+      const jti: unknown = payload.jti;
+      const userId: unknown = payload.userId;
+      if (payload.tokenType !== 'refresh' || typeof jti !== 'string' || jti === '') {
+        throw new AuthenticationExpiredError();
+      }
+      if (typeof userId !== 'string' || userId === '') {
+        throw new AuthenticationExpiredError();
+      }
+
       // One-time use: atomically consume the stored token by deleting it.
       // `count === 1` means the row existed and hadn't expired; anything else
       // (unknown jti, already-consumed, or expired) is treated as expired.
@@ -703,14 +720,14 @@ export class AuthService implements OnModuleInit {
       // rejection. Drop this filter together with the `revoked` column once
       // every legacy revoked row has aged past its expiry.
       const { count } = await this.prisma.refreshToken.deleteMany({
-        where: { jti: payload.jti, expiresAt: { gt: new Date() }, revoked: false },
+        where: { jti, userId, expiresAt: { gt: new Date() }, revoked: false },
       });
       if (count !== 1) {
         throw new AuthenticationExpiredError();
       }
 
       // Generate new tokens
-      return this.login(payload.userId);
+      return this.login(userId);
     } catch (_) {
       throw new AuthenticationExpiredError();
     }

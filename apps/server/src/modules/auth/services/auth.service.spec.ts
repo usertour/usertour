@@ -5,6 +5,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import { PrismaService } from 'nestjs-prisma';
 import {
   AccountNotFoundError,
+  AuthenticationExpiredError,
   PasswordIncorrect,
   SsoRequiredError,
   TooManyLoginAttemptsError,
@@ -31,6 +32,7 @@ describe('AuthService', () => {
   let twoFactor: jest.Mocked<TwoFactorService>;
   let config: { get: jest.Mock };
   let projects: { getProjectConfig: jest.Mock };
+  let jwt: { sign: jest.Mock; verify: jest.Mock };
 
   const buildUser = (overrides: Partial<any> = {}) => ({
     id: 'user-1',
@@ -125,6 +127,7 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
+    jwt = module.get(JwtService);
   });
 
   // ===========================================================================
@@ -341,6 +344,95 @@ describe('AuthService', () => {
       });
       // Rollup happens before the delete (mock order can't assert timing, but both fire).
       expect(prisma.apiToken.deleteMany).toHaveBeenCalled();
+    });
+  });
+
+  // ===========================================================================
+  // Refresh — the public endpoint consumes a refresh token and nothing else
+  // ===========================================================================
+
+  describe('refreshAccessToken', () => {
+    const refreshPayload = { userId: 'user-1', jti: 'jti-1', tokenType: 'refresh' };
+
+    it('rejects an access token and consumes no refresh token', async () => {
+      // By default both token kinds verify with the session secret; an access
+      // token has no jti, and an undefined jti filter would have matched
+      // every row.
+      jwt.verify.mockReturnValue({ userId: 'user-1' });
+
+      await expect(service.refreshAccessToken('access-token')).rejects.toBeInstanceOf(
+        AuthenticationExpiredError,
+      );
+      expect(prisma.refreshToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('rejects a refresh-typed token that names no row', async () => {
+      jwt.verify.mockReturnValue({ userId: 'user-1', tokenType: 'refresh' });
+
+      await expect(service.refreshAccessToken('refresh-token')).rejects.toBeInstanceOf(
+        AuthenticationExpiredError,
+      );
+      expect(prisma.refreshToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('rejects a refresh-typed token whose jti is not a string', async () => {
+      jwt.verify.mockReturnValue({ userId: 'user-1', tokenType: 'refresh', jti: 42 });
+
+      await expect(service.refreshAccessToken('refresh-token')).rejects.toBeInstanceOf(
+        AuthenticationExpiredError,
+      );
+      expect(prisma.refreshToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('consumes exactly the presented token and issues new tokens', async () => {
+      jwt.verify.mockReturnValue(refreshPayload);
+      prisma.refreshToken.deleteMany.mockResolvedValue({ count: 1 });
+
+      const tokens = await service.refreshAccessToken('refresh-token');
+
+      expect(prisma.refreshToken.deleteMany).toHaveBeenCalledTimes(1);
+      expect(prisma.refreshToken.deleteMany.mock.calls[0][0].where).toMatchObject({
+        jti: 'jti-1',
+        userId: 'user-1',
+        revoked: false,
+      });
+      expect(tokens.uid).toBe('user-1');
+      expect(prisma.refreshToken.create).toHaveBeenCalledTimes(1);
+    });
+
+    it("names no row for a known jti paired with another user's id", async () => {
+      // A token forged over the caller's own jti but a victim's userId must
+      // not turn into the victim's session, whatever secret signed it.
+      jwt.verify.mockReturnValue({ userId: 'victim', jti: 'jti-1', tokenType: 'refresh' });
+      prisma.refreshToken.deleteMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.refreshAccessToken('forged-token')).rejects.toBeInstanceOf(
+        AuthenticationExpiredError,
+      );
+      expect(prisma.refreshToken.deleteMany.mock.calls[0][0].where).toMatchObject({
+        jti: 'jti-1',
+        userId: 'victim',
+      });
+      expect(prisma.refreshToken.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a refresh token without a user before touching the table', async () => {
+      jwt.verify.mockReturnValue({ jti: 'jti-1', tokenType: 'refresh' });
+
+      await expect(service.refreshAccessToken('refresh-token')).rejects.toBeInstanceOf(
+        AuthenticationExpiredError,
+      );
+      expect(prisma.refreshToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('rejects a refresh token whose row is already consumed', async () => {
+      jwt.verify.mockReturnValue(refreshPayload);
+      prisma.refreshToken.deleteMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.refreshAccessToken('refresh-token')).rejects.toBeInstanceOf(
+        AuthenticationExpiredError,
+      );
+      expect(prisma.refreshToken.create).not.toHaveBeenCalled();
     });
   });
 });
