@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useParams } from 'react-router-dom';
 import { useEvent } from 'react-use';
 import {
   useBuilderMethods,
@@ -13,24 +13,27 @@ import { LeaveConfirmDialog } from '@/pages/contents/components/builder/core/lif
 // Unsaved-work leave protection — both exit routes run through ONE predicate:
 //
 //   - beforeunload — browser-level exit (tab close, hard reload, external link).
-//   - useBlocker   — SPA pathname changes (sidebar links, back/forward, navigate()).
+//   - useBlocker   — SPA navigations that leave the builder (sidebar links,
+//                    back/forward, navigate()).
 //
-// `hasUnsavedWork` folds every state that means "don't lose this": a non-FSM
-// mutation or the initial load still in flight (isBusy = isLoading + saving),
-// local edits not yet saved (dirty), and a failed save that still holds local
-// state (error). 'idle' / 'saved' are clean and let navigation through.
-// 'conflict' also passes: the draft can never be saved from this mount (the
-// conflict dialog already said so), and blocking would offer a "save and
-// leave" that is guaranteed to fail.
+// `hasUnsavedWork` folds every state that means "don't lose this": a save in
+// flight (isBusy), local edits not yet saved (dirty), and a failed save that
+// still holds local state (error). 'idle' / 'saved' are clean and let
+// navigation through. 'conflict' also passes: the draft can never be saved
+// from this mount (the conflict dialog already said so), and blocking would
+// offer a "save and leave" that is guaranteed to fail.
 //
 // Both paths share this one predicate on purpose: they used to live in two
-// files with two slightly different booleans (beforeunload counted isLoading
-// but missed error; the blocker counted error but missed isLoading), so the
-// same "is there unsaved work?" question got two answers. One predicate, two
-// consumers.
+// files with two slightly different booleans, so the same "is there unsaved
+// work?" question got two answers. One predicate, two consumers. The initial
+// load is deliberately not part of it: leaving before the draft has arrived
+// loses nothing.
 //
-// useBlocker compares pathname only, so search-param-only changes (sub-view
-// route params) pass through — they aren't user-perceivable "leaving".
+// The blocker guards only navigations that leave the builder. The builders'
+// sub-views (a flow's step, a launcher's target or tooltip, a resource
+// center's tab or block) are route segments under the builder's own path,
+// `/env/:envId/:contentType/:contentId/builder/*`, and switching between
+// them keeps the draft mounted, so there is nothing to lose there.
 export const BuilderLeaveGuard = () => {
   const { saveContent } = useBuilderMethods();
   const saveState = useSaveState();
@@ -43,13 +46,15 @@ export const BuilderLeaveGuard = () => {
     }
   });
 
-  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+  const { envId, contentType, contentId } = useParams();
+  const builderPath = `/env/${envId}/${contentType}/${contentId}/builder`;
+  const blocker = useBlocker(({ nextLocation }) => {
     if (!hasUnsavedWork) {
       return false;
     }
-    return currentLocation.pathname !== nextLocation.pathname;
+    const { pathname } = nextLocation;
+    return pathname !== builderPath && !pathname.startsWith(`${builderPath}/`);
   });
-
   // Save & Leave outlives its render: it reads the blocker through a ref so
   // it acts on the blocker the router holds when the save returns (a later
   // navigation attempt may have replaced the one it was clicked for).
