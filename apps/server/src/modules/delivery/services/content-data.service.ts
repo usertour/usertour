@@ -814,7 +814,7 @@ export class ContentDataService {
       this.findSessionsByContent(contentIds, bizUserId, 0),
       this.findSessionCounts(contentIds, bizUserId),
       this.findSessionCounts(contentIds, bizUserId, ContentDataService.COMPLETED_EVENTS),
-      this.findEventsByContentIds(contentIds, bizUserId),
+      this.findLatestEventsByContent(contentIds, bizUserId),
     ]);
 
     // Process latestSiblingEvents and latestDismissedEvents from the same events data
@@ -888,12 +888,18 @@ export class ContentDataService {
   }
 
   /**
-   * Find all events for content IDs
+   * The rows the frequency rules read, picked in the database: for each
+   * content, the user's newest event on it (a sibling content's quiet
+   * period measures from it) and the user's newest dismissed event on it
+   * (its own `every` period measures from it). At most two rows per
+   * content, so the user's whole history on these contents — thousands of
+   * rows for a long-lived user, re-read on every evaluation pass — never
+   * crosses the wire.
    * @param contentIds - Array of content IDs to find events for
    * @param bizUserId - Business user ID (globally unique, determines environment)
-   * @returns Array of events with bizSession and content info, ordered by createdAt desc
+   * @returns The newest events with bizSession and content info, ordered by createdAt desc
    */
-  private async findEventsByContentIds(
+  private async findLatestEventsByContent(
     contentIds: string[],
     bizUserId: string,
   ): Promise<BizEventWithSessionAndContent[]> {
@@ -901,13 +907,38 @@ export class ContentDataService {
       return [];
     }
 
+    // One row per content from each branch; UNION folds a newest event
+    // that is itself the dismissal into a single id.
+    const latest = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      (
+        SELECT DISTINCT ON (s."contentId") e.id
+        FROM "BizEvent" e
+        JOIN "BizSession" s ON s.id = e."bizSessionId"
+        WHERE e."bizUserId" = ${bizUserId}
+          AND s.deleted = false
+          AND s."contentId" IN (${Prisma.join(contentIds)})
+        ORDER BY s."contentId", e."createdAt" DESC
+      )
+      UNION
+      (
+        SELECT DISTINCT ON (s."contentId") e.id
+        FROM "BizEvent" e
+        JOIN "BizSession" s ON s.id = e."bizSessionId"
+        JOIN "Event" ev ON ev.id = e."eventId"
+        WHERE e."bizUserId" = ${bizUserId}
+          AND s.deleted = false
+          AND s."contentId" IN (${Prisma.join(contentIds)})
+          AND ev."codeName" IN (${Prisma.join([...DISMISSED_EVENTS])})
+        ORDER BY s."contentId", e."createdAt" DESC
+      )
+    `;
+    if (latest.length === 0) {
+      return [];
+    }
+
     return await this.prisma.bizEvent.findMany({
       where: {
-        bizUserId,
-        bizSession: {
-          contentId: { in: contentIds },
-          deleted: false,
-        },
+        id: { in: latest.map((row) => row.id) },
       },
       include: {
         event: true,
@@ -930,7 +961,7 @@ export class ContentDataService {
 
   /**
    * Get latest dismissed events for each content ID
-   * @param events - Array of events with bizSession and content info, ordered by createdAt desc
+   * @param events - The newest events per content (see findLatestEventsByContent), ordered by createdAt desc
    * @returns Map of contentId to latest dismissed event
    */
   private getLatestDismissedEvents(
@@ -958,7 +989,7 @@ export class ContentDataService {
   /**
    * For each content, the user's latest event on ANOTHER content of the same
    * type: what the quiet period (`frequency.atLeast`) measures from.
-   * @param events - The user's events on these contents, ordered by createdAt desc
+   * @param events - The newest events per content (see findLatestEventsByContent), ordered by createdAt desc
    * @param contents - The contents to find a reference event for, with their types
    * @returns Map of contentId to the latest event of another content of its type
    */
