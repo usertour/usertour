@@ -71,10 +71,21 @@ const DEFAULT_CLIENT_CONTEXT = {
   viewportHeight: 800,
 };
 
+export interface WebSocketClientOptions {
+  /**
+   * Acknowledge the server's messages (default). A client that never acks
+   * stands in for a dead or frozen tab: every emit to it waits for the
+   * server's emit timeout.
+   */
+  acknowledge?: boolean;
+}
+
 export function connectWebSocketClient(
   baseUrl: string,
   auth: WebSocketAuth,
+  options: WebSocketClientOptions = {},
 ): Promise<WebSocketTestClient> {
+  const { acknowledge = true } = options;
   return new Promise((resolve, reject) => {
     const socket = io(`${baseUrl}/v2`, {
       transports: ['websocket'],
@@ -87,10 +98,10 @@ export function connectWebSocketClient(
 
     // The server delivers sessions via emitWithAck and waits for the client's
     // acknowledgment — a client that never acks would stall every emit until
-    // its timeout. Record and ack everything.
+    // its timeout. Record everything, and ack unless the test wants a silent client.
     socket.on('server-message', (message: ServerMessage, ack?: (ok: boolean) => void) => {
       serverMessages.push(message);
-      if (typeof ack === 'function') {
+      if (acknowledge && typeof ack === 'function') {
         ack(true);
       }
       for (let index = waiters.length - 1; index >= 0; index -= 1) {
