@@ -30,6 +30,7 @@ import {
   duplicateStep,
   remapFlowTranslationIdentifiers,
   remapVersionDataTranslationIdentifiers,
+  hasStepBody,
 } from '@usertour/helpers';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 
@@ -876,7 +877,7 @@ export class ContentService {
         // not share analytics identities), so localized/backup get the new
         // identifiers written in by position first.
         const remapTranslationPayload = (payload: unknown): unknown => {
-          if (duplicateContent.type === ContentDataType.FLOW) {
+          if (hasStepBody(duplicateContent.type)) {
             return remapFlowTranslationIdentifiers(steps, payload);
           }
           return remapVersionDataTranslationIdentifiers(

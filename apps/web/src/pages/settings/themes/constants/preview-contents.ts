@@ -100,6 +100,62 @@ export const LIST_PREVIEW_CONTENT = [
 /**
  * Preview content for banner theme preview
  */
+export const EMBED_PREVIEW_CONTENT: ContentEditorRoot[] = [
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          justifyContent: 'justify-start',
+          alignItems: 'items-start',
+          width: {
+            type: 'fill',
+          },
+          style: {},
+        },
+        children: [
+          {
+            element: {
+              type: 'text',
+              data: [
+                {
+                  type: 'h2',
+                  children: [{ text: 'Advanced reports are a Business feature' }],
+                  align: 'left',
+                },
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: 'Break down usage by team, export to CSV and schedule weekly digests.',
+                    },
+                  ],
+                  align: 'left',
+                },
+              ],
+            },
+            children: null,
+          },
+          {
+            element: {
+              type: 'button',
+              data: {
+                action: 'goto',
+                text: 'Upgrade plan',
+                type: 'primary',
+              },
+            },
+            children: null,
+          },
+        ],
+      },
+    ],
+  },
+] as unknown as ContentEditorRoot[];
+
 export const BANNER_PREVIEW_CONTENT = [
   {
     element: {

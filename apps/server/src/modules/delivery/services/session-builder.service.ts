@@ -14,6 +14,7 @@ import {
   SessionTheme,
   SessionStep,
   SessionAttribute,
+  EmbedData,
 } from '@usertour/types';
 import type { AnnouncementData } from '@usertour/types';
 import { DEFAULT_ANNOUNCEMENT_DATA } from '@usertour/constants';
@@ -286,6 +287,15 @@ export class SessionBuilderService {
     if (contentType === ContentDataType.BANNER) {
       return await this.processBannerSession(session, customContentVersion, socketData);
     }
+    if (contentType === ContentDataType.EMBED) {
+      return await this.processEmbedSession(
+        session,
+        customContentVersion,
+        socketData,
+        sessionThemes,
+        stepCvid,
+      );
+    }
     if (contentType === ContentDataType.RESOURCE_CENTER) {
       return await this.processResourceCenterSession(session, customContentVersion, socketData);
     }
@@ -408,6 +418,38 @@ export class SessionBuilderService {
     session.attributes = attributes;
     session.version.banner = bannerData;
     return session;
+  }
+
+  /**
+   * Process EMBED content type session: the screens are steps (the flow
+   * processing, attributes and current step included) and the shell is the
+   * version data.
+   * @param session - The content session
+   * @param customContentVersion - The custom content version
+   * @param socketData - The client data
+   * @param themes - The themes array
+   * @param stepCvid - The step CVID
+   * @returns The processed session or null if current step not found
+   */
+  private async processEmbedSession(
+    session: CustomContentSession,
+    customContentVersion: CustomContentVersion,
+    socketData: SocketData,
+    themes: Theme[],
+    stepCvid?: string,
+  ): Promise<CustomContentSession | null> {
+    const processed = await this.processFlowSession(
+      session,
+      customContentVersion,
+      socketData,
+      themes,
+      stepCvid,
+    );
+    if (!processed) {
+      return null;
+    }
+    processed.version.embed = customContentVersion.data as unknown as EmbedData;
+    return processed;
   }
 
   /**

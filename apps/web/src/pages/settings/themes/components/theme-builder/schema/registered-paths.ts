@@ -84,6 +84,14 @@ export const DERIVED_PATHS: readonly string[] = [
   'banner.textColor.background',
   'banner.textColor.hover',
   'banner.textColor.active',
+  // Embed: same split as the banner — background.background and text.color
+  // are the fields, the other slots are computed by `convertSettings`.
+  'embed.backgroundColor.color',
+  'embed.backgroundColor.hover',
+  'embed.backgroundColor.active',
+  'embed.textColor.background',
+  'embed.textColor.hover',
+  'embed.textColor.active',
 ];
 
 // Vestigial fields that exist on the canonical type but v1 never exposed (and

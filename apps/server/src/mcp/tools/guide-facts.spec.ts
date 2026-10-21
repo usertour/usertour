@@ -58,21 +58,23 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(AUTHORING_GUIDE).not.toContain('"type": "flow"');
   });
 
-  it('auto-start knobs: frequency/wait/ifCompleted are flow+checklist; atLeast flow-only; priority adds resource-center + banner; launcher none', () => {
+  it('auto-start knobs: frequency is flow+checklist+embed; wait/ifCompleted flow+checklist; atLeast flow-only; priority adds resource-center + banner; launcher none', () => {
     const typesWith = (cap: 'frequency' | 'atLeast' | 'wait' | 'ifCompleted' | 'priority') =>
       Object.values(ContentDataType)
         .filter((t) => AUTO_START_CAPABILITIES[t][cap])
         .sort();
     // matrix side
-    expect(typesWith('frequency')).toEqual(['checklist', 'flow']);
+    expect(typesWith('frequency')).toEqual(['checklist', 'embed', 'flow']);
     expect(typesWith('wait')).toEqual(['checklist', 'flow']);
     expect(typesWith('ifCompleted')).toEqual(['checklist', 'flow']);
     expect(typesWith('atLeast')).toEqual(['flow']);
     expect(typesWith('priority')).toEqual(['banner', 'checklist', 'flow', 'resource-center']);
     // guide side: the sentence carrying the claim
+    expect(AUTHORING_GUIDE).toContain('`frequency` is **flow + checklist + embed**');
     expect(AUTHORING_GUIDE).toContain(
-      '`frequency`, `waitSeconds`, `startIfNotComplete` are **flow + checklist** only',
+      '`waitSeconds`, `startIfNotComplete` are **flow + checklist** only',
     );
+    expect(AUTHORING_GUIDE).toContain('An **embed** takes `frequency` and nothing else');
     expect(AUTHORING_GUIDE).toContain('(`frequency.atLeast`, flow only)');
     expect(AUTHORING_GUIDE).toContain(
       '`priority` is flow + checklist + resource-center + **banner**',
@@ -133,13 +135,13 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(AUTHORING_GUIDE).toContain('no theme (it has no UI)');
   });
 
-  it('persistent surfaces need start rules to appear: matrix trio matches the guide claim', () => {
+  it('persistent surfaces need start rules to appear: matrix quartet matches the guide claim', () => {
     // matrix side
-    const trio = Object.entries(CONTENT_TYPE_TRAITS)
+    const quartet = Object.entries(CONTENT_TYPE_TRAITS)
       .filter(([, t]) => t.autoStartRequiredToAppear)
       .map(([type]) => type)
       .sort();
-    expect(trio).toEqual(['banner', 'launcher', 'resource-center']);
+    expect(quartet).toEqual(['banner', 'embed', 'launcher', 'resource-center']);
     // guide side: the claim carriers (validate section + start-rules section)
     expect(AUTHORING_GUIDE).toContain('a persistent surface with no start rules');
     expect(AUTHORING_GUIDE).toContain('Banner, Launcher, and Resource Center are single-session');

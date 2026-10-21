@@ -60,6 +60,13 @@ const bannerCounts = (c: ReturnType<typeof counts>) => ({
   uniqueSeen: c.uniqueViews,
   uniqueDismissals: c.uniqueCompletions,
 });
+// Embed: reach is first-touch (as the banner's), the success action is a
+// button press, counted as events; dismissals ride beside, not as "complete".
+const embedCounts = (c: ReturnType<typeof counts>) => ({
+  uniqueSeen: c.uniqueViews,
+  uniqueClickers: c.uniqueCompletions,
+  totalClicks: c.totalCompletions,
+});
 const opensClicks = (c: ReturnType<typeof counts>) => ({
   uniqueOpens: c.uniqueViews,
   totalOpens: c.totalViews,
@@ -171,6 +178,33 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
         contentType: 'banner',
         ...bannerCounts(top),
         byDay: byDay(bannerCounts),
+      };
+    case ContentDataType.EMBED:
+      return {
+        ...base,
+        contentType: 'embed',
+        ...embedCounts(top),
+        uniqueDismissals: int(raw?.uniqueDismissals),
+        byDay: byDay(embedCounts),
+        steps: Array.isArray(raw?.viewsByStep)
+          ? // biome-ignore lint/suspicious/noExplicitAny: see above
+            raw.viewsByStep.map((row: any) => ({
+              name: String(row.name ?? ''),
+              cvid: String(row.cvid ?? ''),
+              stepIndex: int(row.stepIndex),
+              uniqueViews: int(row.analytics?.uniqueViews),
+            }))
+          : [],
+        buttons: Array.isArray(raw?.viewsByButton)
+          ? // biome-ignore lint/suspicious/noExplicitAny: see above
+            raw.viewsByButton.map((row: any) => ({
+              name: String(row.name ?? ''),
+              cvid: String(row.cvid ?? ''),
+              stepCvid: String(row.stepCvid ?? ''),
+              uniqueClicks: int(row.analytics?.uniqueClicks),
+              totalClicks: int(row.analytics?.totalClicks),
+            }))
+          : [],
       };
     case ContentDataType.RESOURCE_CENTER:
       return {

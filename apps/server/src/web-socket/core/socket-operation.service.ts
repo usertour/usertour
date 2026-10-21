@@ -427,9 +427,11 @@ export class SocketOperationService {
     const updateData: Partial<SocketData> =
       contentType === ContentDataType.LAUNCHER
         ? { launcherSessions: updatedSessions }
-        : contentType === ContentDataType.TRACKER
-          ? { trackerSessions: updatedSessions }
-          : {};
+        : contentType === ContentDataType.EMBED
+          ? { embedSessions: updatedSessions }
+          : contentType === ContentDataType.TRACKER
+            ? { trackerSessions: updatedSessions }
+            : {};
 
     return await this.socketDataService.set(
       socket,
@@ -480,9 +482,11 @@ export class SocketOperationService {
     const updateData: Partial<SocketData> =
       contentType === ContentDataType.LAUNCHER
         ? { launcherSessions: updatedSessions }
-        : contentType === ContentDataType.TRACKER
-          ? { trackerSessions: updatedSessions }
-          : {};
+        : contentType === ContentDataType.EMBED
+          ? { embedSessions: updatedSessions }
+          : contentType === ContentDataType.TRACKER
+            ? { trackerSessions: updatedSessions }
+            : {};
 
     return await this.socketDataService.set(
       socket,
@@ -689,6 +693,13 @@ export class SocketOperationService {
         ]);
         return { addedSessions, removedContentIds };
       }
+      case ContentDataType.EMBED: {
+        const [addedSessions, removedContentIds] = await Promise.all([
+          this.socketParallelService.addEmbeds(socket, sessionsToAdd),
+          this.socketParallelService.removeEmbeds(socket, contentIdsToRemove),
+        ]);
+        return { addedSessions, removedContentIds };
+      }
       case ContentDataType.TRACKER: {
         const [addedSessions, removedContentIds] = await Promise.all([
           this.socketParallelService.addTrackers(socket, sessionsToAdd),
@@ -733,6 +744,10 @@ export class SocketOperationService {
 
     if (contentType === ContentDataType.LAUNCHER) {
       return await this.socketEmitterService.removeLauncherWithAck(socket, session.content.id);
+    }
+
+    if (contentType === ContentDataType.EMBED) {
+      return await this.socketEmitterService.removeEmbedWithAck(socket, session.content.id);
     }
 
     if (contentType === ContentDataType.TRACKER) {

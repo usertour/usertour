@@ -49,6 +49,8 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.EMBED_SEEN,
+  BizEvents.EMBED_DISMISSED,
   BizEvents.RESOURCE_CENTER_DISMISSED,
 ] as const;
 
@@ -61,6 +63,7 @@ export const DISMISSED_EVENTS = [
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.FLOW_ENDED,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.EMBED_DISMISSED,
   BizEvents.RESOURCE_CENTER_DISMISSED,
 ] as const;
 
@@ -275,8 +278,14 @@ export const getCurrentStepId = (
   eventCodeName: string,
   currentStepId?: string | null,
 ): string | null => {
-  if (eventCodeName === BizEvents.FLOW_STEP_SEEN) {
-    const newStepId = events[EventAttributes.FLOW_STEP_ID] as string | undefined;
+  const stepIdAttribute =
+    eventCodeName === BizEvents.FLOW_STEP_SEEN
+      ? EventAttributes.FLOW_STEP_ID
+      : eventCodeName === BizEvents.EMBED_STEP_SEEN
+        ? EventAttributes.EMBED_STEP_ID
+        : null;
+  if (stepIdAttribute) {
+    const newStepId = events[stepIdAttribute] as string | undefined;
 
     // If newStepId is missing or empty, keep current value (return null means no update)
     if (isNullish(newStepId) || isEmptyString(newStepId)) {
@@ -354,6 +363,37 @@ export const buildBannerBaseEventData = (session: BizSessionWithRelations): Reco
     [EventAttributes.BANNER_VERSION_ID]: session.version.id,
     [EventAttributes.BANNER_VERSION_NUMBER]: session.version.sequence,
   };
+};
+
+/**
+ * Build base event data for embed events
+ * @param session - The business session with content and version
+ * @returns Base embed event data
+ */
+export const buildEmbedBaseEventData = (
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+): Record<string, any> => {
+  return {
+    [EventAttributes.EMBED_ID]: session.content.id,
+    [EventAttributes.EMBED_NAME]: session.content.name,
+    [EventAttributes.EMBED_VERSION_ID]: session.version.id,
+    [EventAttributes.EMBED_VERSION_NUMBER]: session.version.sequence,
+  };
+};
+
+/**
+ * Base attributes of the session's own content type — for events that are
+ * generic across types (question answered, button clicked). Step-bodied types
+ * other than flow get their own base; everything else keeps the flow base,
+ * which is what every pre-embed event carried.
+ */
+export const buildContentBaseEventData = (
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+): Record<string, any> => {
+  if (session.content.type === ContentDataType.EMBED) {
+    return buildEmbedBaseEventData(session);
+  }
+  return buildFlowBaseEventData(session);
 };
 
 // ============================================================================
@@ -482,7 +522,7 @@ export const buildQuestionAnsweredEventData = (
   }
 
   const eventData: Record<string, any> = {
-    ...buildFlowBaseEventData(session),
+    ...buildContentBaseEventData(session),
     [EventAttributes.QUESTION_CVID]: answer.questionCvid,
     [EventAttributes.QUESTION_NAME]: answer.questionName,
     [EventAttributes.QUESTION_TYPE]: answer.questionType,
@@ -644,6 +684,129 @@ export const buildBannerDismissedEventData = (
   session: BizSessionWithRelations,
 ): Record<string, any> | null => {
   return buildBannerBaseEventData(session);
+};
+
+// ============================================================================
+// Embed Event Data Builders
+// ============================================================================
+
+/**
+ * Build event data for embed seen events
+ * @param session - The business session with content and version
+ * @param params - Event build parameters containing startReason
+ * @returns Embed seen event data, or null if startReason is missing
+ */
+export const buildEmbedSeenEventData = (
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+  params?: EventBuildParams,
+): Record<string, any> | null => {
+  const startReason = params?.startReason;
+  if (!startReason) {
+    return null;
+  }
+  return {
+    ...buildEmbedBaseEventData(session),
+    [EventAttributes.EMBED_START_REASON]: startReason,
+  };
+};
+
+/**
+ * Build event data for embed dismissed events
+ * @param session - The business session with content and version
+ * @param params - Event build parameters containing endReason
+ * @returns Embed dismissed event data, or null if endReason is missing
+ */
+export const buildEmbedDismissedEventData = (
+  session: Pick<BizSessionWithRelations, 'content' | 'version'>,
+  params?: EventBuildParams,
+): Record<string, any> | null => {
+  const endReason = params?.endReason;
+  if (!endReason) {
+    return null;
+  }
+  return {
+    ...buildEmbedBaseEventData(session),
+    [EventAttributes.EMBED_END_REASON]: endReason,
+  };
+};
+
+/**
+ * The step attributes of the session's content type for the given step id —
+ * embed screens and flow steps use their own attribute vocabulary. Null when
+ * the step is not part of the version.
+ */
+const buildStepAttributes = (
+  session: BizSessionWithRelations,
+  stepId: string | undefined,
+): Record<string, any> | null => {
+  if (!stepId) {
+    return null;
+  }
+  const steps = session.version.steps;
+  const stepIndex = steps?.findIndex((step: Step) => step.id === stepId) ?? -1;
+  if (!steps || stepIndex === -1) {
+    return null;
+  }
+  const step = steps[stepIndex];
+  if (session.content.type === ContentDataType.EMBED) {
+    return {
+      [EventAttributes.EMBED_STEP_ID]: step.id,
+      [EventAttributes.EMBED_STEP_NUMBER]: stepIndex,
+      [EventAttributes.EMBED_STEP_CVID]: step.cvid,
+      [EventAttributes.EMBED_STEP_NAME]: step.name,
+    };
+  }
+  return {
+    [EventAttributes.FLOW_STEP_ID]: step.id,
+    [EventAttributes.FLOW_STEP_NUMBER]: stepIndex,
+    [EventAttributes.FLOW_STEP_CVID]: step.cvid,
+    [EventAttributes.FLOW_STEP_NAME]: step.name,
+  };
+};
+
+/**
+ * Build event data for embed step seen events. No progress: an embed's
+ * screens are pages inside one container, not a journey with an end.
+ * @param session - The business session with content and version
+ * @param params - Event build parameters containing stepId
+ * @returns Embed step seen event data, or null if the step is unknown
+ */
+export const buildEmbedStepEventData = (
+  session: BizSessionWithRelations,
+  params?: EventBuildParams,
+): Record<string, any> | null => {
+  const stepAttributes = buildStepAttributes(session, params?.stepId);
+  if (!stepAttributes) {
+    return null;
+  }
+  return {
+    ...buildEmbedBaseEventData(session),
+    ...stepAttributes,
+  };
+};
+
+/**
+ * Build event data for button clicked events: the base attributes of the
+ * session's content type, the step attributes when the button lives on a
+ * step, and the button's stable cvid plus its text as a label.
+ * @param session - The business session with content and version
+ * @param params - Event build parameters containing the button and optional stepId
+ * @returns Button clicked event data, or null if the button is missing
+ */
+export const buildButtonClickedEventData = (
+  session: BizSessionWithRelations,
+  params?: EventBuildParams,
+): Record<string, any> | null => {
+  const button = params?.button;
+  if (!button?.cvid) {
+    return null;
+  }
+  return {
+    ...buildContentBaseEventData(session),
+    ...(buildStepAttributes(session, params?.stepId) ?? {}),
+    [EventAttributes.BUTTON_CVID]: button.cvid,
+    [EventAttributes.BUTTON_TEXT]: button.text ?? '',
+  };
 };
 
 // ============================================================================
@@ -863,6 +1026,9 @@ export const getStartEventType = (contentType: ContentDataType): BizEvents | nul
   if (contentType === ContentDataType.BANNER) {
     return BizEvents.BANNER_SEEN;
   }
+  if (contentType === ContentDataType.EMBED) {
+    return BizEvents.EMBED_SEEN;
+  }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return BizEvents.RESOURCE_CENTER_STARTED;
   }
@@ -887,8 +1053,26 @@ export const getEndEventType = (contentType: ContentDataType): BizEvents | null 
   if (contentType === ContentDataType.BANNER) {
     return BizEvents.BANNER_DISMISSED;
   }
+  if (contentType === ContentDataType.EMBED) {
+    return BizEvents.EMBED_DISMISSED;
+  }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return BizEvents.RESOURCE_CENTER_DISMISSED;
+  }
+  return null;
+};
+
+/**
+ * The step-seen event of a step-bodied content type (flow steps, embed screens).
+ * @param contentType - The content type
+ * @returns The step-seen event, or null for types without steps
+ */
+export const getStepSeenEventType = (contentType: ContentDataType | string): BizEvents | null => {
+  if (contentType === ContentDataType.FLOW) {
+    return BizEvents.FLOW_STEP_SEEN;
+  }
+  if (contentType === ContentDataType.EMBED) {
+    return BizEvents.EMBED_STEP_SEEN;
   }
   return null;
 };

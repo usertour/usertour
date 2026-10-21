@@ -201,6 +201,41 @@ export class SocketParallelService {
   }
 
   // ============================================================================
+  // Public API Methods - Embed Operations
+  // ============================================================================
+
+  /**
+   * Add multiple embed sessions in parallel with acknowledgment
+   * @param socket - The socket instance
+   * @param embedSessions - Array of embed sessions to add
+   * @returns Promise<CustomContentSession[]> - Array of successfully added sessions
+   */
+  async addEmbeds(
+    socket: Socket,
+    embedSessions: CustomContentSession[],
+  ): Promise<CustomContentSession[]> {
+    const operations = embedSessions.map(
+      (session) => () => this.socketEmitterService.addEmbedWithAck(socket, session),
+    );
+
+    return await this.executeParallelOperations(socket, operations, embedSessions, 'addEmbeds');
+  }
+
+  /**
+   * Remove multiple embed sessions in parallel with acknowledgment
+   * @param socket - The socket instance
+   * @param contentIds - Array of content ids to remove
+   * @returns Promise<string[]> - Array of successfully removed content ids
+   */
+  async removeEmbeds(socket: Socket, contentIds: string[]): Promise<string[]> {
+    const operations = contentIds.map(
+      (contentId) => () => this.socketEmitterService.removeEmbedWithAck(socket, contentId),
+    );
+
+    return await this.executeParallelOperations(socket, operations, contentIds, 'removeEmbeds');
+  }
+
+  // ============================================================================
   // Public API Methods - Tracker Operations
   // ============================================================================
 

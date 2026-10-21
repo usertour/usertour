@@ -43,7 +43,7 @@ export const SERVER_EVALUATED_CONDITION_TYPES: readonly RulesType[] = [
 export type ContentActionCapabilities = {
   /**
    * The action types this content type's action slots offer, in the builder's
-   * display order. `step-goto` is flow-only (only a flow has steps to go to).
+   * display order. `step-goto` needs steps to go to (flow and embed).
    */
   actions: readonly ContentActionsItemType[];
   /**
@@ -116,6 +116,16 @@ export const CONTENT_ACTION_CAPABILITIES: Record<ContentDataType, ContentActionC
     ],
     dismissVariant: null,
   },
+  [ContentDataType.EMBED]: {
+    actions: [
+      ContentActionsItemType.STEP_GOTO,
+      ContentActionsItemType.EMBED_DISMIS,
+      ContentActionsItemType.FLOW_START,
+      ContentActionsItemType.PAGE_NAVIGATE,
+      ContentActionsItemType.JAVASCRIPT_EVALUATE,
+    ],
+    dismissVariant: ContentActionsItemType.EMBED_DISMIS,
+  },
 };
 
 /** Per-step-kind capabilities. */
@@ -124,9 +134,11 @@ export type StepCapabilities = {
    * How the step is positioned: `anchor` = `{side, align}` relative to its
    * target element (tooltip); `grid` = `{position}` on the 9-cell viewport
    * grid (modal); `theme` = position comes from the theme's bubble placement,
-   * a step-level placement is ignored (bubble); `none` = no UI (hidden).
+   * a step-level placement is ignored (bubble); `inline` = fills the embed's
+   * shell at its target element, no step-level placement (inline); `none` =
+   * no UI (hidden).
    */
-  placement: 'anchor' | 'grid' | 'theme' | 'none';
+  placement: 'anchor' | 'grid' | 'theme' | 'inline' | 'none';
   /** Click-the-target-element-to-advance — needs a target, so tooltip only. */
   onClick: boolean;
   /** Whether the step must carry a `target` element to render. */
@@ -138,6 +150,7 @@ export const STEP_CAPABILITIES: Record<StepContentType, StepCapabilities> = {
   [StepContentType.MODAL]: { placement: 'grid', onClick: false, requiresTarget: false },
   [StepContentType.BUBBLE]: { placement: 'theme', onClick: false, requiresTarget: false },
   [StepContentType.HIDDEN]: { placement: 'none', onClick: false, requiresTarget: false },
+  [StepContentType.INLINE]: { placement: 'inline', onClick: false, requiresTarget: false },
 };
 
 /**
@@ -186,6 +199,12 @@ export type ContentTypeTraits = {
    * no-op stored on the row.
    */
   allowsScheduledAt: boolean;
+  /**
+   * The content body lives in `Step` rows (flow steps, embed screens) rather
+   * than in `Version.data`. Drives everything that walks steps: localization,
+   * duplication, step-level analytics, the step picker.
+   */
+  bodyInSteps: boolean;
 };
 
 export const CONTENT_TYPE_TRAITS: Record<ContentDataType, ContentTypeTraits> = {
@@ -194,41 +213,59 @@ export const CONTENT_TYPE_TRAITS: Record<ContentDataType, ContentTypeTraits> = {
     autoStartRequiredToAppear: false,
     startsOnDemand: true,
     allowsScheduledAt: false,
+    bodyInSteps: true,
   },
   [ContentDataType.CHECKLIST]: {
     requiresTheme: true,
     autoStartRequiredToAppear: false,
     startsOnDemand: true,
     allowsScheduledAt: false,
+    bodyInSteps: false,
   },
   [ContentDataType.LAUNCHER]: {
     requiresTheme: true,
     autoStartRequiredToAppear: true,
     startsOnDemand: false,
     allowsScheduledAt: false,
+    bodyInSteps: false,
   },
   [ContentDataType.BANNER]: {
     requiresTheme: true,
     autoStartRequiredToAppear: true,
     startsOnDemand: false,
     allowsScheduledAt: false,
+    bodyInSteps: false,
   },
   [ContentDataType.RESOURCE_CENTER]: {
     requiresTheme: true,
     autoStartRequiredToAppear: true,
     startsOnDemand: false,
     allowsScheduledAt: false,
+    bodyInSteps: false,
   },
   [ContentDataType.TRACKER]: {
     requiresTheme: false,
     autoStartRequiredToAppear: false,
     startsOnDemand: false,
     allowsScheduledAt: false,
+    bodyInSteps: false,
   },
   [ContentDataType.ANNOUNCEMENT]: {
     requiresTheme: true,
     autoStartRequiredToAppear: false,
     startsOnDemand: false,
     allowsScheduledAt: true,
+    bodyInSteps: false,
+  },
+  [ContentDataType.EMBED]: {
+    requiresTheme: true,
+    autoStartRequiredToAppear: true,
+    startsOnDemand: false,
+    allowsScheduledAt: false,
+    bodyInSteps: true,
   },
 };
+
+/** Whether the type's body is Step rows (flow steps, embed screens). */
+export const hasStepBody = (contentType: ContentDataType | string | undefined): boolean =>
+  !!contentType && (CONTENT_TYPE_TRAITS[contentType as ContentDataType]?.bodyInSteps ?? false);

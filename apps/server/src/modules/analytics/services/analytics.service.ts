@@ -107,6 +107,10 @@ const DISMISSED_END_CONFIG: Partial<
     eventCodeName: BizEvents.BANNER_DISMISSED,
     reasonAttribute: EventAttributes.BANNER_END_REASON,
   },
+  [ContentType.EMBED]: {
+    eventCodeName: BizEvents.EMBED_DISMISSED,
+    reasonAttribute: EventAttributes.EMBED_END_REASON,
+  },
   [ContentType.RESOURCE_CENTER]: {
     eventCodeName: BizEvents.RESOURCE_CENTER_DISMISSED,
     reasonAttribute: EventAttributes.RESOURCE_CENTER_END_REASON,
@@ -133,6 +137,11 @@ export const EVENT_TYPE_MAPPING = {
     start: BizEvents.BANNER_SEEN,
     complete: BizEvents.BANNER_DISMISSED,
   },
+  // An embed's success action is a button press; dismissal is its own counter
+  [ContentType.EMBED]: {
+    start: BizEvents.EMBED_SEEN,
+    complete: BizEvents.BUTTON_CLICKED,
+  },
   [ContentType.RESOURCE_CENTER]: {
     start: BizEvents.RESOURCE_CENTER_OPENED,
     complete: BizEvents.RESOURCE_CENTER_CLICKED,
@@ -155,6 +164,10 @@ const EVENTS = [
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.EMBED_SEEN,
+  BizEvents.EMBED_STEP_SEEN,
+  BizEvents.EMBED_DISMISSED,
+  BizEvents.BUTTON_CLICKED,
   BizEvents.RESOURCE_CENTER_STARTED,
   BizEvents.RESOURCE_CENTER_OPENED,
   BizEvents.RESOURCE_CENTER_CLOSED,
@@ -497,7 +510,8 @@ export class AnalyticsService {
     // the range) instead of trusting the stored stream to be clean.
     const isFirstTouchSeen =
       startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
-      startEvent.codeName === BizEvents.BANNER_SEEN;
+      startEvent.codeName === BizEvents.BANNER_SEEN ||
+      startEvent.codeName === BizEvents.EMBED_SEEN;
     const isFirstTouchComplete =
       completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
       completeEvent.codeName === BizEvents.BANNER_DISMISSED;
@@ -780,7 +794,8 @@ export class AnalyticsService {
     // lands on the day of their first-ever event, immune to legacy repeats.
     const isFirstTouchSeen =
       startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
-      startEvent.codeName === BizEvents.BANNER_SEEN;
+      startEvent.codeName === BizEvents.BANNER_SEEN ||
+      startEvent.codeName === BizEvents.EMBED_SEEN;
     const isFirstTouchComplete =
       completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
       completeEvent.codeName === BizEvents.BANNER_DISMISSED;

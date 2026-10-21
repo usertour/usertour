@@ -22,6 +22,7 @@ const CONTENT_TYPE_I18N_KEY: Record<ContentDataType, string> = {
   [ContentDataType.TRACKER]: 'contents.types.tracker',
   [ContentDataType.RESOURCE_CENTER]: 'contents.types.resourceCenter',
   [ContentDataType.ANNOUNCEMENT]: 'contents.types.announcement',
+  [ContentDataType.EMBED]: 'contents.types.embed',
 };
 
 // Content type configuration interface

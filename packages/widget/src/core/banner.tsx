@@ -1,28 +1,30 @@
 import type { AssetAttributes } from '@usertour/frame';
-import { Frame, useFrame } from '@usertour/frame';
-import { useSize } from '@usertour/react-use-size';
-import { RiCloseLargeFill } from '@usertour/icons';
 import type { BannerAnimationTiming, BannerData, ThemeTypesSetting } from '@usertour/types';
 import { BannerEmbedPlacement } from '@usertour/types';
 import type { CSSProperties } from 'react';
-import {
-  createContext,
-  forwardRef,
-  memo,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { createContext, forwardRef, memo, useContext, useMemo } from 'react';
 
-import { useComposedRefs } from '@usertour/react-compose-refs';
-
-import { Button } from '../primitives';
-import { useSettingsStyles } from './hooks/use-settings-styles';
-import { useWidgetLocale } from '../locale/context';
-import { cn } from '@usertour/tailwind';
 import { WidgetAnimation } from './class-names';
+import {
+  InlineBody,
+  InlineContainer,
+  InlineContentContainer,
+  InlineDismissButton,
+  InlineFrame,
+  InlineInFrame,
+  InlineRoot,
+  getInlineContentWrapperStyle,
+  useInlineRootContext,
+  useInlineSurface,
+  useOptionalInlineRootContext,
+  type InlineRootContextValue,
+  type InlineShell,
+} from './inline';
+
+// The banner is one surface of the shared inline shell (./inline). What stays
+// here is banner-only: the page/element wrapper positioning (overlay, sticky,
+// top/bottom) and the reveal animation, plus the banner-shaped context the
+// builder preview and the SDK already consume.
 
 const BANNER_DEFAULT_HEIGHT_PX = 56;
 const BANNER_DEFAULT_ANIMATION_DURATION_MS = 320;
@@ -34,6 +36,19 @@ const BANNER_ANIMATION_TIMING_PRESETS: Record<BannerAnimationTiming, string> = {
   gentle: 'cubic-bezier(0, 0, 0.58, 1)',
   linear: 'linear',
 };
+
+/** Maps the banner's stored data onto the shared inline shell. */
+const toInlineShell = (data: BannerData): InlineShell => ({
+  allowDismiss: data?.allowUsersToDismissEmbed ?? false,
+  maxContentWidth: data?.maxContentWidth,
+  maxFrameWidth: data?.maxEmbedWidth,
+  borderRadius: data?.borderRadius,
+  outerMargin: data?.outerMargin,
+  height: data?.height,
+});
+
+const getBannerPadding = (themeSetting: ThemeTypesSetting | undefined): number =>
+  themeSetting?.banner?.padding ?? 8; // default padding is 8px
 
 interface BannerRootContextValue {
   globalStyle: string;
@@ -53,25 +68,45 @@ interface BannerRootContextValue {
   onContentSizeChange?: (rect: { width: number; height: number }) => void;
 }
 
-const BannerRootContext = createContext<BannerRootContextValue | null>(null);
+const BannerDataContext = createContext<BannerData | null>(null);
 
-const useBannerRootContext = () => {
-  const context = useContext(BannerRootContext);
-  if (!context) {
+const toBannerRootContext = (
+  inline: InlineRootContextValue,
+  data: BannerData,
+): BannerRootContextValue => ({
+  globalStyle: inline.globalStyle,
+  themeSetting: inline.themeSetting,
+  data,
+  zIndex: inline.zIndex,
+  assets: inline.assets,
+  onDismiss: inline.onDismiss,
+  measuredHeight: inline.measuredHeight,
+  onContentSizeChange: inline.onContentSizeChange,
+});
+
+const useBannerRootContext = (): BannerRootContextValue => {
+  const inline = useInlineRootContext();
+  const data = useContext(BannerDataContext);
+  if (!data) {
     throw new Error('useBannerRootContext must be used within a BannerRoot.');
   }
-  return context;
+  return useMemo(() => toBannerRootContext(inline, data), [inline, data]);
 };
 
 /** Returns Banner context when inside BannerRoot, null otherwise. Use for optional Banner-aware behavior (e.g. CTA button variants). */
 const useOptionalBannerRootContext = (): BannerRootContextValue | null => {
-  return useContext(BannerRootContext);
+  const inline = useOptionalInlineRootContext();
+  const data = useContext(BannerDataContext);
+  return useMemo(
+    () =>
+      inline && data && inline.surface === 'banner' ? toBannerRootContext(inline, data) : null,
+    [inline, data],
+  );
 };
 
 /** Detects the rendering context: 'banner' if inside BannerRoot, 'default' otherwise */
 function useButtonContext(): 'banner' | 'default' {
-  const bannerContext = useOptionalBannerRootContext();
-  return bannerContext != null ? 'banner' : 'default';
+  return useInlineSurface() === 'banner' ? 'banner' : 'default';
 }
 
 /**
@@ -88,7 +123,7 @@ export function getBannerWrapperStyle(
   // stored data.height is a builder-era snapshot (absent on API-authored
   // banners, stale after theme font changes). Until the first measurement,
   // fall back to the snapshot + current theme padding, like before.
-  const bannerPadding = themeSetting?.banner?.padding ?? 8; // default padding is 8px
+  const bannerPadding = getBannerPadding(themeSetting);
   const contentHeight = data?.height ?? BANNER_DEFAULT_HEIGHT_PX;
   const heightPx = measuredHeight ?? contentHeight + bannerPadding * 2;
   const overlay = data?.overlayEmbedOverAppContent ?? false;
@@ -151,77 +186,12 @@ export function getBannerWrapperStyle(
 }
 
 function getBannerContentWrapperStyle(data: BannerData): CSSProperties {
-  // Always inline: the banner frame mounts outside #usertour-widget, where
-  // index.css's iframe reset does not reach, so otherwise it keeps the
-  // browser's 2px inset border (or the host's own iframe border).
-  const style: CSSProperties = { border: 'none' };
-  if (data?.maxEmbedWidth != null) {
-    style.maxWidth = `${data.maxEmbedWidth}px`;
-  }
-  if (data?.borderRadius != null) {
-    style.borderRadius = `${data.borderRadius}px`;
-  }
-  if (data?.outerMargin) {
-    const { top, right, bottom, left } = data.outerMargin;
-    style.margin = `${top}px ${right}px ${bottom}px ${left}px`;
-  }
-  return style;
+  return getInlineContentWrapperStyle(toInlineShell(data));
 }
 
-const BANNER_DISMISS_BUTTON_CLASS = cn(
-  'rounded size-sdk-button',
-  'inline-flex items-center justify-center',
-  'text-sdk-banner-foreground',
-  'hover:bg-sdk-banner-hover',
-  'outline-none cursor-pointer',
-);
+const BannerDismissButton = InlineDismissButton;
 
-interface BannerDismissButtonProps {
-  onClick: () => void;
-  className?: string;
-}
-
-const BannerDismissButton = memo((props: BannerDismissButtonProps) => {
-  const { onClick, className } = props;
-  const { messages } = useWidgetLocale();
-  return (
-    <Button
-      variant="custom"
-      type="button"
-      className={cn(BANNER_DISMISS_BUTTON_CLASS, className)}
-      onClick={onClick}
-      aria-label={messages.dismissBanner}
-    >
-      <RiCloseLargeFill className="size-4" />
-    </Button>
-  );
-});
-
-BannerDismissButton.displayName = 'BannerDismissButton';
-
-interface BannerContentContainerProps {
-  children?: React.ReactNode;
-  style?: CSSProperties;
-  className?: string;
-}
-
-const BannerContentContainer = memo(
-  forwardRef<HTMLDivElement, BannerContentContainerProps>((props, ref) => {
-    const { children, style, className } = props;
-    const containerClassName = cn(
-      'h-full w-full relative flex justify-between gap-x-2 p-sdk-banner bg-sdk-banner text-sdk-banner-foreground',
-      className,
-    );
-
-    return (
-      <div ref={ref} className={containerClassName} style={style}>
-        {children}
-      </div>
-    );
-  }),
-);
-
-BannerContentContainer.displayName = 'BannerContentContainer';
+const BannerContentContainer = InlineContentContainer;
 
 interface BannerRootProps {
   themeSettings: ThemeTypesSetting;
@@ -241,83 +211,30 @@ interface BannerRootProps {
 }
 
 const BannerRoot = memo((props: BannerRootProps) => {
-  const { data, zIndex, assets, onDismiss, themeSettings, onMeasuredHeightChange, children } =
+  const { data, zIndex, assets, onDismiss, themeSettings, globalStyle, onMeasuredHeightChange } =
     props;
-  const { globalStyle: derivedGlobalStyle, themeSetting } = useSettingsStyles(themeSettings, {
-    type: 'banner',
-  });
-  const globalStyle = props.globalStyle ?? derivedGlobalStyle;
-  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
-  const onContentSizeChange = useCallback((rect: { width: number; height: number }) => {
-    if (rect.height > 0) {
-      setMeasuredHeight(rect.height);
-    }
-  }, []);
-  useEffect(() => {
-    onMeasuredHeightChange?.(measuredHeight);
-  }, [measuredHeight, onMeasuredHeightChange]);
-  // Fail open: if no measurement arrives (observer quirk, empty content),
-  // reveal at the fallback height rather than staying hidden forever.
-  useEffect(() => {
-    if (measuredHeight !== null) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      setMeasuredHeight((current) => {
-        if (current !== null) {
-          return current;
-        }
-        const padding = themeSetting?.banner?.padding ?? 8;
-        return (data?.height ?? BANNER_DEFAULT_HEIGHT_PX) + padding * 2;
-      });
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [measuredHeight, data?.height, themeSetting]);
+  const shell = useMemo(() => toInlineShell(data), [data]);
 
-  const contextValue = useMemo<BannerRootContextValue>(
-    () => ({
-      globalStyle,
-      themeSetting,
-      data,
-      zIndex,
-      assets,
-      onDismiss,
-      measuredHeight,
-      onContentSizeChange,
-    }),
-    [
-      globalStyle,
-      themeSetting,
-      data,
-      zIndex,
-      assets,
-      onDismiss,
-      measuredHeight,
-      onContentSizeChange,
-    ],
+  return (
+    <InlineRoot
+      surface="banner"
+      themeSettings={themeSettings}
+      shell={shell}
+      zIndex={zIndex}
+      assets={assets}
+      globalStyle={globalStyle}
+      onDismiss={onDismiss}
+      onMeasuredHeightChange={onMeasuredHeightChange}
+      getPadding={getBannerPadding}
+    >
+      <BannerDataContext.Provider value={data}>{props.children}</BannerDataContext.Provider>
+    </InlineRoot>
   );
-
-  return <BannerRootContext.Provider value={contextValue}>{children}</BannerRootContext.Provider>;
 });
 
 BannerRoot.displayName = 'BannerRoot';
 
-interface BannerContainerProps {
-  children: React.ReactNode;
-}
-
-const BannerContainer = forwardRef<HTMLDivElement, BannerContainerProps>(({ children }, ref) => {
-  const { globalStyle } = useBannerRootContext();
-  const composedRefs = useComposedRefs(ref, (el: HTMLDivElement | null) => {
-    if (el?.style) {
-      el.style.cssText = globalStyle;
-    }
-  });
-
-  return <div ref={composedRefs}>{children}</div>;
-});
-
-BannerContainer.displayName = 'BannerContainer';
+const BannerContainer = InlineContainer;
 
 interface BannerWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
   children?: React.ReactNode;
@@ -349,107 +266,9 @@ const BannerWrapper = memo(
 
 BannerWrapper.displayName = 'BannerWrapper';
 
-type BannerFrameProps = React.ComponentProps<typeof Frame>;
+const BannerFrame = InlineFrame;
 
-const BannerFrame = memo(
-  forwardRef<HTMLIFrameElement, BannerFrameProps>((props, ref) => {
-    const { children, className, ...restProps } = props;
-    const { data, globalStyle, assets } = useBannerRootContext();
-    const contentWrapperStyle = useMemo(() => getBannerContentWrapperStyle(data), [data]);
-    const frameClassName = cn('usertour-widget-banner-frame', className);
-
-    return (
-      <Frame
-        ref={ref}
-        assets={assets ?? []}
-        className={frameClassName}
-        defaultStyle={contentWrapperStyle}
-        {...restProps}
-      >
-        <BannerInFrame globalStyle={globalStyle}>{children}</BannerInFrame>
-      </Frame>
-    );
-  }),
-);
-
-BannerFrame.displayName = 'BannerFrame';
-
-interface BannerInFrameProps {
-  globalStyle: string;
-  /** Content to render inside the banner (e.g. ContentEditorSerialize in runtime). */
-  children?: React.ReactNode;
-}
-
-const BannerInFrame = memo((props: BannerInFrameProps) => {
-  const { globalStyle, children } = props;
-  const { data, onDismiss, onContentSizeChange } = useBannerRootContext();
-  const { document } = useFrame();
-  // Live-measure the rendered banner (content + its padding) and report it to
-  // the host-side wrapper — same measure-inside/apply-outside pattern as
-  // PopperContentInFrame. An iframe can't size itself to its content.
-  const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
-  const containerRect = useSize(containerEl);
-  useEffect(() => {
-    if (containerRect) {
-      onContentSizeChange?.(containerRect);
-    }
-  }, [containerRect, onContentSizeChange]);
-  // Don't wait for the ResizeObserver's first tick (it can lag or, in some
-  // frame setups, never fire): measure synchronously as soon as the element
-  // mounts so the reveal isn't gated on observer plumbing.
-  useEffect(() => {
-    if (containerEl) {
-      const rect = containerEl.getBoundingClientRect();
-      if (rect.height > 0) {
-        onContentSizeChange?.({ width: rect.width, height: rect.height });
-      }
-    }
-  }, [containerEl, onContentSizeChange]);
-
-  useEffect(() => {
-    if (document?.body) {
-      document.documentElement.style.height = '100%';
-      document.documentElement.style.width = '100%';
-      document.body.style.cssText = globalStyle;
-      document.body.style.height = '100%';
-      document.body.style.width = '100%';
-      document.body.style.margin = '0';
-      document.body.className = 'usertour-widget-root';
-    }
-  }, [globalStyle, document]);
-
-  const showDismiss = data?.allowUsersToDismissEmbed ?? false;
-
-  const contentMaxWidth = useMemo(
-    () =>
-      data?.maxContentWidth
-        ? ({ maxWidth: `${data.maxContentWidth}px` } as CSSProperties)
-        : undefined,
-    [data?.maxContentWidth],
-  );
-
-  const handleDismiss = useCallback(() => {
-    onDismiss?.();
-  }, [onDismiss]);
-
-  return (
-    // h-auto (overrides the container's h-full): the measurement must read the
-    // CONTENT's natural height — with h-full the container tracks the iframe,
-    // which tracks this very measurement (circular). The frame is sized to the
-    // container, so nothing is lost by not stretching.
-    <BannerContentContainer ref={setContainerEl} className="h-auto">
-      <div
-        className="min-w-0 flex-1 w-full mx-auto flex flex-col justify-center"
-        style={contentMaxWidth}
-      >
-        {children}
-      </div>
-      {showDismiss && <BannerDismissButton className="flex-none" onClick={handleDismiss} />}
-    </BannerContentContainer>
-  );
-});
-
-BannerInFrame.displayName = 'BannerInFrame';
+const BannerInFrame = InlineInFrame;
 
 interface BannerPreviewProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Content to render inside the banner (e.g. ContentEditor in builder preview). */
@@ -461,33 +280,12 @@ interface BannerPreviewProps extends React.HTMLAttributes<HTMLDivElement> {
 const BannerPreview = memo(
   forwardRef<HTMLDivElement, BannerPreviewProps>((props, ref) => {
     const { children, previewMode, ...restProps } = props;
-    const { data, onDismiss } = useBannerRootContext();
+    const { data } = useBannerRootContext();
     const contentStyle = useMemo(() => getBannerContentWrapperStyle(data), [data]);
-    const showDismiss = data?.allowUsersToDismissEmbed ?? false;
-
-    const contentMaxWidth = useMemo(
-      () =>
-        data?.maxContentWidth
-          ? ({ maxWidth: `${data.maxContentWidth}px` } as CSSProperties)
-          : undefined,
-      [data?.maxContentWidth],
-    );
-
-    const handleDismiss = useCallback(() => {
-      onDismiss?.();
-    }, [onDismiss]);
 
     return (
       <BannerWrapper ref={ref} previewMode={previewMode} {...restProps}>
-        <BannerContentContainer style={contentStyle}>
-          <div
-            className="min-w-0 flex-1 w-full mx-auto flex flex-col justify-center"
-            style={contentMaxWidth}
-          >
-            {children}
-          </div>
-          {showDismiss && <BannerDismissButton className="flex-none" onClick={handleDismiss} />}
-        </BannerContentContainer>
+        <InlineBody style={contentStyle}>{children}</InlineBody>
       </BannerWrapper>
     );
   }),

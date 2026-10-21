@@ -33,6 +33,11 @@ import {
   getAnswer,
   assignClientContext,
   assignDeliveredLocale,
+  buildEmbedSeenEventData,
+  buildEmbedDismissedEventData,
+  buildEmbedStepEventData,
+  buildButtonClickedEventData,
+  getStepSeenEventType,
 } from '../utils/event.util';
 import { BizEvents, EventAttributes, ChecklistItemType } from '@usertour/types';
 import type { ClientContext } from '@usertour/types';
@@ -1074,6 +1079,72 @@ export class EventTrackingService {
   }
 
   /**
+   * Track the step-seen event of a step-bodied session: FLOW_STEP_SEEN for a
+   * flow, EMBED_STEP_SEEN for an embed. The SDK reports a step by session and
+   * step id only; the session's content type picks the event.
+   * @param params - Event tracking parameters with the stepId
+   * @returns True if the event was tracked successfully
+   */
+  async trackStepSeen(params: EventTrackingParams): Promise<boolean> {
+    const bizSession = await this.findTrackingSession(params.sessionId);
+    if (!bizSession) {
+      return false;
+    }
+    const eventType = getStepSeenEventType(bizSession.content.type);
+    if (!eventType) {
+      return false;
+    }
+    return await this.trackEventByType(eventType, params);
+  }
+
+  /**
+   * Handle embed step seen: one event per screen per session (an embed's
+   * screens are pages, re-visiting one is not a new view), while the session's
+   * current step always follows the user so a hide / show resumes there.
+   * @param tx - Transaction client
+   * @param params - Event tracking parameters with the stepId
+   * @returns True if the step was recorded
+   */
+  private async handleEmbedStepSeen(
+    tx: TransactionClient,
+    params: EventTrackingParams,
+  ): Promise<boolean> {
+    const stepId = params.stepId;
+    if (!stepId) {
+      return false;
+    }
+    const bizSession = await this.findTrackingSession(params.sessionId, tx);
+    if (!bizSession) {
+      return false;
+    }
+    const alreadySeen = bizSession.bizEvent.some(
+      (bizEvent) =>
+        bizEvent.event?.codeName === BizEvents.EMBED_STEP_SEEN &&
+        (bizEvent.data as Record<string, unknown> | null)?.[EventAttributes.EMBED_STEP_ID] ===
+          stepId,
+    );
+    if (alreadySeen) {
+      if (bizSession.currentStepId !== stepId) {
+        await tx.bizSession.update({
+          where: { id: bizSession.id },
+          data: { currentStepId: stepId },
+        });
+      }
+      return true;
+    }
+    return await this.trackEventWithSession(
+      tx,
+      {
+        sessionId: params.sessionId,
+        environment: params.environment,
+        clientContext: params.clientContext,
+        eventName: BizEvents.EMBED_STEP_SEEN,
+      },
+      (session) => buildEmbedStepEventData(session, params),
+    );
+  }
+
+  /**
    * Handle question answered event with pre-process (update user attributes)
    * @param tx - Transaction client
    * @param params - Event tracking parameters
@@ -1242,6 +1313,29 @@ export class EventTrackingService {
     register({
       eventName: BizEvents.BANNER_DISMISSED,
       buildEventData: (session) => buildBannerDismissedEventData(session),
+    });
+
+    // Embed events
+    register({
+      eventName: BizEvents.EMBED_SEEN,
+      buildEventData: (session, params) => buildEmbedSeenEventData(session, params),
+    });
+
+    register({
+      eventName: BizEvents.EMBED_DISMISSED,
+      buildEventData: (session, params) => buildEmbedDismissedEventData(session, params),
+    });
+
+    // Embed step seen: once per screen per session, always moves the current step
+    register({
+      eventName: BizEvents.EMBED_STEP_SEEN,
+      handle: (tx, params) => this.handleEmbedStepSeen(tx, params),
+    });
+
+    // Button clicked (generic across content types)
+    register({
+      eventName: BizEvents.BUTTON_CLICKED,
+      buildEventData: (session, params) => buildButtonClickedEventData(session, params),
     });
 
     // Resource center events

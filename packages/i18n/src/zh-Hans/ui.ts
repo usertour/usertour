@@ -2288,6 +2288,7 @@ const translations = {
       tracker: '事件追踪',
       resourceCenter: '资源中心',
       announcement: '公告',
+      embed: '嵌入',
     },
     create: {
       title: '新建{{type}}',
@@ -3241,6 +3242,7 @@ const translations = {
       modal: '模态框',
       survey: '问卷',
       banner: '横幅',
+      embed: '嵌入',
       checklist: '清单',
       checklistLauncher: '清单启动器',
       resourceCenter: '资源中心',
@@ -3343,6 +3345,10 @@ const translations = {
         textColor: '文字颜色',
         animationDuration: '动画时长',
         animationStyle: '动画风格',
+      },
+      embed: {
+        backgroundColor: '背景颜色',
+        textColor: '文字颜色',
       },
       checklist: {
         checkmarkColor: '勾选颜色',
@@ -3475,6 +3481,7 @@ const translations = {
       modal: '模态框',
       speechBubble: '气泡',
       banner: '横幅',
+      embed: '嵌入',
       launcherIcon: '启动器图标',
       launcherBeacon: '启动器信标',
       launcherButton: '启动器按钮',

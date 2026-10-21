@@ -30,6 +30,7 @@ export enum ThemeDetailPreviewType {
   MODAL = 'modal',
   BUBBLE = 'bubble',
   BANNER = 'banner',
+  EMBED = 'embed',
   LAUNCHER_ICON = 'launcher-icon',
   LAUNCHER_BEACON = 'launcher-beacon',
   LAUNCHER_BUTTON = 'launcher-button',

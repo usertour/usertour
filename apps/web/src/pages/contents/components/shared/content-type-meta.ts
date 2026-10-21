@@ -59,6 +59,13 @@ export const CONTENT_TYPE_META: Record<ContentDataType, ContentTypeMeta> = {
     builderPathSegment: CONTENT_TYPE_PATH_SEGMENT[ContentDataType.ANNOUNCEMENT],
     hasBuilder: false,
   },
+  [ContentDataType.EMBED]: {
+    dataType: ContentDataType.EMBED,
+    singular: 'embed',
+    plural: 'embeds',
+    builderPathSegment: CONTENT_TYPE_PATH_SEGMENT[ContentDataType.EMBED],
+    hasBuilder: true,
+  },
 };
 
 export const getContentTypeMeta = (type?: ContentDataType | null): ContentTypeMeta =>

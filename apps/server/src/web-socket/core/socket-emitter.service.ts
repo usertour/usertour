@@ -183,6 +183,28 @@ export class SocketEmitterService {
   }
 
   /**
+   * Add an embed session
+   * @param socket - The socket
+   * @param session - The session to add
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async addEmbedWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.ADD_EMBED, session);
+  }
+
+  /**
+   * Remove an embed
+   * @param socket - The socket
+   * @param contentId - The content id to remove
+   * @returns Promise<boolean> - True if the event was acknowledged by client
+   */
+  async removeEmbedWithAck(socket: Socket, contentId: string): Promise<boolean> {
+    return await this.emitWithAck(socket, ServerMessageKind.REMOVE_EMBED, {
+      contentId,
+    });
+  }
+
+  /**
    * Add a tracker session
    * @param socket - The socket
    * @param session - The session to add

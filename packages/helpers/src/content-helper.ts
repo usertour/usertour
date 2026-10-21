@@ -200,6 +200,7 @@ const STEP_TYPE_LABELS: Record<string, string> = {
   modal: 'Modal',
   bubble: 'Bubble',
   hidden: 'Hidden step',
+  inline: 'Screen',
 };
 
 /**

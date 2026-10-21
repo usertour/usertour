@@ -9,6 +9,7 @@ import {
   Step,
   ThemeTypesSetting,
   UserTourTypes,
+  EmbedData,
 } from '@usertour/types';
 
 // Base store interface
@@ -50,6 +51,15 @@ export type LauncherStore = BaseStore & {
 export type BannerStore = BaseStore & {
   bannerData?: BannerData;
   targetElement?: Element | null;
+};
+
+// Embed store type: the shell plus the screen currently shown in it
+export type EmbedStore = BaseStore & {
+  embedData?: EmbedData;
+  targetElement?: Element | null;
+  currentStep?: Step;
+  currentStepIndex?: number; // Current screen (0-based)
+  totalSteps?: number; // Total number of screens
 };
 
 // Resource Center store type

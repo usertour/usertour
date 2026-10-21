@@ -141,6 +141,11 @@ export class WebSocketV2MessageHandler {
     );
 
     register(
+      ClientMessageKind.CLICK_BUTTON,
+      async (context, payload) => await this.service.clickButton(context, payload),
+    );
+
+    register(
       ClientMessageKind.TRACK_TRACKER_EVENT,
       async (context, payload) => await this.service.trackTrackerEvent(context, payload),
     );

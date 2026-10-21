@@ -2406,6 +2406,7 @@ const translations = {
       tracker: 'event tracker',
       resourceCenter: 'resource center',
       announcement: 'announcement',
+      embed: 'embed',
     },
     create: {
       title: 'New {{type}}',
@@ -3417,6 +3418,7 @@ const translations = {
       modal: 'Modal',
       survey: 'Survey',
       banner: 'Banner',
+      embed: 'Embed',
       checklist: 'Checklist',
       checklistLauncher: 'Checklist launcher',
       resourceCenter: 'Resource center',
@@ -3520,6 +3522,10 @@ const translations = {
         textColor: 'Text color',
         animationDuration: 'Animation duration',
         animationStyle: 'Animation style',
+      },
+      embed: {
+        backgroundColor: 'Background color',
+        textColor: 'Text color',
       },
       checklist: {
         checkmarkColor: 'Checkmark color',
@@ -3652,6 +3658,7 @@ const translations = {
       modal: 'Modal',
       speechBubble: 'Speech bubble',
       banner: 'Banner',
+      embed: 'Embed',
       launcherIcon: 'Launcher icon',
       launcherBeacon: 'Launcher beacon',
       launcherButton: 'Launcher button',

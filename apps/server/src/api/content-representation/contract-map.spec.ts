@@ -45,12 +45,12 @@ describe('contract-map (capability matrix derivations)', () => {
     );
   });
 
-  it('allows goto_step only in flows', () => {
+  it('allows goto_step only in step-bodied types (flow, embed)', () => {
     const allTypes = Object.values(ContentDataType);
     const allowing = allTypes.filter((t) =>
       contentActionCapabilities(t)?.actions.some((a) => a === 'step-goto'),
     );
-    expect(allowing).toEqual([ContentDataType.FLOW]);
+    expect(allowing).toEqual([ContentDataType.FLOW, ContentDataType.EMBED]);
   });
 
   it('gives every dismissable type its host-specific variant', () => {
@@ -58,6 +58,7 @@ describe('contract-map (capability matrix derivations)', () => {
     expect(dismissVariantFor(ContentDataType.CHECKLIST)).toBe('checklist-dismis');
     expect(dismissVariantFor(ContentDataType.LAUNCHER)).toBe('launcher-dismis');
     expect(dismissVariantFor(ContentDataType.BANNER)).toBe('banner-dismis');
+    expect(dismissVariantFor(ContentDataType.EMBED)).toBe('embed-dismis');
   });
 
   it('leaves resource-center, announcement (action slots, no dismiss) and tracker (no slots) without a dismiss', () => {
@@ -88,13 +89,20 @@ describe('contract-map (capability matrix derivations)', () => {
       'announcement',
       'banner',
       'checklist',
+      'embed',
       'flow',
       'launcher',
       'resource-center',
     ]);
-    expect(trait('autoStartRequiredToAppear')).toEqual(['banner', 'launcher', 'resource-center']);
+    expect(trait('autoStartRequiredToAppear')).toEqual([
+      'banner',
+      'embed',
+      'launcher',
+      'resource-center',
+    ]);
     expect(trait('startsOnDemand')).toEqual(['checklist', 'flow']);
     expect(trait('allowsScheduledAt')).toEqual(['announcement']);
+    expect(trait('bodyInSteps')).toEqual(['embed', 'flow']);
   });
 
   it('limits cross-content references to flow and checklist', () => {
