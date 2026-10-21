@@ -1,7 +1,7 @@
 import {
   RiChat2Line,
   RiEyeOffLine,
-  RiLayoutGridLine,
+  EmbedIcon,
   RiMessage2Line,
   RiWindow2Line,
 } from '@usertour/icons';
@@ -42,7 +42,7 @@ const STEP_TYPES: {
   },
   {
     value: StepContentType.INLINE,
-    Icon: RiLayoutGridLine,
+    Icon: EmbedIcon,
     labelKey: 'contentBuilder.flow.stepType.inline',
   },
   {

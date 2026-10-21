@@ -42,7 +42,7 @@ import {
   FlowIcon,
   LauncherIcon,
   ResourceCenterIcon,
-  RiLayoutGridLine,
+  EmbedIcon,
 } from '@usertour/icons';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { useAppContext } from '@/contexts/app-context';
@@ -60,7 +60,7 @@ const CONTENT_ICON: Partial<Record<ContentDataType, ComponentType<{ className?: 
   [ContentDataType.BANNER]: BannerIcon,
   [ContentDataType.RESOURCE_CENTER]: ResourceCenterIcon,
   [ContentDataType.TRACKER]: EventTrackerIcon,
-  [ContentDataType.EMBED]: RiLayoutGridLine,
+  [ContentDataType.EMBED]: EmbedIcon,
 };
 
 const EmptyCell = () => <span className="text-sm text-muted-foreground">—</span>;

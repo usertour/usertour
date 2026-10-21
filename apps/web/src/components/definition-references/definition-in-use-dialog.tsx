@@ -10,7 +10,7 @@ import {
   RiArrowRightUpLine,
   RiErrorWarningLine,
   RiPaletteLine,
-  RiLayoutGridLine,
+  EmbedIcon,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import type {
@@ -51,7 +51,7 @@ const CONTENT_ICONS: Record<string, Icon> = {
   tracker: EventTrackerIcon,
   'resource-center': ResourceCenterIcon,
   announcement: AnnouncementIcon,
-  embed: RiLayoutGridLine,
+  embed: EmbedIcon,
 };
 
 const referrerIcon = (reference: DefinitionReference): Icon => {

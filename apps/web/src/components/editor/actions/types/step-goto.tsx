@@ -14,7 +14,7 @@ import {
   RiEyeOffLine,
   RiMessage2Line,
   RiWindow2Line,
-  RiLayoutGridLine,
+  EmbedIcon,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
@@ -26,7 +26,7 @@ import {
   ContentDataType,
   StepGotoDirection,
 } from '@usertour/types';
-import { useCallback, useMemo, useState } from 'react';
+import { type ComponentType, useCallback, useMemo, useState } from 'react';
 import { useActionsContext } from '../actions-context';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';
@@ -68,7 +68,7 @@ const getStepTypeIcon = (type: string) => {
     case StepContentType.HIDDEN:
       return <RiEyeOffLine className="h-4 w-4 shrink-0" />;
     case StepContentType.INLINE:
-      return <RiLayoutGridLine className="h-4 w-4 shrink-0" />;
+      return <EmbedIcon className="h-4 w-4 shrink-0" />;
     default:
       return null;
   }
@@ -77,7 +77,7 @@ const getStepTypeIcon = (type: string) => {
 // The "Add new step" submenu, filtered to the step kinds the content type accepts.
 const NEW_STEP_ITEMS: {
   type: StepContentType;
-  Icon: typeof RiMessage2Line;
+  Icon: ComponentType<{ className?: string }>;
   labelKey: string;
 }[] = [
   { type: StepContentType.BUBBLE, Icon: RiMessage2Line, labelKey: 'actions.types.stepGoto.bubble' },
@@ -85,7 +85,7 @@ const NEW_STEP_ITEMS: {
   { type: StepContentType.MODAL, Icon: RiWindow2Line, labelKey: 'actions.types.stepGoto.modal' },
   {
     type: StepContentType.INLINE,
-    Icon: RiLayoutGridLine,
+    Icon: EmbedIcon,
     labelKey: 'actions.types.stepGoto.inline',
   },
   { type: StepContentType.HIDDEN, Icon: RiEyeOffLine, labelKey: 'actions.types.stepGoto.hidden' },

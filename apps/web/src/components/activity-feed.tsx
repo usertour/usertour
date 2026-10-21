@@ -18,7 +18,7 @@ import {
   LauncherIcon,
   ResourceCenterIcon,
   SpinnerIcon,
-  RiLayoutGridLine,
+  EmbedIcon,
 } from '@usertour/icons';
 import {
   ActivityLogIcon,
@@ -101,7 +101,7 @@ const CATEGORY_ICON: Record<EventCategory, React.ComponentType<{ className?: str
   checklist: ChecklistIcon,
   launcher: LauncherIcon,
   banner: BannerIcon,
-  embed: RiLayoutGridLine,
+  embed: EmbedIcon,
   resource_center: ResourceCenterIcon,
   announcement: AnnouncementIcon,
   event_tracker: EventTrackerIcon,
