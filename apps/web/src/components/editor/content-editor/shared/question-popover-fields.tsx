@@ -12,6 +12,7 @@ export interface QuestionContextProps {
   zIndex: number;
   currentStep?: Step;
   currentVersion?: ContentVersion;
+  currentContent?: Content;
   contentList?: Content[];
   createStep?: (
     currentVersion: ContentVersion,
@@ -57,8 +58,15 @@ interface ContentActionsFieldProps {
 
 export const ContentActionsField = memo<ContentActionsFieldProps>(
   ({ actions, onActionsChange, contextProps }) => {
-    const { zIndex, currentStep, currentVersion, contentList, createStep, attributes } =
-      contextProps;
+    const {
+      zIndex,
+      currentStep,
+      currentVersion,
+      currentContent,
+      contentList,
+      createStep,
+      attributes,
+    } = contextProps;
     const { t } = useTranslation();
 
     return (
@@ -68,6 +76,7 @@ export const ContentActionsField = memo<ContentActionsFieldProps>(
           baseZIndex={zIndex}
           currentStep={currentStep}
           currentVersion={currentVersion}
+          currentContent={currentContent}
           onChange={onActionsChange}
           conditions={actions || []}
           attributes={attributes}

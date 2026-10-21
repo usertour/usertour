@@ -1,3 +1,4 @@
+import { hasStepBody } from '@usertour/helpers';
 import { useThemeList } from '@/hooks/use-theme-list';
 import { GoogleFontCss } from '@/components/themes/google-font-css';
 import { PREVIEW_BASIC, defaultSettings } from '@usertour/constants';
@@ -339,7 +340,7 @@ const LocalizationPreviewBody = (props: LocalizationPreviewBodyProps) => {
   // one merge per open is enough.
   const version = useMemo(() => buildLocalizedVersion(), [buildLocalizedVersion]);
 
-  if (contentType === ContentDataType.FLOW) {
+  if (hasStepBody(contentType)) {
     return <FlowPreviewBody version={version} />;
   }
   if (contentType === ContentDataType.ANNOUNCEMENT) {

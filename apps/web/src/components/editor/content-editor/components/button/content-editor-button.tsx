@@ -41,6 +41,7 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
     deleteElementInColumn,
     updateElement,
     currentVersion,
+    currentContent,
     contentList,
     attributes,
     currentStep,
@@ -243,6 +244,7 @@ export const ContentEditorButton = memo((props: ContentEditorButtonProps) => {
             onAddRight={handleAddRight}
             currentStep={currentStep}
             currentVersion={currentVersion}
+            currentContent={currentContent}
             attributes={attributes}
             actionItems={actionItems}
             contentList={contentList}

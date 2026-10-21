@@ -25,6 +25,7 @@ import {
   LauncherProgressCell,
   ResourceCenterProgressCell,
   SessionStatusBadge,
+  EmbedProgressCell,
 } from '@/components/sessions/session-analytics';
 import { SHARED_CACHE_QUERY_OPTIONS } from '@/apollo/options';
 import {
@@ -41,6 +42,7 @@ import {
   FlowIcon,
   LauncherIcon,
   ResourceCenterIcon,
+  RiLayoutGridLine,
 } from '@usertour/icons';
 import { ReloadIcon } from '@radix-ui/react-icons';
 import { useAppContext } from '@/contexts/app-context';
@@ -58,6 +60,7 @@ const CONTENT_ICON: Partial<Record<ContentDataType, ComponentType<{ className?: 
   [ContentDataType.BANNER]: BannerIcon,
   [ContentDataType.RESOURCE_CENTER]: ResourceCenterIcon,
   [ContentDataType.TRACKER]: EventTrackerIcon,
+  [ContentDataType.EMBED]: RiLayoutGridLine,
 };
 
 const EmptyCell = () => <span className="text-sm text-muted-foreground">—</span>;
@@ -82,6 +85,8 @@ const renderProgressCell = (session: BizSession, eventList: Event[]) => {
       return <LauncherProgressCell />;
     case ContentDataType.BANNER:
       return <BannerProgressCell />;
+    case ContentDataType.EMBED:
+      return <EmbedProgressCell original={session} eventList={eventList} />;
     case ContentDataType.RESOURCE_CENTER:
       return <ResourceCenterProgressCell />;
     default:

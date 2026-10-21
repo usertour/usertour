@@ -11,6 +11,7 @@ const SUPPORTED_CONTENT_TYPES = [
   ContentTypeName.TRACKERS,
   ContentTypeName.RESOURCE_CENTERS,
   ContentTypeName.ANNOUNCEMENTS,
+  ContentTypeName.EMBEDS,
 ] as const;
 
 export const ContentDetail = () => {

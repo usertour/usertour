@@ -11,6 +11,7 @@ import {
   EventTrackerIcon,
   ResourceCenterIcon,
   AnnouncementIcon,
+  RiLayoutGridLine,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { Link, useLocation } from 'react-router-dom';
@@ -59,6 +60,13 @@ const navigations = [
     href: '/banners',
     match: /^\/env\/[^/]+\/banners(\/|$)/,
     icon: BannerIcon,
+  },
+  {
+    nameKey: 'contents.list.embeds.title',
+    id: 'embeds',
+    href: '/embeds',
+    match: /^\/env\/[^/]+\/embeds(\/|$)/,
+    icon: RiLayoutGridLine,
   },
   {
     nameKey: 'contents.list.trackers.title',

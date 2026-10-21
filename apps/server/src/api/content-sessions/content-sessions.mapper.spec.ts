@@ -195,3 +195,24 @@ describe('mapSessionAnswers — typed by question type', () => {
     expect(out).toEqual([]);
   });
 });
+
+describe('mapContentSession — embed lifecycle', () => {
+  it('an embed has no completion concept — dismissed reads embed_end_reason, completed stays false', () => {
+    const out = mapContentSession(
+      session({
+        state: 1,
+        content: { type: ContentDataType.EMBED },
+        bizEvent: [
+          ev(BizEvents.EMBED_DISMISSED, T1, {
+            [EventAttributes.EMBED_END_REASON]: 'dismiss_button',
+          }),
+        ],
+      }),
+      [],
+      null,
+    );
+    expect(out.completed).toBe(false);
+    expect(out.endedAt).toBe(T1.toISOString());
+    expect(out.endReason).toBe('dismiss_button');
+  });
+});

@@ -314,6 +314,57 @@ describe('codec corpus: flow steps are round-trip idempotent', () => {
       },
     ],
     [
+      'inline (embed step): relative paging, button cvid, dismiss, question',
+      'inline',
+      {
+        content: [
+          { object: 'block', type: 'text', markdown: 'Upgrade to **Pro**' },
+          {
+            object: 'block',
+            type: 'question',
+            question: { kind: 'rating', name: 'Fit', style: 'scale', range: { low: 1, high: 5 } },
+            actions: [{ type: 'goto_step', direction: 'next' }],
+          },
+          {
+            object: 'block',
+            type: 'columns',
+            columns: [
+              {
+                blocks: [
+                  {
+                    object: 'block',
+                    type: 'button',
+                    cvid: 'btn-back',
+                    text: 'Back',
+                    variant: 'secondary',
+                    actions: [{ type: 'goto_step', direction: 'previous' }],
+                  },
+                ],
+              },
+              {
+                blocks: [
+                  {
+                    object: 'block',
+                    type: 'button',
+                    cvid: 'btn-upgrade',
+                    text: 'Upgrade',
+                    variant: 'primary',
+                    actions: [{ type: 'navigate', url: '/billing' }, { type: 'dismiss' }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        triggers: [
+          {
+            when: [{ type: 'current_url', includes: ['*/billing/*'] }],
+            do: [{ type: 'dismiss' }],
+          },
+        ],
+      },
+    ],
+    [
       'tooltip: onClick + grouped conditions',
       'tooltip',
       {
@@ -347,7 +398,7 @@ describe('codec corpus: flow steps are round-trip idempotent', () => {
   });
 });
 
-// ── Non-flow version data (checklist / resource-center / banner) ─────────────────
+// ── Non-flow version data (checklist / resource-center / banner / embed shell) ──
 describe('codec corpus: non-flow version data is round-trip idempotent', () => {
   const roundTrip = (type: string, rep: any) =>
     decompileVersionData(type, compileVersionData(type, rep, undefined, ids), idR);
@@ -426,6 +477,23 @@ describe('codec corpus: non-flow version data is round-trip idempotent', () => {
         distribution: 'popup',
         popupConfig: { style: 'modal' },
       },
+    ],
+    [
+      'embed shell (cover placement)',
+      'embed',
+      {
+        placement: 'cover-element',
+        target: { selector: '[data-feature="reports"]', nth: 1 },
+        allowDismiss: false,
+        zIndex: 20,
+        maxContentWidth: 480,
+        outerMargin: { top: 8, right: 8, bottom: 8, left: 8 },
+      },
+    ],
+    [
+      'embed shell (defaults only)',
+      'embed',
+      { placement: 'immediately-after-element', target: { selector: '#plan' }, allowDismiss: true },
     ],
     [
       'resource-center with announcement block',

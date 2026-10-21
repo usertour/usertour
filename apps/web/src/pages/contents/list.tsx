@@ -152,6 +152,27 @@ const buildContentConfig = (t: TFunction): Record<string, ContentConfig> => {
         />
       ),
     },
+    embeds: {
+      dataType: ContentDataType.EMBED,
+      title: t('contents.list.embeds.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.embeds.text')}
+          docUrl="https://docs.usertour.io/how-to-guides/embeds"
+          linkText={t('contents.list.embeds.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.embeds.emptyTitle'),
+      emptyDescription: t('contents.list.embeds.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.EMBED}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+    },
     trackers: {
       dataType: ContentDataType.TRACKER,
       title: t('contents.list.trackers.title'),

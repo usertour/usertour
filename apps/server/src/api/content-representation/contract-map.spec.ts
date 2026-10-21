@@ -4,7 +4,9 @@ import { ContentDataType } from '@usertour/types';
 import {
   CONTENT_REFERENCE_TARGET_TYPE_SET,
   REACTIVE_REJECTED_REP_CONDITION_TYPES,
+  RELATIVE_GOTO_CONTENT_TYPES,
   REP_CONDITION_TYPE_TO_INTERNAL,
+  allowedStepTypes,
   contentActionCapabilities,
   dismissVariantFor,
   stepCapabilities,
@@ -119,5 +121,23 @@ describe('contract-map (capability matrix derivations)', () => {
     expect(stepCapabilities('bubble')).toMatchObject({ placement: 'theme', onClick: false });
     expect(stepCapabilities('hidden')).toMatchObject({ placement: 'none', onClick: false });
     expect(stepCapabilities('nope')).toBeUndefined();
+  });
+});
+
+describe('contract-map (step-bodied types)', () => {
+  it('derives the step kinds per content type from the matrix; none for data-bodied types', () => {
+    expect([...allowedStepTypes(ContentDataType.FLOW)]).toEqual([
+      'tooltip',
+      'modal',
+      'bubble',
+      'hidden',
+    ]);
+    expect([...allowedStepTypes(ContentDataType.EMBED)]).toEqual(['inline', 'hidden']);
+    expect(allowedStepTypes(ContentDataType.CHECKLIST)).toEqual([]);
+    expect(allowedStepTypes(undefined)).toEqual([]);
+  });
+
+  it('only an embed pages by direction (the embed action handler is the one reading it)', () => {
+    expect([...RELATIVE_GOTO_CONTENT_TYPES]).toEqual([ContentDataType.EMBED]);
   });
 });

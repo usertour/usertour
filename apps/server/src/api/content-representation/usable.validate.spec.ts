@@ -1406,3 +1406,102 @@ describe('dead launch targets (exists but never published)', () => {
     expect(rcWithItem('checklist').warnings.some((w) => w.message.includes('is a'))).toBe(false);
   });
 });
+
+describe('embed (shell + steps)', () => {
+  const textBlocks = [{ children: [{ children: [{ element: { type: 'text', data: {} } }] }] }];
+  const shell = {
+    placement: 'cover-element',
+    targetElement: { type: 'manual', customSelector: '#x' },
+  };
+  const inlineStep = (over: Record<string, unknown>) =>
+    ({ type: StepContentType.INLINE, data: textBlocks, sequence: 0, cvid: 'a', ...over }) as never;
+  const embed = (data: unknown, steps: unknown[]) =>
+    validateVersionUsable({
+      type: ContentDataType.EMBED,
+      themeId: 't',
+      data,
+      steps: steps as never,
+    });
+  const paths = (issues: { path: string }[]) => issues.map((issue) => issue.path);
+
+  it('errors without a target element (every placement is element-relative)', () => {
+    const r = embed({ placement: 'cover-element' }, [inlineStep({})]);
+    expect(r.ok).toBe(false);
+    expect(paths(r.errors)).toContain('target');
+  });
+
+  it('errors on zero steps', () => {
+    const r = embed(shell, []);
+    expect(r.ok).toBe(false);
+    expect(r.errors.map((issue) => issue.message)).toContain('Embed has no steps.');
+  });
+
+  it('accepts inline + hidden steps with a target; rejects a popup kind', () => {
+    expect(
+      embed(shell, [
+        inlineStep({}),
+        inlineStep({ type: StepContentType.HIDDEN, data: [], cvid: 'b', sequence: 1 }),
+      ]).ok,
+    ).toBe(true);
+    const r = embed(shell, [inlineStep({ type: StepContentType.MODAL })]);
+    expect(r.ok).toBe(false);
+    expect(r.errors.map((issue) => issue.message)).toContain(
+      'Step kind "modal" is not allowed in an embed; allowed step types: inline, hidden.',
+    );
+  });
+
+  it('an inline step needs content like any rendered step, and needs no target of its own', () => {
+    expect(embed(shell, [inlineStep({ data: [] })]).ok).toBe(false);
+    expect(embed(shell, [inlineStep({ target: undefined })]).ok).toBe(true);
+  });
+
+  it('a goto by cvid must resolve; a relative goto suppresses the reachability warning', () => {
+    const goto = (data: Record<string, unknown>) => [
+      {
+        children: [
+          {
+            children: [
+              {
+                element: {
+                  type: 'button',
+                  data: { text: 'Go', actions: [{ type: 'step-goto', data }] },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const dangling = embed(shell, [inlineStep({ data: goto({ stepCvid: 'nope' }) })]);
+    expect(dangling.ok).toBe(false);
+    expect(dangling.errors.some((issue) => issue.message.includes('does not exist'))).toBe(true);
+
+    const named = embed(shell, [inlineStep({}), inlineStep({ cvid: 'b', sequence: 1 })]);
+    expect(paths(named.warnings)).toContain('steps[1]');
+
+    const paged = embed(shell, [
+      inlineStep({ data: goto({ direction: 'next' }) }),
+      inlineStep({ cvid: 'b', sequence: 1 }),
+    ]);
+    expect(paged.ok).toBe(true);
+    expect(paths(paged.warnings)).not.toContain('steps[1]');
+  });
+
+  it('warns on missing start rules without offering a manual start (an embed has none)', () => {
+    const r = embed(shell, [inlineStep({})]);
+    const warning = r.warnings.find((issue) => issue.path === 'config.autoStartRules');
+    expect(warning?.message).toContain('embed has no start rules');
+    expect(warning?.message).not.toContain('usertour.start()');
+  });
+
+  it('a flow step kind outside the flow matrix is an error too (same matrix, other row)', () => {
+    const r = validateVersionUsable({
+      type: ContentDataType.FLOW,
+      themeId: 't',
+      steps: [inlineStep({})],
+    });
+    expect(r.errors.map((issue) => issue.message)).toContain(
+      'Step kind "inline" is not allowed in a flow; allowed step types: tooltip, modal, bubble, hidden.',
+    );
+  });
+});

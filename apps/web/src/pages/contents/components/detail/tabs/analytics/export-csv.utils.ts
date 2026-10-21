@@ -60,13 +60,15 @@ const getExportMode = (contentType?: ContentDataType): ExportMode => {
   const isLauncherContent = contentType === ContentDataType.LAUNCHER;
   const isChecklistContent = contentType === ContentDataType.CHECKLIST;
   const isResourceCenterContent = contentType === ContentDataType.RESOURCE_CENTER;
+  const isEmbedContent = contentType === ContentDataType.EMBED;
 
   return {
     isBannerContent,
     isLauncherContent,
     isChecklistContent,
     isResourceCenterContent,
-    isSimpleExport: isBannerContent || isLauncherContent || isResourceCenterContent,
+    isSimpleExport:
+      isBannerContent || isLauncherContent || isResourceCenterContent || isEmbedContent,
   };
 };
 
@@ -177,6 +179,10 @@ const getCompletedAt = (session: SessionExportRow, contentType?: ContentDataType
     return getLatestEventCreatedAt(events, [BizEvents.BANNER_DISMISSED]);
   }
 
+  if (contentType === ContentDataType.EMBED) {
+    return getLatestEventCreatedAt(events, [BizEvents.BUTTON_CLICKED]);
+  }
+
   return getLatestEventCreatedAt(events, [BizEvents.FLOW_COMPLETED]);
 };
 
@@ -190,6 +196,16 @@ const getState = (session: SessionExportRow, contentType?: ContentDataType) => {
     const isDismissed = !!events.find((e) => e.event?.codeName === BizEvents.BANNER_DISMISSED);
     const isSeen = !!events.find((e) => e.event?.codeName === BizEvents.BANNER_SEEN);
     if (isDismissed) return 'Dismissed';
+    if (isSeen) return 'Seen';
+    return 'In Progress';
+  }
+
+  if (contentType === ContentDataType.EMBED) {
+    const isDismissed = !!events.find((e) => e.event?.codeName === BizEvents.EMBED_DISMISSED);
+    const isClicked = !!events.find((e) => e.event?.codeName === BizEvents.BUTTON_CLICKED);
+    const isSeen = !!events.find((e) => e.event?.codeName === BizEvents.EMBED_SEEN);
+    if (isDismissed) return 'Dismissed';
+    if (isClicked) return 'Clicked';
     if (isSeen) return 'Seen';
     return 'In Progress';
   }

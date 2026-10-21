@@ -610,15 +610,29 @@ export const completeWhenCondition: z.ZodType<CompletionCondition> = z.lazy(() =
  * actions, trigger `do`, question actions, onClick) shares one truth.
  */
 export const representationAction = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('goto_step'),
-    step: z
-      .string()
-      .describe(
-        'Target step: a step `key` declared elsewhere in the same write, or an existing step cvid. ' +
-          'Resolved server-side to the cvid.',
-      ),
-  }),
+  z
+    .object({
+      type: z.literal('goto_step'),
+      step: z
+        .string()
+        .optional()
+        .describe(
+          'Target step: a step `key` declared elsewhere in the same write, or an existing step cvid. ' +
+            'Resolved server-side to the cvid. Exactly one of `step` / `direction`.',
+        ),
+      direction: z
+        .enum(['previous', 'next'])
+        .optional()
+        .describe(
+          'Embed steps only: page to the step before / after the current one (by step order) ' +
+            'instead of naming a target. A no-op on the first / last step. Exactly one of ' +
+            '`step` / `direction`; a flow step must name its target with `step`.',
+        ),
+    })
+    .refine(
+      (action) => (action.step !== undefined) !== (action.direction !== undefined),
+      'A goto_step action takes exactly one of `step` (a step key or cvid) or `direction` (`previous` / `next`).',
+    ),
   z.object({
     type: z.literal('start_content'),
     content: z
@@ -836,6 +850,8 @@ export type RepresentationBlock =
       object: ApiObjectType.BLOCK;
       id?: string;
       type: 'button';
+      /** Stable analytics identity (`button_clicked` keys on it); echo to keep it. */
+      cvid?: string;
       text: string;
       actions?: RepresentationAction[];
       disabledWhen?: RepresentationCondition[];
@@ -960,6 +976,14 @@ export const representationBlock = z.lazy(() =>
     z.object({
       ...blockBase,
       type: z.literal('button'),
+      cvid: z
+        .string()
+        .optional()
+        .describe(
+          "The button's stable analytics identity — `button_clicked` events key on it (same role " +
+            "as a question's cvid). ECHO it back when rewriting a step so click analytics stay " +
+            'continuous; a button written without one gets a new cvid.',
+        ),
       text: z.string(),
       actions: z.array(representationAction).optional(),
       disabledWhen: z
@@ -1052,8 +1076,12 @@ export const representationBlock = z.lazy(() =>
   ]),
 ) as unknown as z.ZodType<RepresentationBlock>;
 
-/** The four flow step kinds (mirrors the write-side step type enum). */
-export const stepTypeEnum = z.enum(['tooltip', 'modal', 'hidden', 'bubble']);
+/**
+ * The step kinds: the four flow popups plus `inline`, an embed step rendered
+ * inside the embed's shell. Which kinds a content type accepts is the
+ * STEP_TYPES_BY_CONTENT_TYPE matrix (enforced by the write guards and validate).
+ */
+export const stepTypeEnum = z.enum(['tooltip', 'modal', 'hidden', 'bubble', 'inline']);
 /** The six question element kinds (the question members of ContentEditorElementType). */
 export const questionTypeEnum = z.enum([
   'nps',
@@ -1252,9 +1280,11 @@ export const representationStepInput = z.object({
         'this step even before it exists. Write-only — not stored, not returned on read.',
     ),
   name: z.string(),
-  type: z
-    .enum(['tooltip', 'modal', 'hidden', 'bubble'])
-    .describe('Step kind. Only `tooltip` anchors to a target element; the rest are page-level.'),
+  type: stepTypeEnum.describe(
+    'Step kind. Flow steps: `tooltip` (anchors to a target element), `modal`, `bubble`, `hidden` ' +
+      '(no UI — triggers only). Embed steps: `inline` (rendered inside the embed shell at its ' +
+      'target element) and `hidden`. A kind the content type does not accept is rejected.',
+  ),
   sequence: z.number().optional(),
   themeId: z
     .string()
@@ -1336,9 +1366,10 @@ export const contentVersion = z.object({
   /** Hide rules (present on the standalone content-versions endpoint). */
   hideRules: representationHideRules.optional(),
   /**
-   * Decompiled type-specific body for non-flow content (checklist / launcher /
-   * banner / tracker / announcement / resource-center) — only present when the
-   * `data` expand is requested. Shape is determined by the content type.
+   * Decompiled type-specific body (checklist / launcher / banner / tracker /
+   * announcement / resource-center, and an embed's shell) — only present when
+   * the `data` expand is requested. Shape is determined by the content type; a
+   * flow has none (its body is `steps`), an embed carries both.
    */
   data: z.unknown().optional(),
   /**

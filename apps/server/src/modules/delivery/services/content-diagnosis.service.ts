@@ -72,7 +72,10 @@ export interface DiagnoseFacts {
   userId?: string;
   userFound?: boolean;
   startRulesActive?: boolean; // isActivedAutoStartRules
-  frequencyAllowed?: boolean; // isAllowedByAutoStartRulesSetting
+  /** isAllowedByAutoStartRulesSetting — whether a NEW session may start; the
+   * report consults it only when none is active (a running session is never
+   * subject to it, which for the embed batch path is the runtime rule itself). */
+  frequencyAllowed?: boolean;
   hidden?: boolean; // isActivedHideRules
   singleSessionApplicable: boolean; // isSingleSessionContentType
   singleSessionDismissed?: boolean;
@@ -676,6 +679,7 @@ export class ContentDiagnosisService {
       ContentDataType.BANNER,
       ContentDataType.RESOURCE_CENTER,
       ContentDataType.LAUNCHER,
+      ContentDataType.EMBED,
     ];
     for (const type of sessionTypes) {
       const cvs = await this.contentDataService.findCustomContentVersions(
@@ -687,10 +691,20 @@ export class ContentDiagnosisService {
         typeControl: { [RulesType.CURRENT_PAGE]: true, [RulesType.TIME]: true },
         clientContext: { pageUrl: url } as ClientContext,
       });
-      const pool = isSingleSessionContentType(type)
-        ? filterSingleSessionContentVersions(evaluated)
-        : evaluated;
-      const eligible = filterAvailableAutoStartContentVersions(pool, type, [], []);
+      const singleSession = isSingleSessionContentType(type);
+      const pool = singleSession ? filterSingleSessionContentVersions(evaluated) : evaluated;
+      // The batch (multi-instance) path exempts a RUNNING session from the
+      // frequency check — the rule governs starting, not staying (ADR 0022) —
+      // exactly as prepareBatchData does; for a single-session type the option
+      // is inert (a dismissed session never re-enters the pool). Singleton
+      // types keep their own strategy order (resume first) and are unaffected.
+      const eligible = filterAvailableAutoStartContentVersions(
+        pool,
+        type,
+        [],
+        [],
+        isSingletonContentType(type) ? undefined : { ignoreFrequencyWhenActive: !singleSession },
+      );
       const eligibleIds = new Set(eligible.map((cv) => cv.content.id));
 
       if (isSingletonContentType(type)) {
@@ -739,18 +753,23 @@ export class ContentDiagnosisService {
           }
         }
       } else {
-        // Launcher: many can coexist — everything eligible or already active shows.
+        // Multi-instance types (launcher, embed): many can coexist — everything
+        // eligible or already active shows. A launcher's active session is
+        // reported as resumed; an embed is level-triggered — the batch path
+        // re-evaluates its running session on every sync and removes it the
+        // moment the show rules stop matching — so its active session shows
+        // only while it is still eligible (frequency-exempt, see above).
         for (const cv of evaluated) {
           const base = {
             contentId: cv.content.id,
             name: cv.content.name ?? '',
             contentType: type,
           };
-          if (cv.session.activeSession) {
+          if (cv.session.activeSession && (singleSession || eligibleIds.has(cv.content.id))) {
             rows.push({ ...base, verdict: 'showing', via: 'resume' });
           } else if (eligibleIds.has(cv.content.id)) {
             rows.push({ ...base, verdict: 'showing', via: 'auto_start' });
-          } else if (isSingleSessionContentType(type) && cv.session.totalSessions > 0) {
+          } else if (singleSession && cv.session.totalSessions > 0) {
             rows.push({
               ...base,
               verdict: 'blocked',

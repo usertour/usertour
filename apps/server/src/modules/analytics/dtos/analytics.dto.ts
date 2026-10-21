@@ -2,6 +2,7 @@ import { Field, Int, ObjectType } from '@nestjs/graphql';
 import { JsonValue } from '@prisma/client/runtime/library';
 
 import { AnalyticsViewsByBlockScalar } from './analytics-views-by-block.scalar';
+import { AnalyticsViewsByButtonScalar } from './analytics-views-by-button.scalar';
 import { AnalyticsViewsByDayScalar } from './analytics-views-by-day.scalar';
 import { AnalyticsViewsByStepScalar } from './analytics-views-by-step.scalar';
 import { AnalyticsViewsByTaskScalar } from './analytics-views-by-task.scalar';
@@ -40,4 +41,11 @@ export class AnalyticsDTO {
 
   @Field(() => [AnalyticsViewsByBlockScalar], { nullable: true })
   viewsByBlock: JsonValue;
+
+  @Field(() => [AnalyticsViewsByButtonScalar], { nullable: true })
+  viewsByButton: JsonValue;
+
+  // Embed only: dismissal is its own counter, not its "complete"
+  @Field(() => Int, { nullable: true })
+  uniqueDismissals?: number;
 }

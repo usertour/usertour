@@ -4,7 +4,7 @@ import {
   embedSession,
   gotoRelative,
   gotoStep,
-  oneScreenEmbed,
+  oneStepEmbed,
   paragraph,
   row,
 } from './content';
@@ -12,7 +12,7 @@ import { expect, test } from './fixtures';
 
 /**
  * Embeds, from the pushed session to what the page reports: a card at its
- * target, several at once, paging between screens, button and dismissal
+ * target, several at once, paging between steps, button and dismissal
  * reports, the cover placement, and the sessionless pre-activation.
  */
 
@@ -39,7 +39,7 @@ test('an embed renders after its target and its dismissal ends the session', asy
   await start(sdk);
   await protocol.push(
     'AddEmbed',
-    oneScreenEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade to unlock reports'),
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade to unlock reports'),
   );
   const frame = sdk.page.frameLocator(FRAME);
   await expect(frame.getByText('Upgrade to unlock reports')).toBeVisible();
@@ -63,8 +63,8 @@ test('an embed renders after its target and its dismissal ends the session', asy
 
 test('several embeds show at once, each at its own target', async ({ sdk, protocol }) => {
   await start(sdk);
-  await protocol.push('AddEmbed', oneScreenEmbed('embed-session-1', 'embed-1', '#cta', 'First'));
-  await protocol.push('AddEmbed', oneScreenEmbed('embed-session-2', 'embed-2', '#panel', 'Second'));
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#cta', 'First'));
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-2', 'embed-2', '#panel', 'Second'));
   await expect(sdk.page.locator(FRAME)).toHaveCount(2);
   expect(await sdk.isStarted('embed-1')).toBe(true);
   expect(await sdk.isStarted('embed-2')).toBe(true);
@@ -75,14 +75,14 @@ test('several embeds show at once, each at its own target', async ({ sdk, protoc
   expect(await sdk.isStarted('embed-2')).toBe(true);
 });
 
-test('a button press is reported with its screen and cvid before its actions run', async ({
+test('a button press is reported with its step and cvid before its actions run', async ({
   sdk,
   protocol,
 }) => {
   await start(sdk);
   await protocol.push(
     'AddEmbed',
-    oneScreenEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now', [
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now', [
       button('Not now', [dismissEmbed()], 'button-not-now'),
     ]),
   );
@@ -105,8 +105,8 @@ test('a button press is reported with its screen and cvid before its actions run
   expect(order.indexOf('ClickButton')).toBeLessThan(order.indexOf('EndContent'));
 });
 
-test.describe('screens', () => {
-  const twoScreens = (sessionId: string | undefined, contentId: string, currentCvid?: string) =>
+test.describe('steps', () => {
+  const twoSteps = (sessionId: string | undefined, contentId: string, currentCvid?: string) =>
     embedSession({
       sessionId,
       contentId,
@@ -117,9 +117,9 @@ test.describe('screens', () => {
           id: `${contentId}-step-1`,
           cvid: `${contentId}-cvid-1`,
           type: 'inline',
-          name: 'Screen 1',
+          name: 'Step 1',
           data: [
-            row(paragraph('Screen one')),
+            row(paragraph('Step one')),
             row(button('Next', [gotoStep(`${contentId}-cvid-2`)], 'button-next')),
           ],
         },
@@ -127,20 +127,20 @@ test.describe('screens', () => {
           id: `${contentId}-step-2`,
           cvid: `${contentId}-cvid-2`,
           type: 'inline',
-          name: 'Screen 2',
-          data: [row(paragraph('Screen two')), row(button('Back', [gotoRelative('previous')]))],
+          name: 'Step 2',
+          data: [row(paragraph('Step two')), row(button('Back', [gotoRelative('previous')]))],
         },
       ],
     });
 
-  test('a step-goto button pages within the same shell and reports the screen', async ({
+  test('a step-goto button pages within the same shell and reports the step', async ({
     sdk,
     protocol,
   }) => {
     await start(sdk);
-    await protocol.push('AddEmbed', twoScreens('embed-session-1', 'embed-1'));
+    await protocol.push('AddEmbed', twoSteps('embed-session-1', 'embed-1'));
     const frame = sdk.page.frameLocator(FRAME);
-    await expect(frame.getByText('Screen one')).toBeVisible();
+    await expect(frame.getByText('Step one')).toBeVisible();
     const shellBefore = await sdk.page.locator(SHELL).evaluate((shell) => {
       (shell as HTMLElement).dataset.marker = 'same-shell';
       return true;
@@ -153,8 +153,8 @@ test.describe('screens', () => {
       sessionId: 'embed-session-1',
       stepId: 'embed-1-step-2',
     });
-    await expect(frame.getByText('Screen two')).toBeVisible();
-    // The shell stayed in place: no remount, no layout shift between screens.
+    await expect(frame.getByText('Step two')).toBeVisible();
+    // The shell stayed in place: no remount, no layout shift between steps.
     await expect(sdk.page.locator(SHELL)).toHaveAttribute('data-marker', 'same-shell');
 
     await frame.getByRole('button', { name: 'Back' }).click();
@@ -163,29 +163,29 @@ test.describe('screens', () => {
       sessionId: 'embed-session-1',
       stepId: 'embed-1-step-1',
     });
-    await expect(frame.getByText('Screen one')).toBeVisible();
+    await expect(frame.getByText('Step one')).toBeVisible();
   });
 
-  test('a session opens on its remembered screen without reporting it again', async ({
+  test('a session opens on its remembered step without reporting it again', async ({
     sdk,
     protocol,
   }) => {
     await start(sdk);
-    await protocol.push('AddEmbed', twoScreens('embed-session-1', 'embed-1', 'embed-1-cvid-2'));
-    await expect(sdk.page.frameLocator(FRAME).getByText('Screen two')).toBeVisible();
+    await protocol.push('AddEmbed', twoSteps('embed-session-1', 'embed-1', 'embed-1-cvid-2'));
+    await expect(sdk.page.frameLocator(FRAME).getByText('Step two')).toBeVisible();
     expect(protocol.messages('GoToStep')).toHaveLength(0);
   });
 
-  test('the server can force a screen', async ({ sdk, protocol }) => {
+  test('the server can force a step', async ({ sdk, protocol }) => {
     await start(sdk);
-    await protocol.push('AddEmbed', twoScreens('embed-session-1', 'embed-1'));
+    await protocol.push('AddEmbed', twoSteps('embed-session-1', 'embed-1'));
     const frame = sdk.page.frameLocator(FRAME);
-    await expect(frame.getByText('Screen one')).toBeVisible();
+    await expect(frame.getByText('Step one')).toBeVisible();
     await protocol.push('ForceGoToStep', {
       sessionId: 'embed-session-1',
       stepId: 'embed-1-step-2',
     });
-    await expect(frame.getByText('Screen two')).toBeVisible();
+    await expect(frame.getByText('Step two')).toBeVisible();
     expect(protocol.messages('GoToStep')).toHaveLength(0);
   });
 });
@@ -194,7 +194,7 @@ test('the cover placement sits over the target and tracks its box', async ({ sdk
   await start(sdk);
   await protocol.push(
     'AddEmbed',
-    oneScreenEmbed('embed-session-1', 'embed-1', '#panel', 'Locked', [], 'cover-element'),
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Locked', [], 'cover-element'),
   );
   const shell = sdk.page.locator(SHELL);
   await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
@@ -232,7 +232,7 @@ test('a sessionless embed starts its content once the target is found and render
   protocol,
 }) => {
   await start(sdk);
-  await protocol.push('AddEmbed', oneScreenEmbed(undefined, 'embed-1', '#panel', 'Pending'));
+  await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
   await protocol.waitForMessages('StartContent', 1);
   expect(protocol.messages('StartContent')[0].message.payload).toMatchObject({
     contentId: 'embed-1',
@@ -241,10 +241,7 @@ test('a sessionless embed starts its content once the target is found and render
   await expect(sdk.page.locator(FRAME)).toHaveCount(0);
 
   // The server records the session and hands it back.
-  await protocol.push(
-    'AddEmbed',
-    oneScreenEmbed('embed-session-1', 'embed-1', '#panel', 'Pending'),
-  );
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Pending'));
   await expect(sdk.page.frameLocator(FRAME).getByText('Pending')).toBeVisible();
   expect(await sdk.isStarted('embed-1')).toBe(true);
 });
@@ -254,7 +251,7 @@ test('an embed whose target leaves the page unmounts and comes back with it', as
   protocol,
 }) => {
   await start(sdk);
-  await protocol.push('AddEmbed', oneScreenEmbed('embed-session-1', 'embed-1', '#panel', 'Here'));
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Here'));
   await expect(sdk.page.locator(FRAME)).toBeVisible();
 
   await sdk.page.evaluate(() => {

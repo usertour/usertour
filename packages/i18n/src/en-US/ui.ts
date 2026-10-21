@@ -1481,6 +1481,7 @@ const translations = {
         surveys: 'Surveys',
         launchers: 'Launchers',
         banners: 'Banners',
+        embeds: 'Embeds',
         resourceCenters: 'Resource Centers',
         announcements: 'Announcements',
         trackers: 'Trackers',
@@ -2292,9 +2293,12 @@ const translations = {
         dismissed: 'Dismissed',
         seen: 'Seen',
         activated: 'Activated',
+        clicked: 'Clicked',
       },
       completedIn: 'Completed in {{date}}',
       stepN: 'Step {{number}}',
+      stepOf: 'Step {{number}} of {{total}}',
+      clickedButtons: 'Clicked: {{buttons}}',
       taskClicked: 'User clicked this task',
       taskHidden: 'Task is hidden for user',
       unknownContent: 'Unknown content',
@@ -2448,6 +2452,13 @@ const translations = {
         emptyTitle: 'No banners added',
         emptyDescription: 'You have not added any banners. Add one below.',
       },
+      embeds: {
+        title: 'Embeds',
+        text: "Embeds place cards inside your product's layout at an element you choose: upgrade prompts, inline tips, getting-started cards and short in-place guides. Several can show at once.",
+        link: 'Read more in our Embeds guide',
+        emptyTitle: 'No embeds added',
+        emptyDescription: 'You have not added any embeds. Add one below.',
+      },
       trackers: {
         title: 'Event trackers',
         text: 'Event trackers let you track business events when conditions are met.',
@@ -2544,6 +2555,16 @@ const translations = {
           totalCompletionRateTooltip:
             'Completion rate shows the percentage of visits where the checklist was seen and completed.',
         },
+        embed: {
+          uniqueViewsTooltip:
+            'Users who saw the embed for the FIRST time in the selected date range — each user counts once, on the day they were first reached. Impressions are not counted.',
+          uniqueClickers: 'Unique clickers',
+          uniqueClickersTooltip: 'Unique users who pressed any button in the embed.',
+          clickThroughRate: 'Click-through rate',
+          clickThroughRateTooltip: 'Percentage of users reached who pressed a button.',
+          dismissals: 'Dismissals',
+          dismissalsTooltip: 'Unique users who dismissed the embed.',
+        },
         resourceCenter: {
           uniqueUserInteractions: 'Unique user interactions',
           uniqueUserInteractionsTooltip: 'Unique users who opened the resource center.',
@@ -2601,6 +2622,17 @@ const translations = {
         uniqueViews: 'Unique views',
         completionRate: 'Completion rate',
         clickRate: 'Click rate',
+      },
+      buttons: {
+        title: 'Clicks by button',
+        tooltip:
+          'Clicks per button, grouped by step. "% of step" is the button\'s share of its step\'s clicks; "Clickers / clicks" shows unique users who pressed it versus total presses.',
+        button: 'Button',
+        percentOfStep: '% of step',
+        clickersClicks: 'Clickers / clicks',
+        totalClicks: '{{count}} total click',
+        totalClicks_other: '{{count}} total clicks',
+        noClicks: 'No button clicks in this period',
       },
       blocks: {
         title: 'Clicks by block',
@@ -2884,6 +2916,23 @@ const translations = {
         theme: 'Theme: {{name}}',
         items: 'Items: {{count}}',
       },
+      embed: {
+        showEmbedAt: 'Show embed at {{placement}}',
+        placement: {
+          topOfContainerElement: 'top of container element',
+          bottomOfContainerElement: 'bottom of container element',
+          immediatelyBeforeElement: 'immediately before element',
+          immediatelyAfterElement: 'immediately after element',
+          coverElement: 'cover of element',
+        },
+        targetElement: 'Target element: {{value}}',
+        notSet: 'Not set',
+        allowDismiss: 'Allow users to dismiss',
+        preventDismiss: 'Prevent users from dismissing',
+        steps: '{{count}} step',
+        steps_other: '{{count}} steps',
+        theme: 'Theme: {{name}}',
+      },
       banner: {
         placement: {
           topOfPage: 'Top of page',
@@ -2914,10 +2963,12 @@ const translations = {
         resourceCenter: 'resource center',
         banner: 'banner',
         launcher: 'launcher',
+        embed: 'embed',
       },
       autoStart: {
         showBannerIf: 'Show banner if...',
         showLauncherIf: 'Show launcher if...',
+        showEmbedIf: 'Show embed if...',
         autoStartIf: 'Auto-start {{label}} if...',
         tooltipShowOnly:
           'Only users who match these conditions will see the {{label}}. For example, show it only to new users, or set the current page rule to /* to show it everywhere.',
@@ -4062,6 +4113,7 @@ const translations = {
         tooltip: 'Tooltip',
         modal: 'Modal',
         hidden: 'Hidden',
+        inline: 'Inline',
         bubbleDescription:
           'A non-intrusive message in the corner of your app — pairs well with beacons.',
         tooltipDescription: 'A tooltip anchored to an element you select.',
@@ -4136,6 +4188,38 @@ const translations = {
           clicked: 'clicked',
         },
       },
+    },
+    embed: {
+      placement: 'Placement',
+      placementTooltip: 'Where the embed mounts relative to its target element.',
+      placementOptions: {
+        topOfContainer: 'Top of container element',
+        bottomOfContainer: 'Bottom of container element',
+        beforeElement: 'Immediately before element',
+        afterElement: 'Immediately after element',
+        coverElement: 'Cover element',
+      },
+      selectPlacement: 'Select placement',
+      targetElementSubtitle: 'Show embed at this element',
+      targetElement: 'Target element',
+      zIndex: 'Z-index',
+      layout: 'Layout',
+      maxContentWidth: 'Max content width',
+      maxContentWidthTooltip:
+        'Maximum width of the content column in pixels. Leave empty to fill the embed.',
+      outerMargin: 'Outer margin',
+      outerMarginTooltip: 'Space between the embed and the surrounding content, in pixels.',
+      margin: {
+        top: 'Top',
+        right: 'Right',
+        bottom: 'Bottom',
+        left: 'Left',
+      },
+      none: 'None',
+      settings: 'Settings',
+      allowDismiss: 'Allow users to dismiss',
+      allowDismissTooltip:
+        'Shows a close button. Dismissing ends the session; whether the embed shows again is decided by its frequency setting.',
     },
     banner: {
       embedPlacement: 'Embed placement',
@@ -4671,6 +4755,9 @@ const translations = {
         tooltip: 'Tooltip',
         modal: 'Modal',
         hidden: 'Hidden',
+        inline: 'Inline',
+        previous: 'Previous step',
+        next: 'Next step',
         currentBadge: 'Current',
       },
       flowDismiss: {

@@ -42,6 +42,7 @@ import {
   RiEyeOffLine,
   RiMessage2Line,
   RiWindow2Line,
+  RiLayoutGridLine,
 } from '@usertour/icons';
 import { Step, StepContentType } from '@usertour/types';
 import type { ComponentType } from 'react';
@@ -59,6 +60,7 @@ const STEP_TYPE_ICON: Partial<Record<StepContentType, ComponentType<{ className?
   [StepContentType.MODAL]: RiWindow2Line,
   [StepContentType.HIDDEN]: RiEyeOffLine,
   [StepContentType.BUBBLE]: RiMessage2Line,
+  [StepContentType.INLINE]: RiLayoutGridLine,
 };
 
 // Type definitions for SidebarContent props

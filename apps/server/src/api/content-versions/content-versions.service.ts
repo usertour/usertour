@@ -27,7 +27,10 @@ import { ApiThemesService } from '../themes/themes.service';
 import { loadConditionContext } from '../content-representation/condition-context';
 import { resolveStaleEmbeds } from '@/modules/utilities/utils/embed-resolve.util';
 import { UtilitiesService } from '@/modules/utilities/services/utilities.service';
-import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
+import {
+  CONTENT_REFERENCE_TARGET_TYPE_SET,
+  dismissVariantFor,
+} from '../content-representation/contract-map';
 import {
   type ContentReference,
   collectWriteViolations,
@@ -561,8 +564,16 @@ export class ApiContentVersionsService {
         },
       };
 
+      // A `dismiss` on a step compiles to the HOST type's variant (flow →
+      // flow-dismis, embed → embed-dismis); the renderer only handles its own.
+      const stepDismiss = dismissVariantFor(contentType as ContentDataType);
       content.steps = planned.map((p) =>
-        compileStep({ ...p.input, cvid: p.cvid, sequence: p.sequence }, p.existing, stepResolvers),
+        compileStep(
+          { ...p.input, cvid: p.cvid, sequence: p.sequence },
+          p.existing,
+          stepResolvers,
+          stepDismiss,
+        ),
       );
     }
 

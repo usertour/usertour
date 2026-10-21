@@ -170,6 +170,43 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   );
 };
 
+// Embed: reach (first-touch), the success action is a button press, and
+// dismissal is its own outcome rather than the "completion".
+const EmbedAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
+  const { t } = useTranslation();
+  return (
+    <div className="grid gap-4 md:grid-cols-4">
+      <AnalyticsCard
+        title={t('contents.analytics.views.uniqueViews')}
+        tooltip={t('contents.analytics.views.embed.uniqueViewsTooltip')}
+        value={analyticsData?.uniqueViews || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.embed.uniqueClickers')}
+        tooltip={t('contents.analytics.views.embed.uniqueClickersTooltip')}
+        value={analyticsData?.uniqueCompletions || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.embed.clickThroughRate')}
+        tooltip={t('contents.analytics.views.embed.clickThroughRateTooltip')}
+        value={calculateCompletionRate(
+          analyticsData?.uniqueCompletions || 0,
+          analyticsData?.uniqueViews || 0,
+        )}
+        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.embed.dismissals')}
+        tooltip={t('contents.analytics.views.embed.dismissalsTooltip')}
+        value={analyticsData?.uniqueDismissals || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+    </div>
+  );
+};
+
 const ResourceCenterAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   const { t } = useTranslation();
   return (
@@ -250,6 +287,9 @@ export const AnalyticsViews = () => {
   }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return <ResourceCenterAnalyticsViews analyticsData={analyticsData} />;
+  }
+  if (contentType === ContentDataType.EMBED) {
+    return <EmbedAnalyticsViews analyticsData={analyticsData} />;
   }
   if (contentType === ContentDataType.FLOW) {
     return <FlowAnalyticsViews analyticsData={analyticsData} />;

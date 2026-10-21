@@ -69,10 +69,17 @@ type StepToCompile = {
   onClick?: RepresentationAction[];
 };
 
+/**
+ * `dismiss` compiles to the HOST type's variant (flow steps → `flow-dismis`,
+ * embed steps → `embed-dismis`): each renderer registers only its own
+ * handler, so the wrong variant silently no-ops. Threaded into the content
+ * blocks, the triggers and the click-to-advance actions alike.
+ */
 export function compileStep(
   step: StepToCompile,
   existing: InternalStep | undefined,
   r: CompileResolvers,
+  dismiss: DismissVariant = 'flow-dismis',
 ): CompiledStep {
   // Non-representable actions on the existing step (builder-authored
   // javascript-evaluate etc.) — echoing their read-back form preserves them.
@@ -89,7 +96,7 @@ export function compileStep(
   // reads currentStep.target.actions). An explicit onClick sets them; when omitted
   // the target field-merge above already preserved any existing ones.
   if (step.onClick !== undefined) {
-    target.actions = compileActions(step.onClick, resolvers);
+    target.actions = compileActions(step.onClick, resolvers, dismiss);
   }
   return {
     // cvid is server-owned: preserve the matched existing step's cvid on update,
@@ -107,7 +114,7 @@ export function compileStep(
     // before the merge could see the difference. Explicit [] still clears.
     data:
       step.content !== undefined
-        ? compileContent(step.content, existing?.data, resolvers)
+        ? compileContent(step.content, existing?.data, resolvers, dismiss)
         : (existing?.data ?? []),
     target,
     // Omit (undefined) preserves the existing step's triggers, like themeId /
@@ -116,7 +123,7 @@ export function compileStep(
     // (compileTriggers(undefined) → []).
     trigger:
       step.triggers !== undefined
-        ? compileTriggers(step.triggers, resolvers)
+        ? compileTriggers(step.triggers, resolvers, dismiss)
         : ((existing?.trigger as ReturnType<typeof compileTriggers>) ?? []),
     setting: compileSetting(step, existing?.setting),
   };
@@ -316,6 +323,10 @@ function compileElement(
           ...(block.margin ? { margin: toInternalSpacing(block.margin) } : {}),
           data: {
             ...((keepStyle as any).data ?? {}),
+            // The button's cvid is its stable analytics identity (button_clicked
+            // keys on it) — same precedence as a question's: an echoed cvid, then
+            // the cvid of the element matched by block id, then a fresh one.
+            cvid: block.cvid ?? (keepStyle as any).data?.cvid ?? cuid(),
             text: block.text,
             ...(block.variant ? { type: block.variant } : {}),
             actions: compileActions(block.actions, r, dismiss),

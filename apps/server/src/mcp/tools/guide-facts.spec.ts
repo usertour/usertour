@@ -151,6 +151,22 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(CONTENT_ACTION_CAPABILITIES[ContentDataType.RESOURCE_CENTER].dismissVariant).toBeNull();
     expect(AUTHORING_GUIDE).toContain('NO dismiss affordance');
   });
+
+  it('embed: the step-kind matrix and the inline placement match the Embeds section claims', () => {
+    // matrix side
+    expect(STEP_CAPABILITIES[StepContentType.INLINE]).toEqual({
+      placement: 'inline',
+      onClick: false,
+      requiresTarget: false,
+    });
+    expect(CONTENT_ACTION_CAPABILITIES[ContentDataType.EMBED].dismissVariant).toBe('embed-dismis');
+    // guide side: the claim carriers
+    expect(AUTHORING_GUIDE).toContain('restricted to kinds `inline`');
+    expect(AUTHORING_GUIDE).toContain('**several embeds show at once**');
+    expect(AUTHORING_GUIDE).toContain('`direction: "previous" | "next"`');
+    expect(AUTHORING_GUIDE).toContain('**Button `cvid` is the analytics key.**');
+    expect(AUTHORING_GUIDE).toContain('**no completion state**');
+  });
 });
 
 describe('guide sections (the structure the slicing tool serves)', () => {
@@ -190,6 +206,17 @@ describe('guide sections (the structure the slicing tool serves)', () => {
     );
     expect(guideSectionNamesFor(ContentDataType.BANNER)).not.toEqual(
       expect.arrayContaining(['surveys']),
+    );
+    // An embed's body is steps, so it gets the step-body sections (surveys,
+    // targets) plus its own; the flow-only sections stay off it and vice versa.
+    expect(guideSectionNamesFor(ContentDataType.EMBED)).toEqual(
+      expect.arrayContaining(['embeds', 'surveys', 'targets', 'localization']),
+    );
+    expect(guideSectionNamesFor(ContentDataType.EMBED)).not.toEqual(
+      expect.arrayContaining(['flow-steps', 'orchestration']),
+    );
+    expect(guideSectionNamesFor(ContentDataType.FLOW)).not.toEqual(
+      expect.arrayContaining(['embeds']),
     );
     for (const t of Object.values(ContentDataType)) {
       expect(guideSectionNamesFor(t)).toEqual(

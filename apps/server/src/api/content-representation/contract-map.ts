@@ -1,3 +1,4 @@
+import { getStepTypesForContentType } from '@usertour/constants';
 import {
   CONTENT_ACTION_CAPABILITIES,
   CONTENT_REFERENCE_TARGET_TYPES,
@@ -84,6 +85,23 @@ export function dismissVariantFor(contentType: ContentDataType): DismissVariant 
 export function stepCapabilities(stepType: unknown): StepCapabilities | undefined {
   return typeof stepType === 'string' ? STEP_CAPABILITIES[stepType as StepContentType] : undefined;
 }
+
+/**
+ * The step kinds a content type's `steps` may carry (STEP_TYPES_BY_CONTENT_TYPE:
+ * flow = the popups, embed = inline / hidden); empty for a type whose body is
+ * not steps.
+ */
+export function allowedStepTypes(contentType: string | undefined): readonly string[] {
+  return getStepTypesForContentType(contentType);
+}
+
+/**
+ * Content types whose `goto_step` may page by `direction` (previous / next)
+ * instead of naming a step. Only the embed renderer resolves a relative target
+ * from the step order; a flow's step-goto handler reads the cvid alone, so a
+ * direction written there would silently go nowhere.
+ */
+export const RELATIVE_GOTO_CONTENT_TYPES: ReadonlySet<string> = new Set([ContentDataType.EMBED]);
 
 /** Valid cross-content reference target types, as a lookup set. */
 export const CONTENT_REFERENCE_TARGET_TYPE_SET: ReadonlySet<string> = new Set(

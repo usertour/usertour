@@ -18,6 +18,7 @@ import {
   LauncherIcon,
   ResourceCenterIcon,
   SpinnerIcon,
+  RiLayoutGridLine,
 } from '@usertour/icons';
 import {
   ActivityLogIcon,
@@ -73,6 +74,7 @@ type EventCategory =
   | 'checklist'
   | 'launcher'
   | 'banner'
+  | 'embed'
   | 'resource_center'
   | 'announcement'
   | 'event_tracker'
@@ -86,6 +88,7 @@ function getEventCategory(event: BizEvent): EventCategory {
   if (data[EventAttributes.CHECKLIST_ID]) return 'checklist';
   if (data[EventAttributes.LAUNCHER_ID]) return 'launcher';
   if (data[EventAttributes.BANNER_ID]) return 'banner';
+  if (data[EventAttributes.EMBED_ID]) return 'embed';
   if (data[EventAttributes.ANNOUNCEMENT_ID]) return 'announcement';
   if (data[EventAttributes.RESOURCE_CENTER_ID]) return 'resource_center';
   if (data[EventAttributes.EVENT_TRACKER_ID]) return 'event_tracker';
@@ -98,6 +101,7 @@ const CATEGORY_ICON: Record<EventCategory, React.ComponentType<{ className?: str
   checklist: ChecklistIcon,
   launcher: LauncherIcon,
   banner: BannerIcon,
+  embed: RiLayoutGridLine,
   resource_center: ResourceCenterIcon,
   announcement: AnnouncementIcon,
   event_tracker: EventTrackerIcon,
@@ -143,6 +147,15 @@ function getEventDescriptor(
       return { primary: str(data[EventAttributes.LAUNCHER_NAME]) };
     case 'banner':
       return { primary: str(data[EventAttributes.BANNER_NAME]) };
+    case 'embed': {
+      // A button press names the button; a step event names the step.
+      const buttonText = str(data[EventAttributes.BUTTON_TEXT]);
+      const stepName = str(data[EventAttributes.EMBED_STEP_NAME]);
+      return {
+        primary: str(data[EventAttributes.EMBED_NAME]),
+        secondary: buttonText ?? stepName,
+      };
+    }
     case 'resource_center':
       return {
         primary: str(data[EventAttributes.RESOURCE_CENTER_NAME]),
@@ -164,6 +177,7 @@ const CATEGORY_SESSION_ATTRIBUTE_KEY: Partial<Record<EventCategory, EventAttribu
   checklist: EventAttributes.CHECKLIST_SESSION_ID,
   launcher: EventAttributes.LAUNCHER_SESSION_ID,
   banner: EventAttributes.BANNER_SESSION_ID,
+  embed: EventAttributes.EMBED_SESSION_ID,
   resource_center: EventAttributes.RESOURCE_CENTER_SESSION_ID,
 };
 
@@ -194,6 +208,7 @@ const SESSION_ID_ATTRIBUTES = new Set<string>([
   EventAttributes.LAUNCHER_SESSION_ID,
   EventAttributes.CHECKLIST_SESSION_ID,
   EventAttributes.BANNER_SESSION_ID,
+  EventAttributes.EMBED_SESSION_ID,
   EventAttributes.RESOURCE_CENTER_SESSION_ID,
 ]);
 

@@ -1,3 +1,4 @@
+import { getStepTypesForContentType } from '@usertour/constants';
 import {
   Badge,
   ScrollArea,
@@ -13,6 +14,7 @@ import {
   RiEyeOffLine,
   RiMessage2Line,
   RiWindow2Line,
+  RiLayoutGridLine,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
@@ -21,6 +23,8 @@ import {
   type RulesCondition,
   type Step,
   StepContentType,
+  ContentDataType,
+  StepGotoDirection,
 } from '@usertour/types';
 import { useCallback, useMemo, useState } from 'react';
 import { useActionsContext } from '../actions-context';
@@ -37,6 +41,8 @@ import { useTranslation } from 'react-i18next';
 
 interface StepGotoData {
   stepCvid?: string;
+  /** Relative target (an embed step's previous / next); exclusive with stepCvid. */
+  direction?: StepGotoDirection;
   // Legacy fields preserved for SDK compatibility — the runtime reads
   // `stepCvid` exclusively, but older saved data may carry `logic`/`type`.
   logic?: string;
@@ -61,10 +67,38 @@ const getStepTypeIcon = (type: string) => {
       return <RiWindow2Line className="h-4 w-4 shrink-0" />;
     case StepContentType.HIDDEN:
       return <RiEyeOffLine className="h-4 w-4 shrink-0" />;
+    case StepContentType.INLINE:
+      return <RiLayoutGridLine className="h-4 w-4 shrink-0" />;
     default:
       return null;
   }
 };
+
+// The "Add new step" submenu, filtered to the step kinds the content type accepts.
+const NEW_STEP_ITEMS: {
+  type: StepContentType;
+  Icon: typeof RiMessage2Line;
+  labelKey: string;
+}[] = [
+  { type: StepContentType.BUBBLE, Icon: RiMessage2Line, labelKey: 'actions.types.stepGoto.bubble' },
+  { type: StepContentType.TOOLTIP, Icon: RiChat2Line, labelKey: 'actions.types.stepGoto.tooltip' },
+  { type: StepContentType.MODAL, Icon: RiWindow2Line, labelKey: 'actions.types.stepGoto.modal' },
+  {
+    type: StepContentType.INLINE,
+    Icon: RiLayoutGridLine,
+    labelKey: 'actions.types.stepGoto.inline',
+  },
+  { type: StepContentType.HIDDEN, Icon: RiEyeOffLine, labelKey: 'actions.types.stepGoto.hidden' },
+];
+
+const FLOW_NEW_STEP_TYPES: readonly StepContentType[] = [
+  StepContentType.BUBBLE,
+  StepContentType.TOOLTIP,
+  StepContentType.MODAL,
+  StepContentType.HIDDEN,
+];
+
+const RELATIVE_DIRECTIONS = [StepGotoDirection.PREVIOUS, StepGotoDirection.NEXT] as const;
 
 const findStep = (
   currentVersion: ContentVersion | undefined,
@@ -82,8 +116,12 @@ function StepGotoSummary({ condition }: { condition: RulesCondition }) {
   const data = readData(condition);
   const { step, index } = findStep(currentVersion, data.stepCvid);
 
-  const hasStep = Boolean(step);
-  const stepText = step ? `${index + 1}. ${step.name}` : '';
+  const hasStep = Boolean(step) || Boolean(data.direction);
+  const stepText = data.direction
+    ? t(`actions.types.stepGoto.${data.direction}`)
+    : step
+      ? `${index + 1}. ${step.name}`
+      : '';
 
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
@@ -110,8 +148,11 @@ function StepGotoEditor({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { currentVersion, currentStep, createStep } = useActionsContext();
+  const { currentVersion, currentStep, createStep, currentContent } = useActionsContext();
   const data = readData(condition);
+  const stepTypeOptions = getStepTypesForContentType(currentContent?.type);
+  const newStepTypes = stepTypeOptions.length > 0 ? stepTypeOptions : FLOW_NEW_STEP_TYPES;
+  const allowsRelative = currentContent?.type === ContentDataType.EMBED;
 
   // Open this editor as a controlled dropdown — distinct from ActionRow's
   // chip popover. ActionRow's popover renders the dropdown trigger; the
@@ -125,7 +166,16 @@ function StepGotoEditor({
 
   const handleSelect = useCallback(
     (cvid: string) => {
-      onChange(writeData(condition, { stepCvid: cvid }));
+      onChange(writeData(condition, { stepCvid: cvid, direction: undefined }));
+      setOpen(false);
+      onClose();
+    },
+    [condition, onChange, onClose],
+  );
+
+  const handleSelectDirection = useCallback(
+    (direction: StepGotoDirection) => {
+      onChange(writeData(condition, { direction, stepCvid: undefined }));
       setOpen(false);
       onClose();
     },
@@ -178,8 +228,26 @@ function StepGotoEditor({
         </button>
       </RulesDropdownMenuTrigger>
       <RulesDropdownMenuContent align="start" className="w-[var(--radix-popper-anchor-width)]">
-        <DropdownMenuRadioGroup value={data.stepCvid}>
+        <DropdownMenuRadioGroup
+          value={data.direction ? `direction:${data.direction}` : data.stepCvid}
+        >
           <ScrollArea className={cn(availableSteps.length > 9 ? 'h-72' : '')}>
+            {allowsRelative &&
+              RELATIVE_DIRECTIONS.map((direction) => (
+                <DropdownMenuSelectItem
+                  key={direction}
+                  value={`direction:${direction}`}
+                  onSelect={() => handleSelectDirection(direction)}
+                  className="cursor-pointer"
+                >
+                  <div className="flex w-full min-w-0 items-center gap-1">
+                    <ArrowRightIcon className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0 truncate">
+                      {t(`actions.types.stepGoto.${direction}`)}
+                    </span>
+                  </div>
+                </DropdownMenuSelectItem>
+              ))}
             {availableSteps.map((step) => {
               const realIndex =
                 currentVersion?.steps?.findIndex((entry) => entry.cvid === step.cvid) ?? 0;
@@ -204,22 +272,14 @@ function StepGotoEditor({
                   {t('actions.types.stepGoto.addNewStep')}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.BUBBLE)}>
-                    <RiMessage2Line className="h-4 w-4 shrink-0" />
-                    {t('actions.types.stepGoto.bubble')}
-                  </RulesDropdownMenuItem>
-                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.TOOLTIP)}>
-                    <RiChat2Line className="h-4 w-4 shrink-0" />
-                    {t('actions.types.stepGoto.tooltip')}
-                  </RulesDropdownMenuItem>
-                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.MODAL)}>
-                    <RiWindow2Line className="h-4 w-4 shrink-0" />
-                    {t('actions.types.stepGoto.modal')}
-                  </RulesDropdownMenuItem>
-                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.HIDDEN)}>
-                    <RiEyeOffLine className="h-4 w-4 shrink-0" />
-                    {t('actions.types.stepGoto.hidden')}
-                  </RulesDropdownMenuItem>
+                  {NEW_STEP_ITEMS.filter((item) => newStepTypes.includes(item.type)).map(
+                    ({ type, Icon, labelKey }) => (
+                      <RulesDropdownMenuItem key={type} onSelect={() => handleCreate(type)}>
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {t(labelKey)}
+                      </RulesDropdownMenuItem>
+                    ),
+                  )}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             )}
@@ -273,7 +333,7 @@ export const stepGotoSchema: ActionTypeSchema<StepGotoData> = {
   Editor: StepGotoEditor,
   validate: (condition) => {
     const data = readData(condition);
-    if (!data.stepCvid) {
+    if (!data.stepCvid && !data.direction) {
       return { key: 'actions.errors.stepGoto.selectStep' };
     }
     // Intentionally NOT cross-checking "step still exists in currentVersion"

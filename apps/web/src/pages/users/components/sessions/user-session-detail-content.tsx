@@ -27,6 +27,7 @@ import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   BannerProgressColumn,
+  EmbedProgressColumn,
   ChecklistItemsColumn,
   ChecklistProgressColumn,
   FlowProgressColumn,
@@ -61,6 +62,7 @@ const START_EVENT_CODES = new Set<string>([
   BizEvents.LAUNCHER_SEEN,
   BizEvents.CHECKLIST_STARTED,
   BizEvents.BANNER_SEEN,
+  BizEvents.EMBED_SEEN,
   BizEvents.RESOURCE_CENTER_STARTED,
 ]);
 
@@ -69,6 +71,7 @@ const END_EVENT_CODES = new Set<string>([
   BizEvents.CHECKLIST_DISMISSED,
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.EMBED_DISMISSED,
   BizEvents.RESOURCE_CENTER_DISMISSED,
 ]);
 
@@ -192,6 +195,8 @@ const SessionProgressCard = ({
         return <LauncherProgressColumn original={session} eventList={eventList} />;
       case ContentDataType.BANNER:
         return <BannerProgressColumn original={session} eventList={eventList} />;
+      case ContentDataType.EMBED:
+        return <EmbedProgressColumn original={session} eventList={eventList} />;
       case ContentDataType.RESOURCE_CENTER:
         return <ResourceCenterProgressColumn original={session} eventList={eventList} />;
       default:

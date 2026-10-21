@@ -34,6 +34,9 @@ import {
   ResourceCenterBlocks,
   ResourceCenterTabBar,
   ResourceCenterFooter,
+  EmbedPreview,
+  EmbedRoot,
+  InlineContainer,
 } from '@usertour/widget';
 import { ScaledPreviewContainer } from '@usertour/ui';
 import {
@@ -50,10 +53,17 @@ import {
   ResourceCenterData,
   Step,
   StepContentType,
+  EmbedData,
+  ContentEditorRoot,
 } from '@usertour/types';
 import type { Theme } from '@usertour/data';
 
-import { DEFAULT_ANNOUNCEMENT_DATA, DEFAULT_BANNER_DATA, PREVIEW_BASIC } from '@usertour/constants';
+import {
+  DEFAULT_ANNOUNCEMENT_DATA,
+  DEFAULT_BANNER_DATA,
+  PREVIEW_BASIC,
+  DEFAULT_EMBED_DATA,
+} from '@usertour/constants';
 import { useShouldShowMadeWith } from '@/hooks/use-should-show-made-with';
 
 interface EmptyContentPreviewProps {
@@ -109,6 +119,23 @@ const FlowPreview = ({
       <div className="w-40 h-32 flex flex-none items-center justify-center">
         <EyeNoneIcon className="w-8 h-8" />
       </div>
+    );
+  }
+
+  // An inline step: a card in the embed's shell, no popper geometry
+  if (currentStep.type === StepContentType.INLINE) {
+    const embedData: EmbedData = {
+      ...DEFAULT_EMBED_DATA,
+      ...((currentVersion?.data as EmbedData | undefined) ?? {}),
+    };
+    return (
+      <EmbedRoot themeSettings={currentTheme.settings} data={embedData}>
+        <InlineContainer>
+          <EmbedPreview style={{ width: 480, maxWidth: '100%' }}>
+            <ContentEditorSerialize contents={currentStep.data} />
+          </EmbedPreview>
+        </InlineContainer>
+      </EmbedRoot>
     );
   }
 
@@ -322,6 +349,37 @@ const BannerPreviewContent = ({
   );
 };
 
+// The embed's first visible step inside its shell, read-only.
+const EmbedPreviewContent = ({
+  currentTheme,
+  currentVersion,
+  previewWidth,
+}: {
+  currentTheme: Theme;
+  currentVersion: ContentVersion;
+  previewWidth?: number;
+}) => {
+  const data: EmbedData = {
+    ...DEFAULT_EMBED_DATA,
+    ...((currentVersion.data as EmbedData | undefined) ?? {}),
+  };
+  const step = (currentVersion.steps ?? []).find((item) => item.type !== StepContentType.HIDDEN);
+  if (!step) {
+    return null;
+  }
+  const width = previewWidth ?? 480;
+
+  return (
+    <EmbedRoot themeSettings={currentTheme.settings} data={data}>
+      <InlineContainer>
+        <EmbedPreview style={{ width, maxWidth: '100%' }}>
+          <ContentEditorSerialize contents={(step.data as ContentEditorRoot[] | undefined) ?? []} />
+        </EmbedPreview>
+      </InlineContainer>
+    </EmbedRoot>
+  );
+};
+
 const TrackerPreview = ({ currentVersion }: { currentVersion: ContentVersion }) => {
   const { eventList } = useEventList();
   const { t } = useTranslation();
@@ -389,6 +447,7 @@ export {
   ChecklistPreview,
   ResourceCenterPreview,
   BannerPreviewContent,
+  EmbedPreviewContent,
   TrackerPreview,
   AnnouncementPreview,
   EmptyContentPreview,

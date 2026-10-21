@@ -33,13 +33,13 @@ const EMBED_TARGET_MISSING_SECONDS = 3600;
 
 /**
  * An embed: editor content rendered inline at a target element, one of
- * several that may show at once. Its screens are flow steps (INLINE / HIDDEN)
+ * several that may show at once. Its steps are flow steps (INLINE / HIDDEN)
  * paged inside one shell, so the step machinery is the tour's; its mounting is
  * the element-attached banner's (ADR 0022).
  *
- * Two deliberate differences from the tour: a screen change updates the store
+ * Two deliberate differences from the tour: a step change updates the store
  * in place (a reset would unmount the shell and shift the host layout between
- * screens), and the target watcher lives for the whole session rather than per
+ * steps), and the target watcher lives for the whole session rather than per
  * step.
  */
 export class UsertourEmbed extends UsertourComponent<EmbedStore> {
@@ -79,8 +79,8 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
 
   // === Public API ===
   /**
-   * Shows the embed: picks the screen to open on (the session's remembered
-   * screen, else the first), then attaches to the target. The store is written
+   * Shows the embed: picks the step to open on (the session's remembered
+   * step, else the first), then attaches to the target. The store is written
    * once the target is found; a sessionless pre-activation starts the content
    * instead and waits for the server to hand back the session.
    */
@@ -114,7 +114,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   }
 
   /**
-   * Shows a screen by its id (the server's ForceGoToStep)
+   * Shows a step by its id (the server's ForceGoToStep)
    * @param id - The step id
    * @param reportStepSeen - Whether to report the step seen event
    */
@@ -127,7 +127,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   }
 
   /**
-   * Shows a screen by its cvid (a step-goto action)
+   * Shows a step by its cvid (a step-goto action)
    * @param cvid - The step cvid
    * @param reportStepSeen - Whether to report the step seen event
    */
@@ -140,7 +140,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   }
 
   /**
-   * Shows the screen before or after the current one; a no-op at either end.
+   * Shows the step before or after the current one; a no-op at either end.
    * @param direction - previous or next
    */
   async showRelativeStep(direction: StepGotoDirection): Promise<void> {
@@ -163,7 +163,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
 
   /**
    * Handles a click on a block: a question answer is recorded and may bind an
-   * attribute; a button press is recorded against its screen; then the
+   * attribute; a button press is recorded against its step; then the
    * block's actions run.
    * @param element - The element that was clicked
    * @param value - The value of a question element
@@ -213,7 +213,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     return this.getCurrentStep()?.theme;
   }
 
-  // === Screens ===
+  // === Steps ===
   private getCurrentStep(): SessionStep | undefined {
     if (!this.currentStepCvid) {
       return undefined;
@@ -222,8 +222,8 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   }
 
   /**
-   * Makes sure the current screen exists in the (possibly updated) version:
-   * the session's remembered screen, else the first screen.
+   * Makes sure the current step exists in the (possibly updated) version:
+   * the session's remembered step, else the first step.
    */
   private ensureCurrentStep(): void {
     if (this.currentStepCvid && this.getStepByCvid(this.currentStepCvid)) {
@@ -249,7 +249,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     };
   }
 
-  /** A screen is visible when its target is and it is not a hidden step. */
+  /** A step is visible when its target is and it is not a hidden step. */
   private computeOpenState(step: SessionStep | undefined): boolean {
     return this.targetVisible && !!step && step.type !== StepContentType.HIDDEN;
   }
@@ -266,7 +266,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     await this.applyCurrentStep();
   }
 
-  /** Re-derives the store for the current screen without unmounting the shell. */
+  /** Re-derives the store for the current step without unmounting the shell. */
   private async applyCurrentStep(): Promise<void> {
     if (!this.hasStoreData()) {
       return;

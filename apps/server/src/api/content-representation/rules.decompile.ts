@@ -365,6 +365,10 @@ export function decompileAction(a: RuleNode): RepresentationAction {
   const d = a.data ?? {};
   switch (a.type) {
     case 'step-goto':
+      // Embed steps may page relative to the current one (previous / next).
+      if (d.direction === 'previous' || d.direction === 'next') {
+        return { type: 'goto_step', direction: d.direction };
+      }
       return { type: 'goto_step', step: d.stepCvid ?? '' };
     case 'flow-start':
       return {
@@ -384,6 +388,7 @@ export function decompileAction(a: RuleNode): RepresentationAction {
     case 'launcher-dismis':
     case 'checklist-dismis':
     case 'banner-dismis':
+    case 'embed-dismis':
       return { type: 'dismiss' };
     default:
       return { type: 'unsupported', ...(a.type ? { note: a.type } : {}) };

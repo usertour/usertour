@@ -163,6 +163,64 @@ describe('version-data builder settings round-trip', () => {
     expect(back.zIndex).toBe(99);
   });
 
+  it('embed shell: maps onto EmbedData, field-merges onto the seeded default, and reads back', () => {
+    // DEFAULT_EMBED_DATA is what create seeds; a partial write must land on it.
+    const seeded = { placement: 'immediately-after-element', allowUsersToDismiss: true };
+    const internal: any = compileVersionData(
+      'embed',
+      { placement: 'cover-element', target: { selector: '#reports', text: 'Reports' }, zIndex: 7 },
+      seeded,
+      ids,
+    );
+    expect(internal).toMatchObject({
+      placement: 'cover-element',
+      allowUsersToDismiss: true, // preserved from the seed (field-merge)
+      zIndex: 7,
+      targetElement: { type: 'manual', customSelector: '#reports', content: 'Reports' },
+    });
+
+    const back: any = decompileVersionData('embed', internal, idR);
+    expect(back).toEqual({
+      placement: 'cover-element',
+      target: { selector: '#reports', text: 'Reports' },
+      allowDismiss: true,
+      zIndex: 7,
+    });
+
+    // The remaining shell fields round-trip too; the shell never grows a body.
+    const full: any = compileVersionData(
+      'embed',
+      {
+        allowDismiss: false,
+        maxContentWidth: 400,
+        outerMargin: { top: 1, right: 2, bottom: 3, left: 4 },
+      },
+      internal,
+      ids,
+    );
+    expect(decompileVersionData('embed', full, idR)).toEqual({
+      placement: 'cover-element',
+      target: { selector: '#reports', text: 'Reports' },
+      allowDismiss: false,
+      zIndex: 7,
+      maxContentWidth: 400,
+      outerMargin: { top: 1, right: 2, bottom: 3, left: 4 },
+    });
+  });
+
+  it('embed shell rejects unknown keys and a placement outside the enum (E1017 with paths)', () => {
+    const fail = (body: unknown) => {
+      try {
+        compileVersionData('embed', body, undefined, ids);
+      } catch (e) {
+        return String(e);
+      }
+      throw new Error('expected throw');
+    };
+    expect(fail({ placement: 'top-of-page' })).toMatch(/placement/);
+    expect(fail({ containerTarget: { selector: '#x' } })).toMatch(/containerTarget/);
+  });
+
   it('announcement: field-merge preserves untouched fields; a stored popupConfig echoes under every distribution', () => {
     // Simulates the builder-seeded default data (title + intro already present).
     const existing = {

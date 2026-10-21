@@ -266,7 +266,7 @@ export type EmbedInput = {
   target: string;
   placement?: string;
   steps: StepInput[];
-  /** Open on this screen instead of the first (the session's remembered screen). */
+  /** Open on this step instead of the first (the session's remembered step). */
   currentCvid?: string;
   allowDismiss?: boolean;
 };
@@ -297,8 +297,8 @@ export const embedSession = (input: EmbedInput) => {
   };
 };
 
-/** One screen with a paragraph; `buttons` go on a second row. */
-export const oneScreenEmbed = (
+/** One step with a paragraph; `buttons` go on a second row. */
+export const oneStepEmbed = (
   sessionId: string | undefined,
   contentId: string,
   target: string,
@@ -316,7 +316,7 @@ export const oneScreenEmbed = (
         id: `${contentId}-step-1`,
         cvid: `${contentId}-cvid-1`,
         type: 'inline',
-        name: 'Screen 1',
+        name: 'Step 1',
         data: buttons.length ? [row(paragraph(text)), row(...buttons)] : [row(paragraph(text))],
       },
     ],

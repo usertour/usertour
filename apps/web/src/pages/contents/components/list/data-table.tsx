@@ -17,6 +17,7 @@ import { AutoScaledPreviewContainer, Button, Skeleton } from '@usertour/ui';
 import { ContentEditDropdownMenu } from '../shared/content-edit-dropmenu';
 import {
   BannerPreviewContent,
+  EmbedPreviewContent,
   ChecklistPreview,
   AnnouncementPreview,
   EmptyContentPreview,
@@ -176,6 +177,14 @@ const ContentPreview = ({
           currentVersion={currentVersion}
           previewClassName="justify-start"
         />
+      </AutoScaledPreviewContainer>
+    );
+  }
+
+  if (type === ContentDataType.EMBED && currentTheme && currentVersion) {
+    return (
+      <AutoScaledPreviewContainer padding={16}>
+        <EmbedPreviewContent currentTheme={currentTheme} currentVersion={currentVersion} />
       </AutoScaledPreviewContainer>
     );
   }

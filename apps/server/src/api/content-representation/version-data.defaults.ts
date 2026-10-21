@@ -3,17 +3,18 @@ import {
   DEFAULT_ANNOUNCEMENT_DATA,
   DEFAULT_BANNER_DATA,
   DEFAULT_CHECKLIST_DATA,
+  DEFAULT_EMBED_DATA,
   DEFAULT_LAUNCHER_DATA,
   DEFAULT_RESOURCE_CENTER_DATA,
 } from '@usertour/constants';
 
 /**
- * The default `version.data` for a freshly created non-flow content. The builder
- * seeds these via its create form; the v2 create path must too, so a later
- * partial `update_content_version` (which field-level merges onto the existing
- * data) lands on a complete, renderable base instead of a half-built object
- * missing its structural fields (e.g. a banner with no `embedPlacement`, a
- * checklist with no `initialDisplay`).
+ * The default `version.data` for a freshly created content. The builder seeds
+ * these via its create form; the v2 create path must too, so a later partial
+ * `update_content_version` (which field-level merges onto the existing data)
+ * lands on a complete, renderable base instead of a half-built object missing
+ * its structural fields (e.g. a banner with no `embedPlacement`, a checklist
+ * with no `initialDisplay`, an embed with no `placement`).
  *
  * `flow` (authored via `steps`) and `tracker` (whose `eventId` is a meaningful
  * value the author supplies) get no seed.
@@ -30,6 +31,8 @@ export function defaultVersionData(type: string): JsonValue | undefined {
       return structuredClone(DEFAULT_RESOURCE_CENTER_DATA) as unknown as JsonValue;
     case 'announcement':
       return structuredClone(DEFAULT_ANNOUNCEMENT_DATA) as unknown as JsonValue;
+    case 'embed':
+      return structuredClone(DEFAULT_EMBED_DATA) as unknown as JsonValue;
     default:
       return undefined;
   }

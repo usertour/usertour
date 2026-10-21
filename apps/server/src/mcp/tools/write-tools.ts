@@ -110,7 +110,7 @@ export function buildWriteTools(): McpTool[] {
       title: 'Create content',
       capability: Capability.ContentCreate,
       description:
-        'Create a new piece of Usertour content (flow, checklist, launcher, banner, tracker, ' +
+        'Create a new piece of Usertour content (flow, checklist, launcher, banner, embed, tracker, ' +
         'resource-center, announcement) in the project, with a draft version themed by `themeId`. ' +
         'A survey is a flow with question blocks — there is no separate survey type. An ' +
         'announcement is a feed item: it reaches users ONLY through a resource center that has an ' +
@@ -204,7 +204,8 @@ export function buildWriteTools(): McpTool[] {
         'unlock it; a shipped version is frozen as history) — fails with E0049; fork first with ' +
         'create_content_version. Text blocks use markdown, with `{{ attribute | default: "x" }}` ' +
         'for user attributes. Returns the updated version with the persisted body decompiled — ' +
-        '`steps` for a flow, `data` for other types — so you can confirm the write without a re-read.',
+        '`steps` for a flow, `data` for other types, both for an embed — so you can confirm the ' +
+        'write without a re-read.',
       inputSchema: {
         contentId: z
           .string()
@@ -226,8 +227,9 @@ export function buildWriteTools(): McpTool[] {
           .optional()
           .describe(
             'The COMPLETE step list, not a patch (an omitted existing step is deleted; omit the ' +
-              'FIELD to leave steps untouched). Validated server-side against the flow step ' +
-              "schema — fetch it with get_content_schema('flow') before authoring (the step/" +
+              "FIELD to leave steps untouched). Flow steps, or an embed's steps (kinds " +
+              '`inline` / `hidden`). Validated server-side against the step schema — fetch it ' +
+              "with get_content_schema('flow') or ('embed') before authoring (the step/" +
               'block/action vocabulary is served there, not inlined here).',
           ),
         startRules: z
@@ -268,7 +270,8 @@ export function buildWriteTools(): McpTool[] {
           .optional()
           .describe(
             'Type-specific body for non-flow content (checklist / launcher / banner / tracker / ' +
-              'announcement / resource-center). Fetch its exact shape with get_content_schema. ' +
+              "announcement / resource-center, and an embed's shell — placement + target " +
+              'element). Fetch its exact shape with get_content_schema. ' +
               'Top-level fields merge (omit one to leave it unchanged), but a list you DO send — ' +
               'e.g. checklist `items` — REPLACES that whole list, deleting omitted members (same ' +
               'as `steps`); a member is matched by its `id`. Validated against the content type.',
