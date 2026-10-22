@@ -53,13 +53,13 @@ export type BannerStore = BaseStore & {
   targetElement?: Element | null;
 };
 
-// Embed store type: the shell plus the screen currently shown in it
+// Embed store type: the shell plus the step currently shown in it
 export type EmbedStore = BaseStore & {
   embedData?: EmbedData;
   targetElement?: Element | null;
   currentStep?: Step;
-  currentStepIndex?: number; // Current screen (0-based)
-  totalSteps?: number; // Total number of screens
+  currentStepIndex?: number; // Current step (0-based)
+  totalSteps?: number; // Total number of steps
 };
 
 // Resource Center store type

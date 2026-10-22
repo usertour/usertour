@@ -1977,7 +1977,7 @@ export class ContentOrchestratorService {
       },
     ];
 
-    // Add the step-seen event of the type (flow step, embed screen) if stepId is provided
+    // Add the step-seen event of the type (flow step, embed step) if stepId is provided
     const stepSeenEventType = getStepSeenEventType(contentType);
     if (stepId && stepSeenEventType) {
       events.push({

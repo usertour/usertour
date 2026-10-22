@@ -42,7 +42,7 @@ export interface ActionHandlerContext {
    */
   showStepByCvid?: (stepCvid: string) => Promise<void>;
   /**
-   * Shows the previous / next step relative to the current one (embed screens)
+   * Shows the previous / next step relative to the current one (embed steps)
    */
   showRelativeStep?: (direction: StepGotoDirection) => Promise<void>;
   /**

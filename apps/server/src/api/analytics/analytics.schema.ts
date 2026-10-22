@@ -323,19 +323,19 @@ const embedCounts = {
   totalClicks: int().describe('Button presses (repeats included).'),
 };
 
-/** Per-screen row of an embed: the reach funnel across its screens. */
+/** Per-step row of an embed: the reach funnel across its steps. */
 export const embedStepAnalytics = z.object({
   name: z.string(),
   cvid: z.string(),
   stepIndex: int(),
-  uniqueViews: int().describe('Distinct users who saw this screen.'),
+  uniqueViews: int().describe('Distinct users who saw this step.'),
 });
 
-/** Per-button row of an embed, keyed by the button's stable cvid within its screen. */
+/** Per-button row of an embed, keyed by the button's stable cvid within its step. */
 export const embedButtonAnalytics = z.object({
   name: z.string().describe('The button text on the published version — a label, not a key.'),
   cvid: z.string().describe("The button's stable identity across edits and translations."),
-  stepCvid: z.string().describe('The screen the button lives on.'),
+  stepCvid: z.string().describe('The step the button lives on.'),
   uniqueClicks: int().describe('Distinct users who pressed this button.'),
   totalClicks: int().describe('Presses of this button (repeats included).'),
 });

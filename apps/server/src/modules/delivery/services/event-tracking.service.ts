@@ -1098,8 +1098,8 @@ export class EventTrackingService {
   }
 
   /**
-   * Handle embed step seen: one event per screen per session (an embed's
-   * screens are pages, re-visiting one is not a new view), while the session's
+   * Handle embed step seen: one event per step per session (an embed's
+   * steps are pages, re-visiting one is not a new view), while the session's
    * current step always follows the user so a hide / show resumes there.
    * @param tx - Transaction client
    * @param params - Event tracking parameters with the stepId
@@ -1326,7 +1326,7 @@ export class EventTrackingService {
       buildEventData: (session, params) => buildEmbedDismissedEventData(session, params),
     });
 
-    // Embed step seen: once per screen per session, always moves the current step
+    // Embed step seen: once per step per session, always moves the current step
     register({
       eventName: BizEvents.EMBED_STEP_SEEN,
       handle: (tx, params) => this.handleEmbedStepSeen(tx, params),

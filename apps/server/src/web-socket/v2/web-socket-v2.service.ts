@@ -591,7 +591,7 @@ export class WebSocketV2Service {
   async goToStep(context: WebSocketContext, params: GoToStepDto): Promise<boolean> {
     const { socketData } = context;
     const { environment, clientContext } = socketData;
-    // The session's content type picks the event (flow step / embed screen)
+    // The session's content type picks the event (flow step / embed step)
     return await this.eventTrackingService.trackStepSeen({
       sessionId: params.sessionId,
       environment,

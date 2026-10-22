@@ -421,8 +421,8 @@ export class SessionBuilderService {
   }
 
   /**
-   * Process EMBED content type session: the screens are steps (the flow
-   * processing, attributes and current step included) and the shell is the
+   * Process EMBED content type session: its steps go through the flow
+   * processing (attributes and current step included) and the shell is the
    * version data.
    * @param session - The content session
    * @param customContentVersion - The custom content version

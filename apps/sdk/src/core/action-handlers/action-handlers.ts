@@ -115,7 +115,7 @@ export class BannerActionHandler extends BaseActionHandler {
 }
 
 /**
- * Handler for embed-specific actions: paging between screens (by cvid or
+ * Handler for embed-specific actions: paging between steps (by cvid or
  * relative to the current one) and dismissing the embed.
  */
 export class EmbedActionHandler extends BaseActionHandler {

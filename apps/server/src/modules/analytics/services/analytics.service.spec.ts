@@ -51,7 +51,7 @@ const buildService = () => {
 };
 
 describe('AnalyticsService.aggregationButtonsByContent', () => {
-  it('walks the published version screens and keys each button by (button cvid, step cvid)', async () => {
+  it('walks the published version steps and keys each button by (button cvid, step cvid)', async () => {
     const { service, prisma } = buildService();
     prisma.content.findFirst.mockResolvedValue(publishedContent('embed'));
     prisma.version.findFirst.mockResolvedValue({

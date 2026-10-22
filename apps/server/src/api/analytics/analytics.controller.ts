@@ -73,7 +73,7 @@ export class ApiAnalyticsController {
       'flows report starts + completions and a per-step funnel with tooltip-target-missing ' +
       'counts; checklists starts + completions and per-task rows; launchers seen + ' +
       'activations; banners seen + dismissals; embeds users reached + button clicks + ' +
-      'dismissals with per-screen and per-button rows; resource centers opens + block clicks; ' +
+      'dismissals with per-step and per-button rows; resource centers opens + block clicks; ' +
       'trackers users + occurrences of the tracked event. All with a per-day series. ' +
       'Defaults to the last 30 days, UTC.',
   })

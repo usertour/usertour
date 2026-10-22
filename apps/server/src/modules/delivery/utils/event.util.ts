@@ -732,7 +732,7 @@ export const buildEmbedDismissedEventData = (
 
 /**
  * The step attributes of the session's content type for the given step id —
- * embed screens and flow steps use their own attribute vocabulary. Null when
+ * embed steps and flow steps use their own attribute vocabulary. Null when
  * the step is not part of the version.
  */
 const buildStepAttributes = (
@@ -766,7 +766,7 @@ const buildStepAttributes = (
 
 /**
  * Build event data for embed step seen events. No progress: an embed's
- * screens are pages inside one container, not a journey with an end.
+ * steps are pages inside one container, not a journey with an end.
  * @param session - The business session with content and version
  * @param params - Event build parameters containing stepId
  * @returns Embed step seen event data, or null if the step is unknown
@@ -1063,7 +1063,7 @@ export const getEndEventType = (contentType: ContentDataType): BizEvents | null 
 };
 
 /**
- * The step-seen event of a step-bodied content type (flow steps, embed screens).
+ * The step-seen event of a step-bodied content type (flow steps, embed steps).
  * @param contentType - The content type
  * @returns The step-seen event, or null for types without steps
  */
