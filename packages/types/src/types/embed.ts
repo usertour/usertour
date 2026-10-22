@@ -24,7 +24,7 @@ export type EmbedOuterMargin = BannerOuterMargin;
 /**
  * The embed's shell: the layout decisions stored per content in
  * `Version.data`. Appearance (colors, padding, border) lives in the theme;
- * the screens live in `Step` rows (ADR 0022).
+ * the content lives in `Step` rows (ADR 0022).
  */
 export interface EmbedData {
   placement: EmbedPlacement;

@@ -254,7 +254,7 @@ export const defaultEvents = [
   {
     displayName: 'Embed Step Seen',
     codeName: BizEvents.EMBED_STEP_SEEN,
-    description: 'When an embed screen is shown to a user for the first time in a session',
+    description: 'When an embed step is shown to a user for the first time in a session',
     attributes: [
       EventAttributes.EMBED_ID,
       EventAttributes.EMBED_NAME,
@@ -864,28 +864,28 @@ export const defaultAttributes: ProjectDefaultAttribute[] = [
     displayName: 'Embed Step ID',
     bizType: AttributeBizTypes.Event,
     dataType: AttributeDataType.String,
-    description: 'Unique identifier of the embed screen',
+    description: 'Unique identifier of the embed step',
   },
   {
     codeName: EventAttributes.EMBED_STEP_CVID,
     displayName: 'Embed Step CVID',
     bizType: AttributeBizTypes.Event,
     dataType: AttributeDataType.String,
-    description: 'Stable identifier of the embed screen across versions',
+    description: 'Stable identifier of the embed step across versions',
   },
   {
     codeName: EventAttributes.EMBED_STEP_NAME,
     displayName: 'Embed Step Name',
     bizType: AttributeBizTypes.Event,
     dataType: AttributeDataType.String,
-    description: 'Name of the embed screen',
+    description: 'Name of the embed step',
   },
   {
     codeName: EventAttributes.EMBED_STEP_NUMBER,
     displayName: 'Embed Step Number',
     bizType: AttributeBizTypes.Event,
     dataType: AttributeDataType.Number,
-    description: 'Position of the embed screen, starting at 0',
+    description: 'Position of the embed step, starting at 0',
   },
   {
     codeName: EventAttributes.BUTTON_CVID,

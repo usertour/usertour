@@ -2,7 +2,7 @@ import { ContentDataType, StepContentType } from '@usertour/types';
 
 /**
  * Which step kinds each step-bodied content type accepts. A flow's steps are
- * popups anchored to the page; an embed's steps are screens inside its inline
+ * popups anchored to the page; an embed's steps are inline panels inside its
  * shell, plus hidden steps that only wait for a trigger (ADR 0022). The
  * builder's step picker, the validators and the public API all read this.
  */

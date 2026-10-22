@@ -23,8 +23,8 @@ export enum ContentActionsItemType {
 }
 
 /**
- * Relative target of a `step-goto` action: the screen before or after the
- * current one, resolved at runtime from the step order (embed screens).
+ * Relative target of a `step-goto` action: the step before or after the
+ * current one, resolved at runtime from the step order (embed steps).
  */
 export enum StepGotoDirection {
   PREVIOUS = 'previous',
@@ -77,7 +77,7 @@ export enum StepContentType {
   MODAL = 'modal',
   HIDDEN = 'hidden',
   BUBBLE = 'bubble',
-  /** An embed screen: rendered inline inside the embed's shell at its target (ADR 0022). */
+  /** An embed step: rendered inline inside the embed's shell at its target (ADR 0022). */
   INLINE = 'inline',
 }
 

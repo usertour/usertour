@@ -200,7 +200,7 @@ export type ContentTypeTraits = {
    */
   allowsScheduledAt: boolean;
   /**
-   * The content body lives in `Step` rows (flow steps, embed screens) rather
+   * The content body lives in `Step` rows (flow steps, embed steps) rather
    * than in `Version.data`. Drives everything that walks steps: localization,
    * duplication, step-level analytics, the step picker.
    */
@@ -266,6 +266,6 @@ export const CONTENT_TYPE_TRAITS: Record<ContentDataType, ContentTypeTraits> = {
   },
 };
 
-/** Whether the type's body is Step rows (flow steps, embed screens). */
+/** Whether the type's body is Step rows (flow steps, embed steps). */
 export const hasStepBody = (contentType: ContentDataType | string | undefined): boolean =>
   !!contentType && (CONTENT_TYPE_TRAITS[contentType as ContentDataType]?.bodyInSteps ?? false);
