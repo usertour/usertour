@@ -51,11 +51,6 @@ export const button = (text: string, actions: Action[] = [], cvid?: string) => (
   data: { text, type: 'primary', actions, ...(cvid ? { cvid } : {}) },
 });
 export const dismissEmbed = (): Action => ({ id: id('action'), type: 'embed-dismis', data: {} });
-export const gotoRelative = (direction: 'previous' | 'next'): Action => ({
-  id: id('action'),
-  type: 'step-goto',
-  data: { direction },
-});
 
 // --- flow ---
 

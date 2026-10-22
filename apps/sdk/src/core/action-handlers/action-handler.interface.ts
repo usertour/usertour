@@ -3,7 +3,6 @@ import {
   RulesCondition,
   contentEndReason,
   UserTourTypes,
-  StepGotoDirection,
 } from '@usertour/types';
 
 /**
@@ -41,10 +40,6 @@ export interface ActionHandlerContext {
    * Shows a step by cvid (step-bodied content: tour, embed)
    */
   showStepByCvid?: (stepCvid: string) => Promise<void>;
-  /**
-   * Shows the previous / next step relative to the current one (embed steps)
-   */
-  showRelativeStep?: (direction: StepGotoDirection) => Promise<void>;
   /**
    * Indicates if JavaScript evaluation via eval is disabled
    */

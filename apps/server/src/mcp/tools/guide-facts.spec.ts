@@ -163,7 +163,7 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     // guide side: the claim carriers
     expect(AUTHORING_GUIDE).toContain('restricted to kinds `inline`');
     expect(AUTHORING_GUIDE).toContain('**several embeds show at once**');
-    expect(AUTHORING_GUIDE).toContain('`direction: "previous" | "next"`');
+    expect(AUTHORING_GUIDE).toContain('there is no relative previous / next');
     expect(AUTHORING_GUIDE).toContain('**Button `cvid` is the analytics key.**');
     expect(AUTHORING_GUIDE).toContain('**no completion state**');
   });

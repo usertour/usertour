@@ -4,7 +4,6 @@ import { ContentDataType } from '@usertour/types';
 import {
   CONTENT_REFERENCE_TARGET_TYPE_SET,
   REACTIVE_REJECTED_REP_CONDITION_TYPES,
-  RELATIVE_GOTO_CONTENT_TYPES,
   REP_CONDITION_TYPE_TO_INTERNAL,
   allowedStepTypes,
   contentActionCapabilities,
@@ -135,9 +134,5 @@ describe('contract-map (step-bodied types)', () => {
     expect([...allowedStepTypes(ContentDataType.EMBED)]).toEqual(['inline', 'hidden']);
     expect(allowedStepTypes(ContentDataType.CHECKLIST)).toEqual([]);
     expect(allowedStepTypes(undefined)).toEqual([]);
-  });
-
-  it('only an embed pages by direction (the embed action handler is the one reading it)', () => {
-    expect([...RELATIVE_GOTO_CONTENT_TYPES]).toEqual([ContentDataType.EMBED]);
   });
 });

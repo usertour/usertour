@@ -1,9 +1,4 @@
-import {
-  ContentActionsItemType,
-  RulesCondition,
-  contentEndReason,
-  StepGotoDirection,
-} from '@usertour/types';
+import { ContentActionsItemType, RulesCondition, contentEndReason } from '@usertour/types';
 import { executeUserCode } from '@usertour/helpers';
 import { ErrorMessages } from '@/types/error-messages';
 import { logger } from '@/utils';
@@ -115,8 +110,8 @@ export class BannerActionHandler extends BaseActionHandler {
 }
 
 /**
- * Handler for embed-specific actions: paging between steps (by cvid or
- * relative to the current one) and dismissing the embed.
+ * Handler for embed-specific actions: paging between steps by cvid and
+ * dismissing the embed.
  */
 export class EmbedActionHandler extends BaseActionHandler {
   protected readonly supportedActionTypes = [
@@ -127,14 +122,6 @@ export class EmbedActionHandler extends BaseActionHandler {
   async handle(action: RulesCondition, context: ActionHandlerContext): Promise<void> {
     switch (action.type) {
       case ContentActionsItemType.STEP_GOTO: {
-        const direction = action.data?.direction as StepGotoDirection | undefined;
-        if (direction) {
-          if (!context.showRelativeStep) {
-            throw new Error(ErrorMessages.SHOW_STEP_BY_CVID_NOT_AVAILABLE);
-          }
-          await context.showRelativeStep(direction);
-          break;
-        }
         if (!context.showStepByCvid) {
           throw new Error(ErrorMessages.SHOW_STEP_BY_CVID_NOT_AVAILABLE);
         }

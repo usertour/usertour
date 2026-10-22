@@ -1030,33 +1030,14 @@ describe('rating scale `default` round-trip (flow acceptance eval #22)', () => {
   });
 });
 
-describe('embed: dismiss variant, relative goto, button cvid', () => {
+describe('embed: dismiss variant, button cvid', () => {
   it('dismiss compiles to embed-dismis for an embed host and decompiles back to dismiss', () => {
     const compiled = compileActions([{ type: 'dismiss' }], ids, 'embed-dismis');
     expect((compiled[0] as any).type).toBe('embed-dismis');
     expect(decompileActions(compiled)).toEqual([{ type: 'dismiss' }]);
   });
 
-  it('goto_step with a direction compiles to step-goto { direction } and bypasses the cvid resolver', () => {
-    const resolver = jest.fn((ref: string) => `cvid:${ref}`);
-    const compiled: any[] = compileActions(
-      [
-        { type: 'goto_step', direction: 'next' },
-        { type: 'goto_step', step: 'pricing' },
-      ] as any,
-      { ...ids, stepCvid: resolver },
-    );
-    expect(compiled[0]).toMatchObject({ type: 'step-goto', data: { direction: 'next' } });
-    expect(compiled[0].data.stepCvid).toBeUndefined();
-    expect(compiled[1]).toMatchObject({ type: 'step-goto', data: { stepCvid: 'cvid:pricing' } });
-    expect(resolver).toHaveBeenCalledTimes(1);
-    expect(decompileActions(compiled)).toEqual([
-      { type: 'goto_step', direction: 'next' },
-      { type: 'goto_step', step: 'cvid:pricing' },
-    ]);
-  });
-
-  it('goto_step needs exactly one of step / direction (schema)', () => {
+  it('goto_step needs a step; a direction is not a target (schema)', () => {
     const parse = (action: unknown) =>
       representationStepInput.safeParse({
         name: 'S',
@@ -1064,10 +1045,8 @@ describe('embed: dismiss variant, relative goto, button cvid', () => {
         content: [{ type: 'button', text: 'Go', actions: [action] }],
       }).success;
     expect(parse({ type: 'goto_step', step: 'a' })).toBe(true);
-    expect(parse({ type: 'goto_step', direction: 'previous' })).toBe(true);
     expect(parse({ type: 'goto_step' })).toBe(false);
-    expect(parse({ type: 'goto_step', step: 'a', direction: 'next' })).toBe(false);
-    expect(parse({ type: 'goto_step', direction: 'sideways' })).toBe(false);
+    expect(parse({ type: 'goto_step', direction: 'next' })).toBe(false);
   });
 
   it('button cvid: echoed wins, then the block-id match, then a fresh one; decompile surfaces it', () => {

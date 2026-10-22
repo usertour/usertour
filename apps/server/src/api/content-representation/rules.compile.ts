@@ -301,13 +301,8 @@ function compileAction(
 ): Rule {
   switch (a.type) {
     case 'goto_step':
-      // A relative target (embed steps) is resolved at runtime from the step
-      // order, so it carries no cvid; the schema guarantees exactly one of the two.
-      if (a.direction !== undefined) {
-        return rule('step-goto', { direction: a.direction });
-      }
       return rule('step-goto', {
-        stepCvid: r?.stepCvid ? r.stepCvid(a.step as string) : a.step,
+        stepCvid: r?.stepCvid ? r.stepCvid(a.step) : a.step,
       });
     case 'start_content':
       return rule('flow-start', { contentId: a.content, ...(a.step ? { stepCvid: a.step } : {}) });

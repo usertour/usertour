@@ -22,15 +22,6 @@ export enum ContentActionsItemType {
   JAVASCRIPT_EVALUATE = 'javascript-evaluate',
 }
 
-/**
- * Relative target of a `step-goto` action: the step before or after the
- * current one, resolved at runtime from the step order (embed steps).
- */
-export enum StepGotoDirection {
-  PREVIOUS = 'previous',
-  NEXT = 'next',
-}
-
 export enum ContentDataType {
   CHECKLIST = 'checklist',
   FLOW = 'flow',

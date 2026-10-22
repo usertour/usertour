@@ -314,7 +314,7 @@ describe('codec corpus: flow steps are round-trip idempotent', () => {
       },
     ],
     [
-      'inline (embed step): relative paging, button cvid, dismiss, question',
+      'inline (embed step): goto by step, button cvid, dismiss, question',
       'inline',
       {
         content: [
@@ -323,7 +323,7 @@ describe('codec corpus: flow steps are round-trip idempotent', () => {
             object: 'block',
             type: 'question',
             question: { kind: 'rating', name: 'Fit', style: 'scale', range: { low: 1, high: 5 } },
-            actions: [{ type: 'goto_step', direction: 'next' }],
+            actions: [{ type: 'goto_step', step: 'embed-step-2' }],
           },
           {
             object: 'block',
@@ -337,7 +337,7 @@ describe('codec corpus: flow steps are round-trip idempotent', () => {
                     cvid: 'btn-back',
                     text: 'Back',
                     variant: 'secondary',
-                    actions: [{ type: 'goto_step', direction: 'previous' }],
+                    actions: [{ type: 'goto_step', step: 'embed-step-1' }],
                   },
                 ],
               },

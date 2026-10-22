@@ -4756,8 +4756,6 @@ const translations = {
         modal: 'Modal',
         hidden: 'Hidden',
         inline: 'Inline',
-        previous: 'Previous step',
-        next: 'Next step',
         currentBadge: 'Current',
       },
       flowDismiss: {

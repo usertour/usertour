@@ -88,7 +88,7 @@ A new `embed` section with three fields: `backgroundColor`, `textColor` (both al
 ### 7. SDK, widget and builder
 
 - The widget's banner internals are extracted into `packages/widget/src/core/inline.tsx` (`InlineRoot`, `InlineFrame`, `InlineInFrame`, `InlineContentContainer`, `InlineDismissButton`, `InlinePreview`); the banner components become thin wrappers and keep their exports. The SDK's mount helpers are shared and gain the COVER branch, re-measuring on target size changes. The SDK keeps `embeds[]` as it keeps `launchers[]`.
-- Button actions: go to step (including previous / next relative targets), dismiss, navigate, start a flow, run JavaScript. Step triggers are reused.
+- Button actions: go to step (a named step, exactly as in a flow; a relative previous / next was built and then removed on 2026-10-22 so the two step-bodied types stay one model), dismiss, navigate, start a flow, run JavaScript. Step triggers are reused.
 - The builder is the flow builder's restricted variant: the same routes, a sidebar of theme + embed settings (placement, target element, dismiss, size) + step list + "add step" defaulting to `INLINE`, the step detail's `INLINE` branch, and a canvas preview that places the inline shell inside a browser frame with a placeholder target. The step editor hook is lifted into a shared core.
 - Content settings page: "Show embed if…" and frequency, per the capability row.
 

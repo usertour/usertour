@@ -610,29 +610,15 @@ export const completeWhenCondition: z.ZodType<CompletionCondition> = z.lazy(() =
  * actions, trigger `do`, question actions, onClick) shares one truth.
  */
 export const representationAction = z.discriminatedUnion('type', [
-  z
-    .object({
-      type: z.literal('goto_step'),
-      step: z
-        .string()
-        .optional()
-        .describe(
-          'Target step: a step `key` declared elsewhere in the same write, or an existing step cvid. ' +
-            'Resolved server-side to the cvid. Exactly one of `step` / `direction`.',
-        ),
-      direction: z
-        .enum(['previous', 'next'])
-        .optional()
-        .describe(
-          'Embed steps only: page to the step before / after the current one (by step order) ' +
-            'instead of naming a target. A no-op on the first / last step. Exactly one of ' +
-            '`step` / `direction`; a flow step must name its target with `step`.',
-        ),
-    })
-    .refine(
-      (action) => (action.step !== undefined) !== (action.direction !== undefined),
-      'A goto_step action takes exactly one of `step` (a step key or cvid) or `direction` (`previous` / `next`).',
-    ),
+  z.object({
+    type: z.literal('goto_step'),
+    step: z
+      .string()
+      .describe(
+        'Target step: a step `key` declared elsewhere in the same write, or an existing step cvid. ' +
+          'Resolved server-side to the cvid.',
+      ),
+  }),
   z.object({
     type: z.literal('start_content'),
     content: z

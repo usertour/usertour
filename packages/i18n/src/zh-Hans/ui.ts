@@ -4544,8 +4544,6 @@ const translations = {
         modal: '模态框',
         hidden: '隐藏',
         inline: '内联',
-        previous: '上一步',
-        next: '下一步',
         currentBadge: '当前',
       },
       flowDismiss: {

@@ -5,7 +5,6 @@ import { isHttpUrl } from '@usertour/helpers';
 
 import {
   REACTIVE_REJECTED_REP_CONDITION_TYPES,
-  RELATIVE_GOTO_CONTENT_TYPES,
   REP_ACTION_TYPE_TO_INTERNAL,
   allowedStepTypes,
   contentActionCapabilities,
@@ -31,9 +30,8 @@ import {
  *    in the browser, so server-evaluated condition types (event / segment /
  *    content-state) can never fire there. The builder omits them; reject them.
  *  - `action_not_allowed`: a `data` body can't carry `goto_step` (no steps to
- *    go to), a type without a dismiss variant (resource center) can't carry
- *    `dismiss` (it would compile to flow-dismiss and silently no-op), and a
- *    relative `goto_step` (`direction`) only pages embed steps.
+ *    go to), and a type without a dismiss variant (resource center) can't carry
+ *    `dismiss` (it would compile to flow-dismiss and silently no-op).
  *  - `step_shape`: the step kind must be one the content type accepts
  *    (STEP_TYPES_BY_CONTENT_TYPE), placement shape must match the step kind
  *    (tooltip→{side,align}, modal→{position}; wrong-shape fields are silently
@@ -265,30 +263,6 @@ export function collectWriteViolations(input: {
     }
   };
 
-  /** A relative `goto_step` (`direction`) anywhere in the steps — only embed steps page that way. */
-  const relativeGoto = (node: unknown, path: string): void => {
-    if (Array.isArray(node)) {
-      node.forEach((item, i) => relativeGoto(item, `${path}[${i}]`));
-      return;
-    }
-    if (!node || typeof node !== 'object') {
-      return;
-    }
-    const obj = node as Record<string, unknown>;
-    if (obj.type === 'goto_step' && obj.direction !== undefined) {
-      issues.push({
-        rule: 'action_not_allowed',
-        path,
-        message: `A "goto_step" with \`direction\` pages between the steps of an embed — ${String(
-          input.contentType,
-        )} steps must name their target with \`step\` (a step key or cvid).`,
-      });
-    }
-    for (const key of Object.keys(obj)) {
-      relativeGoto(obj[key], `${path}.${key}`);
-    }
-  };
-
   /** Cross-content references, wherever they sit (the caller checks target types). */
   const collectRefs = (node: unknown, path: string, where: string): void => {
     if (Array.isArray(node)) {
@@ -396,7 +370,7 @@ export function collectWriteViolations(input: {
   // ── THE entry list (the one place that knows where rules apply) ─────────────
 
   // steps (flow steps, embed steps): shape per step, reactive slots (trigger
-  // when + button rules), relative goto, refs.
+  // when + button rules), refs.
   if (Array.isArray(input.steps)) {
     input.steps.forEach((s, i) => {
       stepShape(s, i);
@@ -406,9 +380,6 @@ export function collectWriteViolations(input: {
       );
       buttonReactive(step.content, `steps[${i}].content`);
     });
-    if (input.contentType && !RELATIVE_GOTO_CONTENT_TYPES.has(input.contentType)) {
-      relativeGoto(input.steps, 'steps');
-    }
     collectRefs(input.steps, 'steps', 'a step');
     mediaUrls(input.steps, 'steps');
   }

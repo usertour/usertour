@@ -314,27 +314,6 @@ describe('collectWriteViolations — embed steps', () => {
     ]);
   });
 
-  it('relative goto (direction) pages embed steps only — a flow must name its target', () => {
-    const steps = [
-      {
-        name: 'S',
-        type: 'hidden',
-        content: [],
-        triggers: [
-          {
-            when: [{ type: 'current_url', includes: ['*'] }],
-            do: [{ type: 'goto_step', direction: 'next' }],
-          },
-        ],
-      },
-    ];
-    const flow = collectWriteViolations({ steps, contentType: 'flow' });
-    expect(flow.issues.map((issue) => ({ rule: issue.rule, path: issue.path }))).toEqual([
-      { rule: 'action_not_allowed', path: 'steps[0].triggers[0].do[0]' },
-    ]);
-    expect(collectWriteViolations({ steps, contentType: 'embed' }).issues).toEqual([]);
-  });
-
   it('the embed shell (data) carries no action slots — a clean shell write has no issues', () => {
     const out = collectWriteViolations({
       data: { placement: 'cover-element', target: { selector: '#x' }, allowDismiss: true },

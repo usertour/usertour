@@ -23,8 +23,6 @@ import {
   type RulesCondition,
   type Step,
   StepContentType,
-  ContentDataType,
-  StepGotoDirection,
 } from '@usertour/types';
 import { type ComponentType, useCallback, useMemo, useState } from 'react';
 import { useActionsContext } from '../actions-context';
@@ -41,8 +39,6 @@ import { useTranslation } from 'react-i18next';
 
 interface StepGotoData {
   stepCvid?: string;
-  /** Relative target (an embed step's previous / next); exclusive with stepCvid. */
-  direction?: StepGotoDirection;
   // Legacy fields preserved for SDK compatibility — the runtime reads
   // `stepCvid` exclusively, but older saved data may carry `logic`/`type`.
   logic?: string;
@@ -98,8 +94,6 @@ const FLOW_NEW_STEP_TYPES: readonly StepContentType[] = [
   StepContentType.HIDDEN,
 ];
 
-const RELATIVE_DIRECTIONS = [StepGotoDirection.PREVIOUS, StepGotoDirection.NEXT] as const;
-
 const findStep = (
   currentVersion: ContentVersion | undefined,
   stepCvid: string | undefined,
@@ -116,12 +110,8 @@ function StepGotoSummary({ condition }: { condition: RulesCondition }) {
   const data = readData(condition);
   const { step, index } = findStep(currentVersion, data.stepCvid);
 
-  const hasStep = Boolean(step) || Boolean(data.direction);
-  const stepText = data.direction
-    ? t(`actions.types.stepGoto.${data.direction}`)
-    : step
-      ? `${index + 1}. ${step.name}`
-      : '';
+  const hasStep = Boolean(step);
+  const stepText = step ? `${index + 1}. ${step.name}` : '';
 
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
@@ -152,7 +142,6 @@ function StepGotoEditor({
   const data = readData(condition);
   const stepTypeOptions = getStepTypesForContentType(currentContent?.type);
   const newStepTypes = stepTypeOptions.length > 0 ? stepTypeOptions : FLOW_NEW_STEP_TYPES;
-  const allowsRelative = currentContent?.type === ContentDataType.EMBED;
 
   // Open this editor as a controlled dropdown — distinct from ActionRow's
   // chip popover. ActionRow's popover renders the dropdown trigger; the
@@ -166,16 +155,7 @@ function StepGotoEditor({
 
   const handleSelect = useCallback(
     (cvid: string) => {
-      onChange(writeData(condition, { stepCvid: cvid, direction: undefined }));
-      setOpen(false);
-      onClose();
-    },
-    [condition, onChange, onClose],
-  );
-
-  const handleSelectDirection = useCallback(
-    (direction: StepGotoDirection) => {
-      onChange(writeData(condition, { direction, stepCvid: undefined }));
+      onChange(writeData(condition, { stepCvid: cvid }));
       setOpen(false);
       onClose();
     },
@@ -228,26 +208,8 @@ function StepGotoEditor({
         </button>
       </RulesDropdownMenuTrigger>
       <RulesDropdownMenuContent align="start" className="w-[var(--radix-popper-anchor-width)]">
-        <DropdownMenuRadioGroup
-          value={data.direction ? `direction:${data.direction}` : data.stepCvid}
-        >
+        <DropdownMenuRadioGroup value={data.stepCvid}>
           <ScrollArea className={cn(availableSteps.length > 9 ? 'h-72' : '')}>
-            {allowsRelative &&
-              RELATIVE_DIRECTIONS.map((direction) => (
-                <DropdownMenuSelectItem
-                  key={direction}
-                  value={`direction:${direction}`}
-                  onSelect={() => handleSelectDirection(direction)}
-                  className="cursor-pointer"
-                >
-                  <div className="flex w-full min-w-0 items-center gap-1">
-                    <ArrowRightIcon className="h-4 w-4 shrink-0" />
-                    <span className="min-w-0 truncate">
-                      {t(`actions.types.stepGoto.${direction}`)}
-                    </span>
-                  </div>
-                </DropdownMenuSelectItem>
-              ))}
             {availableSteps.map((step) => {
               const realIndex =
                 currentVersion?.steps?.findIndex((entry) => entry.cvid === step.cvid) ?? 0;
@@ -333,7 +295,7 @@ export const stepGotoSchema: ActionTypeSchema<StepGotoData> = {
   Editor: StepGotoEditor,
   validate: (condition) => {
     const data = readData(condition);
-    if (!data.stepCvid && !data.direction) {
+    if (!data.stepCvid) {
       return { key: 'actions.errors.stepGoto.selectStep' };
     }
     // Intentionally NOT cross-checking "step still exists in currentVersion"

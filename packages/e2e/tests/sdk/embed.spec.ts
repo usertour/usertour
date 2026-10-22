@@ -2,7 +2,6 @@ import {
   button,
   dismissEmbed,
   embedSession,
-  gotoRelative,
   gotoStep,
   oneStepEmbed,
   paragraph,
@@ -128,7 +127,10 @@ test.describe('steps', () => {
           cvid: `${contentId}-cvid-2`,
           type: 'inline',
           name: 'Step 2',
-          data: [row(paragraph('Step two')), row(button('Back', [gotoRelative('previous')]))],
+          data: [
+            row(paragraph('Step two')),
+            row(button('Back', [gotoStep(`${contentId}-cvid-1`)])),
+          ],
         },
       ],
     });

@@ -17,7 +17,6 @@ import {
   LauncherActionType,
   ResourceCenterBlockType,
   StepContentType,
-  StepGotoDirection,
   type AnnouncementData,
   type BannerData,
   type ChecklistData,
@@ -241,26 +240,6 @@ function collectGotoTargets(node: unknown, out: string[]): void {
     }
     for (const key of Object.keys(obj)) collectGotoTargets(obj[key], out);
   }
-}
-
-const GOTO_DIRECTIONS = new Set<string>(Object.values(StepGotoDirection));
-
-/** Deep-walk any value: does a `step-goto` page by direction (previous / next)? */
-function hasRelativeGoto(node: unknown): boolean {
-  if (Array.isArray(node)) {
-    return node.some(hasRelativeGoto);
-  }
-  if (!node || typeof node !== 'object') {
-    return false;
-  }
-  const obj = node as Record<string, unknown>;
-  if (obj.type === ContentActionsItemType.STEP_GOTO) {
-    const direction = (obj.data as { direction?: unknown } | undefined)?.direction;
-    if (typeof direction === 'string' && GOTO_DIRECTIONS.has(direction)) {
-      return true;
-    }
-  }
-  return Object.keys(obj).some((key) => hasRelativeGoto(obj[key]));
 }
 
 export function validateVersionUsable(input: ValidateUsableInput): UsabilityReport {
@@ -885,12 +864,6 @@ function validateSteps(
 
   // Reachability is advisory: a non-first step that nothing navigates to is
   // likely dead, but may be reached via runtime triggers we can't see here.
-  // Embed steps may page relative to the current one (previous / next); once
-  // any step does, which steps are reachable depends on the step order,
-  // not on named targets, so the pass has nothing reliable to say.
-  if (contentType === ContentDataType.EMBED && hasRelativeGoto(steps)) {
-    return;
-  }
   steps.forEach((step, i) => {
     if (i === 0 || !step.cvid) return;
     if (!referenced.has(step.cvid)) {

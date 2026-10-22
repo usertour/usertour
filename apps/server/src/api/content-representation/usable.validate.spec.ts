@@ -1455,7 +1455,7 @@ describe('embed (shell + steps)', () => {
     expect(embed(shell, [inlineStep({ target: undefined })]).ok).toBe(true);
   });
 
-  it('a goto by cvid must resolve; a relative goto suppresses the reachability warning', () => {
+  it('a goto by cvid must resolve; an unreferenced later step is only a warning', () => {
     const goto = (data: Record<string, unknown>) => [
       {
         children: [
@@ -1477,14 +1477,8 @@ describe('embed (shell + steps)', () => {
     expect(dangling.errors.some((issue) => issue.message.includes('does not exist'))).toBe(true);
 
     const named = embed(shell, [inlineStep({}), inlineStep({ cvid: 'b', sequence: 1 })]);
+    expect(named.ok).toBe(true);
     expect(paths(named.warnings)).toContain('steps[1]');
-
-    const paged = embed(shell, [
-      inlineStep({ data: goto({ direction: 'next' }) }),
-      inlineStep({ cvid: 'b', sequence: 1 }),
-    ]);
-    expect(paged.ok).toBe(true);
-    expect(paths(paged.warnings)).not.toContain('steps[1]');
   });
 
   it('warns on missing start rules without offering a manual start (an embed has none)', () => {

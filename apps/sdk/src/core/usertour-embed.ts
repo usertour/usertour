@@ -7,7 +7,6 @@ import {
   SessionStep,
   SessionTheme,
   StepContentType,
-  StepGotoDirection,
   contentEndReason,
   contentStartReason,
 } from '@usertour/types';
@@ -62,7 +61,6 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     return {
       ...baseContext,
       showStepByCvid: (stepCvid: string) => this.showStepByCvid(stepCvid),
-      showRelativeStep: (direction: StepGotoDirection) => this.showRelativeStep(direction),
     };
   }
 
@@ -137,24 +135,6 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
       return;
     }
     await this.showStep(step, reportStepSeen);
-  }
-
-  /**
-   * Shows the step before or after the current one; a no-op at either end.
-   * @param direction - previous or next
-   */
-  async showRelativeStep(direction: StepGotoDirection): Promise<void> {
-    const steps = this.getSteps();
-    const currentIndex = steps.findIndex((step) => step.cvid === this.currentStepCvid);
-    if (currentIndex === -1) {
-      return;
-    }
-    const targetIndex = direction === StepGotoDirection.NEXT ? currentIndex + 1 : currentIndex - 1;
-    const target = steps[targetIndex];
-    if (!target) {
-      return;
-    }
-    await this.showStep(target, true);
   }
 
   async handleDismiss(): Promise<void> {
