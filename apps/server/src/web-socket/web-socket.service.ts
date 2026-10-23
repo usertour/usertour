@@ -308,7 +308,6 @@ export class WebSocketService {
         stack: error.stack,
         data,
         environment,
-        attributes,
       });
       return data;
     }
@@ -357,7 +356,6 @@ export class WebSocketService {
         stack: error.stack,
         steps,
         environment,
-        attributes,
       });
       return steps;
     }
@@ -413,7 +411,6 @@ export class WebSocketService {
         stack: error.stack,
         rulesConditions,
         environment,
-        attributes,
       });
       return rulesConditions;
     }

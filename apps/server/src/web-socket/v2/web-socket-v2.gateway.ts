@@ -132,7 +132,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       const socketsInRoom = await this.server.in(room).fetchSockets();
       if (socketsInRoom.length >= 100) {
         this.logger.warn(
-          `Room ${room} has reached maximum capacity (100 sockets). Rejecting connection for socket ${socket.id}`,
+          `A user in environment ${socketData.environment.id} has reached the room capacity (100 sockets). Rejecting connection for socket ${socket.id}`,
         );
         return next(
           handshakeRejection(new ServiceUnavailableError('Room capacity exceeded'), true),
@@ -151,7 +151,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       // The version names the bundle this connection runs: after a release,
       // the lines still saying the previous one are the pages not yet reloaded.
       this.logger.log(
-        `Socket ${socket.id} authenticated for user ${socketData.externalUserId} (sdk ${socketData.sdkVersion ?? 'unknown'})`,
+        `Socket ${socket.id} authenticated in environment ${socketData.environment.id} (sdk ${socketData.sdkVersion ?? 'unknown'})`,
       );
       return next();
     } catch (error: unknown) {
