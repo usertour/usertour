@@ -973,9 +973,11 @@ export class ContentOrchestratorService {
     const { socket, contentType } = context;
     const socketData = await this.getSocketData(socket);
 
-    // Early return if operation failed
+    // Early return if operation failed. Debug, not warn: the usual reason is
+    // that the environment has no published content of this type, which is
+    // one line per type per evaluation and no fault.
     if (!success || !socketData) {
-      this.logger.warn(
+      this.logger.debug(
         `Handle content start result, failed, reason: ${result.reason}, contentType: ${contentType}`,
       );
       return false;
