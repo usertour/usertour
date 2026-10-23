@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import pLimit from 'p-limit';
 
@@ -11,6 +11,12 @@ export class AdmissionTimeoutError extends Error {
 }
 
 const ABANDONED = Symbol('abandoned');
+
+/** The gate reports on its log at most once per window, whatever happens inside it. */
+const WARN_WINDOW_MS = 5000;
+
+/** A wait for a slot this long is worth reporting. */
+const LONG_WAIT_MS = 1000;
 
 /** A positive number from the environment, or the fallback when unset, blank or not a number. */
 const numberSetting = (raw: unknown, fallback: number): number => {
@@ -49,7 +55,7 @@ const numberSetting = (raw: unknown, fallback: number): number => {
  * unit is never refused for waiting.
  */
 @Injectable()
-export class AdmissionService {
+export class AdmissionService implements OnModuleDestroy {
   private readonly logger = new Logger(AdmissionService.name);
   private readonly limit: ReturnType<typeof pLimit> | undefined;
   readonly concurrency: number;
@@ -59,9 +65,14 @@ export class AdmissionService {
 
   private tokens: number;
   private tokensRefilledAt = performance.now();
-  private lastWaitWarnAt = 0;
+
+  // Reporting: events are counted, and every window with any ends in one
+  // line, so a burst that is over within the window is still reported in full.
   private refusedHandshakes = 0;
-  private lastRefusalWarnAt = 0;
+  private refusalWindow: ReturnType<typeof setTimeout> | undefined;
+  private longWaits = 0;
+  private longestWaitMs = 0;
+  private waitWindow: ReturnType<typeof setTimeout> | undefined;
 
   constructor(configService: ConfigService) {
     this.concurrency = numberSetting(configService.get('WS_ADMISSION_CONCURRENCY'), 16);
@@ -76,6 +87,11 @@ export class AdmissionService {
     );
     this.limit = this.concurrency > 0 ? pLimit(this.concurrency) : undefined;
     this.tokens = this.handshakeRatePerSecond;
+  }
+
+  onModuleDestroy(): void {
+    clearTimeout(this.refusalWindow);
+    clearTimeout(this.waitWindow);
   }
 
   /** Units running now. */
@@ -116,7 +132,7 @@ export class AdmissionService {
       }
       // Admitted: from here on the unit runs to its end, whatever the clock says.
       clearTimeout(timer);
-      this.noteWait(label, Date.now() - queuedAt);
+      this.noteWait(Date.now() - queuedAt);
       return await work();
     });
     try {
@@ -150,30 +166,39 @@ export class AdmissionService {
     return true;
   }
 
-  private noteWait(label: string, waitedMs: number): void {
-    if (waitedMs < 1000) {
+  /** Long waits are counted, and reported once per window in which any happened. */
+  private noteWait(waitedMs: number): void {
+    if (waitedMs < LONG_WAIT_MS) {
       return;
     }
-    const now = Date.now();
-    // One line per five seconds at most: under a burst every unit waits.
-    if (now - this.lastWaitWarnAt < 5000) {
+    this.longWaits += 1;
+    this.longestWaitMs = Math.max(this.longestWaitMs, waitedMs);
+    if (this.waitWindow) {
       return;
     }
-    this.lastWaitWarnAt = now;
-    this.logger.warn(
-      `Admission queue: ${label} waited ${waitedMs}ms (${this.activeCount} running, ${this.pendingCount} waiting)`,
-    );
+    this.waitWindow = setTimeout(() => {
+      this.waitWindow = undefined;
+      this.logger.warn(
+        `Admission queue: ${this.longWaits} units waited over ${LONG_WAIT_MS}ms in the last ${WARN_WINDOW_MS / 1000}s, the longest ${this.longestWaitMs}ms (${this.activeCount} running, ${this.pendingCount} waiting)`,
+      );
+      this.longWaits = 0;
+      this.longestWaitMs = 0;
+    }, WARN_WINDOW_MS);
+    this.waitWindow.unref();
   }
 
+  /** Refusals are counted, and the running total reported once per window in which any happened. */
   private noteRefusal(): void {
     this.refusedHandshakes += 1;
-    const now = Date.now();
-    if (now - this.lastRefusalWarnAt < 5000) {
+    if (this.refusalWindow) {
       return;
     }
-    this.lastRefusalWarnAt = now;
-    this.logger.warn(
-      `Handshake pacing: refused ${this.refusedHandshakes} handshakes so far (${this.handshakeRatePerSecond}/s allowed)`,
-    );
+    this.refusalWindow = setTimeout(() => {
+      this.refusalWindow = undefined;
+      this.logger.warn(
+        `Handshake pacing: refused ${this.refusedHandshakes} handshakes so far (${this.handshakeRatePerSecond}/s allowed)`,
+      );
+    }, WARN_WINDOW_MS);
+    this.refusalWindow.unref();
   }
 }

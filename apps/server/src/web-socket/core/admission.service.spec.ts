@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AdmissionService, AdmissionTimeoutError } from './admission.service';
 
@@ -148,6 +149,55 @@ describe('AdmissionService', () => {
       for (let count = 0; count < 100; count += 1) {
         expect(admission.admitHandshake()).toBe(true);
       }
+    });
+  });
+
+  describe('reporting', () => {
+    let warn: jest.SpyInstance;
+
+    beforeEach(() => {
+      jest.useFakeTimers({ now: 1_000_000, doNotFake: [] });
+      warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      warn.mockRestore();
+      jest.useRealTimers();
+    });
+
+    it('reports the refusals of a burst in one line when the window ends', () => {
+      const admission = build({ WS_HANDSHAKE_RATE_PER_SECOND: '1' });
+      for (let count = 0; count < 5; count += 1) {
+        admission.admitHandshake();
+      }
+      expect(warn).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(5000);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('refused 4 handshakes so far');
+      // A quiet window is no line.
+      jest.advanceTimersByTime(5000);
+      expect(warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports the long waits of a window in one line when it ends', async () => {
+      const admission = build({ WS_ADMISSION_CONCURRENCY: '1' });
+      let release: () => void = () => undefined;
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const holder = admission.run(() => held, 0, 'holder');
+      // Let the holder take its slot before the clock moves: its own wait is nil.
+      await Promise.resolve();
+      await Promise.resolve();
+      const waiting = ['a', 'b', 'c'].map((name) => admission.run(async () => name, 0, name));
+      jest.advanceTimersByTime(1500);
+      release();
+      await Promise.all([holder, ...waiting]);
+      expect(warn).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(5000);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('3 units waited over 1000ms');
+      expect(warn.mock.calls[0][0]).toContain('the longest 1500ms');
     });
   });
 });
