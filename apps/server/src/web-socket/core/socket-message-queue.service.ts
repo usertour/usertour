@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { AdmissionService } from './admission.service';
 
 // ============================================================================
 // Socket Message Queue Service
@@ -13,10 +14,15 @@ import { Injectable, Logger } from '@nestjs/common';
  * - New tasks wait for the previous task to complete before executing
  * - This ensures strict ordering for messages from the same socket
  * - Different sockets have independent queues and don't block each other
+ * - Across sockets, a task runs only once the replica's admission gate
+ *   (AdmissionService) has a slot for it, so a burst of connections cannot
+ *   start hundreds of tasks at once
  */
 @Injectable()
 export class SocketMessageQueueService {
   private readonly logger = new Logger(SocketMessageQueueService.name);
+
+  constructor(@Optional() private readonly admission?: AdmissionService) {}
 
   // Map: socketId -> Promise chain
   // Each socket has its own Promise chain for ordered execution
@@ -49,7 +55,15 @@ export class SocketMessageQueueService {
     // failure — its timeout included — propagates as it is: running it a
     // second time while the first run may still be executing would apply
     // a write twice (an `add` doubled, ADR 0017 §5).
-    const run = () => this.withTimeout(task(), timeoutMs, socketId);
+    //
+    // The task's timeout starts when it is admitted, not while it waits for
+    // a slot: queueing under a burst is the gate's job, and a wait it refuses
+    // (AdmissionTimeoutError) never ran the task at all.
+    const timed = () => this.withTimeout(task(), timeoutMs, socketId);
+    const run = () =>
+      this.admission
+        ? this.admission.run(timed, this.admission.messageWaitMs, `message on ${socketId}`)
+        : timed();
     const newTask = lastTask
       .then(run, (err) => {
         this.logger.warn(`Previous task failed for socket ${socketId}; continuing:`, err?.message);

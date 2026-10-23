@@ -20,6 +20,7 @@ import { buildExternalUserRoomId } from '../utils/websocket.util';
 import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
+import { AdmissionService, AdmissionTimeoutError } from '../core/admission.service';
 import { WebSocketMessageValidationPipe } from './web-socket-message-validation.pipe';
 
 /**
@@ -45,6 +46,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     private readonly queueService: SocketMessageQueueService,
     private readonly socketDataService: SocketDataService,
     private readonly validationPipe: WebSocketMessageValidationPipe,
+    private readonly admission: AdmissionService,
   ) {}
 
   // Connection-level authentication - runs during handshake
@@ -52,71 +54,102 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     this.server = server;
 
     server.use(async (socket: Socket, next) => {
-      const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
-
-      // Store token in socket.data for logging purposes
-      if (auth.token && typeof auth.token === 'string') {
-        socket.data.token = auth.token;
-      }
-
-      // A null result is a credential verdict (missing fields, unknown token,
-      // rejected identity); a throw is a server fault (database, Redis,
-      // session lookup). Only the former is the client's to fix.
-      let socketData: SocketData | null;
-      try {
-        socketData = await this.service.initializeSocketData(auth as unknown as SocketAuthData);
-      } catch (error: unknown) {
-        this.logger.error(
-          `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
-        );
+      // Paced before any work: a reconnect storm is refused into the
+      // client's own backoff rather than queued here in full.
+      if (!this.admission.admitHandshake()) {
         return next(handshakeRejection(new ServiceUnavailableError(), true));
       }
-      if (!socketData) {
-        return next(handshakeRejection(new SDKAuthenticationError(), false));
-      }
-
-      // A rejected socket never reaches handleDisconnect, so nothing may be
-      // stored for it before the handshake is sure to succeed: the capacity
-      // check comes first, and a failure after the store deletes it again.
-      let stored = false;
+      // The handshake is one unit of admitted work; one that cannot start
+      // in time is refused the same way, and never runs.
+      let answered = false;
+      const answer = (error?: Error) => {
+        if (!answered) {
+          answered = true;
+          next(error);
+        }
+      };
       try {
-        // Build room ID and check capacity
-        const room = buildExternalUserRoomId(socketData.environment.id, socketData.externalUserId);
-        const socketsInRoom = await this.server.in(room).fetchSockets();
-        if (socketsInRoom.length >= 100) {
-          this.logger.warn(
-            `Room ${room} has reached maximum capacity (100 sockets). Rejecting connection for socket ${socket.id}`,
-          );
-          return next(
-            handshakeRejection(new ServiceUnavailableError('Room capacity exceeded'), true),
-          );
-        }
-
-        // Store client data in Redis using socket ID
-        stored = await this.socketDataService.set(socket, socketData);
-        if (!stored) {
-          return next(handshakeRejection(new ServiceUnavailableError(), true));
-        }
-
-        // Join user room for targeted messaging
-        await socket.join(room);
-
-        // The version names the bundle this connection runs: after a release,
-        // the lines still saying the previous one are the pages not yet reloaded.
-        this.logger.log(
-          `Socket ${socket.id} authenticated for user ${socketData.externalUserId} (sdk ${socketData.sdkVersion ?? 'unknown'})`,
+        await this.admission.run(
+          () => this.handshake(socket, answer),
+          this.admission.handshakeWaitMs,
+          `handshake ${socket.id}`,
         );
-        return next();
-      } catch (error: unknown) {
-        this.logger.error(
-          `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
-        );
-        if (stored) {
-          await this.socketDataService.delete(socket).catch(() => undefined);
+      } catch (error) {
+        if (!(error instanceof AdmissionTimeoutError)) {
+          this.logger.error(
+            `Handshake failed for socket ${socket.id}: ${(error as Error).message}`,
+          );
         }
-        return next(handshakeRejection(new ServiceUnavailableError(), true));
+        answer(handshakeRejection(new ServiceUnavailableError(), true));
       }
     });
+  }
+
+  private async handshake(socket: Socket, next: (error?: Error) => void): Promise<void> {
+    const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
+
+    // Store token in socket.data for logging purposes
+    if (auth.token && typeof auth.token === 'string') {
+      socket.data.token = auth.token;
+    }
+
+    // A null result is a credential verdict (missing fields, unknown token,
+    // rejected identity); a throw is a server fault (database, Redis,
+    // session lookup). Only the former is the client's to fix.
+    let socketData: SocketData | null;
+    try {
+      socketData = await this.service.initializeSocketData(auth as unknown as SocketAuthData);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
+      );
+      return next(handshakeRejection(new ServiceUnavailableError(), true));
+    }
+    if (!socketData) {
+      return next(handshakeRejection(new SDKAuthenticationError(), false));
+    }
+
+    // A rejected socket never reaches handleDisconnect, so nothing may be
+    // stored for it before the handshake is sure to succeed: the capacity
+    // check comes first, and a failure after the store deletes it again.
+    let stored = false;
+    try {
+      // Build room ID and check capacity
+      const room = buildExternalUserRoomId(socketData.environment.id, socketData.externalUserId);
+      const socketsInRoom = await this.server.in(room).fetchSockets();
+      if (socketsInRoom.length >= 100) {
+        this.logger.warn(
+          `Room ${room} has reached maximum capacity (100 sockets). Rejecting connection for socket ${socket.id}`,
+        );
+        return next(
+          handshakeRejection(new ServiceUnavailableError('Room capacity exceeded'), true),
+        );
+      }
+
+      // Store client data in Redis using socket ID
+      stored = await this.socketDataService.set(socket, socketData);
+      if (!stored) {
+        return next(handshakeRejection(new ServiceUnavailableError(), true));
+      }
+
+      // Join user room for targeted messaging
+      await socket.join(room);
+
+      // The version names the bundle this connection runs: after a release,
+      // the lines still saying the previous one are the pages not yet reloaded.
+      this.logger.log(
+        `Socket ${socket.id} authenticated for user ${socketData.externalUserId} (sdk ${socketData.sdkVersion ?? 'unknown'})`,
+      );
+      return next();
+    } catch (error: unknown) {
+      this.logger.error(
+        `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
+      );
+      if (stored) {
+        await this.socketDataService.delete(socket).catch(() => undefined);
+      }
+      return next(handshakeRejection(new ServiceUnavailableError(), true));
+    }
   }
 
   // Cleanup when a socket disconnects for any reason
@@ -181,9 +214,20 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     );
 
     // All messages are executed in order to maintain Socket.IO's ordering semantics
-    return await this.queueService.executeInOrder(socket.id, async () => {
-      return await this.messageHandler.handle(this.server, socket, kind, payload);
-    });
+    try {
+      return await this.queueService.executeInOrder(socket.id, async () => {
+        return await this.messageHandler.handle(this.server, socket, kind, payload);
+      });
+    } catch (error) {
+      // Refused at the admission gate without running: answered like any
+      // other refusal, so the client learns at once instead of waiting out
+      // its acknowledgement timeout and taking the message for lost.
+      if (error instanceof AdmissionTimeoutError) {
+        this.logger.warn(`Refused ${kind} from socket ${socket.id}: ${error.message}`);
+        return false;
+      }
+      throw error;
+    }
   }
 
   /**
