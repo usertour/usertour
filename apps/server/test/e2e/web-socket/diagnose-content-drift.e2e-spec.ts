@@ -218,7 +218,10 @@ describe('diagnose_content drift guard (real toggleContents oracle)', () => {
     clientConditions: Cond[] = [],
   ) => {
     const socket = { id: `diag-${rid()}`, emit: jest.fn(() => true) } as any;
-    const server = { in: () => ({ fetchSockets: async () => [] }) } as any;
+    const server = {
+      in: () => ({ fetchSockets: async () => [], local: { fetchSockets: async () => [] } }),
+      adapter: { serverCount: async () => 1 },
+    } as any;
     const socketData = {
       environment,
       externalUserId: String(user.externalId),
