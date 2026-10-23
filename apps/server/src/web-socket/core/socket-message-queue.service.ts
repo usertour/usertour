@@ -146,14 +146,19 @@ export class SocketMessageQueueService {
     timeoutMs: number,
     socketId: string,
   ): Promise<T> {
-    return Promise.race([
-      promise,
-      new Promise<T>((_, reject) =>
-        setTimeout(
-          () => reject(new Error(`Task timeout after ${timeoutMs}ms for socket ${socketId}`)),
-          timeoutMs,
-        ),
-      ),
-    ]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<T>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`Task timeout after ${timeoutMs}ms for socket ${socketId}`)),
+        timeoutMs,
+      );
+    });
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      // The timer must not outlive the task: left running it keeps the
+      // task's closure alive for its full length on every message.
+      clearTimeout(timer);
+    }
   }
 }

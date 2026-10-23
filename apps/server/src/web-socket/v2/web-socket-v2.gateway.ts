@@ -6,6 +6,7 @@ import {
   MessageBody,
   ConnectedSocket,
   OnGatewayDisconnect,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
@@ -254,7 +255,10 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       // Anything else is answered `false` so the client learns at once.
       this.logger.warn(`Refused ${kind} from socket ${socket.id}: ${error.message}`);
       if (REPLAYED_WRITE_KINDS.has(kind)) {
-        throw error;
+        // A WsException reaches the client as an `exception` event and no
+        // acknowledgement, like any other error, but is not logged with a
+        // stack by the framework: the line above is the whole record.
+        throw new WsException(error.message);
       }
       return false;
     }
