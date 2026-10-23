@@ -6,12 +6,7 @@
   "author": "Usertour, Inc.",
   "license": "MIT",
   "private": true,
-  "keywords": [
-    "usertour",
-    "onboarding",
-    "tour",
-    "tooltip"
-  ],
+  "keywords": ["usertour", "onboarding", "tour", "tooltip"],
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "prisma generate && nest build",
@@ -183,11 +178,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
+    "moduleFileExtensions": ["js", "json", "ts"],
     "rootDir": ".",
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",
@@ -201,14 +192,9 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
+    "collectCoverageFrom": ["**/*.(t|j)s"],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
-    "moduleDirectories": [
-      "node_modules",
-      "<rootDir>/../node_modules"
-    ]
+    "moduleDirectories": ["node_modules", "<rootDir>/../node_modules"]
   }
 }

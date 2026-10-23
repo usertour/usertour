@@ -8,7 +8,6 @@ import { teardownProject } from '../gql/_support';
 import {
   WebSocketTestApp,
   WebSocketTestClient,
-  connectExpectingError,
   connectWebSocketClient,
   createWebSocketTestApp,
 } from './_support';
@@ -84,7 +83,7 @@ describe('WebSocket v2 admission gate (e2e)', () => {
     const holder = admission.run(() => sleep(250), 5000, 'test holder');
     await sleep(20);
     const sentAt = Date.now();
-    const ack = await client.sendClientMessage(ClientMessageKind.BEGIN_BATCH);
+    const ack = await client.sendClientMessage(ClientMessageKind.END_BATCH);
     const waited = Date.now() - sentAt;
     await holder;
     expect(ack).toBe(true);
@@ -96,7 +95,7 @@ describe('WebSocket v2 admission gate (e2e)', () => {
     const holder = admission.run(() => sleep(900), 5000, 'test holder');
     await sleep(20);
     const sentAt = Date.now();
-    const ack = await client.sendClientMessage(ClientMessageKind.BEGIN_BATCH);
+    const ack = await client.sendClientMessage(ClientMessageKind.END_BATCH);
     const waited = Date.now() - sentAt;
     await holder;
     // Refused after the 400 ms wait, long before the holder let go.
@@ -104,9 +103,35 @@ describe('WebSocket v2 admission gate (e2e)', () => {
     expect(waited).toBeLessThan(850);
   });
 
+  it('a refused write goes unanswered, so the SDK replays it later', async () => {
+    const client = await connect('admission-user-3');
+    const holder = admission.run(() => sleep(900), 5000, 'test holder');
+    await sleep(20);
+    // No acknowledgement within the 400 ms refusal plus margin: the client's
+    // own timeout is what ends the wait, as for a lost message.
+    await expect(
+      client.socket.timeout(700).emitWithAck('client-message', {
+        kind: ClientMessageKind.UPSERT_USER,
+        payload: { externalUserId: 'admission-user-3', attributes: { plan: 'pro' } },
+      }),
+    ).rejects.toThrow('operation has timed out');
+    await holder;
+  });
+
+  it('BeginBatch is answered without taking a slot', async () => {
+    const client = await connect('admission-user-4');
+    const holder = admission.run(() => sleep(300), 5000, 'test holder');
+    await sleep(20);
+    const sentAt = Date.now();
+    const ack = await client.sendClientMessage(ClientMessageKind.BEGIN_BATCH);
+    expect(ack).toBe(true);
+    expect(Date.now() - sentAt).toBeLessThan(200);
+    await holder;
+  });
+
   it('handshakes over the rate are refused as retryable, and admitted again later', async () => {
-    // The rate allows three per second; the two connections above and the
-    // refill since are accounted for by connecting well over it at once.
+    // Three per second are allowed; a burst of eight at once must see both
+    // outcomes, whatever the refill since the connections above.
     const attempts = await Promise.allSettled(
       Array.from({ length: 8 }, (_, index) =>
         connectWebSocketClient(app.baseUrl, {
@@ -115,23 +140,23 @@ describe('WebSocket v2 admission gate (e2e)', () => {
         }),
       ),
     );
-    const connected = attempts.filter((attempt) => attempt.status === 'fulfilled');
-    for (const attempt of connected) {
+    const connected: WebSocketTestClient[] = [];
+    const refusals: Array<{ code: string; retryable: boolean } | undefined> = [];
+    for (const attempt of attempts) {
       if (attempt.status === 'fulfilled') {
-        clients.push(attempt.value);
+        connected.push(attempt.value);
+      } else {
+        refusals.push(
+          (attempt.reason as Error & { data?: { code: string; retryable: boolean } }).data,
+        );
       }
     }
+    clients.push(...connected);
     expect(connected.length).toBeGreaterThanOrEqual(1);
-    expect(connected.length).toBeLessThan(8);
-
-    const refused = await connectExpectingError(app.baseUrl, {
-      token: environmentToken,
-      externalUserId: 'admission-burst-refused',
-    });
-    expect((refused as Error & { data?: { code: string; retryable: boolean } }).data).toEqual({
-      code: 'E1014',
-      retryable: true,
-    });
+    expect(refusals.length).toBeGreaterThanOrEqual(1);
+    for (const refusal of refusals) {
+      expect(refusal).toEqual({ code: 'E1014', retryable: true });
+    }
 
     await sleep(1100);
     const later = await connect('admission-burst-later');

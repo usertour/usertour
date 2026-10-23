@@ -46,6 +46,54 @@ describe('AdmissionService', () => {
       expect(admission.activeCount).toBe(0);
     });
 
+    it('never refuses a unit once it has started, however long it runs', async () => {
+      const admission = build({ WS_ADMISSION_CONCURRENCY: '1' });
+      // Admitted at once, then runs well past the 50 ms wait allowance.
+      await expect(
+        admission.run(
+          async () => {
+            await tick(150);
+            return 'done';
+          },
+          50,
+          'long',
+        ),
+      ).resolves.toBe('done');
+    });
+
+    it('holds the slot until the promise the unit returned settles', async () => {
+      const admission = build({ WS_ADMISSION_CONCURRENCY: '1' });
+      let release: () => void = () => undefined;
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const first = admission.run(() => held, 1000, 'first');
+      await tick(10);
+      let secondStarted = false;
+      const second = admission.run(
+        async () => {
+          secondStarted = true;
+        },
+        1000,
+        'second',
+      );
+      await tick(50);
+      expect(secondStarted).toBe(false);
+      release();
+      await Promise.all([first, second]);
+      expect(secondStarted).toBe(true);
+    });
+
+    it('treats a blank or unparsable setting as the default, and a wait of 0 as no refusal', async () => {
+      const admission = build({ WS_ADMISSION_CONCURRENCY: '', WS_ADMISSION_MESSAGE_WAIT_MS: 'x' });
+      expect(admission.concurrency).toBe(16);
+      expect(admission.messageWaitMs).toBe(15_000);
+      const single = build({ WS_ADMISSION_CONCURRENCY: '1' });
+      const holder = single.run(() => tick(120), 1000, 'holder');
+      await expect(single.run(async () => 'waited', 0, 'patient')).resolves.toBe('waited');
+      await holder;
+    });
+
     it('passes through the result and the error of the unit itself', async () => {
       const admission = build({ WS_ADMISSION_CONCURRENCY: '1' });
       await expect(admission.run(async () => 'ok', 100, 'ok')).resolves.toBe('ok');
@@ -81,15 +129,15 @@ describe('AdmissionService', () => {
     });
 
     it('admits one second of handshakes at once, then refills at the rate', () => {
-      jest.useFakeTimers({ now: 1_000_000 });
+      jest.useFakeTimers({ now: 1_000_000, doNotFake: [] });
       const admission = build({ WS_HANDSHAKE_RATE_PER_SECOND: '2' });
       expect(admission.admitHandshake()).toBe(true);
       expect(admission.admitHandshake()).toBe(true);
       expect(admission.admitHandshake()).toBe(false);
-      jest.setSystemTime(1_000_500);
+      jest.advanceTimersByTime(500);
       expect(admission.admitHandshake()).toBe(true);
       expect(admission.admitHandshake()).toBe(false);
-      jest.setSystemTime(1_005_000);
+      jest.advanceTimersByTime(4500);
       expect(admission.admitHandshake()).toBe(true);
       expect(admission.admitHandshake()).toBe(true);
       expect(admission.admitHandshake()).toBe(false);

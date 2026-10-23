@@ -13,7 +13,7 @@ import { WebSocketThrottlerGuard } from './web-socket-throttler.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/modules/common/errors/errors';
 import { BaseError } from '@/modules/common/errors/base-error';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import { SocketAuthData } from '@usertour/types';
+import { ClientMessageKind, SocketAuthData } from '@usertour/types';
 import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { ClientMessageDto } from './web-socket-v2.dto';
 import { buildExternalUserRoomId } from '../utils/websocket.util';
@@ -31,6 +31,12 @@ import { WebSocketMessageValidationPipe } from './web-socket-message-validation.
  */
 const handshakeRejection = (error: BaseError, retryable: boolean): Error =>
   Object.assign(error, { data: { code: error.code, retryable } });
+
+/** The message kinds the SDK replays when they go unanswered (ADR 0018 §4). */
+const REPLAYED_WRITE_KINDS = new Set<string>([
+  ClientMessageKind.UPSERT_USER,
+  ClientMessageKind.UPSERT_COMPANY,
+]);
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -86,6 +92,12 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
   }
 
   private async handshake(socket: Socket, next: (error?: Error) => void): Promise<void> {
+    // The page may have gone while the handshake waited for its slot. A
+    // socket rejected here never reaches handleDisconnect, so nothing may be
+    // stored for it: the whole handshake is skipped.
+    if (socket.conn.readyState !== 'open') {
+      return next(handshakeRejection(new ServiceUnavailableError(), true));
+    }
     const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
 
     // Store token in socket.data for logging purposes
@@ -213,20 +225,38 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       `Received client message: kind=${kind}, socketId=${socket.id}, requestId=${requestId || 'N/A'}`,
     );
 
+    // The server keeps no batch state (BeginBatch's handler is a no-op), so
+    // it is answered here without a queue slot: under a burst every slot
+    // goes to work that does something.
+    if (kind === ClientMessageKind.BEGIN_BATCH) {
+      return true;
+    }
+
     // All messages are executed in order to maintain Socket.IO's ordering semantics
     try {
       return await this.queueService.executeInOrder(socket.id, async () => {
+        // The page may have gone while the message waited for its slot;
+        // nothing it asked for can be answered, and the SDK replays its
+        // writes on the next connection.
+        if (!socket.connected) {
+          return false;
+        }
         return await this.messageHandler.handle(this.server, socket, kind, payload);
       });
     } catch (error) {
-      // Refused at the admission gate without running: answered like any
-      // other refusal, so the client learns at once instead of waiting out
-      // its acknowledgement timeout and taking the message for lost.
-      if (error instanceof AdmissionTimeoutError) {
-        this.logger.warn(`Refused ${kind} from socket ${socket.id}: ${error.message}`);
-        return false;
+      if (!(error instanceof AdmissionTimeoutError)) {
+        throw error;
       }
-      throw error;
+      // Refused at the gate: the message never ran. A write (identify,
+      // group) must not be answered: the SDK takes any answer as the
+      // server's verdict and would drop the attributes for good, while an
+      // unanswered write is replayed on its next connection (ADR 0018 §4).
+      // Anything else is answered `false` so the client learns at once.
+      this.logger.warn(`Refused ${kind} from socket ${socket.id}: ${error.message}`);
+      if (REPLAYED_WRITE_KINDS.has(kind)) {
+        throw error;
+      }
+      return false;
     }
   }
 

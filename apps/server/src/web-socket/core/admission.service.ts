@@ -12,6 +12,15 @@ export class AdmissionTimeoutError extends Error {
 
 const ABANDONED = Symbol('abandoned');
 
+/** A positive number from the environment, or the fallback when unset, blank or not a number. */
+const numberSetting = (raw: unknown, fallback: number): number => {
+  if (raw === undefined || raw === null || raw === '') {
+    return fallback;
+  }
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
 /**
  * Admission control for the websocket work of one replica.
  *
@@ -27,14 +36,17 @@ const ABANDONED = Symbol('abandoned');
  * AdmissionTimeoutError and never runs; the caller answers the client, which
  * retries with its own backoff. The waits are shorter than what the client
  * tolerates (its connect timeout, its acknowledgement timeout) on purpose: a
- * refusal the client sees beats a success it has given up on.
+ * refusal the client sees beats a success it has given up on. Once a unit has
+ * started it is never refused, however long it runs: a refusal means "not
+ * done", and that must stay true.
  *
  * Handshakes are also paced: `WS_HANDSHAKE_RATE_PER_SECOND` admits that many
  * new connections per second per replica (with the same burst allowance), the
  * excess refused before any work is done. A reconnect storm then arrives over
  * seconds instead of all at once.
  *
- * Either control is off when its variable is 0.
+ * The concurrency and the rate are off at 0. A wait of 0 or less means a
+ * unit is never refused for waiting.
  */
 @Injectable()
 export class AdmissionService {
@@ -46,15 +58,22 @@ export class AdmissionService {
   readonly handshakeRatePerSecond: number;
 
   private tokens: number;
-  private tokensRefilledAt = Date.now();
-  private lastWarnAt = 0;
+  private tokensRefilledAt = performance.now();
+  private lastWaitWarnAt = 0;
+  private refusedHandshakes = 0;
+  private lastRefusalWarnAt = 0;
 
   constructor(configService: ConfigService) {
-    // Number(...) is load-bearing: environment values are strings.
-    this.concurrency = Number(configService.get('WS_ADMISSION_CONCURRENCY') ?? 16);
-    this.handshakeWaitMs = Number(configService.get('WS_ADMISSION_HANDSHAKE_WAIT_MS') ?? 15_000);
-    this.messageWaitMs = Number(configService.get('WS_ADMISSION_MESSAGE_WAIT_MS') ?? 20_000);
-    this.handshakeRatePerSecond = Number(configService.get('WS_HANDSHAKE_RATE_PER_SECOND') ?? 50);
+    this.concurrency = numberSetting(configService.get('WS_ADMISSION_CONCURRENCY'), 16);
+    this.handshakeWaitMs = numberSetting(
+      configService.get('WS_ADMISSION_HANDSHAKE_WAIT_MS'),
+      15_000,
+    );
+    this.messageWaitMs = numberSetting(configService.get('WS_ADMISSION_MESSAGE_WAIT_MS'), 15_000);
+    this.handshakeRatePerSecond = numberSetting(
+      configService.get('WS_HANDSHAKE_RATE_PER_SECOND'),
+      50,
+    );
     this.limit = this.concurrency > 0 ? pLimit(this.concurrency) : undefined;
     this.tokens = this.handshakeRatePerSecond;
   }
@@ -70,9 +89,10 @@ export class AdmissionService {
   }
 
   /**
-   * Runs `work` once a slot is free, or refuses it: after `waitMs` without a
-   * slot the returned promise rejects with AdmissionTimeoutError and `work`
-   * is never called, even when its turn comes later.
+   * Runs `work` once a slot is free, holding the slot until the promise it
+   * returns settles, or refuses it: after `waitMs` without a slot the
+   * returned promise rejects with AdmissionTimeoutError and `work` is never
+   * called, even when its turn comes later.
    */
   async run<T>(work: () => Promise<T>, waitMs: number, label: string): Promise<T> {
     if (!this.limit) {
@@ -82,6 +102,9 @@ export class AdmissionService {
     let abandoned = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refusal = new Promise<never>((_, reject) => {
+      if (waitMs <= 0) {
+        return;
+      }
       timer = setTimeout(() => {
         abandoned = true;
         reject(new AdmissionTimeoutError(label, Date.now() - queuedAt));
@@ -91,6 +114,8 @@ export class AdmissionService {
       if (abandoned) {
         return ABANDONED;
       }
+      // Admitted: from here on the unit runs to its end, whatever the clock says.
+      clearTimeout(timer);
       this.noteWait(label, Date.now() - queuedAt);
       return await work();
     });
@@ -107,17 +132,18 @@ export class AdmissionService {
 
   /**
    * Whether one more handshake may proceed now. A token bucket holding one
-   * second of handshakes, refilled continuously.
+   * second of handshakes, refilled continuously on a monotonic clock.
    */
   admitHandshake(): boolean {
     if (this.handshakeRatePerSecond <= 0) {
       return true;
     }
-    const now = Date.now();
+    const now = performance.now();
     const refill = ((now - this.tokensRefilledAt) / 1000) * this.handshakeRatePerSecond;
     this.tokens = Math.min(this.handshakeRatePerSecond, this.tokens + refill);
     this.tokensRefilledAt = now;
     if (this.tokens < 1) {
+      this.noteRefusal();
       return false;
     }
     this.tokens -= 1;
@@ -130,12 +156,24 @@ export class AdmissionService {
     }
     const now = Date.now();
     // One line per five seconds at most: under a burst every unit waits.
-    if (now - this.lastWarnAt < 5000) {
+    if (now - this.lastWaitWarnAt < 5000) {
       return;
     }
-    this.lastWarnAt = now;
+    this.lastWaitWarnAt = now;
     this.logger.warn(
       `Admission queue: ${label} waited ${waitedMs}ms (${this.activeCount} running, ${this.pendingCount} waiting)`,
+    );
+  }
+
+  private noteRefusal(): void {
+    this.refusedHandshakes += 1;
+    const now = Date.now();
+    if (now - this.lastRefusalWarnAt < 5000) {
+      return;
+    }
+    this.lastRefusalWarnAt = now;
+    this.logger.warn(
+      `Handshake pacing: refused ${this.refusedHandshakes} handshakes so far (${this.handshakeRatePerSecond}/s allowed)`,
     );
   }
 }

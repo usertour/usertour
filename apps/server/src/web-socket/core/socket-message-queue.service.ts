@@ -1,5 +1,5 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
-import { AdmissionService } from './admission.service';
+import { AdmissionService, AdmissionTimeoutError } from './admission.service';
 
 // ============================================================================
 // Socket Message Queue Service
@@ -58,19 +58,40 @@ export class SocketMessageQueueService {
     //
     // The task's timeout starts when it is admitted, not while it waits for
     // a slot: queueing under a burst is the gate's job, and a wait it refuses
-    // (AdmissionTimeoutError) never ran the task at all.
-    const timed = () => this.withTimeout(task(), timeoutMs, socketId);
-    const run = () =>
-      this.admission
-        ? this.admission.run(timed, this.admission.messageWaitMs, `message on ${socketId}`)
-        : timed();
+    // (AdmissionTimeoutError) never ran the task at all. The timeout bounds
+    // the answer only; the slot stays taken until the task itself settles,
+    // or a slow database would let more tasks run than the gate allows.
+    const run = () => {
+      if (!this.admission) {
+        return this.withTimeout(task(), timeoutMs, socketId);
+      }
+      return new Promise<T>((resolve, reject) => {
+        this.admission
+          .run(
+            () => {
+              const running = task();
+              this.withTimeout(running, timeoutMs, socketId).then(resolve, reject);
+              return running.then(
+                () => undefined,
+                () => undefined,
+              );
+            },
+            this.admission.messageWaitMs,
+            `message on ${socketId}`,
+          )
+          .catch(reject);
+      });
+    };
     const newTask = lastTask
       .then(run, (err) => {
         this.logger.warn(`Previous task failed for socket ${socketId}; continuing:`, err?.message);
         return run();
       })
       .catch((err) => {
-        this.logger.error(`Task execution failed for socket ${socketId}:`, err?.message);
+        // A refusal at the gate is not a failure of the task: it never ran.
+        if (!(err instanceof AdmissionTimeoutError)) {
+          this.logger.error(`Task execution failed for socket ${socketId}:`, err?.message);
+        }
         throw err; // Propagate error to caller
       });
 

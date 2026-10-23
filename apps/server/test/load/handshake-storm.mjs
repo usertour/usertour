@@ -192,7 +192,14 @@ async function sendReconnectEvaluation(client) {
 async function send(client, kind, payload) {
   const sentAt = Date.now();
   try {
-    await client.socket.timeout(30_000).emitWithAck('client-message', { kind, payload });
+    const ack = await client.socket
+      .timeout(30_000)
+      .emitWithAck('client-message', { kind, payload });
+    if (ack === false) {
+      // Answered, but refused: the server did not do the work.
+      count(stats.messageErrors, `${kind}: refused`);
+      return;
+    }
     record(stats.latencies, kind, Date.now() - sentAt);
   } catch (error) {
     count(stats.messageErrors, `${kind}: ${error?.message ?? 'error'}`);
