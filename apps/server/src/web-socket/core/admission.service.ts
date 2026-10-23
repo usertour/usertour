@@ -66,12 +66,14 @@ export class AdmissionService implements OnModuleDestroy {
   private tokens: number;
   private tokensRefilledAt = performance.now();
 
-  // Reporting: events are counted, and every window with any ends in one
-  // line, so a burst that is over within the window is still reported in full.
+  // Reporting: events are counted per window, and every window with any
+  // ends in one line, so a burst that is over within the window is still
+  // reported in full. A window still open at shutdown is reported then.
   private refusedHandshakes = 0;
   private refusalWindow: ReturnType<typeof setTimeout> | undefined;
   private longWaits = 0;
   private longestWaitMs = 0;
+  private deepestQueue = 0;
   private waitWindow: ReturnType<typeof setTimeout> | undefined;
 
   constructor(configService: ConfigService) {
@@ -90,8 +92,14 @@ export class AdmissionService implements OnModuleDestroy {
   }
 
   onModuleDestroy(): void {
-    clearTimeout(this.refusalWindow);
-    clearTimeout(this.waitWindow);
+    if (this.refusalWindow) {
+      clearTimeout(this.refusalWindow);
+      this.reportRefusals();
+    }
+    if (this.waitWindow) {
+      clearTimeout(this.waitWindow);
+      this.reportWaits();
+    }
   }
 
   /** Units running now. */
@@ -173,32 +181,38 @@ export class AdmissionService implements OnModuleDestroy {
     }
     this.longWaits += 1;
     this.longestWaitMs = Math.max(this.longestWaitMs, waitedMs);
-    if (this.waitWindow) {
-      return;
+    // The queue as this unit leaves it, so the deepest the window saw.
+    this.deepestQueue = Math.max(this.deepestQueue, this.pendingCount);
+    if (!this.waitWindow) {
+      this.waitWindow = setTimeout(() => this.reportWaits(), WARN_WINDOW_MS);
+      this.waitWindow.unref();
     }
-    this.waitWindow = setTimeout(() => {
-      this.waitWindow = undefined;
-      this.logger.warn(
-        `Admission queue: ${this.longWaits} units waited over ${LONG_WAIT_MS}ms in the last ${WARN_WINDOW_MS / 1000}s, the longest ${this.longestWaitMs}ms (${this.activeCount} running, ${this.pendingCount} waiting)`,
-      );
-      this.longWaits = 0;
-      this.longestWaitMs = 0;
-    }, WARN_WINDOW_MS);
-    this.waitWindow.unref();
   }
 
-  /** Refusals are counted, and the running total reported once per window in which any happened. */
+  private reportWaits(): void {
+    this.waitWindow = undefined;
+    this.logger.warn(
+      `Admission queue: ${this.longWaits} units waited over ${LONG_WAIT_MS}ms in the last ${WARN_WINDOW_MS / 1000}s, the longest ${this.longestWaitMs}ms, up to ${this.deepestQueue} waiting`,
+    );
+    this.longWaits = 0;
+    this.longestWaitMs = 0;
+    this.deepestQueue = 0;
+  }
+
+  /** Refusals are counted, and reported once per window in which any happened. */
   private noteRefusal(): void {
     this.refusedHandshakes += 1;
-    if (this.refusalWindow) {
-      return;
+    if (!this.refusalWindow) {
+      this.refusalWindow = setTimeout(() => this.reportRefusals(), WARN_WINDOW_MS);
+      this.refusalWindow.unref();
     }
-    this.refusalWindow = setTimeout(() => {
-      this.refusalWindow = undefined;
-      this.logger.warn(
-        `Handshake pacing: refused ${this.refusedHandshakes} handshakes so far (${this.handshakeRatePerSecond}/s allowed)`,
-      );
-    }, WARN_WINDOW_MS);
-    this.refusalWindow.unref();
+  }
+
+  private reportRefusals(): void {
+    this.refusalWindow = undefined;
+    this.logger.warn(
+      `Handshake pacing: refused ${this.refusedHandshakes} handshakes in the last ${WARN_WINDOW_MS / 1000}s (${this.handshakeRatePerSecond}/s allowed)`,
+    );
+    this.refusedHandshakes = 0;
   }
 }

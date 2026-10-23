@@ -173,7 +173,7 @@ describe('AdmissionService', () => {
       expect(warn).not.toHaveBeenCalled();
       jest.advanceTimersByTime(5000);
       expect(warn).toHaveBeenCalledTimes(1);
-      expect(warn.mock.calls[0][0]).toContain('refused 4 handshakes so far');
+      expect(warn.mock.calls[0][0]).toContain('refused 4 handshakes in the last 5s');
       // A quiet window is no line.
       jest.advanceTimersByTime(5000);
       expect(warn).toHaveBeenCalledTimes(1);
@@ -198,6 +198,20 @@ describe('AdmissionService', () => {
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn.mock.calls[0][0]).toContain('3 units waited over 1000ms');
       expect(warn.mock.calls[0][0]).toContain('the longest 1500ms');
+      // a left b and c behind: the deepest the queue was seen at an admission.
+      expect(warn.mock.calls[0][0]).toContain('up to 2 waiting');
+    });
+
+    it('reports a window still open at shutdown, and nothing after', () => {
+      const admission = build({ WS_HANDSHAKE_RATE_PER_SECOND: '1' });
+      for (let count = 0; count < 3; count += 1) {
+        admission.admitHandshake();
+      }
+      admission.onModuleDestroy();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('refused 2 handshakes in the last 5s');
+      jest.advanceTimersByTime(5000);
+      expect(warn).toHaveBeenCalledTimes(1);
     });
   });
 });
