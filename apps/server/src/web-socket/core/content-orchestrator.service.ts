@@ -820,41 +820,38 @@ export class ContentOrchestratorService {
     const { contentType, socketData } = context;
     const { clientConditions } = socketData;
 
-    const customContentVersions = findLatestActivatedCustomContentVersions(
-      evaluatedContentVersions,
-      clientConditions,
-    );
-    let customContentVersion = customContentVersions?.[0];
+    const customContentVersions =
+      findLatestActivatedCustomContentVersions(evaluatedContentVersions, clientConditions) ?? [];
 
-    // Check if content version is allowed by hide rules
-    if (!customContentVersion) {
+    // Newest live session first. A session on a superseded version is served
+    // that version, which has to be read and checked on its own: the hide
+    // rules the list was filtered on are the published version's. Resuming
+    // it under active hide rules would hand back a session to cancel, and
+    // cancelling it would come here again to resume it, without end. Such a
+    // session is passed over, as a hidden one on the published version was.
+    for (const candidate of customContentVersions) {
+      const customContentVersion = isVersionMismatchWithActiveSession(candidate)
+        ? await this.findEvaluatedContentVersion(
+            socketData,
+            contentType,
+            candidate.session?.activeSession?.versionId,
+          )
+        : candidate;
+      if (!customContentVersion || isActivedHideRules(customContentVersion)) {
+        continue;
+      }
+
+      const result = await this.handleContentVersion(context, customContentVersion);
+
       return {
-        success: false,
-        reason: 'No latest activated content version found',
+        ...result,
+        reason: result.success ? 'Started by latest activated version' : result.reason,
       };
     }
 
-    if (isVersionMismatchWithActiveSession(customContentVersion)) {
-      const activeSession = customContentVersion.session?.activeSession;
-      customContentVersion = await this.findEvaluatedContentVersion(
-        socketData,
-        contentType,
-        activeSession?.versionId,
-      );
-      // If the active session version is not found, return error
-      if (!customContentVersion) {
-        return {
-          success: false,
-          reason: 'Active session version not found',
-        };
-      }
-    }
-
-    const result = await this.handleContentVersion(context, customContentVersion);
-
     return {
-      ...result,
-      reason: result.success ? 'Started by latest activated version' : result.reason,
+      success: false,
+      reason: 'No latest activated content version found',
     };
   }
 
