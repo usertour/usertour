@@ -973,11 +973,10 @@ export class ContentOrchestratorService {
     const { socket, contentType } = context;
     const socketData = await this.getSocketData(socket);
 
-    // Early return if operation failed
+    // Nothing to start is the usual outcome (nothing published of this type,
+    // already seen, rules not met) and is not logged; the outcomes that are
+    // faults log where they happen.
     if (!success || !socketData) {
-      this.logger.warn(
-        `Handle content start result, failed, reason: ${result.reason}, contentType: ${contentType}`,
-      );
       return false;
     }
 
@@ -1100,6 +1099,7 @@ export class ContentOrchestratorService {
       contentId,
     );
     if (!result) {
+      this.logger.warn(`Failed to create a session for content ${contentId}`);
       return { success: false, reason: 'Failed to create business session' };
     }
 
@@ -1115,6 +1115,7 @@ export class ContentOrchestratorService {
         clientContext,
       );
       if (!tracked) {
+        this.logger.warn(`Failed to track the start event of session ${result.session.id}`);
         return { success: false, reason: 'Failed to track auto start event' };
       }
     }
@@ -1135,6 +1136,9 @@ export class ContentOrchestratorService {
     const session = await this.initializeSession(customContentVersion, socketData, options);
 
     if (!session) {
+      this.logger.warn(
+        `Failed to initialize a session for content ${customContentVersion.contentId}`,
+      );
       return {
         success: false,
         reason: 'Failed to initialize session',
