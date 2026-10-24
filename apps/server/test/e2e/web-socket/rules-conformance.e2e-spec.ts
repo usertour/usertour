@@ -781,8 +781,8 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
       const session = await running.activeSession(content.id);
       expect(session?.versionId).toBe(version.id);
 
-      // Without a frequency a flow shows once, and this user has had it: the
-      // published version may only start again because it says so.
+      // A flow with no frequency set gets the default, once, and this user has
+      // had it: the published version may only start again because it says so.
       const republished = await republish(
         environment,
         content,
@@ -808,6 +808,39 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
       ).toMatchObject({ id: session?.id, version: { id: republished.id } });
       expect(result.after.flowSession?.version?.id).toBe(republished.id);
       expect((await result.activeSession(content.id))?.versionId).toBe(republished.id);
+    });
+
+    it('a hidden live session on a superseded version is passed over for an earlier live one', async () => {
+      const { projectId, environment, plan, tier } = await fresh();
+      // Two unfinished flows; only the later one has a hide rule.
+      const earlier = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [attrRule(plan.id, 'pro')],
+        userData: { plan: 'pro', tier: 'blocked' },
+        activeSessions: 1,
+      });
+      const later = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [attrRule(plan.id, 'pro')],
+        opts: { hideRules: [attrRule(tier.id, 'blocked')] },
+        user: earlier.user,
+        activeSessions: 1,
+      });
+      await republish(environment, later.content, later.version, [attrRule(plan.id, 'pro')]);
+
+      // A fresh page. The newest live session is on the superseded version,
+      // which hides it; the earlier live session is the one to resume, as it
+      // would be were the hide rule on the published version.
+      const result = await toggle(environment, earlier.user, [ContentDataType.FLOW]);
+      const session = await result.activeSession(earlier.content.id);
+      expect(
+        result.pushed.find((message) => message.kind === ServerMessageKind.SET_FLOW_SESSION)
+          ?.payload,
+      ).toMatchObject({ id: session?.id });
     });
   });
 
