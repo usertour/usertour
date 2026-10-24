@@ -848,6 +848,16 @@ export class ContentOrchestratorService {
           reason: 'Active session version not found',
         };
       }
+      // The hide rules checked above were the published version's; the
+      // session's version has its own. Resuming it under active hide rules
+      // would hand back a session to cancel, and cancelling it would come
+      // here again to resume it, without end.
+      if (isActivedHideRules(customContentVersion)) {
+        return {
+          success: false,
+          reason: 'Active session version is hidden',
+        };
+      }
     }
 
     const result = await this.handleContentVersion(context, customContentVersion);
