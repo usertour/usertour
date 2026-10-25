@@ -3,6 +3,7 @@ import { AddressInfo } from 'node:net';
 import { Socket as ClientSocket, io } from 'socket.io-client';
 
 import { createTestApp } from '../create-test-app';
+import { RedisClusterTestAdapter } from './redis-cluster-adapter';
 
 export interface WebSocketTestApp {
   app: INestApplication;
@@ -10,16 +11,38 @@ export interface WebSocketTestApp {
   close: () => Promise<void>;
 }
 
+export interface WebSocketTestAppOptions {
+  /**
+   * Run the socket.io server on a Redis adapter, as production does, under
+   * this channel prefix (see RedisClusterTestAdapter). Apps created with the
+   * same prefix form one cluster. Without it the app runs the in-process
+   * adapter: one server, no cross-server traffic.
+   */
+  redisAdapterKey?: string;
+}
+
 /**
  * Boots the full application on an ephemeral port so socket.io clients can
  * perform a real websocket handshake against the v2 gateway (`/v2`
  * namespace). createTestApp listens on an ephemeral port for every suite;
- * websocket specs read it back for a real handshake. Uses the default in-process
- * socket.io adapter — the RedisIoAdapter is only wired in main.ts and a
- * single-instance test doesn't need cross-instance fan-out.
+ * websocket specs read it back for a real handshake. A single-instance spec
+ * runs the default in-process socket.io adapter; a cluster spec passes a
+ * Redis adapter key and boots several apps under it.
  */
-export async function createWebSocketTestApp(): Promise<WebSocketTestApp> {
-  const app = await createTestApp();
+export async function createWebSocketTestApp(
+  options: WebSocketTestAppOptions = {},
+): Promise<WebSocketTestApp> {
+  const { redisAdapterKey } = options;
+  // The application closes the adapter with itself: its socket.io server
+  // first, then (dispose) the adapter's own Redis connections.
+  const app = await createTestApp(undefined, async (created) => {
+    if (!redisAdapterKey) {
+      return;
+    }
+    const adapter = new RedisClusterTestAdapter(created, redisAdapterKey);
+    await adapter.connectToRedis();
+    created.useWebSocketAdapter(adapter);
+  });
   const address = app.getHttpServer().address() as AddressInfo;
   return {
     app,
@@ -71,10 +94,21 @@ const DEFAULT_CLIENT_CONTEXT = {
   viewportHeight: 800,
 };
 
+export interface WebSocketClientOptions {
+  /**
+   * Acknowledge the server's messages (default). A client that never acks
+   * stands in for a dead or frozen tab: every emit to it waits for the
+   * server's emit timeout.
+   */
+  acknowledge?: boolean;
+}
+
 export function connectWebSocketClient(
   baseUrl: string,
   auth: WebSocketAuth,
+  options: WebSocketClientOptions = {},
 ): Promise<WebSocketTestClient> {
+  const { acknowledge = true } = options;
   return new Promise((resolve, reject) => {
     const socket = io(`${baseUrl}/v2`, {
       transports: ['websocket'],
@@ -87,10 +121,10 @@ export function connectWebSocketClient(
 
     // The server delivers sessions via emitWithAck and waits for the client's
     // acknowledgment — a client that never acks would stall every emit until
-    // its timeout. Record and ack everything.
+    // its timeout. Record everything, and ack unless the test wants a silent client.
     socket.on('server-message', (message: ServerMessage, ack?: (ok: boolean) => void) => {
       serverMessages.push(message);
-      if (typeof ack === 'function') {
+      if (acknowledge && typeof ack === 'function') {
         ack(true);
       }
       for (let index = waiters.length - 1; index >= 0; index -= 1) {
