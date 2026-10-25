@@ -1,10 +1,19 @@
 # Build stage
-FROM node:22.13-alpine AS builder
+#
+# Debian (glibc), not Alpine (musl): the Prisma query engine is a
+# multi-threaded native binary, and under a reconnect burst its four worker
+# threads cost about five times more CPU on musl's allocator than on glibc's,
+# enough to saturate a 4 vCPU replica on their own. Same major as the LTS line
+# in use, release and distribution named so a rebuild never moves to another
+# Node minor or Debian release on its own.
+FROM node:22.23-trixie-slim AS builder
 
 WORKDIR /app
 
 # Install OpenSSL for Prisma
-RUN apk add --no-cache openssl openssl-dev
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openssl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
 RUN npm install -g pnpm@9.6.0
@@ -38,13 +47,16 @@ RUN SDK_VERSION=$(node -e "console.log(require('./apps/sdk/package.json').versio
     cp -r apps/sdk/dist/$SDK_VERSION/* /sdk-dist/
 
 # Production stage
-FROM node:22.13-alpine
+FROM node:22.23-trixie-slim
 
 WORKDIR /app
 
-# Install pnpm and system dependencies
+# Install pnpm and system dependencies. gettext-base provides envsubst for
+# start.sh; postgresql-client provides pg_dump for the backup script.
 RUN npm install -g pnpm@9.6.0 && \
-    apk add --no-cache nginx openssl openssl-dev libc6-compat gettext postgresql16-client
+    apt-get update && \
+    apt-get install -y --no-install-recommends nginx openssl ca-certificates gettext-base postgresql-client && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy nginx configuration
 COPY nginx/nginx.conf /etc/nginx/nginx.conf

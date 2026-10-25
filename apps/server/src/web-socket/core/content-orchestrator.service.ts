@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import {
   ContentDataType,
   contentStartReason,
@@ -40,7 +40,6 @@ import {
   buildExternalUserRoomId,
   extractExcludedContentIds,
   extractSessionByContentType,
-  buildSocketLockKey,
   extractSessionsByContentType,
   getSocketId,
   hasSdkCapability,
@@ -56,12 +55,12 @@ import { ConditionExtractionMode } from '@/modules/delivery/constants/condition-
 import { Environment } from '@prisma/client';
 import { TryAutoStartContentOptions } from '../types/try-auto-start-content-options.type';
 import { EventTrackingItem } from '@/modules/delivery/types/event-tracking-item.type';
-import { DistributedLockService } from '@/modules/delivery/services/distributed-lock.service';
 import { ContentDataService } from '@/modules/delivery/services/content-data.service';
 import { SessionBuilderService } from '@/modules/delivery/services/session-builder.service';
 import { EventTrackingService } from '@/modules/delivery/services/event-tracking.service';
 import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
+import { RoomSyncJob, RoomSyncService } from './room-sync.service';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import {
   getStartEventType,
@@ -94,7 +93,7 @@ export class ContentOrchestratorService {
     private readonly eventTrackingService: EventTrackingService,
     private readonly socketOperationService: SocketOperationService,
     private readonly socketDataService: SocketDataService,
-    private readonly distributedLockService: DistributedLockService,
+    private readonly roomSync: RoomSyncService,
     private readonly cache: ProjectCacheService,
   ) {}
 
@@ -835,41 +834,38 @@ export class ContentOrchestratorService {
     const { contentType, socketData } = context;
     const { clientConditions } = socketData;
 
-    const customContentVersions = findLatestActivatedCustomContentVersions(
-      evaluatedContentVersions,
-      clientConditions,
-    );
-    let customContentVersion = customContentVersions?.[0];
+    const customContentVersions =
+      findLatestActivatedCustomContentVersions(evaluatedContentVersions, clientConditions) ?? [];
 
-    // Check if content version is allowed by hide rules
-    if (!customContentVersion) {
+    // Newest live session first. A session on a superseded version is served
+    // that version, which has to be read and checked on its own: the hide
+    // rules the list was filtered on are the published version's. Resuming
+    // it under active hide rules would hand back a session to cancel, and
+    // cancelling it would come here again to resume it, without end. Such a
+    // session is passed over, as a hidden one on the published version was.
+    for (const candidate of customContentVersions) {
+      const customContentVersion = isVersionMismatchWithActiveSession(candidate)
+        ? await this.findEvaluatedContentVersion(
+            socketData,
+            contentType,
+            candidate.session?.activeSession?.versionId,
+          )
+        : candidate;
+      if (!customContentVersion || isActivedHideRules(customContentVersion)) {
+        continue;
+      }
+
+      const result = await this.handleContentVersion(context, customContentVersion);
+
       return {
-        success: false,
-        reason: 'No latest activated content version found',
+        ...result,
+        reason: result.success ? 'Started by latest activated version' : result.reason,
       };
     }
 
-    if (isVersionMismatchWithActiveSession(customContentVersion)) {
-      const activeSession = customContentVersion.session?.activeSession;
-      customContentVersion = await this.findEvaluatedContentVersion(
-        socketData,
-        contentType,
-        activeSession?.versionId,
-      );
-      // If the active session version is not found, return error
-      if (!customContentVersion) {
-        return {
-          success: false,
-          reason: 'Active session version not found',
-        };
-      }
-    }
-
-    const result = await this.handleContentVersion(context, customContentVersion);
-
     return {
-      ...result,
-      reason: result.success ? 'Started by latest activated version' : result.reason,
+      success: false,
+      reason: 'No latest activated content version found',
     };
   }
 
@@ -988,11 +984,10 @@ export class ContentOrchestratorService {
     const { socket, contentType } = context;
     const socketData = await this.getSocketData(socket);
 
-    // Early return if operation failed
+    // Nothing to start is the usual outcome (nothing published of this type,
+    // already seen, rules not met) and is not logged; the outcomes that are
+    // faults log where they happen.
     if (!success || !socketData) {
-      this.logger.warn(
-        `Handle content start result, failed, reason: ${result.reason}, contentType: ${contentType}`,
-      );
       return false;
     }
 
@@ -1115,6 +1110,7 @@ export class ContentOrchestratorService {
       contentId,
     );
     if (!result) {
+      this.logger.warn(`Failed to create a session for content ${contentId}`);
       return { success: false, reason: 'Failed to create business session' };
     }
 
@@ -1130,6 +1126,7 @@ export class ContentOrchestratorService {
         clientContext,
       );
       if (!tracked) {
+        this.logger.warn(`Failed to track the start event of session ${result.session.id}`);
         return { success: false, reason: 'Failed to track auto start event' };
       }
     }
@@ -1150,6 +1147,9 @@ export class ContentOrchestratorService {
     const session = await this.initializeSession(customContentVersion, socketData, options);
 
     if (!session) {
+      this.logger.warn(
+        `Failed to initialize a session for content ${customContentVersion.contentId}`,
+      );
       return {
         success: false,
         reason: 'Failed to initialize session',
@@ -1219,11 +1219,20 @@ export class ContentOrchestratorService {
       `Handle session activation, session: ${session.id}, reason: ${result.reason}`,
     );
 
-    if (!(await this.activateSocketSession(activateSessionParams))) {
+    // This connection started the flow, so it records the step; the user's
+    // other connections take the session through runRoomSyncJob without the
+    // flag, since their syncs may run after the user has moved on.
+    if (!(await this.activateSocketSession({ ...activateSessionParams, recordStartStep: true }))) {
       return false;
     }
     if (isActivateOtherSockets) {
-      await this.activateOtherSocketsInRoom(roomId, activateSessionParams);
+      // The user's other connections take the same session through their own
+      // queues; this handler does not wait for them.
+      this.roomSync.publish(server, {
+        roomId,
+        excludeSocketId: getSocketId(socket),
+        job: { kind: 'activate', session, trackConditions, forceGoToStep },
+      });
     }
     return true;
   }
@@ -1276,7 +1285,7 @@ export class ContentOrchestratorService {
    * @returns True if the session was activated successfully
    */
   private async activateSocketSession(params: ActivateSessionParams) {
-    const { socketData, session, forceGoToStep } = params;
+    const { socketData, session, forceGoToStep, recordStartStep = false } = params;
     if (!socketData || !session) {
       return false;
     }
@@ -1288,7 +1297,9 @@ export class ContentOrchestratorService {
       return true;
     }
     if (contentType === ContentDataType.FLOW) {
-      if (forceGoToStep && session.currentStep?.id) {
+      // Recorded only once the session is known to change: a repeated start
+      // of a flow the user has moved on in must leave the stored step alone.
+      if (recordStartStep && forceGoToStep && session.currentStep?.id) {
         await this.sessionBuilderService.updateCurrentStepId(session.id, session.currentStep.id);
       }
       return await this.activateFlowSession(params);
@@ -1412,69 +1423,41 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Activate other socket session
-   * @param params - The activate session parameters
-   * @returns True if the session was activated successfully
-   */
-  private async activateOtherSocketSession(params: ActivateSessionParams) {
-    const { socket } = params;
-    const lockKey = buildSocketLockKey(socket);
-
-    return (
-      (await this.distributedLockService.withRetryLock(
-        lockKey,
-        async () => {
-          const socketData = await this.getSocketData(socket);
-          if (!socketData) {
-            return false;
-          }
-          return await this.activateSocketSession({
-            ...params,
-            socketData,
-          });
-        },
-        5, // Retry 5 times (increased from 3 to handle concurrent message processing)
-        200, // Retry interval 200ms (increased from 100ms to allow more time for other operations)
-        5000, // Lock timeout 5 seconds
-      )) ?? false
-    );
-  }
-
-  /**
-   * Activate socket sessions for all sockets in the same room
+   * Runs one room-sync job on a connection of the user that did not send the
+   * message: the work the sending connection did for itself, repeated with
+   * this connection's own socket data. Called from this connection's own
+   * message queue (RoomSyncService), so it is serialized with its client
+   * messages and never waited for by the sender.
    * @param server - The WebSocket server
-   * @param roomId - The room ID
-   * @param params - The activate session parameters
-   * @returns Promise<boolean> - True if activation was successful
+   * @param socket - The connection to bring in step
+   * @param job - What the sending connection did
+   * @returns True if the job was applied
    */
-  private async activateOtherSocketsInRoom(
-    roomId: string,
-    params: ActivateSessionParams,
-  ): Promise<boolean> {
-    try {
-      const { server, socket: currentSocket } = params;
-      const sockets = await server.in(roomId).fetchSockets();
-
-      if (sockets.length === 0) {
-        return false;
-      }
-
-      const activatePromises = sockets
-        .filter((socket) => socket.id !== currentSocket.id)
-        .map((socket) =>
-          this.activateOtherSocketSession({
-            ...params,
-            socket: socket as unknown as Socket,
-          }),
-        );
-
-      await Promise.allSettled(activatePromises);
-
-      return true;
-    } catch (error) {
-      this.logger.error(`Failed to activate all sockets in room: ${error.message}`);
+  async runRoomSyncJob(server: Server, socket: Socket, job: RoomSyncJob): Promise<boolean> {
+    const socketData = await this.getSocketData(socket);
+    if (!socketData) {
       return false;
     }
+    if (job.kind === 'activate') {
+      return await this.activateSocketSession({
+        server,
+        socket,
+        socketData,
+        session: job.session,
+        trackConditions: job.trackConditions,
+        forceGoToStep: job.forceGoToStep,
+      });
+    }
+    return await this.cancelSocketSession({
+      server,
+      socket,
+      socketData,
+      sessionId: job.sessionId,
+      contentType: job.contentType,
+      contentId: job.contentId,
+      setLastDismissedId: job.setLastDismissedId,
+      trackConditions: job.trackConditions,
+    });
   }
 
   // ============================================================================
@@ -1514,7 +1497,19 @@ export class ContentOrchestratorService {
       unsetSession: unsetCurrentSession,
     });
     if (cancelOtherSessions) {
-      await this.cancelOtherSocketSessionsInRoom(roomId, cancelParams);
+      const { server, contentType, contentId, setLastDismissedId, trackConditions } = cancelParams;
+      this.roomSync.publish(server, {
+        roomId,
+        excludeSocketId: getSocketId(socket),
+        job: {
+          kind: 'cancel',
+          sessionId,
+          contentType,
+          contentId,
+          setLastDismissedId,
+          trackConditions,
+        },
+      });
     }
 
     return true;
@@ -1645,67 +1640,6 @@ export class ContentOrchestratorService {
       session,
       options,
     );
-  }
-
-  /**
-   * Cancel other socket session
-   * @param params - The cancel session parameters
-   * @returns True if the session was canceled successfully
-   */
-  private async cancelOtherSocketSession(params: CancelSessionParams) {
-    const { socket } = params;
-    const lockKey = buildSocketLockKey(socket);
-
-    return (
-      (await this.distributedLockService.withRetryLock(
-        lockKey,
-        async () => {
-          const socketData = await this.getSocketData(socket);
-          if (!socketData) {
-            return false;
-          }
-          return await this.cancelSocketSession({
-            ...params,
-            socketData,
-          });
-        },
-        5, // Retry 5 times (increased from 3 to handle concurrent message processing)
-        200, // Retry interval 200ms (increased from 100ms to allow more time for other operations)
-        5000, // Lock timeout 5 seconds
-      )) ?? false
-    );
-  }
-
-  /**
-   * Cancel other socket sessions in room
-   * @param roomId - The room id
-   * @param params - The cancel session parameters
-   * @returns True if the sessions were canceled successfully
-   */
-  private async cancelOtherSocketSessionsInRoom(roomId: string, params: CancelSessionParams) {
-    const { server, socket: currentSocket } = params;
-    try {
-      const sockets = await server.in(roomId).fetchSockets();
-      if (sockets.length === 0) {
-        return false;
-      }
-
-      const stopPromises = sockets
-        .filter((socket) => socket.id !== currentSocket.id)
-        .map((socket) =>
-          this.cancelOtherSocketSession({
-            ...params,
-            socket: socket as unknown as Socket,
-          }),
-        );
-
-      await Promise.allSettled(stopPromises);
-
-      return true;
-    } catch (error) {
-      this.logger.error(`Failed to stop other sockets in room: ${error.message}`);
-      return false;
-    }
   }
 
   // ============================================================================

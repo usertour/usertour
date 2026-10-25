@@ -18,6 +18,7 @@ import {
   ServerMessageKind,
 } from '@usertour/types';
 import { DEFAULT_CHECKLIST_DATA } from '@usertour/constants';
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { AnnouncementService } from '@/modules/delivery/services/announcement.service';
 import { initialization } from '@/modules/projects/utils/project-initialization.util';
 import { SegmentBizType } from '@/modules/biz/constants/segment-biz-type.constant';
@@ -199,7 +200,12 @@ const stubSocket = () => {
   } as any;
   return { socket, pushed };
 };
-const stubServer = { in: () => ({ fetchSockets: async () => [] }) } as any;
+// The shape the orchestrator reads: room membership (all servers, and this
+// server only) and the adapter's server count, which room sync consults.
+const stubServer = {
+  in: () => ({ fetchSockets: async () => [], local: { fetchSockets: async () => [] } }),
+  adapter: { serverCount: async () => 1 },
+} as any;
 
 describe('auto-start and hide rules conformance (real toggleContents oracle)', () => {
   let app: INestApplication;
@@ -207,6 +213,7 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
   let orchestrator: ContentOrchestratorService;
   let socketDataService: SocketDataService;
   let announcements: AnnouncementService;
+  let cache: ProjectCacheService;
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -214,6 +221,7 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
     orchestrator = app.get(ContentOrchestratorService);
     socketDataService = app.get(SocketDataService);
     announcements = app.get(AnnouncementService);
+    cache = app.get(ProjectCacheService);
   }, 60000);
 
   afterAll(async () => {
@@ -308,6 +316,49 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
       });
     }
     return { content, version, user };
+  };
+
+  /**
+   * A new version of the content goes live, its steps carried over under the
+   * same cvids as a real republish does; a session already open stays on its
+   * own version.
+   */
+  const republish = async (
+    environment: any,
+    content: any,
+    previous: any,
+    autoStartRules: Cond[],
+    opts: ConfigOptions = {},
+  ) => {
+    const version = await buildVersion(prisma, {
+      contentId: content.id,
+      themeId: previous.themeId,
+      sequence: previous.sequence + 1,
+      config: mkConfig(autoStartRules, opts) as unknown as Prisma.InputJsonValue,
+      data: [] as Prisma.InputJsonValue,
+    });
+    const steps = await prisma.step.findMany({ where: { versionId: previous.id } });
+    for (const step of steps) {
+      await buildStep(prisma, {
+        versionId: version.id,
+        cvid: step.cvid,
+        type: step.type,
+        sequence: step.sequence,
+        data: step.data as Prisma.InputJsonValue,
+      });
+    }
+    await prisma.content.update({
+      where: { id: content.id },
+      data: { publishedVersionId: version.id },
+    });
+    await prisma.contentOnEnvironment.update({
+      where: {
+        environmentId_contentId: { environmentId: environment.id, contentId: content.id },
+      },
+      data: { publishedVersionId: version.id },
+    });
+    await cache.invalidate(cache.keys.contents(environment.id, content.type));
+    return version;
   };
 
   /** An ended session with an event of a chosen age: what the frequency gates read. */
@@ -667,6 +718,132 @@ describe('auto-start and hide rules conformance (real toggleContents oracle)', (
       expect(resumed.kinds).toContain(ServerMessageKind.SET_FLOW_SESSION);
       expect(
         resumed.pushed.find((message) => message.kind === ServerMessageKind.SET_FLOW_SESSION)
+          ?.payload,
+      ).toMatchObject({ id: session?.id });
+    });
+
+    it('a live session on a superseded version is hidden by that version’s hide rules, and comes back', async () => {
+      const { projectId, environment, plan, tier } = await fresh();
+      const { content, version, user } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [attrRule(plan.id, 'pro')],
+        opts: { hideRules: [attrRule(tier.id, 'blocked')], frequency: Frequency.ONCE },
+        userData: { plan: 'pro', tier: 'gold' },
+      });
+      const running = await started(environment, user, content, ContentDataType.FLOW);
+      expect(running.active).toBe(true);
+
+      // A new version without the hide rule goes live; the live session stays
+      // on the old one, which is the version that gets served to it.
+      await republish(environment, content, version, [attrRule(plan.id, 'pro')], {
+        frequency: Frequency.ONCE,
+      });
+
+      // The old version's hide rule becomes active on the live session. The
+      // published version is the one the hide check sees, the session's
+      // version is the one that resumes: it must be hidden, not resumed and
+      // cancelled over and over.
+      await prisma.bizUser.update({
+        where: { id: user.id },
+        data: { data: { plan: 'pro', tier: 'blocked' } },
+      });
+      const result = await toggle(environment, user, [ContentDataType.FLOW], {
+        on: running.connection,
+      });
+      expect(result.kinds).toContain(ServerMessageKind.UNSET_FLOW_SESSION);
+      expect(result.after.flowSession).toBeFalsy();
+      const session = await result.activeSession(content.id);
+      expect(session?.versionId).toBe(version.id);
+
+      // The hide rule clears; the session resumes, still on its own version.
+      await prisma.bizUser.update({
+        where: { id: user.id },
+        data: { data: { plan: 'pro', tier: 'gold' } },
+      });
+      const resumed = await toggle(environment, user, [ContentDataType.FLOW], {
+        on: result.connection,
+      });
+      expect(
+        resumed.pushed.find((message) => message.kind === ServerMessageKind.SET_FLOW_SESSION)
+          ?.payload,
+      ).toMatchObject({ id: session?.id });
+    });
+
+    it('a live session on a superseded version carries on with the published version when that one may start', async () => {
+      const { projectId, environment, plan, tier } = await fresh();
+      const { content, version, user } = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [attrRule(plan.id, 'pro')],
+        opts: { hideRules: [attrRule(tier.id, 'blocked')] },
+        userData: { plan: 'pro', tier: 'gold' },
+      });
+      const running = await started(environment, user, content, ContentDataType.FLOW);
+      expect(running.active).toBe(true);
+      const session = await running.activeSession(content.id);
+      expect(session?.versionId).toBe(version.id);
+
+      // A flow with no frequency set gets the default, once, and this user has
+      // had it: the published version may only start again because it says so.
+      const republished = await republish(
+        environment,
+        content,
+        version,
+        [attrRule(plan.id, 'pro')],
+        {
+          frequency: Frequency.UNLIMITED,
+        },
+      );
+
+      // The session's version would hide it; the published version has no
+      // hide rule and may start again, so the same session goes on with it.
+      await prisma.bizUser.update({
+        where: { id: user.id },
+        data: { data: { plan: 'pro', tier: 'blocked' } },
+      });
+      const result = await toggle(environment, user, [ContentDataType.FLOW], {
+        on: running.connection,
+      });
+      expect(
+        result.pushed.find((message) => message.kind === ServerMessageKind.SET_FLOW_SESSION)
+          ?.payload,
+      ).toMatchObject({ id: session?.id, version: { id: republished.id } });
+      expect(result.after.flowSession?.version?.id).toBe(republished.id);
+      expect((await result.activeSession(content.id))?.versionId).toBe(republished.id);
+    });
+
+    it('a hidden live session on a superseded version is passed over for an earlier live one', async () => {
+      const { projectId, environment, plan, tier } = await fresh();
+      // Two unfinished flows; only the later one has a hide rule.
+      const earlier = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [attrRule(plan.id, 'pro')],
+        userData: { plan: 'pro', tier: 'blocked' },
+        activeSessions: 1,
+      });
+      const later = await seed({
+        projectId,
+        environment,
+        type: ContentDataType.FLOW,
+        autoStartRules: [attrRule(plan.id, 'pro')],
+        opts: { hideRules: [attrRule(tier.id, 'blocked')] },
+        user: earlier.user,
+        activeSessions: 1,
+      });
+      await republish(environment, later.content, later.version, [attrRule(plan.id, 'pro')]);
+
+      // A fresh page. The newest live session is on the superseded version,
+      // which hides it; the earlier live session is the one to resume, as it
+      // would be were the hide rule on the published version.
+      const result = await toggle(environment, earlier.user, [ContentDataType.FLOW]);
+      const session = await result.activeSession(earlier.content.id);
+      expect(
+        result.pushed.find((message) => message.kind === ServerMessageKind.SET_FLOW_SESSION)
           ?.payload,
       ).toMatchObject({ id: session?.id });
     });
