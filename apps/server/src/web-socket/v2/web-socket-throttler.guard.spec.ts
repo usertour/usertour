@@ -1,10 +1,18 @@
 import { ExecutionContext } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerOptions, ThrottlerStorageService } from '@nestjs/throttler';
 import { WebSocketThrottlerGuard } from './web-socket-throttler.guard';
 
 describe('WebSocketThrottlerGuard', () => {
   let guard: WebSocketThrottlerGuard;
+
+  // The gateway's own settings, as the environment would give them.
+  const environment: Record<string, string> = {
+    WS_THROTTLE_SHORT_TTL: '1000',
+    WS_THROTTLE_SHORT_LIMIT: '10',
+  };
+  const configService = { get: (key: string) => environment[key] };
 
   const createMockSocket = (id?: string, address?: string) => ({
     id,
@@ -24,13 +32,11 @@ describe('WebSocketThrottlerGuard', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ThrottlerModule.forRoot({
-          setHeaders: false,
-          throttlers: [{ name: 'test', ttl: 1000, limit: 10 }],
-        }),
+      providers: [
+        WebSocketThrottlerGuard,
+        ThrottlerStorageService,
+        { provide: ConfigService, useValue: configService },
       ],
-      providers: [WebSocketThrottlerGuard],
     }).compile();
 
     guard = module.get<WebSocketThrottlerGuard>(WebSocketThrottlerGuard);
@@ -39,6 +45,17 @@ describe('WebSocketThrottlerGuard', () => {
   describe('initialization', () => {
     it('should be defined', () => {
       expect(guard).toBeDefined();
+    });
+
+    it('runs under its own two limits, read from the environment, with defaults', async () => {
+      // The testing module compiles without running lifecycle hooks; the
+      // guard reads its throttler list in one.
+      await (guard as unknown as { onModuleInit: () => Promise<void> }).onModuleInit();
+      const throttlers = (guard as unknown as { throttlers: ThrottlerOptions[] }).throttlers;
+      expect(throttlers.map(({ name, ttl, limit }) => ({ name, ttl, limit }))).toEqual([
+        { name: 'short', ttl: 1000, limit: 10 },
+        { name: 'medium', ttl: 60000, limit: 300 },
+      ]);
     });
   });
 
