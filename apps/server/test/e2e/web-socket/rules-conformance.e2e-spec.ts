@@ -200,7 +200,12 @@ const stubSocket = () => {
   } as any;
   return { socket, pushed };
 };
-const stubServer = { in: () => ({ fetchSockets: async () => [] }) } as any;
+// The shape the orchestrator reads: room membership (all servers, and this
+// server only) and the adapter's server count, which room sync consults.
+const stubServer = {
+  in: () => ({ fetchSockets: async () => [], local: { fetchSockets: async () => [] } }),
+  adapter: { serverCount: async () => 1 },
+} as any;
 
 describe('auto-start and hide rules conformance (real toggleContents oracle)', () => {
   let app: INestApplication;

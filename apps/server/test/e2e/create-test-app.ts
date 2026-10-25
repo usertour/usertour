@@ -23,6 +23,9 @@ import { ResponseContractInterceptor } from './response-contract';
  */
 export async function createTestApp(
   override?: (builder: TestingModuleBuilder) => TestingModuleBuilder,
+  // Runs on the created application before it initializes: for what must be
+  // in place by then, such as a websocket adapter.
+  configure?: (app: INestApplication) => Promise<void>,
 ): Promise<INestApplication> {
   const base = Test.createTestingModule({ imports: [AppModule] });
   const moduleRef = await (override ? override(base) : base).compile();
@@ -62,6 +65,9 @@ export async function createTestApp(
   // NOT here — the wrapped close() below is itself raced against a cap, so
   // nothing that must run may hang off it.
   app.useGlobalInterceptors(new ResponseContractInterceptor());
+  if (configure) {
+    await configure(app);
+  }
   await app.init();
   // Listen once per suite. supertest otherwise `listen(0)`s and `close()`s the
   // server around EVERY request, and on Node 22 (keep-alive agents by default,
