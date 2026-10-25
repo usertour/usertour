@@ -22,6 +22,7 @@ import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 import { AdmissionService, AdmissionTimeoutError } from '../core/admission.service';
+import { RoomSyncService } from '../core/room-sync.service';
 import { WebSocketMessageValidationPipe } from './web-socket-message-validation.pipe';
 
 /**
@@ -54,11 +55,18 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     private readonly socketDataService: SocketDataService,
     private readonly validationPipe: WebSocketMessageValidationPipe,
     private readonly admission: AdmissionService,
+    private readonly roomSync: RoomSyncService,
   ) {}
 
   // Connection-level authentication - runs during handshake
   async afterInit(server: Server): Promise<void> {
     this.server = server;
+
+    // Room syncs published here or by the other servers of the cluster land
+    // on each local connection's own message queue.
+    this.roomSync.listen(server, (socketServer, socket, job) =>
+      this.service.runRoomSyncJob(socketServer, socket, job),
+    );
 
     server.use(async (socket: Socket, next) => {
       // Paced before any work: a reconnect storm is refused into the

@@ -56,6 +56,7 @@ import {
   RESERVED_EVENT_CODE_NAMES,
 } from '@/modules/delivery/services/event-tracking.service';
 import { ContentOrchestratorService } from '@/web-socket/core/content-orchestrator.service';
+import { RoomSyncJob } from '@/web-socket/core/room-sync.service';
 import { AnnouncementService } from '@/modules/delivery/services/announcement.service';
 import { ContentDataService } from '@/modules/delivery/services/content-data.service';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
@@ -999,6 +1000,15 @@ export class WebSocketV2Service {
       }
     }
     return launcherSessions;
+  }
+
+  /**
+   * Applies a room-sync job to one of the user's other connections: what the
+   * connection that sent a message did for itself, repeated here for this one
+   * (see RoomSyncService).
+   */
+  async runRoomSyncJob(server: Server, socket: Socket, job: RoomSyncJob): Promise<boolean> {
+    return await this.contentOrchestratorService.runRoomSyncJob(server, socket, job);
   }
 
   /**
