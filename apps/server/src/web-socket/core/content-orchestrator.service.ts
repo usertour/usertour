@@ -819,41 +819,38 @@ export class ContentOrchestratorService {
     const { contentType, socketData } = context;
     const { clientConditions } = socketData;
 
-    const customContentVersions = findLatestActivatedCustomContentVersions(
-      evaluatedContentVersions,
-      clientConditions,
-    );
-    let customContentVersion = customContentVersions?.[0];
+    const customContentVersions =
+      findLatestActivatedCustomContentVersions(evaluatedContentVersions, clientConditions) ?? [];
 
-    // Check if content version is allowed by hide rules
-    if (!customContentVersion) {
+    // Newest live session first. A session on a superseded version is served
+    // that version, which has to be read and checked on its own: the hide
+    // rules the list was filtered on are the published version's. Resuming
+    // it under active hide rules would hand back a session to cancel, and
+    // cancelling it would come here again to resume it, without end. Such a
+    // session is passed over, as a hidden one on the published version was.
+    for (const candidate of customContentVersions) {
+      const customContentVersion = isVersionMismatchWithActiveSession(candidate)
+        ? await this.findEvaluatedContentVersion(
+            socketData,
+            contentType,
+            candidate.session?.activeSession?.versionId,
+          )
+        : candidate;
+      if (!customContentVersion || isActivedHideRules(customContentVersion)) {
+        continue;
+      }
+
+      const result = await this.handleContentVersion(context, customContentVersion);
+
       return {
-        success: false,
-        reason: 'No latest activated content version found',
+        ...result,
+        reason: result.success ? 'Started by latest activated version' : result.reason,
       };
     }
 
-    if (isVersionMismatchWithActiveSession(customContentVersion)) {
-      const activeSession = customContentVersion.session?.activeSession;
-      customContentVersion = await this.findEvaluatedContentVersion(
-        socketData,
-        contentType,
-        activeSession?.versionId,
-      );
-      // If the active session version is not found, return error
-      if (!customContentVersion) {
-        return {
-          success: false,
-          reason: 'Active session version not found',
-        };
-      }
-    }
-
-    const result = await this.handleContentVersion(context, customContentVersion);
-
     return {
-      ...result,
-      reason: result.success ? 'Started by latest activated version' : result.reason,
+      success: false,
+      reason: 'No latest activated content version found',
     };
   }
 
@@ -972,11 +969,10 @@ export class ContentOrchestratorService {
     const { socket, contentType } = context;
     const socketData = await this.getSocketData(socket);
 
-    // Early return if operation failed
+    // Nothing to start is the usual outcome (nothing published of this type,
+    // already seen, rules not met) and is not logged; the outcomes that are
+    // faults log where they happen.
     if (!success || !socketData) {
-      this.logger.warn(
-        `Handle content start result, failed, reason: ${result.reason}, contentType: ${contentType}`,
-      );
       return false;
     }
 
@@ -1099,6 +1095,7 @@ export class ContentOrchestratorService {
       contentId,
     );
     if (!result) {
+      this.logger.warn(`Failed to create a session for content ${contentId}`);
       return { success: false, reason: 'Failed to create business session' };
     }
 
@@ -1114,6 +1111,7 @@ export class ContentOrchestratorService {
         clientContext,
       );
       if (!tracked) {
+        this.logger.warn(`Failed to track the start event of session ${result.session.id}`);
         return { success: false, reason: 'Failed to track auto start event' };
       }
     }
@@ -1134,6 +1132,9 @@ export class ContentOrchestratorService {
     const session = await this.initializeSession(customContentVersion, socketData, options);
 
     if (!session) {
+      this.logger.warn(
+        `Failed to initialize a session for content ${customContentVersion.contentId}`,
+      );
       return {
         success: false,
         reason: 'Failed to initialize session',
