@@ -397,9 +397,6 @@ importers:
       dotenv:
         specifier: 16.4.5
         version: 16.4.5
-      dotenv-expand:
-        specifier: 10.0.0
-        version: 10.0.0
       express-rate-limit:
         specifier: ^7.4.1
         version: 7.4.1(express@5.2.1)

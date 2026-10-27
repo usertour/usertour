@@ -4,15 +4,16 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { PrismaInstrumentation } from '@prisma/instrumentation';
 import { config as readEnvFile } from 'dotenv';
-import { expand } from 'dotenv-expand';
 
 // This module is the first thing main.ts loads, and it starts the SDK while
 // loading: an instrumentation patches a module as that module is required,
 // so the instrumentations must be registered before the framework, the
 // drivers and the application are. That is also before the application reads
-// `.env`, so it is read here the same way the application does (expanded
-// with the same library; what the environment already holds is kept).
-expand(readEnvFile());
+// `.env`, so it is read here, as written: what the environment already holds
+// is kept, and `${...}` references are left for the application's
+// configuration to expand, once, like everywhere else. The OTEL_* values
+// are therefore taken literally.
+readEnvFile();
 
 // The SDK configures itself from the standard OTEL_* variables: where to
 // send (OTEL_EXPORTER_OTLP_ENDPOINT, or per signal
@@ -39,9 +40,8 @@ const names = (variable: string): boolean => {
 const configured = process.env.OTEL_SDK_DISABLED !== 'true' && CONFIGURING_VARIABLES.some(names);
 
 // Without a collector the SDK is not built at all: registering the
-// instrumentations alone patches every hot path (http, Redis, socket.io) and
-// makes the Prisma query engine produce a trace for every query — work that
-// was thrown away, measured at a full engine thread under a reconnect burst.
+// instrumentations alone patches every hot path (http, Redis, socket.io),
+// and that is work on every request with nobody to collect the result.
 const sdk = configured
   ? new NodeSDK({
       instrumentations: [

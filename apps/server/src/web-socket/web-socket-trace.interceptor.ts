@@ -1,5 +1,6 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import api, { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { ClientMessageKind } from '@usertour/types';
 import { Observable } from 'rxjs';
 import { finalize, tap } from 'rxjs/operators';
 
@@ -14,13 +15,14 @@ import { finalize, tap } from 'rxjs/operators';
 export class WebSocketTraceInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const host = context.switchToWs();
+    const event = host.getPattern();
     const tracer = api.trace.getTracer('usertour-websocket');
     return new Observable((subscriber) => {
-      const span = tracer.startSpan(messageKind(host.getData()) ?? context.getHandler().name, {
+      const span = tracer.startSpan(messageKind(host.getData()) ?? event, {
         kind: SpanKind.CONSUMER,
         attributes: {
           'messaging.system': 'socket.io',
-          'messaging.socket.io.event_name': host.getPattern(),
+          'messaging.socket.io.event_name': event,
         },
       });
       // The handler runs when the observable is subscribed to, so the span is
@@ -45,11 +47,16 @@ export class WebSocketTraceInterceptor implements NestInterceptor {
   }
 }
 
-/** The kind of a client message, read before validation: the raw payload may be anything. */
+const knownKinds = new Set<string>(Object.values(ClientMessageKind));
+
+/**
+ * The kind of a client message, read before validation: the payload is
+ * whatever the client sent, and only a known kind may name a span.
+ */
 const messageKind = (data: unknown): string | undefined => {
   if (typeof data !== 'object' || data === null) {
     return undefined;
   }
   const { kind } = data as { kind?: unknown };
-  return typeof kind === 'string' ? kind : undefined;
+  return typeof kind === 'string' && knownKinds.has(kind) ? kind : undefined;
 };

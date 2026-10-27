@@ -68,11 +68,18 @@ describe('WebSocketTraceInterceptor', () => {
     expect(span.events.map((event) => event.name)).toEqual(['exception']);
   });
 
-  it('falls back to the handler name when the message carries no kind', async () => {
-    const next: CallHandler = { handle: () => defer(async () => false) };
-    await lastValueFrom(interceptor.intercept(contextFor('not an object'), next));
+  it('names the span by the event when the message carries no known kind', async () => {
+    // The payload is read before validation: a name comes from it only when
+    // it is one of ours, never from whatever the client sent.
+    for (const data of ['not an object', { kind: 'x'.repeat(10_000) }, { kind: 42 }]) {
+      const next: CallHandler = { handle: () => defer(async () => false) };
+      await lastValueFrom(interceptor.intercept(contextFor(data), next));
+    }
 
-    const [span] = exporter.getFinishedSpans();
-    expect(span.name).toBe('handleClientMessage');
+    expect(exporter.getFinishedSpans().map((span) => span.name)).toEqual([
+      'client-message',
+      'client-message',
+      'client-message',
+    ]);
   });
 });
