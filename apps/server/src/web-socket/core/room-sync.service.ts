@@ -135,9 +135,8 @@ export class RoomSyncService {
             ),
           )
           .catch((error) => {
-            // Refused at the gate: the job never ran, and the gate reports
-            // its refusals per window. The other connection catches up on
-            // its next activity.
+            // Refused at the gate: the job never ran and, like any failed
+            // sync, is not retried. The gate counts its refusals per window.
             if (error instanceof AdmissionTimeoutError) {
               return;
             }
