@@ -1,13 +1,16 @@
 import { CallHandler, ExecutionContext } from '@nestjs/common';
 import api, { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import { node, tracing } from '@opentelemetry/sdk-node';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { defer, lastValueFrom, throwError } from 'rxjs';
 import { WebSocketTraceInterceptor } from './web-socket-trace.interceptor';
 
-const exporter = new tracing.InMemorySpanExporter();
-const provider = new node.NodeTracerProvider({
-  spanProcessors: [new tracing.SimpleSpanProcessor(exporter)],
-});
+const exporter = new InMemorySpanExporter();
+const provider = new TracerProvider({ spanProcessors: [new SimpleSpanProcessor({ exporter })] });
 
 const contextFor = (data: unknown): ExecutionContext =>
   ({
@@ -21,7 +24,8 @@ describe('WebSocketTraceInterceptor', () => {
   beforeAll(() => {
     // Registers the tracer provider and the context manager the spans need
     // to find their parent across awaits, as the SDK does in the application.
-    provider.register();
+    api.trace.setGlobalTracerProvider(provider);
+    api.context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
   });
 
   afterAll(async () => {
