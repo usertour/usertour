@@ -1,3 +1,6 @@
+// First, before anything it instruments is loaded.
+import './tracer';
+
 import { Logger as NestLogger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -12,9 +15,6 @@ import { OpenAPIModule } from './openapi/openapi.module';
 import { ApiModule } from './api/api.module';
 import { normalizeOpenApiParameters } from './openapi/shared/normalize-parameters';
 import { configureApp } from './configure-app';
-
-// Import tracer for OpenTelemetry
-import { startTracer } from './tracer';
 import { setTraceID } from '@/modules/common/middleware/set-trace-id.middleware';
 import { requestLocale, resolveMessageLocale } from '@/modules/common/utils/request-locale.util';
 import { NextFunction, Request, Response } from 'express';
@@ -142,9 +142,6 @@ async function bootstrap() {
   //     max: 1000,
   //   }),
   // );
-
-  // Start tracer
-  startTracer();
 
   await app.listen(configService.get('nest.port'));
   console.log(`Application is running on: ${await app.getUrl()}`);

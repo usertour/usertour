@@ -372,7 +372,7 @@ importers:
         version: 0.41.1
       axios:
         specifier: ^1.6.2
-        version: 1.7.7
+        version: 1.7.7(debug@4.4.3)
       bcryptjs:
         specifier: 2.4.3
         version: 2.4.3
@@ -397,6 +397,12 @@ importers:
       deepmerge-ts:
         specifier: ^7.1.3
         version: 7.1.3
+      dotenv:
+        specifier: 16.4.5
+        version: 16.4.5
+      dotenv-expand:
+        specifier: 10.0.0
+        version: 10.0.0
       express-rate-limit:
         specifier: ^7.4.1
         version: 7.4.1(express@5.2.1)
@@ -574,7 +580,7 @@ importers:
         version: 6.3.3
       ts-jest:
         specifier: 29.0.5
-        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@5.3.3)))(typescript@5.3.3)
+        version: 29.0.5(@babel/core@7.29.7)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest@29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@5.3.3)))(typescript@5.3.3)
       ts-loader:
         specifier: 9.4.2
         version: 9.4.2(typescript@5.3.3)(webpack@5.90.1(@swc/core@1.7.42))
@@ -884,7 +890,7 @@ importers:
         version: 3.4.14(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))
       ts-jest:
         specifier: 29.0.5
-        version: 29.0.5(@babel/core@7.29.7)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
+        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
@@ -1161,7 +1167,7 @@ importers:
         version: 29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3))
       ts-jest:
         specifier: 29.0.5
-        version: 29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
+        version: 29.0.5(@babel/core@7.29.7)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3)
       typescript:
         specifier: ^5.0.2
         version: 5.3.3
@@ -18660,7 +18666,7 @@ snapshots:
   '@nestjs/axios@3.0.2(@nestjs/common@10.3.7(class-transformer@0.5.1)(class-validator@0.14.0)(reflect-metadata@0.1.13)(rxjs@7.8.1))(axios@1.7.7)(rxjs@7.8.1)':
     dependencies:
       '@nestjs/common': 10.3.7(class-transformer@0.5.1)(class-validator@0.14.0)(reflect-metadata@0.1.13)(rxjs@7.8.1)
-      axios: 1.7.7
+      axios: 1.7.7(debug@4.4.3)
       rxjs: 7.8.1
 
   '@nestjs/bull-shared@10.2.3(@nestjs/common@10.3.7(class-transformer@0.5.1)(class-validator@0.14.0)(reflect-metadata@0.1.13)(rxjs@7.8.1))(@nestjs/core@10.3.7(@nestjs/common@10.3.7(class-transformer@0.5.1)(class-validator@0.14.0)(reflect-metadata@0.1.13)(rxjs@7.8.1))(@nestjs/platform-express@10.3.7)(@nestjs/websockets@10.3.7)(encoding@0.1.13)(reflect-metadata@0.1.13)(rxjs@7.8.1))':
@@ -23119,14 +23125,6 @@ snapshots:
 
   aws4fetch@1.0.20: {}
 
-  axios@1.7.7:
-    dependencies:
-      follow-redirects: 1.15.9
-      form-data: 4.0.1
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-
   axios@1.7.7(debug@4.4.3):
     dependencies:
       follow-redirects: 1.15.9(debug@4.4.3)
@@ -25204,8 +25202,6 @@ snapshots:
       rimraf: 3.0.2
 
   flatted@3.3.1: {}
-
-  follow-redirects@1.15.9: {}
 
   follow-redirects@1.15.9(debug@4.4.3):
     optionalDependencies:
@@ -30289,23 +30285,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  ts-jest@29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@5.3.3)))(typescript@5.3.3):
-    dependencies:
-      bs-logger: 0.2.6
-      fast-json-stable-stringify: 2.1.0
-      jest: 29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@5.3.3))
-      jest-util: 29.7.0
-      json5: 2.2.3
-      lodash.memoize: 4.1.2
-      make-error: 1.3.6
-      semver: 7.7.4
-      typescript: 5.3.3
-      yargs-parser: 21.1.1
-    optionalDependencies:
-      '@babel/core': 7.26.0
-      '@jest/types': 29.6.3
-      babel-jest: 29.7.0(@babel/core@7.26.0)
-
   ts-jest@29.0.5(@babel/core@7.26.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.26.0))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3):
     dependencies:
       bs-logger: 0.2.6
@@ -30322,6 +30301,23 @@ snapshots:
       '@babel/core': 7.26.0
       '@jest/types': 29.6.3
       babel-jest: 29.7.0(@babel/core@7.26.0)
+
+  ts-jest@29.0.5(@babel/core@7.29.7)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest@29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@5.3.3)))(typescript@5.3.3):
+    dependencies:
+      bs-logger: 0.2.6
+      fast-json-stable-stringify: 2.1.0
+      jest: 29.5.0(@types/node@18.19.63)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@18.19.63)(typescript@5.3.3))
+      jest-util: 29.7.0
+      json5: 2.2.3
+      lodash.memoize: 4.1.2
+      make-error: 1.3.6
+      semver: 7.7.4
+      typescript: 5.3.3
+      yargs-parser: 21.1.1
+    optionalDependencies:
+      '@babel/core': 7.29.7
+      '@jest/types': 29.6.3
+      babel-jest: 29.7.0(@babel/core@7.29.7)
 
   ts-jest@29.0.5(@babel/core@7.29.7)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest@29.5.0(@types/node@20.17.5)(node-notifier@8.0.2)(ts-node@10.9.1(@swc/core@1.7.42)(@types/node@20.17.5)(typescript@5.3.3)))(typescript@5.3.3):
     dependencies:

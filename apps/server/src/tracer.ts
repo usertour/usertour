@@ -4,6 +4,16 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { PrismaInstrumentation } from '@prisma/instrumentation';
+import { config as readEnvFile } from 'dotenv';
+import { expand } from 'dotenv-expand';
+
+// This module is the first thing main.ts loads, and it starts the SDK while
+// loading: an instrumentation patches a module as that module is required,
+// so the instrumentations must be registered before the framework, the
+// drivers and the application are. That is also before the application reads
+// `.env`, so it is read here the same way the application does (expanded
+// with the same library; what the environment already holds is kept).
+expand(readEnvFile());
 
 // The SDK configures itself from the standard OTEL_* variables: where to
 // send (OTEL_EXPORTER_OTLP_ENDPOINT, or per signal
@@ -46,11 +56,7 @@ const sdk = configured
     })
   : undefined;
 
-export const startTracer = (): void => {
-  if (!sdk) {
-    console.log('OpenTelemetry off: no OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_*_EXPORTER set');
-    return;
-  }
+if (sdk) {
   try {
     sdk.start();
     console.log('OpenTelemetry started');
@@ -58,14 +64,12 @@ export const startTracer = (): void => {
     // A misconfigured exporter costs the telemetry, never the service.
     console.warn('OpenTelemetry not started:', (error as Error).message);
   }
-};
-
-// Flush what is buffered when the process is told to stop. The application's
-// own shutdown hooks close it and end the process; this must not exit it.
-if (sdk) {
+  // Flush what is buffered when the process is told to stop. The
+  // application's own shutdown hooks close it and end the process; this
+  // must not exit it.
   process.on('SIGTERM', () => {
     void sdk.shutdown().catch((error) => console.log('Error terminating tracing', error));
   });
+} else {
+  console.log('OpenTelemetry off: no OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_*_EXPORTER set');
 }
-
-export default sdk;
