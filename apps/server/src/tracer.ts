@@ -1,5 +1,4 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
@@ -45,11 +44,7 @@ const configured = process.env.OTEL_SDK_DISABLED !== 'true' && CONFIGURING_VARIA
 // was thrown away, measured at a full engine thread under a reconnect burst.
 const sdk = configured
   ? new NodeSDK({
-      instrumentations: [
-        getNodeAutoInstrumentations(),
-        new PrismaInstrumentation(),
-        new SocketIoInstrumentation({ enabled: true }),
-      ],
+      instrumentations: [getNodeAutoInstrumentations(), new PrismaInstrumentation()],
       // The name when OTEL_SERVICE_NAME is not set: the attributes detected
       // from the environment merge over this resource.
       resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: 'usertour-server' }),
