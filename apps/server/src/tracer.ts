@@ -44,7 +44,21 @@ const configured = process.env.OTEL_SDK_DISABLED !== 'true' && CONFIGURING_VARIA
 // was thrown away, measured at a full engine thread under a reconnect burst.
 const sdk = configured
   ? new NodeSDK({
-      instrumentations: [getNodeAutoInstrumentations(), new PrismaInstrumentation()],
+      instrumentations: [
+        getNodeAutoInstrumentations({
+          // A span per GraphQL field is noise: a trivial resolver reads a
+          // property in microseconds, and a list repeats that per item.
+          '@opentelemetry/instrumentation-graphql': {
+            ignoreTrivialResolveSpans: true,
+            mergeItems: true,
+          },
+        }),
+        // Inert on this Prisma line: the 5.x client emits only with its
+        // `tracing` preview feature, whose span delivery is written against
+        // the 1.x OpenTelemetry SDK, and this SDK is 2.x. Queries join the
+        // traces once Prisma is on 6, where tracing is stable.
+        new PrismaInstrumentation(),
+      ],
       // The name when OTEL_SERVICE_NAME is not set: the attributes detected
       // from the environment merge over this resource.
       resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: 'usertour-server' }),
@@ -60,9 +74,10 @@ if (sdk) {
     console.warn('OpenTelemetry not started:', (error as Error).message);
   }
   // Flush what is buffered when the process is told to stop. The
-  // application's own shutdown hooks close it and end the process; this
-  // must not exit it.
-  process.on('SIGTERM', () => {
+  // application's own shutdown hooks close it, then raise the signal again
+  // for the default action to end the process; that default only applies
+  // when no listener is left, so this one must be gone by then.
+  process.once('SIGTERM', () => {
     void sdk.shutdown().catch((error) => console.log('Error terminating tracing', error));
   });
 } else {

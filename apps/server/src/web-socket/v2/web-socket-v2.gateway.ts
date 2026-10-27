@@ -1,4 +1,4 @@
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
   WebSocketGateway as WsGateway,
   WebSocketServer,
@@ -22,6 +22,7 @@ import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
 import { RoomSyncService } from '../core/room-sync.service';
 import { WebSocketMessageValidationPipe } from './web-socket-message-validation.pipe';
+import { WebSocketTraceInterceptor } from '../web-socket-trace.interceptor';
 
 /**
  * Socket.IO forwards `err.data` with a handshake rejection, and it abandons
@@ -161,6 +162,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
    */
   @SubscribeMessage('client-message')
   @UseGuards(WebSocketThrottlerGuard)
+  @UseInterceptors(WebSocketTraceInterceptor)
   async handleClientMessage(
     @ConnectedSocket() socket: Socket,
     @MessageBody() raw: unknown,
