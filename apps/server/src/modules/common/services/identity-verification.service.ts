@@ -184,7 +184,7 @@ export class IdentityVerificationService {
 
     if (!this.isAcceptable(userVerdict, environment.requireIdentityVerification)) {
       this.logger.warn(
-        `[WS] Rejecting connection for user ${externalUserId} in environment ${environment.id}: identity token verdict=${userVerdict}${checkStatus ? ` (${checkStatus})` : ''}`,
+        `[WS] Rejecting connection in environment ${environment.id}: identity token verdict=${userVerdict}${checkStatus ? ` (${checkStatus})` : ''}`,
       );
       return false;
     }
@@ -193,7 +193,7 @@ export class IdentityVerificationService {
       !this.isAcceptable(companyVerdict, environment.requireIdentityVerification)
     ) {
       this.logger.warn(
-        `[WS] Rejecting connection for user ${externalUserId} in environment ${environment.id}: company claim verdict=${companyVerdict} for company ${externalCompanyId}`,
+        `[WS] Rejecting connection in environment ${environment.id}: company claim verdict=${companyVerdict}`,
       );
       return false;
     }
@@ -218,7 +218,7 @@ export class IdentityVerificationService {
     );
     if (!this.isAcceptable(membershipVerdict, environment.requireIdentityVerification)) {
       this.logger.warn(
-        `[WS] Rejecting company claim for user ${externalUserId} in environment ${environment.id}: company claim verdict=${membershipVerdict} for company ${externalCompanyId}`,
+        `[WS] Rejecting company claim in environment ${environment.id}: company claim verdict=${membershipVerdict}`,
       );
       return false;
     }

@@ -451,6 +451,9 @@ importers:
       otplib:
         specifier: ^12.0.1
         version: 12.0.1
+      p-limit:
+        specifier: '3'
+        version: 3.1.0
       passport:
         specifier: 0.6.0
         version: 0.6.0
