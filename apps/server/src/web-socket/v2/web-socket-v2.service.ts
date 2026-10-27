@@ -274,7 +274,7 @@ export class WebSocketV2Service {
     // session's socketData.
     if (externalUserId !== socketData.externalUserId) {
       this.logger.warn(
-        `[WS] UpsertUser payload externalUserId=${externalUserId} does not match socket auth ${socketData.externalUserId}; rejecting`,
+        `[WS] UpsertUser payload names a different user than socket ${socket.id} authenticated as; rejecting`,
       );
       return false;
     }
@@ -288,7 +288,7 @@ export class WebSocketV2Service {
     );
     if (!bizUser) {
       await this.socketDataService.delete(socket);
-      this.logger.error(`Failed to upsert business user ${externalUserId} for socket ${socket.id}`);
+      this.logger.error(`Failed to upsert business user for socket ${socket.id}`);
       return false;
     }
     const stored = await this.updateSocketData(socket, { externalUserId, bizUserId: bizUser.id });
@@ -318,7 +318,7 @@ export class WebSocketV2Service {
     // here.
     if (externalUserId !== socketData.externalUserId) {
       this.logger.warn(
-        `[WS] UpsertCompany payload externalUserId=${externalUserId} does not match socket auth ${socketData.externalUserId}; rejecting`,
+        `[WS] UpsertCompany payload names a different user than socket ${socket.id} authenticated as; rejecting`,
       );
       return false;
     }
@@ -354,9 +354,7 @@ export class WebSocketV2Service {
 
     if (!bizCompany) {
       await this.socketDataService.delete(socket);
-      this.logger.error(
-        `Failed to upsert business company ${externalCompanyId} for socket ${socket.id}`,
-      );
+      this.logger.error(`Failed to upsert business company for socket ${socket.id}`);
       return false;
     }
     const stored = await this.updateSocketData(socket, {

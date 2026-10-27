@@ -6,6 +6,7 @@ import {
   MessageBody,
   ConnectedSocket,
   OnGatewayDisconnect,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketV2Guard } from './web-socket-v2.guard';
@@ -13,13 +14,14 @@ import { WebSocketThrottlerGuard } from './web-socket-throttler.guard';
 import { SDKAuthenticationError, ServiceUnavailableError } from '@/modules/common/errors/errors';
 import { BaseError } from '@/modules/common/errors/base-error';
 import { WebSocketV2Service } from './web-socket-v2.service';
-import { SocketAuthData } from '@usertour/types';
+import { ClientMessageKind, SocketAuthData } from '@usertour/types';
 import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { ClientMessageDto } from './web-socket-v2.dto';
 import { buildExternalUserRoomId } from '../utils/websocket.util';
 import { SocketDataService } from '../core/socket-data.service';
 import { WebSocketV2MessageHandler } from './web-socket-v2-message-handler';
 import { SocketMessageQueueService } from '../core/socket-message-queue.service';
+import { AdmissionService, AdmissionTimeoutError } from '../core/admission.service';
 import { RoomSyncService } from '../core/room-sync.service';
 import { WebSocketMessageValidationPipe } from './web-socket-message-validation.pipe';
 
@@ -31,6 +33,12 @@ import { WebSocketMessageValidationPipe } from './web-socket-message-validation.
  */
 const handshakeRejection = (error: BaseError, retryable: boolean): Error =>
   Object.assign(error, { data: { code: error.code, retryable } });
+
+/** The message kinds the SDK replays when they go unanswered (ADR 0018 §4). */
+const REPLAYED_WRITE_KINDS = new Set<string>([
+  ClientMessageKind.UPSERT_USER,
+  ClientMessageKind.UPSERT_COMPANY,
+]);
 
 @WsGateway({ namespace: '/v2' })
 @UseGuards(WebSocketV2Guard)
@@ -46,6 +54,7 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     private readonly queueService: SocketMessageQueueService,
     private readonly socketDataService: SocketDataService,
     private readonly validationPipe: WebSocketMessageValidationPipe,
+    private readonly admission: AdmissionService,
     private readonly roomSync: RoomSyncService,
   ) {}
 
@@ -60,71 +69,108 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
     );
 
     server.use(async (socket: Socket, next) => {
-      const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
-
-      // Store token in socket.data for logging purposes
-      if (auth.token && typeof auth.token === 'string') {
-        socket.data.token = auth.token;
-      }
-
-      // A null result is a credential verdict (missing fields, unknown token,
-      // rejected identity); a throw is a server fault (database, Redis,
-      // session lookup). Only the former is the client's to fix.
-      let socketData: SocketData | null;
-      try {
-        socketData = await this.service.initializeSocketData(auth as unknown as SocketAuthData);
-      } catch (error: unknown) {
-        this.logger.error(
-          `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
-        );
+      // Paced before any work: a reconnect storm is refused into the
+      // client's own backoff rather than queued here in full.
+      if (!this.admission.admitHandshake()) {
         return next(handshakeRejection(new ServiceUnavailableError(), true));
       }
-      if (!socketData) {
-        return next(handshakeRejection(new SDKAuthenticationError(), false));
-      }
-
-      // A rejected socket never reaches handleDisconnect, so nothing may be
-      // stored for it before the handshake is sure to succeed: the capacity
-      // check comes first, and a failure after the store deletes it again.
-      let stored = false;
+      // The handshake is one unit of admitted work; one that cannot start
+      // in time is refused the same way, and never runs.
+      let answered = false;
+      const answer = (error?: Error) => {
+        if (!answered) {
+          answered = true;
+          next(error);
+        }
+      };
       try {
-        // Build room ID and check capacity
-        const room = buildExternalUserRoomId(socketData.environment.id, socketData.externalUserId);
-        const socketsInRoom = await this.server.in(room).fetchSockets();
-        if (socketsInRoom.length >= 100) {
-          this.logger.warn(
-            `Room ${room} has reached maximum capacity (100 sockets). Rejecting connection for socket ${socket.id}`,
-          );
-          return next(
-            handshakeRejection(new ServiceUnavailableError('Room capacity exceeded'), true),
-          );
-        }
-
-        // Store client data in Redis using socket ID
-        stored = await this.socketDataService.set(socket, socketData);
-        if (!stored) {
-          return next(handshakeRejection(new ServiceUnavailableError(), true));
-        }
-
-        // Join user room for targeted messaging
-        await socket.join(room);
-
-        // The version names the bundle this connection runs: after a release,
-        // the lines still saying the previous one are the pages not yet reloaded.
-        this.logger.log(
-          `Socket ${socket.id} authenticated for user ${socketData.externalUserId} (sdk ${socketData.sdkVersion ?? 'unknown'})`,
+        await this.admission.run(
+          () => this.handshake(socket, answer),
+          this.admission.handshakeWaitMs,
+          `handshake ${socket.id}`,
         );
-        return next();
-      } catch (error: unknown) {
-        this.logger.error(
-          `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
-        );
-        if (stored) {
-          await this.socketDataService.delete(socket).catch(() => undefined);
+      } catch (error) {
+        if (!(error instanceof AdmissionTimeoutError)) {
+          this.logger.error(
+            `Handshake failed for socket ${socket.id}: ${(error as Error).message}`,
+          );
         }
-        return next(handshakeRejection(new ServiceUnavailableError(), true));
+        answer(handshakeRejection(new ServiceUnavailableError(), true));
       }
     });
+  }
+
+  private async handshake(socket: Socket, next: (error?: Error) => void): Promise<void> {
+    // The page may have gone while the handshake waited for its slot. A
+    // socket rejected here never reaches handleDisconnect, so nothing may be
+    // stored for it: the whole handshake is skipped.
+    if (socket.conn.readyState !== 'open') {
+      return next(handshakeRejection(new ServiceUnavailableError(), true));
+    }
+    const auth = (socket.handshake?.auth as Record<string, unknown>) ?? {};
+
+    // Store token in socket.data for logging purposes
+    if (auth.token && typeof auth.token === 'string') {
+      socket.data.token = auth.token;
+    }
+
+    // A null result is a credential verdict (missing fields, unknown token,
+    // rejected identity); a throw is a server fault (database, Redis,
+    // session lookup). Only the former is the client's to fix.
+    let socketData: SocketData | null;
+    try {
+      socketData = await this.service.initializeSocketData(auth as unknown as SocketAuthData);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
+      );
+      return next(handshakeRejection(new ServiceUnavailableError(), true));
+    }
+    if (!socketData) {
+      return next(handshakeRejection(new SDKAuthenticationError(), false));
+    }
+
+    // A rejected socket never reaches handleDisconnect, so nothing may be
+    // stored for it before the handshake is sure to succeed: the capacity
+    // check comes first, and a failure after the store deletes it again.
+    let stored = false;
+    try {
+      // Build room ID and check capacity
+      const room = buildExternalUserRoomId(socketData.environment.id, socketData.externalUserId);
+      const socketsInRoom = await this.server.in(room).fetchSockets();
+      if (socketsInRoom.length >= 100) {
+        this.logger.warn(
+          `A user in environment ${socketData.environment.id} has reached the room capacity (100 sockets). Rejecting connection for socket ${socket.id}`,
+        );
+        return next(
+          handshakeRejection(new ServiceUnavailableError('Room capacity exceeded'), true),
+        );
+      }
+
+      // Store client data in Redis using socket ID
+      stored = await this.socketDataService.set(socket, socketData);
+      if (!stored) {
+        return next(handshakeRejection(new ServiceUnavailableError(), true));
+      }
+
+      // Join user room for targeted messaging
+      await socket.join(room);
+
+      // The version names the bundle this connection runs: after a release,
+      // the lines still saying the previous one are the pages not yet reloaded.
+      this.logger.log(
+        `Socket ${socket.id} authenticated in environment ${socketData.environment.id} (sdk ${socketData.sdkVersion ?? 'unknown'})`,
+      );
+      return next();
+    } catch (error: unknown) {
+      this.logger.error(
+        `Handshake failed for socket ${socket.id}: ${(error as Error)?.message ?? 'Unknown error'}`,
+      );
+      if (stored) {
+        await this.socketDataService.delete(socket).catch(() => undefined);
+      }
+      return next(handshakeRejection(new ServiceUnavailableError(), true));
+    }
   }
 
   // Cleanup when a socket disconnects for any reason
@@ -188,10 +234,42 @@ export class WebSocketV2Gateway implements OnGatewayDisconnect {
       `Received client message: kind=${kind}, socketId=${socket.id}, requestId=${requestId || 'N/A'}`,
     );
 
+    // The server keeps no batch state (BeginBatch's handler is a no-op), so
+    // it is answered here without a queue slot: under a burst every slot
+    // goes to work that does something.
+    if (kind === ClientMessageKind.BEGIN_BATCH) {
+      return true;
+    }
+
     // All messages are executed in order to maintain Socket.IO's ordering semantics
-    return await this.queueService.executeInOrder(socket.id, async () => {
-      return await this.messageHandler.handle(this.server, socket, kind, payload);
-    });
+    try {
+      return await this.queueService.executeInOrder(socket.id, async () => {
+        // The page may have gone while the message waited for its slot;
+        // nothing it asked for can be answered, and the SDK replays its
+        // writes on the next connection.
+        if (!socket.connected) {
+          return false;
+        }
+        return await this.messageHandler.handle(this.server, socket, kind, payload);
+      });
+    } catch (error) {
+      if (!(error instanceof AdmissionTimeoutError)) {
+        throw error;
+      }
+      // Refused at the gate: the message never ran. A write (identify,
+      // group) must not be answered: the SDK takes any answer as the
+      // server's verdict and would drop the attributes for good, while an
+      // unanswered write is replayed on its next connection (ADR 0018 §4).
+      // Anything else is answered `false` so the client learns at once.
+      this.logger.warn(`Refused ${kind} from socket ${socket.id}: ${error.message}`);
+      if (REPLAYED_WRITE_KINDS.has(kind)) {
+        // A WsException reaches the client as an `exception` event and no
+        // acknowledgement, like any other error, but is not logged with a
+        // stack by the framework: the line above is the whole record.
+        throw new WsException(error.message);
+      }
+      return false;
+    }
   }
 
   /**
