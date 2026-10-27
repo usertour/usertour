@@ -173,7 +173,7 @@ describe('AdmissionService', () => {
       expect(warn).not.toHaveBeenCalled();
       jest.advanceTimersByTime(5000);
       expect(warn).toHaveBeenCalledTimes(1);
-      expect(warn.mock.calls[0][0]).toContain('refused 4 handshakes in the last 5s');
+      expect(warn.mock.calls[0][0]).toContain('4 handshakes refused by pacing');
       // A quiet window is no line.
       jest.advanceTimersByTime(5000);
       expect(warn).toHaveBeenCalledTimes(1);
@@ -197,9 +197,31 @@ describe('AdmissionService', () => {
       jest.advanceTimersByTime(5000);
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn.mock.calls[0][0]).toContain('3 units waited over 1000ms');
-      expect(warn.mock.calls[0][0]).toContain('the longest 1500ms');
+      expect(warn.mock.calls[0][0]).toContain('longest 1500ms');
       // a left b and c behind: the deepest the queue was seen at an admission.
       expect(warn.mock.calls[0][0]).toContain('up to 2 waiting');
+      expect(warn.mock.calls[0][0]).toContain('0 refused for waiting');
+    });
+
+    it('counts the units refused for waiting in the same line', async () => {
+      const admission = build({ WS_ADMISSION_CONCURRENCY: '1' });
+      let release: () => void = () => undefined;
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const holder = admission.run(() => held, 0, 'holder');
+      await Promise.resolve();
+      await Promise.resolve();
+      const refused = admission.run(async () => 'late', 500, 'late');
+      jest.advanceTimersByTime(500);
+      await expect(refused).rejects.toBeInstanceOf(AdmissionTimeoutError);
+      expect(warn).not.toHaveBeenCalled();
+      jest.advanceTimersByTime(5000);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('0 units waited over 1000ms');
+      expect(warn.mock.calls[0][0]).toContain('1 refused for waiting');
+      release();
+      await holder;
     });
 
     it('reports a window still open at shutdown, and nothing after', () => {
@@ -209,7 +231,7 @@ describe('AdmissionService', () => {
       }
       admission.onModuleDestroy();
       expect(warn).toHaveBeenCalledTimes(1);
-      expect(warn.mock.calls[0][0]).toContain('refused 2 handshakes in the last 5s');
+      expect(warn.mock.calls[0][0]).toContain('2 handshakes refused by pacing');
       jest.advanceTimersByTime(5000);
       expect(warn).toHaveBeenCalledTimes(1);
     });

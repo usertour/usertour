@@ -12,11 +12,20 @@ export class AdmissionTimeoutError extends Error {
 
 const ABANDONED = Symbol('abandoned');
 
-/** The gate reports on its log at most once per window, whatever happens inside it. */
+/** The gate reports on its log once per window, and only for a window with anything in it. */
 const WARN_WINDOW_MS = 5000;
 
-/** A wait for a slot this long is worth reporting. */
+/** A wait for a slot this long is worth counting. */
 const LONG_WAIT_MS = 1000;
+
+/** What one window counts; reported in one line, then reset. */
+const emptyStats = () => ({
+  refusedHandshakes: 0,
+  longWaits: 0,
+  longestWaitMs: 0,
+  deepestQueue: 0,
+  refusedWaits: 0,
+});
 
 /** A positive number from the environment, or the fallback when unset, blank or not a number. */
 const numberSetting = (raw: unknown, fallback: number): number => {
@@ -66,15 +75,11 @@ export class AdmissionService implements OnModuleDestroy {
   private tokens: number;
   private tokensRefilledAt = performance.now();
 
-  // Reporting: events are counted per window, and every window with any
-  // ends in one line, so a burst that is over within the window is still
-  // reported in full. A window still open at shutdown is reported then.
-  private refusedHandshakes = 0;
-  private refusalWindow: ReturnType<typeof setTimeout> | undefined;
-  private longWaits = 0;
-  private longestWaitMs = 0;
-  private deepestQueue = 0;
-  private waitWindow: ReturnType<typeof setTimeout> | undefined;
+  // Reporting: the window's counts go out in one warn line when it ends, so
+  // a burst that is over within the window is still reported in full. A
+  // quiet window is no line; the window open at shutdown is reported then.
+  private stats = emptyStats();
+  private readonly reporter: ReturnType<typeof setInterval>;
 
   constructor(configService: ConfigService) {
     this.concurrency = numberSetting(configService.get('WS_ADMISSION_CONCURRENCY'), 16);
@@ -89,17 +94,13 @@ export class AdmissionService implements OnModuleDestroy {
     );
     this.limit = this.concurrency > 0 ? pLimit(this.concurrency) : undefined;
     this.tokens = this.handshakeRatePerSecond;
+    this.reporter = setInterval(() => this.report(), WARN_WINDOW_MS);
+    this.reporter.unref();
   }
 
   onModuleDestroy(): void {
-    if (this.refusalWindow) {
-      clearTimeout(this.refusalWindow);
-      this.reportRefusals();
-    }
-    if (this.waitWindow) {
-      clearTimeout(this.waitWindow);
-      this.reportWaits();
-    }
+    clearInterval(this.reporter);
+    this.report();
   }
 
   /** Units running now. */
@@ -131,6 +132,7 @@ export class AdmissionService implements OnModuleDestroy {
       }
       timer = setTimeout(() => {
         abandoned = true;
+        this.stats.refusedWaits += 1;
         reject(new AdmissionTimeoutError(label, Date.now() - queuedAt));
       }, waitMs);
     });
@@ -140,7 +142,7 @@ export class AdmissionService implements OnModuleDestroy {
       }
       // Admitted: from here on the unit runs to its end, whatever the clock says.
       clearTimeout(timer);
-      this.noteWait(Date.now() - queuedAt);
+      this.countWait(Date.now() - queuedAt);
       return await work();
     });
     try {
@@ -167,52 +169,32 @@ export class AdmissionService implements OnModuleDestroy {
     this.tokens = Math.min(this.handshakeRatePerSecond, this.tokens + refill);
     this.tokensRefilledAt = now;
     if (this.tokens < 1) {
-      this.noteRefusal();
+      this.stats.refusedHandshakes += 1;
       return false;
     }
     this.tokens -= 1;
     return true;
   }
 
-  /** Long waits are counted, and reported once per window in which any happened. */
-  private noteWait(waitedMs: number): void {
+  /** A long wait for a slot is counted, with the queue as the unit leaves it. */
+  private countWait(waitedMs: number): void {
     if (waitedMs < LONG_WAIT_MS) {
       return;
     }
-    this.longWaits += 1;
-    this.longestWaitMs = Math.max(this.longestWaitMs, waitedMs);
-    // The queue as this unit leaves it, so the deepest the window saw.
-    this.deepestQueue = Math.max(this.deepestQueue, this.pendingCount);
-    if (!this.waitWindow) {
-      this.waitWindow = setTimeout(() => this.reportWaits(), WARN_WINDOW_MS);
-      this.waitWindow.unref();
+    this.stats.longWaits += 1;
+    this.stats.longestWaitMs = Math.max(this.stats.longestWaitMs, waitedMs);
+    this.stats.deepestQueue = Math.max(this.stats.deepestQueue, this.pendingCount);
+  }
+
+  /** The window's counts in one line, for a window with anything in it. */
+  private report(): void {
+    const stats = this.stats;
+    if (stats.refusedHandshakes + stats.longWaits + stats.refusedWaits === 0) {
+      return;
     }
-  }
-
-  private reportWaits(): void {
-    this.waitWindow = undefined;
+    this.stats = emptyStats();
     this.logger.warn(
-      `Admission queue: ${this.longWaits} units waited over ${LONG_WAIT_MS}ms in the last ${WARN_WINDOW_MS / 1000}s, the longest ${this.longestWaitMs}ms, up to ${this.deepestQueue} waiting`,
+      `Admission in the last ${WARN_WINDOW_MS / 1000}s: ${stats.refusedHandshakes} handshakes refused by pacing (${this.handshakeRatePerSecond}/s allowed), ${stats.longWaits} units waited over ${LONG_WAIT_MS}ms for a slot (longest ${stats.longestWaitMs}ms, up to ${stats.deepestQueue} waiting), ${stats.refusedWaits} refused for waiting`,
     );
-    this.longWaits = 0;
-    this.longestWaitMs = 0;
-    this.deepestQueue = 0;
-  }
-
-  /** Refusals are counted, and reported once per window in which any happened. */
-  private noteRefusal(): void {
-    this.refusedHandshakes += 1;
-    if (!this.refusalWindow) {
-      this.refusalWindow = setTimeout(() => this.reportRefusals(), WARN_WINDOW_MS);
-      this.refusalWindow.unref();
-    }
-  }
-
-  private reportRefusals(): void {
-    this.refusalWindow = undefined;
-    this.logger.warn(
-      `Handshake pacing: refused ${this.refusedHandshakes} handshakes in the last ${WARN_WINDOW_MS / 1000}s (${this.handshakeRatePerSecond}/s allowed)`,
-    );
-    this.refusedHandshakes = 0;
   }
 }
