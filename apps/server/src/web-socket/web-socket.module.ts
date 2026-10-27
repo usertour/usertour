@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WebSocketGateway } from './web-socket.gateway';
 import { WebSocketService } from './web-socket.service';
 import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
+import { WebSocketTraceInterceptor } from './web-socket-trace.interceptor';
 import { BizModule } from '@/modules/biz/biz.module';
 import { LicenseModule } from '@/modules/license/license.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
@@ -65,6 +66,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     WebSocketGateway,
     WebSocketService,
     WebSocketPerformanceInterceptor,
+    WebSocketTraceInterceptor,
     WebSocketV2Gateway,
     WebSocketV2Service,
     WebSocketV2Guard,
