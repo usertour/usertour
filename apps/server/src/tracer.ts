@@ -1,71 +1,70 @@
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
-import { resourceFromAttributes } from '@opentelemetry/resources';
-import * as opentelemetry from '@opentelemetry/sdk-node';
-import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
-import { PrismaInstrumentation } from '@prisma/instrumentation';
 import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { PrismaInstrumentation } from '@prisma/instrumentation';
 
-const createExporter = (endpoint: string | undefined, path: string) => {
-  if (!endpoint) return undefined;
-  return { url: `${endpoint}${path}` };
+// The SDK configures itself from the standard OTEL_* variables: where to
+// send (OTEL_EXPORTER_OTLP_ENDPOINT, or per signal
+// OTEL_EXPORTER_OTLP_TRACES_ENDPOINT / OTEL_EXPORTER_OTLP_METRICS_ENDPOINT),
+// how (OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_EXPORTER_OTLP_HEADERS), which
+// signals (OTEL_TRACES_EXPORTER / OTEL_METRICS_EXPORTER: otlp, console,
+// none), how often (OTEL_METRIC_EXPORT_INTERVAL) and as whom
+// (OTEL_SERVICE_NAME, OTEL_RESOURCE_ATTRIBUTES). The one thing it does not
+// decide is whether to exist: with nothing set it would export to
+// localhost:4318. Here, telemetry exists only where something collects it.
+const CONFIGURING_VARIABLES = [
+  'OTEL_EXPORTER_OTLP_ENDPOINT',
+  'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT',
+  'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT',
+  'OTEL_TRACES_EXPORTER',
+  'OTEL_METRICS_EXPORTER',
+];
+
+const names = (variable: string): boolean => {
+  const value = process.env[variable]?.trim();
+  return value !== undefined && value !== '' && value !== 'none';
 };
 
-const tracesConfig = createExporter(process.env.OTLP_TRACES_ENDPOINT, '/v1/traces');
-const metricsConfig = createExporter(process.env.OTLP_METRICS_ENDPOINT, '/v1/metrics');
+const configured = process.env.OTEL_SDK_DISABLED !== 'true' && CONFIGURING_VARIABLES.some(names);
 
-// Telemetry exists only where something collects it. Without an endpoint the
-// SDK is not built at all: registering the instrumentations alone patches
-// every hot path (http, Redis, socket.io) and makes the Prisma query engine
-// produce a trace for every query — work that was thrown away, measured at a
-// full engine thread under a reconnect burst.
-const sdk =
-  tracesConfig || metricsConfig
-    ? new opentelemetry.NodeSDK({
-        ...(tracesConfig && {
-          traceExporter: new OTLPTraceExporter(tracesConfig),
-        }),
-        ...(metricsConfig && {
-          metricReader: new PeriodicExportingMetricReader({
-            exporter: new OTLPMetricExporter(metricsConfig),
-            exportIntervalMillis: 1000,
-          }),
-        }),
-        instrumentations: [
-          getNodeAutoInstrumentations(),
-          new PrismaInstrumentation(),
-          new SocketIoInstrumentation({ enabled: true }),
-        ],
-        resource: resourceFromAttributes({
-          'service.name': 'usertour-server',
-        }),
-      })
-    : undefined;
+// Without a collector the SDK is not built at all: registering the
+// instrumentations alone patches every hot path (http, Redis, socket.io) and
+// makes the Prisma query engine produce a trace for every query — work that
+// was thrown away, measured at a full engine thread under a reconnect burst.
+const sdk = configured
+  ? new NodeSDK({
+      instrumentations: [
+        getNodeAutoInstrumentations(),
+        new PrismaInstrumentation(),
+        new SocketIoInstrumentation({ enabled: true }),
+      ],
+      // The name when OTEL_SERVICE_NAME is not set: the attributes detected
+      // from the environment merge over this resource.
+      resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: 'usertour-server' }),
+    })
+  : undefined;
 
-// initialize the SDK and register with the OpenTelemetry API
-// this enables the API to record telemetry
-export const startTracer = () => {
+export const startTracer = (): void => {
   if (!sdk) {
-    console.log('OpenTelemetry disabled: no OTLP endpoint configured');
+    console.log('OpenTelemetry off: no OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_*_EXPORTER set');
     return;
   }
   try {
     sdk.start();
-    console.log('OpenTelemetry tracer started successfully');
+    console.log('OpenTelemetry started');
   } catch (error) {
-    console.warn('OpenTelemetry SDK already initialized, skipping:', error.message);
+    // A misconfigured exporter costs the telemetry, never the service.
+    console.warn('OpenTelemetry not started:', (error as Error).message);
   }
 };
 
-// gracefully shut down the SDK on process exit
+// Flush what is buffered when the process is told to stop. The application's
+// own shutdown hooks close it and end the process; this must not exit it.
 if (sdk) {
   process.on('SIGTERM', () => {
-    sdk
-      .shutdown()
-      .then(() => console.log('Tracing terminated'))
-      .catch((error) => console.log('Error terminating tracing', error))
-      .finally(() => process.exit(0));
+    void sdk.shutdown().catch((error) => console.log('Error terminating tracing', error));
   });
 }
 
