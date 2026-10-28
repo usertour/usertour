@@ -9,7 +9,6 @@ import {
 } from '@usertour/types';
 import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { SocketEmitterService } from './socket-emitter.service';
-import { SocketParallelService } from './socket-parallel.service';
 import {
   categorizeClientConditions,
   filterAndPreserveConditions,
@@ -136,7 +135,6 @@ export class SocketOperationService {
 
   constructor(
     private readonly socketEmitterService: SocketEmitterService,
-    private readonly socketParallelService: SocketParallelService,
     private readonly socketDataService: SocketDataService,
   ) {}
 
@@ -316,7 +314,7 @@ export class SocketOperationService {
     const contentType = session.content.type;
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (unsetSession && !(await this.unsetSocketSession(socket, session))) {
+    if (unsetSession && !this.unsetSocketSession(socket, session)) {
       return false;
     }
 
@@ -436,7 +434,7 @@ export class SocketOperationService {
     const currentSessions = extractSessionsByContentType(socketData, contentType);
 
     // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (unsetSession && !(await this.unsetSocketSession(socket, session))) {
+    if (unsetSession && !this.unsetSocketSession(socket, session)) {
       return false;
     }
 
@@ -495,20 +493,8 @@ export class SocketOperationService {
     if (newTrackConditions.length === 0) {
       return true;
     }
-    const trackedConditions = await this.socketParallelService.trackClientConditions(
-      socket,
-      newTrackConditions,
-    );
-    const trackedClientConditions = convertToClientConditions(trackedConditions);
-
-    // If not all conditions were tracked, log an error and return false
-    if (trackedConditions.length !== newTrackConditions.length) {
-      this.logger.error(
-        `Failed to track all conditions: ${newTrackConditions.length} conditions to track,
-         ${trackedConditions.length} conditions tracked`,
-      );
-      return false;
-    }
+    this.socketEmitterService.trackClientConditions(socket, newTrackConditions);
+    const trackedClientConditions = convertToClientConditions(newTrackConditions);
 
     const newClientConditions = [...clientConditions, ...trackedClientConditions];
 
@@ -540,24 +526,12 @@ export class SocketOperationService {
         !existingTimers.some((existingTimer) => existingTimer.versionId === waitTimer.versionId),
     );
 
-    const startedTimers = await this.socketParallelService.startConditionWaitTimers(
-      socket,
-      newWaitTimers,
-    );
-
-    // If not all wait timers were started, log an error and return false
-    if (startedTimers.length !== newWaitTimers.length) {
-      this.logger.error(
-        `Failed to start all wait timers: ${newWaitTimers.length} wait timers to start,
-         ${startedTimers.length} wait timers started`,
-      );
-      return false;
-    }
+    this.socketEmitterService.startConditionWaitTimers(socket, newWaitTimers);
 
     return await this.socketDataService.set(
       socket,
       {
-        waitTimers: [...existingTimers, ...startedTimers],
+        waitTimers: [...existingTimers, ...newWaitTimers],
       },
       true,
     );
@@ -656,20 +630,14 @@ export class SocketOperationService {
       return { addedSessions: [], removedContentIds: [] };
     }
     switch (contentType) {
-      case ContentDataType.LAUNCHER: {
-        const [addedSessions, removedContentIds] = await Promise.all([
-          this.socketParallelService.addLaunchers(socket, sessionsToAdd),
-          this.socketParallelService.removeLaunchers(socket, contentIdsToRemove),
-        ]);
-        return { addedSessions, removedContentIds };
-      }
-      case ContentDataType.TRACKER: {
-        const [addedSessions, removedContentIds] = await Promise.all([
-          this.socketParallelService.addTrackers(socket, sessionsToAdd),
-          this.socketParallelService.removeTrackers(socket, contentIdsToRemove),
-        ]);
-        return { addedSessions, removedContentIds };
-      }
+      case ContentDataType.LAUNCHER:
+        this.socketEmitterService.addLaunchers(socket, sessionsToAdd);
+        this.socketEmitterService.removeLaunchers(socket, contentIdsToRemove);
+        return { addedSessions: sessionsToAdd, removedContentIds: contentIdsToRemove };
+      case ContentDataType.TRACKER:
+        this.socketEmitterService.addTrackers(socket, sessionsToAdd);
+        this.socketEmitterService.removeTrackers(socket, contentIdsToRemove);
+        return { addedSessions: sessionsToAdd, removedContentIds: contentIdsToRemove };
       default:
         this.logger.warn(`Unsupported content type for emitBatchSessions: ${contentType}`);
         return { addedSessions: [], removedContentIds: [] };
@@ -687,30 +655,25 @@ export class SocketOperationService {
    * @param session - The session to unset
    * @returns Promise<boolean> - True if the session was unset and acknowledged by client
    */
-  private async unsetSocketSession(
-    socket: Socket,
-    session: CustomContentSession,
-  ): Promise<boolean> {
+  private unsetSocketSession(socket: Socket, session: CustomContentSession): boolean {
     const contentType = session.content.type;
     if (contentType === ContentDataType.FLOW) {
-      return await this.socketEmitterService.unsetFlowSessionWithAck(socket, session.id);
+      return this.socketEmitterService.unsetFlowSession(socket, session.id);
     }
     if (contentType === ContentDataType.CHECKLIST) {
-      return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, session.id);
+      return this.socketEmitterService.unsetChecklistSession(socket, session.id);
     }
     if (contentType === ContentDataType.BANNER) {
-      return await this.socketEmitterService.unsetBannerSessionWithAck(socket, session.id);
+      return this.socketEmitterService.unsetBannerSession(socket, session.id);
     }
     if (contentType === ContentDataType.RESOURCE_CENTER) {
-      return await this.socketEmitterService.unsetResourceCenterSessionWithAck(socket, session.id);
+      return this.socketEmitterService.unsetResourceCenterSession(socket, session.id);
     }
-
     if (contentType === ContentDataType.LAUNCHER) {
-      return await this.socketEmitterService.removeLauncherWithAck(socket, session.content.id);
+      return this.socketEmitterService.removeLauncher(socket, session.content.id);
     }
-
     if (contentType === ContentDataType.TRACKER) {
-      return await this.socketEmitterService.removeTrackerWithAck(socket, session.content.id);
+      return this.socketEmitterService.removeTracker(socket, session.content.id);
     }
 
     this.logger.warn(`Unsupported content type: ${contentType}`);
@@ -751,16 +714,9 @@ export class SocketOperationService {
       cleanupContentTypes,
     );
 
-    // Execute and validate parallel condition operations
-    const isSuccess = await this.executeParallelConditionOperations(
-      socket,
-      conditionsToUntrack,
-      filteredWaitTimers,
-      conditionsToTrack,
-    );
-    if (!isSuccess) {
-      return null;
-    }
+    this.socketEmitterService.untrackClientConditions(socket, conditionsToUntrack);
+    this.socketEmitterService.cancelConditionWaitTimers(socket, filteredWaitTimers);
+    this.socketEmitterService.trackClientConditions(socket, conditionsToTrack);
 
     const trackedClientConditions = convertToClientConditions(conditionsToTrack);
 
@@ -774,43 +730,6 @@ export class SocketOperationService {
       clientConditions: updatedConditions,
       waitTimers: preservedWaitTimers,
     };
-  }
-
-  /**
-   * Execute and validate parallel condition operations
-   * @param socket - The socket instance
-   * @param conditionsToUntrack - Conditions to untrack
-   * @param waitTimers - Wait timers to cancel
-   * @param conditionsToTrack - Conditions to track
-   * @returns True if all operations completed successfully
-   */
-  private async executeParallelConditionOperations(
-    socket: Socket,
-    conditionsToUntrack: ClientCondition[],
-    waitTimers: ConditionWaitTimer[],
-    conditionsToTrack: TrackCondition[],
-  ): Promise<boolean> {
-    // Execute all condition operations in parallel
-    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
-      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
-      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
-      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
-    ]);
-
-    // Validate results
-    if (
-      untrackedConditions.length !== conditionsToUntrack.length ||
-      cancelledTimers.length !== waitTimers.length ||
-      newConditions.length !== conditionsToTrack.length
-    ) {
-      this.logger.error(
-        `Failed to execute all condition operations: ${conditionsToUntrack.length} conditions to untrack,
-         ${waitTimers.length} wait timers to cancel, ${conditionsToTrack.length} conditions to track`,
-      );
-      return false;
-    }
-
-    return true;
   }
 
   // ============================================================================
@@ -848,7 +767,7 @@ export class SocketOperationService {
 
     // Cancel tracking for conditions that are no longer needed
     for (const condition of untrackedConditions) {
-      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId);
+      this.socketEmitterService.untrackClientCondition(socket, condition.conditionId);
     }
 
     return {

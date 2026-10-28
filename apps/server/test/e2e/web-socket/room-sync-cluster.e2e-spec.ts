@@ -40,15 +40,11 @@ describe("WebSocket v2 room sync across a cluster's servers (e2e)", () => {
   const externalUserId = `ws-cluster-user-${Date.now()}`;
   const clients: WebSocketTestClient[] = [];
 
-  const connect = async (
-    server: WebSocketTestApp,
-    options?: { acknowledge?: boolean },
-  ): Promise<WebSocketTestClient> => {
-    const client = await connectWebSocketClient(
-      server.baseUrl,
-      { token: environmentToken, externalUserId },
-      options,
-    );
+  const connect = async (server: WebSocketTestApp): Promise<WebSocketTestClient> => {
+    const client = await connectWebSocketClient(server.baseUrl, {
+      token: environmentToken,
+      externalUserId,
+    });
     clients.push(client);
     return client;
   };
@@ -153,8 +149,8 @@ describe("WebSocket v2 room sync across a cluster's servers (e2e)", () => {
     expect(await activeSessionId()).toBeUndefined();
   });
 
-  it('a silent connection on the other server does not delay the sender', async () => {
-    const silent = await connect(second, { acknowledge: false });
+  it('the sender does not wait for a connection on the other server', async () => {
+    const other = await connect(second);
 
     const startedAt = Date.now();
     const ack = await onFirst.sendClientMessage(ClientMessageKind.START_CONTENT, {
@@ -164,9 +160,9 @@ describe("WebSocket v2 room sync across a cluster's servers (e2e)", () => {
     const elapsed = Date.now() - startedAt;
     expect(ack).toBe(true);
 
-    // The emit to the silent connection waits out the two-second timeout on
-    // the other server, in that connection's own queue.
+    // The other server takes the session on that connection's own queue;
+    // nothing in the sender's handler waits for it, or for any receipt.
     expect(elapsed).toBeLessThan(2000);
-    await silent.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
+    await other.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
   });
 });
