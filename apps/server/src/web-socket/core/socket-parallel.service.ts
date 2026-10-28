@@ -165,25 +165,16 @@ export class SocketParallelService {
   // ============================================================================
 
   /**
-   * Add multiple launcher sessions in parallel with acknowledgment
+   * Push launcher sessions to the client, without waiting for a receipt
    * @param socket - The socket instance
    * @param launcherSessions - Array of launcher sessions to add
-   * @returns Promise<CustomContentSession[]> - Array of successfully added sessions
+   * @returns The sessions pushed
    */
-  async addLaunchers(
-    socket: Socket,
-    launcherSessions: CustomContentSession[],
-  ): Promise<CustomContentSession[]> {
-    const operations = launcherSessions.map(
-      (session) => () => this.socketEmitterService.addLauncherWithAck(socket, session),
-    );
-
-    return await this.executeParallelOperations(
-      socket,
-      operations,
-      launcherSessions,
-      'addLaunchers',
-    );
+  addLaunchers(socket: Socket, launcherSessions: CustomContentSession[]): CustomContentSession[] {
+    for (const session of launcherSessions) {
+      this.socketEmitterService.addLauncher(socket, session);
+    }
+    return launcherSessions;
   }
 
   /**
@@ -205,17 +196,13 @@ export class SocketParallelService {
   // ============================================================================
 
   /**
-   * Add multiple tracker sessions in parallel with acknowledgment
+   * Push tracker sessions to the client, without waiting for a receipt
    */
-  async addTrackers(
-    socket: Socket,
-    trackerSessions: CustomContentSession[],
-  ): Promise<CustomContentSession[]> {
-    const operations = trackerSessions.map(
-      (session) => () => this.socketEmitterService.addTrackerWithAck(socket, session),
-    );
-
-    return await this.executeParallelOperations(socket, operations, trackerSessions, 'addTrackers');
+  addTrackers(socket: Socket, trackerSessions: CustomContentSession[]): CustomContentSession[] {
+    for (const session of trackerSessions) {
+      this.socketEmitterService.addTracker(socket, session);
+    }
+    return trackerSessions;
   }
 
   /**

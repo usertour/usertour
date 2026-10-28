@@ -159,19 +159,9 @@ export class SocketOperationService {
     options: ActivateFlowSessionOptions = {},
   ): Promise<boolean> {
     const { trackConditions = [], forceGoToStep = false, cleanupContentTypes } = options;
-    // Set Flow session
-    const isSetSession = await this.socketEmitterService.setFlowSessionWithAck(socket, session);
-    if (!isSetSession) {
-      return false;
-    }
-
-    // Force go to step if needed (Flow-specific logic)
+    this.socketEmitterService.setFlowSession(socket, session);
     if (forceGoToStep && session.currentStep?.id) {
-      await this.socketEmitterService.forceGoToStepWithAck(
-        socket,
-        session.id,
-        session.currentStep.id,
-      );
+      this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
     }
 
     // Sync condition state efficiently
@@ -211,14 +201,7 @@ export class SocketOperationService {
   ): Promise<boolean> {
     const { trackConditions = [], cleanupContentTypes } = options;
 
-    // Set Checklist session
-    const isSetSession = await this.socketEmitterService.setChecklistSessionWithAck(
-      socket,
-      session,
-    );
-    if (!isSetSession) {
-      return false;
-    }
+    this.socketEmitterService.setChecklistSession(socket, session);
 
     // Sync condition state efficiently
     const conditionChanges = await this.emitConditions(
@@ -257,10 +240,7 @@ export class SocketOperationService {
   ): Promise<boolean> {
     const { trackConditions = [], cleanupContentTypes } = options;
 
-    const isSetSession = await this.socketEmitterService.setBannerSessionWithAck(socket, session);
-    if (!isSetSession) {
-      return false;
-    }
+    this.socketEmitterService.setBannerSession(socket, session);
 
     const conditionChanges = await this.emitConditions(
       socket,
@@ -297,13 +277,7 @@ export class SocketOperationService {
   ): Promise<boolean> {
     const { trackConditions = [], cleanupContentTypes } = options;
 
-    const isSetSession = await this.socketEmitterService.setResourceCenterSessionWithAck(
-      socket,
-      session,
-    );
-    if (!isSetSession) {
-      return false;
-    }
+    this.socketEmitterService.setResourceCenterSession(socket, session);
 
     const conditionChanges = await this.emitConditions(
       socket,

@@ -66,14 +66,23 @@ export class SocketEmitterService {
   // Public API Methods - Content Session Management
   // ============================================================================
 
+  // A session is pushed without waiting for the client's receipt. The receipt
+  // proved only that the socket was open at that moment: the SDK acknowledges
+  // before it processes. A connection that is gone gets the session again
+  // from its own re-evaluation on reconnect (ADR 0018), and socket.io keeps
+  // the order of what it sends on one connection. Not waiting keeps the
+  // client's round trip out of the unit of work that holds the admission
+  // slot and the socket's lock until it ends: an evaluation that pushes six
+  // sessions to a far client paid six round trips in series.
+
   /**
    * Set the flow session
    * @param socket - The socket
    * @param session - The session to set
-   * @returns Promise<boolean> - True if the event was acknowledged by client
+   * @returns boolean - True if the message was handed to the transport
    */
-  async setFlowSessionWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    return await this.emitWithAck(socket, ServerMessageKind.SET_FLOW_SESSION, session);
+  setFlowSession(socket: Socket, session: CustomContentSession): boolean {
+    return this.emit(socket, ServerMessageKind.SET_FLOW_SESSION, session);
   }
 
   /**
@@ -92,23 +101,20 @@ export class SocketEmitterService {
    * Set the checklist session
    * @param socket - The socket
    * @param session - The session to set
-   * @returns Promise<boolean> - True if the event was acknowledged by client
+   * @returns boolean - True if the message was handed to the transport
    */
-  async setChecklistSessionWithAck(
-    socket: Socket,
-    session: CustomContentSession,
-  ): Promise<boolean> {
-    return await this.emitWithAck(socket, ServerMessageKind.SET_CHECKLIST_SESSION, session);
+  setChecklistSession(socket: Socket, session: CustomContentSession): boolean {
+    return this.emit(socket, ServerMessageKind.SET_CHECKLIST_SESSION, session);
   }
 
   /**
    * Set the banner session
    * @param socket - The socket
    * @param session - The session to set
-   * @returns Promise<boolean> - True if the event was acknowledged by client
+   * @returns boolean - True if the message was handed to the transport
    */
-  async setBannerSessionWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    return await this.emitWithAck(socket, ServerMessageKind.SET_BANNER_SESSION, session);
+  setBannerSession(socket: Socket, session: CustomContentSession): boolean {
+    return this.emit(socket, ServerMessageKind.SET_BANNER_SESSION, session);
   }
 
   /**
@@ -139,13 +145,10 @@ export class SocketEmitterService {
    * Set the resource center session
    * @param socket - The socket
    * @param session - The session to set
-   * @returns Promise<boolean> - True if the event was acknowledged by client
+   * @returns boolean - True if the message was handed to the transport
    */
-  async setResourceCenterSessionWithAck(
-    socket: Socket,
-    session: CustomContentSession,
-  ): Promise<boolean> {
-    return await this.emitWithAck(socket, ServerMessageKind.SET_RESOURCE_CENTER_SESSION, session);
+  setResourceCenterSession(socket: Socket, session: CustomContentSession): boolean {
+    return this.emit(socket, ServerMessageKind.SET_RESOURCE_CENTER_SESSION, session);
   }
 
   /**
@@ -164,10 +167,10 @@ export class SocketEmitterService {
    * Add a launcher session
    * @param socket - The socket
    * @param session - The session to add
-   * @returns Promise<boolean> - True if the event was acknowledged by client
+   * @returns boolean - True if the message was handed to the transport
    */
-  async addLauncherWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    return await this.emitWithAck(socket, ServerMessageKind.ADD_LAUNCHER, session);
+  addLauncher(socket: Socket, session: CustomContentSession): boolean {
+    return this.emit(socket, ServerMessageKind.ADD_LAUNCHER, session);
   }
 
   /**
@@ -186,10 +189,10 @@ export class SocketEmitterService {
    * Add a tracker session
    * @param socket - The socket
    * @param session - The session to add
-   * @returns Promise<boolean> - True if the event was acknowledged by client
+   * @returns boolean - True if the message was handed to the transport
    */
-  async addTrackerWithAck(socket: Socket, session: CustomContentSession): Promise<boolean> {
-    return await this.emitWithAck(socket, ServerMessageKind.ADD_TRACKER, session);
+  addTracker(socket: Socket, session: CustomContentSession): boolean {
+    return this.emit(socket, ServerMessageKind.ADD_TRACKER, session);
   }
 
   /**
@@ -209,17 +212,15 @@ export class SocketEmitterService {
   // ============================================================================
 
   /**
-   * Force go to step
+   * Force go to step. Sent after the session it belongs to, on the same
+   * connection, so the client takes it in that order.
    * @param socket - The socket
    * @param sessionId - The session id to force go to step
    * @param stepId - The step id to force go to step
-   * @returns Promise<boolean> - True if the event was acknowledged by client
+   * @returns boolean - True if the message was handed to the transport
    */
-  async forceGoToStepWithAck(socket: Socket, sessionId: string, stepId: string): Promise<boolean> {
-    return await this.emitWithAck(socket, ServerMessageKind.FORCE_GO_TO_STEP, {
-      sessionId,
-      stepId,
-    });
+  forceGoToStep(socket: Socket, sessionId: string, stepId: string): boolean {
+    return this.emit(socket, ServerMessageKind.FORCE_GO_TO_STEP, { sessionId, stepId });
   }
 
   // ============================================================================
