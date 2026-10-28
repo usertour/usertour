@@ -17,7 +17,6 @@ import { DeliveryModule } from '@/modules/delivery/delivery.module';
 import { ContentOrchestratorService } from './core/content-orchestrator.service';
 import { SocketOperationService } from './core/socket-operation.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
-import { SocketParallelService } from './core/socket-parallel.service';
 import { SocketMessageQueueService } from './core/socket-message-queue.service';
 import { AdmissionService } from './core/admission.service';
 import { RoomSyncService } from './core/room-sync.service';
@@ -74,7 +73,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     ContentOrchestratorService,
     SocketOperationService,
     SocketEmitterService,
-    SocketParallelService,
     SocketMessageQueueService,
     AdmissionService,
     RoomSyncService,

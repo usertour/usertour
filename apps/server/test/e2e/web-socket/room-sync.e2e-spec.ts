@@ -13,7 +13,6 @@ import {
 } from '../factories';
 import { teardownProject } from '../gql/_support';
 import {
-  WebSocketClientOptions,
   WebSocketTestApp,
   WebSocketTestClient,
   connectWebSocketClient,
@@ -22,9 +21,9 @@ import {
 
 /**
  * One user, several connections (tabs). What one tab starts or ends shows up
- * on the others, and the tab that sent the message never waits for them: a
- * tab that does not acknowledge costs the sender nothing, although the
- * server's emit to it waits out a two-second timeout.
+ * on the others, and the tab that sent the message never waits for them:
+ * each takes the sync on its own queue, and the server pushes to it without
+ * asking for a receipt.
  */
 describe("WebSocket v2 room sync between a user's connections (e2e)", () => {
   let harness: WebSocketTestApp;
@@ -41,12 +40,11 @@ describe("WebSocket v2 room sync between a user's connections (e2e)", () => {
   const externalUserId = `ws-room-sync-user-${Date.now()}`;
   const clients: WebSocketTestClient[] = [];
 
-  const connect = async (options?: WebSocketClientOptions): Promise<WebSocketTestClient> => {
-    const client = await connectWebSocketClient(
-      harness.baseUrl,
-      { token: environmentToken, externalUserId },
-      options,
-    );
+  const connect = async (): Promise<WebSocketTestClient> => {
+    const client = await connectWebSocketClient(harness.baseUrl, {
+      token: environmentToken,
+      externalUserId,
+    });
     clients.push(client);
     return client;
   };
@@ -168,21 +166,20 @@ describe("WebSocket v2 room sync between a user's connections (e2e)", () => {
     expect(await activeSessionId()).toBeUndefined();
   });
 
-  it('a connection that never acknowledges does not delay the sender', async () => {
-    const silent = await connect({ acknowledge: false });
+  it('pushes to every connection without asking for a receipt', async () => {
+    const third = await connect();
     const setsOnSecond = countOf(second, ServerMessageKind.SET_FLOW_SESSION);
 
-    const startedAt = Date.now();
     expect(await startFlow(first)).toBe(true);
-    const elapsed = Date.now() - startedAt;
-
-    // The emit to the silent connection waits out the server's two-second
-    // timeout on that connection's own queue, never inside the sender's
-    // handler: the sender's acknowledgement arrives well before it.
-    expect(elapsed).toBeLessThan(2000);
-
     await waitForCount(second, ServerMessageKind.SET_FLOW_SESSION, setsOnSecond + 1);
-    await silent.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
+    await third.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
+
+    // A push that waits on the client holds the admission slot and the
+    // socket's lock for a round trip: the sender's own session and the syncs
+    // to the user's other connections all go out without a receipt.
+    for (const client of clients) {
+      expect(client.receiptRequests.map((message) => message.kind)).toEqual([]);
+    }
   });
 
   it('a sync that lands after the user moved on does not write the start step back', async () => {
