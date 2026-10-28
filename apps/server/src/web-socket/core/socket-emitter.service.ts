@@ -36,8 +36,8 @@ export class SocketEmitterService {
   // Client conditions
   // ============================================================================
 
-  trackClientCondition(socket: Socket, condition: TrackCondition): boolean {
-    return this.emit(socket, ServerMessageKind.TRACK_CLIENT_CONDITION, condition);
+  trackClientCondition(socket: Socket, condition: TrackCondition): void {
+    this.emit(socket, ServerMessageKind.TRACK_CLIENT_CONDITION, condition);
   }
 
   trackClientConditions(socket: Socket, conditions: TrackCondition[]): void {
@@ -46,8 +46,8 @@ export class SocketEmitterService {
     }
   }
 
-  untrackClientCondition(socket: Socket, conditionId: string): boolean {
-    return this.emit(socket, ServerMessageKind.UNTRACK_CLIENT_CONDITION, { conditionId });
+  untrackClientCondition(socket: Socket, conditionId: string): void {
+    this.emit(socket, ServerMessageKind.UNTRACK_CLIENT_CONDITION, { conditionId });
   }
 
   untrackClientConditions(socket: Socket, conditions: ClientCondition[]): void {
@@ -60,40 +60,40 @@ export class SocketEmitterService {
   // Content sessions
   // ============================================================================
 
-  setFlowSession(socket: Socket, session: CustomContentSession): boolean {
-    return this.emit(socket, ServerMessageKind.SET_FLOW_SESSION, session);
+  setFlowSession(socket: Socket, session: CustomContentSession): void {
+    this.emit(socket, ServerMessageKind.SET_FLOW_SESSION, session);
   }
 
-  unsetFlowSession(socket: Socket, sessionId: string): boolean {
-    return this.emit(socket, ServerMessageKind.UNSET_FLOW_SESSION, { sessionId });
+  unsetFlowSession(socket: Socket, sessionId: string): void {
+    this.emit(socket, ServerMessageKind.UNSET_FLOW_SESSION, { sessionId });
   }
 
-  setChecklistSession(socket: Socket, session: CustomContentSession): boolean {
-    return this.emit(socket, ServerMessageKind.SET_CHECKLIST_SESSION, session);
+  setChecklistSession(socket: Socket, session: CustomContentSession): void {
+    this.emit(socket, ServerMessageKind.SET_CHECKLIST_SESSION, session);
   }
 
-  unsetChecklistSession(socket: Socket, sessionId: string): boolean {
-    return this.emit(socket, ServerMessageKind.UNSET_CHECKLIST_SESSION, { sessionId });
+  unsetChecklistSession(socket: Socket, sessionId: string): void {
+    this.emit(socket, ServerMessageKind.UNSET_CHECKLIST_SESSION, { sessionId });
   }
 
-  setBannerSession(socket: Socket, session: CustomContentSession): boolean {
-    return this.emit(socket, ServerMessageKind.SET_BANNER_SESSION, session);
+  setBannerSession(socket: Socket, session: CustomContentSession): void {
+    this.emit(socket, ServerMessageKind.SET_BANNER_SESSION, session);
   }
 
-  unsetBannerSession(socket: Socket, sessionId: string): boolean {
-    return this.emit(socket, ServerMessageKind.UNSET_BANNER_SESSION, { sessionId });
+  unsetBannerSession(socket: Socket, sessionId: string): void {
+    this.emit(socket, ServerMessageKind.UNSET_BANNER_SESSION, { sessionId });
   }
 
-  setResourceCenterSession(socket: Socket, session: CustomContentSession): boolean {
-    return this.emit(socket, ServerMessageKind.SET_RESOURCE_CENTER_SESSION, session);
+  setResourceCenterSession(socket: Socket, session: CustomContentSession): void {
+    this.emit(socket, ServerMessageKind.SET_RESOURCE_CENTER_SESSION, session);
   }
 
-  unsetResourceCenterSession(socket: Socket, sessionId: string): boolean {
-    return this.emit(socket, ServerMessageKind.UNSET_RESOURCE_CENTER_SESSION, { sessionId });
+  unsetResourceCenterSession(socket: Socket, sessionId: string): void {
+    this.emit(socket, ServerMessageKind.UNSET_RESOURCE_CENTER_SESSION, { sessionId });
   }
 
-  addLauncher(socket: Socket, session: CustomContentSession): boolean {
-    return this.emit(socket, ServerMessageKind.ADD_LAUNCHER, session);
+  addLauncher(socket: Socket, session: CustomContentSession): void {
+    this.emit(socket, ServerMessageKind.ADD_LAUNCHER, session);
   }
 
   addLaunchers(socket: Socket, sessions: CustomContentSession[]): void {
@@ -102,8 +102,8 @@ export class SocketEmitterService {
     }
   }
 
-  removeLauncher(socket: Socket, contentId: string): boolean {
-    return this.emit(socket, ServerMessageKind.REMOVE_LAUNCHER, { contentId });
+  removeLauncher(socket: Socket, contentId: string): void {
+    this.emit(socket, ServerMessageKind.REMOVE_LAUNCHER, { contentId });
   }
 
   removeLaunchers(socket: Socket, contentIds: string[]): void {
@@ -112,8 +112,8 @@ export class SocketEmitterService {
     }
   }
 
-  addTracker(socket: Socket, session: CustomContentSession): boolean {
-    return this.emit(socket, ServerMessageKind.ADD_TRACKER, session);
+  addTracker(socket: Socket, session: CustomContentSession): void {
+    this.emit(socket, ServerMessageKind.ADD_TRACKER, session);
   }
 
   addTrackers(socket: Socket, sessions: CustomContentSession[]): void {
@@ -122,8 +122,8 @@ export class SocketEmitterService {
     }
   }
 
-  removeTracker(socket: Socket, contentId: string): boolean {
-    return this.emit(socket, ServerMessageKind.REMOVE_TRACKER, { contentId });
+  removeTracker(socket: Socket, contentId: string): void {
+    this.emit(socket, ServerMessageKind.REMOVE_TRACKER, { contentId });
   }
 
   removeTrackers(socket: Socket, contentIds: string[]): void {
@@ -137,20 +137,20 @@ export class SocketEmitterService {
   // ============================================================================
 
   /** Sent after the session it belongs to, on the same connection, so the client takes it in that order. */
-  forceGoToStep(socket: Socket, sessionId: string, stepId: string): boolean {
-    return this.emit(socket, ServerMessageKind.FORCE_GO_TO_STEP, { sessionId, stepId });
+  forceGoToStep(socket: Socket, sessionId: string, stepId: string): void {
+    this.emit(socket, ServerMessageKind.FORCE_GO_TO_STEP, { sessionId, stepId });
   }
 
-  checklistTaskCompleted(socket: Socket, sessionId: string, taskId: string): boolean {
-    return this.emit(socket, ServerMessageKind.CHECKLIST_TASK_COMPLETED, { sessionId, taskId });
+  checklistTaskCompleted(socket: Socket, sessionId: string, taskId: string): void {
+    this.emit(socket, ServerMessageKind.CHECKLIST_TASK_COMPLETED, { sessionId, taskId });
   }
 
   // ============================================================================
   // Condition wait timers
   // ============================================================================
 
-  startConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): boolean {
-    return this.emit(socket, ServerMessageKind.START_CONDITION_WAIT_TIMER, conditionWaitTimer);
+  startConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): void {
+    this.emit(socket, ServerMessageKind.START_CONDITION_WAIT_TIMER, conditionWaitTimer);
   }
 
   startConditionWaitTimers(socket: Socket, waitTimers: ConditionWaitTimer[]): void {
@@ -159,8 +159,8 @@ export class SocketEmitterService {
     }
   }
 
-  cancelConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): boolean {
-    return this.emit(socket, ServerMessageKind.CANCEL_CONDITION_WAIT_TIMER, conditionWaitTimer);
+  cancelConditionWaitTimer(socket: Socket, conditionWaitTimer: ConditionWaitTimer): void {
+    this.emit(socket, ServerMessageKind.CANCEL_CONDITION_WAIT_TIMER, conditionWaitTimer);
   }
 
   cancelConditionWaitTimers(socket: Socket, waitTimers: ConditionWaitTimer[]): void {
@@ -174,19 +174,19 @@ export class SocketEmitterService {
   // ============================================================================
 
   /**
-   * Hands one server message to the connection's transport. True means it
-   * was written; a connection that is not open drops it, as socket.io does.
+   * Hands one server message to the connection's transport. There is no
+   * outcome to report: socket.io's emit returns true whether or not the
+   * connection is open, and drops the packet when it is not.
    */
-  private emit(socket: Socket, kind: ServerMessageKind, payload?: unknown): boolean {
+  private emit(socket: Socket, kind: ServerMessageKind, payload?: unknown): void {
     try {
-      return socket.emit(this.SERVER_MESSAGE_EVENT, {
+      socket.emit(this.SERVER_MESSAGE_EVENT, {
         kind,
         payload,
         messageId: uuidV4(), // Generate a unique message ID for idempotency
       });
     } catch (error) {
       this.logger.error(`Failed to emit ${kind} for socket ${socket.id}:`, error);
-      return false;
     }
   }
 }

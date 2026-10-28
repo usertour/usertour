@@ -63,6 +63,11 @@ export interface WebSocketTestClient {
   socket: ClientSocket;
   /** Every server-message received, in arrival order. */
   serverMessages: ServerMessage[];
+  /**
+   * The server-messages that asked for a receipt. The server pushes without
+   * one, so this stays empty; a push that waits on the client shows up here.
+   */
+  receiptRequests: ServerMessage[];
   /** Send a client-message and resolve with the server's ack value. */
   sendClientMessage: (kind: string, payload?: Record<string, unknown>) => Promise<any>;
   /** Resolve with the first (recorded or future) server-message of `kind`. */
@@ -106,6 +111,7 @@ export function connectWebSocketClient(
     });
 
     const serverMessages: ServerMessage[] = [];
+    const receiptRequests: ServerMessage[] = [];
     const waiters: Array<{ kind: string; resolve: (message: ServerMessage) => void }> = [];
 
     // The server pushes its messages without asking for a receipt, so `ack`
@@ -114,6 +120,7 @@ export function connectWebSocketClient(
     socket.on('server-message', (message: ServerMessage, ack?: (ok: boolean) => void) => {
       serverMessages.push(message);
       if (typeof ack === 'function') {
+        receiptRequests.push(message);
         ack(true);
       }
       for (let index = waiters.length - 1; index >= 0; index -= 1) {
@@ -128,6 +135,7 @@ export function connectWebSocketClient(
       resolve({
         socket,
         serverMessages,
+        receiptRequests,
         sendClientMessage: async (kind, payload = {}) =>
           await socket.timeout(10_000).emitWithAck('client-message', { kind, payload }),
         waitForServerMessage: (kind, timeoutMs = 5_000) => {

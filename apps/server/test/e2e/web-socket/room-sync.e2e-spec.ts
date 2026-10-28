@@ -166,20 +166,20 @@ describe("WebSocket v2 room sync between a user's connections (e2e)", () => {
     expect(await activeSessionId()).toBeUndefined();
   });
 
-  it("the sender does not wait for the user's other connections", async () => {
+  it('pushes to every connection without asking for a receipt', async () => {
     const third = await connect();
     const setsOnSecond = countOf(second, ServerMessageKind.SET_FLOW_SESSION);
 
-    const startedAt = Date.now();
     expect(await startFlow(first)).toBe(true);
-    const elapsed = Date.now() - startedAt;
-
-    // The other connections take the session on their own queues; nothing in
-    // the sender's handler waits for them, or for any receipt from them.
-    expect(elapsed).toBeLessThan(2000);
-
     await waitForCount(second, ServerMessageKind.SET_FLOW_SESSION, setsOnSecond + 1);
     await third.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
+
+    // A push that waits on the client holds the admission slot and the
+    // socket's lock for a round trip: the sender's own session and the syncs
+    // to the user's other connections all go out without a receipt.
+    for (const client of clients) {
+      expect(client.receiptRequests.map((message) => message.kind)).toEqual([]);
+    }
   });
 
   it('a sync that lands after the user moved on does not write the start step back', async () => {

@@ -149,20 +149,20 @@ describe("WebSocket v2 room sync across a cluster's servers (e2e)", () => {
     expect(await activeSessionId()).toBeUndefined();
   });
 
-  it('the sender does not wait for a connection on the other server', async () => {
+  it('pushes across servers without asking for a receipt', async () => {
     const other = await connect(second);
 
-    const startedAt = Date.now();
     const ack = await onFirst.sendClientMessage(ClientMessageKind.START_CONTENT, {
       contentId: flowContentId,
       startReason: 'start_from_manual',
     });
-    const elapsed = Date.now() - startedAt;
     expect(ack).toBe(true);
-
-    // The other server takes the session on that connection's own queue;
-    // nothing in the sender's handler waits for it, or for any receipt.
-    expect(elapsed).toBeLessThan(2000);
     await other.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
+
+    // Neither server waits on a client: the sync that reached the other
+    // server went out without a receipt, as did everything before it.
+    for (const client of clients) {
+      expect(client.receiptRequests.map((message) => message.kind)).toEqual([]);
+    }
   });
 });
