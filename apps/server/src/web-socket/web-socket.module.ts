@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WebSocketGateway } from './web-socket.gateway';
 import { WebSocketService } from './web-socket.service';
 import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
+import { WebSocketTraceInterceptor } from './web-socket-trace.interceptor';
 import { BizModule } from '@/modules/biz/biz.module';
 import { LicenseModule } from '@/modules/license/license.module';
 import { ProjectsModule } from '@/modules/projects/projects.module';
@@ -18,6 +19,7 @@ import { SocketOperationService } from './core/socket-operation.service';
 import { SocketEmitterService } from './core/socket-emitter.service';
 import { SocketParallelService } from './core/socket-parallel.service';
 import { SocketMessageQueueService } from './core/socket-message-queue.service';
+import { AdmissionService } from './core/admission.service';
 import { RoomSyncService } from './core/room-sync.service';
 import { WebSocketMessageValidationPipe } from './v2/web-socket-message-validation.pipe';
 import { SocketDataService } from './core/socket-data.service';
@@ -64,6 +66,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     WebSocketGateway,
     WebSocketService,
     WebSocketPerformanceInterceptor,
+    WebSocketTraceInterceptor,
     WebSocketV2Gateway,
     WebSocketV2Service,
     WebSocketV2Guard,
@@ -73,6 +76,7 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     SocketEmitterService,
     SocketParallelService,
     SocketMessageQueueService,
+    AdmissionService,
     RoomSyncService,
     WebSocketMessageValidationPipe,
     SocketDataService,

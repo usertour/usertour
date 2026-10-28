@@ -5,6 +5,7 @@ import { Namespace, Server, Socket } from 'socket.io';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { DistributedLockService } from '@/modules/delivery/services/distributed-lock.service';
 import { buildSocketLockKey } from '../utils/websocket.util';
+import { AdmissionTimeoutError } from './admission.service';
 import { SocketMessageQueueService } from './socket-message-queue.service';
 
 /** The server-side event that carries a room sync between the servers of a cluster. */
@@ -134,6 +135,11 @@ export class RoomSyncService {
             ),
           )
           .catch((error) => {
+            // Refused at the gate: the job never ran and, like any failed
+            // sync, is not retried. The gate counts its refusals per window.
+            if (error instanceof AdmissionTimeoutError) {
+              return;
+            }
             this.logger.error(
               `Room sync ${message.job.kind} failed for socket ${socket.id}: ${(error as Error).message}`,
             );
