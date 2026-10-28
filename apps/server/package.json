@@ -93,7 +93,7 @@
     "@usertour/types": "workspace:^",
     "ai": "^7.0.16",
     "argon2": "^0.41.1",
-    "axios": "^1.6.2",
+    "axios": "^1.20.0",
     "bcryptjs": "2.4.3",
     "bullmq": "^5.40.5",
     "class-transformer": "0.5.1",
