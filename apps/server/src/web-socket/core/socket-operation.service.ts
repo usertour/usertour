@@ -356,7 +356,7 @@ export class SocketOperationService {
 
     // Process sessions: add new, update changed, remove obsolete (removal is
     // skipped in incremental mode — see HandleBatchSessionsOptions.incremental)
-    const { updatedSessions, removedContentIds } = await this.handleBatchSessions({
+    const { updatedSessions, removedContentIds } = this.handleBatchSessions({
       currentSessions,
       newSessions: sessions,
       socket,
@@ -537,11 +537,9 @@ export class SocketOperationService {
    * Handle batch sessions processing
    * Processes session additions, removals, and preserves existing sessions
    * @param params - Parameters for handling batch sessions
-   * @returns Promise containing updated sessions and removed content IDs
+   * @returns The updated sessions and the removed content IDs
    */
-  private async handleBatchSessions(
-    params: HandleBatchSessionsOptions,
-  ): Promise<HandleBatchSessionsResult> {
+  private handleBatchSessions(params: HandleBatchSessionsOptions): HandleBatchSessionsResult {
     const { currentSessions, newSessions, socket, contentType, incremental = false } = params;
     const {
       newSessions: categorizedNewSessions,
@@ -575,8 +573,11 @@ export class SocketOperationService {
 
     this.emitBatchSessions({ socket, sessionsToAdd: toAdd, contentIdsToRemove, contentType });
 
+    // Incremental mode leaves the sessions absent from the batch in place.
+    const keptSessions = incremental ? removedSessions : [];
+
     return {
-      updatedSessions: [...preservedUnchangedSessions, ...toAdd],
+      updatedSessions: [...preservedUnchangedSessions, ...keptSessions, ...toAdd],
       removedContentIds: contentIdsToRemove,
     };
   }
