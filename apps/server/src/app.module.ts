@@ -110,6 +110,14 @@ import { Logger } from '@nestjs/common';
             level: logLevel,
             transport:
               process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+            // A log platform reads `level` as a word (debug, info, warn,
+            // error); pino writes the number, and a number lands in info.
+            // The pretty transport wants the number, so only the JSON output
+            // gets the word.
+            formatters:
+              process.env.NODE_ENV === 'production'
+                ? { level: (label: string) => ({ level: label }) }
+                : undefined,
           },
         };
       },
