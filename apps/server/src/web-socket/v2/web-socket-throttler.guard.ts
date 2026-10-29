@@ -8,6 +8,7 @@ import {
   ThrottlerStorageService,
 } from '@nestjs/throttler';
 import { Socket } from 'socket.io';
+import { positiveNumberSetting } from '@/modules/common/utils/positive-number-setting.util';
 
 /**
  * The message objects the guard refused, awaiting the handler's `false`. Keyed
@@ -19,32 +20,15 @@ import { Socket } from 'socket.io';
 const refusedMessages = new WeakSet<object>();
 
 /**
- * A positive number from the environment, or the fallback when the setting is
- * unset, blank, not a number, or not positive: a window of zero or a limit of
- * zero has no meaning for a rate limit, and a limit of zero would refuse every
- * message.
- */
-const numberSetting = (raw: unknown, fallback: number): number => {
-  if (raw === undefined || raw === null) {
-    return fallback;
-  }
-  // Number(...) is load-bearing: env values are STRINGS, and the throttler
-  // storage computes `Date.now() + ttl` — string concatenation would push the
-  // expiry out millions of years and the window would never reset.
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-};
-
-/**
  * The gateway's limits, per socket:
  * - short: 30 messages per second (burst protection)
  * - medium: 300 messages per minute (sustained rate)
  *
  * Built here rather than registered through `ThrottlerModule`: that module is
- * global and keeps one options token for the whole application, so a second
- * registration (the v2 REST limiter is the first) does not add a second set
- * of limits — one of the two wins for every guard. The gateway ran under the
- * REST limiter's 1000 per minute that way.
+ * global and keeps one options token for the whole application, so two
+ * registrations do not add up — one wins for every guard. The gateway once
+ * ran under the v2 REST limiter's 1000 per minute that way. Both guards now
+ * build their own options, and nothing registers the module.
  */
 const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOptions => ({
   // Disable HTTP response headers since WebSocket doesn't have HTTP response
@@ -53,13 +37,13 @@ const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOption
   throttlers: [
     {
       name: 'short',
-      ttl: numberSetting(config.get('WS_THROTTLE_SHORT_TTL'), 1000),
-      limit: numberSetting(config.get('WS_THROTTLE_SHORT_LIMIT'), 30),
+      ttl: positiveNumberSetting(config.get('WS_THROTTLE_SHORT_TTL'), 1000),
+      limit: positiveNumberSetting(config.get('WS_THROTTLE_SHORT_LIMIT'), 30),
     },
     {
       name: 'medium',
-      ttl: numberSetting(config.get('WS_THROTTLE_MEDIUM_TTL'), 60000),
-      limit: numberSetting(config.get('WS_THROTTLE_MEDIUM_LIMIT'), 300),
+      ttl: positiveNumberSetting(config.get('WS_THROTTLE_MEDIUM_TTL'), 60000),
+      limit: positiveNumberSetting(config.get('WS_THROTTLE_MEDIUM_LIMIT'), 300),
     },
   ],
 });
@@ -76,7 +60,9 @@ const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOption
  */
 @Injectable()
 export class WebSocketThrottlerGuard extends ThrottlerGuard {
-  private readonly logger = new Logger(WebSocketThrottlerGuard.name);
+  // The base class declares a protected logger of its own; this one names
+  // the guard, so its lines are filed under it.
+  protected readonly logger = new Logger(WebSocketThrottlerGuard.name);
 
   // The base class injects its options and storage by the module's tokens,
   // and a subclass inherits those parameter declarations: each one is named

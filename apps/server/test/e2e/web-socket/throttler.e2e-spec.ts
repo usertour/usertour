@@ -20,8 +20,8 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * The limit is read at boot, so the environment is set before the
  * application starts and restored after: the e2e suites share one process.
  *
- * The application also registers the v2 REST limiter, through the global
- * ThrottlerModule; the gateway's guard must not run under that one.
+ * The v2 REST guard has limits of its own; the gateway's guard must not run
+ * under those.
  */
 describe('WebSocket v2 message rate limit (e2e)', () => {
   const shortLimitSetting = 'WS_THROTTLE_SHORT_LIMIT';
@@ -75,7 +75,7 @@ describe('WebSocket v2 message rate limit (e2e)', () => {
     }
   });
 
-  it('runs under the gateway limits, not the REST limiter registered on the module', () => {
+  it("runs under the gateway limits, not the REST guard's", () => {
     const guard = app.app.get(WebSocketThrottlerGuard);
     const throttlers = (guard as unknown as { throttlers: ThrottlerOptions[] }).throttlers;
     expect(throttlers.map(({ name, limit }) => ({ name, limit }))).toEqual([

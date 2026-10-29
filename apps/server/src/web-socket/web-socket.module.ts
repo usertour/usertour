@@ -36,9 +36,9 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     // The counters of WebSocketThrottlerGuard. The guard itself is applied
     // with @UseGuards on the gateway, which is where Nest builds it; a
     // provider entry would only add a second, idle instance. Its limits are
-    // built by the guard, not registered through ThrottlerModule: that module
-    // is global and holds one options token for the application, which the
-    // v2 REST limiter owns.
+    // built by the guard, as the v2 REST guard builds its own: nothing
+    // registers ThrottlerModule, which is global and holds one options token
+    // for the whole application (see webSocketThrottlerOptions).
     ThrottlerStorageService,
     ContentOrchestratorService,
     SocketOperationService,
