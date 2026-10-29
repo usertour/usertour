@@ -47,7 +47,6 @@
     "@usertour/types": "workspace:^",
     "@usertour/ui": "workspace:^",
     "@usertour/widget": "workspace:^",
-    "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "context": "link:@apollo/client/link/context",
