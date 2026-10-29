@@ -25,10 +25,10 @@ const refusedMessages = new WeakSet<object>();
  * - medium: 300 messages per minute (sustained rate)
  *
  * Built here rather than registered through `ThrottlerModule`: that module is
- * global and keeps one options token for the whole application, so a second
- * registration (the v2 REST limiter is the first) does not add a second set
- * of limits — one of the two wins for every guard. The gateway ran under the
- * REST limiter's 1000 per minute that way.
+ * global and keeps one options token for the whole application, so two
+ * registrations do not add up — one wins for every guard. The gateway once
+ * ran under the v2 REST limiter's 1000 per minute that way. Both guards now
+ * build their own options, and nothing registers the module.
  */
 const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOptions => ({
   // Disable HTTP response headers since WebSocket doesn't have HTTP response

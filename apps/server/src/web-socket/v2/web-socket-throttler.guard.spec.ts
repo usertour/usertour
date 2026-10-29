@@ -51,9 +51,8 @@ describe('WebSocketThrottlerGuard', () => {
     guard = module.get<WebSocketThrottlerGuard>(WebSocketThrottlerGuard);
   });
 
-  // The storage arms one timer per hit for the length of the window (60 s
-  // for the medium limit); closing the module clears them, or they keep the
-  // test process alive for that long after the last test.
+  // Closing the module runs the storage's shutdown hook, which stops its
+  // sweep timer and clears its records.
   afterEach(async () => {
     await module.close();
   });
