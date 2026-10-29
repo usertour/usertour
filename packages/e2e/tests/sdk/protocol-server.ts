@@ -189,12 +189,29 @@ export class ProtocolServer {
     }
   }
 
-  /** Push a server message and resolve with the SDK's acknowledgement. */
+  /**
+   * Push a server message and resolve with the SDK's acknowledgement. The
+   * acknowledgement is a test convenience, a point at which the SDK has
+   * taken the message: the server itself pushes without one, as
+   * `pushWithoutReceipt` does.
+   */
   push(kind: string, payload: unknown, connection: Connection | undefined = this.live().at(-1)) {
     if (!connection) {
       throw new Error('push: no live connection');
     }
     return connection.socket.emitWithAck(SERVER_MESSAGE, { kind, payload });
+  }
+
+  /** Push a server message the way the server does: no acknowledgement asked for. */
+  pushWithoutReceipt(
+    kind: string,
+    payload: unknown,
+    connection: Connection | undefined = this.live().at(-1),
+  ): void {
+    if (!connection) {
+      throw new Error('pushWithoutReceipt: no live connection');
+    }
+    connection.socket.emit(SERVER_MESSAGE, { kind, payload });
   }
 
   /** Wait until the recorded traffic satisfies `predicate`, polling with real time. */

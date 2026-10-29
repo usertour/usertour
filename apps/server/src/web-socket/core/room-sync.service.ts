@@ -42,9 +42,9 @@ export type RoomSyncRunner = (server: Server, socket: Socket, job: RoomSyncJob) 
  * others. A message handler that activated or cancelled a session on its own
  * connection publishes the job; every other connection in the user's room
  * runs it on its own message queue, serialized with its own client messages,
- * on the server it is connected to. The sender returns at once: a slow
- * connection's acknowledgement, a dead connection's emit timeout, or another
- * server that is late to answer, costs only that connection.
+ * on the server it is connected to. The sender returns at once: a busy queue
+ * on another connection, or another server that is late to answer, costs
+ * only that connection.
  *
  * Local connections are queued here directly; the servers of the cluster
  * receive the message through the adapter's server-side event and queue

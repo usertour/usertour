@@ -1,6 +1,14 @@
-import { Injectable, ExecutionContext, Logger } from '@nestjs/common';
-import { ThrottlerGuard, ThrottlerLimitDetail } from '@nestjs/throttler';
+import { Injectable, Inject, ExecutionContext, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
+import {
+  ThrottlerGuard,
+  ThrottlerLimitDetail,
+  ThrottlerModuleOptions,
+  ThrottlerStorageService,
+} from '@nestjs/throttler';
 import { Socket } from 'socket.io';
+import { positiveNumberSetting } from '@/modules/common/utils/positive-number-setting.util';
 
 /**
  * The message objects the guard refused, awaiting the handler's `false`. Keyed
@@ -12,6 +20,35 @@ import { Socket } from 'socket.io';
 const refusedMessages = new WeakSet<object>();
 
 /**
+ * The gateway's limits, per socket:
+ * - short: 30 messages per second (burst protection)
+ * - medium: 300 messages per minute (sustained rate)
+ *
+ * Built here rather than registered through `ThrottlerModule`: that module is
+ * global and keeps one options token for the whole application, so two
+ * registrations do not add up — one wins for every guard. The gateway once
+ * ran under the v2 REST limiter's 1000 per minute that way. Both guards now
+ * build their own options, and nothing registers the module.
+ */
+const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOptions => ({
+  // Disable HTTP response headers since WebSocket doesn't have HTTP response
+  // This prevents "Cannot read properties of undefined (reading 'header')" error
+  setHeaders: false,
+  throttlers: [
+    {
+      name: 'short',
+      ttl: positiveNumberSetting(config.get('WS_THROTTLE_SHORT_TTL'), 1000),
+      limit: positiveNumberSetting(config.get('WS_THROTTLE_SHORT_LIMIT'), 30),
+    },
+    {
+      name: 'medium',
+      ttl: positiveNumberSetting(config.get('WS_THROTTLE_MEDIUM_TTL'), 60000),
+      limit: positiveNumberSetting(config.get('WS_THROTTLE_MEDIUM_LIMIT'), 300),
+    },
+  ],
+});
+
+/**
  * Custom WebSocket throttler guard that uses socket ID as the rate limit key.
  * This ensures rate limiting is applied per WebSocket connection rather than per IP.
  *
@@ -20,13 +57,25 @@ const refusedMessages = new WeakSet<object>();
  * waits for, and the SDK then takes the silence for a network failure and
  * resends the message (ADR 0018 §4). The guard marks the message instead
  * and the handler answers it `false`.
- *
- * Note: ThrottlerModule must be configured with `setHeaders: false` since
- * WebSocket doesn't have HTTP response headers.
  */
 @Injectable()
 export class WebSocketThrottlerGuard extends ThrottlerGuard {
-  private readonly logger = new Logger(WebSocketThrottlerGuard.name);
+  // The base class declares a protected logger of its own; this one names
+  // the guard, so its lines are filed under it.
+  protected readonly logger = new Logger(WebSocketThrottlerGuard.name);
+
+  // The base class injects its options and storage by the module's tokens,
+  // and a subclass inherits those parameter declarations: each one is named
+  // again here so that this constructor's own dependencies are resolved. The
+  // storage is the module's own instance (a provider of WebSocketModule), so
+  // the counters never share a store with the REST limiter.
+  constructor(
+    @Inject(ConfigService) config: ConfigService,
+    @Inject(ThrottlerStorageService) storage: ThrottlerStorageService,
+    reflector: Reflector,
+  ) {
+    super(webSocketThrottlerOptions(config), storage, reflector);
+  }
 
   /** Whether the guard refused this message; clears the mark. */
   static consumeRefusal(message: unknown): boolean {

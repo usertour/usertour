@@ -40,15 +40,11 @@ describe("WebSocket v2 room sync across a cluster's servers (e2e)", () => {
   const externalUserId = `ws-cluster-user-${Date.now()}`;
   const clients: WebSocketTestClient[] = [];
 
-  const connect = async (
-    server: WebSocketTestApp,
-    options?: { acknowledge?: boolean },
-  ): Promise<WebSocketTestClient> => {
-    const client = await connectWebSocketClient(
-      server.baseUrl,
-      { token: environmentToken, externalUserId },
-      options,
-    );
+  const connect = async (server: WebSocketTestApp): Promise<WebSocketTestClient> => {
+    const client = await connectWebSocketClient(server.baseUrl, {
+      token: environmentToken,
+      externalUserId,
+    });
     clients.push(client);
     return client;
   };
@@ -153,20 +149,20 @@ describe("WebSocket v2 room sync across a cluster's servers (e2e)", () => {
     expect(await activeSessionId()).toBeUndefined();
   });
 
-  it('a silent connection on the other server does not delay the sender', async () => {
-    const silent = await connect(second, { acknowledge: false });
+  it('pushes across servers without asking for a receipt', async () => {
+    const other = await connect(second);
 
-    const startedAt = Date.now();
     const ack = await onFirst.sendClientMessage(ClientMessageKind.START_CONTENT, {
       contentId: flowContentId,
       startReason: 'start_from_manual',
     });
-    const elapsed = Date.now() - startedAt;
     expect(ack).toBe(true);
+    await other.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
 
-    // The emit to the silent connection waits out the two-second timeout on
-    // the other server, in that connection's own queue.
-    expect(elapsed).toBeLessThan(2000);
-    await silent.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
+    // Neither server waits on a client: the sync that reached the other
+    // server went out without a receipt, as did everything before it.
+    for (const client of clients) {
+      expect(client.receiptRequests.map((message) => message.kind)).toEqual([]);
+    }
   });
 });
