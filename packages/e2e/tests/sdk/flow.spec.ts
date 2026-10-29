@@ -143,6 +143,22 @@ test.describe('flow sessions', () => {
     expect(protocol.messages('GoToStep')).toHaveLength(0);
   });
 
+  test('a session and a step jump pushed without a receipt are taken, in order', async ({
+    sdk,
+    protocol,
+  }) => {
+    // The server pushes without asking for an acknowledgement: the SDK's
+    // listener gets no callback and must process the message all the same.
+    await start(sdk);
+    protocol.pushWithoutReceipt('SetFlowSession', twoStepFlow('session-1', 'flow-1'));
+    protocol.pushWithoutReceipt('ForceGoToStep', {
+      sessionId: 'session-1',
+      stepId: 'flow-1-step-2',
+    });
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    expect(await sdk.isStarted('flow-1')).toBe(true);
+  });
+
   test('a session pushed with a current step opens on that step', async ({ sdk, protocol }) => {
     await start(sdk);
     const session = twoStepFlow('session-1', 'flow-1');

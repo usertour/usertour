@@ -5,6 +5,7 @@ import { Namespace, Server, Socket } from 'socket.io';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { DistributedLockService } from '@/modules/delivery/services/distributed-lock.service';
 import { buildSocketLockKey } from '../utils/websocket.util';
+import { AdmissionTimeoutError } from './admission.service';
 import { SocketMessageQueueService } from './socket-message-queue.service';
 
 /** The server-side event that carries a room sync between the servers of a cluster. */
@@ -41,9 +42,9 @@ export type RoomSyncRunner = (server: Server, socket: Socket, job: RoomSyncJob) 
  * others. A message handler that activated or cancelled a session on its own
  * connection publishes the job; every other connection in the user's room
  * runs it on its own message queue, serialized with its own client messages,
- * on the server it is connected to. The sender returns at once: a slow
- * connection's acknowledgement, a dead connection's emit timeout, or another
- * server that is late to answer, costs only that connection.
+ * on the server it is connected to. The sender returns at once: a busy queue
+ * on another connection, or another server that is late to answer, costs
+ * only that connection.
  *
  * Local connections are queued here directly; the servers of the cluster
  * receive the message through the adapter's server-side event and queue
@@ -134,6 +135,11 @@ export class RoomSyncService {
             ),
           )
           .catch((error) => {
+            // Refused at the gate: the job never ran and, like any failed
+            // sync, is not retried. The gate counts its refusals per window.
+            if (error instanceof AdmissionTimeoutError) {
+              return;
+            }
             this.logger.error(
               `Room sync ${message.job.kind} failed for socket ${socket.id}: ${(error as Error).message}`,
             );

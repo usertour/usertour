@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { AdmissionService, AdmissionTimeoutError } from './admission.service';
 
 // ============================================================================
 // Socket Message Queue Service
@@ -13,10 +14,15 @@ import { Injectable, Logger } from '@nestjs/common';
  * - New tasks wait for the previous task to complete before executing
  * - This ensures strict ordering for messages from the same socket
  * - Different sockets have independent queues and don't block each other
+ * - Across sockets, a task runs only once the replica's admission gate
+ *   (AdmissionService) has a slot for it, so a burst of connections cannot
+ *   start hundreds of tasks at once
  */
 @Injectable()
 export class SocketMessageQueueService {
   private readonly logger = new Logger(SocketMessageQueueService.name);
+
+  constructor(@Optional() private readonly admission?: AdmissionService) {}
 
   // Map: socketId -> Promise chain
   // Each socket has its own Promise chain for ordered execution
@@ -49,14 +55,43 @@ export class SocketMessageQueueService {
     // failure — its timeout included — propagates as it is: running it a
     // second time while the first run may still be executing would apply
     // a write twice (an `add` doubled, ADR 0017 §5).
-    const run = () => this.withTimeout(task(), timeoutMs, socketId);
+    //
+    // The task's timeout starts when it is admitted, not while it waits for
+    // a slot: queueing under a burst is the gate's job, and a wait it refuses
+    // (AdmissionTimeoutError) never ran the task at all. The timeout bounds
+    // the answer only; the slot stays taken until the task itself settles,
+    // or a slow database would let more tasks run than the gate allows.
+    const run = () => {
+      if (!this.admission) {
+        return this.withTimeout(task(), timeoutMs, socketId);
+      }
+      return new Promise<T>((resolve, reject) => {
+        this.admission
+          .run(
+            () => {
+              const running = task();
+              this.withTimeout(running, timeoutMs, socketId).then(resolve, reject);
+              return running.then(
+                () => undefined,
+                () => undefined,
+              );
+            },
+            this.admission.messageWaitMs,
+            `message on ${socketId}`,
+          )
+          .catch(reject);
+      });
+    };
     const newTask = lastTask
       .then(run, (err) => {
         this.logger.warn(`Previous task failed for socket ${socketId}; continuing:`, err?.message);
         return run();
       })
       .catch((err) => {
-        this.logger.error(`Task execution failed for socket ${socketId}:`, err?.message);
+        // A refusal at the gate is not a failure of the task: it never ran.
+        if (!(err instanceof AdmissionTimeoutError)) {
+          this.logger.error(`Task execution failed for socket ${socketId}:`, err?.message);
+        }
         throw err; // Propagate error to caller
       });
 
@@ -111,14 +146,19 @@ export class SocketMessageQueueService {
     timeoutMs: number,
     socketId: string,
   ): Promise<T> {
-    return Promise.race([
-      promise,
-      new Promise<T>((_, reject) =>
-        setTimeout(
-          () => reject(new Error(`Task timeout after ${timeoutMs}ms for socket ${socketId}`)),
-          timeoutMs,
-        ),
-      ),
-    ]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<T>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`Task timeout after ${timeoutMs}ms for socket ${socketId}`)),
+        timeoutMs,
+      );
+    });
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      // The timer must not outlive the task: left running it keeps the
+      // task's closure alive for its full length on every message.
+      clearTimeout(timer);
+    }
   }
 }
