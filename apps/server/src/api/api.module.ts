@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageService } from '@nestjs/throttler';
 
 import { AnalyticsModule } from '@/modules/analytics/analytics.module';
 import { ApiTokenModule } from '@/modules/api-token/api-token.module';
@@ -64,32 +63,6 @@ import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
  */
 @Module({
   imports: [
-    // v2 REST rate limiting (per credential; see ApiThrottlerGuard). This is
-    // the application's only ThrottlerModule registration: the module is
-    // global and keeps one options token, so a second registration would not
-    // add limits, one of the two would win for every guard. The websocket
-    // gateway builds its own options (WebSocketThrottlerGuard).
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        // The library's headers are name-suffixed (X-RateLimit-Limit-Api) and
-        // useless to standard clients; ApiThrottlerGuard sets the standard,
-        // unsuffixed ones itself.
-        setHeaders: false,
-        throttlers: [
-          {
-            name: 'api',
-            // Number(...) is load-bearing: env values arrive as STRINGS and the
-            // throttler storage computes `Date.now() + ttl` — with a string
-            // that's concatenation, pushing expiry millions of years out (the
-            // window then NEVER resets and quotas become lifetime totals).
-            ttl: Number(config.get('API_THROTTLE_TTL') ?? 60_000),
-            limit: Number(config.get('API_THROTTLE_LIMIT') ?? 1000),
-          },
-        ],
-      }),
-    }),
     ApiTokenModule,
     EventsModule,
     AttributesModule,
@@ -150,7 +123,12 @@ import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
     // controller-scoped OpenAPIExceptionFilter can never see. Non-/v2 traffic
     // keeps the default behavior.
     { provide: APP_FILTER, useClass: V2FallbackExceptionFilter },
-    // Global guard, no-op off /v2 (see ApiThrottlerGuard).
+    // v2 REST rate limiting, per credential: a global guard, no-op off /v2.
+    // The guard builds its limits itself and counts in this module's own
+    // storage instance; nothing registers ThrottlerModule (it is global and
+    // keeps one options token, so a second registration would not add
+    // limits — see apiThrottlerOptions).
+    ThrottlerStorageService,
     { provide: APP_GUARD, useClass: ApiThrottlerGuard },
   ],
   // Exported for the MCP module, which binds these read services as tools.

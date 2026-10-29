@@ -8,6 +8,7 @@ import {
   ThrottlerStorageService,
 } from '@nestjs/throttler';
 import { Socket } from 'socket.io';
+import { positiveNumberSetting } from '@/modules/common/utils/positive-number-setting.util';
 
 /**
  * The message objects the guard refused, awaiting the handler's `false`. Keyed
@@ -17,23 +18,6 @@ import { Socket } from 'socket.io';
  * by the wrong one.
  */
 const refusedMessages = new WeakSet<object>();
-
-/**
- * A positive number from the environment, or the fallback when the setting is
- * unset, blank, not a number, or not positive: a window of zero or a limit of
- * zero has no meaning for a rate limit, and a limit of zero would refuse every
- * message.
- */
-const numberSetting = (raw: unknown, fallback: number): number => {
-  if (raw === undefined || raw === null) {
-    return fallback;
-  }
-  // Number(...) is load-bearing: env values are STRINGS, and the throttler
-  // storage computes `Date.now() + ttl` — string concatenation would push the
-  // expiry out millions of years and the window would never reset.
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-};
 
 /**
  * The gateway's limits, per socket:
@@ -53,13 +37,13 @@ const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOption
   throttlers: [
     {
       name: 'short',
-      ttl: numberSetting(config.get('WS_THROTTLE_SHORT_TTL'), 1000),
-      limit: numberSetting(config.get('WS_THROTTLE_SHORT_LIMIT'), 30),
+      ttl: positiveNumberSetting(config.get('WS_THROTTLE_SHORT_TTL'), 1000),
+      limit: positiveNumberSetting(config.get('WS_THROTTLE_SHORT_LIMIT'), 30),
     },
     {
       name: 'medium',
-      ttl: numberSetting(config.get('WS_THROTTLE_MEDIUM_TTL'), 60000),
-      limit: numberSetting(config.get('WS_THROTTLE_MEDIUM_LIMIT'), 300),
+      ttl: positiveNumberSetting(config.get('WS_THROTTLE_MEDIUM_TTL'), 60000),
+      limit: positiveNumberSetting(config.get('WS_THROTTLE_MEDIUM_LIMIT'), 300),
     },
   ],
 });
@@ -76,7 +60,9 @@ const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOption
  */
 @Injectable()
 export class WebSocketThrottlerGuard extends ThrottlerGuard {
-  private readonly logger = new Logger(WebSocketThrottlerGuard.name);
+  // The base class declares a protected logger of its own; this one names
+  // the guard, so its lines are filed under it.
+  protected readonly logger = new Logger(WebSocketThrottlerGuard.name);
 
   // The base class injects its options and storage by the module's tokens,
   // and a subclass inherits those parameter declarations: each one is named
