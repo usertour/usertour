@@ -191,12 +191,6 @@ const stubSocket = () => {
       pushed.push({ kind: message.kind, payload: message.payload });
       return true;
     }),
-    timeout: () => ({
-      emitWithAck: async (_event: string, message: { kind: string; payload: any }) => {
-        pushed.push({ kind: message.kind, payload: message.payload });
-        return true;
-      },
-    }),
   } as any;
   return { socket, pushed };
 };

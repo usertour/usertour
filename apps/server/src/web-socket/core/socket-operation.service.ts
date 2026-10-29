@@ -9,7 +9,6 @@ import {
 } from '@usertour/types';
 import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { SocketEmitterService } from './socket-emitter.service';
-import { SocketParallelService } from './socket-parallel.service';
 import {
   categorizeClientConditions,
   filterAndPreserveConditions,
@@ -77,13 +76,6 @@ interface EmitBatchSessionsOptions {
   contentType: ContentDataType;
 }
 
-interface EmitBatchSessionsResult {
-  /** Successfully added sessions */
-  addedSessions: CustomContentSession[];
-  /** Successfully removed content IDs */
-  removedContentIds: string[];
-}
-
 interface HandleBatchSessionsOptions {
   /** Current sessions */
   currentSessions: CustomContentSession[];
@@ -136,7 +128,6 @@ export class SocketOperationService {
 
   constructor(
     private readonly socketEmitterService: SocketEmitterService,
-    private readonly socketParallelService: SocketParallelService,
     private readonly socketDataService: SocketDataService,
   ) {}
 
@@ -159,31 +150,18 @@ export class SocketOperationService {
     options: ActivateFlowSessionOptions = {},
   ): Promise<boolean> {
     const { trackConditions = [], forceGoToStep = false, cleanupContentTypes } = options;
-    // Set Flow session
-    const isSetSession = await this.socketEmitterService.setFlowSessionWithAck(socket, session);
-    if (!isSetSession) {
-      return false;
-    }
-
-    // Force go to step if needed (Flow-specific logic)
+    this.socketEmitterService.setFlowSession(socket, session);
     if (forceGoToStep && session.currentStep?.id) {
-      await this.socketEmitterService.forceGoToStepWithAck(
-        socket,
-        session.id,
-        session.currentStep.id,
-      );
+      this.socketEmitterService.forceGoToStep(socket, session.id, session.currentStep.id);
     }
 
     // Sync condition state efficiently
-    const conditionChanges = await this.emitConditions(
+    const conditionChanges = this.emitConditions(
       socket,
       socketData,
       trackConditions,
       cleanupContentTypes,
     );
-    if (!conditionChanges) {
-      return false;
-    }
 
     // Update client data with Flow session and all condition changes
     const updatedSocketData: Partial<SocketData> = {
@@ -211,25 +189,15 @@ export class SocketOperationService {
   ): Promise<boolean> {
     const { trackConditions = [], cleanupContentTypes } = options;
 
-    // Set Checklist session
-    const isSetSession = await this.socketEmitterService.setChecklistSessionWithAck(
-      socket,
-      session,
-    );
-    if (!isSetSession) {
-      return false;
-    }
+    this.socketEmitterService.setChecklistSession(socket, session);
 
     // Sync condition state efficiently
-    const conditionChanges = await this.emitConditions(
+    const conditionChanges = this.emitConditions(
       socket,
       socketData,
       trackConditions,
       cleanupContentTypes,
     );
-    if (!conditionChanges) {
-      return false;
-    }
 
     // Update client data with Checklist session and all condition changes
     const updatedSocketData: Partial<SocketData> = {
@@ -257,20 +225,14 @@ export class SocketOperationService {
   ): Promise<boolean> {
     const { trackConditions = [], cleanupContentTypes } = options;
 
-    const isSetSession = await this.socketEmitterService.setBannerSessionWithAck(socket, session);
-    if (!isSetSession) {
-      return false;
-    }
+    this.socketEmitterService.setBannerSession(socket, session);
 
-    const conditionChanges = await this.emitConditions(
+    const conditionChanges = this.emitConditions(
       socket,
       socketData,
       trackConditions,
       cleanupContentTypes,
     );
-    if (!conditionChanges) {
-      return false;
-    }
 
     const updatedSocketData: Partial<SocketData> = {
       ...conditionChanges,
@@ -297,23 +259,14 @@ export class SocketOperationService {
   ): Promise<boolean> {
     const { trackConditions = [], cleanupContentTypes } = options;
 
-    const isSetSession = await this.socketEmitterService.setResourceCenterSessionWithAck(
-      socket,
-      session,
-    );
-    if (!isSetSession) {
-      return false;
-    }
+    this.socketEmitterService.setResourceCenterSession(socket, session);
 
-    const conditionChanges = await this.emitConditions(
+    const conditionChanges = this.emitConditions(
       socket,
       socketData,
       trackConditions,
       cleanupContentTypes,
     );
-    if (!conditionChanges) {
-      return false;
-    }
 
     const updatedSocketData: Partial<SocketData> = {
       ...conditionChanges,
@@ -341,20 +294,16 @@ export class SocketOperationService {
     const { unsetSession = true, setLastDismissedId = false, trackConditions = [] } = options;
     const contentType = session.content.type;
 
-    // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (unsetSession && !(await this.unsetSocketSession(socket, session))) {
-      return false;
+    if (unsetSession) {
+      this.unsetSocketSession(socket, session);
     }
 
     // Cleanup conditions efficiently
     // const conditionChanges = await this.cleanupConditions(socket, socketData, [contentType]);
 
-    const conditionChanges = await this.emitConditions(socket, socketData, trackConditions, [
+    const conditionChanges = this.emitConditions(socket, socketData, trackConditions, [
       contentType,
     ]);
-    if (!conditionChanges) {
-      return false;
-    }
 
     // Update client data with session clearing and remaining conditions/timers
     // Now simplified as message queue ensures ordered execution
@@ -407,7 +356,7 @@ export class SocketOperationService {
 
     // Process sessions: add new, update changed, remove obsolete (removal is
     // skipped in incremental mode — see HandleBatchSessionsOptions.incremental)
-    const { updatedSessions, removedContentIds } = await this.handleBatchSessions({
+    const { updatedSessions, removedContentIds } = this.handleBatchSessions({
       currentSessions,
       newSessions: sessions,
       socket,
@@ -463,9 +412,8 @@ export class SocketOperationService {
     const contentId = session.content.id;
     const currentSessions = extractSessionsByContentType(socketData, contentType);
 
-    // Send WebSocket messages first if shouldUnsetSession is true, return false if any fails
-    if (unsetSession && !(await this.unsetSocketSession(socket, session))) {
-      return false;
+    if (unsetSession) {
+      this.unsetSocketSession(socket, session);
     }
 
     // Handle client conditions update
@@ -525,20 +473,8 @@ export class SocketOperationService {
     if (newTrackConditions.length === 0) {
       return true;
     }
-    const trackedConditions = await this.socketParallelService.trackClientConditions(
-      socket,
-      newTrackConditions,
-    );
-    const trackedClientConditions = convertToClientConditions(trackedConditions);
-
-    // If not all conditions were tracked, log an error and return false
-    if (trackedConditions.length !== newTrackConditions.length) {
-      this.logger.error(
-        `Failed to track all conditions: ${newTrackConditions.length} conditions to track,
-         ${trackedConditions.length} conditions tracked`,
-      );
-      return false;
-    }
+    this.socketEmitterService.trackClientConditions(socket, newTrackConditions);
+    const trackedClientConditions = convertToClientConditions(newTrackConditions);
 
     const newClientConditions = [...clientConditions, ...trackedClientConditions];
 
@@ -570,24 +506,12 @@ export class SocketOperationService {
         !existingTimers.some((existingTimer) => existingTimer.versionId === waitTimer.versionId),
     );
 
-    const startedTimers = await this.socketParallelService.startConditionWaitTimers(
-      socket,
-      newWaitTimers,
-    );
-
-    // If not all wait timers were started, log an error and return false
-    if (startedTimers.length !== newWaitTimers.length) {
-      this.logger.error(
-        `Failed to start all wait timers: ${newWaitTimers.length} wait timers to start,
-         ${startedTimers.length} wait timers started`,
-      );
-      return false;
-    }
+    this.socketEmitterService.startConditionWaitTimers(socket, newWaitTimers);
 
     return await this.socketDataService.set(
       socket,
       {
-        waitTimers: [...existingTimers, ...startedTimers],
+        waitTimers: [...existingTimers, ...newWaitTimers],
       },
       true,
     );
@@ -602,12 +526,11 @@ export class SocketOperationService {
    * @param socket - The socket
    * @param sessionId - The session id to complete the task for
    * @param taskIds - The task IDs to emit completed events for
-   * @returns string[] - The task IDs that were successfully emitted
    */
-  emitChecklistTasksCompleted(socket: Socket, sessionId: string, taskIds: string[]): string[] {
-    return taskIds.filter((taskId) =>
-      this.socketEmitterService.checklistTaskCompleted(socket, sessionId, taskId),
-    );
+  emitChecklistTasksCompleted(socket: Socket, sessionId: string, taskIds: string[]): void {
+    for (const taskId of taskIds) {
+      this.socketEmitterService.checklistTaskCompleted(socket, sessionId, taskId);
+    }
   }
 
   // ============================================================================
@@ -618,11 +541,9 @@ export class SocketOperationService {
    * Handle batch sessions processing
    * Processes session additions, removals, and preserves existing sessions
    * @param params - Parameters for handling batch sessions
-   * @returns Promise containing updated sessions and removed content IDs
+   * @returns The updated sessions and the removed content IDs
    */
-  private async handleBatchSessions(
-    params: HandleBatchSessionsOptions,
-  ): Promise<HandleBatchSessionsResult> {
+  private handleBatchSessions(params: HandleBatchSessionsOptions): HandleBatchSessionsResult {
     const { currentSessions, newSessions, socket, contentType, incremental = false } = params;
     const {
       newSessions: categorizedNewSessions,
@@ -654,62 +575,38 @@ export class SocketOperationService {
       ? []
       : removedSessions.map((session) => session.content.id);
 
-    const { addedSessions, removedContentIds } = await this.emitBatchSessions({
-      socket,
-      sessionsToAdd: toAdd,
-      contentIdsToRemove,
-      contentType,
-    });
+    this.emitBatchSessions({ socket, sessionsToAdd: toAdd, contentIdsToRemove, contentType });
 
-    const unremovedSessions = removedSessions.filter(
-      (session) => !removedContentIds.includes(session.content.id),
-    );
+    // Incremental mode leaves the sessions absent from the batch in place.
+    const keptSessions = incremental ? removedSessions : [];
 
     return {
-      updatedSessions: [...preservedUnchangedSessions, ...unremovedSessions, ...addedSessions],
-      removedContentIds,
+      updatedSessions: [...preservedUnchangedSessions, ...keptSessions, ...toAdd],
+      removedContentIds: contentIdsToRemove,
     };
   }
 
   /**
-   * Emit batch sessions in parallel based on content type
-   * Handles session additions and removals for multi-instance content types
+   * Push the additions and removals of a multi-instance content type
    * @param params - Parameters for emitting batch sessions
-   * @returns Promise containing added sessions and removed content IDs
    */
-  private async emitBatchSessions(
-    params: EmitBatchSessionsOptions,
-  ): Promise<EmitBatchSessionsResult> {
+  private emitBatchSessions(params: EmitBatchSessionsOptions): void {
     const { socket, sessionsToAdd, contentIdsToRemove, contentType } = params;
-    // Early return if no operations are needed
-    if (sessionsToAdd.length === 0 && contentIdsToRemove.length === 0) {
-      return { addedSessions: [], removedContentIds: [] };
-    }
     switch (contentType) {
-      case ContentDataType.LAUNCHER: {
-        const [addedSessions, removedContentIds] = await Promise.all([
-          this.socketParallelService.addLaunchers(socket, sessionsToAdd),
-          this.socketParallelService.removeLaunchers(socket, contentIdsToRemove),
-        ]);
-        return { addedSessions, removedContentIds };
-      }
-      case ContentDataType.EMBED: {
-        const [addedSessions, removedContentIds] = await Promise.all([
-          this.socketParallelService.addEmbeds(socket, sessionsToAdd),
-          this.socketParallelService.removeEmbeds(socket, contentIdsToRemove),
-        ]);
-        return { addedSessions, removedContentIds };
-      }
-      case ContentDataType.TRACKER: {
-        const [addedSessions, removedContentIds] = await Promise.all([
-          this.socketParallelService.addTrackers(socket, sessionsToAdd),
-          this.socketParallelService.removeTrackers(socket, contentIdsToRemove),
-        ]);
-        return { addedSessions, removedContentIds };
-      }
+      case ContentDataType.LAUNCHER:
+        this.socketEmitterService.addLaunchers(socket, sessionsToAdd);
+        this.socketEmitterService.removeLaunchers(socket, contentIdsToRemove);
+        return;
+      case ContentDataType.EMBED:
+        this.socketEmitterService.addEmbeds(socket, sessionsToAdd);
+        this.socketEmitterService.removeEmbeds(socket, contentIdsToRemove);
+        return;
+      case ContentDataType.TRACKER:
+        this.socketEmitterService.addTrackers(socket, sessionsToAdd);
+        this.socketEmitterService.removeTrackers(socket, contentIdsToRemove);
+        return;
       default:
         this.logger.warn(`Unsupported content type for emitBatchSessions: ${contentType}`);
-        return { addedSessions: [], removedContentIds: [] };
     }
   }
 
@@ -718,44 +615,31 @@ export class SocketOperationService {
   // ============================================================================
 
   /**
-   * Emit unset socket session event with acknowledgment
-   * Supports both singleton (FLOW, CHECKLIST, BANNER) and batch (LAUNCHER) content types
+   * Tell the client to drop a session.
+   * Supports both singleton (FLOW, CHECKLIST, BANNER, RESOURCE_CENTER) and
+   * batch (LAUNCHER, EMBED, TRACKER) content types.
    * @param socket - The socket instance
    * @param session - The session to unset
-   * @returns Promise<boolean> - True if the session was unset and acknowledged by client
    */
-  private async unsetSocketSession(
-    socket: Socket,
-    session: CustomContentSession,
-  ): Promise<boolean> {
+  private unsetSocketSession(socket: Socket, session: CustomContentSession): void {
     const contentType = session.content.type;
     if (contentType === ContentDataType.FLOW) {
-      return await this.socketEmitterService.unsetFlowSessionWithAck(socket, session.id);
+      this.socketEmitterService.unsetFlowSession(socket, session.id);
+    } else if (contentType === ContentDataType.CHECKLIST) {
+      this.socketEmitterService.unsetChecklistSession(socket, session.id);
+    } else if (contentType === ContentDataType.BANNER) {
+      this.socketEmitterService.unsetBannerSession(socket, session.id);
+    } else if (contentType === ContentDataType.RESOURCE_CENTER) {
+      this.socketEmitterService.unsetResourceCenterSession(socket, session.id);
+    } else if (contentType === ContentDataType.LAUNCHER) {
+      this.socketEmitterService.removeLauncher(socket, session.content.id);
+    } else if (contentType === ContentDataType.EMBED) {
+      this.socketEmitterService.removeEmbed(socket, session.content.id);
+    } else if (contentType === ContentDataType.TRACKER) {
+      this.socketEmitterService.removeTracker(socket, session.content.id);
+    } else {
+      this.logger.warn(`Unsupported content type: ${contentType}`);
     }
-    if (contentType === ContentDataType.CHECKLIST) {
-      return await this.socketEmitterService.unsetChecklistSessionWithAck(socket, session.id);
-    }
-    if (contentType === ContentDataType.BANNER) {
-      return await this.socketEmitterService.unsetBannerSessionWithAck(socket, session.id);
-    }
-    if (contentType === ContentDataType.RESOURCE_CENTER) {
-      return await this.socketEmitterService.unsetResourceCenterSessionWithAck(socket, session.id);
-    }
-
-    if (contentType === ContentDataType.LAUNCHER) {
-      return await this.socketEmitterService.removeLauncherWithAck(socket, session.content.id);
-    }
-
-    if (contentType === ContentDataType.EMBED) {
-      return await this.socketEmitterService.removeEmbedWithAck(socket, session.content.id);
-    }
-
-    if (contentType === ContentDataType.TRACKER) {
-      return await this.socketEmitterService.removeTrackerWithAck(socket, session.content.id);
-    }
-
-    this.logger.warn(`Unsupported content type: ${contentType}`);
-    return false;
   }
 
   // ============================================================================
@@ -763,20 +647,20 @@ export class SocketOperationService {
   // ============================================================================
 
   /**
-   * Emit conditions efficiently with parallel operations
-   * Handles condition tracking, untracking, and wait timer management for singleton content types
+   * Push the condition changes a singleton session implies: untrack what it
+   * no longer needs, cancel its wait timers, track its new conditions.
    * @param socket - The socket
    * @param socketData - The socket client data
    * @param trackConditions - New conditions to track
    * @param cleanupContentTypes - Optional array of content types to cleanup client conditions for
-   * @returns Object containing updated conditions and remaining timers
+   * @returns The conditions and timers the socket holds afterwards
    */
-  private async emitConditions(
+  private emitConditions(
     socket: Socket,
     socketData: SocketData,
     trackConditions: TrackCondition[],
     cleanupContentTypes?: ContentDataType[],
-  ): Promise<Pick<SocketData, 'clientConditions' | 'waitTimers'> | null> {
+  ): Pick<SocketData, 'clientConditions' | 'waitTimers'> {
     const { clientConditions = [], waitTimers = [] } = socketData;
     // Filter and preserve client conditions based on content type filter
     const { filteredConditions, preservedConditions: preservedClientConditions } =
@@ -792,16 +676,9 @@ export class SocketOperationService {
       cleanupContentTypes,
     );
 
-    // Execute and validate parallel condition operations
-    const isSuccess = await this.executeParallelConditionOperations(
-      socket,
-      conditionsToUntrack,
-      filteredWaitTimers,
-      conditionsToTrack,
-    );
-    if (!isSuccess) {
-      return null;
-    }
+    this.socketEmitterService.untrackClientConditions(socket, conditionsToUntrack);
+    this.socketEmitterService.cancelConditionWaitTimers(socket, filteredWaitTimers);
+    this.socketEmitterService.trackClientConditions(socket, conditionsToTrack);
 
     const trackedClientConditions = convertToClientConditions(conditionsToTrack);
 
@@ -815,43 +692,6 @@ export class SocketOperationService {
       clientConditions: updatedConditions,
       waitTimers: preservedWaitTimers,
     };
-  }
-
-  /**
-   * Execute and validate parallel condition operations
-   * @param socket - The socket instance
-   * @param conditionsToUntrack - Conditions to untrack
-   * @param waitTimers - Wait timers to cancel
-   * @param conditionsToTrack - Conditions to track
-   * @returns True if all operations completed successfully
-   */
-  private async executeParallelConditionOperations(
-    socket: Socket,
-    conditionsToUntrack: ClientCondition[],
-    waitTimers: ConditionWaitTimer[],
-    conditionsToTrack: TrackCondition[],
-  ): Promise<boolean> {
-    // Execute all condition operations in parallel
-    const [untrackedConditions, cancelledTimers, newConditions] = await Promise.all([
-      this.socketParallelService.untrackClientConditions(socket, conditionsToUntrack),
-      this.socketParallelService.cancelConditionWaitTimers(socket, waitTimers),
-      this.socketParallelService.trackClientConditions(socket, conditionsToTrack),
-    ]);
-
-    // Validate results
-    if (
-      untrackedConditions.length !== conditionsToUntrack.length ||
-      cancelledTimers.length !== waitTimers.length ||
-      newConditions.length !== conditionsToTrack.length
-    ) {
-      this.logger.error(
-        `Failed to execute all condition operations: ${conditionsToUntrack.length} conditions to untrack,
-         ${waitTimers.length} wait timers to cancel, ${conditionsToTrack.length} conditions to track`,
-      );
-      return false;
-    }
-
-    return true;
   }
 
   // ============================================================================
@@ -889,7 +729,7 @@ export class SocketOperationService {
 
     // Cancel tracking for conditions that are no longer needed
     for (const condition of untrackedConditions) {
-      this.socketEmitterService.untrackClientEvent(socket, condition.conditionId);
+      this.socketEmitterService.untrackClientCondition(socket, condition.conditionId);
     }
 
     return {

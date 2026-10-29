@@ -1,7 +1,9 @@
 import { PrismaService } from 'nestjs-prisma';
+import { Socket } from 'socket.io';
 import { ClientMessageKind, ServerMessageKind } from '@usertour/types';
 
 import { initialization } from '@/modules/projects/utils/project-initialization.util';
+import { SocketDataService } from '@/web-socket/core/socket-data.service';
 import {
   buildContent,
   buildEnvironment,
@@ -303,6 +305,19 @@ describe('WebSocket v2 launcher, tracker and timers (e2e)', () => {
       });
       expect(session).not.toBeNull();
     }
+
+    // And both are held on the socket, not only in the database: a start that
+    // dropped the launchers absent from its batch would leave only C there,
+    // and a later dismiss of B, endAll or full evaluation would not find B.
+    const socketData = await harness.app
+      .get(SocketDataService)
+      .get({ id: client.socket.id } as unknown as Socket);
+    const heldContentIds = (socketData?.launcherSessions ?? []).map(
+      (session) => session.content.id,
+    );
+    expect(heldContentIds).toEqual(
+      expect.arrayContaining([launcherBContentId, launcherCContentId]),
+    );
   });
 
   it('TrackTrackerEvent records the tracker target event and dedups within the window', async () => {

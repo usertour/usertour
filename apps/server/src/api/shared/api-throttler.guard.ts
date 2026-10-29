@@ -1,6 +1,12 @@
 import { ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ThrottlerGuard, ThrottlerRequest } from '@nestjs/throttler';
+import { Reflector } from '@nestjs/core';
+import {
+  ThrottlerGuard,
+  ThrottlerModuleOptions,
+  ThrottlerRequest,
+  ThrottlerStorageService,
+} from '@nestjs/throttler';
 import { resolvePlanFeatures } from '@usertour/helpers';
 import { PlanType } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
@@ -10,11 +16,36 @@ import {
   stripTokenPrefix,
 } from '@/modules/api-token/utils/api-token-crypto.util';
 import { RateLimitExceededError } from '@/modules/common/errors/errors';
+import { positiveNumberSetting } from '@/modules/common/utils/positive-number-setting.util';
 
 interface ResolvedThrottle {
   tracker: string;
   limit: number;
 }
+
+/**
+ * The window every bucket counts in, and the limit a request falls back to
+ * when it resolves none (handleRequest swaps in the credential's plan
+ * allowance). Built here rather than registered through `ThrottlerModule`:
+ * that module is global and keeps one options token for the whole
+ * application, so two registrations (the websocket gateway has limits of its
+ * own) do not add up — one wins for every guard, and the gateway once ran
+ * under this limiter's 1000 per minute that way. Nothing registers the
+ * module now.
+ */
+const apiThrottlerOptions = (config: ConfigService): ThrottlerModuleOptions => ({
+  // The library's headers are name-suffixed (X-RateLimit-Limit-Api) and
+  // useless to standard clients; handleRequest sets the standard, unsuffixed
+  // ones itself.
+  setHeaders: false,
+  throttlers: [
+    {
+      name: 'api',
+      ttl: positiveNumberSetting(config.get('API_THROTTLE_TTL'), 60_000),
+      limit: positiveNumberSetting(config.get('API_THROTTLE_LIMIT'), 1000),
+    },
+  ],
+});
 
 /**
  * Rate limiting for the v2 REST surface. Registered as a global guard by
@@ -37,15 +68,23 @@ interface ResolvedThrottle {
  */
 @Injectable()
 export class ApiThrottlerGuard extends ThrottlerGuard {
-  @Inject(PrismaService)
-  private readonly prisma!: PrismaService;
-
-  @Inject(ConfigService)
-  private readonly config!: ConfigService;
-
   /** Valid-credential cache: hashedSecret -> resolved bucket, 60s. */
   private readonly credentialCache = new Map<string, ResolvedThrottle & { expiresAt: number }>();
   private static readonly CACHE_TTL_MS = 60_000;
+
+  // The base class injects its options and storage by the module's tokens,
+  // and a subclass inherits those parameter declarations: each one is named
+  // again here so that this constructor's own dependencies are resolved. The
+  // storage is ApiModule's own instance (a provider there), so the counters
+  // never share a store with the websocket gateway's limiter.
+  constructor(
+    @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(ThrottlerStorageService) storage: ThrottlerStorageService,
+    reflector: Reflector,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+  ) {
+    super(apiThrottlerOptions(config), storage, reflector);
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (context.getType() !== 'http') {
@@ -66,7 +105,7 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
    * credential's plan allowance AND owns the response headers. The library's
    * own headers are name-suffixed (X-RateLimit-Limit-Api, Retry-After-Api) —
    * shapes no client or retry middleware recognizes — so they are disabled in
-   * the module config (setHeaders: false) and the STANDARD ones are set here:
+   * the guard's own options (setHeaders: false) and the STANDARD ones are set here:
    *
    *  - every /v2 response carries X-RateLimit-Limit / -Remaining / -Reset, so
    *    integrators can pace themselves BEFORE hitting the wall (and can see
@@ -128,7 +167,7 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
   private async resolveThrottle(req: Record<string, any>): Promise<ResolvedThrottle> {
     const fallback: ResolvedThrottle = {
       tracker: ApiThrottlerGuard.ipTracker(req),
-      limit: Number(this.config.get('API_THROTTLE_FALLBACK_LIMIT') ?? 100),
+      limit: positiveNumberSetting(this.config.get('API_THROTTLE_FALLBACK_LIMIT'), 100),
     };
 
     const auth = (req.headers as Record<string, string> | undefined)?.authorization;
@@ -175,10 +214,10 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
   private async resolvePlanLimit(projectId: string | undefined): Promise<number> {
     // Self-hosted deployments have no plans: flat, env-configurable limit.
     if (this.config.get('globalConfig.isSelfHostedMode')) {
-      return Number(this.config.get('API_THROTTLE_LIMIT') ?? 1000);
+      return positiveNumberSetting(this.config.get('API_THROTTLE_LIMIT'), 1000);
     }
     if (!projectId) {
-      return Number(this.config.get('API_THROTTLE_FALLBACK_LIMIT') ?? 100);
+      return positiveNumberSetting(this.config.get('API_THROTTLE_FALLBACK_LIMIT'), 100);
     }
     // Same subscription resolution as the environment/team-member limits
     // (projects.service.resolveProjectFeatures) — no subscription = Hobby.
