@@ -11,7 +11,6 @@ import { ProjectsModule } from '@/modules/projects/projects.module';
 import { WebSocketV2Gateway } from './v2/web-socket-v2.gateway';
 import { WebSocketV2Service } from './v2/web-socket-v2.service';
 import { WebSocketV2Guard } from './v2/web-socket-v2.guard';
-import { WebSocketThrottlerGuard } from './v2/web-socket-throttler.guard';
 import { CommonModule } from '@/modules/common/common.module';
 import { DeliveryModule } from '@/modules/delivery/delivery.module';
 import { ContentOrchestratorService } from './core/content-orchestrator.service';
@@ -34,11 +33,12 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     WebSocketV2Gateway,
     WebSocketV2Service,
     WebSocketV2Guard,
-    // The gateway's rate limits (per socket) are built by the guard itself,
-    // not registered through ThrottlerModule: that module is global and holds
-    // one options token for the application, which the v2 REST limiter owns.
-    // The guard's counters live in this module's own storage instance.
-    WebSocketThrottlerGuard,
+    // The counters of WebSocketThrottlerGuard. The guard itself is applied
+    // with @UseGuards on the gateway, which is where Nest builds it; a
+    // provider entry would only add a second, idle instance. Its limits are
+    // built by the guard, not registered through ThrottlerModule: that module
+    // is global and holds one options token for the application, which the
+    // v2 REST limiter owns.
     ThrottlerStorageService,
     ContentOrchestratorService,
     SocketOperationService,

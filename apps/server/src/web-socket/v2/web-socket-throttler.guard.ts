@@ -18,16 +18,21 @@ import { Socket } from 'socket.io';
  */
 const refusedMessages = new WeakSet<object>();
 
-/** A positive number from the environment, or the fallback when unset or blank. */
+/**
+ * A positive number from the environment, or the fallback when the setting is
+ * unset, blank, not a number, or not positive: a window of zero or a limit of
+ * zero has no meaning for a rate limit, and a limit of zero would refuse every
+ * message.
+ */
 const numberSetting = (raw: unknown, fallback: number): number => {
-  if (raw === undefined || raw === null || raw === '') {
+  if (raw === undefined || raw === null) {
     return fallback;
   }
   // Number(...) is load-bearing: env values are STRINGS, and the throttler
   // storage computes `Date.now() + ttl` — string concatenation would push the
   // expiry out millions of years and the window would never reset.
   const parsed = Number(raw);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
 /**
@@ -41,7 +46,7 @@ const numberSetting = (raw: unknown, fallback: number): number => {
  * of limits — one of the two wins for every guard. The gateway ran under the
  * REST limiter's 1000 per minute that way.
  */
-export const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOptions => ({
+const webSocketThrottlerOptions = (config: ConfigService): ThrottlerModuleOptions => ({
   // Disable HTTP response headers since WebSocket doesn't have HTTP response
   // This prevents "Cannot read properties of undefined (reading 'header')" error
   setHeaders: false,
