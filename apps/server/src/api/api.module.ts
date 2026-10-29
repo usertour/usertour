@@ -64,8 +64,11 @@ import { WebhooksModule } from '@/modules/webhooks/webhooks.module';
  */
 @Module({
   imports: [
-    // v2 REST rate limiting (per credential; see ApiThrottlerGuard). Module-
-    // scoped ThrottlerModule — the websocket gateway configures its own.
+    // v2 REST rate limiting (per credential; see ApiThrottlerGuard). This is
+    // the application's only ThrottlerModule registration: the module is
+    // global and keeps one options token, so a second registration would not
+    // add limits, one of the two would win for every guard. The websocket
+    // gateway builds its own options (WebSocketThrottlerGuard).
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
