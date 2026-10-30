@@ -58,8 +58,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      # The build record the action uploads as an artifact is not log-masked
+      # and would carry the registry host with the account id, downloadable
+      # by anyone on a public repository. No record, no summary.
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: 'false'
+          DOCKER_BUILD_SUMMARY: 'false'
         with:
           context: .
           platforms: linux/amd64
@@ -104,17 +110,27 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       # Before the app stack exists there is nothing to deploy onto; the
-      # pushed image is what that stack's first apply starts from.
+      # pushed image is what that stack's first apply starts from. Only a
+      # missing cluster counts as "not yet": a denied, throttled or failed
+      # call fails the job instead of passing as a skipped deploy.
       - name: Look for the service
         id: service
+        env:
+          SERVICE: ${{ env.ECS_CLUSTER }}-${{ matrix.service }}
         run: |
-          status=$(aws ecs describe-services \
-            --cluster "$ECS_CLUSTER" \
-            --services "${ECS_CLUSTER}-${{ matrix.service }}" \
-            --query 'services[0].status' --output text 2>/dev/null || echo MISSING)
+          if output=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" --services "$SERVICE" \
+              --query 'services[0].status' --output text 2>&1); then
+            status=$output
+          elif grep -q ClusterNotFoundException <<<"$output"; then
+            status=MISSING
+          else
+            echo "$output" >&2
+            exit 1
+          fi
           echo "status=$status" >> "$GITHUB_OUTPUT"
           if [ "$status" != "ACTIVE" ]; then
-            echo "Service ${ECS_CLUSTER}-${{ matrix.service }} is not there yet; image pushed, nothing to deploy."
+            echo "::warning::$SERVICE is $status; image pushed, nothing deployed."
           fi
 
       # The family's latest revision carries whatever Terraform registered
