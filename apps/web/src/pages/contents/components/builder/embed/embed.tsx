@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import { EmbedSideBar } from '@/pages/contents/components/builder/embed/sidebar';
 import { EmbedBuilderDetail } from '@/pages/contents/components/builder/embed/embed-detail';
+import { EmbedTarget } from '@/pages/contents/components/builder/embed/embed-target';
 import {
   EmbedOverviewCanvas,
   EmbedStepCanvas,
@@ -17,6 +18,7 @@ export const EmbedBuilder = () => (
     <Routes>
       <Route element={<FlowSidebarLayout />}>
         <Route index element={<EmbedSideBar />} />
+        <Route path="target" element={<EmbedTarget />} />
         <Route path="step/new/:type" element={<EmbedBuilderDetail />} />
         <Route path="step/:stepId" element={<EmbedBuilderDetail />} />
         <Route path="trigger/:stepId" element={<FlowBuilderTrigger />} />
@@ -24,6 +26,7 @@ export const EmbedBuilder = () => (
     </Routes>
     <Routes>
       <Route index element={<EmbedOverviewCanvas />} />
+      <Route path="target" element={<EmbedOverviewCanvas />} />
       <Route path="trigger/:stepId" element={<EmbedOverviewCanvas />} />
       <Route path="step/new/:type" element={<EmbedStepCanvas />} />
       <Route path="step/:stepId" element={<EmbedStepCanvas />} />

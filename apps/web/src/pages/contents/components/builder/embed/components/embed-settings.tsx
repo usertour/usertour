@@ -1,8 +1,10 @@
 'use client';
 
 import { BUILDER_Z } from '@usertour/constants';
+import { ElementIcon, RiSettings3Line } from '@usertour/icons';
+import { cn } from '@usertour/tailwind';
 import { EmbedPlacement } from '@usertour/types';
-import type { ElementSelectorPropsData, EmbedOuterMargin } from '@usertour/types';
+import type { EmbedOuterMargin } from '@usertour/types';
 import { useCallback } from 'react';
 import {
   BooleanField,
@@ -16,8 +18,11 @@ import {
 } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 
-import { ContentPlacementProvider } from '@/pages/contents/components/builder/components/content-placement';
-import { ContentPlacementManual } from '@/pages/contents/components/builder/components/content-placement/content-placement-manual';
+import {
+  ContentError,
+  ContentErrorAnchor,
+  ContentErrorContent,
+} from '@/pages/contents/components/builder/components/content-error';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useEmbedEditor } from '@/pages/contents/components/builder/embed/use-embed-editor';
 
@@ -30,30 +35,11 @@ const PLACEMENT_OPTIONS: { value: EmbedPlacement; i18n: string }[] = [
 ];
 
 // Placement + target element. Every embed placement is element-relative, so
-// the target picker is always shown.
+// the target row is always shown; the target's fields (and the cover
+// placement's z-index) are edited in the target sub-view the row opens.
 export const EmbedPlacementSelect = () => {
-  const isShowError = useBuilderStore((state) => state.isShowError);
-  const currentContent = useBuilderStore((state) => state.currentContent);
   const { data: localData, updateData: updateLocalData } = useEmbedEditor();
   const { t } = useTranslation();
-
-  const handleTargetChange = useCallback(
-    (value: Partial<ElementSelectorPropsData>) => {
-      const nextTarget = { ...localData.targetElement, ...value };
-      let nextType = nextTarget.type;
-      if (!nextType) {
-        if (value.customSelector) {
-          nextType = 'manual';
-        } else if (value.selectors) {
-          nextType = 'auto';
-        }
-      }
-      updateLocalData({
-        targetElement: nextType ? { ...nextTarget, type: nextType } : nextTarget,
-      });
-    },
-    [localData.targetElement, updateLocalData],
-  );
 
   return (
     <FieldSection
@@ -71,46 +57,54 @@ export const EmbedPlacementSelect = () => {
         className="w-full bg-surface dark:bg-surface-raised/50 shadow-none"
         contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
-      <ContentPlacementProvider
-        isShowError={isShowError}
-        target={localData.targetElement}
-        onTargetChange={handleTargetChange}
-        buildUrl={currentContent?.buildUrl}
-        subTitle={t('contentBuilder.embed.targetElementSubtitle')}
-      >
-        <SurfaceCard className="flex flex-col space-y-6 mt-2">
-          <ContentPlacementManual />
-        </SurfaceCard>
-      </ContentPlacementProvider>
+      <EmbedTargetRow />
     </FieldSection>
   );
 };
 
 EmbedPlacementSelect.displayName = 'EmbedPlacementSelect';
 
-export const EmbedZIndex = () => {
-  const { data: localData, updateData: updateLocalData } = useEmbedEditor();
+// One row that names the target and opens the sub-view. The target is
+// required for every placement, so the row carries what the field would:
+// the current selector (or the element text), "Not set" otherwise, and the
+// error popover when a validation pass finds it missing.
+const EmbedTargetRow = () => {
+  const isShowError = useBuilderStore((state) => state.isShowError);
+  const { data: localData, gotoTarget } = useEmbedEditor();
   const { t } = useTranslation();
 
+  const target = localData.targetElement;
+  const summary = target?.customSelector || target?.content;
+  const showError = isShowError && !target?.customSelector;
+
   return (
-    <FieldSection title={t('contentBuilder.embed.zIndex')}>
-      <Input
-        variant="compact-muted"
-        className="bg-surface dark:bg-surface-raised/50 shadow-none"
-        type="number"
-        min={0}
-        value={localData.zIndex ?? ''}
-        placeholder={t('contentBuilder.common.default')}
-        onChange={(event) => {
-          const parsed = Number.parseInt(event.target.value, 10);
-          updateLocalData({ zIndex: Number.isNaN(parsed) ? undefined : Math.max(0, parsed) });
-        }}
-      />
-    </FieldSection>
+    <ContentError open={showError}>
+      <ContentErrorAnchor>
+        <SurfaceCard
+          onClick={gotoTarget}
+          className={cn(
+            'flex cursor-pointer flex-row items-center justify-between gap-2',
+            showError && 'ring-1 ring-destructive',
+          )}
+        >
+          <div className="flex min-w-0 flex-row items-center gap-1.5">
+            <ElementIcon className="h-4 w-4 shrink-0" />
+            <span className="shrink-0 text-sm">{t('contentBuilder.embed.target')}</span>
+            <span className="truncate text-sm text-muted-foreground">
+              {summary || t('contentBuilder.embed.targetNotSet')}
+            </span>
+          </div>
+          <RiSettings3Line className="h-4 w-4 shrink-0 opacity-70" />
+        </SurfaceCard>
+      </ContentErrorAnchor>
+      <ContentErrorContent style={{ zIndex: BUILDER_Z.popover }}>
+        {t('contentBuilder.shared.cssSelectorRequired')}
+      </ContentErrorContent>
+    </ContentError>
   );
 };
 
-EmbedZIndex.displayName = 'EmbedZIndex';
+EmbedTargetRow.displayName = 'EmbedTargetRow';
 
 const defaultMargin: EmbedOuterMargin = { top: 0, right: 0, bottom: 0, left: 0 };
 

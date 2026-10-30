@@ -10,7 +10,21 @@ const normalizeEmbedData = (raw: EmbedData | undefined): EmbedData => ({
   ...(raw ?? {}),
 });
 
-export const embedTypeConfig: BuilderTypeConfig<EmbedData> = {
+// The target sub-view edits a draft of the shell's target element and, for
+// the cover placement, its z-index, and writes both back on Save, as the
+// launcher's target sub-view does. The draft sits in the shared per-type UI
+// slot so the sub-view's header, body and footer read the same one.
+export interface EmbedTargetDraft {
+  targetElement: EmbedData['targetElement'];
+  zIndex: EmbedData['zIndex'];
+}
+
+export interface EmbedUIState {
+  target: EmbedTargetDraft | undefined;
+}
+
+export const embedTypeConfig: BuilderTypeConfig<EmbedData, EmbedUIState> = {
   defaultData: DEFAULT_EMBED_DATA,
   normalize: normalizeEmbedData,
+  defaultUIState: { target: undefined },
 };

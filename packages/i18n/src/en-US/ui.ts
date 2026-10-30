@@ -4200,9 +4200,13 @@ const translations = {
         coverElement: 'Cover element',
       },
       selectPlacement: 'Select placement',
-      targetElementSubtitle: 'Show embed at this element',
+      target: 'Target',
+      targetNotSet: 'Not set',
+      targetSettings: 'Target settings',
       targetElement: 'Target element',
       zIndex: 'Z-index',
+      zIndexTooltip:
+        'Stacking order of the cover above the host page. Leave empty for the default.',
       layout: 'Layout',
       maxContentWidth: 'Max content width',
       maxContentWidthTooltip:

@@ -13,11 +13,10 @@ import {
   EmbedLayout,
   EmbedPlacementSelect,
   EmbedSettings,
-  EmbedZIndex,
 } from '@/pages/contents/components/builder/embed/components/embed-settings';
 
-// Overview content: theme, the shell (placement / target / z-index / layout /
-// dismiss) and the step list. Rendered into the persistent panel layout.
+// Overview content: theme, the shell (placement / target / layout / dismiss)
+// and the step list. Rendered into the persistent panel layout.
 export const EmbedSideBar = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);
   const currentVersion = useBuilderStore((state) => state.currentVersion);
@@ -36,7 +35,6 @@ export const EmbedSideBar = () => {
           <div className="flex flex-col gap-4 p-3">
             <SidebarTheme />
             <EmbedPlacementSelect />
-            <EmbedZIndex />
             <EmbedLayout />
             <EmbedSettings />
             {currentVersion?.steps && currentVersion.steps.length > 0 && (
