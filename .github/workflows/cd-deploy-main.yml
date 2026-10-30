@@ -1,0 +1,40 @@
+name: CD deploy main
+
+# Every push to main asks the infrastructure repository to deploy it. The
+# build and the deploy live there; this repository only starts them.
+# Inert until the repository variable DEPLOY_ENABLED is "true". The
+# GitHub App referenced below is installed on the infrastructure
+# repository alone, with permission to run its workflows and nothing else.
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    name: Trigger the deploy
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Mint a token for the infrastructure repository
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.DEPLOY_DISPATCHER_CLIENT_ID }}
+          private-key: ${{ secrets.DEPLOY_DISPATCHER_PRIVATE_KEY }}
+          owner: usertour
+          repositories: usertour-infra
+          permission-actions: write
+
+      # No commit is passed: the deploy workflow builds the head of this
+      # repository's main, so this token can only ask for main to be deployed.
+      - name: Run the deploy workflow
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh workflow run deploy.yml --repo usertour/usertour-infra --ref main
