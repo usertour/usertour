@@ -1,7 +1,15 @@
 'use client';
 
-import { CardContent, CardFooter, CardHeader, CardTitle, ScrollArea } from '@usertour/ui';
+import {
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  FieldSection,
+  ScrollArea,
+} from '@usertour/ui';
 import { StepContentType } from '@usertour/types';
+import { useTranslation } from 'react-i18next';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
 import { useSidebarSave } from '@/pages/contents/components/builder/hooks/use-sidebar-save';
 import { SidebarContents } from '@/pages/contents/components/builder/flow/sidebar-contents';
@@ -15,11 +23,14 @@ import {
   EmbedSettings,
 } from '@/pages/contents/components/builder/embed/components/embed-settings';
 
-// Overview content: theme, the shell (placement / target / layout / dismiss)
-// and the step list. Rendered into the persistent panel layout.
+// Overview content, in the checklist sidebar's order: theme; placement, the
+// shell's identity, kept first so the required target's row stays in view;
+// the steps, where the work happens; then the rest of the shell (layout /
+// dismiss), set once. Rendered into the persistent panel layout.
 export const EmbedSideBar = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);
   const currentVersion = useBuilderStore((state) => state.currentVersion);
+  const { t } = useTranslation();
 
   const handleSave = useSidebarSave();
 
@@ -35,14 +46,16 @@ export const EmbedSideBar = () => {
           <div className="flex flex-col gap-4 p-3">
             <SidebarTheme />
             <EmbedPlacementSelect />
+            <FieldSection title={t('contentBuilder.embed.steps')}>
+              {currentVersion?.steps && currentVersion.steps.length > 0 && (
+                <div className="flex flex-col gap-0.5">
+                  <SidebarContents />
+                </div>
+              )}
+              <SidebarCreate defaultType={StepContentType.INLINE} />
+            </FieldSection>
             <EmbedLayout />
             <EmbedSettings />
-            {currentVersion?.steps && currentVersion.steps.length > 0 && (
-              <div className="flex flex-col gap-0.5">
-                <SidebarContents />
-              </div>
-            )}
-            <SidebarCreate defaultType={StepContentType.INLINE} />
           </div>
         </ScrollArea>
       </CardContent>

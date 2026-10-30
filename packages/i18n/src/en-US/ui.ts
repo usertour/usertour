@@ -4200,6 +4200,7 @@ const translations = {
         coverElement: 'Cover element',
       },
       selectPlacement: 'Select placement',
+      steps: 'Steps',
       target: 'Target',
       targetNotSet: 'Not set',
       targetSettings: 'Target settings',

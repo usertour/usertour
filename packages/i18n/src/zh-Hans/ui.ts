@@ -4017,6 +4017,7 @@ const translations = {
         coverElement: '覆盖元素',
       },
       selectPlacement: '选择位置',
+      steps: '步骤',
       target: '目标',
       targetNotSet: '未设置',
       targetSettings: '目标设置',
