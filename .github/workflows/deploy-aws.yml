@@ -1,11 +1,12 @@
 name: Deploy to AWS
 
-# Builds main with the same Dockerfile as the published image and rolls the
-# two ECS services onto it. The workflow is inert until the repository
-# variable AWS_DEPLOY_ENABLED is "true"; the role it assumes is the
-# AWS_DEPLOY_ROLE_ARN secret. A manual dispatch redeploys the current main,
-# which is also how a task-definition change registered by Terraform
-# reaches the services.
+# Every push to main asks the private infrastructure repository to build
+# and deploy it. The build and the deploy themselves live there, so this
+# public repository carries no deploy logic and its logs show none. Inert
+# until the repository variable AWS_DEPLOY_ENABLED is "true". The GitHub
+# App whose id and key are referenced below is installed on the
+# infrastructure repository only, with permission to run its workflows and
+# nothing else.
 
 on:
   push:
@@ -13,160 +14,29 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
-concurrency:
-  group: deploy-aws
-  cancel-in-progress: false
-
-env:
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY: usertour
-  ECS_CLUSTER: usertour-prod
-
 jobs:
-  build:
-    name: Build and push image
+  dispatch:
+    name: Trigger the deploy
     if: ${{ vars.AWS_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-    outputs:
-      tag: ${{ steps.tag.outputs.tag }}
+    timeout-minutes: 3
 
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v7
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
+      - name: Mint a token for the infrastructure repository
+        id: app-token
+        uses: actions/create-github-app-token@v3
         with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-          mask-aws-account-id: true
+          client-id: ${{ vars.AWS_DEPLOY_DISPATCHER_CLIENT_ID }}
+          private-key: ${{ secrets.AWS_DEPLOY_DISPATCHER_PRIVATE_KEY }}
+          owner: usertour
+          repositories: usertour-infra
+          permission-actions: write
 
-      - name: Log in to Amazon ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      # The tag alone crosses the job boundary: an output that contains the
-      # masked account id would be dropped.
-      - name: Name the build
-        id: tag
-        run: echo "tag=sha-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      # The build record the action uploads as an artifact is not log-masked
-      # and would carry the registry host with the account id, downloadable
-      # by anyone on a public repository. No record, no summary.
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v7
+      # The deploy workflow builds the head of this repository's main; no
+      # commit is passed, so this token can only ask for main to be deployed.
+      - name: Run the deploy workflow
         env:
-          DOCKER_BUILD_RECORD_UPLOAD: 'false'
-          DOCKER_BUILD_SUMMARY: 'false'
-        with:
-          context: .
-          platforms: linux/amd64
-          push: true
-          tags: |
-            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.tag.outputs.tag }}
-            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:main
-          labels: |
-            org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Notify team on failure
-        if: ${{ failure() }}
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: ${{ secrets.BUILD_NOTIFICATION_URL }}
-          method: 'POST'
-          customHeaders: '{"Content-Type": "application/json"}'
-          data: '{"msg_type": "text","text": {"content": "Usertour AWS image build failed"}}'
-
-  deploy:
-    name: Deploy ${{ matrix.service }}
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [api, web]
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-          mask-aws-account-id: true
-
-      - name: Log in to Amazon ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      # Before the app stack exists there is nothing to deploy onto; the
-      # pushed image is what that stack's first apply starts from. Only a
-      # missing cluster counts as "not yet": a denied, throttled or failed
-      # call fails the job instead of passing as a skipped deploy.
-      - name: Look for the service
-        id: service
-        env:
-          SERVICE: ${{ env.ECS_CLUSTER }}-${{ matrix.service }}
-        run: |
-          if output=$(aws ecs describe-services \
-              --cluster "$ECS_CLUSTER" --services "$SERVICE" \
-              --query 'services[0].status' --output text 2>&1); then
-            status=$output
-          elif grep -q ClusterNotFoundException <<<"$output"; then
-            status=MISSING
-          else
-            echo "$output" >&2
-            exit 1
-          fi
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          if [ "$status" != "ACTIVE" ]; then
-            echo "::warning::$SERVICE is $status; image pushed, nothing deployed."
-          fi
-
-      # The family's latest revision carries whatever Terraform registered
-      # last (environment, secrets, sizing); only the image changes here.
-      - name: Fetch the current task definition
-        if: ${{ steps.service.outputs.status == 'ACTIVE' }}
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition "${ECS_CLUSTER}-${{ matrix.service }}" \
-            --query taskDefinition > task-definition.json
-
-      - name: Point it at the new image
-        if: ${{ steps.service.outputs.status == 'ACTIVE' }}
-        id: render
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          container-name: app
-          image: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ needs.build.outputs.tag }}
-
-      # The service's circuit breaker rolls a failing revision back on its
-      # own; this step fails with it instead of reporting a green deploy.
-      - name: Deploy
-        if: ${{ steps.service.outputs.status == 'ACTIVE' }}
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.render.outputs.task-definition }}
-          service: ${{ env.ECS_CLUSTER }}-${{ matrix.service }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
-
-      - name: Notify team on failure
-        if: ${{ failure() }}
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: ${{ secrets.BUILD_NOTIFICATION_URL }}
-          method: 'POST'
-          customHeaders: '{"Content-Type": "application/json"}'
-          data: '{"msg_type": "text","text": {"content": "Usertour AWS deploy failed: ${{ matrix.service }}"}}'
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh workflow run deploy.yml --repo usertour/usertour-infra --ref main
