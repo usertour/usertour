@@ -103,15 +103,31 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Before the app stack exists there is nothing to deploy onto; the
+      # pushed image is what that stack's first apply starts from.
+      - name: Look for the service
+        id: service
+        run: |
+          status=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "${ECS_CLUSTER}-${{ matrix.service }}" \
+            --query 'services[0].status' --output text 2>/dev/null || echo MISSING)
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" != "ACTIVE" ]; then
+            echo "Service ${ECS_CLUSTER}-${{ matrix.service }} is not there yet; image pushed, nothing to deploy."
+          fi
+
       # The family's latest revision carries whatever Terraform registered
       # last (environment, secrets, sizing); only the image changes here.
       - name: Fetch the current task definition
+        if: ${{ steps.service.outputs.status == 'ACTIVE' }}
         run: |
           aws ecs describe-task-definition \
             --task-definition "${ECS_CLUSTER}-${{ matrix.service }}" \
             --query taskDefinition > task-definition.json
 
       - name: Point it at the new image
+        if: ${{ steps.service.outputs.status == 'ACTIVE' }}
         id: render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -122,6 +138,7 @@ jobs:
       # The service's circuit breaker rolls a failing revision back on its
       # own; this step fails with it instead of reporting a green deploy.
       - name: Deploy
+        if: ${{ steps.service.outputs.status == 'ACTIVE' }}
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render.outputs.task-definition }}
