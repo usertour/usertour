@@ -307,6 +307,49 @@ export const bannerAnalytics = z.object({
   byDay: dailySeries(bannerCounts, firstTouchSeriesNote),
 });
 
+/** embed byDay: seen is first-touch, clicks are increments. */
+const embedSeriesNote =
+  'Per-day rows: uniqueSeen is FIRST-TOUCH (the users whose first embed session started that ' +
+  'day — a user appears on one day only, rows sum to the headline); uniqueClickers and ' +
+  'totalClicks are per-day increments (a user clicking on several days appears on each).';
+
+const embedCounts = {
+  uniqueSeen: int().describe(
+    'Distinct users reached by the embed in the range — first-touch, counted on the day of ' +
+      'their first session. Impressions are not counted: a persistent inline card is seen on ' +
+      'every page load, so "views" would be page views.',
+  ),
+  uniqueClickers: int().describe('Distinct users who pressed any button in the embed.'),
+  totalClicks: int().describe('Button presses (repeats included).'),
+};
+
+/** Per-step row of an embed: the reach funnel across its steps. */
+export const embedStepAnalytics = z.object({
+  name: z.string(),
+  cvid: z.string(),
+  stepIndex: int(),
+  uniqueViews: int().describe('Distinct users who saw this step.'),
+});
+
+/** Per-button row of an embed, keyed by the button's stable cvid within its step. */
+export const embedButtonAnalytics = z.object({
+  name: z.string().describe('The button text on the published version — a label, not a key.'),
+  cvid: z.string().describe("The button's stable identity across edits and translations."),
+  stepCvid: z.string().describe('The step the button lives on.'),
+  uniqueClicks: int().describe('Distinct users who pressed this button.'),
+  totalClicks: int().describe('Presses of this button (repeats included).'),
+});
+
+export const embedAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('embed'),
+  ...embedCounts,
+  uniqueDismissals: int().describe('Distinct users who dismissed the embed.'),
+  byDay: dailySeries(embedCounts, embedSeriesNote),
+  steps: z.array(embedStepAnalytics),
+  buttons: z.array(embedButtonAnalytics),
+});
+
 export const resourceCenterAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('resource-center'),
@@ -334,6 +377,7 @@ export const contentAnalytics = z.discriminatedUnion('contentType', [
   checklistAnalytics,
   launcherAnalytics,
   bannerAnalytics,
+  embedAnalytics,
   resourceCenterAnalytics,
   trackerAnalytics,
   announcementAnalytics,
@@ -346,6 +390,7 @@ export class FlowAnalyticsDto extends createZodDto(flowAnalytics) {}
 export class ChecklistAnalyticsDto extends createZodDto(checklistAnalytics) {}
 export class LauncherAnalyticsDto extends createZodDto(launcherAnalytics) {}
 export class BannerAnalyticsDto extends createZodDto(bannerAnalytics) {}
+export class EmbedAnalyticsDto extends createZodDto(embedAnalytics) {}
 export class ResourceCenterAnalyticsDto extends createZodDto(resourceCenterAnalytics) {}
 export class TrackerAnalyticsDto extends createZodDto(trackerAnalytics) {}
 export class AnnouncementAnalyticsDto extends createZodDto(announcementAnalytics) {}

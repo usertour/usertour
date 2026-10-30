@@ -27,6 +27,7 @@ import {
   representationAnnouncement,
   representationBanner,
   representationChecklist,
+  representationEmbed,
   representationLauncher,
   representationTracker,
 } from '@/api/content-representation/version-data.schema';
@@ -221,6 +222,7 @@ const contentSchemaType = z.enum([
   'checklist',
   'launcher',
   'banner',
+  'embed',
   'tracker',
   'resource-center',
   'announcement',
@@ -293,7 +295,8 @@ export function buildReadTools(): McpTool[] {
       description:
         'Return the JSON Schema for the body you write to `update_content_version` for a content ' +
         'type: `flow` → the `steps` array item; checklist / launcher / banner / tracker / ' +
-        'announcement / resource-center → the `data` object. The `data` arg is polymorphic so its ' +
+        'announcement / resource-center → the `data` object; `embed` → both (`data` is its shell, ' +
+        '`steps` its steps). The `data` arg is polymorphic so its ' +
         'schema is NOT on the tool itself — fetch it here before authoring a non-flow type. ' +
         'Authoring SEVERAL types? Pass an array — the shared vocabulary (conditions / actions / ' +
         'blocks, ~90% of each schema) is then emitted once in `$defs` instead of once per call. ' +
@@ -330,8 +333,23 @@ export function buildReadTools(): McpTool[] {
           [ContentDataType.TRACKER]: representationTracker,
           [ContentDataType.RESOURCE_CENTER]: representationResourceCenter,
           [ContentDataType.ANNOUNCEMENT]: representationAnnouncement,
+          // An embed writes two fields: the shell (`data`) and its steps (`steps`).
+          [ContentDataType.EMBED]: z.object({
+            data: representationEmbed,
+            steps: z
+              .array(representationStepInput)
+              .describe('The embed steps — step kinds `inline` / `hidden` only.'),
+          }),
         };
-        const bodyFor = (t: string) => (t === (ContentDataType.FLOW as string) ? 'steps' : 'data');
+        const bodyFor = (t: string) => {
+          if (t === (ContentDataType.FLOW as string)) {
+            return 'steps';
+          }
+          if (t === (ContentDataType.EMBED as string)) {
+            return 'data + steps';
+          }
+          return 'data';
+        };
         if (types.length === 1) {
           const type = types[0];
           return {
@@ -369,7 +387,7 @@ export function buildReadTools(): McpTool[] {
       title: 'List content',
       capability: Capability.ContentRead,
       description:
-        'List Usertour content (flow, checklist, launcher, banner, tracker, resource-center, ' +
+        'List Usertour content (flow, checklist, launcher, banner, embed, tracker, resource-center, ' +
         'announcement) in the project. Filter by `name`, `type`, `published`, or a created-at ' +
         'range; `deleted: true` lists soft-deleted content instead (restorable via ' +
         '`restore_content`). Returns `{ items, nextCursor }`; pass `nextCursor` back as `cursor` ' +
@@ -484,8 +502,8 @@ export function buildReadTools(): McpTool[] {
         'single_session / hidden / active_session / target (announcements get their own set: ' +
         'scheduled / rc_reachability / start_rules-as-audience-filter / seen). Gates appear ' +
         'CONDITIONALLY — only the ones that apply to this content type and state (e.g. ' +
-        'active_session only when a session is currently live; target only for launcher/tooltip ' +
-        'render anchors, always status unknown since the server cannot see your DOM) — so absent ' +
+        'active_session only when a session is currently live; target only for launcher / embed / ' +
+        'tooltip render anchors, always status unknown since the server cannot see your DOM) — so absent ' +
         'gates are normal, not missing checks. Each present gate is evaluated by the SAME ' +
         'runtime function the websocket uses, plus ' +
         '`blockedBy` (the failing gates) and a one-line `summary`. For the two complex gates it ' +
@@ -730,9 +748,11 @@ export function buildReadTools(): McpTool[] {
           }
         }
 
-        // Render anchors the content draws against (launcher `data.target`, flow tooltip steps'
-        // `target`). The server can't verify the element exists, so diagnose surfaces them as an
-        // `unknown` gate — a typo'd selector otherwise passes every gate yet renders nothing.
+        // Render anchors the content draws against (launcher `data.target`, the embed shell's
+        // `data.target` — stored as `targetElement`, decompiled to the same `target` shape —
+        // and flow tooltip steps' `target`). The server can't verify the element exists, so
+        // diagnose surfaces them as an `unknown` gate — a typo'd selector otherwise passes
+        // every gate yet renders nothing.
         const renderTargets: string[] = [];
         if (facts.published && facts.publishedVersionId) {
           const version = (await ctx.services.contentVersions
@@ -1785,7 +1805,7 @@ export function buildReadTools(): McpTool[] {
           .string()
           .optional()
           .describe(
-            'Filter to one content kind: flow, checklist, launcher, banner, tracker, ' +
+            'Filter to one content kind: flow, checklist, launcher, banner, embed, tracker, ' +
               'resource-center, or announcement.',
           ),
         expand: z

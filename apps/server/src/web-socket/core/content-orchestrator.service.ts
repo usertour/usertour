@@ -10,6 +10,7 @@ import {
   CustomContentSession,
   ClientCondition,
   ResourceCenterBlockType,
+  SdkCapability,
 } from '@usertour/types';
 import {
   filterActivatedContentWithoutClientConditions,
@@ -41,6 +42,7 @@ import {
   extractSessionByContentType,
   extractSessionsByContentType,
   getSocketId,
+  hasSdkCapability,
 } from '../utils/websocket.util';
 import { SocketData } from '@/modules/delivery/types/socket-data.type';
 import { CustomContentVersion } from '@/modules/delivery/types/custom-content-version.type';
@@ -60,7 +62,11 @@ import { SocketOperationService } from './socket-operation.service';
 import { SocketDataService } from './socket-data.service';
 import { RoomSyncJob, RoomSyncService } from './room-sync.service';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
-import { getStartEventType, getEndEventType } from '@/modules/delivery/utils/event.util';
+import {
+  getStartEventType,
+  getEndEventType,
+  getStepSeenEventType,
+} from '@/modules/delivery/utils/event.util';
 import { WebSocketContext } from '../v2/web-socket-v2.dto';
 
 /**
@@ -242,6 +248,14 @@ export class ContentOrchestratorService {
       return false;
     }
 
+    // A type is delivered only to SDK bundles that declare its capability
+    if (
+      contentType === ContentDataType.EMBED &&
+      !hasSdkCapability(context.socketData, SdkCapability.EMBED)
+    ) {
+      return false;
+    }
+
     // Tracker has its own lightweight distribution flow:
     // distribute all published trackers and let SDK evaluate conditions.
     if (contentType === ContentDataType.TRACKER) {
@@ -375,6 +389,7 @@ export class ContentOrchestratorService {
       ContentDataType.RESOURCE_CENTER,
       ContentDataType.FLOW,
       ContentDataType.LAUNCHER,
+      ContentDataType.EMBED,
       ContentDataType.TRACKER,
     ];
 
@@ -1745,14 +1760,21 @@ export class ContentOrchestratorService {
       versionId,
     );
 
-    // Keep versions that have active session OR have total sessions = 0
-    // Filter out versions that have neither active session nor total sessions = 0
-    const activeEvaluatedVersions = filterSingleSessionContentVersions(evaluatedVersions);
+    // Single-session types (launcher): keep versions that have an active
+    // session OR have never had one. Frequency-governed batch types (embed)
+    // keep every version; the frequency filter below decides re-entry, and a
+    // running session is exempt from it (ADR 0022).
+    const singleSession = isSingleSessionContentType(contentType);
+    const activeEvaluatedVersions = singleSession
+      ? filterSingleSessionContentVersions(evaluatedVersions)
+      : evaluatedVersions;
 
     const availableVersions = filterAvailableAutoStartContentVersions(
       activeEvaluatedVersions,
       contentType,
       clientConditions,
+      undefined,
+      { ignoreFrequencyWhenActive: !singleSession },
     );
 
     // Versions that should be tracked but not activated
@@ -1889,10 +1911,11 @@ export class ContentOrchestratorService {
       },
     ];
 
-    // Add go to step event if stepId is provided
-    if (stepId) {
+    // Add the step-seen event of the type (flow step, embed step) if stepId is provided
+    const stepSeenEventType = getStepSeenEventType(contentType);
+    if (stepId && stepSeenEventType) {
       events.push({
-        eventType: BizEvents.FLOW_STEP_SEEN,
+        eventType: stepSeenEventType,
         params: {
           ...baseEventParams,
           stepId,

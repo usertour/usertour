@@ -41,9 +41,9 @@ export interface CompileResolvers {
   misses?: string[];
   /**
    * Resolve a `goto_step` target reference (an author `key` or an existing
-   * `cvid`) to the real step cvid. Present only when compiling flow steps; the
-   * caller builds it from the step list in the same write. Falls back to passing
-   * the reference through unchanged when absent.
+   * `cvid`) to the real step cvid. Present only when compiling steps (flow steps,
+   * embed steps); the caller builds it from the step list in the same write.
+   * Falls back to passing the reference through unchanged when absent.
    */
   stepCvid?: (ref: string) => string;
   /**
@@ -240,16 +240,17 @@ function compileCondition(c: CompilableCondition, r: CompileResolvers): Rule {
 
 /**
  * The internal `dismiss` action splits by host content type — each renderer
- * registers only its own dismiss handler (flow/checklist/banner/launcher), and
- * a mismatched type finds no handler and silently no-ops. The representation has
- * one `dismiss`; the host's type is supplied here so it compiles to the right
+ * registers only its own dismiss handler (flow/checklist/banner/launcher/embed),
+ * and a mismatched type finds no handler and silently no-ops. The representation
+ * has one `dismiss`; the host's type is supplied here so it compiles to the right
  * variant. Defaults to `flow-dismis` (flow steps, the common case).
  */
 export type DismissVariant =
   | 'flow-dismis'
   | 'checklist-dismis'
   | 'banner-dismis'
-  | 'launcher-dismis';
+  | 'launcher-dismis'
+  | 'embed-dismis';
 
 // Internal keys whose array values are ALWAYS action lists (step target.actions,
 // trigger.actions, button element.data.actions, checklist/RC clickedActions) —
@@ -300,7 +301,9 @@ function compileAction(
 ): Rule {
   switch (a.type) {
     case 'goto_step':
-      return rule('step-goto', { stepCvid: r?.stepCvid ? r.stepCvid(a.step) : a.step });
+      return rule('step-goto', {
+        stepCvid: r?.stepCvid ? r.stepCvid(a.step) : a.step,
+      });
     case 'start_content':
       return rule('flow-start', { contentId: a.content, ...(a.step ? { stepCvid: a.step } : {}) });
     case 'navigate':

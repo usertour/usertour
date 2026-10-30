@@ -107,7 +107,7 @@ export const contentSession = z.object({
         'completion step) / every checklist task was checked. Independent of whether the session ' +
         'is still open: a completed checklist can still be showing, and a flow can complete at a ' +
         'mid-flow completion step and keep running. Only flows and checklists can be completed; ' +
-        'banners / launchers / resource centers are seen-then-dismissed and are always false.',
+        'banners / launchers / resource centers / embeds are seen-then-dismissed and are always false.',
     ),
   completedAt: z
     .string()

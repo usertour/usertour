@@ -137,6 +137,9 @@ export const THEME_SETTING_CONSTRAINTS = {
   'checklistLauncher.placement.positionOffsetX': { kind: 'number', min: 0, max: 1000 },
   'checklistLauncher.placement.positionOffsetY': { kind: 'number', min: 0, max: 1000 },
   customCss: { kind: 'string' },
+  'embed.backgroundColor.background': { kind: 'color', allowAuto: true },
+  'embed.padding': { kind: 'number', min: 0, max: 100 },
+  'embed.textColor.color': { kind: 'color', allowAuto: true },
   'focusHighlight.color': { kind: 'color', allowAuto: true },
   'focusHighlight.opacity': {
     kind: 'number',

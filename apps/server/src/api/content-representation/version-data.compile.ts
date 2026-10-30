@@ -25,6 +25,8 @@ import {
   RepresentationBanner,
   representationChecklist,
   RepresentationChecklist,
+  representationEmbed,
+  RepresentationEmbed,
   representationLauncher,
   RepresentationLauncher,
   representationTracker,
@@ -42,10 +44,10 @@ import {
  */
 /**
  * Walk a representation data body for any `question` block. Question blocks render
- * only in flow steps; the non-flow data bodies (checklist / launcher / banner /
- * resource-center) share the block union and would accept one, but the runtime
- * doesn't support it — so reject it at write rather than silently shipping a dead
- * survey.
+ * only in step bodies (flow steps, embed steps); the `data` bodies (checklist /
+ * launcher / banner / resource-center) share the block union and would accept
+ * one, but the runtime doesn't support it — so reject it at write rather than
+ * silently shipping a dead survey.
  */
 function containsQuestionBlock(data: unknown): boolean {
   let found = false;
@@ -75,7 +77,7 @@ export function compileVersionData(
 ): unknown {
   if (containsQuestionBlock(data)) {
     throw new ValidationError(
-      `Question (survey) blocks are only supported in flows — not in ${contentType}. Remove the question block, or build the survey as a flow with question blocks in its steps.`,
+      `Question (survey) blocks are only supported in flows and embed steps (\`steps\`) — not in the \`data\` body of ${contentType}. Remove the question block, or build the survey as a flow with question blocks in its steps.`,
     );
   }
   // Non-representable actions on the existing body (builder-authored
@@ -96,9 +98,11 @@ export function compileVersionData(
       return compileAnnouncement(parse(representationAnnouncement, data), existingData, r);
     case ContentDataType.RESOURCE_CENTER:
       return compileResourceCenter(parse(representationResourceCenter, data), existingData, r);
+    case ContentDataType.EMBED:
+      return compileEmbed(parse(representationEmbed, data), existingData);
     default:
       throw new ValidationError(
-        `Content type "${contentType}" does not accept a data body — \`data\` is for checklist / launcher / banner / tracker / announcement / resource-center; a flow authors its body via \`steps\`.`,
+        `Content type "${contentType}" does not accept a data body — \`data\` is for checklist / launcher / banner / tracker / announcement / resource-center and an embed's shell; a flow authors its body via \`steps\` (an embed writes both).`,
       );
   }
 }
@@ -355,6 +359,32 @@ function compileBanner(rep: RepresentationBanner, existing: unknown, r: CompileR
     if (l.maxEmbedWidth !== undefined) out.maxEmbedWidth = l.maxEmbedWidth;
     if (l.borderRadius !== undefined) out.borderRadius = l.borderRadius;
     if (l.outerMargin !== undefined) out.outerMargin = l.outerMargin;
+  }
+  return out;
+}
+
+// The shell has no action slots and no blocks (those are the embed's steps), so
+// no resolvers are needed: every field maps one-to-one onto EmbedData.
+function compileEmbed(rep: RepresentationEmbed, existing: unknown): unknown {
+  const base = (existing ?? {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...base };
+  if (rep.placement !== undefined) {
+    out.placement = rep.placement;
+  }
+  if (rep.target !== undefined) {
+    out.targetElement = compileTargetToElementData(rep.target, base.targetElement);
+  }
+  if (rep.allowDismiss !== undefined) {
+    out.allowUsersToDismiss = rep.allowDismiss;
+  }
+  if (rep.zIndex !== undefined) {
+    out.zIndex = rep.zIndex;
+  }
+  if (rep.maxContentWidth !== undefined) {
+    out.maxContentWidth = rep.maxContentWidth;
+  }
+  if (rep.outerMargin !== undefined) {
+    out.outerMargin = rep.outerMargin;
   }
   return out;
 }

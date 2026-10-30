@@ -9,6 +9,7 @@ import { DataTableColumnHeader } from './data-table-column-header';
 import {
   BannerProgressCell,
   ChecklistProgressCell,
+  EmbedProgressCell,
   FlowProgressCell,
   LauncherProgressCell,
   ResourceCenterProgressCell,
@@ -65,6 +66,9 @@ const ProgressCell = (props: ProgressCellProps) => {
   }
   if (contentType === ContentDataType.BANNER) {
     return <BannerProgressCell />;
+  }
+  if (contentType === ContentDataType.EMBED) {
+    return <EmbedProgressCell original={row.original} eventList={eventList} />;
   }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return <ResourceCenterProgressCell />;

@@ -8,7 +8,7 @@ import {
 import { AttributeBizType } from '@/modules/attributes/constants/attribute-biz-type.constant';
 import { extractQuestionData } from '@/modules/content/utils/content-question.util';
 import { collectRuleIssues } from './condition-validate';
-import { stepCapabilities } from './contract-map';
+import { allowedStepTypes, stepCapabilities } from './contract-map';
 import { matchesOembedProvider } from '@/modules/utilities/utils/embed-resolve.util';
 import {
   BizAttributeTypes,
@@ -22,6 +22,7 @@ import {
   type ChecklistData,
   type ContentEditorRoot,
   type ElementSelectorPropsData,
+  type EmbedData,
   type LauncherData,
   type ResourceCenterData,
   type RulesCondition,
@@ -60,9 +61,9 @@ export interface ValidateUsableInput {
   /** Content type (ContentDataType value). */
   type: string;
   themeId: string | null | undefined;
-  /** Flow steps (compiled, with `data` as ContentEditorRoot[]). */
+  /** Flow steps / embed steps (compiled, with `data` as ContentEditorRoot[]). */
   steps?: Step[] | null;
-  /** Non-flow version data (the compiled @usertour/types model, parsed). */
+  /** Type-specific version data (the compiled @usertour/types model, parsed). */
   data?: unknown;
   /** version.config (carries autoStartRules + the start-delay setting). */
   config?: {
@@ -255,7 +256,10 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
 
   switch (input.type) {
     case ContentDataType.FLOW:
-      validateFlow(asArray<Step>(input.steps), err, warn);
+      validateSteps(asArray<Step>(input.steps), ContentDataType.FLOW, err, warn);
+      break;
+    case ContentDataType.EMBED:
+      validateEmbed(parseData<EmbedData>(input.data), asArray<Step>(input.steps), err, warn);
       break;
     case ContentDataType.CHECKLIST:
       validateChecklist(parseData<ChecklistData>(input.data), err, warn);
@@ -337,8 +341,8 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
     }
   }
 
-  // A frequency-capable type (flow/checklist) with auto-start enabled but NO
-  // stored frequency runs with NO limit: the runtime gate passes
+  // A frequency-capable type (flow / checklist / embed) with auto-start enabled but
+  // NO stored frequency runs with NO limit: the runtime gate passes
   // unconditionally, so the content starts again every time its rules match
   // once the prior session ends. The builder always persists a default and the
   // v2 write path seeds `once`, so only legacy / builder-external writes reach
@@ -370,10 +374,14 @@ export function validateVersionUsable(input: ValidateUsableInput): UsabilityRepo
         // conditions match" — of a content that HAS no conditions, which reads as
         // a contradiction and tells the author nothing. State the consequence
         // instead, then the two ways out.
-        `${input.type} has no start rules, so it never starts on its own for anyone.${extra} Add at least one auto-start condition — for an always-available surface a permissive current_url match. ${
+        `${input.type} has no start rules, so it never starts on its own for anyone.${extra} Add at least one auto-start condition — for an always-available surface a permissive current_url match.${
           input.type === ContentDataType.RESOURCE_CENTER
-            ? 'Or leave it rule-less on purpose and have the host app open it with usertour.start() — that DOES create the first session even with no rules, but then it reaches only the users the app explicitly launches it for.'
-            : 'It can still be launched programmatically via usertour.start().'
+            ? ' Or leave it rule-less on purpose and have the host app open it with usertour.start() — that DOES create the first session even with no rules, but then it reaches only the users the app explicitly launches it for.'
+            : // An embed has no manual start: its rules are the only way in
+              // (level-triggered, ADR 0022), so no usertour.start() escape hatch.
+              input.type === ContentDataType.EMBED
+              ? ''
+              : ' It can still be launched programmatically via usertour.start().'
         }`,
       );
     }
@@ -771,24 +779,60 @@ function collectDeadLaunchTargetWarnings(
   for (const root of roots) walk(root);
 }
 
-function validateFlow(
+/**
+ * The embed shell + its steps. The shell must resolve to an element (every
+ * placement is element-relative — without one the embed never mounts); the
+ * steps are steps and get the same checks a flow's do, restricted to the
+ * kinds the matrix allows an embed (inline / hidden).
+ */
+function validateEmbed(
+  data: EmbedData | null,
   steps: Step[],
   err: (path: string, message: string) => void,
   warn: (path: string, message: string) => void,
 ): void {
+  if (!hasTarget(data?.targetElement)) {
+    err('target', 'Embed has no target element to mount at; it never shows.');
+  }
+  validateSteps(steps, ContentDataType.EMBED, err, warn);
+}
+
+/**
+ * The step body shared by flow (steps) and embed (steps): at least one step,
+ * kinds from the matrix, a target where the kind needs one, content where the
+ * kind renders, resolvable goto targets, and an advisory reachability pass.
+ */
+function validateSteps(
+  steps: Step[],
+  contentType: ContentDataType.FLOW | ContentDataType.EMBED,
+  err: (path: string, message: string) => void,
+  warn: (path: string, message: string) => void,
+): void {
+  const typeLabel = contentType === ContentDataType.EMBED ? 'Embed' : 'Flow';
   if (steps.length === 0) {
-    err('steps', 'Flow has no steps.');
+    err('steps', `${typeLabel} has no steps.`);
     return;
   }
 
+  const kinds = allowedStepTypes(contentType);
   const cvids = new Set(steps.map((s) => s.cvid).filter(Boolean) as string[]);
   const referenced = new Set<string>();
 
   steps.forEach((step, i) => {
     const label = `steps[${i}]${step.name ? ` "${step.name}"` : ''}`;
 
+    // The kinds this type's steps may carry (STEP_TYPES_BY_CONTENT_TYPE): the
+    // renderer skips any other kind, so a stored one is a blank screen.
+    if (!kinds.includes(step.type as StepContentType)) {
+      err(
+        label,
+        `Step kind "${step.type}" is not allowed in ${contentType === ContentDataType.EMBED ? 'an embed' : 'a flow'}; allowed step types: ${kinds.join(', ')}.`,
+      );
+    }
+
     // Only tooltip steps need a target; modal/bubble/hidden anchor to the page
-    // (capability matrix: STEP_CAPABILITIES.requiresTarget).
+    // and an inline step fills the embed shell (capability matrix:
+    // STEP_CAPABILITIES.requiresTarget).
     if (stepCapabilities(step.type)?.requiresTarget && !hasTarget(step.target)) {
       err(label, 'Tooltip step has no target element; the SDK skips it.');
     }

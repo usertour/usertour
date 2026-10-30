@@ -55,7 +55,11 @@ const rulesSetting: autoStartRulesSetting = {
 // these get a concrete frequency default (see buildConfig). For other types
 // an unset frequency means "no auto-start limit" and must stay unset —
 // baking Once in would cap launchers/banners at a single show.
-const FREQUENCY_DEFAULT_TYPES = [ContentDataType.FLOW, ContentDataType.CHECKLIST];
+const FREQUENCY_DEFAULT_TYPES = [
+  ContentDataType.FLOW,
+  ContentDataType.CHECKLIST,
+  ContentDataType.EMBED,
+];
 
 // Canonical auto-start frequency default. Single source of truth: the frequency
 // picker (condition-frequency.tsx) renders this as its display fallback, and
@@ -74,7 +78,7 @@ export const DEFAULT_FREQUENCY: RulesFrequencyValue = {
 // seeds the SAME default when a write leaves frequency unset (builder parity —
 // see the DEFAULT_FREQUENCY note above on what an unset frequency does).
 export const defaultFrequencyFor = (contentType: ContentDataType): RulesFrequencyValue =>
-  contentType === ContentDataType.CHECKLIST
+  contentType === ContentDataType.CHECKLIST || contentType === ContentDataType.EMBED
     ? { frequency: DEFAULT_FREQUENCY.frequency, every: DEFAULT_FREQUENCY.every }
     : DEFAULT_FREQUENCY;
 
@@ -223,6 +227,14 @@ export const AUTO_START_CAPABILITIES: Record<ContentDataType, AutoStartCapabilit
     ...NO_AUTO_START_CAPABILITIES,
     clientConditionsOnly: true,
   },
+  // Embed shows while its rules match (level-triggered, like banner and
+  // launcher) and re-enters by frequency: dismissal ends the session and
+  // frequency says whether a later qualifying page load may start another.
+  // Nothing that assumes one-at-a-time applies: no priority (every qualifying
+  // embed shows), no quiet period against siblings (atLeast), no wait (inline
+  // content appearing late is a layout shift), no hide rules (level-triggered
+  // show rules already express "and not B"), no completion (ADR 0022).
+  [ContentDataType.EMBED]: { ...NO_AUTO_START_CAPABILITIES, frequency: true },
 };
 
 /** Capabilities for a type, defaulting to "nothing supported" for unknown types. */

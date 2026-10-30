@@ -1,4 +1,10 @@
-import { RiChat2Line, RiEyeOffLine, RiMessage2Line, RiWindow2Line } from '@usertour/icons';
+import {
+  RiChat2Line,
+  RiEyeOffLine,
+  EmbedIcon,
+  RiMessage2Line,
+  RiWindow2Line,
+} from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import { StepContentType } from '@usertour/types';
 import type { ComponentType } from 'react';
@@ -8,6 +14,8 @@ import { Callout } from '@/pages/contents/components/builder/shared/callout';
 interface ContentTypeProps {
   type: string;
   onChange: (value: string) => void;
+  /** The step kinds this content type accepts; defaults to the flow's four. */
+  options?: readonly StepContentType[];
 }
 
 // 2×2 grid of step types. Order matches the design: Modal, Tooltip, Speech
@@ -33,22 +41,35 @@ const STEP_TYPES: {
     labelKey: 'contentBuilder.flow.stepType.bubble',
   },
   {
+    value: StepContentType.INLINE,
+    Icon: EmbedIcon,
+    labelKey: 'contentBuilder.flow.stepType.inline',
+  },
+  {
     value: StepContentType.HIDDEN,
     Icon: RiEyeOffLine,
     labelKey: 'contentBuilder.flow.stepType.hidden',
   },
 ];
 
+const FLOW_STEP_TYPES: readonly StepContentType[] = [
+  StepContentType.MODAL,
+  StepContentType.TOOLTIP,
+  StepContentType.BUBBLE,
+  StepContentType.HIDDEN,
+];
+
 export const ContentType = (props: ContentTypeProps) => {
-  const { onChange, type } = props;
+  const { onChange, type, options = FLOW_STEP_TYPES } = props;
   const { t } = useTranslation();
+  const visibleTypes = STEP_TYPES.filter((entry) => options.includes(entry.value));
 
   return (
     <div className="space-y-3">
       <h1 className="text-sm">{t('contentBuilder.flow.stepTypeTitle')}</h1>
 
       <div className="grid grid-cols-2 gap-2">
-        {STEP_TYPES.map(({ value, Icon, labelKey }) => {
+        {visibleTypes.map(({ value, Icon, labelKey }) => {
           const active = type === value;
           return (
             <button

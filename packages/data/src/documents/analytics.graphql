@@ -20,6 +20,8 @@ query queryContentAnalytics(
     viewsByStep
     viewsByTask
     viewsByBlock
+    viewsByButton
+    uniqueDismissals
   }
 }
 

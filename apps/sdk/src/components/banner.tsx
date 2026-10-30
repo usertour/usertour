@@ -15,18 +15,17 @@ import {
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
-import {
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useSyncExternalStore,
-  useEffect,
-  useState,
-  CSSProperties,
-} from 'react';
+import { useLayoutEffect, useMemo, useRef, useSyncExternalStore, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { document } from '@/utils';
+
+import {
+  type InlineMountPlacement,
+  applyStyleObject,
+  insertMountEl,
+  resolveElementMountPlacement,
+} from './inline-mount';
 
 type BannerWidgetStore = {
   openState: boolean;
@@ -53,36 +52,14 @@ type BannerWidgetProps = {
   banner: BannerWidgetInstance;
 };
 
-type BannerMountPlacement = {
-  parent: HTMLElement;
-  insertMode: 'append' | 'prepend' | 'before' | 'after';
-  anchor?: Element;
-};
-
 /**
- * Applies React CSSProperties to an HTMLElement's inline style.
- * Uses the DOM's native style assignment so the browser normalizes values
- * (e.g. numbers for dimensions become "px", unitless props like zIndex stay numeric).
- * Custom properties (--*) use setProperty for correct handling.
+ * Page-level placements are the banner's own; element-relative ones are the
+ * inline shell's and shared with the embed (./inline-mount).
  */
-const applyStyleObject = (el: HTMLElement, style: CSSProperties) => {
-  el.style.cssText = '';
-  for (const [key, value] of Object.entries(style)) {
-    if (value === undefined || value === null) {
-      continue;
-    }
-    if (key.startsWith('--')) {
-      el.style.setProperty(key, String(value));
-      continue;
-    }
-    (el.style as unknown as Record<string, string | number>)[key] = value;
-  }
-};
-
 const resolveBannerPlacement = (
   placement: BannerEmbedPlacement,
   targetElement?: Element | null,
-): BannerMountPlacement | null => {
+): InlineMountPlacement | null => {
   if (!document?.body) {
     return null;
   }
@@ -93,63 +70,12 @@ const resolveBannerPlacement = (
     case BannerEmbedPlacement.BOTTOM_OF_PAGE:
       return { parent: document.body, insertMode: 'append' };
     case BannerEmbedPlacement.TOP_OF_CONTAINER_ELEMENT:
-      if (targetElement instanceof HTMLElement) {
-        return { parent: targetElement, insertMode: 'prepend' };
-      }
-      return null;
     case BannerEmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT:
-      if (targetElement instanceof HTMLElement) {
-        return { parent: targetElement, insertMode: 'append' };
-      }
-      return null;
     case BannerEmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT:
-      if (targetElement?.parentElement) {
-        return { parent: targetElement.parentElement, insertMode: 'before', anchor: targetElement };
-      }
-      return null;
     case BannerEmbedPlacement.IMMEDIATELY_AFTER_ELEMENT:
-      if (targetElement?.parentElement) {
-        return { parent: targetElement.parentElement, insertMode: 'after', anchor: targetElement };
-      }
-      return null;
+      return resolveElementMountPlacement(placement, targetElement);
     default:
       return { parent: document.body, insertMode: 'prepend' };
-  }
-};
-
-const insertMountEl = (mountEl: HTMLDivElement, placement: BannerMountPlacement) => {
-  const { parent, insertMode, anchor } = placement;
-
-  if (!parent.isConnected) {
-    return;
-  }
-
-  if (mountEl.parentNode === parent) {
-    if (insertMode === 'append' && mountEl === parent.lastChild) return;
-    if (insertMode === 'prepend' && mountEl === parent.firstChild) return;
-    if (insertMode === 'before' && anchor && mountEl.nextSibling === anchor) return;
-    if (insertMode === 'after' && anchor && anchor.nextSibling === mountEl) return;
-  }
-
-  switch (insertMode) {
-    case 'append':
-      parent.appendChild(mountEl);
-      break;
-    case 'prepend':
-      parent.insertBefore(mountEl, parent.firstChild);
-      break;
-    case 'before':
-      if (anchor?.parentNode) {
-        anchor.parentNode.insertBefore(mountEl, anchor);
-      }
-      break;
-    case 'after':
-      if (anchor?.parentNode) {
-        anchor.parentNode.insertBefore(mountEl, anchor.nextSibling);
-      }
-      break;
-    default:
-      parent.appendChild(mountEl);
   }
 };
 

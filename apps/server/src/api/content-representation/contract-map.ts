@@ -1,3 +1,4 @@
+import { getStepTypesForContentType } from '@usertour/constants';
 import {
   CONTENT_ACTION_CAPABILITIES,
   CONTENT_REFERENCE_TARGET_TYPES,
@@ -83,6 +84,15 @@ export function dismissVariantFor(contentType: ContentDataType): DismissVariant 
 /** Step-kind capabilities; undefined for an unknown step type string. */
 export function stepCapabilities(stepType: unknown): StepCapabilities | undefined {
   return typeof stepType === 'string' ? STEP_CAPABILITIES[stepType as StepContentType] : undefined;
+}
+
+/**
+ * The step kinds a content type's `steps` may carry (STEP_TYPES_BY_CONTENT_TYPE:
+ * flow = the popups, embed = inline / hidden); empty for a type whose body is
+ * not steps.
+ */
+export function allowedStepTypes(contentType: string | undefined): readonly string[] {
+  return getStepTypesForContentType(contentType);
 }
 
 /** Valid cross-content reference target types, as a lookup set. */

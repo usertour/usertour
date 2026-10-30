@@ -87,6 +87,7 @@ const EVENT_GROUPS: { key: string; prefixes: string[] }[] = [
   { key: 'surveys', prefixes: ['question_'] },
   { key: 'launchers', prefixes: ['launcher_'] },
   { key: 'banners', prefixes: ['banner_'] },
+  { key: 'embeds', prefixes: ['embed_', 'button_'] },
   { key: 'resourceCenters', prefixes: ['resource_center_'] },
   { key: 'announcements', prefixes: ['announcement_'] },
   { key: 'trackers', prefixes: ['event_tracker_'] },

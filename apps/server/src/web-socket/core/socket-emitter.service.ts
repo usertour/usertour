@@ -112,6 +112,26 @@ export class SocketEmitterService {
     }
   }
 
+  addEmbed(socket: Socket, session: CustomContentSession): void {
+    this.emit(socket, ServerMessageKind.ADD_EMBED, session);
+  }
+
+  addEmbeds(socket: Socket, sessions: CustomContentSession[]): void {
+    for (const session of sessions) {
+      this.addEmbed(socket, session);
+    }
+  }
+
+  removeEmbed(socket: Socket, contentId: string): void {
+    this.emit(socket, ServerMessageKind.REMOVE_EMBED, { contentId });
+  }
+
+  removeEmbeds(socket: Socket, contentIds: string[]): void {
+    for (const contentId of contentIds) {
+      this.removeEmbed(socket, contentId);
+    }
+  }
+
   addTracker(socket: Socket, session: CustomContentSession): void {
     this.emit(socket, ServerMessageKind.ADD_TRACKER, session);
   }

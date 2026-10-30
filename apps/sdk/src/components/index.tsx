@@ -6,6 +6,7 @@ import { UsertourTour } from '../core/usertour-tour';
 import { UsertourChecklist } from '../core/usertour-checklist';
 import { UsertourLauncher } from '@/core/usertour-launcher';
 import { UsertourBanner } from '@/core/usertour-banner';
+import { UsertourEmbed } from '@/core/usertour-embed';
 import { UsertourResourceCenter } from '@/core/usertour-resource-center';
 import { logger } from '@/utils';
 import '../index.css';
@@ -41,6 +42,11 @@ const WIDGETS = {
       default: module.BannerWidget,
     })),
   ),
+  Embed: React.lazy(() =>
+    import('./embed').then((module) => ({
+      default: module.EmbedWidget,
+    })),
+  ),
   ResourceCenter: React.lazy(() =>
     import('./resource-center').then((module) => ({
       default: module.ResourceCenterWidget,
@@ -53,6 +59,7 @@ interface AppProps {
   checklistsStore: ExternalStore<UsertourChecklist[]>;
   launchersStore: ExternalStore<UsertourLauncher[]>;
   bannersStore: ExternalStore<UsertourBanner[]>;
+  embedsStore: ExternalStore<UsertourEmbed[]>;
   resourceCentersStore: ExternalStore<UsertourResourceCenter[]>;
 }
 
@@ -62,6 +69,7 @@ const App = ({
   checklistsStore,
   launchersStore,
   bannersStore,
+  embedsStore,
   resourceCentersStore,
 }: AppProps) => {
   // Use custom hook to reduce repetition
@@ -72,6 +80,7 @@ const App = ({
   const checklists = useStore(checklistsStore);
   const launchers = useStore(launchersStore);
   const banners = useStore(bannersStore);
+  const embeds = useStore(embedsStore);
   const resourceCenters = useStore(resourceCentersStore);
 
   return (
@@ -112,6 +121,15 @@ const App = ({
               onError={handleWidgetError}
             >
               <WIDGETS.Banner banner={banner} />
+            </ErrorBoundary>
+          ))}
+          {embeds?.map((embed) => (
+            <ErrorBoundary
+              key={embed.getId()}
+              fallbackRender={() => null}
+              onError={handleWidgetError}
+            >
+              <WIDGETS.Embed embed={embed} />
             </ErrorBoundary>
           ))}
           {resourceCenters?.map((rc) => (

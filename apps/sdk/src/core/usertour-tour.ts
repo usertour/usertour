@@ -1,6 +1,5 @@
 import { smoothScroll } from '@usertour/dom';
 import {
-  AttributeBizTypes,
   ContentEditorRoot,
   ContentEditorClickableElement,
   ContentEditorQuestionElement,
@@ -21,7 +20,7 @@ import {
 } from '@/core/usertour-component';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { logger } from '@/utils';
-import { createQuestionAnswerEventData, rootsHaveButtonConditions } from '@/core/usertour-helper';
+import { rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
@@ -144,11 +143,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   async handleOnClick(element: ContentEditorClickableElement, value?: any) {
     if (isQuestionElement(element)) {
-      const el = element as ContentEditorQuestionElement;
-      if (el?.data?.bindToAttribute && el?.data?.selectedAttribute) {
-        this.updateSessionAttribute(AttributeBizTypes.User, el.data.selectedAttribute, value);
-      }
-      await this.reportQuestionAnswer(el, value);
+      await this.handleQuestionAnswer(element as ContentEditorQuestionElement, value);
     }
     if (element?.data?.actions) {
       await this.handleActions(element.data.actions as RulesCondition[]);
@@ -623,22 +618,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       },
       { batch: true },
     );
-  }
-
-  /**
-   * Reports the question answer event
-   * This method handles:
-   * 1. Reporting the question answer event with the correct event name
-   * 2. Adding the question cvid, name, and type to the event data
-   * 3. Handling multiple choice, scale, NPS, and star rating elements
-   *
-   * @param element - The question element that was answered
-   * @param value - The value of the answer
-   * @private
-   */
-  private async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
-    const eventData = createQuestionAnswerEventData(element, value, this.getSessionId());
-    await this.socketService.answerQuestion(eventData);
   }
 
   // === Lifecycle Hooks ===

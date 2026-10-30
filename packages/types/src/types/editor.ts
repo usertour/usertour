@@ -46,6 +46,12 @@ export interface ContentEditorUploadRequestOption {
 export type ContentEditorUploadFunc = (options: ContentEditorUploadRequestOption) => void;
 
 export type ContentEditorButtonData = {
+  /**
+   * Stable identity of the button across edits and translations, the key
+   * `button_clicked` analytics aggregate on (same role as a question's cvid).
+   * Assigned when the button is created; regenerated when a step is duplicated.
+   */
+  cvid?: string;
   type?: ButtonSemanticType;
   text: string;
   action?: string;

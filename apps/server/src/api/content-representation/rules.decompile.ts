@@ -384,6 +384,7 @@ export function decompileAction(a: RuleNode): RepresentationAction {
     case 'launcher-dismis':
     case 'checklist-dismis':
     case 'banner-dismis':
+    case 'embed-dismis':
       return { type: 'dismiss' };
     default:
       return { type: 'unsupported', ...(a.type ? { note: a.type } : {}) };

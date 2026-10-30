@@ -152,17 +152,23 @@ export const processQuestionElements = (
           };
         }
 
-        // Process button elements: regenerate actions
+        // Process button elements: regenerate the cvid (the copy must not
+        // share the original's click analytics identity) and the actions
         if (element.type === ContentEditorElementType.BUTTON) {
           const buttonElement = element;
-          if (buttonElement.data?.actions && isArray(buttonElement.data.actions)) {
+          const hasActions =
+            buttonElement.data?.actions !== undefined && isArray(buttonElement.data.actions);
+          if (hasActions || buttonElement.data?.cvid) {
             return {
               ...item,
               element: {
                 ...buttonElement,
                 data: {
                   ...buttonElement.data,
-                  actions: regenerateConditionIds(buttonElement.data.actions),
+                  ...(buttonElement.data?.cvid ? { cvid: cuid() } : {}),
+                  ...(hasActions
+                    ? { actions: regenerateConditionIds(buttonElement.data.actions) }
+                    : {}),
                 },
               },
             };
@@ -200,6 +206,7 @@ const STEP_TYPE_LABELS: Record<string, string> = {
   modal: 'Modal',
   bubble: 'Bubble',
   hidden: 'Hidden step',
+  inline: 'Inline',
 };
 
 /**

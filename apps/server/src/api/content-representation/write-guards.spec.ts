@@ -278,3 +278,48 @@ describe('collectWriteViolations (single write walk)', () => {
     ]);
   });
 });
+
+describe('collectWriteViolations — embed steps', () => {
+  it('step kinds follow the content type: inline is rejected in a flow, modal in an embed', () => {
+    const flow = collectWriteViolations({
+      steps: [{ name: 'Card', type: 'inline', content: [] }],
+      contentType: 'flow',
+    });
+    expect(flow.issues.map((issue) => ({ rule: issue.rule, path: issue.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].type' },
+    ]);
+    expect(flow.issues[0].message).toMatch(/tooltip \/ modal \/ bubble \/ hidden/);
+
+    const embed = collectWriteViolations({
+      steps: [
+        { name: 'Card', type: 'inline', content: [] },
+        { name: 'Router', type: 'hidden', content: [] },
+        { name: 'Popup', type: 'modal', content: [] },
+      ],
+      contentType: 'embed',
+    });
+    expect(embed.issues.map((issue) => ({ rule: issue.rule, path: issue.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[2].type' },
+    ]);
+    expect(embed.issues[0].message).toMatch(/inline \/ hidden/);
+  });
+
+  it('inline placement: rejected — the shell is placed by the embed data', () => {
+    const out = collectWriteViolations({
+      steps: [{ name: 'Card', type: 'inline', placement: { position: 'center' }, content: [] }],
+      contentType: 'embed',
+    });
+    expect(out.issues.map((issue) => ({ rule: issue.rule, path: issue.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].placement' },
+    ]);
+  });
+
+  it('the embed shell (data) carries no action slots — a clean shell write has no issues', () => {
+    const out = collectWriteViolations({
+      data: { placement: 'cover-element', target: { selector: '#x' }, allowDismiss: true },
+      contentType: 'embed',
+    });
+    expect(out.issues).toEqual([]);
+    expect(out.refs).toEqual([]);
+  });
+});

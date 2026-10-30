@@ -140,6 +140,14 @@ export enum BizEvents {
   CHECKLIST_TASK_COMPLETED = 'checklist_task_completed',
   BANNER_SEEN = 'banner_seen',
   BANNER_DISMISSED = 'banner_dismissed',
+  EMBED_SEEN = 'embed_seen',
+  EMBED_STEP_SEEN = 'embed_step_seen',
+  EMBED_DISMISSED = 'embed_dismissed',
+  /**
+   * A button block was pressed. Generic across content types: the base
+   * attributes follow the session's content type (ADR 0022).
+   */
+  BUTTON_CLICKED = 'button_clicked',
   RESOURCE_CENTER_STARTED = 'resource_center_started',
   RESOURCE_CENTER_OPENED = 'resource_center_opened',
   RESOURCE_CENTER_CLOSED = 'resource_center_closed',
@@ -203,6 +211,22 @@ export enum EventAttributes {
   BANNER_END_REASON = 'banner_end_reason',
   BANNER_VERSION_ID = 'banner_version_id',
   BANNER_VERSION_NUMBER = 'banner_version_number',
+  // Embed attributes
+  EMBED_ID = 'embed_id',
+  EMBED_NAME = 'embed_name',
+  /** Populated only on the integration wire (adapter-derived); in-product the canonical link is BizEvent.bizSessionId. */
+  EMBED_SESSION_ID = 'embed_session_id',
+  EMBED_START_REASON = 'embed_start_reason',
+  EMBED_END_REASON = 'embed_end_reason',
+  EMBED_VERSION_ID = 'embed_version_id',
+  EMBED_VERSION_NUMBER = 'embed_version_number',
+  EMBED_STEP_ID = 'embed_step_id',
+  EMBED_STEP_CVID = 'embed_step_cvid',
+  EMBED_STEP_NAME = 'embed_step_name',
+  EMBED_STEP_NUMBER = 'embed_step_number',
+  // Button attributes (button_clicked, any content type)
+  BUTTON_CVID = 'button_cvid',
+  BUTTON_TEXT = 'button_text',
   // Resource center attributes
   RESOURCE_CENTER_ID = 'resource_center_id',
   RESOURCE_CENTER_NAME = 'resource_center_name',

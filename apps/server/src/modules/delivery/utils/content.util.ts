@@ -547,11 +547,22 @@ export const isAllowedByHideRules = (
  * @param waitTimers - The wait timer conditions
  * @returns The available auto-start custom content versions
  */
+export type FilterAvailableAutoStartOptions = {
+  /**
+   * Keep a version whose session is already running even when the frequency
+   * rule would refuse a NEW session. The batch path re-evaluates every live
+   * session on every sync; without this an `once` embed would be removed the
+   * moment its own session counted against `once` (ADR 0022).
+   */
+  ignoreFrequencyWhenActive?: boolean;
+};
+
 export const filterAvailableAutoStartContentVersions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType,
   clientConditions: ClientCondition[],
   waitTimers?: ConditionWaitTimer[],
+  options?: FilterAvailableAutoStartOptions,
 ) => {
   const firedWaitTimerVersionIds = waitTimers
     ?.filter((waitTimer) => waitTimer.activated)
@@ -569,8 +580,11 @@ export const filterAvailableAutoStartContentVersions = (
         return false;
       }
 
-      // Check auto-start rules settings
-      if (!isAllowedByAutoStartRulesSetting(customContentVersion)) {
+      // Check auto-start rules settings (frequency); a running session is
+      // exempt when the caller says so — the rule governs starting, not staying
+      const frequencyExempt =
+        !!options?.ignoreFrequencyWhenActive && !!customContentVersion.session.activeSession;
+      if (!frequencyExempt && !isAllowedByAutoStartRulesSetting(customContentVersion)) {
         return false;
       }
 
@@ -669,8 +683,9 @@ export const filterActivatedContentWithoutClientConditions = (
       return true;
     }
 
-    // Launcher is not eligible for auto-start, return false
-    if (contentType === ContentDataType.LAUNCHER) {
+    // Multi-instance types (launcher, embed) show only while their rules
+    // match: an active session alone does not justify tracking conditions.
+    if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.EMBED) {
       return false;
     }
 
@@ -2175,6 +2190,10 @@ export const hasContentSessionChanges = (
   }
 
   if (!isEqual(oldVersion.banner, newVersion.banner)) {
+    return true;
+  }
+
+  if (!isEqual(oldVersion.embed, newVersion.embed)) {
     return true;
   }
 

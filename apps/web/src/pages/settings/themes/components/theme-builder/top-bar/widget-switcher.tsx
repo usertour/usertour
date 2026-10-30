@@ -5,6 +5,7 @@ import {
   FlowIcon,
   LauncherIcon,
   ResourceCenterIcon,
+  EmbedIcon,
 } from '@usertour/icons';
 import {
   CompactSelectContent,
@@ -66,6 +67,11 @@ export const WidgetSwitcher = (props: WidgetSwitcherProps) => {
         value: ThemeDetailPreviewType.BANNER,
         label: t('themeBuilder.previewTypes.banner'),
         Icon: BannerIcon,
+      },
+      {
+        value: ThemeDetailPreviewType.EMBED,
+        label: t('themeBuilder.previewTypes.embed'),
+        Icon: EmbedIcon,
       },
       {
         value: ThemeDetailPreviewType.LAUNCHER_ICON,

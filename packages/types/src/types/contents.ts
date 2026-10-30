@@ -16,6 +16,7 @@ export enum ContentActionsItemType {
   LAUNCHER_DISMIS = 'launcher-dismis',
   CHECKLIST_DISMIS = 'checklist-dismis',
   BANNER_DISMIS = 'banner-dismis',
+  EMBED_DISMIS = 'embed-dismis',
   FLOW_START = 'flow-start',
   PAGE_NAVIGATE = 'page-navigate',
   JAVASCRIPT_EVALUATE = 'javascript-evaluate',
@@ -29,6 +30,7 @@ export enum ContentDataType {
   TRACKER = 'tracker',
   RESOURCE_CENTER = 'resource-center',
   ANNOUNCEMENT = 'announcement',
+  EMBED = 'embed',
 }
 
 export enum ContentTypeName {
@@ -39,6 +41,7 @@ export enum ContentTypeName {
   BANNERS = 'banners',
   TRACKERS = 'trackers',
   ANNOUNCEMENTS = 'announcements',
+  EMBEDS = 'embeds',
 }
 
 export enum LauncherDataType {
@@ -65,6 +68,8 @@ export enum StepContentType {
   MODAL = 'modal',
   HIDDEN = 'hidden',
   BUBBLE = 'bubble',
+  /** An embed step: rendered inline inside the embed's shell at its target (ADR 0022). */
+  INLINE = 'inline',
 }
 
 // ============================================================================

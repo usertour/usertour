@@ -283,6 +283,9 @@ export const getStartReasonTitle = (
   if (contentType === ContentDataType.BANNER) {
     return 'Banner seen';
   }
+  if (contentType === ContentDataType.EMBED) {
+    return 'Embed seen';
+  }
   try {
     const reason =
       attributeText(startEvent?.data?.[EventAttributes.FLOW_START_REASON]) ||
@@ -319,7 +322,8 @@ export const getEndReasonTitle = (
     const reason =
       attributeText(endEvent?.data?.[EventAttributes.FLOW_END_REASON]) ||
       attributeText(endEvent?.data?.[EventAttributes.CHECKLIST_END_REASON]) ||
-      attributeText(endEvent?.data?.[EventAttributes.LAUNCHER_END_REASON]);
+      attributeText(endEvent?.data?.[EventAttributes.LAUNCHER_END_REASON]) ||
+      attributeText(endEvent?.data?.[EventAttributes.EMBED_END_REASON]);
     return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason || '';
   } catch (_) {
     return '';

@@ -96,6 +96,15 @@ const generateViewChartConfig = (contentType: ContentDataType, t: TFunction): Ch
       },
     };
   }
+  if (contentType === ContentDataType.EMBED) {
+    return {
+      uniqueViews: { label: t('contents.analytics.chart.uniqueViews'), color: COLOR_VIEWS },
+      uniqueCompletions: {
+        label: t('contents.analytics.chart.uniqueClickers'),
+        color: COLOR_ENGAGEMENT,
+      },
+    };
+  }
   return {
     uniqueViews: { label: t('contents.analytics.chart.uniqueViews'), color: COLOR_VIEWS },
     uniqueCompletions: {
@@ -312,11 +321,14 @@ export const AnalyticsDays = () => {
   // Types with no meaningful completion have completions === views, so a
   // rate would always read 100%. Announcements are view-only like these, so
   // exclude them too instead of showing a nonsensical 100% completion rate.
+  // Embed's click-through rate lives in its overview card, like the resource
+  // center's.
   const showRate =
     contentType !== ContentDataType.BANNER &&
     contentType !== ContentDataType.TRACKER &&
     contentType !== ContentDataType.RESOURCE_CENTER &&
-    contentType !== ContentDataType.ANNOUNCEMENT;
+    contentType !== ContentDataType.ANNOUNCEMENT &&
+    contentType !== ContentDataType.EMBED;
 
   const dateLabel = formatDateRange(dateRange, t);
   const isAnnouncement = contentType === ContentDataType.ANNOUNCEMENT;

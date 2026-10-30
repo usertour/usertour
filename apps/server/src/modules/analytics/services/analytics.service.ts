@@ -6,9 +6,14 @@ import {
   contentEndReason,
   ContentEditorElementType,
   ContentEditorQuestionElement,
+  ContentEditorRoot,
 } from '@usertour/types';
 import { rollingDayWindows } from '../utils/rolling-day-windows.util';
-import { GENUINE_COMPLETION_EVENTS } from '@/modules/delivery/utils/event.util';
+import { extractStepButtons } from '../utils/step-buttons.util';
+import {
+  GENUINE_COMPLETION_EVENTS,
+  getStepSeenEventType,
+} from '@/modules/delivery/utils/event.util';
 import { createdAtWhere } from '@/modules/common/utils/query-filters.util';
 import type { Pagination } from '@/modules/common/types/pagination.type';
 import { ContentType } from '@/modules/content/constants/content-type.constant';
@@ -54,6 +59,31 @@ type RollWindowConfig = {
 type ItemAnalyticsConditions = AnalyticsConditions & {
   key: string;
   value: string;
+  // Further `data ->> key = value` pairs the event must also match. A button
+  // is identified by its cvid AND its step's cvid: a duplicated step kept the
+  // original button cvids until the duplicate path regenerated them.
+  additionalAttributes?: Record<string, string>;
+};
+
+/** `"BizEvent"."data" ->> key = value` for the primary pair and every additional pair. */
+const dataAttributeMatches = ({
+  key,
+  value,
+  additionalAttributes = {},
+}: Pick<ItemAnalyticsConditions, 'key' | 'value' | 'additionalAttributes'>) =>
+  Prisma.join(
+    [[key, value], ...Object.entries(additionalAttributes)].map(
+      ([attributeKey, attributeValue]) =>
+        Prisma.sql`"BizEvent"."data" ->> ${attributeKey} = ${String(attributeValue)}`,
+    ),
+    ' AND ',
+  );
+
+// Step-scoped events carry the step's cvid under a per-type attribute key;
+// only the types whose steps are Step rows have one.
+const STEP_CVID_ATTRIBUTE: Partial<Record<ContentType, EventAttributes>> = {
+  [ContentType.FLOW]: EventAttributes.FLOW_STEP_CVID,
+  [ContentType.EMBED]: EventAttributes.EMBED_STEP_CVID,
 };
 
 const defaultRollWindowConfig = { nps: 365, rate: 365, scale: 365 };
@@ -107,6 +137,10 @@ const DISMISSED_END_CONFIG: Partial<
     eventCodeName: BizEvents.BANNER_DISMISSED,
     reasonAttribute: EventAttributes.BANNER_END_REASON,
   },
+  [ContentType.EMBED]: {
+    eventCodeName: BizEvents.EMBED_DISMISSED,
+    reasonAttribute: EventAttributes.EMBED_END_REASON,
+  },
   [ContentType.RESOURCE_CENTER]: {
     eventCodeName: BizEvents.RESOURCE_CENTER_DISMISSED,
     reasonAttribute: EventAttributes.RESOURCE_CENTER_END_REASON,
@@ -133,6 +167,11 @@ export const EVENT_TYPE_MAPPING = {
     start: BizEvents.BANNER_SEEN,
     complete: BizEvents.BANNER_DISMISSED,
   },
+  // An embed's success action is a button press; dismissal is its own counter
+  [ContentType.EMBED]: {
+    start: BizEvents.EMBED_SEEN,
+    complete: BizEvents.BUTTON_CLICKED,
+  },
   [ContentType.RESOURCE_CENTER]: {
     start: BizEvents.RESOURCE_CENTER_OPENED,
     complete: BizEvents.RESOURCE_CENTER_CLICKED,
@@ -155,6 +194,10 @@ const EVENTS = [
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.EMBED_SEEN,
+  BizEvents.EMBED_STEP_SEEN,
+  BizEvents.EMBED_DISMISSED,
+  BizEvents.BUTTON_CLICKED,
   BizEvents.RESOURCE_CENTER_STARTED,
   BizEvents.RESOURCE_CENTER_OPENED,
   BizEvents.RESOURCE_CENTER_CLOSED,
@@ -302,6 +345,8 @@ export class AnalyticsService {
       viewsByDay: null,
       viewsByStep: null,
       viewsByTask: null,
+      viewsByButton: null,
+      uniqueDismissals: null,
     };
   }
 
@@ -459,9 +504,11 @@ export class AnalyticsService {
       return emptyAnalytics;
     }
 
+    // Flow and embed steps are Step rows; each type has its own step-seen event
+    const stepSeenEventCodeName = getStepSeenEventType(contentType);
     const startEventFilter = (ev: Event) => ev.codeName === eventTypeMapping.start;
     const completeEventFilter = (ev: Event) => ev.codeName === eventTypeMapping.complete;
-    const stepSeenEventFilter = (ev: Event) => ev.codeName === BizEvents.FLOW_STEP_SEEN;
+    const stepSeenEventFilter = (ev: Event) => ev.codeName === stepSeenEventCodeName;
     const tooltipTargetMissingEventFilter = (ev: Event) =>
       ev.codeName === BizEvents.TOOLTIP_TARGET_MISSING;
 
@@ -471,7 +518,9 @@ export class AnalyticsService {
     const tooltipTargetMissingEvent = events.find(tooltipTargetMissingEventFilter);
 
     const isFlow = contentType === ContentType.FLOW;
-    if (!startEvent || !completeEvent || (isFlow && !stepSeenEvent)) {
+    const isEmbed = contentType === ContentType.EMBED;
+    const hasSteps = isFlow || isEmbed;
+    if (!startEvent || !completeEvent || (hasSteps && !stepSeenEvent)) {
       return emptyAnalytics;
     }
 
@@ -497,7 +546,8 @@ export class AnalyticsService {
     // the range) instead of trusting the stored stream to be clean.
     const isFirstTouchSeen =
       startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
-      startEvent.codeName === BizEvents.BANNER_SEEN;
+      startEvent.codeName === BizEvents.BANNER_SEEN ||
+      startEvent.codeName === BizEvents.EMBED_SEEN;
     const isFirstTouchComplete =
       completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
       completeEvent.codeName === BizEvents.BANNER_DISMISSED;
@@ -513,15 +563,19 @@ export class AnalyticsService {
     const uniqueCompletions = isFirstTouchComplete
       ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
       : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
-    const totalCompletions = isResourceCenter
-      ? await this.countEventsByContent({ ...condition, eventId: completeEvent.id })
-      : isFirstTouchComplete
-        ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
-        : await this.aggregationByEvent({
-            ...condition,
-            eventId: completeEvent.id,
-            isDistinct: false,
-          });
+    // An embed's success action is a button press and a session holds many of
+    // them, so its total counts click EVENTS (as the resource center's does)
+    // while its total views stay sessions (frequency restarts them, as flow's).
+    const totalCompletions =
+      isResourceCenter || isEmbed
+        ? await this.countEventsByContent({ ...condition, eventId: completeEvent.id })
+        : isFirstTouchComplete
+          ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+          : await this.aggregationByEvent({
+              ...condition,
+              eventId: completeEvent.id,
+              isDistinct: false,
+            });
     // Checklist panel-open counters — same pair as the resource-center's:
     // CHECKLIST_SEEN fires on every collapsed→expanded transition, so unique
     // counts users who opened the panel and total counts expansions (events).
@@ -545,16 +599,33 @@ export class AnalyticsService {
           ? { uniqueOpens: 0, totalOpens: 0 }
           : {};
 
-    const viewsByStep = isFlow
+    // Embed dismissals ride beside the click counters (dismissal is not its
+    // "complete"); first-touch, as the banner's dismissals are.
+    const embedDismissedEvent = events.find((ev) => ev.codeName === BizEvents.EMBED_DISMISSED);
+    const dismissals =
+      isEmbed && embedDismissedEvent
+        ? {
+            uniqueDismissals: await this.aggregationFirstEvent({
+              ...condition,
+              eventId: embedDismissedEvent.id,
+            }),
+          }
+        : isEmbed
+          ? { uniqueDismissals: 0 }
+          : {};
+
+    // Embed steps carry views only: no completion, no tooltip target
+    const viewsByStep = hasSteps
       ? await this.aggregationStepsByContent(
           condition,
           stepSeenEvent!,
-          completeEvent,
-          tooltipTargetMissingEvent,
+          isFlow ? completeEvent : undefined,
+          isFlow ? tooltipTargetMissingEvent : undefined,
         )
       : null;
     const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
     const viewsByBlock = await this.aggregationBlocksByContent(condition, projectId);
+    const viewsByButton = await this.aggregationButtonsByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
       { ...condition },
       timezone,
@@ -569,10 +640,12 @@ export class AnalyticsService {
       uniqueCompletions,
       totalCompletions,
       ...opens,
+      ...dismissals,
       viewsByDay,
       viewsByStep,
       viewsByTask,
       viewsByBlock,
+      viewsByButton,
     };
   }
 
@@ -776,11 +849,14 @@ export class AnalyticsService {
     // (see querySessionBasedContentAnalytics) so the rows still sum to the
     // headline totals.
     const isResourceCenter = startEvent.codeName === BizEvents.RESOURCE_CENTER_OPENED;
+    // Embed clicks count events per day too (see querySessionBasedContentAnalytics).
+    const isEmbed = startEvent.codeName === BizEvents.EMBED_SEEN;
     // First-touch pairs (see querySessionBasedContentAnalytics): each user
     // lands on the day of their first-ever event, immune to legacy repeats.
     const isFirstTouchSeen =
       startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
-      startEvent.codeName === BizEvents.BANNER_SEEN;
+      startEvent.codeName === BizEvents.BANNER_SEEN ||
+      startEvent.codeName === BizEvents.EMBED_SEEN;
     const isFirstTouchComplete =
       completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
       completeEvent.codeName === BizEvents.BANNER_DISMISSED;
@@ -796,21 +872,25 @@ export class AnalyticsService {
     const uniqueCompletionByDay = isFirstTouchComplete
       ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
       : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
-    const totalCompletionByDay = isResourceCenter
-      ? await this.countEventsByContentByDay({ ...condition, eventId: completeEvent.id }, timezone)
-      : isFirstTouchComplete
-        ? await this.aggregationFirstEventByDay(
+    const totalCompletionByDay =
+      isResourceCenter || isEmbed
+        ? await this.countEventsByContentByDay(
             { ...condition, eventId: completeEvent.id },
             timezone,
           )
-        : await this.aggregationByDay(
-            {
-              ...condition,
-              eventId: completeEvent.id,
-              isDistinct: false,
-            },
-            timezone,
-          );
+        : isFirstTouchComplete
+          ? await this.aggregationFirstEventByDay(
+              { ...condition, eventId: completeEvent.id },
+              timezone,
+            )
+          : await this.aggregationByDay(
+              {
+                ...condition,
+                eventId: completeEvent.id,
+                isDistinct: false,
+              },
+              timezone,
+            );
     const uniqueOpensByDay = opensEvent
       ? await this.aggregationByDay({ ...condition, eventId: opensEvent.id }, timezone)
       : null;
@@ -846,7 +926,7 @@ export class AnalyticsService {
   async aggregationStepsByContent(
     condition: AnalyticsConditions,
     stepSeenEvent: Event,
-    completeEvent: Event,
+    completeEvent?: Event,
     tooltipTargetMissingEvent?: Event,
   ) {
     const { contentId, environmentId } = condition;
@@ -854,11 +934,11 @@ export class AnalyticsService {
       where: { id: contentId },
       include: { contentOnEnvironments: true },
     });
-    if (
-      !content ||
-      content.type === ContentType.CHECKLIST ||
-      content.type === ContentType.LAUNCHER
-    ) {
+    if (!content) {
+      return [];
+    }
+    const stepCvidKey = STEP_CVID_ATTRIBUTE[content.type as ContentType];
+    if (!stepCvidKey) {
       return [];
     }
     const versionId = resolveContentVersionId(content, environmentId);
@@ -877,7 +957,7 @@ export class AnalyticsService {
     const ret = [];
     for (let index = 0; index < maxStepIndex; index++) {
       const stepInfo = version.steps[index];
-      const analytics = await this.getStepAnalyticsMetrics(condition, stepInfo.cvid, {
+      const analytics = await this.getStepAnalyticsMetrics(condition, stepCvidKey, stepInfo.cvid, {
         stepSeenEvent,
         completeEvent,
         tooltipTargetMissingEvent,
@@ -1070,6 +1150,78 @@ export class AnalyticsService {
     return ret;
   }
 
+  /**
+   * Per-button click counts of an embed: the published version's steps are
+   * walked in sequence, each step's editor tree in document order, and every
+   * button carrying a cvid gets a row keyed by (step cvid, button cvid).
+   */
+  async aggregationButtonsByContent(condition: AnalyticsConditions, projectId: string) {
+    const { contentId, environmentId } = condition;
+    const content = await this.prisma.content.findFirst({
+      where: { id: contentId },
+      include: { contentOnEnvironments: true },
+    });
+    if (!content || content.type !== ContentType.EMBED) {
+      return [];
+    }
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return [];
+    }
+    const version = await this.prisma.version.findFirst({
+      where: { id: versionId },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
+    });
+    if (!version || !version.steps || version.steps.length === 0) {
+      return [];
+    }
+
+    const clickEvent = await this.prisma.event.findFirst({
+      where: {
+        projectId,
+        codeName: BizEvents.BUTTON_CLICKED,
+      },
+    });
+    if (!clickEvent) {
+      return [];
+    }
+
+    const ret = [];
+    for (const [stepIndex, step] of version.steps.entries()) {
+      const buttons = extractStepButtons(step.data as unknown as ContentEditorRoot[]);
+      for (const button of buttons) {
+        const cvid = button.data.cvid;
+        if (!cvid) {
+          continue;
+        }
+        const buttonCondition = {
+          ...condition,
+          eventId: clickEvent.id,
+          key: EventAttributes.BUTTON_CVID,
+          value: cvid,
+          additionalAttributes: { [EventAttributes.EMBED_STEP_CVID]: step.cvid },
+        };
+        const uniqueClicks = await this.aggregationByItem({
+          ...buttonCondition,
+          isDistinct: true,
+        });
+        const totalClicks = await this.countTotalEvents(buttonCondition);
+        ret.push({
+          name: button.data.text,
+          cvid,
+          stepCvid: step.cvid,
+          stepName: step.name,
+          stepIndex,
+          analytics: {
+            uniqueClicks,
+            totalClicks,
+          },
+        });
+      }
+    }
+    return ret;
+  }
+
   async aggregationByEvent(condition: AnalyticsConditions) {
     const { contentId, eventId, startDateStr, endDateStr, isDistinct, environmentId } = condition;
     const startDate = new Date(startDateStr);
@@ -1236,8 +1388,7 @@ export class AnalyticsService {
   }
 
   async aggregationByItem(condition: ItemAnalyticsConditions) {
-    const { contentId, eventId, startDateStr, endDateStr, isDistinct, key, value, environmentId } =
-      condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -1248,7 +1399,7 @@ export class AnalyticsService {
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
-        AND "BizEvent"."data" ->> ${key} = ${String(value)}
+        AND ${dataAttributeMatches(condition)}
       `;
       return Number.parseInt(data[0].count.toString());
     }
@@ -1259,13 +1410,13 @@ export class AnalyticsService {
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
-        AND "BizEvent"."data" ->> ${key} = ${String(value)}
+        AND ${dataAttributeMatches(condition)}
         `;
     return Number.parseInt(data[0].count.toString());
   }
 
   async countTotalEvents(condition: Omit<ItemAnalyticsConditions, 'isDistinct'>) {
-    const { contentId, eventId, startDateStr, endDateStr, key, value, environmentId } = condition;
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -1274,7 +1425,7 @@ export class AnalyticsService {
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
-        AND "BizEvent"."data" ->> ${key} = ${String(value)}
+        AND ${dataAttributeMatches(condition)}
     `;
     return Number.parseInt(data[0].count.toString());
   }
@@ -1324,12 +1475,14 @@ export class AnalyticsService {
    * Get analytics metrics for a specific step
    * Unified method to aggregate views, completions, and tooltip target missing counts
    * @param baseCondition - Base analytics conditions
+   * @param stepCvidKey - The attribute the content type's events carry the step cvid under
    * @param stepCvid - Step CVID to query
    * @param events - Event configuration (all optional)
    * @returns Unified step analytics metrics
    */
   private async getStepAnalyticsMetrics(
     baseCondition: Omit<AnalyticsConditions, 'eventId' | 'isDistinct'>,
+    stepCvidKey: EventAttributes,
     stepCvid: string,
     events: StepAnalyticsEvents,
   ): Promise<StepAnalyticsMetrics> {
@@ -1337,7 +1490,7 @@ export class AnalyticsService {
 
     const itemCondition = {
       ...baseCondition,
-      key: 'flow_step_cvid',
+      key: stepCvidKey,
       value: stepCvid,
     };
 
@@ -1673,7 +1826,7 @@ export class AnalyticsService {
           { first, last, before, after },
         ),
         // Query step analytics using unified method
-        this.getStepAnalyticsMetrics(baseCondition, stepCvid, {
+        this.getStepAnalyticsMetrics(baseCondition, EventAttributes.FLOW_STEP_CVID, stepCvid, {
           stepSeenEvent: flowStepSeenEvent ?? undefined,
           completeEvent: flowCompletedEvent ?? undefined,
           tooltipTargetMissingEvent,

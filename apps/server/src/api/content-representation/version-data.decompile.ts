@@ -1,4 +1,4 @@
-import { ContentDataType, LauncherDataType } from '@usertour/types';
+import { ContentDataType, EmbedPlacement, LauncherDataType } from '@usertour/types';
 
 import { decompileContent } from './representation.decompile';
 import { decompileResourceCenter } from './resource-center.decompile';
@@ -8,6 +8,7 @@ import {
   RepresentationAnnouncement,
   RepresentationBanner,
   RepresentationChecklist,
+  RepresentationEmbed,
   RepresentationLauncher,
   RepresentationTracker,
   RepresentationVersionData,
@@ -16,7 +17,8 @@ import {
 /**
  * Decompile a version's type-specific `version.data` into its representation,
  * dispatching on the content type. Returns undefined for `flow` (its body is
- * `steps`, not `version.data`) and for unknown types.
+ * `steps`, not `version.data`) and for unknown types; an embed's `data` is its
+ * shell (its steps are decompiled as steps, like a flow's).
  */
 export function decompileVersionData(
   contentType: string,
@@ -36,9 +38,34 @@ export function decompileVersionData(
       return decompileAnnouncement(data, resolvers);
     case ContentDataType.RESOURCE_CENTER:
       return decompileResourceCenter(data, resolvers);
+    case ContentDataType.EMBED:
+      return decompileEmbed(data);
     default:
       return undefined;
   }
+}
+
+const EMBED_PLACEMENTS = new Set<string>(Object.values(EmbedPlacement));
+
+function decompileEmbed(data: unknown): RepresentationEmbed {
+  const shell = (data ?? {}) as Record<string, unknown>;
+  const target = decompileTarget(shell.targetElement);
+  return {
+    ...(typeof shell.placement === 'string' && EMBED_PLACEMENTS.has(shell.placement)
+      ? { placement: shell.placement as EmbedPlacement }
+      : {}),
+    ...(target ? { target } : {}),
+    ...(typeof shell.allowUsersToDismiss === 'boolean'
+      ? { allowDismiss: shell.allowUsersToDismiss }
+      : {}),
+    ...(typeof shell.zIndex === 'number' ? { zIndex: shell.zIndex } : {}),
+    ...(typeof shell.maxContentWidth === 'number'
+      ? { maxContentWidth: shell.maxContentWidth }
+      : {}),
+    ...(shell.outerMargin
+      ? { outerMargin: shell.outerMargin as RepresentationEmbed['outerMargin'] }
+      : {}),
+  };
 }
 
 function decompileTracker(data: unknown, r: DecompileResolvers): RepresentationTracker {

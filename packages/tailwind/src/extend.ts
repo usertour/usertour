@@ -48,6 +48,14 @@ export const extendSdk = {
         'foreground-hover': 'hsl(var(--usertour-banner-hover-foreground-color))',
         'foreground-active': 'hsl(var(--usertour-banner-active-foreground-color))',
       },
+      embed: {
+        DEFAULT: 'hsl(var(--usertour-embed-background-color))',
+        foreground: 'hsl(var(--usertour-embed-foreground-color))',
+        hover: 'hsl(var(--usertour-embed-hover-background-color))',
+        active: 'hsl(var(--usertour-embed-active-background-color))',
+        'foreground-hover': 'hsl(var(--usertour-embed-hover-foreground-color))',
+        'foreground-active': 'hsl(var(--usertour-embed-active-foreground-color))',
+      },
       // Button colors (border colors are in borderColor extension)
       btn: {
         primary: {
@@ -108,6 +116,7 @@ export const extendSdk = {
   padding: {
     'sdk-button-x': 'var(--usertour-button-px)',
     'sdk-banner': 'var(--usertour-banner-padding, 8px)',
+    'sdk-embed': 'var(--usertour-embed-padding, 16px)',
     'sdk-resource-center-launcher': 'calc(var(--usertour-resource-center-launcher-height) / 4)',
     // Button vertical padding: centers text within button height accounting for borders
     // Formula: (button-height - font-size) / 2 - border-width

@@ -117,6 +117,17 @@ export type ThemeTypesSettingsButton = {
     color: ThemeTypesSettingsColor;
   };
 };
+/**
+ * The embed's inline shell: a card in the host layout. Auto colours resolve
+ * to the main (card) colours, not the brand colours a banner uses; border
+ * and radius come from the shared `border` section (ADR 0022).
+ */
+export type EmbedThemeSettings = {
+  backgroundColor: ThemeTypesSettingsColor;
+  textColor: ThemeTypesSettingsColor;
+  padding: number;
+};
+
 export type ThemeTypesSetting = {
   brandColor: ThemeTypesSettingsColor;
   mainColor: ThemeTypesSettingsColor;
@@ -246,6 +257,7 @@ export type ThemeTypesSetting = {
   resourceCenterLauncherButton?: ResourceCenterLauncherButtonThemeSettings;
   resourceCenterUnreadBadge?: ResourceCenterUnreadBadgeThemeSettings;
   announcement?: AnnouncementThemeSettings;
+  embed?: EmbedThemeSettings;
   // Raw CSS injected as a <style> tag into every widget iframe. The
   // sanctioned home for @font-face rules backing 'Custom font' and for
   // advanced widget style overrides.

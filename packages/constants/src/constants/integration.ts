@@ -85,4 +85,5 @@ export const SYNC_TIMELINE_EVENTS: readonly string[] = [
   BizEvents.CHECKLIST_TASK_COMPLETED,
   BizEvents.QUESTION_ANSWERED,
   BizEvents.LAUNCHER_ACTIVATED,
+  BizEvents.BUTTON_CLICKED,
 ];

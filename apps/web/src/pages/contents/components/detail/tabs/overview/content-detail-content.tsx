@@ -32,8 +32,12 @@ import {
   ResourceCenterData,
   Step,
   ThemeTypesSetting,
+  EmbedData,
+  EmbedPlacement,
+  StepContentType,
 } from '@usertour/types';
 import type { Theme } from '@usertour/data';
+import { DEFAULT_EMBED_DATA } from '@usertour/constants';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -44,6 +48,7 @@ import {
   FlowPreview,
   LauncherPreview,
   ResourceCenterPreview,
+  EmbedPreviewContent,
 } from '../../../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
 import { cn } from '@usertour/tailwind';
@@ -218,6 +223,9 @@ const ContentDetailContentStep = ({
   if (!currentStep || !currentTheme) return null;
 
   const isHiddenStep = currentStep.type === 'hidden';
+  // An inline step has no popup geometry: its placement and dismiss button
+  // are the shell's, so only its theme is worth a badge.
+  const isInlineStep = currentStep.type === StepContentType.INLINE;
 
   const leftContent = isHiddenStep ? (
     <div className="w-40 h-32 flex flex-none items-center justify-center">
@@ -243,7 +251,12 @@ const ContentDetailContentStep = ({
   const badges = (
     <>
       <ContentBadge>{currentStep.type}</ContentBadge>
-      {!isHiddenStep && (
+      {isInlineStep && (
+        <ContentBadge>
+          {t('contents.overview.step.theme', { name: currentTheme.name })}
+        </ContentBadge>
+      )}
+      {!isHiddenStep && !isInlineStep && (
         <>
           <ContentBadge>
             {t('contents.overview.step.width', {
@@ -631,6 +644,102 @@ const ResourceCenterContentPreview = ({
   );
 };
 
+interface EmbedContentPreviewProps {
+  currentVersion: ContentVersion;
+  content: Content;
+  onEdit: () => void;
+  disabled: boolean;
+}
+
+// The embed's shell: where it mounts, its target, dismissal, step count and
+// theme, with the first step as the preview. The steps follow as their own
+// cards.
+const EmbedContentPreview = ({
+  currentVersion,
+  content,
+  onEdit,
+  disabled,
+}: EmbedContentPreviewProps) => {
+  const { t } = useTranslation();
+  const currentTheme = useThemeHandler(currentVersion);
+  const data: EmbedData = {
+    ...DEFAULT_EMBED_DATA,
+    ...((currentVersion.data as EmbedData | undefined) ?? {}),
+  };
+  const { height, setContentRect, setScale } = useScaledPreview();
+
+  if (!currentVersion || !currentTheme) return null;
+
+  const leftContent = (
+    <ScaledPreviewWrapper
+      height={height}
+      onContentRectChange={(rect, scale) => {
+        setContentRect(rect);
+        setScale(scale);
+      }}
+    >
+      <EmbedPreviewContent currentTheme={currentTheme} currentVersion={currentVersion} />
+    </ScaledPreviewWrapper>
+  );
+
+  const placementLabelMap: Record<EmbedPlacement, string> = {
+    [EmbedPlacement.TOP_OF_CONTAINER_ELEMENT]: t(
+      'contents.overview.embed.placement.topOfContainerElement',
+    ),
+    [EmbedPlacement.BOTTOM_OF_CONTAINER_ELEMENT]: t(
+      'contents.overview.embed.placement.bottomOfContainerElement',
+    ),
+    [EmbedPlacement.IMMEDIATELY_BEFORE_ELEMENT]: t(
+      'contents.overview.embed.placement.immediatelyBeforeElement',
+    ),
+    [EmbedPlacement.IMMEDIATELY_AFTER_ELEMENT]: t(
+      'contents.overview.embed.placement.immediatelyAfterElement',
+    ),
+    [EmbedPlacement.COVER_ELEMENT]: t('contents.overview.embed.placement.coverElement'),
+  };
+  const badgeTextClassName = 'max-w-64';
+
+  const badges = (
+    <>
+      <ContentBadge textClassName={badgeTextClassName}>
+        {t('contents.overview.embed.showEmbedAt', {
+          placement: placementLabelMap[data.placement] ?? data.placement,
+        })}
+      </ContentBadge>
+      <ContentBadge textClassName={badgeTextClassName}>
+        {t('contents.overview.embed.targetElement', {
+          value: data.targetElement?.customSelector
+            ? data.targetElement.customSelector
+            : t('contents.overview.embed.notSet'),
+        })}
+      </ContentBadge>
+      <ContentBadge textClassName={badgeTextClassName}>
+        {data.allowUsersToDismiss
+          ? t('contents.overview.embed.allowDismiss')
+          : t('contents.overview.embed.preventDismiss')}
+      </ContentBadge>
+      <ContentBadge textClassName={badgeTextClassName}>
+        {t('contents.overview.embed.steps', { count: currentVersion.steps?.length ?? 0 })}
+      </ContentBadge>
+      <ContentBadge textClassName={badgeTextClassName}>
+        {t('contents.overview.embed.theme', { name: currentTheme.name })}
+      </ContentBadge>
+    </>
+  );
+
+  return (
+    <ContentPreviewCard
+      themeSettings={currentTheme.settings}
+      title={content.name}
+      badges={badges}
+      updatedAt={currentVersion.updatedAt}
+      onEdit={onEdit}
+      disabled={disabled}
+      leftContent={leftContent}
+    />
+  );
+};
+
 export const ContentDetailContent = () => {
   const { contentId, contentType } = useContentDetailUI();
   const { content } = useContentDetail(contentId);
@@ -645,7 +754,8 @@ export const ContentDetailContent = () => {
 
   if (!version || !content || !contentType) return null;
 
-  const showAddButton = contentType === ContentTypeName.FLOWS;
+  const showAddButton =
+    contentType === ContentTypeName.FLOWS || contentType === ContentTypeName.EMBEDS;
 
   return (
     <>
@@ -685,6 +795,25 @@ export const ContentDetailContent = () => {
             disabled={isViewOnly}
           />
         )}
+        {contentType === ContentTypeName.EMBEDS && content && (
+          <EmbedContentPreview
+            currentVersion={version}
+            content={content}
+            onEdit={() => openBuilder(content, contentType)}
+            disabled={isViewOnly}
+          />
+        )}
+        {contentType === ContentTypeName.EMBEDS &&
+          version.steps?.map((step, index) => (
+            <ContentDetailContentStep
+              onEdit={() => openBuilder(content, contentType, getStepId(step, index))}
+              currentStep={step}
+              index={index}
+              key={getStepId(step, index)}
+              currentVersion={version}
+              disabled={isViewOnly}
+            />
+          ))}
         {contentType === ContentTypeName.RESOURCE_CENTERS && content && version.data && (
           <ResourceCenterContentPreview
             currentVersion={version}

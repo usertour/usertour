@@ -3,9 +3,9 @@ import {
   collectActionListDestinations,
   collectContentsDestinations,
   collectVersionDataDestinations,
+  hasStepBody,
   isSafeDestinationUrl,
 } from '@usertour/helpers';
-import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot } from '@usertour/types';
 
 import type { ValidationIssue } from '@/modules/common/errors/errors';
@@ -27,43 +27,49 @@ type InternalStep = {
  * destination is and where one can sit: the representation has no single
  * shape for one (markdown links, plain url strings, list-entry fields), the
  * compiled model does. Dynamic destinations (user-attribute chips) are read
- * with the chips stood in for, so a scheme cannot hide behind one. A flow
- * step's own action slots — click-the-target and trigger actions — sit
- * outside its content tree (they are no translation unit) and are walked on
- * top.
+ * with the chips stood in for, so a scheme cannot hide behind one. A step's
+ * own action slots — click-the-target and trigger actions — sit outside its
+ * content tree (they are no translation unit) and are walked on top. A
+ * step-bodied type (flow steps, embed steps) is walked through its steps and
+ * its `data` both — an embed's shell carries no destination today, a flow has
+ * no `data`, so each contributes what it has.
  *
  * A value the stored version already carries passes verbatim
  * (preserve-not-endorse): builder-authored data must stay echo-editable.
  */
+const collectStepDestinations = (steps: unknown): DestinationValue[] => {
+  if (!Array.isArray(steps)) {
+    return [];
+  }
+  return (steps as InternalStep[]).flatMap((step) => {
+    const stepDestinations = [
+      ...(Array.isArray(step?.data)
+        ? collectContentsDestinations(step.data as ContentEditorRoot[])
+        : []),
+      ...collectActionListDestinations(step?.target?.actions, 'target.actions'),
+      ...(Array.isArray(step?.trigger) ? step.trigger : []).flatMap((trigger, index) =>
+        collectActionListDestinations(trigger?.actions, `trigger.${index}.actions`),
+      ),
+    ];
+    return stepDestinations.map((destination) => ({
+      ...destination,
+      path: `steps/${step?.cvid ?? ''}/${destination.path}`,
+    }));
+  });
+};
+
 const collectDestinations = (
   contentType: string | undefined,
   steps: unknown,
   data: unknown,
 ): DestinationValue[] => {
-  if (contentType === ContentDataType.FLOW) {
-    if (!Array.isArray(steps)) {
-      return [];
-    }
-    return (steps as InternalStep[]).flatMap((step) => {
-      const stepDestinations = [
-        ...(Array.isArray(step?.data)
-          ? collectContentsDestinations(step.data as ContentEditorRoot[])
-          : []),
-        ...collectActionListDestinations(step?.target?.actions, 'target.actions'),
-        ...(Array.isArray(step?.trigger) ? step.trigger : []).flatMap((trigger, index) =>
-          collectActionListDestinations(trigger?.actions, `trigger.${index}.actions`),
-        ),
-      ];
-      return stepDestinations.map((destination) => ({
-        ...destination,
-        path: `steps/${step?.cvid ?? ''}/${destination.path}`,
-      }));
-    });
-  }
-  if (!contentType || !data) {
+  if (!contentType) {
     return [];
   }
-  return collectVersionDataDestinations(contentType, data);
+  return [
+    ...(hasStepBody(contentType) ? collectStepDestinations(steps) : []),
+    ...(data ? collectVersionDataDestinations(contentType, data) : []),
+  ];
 };
 
 export const collectDestinationIssues = (input: {
