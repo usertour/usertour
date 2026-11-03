@@ -76,7 +76,67 @@ export const resolveElementMountPlacement = (
   }
 };
 
-/** Inserts the mount element at its placement; idempotent when already there. */
+/** Marks the mount elements this module created, so they recognize each other. */
+const MOUNT_MARKER_ATTRIBUTE = 'data-usertour-inline-mount';
+
+const isMountEl = (node: Node | null | undefined): node is HTMLElement => {
+  return node instanceof HTMLElement && node.hasAttribute(MOUNT_MARKER_ATTRIBUTE);
+};
+
+/**
+ * The mount elements already sitting at a placement, in document order: the
+ * run of marked siblings at the parent's start (prepend) or end (append), or
+ * the run touching the anchor (before: just above it, after: just below it).
+ * A mount inside its run is placed; a newcomer joins the run's end. So several
+ * shells on one target keep their delivery order and never move each other —
+ * and a moved mount is not harmless: moving an iframe reloads its document,
+ * while the frame keeps rendering into the old one.
+ */
+const mountRun = (placement: InlineMountPlacement): HTMLElement[] => {
+  const { parent, insertMode, anchor } = placement;
+  const run: HTMLElement[] = [];
+  switch (insertMode) {
+    case 'prepend': {
+      let node: Node | null = parent.firstChild;
+      while (isMountEl(node)) {
+        run.push(node);
+        node = node.nextSibling;
+      }
+      return run;
+    }
+    case 'append': {
+      let node: Node | null = parent.lastChild;
+      while (isMountEl(node)) {
+        run.unshift(node);
+        node = node.previousSibling;
+      }
+      return run;
+    }
+    case 'before': {
+      let node: Node | null = anchor?.previousSibling ?? null;
+      while (isMountEl(node)) {
+        run.unshift(node);
+        node = node.previousSibling;
+      }
+      return run;
+    }
+    case 'after': {
+      let node: Node | null = anchor?.nextSibling ?? null;
+      while (isMountEl(node)) {
+        run.push(node);
+        node = node.nextSibling;
+      }
+      return run;
+    }
+    default:
+      return run;
+  }
+};
+
+/**
+ * Inserts the mount element at its placement, at the end of the run already
+ * there; a mount inside its run stays where it is.
+ */
 export const insertMountEl = (mountEl: HTMLDivElement, placement: InlineMountPlacement) => {
   const { parent, insertMode, anchor } = placement;
 
@@ -84,19 +144,18 @@ export const insertMountEl = (mountEl: HTMLDivElement, placement: InlineMountPla
     return;
   }
 
-  if (mountEl.parentNode === parent) {
-    if (insertMode === 'append' && mountEl === parent.lastChild) return;
-    if (insertMode === 'prepend' && mountEl === parent.firstChild) return;
-    if (insertMode === 'before' && anchor && mountEl.nextSibling === anchor) return;
-    if (insertMode === 'after' && anchor && anchor.nextSibling === mountEl) return;
+  const run = mountRun(placement);
+  if (run.includes(mountEl)) {
+    return;
   }
+  const lastInRun = run.length > 0 ? run[run.length - 1] : null;
 
   switch (insertMode) {
     case 'append':
       parent.appendChild(mountEl);
       break;
     case 'prepend':
-      parent.insertBefore(mountEl, parent.firstChild);
+      parent.insertBefore(mountEl, lastInRun ? lastInRun.nextSibling : parent.firstChild);
       break;
     case 'before':
       if (anchor?.parentNode) {
@@ -105,7 +164,7 @@ export const insertMountEl = (mountEl: HTMLDivElement, placement: InlineMountPla
       break;
     case 'after':
       if (anchor?.parentNode) {
-        anchor.parentNode.insertBefore(mountEl, anchor.nextSibling);
+        anchor.parentNode.insertBefore(mountEl, (lastInRun ?? anchor).nextSibling);
       }
       break;
     default:
@@ -113,13 +172,14 @@ export const insertMountEl = (mountEl: HTMLDivElement, placement: InlineMountPla
   }
 };
 
-/** Creates the detached mount element an inline shell portals into. */
+/** Creates the detached, marked mount element an inline shell portals into. */
 export const createMountEl = (className: string): HTMLDivElement | null => {
   if (!document?.createElement) {
     return null;
   }
   const el = document.createElement('div');
   el.className = className;
+  el.setAttribute(MOUNT_MARKER_ATTRIBUTE, '');
   return el;
 };
 

@@ -248,6 +248,74 @@ test('a sessionless embed starts its content once the target is found and render
   expect(await sdk.isStarted('embed-1')).toBe(true);
 });
 
+test('several embeds on one target keep their frames and their delivery order', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'First', [], 'top-of-container-element'),
+  );
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-2', 'embed-2', '#panel', 'Second', [], 'top-of-container-element'),
+  );
+  await expect(sdk.page.locator(FRAME)).toHaveCount(2);
+  // Each frame measures its content once rendered, and the measurement re-runs
+  // the mount effect: that used to move the other shell, reloading its frame
+  // while React kept rendering into the old document — two blank cards.
+  await sdk.advance(600);
+  await expect(sdk.page.frameLocator(FRAME).first().getByText('First')).toBeVisible();
+  await expect(sdk.page.frameLocator(FRAME).nth(1).getByText('Second')).toBeVisible();
+  // Both sit at the top of the target, in delivery order.
+  const order = await sdk.page.evaluate(() => {
+    const children = [...(document.getElementById('panel') as HTMLElement).children];
+    return children.slice(0, 2).map((child) => child.className);
+  });
+  expect(order).toEqual(['usertour-widget-embed', 'usertour-widget-embed']);
+  const texts = await sdk.page.evaluate(() => {
+    return [...document.querySelectorAll('#panel > .usertour-widget-embed iframe')].map((frame) =>
+      (frame as HTMLIFrameElement).contentDocument?.body?.innerText.trim(),
+    );
+  });
+  expect(texts).toEqual(['First', 'Second']);
+});
+
+test('an embed stays mounted while its target is scrolled out of the viewport', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Here'));
+  await expect(sdk.page.locator(FRAME)).toHaveCount(1);
+
+  // Push the target well below the fold and count shell insertions from here:
+  // the viewport check used to hide the embed, which reflowed the target back
+  // into view, which showed it again, every tick.
+  await sdk.page.evaluate(() => {
+    (document.getElementById('panel') as HTMLElement).style.marginTop = '4000px';
+    window.scrollTo(0, 0);
+    (window as unknown as { __shellInsertions: number }).__shellInsertions = 0;
+    new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node instanceof HTMLElement && node.classList.contains('usertour-widget-embed')) {
+            (window as unknown as { __shellInsertions: number }).__shellInsertions += 1;
+          }
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+  await sdk.advance(1000);
+  await expect(sdk.page.locator(FRAME)).toHaveCount(1);
+  expect(await sdk.isStarted('embed-1')).toBe(true);
+  const insertions = await sdk.page.evaluate(
+    () => (window as unknown as { __shellInsertions: number }).__shellInsertions,
+  );
+  expect(insertions).toBe(0);
+});
+
 test('an embed whose target leaves the page unmounts and comes back with it', async ({
   sdk,
   protocol,

@@ -373,6 +373,10 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     this.watcherTargetKey = targetKey;
     this.watcher = new UsertourElementWatcher(targetElement);
     this.watcher.setTargetMissingSeconds(EMBED_TARGET_MISSING_SECONDS);
+    // The embed shows while its target exists (ADR 0022), not while the target
+    // is in view: it sits in the document flow, so being scrolled past is
+    // ordinary, and its own height can push the target out of the viewport.
+    this.watcher.setViewportCheck(false);
 
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (el instanceof Element) {

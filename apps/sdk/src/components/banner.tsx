@@ -23,6 +23,7 @@ import { document } from '@/utils';
 import {
   type InlineMountPlacement,
   applyStyleObject,
+  createMountEl,
   insertMountEl,
   resolveElementMountPlacement,
 } from './inline-mount';
@@ -106,11 +107,12 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   const contents = useMemo(() => bannerData?.contents ?? [], [bannerData?.contents]);
 
   useEffect(() => {
-    if (!mountElRef.current && document?.createElement) {
-      const el = document.createElement('div');
-      el.className = 'usertour-widget-banner';
-      mountElRef.current = el;
-      setPortalEl(el);
+    if (!mountElRef.current) {
+      const el = createMountEl('usertour-widget-banner');
+      if (el) {
+        mountElRef.current = el;
+        setPortalEl(el);
+      }
     }
 
     return () => {
