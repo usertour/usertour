@@ -576,9 +576,10 @@ export const representationEmbed = z
       .boolean()
       .optional()
       .describe(
-        'Adds an X button. Dismissing ends the current session; whether a later qualifying ' +
-          'page load starts a new one is decided by `startRules.frequency` (`once` = closable ' +
-          'forever, `unlimited` = closable until the next visit).',
+        'Adds an X button. Dismissing ends the current session; whether a new one may start ' +
+          'later is decided by `startRules.frequency`: `once` = closable forever, `unlimited` / ' +
+          '`multiple` = back once the `every` gap has passed since the dismissal (`0` = right ' +
+          'away while the start rules still match).',
       ),
     zIndex: z
       .number()

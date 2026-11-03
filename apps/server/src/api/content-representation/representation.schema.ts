@@ -452,8 +452,8 @@ export const representationCondition = z.lazy(() =>
         .string()
         .describe(
           'contentId of the FLOW or CHECKLIST whose per-user state to check (an id from the content list). ' +
-            'Only flows and checklists record this state — referencing a banner / launcher / ' +
-            'resource-center / tracker is rejected at write.',
+            'Only flows and checklists record this state — referencing content of any other ' +
+            'type is rejected at write.',
         ),
       state: z
         .enum(['seen', 'unseen', 'completed', 'uncompleted', 'active', 'inactive'])
@@ -1168,13 +1168,13 @@ export const representationStartRules = z.preprocess(
         mode: z
           .enum(['once', 'multiple', 'unlimited'])
           .describe(
-            'once = show a single time; multiple = up to N times per window; unlimited = every time the conditions match (subject to `every`).',
+            'once = show a single time; multiple = at most `every.times` sessions in total (a lifetime count, not per window), each new one only after the `every` gap; unlimited = no count cap, a new session after the `every` gap.',
           ),
         every: z
           .object({ times: z.number().optional(), duration: z.number(), unit: durationUnit })
           .optional()
           .describe(
-            'Re-show window. Used by `multiple` (with `times`) and `unlimited`; ignored for `once`. If omitted for those modes a default window is applied. Manual and programmatic starts also count toward the `multiple` limit.',
+            'Gap after a session ends: a new one may start once `duration` `unit` has passed since the previous session of this content ended (dismissed / ended). Used by `multiple` (with `times`, the total session cap) and `unlimited`; ignored for `once`. If omitted for those modes the default is stored: 1 day, plus `times: 2` for `multiple`. `duration: 0` = no gap. Manual and programmatic starts also count toward the `multiple` limit.',
           ),
         atLeast: z
           .object({ duration: z.number(), unit: durationUnit })
