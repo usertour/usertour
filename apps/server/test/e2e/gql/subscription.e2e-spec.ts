@@ -280,6 +280,8 @@ describe('GraphQL subscription (e2e)', () => {
           mode: 'subscription',
           client_reference_id: projectId,
           line_items: [{ price: 'price_e2e_123', quantity: 1 }],
+          billing_address_collection: 'required',
+          tax_id_collection: { enabled: true },
         }),
       );
 
@@ -292,6 +294,89 @@ describe('GraphQL subscription (e2e)', () => {
         sessionId: 'cs_e2e_123',
         lookupKey: plan.lookupKey,
       });
+    });
+
+    // Fresh project+owner per case below: the shared project's customerId is
+    // set by the case above, which would decide the branch taken here.
+    it('creates the Stripe Customer from the owner email when there is none', async () => {
+      const other = await buildProject(prisma, { name: 'checkout-new-customer' });
+      const member = await buildAuthorizedUser(prisma, app, {
+        projectId: other.id,
+        role: 'OWNER',
+      });
+      userIds.push(member.user.id);
+      const plan = await prisma.subscriptionPlan.create({
+        data: {
+          planType: 'business',
+          interval: 'yearly',
+          lookupKey: `lookup_checkout_new_${Date.now()}`,
+        },
+      });
+      planIds.push(plan.id);
+
+      const res = await graphql(app, {
+        token: member.token,
+        query: `mutation ($data: CreateCheckoutSessionRequest!) {
+          createCheckoutSession(data: $data)
+        }`,
+        variables: {
+          data: { projectId: other.id, planType: 'business', interval: 'yearly' },
+        },
+      });
+      expect(gqlData(res).createCheckoutSession).toBe(CHECKOUT_URL);
+
+      const [params] = mockStripe.checkout.sessions.create.mock.calls[0];
+      expect(params).toMatchObject({ customer_email: member.user.email });
+      expect(params).not.toHaveProperty('customer');
+      expect(params).not.toHaveProperty('customer_update');
+
+      await prisma.checkoutSession.deleteMany({ where: { projectId: other.id } });
+      await teardownProject(prisma, other.id);
+    });
+
+    it('reuses an existing Stripe Customer and lets the page update its record', async () => {
+      const other = await buildProject(prisma, { name: 'checkout-existing-customer' });
+      const member = await buildAuthorizedUser(prisma, app, {
+        projectId: other.id,
+        role: 'OWNER',
+      });
+      userIds.push(member.user.id);
+      // (planType, interval) is unique in the plans table; each case seeds its
+      // own pair.
+      const plan = await prisma.subscriptionPlan.create({
+        data: {
+          planType: 'starter',
+          interval: 'yearly',
+          lookupKey: `lookup_checkout_existing_${Date.now()}`,
+        },
+      });
+      planIds.push(plan.id);
+
+      // No customerId on the project → found by the owner's email.
+      mockStripe.customers.list.mockResolvedValueOnce({
+        data: [{ id: 'cus_checkout_existing' }],
+      });
+
+      const res = await graphql(app, {
+        token: member.token,
+        query: `mutation ($data: CreateCheckoutSessionRequest!) {
+          createCheckoutSession(data: $data)
+        }`,
+        variables: {
+          data: { projectId: other.id, planType: 'starter', interval: 'yearly' },
+        },
+      });
+      expect(gqlData(res).createCheckoutSession).toBe(CHECKOUT_URL);
+
+      const [params] = mockStripe.checkout.sessions.create.mock.calls[0];
+      expect(params).toMatchObject({
+        customer: 'cus_checkout_existing',
+        customer_update: { address: 'auto', name: 'auto' },
+      });
+      expect(params).not.toHaveProperty('customer_email');
+
+      await prisma.checkoutSession.deleteMany({ where: { projectId: other.id } });
+      await teardownProject(prisma, other.id);
     });
 
     it('errors when no plan matches the requested type/interval', async () => {

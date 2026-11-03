@@ -130,15 +130,30 @@ export class SubscriptionService implements OnModuleInit {
     }
 
     const price = prices.data[0];
+
+    // Invoices, the renewal ones included, take the customer's name, address
+    // and tax IDs from the Stripe Customer, not from the payment page. A new
+    // Customer is created from what the page collects; an existing one keeps
+    // its record unless the session is allowed to update it.
+    const customerParams: Pick<
+      Stripe.Checkout.SessionCreateParams,
+      'customer' | 'customer_update' | 'customer_email'
+    > = customerId
+      ? { customer: customerId, customer_update: { address: 'auto', name: 'auto' } }
+      : { customer_email: owner.email };
+
     const session = await this.stripeClient.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: price.id, quantity: 1 }],
       success_url: this.configService.get('stripe.sessionSuccessUrl'),
       cancel_url: this.configService.get('stripe.sessionCancelUrl'),
       client_reference_id: projectId,
-      customer: customerId || undefined,
-      customer_email: !customerId ? owner?.email : undefined,
       allow_promotion_codes: true,
+      // The billing address goes on every invoice; the tax ID form shows in
+      // the countries Stripe supports it for, with the legal business name.
+      billing_address_collection: 'required',
+      tax_id_collection: { enabled: true },
+      ...customerParams,
     });
 
     await this.prisma.$transaction(async (prisma) => {
