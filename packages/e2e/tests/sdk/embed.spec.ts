@@ -212,6 +212,14 @@ test('the cover placement sits over the target and tracks its box', async ({ sdk
   expect(Math.abs(cover!.y - target!.y)).toBeLessThanOrEqual(1);
   expect(Math.abs(cover!.width - target!.width)).toBeLessThanOrEqual(1);
   expect(Math.abs(cover!.height - target!.height)).toBeLessThanOrEqual(1);
+
+  // The cover stands in for the target, so the painted card fills the whole
+  // box — not just the content's height, with the target showing underneath.
+  const paintedHeight = async () => {
+    const painted = await sdk.page.frameLocator(FRAME).locator('body > div').first().boundingBox();
+    return painted?.height ?? 0;
+  };
+  expect(Math.abs((await paintedHeight()) - cover!.height)).toBeLessThanOrEqual(1);
   // The target's DOM is untouched: the cover lives in the body.
   expect(await shell.evaluate((el) => el.parentElement?.tagName)).toBe('BODY');
 
@@ -227,6 +235,59 @@ test('the cover placement sits over the target and tracks its box', async ({ sdk
       return Math.abs(cover!.y - target!.y) <= 1 && Math.abs(cover!.height - target!.height) <= 1;
     })
     .toBe(true);
+  await expect.poll(async () => Math.abs((await paintedHeight()) - cover!.height) <= 1).toBe(true);
+});
+
+test('the cover places its content at the top, center or bottom of the box', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  // A tall target, so the content has room to sit somewhere in the box.
+  await sdk.page.evaluate(() => {
+    (document.getElementById('panel') as HTMLElement).style.height = '400px';
+  });
+  const measure = async () => {
+    const frame = await sdk.page.locator(FRAME).boundingBox();
+    const row = await sdk.page
+      .frameLocator(FRAME)
+      .locator('body > div > div > *')
+      .first()
+      .boundingBox();
+    return { frame: frame!, row: row! };
+  };
+  const padding = 16;
+
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Locked', [], 'cover-element', 'top'),
+  );
+  await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+  let { frame, row } = await measure();
+  expect(row.y - frame.y).toBeLessThanOrEqual(padding + 2);
+  await protocol.push('RemoveEmbed', { contentId: 'embed-1' });
+  await expect(sdk.page.locator(FRAME)).toHaveCount(0);
+
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-2', 'embed-2', '#panel', 'Locked', [], 'cover-element', 'bottom'),
+  );
+  await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+  ({ frame, row } = await measure());
+  expect(frame.y + frame.height - (row.y + row.height)).toBeLessThanOrEqual(padding + 2);
+  await protocol.push('RemoveEmbed', { contentId: 'embed-2' });
+  await expect(sdk.page.locator(FRAME)).toHaveCount(0);
+
+  // The default: centered.
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-3', 'embed-3', '#panel', 'Locked', [], 'cover-element'),
+  );
+  await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+  ({ frame, row } = await measure());
+  const frameCenter = frame.y + frame.height / 2;
+  const rowCenter = row.y + row.height / 2;
+  expect(Math.abs(rowCenter - frameCenter)).toBeLessThanOrEqual(2);
 });
 
 test('a sessionless embed starts its content once the target is found and renders nothing until then', async ({

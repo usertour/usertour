@@ -386,5 +386,8 @@ function compileEmbed(rep: RepresentationEmbed, existing: unknown): unknown {
   if (rep.outerMargin !== undefined) {
     out.outerMargin = rep.outerMargin;
   }
+  if (rep.coverAlignment !== undefined) {
+    out.coverAlignment = rep.coverAlignment;
+  }
   return out;
 }

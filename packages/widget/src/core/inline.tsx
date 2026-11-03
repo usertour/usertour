@@ -3,6 +3,7 @@ import { Frame, useFrame } from '@usertour/frame';
 import { useSize } from '@usertour/react-use-size';
 import { RiCloseLargeFill } from '@usertour/icons';
 import type { ThemeTypesSetting } from '@usertour/types';
+import { EmbedCoverAlignment } from '@usertour/types';
 import type { CSSProperties } from 'react';
 import {
   createContext,
@@ -53,7 +54,23 @@ export interface InlineShell {
    * content.
    */
   height?: number;
+  /**
+   * Paint the whole frame, not just the content: the frame's height comes
+   * from the host (the embed's cover placement sizes it to the target's box)
+   * instead of from the content measurement, and the content column centers
+   * in it. Off for every in-flow placement, where the frame is as tall as the
+   * content and there is nothing more to paint.
+   */
+  fill?: boolean;
+  /** Where the content column sits in a filling shell; center when absent. */
+  fillAlignment?: EmbedCoverAlignment;
 }
+
+const FILL_ALIGNMENT_CLASS: Record<EmbedCoverAlignment, string> = {
+  [EmbedCoverAlignment.TOP]: 'justify-start',
+  [EmbedCoverAlignment.CENTER]: 'justify-center',
+  [EmbedCoverAlignment.BOTTOM]: 'justify-end',
+};
 
 const INLINE_DEFAULT_CONTENT_HEIGHT_PX = 56;
 const INLINE_MEASURE_FAIL_OPEN_MS = 500;
@@ -309,13 +326,21 @@ const InlineBody = memo(
     const { shell, onDismiss } = useInlineRootContext();
     const showDismiss = shell?.allowDismiss ?? false;
 
-    const contentMaxWidth = useMemo(
-      () =>
-        shell?.maxContentWidth
-          ? ({ maxWidth: `${shell.maxContentWidth}px` } as CSSProperties)
-          : undefined,
-      [shell?.maxContentWidth],
-    );
+    const fill = shell?.fill ?? false;
+    const fillAlignment = shell?.fillAlignment ?? EmbedCoverAlignment.CENTER;
+    const columnStyle = useMemo(() => {
+      const style: CSSProperties = {};
+      if (shell?.maxContentWidth) {
+        style.maxWidth = `${shell.maxContentWidth}px`;
+      }
+      // Content taller than a filling shell must not be clipped at the top,
+      // which plain centering does; `safe center` falls back to the start.
+      // A browser without `safe` ignores this and keeps the class's center.
+      if (fill && fillAlignment === EmbedCoverAlignment.CENTER) {
+        style.justifyContent = 'safe center';
+      }
+      return style;
+    }, [shell?.maxContentWidth, fill, fillAlignment]);
 
     const handleDismiss = useCallback(() => {
       onDismiss?.();
@@ -324,8 +349,11 @@ const InlineBody = memo(
     return (
       <InlineContentContainer ref={ref} className={className} style={style}>
         <div
-          className="min-w-0 flex-1 w-full mx-auto flex flex-col justify-center"
-          style={contentMaxWidth}
+          className={cn(
+            'min-w-0 flex-1 w-full mx-auto flex flex-col',
+            fill ? FILL_ALIGNMENT_CLASS[fillAlignment] : 'justify-center',
+          )}
+          style={columnStyle}
         >
           {children}
         </div>
@@ -370,7 +398,8 @@ export interface InlineInFrameProps {
 
 const InlineInFrame = memo((props: InlineInFrameProps) => {
   const { globalStyle, children } = props;
-  const { onContentSizeChange } = useInlineRootContext();
+  const { onContentSizeChange, shell } = useInlineRootContext();
+  const fill = shell?.fill ?? false;
   const { document } = useFrame();
   // Live-measure the rendered content (plus its padding) and report it to the
   // host-side wrapper — same measure-inside/apply-outside pattern as
@@ -410,8 +439,10 @@ const InlineInFrame = memo((props: InlineInFrameProps) => {
     // h-auto (overrides the container's h-full): the measurement must read the
     // CONTENT's natural height — with h-full the container tracks the iframe,
     // which tracks this very measurement (circular). The frame is sized to the
-    // container, so nothing is lost by not stretching.
-    <InlineBody ref={setContainerEl} className="h-auto">
+    // container, so nothing is lost by not stretching. A filling shell is the
+    // exception: its frame is sized by the host, not by this measurement, so
+    // the container may track the frame and paint all of it.
+    <InlineBody ref={setContainerEl} className={fill ? 'h-full' : 'h-auto'}>
       {children}
     </InlineBody>
   );

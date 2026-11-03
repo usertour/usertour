@@ -194,6 +194,7 @@ describe('version-data builder settings round-trip', () => {
         allowDismiss: false,
         maxContentWidth: 400,
         outerMargin: { top: 1, right: 2, bottom: 3, left: 4 },
+        coverAlignment: 'bottom',
       },
       internal,
       ids,
@@ -205,6 +206,7 @@ describe('version-data builder settings round-trip', () => {
       zIndex: 7,
       maxContentWidth: 400,
       outerMargin: { top: 1, right: 2, bottom: 3, left: 4 },
+      coverAlignment: 'bottom',
     });
   });
 

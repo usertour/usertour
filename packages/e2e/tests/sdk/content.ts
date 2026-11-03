@@ -275,6 +275,8 @@ export type EmbedInput = {
   /** Open on this step instead of the first (the session's remembered step). */
   currentCvid?: string;
   allowDismiss?: boolean;
+  /** Content position inside a cover; center when omitted. */
+  coverAlignment?: string;
 };
 
 export const embedSession = (input: EmbedInput) => {
@@ -297,6 +299,7 @@ export const embedSession = (input: EmbedInput) => {
         placement: input.placement ?? 'immediately-after-element',
         targetElement: { type: 'manual', customSelector: input.target },
         allowUsersToDismiss: input.allowDismiss ?? true,
+        ...(input.coverAlignment ? { coverAlignment: input.coverAlignment } : {}),
       },
     },
     ...(current ? { currentStep: { id: current.id, cvid: current.cvid } } : {}),
@@ -311,12 +314,14 @@ export const oneStepEmbed = (
   text: string,
   buttons: ReturnType<typeof button>[] = [],
   placement?: string,
+  coverAlignment?: string,
 ) =>
   embedSession({
     sessionId,
     contentId,
     target,
     placement,
+    coverAlignment,
     steps: [
       {
         id: `${contentId}-step-1`,

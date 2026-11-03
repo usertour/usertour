@@ -3,7 +3,7 @@
 import { BUILDER_Z } from '@usertour/constants';
 import { ElementIcon, RiSettings3Line } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
-import { EmbedPlacement } from '@usertour/types';
+import { EmbedCoverAlignment, EmbedPlacement } from '@usertour/types';
 import type { EmbedOuterMargin } from '@usertour/types';
 import { useCallback } from 'react';
 import {
@@ -34,12 +34,20 @@ const PLACEMENT_OPTIONS: { value: EmbedPlacement; i18n: string }[] = [
   { value: EmbedPlacement.COVER_ELEMENT, i18n: 'coverElement' },
 ];
 
+const COVER_ALIGNMENT_OPTIONS: { value: EmbedCoverAlignment; i18n: string }[] = [
+  { value: EmbedCoverAlignment.TOP, i18n: 'top' },
+  { value: EmbedCoverAlignment.CENTER, i18n: 'center' },
+  { value: EmbedCoverAlignment.BOTTOM, i18n: 'bottom' },
+];
+
 // Placement + target element. Every embed placement is element-relative, so
 // the target row is always shown; the target's fields (and the cover
-// placement's z-index) are edited in the target sub-view the row opens.
+// placement's z-index) are edited in the target sub-view the row opens. The
+// cover is as tall as its target, so it alone has a content position.
 export const EmbedPlacementSelect = () => {
   const { data: localData, updateData: updateLocalData } = useEmbedEditor();
   const { t } = useTranslation();
+  const isCover = localData.placement === EmbedPlacement.COVER_ELEMENT;
 
   return (
     <FieldSection
@@ -57,6 +65,24 @@ export const EmbedPlacementSelect = () => {
         className="w-full bg-surface dark:bg-surface-raised/50 shadow-none"
         contentStyle={{ zIndex: BUILDER_Z.popover }}
       />
+      {isCover && (
+        <div className="flex flex-col gap-1.5">
+          <Label className="flex items-center gap-1 text-sm">
+            {t('contentBuilder.embed.coverAlignment')}
+            <QuestionTooltip>{t('contentBuilder.embed.coverAlignmentTooltip')}</QuestionTooltip>
+          </Label>
+          <CompactSelect
+            options={COVER_ALIGNMENT_OPTIONS.map((option) => ({
+              value: option.value,
+              label: t(`contentBuilder.embed.coverAlignmentOptions.${option.i18n}`),
+            }))}
+            value={localData.coverAlignment ?? EmbedCoverAlignment.CENTER}
+            onChange={(value) => updateLocalData({ coverAlignment: value as EmbedCoverAlignment })}
+            className="w-full bg-surface dark:bg-surface-raised/50 shadow-none"
+            contentStyle={{ zIndex: BUILDER_Z.popover }}
+          />
+        </div>
+      )}
       <EmbedTargetRow />
     </FieldSection>
   );

@@ -1,5 +1,6 @@
 import type { AssetAttributes } from '@usertour/frame';
 import type { EmbedData, ThemeTypesSetting } from '@usertour/types';
+import { EmbedCoverAlignment, EmbedPlacement } from '@usertour/types';
 import type { CSSProperties } from 'react';
 import { forwardRef, memo, useMemo } from 'react';
 
@@ -23,6 +24,10 @@ export const toEmbedInlineShell = (data: EmbedData | undefined): InlineShell => 
   allowDismiss: data?.allowUsersToDismiss ?? false,
   maxContentWidth: data?.maxContentWidth,
   outerMargin: data?.outerMargin,
+  // The cover is sized to the target's box and stands in for it, so the shell
+  // paints the whole box; the in-flow placements paint their content.
+  fill: data?.placement === EmbedPlacement.COVER_ELEMENT,
+  fillAlignment: data?.coverAlignment ?? EmbedCoverAlignment.CENTER,
 });
 
 export const getEmbedPadding = (themeSetting: ThemeTypesSetting | undefined): number =>
@@ -91,13 +96,15 @@ const EmbedPreview = memo(
     const { children, style, ...restProps } = props;
     const { shell } = useInlineRootContext();
     const contentStyle = useMemo(() => getInlineContentWrapperStyle(shell), [shell]);
+    // A filling shell (the cover) takes its host's height, as the live cover
+    // takes the target's; everything else sizes to its content.
     const wrapperStyle = useMemo<CSSProperties>(
       () => ({
         position: 'relative',
-        ['--usertour-widget-embed-height' as string]: 'auto',
+        ['--usertour-widget-embed-height' as string]: shell.fill ? '100%' : 'auto',
         ...style,
       }),
-      [style],
+      [shell.fill, style],
     );
 
     return (

@@ -4017,6 +4017,13 @@ const translations = {
         coverElement: '覆盖元素',
       },
       selectPlacement: '选择位置',
+      coverAlignment: '内容位置',
+      coverAlignmentTooltip: '内容在覆盖区域内的位置。覆盖层与被覆盖的元素一样高。',
+      coverAlignmentOptions: {
+        top: '顶部',
+        center: '居中',
+        bottom: '底部',
+      },
       steps: '步骤',
       target: '目标',
       targetNotSet: '未设置',

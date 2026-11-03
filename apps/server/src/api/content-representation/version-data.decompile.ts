@@ -1,4 +1,9 @@
-import { ContentDataType, EmbedPlacement, LauncherDataType } from '@usertour/types';
+import {
+  ContentDataType,
+  EmbedCoverAlignment,
+  EmbedPlacement,
+  LauncherDataType,
+} from '@usertour/types';
 
 import { decompileContent } from './representation.decompile';
 import { decompileResourceCenter } from './resource-center.decompile';
@@ -46,6 +51,7 @@ export function decompileVersionData(
 }
 
 const EMBED_PLACEMENTS = new Set<string>(Object.values(EmbedPlacement));
+const EMBED_COVER_ALIGNMENTS = new Set<string>(Object.values(EmbedCoverAlignment));
 
 function decompileEmbed(data: unknown): RepresentationEmbed {
   const shell = (data ?? {}) as Record<string, unknown>;
@@ -64,6 +70,9 @@ function decompileEmbed(data: unknown): RepresentationEmbed {
       : {}),
     ...(shell.outerMargin
       ? { outerMargin: shell.outerMargin as RepresentationEmbed['outerMargin'] }
+      : {}),
+    ...(typeof shell.coverAlignment === 'string' && EMBED_COVER_ALIGNMENTS.has(shell.coverAlignment)
+      ? { coverAlignment: shell.coverAlignment as RepresentationEmbed['coverAlignment'] }
       : {}),
   };
 }

@@ -19,6 +19,17 @@ export enum EmbedPlacement {
   COVER_ELEMENT = 'cover-element',
 }
 
+/**
+ * Where the content sits inside a cover's box. The cover is as tall as its
+ * target, so the content has room to move; the in-flow placements are as
+ * tall as their content and ignore this.
+ */
+export enum EmbedCoverAlignment {
+  TOP = 'top',
+  CENTER = 'center',
+  BOTTOM = 'bottom',
+}
+
 export type EmbedOuterMargin = BannerOuterMargin;
 
 /**
@@ -33,4 +44,6 @@ export interface EmbedData {
   zIndex?: number;
   maxContentWidth?: number;
   outerMargin?: EmbedOuterMargin;
+  /** Content position inside the covered box; `cover-element` only. Center when absent. */
+  coverAlignment?: EmbedCoverAlignment;
 }

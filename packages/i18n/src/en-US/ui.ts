@@ -4200,6 +4200,14 @@ const translations = {
         coverElement: 'Cover element',
       },
       selectPlacement: 'Select placement',
+      coverAlignment: 'Content position',
+      coverAlignmentTooltip:
+        'Where the content sits inside the covered area. The cover is as tall as the element it covers.',
+      coverAlignmentOptions: {
+        top: 'Top',
+        center: 'Center',
+        bottom: 'Bottom',
+      },
       steps: 'Steps',
       target: 'Target',
       targetNotSet: 'Not set',

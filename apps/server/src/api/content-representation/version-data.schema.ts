@@ -602,6 +602,14 @@ export const representationEmbed = z
       })
       .optional()
       .describe('Space (in pixels) around the embed on all four sides.'),
+    coverAlignment: z
+      .enum(['top', 'center', 'bottom'])
+      .optional()
+      .describe(
+        'Where the content sits inside the covered box — `cover-element` only, since the ' +
+          'cover is as tall as its target while the other placements are as tall as their ' +
+          'content. Default `center`.',
+      ),
   })
   .strict()
   .describe(
