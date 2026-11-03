@@ -153,6 +153,10 @@ export class SubscriptionService implements OnModuleInit {
       // the countries Stripe supports it for, with the legal business name.
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true },
+      // Stripe Tax prices the tax from the billing address where the account
+      // holds a registration and marks the reverse charge for business
+      // customers with a tax ID. The subscription keeps the setting.
+      automatic_tax: { enabled: true },
       ...customerParams,
     });
 
