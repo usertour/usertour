@@ -282,6 +282,7 @@ describe('GraphQL subscription (e2e)', () => {
           line_items: [{ price: 'price_e2e_123', quantity: 1 }],
           billing_address_collection: 'required',
           tax_id_collection: { enabled: true },
+          automatic_tax: { enabled: true },
         }),
       );
 
