@@ -8,6 +8,7 @@ import {
   row,
 } from './content';
 import { expect, test } from './fixtures';
+import { defaultAnswer } from './protocol-server';
 
 /**
  * Embeds, from the pushed session to what the page reports: a card at its
@@ -372,6 +373,116 @@ test('a hidden first step routes only once the session exists, and reports where
     sessionId: 'embed-session-1',
     stepId: 'embed-1-step-2',
   });
+});
+
+test('a hidden step between two inline steps routes on without unmounting the frame', async ({
+  sdk,
+  protocol,
+}) => {
+  // A button sends the user through a hidden router step whose trigger fires
+  // at once (`#panel` is on the page) and lands on a third step. The router
+  // has no UI, and it must not show that either: the third step renders into
+  // the frame the first one rendered into. For a cover, that is what keeps
+  // the target covered throughout. The router's own report is held back, so
+  // the 200 ms check loop ticks while the router is current but not applied.
+  await start(sdk);
+  let releaseRouterReport = () => {};
+  const routerReport = new Promise<void>((resolve) => {
+    releaseRouterReport = resolve;
+  });
+  protocol.answer = async (message, connection) => {
+    if (message.kind === 'GoToStep' && message.payload?.stepId === 'embed-1-step-2') {
+      await routerReport;
+    }
+    return defaultAnswer(message, connection);
+  };
+  await protocol.push(
+    'AddEmbed',
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#panel',
+      placement: 'cover-element',
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'inline',
+          name: 'First',
+          data: [row(paragraph('First')), row(button('Next', [gotoStep('embed-1-cvid-2')]))],
+        },
+        {
+          id: 'embed-1-step-2',
+          cvid: 'embed-1-cvid-2',
+          type: 'hidden',
+          name: 'Router',
+          data: [],
+          trigger: [
+            {
+              id: 'trigger-1',
+              conditions: [
+                {
+                  id: 'trigger-cond-1',
+                  type: 'element',
+                  operators: 'and',
+                  data: {
+                    logic: 'present',
+                    elementData: { type: 'manual', customSelector: '#panel', sequence: '1st' },
+                  },
+                },
+              ],
+              actions: [gotoStep('embed-1-cvid-3')],
+              wait: 0,
+            },
+          ],
+        },
+        {
+          id: 'embed-1-step-3',
+          cvid: 'embed-1-cvid-3',
+          type: 'inline',
+          name: 'Routed',
+          data: [row(paragraph('Routed'))],
+        },
+      ],
+    }),
+  );
+  const frame = sdk.page.frameLocator(FRAME);
+  await expect(frame.getByText('First')).toBeVisible();
+
+  // Mark the frame the first step rendered into, and count the mounts that
+  // leave the page from here on.
+  await sdk.page.evaluate((selector) => {
+    const testWindow = window as unknown as { __mountRemovals: number };
+    testWindow.__mountRemovals = 0;
+    document.querySelector(selector)?.setAttribute('data-test-first-frame', '');
+    new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.removedNodes) {
+          if (node instanceof HTMLElement && node.hasAttribute('data-usertour-inline-mount')) {
+            testWindow.__mountRemovals += 1;
+          }
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  }, FRAME);
+
+  await frame.getByRole('button', { name: 'Next' }).click();
+  // The router is current and unreported; the first step stays on screen
+  // through the check loop's ticks.
+  await sdk.advance(1000);
+  await expect(frame.getByText('First')).toBeVisible();
+  releaseRouterReport();
+  await expect(frame.getByText('Routed')).toBeVisible();
+  await protocol.waitForMessages('GoToStep', 2);
+  expect(protocol.messages('GoToStep').map((entry) => entry.message.payload.stepId)).toEqual([
+    'embed-1-step-2',
+    'embed-1-step-3',
+  ]);
+  const removals = await sdk.page.evaluate(
+    () => (window as unknown as { __mountRemovals: number }).__mountRemovals,
+  );
+  expect(removals).toBe(0);
+  await expect(sdk.page.locator(`${FRAME}[data-test-first-frame]`)).toHaveCount(1);
 });
 
 test('several embeds on one target keep their frames and their delivery order', async ({

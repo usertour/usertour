@@ -230,7 +230,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     if (!step || !this.getSessionId() || this.stepTriggerCvid === step.cvid) {
       return;
     }
-    this.setupStepTrigger(step);
+    void this.setupStepTrigger(step);
   }
 
   private getStepInfo(
@@ -257,7 +257,14 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     if (reportStepSeen) {
       await this.reportStepSeen(step);
     }
-    this.setupStepTrigger(step);
+    // The trigger runs before the step is applied, as a flow's does: a step
+    // its trigger routes away from on arrival is never applied, so a hidden
+    // router between two inline steps leaves the frame — and a cover's
+    // target — untouched.
+    await this.setupStepTrigger(step);
+    if (this.currentStepCvid !== step.cvid) {
+      return;
+    }
     await this.applyCurrentStep();
   }
 
@@ -273,12 +280,13 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     const { openState: _openState, targetElement: _targetElement, ...refreshed } = built;
     this.updateStore({
       ...refreshed,
-      openState: this.computeOpenState(this.getCurrentStep()),
+      openState: this.computeOpenState(refreshed.currentStep),
     } as Partial<EmbedStore>);
   }
 
   // === Triggers ===
-  private setupStepTrigger(step: SessionStep): void {
+  /** Installs the step's trigger and runs its first pass. */
+  private async setupStepTrigger(step: SessionStep): Promise<void> {
     this.resetStepTrigger();
     this.stepTriggerCvid = step.cvid ?? null;
     if (!step.trigger?.length) {
@@ -290,7 +298,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
       () => this.getSessionAttributes(),
       (actions) => this.handleActions(actions, ActionSource.TRIGGER),
     );
-    void this.stepTrigger.process();
+    await this.stepTrigger.process();
   }
 
   private async checkAndProcessTrigger(): Promise<void> {
@@ -334,7 +342,10 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     }
     const { isHidden } = await this.watcher.checkVisibility();
     this.targetVisible = !isHidden;
-    const desired = this.computeOpenState(this.getCurrentStep());
+    // The step the loop reconciles against is the one the store holds, not
+    // `currentStepCvid`: a step in transit — a hidden router waiting on its
+    // report, say — is not shown and must not hide what is.
+    const desired = this.computeOpenState(store.currentStep);
     if (desired && !store.openState) {
       this.open();
       return;
@@ -368,7 +379,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
           this.targetVisible = isVisibleNode(el);
           this.setStoreData({
             ...store,
-            openState: this.computeOpenState(this.getCurrentStep()),
+            openState: this.computeOpenState(store.currentStep),
             targetElement: el,
           });
         } else {
@@ -434,7 +445,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     }
     this.setStoreData({
       ...store,
-      openState: this.computeOpenState(this.getCurrentStep()),
+      openState: this.computeOpenState(store.currentStep),
       targetElement: el,
     });
   }
