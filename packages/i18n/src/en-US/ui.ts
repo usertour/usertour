@@ -2916,23 +2916,6 @@ const translations = {
         theme: 'Theme: {{name}}',
         items: 'Items: {{count}}',
       },
-      embed: {
-        showEmbedAt: 'Show embed at {{placement}}',
-        placement: {
-          topOfContainerElement: 'top of container element',
-          bottomOfContainerElement: 'bottom of container element',
-          immediatelyBeforeElement: 'immediately before element',
-          immediatelyAfterElement: 'immediately after element',
-          coverElement: 'cover of element',
-        },
-        targetElement: 'Target element: {{value}}',
-        notSet: 'Not set',
-        allowDismiss: 'Allow users to dismiss',
-        preventDismiss: 'Prevent users from dismissing',
-        steps: '{{count}} step',
-        steps_other: '{{count}} steps',
-        theme: 'Theme: {{name}}',
-      },
       banner: {
         placement: {
           topOfPage: 'Top of page',

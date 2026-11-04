@@ -2778,23 +2778,6 @@ const translations = {
         theme: '主题：{{name}}',
         items: '项目数：{{count}}',
       },
-      embed: {
-        showEmbedAt: '在{{placement}}显示嵌入',
-        placement: {
-          topOfContainerElement: '容器元素顶部',
-          bottomOfContainerElement: '容器元素底部',
-          immediatelyBeforeElement: '紧邻元素之前',
-          immediatelyAfterElement: '紧邻元素之后',
-          coverElement: '元素覆盖层',
-        },
-        targetElement: '目标元素：{{value}}',
-        notSet: '未设置',
-        allowDismiss: '允许用户关闭',
-        preventDismiss: '禁止用户关闭',
-        steps: '{{count}} 个步骤',
-        steps_other: '{{count}} 个步骤',
-        theme: '主题：{{name}}',
-      },
       banner: {
         placement: {
           topOfPage: '页面顶部',
