@@ -32,6 +32,14 @@ describe('isUnambiguousIsoDate — deployment-independent instants only', () => 
     expect(isUnambiguousIsoDate('2026-07-10T00:00')).toBe(false);
   });
 
+  it('rejects a day that does not exist in its month (Date.parse rolls it forward → a silently shifted range)', () => {
+    expect(isUnambiguousIsoDate('2026-02-30')).toBe(false);
+    expect(isUnambiguousIsoDate('2026-02-29')).toBe(false); // not a leap year
+    expect(isUnambiguousIsoDate('2026-04-31')).toBe(false);
+    expect(isUnambiguousIsoDate('2026-02-30T00:00:00Z')).toBe(false);
+    expect(isUnambiguousIsoDate('2024-02-29')).toBe(true); // leap day
+  });
+
   it('rejects non-ISO garbage even when Date.parse would accept it locally', () => {
     expect(isUnambiguousIsoDate('07/10/2026')).toBe(false);
     expect(isUnambiguousIsoDate('not-a-date')).toBe(false);
