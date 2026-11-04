@@ -169,6 +169,28 @@ test.describe('steps', () => {
     await expect(frame.getByText('Step one')).toBeVisible();
   });
 
+  test('a step change rebuilds the step content instead of patching it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('AddEmbed', twoSteps('embed-session-1', 'embed-1'));
+    const frame = sdk.page.frameLocator(FRAME);
+    const nextButton = frame.getByRole('button', { name: 'Next' });
+    await expect(nextButton).toBeVisible();
+    // Both steps put a button in the same slot. Were its node kept and
+    // patched, Back would morph out of Next's colours and inherit its state.
+    await nextButton.evaluate((element) => {
+      (element as HTMLElement).dataset.marker = 'step-one-button';
+    });
+
+    await nextButton.click();
+    await expect(frame.getByText('Step two')).toBeVisible();
+    const backButton = frame.getByRole('button', { name: 'Back' });
+    await expect(backButton).toBeVisible();
+    await expect(backButton).not.toHaveAttribute('data-marker', 'step-one-button');
+  });
+
   test('a session opens on its remembered step without reporting it again', async ({
     sdk,
     protocol,

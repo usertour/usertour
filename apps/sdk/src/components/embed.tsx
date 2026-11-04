@@ -193,7 +193,12 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
           onMeasuredHeightChange={setMeasuredHeight}
         >
           <InlineFrame>
+            {/* Keyed by step: a step change is a new document, not an edit of
+                the last one. Patched in place, a button landing in the same
+                slot would keep the previous button's node, and with it its
+                pending state and a colour transition out of its variant. */}
             <ContentEditorSerialize
+              key={currentStep.cvid}
               contents={contents}
               userAttributes={userAttributes}
               onClick={embed.handleOnClick}
