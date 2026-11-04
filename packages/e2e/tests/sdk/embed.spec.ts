@@ -419,6 +419,37 @@ test('a cover on a target that scrolls its own content mounts in the body and st
   expectSameBox(await shell.boundingBox(), await panel.boundingBox());
 });
 
+test('two covers on one target keep it positioned until the last one leaves', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'First', [], 'cover-element'),
+  );
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-2', 'embed-2', '#panel', 'Second', [], 'cover-element'),
+  );
+  await expect(sdk.page.frameLocator(FRAME).last().getByText('Second')).toBeVisible();
+  await expect(sdk.page.locator(SHELL)).toHaveCount(2);
+  const targetPosition = () =>
+    sdk.page.locator('#panel').evaluate((el) => (el as HTMLElement).style.position);
+  expect(await targetPosition()).toBe('relative');
+
+  // The first cover leaves; the second still has the target as its containing
+  // block, so it still fills the target rather than whatever is above it.
+  await protocol.push('RemoveEmbed', { contentId: 'embed-1' });
+  await expect(sdk.page.locator(SHELL)).toHaveCount(1);
+  expect(await targetPosition()).toBe('relative');
+  expectSameBox(await sdk.page.locator(SHELL).boundingBox(), await paddingBox(sdk, '#panel'));
+
+  await protocol.push('RemoveEmbed', { contentId: 'embed-2' });
+  await expect(sdk.page.locator(SHELL)).toHaveCount(0);
+  expect(await targetPosition()).toBe('');
+});
+
 test('a cover on an element that takes no child mounts in the body at document coordinates', async ({
   sdk,
   protocol,

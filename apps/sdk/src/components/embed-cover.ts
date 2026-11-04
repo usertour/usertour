@@ -40,19 +40,45 @@ const scrollsItsContent = (element: HTMLElement): boolean => {
 };
 
 /**
+ * Hosts held as containing blocks, counted per host: two covers on one static
+ * host (an authoring error, but not one to paint wrong) give it back only
+ * when the last of them leaves.
+ */
+const heldHosts = new WeakMap<HTMLElement, { count: number; previous: string }>();
+
+/**
  * Makes the host its cover's containing block and returns the undo. A host
  * that is positioned already is left alone.
  */
 const holdAsContainingBlock = (host: HTMLElement): (() => void) => {
-  const view = host.ownerDocument.defaultView;
-  if (!view || view.getComputedStyle(host).position !== 'static') {
-    return () => {};
+  const held = heldHosts.get(host);
+  if (held) {
+    held.count += 1;
+  } else {
+    const view = host.ownerDocument.defaultView;
+    if (!view || view.getComputedStyle(host).position !== 'static') {
+      return () => {};
+    }
+    heldHosts.set(host, { count: 1, previous: host.style.position });
+    host.style.position = 'relative';
   }
-  const previous = host.style.position;
-  host.style.position = 'relative';
+  let released = false;
   return () => {
+    if (released) {
+      return;
+    }
+    released = true;
+    const current = heldHosts.get(host);
+    if (!current) {
+      return;
+    }
+    current.count -= 1;
+    if (current.count > 0) {
+      return;
+    }
+    heldHosts.delete(host);
     if (host.style.position === 'relative') {
-      host.style.position = previous;
+      host.style.position = current.previous;
     }
   };
 };
