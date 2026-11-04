@@ -136,18 +136,29 @@ const mountRun = (placement: InlineMountPlacement): HTMLElement[] => {
 /**
  * Inserts the mount element at its placement, at the end of the run already
  * there; a mount inside its run stays where it is.
+ *
+ * Returns whether a mount that had already been placed was moved — into a
+ * replaced target, say. "Placed" is having a parent, not being connected: a
+ * host that replaces the target takes the mount out of the page with the old
+ * node, and re-attaching it reloads the iframe it holds just as a move does,
+ * while React keeps rendering into the old document. A caller that gets
+ * `true` must rebuild its frame in the new place.
  */
-export const insertMountEl = (mountEl: HTMLDivElement, placement: InlineMountPlacement) => {
+export const insertMountEl = (
+  mountEl: HTMLDivElement,
+  placement: InlineMountPlacement,
+): boolean => {
   const { parent, insertMode, anchor } = placement;
 
   if (!parent.isConnected) {
-    return;
+    return false;
   }
 
   const run = mountRun(placement);
   if (run.includes(mountEl)) {
-    return;
+    return false;
   }
+  const wasPlaced = mountEl.parentNode !== null;
   const lastInRun = run.length > 0 ? run[run.length - 1] : null;
 
   switch (insertMode) {
@@ -170,6 +181,7 @@ export const insertMountEl = (mountEl: HTMLDivElement, placement: InlineMountPla
     default:
       parent.appendChild(mountEl);
   }
+  return wasPlaced;
 };
 
 /** Creates the detached, marked mount element an inline shell portals into. */

@@ -97,6 +97,10 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   // null = pending, keeps the wrapper hidden until the reveal can use the real
   // height. BannerRoot fails open after 500ms so this always resolves.
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  // Bumped when the mount element had to move (an element-relative banner's
+  // target was replaced by a new node): a moved iframe reloads its document
+  // while the frame keeps rendering into the old one, so the frame is rebuilt.
+  const [frameGeneration, setFrameGeneration] = useState(0);
 
   const { bannerData, themeSettings, assets, userAttributes, targetElement, zIndex, globalStyle } =
     store ?? {};
@@ -153,7 +157,9 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
       return;
     }
 
-    insertMountEl(mountEl, resolved);
+    if (insertMountEl(mountEl, resolved)) {
+      setFrameGeneration((generation) => generation + 1);
+    }
   }, [store, bannerData, placement, targetElement, requiresElement, portalEl, measuredHeight]);
 
   if (!store || !bannerData || !themeSettings) {
@@ -170,7 +176,7 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   }
 
   return createPortal(
-    <WidgetLocaleProvider locale={store.userLocale}>
+    <WidgetLocaleProvider key={frameGeneration} locale={store.userLocale}>
       <LinkDecoratorContext.Provider value={store.linkUrlDecorator || null}>
         <BannerRoot
           themeSettings={themeSettings}

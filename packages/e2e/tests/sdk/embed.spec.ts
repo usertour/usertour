@@ -377,6 +377,32 @@ test('an embed stays mounted while its target is scrolled out of the viewport', 
   expect(insertions).toBe(0);
 });
 
+test('an embed survives its target being replaced in place', async ({ sdk, protocol }) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Here', [], 'bottom-of-container-element'),
+  );
+  await expect(sdk.page.frameLocator(FRAME).getByText('Here')).toBeVisible();
+
+  // The host re-renders the card: a new node with the same selector takes the
+  // old one's place in the same tick. The watcher finds the new node and the
+  // shell is moved into it — which reloads the iframe. The frame must be
+  // rebuilt there, not left rendering into the old document.
+  await sdk.page.evaluate(() => {
+    const oldPanel = document.getElementById('panel') as HTMLElement;
+    const newPanel = oldPanel.cloneNode(true) as HTMLElement;
+    for (const shell of newPanel.querySelectorAll('.usertour-widget-embed')) {
+      shell.remove();
+    }
+    newPanel.dataset.replaced = 'true';
+    oldPanel.replaceWith(newPanel);
+  });
+  await sdk.advance(600);
+  await expect(sdk.page.locator('#panel[data-replaced] > .usertour-widget-embed')).toHaveCount(1);
+  await expect(sdk.page.frameLocator(FRAME).getByText('Here')).toBeVisible();
+});
+
 test('an embed whose target leaves the page unmounts and comes back with it', async ({
   sdk,
   protocol,

@@ -93,6 +93,10 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
   // Live height reported from inside the frame (EmbedRoot measures it); null =
   // pending, keeps an in-flow shell at zero height until the real height lands.
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  // Bumped when the mount element had to move (the target was replaced by a
+  // new node): a moved iframe reloads its document while the frame keeps
+  // rendering into the old one, so the frame is rebuilt in the new place.
+  const [frameGeneration, setFrameGeneration] = useState(0);
 
   const { embedData, currentStep, themeSettings, assets, userAttributes, targetElement, zIndex } =
     store ?? {};
@@ -137,7 +141,9 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
     if (!resolved) {
       return;
     }
-    insertMountEl(mountEl, resolved);
+    if (insertMountEl(mountEl, resolved)) {
+      setFrameGeneration((generation) => generation + 1);
+    }
   }, [store, targetElement, placement, isCover, portalEl, measuredHeight]);
 
   // Cover placement: body-level, tracking the target's rectangle.
@@ -175,7 +181,7 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
   }
 
   return createPortal(
-    <WidgetLocaleProvider locale={store.userLocale}>
+    <WidgetLocaleProvider key={frameGeneration} locale={store.userLocale}>
       <LinkDecoratorContext.Provider value={store.linkUrlDecorator || null}>
         <EmbedRoot
           themeSettings={themeSettings}

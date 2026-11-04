@@ -181,6 +181,40 @@ test.describe('banner sessions', () => {
     await expect(sdk.page.locator('iframe.usertour-widget-banner-frame')).toHaveCount(0);
   });
 
+  test('an element-relative banner survives its target being replaced in place', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Inside the panel',
+        placement: 'top-of-container-element',
+        target: '#panel',
+      }),
+    );
+    const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
+    await expect(banner.getByText('Inside the panel')).toBeVisible();
+
+    await sdk.page.evaluate(() => {
+      const oldPanel = document.getElementById('panel') as HTMLElement;
+      const newPanel = oldPanel.cloneNode(true) as HTMLElement;
+      for (const shell of newPanel.querySelectorAll('.usertour-widget-banner')) {
+        shell.remove();
+      }
+      newPanel.dataset.replaced = 'true';
+      oldPanel.replaceWith(newPanel);
+    });
+    await sdk.advance(600);
+    await expect(sdk.page.locator('#panel[data-replaced] > .usertour-widget-banner')).toHaveCount(
+      1,
+    );
+    await expect(banner.getByText('Inside the panel')).toBeVisible();
+  });
+
   test('an element-relative banner stays mounted while its target is out of the viewport', async ({
     sdk,
     protocol,
