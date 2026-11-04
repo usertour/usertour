@@ -309,6 +309,71 @@ test('a sessionless embed starts its content once the target is found and render
   expect(await sdk.isStarted('embed-1')).toBe(true);
 });
 
+test('a hidden first step routes only once the session exists, and reports where it lands', async ({
+  sdk,
+  protocol,
+}) => {
+  // A trigger on a hidden router step: `#panel` is on the page, so it fires
+  // as soon as the step's trigger is armed.
+  const routed = (sessionId: string | undefined) =>
+    embedSession({
+      sessionId,
+      contentId: 'embed-1',
+      target: '#panel',
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'hidden',
+          name: 'Router',
+          data: [],
+          trigger: [
+            {
+              id: 'trigger-1',
+              conditions: [
+                {
+                  id: 'trigger-cond-1',
+                  type: 'element',
+                  operators: 'and',
+                  data: {
+                    logic: 'present',
+                    elementData: { type: 'manual', customSelector: '#panel', sequence: '1st' },
+                  },
+                },
+              ],
+              actions: [gotoStep('embed-1-cvid-2')],
+              wait: 0,
+            },
+          ],
+        },
+        {
+          id: 'embed-1-step-2',
+          cvid: 'embed-1-cvid-2',
+          type: 'inline',
+          name: 'Routed',
+          data: [row(paragraph('Routed'))],
+        },
+      ],
+    });
+
+  await start(sdk);
+  await protocol.push('AddEmbed', routed(undefined));
+  await protocol.waitForMessages('StartContent', 1);
+  // Nothing is active before the session exists, so nothing routes or reports.
+  await sdk.advance(500);
+  expect(protocol.messages('GoToStep')).toHaveLength(0);
+
+  // The server hands the session back on its first step; the router now runs
+  // with a session to report against, and the server learns the landing step.
+  await protocol.push('AddEmbed', routed('embed-session-1'));
+  await expect(sdk.page.frameLocator(FRAME).getByText('Routed')).toBeVisible();
+  await protocol.waitForMessages('GoToStep', 1);
+  expect(protocol.messages('GoToStep')[0].message.payload).toEqual({
+    sessionId: 'embed-session-1',
+    stepId: 'embed-1-step-2',
+  });
+});
+
 test('several embeds on one target keep their frames and their delivery order', async ({
   sdk,
   protocol,

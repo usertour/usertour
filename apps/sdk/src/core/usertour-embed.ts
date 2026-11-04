@@ -48,6 +48,8 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   /** See usertour-launcher.ts: the found handler must render the LATEST store. */
   private pendingWatcherStore: EmbedStore | null = null;
   private stepTrigger: UsertourTrigger | null = null;
+  /** The step the live trigger was armed for, so a re-run does not re-arm it. */
+  private stepTriggerCvid: string | null = null;
   private currentStepCvid?: string;
   /** Whether the target is found and visible — one of the two gates on openState. */
   private targetVisible = false;
@@ -203,19 +205,32 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
 
   /**
    * Makes sure the current step exists in the (possibly updated) version:
-   * the session's remembered step, else the first step.
+   * the session's remembered step, else the first step. Then arms the step's
+   * trigger, once there is a session for it to act on.
    */
   private ensureCurrentStep(): void {
-    if (this.currentStepCvid && this.getStepByCvid(this.currentStepCvid)) {
+    if (!this.currentStepCvid || !this.getStepByCvid(this.currentStepCvid)) {
+      const remembered = this.session.getCurrentStepFromSession();
+      const step =
+        (remembered?.cvid ? this.getStepByCvid(remembered.cvid) : undefined) ?? this.getSteps()[0];
+      this.currentStepCvid = step?.cvid;
+    }
+    this.armStepTrigger();
+  }
+
+  /**
+   * A step's trigger belongs to a live session: before one exists (a
+   * sessionless pre-activation) nothing is shown, and a step it routed to
+   * could not be reported. So the trigger is armed once the session is there
+   * — on a resumed session that is at once; after a pre-activation it is when
+   * the server hands the session back — and only once per step.
+   */
+  private armStepTrigger(): void {
+    const step = this.getCurrentStep();
+    if (!step || !this.getSessionId() || this.stepTriggerCvid === step.cvid) {
       return;
     }
-    const remembered = this.session.getCurrentStepFromSession();
-    const step =
-      (remembered?.cvid ? this.getStepByCvid(remembered.cvid) : undefined) ?? this.getSteps()[0];
-    this.currentStepCvid = step?.cvid;
-    if (step) {
-      this.setupStepTrigger(step);
-    }
+    this.setupStepTrigger(step);
   }
 
   private getStepInfo(
@@ -265,6 +280,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   // === Triggers ===
   private setupStepTrigger(step: SessionStep): void {
     this.resetStepTrigger();
+    this.stepTriggerCvid = step.cvid ?? null;
     if (!step.trigger?.length) {
       return;
     }
@@ -286,6 +302,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   private resetStepTrigger(): void {
     this.stepTrigger?.destroy();
     this.stepTrigger = null;
+    this.stepTriggerCvid = null;
   }
 
   // === Button conditions ===
