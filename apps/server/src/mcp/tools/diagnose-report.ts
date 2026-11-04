@@ -1,5 +1,5 @@
 import { getAutoStartCapabilities, isConditionsActived } from '@usertour/helpers';
-import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
+import { ContentDataType, Frequency, RulesCondition, RulesType } from '@usertour/types';
 
 import type { RepresentationCondition } from '@/api/content-representation/representation.schema';
 import type { DiagnoseFacts } from '@/modules/delivery/services/content-diagnosis.service';
@@ -369,6 +369,25 @@ const foldAssumingUnknown = (
   return node.status === 'matched';
 };
 
+/**
+ * Why an embed's frequency refuses a new session, by mode. Every session
+ * counts, however it ended — dismissed, or ended another way, such as the
+ * content being unpublished — and the `every` gap runs from that end.
+ */
+const embedFrequencyCapDetail = (mode: Frequency | undefined): string => {
+  const ended = 'dismissed, or ended another way, such as the content being unpublished';
+  switch (mode) {
+    case Frequency.ONCE:
+      return `frequency cap reached — this user already had a session of this content (${ended}); \`once\` never starts another for this user.`;
+    case Frequency.MULTIPLE:
+      return `frequency cap reached — either this user has reached the total number of sessions \`every.times\` allows, or the \`every\` gap since their previous session ended (${ended}) has not passed yet.`;
+    case Frequency.UNLIMITED:
+      return `frequency cap reached — the \`every\` gap since this user's previous session ended (${ended}) has not passed yet.`;
+    default:
+      return `frequency cap reached — this user already had a session of this content (${ended}) and \`frequency\` does not allow another one yet.`;
+  }
+};
+
 export const buildDiagnoseReport = (
   facts: DiagnoseFacts,
   startConditions?: AnnotatedCondition,
@@ -521,8 +540,8 @@ export const buildDiagnoseReport = (
               // it has no start-if-not-complete.
               detail: isLevelTriggered
                 ? facts.frequencyAllowed
-                  ? 'frequency allows a new session now (dismissal ended the previous one, if any).'
-                  : 'frequency cap reached — the previous session was dismissed and `frequency` does not allow another one yet (`once` = never again for this user).'
+                  ? 'frequency allows a new session now (the previous one, if any, has ended).'
+                  : embedFrequencyCapDetail(facts.frequencyMode)
                 : facts.frequencyAllowed
                   ? 'frequency / start-if-not-complete allows it now.'
                   : 'frequency cap reached, or start-if-not-complete and already completed.',

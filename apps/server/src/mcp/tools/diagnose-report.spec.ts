@@ -1,4 +1,4 @@
-import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
+import { ContentDataType, Frequency, RulesCondition, RulesType } from '@usertour/types';
 
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
 import type { DiagnoseFacts } from '@/modules/delivery/services/content-diagnosis.service';
@@ -539,6 +539,22 @@ describe('buildDiagnoseReport — embed (multi-instance, level-triggered)', () =
     expect(ids).not.toContain('hidden');
     expect(r.blockedBy).toEqual(['frequency']);
     expect(r.gates.find((gate) => gate.id === 'frequency')?.detail).toMatch(/dismissed/);
+  });
+
+  it('the frequency cap is explained by mode: once never again, multiple count or gap, unlimited gap', () => {
+    const detail = (frequencyMode: Frequency) =>
+      buildDiagnoseReport(embedFacts({ frequencyAllowed: false, frequencyMode })).gates.find(
+        (gate) => gate.id === 'frequency',
+      )?.detail;
+    expect(detail(Frequency.ONCE)).toMatch(/`once` never starts another/);
+    expect(detail(Frequency.MULTIPLE)).toMatch(/`every.times`/);
+    expect(detail(Frequency.MULTIPLE)).toMatch(/gap/);
+    expect(detail(Frequency.UNLIMITED)).toMatch(/gap/);
+    expect(detail(Frequency.UNLIMITED)).not.toMatch(/`once`/);
+    // Every mode says that a session counts however it ended.
+    for (const mode of [Frequency.ONCE, Frequency.MULTIPLE, Frequency.UNLIMITED]) {
+      expect(detail(mode)).toMatch(/unpublished/);
+    }
   });
 
   it('a running session is exempt from frequency: the gate is not emitted while active', () => {

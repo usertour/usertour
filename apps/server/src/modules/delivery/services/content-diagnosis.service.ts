@@ -7,6 +7,7 @@ import {
   BizAttributeTypes,
   ClientContext,
   ContentDataType,
+  Frequency,
   ResourceCenterBlockType,
   RulesCondition,
   RulesType,
@@ -76,6 +77,8 @@ export interface DiagnoseFacts {
    * report consults it only when none is active (a running session is never
    * subject to it, which for the embed batch path is the runtime rule itself). */
   frequencyAllowed?: boolean;
+  /** The version's frequency mode, so the report can say what the cap means. */
+  frequencyMode?: Frequency;
   hidden?: boolean; // isActivedHideRules
   singleSessionApplicable: boolean; // isSingleSessionContentType
   singleSessionDismissed?: boolean;
@@ -335,6 +338,7 @@ export class ContentDiagnosisService {
           userFound: true,
           startRulesActive: isActivedAutoStartRules(target),
           frequencyAllowed: isAllowedByAutoStartRulesSetting(target),
+          frequencyMode: target.config?.autoStartRulesSetting?.frequency?.frequency,
           hidden: isActivedHideRules(target),
           singleSessionApplicable,
           singleSessionDismissed:
