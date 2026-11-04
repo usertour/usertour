@@ -1,4 +1,4 @@
-import { autoUpdate } from '@floating-ui/dom';
+import { autoUpdate, platform, type Rect } from '@floating-ui/dom';
 import { AssetAttributes } from '@usertour/frame';
 import {
   ContentEditorSerialize,
@@ -67,22 +67,69 @@ const useEmbedStore = (embed: EmbedWidgetInstance) => {
 };
 
 /**
- * COVER: the mount element sits in the body, fixed over the target's
- * viewport rectangle, and follows it through scroll, resize and layout
- * changes (floating-ui's autoUpdate). The target's DOM is untouched.
+ * COVER: the mount element is an absolutely positioned child of the target,
+ * filling it, with the target as its containing block — a static target gets
+ * `position: relative` for as long as the cover is mounted. The page then
+ * scrolls, clips and transforms the two together with no per-frame work; a
+ * fixed overlay re-placed from scroll events trails the target by a frame.
+ * A target that renders no child (an image, a canvas, a form control, a
+ * frame), or one that scrolls its own content — a child would scroll away
+ * with it — gets a body-level mount at document coordinates instead, tracked
+ * by floating-ui's autoUpdate. The target's own content is untouched.
  */
-const coverStyle = (target: Element, zIndex: number): React.CSSProperties => {
+const COVER_FILL_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  top: '0',
+  right: '0',
+  bottom: '0',
+  left: '0',
+  ['--usertour-widget-embed-height' as string]: '100%',
+};
+
+/** Whether the element scrolls its own content, so a child would scroll with it. */
+const scrollsItsContent = (element: HTMLElement): boolean => {
+  const style = element.ownerDocument.defaultView?.getComputedStyle(element);
+  if (!style) {
+    return false;
+  }
+  const scrolls = (overflow: string) =>
+    overflow === 'auto' || overflow === 'scroll' || overflow === 'overlay';
+  return (
+    (scrolls(style.overflowY) && element.scrollHeight > element.clientHeight) ||
+    (scrolls(style.overflowX) && element.scrollWidth > element.clientWidth)
+  );
+};
+
+/**
+ * Makes the host its cover's containing block and returns the undo. A host
+ * that is positioned already is left alone.
+ */
+const holdCover = (host: HTMLElement): (() => void) => {
+  const view = host.ownerDocument.defaultView;
+  if (!view || view.getComputedStyle(host).position !== 'static') {
+    return () => {};
+  }
+  const previous = host.style.position;
+  host.style.position = 'relative';
+  return () => {
+    if (host.style.position === 'relative') {
+      host.style.position = previous;
+    }
+  };
+};
+
+/** The body-level mount: the target's border box relative to the mount's containing block. */
+const coverStyle = (reference: Rect, zIndex: number): React.CSSProperties => {
   // Explicit units: these land on the element's style object directly, where
   // a bare number is not a length (React's px shorthand does not apply).
-  const rect = target.getBoundingClientRect();
   return {
-    position: 'fixed',
-    top: `${rect.top}px`,
-    left: `${rect.left}px`,
-    width: `${rect.width}px`,
-    height: `${rect.height}px`,
+    position: 'absolute',
+    top: `${reference.y}px`,
+    left: `${reference.x}px`,
+    width: `${reference.width}px`,
+    height: `${reference.height}px`,
     zIndex,
-    ['--usertour-widget-embed-height' as string]: `${rect.height}px`,
+    ['--usertour-widget-embed-height' as string]: `${reference.height}px`,
   };
 };
 
@@ -146,7 +193,8 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
     }
   }, [store, targetElement, placement, isCover, portalEl, measuredHeight]);
 
-  // Cover placement: body-level, tracking the target's rectangle.
+  // Cover placement: inside the target, or body-level when the target cannot
+  // hold it (see COVER_FILL_STYLE).
   useLayoutEffect(() => {
     const mountEl = mountElRef.current;
     if (!mountEl || !isCover) {
@@ -156,17 +204,60 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
       detachMountEl(mountEl);
       return;
     }
-    const body = document.body;
     mountEl.className = MOUNT_CLASS;
+
+    const host =
+      targetElement instanceof HTMLElement && !scrollsItsContent(targetElement)
+        ? targetElement
+        : null;
+    if (host) {
+      applyStyleObject(mountEl, { ...COVER_FILL_STYLE, zIndex: zIndex ?? 0 });
+      const moved = insertMountEl(mountEl, { parent: host, insertMode: 'append' });
+      // A host that renders no child gives the mount no box.
+      if (mountEl.offsetParent !== null) {
+        if (moved) {
+          setFrameGeneration((generation) => generation + 1);
+        }
+        return holdCover(host);
+      }
+      detachMountEl(mountEl);
+    }
+
+    if (mountEl.style.position !== 'absolute') {
+      applyStyleObject(mountEl, { position: 'absolute', zIndex: zIndex ?? 0 });
+    }
+    if (mountEl.parentNode !== document.body) {
+      const wasPlaced = mountEl.parentNode !== null;
+      document.body.appendChild(mountEl);
+      if (wasPlaced) {
+        setFrameGeneration((generation) => generation + 1);
+      }
+    }
+    let stopped = false;
+    let applied = '';
     const update = () => {
-      applyStyleObject(mountEl, coverStyle(targetElement, zIndex ?? 0));
+      void Promise.resolve(
+        platform.getElementRects({
+          reference: targetElement,
+          floating: mountEl,
+          strategy: 'absolute',
+        }),
+      ).then(({ reference }) => {
+        if (stopped) {
+          return;
+        }
+        const style = coverStyle(reference, zIndex ?? 0);
+        const key = JSON.stringify(style);
+        if (key !== applied) {
+          applied = key;
+          applyStyleObject(mountEl, style);
+        }
+      });
     };
     update();
-    if (mountEl.parentNode !== body) {
-      body.appendChild(mountEl);
-    }
     const stop = autoUpdate(targetElement, mountEl, update);
     return () => {
+      stopped = true;
       stop();
     };
   }, [store, targetElement, isCover, zIndex, portalEl]);

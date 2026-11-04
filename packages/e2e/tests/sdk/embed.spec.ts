@@ -7,6 +7,8 @@ import {
   paragraph,
   row,
 } from './content';
+import type { Page } from '@playwright/test';
+
 import { expect, test } from './fixtures';
 import { defaultAnswer } from './protocol-server';
 
@@ -215,6 +217,29 @@ test.describe('steps', () => {
   });
 });
 
+/** The element's padding box in viewport coordinates: the box a cover takes. */
+const paddingBox = (sdk: { page: Page }, selector: string) =>
+  sdk.page.locator(selector).evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.x + element.clientLeft,
+      y: rect.y + element.clientTop,
+      width: element.clientWidth,
+      height: element.clientHeight,
+    };
+  });
+
+const expectSameBox = (
+  actual: { x: number; y: number; width: number; height: number } | null,
+  expected: { x: number; y: number; width: number; height: number } | null,
+) => {
+  expect(actual && expected).toBeTruthy();
+  expect(Math.abs(actual!.x - expected!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(actual!.y - expected!.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(actual!.width - expected!.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(actual!.height - expected!.height)).toBeLessThanOrEqual(1);
+};
+
 test('the cover placement sits over the target and tracks its box', async ({ sdk, protocol }) => {
   await start(sdk);
   await protocol.push(
@@ -224,17 +249,9 @@ test('the cover placement sits over the target and tracks its box', async ({ sdk
   const shell = sdk.page.locator(SHELL);
   await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
 
-  const boxes = async () => {
-    const target = await sdk.page.locator('#panel').boundingBox();
-    const cover = await shell.boundingBox();
-    return { target, cover };
-  };
-  let { target, cover } = await boxes();
-  expect(target && cover).toBeTruthy();
-  expect(Math.abs(cover!.x - target!.x)).toBeLessThanOrEqual(1);
-  expect(Math.abs(cover!.y - target!.y)).toBeLessThanOrEqual(1);
-  expect(Math.abs(cover!.width - target!.width)).toBeLessThanOrEqual(1);
-  expect(Math.abs(cover!.height - target!.height)).toBeLessThanOrEqual(1);
+  // The cover takes the target's padding box: the target's own border and
+  // radius stay visible around the card.
+  expectSameBox(await shell.boundingBox(), await paddingBox(sdk, '#panel'));
 
   // The cover stands in for the target, so the painted card fills the whole
   // box — not just the content's height, with the target showing underneath.
@@ -242,9 +259,14 @@ test('the cover placement sits over the target and tracks its box', async ({ sdk
     const painted = await sdk.page.frameLocator(FRAME).locator('body > div').first().boundingBox();
     return painted?.height ?? 0;
   };
-  expect(Math.abs((await paintedHeight()) - cover!.height)).toBeLessThanOrEqual(1);
-  // The target's DOM is untouched: the cover lives in the body.
-  expect(await shell.evaluate((el) => el.parentElement?.tagName)).toBe('BODY');
+  expect(
+    Math.abs((await paintedHeight()) - (await shell.boundingBox())!.height),
+  ).toBeLessThanOrEqual(1);
+  // The cover is a positioned child of the target, in the target's own
+  // scrolling context; the target's content is untouched.
+  expect(
+    await shell.evaluate((el) => [el.parentElement?.id, getComputedStyle(el).position]),
+  ).toEqual(['panel', 'absolute']);
 
   // The host lays the page out differently; the cover follows.
   await sdk.page.evaluate(() => {
@@ -254,11 +276,160 @@ test('the cover placement sits over the target and tracks its box', async ({ sdk
   });
   await expect
     .poll(async () => {
-      ({ target, cover } = await boxes());
-      return Math.abs(cover!.y - target!.y) <= 1 && Math.abs(cover!.height - target!.height) <= 1;
+      const target = await paddingBox(sdk, '#panel');
+      const cover = await shell.boundingBox();
+      return Math.abs(cover!.y - target.y) <= 1 && Math.abs(cover!.height - target.height) <= 1;
     })
     .toBe(true);
-  await expect.poll(async () => Math.abs((await paintedHeight()) - cover!.height) <= 1).toBe(true);
+  await expect
+    .poll(async () => Math.abs((await paintedHeight()) - (await shell.boundingBox())!.height) <= 1)
+    .toBe(true);
+
+  // A static target is made the cover's containing block, for the cover's
+  // lifetime only.
+  const targetPosition = () =>
+    sdk.page.locator('#panel').evaluate((el) => (el as HTMLElement).style.position);
+  expect(await targetPosition()).toBe('relative');
+  await protocol.push('RemoveEmbed', { contentId: 'embed-1' });
+  await expect(sdk.page.locator(FRAME)).toHaveCount(0);
+  expect(await targetPosition()).toBe('');
+});
+
+test('a scroll moves the cover with its target without repositioning it', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await sdk.page.evaluate(() => {
+    document.body.style.minHeight = '3000px';
+  });
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Locked', [], 'cover-element'),
+  );
+  const shell = sdk.page.locator(SHELL);
+  await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+  const styleBefore = await shell.getAttribute('style');
+  const targetBefore = await paddingBox(sdk, '#panel');
+
+  await sdk.page.evaluate(() => window.scrollTo(0, 400));
+  await expect
+    .poll(async () => (await paddingBox(sdk, '#panel')).y)
+    .toBeLessThan(targetBefore.y - 300);
+
+  // The page scrolled the cover along with its target. A fixed overlay would
+  // have been re-placed from the scroll event, one frame behind the target.
+  expectSameBox(await shell.boundingBox(), await paddingBox(sdk, '#panel'));
+  expect(await shell.getAttribute('style')).toBe(styleBefore);
+});
+
+test('a cover inside a scrolling container moves with its target without repositioning it', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  // The target sits in an unpositioned scroll container, as an app shell's
+  // main area usually is.
+  await sdk.page.evaluate(() => {
+    const panel = document.getElementById('panel') as HTMLElement;
+    const scroller = document.createElement('div');
+    scroller.id = 'scroller';
+    scroller.style.height = '160px';
+    scroller.style.overflow = 'auto';
+    const above = document.createElement('div');
+    above.style.height = '40px';
+    const below = document.createElement('div');
+    below.style.height = '600px';
+    panel.replaceWith(scroller);
+    scroller.append(above, panel, below);
+  });
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Locked', [], 'cover-element'),
+  );
+  const shell = sdk.page.locator(SHELL);
+  await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+  expectSameBox(await shell.boundingBox(), await paddingBox(sdk, '#panel'));
+  const styleBefore = await shell.getAttribute('style');
+  const targetBefore = await paddingBox(sdk, '#panel');
+
+  await sdk.page.evaluate(() => {
+    (document.getElementById('scroller') as HTMLElement).scrollTop = 60;
+  });
+  await expect
+    .poll(async () => (await paddingBox(sdk, '#panel')).y)
+    .toBeLessThan(targetBefore.y - 50);
+  // The container scrolled the cover along with its target: the cover's
+  // containing block is the target, not something outside the container.
+  expectSameBox(await shell.boundingBox(), await paddingBox(sdk, '#panel'));
+  expect(await shell.getAttribute('style')).toBe(styleBefore);
+});
+
+test('a cover on a target that scrolls its own content mounts in the body and stays over the box', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await sdk.page.evaluate(() => {
+    const panel = document.getElementById('panel') as HTMLElement;
+    panel.style.height = '80px';
+    panel.style.overflow = 'auto';
+    const tall = document.createElement('div');
+    tall.style.height = '400px';
+    panel.append(tall);
+  });
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Locked', [], 'cover-element'),
+  );
+  const shell = sdk.page.locator(SHELL);
+  await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+  // A child would scroll away with the target's content, so the cover is not one.
+  expect(
+    await shell.evaluate((el) => [el.parentElement?.tagName, getComputedStyle(el).position]),
+  ).toEqual(['BODY', 'absolute']);
+  const panel = sdk.page.locator('#panel');
+  expectSameBox(await shell.boundingBox(), await panel.boundingBox());
+
+  await sdk.page.evaluate(() => {
+    (document.getElementById('panel') as HTMLElement).scrollTop = 100;
+  });
+  await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBe(100);
+  expectSameBox(await shell.boundingBox(), await panel.boundingBox());
+});
+
+test('a cover on an element that takes no child mounts in the body at document coordinates', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await sdk.page.evaluate(() => {
+    document.body.style.minHeight = '3000px';
+    const chart = document.createElement('canvas');
+    chart.id = 'chart';
+    chart.width = 300;
+    chart.height = 120;
+    chart.style.display = 'block';
+    document.getElementById('panel')?.after(chart);
+  });
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#chart', 'Locked', [], 'cover-element'),
+  );
+  const shell = sdk.page.locator(SHELL);
+  await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+  expect(
+    await shell.evaluate((el) => [el.parentElement?.tagName, getComputedStyle(el).position]),
+  ).toEqual(['BODY', 'absolute']);
+  const chart = sdk.page.locator('#chart');
+  expectSameBox(await shell.boundingBox(), await chart.boundingBox());
+  const styleBefore = await shell.getAttribute('style');
+  const chartBefore = await chart.boundingBox();
+
+  await sdk.page.evaluate(() => window.scrollTo(0, 400));
+  await expect.poll(async () => (await chart.boundingBox())!.y).toBeLessThan(chartBefore!.y - 300);
+  expectSameBox(await shell.boundingBox(), await chart.boundingBox());
+  expect(await shell.getAttribute('style')).toBe(styleBefore);
 });
 
 test('the cover places its content at the top, center or bottom of the box', async ({
@@ -496,7 +667,7 @@ test('a hidden step between two inline steps routes on without unmounting the fr
   releaseRouterReport();
   await expect(frame.getByText('Routed')).toBeVisible();
   await protocol.waitForMessages('GoToStep', 2);
-  expect(protocol.messages('GoToStep').map((entry) => entry.message.payload.stepId)).toEqual([
+  expect(protocol.messages('GoToStep').map((entry) => entry.message.payload?.stepId)).toEqual([
     'embed-1-step-2',
     'embed-1-step-3',
   ]);
