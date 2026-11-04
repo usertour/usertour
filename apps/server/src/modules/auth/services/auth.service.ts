@@ -1287,24 +1287,20 @@ export class AuthService implements OnModuleInit {
       return { success: true };
     }
 
-    try {
-      // Invalidate any prior outstanding codes for this user. If they
-      // requested reset multiple times, only the latest link should work —
-      // a user who clicked Forgot password three times shouldn't leave
-      // three valid reset URLs in their inbox.
-      await this.prisma.code.deleteMany({ where: { userId: user.id } });
+    // Invalidate any prior outstanding codes for this user. If they
+    // requested reset multiple times, only the latest link should work —
+    // a user who clicked Forgot password three times shouldn't leave
+    // three valid reset URLs in their inbox.
+    await this.prisma.code.deleteMany({ where: { userId: user.id } });
 
-      const result = await this.prisma.code.create({
-        data: {
-          userId: user.id,
-          expiresAt: new Date(Date.now() + RESET_CODE_TTL_MS),
-        },
-      });
-      await this.addSendResetPasswordEmailJob(result.id);
-      return { success: true };
-    } catch (_) {
-      throw new UnknownError();
-    }
+    const result = await this.prisma.code.create({
+      data: {
+        userId: user.id,
+        expiresAt: new Date(Date.now() + RESET_CODE_TTL_MS),
+      },
+    });
+    await this.addSendResetPasswordEmailJob(result.id);
+    return { success: true };
   }
 
   async resetUserPasswordByCode(code: string, password: string): Promise<CommonResult> {
@@ -1317,22 +1313,15 @@ export class AuthService implements OnModuleInit {
       throw new AccountNotFoundError();
     }
 
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        const consumed = await tx.code.deleteMany({
-          where: { id: code, expiresAt: { gt: new Date() } },
-        });
-        if (consumed.count === 0) {
-          throw new InvalidVerificationSession();
-        }
-        await this.updatePasswordAndRevokeTokens(tx, user.id, password);
+    await this.prisma.$transaction(async (tx) => {
+      const consumed = await tx.code.deleteMany({
+        where: { id: code, expiresAt: { gt: new Date() } },
       });
-    } catch (e) {
-      if (e instanceof BaseError) {
-        throw e;
+      if (consumed.count === 0) {
+        throw new InvalidVerificationSession();
       }
-      throw new UnknownError();
-    }
+      await this.updatePasswordAndRevokeTokens(tx, user.id, password);
+    });
 
     // Best-effort: password is already committed, don't fail the request on a Redis hiccup.
     await this.clearPasswordFailures(user.email).catch((e) =>

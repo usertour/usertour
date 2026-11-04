@@ -1567,57 +1567,53 @@ export class AnalyticsService {
     const { contentId, startDate, endDate, environmentId } = query;
     const startDateObj = new Date(startDate);
     const endDateObj = new Date(endDate);
-    try {
-      const content = await this.prisma.content.findUnique({
-        where: { id: contentId },
-      });
-      if (!content) {
-        return false;
-      }
-      const resp = await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizSession.findMany({
-            where: {
-              contentId,
-              createdAt: {
-                gte: startDateObj,
-                lte: endDateObj,
-              },
-              environmentId,
-              bizEvent: {
-                some: {},
-              },
-            },
-            include: {
-              bizUser: true,
-              bizCompany: true,
-              bizEvent: { include: { event: true } },
-              content: true,
-              version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
-            },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
-            ...args,
-          }),
-        () =>
-          this.prisma.bizSession.count({
-            where: {
-              contentId,
-              environmentId,
-              createdAt: {
-                gte: startDateObj,
-                lte: endDateObj,
-              },
-              bizEvent: {
-                some: {},
-              },
-            },
-          }),
-        { first, last, before, after },
-      );
-      return resp;
-    } catch (_) {
-      // console.log(error);
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+    });
+    if (!content) {
+      return false;
     }
+    const resp = await findManyCursorConnection(
+      (args) =>
+        this.prisma.bizSession.findMany({
+          where: {
+            contentId,
+            createdAt: {
+              gte: startDateObj,
+              lte: endDateObj,
+            },
+            environmentId,
+            bizEvent: {
+              some: {},
+            },
+          },
+          include: {
+            bizUser: true,
+            bizCompany: true,
+            bizEvent: { include: { event: true } },
+            content: true,
+            version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+          },
+          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
+          ...args,
+        }),
+      () =>
+        this.prisma.bizSession.count({
+          where: {
+            contentId,
+            environmentId,
+            createdAt: {
+              gte: startDateObj,
+              lte: endDateObj,
+            },
+            bizEvent: {
+              some: {},
+            },
+          },
+        }),
+      { first, last, before, after },
+    );
+    return resp;
   }
 
   async listSessionsDetail(
@@ -1625,34 +1621,27 @@ export class AnalyticsService {
     pagination: Pagination,
     orderBy: AnalyticsOrdering,
   ) {
-    try {
-      const sessions = await this.queryRecentSessions(query, pagination, orderBy);
-      if (!sessions) {
-        throw new UnknownError('Failed to fetch sessions');
-      }
-
-      // Fetch all session details in a single query
-      const sessionIds = sessions.edges.map((edge) => edge.node.id);
-      const sessionDetails = await this.querySessionsDetail(sessionIds);
-
-      // Create a map of session ID to session details for efficient lookup
-      const sessionDetailMap = new Map(sessionDetails.map((detail) => [detail.id, detail]));
-
-      // Build the response with enhanced session details
-      return {
-        edges: sessions.edges.map((edge) => ({
-          node: sessionDetailMap.get(edge.node.id) || edge.node,
-          cursor: edge.cursor,
-        })),
-        pageInfo: sessions.pageInfo,
-        totalCount: sessions.totalCount,
-      };
-    } catch (error) {
-      if (error instanceof UnknownError) {
-        throw error;
-      }
-      throw new UnknownError('Failed to fetch session details');
+    const sessions = await this.queryRecentSessions(query, pagination, orderBy);
+    if (!sessions) {
+      throw new UnknownError('Failed to fetch sessions');
     }
+
+    // Fetch all session details in a single query
+    const sessionIds = sessions.edges.map((edge) => edge.node.id);
+    const sessionDetails = await this.querySessionsDetail(sessionIds);
+
+    // Create a map of session ID to session details for efficient lookup
+    const sessionDetailMap = new Map(sessionDetails.map((detail) => [detail.id, detail]));
+
+    // Build the response with enhanced session details
+    return {
+      edges: sessions.edges.map((edge) => ({
+        node: sessionDetailMap.get(edge.node.id) || edge.node,
+        cursor: edge.cursor,
+      })),
+      pageInfo: sessions.pageInfo,
+      totalCount: sessions.totalCount,
+    };
   }
 
   async getSession(sessionId: string) {
@@ -1728,117 +1717,113 @@ export class AnalyticsService {
       },
     };
 
-    try {
-      // Get projectId from environment
-      const environment = await this.prisma.environment.findUnique({
-        where: { id: environmentId },
-      });
-      if (!environment) {
-        return emptyResponse;
-      }
-      const projectId = environment.projectId;
-
-      // Find required events
-      const [tooltipTargetMissingEvent, flowStepSeenEvent, flowCompletedEvent] = await Promise.all([
-        this.prisma.event.findFirst({
-          where: {
-            projectId,
-            codeName: BizEvents.TOOLTIP_TARGET_MISSING,
-          },
-        }),
-        this.prisma.event.findFirst({
-          where: {
-            projectId,
-            codeName: BizEvents.FLOW_STEP_SEEN,
-          },
-        }),
-        this.prisma.event.findFirst({
-          where: {
-            projectId,
-            codeName: BizEvents.FLOW_COMPLETED,
-          },
-        }),
-      ]);
-
-      if (!tooltipTargetMissingEvent) {
-        return emptyResponse;
-      }
-
-      // Build the event filter condition with stepCvid
-      const eventFilter: Prisma.BizEventWhereInput = {
-        eventId: tooltipTargetMissingEvent.id,
-        createdAt: {
-          gte: startDateObj,
-          lte: endDateObj,
-        },
-        data: {
-          path: ['flow_step_cvid'],
-          equals: stepCvid,
-        },
-      };
-
-      // Query sessions and step analytics in parallel
-      const baseCondition = {
-        environmentId,
-        contentId,
-        startDateStr: startDate,
-        endDateStr: endDate,
-      };
-
-      const [sessions, stepAnalytics] = await Promise.all([
-        // Query sessions
-        findManyCursorConnection(
-          (args) =>
-            this.prisma.bizSession.findMany({
-              where: {
-                contentId,
-                environmentId,
-                deleted: false,
-                bizEvent: {
-                  some: eventFilter,
-                },
-              },
-              include: {
-                bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
-                bizEvent: {
-                  where: eventFilter,
-                  include: { event: true },
-                  orderBy: { createdAt: 'desc' },
-                },
-                content: true,
-                version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
-              },
-              orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
-              ...args,
-            }),
-          () =>
-            this.prisma.bizSession.count({
-              where: {
-                contentId,
-                environmentId,
-                deleted: false,
-                bizEvent: {
-                  some: eventFilter,
-                },
-              },
-            }),
-          { first, last, before, after },
-        ),
-        // Query step analytics using unified method
-        this.getStepAnalyticsMetrics(baseCondition, EventAttributes.FLOW_STEP_CVID, stepCvid, {
-          stepSeenEvent: flowStepSeenEvent ?? undefined,
-          completeEvent: flowCompletedEvent ?? undefined,
-          tooltipTargetMissingEvent,
-        }),
-      ]);
-
-      return {
-        sessions,
-        stepAnalytics,
-      };
-    } catch (_) {
-      throw new UnknownError('Failed to query tooltip target missing sessions');
+    // Get projectId from environment
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+    });
+    if (!environment) {
+      return emptyResponse;
     }
+    const projectId = environment.projectId;
+
+    // Find required events
+    const [tooltipTargetMissingEvent, flowStepSeenEvent, flowCompletedEvent] = await Promise.all([
+      this.prisma.event.findFirst({
+        where: {
+          projectId,
+          codeName: BizEvents.TOOLTIP_TARGET_MISSING,
+        },
+      }),
+      this.prisma.event.findFirst({
+        where: {
+          projectId,
+          codeName: BizEvents.FLOW_STEP_SEEN,
+        },
+      }),
+      this.prisma.event.findFirst({
+        where: {
+          projectId,
+          codeName: BizEvents.FLOW_COMPLETED,
+        },
+      }),
+    ]);
+
+    if (!tooltipTargetMissingEvent) {
+      return emptyResponse;
+    }
+
+    // Build the event filter condition with stepCvid
+    const eventFilter: Prisma.BizEventWhereInput = {
+      eventId: tooltipTargetMissingEvent.id,
+      createdAt: {
+        gte: startDateObj,
+        lte: endDateObj,
+      },
+      data: {
+        path: ['flow_step_cvid'],
+        equals: stepCvid,
+      },
+    };
+
+    // Query sessions and step analytics in parallel
+    const baseCondition = {
+      environmentId,
+      contentId,
+      startDateStr: startDate,
+      endDateStr: endDate,
+    };
+
+    const [sessions, stepAnalytics] = await Promise.all([
+      // Query sessions
+      findManyCursorConnection(
+        (args) =>
+          this.prisma.bizSession.findMany({
+            where: {
+              contentId,
+              environmentId,
+              deleted: false,
+              bizEvent: {
+                some: eventFilter,
+              },
+            },
+            include: {
+              bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
+              bizEvent: {
+                where: eventFilter,
+                include: { event: true },
+                orderBy: { createdAt: 'desc' },
+              },
+              content: true,
+              version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+            },
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+            ...args,
+          }),
+        () =>
+          this.prisma.bizSession.count({
+            where: {
+              contentId,
+              environmentId,
+              deleted: false,
+              bizEvent: {
+                some: eventFilter,
+              },
+            },
+          }),
+        { first, last, before, after },
+      ),
+      // Query step analytics using unified method
+      this.getStepAnalyticsMetrics(baseCondition, EventAttributes.FLOW_STEP_CVID, stepCvid, {
+        stepSeenEvent: flowStepSeenEvent ?? undefined,
+        completeEvent: flowCompletedEvent ?? undefined,
+        tooltipTargetMissingEvent,
+      }),
+    ]);
+
+    return {
+      sessions,
+      stepAnalytics,
+    };
   }
 
   async endSession(sessionId: string) {
@@ -2294,89 +2279,46 @@ export class AnalyticsService {
     const { environmentId, externalUserId, externalCompanyId, contentId, startDate, endDate } =
       query;
 
-    try {
-      // Build where conditions
-      const where: Prisma.BizSessionWhereInput = {
-        environmentId,
-        deleted: false,
-        bizEvent: {
-          some: {},
-        },
+    // Build where conditions
+    const where: Prisma.BizSessionWhereInput = {
+      environmentId,
+      deleted: false,
+      bizEvent: {
+        some: {},
+      },
+    };
+
+    // Add contentId filter if provided
+    if (contentId) {
+      where.contentId = contentId;
+    }
+
+    // Add date range filters if provided
+    if (startDate && endDate) {
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      where.createdAt = {
+        gte: startDateObj,
+        lte: endDateObj,
       };
+    }
 
-      // Add contentId filter if provided
-      if (contentId) {
-        where.contentId = contentId;
-      }
+    // Add external user filter
+    if (externalUserId) {
+      where.bizUser = {
+        externalId: externalUserId,
+      };
+    }
 
-      // Add date range filters if provided
-      if (startDate && endDate) {
-        const startDateObj = new Date(startDate);
-        const endDateObj = new Date(endDate);
-        where.createdAt = {
-          gte: startDateObj,
-          lte: endDateObj,
-        };
-      }
+    // Add external company filter
+    if (externalCompanyId) {
+      where.bizCompany = {
+        externalId: externalCompanyId,
+      };
+    }
 
-      // Add external user filter
-      if (externalUserId) {
-        where.bizUser = {
-          externalId: externalUserId,
-        };
-      }
-
-      // Add external company filter
-      if (externalCompanyId) {
-        where.bizCompany = {
-          externalId: externalCompanyId,
-        };
-      }
-
-      // Ensure at least one of externalUserId or externalCompanyId is provided
-      if (!externalUserId && !externalCompanyId) {
-        return {
-          edges: [],
-          pageInfo: {
-            hasNextPage: false,
-            hasPreviousPage: false,
-            startCursor: null,
-            endCursor: null,
-          },
-          totalCount: 0,
-        };
-      }
-
-      const resp = await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizSession.findMany({
-            where,
-            include: {
-              bizUser: {
-                include: {
-                  bizUsersOnCompany: {
-                    include: { bizCompany: true },
-                  },
-                },
-              },
-              bizEvent: {
-                include: { event: true },
-              },
-              content: true,
-              version: true,
-            },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
-            ...args,
-          }),
-        () =>
-          this.prisma.bizSession.count({
-            where,
-          }),
-        { first, last, before, after },
-      );
-      return resp;
-    } catch (_) {
-      // console.log(error);
+    // Ensure at least one of externalUserId or externalCompanyId is provided
+    if (!externalUserId && !externalCompanyId) {
       return {
         edges: [],
         pageInfo: {
@@ -2388,6 +2330,35 @@ export class AnalyticsService {
         totalCount: 0,
       };
     }
+
+    const resp = await findManyCursorConnection(
+      (args) =>
+        this.prisma.bizSession.findMany({
+          where,
+          include: {
+            bizUser: {
+              include: {
+                bizUsersOnCompany: {
+                  include: { bizCompany: true },
+                },
+              },
+            },
+            bizEvent: {
+              include: { event: true },
+            },
+            content: true,
+            version: true,
+          },
+          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
+          ...args,
+        }),
+      () =>
+        this.prisma.bizSession.count({
+          where,
+        }),
+      { first, last, before, after },
+    );
+    return resp;
   }
 
   async deleteContentSessionWithRelations(id: string, environmentId: string) {

@@ -6,7 +6,6 @@ import type { NewEvent } from '../types/new-event.type';
 import {
   ParamsError,
   ResourceAlreadyExistsError,
-  UnknownError,
   ValidationError,
 } from '@/modules/common/errors/errors';
 import { nameContains } from '@/modules/common/utils/query-filters.util';
@@ -91,7 +90,7 @@ export class EventsService {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new ResourceAlreadyExistsError();
       }
-      throw new UnknownError();
+      throw err;
     }
   }
 

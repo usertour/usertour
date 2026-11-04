@@ -827,195 +827,181 @@ export class BizService {
   async queryBizUser(query: BizFilter, pagination: Pagination, orderBy: BizOrdering) {
     const { first, last, before, after } = pagination;
     const { environmentId, segmentId, data, userId, search, companyId } = query;
-    try {
-      const environmenet = await this.prisma.environment.findUnique({
-        where: { id: environmentId },
+    const environmenet = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+    });
+    if (!environmenet) {
+      return false;
+    }
+    const projectId = environmenet.projectId;
+    let conditions: any = data ? data : {};
+    let segment: Segment;
+    if (segmentId) {
+      // A deleted segment keeps its memberships (ADR 0016) but is not found here,
+      // as over REST.
+      segment = await this.prisma.segment.findFirst({
+        where: { id: segmentId, projectId, deleted: false },
       });
-      if (!environmenet) {
-        return false;
+      if (!segment) {
+        throw new SegmentNotFoundError();
       }
-      const projectId = environmenet.projectId;
-      let conditions: any = data ? data : {};
-      let segment: Segment;
-      if (segmentId) {
-        // A deleted segment keeps its memberships (ADR 0016) but is not found here,
-        // as over REST.
-        segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, projectId, deleted: false },
-        });
-        if (!segment) {
-          throw new SegmentNotFoundError();
-        }
-        if (!data && segment.dataType === SegmentDataType.CONDITION) {
-          conditions = segment.data;
-        }
+      if (!data && segment.dataType === SegmentDataType.CONDITION) {
+        conditions = segment.data;
       }
-      const attributes = await this.prisma.attribute.findMany({
-        where: {
-          projectId,
-          bizType: {
-            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+    }
+    const attributes = await this.prisma.attribute.findMany({
+      where: {
+        projectId,
+        bizType: {
+          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+        },
+      },
+    });
+    const filter = createBizUserConditionsFilter(conditions, attributes);
+    // The compiled filter and the search conditions can each carry top-level
+    // OR / bizUsersOnCompany keys, so they are combined as AND members
+    // instead of being spread into one object where the keys would collide.
+    const andFilters: Record<string, any>[] = filter ? [filter] : [];
+    const where: Record<string, any> = {};
+    if (segment && segment.dataType === SegmentDataType.MANUAL) {
+      where.bizUsersOnSegment = {
+        some: {
+          segment: {
+            id: segment.id,
           },
         },
+      };
+    }
+    if (userId) {
+      where.id = userId;
+    }
+    if (search) {
+      // Support searching across multiple fields
+      andFilters.push({
+        OR: this.createSearchConditions(search, attributes, AttributeBizType.USER),
       });
-      const filter = createBizUserConditionsFilter(conditions, attributes);
-      // The compiled filter and the search conditions can each carry top-level
-      // OR / bizUsersOnCompany keys, so they are combined as AND members
-      // instead of being spread into one object where the keys would collide.
-      const andFilters: Record<string, any>[] = filter ? [filter] : [];
-      const where: Record<string, any> = {};
-      if (segment && segment.dataType === SegmentDataType.MANUAL) {
-        where.bizUsersOnSegment = {
-          some: {
-            segment: {
-              id: segment.id,
-            },
+    }
+    if (companyId) {
+      where.bizUsersOnCompany = {
+        some: {
+          bizCompanyId: companyId,
+        },
+      };
+    }
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
+    }
+    const resp = await findManyCursorConnection(
+      (args) =>
+        this.prisma.bizUser.findMany({
+          where: {
+            environmentId,
+            ...where,
           },
-        };
-      }
-      if (userId) {
-        where.id = userId;
-      }
-      if (search) {
-        // Support searching across multiple fields
-        andFilters.push({
-          OR: this.createSearchConditions(search, attributes, AttributeBizType.USER),
-        });
-      }
-      if (companyId) {
-        where.bizUsersOnCompany = {
-          some: {
-            bizCompanyId: companyId,
-          },
-        };
-      }
-      if (andFilters.length > 0) {
-        where.AND = andFilters;
-      }
-      const resp = await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizUser.findMany({
-            where: {
-              environmentId,
-              ...where,
-            },
-            include: {
-              bizUsersOnCompany: {
-                include: {
-                  bizCompany: true,
-                },
+          include: {
+            bizUsersOnCompany: {
+              include: {
+                bizCompany: true,
               },
             },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
-            ...args,
-          }),
-        () =>
-          this.prisma.bizUser.count({
-            where: {
-              environmentId,
-              ...where,
-            },
-          }),
-        { first, last, before, after },
-      );
-      return resp;
-    } catch (error) {
-      if (error instanceof SegmentNotFoundError) {
-        throw error;
-      }
-      throw new UnknownError(error);
-    }
+          },
+          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
+          ...args,
+        }),
+      () =>
+        this.prisma.bizUser.count({
+          where: {
+            environmentId,
+            ...where,
+          },
+        }),
+      { first, last, before, after },
+    );
+    return resp;
   }
 
   async queryBizCompany(query: BizFilter, pagination: Pagination, orderBy: BizOrdering) {
     const { first, last, before, after } = pagination;
     const { environmentId, segmentId, data, companyId, search } = query;
-    try {
-      const environmenet = await this.prisma.environment.findUnique({
-        where: { id: environmentId },
+    const environmenet = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+    });
+    if (!environmenet) {
+      return false;
+    }
+    const projectId = environmenet.projectId;
+    let conditions: any = data ? data : {};
+    let segment: Segment;
+    if (segmentId) {
+      // A deleted segment keeps its memberships (ADR 0016) but is not found here,
+      // as over REST.
+      segment = await this.prisma.segment.findFirst({
+        where: { id: segmentId, projectId, deleted: false },
       });
-      if (!environmenet) {
-        return false;
+      if (!segment) {
+        throw new SegmentNotFoundError();
       }
-      const projectId = environmenet.projectId;
-      let conditions: any = data ? data : {};
-      let segment: Segment;
-      if (segmentId) {
-        // A deleted segment keeps its memberships (ADR 0016) but is not found here,
-        // as over REST.
-        segment = await this.prisma.segment.findFirst({
-          where: { id: segmentId, projectId, deleted: false },
-        });
-        if (!segment) {
-          throw new SegmentNotFoundError();
-        }
-        if (!data && segment.dataType === SegmentDataType.CONDITION) {
-          conditions = segment.data;
-        }
+      if (!data && segment.dataType === SegmentDataType.CONDITION) {
+        conditions = segment.data;
       }
-      const attributes = await this.prisma.attribute.findMany({
-        where: {
-          projectId: environmenet.projectId,
-          bizType: {
-            in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+    }
+    const attributes = await this.prisma.attribute.findMany({
+      where: {
+        projectId: environmenet.projectId,
+        bizType: {
+          in: [AttributeBizType.USER, AttributeBizType.COMPANY, AttributeBizType.MEMBERSHIP],
+        },
+      },
+    });
+    const filter = createBizCompanyConditionsFilter(conditions, attributes);
+    // The compiled filter and the search conditions can each carry top-level
+    // OR / bizUsersOnCompany keys, so they are combined as AND members
+    // instead of being spread into one object where the keys would collide.
+    const andFilters: Record<string, any>[] = filter ? [filter] : [];
+    const where: Record<string, any> = {};
+    if (segment && segment.dataType === SegmentDataType.MANUAL) {
+      where.bizCompaniesOnSegment = {
+        some: {
+          segment: {
+            id: segment.id,
           },
         },
-      });
-      const filter = createBizCompanyConditionsFilter(conditions, attributes);
-      // The compiled filter and the search conditions can each carry top-level
-      // OR / bizUsersOnCompany keys, so they are combined as AND members
-      // instead of being spread into one object where the keys would collide.
-      const andFilters: Record<string, any>[] = filter ? [filter] : [];
-      const where: Record<string, any> = {};
-      if (segment && segment.dataType === SegmentDataType.MANUAL) {
-        where.bizCompaniesOnSegment = {
-          some: {
-            segment: {
-              id: segment.id,
-            },
-          },
-        };
-      }
-      if (companyId) {
-        where.id = companyId;
-      }
-      if (search) {
-        // Support searching across multiple fields for companies
-        andFilters.push({
-          OR: this.createSearchConditions(search, attributes, AttributeBizType.COMPANY),
-        });
-      }
-      if (andFilters.length > 0) {
-        where.AND = andFilters;
-      }
-      const resp = await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizCompany.findMany({
-            where: {
-              environmentId,
-              deleted: false,
-              ...where,
-            },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
-            ...args,
-          }),
-        () =>
-          this.prisma.bizCompany.count({
-            where: {
-              environmentId,
-              deleted: false,
-              ...where,
-            },
-          }),
-        { first, last, before, after },
-      );
-      return resp;
-    } catch (error) {
-      if (error instanceof SegmentNotFoundError) {
-        throw error;
-      }
-      throw new UnknownError(error);
+      };
     }
+    if (companyId) {
+      where.id = companyId;
+    }
+    if (search) {
+      // Support searching across multiple fields for companies
+      andFilters.push({
+        OR: this.createSearchConditions(search, attributes, AttributeBizType.COMPANY),
+      });
+    }
+    if (andFilters.length > 0) {
+      where.AND = andFilters;
+    }
+    const resp = await findManyCursorConnection(
+      (args) =>
+        this.prisma.bizCompany.findMany({
+          where: {
+            environmentId,
+            deleted: false,
+            ...where,
+          },
+          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
+          ...args,
+        }),
+      () =>
+        this.prisma.bizCompany.count({
+          where: {
+            environmentId,
+            deleted: false,
+            ...where,
+          },
+        }),
+      { first, last, before, after },
+    );
+    return resp;
   }
 
   // ── Entity writes: planned outside the transaction, applied under the row lock
@@ -2452,30 +2438,26 @@ export class BizService {
   ) {
     const { first, last, before, after } = pagination;
     const { environmentId, userId } = query;
-    try {
-      const where: Prisma.BizEventWhereInput = {
-        bizUserId: userId,
-        bizUser: { environmentId },
-      };
+    const where: Prisma.BizEventWhereInput = {
+      bizUserId: userId,
+      bizUser: { environmentId },
+    };
 
-      return await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizEvent.findMany({
-            where,
-            include: {
-              event: true,
-              bizCompany: true,
-              bizUser: true,
-            },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
-            ...args,
-          }),
-        () => this.prisma.bizEvent.count({ where }),
-        { first, last, before, after },
-      );
-    } catch (error) {
-      throw new UnknownError(error);
-    }
+    return await findManyCursorConnection(
+      (args) =>
+        this.prisma.bizEvent.findMany({
+          where,
+          include: {
+            event: true,
+            bizCompany: true,
+            bizUser: true,
+          },
+          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+          ...args,
+        }),
+      () => this.prisma.bizEvent.count({ where }),
+      { first, last, before, after },
+    );
   }
 
   async queryBizCompanyEvents(
@@ -2485,52 +2467,48 @@ export class BizService {
   ) {
     const { first, last, before, after } = pagination;
     const { environmentId, companyId } = query;
-    try {
-      // Events reach a company two ways: stamped with its id at creation, or
-      // (rows from before stamping) through a session that belongs to it.
-      // Both branches must be plain column conditions: an OR over a relation
-      // subquery cannot use either index and sequentially scans BizEvent —
-      // hundreds of milliseconds per page and per count on a large table. So
-      // the environment check and the session lookup happen once, up front,
-      // each on its own index, and the planner bitmap-ORs the two branches.
-      const company = await this.prisma.bizCompany.findFirst({
-        where: { id: companyId, environmentId },
-        select: { id: true },
-      });
-      const sessions = company
-        ? await this.prisma.bizSession.findMany({
-            where: { bizCompanyId: companyId, environmentId },
-            select: { id: true },
-          })
-        : [];
-      const where: Prisma.BizEventWhereInput = company
-        ? {
-            OR: [
-              { bizCompanyId: companyId },
-              ...(sessions.length > 0
-                ? [{ bizSessionId: { in: sessions.map((session) => session.id) } }]
-                : []),
-            ],
-          }
-        : { id: { in: [] } }; // not this environment's company: nothing to show
+    // Events reach a company two ways: stamped with its id at creation, or
+    // (rows from before stamping) through a session that belongs to it.
+    // Both branches must be plain column conditions: an OR over a relation
+    // subquery cannot use either index and sequentially scans BizEvent —
+    // hundreds of milliseconds per page and per count on a large table. So
+    // the environment check and the session lookup happen once, up front,
+    // each on its own index, and the planner bitmap-ORs the two branches.
+    const company = await this.prisma.bizCompany.findFirst({
+      where: { id: companyId, environmentId },
+      select: { id: true },
+    });
+    const sessions = company
+      ? await this.prisma.bizSession.findMany({
+          where: { bizCompanyId: companyId, environmentId },
+          select: { id: true },
+        })
+      : [];
+    const where: Prisma.BizEventWhereInput = company
+      ? {
+          OR: [
+            { bizCompanyId: companyId },
+            ...(sessions.length > 0
+              ? [{ bizSessionId: { in: sessions.map((session) => session.id) } }]
+              : []),
+          ],
+        }
+      : { id: { in: [] } }; // not this environment's company: nothing to show
 
-      return await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizEvent.findMany({
-            where,
-            include: {
-              event: true,
-              bizCompany: true,
-              bizUser: true,
-            },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
-            ...args,
-          }),
-        () => this.prisma.bizEvent.count({ where }),
-        { first, last, before, after },
-      );
-    } catch (error) {
-      throw new UnknownError(error);
-    }
+    return await findManyCursorConnection(
+      (args) =>
+        this.prisma.bizEvent.findMany({
+          where,
+          include: {
+            event: true,
+            bizCompany: true,
+            bizUser: true,
+          },
+          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+          ...args,
+        }),
+      () => this.prisma.bizEvent.count({ where }),
+      { first, last, before, after },
+    );
   }
 }
