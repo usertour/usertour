@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 
 const DAY_MS = 86_400_000;
@@ -58,3 +59,19 @@ export function rollingDayWindows(
   }
   return windows;
 }
+
+/**
+ * SQL labelling `column` (a timestamptz) with the day of `days` it falls in,
+ * for a per-day GROUP BY. The days carry the zone already resolved into
+ * instants, so the database compares instants only and never reads a zone
+ * name: a name its own zone data lacks (an older alias a browser still
+ * reports) cannot fail the query, and every bucket is labelled exactly as the
+ * caller's day rows are. An instant before the first day yields NULL; the
+ * last bucket is open-ended, so the caller bounds the column by the range
+ * end itself (every per-day query here filters `createdAt <= endDate`).
+ */
+export const dayLabelSql = (column: Prisma.Sql, days: readonly DayWindow[]): Prisma.Sql => {
+  const labels = days.map((window) => window.day);
+  const starts = days.map((window) => window.dayStart.toISOString());
+  return Prisma.sql`(${labels}::text[])[width_bucket(${column}, ${starts}::timestamptz[])]`;
+};

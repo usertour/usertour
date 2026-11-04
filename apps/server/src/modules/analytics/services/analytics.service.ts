@@ -8,7 +8,7 @@ import {
   ContentEditorQuestionElement,
   ContentEditorRoot,
 } from '@usertour/types';
-import { rollingDayWindows } from '../utils/rolling-day-windows.util';
+import { type DayWindow, dayLabelSql, rollingDayWindows } from '../utils/rolling-day-windows.util';
 import { extractStepButtons } from '../utils/step-buttons.util';
 import {
   GENUINE_COMPLETION_EVENTS,
@@ -844,6 +844,9 @@ export class AnalyticsService {
     if (isBefore(endDate, startDate)) {
       return [];
     }
+    // The calendar days, resolved once: the SQL buckets and the rows below
+    // both read these, so a count always lands on its own row's label.
+    const days = rollingDayWindows(startDate, endDate, timezone, 1);
 
     // Get aggregated statistics. Resource-center totals count events per day
     // (see querySessionBasedContentAnalytics) so the rows still sum to the
@@ -861,50 +864,44 @@ export class AnalyticsService {
       completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
       completeEvent.codeName === BizEvents.BANNER_DISMISSED;
     const uniqueViewsByDay = isFirstTouchSeen
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: startEvent.id }, timezone)
-      : await this.aggregationByDay({ ...condition, eventId: startEvent.id }, timezone);
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: startEvent.id }, days)
+      : await this.aggregationByDay({ ...condition, eventId: startEvent.id }, days);
     const totalViewsByDay = isResourceCenter
-      ? await this.countEventsByContentByDay({ ...condition, eventId: startEvent.id }, timezone)
+      ? await this.countEventsByContentByDay({ ...condition, eventId: startEvent.id }, days)
       : await this.aggregationByDay(
           { ...condition, eventId: startEvent.id, isDistinct: false },
-          timezone,
+          days,
         );
     const uniqueCompletionByDay = isFirstTouchComplete
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
-      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, days)
+      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, days);
     const totalCompletionByDay =
       isResourceCenter || isEmbed
-        ? await this.countEventsByContentByDay(
-            { ...condition, eventId: completeEvent.id },
-            timezone,
-          )
+        ? await this.countEventsByContentByDay({ ...condition, eventId: completeEvent.id }, days)
         : isFirstTouchComplete
-          ? await this.aggregationFirstEventByDay(
-              { ...condition, eventId: completeEvent.id },
-              timezone,
-            )
+          ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, days)
           : await this.aggregationByDay(
               {
                 ...condition,
                 eventId: completeEvent.id,
                 isDistinct: false,
               },
-              timezone,
+              days,
             );
     const uniqueOpensByDay = opensEvent
-      ? await this.aggregationByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      ? await this.aggregationByDay({ ...condition, eventId: opensEvent.id }, days)
       : null;
     const totalOpensByDay = opensEvent
-      ? await this.countEventsByContentByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      ? await this.countEventsByContentByDay({ ...condition, eventId: opensEvent.id }, days)
       : null;
 
     // Calendar walk in the requested timezone (NOT 24h stepping — see the
-    // tracker path). The SQL buckets label days as plain `to_char` strings in
-    // the same timezone, so matching is string === string; no Date parsing
+    // tracker path). The SQL buckets carry the very `day` labels of these
+    // windows (dayLabelSql), so matching is string === string; no Date parsing
     // round-trip (the old lightFormat(new Date(day)) read a UTC-parsed bucket
     // with the SERVER clock and shifted a day on negative-offset machines).
     const data = [];
-    for (const { day: dd, dayStart } of rollingDayWindows(startDate, endDate, timezone, 1)) {
+    for (const { day: dd, dayStart } of days) {
       data.push({
         date: dayStart,
         uniqueViews: uniqueViewsByDay.find((views) => views.day === dd)?.count || 0,
@@ -1248,7 +1245,7 @@ export class AnalyticsService {
     return Number.parseInt(data[0].count.toString());
   }
 
-  async aggregationByDay(condition: AnalyticsConditions, timezone: string) {
+  async aggregationByDay(condition: AnalyticsConditions, days: readonly DayWindow[]) {
     const { contentId, eventId, startDateStr, endDateStr, isDistinct, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
@@ -1257,11 +1254,12 @@ export class AnalyticsService {
     // timezone). A DATE_TRUNC timestamp here gets parsed as UTC by Prisma and
     // any local re-formatting shifts it a day on negative-offset servers —
     // calendar names travel as strings, never as instants.
+    const day = dayLabelSql(Prisma.sql`"BizEvent"."createdAt"`, days);
     let data: [{ day: string; count: number }];
     if (!isDistinct) {
       // Count total sessions per day
       data = await this.prisma.$queryRaw`
-        SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+        SELECT ${day} AS DAY,
           Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent"
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
@@ -1271,7 +1269,7 @@ export class AnalyticsService {
     } else {
       // Count unique users per day
       data = await this.prisma.$queryRaw`
-        SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+        SELECT ${day} AS DAY,
           Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
@@ -1288,7 +1286,7 @@ export class AnalyticsService {
    * The first event is determined from all historical events, then filtered by the query time range
    * Only first events that occurred within the query time range are included
    */
-  async aggregationFirstEventByDay(condition: AnalyticsConditions, timezone: string) {
+  async aggregationFirstEventByDay(condition: AnalyticsConditions, days: readonly DayWindow[]) {
     const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
@@ -1300,7 +1298,7 @@ export class AnalyticsService {
         SELECT DISTINCT ON (be."bizUserId")
           be."bizUserId",
           be."createdAt",
-          to_char(be."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD') AS day
+          ${dayLabelSql(Prisma.sql`be."createdAt"`, days)} AS day
         FROM "BizEvent" be
         LEFT JOIN "BizSession" bs ON be."bizSessionId" = bs.id
         WHERE
@@ -1454,14 +1452,15 @@ export class AnalyticsService {
   /** Per-day companion of countEventsByContent — same day-label contract as aggregationByDay. */
   async countEventsByContentByDay(
     condition: Omit<AnalyticsConditions, 'isDistinct'>,
-    timezone: string,
+    days: readonly DayWindow[],
   ) {
     const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
+    const day = dayLabelSql(Prisma.sql`"BizEvent"."createdAt"`, days);
 
     const data = (await this.prisma.$queryRaw`
-      SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+      SELECT ${day} AS DAY,
         Count(*) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}

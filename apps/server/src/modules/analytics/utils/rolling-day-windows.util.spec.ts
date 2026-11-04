@@ -1,4 +1,5 @@
-import { rollingDayWindows } from './rolling-day-windows.util';
+import { Prisma } from '@prisma/client';
+import { dayLabelSql, rollingDayWindows } from './rolling-day-windows.util';
 
 /**
  * Timezone-purity regression. The old inline logic cut days with server-local
@@ -61,5 +62,24 @@ describe('rollingDayWindows', () => {
 
   it('inverted range yields no days', () => {
     expect(rollingDayWindows('2026-07-05T00:00:00Z', '2026-07-01T00:00:00Z', 'UTC', 7)).toEqual([]);
+  });
+});
+
+describe('dayLabelSql', () => {
+  it('hands the database day labels and instants, never the zone name', () => {
+    // An older alias a browser still reports; the database may not know it.
+    const days = rollingDayWindows(
+      '2026-11-02T22:00:00.000Z',
+      '2026-11-04T21:59:59.999Z',
+      'Europe/Kiev',
+      1,
+    );
+    const sql = dayLabelSql(Prisma.sql`"createdAt"`, days);
+
+    expect(sql.text).toBe('($1::text[])[width_bucket("createdAt", $2::timestamptz[])]');
+    expect(sql.values).toEqual([
+      ['2026-11-03', '2026-11-04'],
+      ['2026-11-02T22:00:00.000Z', '2026-11-03T22:00:00.000Z'],
+    ]);
   });
 });
