@@ -1,5 +1,6 @@
+import { tz } from '@date-fns/tz';
 import { ContentDataType, ContentEditorElementType } from '@usertour/types';
-import { formatInTimeZone } from 'date-fns-tz';
+import { format } from 'date-fns';
 
 import { ApiObjectType } from '../shared/object-type';
 import type { ContentAnalytics, QuestionAnalytics } from './analytics.schema';
@@ -19,7 +20,7 @@ const dayLabelIn = (timezone: string, value: unknown): string => {
   const date = value instanceof Date ? value : new Date(String(value));
   return Number.isNaN(date.getTime())
     ? String(value)
-    : formatInTimeZone(date, timezone, 'yyyy-MM-dd');
+    : format(date, 'yyyy-MM-dd', { in: tz(timezone) });
 };
 
 const int = (value: unknown): number => (typeof value === 'number' ? Math.trunc(value) : 0);

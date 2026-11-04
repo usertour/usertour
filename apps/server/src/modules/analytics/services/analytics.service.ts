@@ -22,12 +22,12 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import { BizSession, Event } from '@prisma/client';
-import { isBefore } from 'date-fns';
+import { tz } from '@date-fns/tz';
+import { format, isBefore } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import type { AnalyticsFilter } from '../types/analytics-filter.type';
 import type { AnalyticsOrdering } from '../types/analytics-ordering.type';
 import type { TooltipTargetMissingFilter } from '../types/tooltip-target-missing-filter.type';
-import { formatInTimeZone } from 'date-fns-tz';
 
 import {
   extractStepQuestion,
@@ -431,7 +431,7 @@ export class AnalyticsService {
       { date: string; totalViews: number; uniqueUserIds: Set<string> }
     >();
     for (const item of trackerEvents) {
-      const date = formatInTimeZone(item.createdAt, timezone, 'yyyy-MM-dd');
+      const date = format(item.createdAt, 'yyyy-MM-dd', { in: tz(timezone) });
       const current = viewsByDayMap.get(date) ?? {
         date,
         totalViews: 0,

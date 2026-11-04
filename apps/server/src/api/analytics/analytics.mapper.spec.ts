@@ -492,7 +492,7 @@ describe('analyticsQuery timezone validation (IANA at the boundary → 400, not 
   const parse = (timezone?: string) => analyticsQuery.safeParse({ environmentId: 'e', timezone });
 
   it('rejects a timezone the runtime cannot use (would RangeError → 500)', () => {
-    // Validate exactly what fromZonedTime/formatInTimeZone accept: a typo or garbage
+    // Validate exactly what the date-fns zone math (`tz()`) accepts: a typo or garbage
     // zone throws in Intl, so it must be a 400 here, not a deep 500.
     expect(parse('America/Los_Angles').success).toBe(false); // typo
     expect(parse('Foo/Bar').success).toBe(false);
@@ -502,7 +502,7 @@ describe('analyticsQuery timezone validation (IANA at the boundary → 400, not 
     expect(parse('UTC').success).toBe(true);
     expect(parse('Asia/Tokyo').success).toBe(true);
     expect(parse('America/New_York').success).toBe(true);
-    // ICU accepts these legacy aliases, and so does fromZonedTime — so they must NOT
+    // ICU accepts these legacy aliases, and so does `tz()` — so they must NOT
     // be rejected (rejecting a zone the runtime handles fine would be its own bug).
     expect(parse('PST').success).toBe(true);
   });

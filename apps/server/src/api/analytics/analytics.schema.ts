@@ -14,9 +14,9 @@ import { ApiObjectType } from '../shared/object-type';
  */
 
 /**
- * Reject a non-IANA timezone at the boundary (400), not deep inside
- * `fromZonedTime` (which throws a RangeError → 500). Tests the exact thing the
- * runtime uses the zone for: the day windows are resolved here in Node, and
+ * Reject a non-IANA timezone at the boundary (400), not deep inside the
+ * date-fns zone math (`tz()` throws a RangeError → 500). Tests the exact thing
+ * the runtime uses the zone for: the day windows are resolved here in Node, and
  * the database only ever sees their instants, never the zone name.
  */
 const isValidTimeZone = (tz: string): boolean => {
