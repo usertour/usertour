@@ -87,10 +87,10 @@ const isMountEl = (node: Node | null | undefined): node is HTMLElement => {
  * The mount elements already sitting at a placement, in document order: the
  * run of marked siblings at the parent's start (prepend) or end (append), or
  * the run touching the anchor (before: just above it, after: just below it).
- * A mount inside its run is placed; a newcomer joins the run's end. So several
- * shells on one target keep their delivery order and never move each other —
- * and a moved mount is not harmless: moving an iframe reloads its document,
- * while the frame keeps rendering into the old one.
+ * A newcomer joins the run's end, so several shells on one target keep their
+ * delivery order and never move each other — and a moved mount is not
+ * harmless: moving an iframe reloads its document, while the frame keeps
+ * rendering into the old one.
  */
 const mountRun = (placement: InlineMountPlacement): HTMLElement[] => {
   const { parent, insertMode, anchor } = placement;
@@ -135,30 +135,18 @@ const mountRun = (placement: InlineMountPlacement): HTMLElement[] => {
 
 /**
  * Inserts the mount element at its placement, at the end of the run already
- * there; a mount inside its run stays where it is.
- *
- * Returns whether a mount that had already been placed was moved — into a
- * replaced target, say. "Placed" is having a parent, not being connected: a
- * host that replaces the target takes the mount out of the page with the old
- * node, and re-attaching it reloads the iframe it holds just as a move does,
- * while React keeps rendering into the old document. A caller that gets
- * `true` must rebuild its frame in the new place.
+ * there. A placement is taken once per target and released before the next
+ * one (`placeInFlow`, the embed's `placeCover`), so a placed mount is never
+ * moved in place.
  */
-export const insertMountEl = (
-  mountEl: HTMLDivElement,
-  placement: InlineMountPlacement,
-): boolean => {
+export const insertMountEl = (mountEl: HTMLDivElement, placement: InlineMountPlacement): void => {
   const { parent, insertMode, anchor } = placement;
 
   if (!parent.isConnected) {
-    return false;
+    return;
   }
 
   const run = mountRun(placement);
-  if (run.includes(mountEl)) {
-    return false;
-  }
-  const wasPlaced = mountEl.parentNode !== null;
   const lastInRun = run.length > 0 ? run[run.length - 1] : null;
 
   switch (insertMode) {
@@ -181,7 +169,6 @@ export const insertMountEl = (
     default:
       parent.appendChild(mountEl);
   }
-  return wasPlaced;
 };
 
 /** Creates the detached, marked mount element an inline shell portals into. */
@@ -200,4 +187,48 @@ export const detachMountEl = (mountEl: HTMLDivElement | null) => {
   if (mountEl?.parentNode) {
     mountEl.parentNode.removeChild(mountEl);
   }
+};
+
+/** Whether the mount element already sits in the run at `placement`. */
+export const isMountAt = (mountEl: HTMLDivElement, placement: InlineMountPlacement): boolean =>
+  mountRun(placement).includes(mountEl);
+
+/** Where a shell's mount goes for a target; null when it cannot be placed there. */
+export type MountResolver = (target: Element | null) => InlineMountPlacement | null;
+
+/**
+ * A mount element placed in the page. `holds` says whether the mount still
+ * sits where the placement puts it for `target` — the sibling of a target
+ * that was replaced in place does, so nothing needs to move; `restyle`
+ * updates the shell's own style in place (its measured height, its z-index);
+ * `release` takes the mount out of the page and undoes whatever the placement
+ * did to hold it there.
+ */
+export type PlacedMount = {
+  holds: (target: Element | null) => boolean;
+  restyle: (style: CSSProperties) => void;
+  release: () => void;
+};
+
+/** Places the mount element in the document flow where `resolve` puts it for `target`. */
+export const placeInFlow = (
+  mountEl: HTMLDivElement,
+  resolve: MountResolver,
+  target: Element | null,
+  style: CSSProperties,
+): PlacedMount | null => {
+  const placement = resolve(target);
+  if (!placement) {
+    return null;
+  }
+  applyStyleObject(mountEl, style);
+  insertMountEl(mountEl, placement);
+  return {
+    holds: (next) => {
+      const nextPlacement = resolve(next);
+      return nextPlacement !== null && isMountAt(mountEl, nextPlacement);
+    },
+    restyle: (next) => applyStyleObject(mountEl, next),
+    release: () => detachMountEl(mountEl),
+  };
 };

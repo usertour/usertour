@@ -181,6 +181,46 @@ test.describe('banner sessions', () => {
     await expect(sdk.page.locator('iframe.usertour-widget-banner-frame')).toHaveCount(0);
   });
 
+  test('a banner beside its target stays put when the target is replaced in place', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Beside the panel',
+        placement: 'immediately-after-element',
+        target: '#panel',
+      }),
+    );
+    const bannerFrame = sdk.page.locator('iframe.usertour-widget-banner-frame');
+    await expect(
+      sdk.page.frameLocator('iframe.usertour-widget-banner-frame').getByText('Beside the panel'),
+    ).toBeVisible();
+    await bannerFrame.evaluate((frame) => {
+      (frame as HTMLElement).dataset.testFirstFrame = 'true';
+    });
+
+    // The shell is the target's sibling and already sits beside the new node:
+    // nothing moves, and the frame keeps its document.
+    await sdk.page.evaluate(() => {
+      const oldPanel = document.getElementById('panel') as HTMLElement;
+      const newPanel = oldPanel.cloneNode(true) as HTMLElement;
+      newPanel.dataset.replaced = 'true';
+      oldPanel.replaceWith(newPanel);
+    });
+    await sdk.advance(600);
+    await expect(sdk.page.locator('#panel[data-replaced] + .usertour-widget-banner')).toHaveCount(
+      1,
+    );
+    await expect(
+      sdk.page.locator('iframe.usertour-widget-banner-frame[data-test-first-frame]'),
+    ).toHaveCount(1);
+  });
+
   test('an element-relative banner survives its target being replaced in place', async ({
     sdk,
     protocol,

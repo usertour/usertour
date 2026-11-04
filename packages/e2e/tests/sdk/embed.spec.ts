@@ -6,6 +6,7 @@ import {
   oneStepEmbed,
   paragraph,
   row,
+  twoStepFlow,
 } from './content';
 import type { Page } from '@playwright/test';
 
@@ -20,6 +21,26 @@ import { defaultAnswer } from './protocol-server';
 
 const FRAME = 'iframe.usertour-widget-embed-frame';
 const SHELL = '.usertour-widget-embed';
+
+type RemovalCounter = Window & { __shellRemovals: number };
+
+/** Counts, from now on, every shell mount taken out of the page. */
+const countShellRemovals = (page: Page) =>
+  page.evaluate(() => {
+    (window as unknown as RemovalCounter).__shellRemovals = 0;
+    new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.removedNodes) {
+          if (node instanceof HTMLElement && node.hasAttribute('data-usertour-inline-mount')) {
+            (window as unknown as RemovalCounter).__shellRemovals += 1;
+          }
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+
+const shellRemovals = (page: Page) =>
+  page.evaluate(() => (window as unknown as RemovalCounter).__shellRemovals);
 
 const start = async (sdk: {
   init: () => Promise<unknown>;
@@ -770,6 +791,66 @@ test('an embed survives its target being replaced in place', async ({ sdk, proto
   await sdk.advance(600);
   await expect(sdk.page.locator('#panel[data-replaced] > .usertour-widget-embed')).toHaveCount(1);
   await expect(sdk.page.frameLocator(FRAME).getByText('Here')).toBeVisible();
+});
+
+test('an embed beside its target stays put when the target is replaced in place', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Beside', [], 'immediately-after-element'),
+  );
+  await expect(sdk.page.frameLocator(FRAME).getByText('Beside')).toBeVisible();
+  await sdk.page.locator(FRAME).evaluate((frame) => {
+    (frame as HTMLElement).dataset.testFirstFrame = 'true';
+  });
+  await countShellRemovals(sdk.page);
+
+  // The host swaps the target for a new node in the same place. The shell is
+  // the target's sibling and already sits beside the new node: nothing moves,
+  // and the frame keeps its document.
+  await sdk.page.evaluate(() => {
+    const oldPanel = document.getElementById('panel') as HTMLElement;
+    const newPanel = oldPanel.cloneNode(true) as HTMLElement;
+    newPanel.dataset.replaced = 'true';
+    oldPanel.replaceWith(newPanel);
+  });
+  await sdk.advance(600);
+  await expect(sdk.page.locator('#panel[data-replaced] + .usertour-widget-embed')).toHaveCount(1);
+  await expect(sdk.page.frameLocator(FRAME).getByText('Beside')).toBeVisible();
+  expect(await shellRemovals(sdk.page)).toBe(0);
+  await expect(sdk.page.locator(`${FRAME}[data-test-first-frame]`)).toHaveCount(1);
+});
+
+test('an embed stays put while another widget kind loads', async ({ sdk, protocol }) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed(
+      'embed-session-1',
+      'embed-1',
+      '#panel',
+      'Staying',
+      [],
+      'bottom-of-container-element',
+    ),
+  );
+  await expect(sdk.page.frameLocator(FRAME).getByText('Staying')).toBeVisible();
+  await sdk.page.locator(FRAME).evaluate((frame) => {
+    (frame as HTMLElement).dataset.testFirstFrame = 'true';
+  });
+  await countShellRemovals(sdk.page);
+
+  // The first flow loads its widget chunk behind the Suspense boundary the
+  // embed already renders under; the embed's shell must not be touched by it.
+  await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1'));
+  await expect(sdk.frame().getByText('Welcome aboard')).toBeVisible();
+  await sdk.advance(600);
+  await expect(sdk.page.frameLocator(FRAME).getByText('Staying')).toBeVisible();
+  expect(await shellRemovals(sdk.page)).toBe(0);
+  await expect(sdk.page.locator(`${FRAME}[data-test-first-frame]`)).toHaveCount(1);
 });
 
 test('an embed whose target leaves the page unmounts and comes back with it', async ({
