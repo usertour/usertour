@@ -98,7 +98,9 @@ export const LIST_PREVIEW_CONTENT = [
 ] as ContentEditorRoot[];
 
 /**
- * Preview content for banner theme preview
+ * Preview content for the embed theme preview: an upsell card, the copy on
+ * the left and the call to action beside it in its own column, so the button
+ * keeps its width.
  */
 export const EMBED_PREVIEW_CONTENT: ContentEditorRoot[] = [
   {
@@ -110,7 +112,7 @@ export const EMBED_PREVIEW_CONTENT: ContentEditorRoot[] = [
         element: {
           type: 'column',
           justifyContent: 'justify-start',
-          alignItems: 'items-start',
+          alignItems: 'items-center',
           width: {
             type: 'fill',
           },
@@ -139,6 +141,16 @@ export const EMBED_PREVIEW_CONTENT: ContentEditorRoot[] = [
             },
             children: null,
           },
+        ],
+      },
+      {
+        element: {
+          type: 'column',
+          justifyContent: 'justify-end',
+          alignItems: 'items-center',
+          style: {},
+        },
+        children: [
           {
             element: {
               type: 'button',

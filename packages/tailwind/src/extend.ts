@@ -93,9 +93,12 @@ export const extendSdk = {
   borderWidth: {
     'sdk-btn-primary': 'var(--usertour-primary-border-width)',
     'sdk-btn-secondary': 'var(--usertour-secondary-border-width)',
+    // The theme's shared Border section, as the popper draws it (index.css).
+    'sdk-popper': 'var(--usertour-widget-popper-border-width)',
   },
   // Use same key as borderWidth so single class sets both width and color
   borderColor: {
+    'sdk-popper': 'var(--usertour-widget-popper-border-color)',
     'sdk-btn-primary': {
       DEFAULT: 'var(--usertour-primary-border-color)',
       hover: 'var(--usertour-primary-border-hover)',

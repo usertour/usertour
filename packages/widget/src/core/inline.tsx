@@ -81,7 +81,10 @@ const SURFACE_CLASSES: Record<InlineSurface, { container: string; dismiss: strin
     dismiss: 'text-sdk-banner-foreground hover:bg-sdk-banner-hover',
   },
   embed: {
-    container: 'p-sdk-embed bg-sdk-embed text-sdk-embed-foreground',
+    // A card in the page: the theme's shared Border section gives it its
+    // corners and, when enabled, its border — the same tokens the popper uses.
+    container:
+      'p-sdk-embed bg-sdk-embed text-sdk-embed-foreground rounded-sdk-popper border-sdk-popper',
     dismiss: 'text-sdk-embed-foreground hover:bg-sdk-embed-hover',
   },
 };
