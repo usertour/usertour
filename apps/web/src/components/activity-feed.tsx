@@ -124,20 +124,23 @@ function getEventDescriptor(
   const str = (v: unknown): string | undefined =>
     typeof v === 'string' && v ? v : typeof v === 'number' ? String(v) : undefined;
 
+  // A step number is 0-indexed in event data; display it 1-based to match the
+  // expanded detail (getFieldValue) and the sessions list, which both +1.
+  const stepLabel = (rawStep: unknown, stepName: string | undefined): string | undefined => {
+    const stepNumber =
+      rawStep === undefined || rawStep === null ? undefined : String(Number(rawStep) + 1);
+    return stepNumber ? `${formatStep(stepNumber)}${stepName ? `: ${stepName}` : ''}` : stepName;
+  };
+
   switch (category) {
-    case 'flow': {
-      const primary = str(data[EventAttributes.FLOW_NAME]);
-      // FLOW_STEP_NUMBER is 0-indexed in event data; display it 1-based to match
-      // the expanded detail (getFieldValue) and the sessions list, which both +1.
-      const rawStep = data[EventAttributes.FLOW_STEP_NUMBER];
-      const stepNumber =
-        rawStep === undefined || rawStep === null ? undefined : String(Number(rawStep) + 1);
-      const stepName = str(data[EventAttributes.FLOW_STEP_NAME]);
-      const secondary = stepNumber
-        ? `${formatStep(stepNumber)}${stepName ? `: ${stepName}` : ''}`
-        : stepName;
-      return { primary, secondary };
-    }
+    case 'flow':
+      return {
+        primary: str(data[EventAttributes.FLOW_NAME]),
+        secondary: stepLabel(
+          data[EventAttributes.FLOW_STEP_NUMBER],
+          str(data[EventAttributes.FLOW_STEP_NAME]),
+        ),
+      };
     case 'checklist':
       return {
         primary: str(data[EventAttributes.CHECKLIST_NAME]),
@@ -148,12 +151,17 @@ function getEventDescriptor(
     case 'banner':
       return { primary: str(data[EventAttributes.BANNER_NAME]) };
     case 'embed': {
-      // A button press names the button; a step event names the step.
+      // A button press names the button; a step event names the step, as a
+      // flow's does.
       const buttonText = str(data[EventAttributes.BUTTON_TEXT]);
-      const stepName = str(data[EventAttributes.EMBED_STEP_NAME]);
       return {
         primary: str(data[EventAttributes.EMBED_NAME]),
-        secondary: buttonText ?? stepName,
+        secondary:
+          buttonText ??
+          stepLabel(
+            data[EventAttributes.EMBED_STEP_NUMBER],
+            str(data[EventAttributes.EMBED_STEP_NAME]),
+          ),
       };
     }
     case 'resource_center':
