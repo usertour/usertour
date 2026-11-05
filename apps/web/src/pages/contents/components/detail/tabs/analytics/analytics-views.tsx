@@ -170,12 +170,14 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   );
 };
 
-// Embed: reach (first-touch), the success action is a button press, and
-// dismissal is its own outcome rather than the "completion".
+// Embed: reach (first-touch), then the users who pressed a button and the
+// users who dismissed it in the range. No rate: reach counts each user once,
+// on the day they were first reached, so it is no denominator for what
+// happened in a range.
 const EmbedAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   const { t } = useTranslation();
   return (
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-3">
       <AnalyticsCard
         title={t('contents.analytics.views.uniqueViews')}
         tooltip={t('contents.analytics.views.embed.uniqueViewsTooltip')}
@@ -187,15 +189,6 @@ const EmbedAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
         tooltip={t('contents.analytics.views.embed.uniqueClickersTooltip')}
         value={analyticsData?.uniqueCompletions || 0}
         icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
-      />
-      <AnalyticsCard
-        title={t('contents.analytics.views.embed.clickThroughRate')}
-        tooltip={t('contents.analytics.views.embed.clickThroughRateTooltip')}
-        value={calculateCompletionRate(
-          analyticsData?.uniqueCompletions || 0,
-          analyticsData?.uniqueViews || 0,
-        )}
-        icon={<AnalyticsGrowthIcon className="h-4 w-4 text-muted-foreground" />}
       />
       <AnalyticsCard
         title={t('contents.analytics.views.embed.dismissals')}

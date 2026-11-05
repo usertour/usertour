@@ -320,7 +320,9 @@ const embedCounts = {
       'their first session. Impressions are not counted: a persistent inline card is seen on ' +
       'every page load, so "views" would be page views.',
   ),
-  uniqueClickers: int().describe('Distinct users who pressed any button in the embed.'),
+  uniqueClickers: int().describe(
+    'Distinct users who pressed any button in the embed in the range.',
+  ),
   totalClicks: int().describe('Button presses (repeats included).'),
 };
 
@@ -345,7 +347,10 @@ export const embedAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('embed'),
   ...embedCounts,
-  uniqueDismissals: int().describe('Distinct users who dismissed the embed.'),
+  uniqueDismissals: int().describe(
+    'Distinct users who dismissed the embed in the range. Frequency can bring an embed back, ' +
+      'so a user who dismissed it before the range and again inside it is counted.',
+  ),
   byDay: dailySeries(embedCounts, embedSeriesNote),
   steps: z.array(embedStepAnalytics),
   buttons: z.array(embedButtonAnalytics),

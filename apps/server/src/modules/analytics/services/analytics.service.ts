@@ -600,12 +600,15 @@ export class AnalyticsService {
           : {};
 
     // Embed dismissals ride beside the click counters (dismissal is not its
-    // "complete"); first-touch, as the banner's dismissals are.
+    // "complete"). The users who dismissed in the range, as the clickers are
+    // the users who clicked in it: frequency lets one user dismiss an embed
+    // again and again, so the banner's first-touch count would drop every
+    // dismissal after the first.
     const embedDismissedEvent = events.find((ev) => ev.codeName === BizEvents.EMBED_DISMISSED);
     const dismissals =
       isEmbed && embedDismissedEvent
         ? {
-            uniqueDismissals: await this.aggregationFirstEvent({
+            uniqueDismissals: await this.aggregationByEvent({
               ...condition,
               eventId: embedDismissedEvent.id,
             }),

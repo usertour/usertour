@@ -2559,11 +2559,10 @@ const translations = {
           uniqueViewsTooltip:
             'Users who saw the embed for the FIRST time in the selected date range — each user counts once, on the day they were first reached. Impressions are not counted.',
           uniqueClickers: 'Unique clickers',
-          uniqueClickersTooltip: 'Unique users who pressed any button in the embed.',
-          clickThroughRate: 'Click-through rate',
-          clickThroughRateTooltip: 'Percentage of users reached who pressed a button.',
+          uniqueClickersTooltip:
+            'Unique users who pressed any button in the embed in the selected date range.',
           dismissals: 'Dismissals',
-          dismissalsTooltip: 'Unique users who dismissed the embed.',
+          dismissalsTooltip: 'Unique users who dismissed the embed in the selected date range.',
         },
         resourceCenter: {
           uniqueUserInteractions: 'Unique user interactions',

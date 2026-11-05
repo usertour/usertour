@@ -73,11 +73,11 @@ Not defined: `embed_completed` (no completion state) and a target-missing event 
 
 The top-level vocabulary follows resource center, because the session model is the same: a long-lived session whose "total" would collapse into "unique", and a success action that is a click. The content level follows flow, because its steps are `Step` rows.
 
-- Start / success events: `embed_seen` → `button_clicked`. Overview cards: unique views (first-touch, as for banner and launcher), unique clickers, click-through rate, dismissals. The performance chart plots views and clickers.
+- Start / success events: `embed_seen` → `button_clicked`. Overview cards: unique views (first-touch, as for banner and launcher), unique clickers and dismissals (the users who acted in the range: frequency lets one user click or dismiss across many sessions, so first-touch would drop everything after the first). There is no click-through rate: reach counts a user once, on the day they were first reached, and a session can outlive any range, so there is no count of the users who saw the embed in a range to divide by. The performance chart plots views and clickers.
 - Steps table: the flow step table (`AnalyticsSteps`) without the tooltip-missing column and the goal badge, rendered only when the version has more than one step; a one-row table repeats the overview card.
 - Buttons table: new, modelled on the resource center block table. The server reads the published version, collects the buttons of every step, and counts unique and total clicks per button keyed by `embed_step_cvid` + `button_cvid`; the button text is the label. Grouped by step.
 - Questions: the existing question analytics apply unchanged (keyed by question cvid, iterating `version.steps`).
-- Counting: `embed_seen` and `embed_step_seen` are once per session, so **impressions are not counted** and there is no "total views". A persistent inline card's impressions are page views, and every page load of every card would write an event into the table the SDK's rule evaluation reads. With frequency, total views means sessions, as for flow. Clicks count events. Click-through rate counts any button, including step navigation; the buttons table separates them.
+- Counting: `embed_seen` and `embed_step_seen` are once per session, so **impressions are not counted** and there is no "total views". A persistent inline card's impressions are page views, and every page load of every card would write an event into the table the SDK's rule evaluation reads. With frequency, total views means sessions, as for flow. Clicks count events. Unique clickers count any button, including step navigation; the buttons table separates them.
 - Sessions: status dismissed / clicked / active; the progress column shows the current step for multi-step embeds; the session detail progress card lists steps seen and buttons clicked. The activity feed needs no change beyond the `*_id` table.
 - Public API v2 and the MCP analytics tool get an embed shape: users, clickers, dismissals, by day, steps, buttons.
 
@@ -150,5 +150,6 @@ Rejected. Stacking in the existing order is deterministic; a knob every author s
 - Customers ask for impression counts on embeds; the answer would be a sampled or aggregated counter, not raw events.
 - Demand for a completion state or a "show until completed" frequency on multi-step embeds.
 - Demand for a target-missing diagnostic for element-anchored types; it would be designed for launcher, banner and embed together.
+- Demand for a click-through rate, or for the number of users who saw an embed in a range; both need the exposure counter the impressions trigger above describes.
 - Flow or banner adopts `button_clicked`; the buttons table then becomes a shared analytics component.
 - A request for page-level inline placement, which would reopen the banner / embed boundary rather than extend embed.

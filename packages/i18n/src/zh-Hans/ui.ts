@@ -2431,11 +2431,9 @@ const translations = {
           uniqueViewsTooltip:
             '在所选时间范围内首次看到该嵌入的用户数——每位用户只在首次触达的那天计一次。不统计曝光次数。',
           uniqueClickers: '独立点击用户',
-          uniqueClickersTooltip: '在嵌入中点击过任意按钮的独立用户数。',
-          clickThroughRate: '点击率',
-          clickThroughRateTooltip: '触达用户中点击过按钮的比例。',
+          uniqueClickersTooltip: '在所选时间范围内，在嵌入中点击过任意按钮的独立用户数。',
           dismissals: '关闭次数',
-          dismissalsTooltip: '关闭该嵌入的独立用户数。',
+          dismissalsTooltip: '在所选时间范围内关闭过该嵌入的独立用户数。',
         },
         resourceCenter: {
           uniqueUserInteractions: '独立用户互动',
