@@ -151,13 +151,25 @@ export const getQuestionAnswerValue = (answerEvent: BizEvent): string => {
 };
 
 /**
- * Events that should display flow step information
+ * Events that display the step they belong to, with the attributes its name
+ * and number live under: a flow's and an embed's step events carry their own.
  */
-const FLOW_STEP_DISPLAY_EVENTS = [
-  BizEvents.FLOW_STEP_SEEN,
-  BizEvents.TOOLTIP_TARGET_MISSING,
-  BizEvents.FLOW_STEP_COMPLETED,
-] as const;
+type StepDisplayAttributes = { name: EventAttributes; number: EventAttributes };
+
+const FLOW_STEP_DISPLAY_ATTRIBUTES: StepDisplayAttributes = {
+  name: EventAttributes.FLOW_STEP_NAME,
+  number: EventAttributes.FLOW_STEP_NUMBER,
+};
+
+const STEP_DISPLAY_ATTRIBUTES: Partial<Record<BizEvents, StepDisplayAttributes>> = {
+  [BizEvents.FLOW_STEP_SEEN]: FLOW_STEP_DISPLAY_ATTRIBUTES,
+  [BizEvents.TOOLTIP_TARGET_MISSING]: FLOW_STEP_DISPLAY_ATTRIBUTES,
+  [BizEvents.FLOW_STEP_COMPLETED]: FLOW_STEP_DISPLAY_ATTRIBUTES,
+  [BizEvents.EMBED_STEP_SEEN]: {
+    name: EventAttributes.EMBED_STEP_NAME,
+    number: EventAttributes.EMBED_STEP_NUMBER,
+  },
+};
 
 /**
  * Get display suffix for event based on event type
@@ -177,24 +189,30 @@ export const getEventDisplaySuffix = (
     return session?.content?.name ?? '';
   }
 
-  // Handle flow step events
-  if (
-    FLOW_STEP_DISPLAY_EVENTS.includes(eventCodeName as (typeof FLOW_STEP_DISPLAY_EVENTS)[number])
-  ) {
-    const flowStepName = attributeText(bizEvent.data?.[EventAttributes.FLOW_STEP_NAME]);
-    const flowStepNumber = attributeNumber(bizEvent.data?.[EventAttributes.FLOW_STEP_NUMBER]);
-    const stepNumberDisplay = flowStepNumber === undefined ? '' : `${flowStepNumber + 1}`;
+  // Handle step events (flow, embed)
+  const stepAttributes = STEP_DISPLAY_ATTRIBUTES[eventCodeName as BizEvents];
+  if (stepAttributes) {
+    const stepName = attributeText(bizEvent.data?.[stepAttributes.name]);
+    const stepNumber = attributeNumber(bizEvent.data?.[stepAttributes.number]);
+    const stepNumberDisplay = stepNumber === undefined ? '' : `${stepNumber + 1}`;
 
-    if (stepNumberDisplay && flowStepName) {
-      return `Step ${stepNumberDisplay}. ${flowStepName}`;
+    if (stepNumberDisplay && stepName) {
+      return `Step ${stepNumberDisplay}. ${stepName}`;
     }
     if (stepNumberDisplay) {
       return `Step ${stepNumberDisplay}`;
     }
-    if (flowStepName) {
-      return flowStepName;
+    if (stepName) {
+      return stepName;
     }
     return '';
+  }
+
+  // A button press names its button
+  if (eventCodeName === BizEvents.BUTTON_CLICKED) {
+    return (
+      attributeText(bizEvent.data?.[EventAttributes.BUTTON_TEXT]) || (session?.content?.name ?? '')
+    );
   }
 
   // Handle QUESTION_ANSWERED event
@@ -268,7 +286,7 @@ export const sortEventDataEntries = (
 /**
  * Get start reason title from start event
  * Extracts the start reason from FLOW_STARTED, CHECKLIST_STARTED, RESOURCE_CENTER_STARTED,
- * or LAUNCHER_SEEN events
+ * EMBED_STARTED or LAUNCHER_SEEN events
  *
  * @param startEvent - Business event containing start reason data
  * @returns Formatted start reason title or empty string
@@ -283,15 +301,13 @@ export const getStartReasonTitle = (
   if (contentType === ContentDataType.BANNER) {
     return 'Banner seen';
   }
-  if (contentType === ContentDataType.EMBED) {
-    return 'Embed seen';
-  }
   try {
     const reason =
       attributeText(startEvent?.data?.[EventAttributes.FLOW_START_REASON]) ||
       attributeText(startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON]) ||
       attributeText(startEvent?.data?.[EventAttributes.RESOURCE_CENTER_START_REASON]) ||
-      attributeText(startEvent?.data?.[EventAttributes.LAUNCHER_START_REASON]);
+      attributeText(startEvent?.data?.[EventAttributes.LAUNCHER_START_REASON]) ||
+      attributeText(startEvent?.data?.[EventAttributes.EMBED_START_REASON]);
     return flowReasonTitleMap[reason as keyof typeof flowReasonTitleMap] || reason || '';
   } catch (_) {
     return '';
@@ -342,17 +358,22 @@ export const getFieldValue = (key: string, value: any): string | number => {
   if (
     key === EventAttributes.FLOW_START_REASON ||
     key === EventAttributes.CHECKLIST_START_REASON ||
-    key === EventAttributes.LAUNCHER_START_REASON
+    key === EventAttributes.LAUNCHER_START_REASON ||
+    key === EventAttributes.EMBED_START_REASON
   ) {
     return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
   }
-  if (key === EventAttributes.FLOW_END_REASON || key === EventAttributes.CHECKLIST_END_REASON) {
+  if (
+    key === EventAttributes.FLOW_END_REASON ||
+    key === EventAttributes.CHECKLIST_END_REASON ||
+    key === EventAttributes.EMBED_END_REASON
+  ) {
     return flowReasonTitleMap[value as keyof typeof flowReasonTitleMap] || value;
   }
-  if (key === EventAttributes.FLOW_STEP_NUMBER) {
+  if (key === EventAttributes.FLOW_STEP_NUMBER || key === EventAttributes.EMBED_STEP_NUMBER) {
     return value !== undefined && value !== null ? Number(value) + 1 : value;
   }
-  if (key === EventAttributes.FLOW_VERSION_NUMBER) {
+  if (key === EventAttributes.FLOW_VERSION_NUMBER || key === EventAttributes.EMBED_VERSION_NUMBER) {
     return value !== undefined && value !== null ? Number(value) + 1 : value;
   }
   if (key === EventAttributes.BANNER_VERSION_NUMBER) {
