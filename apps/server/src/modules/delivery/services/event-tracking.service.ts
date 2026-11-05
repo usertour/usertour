@@ -1086,11 +1086,17 @@ export class EventTrackingService {
    * @returns True if the event was tracked successfully
    */
   async trackStepSeen(params: EventTrackingParams): Promise<boolean> {
-    const bizSession = await this.findTrackingSession(params.sessionId);
-    if (!bizSession) {
-      return false;
-    }
-    const eventType = getStepSeenEventType(bizSession.content.type);
+    // Only the content type is read here. This runs on every step of every
+    // flow, and the handler it dispatches to loads the session it works on
+    // inside its own transaction — loading it here too, with its events and
+    // its version's steps, doubled the heaviest query of the path.
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: params.sessionId },
+      select: { content: { select: { type: true } } },
+    });
+    const eventType = bizSession?.content
+      ? getStepSeenEventType(bizSession.content.type)
+      : undefined;
     if (!eventType) {
       return false;
     }
@@ -1124,6 +1130,11 @@ export class EventTrackingService {
           stepId,
     );
     if (alreadySeen) {
+      // The gate a recorded event passes (executeEventTransaction): nothing
+      // is written to an ended session or to one of another environment.
+      if (bizSession.state === 1 || bizSession.environmentId !== params.environment.id) {
+        return false;
+      }
       if (bizSession.currentStepId !== stepId) {
         await tx.bizSession.update({
           where: { id: bizSession.id },
