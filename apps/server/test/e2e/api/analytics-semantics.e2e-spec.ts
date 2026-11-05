@@ -33,11 +33,11 @@ import { createTestApp } from '../create-test-app';
  * - banner exposes only the two first-touch user counts; announcement only
  *   uniqueSeen. The session totals the domain still computes for them repeat
  *   the unique numbers and must NOT appear in the payload.
- * - embed mixes on purpose: uniqueSeen is first-touch (seen is written once
- *   per session, and a session can outlive any range), while uniqueClickers
- *   and uniqueDismissals count the users who acted IN the range — frequency
- *   lets one user dismiss an embed more than once, so a first-touch count
- *   would drop every later dismissal.
+ * - embed counts the users it happened to IN the range, all three ways: a
+ *   session started (uniqueViews), a button was pressed (uniqueClickers), a
+ *   session ended (uniqueDismissals). It is not first-touch as launcher and
+ *   banner are: frequency gives an embed session after session, and
+ *   first-touch would drop every one after the first.
  */
 describe('API v2 analytics per-type counting semantics (e2e)', () => {
   let app: INestApplication;
@@ -324,9 +324,9 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     expect(res.body).not.toHaveProperty('totalDismissals');
   });
 
-  it('embed: reach is first-touch, clickers and dismissals are users who acted in the range', async () => {
+  it('embed: views, clickers and dismissals are the users it happened to in the range', async () => {
     const def = (codeName: string) => buildEvent(prisma, { projectId, codeName });
-    const seenDef = await def(BizEvents.EMBED_SEEN);
+    const startedDef = await def(BizEvents.EMBED_STARTED);
     await def(BizEvents.EMBED_STEP_SEEN);
     const clickedDef = await def(BizEvents.BUTTON_CLICKED);
     const dismissedDef = await def(BizEvents.EMBED_DISMISSED);
@@ -362,12 +362,12 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     });
     await prisma.bizEvent.createMany({
       data: [
-        event(firstSession.id, returning.id, seenDef.id, daysAgo(40)),
+        event(firstSession.id, returning.id, startedDef.id, daysAgo(40)),
         event(firstSession.id, returning.id, dismissedDef.id, daysAgo(40)),
-        event(secondSession.id, returning.id, seenDef.id, daysAgo(5)),
+        event(secondSession.id, returning.id, startedDef.id, daysAgo(5)),
         event(secondSession.id, returning.id, clickedDef.id, daysAgo(4)),
         event(secondSession.id, returning.id, dismissedDef.id, daysAgo(4)),
-        event(freshSession.id, fresh.id, seenDef.id, daysAgo(3)),
+        event(freshSession.id, fresh.id, startedDef.id, daysAgo(3)),
       ],
     });
 
@@ -375,9 +375,9 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       contentType: 'embed',
-      // Only `fresh` was first reached in the range.
-      uniqueSeen: 1,
-      // `returning` acted in the range, though first reached before it.
+      // A session started in the range for both: `fresh`, and `returning`
+      // when the embed came back.
+      uniqueViews: 2,
       uniqueClickers: 1,
       uniqueDismissals: 1,
     });

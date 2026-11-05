@@ -1698,7 +1698,9 @@ export function buildReadTools(): McpTool[] {
         '(the selector-health signal); checklists starts + completions (= every visible task ' +
         'done), panel opens (the per-task rate denominator — completion does NOT require ' +
         'opening, so only click-completed tasks form a true funnel) and per-task rows; ' +
-        'launchers seen + activations; banners seen + dismissals; ' +
+        'launchers seen + activations; banners seen + dismissals; embeds views (users a ' +
+        'session started for) + clickers + dismissals (users a session ended for, whatever the ' +
+        'end reason), with per-step and per-button rows; ' +
         'resource centers opens + block clicks; trackers users + occurrences of the tracked ' +
         'event; announcements seen counts (once per user). All with a per-day series. Defaults ' +
         'to the last 30 days, UTC. Reading the numbers: `unique*` always counts distinct ' +

@@ -169,7 +169,7 @@ export const EVENT_TYPE_MAPPING = {
   },
   // An embed's success action is a button press; dismissal is its own counter
   [ContentType.EMBED]: {
-    start: BizEvents.EMBED_SEEN,
+    start: BizEvents.EMBED_STARTED,
     complete: BizEvents.BUTTON_CLICKED,
   },
   [ContentType.RESOURCE_CENTER]: {
@@ -194,7 +194,7 @@ const EVENTS = [
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
-  BizEvents.EMBED_SEEN,
+  BizEvents.EMBED_STARTED,
   BizEvents.EMBED_STEP_SEEN,
   BizEvents.EMBED_DISMISSED,
   BizEvents.BUTTON_CLICKED,
@@ -543,11 +543,12 @@ export class AnalyticsService {
     // (user, content) — filterSingleSessionContentVersions blocks a second
     // session for life — but pre-rework production code wrote repeat events, so
     // these aggregate each user's FIRST event over all history (then filter to
-    // the range) instead of trusting the stored stream to be clean.
+    // the range) instead of trusting the stored stream to be clean. An embed is
+    // not one of them: frequency gives it session after session, so its views
+    // are the users a session started for in the range, as a flow's are.
     const isFirstTouchSeen =
       startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
-      startEvent.codeName === BizEvents.BANNER_SEEN ||
-      startEvent.codeName === BizEvents.EMBED_SEEN;
+      startEvent.codeName === BizEvents.BANNER_SEEN;
     const isFirstTouchComplete =
       completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
       completeEvent.codeName === BizEvents.BANNER_DISMISSED;
@@ -856,13 +857,12 @@ export class AnalyticsService {
     // headline totals.
     const isResourceCenter = startEvent.codeName === BizEvents.RESOURCE_CENTER_OPENED;
     // Embed clicks count events per day too (see querySessionBasedContentAnalytics).
-    const isEmbed = startEvent.codeName === BizEvents.EMBED_SEEN;
+    const isEmbed = startEvent.codeName === BizEvents.EMBED_STARTED;
     // First-touch pairs (see querySessionBasedContentAnalytics): each user
     // lands on the day of their first-ever event, immune to legacy repeats.
     const isFirstTouchSeen =
       startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
-      startEvent.codeName === BizEvents.BANNER_SEEN ||
-      startEvent.codeName === BizEvents.EMBED_SEEN;
+      startEvent.codeName === BizEvents.BANNER_SEEN;
     const isFirstTouchComplete =
       completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
       completeEvent.codeName === BizEvents.BANNER_DISMISSED;

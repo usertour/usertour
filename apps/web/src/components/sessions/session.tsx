@@ -149,7 +149,7 @@ const EmbedProgressColumn = ({
     return <></>;
   }
 
-  const isSeen = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.EMBED_SEEN);
+  const isSeen = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.EMBED_STARTED);
   const isDismissed = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.EMBED_DISMISSED);
   if (!isSeen && !isDismissed) {
     return <></>;

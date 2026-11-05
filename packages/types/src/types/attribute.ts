@@ -140,7 +140,7 @@ export enum BizEvents {
   CHECKLIST_TASK_COMPLETED = 'checklist_task_completed',
   BANNER_SEEN = 'banner_seen',
   BANNER_DISMISSED = 'banner_dismissed',
-  EMBED_SEEN = 'embed_seen',
+  EMBED_STARTED = 'embed_started',
   EMBED_STEP_SEEN = 'embed_step_seen',
   EMBED_DISMISSED = 'embed_dismissed',
   /**

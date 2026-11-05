@@ -49,7 +49,7 @@ const SINGLE_OCCURRENCE_EVENTS = [
   BizEvents.LAUNCHER_DISMISSED,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
-  BizEvents.EMBED_SEEN,
+  BizEvents.EMBED_STARTED,
   BizEvents.EMBED_DISMISSED,
   BizEvents.RESOURCE_CENTER_DISMISSED,
 ] as const;
@@ -691,12 +691,12 @@ export const buildBannerDismissedEventData = (
 // ============================================================================
 
 /**
- * Build event data for embed seen events
+ * Build event data for embed started events
  * @param session - The business session with content and version
  * @param params - Event build parameters containing startReason
- * @returns Embed seen event data, or null if startReason is missing
+ * @returns Embed started event data, or null if startReason is missing
  */
-export const buildEmbedSeenEventData = (
+export const buildEmbedStartedEventData = (
   session: Pick<BizSessionWithRelations, 'content' | 'version'>,
   params?: EventBuildParams,
 ): Record<string, any> | null => {
@@ -1027,7 +1027,7 @@ export const getStartEventType = (contentType: ContentDataType): BizEvents | nul
     return BizEvents.BANNER_SEEN;
   }
   if (contentType === ContentDataType.EMBED) {
-    return BizEvents.EMBED_SEEN;
+    return BizEvents.EMBED_STARTED;
   }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return BizEvents.RESOURCE_CENTER_STARTED;

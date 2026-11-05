@@ -61,10 +61,11 @@ const bannerCounts = (c: ReturnType<typeof counts>) => ({
   uniqueSeen: c.uniqueViews,
   uniqueDismissals: c.uniqueCompletions,
 });
-// Embed: reach is first-touch (as the banner's), the success action is a
-// button press, counted as events; dismissals ride beside, not as "complete".
+// Embed: views are the users a session started for (as a flow's), the
+// success action is a button press, counted as events; dismissals ride
+// beside, not as "complete".
 const embedCounts = (c: ReturnType<typeof counts>) => ({
-  uniqueSeen: c.uniqueViews,
+  uniqueViews: c.uniqueViews,
   uniqueClickers: c.uniqueCompletions,
   totalClicks: c.totalCompletions,
 });

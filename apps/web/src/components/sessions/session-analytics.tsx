@@ -56,7 +56,7 @@ const deriveStatus = (
   if (contentType === ContentDataType.EMBED) {
     if (has(BizEvents.EMBED_DISMISSED)) return 'dismissed';
     if (has(BizEvents.BUTTON_CLICKED)) return 'clicked';
-    if (has(BizEvents.EMBED_SEEN)) return 'active';
+    if (has(BizEvents.EMBED_STARTED)) return 'active';
     return null;
   }
 

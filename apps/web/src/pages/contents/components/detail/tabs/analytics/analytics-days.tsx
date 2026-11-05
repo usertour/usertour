@@ -322,8 +322,8 @@ export const AnalyticsDays = () => {
   // rate would always read 100%. Announcements are view-only like these, so
   // exclude them too instead of showing a nonsensical 100% completion rate.
   // The resource center's click-through rate lives in its overview card. An
-  // embed has no rate: its reach is first-touch, which is no denominator for
-  // the clicks of a range.
+  // embed has no rate: a session can outlive any range, so its views are no
+  // denominator for the clicks of a range.
   const showRate =
     contentType !== ContentDataType.BANNER &&
     contentType !== ContentDataType.TRACKER &&

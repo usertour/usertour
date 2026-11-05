@@ -235,9 +235,9 @@ export const defaultEvents = [
     ],
   },
   {
-    displayName: 'Embed Seen',
-    codeName: BizEvents.EMBED_SEEN,
-    description: 'When an embed is shown to a user for the first time in a session',
+    displayName: 'Embed Started',
+    codeName: BizEvents.EMBED_STARTED,
+    description: 'When an embed session starts: its target is on the page and it is shown',
     attributes: [
       EventAttributes.EMBED_ID,
       EventAttributes.EMBED_NAME,

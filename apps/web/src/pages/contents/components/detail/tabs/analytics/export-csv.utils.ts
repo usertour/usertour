@@ -203,7 +203,7 @@ const getState = (session: SessionExportRow, contentType?: ContentDataType) => {
   if (contentType === ContentDataType.EMBED) {
     const isDismissed = !!events.find((e) => e.event?.codeName === BizEvents.EMBED_DISMISSED);
     const isClicked = !!events.find((e) => e.event?.codeName === BizEvents.BUTTON_CLICKED);
-    const isSeen = !!events.find((e) => e.event?.codeName === BizEvents.EMBED_SEEN);
+    const isSeen = !!events.find((e) => e.event?.codeName === BizEvents.EMBED_STARTED);
     if (isDismissed) return 'Dismissed';
     if (isClicked) return 'Clicked';
     if (isSeen) return 'Seen';

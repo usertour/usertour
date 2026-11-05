@@ -62,7 +62,7 @@ const START_EVENT_CODES = new Set<string>([
   BizEvents.LAUNCHER_SEEN,
   BizEvents.CHECKLIST_STARTED,
   BizEvents.BANNER_SEEN,
-  BizEvents.EMBED_SEEN,
+  BizEvents.EMBED_STARTED,
   BizEvents.RESOURCE_CENTER_STARTED,
 ]);
 

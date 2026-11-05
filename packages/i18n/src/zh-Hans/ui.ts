@@ -2429,7 +2429,7 @@ const translations = {
         },
         embed: {
           uniqueViewsTooltip:
-            '在所选时间范围内首次看到该嵌入的用户数——每位用户只在首次触达的那天计一次。不统计曝光次数。',
+            '在所选时间范围内，该嵌入开始展示的用户数。关闭后按频率再次出现的用户，在再次出现时重新计入。不统计曝光次数。',
           uniqueClickers: '独立点击用户',
           uniqueClickersTooltip: '在所选时间范围内，在嵌入中点击过任意按钮的独立用户数。',
           dismissals: '关闭次数',

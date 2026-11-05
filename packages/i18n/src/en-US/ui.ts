@@ -2557,7 +2557,7 @@ const translations = {
         },
         embed: {
           uniqueViewsTooltip:
-            'Users who saw the embed for the FIRST time in the selected date range — each user counts once, on the day they were first reached. Impressions are not counted.',
+            'Users for whom the embed started showing in the selected date range. A user it comes back to after being dismissed counts again when it comes back. Impressions are not counted.',
           uniqueClickers: 'Unique clickers',
           uniqueClickersTooltip:
             'Unique users who pressed any button in the embed in the selected date range.',

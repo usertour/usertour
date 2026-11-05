@@ -308,17 +308,17 @@ export const bannerAnalytics = z.object({
   byDay: dailySeries(bannerCounts, firstTouchSeriesNote),
 });
 
-/** embed byDay: seen is first-touch, clicks are increments. */
+/** embed byDay: every count is per day. */
 const embedSeriesNote =
-  'Per-day rows: uniqueSeen is FIRST-TOUCH (the users whose first embed session started that ' +
-  'day — a user appears on one day only, rows sum to the headline); uniqueClickers and ' +
-  'totalClicks are per-day increments (a user clicking on several days appears on each).';
+  'Per-day rows: every count is per day. A user whose sessions start on several days, or who ' +
+  'clicks on several days, appears on each, so the unique rows do not sum to the headline.';
 
 const embedCounts = {
-  uniqueSeen: int().describe(
-    'Distinct users reached by the embed in the range — first-touch, counted on the day of ' +
-      'their first session. Impressions are not counted: a persistent inline card is seen on ' +
-      'every page load, so "views" would be page views.',
+  uniqueViews: int().describe(
+    'Distinct users for whom a session of the embed started in the range. Frequency can bring ' +
+      'an embed back after it was dismissed; that user counts again in the range it came back ' +
+      'in. Impressions are not counted: a persistent inline card is seen on every page load, ' +
+      'so they would be page views.',
   ),
   uniqueClickers: int().describe(
     'Distinct users who pressed any button in the embed in the range.',
@@ -348,8 +348,9 @@ export const embedAnalytics = z.object({
   contentType: z.literal('embed'),
   ...embedCounts,
   uniqueDismissals: int().describe(
-    'Distinct users who dismissed the embed in the range. Frequency can bring an embed back, ' +
-      'so a user who dismissed it before the range and again inside it is counted.',
+    'Distinct users for whom a session of the embed ended in the range, whatever the end ' +
+      'reason (a dismissal, the embed being unpublished, an admin ending the session), as the ' +
+      'other content types count theirs.',
   ),
   byDay: dailySeries(embedCounts, embedSeriesNote),
   steps: z.array(embedStepAnalytics),

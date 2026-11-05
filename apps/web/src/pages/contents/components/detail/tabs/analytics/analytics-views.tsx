@@ -170,10 +170,9 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   );
 };
 
-// Embed: reach (first-touch), then the users who pressed a button and the
-// users who dismissed it in the range. No rate: reach counts each user once,
-// on the day they were first reached, so it is no denominator for what
-// happened in a range.
+// Embed: the users a session started for, the users who pressed a button and
+// the users a session ended for, all in the range. No rate: a session can
+// outlive any range, so the users who saw the embed in a range are not known.
 const EmbedAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   const { t } = useTranslation();
   return (

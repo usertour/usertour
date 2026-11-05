@@ -33,7 +33,7 @@ import {
   getAnswer,
   assignClientContext,
   assignDeliveredLocale,
-  buildEmbedSeenEventData,
+  buildEmbedStartedEventData,
   buildEmbedDismissedEventData,
   buildEmbedStepEventData,
   buildButtonClickedEventData,
@@ -1328,8 +1328,8 @@ export class EventTrackingService {
 
     // Embed events
     register({
-      eventName: BizEvents.EMBED_SEEN,
-      buildEventData: (session, params) => buildEmbedSeenEventData(session, params),
+      eventName: BizEvents.EMBED_STARTED,
+      buildEventData: (session, params) => buildEmbedStartedEventData(session, params),
     });
 
     register({
