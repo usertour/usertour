@@ -191,32 +191,26 @@ export const BannerProgressCell = () => {
 };
 BannerProgressCell.displayName = 'BannerProgressCell';
 
-// The step the user is on, for multi-step embeds (every visit to a step is
-// recorded, so the last one seen is it); a single step has nothing to report.
+// The step the user is on, printed as a flow's is: its number among the
+// version's steps and its name. Every visit to a step is recorded, so the last
+// one seen is it. Read from the event alone, whatever the number of steps.
 export const EmbedProgressCell = ({
   original,
   eventList,
 }: { original: BizSession; eventList: Event[] }) => {
   const { t } = useTranslation();
-  const { bizEvent, version } = original;
+  const { bizEvent } = original;
   if (!eventList || !bizEvent || bizEvent.length === 0) return null;
-  const stepCount = version?.steps?.length ?? 0;
-  if (stepCount < 2) {
-    return <span className="text-sm text-muted-foreground">—</span>;
-  }
   const lastSeenBizEvent = bizEvent
     .filter((e) => e.event?.codeName === BizEvents.EMBED_STEP_SEEN)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-  if (!lastSeenBizEvent) {
-    return <span className="text-sm text-muted-foreground">—</span>;
-  }
-  // Formatted as a flow's step is: its number among the version's steps and
-  // its name.
-  const stepDisplay = formatFlowStepDisplay(
-    attributeNumber(lastSeenBizEvent.data?.embed_step_number),
-    attributeText(lastSeenBizEvent.data?.embed_step_name) || null,
-    t,
-  );
+  const stepDisplay = lastSeenBizEvent
+    ? formatFlowStepDisplay(
+        attributeNumber(lastSeenBizEvent.data?.embed_step_number),
+        attributeText(lastSeenBizEvent.data?.embed_step_name) || null,
+        t,
+      )
+    : '';
   if (!stepDisplay) {
     return <span className="text-sm text-muted-foreground">—</span>;
   }

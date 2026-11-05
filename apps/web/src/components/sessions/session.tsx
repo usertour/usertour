@@ -137,14 +137,14 @@ const BannerProgressColumn = ({
 };
 BannerProgressColumn.displayName = 'BannerProgressColumn';
 
-// Embed: lifecycle icon, the step the user is on (multi-step only) and the
-// buttons they pressed, in order.
+// Embed: lifecycle icon, the step the user is on and the buttons they
+// pressed, in order.
 const EmbedProgressColumn = ({
   original,
   eventList,
 }: { original: BizSession; eventList: Event[] }) => {
   const { t } = useTranslation();
-  const { bizEvent, version } = original;
+  const { bizEvent } = original;
   if (!eventList || !bizEvent || bizEvent.length === 0) {
     return <></>;
   }
@@ -157,7 +157,6 @@ const EmbedProgressColumn = ({
 
   const byTime = (a: (typeof bizEvent)[number], b: (typeof bizEvent)[number]) =>
     new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  const stepCount = version?.steps?.length ?? 0;
   const lastSeenBizEvent = bizEvent
     .filter((e) => e.event?.codeName === BizEvents.EMBED_STEP_SEEN)
     .sort((a, b) => byTime(b, a))[0];
@@ -192,7 +191,7 @@ const EmbedProgressColumn = ({
         </TooltipProvider>
       )}
       <div className="flex flex-col min-w-0">
-        {stepCount > 1 && lastSeenBizEvent && (
+        {lastSeenBizEvent && (
           <div className="text-left">{formatFlowStepDisplay(stepNumber, stepName || null, t)}</div>
         )}
         {clickedButtons.length > 0 ? (

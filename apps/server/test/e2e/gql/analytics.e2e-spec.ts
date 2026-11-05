@@ -494,31 +494,6 @@ describe('GraphQL analytics (e2e)', () => {
       expect(conn.totalCount).toBeGreaterThanOrEqual(1);
     });
 
-    it("returns each session's version with its steps", async () => {
-      // The user page shows an embed's progress as "Step 2 of 4", which counts
-      // the version's steps; the content's own session list loads them too.
-      const session = await seedSession();
-      const bizUser = await prisma.bizUser.findUniqueOrThrow({ where: { id: bizUserId } });
-      const res = await graphql(app, {
-        token,
-        query: `query ($query: SessionQuery!, $orderBy: AnalyticsOrder!, $first: Int) {
-          querySessionsByExternalId(query: $query, orderBy: $orderBy, first: $first) {
-            edges { node { id version { id steps { cvid sequence } } } }
-          }
-        }`,
-        variables: {
-          query: { environmentId, externalUserId: bizUser.externalId, contentId },
-          orderBy: { field: 'createdAt', direction: 'desc' },
-          first: 50,
-        },
-      });
-      type Node = { id: string; version: { steps: { cvid: string }[] | null } | null };
-      const node: Node | undefined = gqlData(res).querySessionsByExternalId.edges.find(
-        (edge: { node: Node }) => edge.node.id === session.id,
-      )?.node;
-      expect(node?.version?.steps?.map((step) => step.cvid)).toContain(stepCvid);
-    });
-
     it('returns an empty connection when neither external user nor company is given', async () => {
       const res = await graphql(app, {
         token,
