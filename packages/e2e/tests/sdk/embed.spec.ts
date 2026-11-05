@@ -42,6 +42,14 @@ const countShellRemovals = (page: Page) =>
 const shellRemovals = (page: Page) =>
   page.evaluate(() => (window as unknown as RemovalCounter).__shellRemovals);
 
+/** Adds `#late` to the page: a target that was not there when the embed arrived. */
+const appendLateTarget = (page: Page) =>
+  page.evaluate(() => {
+    const late = document.createElement('div');
+    late.id = 'late';
+    document.querySelector('main')?.append(late);
+  });
+
 const start = async (sdk: {
   init: () => Promise<unknown>;
   identify: (id: string) => Promise<unknown>;
@@ -618,6 +626,106 @@ test('a hidden first step routes only once the session exists, and reports where
     sessionId: 'embed-session-1',
     stepId: 'embed-1-step-2',
   });
+});
+
+test('a session resting on a hidden step opens on the step it routes to once the target appears', async ({
+  sdk,
+  protocol,
+}) => {
+  // The session was left on the router. Its condition holds now, but the
+  // target is not on the page yet, so it routes on before there is a store
+  // to show the step in.
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#late',
+      currentCvid: 'embed-1-cvid-1',
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'hidden',
+          name: 'Router',
+          data: [],
+          trigger: [
+            {
+              id: 'trigger-1',
+              conditions: [
+                {
+                  id: 'trigger-cond-1',
+                  type: 'element',
+                  operators: 'and',
+                  data: {
+                    logic: 'present',
+                    elementData: { type: 'manual', customSelector: '#cta', sequence: '1st' },
+                  },
+                },
+              ],
+              actions: [gotoStep('embed-1-cvid-2')],
+              wait: 0,
+            },
+          ],
+        },
+        {
+          id: 'embed-1-step-2',
+          cvid: 'embed-1-cvid-2',
+          type: 'inline',
+          name: 'Routed',
+          data: [row(paragraph('Routed'))],
+        },
+      ],
+    }),
+  );
+  await protocol.waitForMessages('GoToStep', 1);
+  await sdk.advance(500);
+  await expect(sdk.page.locator(SHELL)).toHaveCount(0);
+
+  await appendLateTarget(sdk.page);
+  await sdk.advance(2000);
+  await expect(sdk.page.frameLocator(FRAME).getByText('Routed')).toBeVisible();
+});
+
+test('a step forced before the target appears is the step the embed opens on', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#late',
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'inline',
+          name: 'Step 1',
+          data: [row(paragraph('Step one'))],
+        },
+        {
+          id: 'embed-1-step-2',
+          cvid: 'embed-1-cvid-2',
+          type: 'inline',
+          name: 'Step 2',
+          data: [row(paragraph('Step two'))],
+        },
+      ],
+    }),
+  );
+  await sdk.advance(300);
+  await protocol.push('ForceGoToStep', { sessionId: 'embed-session-1', stepId: 'embed-1-step-2' });
+  await sdk.advance(300);
+
+  await appendLateTarget(sdk.page);
+  await sdk.advance(2000);
+  const frame = sdk.page.frameLocator(FRAME);
+  await expect(frame.getByText('Step two')).toBeVisible();
+  await expect(frame.getByText('Step one')).toHaveCount(0);
 });
 
 test('a hidden step between two inline steps routes on without unmounting the frame', async ({

@@ -47,6 +47,8 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   private watcherTargetKey: string | null = null;
   /** See usertour-launcher.ts: the found handler must render the LATEST store. */
   private pendingWatcherStore: EmbedStore | null = null;
+  // Set once and for good: an embed is created per delivery and never reused.
+  private destroyed = false;
   private stepTrigger: UsertourTrigger | null = null;
   /** The step the live trigger was armed for, so a re-run does not re-arm it. */
   private stepTriggerCvid: string | null = null;
@@ -356,6 +358,11 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   }
 
   private setupElementWatcher(store: EmbedStore): void {
+    // A trigger that dismissed the embed on arrival may have destroyed it while
+    // the caller was still building this store; nothing would stop the watcher.
+    if (this.destroyed) {
+      return;
+    }
     this.pendingWatcherStore = store;
     const targetElement = store.embedData?.targetElement;
     if (!targetElement) {
@@ -443,9 +450,30 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
       );
       return;
     }
+    // The store was built when the watcher was set up. A step change since
+    // then — a trigger that routed on, a step the server forced — found no
+    // store to land in, so this one is on a step the embed has left: build
+    // the store for the step it is on rather than write a stale one.
+    if (store.currentStep?.cvid !== this.currentStepCvid) {
+      void this.openOnCurrentStep(el);
+      return;
+    }
     this.setStoreData({
       ...store,
       openState: this.computeOpenState(store.currentStep),
+      targetElement: el,
+    });
+  }
+
+  /** Writes the store for the current step, now that the target is there. */
+  private async openOnCurrentStep(el: Element): Promise<void> {
+    const built = await this.buildStoreData();
+    if (!built || this.destroyed) {
+      return;
+    }
+    this.setStoreData({
+      ...built,
+      openState: this.computeOpenState(built.currentStep),
       targetElement: el,
     });
   }
@@ -460,6 +488,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
 
   // === Lifecycle ===
   protected onDestroy(): void {
+    this.destroyed = true;
     this.resetStepTrigger();
     if (this.watcher) {
       this.watcher.destroy();
