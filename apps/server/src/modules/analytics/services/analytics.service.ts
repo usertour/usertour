@@ -2350,7 +2350,9 @@ export class AnalyticsService {
               include: { event: true },
             },
             content: true,
-            version: true,
+            // With its steps, as the content's own session list loads them: an
+            // embed's progress ("Step 2 of 4") counts the version's steps.
+            version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
           },
           orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
           ...args,
