@@ -191,8 +191,8 @@ export const BannerProgressCell = () => {
 };
 BannerProgressCell.displayName = 'BannerProgressCell';
 
-// The step the user is on, for multi-step embeds; a single step has nothing
-// to report.
+// The step the user is on, for multi-step embeds (every visit to a step is
+// recorded, so the last one seen is it); a single step has nothing to report.
 export const EmbedProgressCell = ({
   original,
   eventList,
@@ -210,19 +210,17 @@ export const EmbedProgressCell = ({
   if (!lastSeenBizEvent) {
     return <span className="text-sm text-muted-foreground">—</span>;
   }
-  const stepNumber = attributeNumber(lastSeenBizEvent.data?.embed_step_number);
-  const stepName = attributeText(lastSeenBizEvent.data?.embed_step_name);
-  return (
-    <div className="flex flex-col min-w-0">
-      <span className="text-sm tabular-nums font-medium">
-        {t('users.sessions.stepOf', {
-          number: stepNumber === undefined || stepNumber === null ? 1 : Number(stepNumber) + 1,
-          total: stepCount,
-        })}
-      </span>
-      {stepName && <span className="text-xs text-muted-foreground truncate">{stepName}</span>}
-    </div>
+  // Formatted as a flow's step is: its number among the version's steps and
+  // its name.
+  const stepDisplay = formatFlowStepDisplay(
+    attributeNumber(lastSeenBizEvent.data?.embed_step_number),
+    attributeText(lastSeenBizEvent.data?.embed_step_name) || null,
+    t,
   );
+  if (!stepDisplay) {
+    return <span className="text-sm text-muted-foreground">—</span>;
+  }
+  return <span className="text-sm truncate">{stepDisplay}</span>;
 };
 EmbedProgressCell.displayName = 'EmbedProgressCell';
 

@@ -2184,7 +2184,6 @@ const translations = {
       },
       completedIn: '已完成，耗时 {{date}}',
       stepN: '步骤 {{number}}',
-      stepOf: '第 {{number}} / {{total}} 步',
       clickedButtons: '点击了:{{buttons}}',
       taskClicked: '用户点击了该任务',
       taskHidden: '该任务对用户不可见',

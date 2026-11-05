@@ -1104,58 +1104,6 @@ export class EventTrackingService {
   }
 
   /**
-   * Handle embed step seen: one event per step per session (an embed's
-   * steps are pages, re-visiting one is not a new view), while the session's
-   * current step always follows the user so a hide / show resumes there.
-   * @param tx - Transaction client
-   * @param params - Event tracking parameters with the stepId
-   * @returns True if the step was recorded
-   */
-  private async handleEmbedStepSeen(
-    tx: TransactionClient,
-    params: EventTrackingParams,
-  ): Promise<boolean> {
-    const stepId = params.stepId;
-    if (!stepId) {
-      return false;
-    }
-    const bizSession = await this.findTrackingSession(params.sessionId, tx);
-    if (!bizSession) {
-      return false;
-    }
-    const alreadySeen = bizSession.bizEvent.some(
-      (bizEvent) =>
-        bizEvent.event?.codeName === BizEvents.EMBED_STEP_SEEN &&
-        (bizEvent.data as Record<string, unknown> | null)?.[EventAttributes.EMBED_STEP_ID] ===
-          stepId,
-    );
-    if (alreadySeen) {
-      // The gate a recorded event passes (executeEventTransaction): nothing
-      // is written to an ended session or to one of another environment.
-      if (bizSession.state === 1 || bizSession.environmentId !== params.environment.id) {
-        return false;
-      }
-      if (bizSession.currentStepId !== stepId) {
-        await tx.bizSession.update({
-          where: { id: bizSession.id },
-          data: { currentStepId: stepId },
-        });
-      }
-      return true;
-    }
-    return await this.trackEventWithSession(
-      tx,
-      {
-        sessionId: params.sessionId,
-        environment: params.environment,
-        clientContext: params.clientContext,
-        eventName: BizEvents.EMBED_STEP_SEEN,
-      },
-      (session) => buildEmbedStepEventData(session, params),
-    );
-  }
-
-  /**
    * Handle question answered event with pre-process (update user attributes)
    * @param tx - Transaction client
    * @param params - Event tracking parameters
@@ -1337,10 +1285,11 @@ export class EventTrackingService {
       buildEventData: (session, params) => buildEmbedDismissedEventData(session, params),
     });
 
-    // Embed step seen: once per step per session, always moves the current step
+    // Embed step seen: every time a step is shown, as a flow's. The recorded
+    // event moves the session's current step.
     register({
       eventName: BizEvents.EMBED_STEP_SEEN,
-      handle: (tx, params) => this.handleEmbedStepSeen(tx, params),
+      buildEventData: (session, params) => buildEmbedStepEventData(session, params),
     });
 
     // Button clicked (generic across content types)

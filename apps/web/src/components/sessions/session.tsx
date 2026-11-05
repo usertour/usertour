@@ -193,13 +193,7 @@ const EmbedProgressColumn = ({
       )}
       <div className="flex flex-col min-w-0">
         {stepCount > 1 && lastSeenBizEvent && (
-          <div className="text-left">
-            {t('users.sessions.stepOf', {
-              number: stepNumber === undefined || stepNumber === null ? 1 : Number(stepNumber) + 1,
-              total: stepCount,
-            })}
-            {stepName ? ` · ${stepName}` : ''}
-          </div>
+          <div className="text-left">{formatFlowStepDisplay(stepNumber, stepName || null, t)}</div>
         )}
         {clickedButtons.length > 0 ? (
           <div className="text-left text-muted-foreground truncate">

@@ -1,11 +1,10 @@
-import { BizEvents, EventAttributes } from '@usertour/types';
+import { BizEvents } from '@usertour/types';
 
 import { EventTrackingService } from './event-tracking.service';
 
 /**
  * The step-seen path the SDK's GoToStep lands on: one event name per
- * step-bodied type, picked from the session's content type, and the embed's
- * "already seen" shortcut that only moves the session's current step.
+ * step-bodied type, picked from the session's content type.
  */
 describe('EventTrackingService step seen', () => {
   const environment = { id: 'env-1', projectId: 'project-1' };
@@ -46,59 +45,6 @@ describe('EventTrackingService step seen', () => {
       const { result, trackEventByType } = await run(null);
       expect(result).toBe(false);
       expect(trackEventByType).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('an embed step that was already seen', () => {
-    const session = (overrides: Record<string, unknown> = {}) => ({
-      id: 'session-1',
-      state: 0,
-      environmentId: 'env-1',
-      currentStepId: 'step-1',
-      content: { type: 'embed' },
-      version: { steps: [] },
-      bizUser: { externalId: 'user-1' },
-      bizEvent: [
-        {
-          event: { codeName: BizEvents.EMBED_STEP_SEEN },
-          data: { [EventAttributes.EMBED_STEP_ID]: 'step-2' },
-        },
-      ],
-      ...overrides,
-    });
-    const run = async (found: unknown) => {
-      const tx = {
-        bizSession: { findUnique: jest.fn().mockResolvedValue(found), update: jest.fn() },
-      };
-      const service = build({});
-      const handle = (
-        service as unknown as {
-          handleEmbedStepSeen: (tx: unknown, params: unknown) => Promise<boolean>;
-        }
-      ).handleEmbedStepSeen.bind(service);
-      const result = await handle(tx, { sessionId: 'session-1', environment, stepId: 'step-2' });
-      return { result, update: tx.bizSession.update };
-    };
-
-    it('moves the current step of a live session without a second event', async () => {
-      const { result, update } = await run(session());
-      expect(result).toBe(true);
-      expect(update).toHaveBeenCalledWith({
-        where: { id: 'session-1' },
-        data: { currentStepId: 'step-2' },
-      });
-    });
-
-    it('leaves an ended session alone', async () => {
-      const { result, update } = await run(session({ state: 1 }));
-      expect(result).toBe(false);
-      expect(update).not.toHaveBeenCalled();
-    });
-
-    it('leaves a session of another environment alone', async () => {
-      const { result, update } = await run(session({ environmentId: 'env-2' }));
-      expect(result).toBe(false);
-      expect(update).not.toHaveBeenCalled();
     });
   });
 });

@@ -2297,7 +2297,6 @@ const translations = {
       },
       completedIn: 'Completed in {{date}}',
       stepN: 'Step {{number}}',
-      stepOf: 'Step {{number}} of {{total}}',
       clickedButtons: 'Clicked: {{buttons}}',
       taskClicked: 'User clicked this task',
       taskHidden: 'Task is hidden for user',
