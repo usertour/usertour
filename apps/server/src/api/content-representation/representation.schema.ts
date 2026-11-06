@@ -1327,10 +1327,18 @@ export const question = z.object({
   type: questionTypeEnum,
 });
 
+/** A version's number as the API returns it, wherever a version appears. */
+export const versionNumber = z
+  .number()
+  .describe(
+    "The version's number within its content, starting from 0. The dashboard labels versions " +
+      'from 1, so the version it shows as V1 has `number: 0`.',
+  );
+
 export const contentVersion = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_VERSION),
-  number: z.number(),
+  number: versionNumber,
   firstPublishedAt: z
     .string()
     .nullable()

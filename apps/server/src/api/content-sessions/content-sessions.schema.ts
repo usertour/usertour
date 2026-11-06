@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { contentTypeEnum } from '../content/content.schema';
-import { questionTypeEnum } from '../content-representation/representation.schema';
+import { questionTypeEnum, versionNumber } from '../content-representation/representation.schema';
 import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { createdAtRangeFields } from '@/modules/common/utils/query-filters.util';
@@ -85,7 +85,7 @@ const embeddedUser = z.object({
 const embeddedVersion = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_VERSION),
-  number: z.number(),
+  number: versionNumber,
   updatedAt: isoTimestamp,
   createdAt: isoTimestamp,
 });
