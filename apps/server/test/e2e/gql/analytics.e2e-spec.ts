@@ -198,6 +198,70 @@ describe('GraphQL analytics (e2e)', () => {
       });
       expect(res.body.errors?.length).toBeGreaterThan(0);
     });
+
+    it('buckets the days in a zone the database may not know by that name', async () => {
+      // Browsers still report the older alias "Europe/Kiev". Its days are
+      // resolved before the query, so the database never reads the name.
+      const flow = await buildContent(prisma, { projectId, environmentId, type: 'flow' });
+      const flowVersion = await buildVersion(prisma, { contentId: flow.id });
+      const startedEvent = await prisma.event.findFirstOrThrow({
+        where: { projectId, codeName: BizEvents.FLOW_STARTED },
+      });
+      // 23:30 on Jan 14 and 00:30 on Jan 15, Kyiv time (UTC+2 in winter).
+      for (const createdAt of ['2025-01-14T21:30:00.000Z', '2025-01-14T22:30:00.000Z']) {
+        const session = await buildSession(prisma, {
+          bizUserId,
+          contentId: flow.id,
+          versionId: flowVersion.id,
+          environmentId,
+          projectId,
+        });
+        await prisma.bizEvent.create({
+          data: {
+            bizSessionId: session.id,
+            eventId: startedEvent.id,
+            bizUserId,
+            data: {},
+            createdAt: new Date(createdAt),
+          },
+        });
+      }
+
+      const res = await graphql(app, {
+        token,
+        query: `query ($contentId: String!, $startDate: String!, $endDate: String!, $timezone: String!, $environmentId: String!) {
+          queryContentAnalytics(
+            contentId: $contentId
+            startDate: $startDate
+            endDate: $endDate
+            timezone: $timezone
+            environmentId: $environmentId
+          ) {
+            totalViews
+            viewsByDay
+          }
+        }`,
+        variables: {
+          contentId: flow.id,
+          // Kyiv's Jan 14 and Jan 15, as the dashboard sends them.
+          startDate: '2025-01-13T22:00:00.000Z',
+          endDate: '2025-01-15T21:59:59.999Z',
+          timezone: 'Europe/Kiev',
+          environmentId,
+        },
+      });
+      const analytics = gqlData(res).queryContentAnalytics;
+      expect(analytics.totalViews).toBe(2);
+      expect(
+        analytics.viewsByDay.map((row: { date: string; totalViews: number }) => [
+          row.date,
+          row.totalViews,
+        ]),
+      ).toEqual([
+        ['2025-01-13T22:00:00.000Z', 1],
+        ['2025-01-14T22:00:00.000Z', 1],
+      ]);
+    });
   });
 
   // ── queryContentQuestionAnalytics ──────────────────────────────────────────

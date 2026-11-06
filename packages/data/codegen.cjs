@@ -24,6 +24,7 @@ const sharedConfig = {
     // Named scalars: the server declares what a JSON, Int or String field
     // carries, and each name maps to the domain type that describes it.
     AnalyticsViewsByBlock: '@usertour/types#AnalyticsViewsByBlock',
+    AnalyticsViewsByButton: '@usertour/types#AnalyticsViewsByButton',
     AnalyticsViewsByDay: '@usertour/types#AnalyticsViewsByDay',
     AnalyticsViewsByStep: '@usertour/types#AnalyticsViewsByStep',
     AnalyticsViewsByTask: '@usertour/types#AnalyticsViewsByTask',

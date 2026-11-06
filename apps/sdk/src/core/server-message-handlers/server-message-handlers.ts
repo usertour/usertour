@@ -144,6 +144,29 @@ export class RemoveLauncherHandler implements ServerMessageHandler {
 }
 
 /**
+ * Handler for AddEmbed message
+ */
+export class AddEmbedHandler implements ServerMessageHandler {
+  readonly messageKind = 'AddEmbed';
+
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    return await context.addEmbed(payload as CustomContentSession);
+  }
+}
+
+/**
+ * Handler for RemoveEmbed message
+ */
+export class RemoveEmbedHandler implements ServerMessageHandler {
+  readonly messageKind = 'RemoveEmbed';
+
+  async handle(payload: unknown, context: ServerMessageHandlerContext): Promise<boolean> {
+    const { contentId } = payload as { contentId: string };
+    return await context.removeEmbed(contentId);
+  }
+}
+
+/**
  * Handler for AddTracker message
  */
 export class AddTrackerHandler implements ServerMessageHandler {

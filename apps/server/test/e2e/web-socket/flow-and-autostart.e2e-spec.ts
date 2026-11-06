@@ -11,6 +11,7 @@ import {
   buildEnvironment,
   buildProject,
   buildSegment,
+  buildSession,
   buildStep,
   buildVersion,
   publishVersion,
@@ -241,6 +242,67 @@ describe('WebSocket v2 flow lifecycle and auto-start (e2e)', () => {
       (bizEvent) => (bizEvent.data as Record<string, unknown>).flow_step_id,
     );
     expect(seenStepIds).toContain(middleStepId);
+  });
+
+  it('GoToStep on an embed records the step each time the user comes to it', async () => {
+    // An embed's steps are recorded as a flow's are, every time one is shown,
+    // so the last step seen is the step the user is on.
+    const embed = await buildContent(prisma, {
+      projectId,
+      environmentId,
+      name: 'ws-embed',
+      type: 'embed',
+    });
+    const version = await buildVersion(prisma, {
+      contentId: embed.id,
+      sequence: 1,
+      config: {},
+      data: {},
+    });
+    const first = await buildStep(prisma, {
+      versionId: version.id,
+      type: 'inline',
+      sequence: 0,
+      name: 'First',
+      data: [],
+    });
+    const second = await buildStep(prisma, {
+      versionId: version.id,
+      type: 'inline',
+      sequence: 1,
+      name: 'Second',
+      data: [],
+    });
+    const bizUser = await prisma.bizUser.findFirstOrThrow({
+      where: { externalId: externalUserId, environmentId },
+    });
+    const session = await buildSession(prisma, {
+      bizUserId: bizUser.id,
+      contentId: embed.id,
+      versionId: version.id,
+      environmentId,
+      projectId,
+    });
+
+    // Forward, back, forward again.
+    const visits = [second.id, first.id, second.id];
+    for (const stepId of visits) {
+      const ack = await client.sendClientMessage(ClientMessageKind.GO_TO_STEP, {
+        sessionId: session.id,
+        stepId,
+      });
+      expect(ack).toBe(true);
+    }
+
+    const seen = await prisma.bizEvent.findMany({
+      where: { bizSessionId: session.id, event: { codeName: 'embed_step_seen' } },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(
+      seen.map((bizEvent) => (bizEvent.data as Record<string, unknown>).embed_step_id),
+    ).toEqual(visits);
+    const after = await prisma.bizSession.findUniqueOrThrow({ where: { id: session.id } });
+    expect(after.currentStepId).toBe(second.id);
   });
 
   it('ReportTooltipTargetMissing tracks tooltip_target_missing', async () => {

@@ -63,7 +63,7 @@ export function decompileStep(
     id: step.id,
     cvid: step.cvid ?? null,
     name: step.name ?? '',
-    // Stored steps always carry one of the four kinds (the builder requires it);
+    // Stored steps always carry one of the step kinds (the builder requires it);
     // the legacy '' fallback survives only for hypothetical pre-builder rows.
     type: (step.type ?? '') as RepresentationStep['type'],
     sequence: step.sequence,
@@ -230,6 +230,7 @@ function decompileElement(
         block: {
           ...base,
           type: 'button',
+          ...(typeof e.data?.cvid === 'string' && e.data.cvid ? { cvid: e.data.cvid } : {}),
           text: typeof e.data?.text === 'string' ? e.data.text : '',
           ...(variant ? { variant } : {}),
           ...(actions.length ? { actions } : {}),

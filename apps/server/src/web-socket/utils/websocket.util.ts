@@ -102,6 +102,9 @@ export const extractSessionsByContentType = (
   if (contentType === ContentDataType.LAUNCHER) {
     return socketData.launcherSessions ?? [];
   }
+  if (contentType === ContentDataType.EMBED) {
+    return socketData.embedSessions ?? [];
+  }
   if (contentType === ContentDataType.TRACKER) {
     return socketData.trackerSessions ?? [];
   }
@@ -379,6 +382,22 @@ export const sanitizeWaitTimers = (value: unknown): ConditionWaitTimer[] => {
       (item.activated === undefined || typeof item.activated === 'boolean'),
   );
 };
+
+/** The capabilities an SDK declares on its handshake, kept only where well formed. */
+export const sanitizeCapabilities = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .filter(
+      (item): item is string => typeof item === 'string' && /^[a-z][a-z0-9-]{0,31}$/.test(item),
+    )
+    .slice(0, 16);
+};
+
+/** Whether the connection's SDK declared the capability (an absent list declares none). */
+export const hasSdkCapability = (socketData: SocketData, capability: string): boolean =>
+  socketData.capabilities?.includes(capability) ?? false;
 
 /**
  * The SDK bundle version a client declares on its handshake: a short

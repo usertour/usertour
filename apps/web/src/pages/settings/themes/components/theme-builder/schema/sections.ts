@@ -665,6 +665,34 @@ export const builderSections: BuilderSection[] = [
   },
 
   {
+    id: 'embed',
+    label: 'themeBuilder.sections.embed',
+    previewWidget: ThemeDetailPreviewType.EMBED,
+    fields: [
+      {
+        type: 'color',
+        path: 'embed.backgroundColor.background',
+        label: 'themeBuilder.fields.embed.backgroundColor',
+        allowAuto: true,
+      },
+      {
+        type: 'color',
+        path: 'embed.textColor.color',
+        label: 'themeBuilder.fields.embed.textColor',
+        allowAuto: true,
+      },
+      {
+        type: 'number',
+        path: 'embed.padding',
+        label: 'themeBuilder.fields.common.padding',
+        min: 0,
+        max: 100,
+        suffix: 'px',
+      },
+    ],
+  },
+
+  {
     id: 'checklist',
     label: 'themeBuilder.sections.checklist',
     previewWidget: ThemeDetailPreviewType.CHECKLIST,

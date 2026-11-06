@@ -153,12 +153,12 @@ describe('API v2 theme settings per-item fidelity (e2e)', () => {
     }
   };
 
-  it('covers the whole writable surface: 155 SSOT leaves + 3 media URLs', () => {
+  it('covers the whole writable surface: 158 SSOT leaves + 3 media URLs', () => {
     // Tripwire: adding a setting to the SSOT (or a writable media path) must
     // grow this sweep — update the count AND the coverage ledger.
-    expect(Object.keys(THEME_SETTING_CONSTRAINTS)).toHaveLength(155);
+    expect(Object.keys(THEME_SETTING_CONSTRAINTS)).toHaveLength(158);
     expect(WRITABLE_MEDIA_URL_PATHS).toHaveLength(3);
-    expect(sweepEntries).toHaveLength(158);
+    expect(sweepEntries).toHaveLength(161);
   });
 
   it('every setting written comes back with the exact value, twice over', async () => {

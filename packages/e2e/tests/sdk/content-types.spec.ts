@@ -180,6 +180,123 @@ test.describe('banner sessions', () => {
     await protocol.push('UnsetBannerSession', { sessionId: 'banner-session-1' });
     await expect(sdk.page.locator('iframe.usertour-widget-banner-frame')).toHaveCount(0);
   });
+
+  test('a banner beside its target stays put when the target is replaced in place', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Beside the panel',
+        placement: 'immediately-after-element',
+        target: '#panel',
+      }),
+    );
+    const bannerFrame = sdk.page.locator('iframe.usertour-widget-banner-frame');
+    await expect(
+      sdk.page.frameLocator('iframe.usertour-widget-banner-frame').getByText('Beside the panel'),
+    ).toBeVisible();
+    await bannerFrame.evaluate((frame) => {
+      (frame as HTMLElement).dataset.testFirstFrame = 'true';
+    });
+
+    // The shell is the target's sibling and already sits beside the new node:
+    // nothing moves, and the frame keeps its document.
+    await sdk.page.evaluate(() => {
+      const oldPanel = document.getElementById('panel') as HTMLElement;
+      const newPanel = oldPanel.cloneNode(true) as HTMLElement;
+      newPanel.dataset.replaced = 'true';
+      oldPanel.replaceWith(newPanel);
+    });
+    await sdk.advance(600);
+    await expect(sdk.page.locator('#panel[data-replaced] + .usertour-widget-banner')).toHaveCount(
+      1,
+    );
+    await expect(
+      sdk.page.locator('iframe.usertour-widget-banner-frame[data-test-first-frame]'),
+    ).toHaveCount(1);
+  });
+
+  test('an element-relative banner survives its target being replaced in place', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Inside the panel',
+        placement: 'top-of-container-element',
+        target: '#panel',
+      }),
+    );
+    const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
+    await expect(banner.getByText('Inside the panel')).toBeVisible();
+
+    await sdk.page.evaluate(() => {
+      const oldPanel = document.getElementById('panel') as HTMLElement;
+      const newPanel = oldPanel.cloneNode(true) as HTMLElement;
+      for (const shell of newPanel.querySelectorAll('.usertour-widget-banner')) {
+        shell.remove();
+      }
+      newPanel.dataset.replaced = 'true';
+      oldPanel.replaceWith(newPanel);
+    });
+    await sdk.advance(600);
+    await expect(sdk.page.locator('#panel[data-replaced] > .usertour-widget-banner')).toHaveCount(
+      1,
+    );
+    await expect(banner.getByText('Inside the panel')).toBeVisible();
+  });
+
+  test('an element-relative banner stays mounted while its target is out of the viewport', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Right before the panel',
+        placement: 'immediately-before-element',
+        target: '#panel',
+      }),
+    );
+    await expect(sdk.page.locator('iframe.usertour-widget-banner-frame')).toHaveCount(1);
+
+    // Push the target below the fold and count shell insertions from here:
+    // the viewport check used to hide the banner, which reflowed the target
+    // back into view, which showed it again, every tick.
+    await sdk.page.evaluate(() => {
+      (document.getElementById('panel') as HTMLElement).style.marginTop = '4000px';
+      window.scrollTo(0, 0);
+      (window as unknown as { __shellInsertions: number }).__shellInsertions = 0;
+      new MutationObserver((records) => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (node instanceof HTMLElement && node.classList.contains('usertour-widget-banner')) {
+              (window as unknown as { __shellInsertions: number }).__shellInsertions += 1;
+            }
+          }
+        }
+      }).observe(document.body, { childList: true, subtree: true });
+    });
+    await sdk.advance(1000);
+    await expect(sdk.page.locator('iframe.usertour-widget-banner-frame')).toHaveCount(1);
+    expect(await sdk.isStarted('banner-1')).toBe(true);
+    const insertions = await sdk.page.evaluate(
+      () => (window as unknown as { __shellInsertions: number }).__shellInsertions,
+    );
+    expect(insertions).toBe(0);
+  });
 });
 
 test.describe('launchers', () => {

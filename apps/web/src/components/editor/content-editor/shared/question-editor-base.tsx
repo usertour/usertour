@@ -72,6 +72,7 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
     zIndex,
     currentStep,
     currentVersion,
+    currentContent,
     contentList,
     createStep,
     attributes,
@@ -88,12 +89,22 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
       zIndex,
       currentStep,
       currentVersion,
+      currentContent,
       contentList,
       createStep,
       attributes,
       projectId,
     }),
-    [zIndex, currentStep, currentVersion, contentList, createStep, attributes, projectId],
+    [
+      zIndex,
+      currentStep,
+      currentVersion,
+      currentContent,
+      contentList,
+      createStep,
+      attributes,
+      projectId,
+    ],
   );
 
   // Handle data change

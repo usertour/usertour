@@ -33,6 +33,7 @@ import { ApiValidationPipe } from '../shared/validation.pipe';
 import {
   AnalyticsQueryDto,
   BannerAnalyticsDto,
+  EmbedAnalyticsDto,
   ChecklistAnalyticsDto,
   FlowAnalyticsDto,
   LauncherAnalyticsDto,
@@ -71,7 +72,8 @@ export class ApiAnalyticsController {
       'The response shape follows the content type (discriminated on `contentType`): ' +
       'flows report starts + completions and a per-step funnel with tooltip-target-missing ' +
       'counts; checklists starts + completions and per-task rows; launchers seen + ' +
-      'activations; banners seen + dismissals; resource centers opens + block clicks; ' +
+      'activations; banners seen + dismissals; embeds users reached + button clicks + ' +
+      'dismissals with per-step and per-button rows; resource centers opens + block clicks; ' +
       'trackers users + occurrences of the tracked event. All with a per-day series. ' +
       'Defaults to the last 30 days, UTC.',
   })
@@ -82,6 +84,7 @@ export class ApiAnalyticsController {
     ChecklistAnalyticsDto,
     LauncherAnalyticsDto,
     BannerAnalyticsDto,
+    EmbedAnalyticsDto,
     ResourceCenterAnalyticsDto,
     TrackerAnalyticsDto,
     AnnouncementAnalyticsDto,
@@ -95,6 +98,7 @@ export class ApiAnalyticsController {
         { $ref: getSchemaPath(ChecklistAnalyticsDto) },
         { $ref: getSchemaPath(LauncherAnalyticsDto) },
         { $ref: getSchemaPath(BannerAnalyticsDto) },
+        { $ref: getSchemaPath(EmbedAnalyticsDto) },
         { $ref: getSchemaPath(ResourceCenterAnalyticsDto) },
         { $ref: getSchemaPath(TrackerAnalyticsDto) },
         { $ref: getSchemaPath(AnnouncementAnalyticsDto) },

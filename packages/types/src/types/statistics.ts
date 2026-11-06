@@ -66,6 +66,19 @@ export type AnalyticsViewsByBlock = {
   };
 };
 
+/** One embed button's clicks, keyed by its cvid together with its step's cvid. */
+export type AnalyticsViewsByButton = {
+  name: string;
+  cvid: string;
+  stepCvid: string;
+  stepName: string;
+  stepIndex: number;
+  analytics: {
+    uniqueClicks: number;
+    totalClicks: number;
+  };
+};
+
 /**
  * A session as the runtime receives it: `latestSession` of a content over the
  * socket. The dashboard types sessions from its documents (`BizSession` in

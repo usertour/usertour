@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 import { contentTypeEnum } from '../content/content.schema';
-import { questionTypeEnum } from '../content-representation/representation.schema';
+import { questionTypeEnum, versionNumber } from '../content-representation/representation.schema';
 import { orderByField, singleOrArray, isoTimestamp } from '../shared/query';
 
 import { createdAtRangeFields } from '@/modules/common/utils/query-filters.util';
@@ -85,7 +85,7 @@ const embeddedUser = z.object({
 const embeddedVersion = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_VERSION),
-  number: z.number(),
+  number: versionNumber,
   updatedAt: isoTimestamp,
   createdAt: isoTimestamp,
 });
@@ -107,7 +107,7 @@ export const contentSession = z.object({
         'completion step) / every checklist task was checked. Independent of whether the session ' +
         'is still open: a completed checklist can still be showing, and a flow can complete at a ' +
         'mid-flow completion step and keep running. Only flows and checklists can be completed; ' +
-        'banners / launchers / resource centers are seen-then-dismissed and are always false.',
+        'banners / launchers / resource centers / embeds are seen-then-dismissed and are always false.',
     ),
   completedAt: z
     .string()

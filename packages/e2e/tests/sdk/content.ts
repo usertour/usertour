@@ -1,6 +1,7 @@
 import {
   DEFAULT_BANNER_DATA,
   DEFAULT_CHECKLIST_DATA,
+  DEFAULT_EMBED_DATA,
   DEFAULT_LAUNCHER_DATA,
   DEFAULT_RESOURCE_CENTER_DATA,
   defaultSettings,
@@ -45,10 +46,11 @@ export const gotoStep = (stepCvid: string): Action => ({
 });
 export const dismissFlow = (): Action => ({ id: id('action'), type: 'flow-dismis', data: {} });
 
-export const button = (text: string, actions: Action[] = []) => ({
+export const button = (text: string, actions: Action[] = [], cvid?: string) => ({
   type: 'button',
-  data: { text, type: 'primary', actions },
+  data: { text, type: 'primary', actions, ...(cvid ? { cvid } : {}) },
 });
+export const dismissEmbed = (): Action => ({ id: id('action'), type: 'embed-dismis', data: {} });
 
 // --- flow ---
 
@@ -70,7 +72,7 @@ const stepSetting = {
 export type StepInput = {
   id: string;
   cvid: string;
-  type: 'modal' | 'tooltip' | 'bubble' | 'hidden';
+  type: 'modal' | 'tooltip' | 'bubble' | 'hidden' | 'inline';
   name?: string;
   data: unknown[];
   /** Tooltip target, by CSS selector. */
@@ -196,7 +198,15 @@ export const checklistSession = (input: {
 
 // --- banner ---
 
-export const bannerSession = (input: { sessionId: string; contentId: string; text: string }) => ({
+export const bannerSession = (input: {
+  sessionId: string;
+  contentId: string;
+  text: string;
+  /** An element-relative placement; defaults to the top of the page. */
+  placement?: string;
+  /** The container element's selector, for an element-relative placement. */
+  target?: string;
+}) => ({
   id: input.sessionId,
   type: 'banner',
   draftMode: false,
@@ -207,7 +217,10 @@ export const bannerSession = (input: { sessionId: string; contentId: string; tex
     theme: { settings: defaultSettings },
     banner: {
       ...DEFAULT_BANNER_DATA,
-      embedPlacement: 'top-of-page',
+      embedPlacement: input.placement ?? 'top-of-page',
+      ...(input.target
+        ? { containerElement: { type: 'manual', customSelector: input.target } }
+        : {}),
       allowUsersToDismissEmbed: true,
       animateWhenEmbedAppears: false,
       contents: [row(paragraph(input.text))],
@@ -248,6 +261,77 @@ export const launcherSession = (input: {
     },
   },
 });
+
+// --- embed ---
+
+export type EmbedInput = {
+  /** Absent for a sessionless pre-activation (a full sync before any session exists). */
+  sessionId?: string;
+  contentId: string;
+  /** Target element, by CSS selector. */
+  target: string;
+  placement?: string;
+  steps: StepInput[];
+  /** Open on this step instead of the first (the session's remembered step). */
+  currentCvid?: string;
+  allowDismiss?: boolean;
+  /** Content position inside a cover; center when omitted. */
+  coverAlignment?: string;
+};
+
+export const embedSession = (input: EmbedInput) => {
+  const steps = input.steps.map((item, index) => step(item, index));
+  const current = input.currentCvid
+    ? steps.find((item) => item.cvid === input.currentCvid)
+    : undefined;
+  return {
+    id: input.sessionId,
+    type: 'embed',
+    draftMode: false,
+    attributes: [],
+    content: { id: input.contentId, name: input.contentId, type: 'embed', project: PROJECT },
+    version: {
+      id: `${input.contentId}-version`,
+      theme: { settings: defaultSettings },
+      steps,
+      embed: {
+        ...DEFAULT_EMBED_DATA,
+        placement: input.placement ?? 'immediately-after-element',
+        targetElement: { type: 'manual', customSelector: input.target },
+        allowUsersToDismiss: input.allowDismiss ?? true,
+        ...(input.coverAlignment ? { coverAlignment: input.coverAlignment } : {}),
+      },
+    },
+    ...(current ? { currentStep: { id: current.id, cvid: current.cvid } } : {}),
+  };
+};
+
+/** One step with a paragraph; `buttons` go on a second row. */
+export const oneStepEmbed = (
+  sessionId: string | undefined,
+  contentId: string,
+  target: string,
+  text: string,
+  buttons: ReturnType<typeof button>[] = [],
+  placement?: string,
+  coverAlignment?: string,
+) =>
+  embedSession({
+    sessionId,
+    contentId,
+    target,
+    placement,
+    coverAlignment,
+    steps: [
+      {
+        id: `${contentId}-step-1`,
+        cvid: `${contentId}-cvid-1`,
+        type: 'inline',
+        name: 'Step 1',
+        data: buttons.length ? [row(paragraph(text)), row(...buttons)] : [row(paragraph(text))],
+      },
+    ],
+  });
 
 // --- resource center ---
 

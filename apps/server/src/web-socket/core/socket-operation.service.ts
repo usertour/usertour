@@ -376,9 +376,11 @@ export class SocketOperationService {
     const updateData: Partial<SocketData> =
       contentType === ContentDataType.LAUNCHER
         ? { launcherSessions: updatedSessions }
-        : contentType === ContentDataType.TRACKER
-          ? { trackerSessions: updatedSessions }
-          : {};
+        : contentType === ContentDataType.EMBED
+          ? { embedSessions: updatedSessions }
+          : contentType === ContentDataType.TRACKER
+            ? { trackerSessions: updatedSessions }
+            : {};
 
     return await this.socketDataService.set(
       socket,
@@ -428,9 +430,11 @@ export class SocketOperationService {
     const updateData: Partial<SocketData> =
       contentType === ContentDataType.LAUNCHER
         ? { launcherSessions: updatedSessions }
-        : contentType === ContentDataType.TRACKER
-          ? { trackerSessions: updatedSessions }
-          : {};
+        : contentType === ContentDataType.EMBED
+          ? { embedSessions: updatedSessions }
+          : contentType === ContentDataType.TRACKER
+            ? { trackerSessions: updatedSessions }
+            : {};
 
     return await this.socketDataService.set(
       socket,
@@ -593,6 +597,10 @@ export class SocketOperationService {
         this.socketEmitterService.addLaunchers(socket, sessionsToAdd);
         this.socketEmitterService.removeLaunchers(socket, contentIdsToRemove);
         return;
+      case ContentDataType.EMBED:
+        this.socketEmitterService.addEmbeds(socket, sessionsToAdd);
+        this.socketEmitterService.removeEmbeds(socket, contentIdsToRemove);
+        return;
       case ContentDataType.TRACKER:
         this.socketEmitterService.addTrackers(socket, sessionsToAdd);
         this.socketEmitterService.removeTrackers(socket, contentIdsToRemove);
@@ -609,7 +617,7 @@ export class SocketOperationService {
   /**
    * Tell the client to drop a session.
    * Supports both singleton (FLOW, CHECKLIST, BANNER, RESOURCE_CENTER) and
-   * batch (LAUNCHER, TRACKER) content types.
+   * batch (LAUNCHER, EMBED, TRACKER) content types.
    * @param socket - The socket instance
    * @param session - The session to unset
    */
@@ -625,6 +633,8 @@ export class SocketOperationService {
       this.socketEmitterService.unsetResourceCenterSession(socket, session.id);
     } else if (contentType === ContentDataType.LAUNCHER) {
       this.socketEmitterService.removeLauncher(socket, session.content.id);
+    } else if (contentType === ContentDataType.EMBED) {
+      this.socketEmitterService.removeEmbed(socket, session.content.id);
     } else if (contentType === ContentDataType.TRACKER) {
       this.socketEmitterService.removeTracker(socket, session.content.id);
     } else {

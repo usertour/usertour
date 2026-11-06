@@ -189,3 +189,26 @@ describe('collectDestinationIssues', () => {
     ).toHaveLength(1);
   });
 });
+
+describe('collectDestinationIssues — embed steps', () => {
+  it("walks an embed's steps like a flow's (its shell carries no destination)", () => {
+    const issues = collectDestinationIssues({
+      contentType: ContentDataType.EMBED,
+      steps: flowSteps({ navigate: 'javascript:alert(1)' }),
+      data: { placement: 'cover-element', targetElement: { type: 'manual', customSelector: '#x' } },
+    });
+    expect(issues.map((issue) => issue.path)).toEqual([
+      'steps/step-1/0.0.2:button.actions.0:navigate.url',
+    ]);
+  });
+
+  it('stays quiet for a flow with no steps and for a shell-only embed write', () => {
+    expect(collectDestinationIssues({ contentType: ContentDataType.FLOW })).toEqual([]);
+    expect(
+      collectDestinationIssues({
+        contentType: ContentDataType.EMBED,
+        data: { placement: 'cover-element' },
+      }),
+    ).toEqual([]);
+  });
+});

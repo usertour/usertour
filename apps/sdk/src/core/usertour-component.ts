@@ -23,6 +23,9 @@ import {
   SessionStep,
   SessionTheme,
   ContentEditorRoot,
+  ContentEditorButtonElement,
+  ContentEditorQuestionElement,
+  EmbedData,
 } from '@usertour/types';
 import { uuidV4, isEqual, extractLinkUrl } from '@usertour/helpers';
 import {
@@ -36,6 +39,7 @@ import { SDKClientEvents } from '@usertour/constants';
 import {
   convertToAttributeEvaluationOptions,
   evaluateButtonConditionsInRoots,
+  createQuestionAnswerEventData,
 } from '@/core/usertour-helper';
 import { window } from '@/utils';
 
@@ -499,6 +503,13 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
   }
 
   /**
+   * Gets the embed data (the shell) from session
+   */
+  protected getEmbedData(): EmbedData | undefined {
+    return this.session.getEmbedData();
+  }
+
+  /**
    * Gets the unacked tasks for the current session
    * @returns Set of unacked task IDs for the current session, or undefined if no unacked tasks exist
    */
@@ -687,6 +698,60 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
    */
   protected onReset(): void {
     // Default: no additional reset
+  }
+
+  // === Block Interactions ===
+  /**
+   * Records a question answer: binds the answer to the user attribute the
+   * question is configured with (locally, the server writes it too) and
+   * reports the answer event. Shared by every component whose content holds
+   * question blocks (tour, embed).
+   * @param element - The question element that was answered
+   * @param value - The value of the answer
+   */
+  protected async handleQuestionAnswer(
+    element: ContentEditorQuestionElement,
+    value?: unknown,
+  ): Promise<void> {
+    if (element?.data?.bindToAttribute && element?.data?.selectedAttribute) {
+      this.updateSessionAttribute(AttributeBizTypes.User, element.data.selectedAttribute, value);
+    }
+    await this.reportQuestionAnswer(element, value);
+  }
+
+  /**
+   * Reports the question answer event with the question cvid, name and type
+   * and the typed answer value
+   * @param element - The question element that was answered
+   * @param value - The value of the answer
+   */
+  protected async reportQuestionAnswer(
+    element: ContentEditorQuestionElement,
+    value?: unknown,
+  ): Promise<void> {
+    const eventData = createQuestionAnswerEventData(element, value, this.getSessionId());
+    await this.socketService.answerQuestion(eventData);
+  }
+
+  /**
+   * Reports a button press (`button_clicked`). Fire-and-forget: the report is
+   * queued before the button's actions run, and an acknowledgement would only
+   * delay the action the user asked for. Buttons without a cvid (content
+   * authored before cvids existed) are not reported.
+   * @param element - The button element
+   * @param stepId - The step the button lives on, for step-bodied content
+   */
+  protected reportButtonClick(element: ContentEditorButtonElement, stepId?: string): void {
+    const cvid = element?.data?.cvid;
+    if (!cvid) {
+      return;
+    }
+    void this.socketService.clickButton({
+      sessionId: this.getSessionId(),
+      stepId: stepId ? String(stepId) : undefined,
+      buttonCvid: cvid,
+      buttonText: element.data?.text,
+    });
   }
 
   /**

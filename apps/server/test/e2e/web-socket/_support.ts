@@ -84,6 +84,8 @@ export interface WebSocketAuth {
   clientConditions?: unknown[];
   waitTimers?: unknown[];
   sdkVersion?: unknown;
+  /** What the SDK bundle declares it can render (an embed goes only to one that says so). */
+  capabilities?: string[];
   // Session-recovery handshake: ids of sessions the SDK held before a
   // reconnect, restored server-side into the new connection's socket data.
   flowSessionId?: string;

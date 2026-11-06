@@ -132,3 +132,12 @@ export interface RulesEvaluationOptions {
   deactivatedIds?: string[];
   customEvaluators?: CustomRuleEvaluators;
 }
+
+/**
+ * Features an SDK bundle declares on its handshake (`SocketAuthData.capabilities`).
+ * The server delivers a content type only to connections that declare it, so a
+ * bundle that predates a type never receives messages it cannot render.
+ */
+export enum SdkCapability {
+  EMBED = 'embed',
+}

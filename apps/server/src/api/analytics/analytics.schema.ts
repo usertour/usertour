@@ -14,9 +14,10 @@ import { ApiObjectType } from '../shared/object-type';
  */
 
 /**
- * Reject a non-IANA timezone at the boundary (400), not deep inside `fromZonedTime`
- * / the `AT TIME ZONE` SQL (which throw a RangeError / Postgres error → 500). Tests
- * the exact thing the runtime uses the zone for.
+ * Reject a non-IANA timezone at the boundary (400), not deep inside the
+ * date-fns zone math (`tz()` throws a RangeError → 500). Tests the exact thing
+ * the runtime uses the zone for: the day windows are resolved here in Node, and
+ * the database only ever sees their instants, never the zone name.
  */
 const isValidTimeZone = (tz: string): boolean => {
   try {
@@ -307,6 +308,55 @@ export const bannerAnalytics = z.object({
   byDay: dailySeries(bannerCounts, firstTouchSeriesNote),
 });
 
+/** embed byDay: every count is per day. */
+const embedSeriesNote =
+  'Per-day rows: every count is per day. A user whose sessions start on several days, or who ' +
+  'clicks on several days, appears on each, so the unique rows do not sum to the headline.';
+
+const embedCounts = {
+  uniqueViews: int().describe(
+    'Distinct users for whom a session of the embed started in the range. Frequency can bring ' +
+      'an embed back after it was dismissed; that user counts again in the range it came back ' +
+      'in. Impressions are not counted: a persistent inline card is seen on every page load, ' +
+      'so they would be page views.',
+  ),
+  uniqueClickers: int().describe(
+    'Distinct users who pressed any button in the embed in the range.',
+  ),
+  totalClicks: int().describe('Button presses (repeats included).'),
+};
+
+/** Per-step row of an embed: the reach funnel across its steps. */
+export const embedStepAnalytics = z.object({
+  name: z.string(),
+  cvid: z.string(),
+  stepIndex: int(),
+  uniqueViews: int().describe('Distinct users who saw this step.'),
+});
+
+/** Per-button row of an embed, keyed by the button's stable cvid within its step. */
+export const embedButtonAnalytics = z.object({
+  name: z.string().describe('The button text on the published version — a label, not a key.'),
+  cvid: z.string().describe("The button's stable identity across edits and translations."),
+  stepCvid: z.string().describe('The step the button lives on.'),
+  uniqueClicks: int().describe('Distinct users who pressed this button.'),
+  totalClicks: int().describe('Presses of this button (repeats included).'),
+});
+
+export const embedAnalytics = z.object({
+  ...analyticsBase,
+  contentType: z.literal('embed'),
+  ...embedCounts,
+  uniqueDismissals: int().describe(
+    'Distinct users for whom a session of the embed ended in the range, whatever the end ' +
+      'reason (a dismissal, the embed being unpublished, an admin ending the session), as the ' +
+      'other content types count theirs.',
+  ),
+  byDay: dailySeries(embedCounts, embedSeriesNote),
+  steps: z.array(embedStepAnalytics),
+  buttons: z.array(embedButtonAnalytics),
+});
+
 export const resourceCenterAnalytics = z.object({
   ...analyticsBase,
   contentType: z.literal('resource-center'),
@@ -334,6 +384,7 @@ export const contentAnalytics = z.discriminatedUnion('contentType', [
   checklistAnalytics,
   launcherAnalytics,
   bannerAnalytics,
+  embedAnalytics,
   resourceCenterAnalytics,
   trackerAnalytics,
   announcementAnalytics,
@@ -346,6 +397,7 @@ export class FlowAnalyticsDto extends createZodDto(flowAnalytics) {}
 export class ChecklistAnalyticsDto extends createZodDto(checklistAnalytics) {}
 export class LauncherAnalyticsDto extends createZodDto(launcherAnalytics) {}
 export class BannerAnalyticsDto extends createZodDto(bannerAnalytics) {}
+export class EmbedAnalyticsDto extends createZodDto(embedAnalytics) {}
 export class ResourceCenterAnalyticsDto extends createZodDto(resourceCenterAnalytics) {}
 export class TrackerAnalyticsDto extends createZodDto(trackerAnalytics) {}
 export class AnnouncementAnalyticsDto extends createZodDto(announcementAnalytics) {}

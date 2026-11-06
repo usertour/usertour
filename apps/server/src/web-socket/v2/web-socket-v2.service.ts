@@ -43,6 +43,7 @@ import {
   MarkAnnouncementsSeenDto,
   AnnouncementListItem,
   AnnouncementData,
+  ClickButtonDto,
 } from '@usertour/types';
 import { ANNOUNCEMENT_SEEN_SOURCES } from '@usertour/constants';
 import { WebSocketContext } from './web-socket-v2.dto';
@@ -67,6 +68,7 @@ import {
   sanitizeClientConditions,
   sanitizeSdkVersion,
   sanitizeWaitTimers,
+  sanitizeCapabilities,
 } from '../utils/websocket.util';
 import {
   assignClientContext,
@@ -181,6 +183,7 @@ export class WebSocketV2Service {
       externalUserId,
       clientContext,
       sdkVersion: sanitizeSdkVersion(auth.sdkVersion),
+      capabilities: sanitizeCapabilities(auth.capabilities),
       externalCompanyId,
       waitTimers: sanitizeWaitTimers(auth.waitTimers),
       clientConditions,
@@ -208,27 +211,33 @@ export class WebSocketV2Service {
       bannerSessionId,
       resourceCenterSessionId,
       launchers = [],
+      embeds = [],
     } = auth;
 
     // Initialize sessions in parallel (singleton sessions and launchers can be initialized concurrently)
-    const [flowSession, checklistSession, bannerSession, resourceCenterSession, launcherSessions] =
-      await Promise.all([
-        flowSessionId
-          ? this.initializeSessionById(socketData, flowSessionId)
-          : Promise.resolve(null),
-        checklistSessionId
-          ? this.initializeSessionById(socketData, checklistSessionId)
-          : Promise.resolve(null),
-        bannerSessionId
-          ? this.initializeSessionById(socketData, bannerSessionId)
-          : Promise.resolve(null),
-        resourceCenterSessionId
-          ? this.initializeSessionById(socketData, resourceCenterSessionId)
-          : Promise.resolve(null),
-        launchers.length > 0
-          ? this.initializeLauncherSessions(socketData, launchers)
-          : Promise.resolve([]),
-      ]);
+    const [
+      flowSession,
+      checklistSession,
+      bannerSession,
+      resourceCenterSession,
+      launcherSessions,
+      embedSessions,
+    ] = await Promise.all([
+      flowSessionId ? this.initializeSessionById(socketData, flowSessionId) : Promise.resolve(null),
+      checklistSessionId
+        ? this.initializeSessionById(socketData, checklistSessionId)
+        : Promise.resolve(null),
+      bannerSessionId
+        ? this.initializeSessionById(socketData, bannerSessionId)
+        : Promise.resolve(null),
+      resourceCenterSessionId
+        ? this.initializeSessionById(socketData, resourceCenterSessionId)
+        : Promise.resolve(null),
+      launchers.length > 0
+        ? this.initializeLauncherSessions(socketData, launchers)
+        : Promise.resolve([]),
+      embeds.length > 0 ? this.initializeEmbedSessions(socketData, embeds) : Promise.resolve([]),
+    ]);
 
     // Assign sessions to socket data if they exist
     if (flowSession) {
@@ -245,6 +254,9 @@ export class WebSocketV2Service {
     }
     if (launcherSessions.length > 0) {
       socketData.launcherSessions = launcherSessions;
+    }
+    if (embedSessions.length > 0) {
+      socketData.embedSessions = embedSessions;
     }
 
     return socketData;
@@ -408,7 +420,7 @@ export class WebSocketV2Service {
       socketData,
       options: startContentDto,
     };
-    if (contentType === ContentDataType.LAUNCHER) {
+    if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.EMBED) {
       return await this.contentOrchestratorService.startContentBatch(startContentContext);
     }
     // Start the content
@@ -456,6 +468,7 @@ export class WebSocketV2Service {
       bannerSession,
       resourceCenterSession,
       launcherSessions = [],
+      embedSessions = [],
     } = socketData;
 
     // Collect all sessions to cancel
@@ -473,6 +486,7 @@ export class WebSocketV2Service {
       sessionsToCancel.push(resourceCenterSession);
     }
     sessionsToCancel.push(...launcherSessions);
+    sessionsToCancel.push(...embedSessions);
 
     if (sessionsToCancel.length === 0) {
       return true;
@@ -576,7 +590,8 @@ export class WebSocketV2Service {
   async goToStep(context: WebSocketContext, params: GoToStepDto): Promise<boolean> {
     const { socketData } = context;
     const { environment, clientContext } = socketData;
-    return await this.eventTrackingService.trackEventByType(BizEvents.FLOW_STEP_SEEN, {
+    // The session's content type picks the event (flow step / embed step)
+    return await this.eventTrackingService.trackStepSeen({
       sessionId: params.sessionId,
       environment,
       clientContext,
@@ -599,7 +614,10 @@ export class WebSocketV2Service {
       clientContext,
       answer: params,
     });
-    await this.contentOrchestratorService.toggleContents(context, [ContentDataType.FLOW]);
+    await this.contentOrchestratorService.toggleContents(context, [
+      ContentDataType.FLOW,
+      ContentDataType.EMBED,
+    ]);
 
     return success;
   }
@@ -690,6 +708,25 @@ export class WebSocketV2Service {
       sessionId,
       environment,
       clientContext,
+    });
+  }
+
+  /**
+   * Click button: a button block was pressed in any content type
+   * @param context - The web socket context
+   * @param params - The session, the step the button lives on, and the button
+   * @returns True if the event was tracked successfully
+   */
+  async clickButton(context: WebSocketContext, params: ClickButtonDto): Promise<boolean> {
+    const { socketData } = context;
+    const { environment, clientContext } = socketData;
+    const { sessionId, stepId, buttonCvid, buttonText } = params;
+    return await this.eventTrackingService.trackEventByType(BizEvents.BUTTON_CLICKED, {
+      sessionId,
+      environment,
+      clientContext,
+      stepId,
+      button: { cvid: buttonCvid, text: buttonText },
     });
   }
 
@@ -1000,6 +1037,30 @@ export class WebSocketV2Service {
       }
     }
     return launcherSessions;
+  }
+
+  /**
+   * Initialize embed sessions from the handshake's embed content ids
+   * @param socketData - The socket data
+   * @param embedIds - Array of embed content IDs
+   * @returns Array of initialized sessions
+   */
+  async initializeEmbedSessions(
+    socketData: SocketData,
+    embedIds: string[],
+  ): Promise<CustomContentSession[]> {
+    const embedSessions: CustomContentSession[] = [];
+    for (const embedId of embedIds) {
+      const embedSession = await this.contentOrchestratorService.initializeSessionByContentId(
+        socketData,
+        embedId,
+        ContentDataType.EMBED,
+      );
+      if (embedSession) {
+        embedSessions.push(embedSession);
+      }
+    }
+    return embedSessions;
   }
 
   /**
