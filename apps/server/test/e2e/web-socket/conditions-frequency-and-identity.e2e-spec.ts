@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import { PrismaService } from 'nestjs-prisma';
 import { ClientMessageKind, ServerMessageKind } from '@usertour/types';
 
+import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 import { initialization } from '@/modules/projects/utils/project-initialization.util';
 import { EncryptionService } from '@/modules/common/services/encryption.service';
 import {
@@ -148,6 +149,153 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
       expect(flowSession?.state).toBe(0);
 
       client.disconnect();
+    });
+  });
+
+  describe('an embed republished while its session rests on a later step', () => {
+    const externalUserId = `ws-embed-republish-user-${Date.now()}`;
+    const stepCvids = ['embed-step-a', 'embed-step-b'];
+    let environmentId: string;
+    let environmentToken: string;
+    let embedContentId: string;
+    let config: Record<string, unknown>;
+    let firstVersionSteps: { id: string }[];
+
+    const buildEmbedVersion = async (sequence: number) => {
+      const version = await buildVersion(prisma, {
+        contentId: embedContentId,
+        sequence,
+        config: config as never,
+        data: {},
+      });
+      const steps = [];
+      for (const [index, cvid] of stepCvids.entries()) {
+        steps.push(
+          await buildStep(prisma, {
+            versionId: version.id,
+            type: 'inline',
+            sequence: index,
+            name: `Step ${index + 1}`,
+            cvid,
+            data: [],
+          }),
+        );
+      }
+      return { version, steps };
+    };
+
+    beforeAll(async () => {
+      const environment = await buildEnvironment(prisma, { projectId });
+      environmentId = environment.id;
+      environmentToken = environment.token;
+      const allUsersSegment = await buildSegment(prisma, {
+        projectId,
+        environmentId,
+        bizType: 1,
+        dataType: 1,
+      });
+      config = {
+        enabledAutoStartRules: true,
+        autoStartRules: [
+          {
+            type: 'segment',
+            operators: 'and',
+            data: { segmentId: allUsersSegment.id, logic: 'is' },
+          },
+        ],
+        autoStartRulesSetting: {
+          wait: 0,
+          frequency: { frequency: 'once', every: { duration: 0, unit: 'days' } },
+        },
+      };
+      const embedContent = await buildContent(prisma, {
+        projectId,
+        environmentId,
+        name: 'ws-republished-embed',
+        type: 'embed',
+      });
+      embedContentId = embedContent.id;
+      const first = await buildEmbedVersion(1);
+      firstVersionSteps = first.steps;
+      await publishVersion(prisma, {
+        environmentId,
+        contentId: embedContentId,
+        versionId: first.version.id,
+      });
+    }, 60000);
+
+    const loadPage = async () => {
+      const client = await connectWebSocketClient(harness.baseUrl, {
+        token: environmentToken,
+        externalUserId,
+        capabilities: ['embed'],
+      });
+      const embeds = () =>
+        client.serverMessages.filter(
+          (message) =>
+            message.kind === ServerMessageKind.ADD_EMBED &&
+            message.payload?.content?.id === embedContentId,
+        );
+      const until = async (condition: () => boolean, what: string) => {
+        const startedAt = Date.now();
+        while (!condition()) {
+          if (Date.now() - startedAt > 5_000) {
+            throw new Error(`Timed out waiting for ${what}`);
+          }
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+      };
+      expect(await client.sendClientMessage(ClientMessageKind.END_BATCH, {})).toBe(true);
+      await until(() => embeds().length > 0, 'the embed to be delivered');
+      return { client, embeds, until };
+    };
+
+    it('reopens on the step it was on, found by its cvid in the new version', async () => {
+      const first = await loadPage();
+      let sessionId: string;
+      try {
+        const startAck = await first.client.sendClientMessage(ClientMessageKind.START_CONTENT, {
+          contentId: embedContentId,
+          startReason: 'start_from_condition',
+        });
+        expect(startAck).toBe(true);
+        await first.until(() => !!first.embeds().at(-1)?.payload?.id, 'the session to start');
+        sessionId = first.embeds().at(-1)?.payload?.id;
+        // The user pages to the second step.
+        const stepAck = await first.client.sendClientMessage(ClientMessageKind.GO_TO_STEP, {
+          sessionId,
+          stepId: firstVersionSteps[1].id,
+        });
+        expect(stepAck).toBe(true);
+      } finally {
+        first.client.disconnect();
+      }
+
+      // A new version with the same steps (other rows, same cvids) goes live.
+      const second = await buildEmbedVersion(2);
+      await prisma.content.update({
+        where: { id: embedContentId },
+        data: { publishedVersionId: second.version.id },
+      });
+      await prisma.contentOnEnvironment.updateMany({
+        where: { contentId: embedContentId, environmentId },
+        data: { publishedVersionId: second.version.id },
+      });
+      const cache = harness.app.get(ProjectCacheService);
+      await cache.invalidate([
+        ...cache.envContentKeys(environmentId),
+        cache.keys.publishedVersionId(environmentId, embedContentId),
+      ]);
+
+      const next = await loadPage();
+      try {
+        const delivered = next.embeds().at(-1)?.payload;
+        expect(delivered?.id).toBe(sessionId);
+        expect(delivered?.version?.id).toBe(second.version.id);
+        expect(delivered?.currentStep?.cvid).toBe(stepCvids[1]);
+      } finally {
+        next.client.disconnect();
+      }
     });
   });
 

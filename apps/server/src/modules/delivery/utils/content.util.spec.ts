@@ -1,6 +1,8 @@
 import {
   canCompleteChecklistItem,
   extractClientConditionWaitTimers,
+  findCurrentStepCvid,
+  findStepIdByLatestCvid,
   getAttributeValue,
   priorityCompare,
 } from './content.util';
@@ -114,5 +116,54 @@ describe('extractClientConditionWaitTimers — the delivery-side 300s cap', () =
     const [timer] = extractClientConditionWaitTimers([version(45)]);
     expect(timer.waitTime).toBe(45);
     expect(extractClientConditionWaitTimers([version(0)])).toEqual([]);
+  });
+});
+
+describe('the step a session resumes on after its version changed', () => {
+  // The session still points at a step row of the version it started on. The
+  // version now published has other rows for the same steps, so the step is
+  // found again by its cvid, read from the last step the session reported.
+  const stepSeen = (codeName: string, cvidAttribute: string, cvid: string, at: string) => ({
+    createdAt: new Date(at),
+    event: { codeName },
+    data: { [cvidAttribute]: cvid },
+  });
+  const republished = (type: string, bizEvent: unknown[]) =>
+    ({
+      id: 'v2',
+      contentId: 'c1',
+      content: { id: 'c1', type },
+      steps: [
+        { id: 'v2-step-1', cvid: 'cvid-1' },
+        { id: 'v2-step-2', cvid: 'cvid-2' },
+      ],
+      session: { activeSession: { id: 's1', currentStepId: 'v1-step-2', bizEvent } },
+    }) as never;
+
+  it("finds a flow session's step by the cvid of its last step-seen event", () => {
+    const events = [
+      stepSeen('flow_step_seen', 'flow_step_cvid', 'cvid-1', '2026-01-01T00:00:00Z'),
+      stepSeen('flow_step_seen', 'flow_step_cvid', 'cvid-2', '2026-01-01T00:01:00Z'),
+    ];
+    expect(findCurrentStepCvid(republished('flow', events))).toBe('cvid-2');
+  });
+
+  it("finds an embed session's step the same way", () => {
+    const events = [
+      stepSeen('embed_step_seen', 'embed_step_cvid', 'cvid-1', '2026-01-01T00:00:00Z'),
+      stepSeen('embed_step_seen', 'embed_step_cvid', 'cvid-2', '2026-01-01T00:01:00Z'),
+    ];
+    expect(findCurrentStepCvid(republished('embed', events))).toBe('cvid-2');
+    expect(
+      findStepIdByLatestCvid({
+        version: {
+          steps: [
+            { id: 'v2-step-1', cvid: 'cvid-1' },
+            { id: 'v2-step-2', cvid: 'cvid-2' },
+          ],
+        },
+        bizEvent: events,
+      } as never),
+    ).toBe('v2-step-2');
   });
 });

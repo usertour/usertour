@@ -220,10 +220,11 @@ export const findLatestStepCvid = (
       return undefined;
     }
     const data = latestStepSeenEvent.data as Record<string, unknown>;
-    if (isUndefined(data[EventAttributes.FLOW_STEP_CVID])) {
+    const cvidAttribute = STEP_SEEN_CVID_ATTRIBUTE[latestStepSeenEvent.event.codeName as BizEvents];
+    if (!cvidAttribute || isUndefined(data[cvidAttribute])) {
       return undefined;
     }
-    return data[EventAttributes.FLOW_STEP_CVID] as string;
+    return data[cvidAttribute] as string;
   } catch (_) {
     return undefined;
   }
@@ -281,6 +282,15 @@ export const findCurrentStepCvid = (
 };
 
 /**
+ * The step-seen event of each step-bodied type, with the attribute the step's
+ * cvid is recorded under. A session's events are all of one type.
+ */
+const STEP_SEEN_CVID_ATTRIBUTE: Partial<Record<BizEvents, EventAttributes>> = {
+  [BizEvents.FLOW_STEP_SEEN]: EventAttributes.FLOW_STEP_CVID,
+  [BizEvents.EMBED_STEP_SEEN]: EventAttributes.EMBED_STEP_CVID,
+};
+
+/**
  * Finds the latest step seen event from business events
  * @param bizEvents - Array of business events to search through
  * @returns The latest step seen event or null if not found
@@ -295,7 +305,7 @@ export const findLatestStepSeenEvent = (
   // Use reduce to find the latest event instead of sorting the entire array
   // This is more efficient (O(n) vs O(n log n)) when we only need the latest one
   const stepSeenEvents = bizEvents.filter(
-    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
+    (event) => !!STEP_SEEN_CVID_ATTRIBUTE[event?.event?.codeName as BizEvents],
   );
 
   if (!stepSeenEvents.length) {
