@@ -697,18 +697,11 @@ export class ContentDiagnosisService {
       });
       const singleSession = isSingleSessionContentType(type);
       const pool = singleSession ? filterSingleSessionContentVersions(evaluated) : evaluated;
-      // The batch (multi-instance) path exempts a RUNNING session from the
-      // frequency check — the rule governs starting, not staying (ADR 0022) —
-      // exactly as prepareBatchData does; for a single-session type the option
-      // is inert (a dismissed session never re-enters the pool). Singleton
-      // types keep their own strategy order (resume first) and are unaffected.
-      const eligible = filterAvailableAutoStartContentVersions(
-        pool,
-        type,
-        [],
-        [],
-        isSingletonContentType(type) ? undefined : { ignoreFrequencyWhenActive: !singleSession },
-      );
+      // The filter keeps an embed whose session runs whatever its frequency
+      // says — the rule governs starting, not staying (ADR 0022) — as it does
+      // for prepareBatchData. Singleton types keep their own strategy order
+      // (resume first) and are unaffected.
+      const eligible = filterAvailableAutoStartContentVersions(pool, type, [], []);
       const eligibleIds = new Set(eligible.map((cv) => cv.content.id));
 
       if (isSingletonContentType(type)) {

@@ -320,6 +320,39 @@ describe('filterAvailableAutoStartContentVersions — the gates in sequence', ()
     expect(run([v])).toEqual([]);
   });
 
+  it('keeps an embed whose session runs, though `once` allows no new one', () => {
+    // An embed is delivered again on every sync while its rules match. Its
+    // session counts against `once` from the moment it exists; frequency
+    // decides whether a NEW session may start, not whether this one stays.
+    const running = version(
+      { type: ContentDataType.EMBED, frequency: { frequency: Frequency.ONCE } },
+      { totalSessions: 1, activeSession: { id: 's1' } as never },
+    );
+    expect(run([running], ContentDataType.EMBED)).toEqual(['v1']);
+  });
+
+  it('drops an embed whose `once` session has ended', () => {
+    const ended = version(
+      { type: ContentDataType.EMBED, frequency: { frequency: Frequency.ONCE } },
+      { totalSessions: 1 },
+    );
+    expect(run([ended], ContentDataType.EMBED)).toEqual([]);
+  });
+
+  it('leaves every other type subject to frequency while its session runs', () => {
+    for (const type of [
+      ContentDataType.FLOW,
+      ContentDataType.CHECKLIST,
+      ContentDataType.LAUNCHER,
+    ]) {
+      const running = version(
+        { type, frequency: { frequency: Frequency.ONCE } },
+        { totalSessions: 1, activeSession: { id: 's1' } as never },
+      );
+      expect(run([running], type)).toEqual([]);
+    }
+  });
+
   it('drops versions whose hide rules are active', () => {
     const v = version({
       frequency: { frequency: Frequency.ONCE },

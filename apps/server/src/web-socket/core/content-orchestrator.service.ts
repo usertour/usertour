@@ -1773,8 +1773,6 @@ export class ContentOrchestratorService {
       activeEvaluatedVersions,
       contentType,
       clientConditions,
-      undefined,
-      { ignoreFrequencyWhenActive: !singleSession },
     );
 
     // Versions that should be tracked but not activated

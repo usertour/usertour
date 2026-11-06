@@ -550,6 +550,15 @@ export const isAllowedByHideRules = (
 };
 
 /**
+ * Whether this is an embed whose session already runs. An embed keeps
+ * showing while its rules match, and its session counts against `once` from
+ * the moment it exists, so frequency is not asked about it (ADR 0022).
+ */
+const hasRunningEmbedSession = (customContentVersion: CustomContentVersion): boolean =>
+  customContentVersion.content.type === ContentDataType.EMBED &&
+  !!customContentVersion.session.activeSession;
+
+/**
  * Filters the available auto-start custom content versions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
@@ -557,22 +566,11 @@ export const isAllowedByHideRules = (
  * @param waitTimers - The wait timer conditions
  * @returns The available auto-start custom content versions
  */
-export type FilterAvailableAutoStartOptions = {
-  /**
-   * Keep a version whose session is already running even when the frequency
-   * rule would refuse a NEW session. The batch path re-evaluates every live
-   * session on every sync; without this an `once` embed would be removed the
-   * moment its own session counted against `once` (ADR 0022).
-   */
-  ignoreFrequencyWhenActive?: boolean;
-};
-
 export const filterAvailableAutoStartContentVersions = (
   customContentVersions: CustomContentVersion[],
   contentType: ContentDataType,
   clientConditions: ClientCondition[],
   waitTimers?: ConditionWaitTimer[],
-  options?: FilterAvailableAutoStartOptions,
 ) => {
   const firedWaitTimerVersionIds = waitTimers
     ?.filter((waitTimer) => waitTimer.activated)
@@ -590,11 +588,14 @@ export const filterAvailableAutoStartContentVersions = (
         return false;
       }
 
-      // Check auto-start rules settings (frequency); a running session is
-      // exempt when the caller says so — the rule governs starting, not staying
-      const frequencyExempt =
-        !!options?.ignoreFrequencyWhenActive && !!customContentVersion.session.activeSession;
-      if (!frequencyExempt && !isAllowedByAutoStartRulesSetting(customContentVersion)) {
+      // Check auto-start rules settings (frequency). They govern starting a
+      // session, not keeping one: the batch path judges an embed again on
+      // every sync, and without this its `once` session would remove it the
+      // moment it counted against `once`
+      if (
+        !hasRunningEmbedSession(customContentVersion) &&
+        !isAllowedByAutoStartRulesSetting(customContentVersion)
+      ) {
         return false;
       }
 
@@ -614,15 +615,6 @@ export const filterAvailableAutoStartContentVersions = (
     })
     .sort(priorityCompare);
 };
-
-/**
- * Whether this is an embed whose session already runs. An embed keeps
- * showing while its rules match, and its session counts against `once` from
- * the moment it exists, so frequency is not asked about it (ADR 0022).
- */
-const hasRunningEmbedSession = (customContentVersion: CustomContentVersion): boolean =>
-  customContentVersion.content.type === ContentDataType.EMBED &&
-  !!customContentVersion.session.activeSession;
 
 /**
  * Whether the version's start rules are enabled and every condition the
