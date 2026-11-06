@@ -7,7 +7,7 @@ import {
 } from '@usertour/types';
 import { BannerStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
-import { rootsHaveButtonConditions } from '@/core/usertour-helper';
+import { findTargetElementInPage, rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { isEqual } from '@usertour/helpers';
 import { isVisibleNode } from '@usertour/dom';
 import { isElement, logger } from '@/utils';
@@ -221,7 +221,9 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     }
 
     this.watcherTargetKey = targetKey;
-    this.watcher = new UsertourElementWatcher(targetElement);
+    // Not in a frame: the banner would be inserted into the frame's document,
+    // where its styles are not loaded.
+    this.watcher = new UsertourElementWatcher(targetElement, findTargetElementInPage);
 
     // Keep looking for the target for the session's lifetime (SPA targets can
     // appear long after load) — the old 6s default gave up for good and the

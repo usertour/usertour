@@ -1,4 +1,5 @@
 import { getComputedStyle } from './getComputedStyle';
+import { getScale } from './getScale';
 import { getWindow } from './getWindow';
 import { isElement } from './is';
 import type { Rect, Strategy } from './types';
@@ -57,12 +58,7 @@ export async function getClippingRectAcrossFrames(
   });
   let frame = getFrameElement(element);
   while (frame) {
-    const origin = getContentBoxOrigin(frame);
-    clippingRect = {
-      ...clippingRect,
-      x: clippingRect.x + origin.x,
-      y: clippingRect.y + origin.y,
-    };
+    clippingRect = projectThroughFrame(clippingRect, frame);
     const frameClippingRect = await platform.getClippingRect({
       element: frame,
       boundary: 'clippingAncestors',
@@ -107,13 +103,22 @@ export async function getBoundaryAcrossFrames(
   return clippingRect ? { boundary: clippingRect, rootBoundary: clippingRect } : undefined;
 }
 
-/** Where the frame's document starts, in the frame's own window's viewport coordinates. */
-function getContentBoxOrigin(frame: HTMLElement) {
-  const rect = frame.getBoundingClientRect();
+/**
+ * A rect of a frame's document, in the viewport of the window that embeds the
+ * frame: scaled by the frame's transform and moved to where its content box
+ * starts. The same arithmetic Floating UI applies to a reference's rect.
+ */
+function projectThroughFrame(rect: Rect, frame: HTMLElement): Rect {
+  const scale = getScale(frame);
+  const frameRect = frame.getBoundingClientRect();
   const style = getComputedStyle(frame);
+  const left = frameRect.left + (frame.clientLeft + Number.parseFloat(style.paddingLeft)) * scale.x;
+  const top = frameRect.top + (frame.clientTop + Number.parseFloat(style.paddingTop)) * scale.y;
   return {
-    x: rect.left + frame.clientLeft + Number.parseFloat(style.paddingLeft),
-    y: rect.top + frame.clientTop + Number.parseFloat(style.paddingTop),
+    x: rect.x * scale.x + left,
+    y: rect.y * scale.y + top,
+    width: rect.width * scale.x,
+    height: rect.height * scale.y,
   };
 }
 

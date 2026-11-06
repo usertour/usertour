@@ -130,6 +130,7 @@ const useLauncherHandlers = (
 const useClickOutside = (
   open: boolean,
   popperRef: React.RefObject<HTMLDivElement>,
+  triggerRef: React.RefObject<HTMLElement>,
   setOpen: (open: boolean) => void,
 ) => {
   useEffect(() => {
@@ -141,13 +142,20 @@ const useClickOutside = (
       }
     };
 
-    on(document, 'mousedown', handleClickOutside);
+    // A press inside a frame never reaches this document: when the target
+    // lives in one, listen in its document too.
+    const targetDocument = triggerRef.current?.ownerDocument;
+    const documents =
+      targetDocument && targetDocument !== document ? [document, targetDocument] : [document];
+    for (const listenedDocument of documents) {
+      on(listenedDocument, 'mousedown', handleClickOutside);
+    }
     return () => {
-      if (document) {
-        off(document, 'mousedown', handleClickOutside);
+      for (const listenedDocument of documents) {
+        off(listenedDocument, 'mousedown', handleClickOutside);
       }
     };
-  }, [open, setOpen]);
+  }, [open, setOpen, triggerRef]);
 };
 
 const usePopperMouseLeave = (
@@ -307,7 +315,7 @@ const LauncherWidgetCore = ({
     triggerRef,
   );
   useEventHandlers(data, launcherRef, triggerRef, handlers);
-  useClickOutside(open, popperRef, setOpen);
+  useClickOutside(open, popperRef, triggerRef, setOpen);
   usePopperMouseLeave(popperRef, launcherRef, triggerRef, data, open, setOpen);
 
   return (

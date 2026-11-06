@@ -17,6 +17,9 @@ type CheckContentIsVisible = {
   isTimeout: boolean;
 };
 
+/** Resolves a target to an element; the default looks in the page and its same-origin frames. */
+type FindElementByTarget = (target: ElementSelectorPropsData) => Element | null;
+
 // === Constants ===
 const RETRY_DELAY = 200; // Delay between retries in milliseconds
 const DEFAULT_TARGET_MISSING_SECONDS = 6;
@@ -32,11 +35,16 @@ export class UsertourElementWatcher extends Evented {
   private checker: CheckContentIsVisible | null = null; // Visibility state tracker
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS; // Time allowed for target element to be missing
   private readonly id: string; // Unique identifier for this watcher
+  private readonly findElementByTarget: FindElementByTarget; // Where and how the target is looked up
 
   // === Constructor ===
-  constructor(target: ElementSelectorPropsData) {
+  constructor(
+    target: ElementSelectorPropsData,
+    findElementByTarget: FindElementByTarget = findTargetElement,
+  ) {
     super();
     this.target = target;
+    this.findElementByTarget = findElementByTarget;
     this.id = uuidV4();
   }
 
@@ -226,10 +234,10 @@ export class UsertourElementWatcher extends Evented {
   }
 
   /**
-   * Finds the target element in the page and its same-origin frames
+   * Finds the target element with the lookup this watcher was given
    * @returns Found element or null if not found
    */
   private findElementBySelector(): Element | null {
-    return findTargetElement(this.target);
+    return this.findElementByTarget(this.target);
   }
 }

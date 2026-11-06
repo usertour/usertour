@@ -1,7 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Frame, Locator, Page } from '@playwright/test';
-import { dismissFlow, flowSession, paragraph, row, twoStepFlow } from './content';
+import {
+  bannerSession,
+  dismissFlow,
+  flowSession,
+  launcherSession,
+  paragraph,
+  row,
+  twoStepFlow,
+} from './content';
 import { RUNTIME_HOST_URL, SDK_BUNDLE_URL, type SdkPage, expect, test } from './fixtures';
 import type { ProtocolServer } from './protocol-server';
 
@@ -19,7 +27,8 @@ test.describe('targets inside frames', () => {
     await sdk.identify('u1');
   };
 
-  type Box = { left: number; top: number; width: number; height: number };
+  /** Where a frame is laid out; `scale` draws it larger or smaller from its top-left corner. */
+  type Box = { left: number; top: number; width: number; height: number; scale?: number };
 
   /** Far enough from the page's corner that a frame-local position or clip is visibly wrong. */
   const FRAME_BOX: Box = { left: 300, top: 400, width: 640, height: 420 };
@@ -32,7 +41,7 @@ test.describe('targets inside frames', () => {
           const element = document.createElement('iframe');
           element.id = id;
           element.src = src;
-          element.style.cssText = `position:absolute;left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px;border:0`;
+          element.style.cssText = `position:absolute;left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px;border:0;transform-origin:0 0;transform:scale(${box.scale ?? 1})`;
           element.addEventListener('load', () => resolveLoad(), { once: true });
           document.body.appendChild(element);
         }),
@@ -41,23 +50,34 @@ test.describe('targets inside frames', () => {
 
   type Rect = { x: number; y: number; width: number; height: number };
 
-  /** An element's rect in the top window, read through the frames that hold it. */
+  /**
+   * An element's rect in the top window, read through the frames that hold it,
+   * each of which may be drawn at a scale.
+   */
   const targetRect = (page: Page, frameIds: string[], selector: string): Promise<Rect> =>
     page.evaluate(
       ({ ids, selector }) => {
         let win: Window = window;
         let x = 0;
         let y = 0;
+        let scale = 1;
         for (const id of ids) {
           const frame = win.document.getElementById(id) as HTMLIFrameElement;
           const rect = frame.getBoundingClientRect();
-          x += rect.left + frame.clientLeft;
-          y += rect.top + frame.clientTop;
+          const frameScale = rect.width / frame.offsetWidth;
+          x += (rect.left + frame.clientLeft * frameScale) * scale;
+          y += (rect.top + frame.clientTop * frameScale) * scale;
+          scale *= frameScale;
           win = frame.contentWindow as Window;
         }
         const target = win.document.querySelector(selector) as HTMLElement;
         const rect = target.getBoundingClientRect();
-        return { x: x + rect.left, y: y + rect.top, width: rect.width, height: rect.height };
+        return {
+          x: x + rect.left * scale,
+          y: y + rect.top * scale,
+          width: rect.width * scale,
+          height: rect.height * scale,
+        };
       },
       { ids: frameIds, selector },
     );
@@ -91,6 +111,31 @@ test.describe('targets inside frames', () => {
         { message: 'the tooltip is centered under the target' },
       )
       .toBe('under the target');
+  };
+
+  /** Ask the page to track "this input's value is …" and return its reports, newest last. */
+  const trackTextInputIs = async (protocol: ProtocolServer, selector: string, value: string) => {
+    const condition = {
+      id: `text-input-is:${selector}`,
+      type: 'text-input',
+      operators: 'and',
+      data: {
+        logic: 'is',
+        value,
+        elementData: { type: 'manual', customSelector: selector, sequence: '1st' },
+      },
+    };
+    await protocol.push('TrackClientCondition', {
+      contentId: 'flow-1',
+      contentType: 'flow',
+      versionId: 'version-1',
+      condition,
+    });
+    return () =>
+      protocol
+        .messages('ToggleClientCondition')
+        .map((seen) => seen.message.payload as { conditionId: string; isActive: boolean })
+        .filter((payload) => payload.conditionId === condition.id);
   };
 
   test('a tooltip finds its target inside a same-origin frame and sits under it', async ({
@@ -245,6 +290,143 @@ test.describe('targets inside frames', () => {
     expect(protocol.messages('EndContent')[0].message.payload).toMatchObject({
       endReason: 'tooltip_target_missing',
     });
+  });
+
+  test('a frame drawn at a scale: its target is judged where it is drawn', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    // 560×340 drawn at 1.5×: the button, at (420, 300) in the frame, is drawn
+    // 630px right of the frame's corner — outside the frame's unscaled box.
+    await mountFrame(
+      sdk.page.mainFrame(),
+      { id: 'activity', src: '/frame-activity.html' },
+      { left: 40, top: 40, width: 560, height: 340, scale: 1.5 },
+    );
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#activity-submit'));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    await expectAttachedBelow(sdk.page, sdk.surface, ['activity']);
+    await sdk.advance(4_000);
+    await expect(sdk.surface).toBeVisible();
+    expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
+  });
+
+  test('a text-input condition reads an input inside a same-origin frame', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await mountFrame(sdk.page.mainFrame(), { id: 'activity', src: '/frame-activity.html' });
+    const answer = sdk.page.frameLocator('#activity').locator('#activity-answer');
+    await answer.fill('42');
+
+    const reports = await trackTextInputIs(protocol, '#activity-answer', '42');
+    await expect.poll(() => reports().length).toBe(1);
+    expect(reports()[0].isActive).toBe(true);
+
+    await answer.fill('7');
+    // The conditions monitor polls once a second.
+    await sdk.advance(1_000);
+    await expect.poll(() => reports().length).toBe(2);
+    expect(reports()[1].isActive).toBe(false);
+  });
+
+  test('a text-input condition reads an input the page created and moved into a frame', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await mountFrame(sdk.page.mainFrame(), { id: 'activity', src: '/frame-activity.html' });
+    // Created by the page's document, so an instance of the page's
+    // constructors, yet living in the frame's document.
+    await sdk.page.evaluate(() => {
+      const frame = document.getElementById('activity') as HTMLIFrameElement;
+      const input = document.createElement('input');
+      input.id = 'moved-answer';
+      input.value = '42';
+      frame.contentDocument?.body.append(input);
+    });
+
+    const reports = await trackTextInputIs(protocol, '#moved-answer', '42');
+    await expect.poll(() => reports().length).toBe(1);
+    expect(reports()[0].isActive).toBe(true);
+  });
+
+  test('a press inside the frame closes the tooltip of a launcher whose target is in it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await mountFrame(sdk.page.mainFrame(), { id: 'activity', src: '/frame-activity.html' });
+    await protocol.push(
+      'AddLauncher',
+      launcherSession({
+        sessionId: 'launcher-session-1',
+        contentId: 'launcher-1',
+        target: '#activity-submit',
+        text: 'Start here',
+      }),
+    );
+    const launcher = sdk.page.locator('.usertour-widget-launcher');
+    await expect(launcher).toBeVisible();
+    await launcher.click();
+    await expect(sdk.frame().getByText('Start here')).toBeVisible();
+
+    // A press in the frame's document does not bubble to the page's.
+    await sdk.page.frameLocator('#activity').getByRole('heading').click();
+    await expect(sdk.frame().getByText('Start here')).toBeHidden();
+  });
+
+  test('the SDK’s own banner frame is not a place selectors are resolved in', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Maintenance tonight',
+      }),
+    );
+    const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+    // The banner's frame sits outside the SDK's mount point and holds a button
+    // of its own. The page has two: a third match would be the banner's, and
+    // without one the selector falls back to the page's first.
+    await protocol.push(
+      'SetFlowSession',
+      twoStepFlow('session-1', 'flow-1', { customSelector: 'button', sequence: '3st' }),
+    );
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    await expectAttachedBelow(sdk.page, sdk.surface, [], '#cta');
+  });
+
+  test('a banner is not embedded at an element inside a frame', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await mountFrame(sdk.page.mainFrame(), { id: 'activity', src: '/frame-activity.html' });
+    await protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Maintenance tonight',
+        container: '#activity-notice',
+      }),
+    );
+    // The banner looks for its container every 200ms; give it several turns.
+    await sdk.advance(2_000);
+    await sdk.page.waitForTimeout(300);
+    await expect(sdk.page.frameLocator('#activity').locator('.usertour-widget-banner')).toHaveCount(
+      0,
+    );
+    await expect(sdk.page.locator('.usertour-widget-banner')).toHaveCount(0);
   });
 
   test.describe('with the SDK’s own page embedded in a same-origin frame', () => {

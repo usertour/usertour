@@ -68,6 +68,12 @@ export interface FrameProps {
 }
 
 /**
+ * Set on every `<iframe>` this component renders, so code that walks a page's
+ * frames can tell them from the page's own.
+ */
+export const FRAME_MARKER_ATTRIBUTE = 'data-usertour-frame';
+
+/**
  * Frame component that creates an isolated iframe environment
  * Allows rendering React components inside an iframe with custom head content
  */
@@ -272,6 +278,7 @@ export const Frame = forwardRef<HTMLIFrameElement, FrameProps>((props, ref) => {
         title="Content Frame"
         aria-label="Content Frame"
         role="document"
+        {...{ [FRAME_MARKER_ATTRIBUTE]: '' }}
       />
 
       {/* Inject head content into iframe */}

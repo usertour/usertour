@@ -207,7 +207,13 @@ export const checklistSession = (input: {
 
 // --- banner ---
 
-export const bannerSession = (input: { sessionId: string; contentId: string; text: string }) => ({
+export const bannerSession = (input: {
+  sessionId: string;
+  contentId: string;
+  text: string;
+  /** Embed at the top of the element this selector matches, instead of the top of the page. */
+  container?: string;
+}) => ({
   id: input.sessionId,
   type: 'banner',
   draftMode: false,
@@ -218,7 +224,10 @@ export const bannerSession = (input: { sessionId: string; contentId: string; tex
     theme: { settings: defaultSettings },
     banner: {
       ...DEFAULT_BANNER_DATA,
-      embedPlacement: 'top-of-page',
+      embedPlacement: input.container ? 'top-of-container-element' : 'top-of-page',
+      ...(input.container
+        ? { containerElement: { type: 'manual', customSelector: input.container } }
+        : {}),
       allowUsersToDismissEmbed: true,
       animateWhenEmbedAppears: false,
       contents: [row(paragraph(input.text))],
