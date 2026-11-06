@@ -616,22 +616,28 @@ export const filterAvailableAutoStartContentVersions = (
 };
 
 /**
- * Helper function to check if auto-start content is eligible
- * @param customContentVersion - The content version to check
- * @param allowedConditionTypes - Allowed condition types for filtering
- * @returns True if the content is eligible for auto-start
+ * Whether this is an embed whose session already runs. An embed keeps
+ * showing while its rules match, and its session counts against `once` from
+ * the moment it exists, so frequency is not asked about it (ADR 0022).
  */
-const isAutoStartContentEligible = (
+const hasRunningEmbedSession = (customContentVersion: CustomContentVersion): boolean =>
+  customContentVersion.content.type === ContentDataType.EMBED &&
+  !!customContentVersion.session.activeSession;
+
+/**
+ * Whether the version's start rules are enabled and every condition the
+ * server can judge by itself is met. Its browser-side conditions are not
+ * asked here: they are what is handed to the SDK for tracking.
+ * @param customContentVersion - The content version to check
+ * @param allowedConditionTypes - The condition types the server judges
+ * @returns True if the rules match as far as the server can tell
+ */
+const hasMatchingServerRules = (
   customContentVersion: CustomContentVersion,
   allowedConditionTypes: RulesType[],
 ): boolean => {
   // Check if auto-start rules are enabled
   if (!isEnabledAutoStartRules(customContentVersion)) {
-    return false;
-  }
-
-  // Check auto-start rules settings
-  if (!isAllowedByAutoStartRulesSetting(customContentVersion)) {
     return false;
   }
 
@@ -648,6 +654,20 @@ const isAutoStartContentEligible = (
 
   return isConditionsActived(filteredConditions);
 };
+
+/**
+ * Helper function to check if auto-start content is eligible: its rules
+ * match and its auto-start settings (frequency) allow a new session
+ * @param customContentVersion - The content version to check
+ * @param allowedConditionTypes - Allowed condition types for filtering
+ * @returns True if the content is eligible for auto-start
+ */
+const isAutoStartContentEligible = (
+  customContentVersion: CustomContentVersion,
+  allowedConditionTypes: RulesType[],
+): boolean =>
+  hasMatchingServerRules(customContentVersion, allowedConditionTypes) &&
+  isAllowedByAutoStartRulesSetting(customContentVersion);
 
 /**
  * Filters activated custom content versions that do not have client-side conditions
@@ -695,8 +715,19 @@ export const filterActivatedContentWithoutClientConditions = (
 
     // Multi-instance types (launcher, embed) show only while their rules
     // match: an active session alone does not justify tracking conditions.
-    if (contentType === ContentDataType.LAUNCHER || contentType === ContentDataType.EMBED) {
+    if (contentType === ContentDataType.LAUNCHER) {
       return false;
+    }
+
+    // An embed whose session runs is tracked while its rules match. Frequency
+    // may be what refused it above, and frequency decides whether a NEW
+    // session may start, not whether a running one keeps showing; without its
+    // conditions the card would be gone on the next page load.
+    if (contentType === ContentDataType.EMBED) {
+      return (
+        hasRunningEmbedSession(customContentVersion) &&
+        hasMatchingServerRules(customContentVersion, allowedConditionTypes)
+      );
     }
 
     // Path 2: Check activated content versions (session-based)

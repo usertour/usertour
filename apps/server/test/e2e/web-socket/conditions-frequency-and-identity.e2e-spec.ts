@@ -152,6 +152,134 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
     });
   });
 
+  describe('an embed whose show rule is a browser condition', () => {
+    const externalUserId = `ws-embed-element-user-${Date.now()}`;
+    const elementConditionId = 'embed-element-condition-1';
+    let environmentToken: string;
+    let embedContentId: string;
+    let embedVersionId: string;
+
+    beforeAll(async () => {
+      const environment = await buildEnvironment(prisma, { projectId });
+      environmentToken = environment.token;
+
+      const embedContent = await buildContent(prisma, {
+        projectId,
+        environmentId: environment.id,
+        name: 'ws-element-embed',
+        type: 'embed',
+      });
+      embedContentId = embedContent.id;
+      const embedVersion = await buildVersion(prisma, {
+        contentId: embedContent.id,
+        sequence: 1,
+        config: {
+          enabledAutoStartRules: true,
+          autoStartRules: [
+            {
+              id: elementConditionId,
+              type: 'element',
+              operators: 'and',
+              data: { logic: 'present', elementData: { precision: 'strict' } },
+            },
+          ],
+          autoStartRulesSetting: {
+            wait: 0,
+            frequency: { frequency: 'once', every: { duration: 0, unit: 'days' } },
+          },
+        },
+        data: {},
+      });
+      embedVersionId = embedVersion.id;
+      await buildStep(prisma, {
+        versionId: embedVersion.id,
+        type: 'inline',
+        sequence: 0,
+        name: 'Card',
+        data: [],
+      });
+      await publishVersion(prisma, {
+        environmentId: environment.id,
+        contentId: embedContent.id,
+        versionId: embedVersion.id,
+      });
+    }, 60000);
+
+    // One page load: the SDK is asked to track the condition, reports the
+    // element present, and is handed the embed.
+    const loadPage = async () => {
+      const client = await connectWebSocketClient(harness.baseUrl, {
+        token: environmentToken,
+        externalUserId,
+        capabilities: ['embed'],
+      });
+      const embeds = () =>
+        client.serverMessages.filter(
+          (message) =>
+            message.kind === ServerMessageKind.ADD_EMBED &&
+            message.payload?.content?.id === embedContentId,
+        );
+      const until = async (condition: () => boolean, what: string) => {
+        const startedAt = Date.now();
+        while (!condition()) {
+          if (Date.now() - startedAt > 5_000) {
+            throw new Error(`Timed out waiting for ${what}`);
+          }
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+      };
+
+      expect(await client.sendClientMessage(ClientMessageKind.END_BATCH, {})).toBe(true);
+      await until(
+        () =>
+          client.serverMessages.some(
+            (message) => message.kind === ServerMessageKind.TRACK_CLIENT_CONDITION,
+          ),
+        'the condition to be handed to the SDK',
+      );
+      expect(embeds()).toHaveLength(0);
+
+      const toggleAck = await client.sendClientMessage(ClientMessageKind.TOGGLE_CLIENT_CONDITION, {
+        contentId: embedContentId,
+        contentType: 'embed',
+        versionId: embedVersionId,
+        conditionId: elementConditionId,
+        isActive: true,
+      });
+      expect(toggleAck).toBe(true);
+      expect(await client.sendClientMessage(ClientMessageKind.END_BATCH, {})).toBe(true);
+      await until(() => embeds().length > 0, 'the embed to be delivered');
+      return { client, embeds };
+    };
+
+    it('is tracked again on the next page load while the `once` session runs', async () => {
+      const first = await loadPage();
+      try {
+        // The SDK found the target: the session starts and counts against `once`.
+        const startAck = await first.client.sendClientMessage(ClientMessageKind.START_CONTENT, {
+          contentId: embedContentId,
+          startReason: 'start_from_condition',
+        });
+        expect(startAck).toBe(true);
+      } finally {
+        first.client.disconnect();
+      }
+      const session = await prisma.bizSession.findFirst({
+        where: { contentId: embedContentId, bizUser: { externalId: externalUserId }, state: 0 },
+      });
+      expect(session).not.toBeNull();
+
+      // The next page load: the running session is still shown, so its
+      // condition has to reach the SDK again.
+      const second = await loadPage();
+      try {
+        expect(second.embeds().at(-1)?.payload?.id).toBe(session?.id);
+      } finally {
+        second.client.disconnect();
+      }
+    });
+  });
+
   describe('an embed republished while its session rests on a later step', () => {
     const externalUserId = `ws-embed-republish-user-${Date.now()}`;
     const stepCvids = ['embed-step-a', 'embed-step-b'];
