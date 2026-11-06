@@ -28,10 +28,13 @@ import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-
 
 export interface AnalyticsStepsProps {
   /**
-   * `flow` (default): a step funnel with the goal step and the tooltip
-   * target-missing column. `embed`: inline steps inside one shell — no goal,
-   * no tooltip targets, and nothing to show for a single step (its one row
-   * would repeat the overview card).
+   * `flow` (default): a step funnel with the goal step, the view rate and the
+   * tooltip target-missing column. `embed`: inline steps inside one shell — no
+   * goal, no tooltip targets, and nothing to show for a single step (its one
+   * row would repeat the overview card). No view rate either: an embed's
+   * session can outlive any range, so the users who saw a step in a range are
+   * not a share of the users a session started for in it. Its bars compare
+   * the steps with each other.
    */
   variant?: 'flow' | 'embed';
 }
@@ -53,6 +56,11 @@ export const AnalyticsSteps = (props: AnalyticsStepsProps) => {
     return null;
   }
   const hasExplicitGoalStep = viewsByStep.some((step) => step.explicitCompletionStep);
+  // What a full bar stands for: the users the content started for (flow), or
+  // the step most users saw (embed)
+  const barBase = isEmbed
+    ? Math.max(0, ...viewsByStep.map((step) => step.analytics.uniqueViews))
+    : (analyticsData?.uniqueViews ?? 0);
 
   const isGoalStep = (step: AnalyticsViewsByStep, index: number) => {
     if (isEmbed) {
@@ -86,10 +94,14 @@ export const AnalyticsSteps = (props: AnalyticsStepsProps) => {
                   {t('contents.analytics.steps.uniqueViews')}
                 </TableHead>
                 <TableHead className="w-6" />
-                <TableHead className="w-28 text-right">
-                  {t('contents.analytics.steps.viewRate')}
-                </TableHead>
-                <TableHead className="w-6" />
+                {!isEmbed && (
+                  <>
+                    <TableHead className="w-28 text-right">
+                      {t('contents.analytics.steps.viewRate')}
+                    </TableHead>
+                    <TableHead className="w-6" />
+                  </>
+                )}
                 <TableHead />
                 {!isEmbed && (
                   <TableHead className="w-28 text-right">
@@ -113,10 +125,7 @@ export const AnalyticsSteps = (props: AnalyticsStepsProps) => {
             <TableBody>
               {viewsByStep.length > 0 ? (
                 viewsByStep.map((step: AnalyticsViewsByStep, index) => {
-                  const viewRate = calculateRate(
-                    step.analytics.uniqueViews,
-                    analyticsData?.uniqueViews ?? 0,
-                  );
+                  const barWidth = calculateRate(step.analytics.uniqueViews, barBase);
                   return (
                     <TableRow key={index}>
                       <TableCell className="py-[1px]">
@@ -131,13 +140,17 @@ export const AnalyticsSteps = (props: AnalyticsStepsProps) => {
                         {step.analytics.uniqueViews}
                       </TableCell>
                       <TableCell className="py-[1px] w-6" />
-                      <TableCell className="py-[1px] text-right">{viewRate}%</TableCell>
-                      <TableCell className="py-[1px] w-6" />
+                      {!isEmbed && (
+                        <>
+                          <TableCell className="py-[1px] text-right">{barWidth}%</TableCell>
+                          <TableCell className="py-[1px] w-6" />
+                        </>
+                      )}
                       <TableCell className="py-[1px] px-0">
                         <div
                           className="h-9 bg-gradient-to-r from-success/50 to-success max-w-full"
                           style={{
-                            width: `${viewRate}%`,
+                            width: `${barWidth}%`,
                           }}
                         />
                       </TableCell>
@@ -178,7 +191,7 @@ export const AnalyticsSteps = (props: AnalyticsStepsProps) => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={isEmbed ? 7 : 8} className="h-24 text-center">
+                  <TableCell colSpan={isEmbed ? 5 : 8} className="h-24 text-center">
                     {t('contents.analytics.common.noResults')}
                   </TableCell>
                 </TableRow>
