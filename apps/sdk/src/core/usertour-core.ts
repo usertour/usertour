@@ -1587,8 +1587,17 @@ export class UsertourCore extends Evented {
     const contentId = session.content.id;
     const existingEmbed = this.embeds.find((embed) => embed.getContentId() === contentId);
     if (existingEmbed) {
-      await existingEmbed.update(session);
-      return true;
+      // The same content under another session, or under none, means the
+      // session this embed holds is gone (deleted, or ended elsewhere). It is
+      // rebuilt rather than updated: the card it shows belongs to that session,
+      // and an embed that already found its target would not start a new one.
+      // An embed still waiting for its session takes whichever it is handed.
+      const heldSessionId = existingEmbed.getSessionId();
+      if (!heldSessionId || heldSessionId === session.id) {
+        await existingEmbed.update(session);
+        return true;
+      }
+      await this.removeEmbed(contentId);
     }
     const embed = new UsertourEmbed(this, new UsertourSession(session));
     this.setupComponentDismissHandler(embed, async (_sessionId) => {

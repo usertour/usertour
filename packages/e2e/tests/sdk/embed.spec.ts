@@ -1012,3 +1012,93 @@ test('an embed whose target leaves the page unmounts and comes back with it', as
   await sdk.advance(600);
   await expect(sdk.page.locator(FRAME)).toBeVisible();
 });
+
+test('an embed whose session is gone starts over when the server sends it without one', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  const buttons = [button('Learn more', [], 'button-learn')];
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now', buttons),
+  );
+  const frame = sdk.page.frameLocator(FRAME);
+  await expect(frame.getByText('Upgrade now')).toBeVisible();
+
+  // The session was deleted on the server (the dashboard, the API): the next
+  // sync delivers the same embed with none. Nothing stays on screen against a
+  // session that no longer exists; the embed asks to start again.
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed(undefined, 'embed-1', '#panel', 'Upgrade now', buttons),
+  );
+  await protocol.waitForMessages('StartContent', 1);
+  expect(protocol.messages('StartContent')[0].message.payload).toMatchObject({
+    contentId: 'embed-1',
+  });
+  await expect(sdk.page.locator(FRAME)).toHaveCount(0);
+
+  // The server records a new session and hands it back: the card is there
+  // again, and what the user does is reported against the new session.
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-2', 'embed-1', '#panel', 'Upgrade now', buttons),
+  );
+  await expect(frame.getByText('Upgrade now')).toBeVisible();
+  await frame.getByRole('button', { name: 'Learn more' }).click();
+  await protocol.waitForMessages('ClickButton', 1);
+  expect(protocol.messages('ClickButton')[0].message.payload).toMatchObject({
+    sessionId: 'embed-session-2',
+  });
+
+  await frame.getByRole('button', { name: 'Close' }).click();
+  await protocol.waitForMessages('EndContent', 1);
+  expect(protocol.messages('EndContent')[0].message.payload).toEqual({
+    sessionId: 'embed-session-2',
+    endReason: 'dismiss_button',
+  });
+  await expect(sdk.page.locator(FRAME)).toHaveCount(0);
+  expect(await sdk.isStarted('embed-1')).toBe(false);
+});
+
+test('an embed sent under another session is rebuilt, one sent under the same session is not', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  const buttons = [button('Learn more', [], 'button-learn')];
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now', buttons),
+  );
+  const frame = sdk.page.frameLocator(FRAME);
+  await expect(frame.getByText('Upgrade now')).toBeVisible();
+  await sdk.page.locator(FRAME).evaluate((el) => el.setAttribute('data-test-first-frame', ''));
+  const firstFrame = sdk.page.locator(`${FRAME}[data-test-first-frame]`);
+  await countShellRemovals(sdk.page);
+
+  // A re-send of the session it holds (a sync, a locale change) updates in place.
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now', buttons),
+  );
+  await sdk.advance(600);
+  await expect(frame.getByText('Upgrade now')).toBeVisible();
+  expect(await shellRemovals(sdk.page)).toBe(0);
+  await expect(firstFrame).toHaveCount(1);
+
+  // Another session for the same content: the one it held has ended
+  // elsewhere, so the card of that session goes and a new one takes its place.
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-2', 'embed-1', '#panel', 'Upgrade now', buttons),
+  );
+  await expect(firstFrame).toHaveCount(0);
+  await expect(frame.getByText('Upgrade now')).toBeVisible();
+  await frame.getByRole('button', { name: 'Learn more' }).click();
+  await protocol.waitForMessages('ClickButton', 1);
+  expect(protocol.messages('ClickButton')[0].message.payload).toMatchObject({
+    sessionId: 'embed-session-2',
+  });
+});
