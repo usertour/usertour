@@ -28,7 +28,7 @@ import { uuidV4 } from '@usertour/helpers';
  * same-origin frame's in document order, nested ones included. The frames the
  * SDK renders its own UI in are skipped.
  */
-const getSearchDocuments = (): Document[] => {
+export const getSearchDocuments = (): Document[] => {
   if (!document) {
     return [];
   }

@@ -25,6 +25,7 @@ import { useEventHandlers } from '../hooks/use-event-handlers';
 import { document } from '../utils/globals';
 import { on, off } from '../utils/listener';
 import { isElement } from '../utils/type-check';
+import { getSearchDocuments } from '@/core/usertour-helper';
 import { UsertourLauncher } from '@/core/usertour-launcher';
 import { AssetAttributes } from '@usertour/frame';
 
@@ -130,7 +131,6 @@ const useLauncherHandlers = (
 const useClickOutside = (
   open: boolean,
   popperRef: React.RefObject<HTMLDivElement>,
-  triggerRef: React.RefObject<HTMLElement>,
   setOpen: (open: boolean) => void,
 ) => {
   useEffect(() => {
@@ -142,11 +142,9 @@ const useClickOutside = (
       }
     };
 
-    // A press inside a frame never reaches this document: when the target
-    // lives in one, listen in its document too.
-    const targetDocument = triggerRef.current?.ownerDocument;
-    const documents =
-      targetDocument && targetDocument !== document ? [document, targetDocument] : [document];
+    // A press inside a frame never reaches this document, so listen in every
+    // document a target can live in: the page's and each same-origin frame's.
+    const documents = getSearchDocuments();
     for (const listenedDocument of documents) {
       on(listenedDocument, 'mousedown', handleClickOutside);
     }
@@ -155,7 +153,7 @@ const useClickOutside = (
         off(listenedDocument, 'mousedown', handleClickOutside);
       }
     };
-  }, [open, setOpen, triggerRef]);
+  }, [open, setOpen]);
 };
 
 const usePopperMouseLeave = (
@@ -315,7 +313,7 @@ const LauncherWidgetCore = ({
     triggerRef,
   );
   useEventHandlers(data, launcherRef, triggerRef, handlers);
-  useClickOutside(open, popperRef, triggerRef, setOpen);
+  useClickOutside(open, popperRef, setOpen);
   usePopperMouseLeave(popperRef, launcherRef, triggerRef, data, open, setOpen);
 
   return (

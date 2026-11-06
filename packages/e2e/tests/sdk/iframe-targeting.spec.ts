@@ -380,6 +380,36 @@ test.describe('targets inside frames', () => {
     await expect(sdk.frame().getByText('Start here')).toBeHidden();
   });
 
+  test('a press in the frame between the page and a nested target closes it too', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    // Large enough to show the lesson's inner frame whole.
+    await mountFrame(
+      sdk.page.mainFrame(),
+      { id: 'lesson', src: '/frame-outer.html' },
+      { left: 100, top: 60, width: 760, height: 620 },
+    );
+    await protocol.push(
+      'AddLauncher',
+      launcherSession({
+        sessionId: 'launcher-session-1',
+        contentId: 'launcher-1',
+        target: '#activity-submit',
+        text: 'Start here',
+      }),
+    );
+    const launcher = sdk.page.locator('.usertour-widget-launcher');
+    await expect(launcher).toBeVisible();
+    await launcher.click();
+    await expect(sdk.frame().getByText('Start here')).toBeVisible();
+
+    // The lesson page is neither the SDK's document nor the target's.
+    await sdk.page.frameLocator('#lesson').getByRole('heading', { name: 'Lesson' }).click();
+    await expect(sdk.frame().getByText('Start here')).toBeHidden();
+  });
+
   test('the SDK’s own banner frame is not a place selectors are resolved in', async ({
     sdk,
     protocol,
