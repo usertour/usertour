@@ -427,6 +427,30 @@ describe('buildExportPayload', () => {
     expect(payload.headers.length).toBe(payload.rows[0].length);
   });
 
+  // A version's sequence is zero-based; the dashboard prints the first one as
+  // v1 everywhere, and the export is read next to it.
+  it.each([
+    ContentDataType.FLOW,
+    ContentDataType.CHECKLIST,
+    ContentDataType.LAUNCHER,
+    ContentDataType.BANNER,
+    ContentDataType.EMBED,
+  ])('prints the version of a %s session as the dashboard does, one-based', (contentType) => {
+    const versionOf = (sequence: number) => {
+      const payload = buildExportPayload({
+        sessions: [createSession({ version: { sequence } } as Partial<SessionExportRow>)],
+        contentType,
+        contentName: 'Content',
+        includeAllAttributes: false,
+        version: { sequence, steps: [] } as unknown as ContentVersion,
+      });
+      return payload.rows[0][payload.headers.indexOf('Version')];
+    };
+
+    expect(versionOf(0)).toBe('v1');
+    expect(versionOf(3)).toBe('v4');
+  });
+
   describe('embed', () => {
     const embedVersion = {
       sequence: 0,
@@ -479,7 +503,7 @@ describe('buildExportPayload', () => {
         return payload.rows[0][index];
       };
 
-      expect(cell('Version')).toBe('v0');
+      expect(cell('Version')).toBe('v1');
       expect(cell('Last activity at (UTC)')).toBe('2026-03-05 10:27:41');
       expect(cell('State')).toBe('Dismissed');
       expect(cell('Clicked buttons')).toBe('See how it works, Got it');

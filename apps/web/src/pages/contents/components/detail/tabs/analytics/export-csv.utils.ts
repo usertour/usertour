@@ -139,6 +139,15 @@ const toCSVCell = (value: unknown) => {
   return normalizedValue;
 };
 
+/**
+ * The version a session ran on, as the dashboard prints it: a version's
+ * sequence is zero-based, the first version reads v1.
+ */
+const formatVersion = (session: SessionExportRow) => {
+  const sequence = session.version?.sequence;
+  return sequence === undefined || sequence === null ? '' : `v${sequence + 1}`;
+};
+
 const getLastActivityAt = (session: SessionExportRow) => {
   if (!session.bizEvent || session.bizEvent.length === 0) {
     return session.createdAt;
@@ -537,13 +546,13 @@ const buildRows = (args: {
       ? [formatUTCDate(session.createdAt)]
       : mode.isSimpleExport
         ? [
-            `v${session.version?.sequence}`,
+            formatVersion(session),
             formatUTCDate(session.createdAt),
             ...(mode.isLauncherContent ? [activatedCount] : []),
           ]
         : mode.isEmbedContent
           ? [
-              `v${session.version?.sequence}`,
+              formatVersion(session),
               formatUTCDate(session.createdAt),
               formatUTCDate(getLastActivityAt(session)),
               getState(session, contentType),
@@ -552,7 +561,7 @@ const buildRows = (args: {
               endReason,
             ]
           : [
-              `v${session.version?.sequence}`,
+              formatVersion(session),
               formatUTCDate(session.createdAt),
               formatUTCDate(getLastActivityAt(session)),
               formatUTCDate(getCompletedAt(session, contentType)),
