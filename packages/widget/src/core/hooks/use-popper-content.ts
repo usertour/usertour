@@ -165,7 +165,7 @@ export const usePopperContent = (
         name: 'overflowState',
         async fn(state) {
           if (setOverflow) {
-            // A reference inside a same-origin frame is clipped in the top window's space
+            // A reference inside a same-origin frame is clipped in this window's space
             const overflow = await detectOverflow(state, {
               elementContext: 'reference',
               ...(await getBoundaryAcrossFrames(state)),

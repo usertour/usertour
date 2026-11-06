@@ -46,7 +46,7 @@ export const getTargetSearchRoots = (): Element[] => {
 export const findTargetElement = (target: ElementSelectorPropsData): HTMLElement | null =>
   finderV2(target, getTargetSearchRoots());
 
-/** Floating UI's `hide`, clipping a reference inside a same-origin frame in the top window's space. */
+/** Floating UI's `hide`, clipping a reference inside a same-origin frame in this window's space. */
 const hideAcrossFrames: Middleware = {
   name: 'hide',
   async fn(state) {

@@ -13,8 +13,8 @@ export interface CustomHideDetectOverflowOptions {
 /**
  * Custom hide middleware: wraps Floating UI's hide with referenceHidden, and also treats
  * invalid reference rect (0 width/height or 0,0,0,0) as hidden so the floating element is hidden.
- * A reference inside a same-origin frame is clipped in the top window's space, which
- * replaces the caller's boundaries.
+ * A reference inside a same-origin frame is clipped in the floating element's window's
+ * space, which replaces the caller's boundaries.
  */
 export function createCustomHideMiddleware(
   detectOverflowOptions: CustomHideDetectOverflowOptions,

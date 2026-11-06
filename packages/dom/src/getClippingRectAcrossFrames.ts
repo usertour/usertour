@@ -26,23 +26,27 @@ export function getFrameElement(element: Element): HTMLElement | null {
 }
 
 /**
- * The clipping rect of an element that lives in a same-origin frame, in the
- * top window's viewport coordinates: the element's own clipping ancestors and
- * viewport, then those of each enclosing frame element, intersected.
+ * The clipping rect of an element that lives in a same-origin frame below
+ * `targetWindow`, in `targetWindow`'s viewport coordinates: the element's own
+ * clipping ancestors and viewport, then those of each frame element on the way
+ * up to `targetWindow`, intersected.
  *
- * Floating UI clips a reference within the reference's own window, so for a
- * reference inside a frame it compares a top-window reference rect against a
- * frame-local viewport. Passing this rect as both `boundary` and
- * `rootBoundary` keeps both sides in the same space. Returns null for an
- * element in the top window, where the defaults are right.
+ * Floating UI expresses a reference's rect in the floating element's window
+ * but clips it within the reference's own window, so for a reference inside a
+ * frame the two are in different spaces. Passing this rect as both `boundary`
+ * and `rootBoundary`, with the floating element's window as `targetWindow`,
+ * keeps both sides in the same space. The walk stops at `targetWindow`, which
+ * is not the top window when the page itself is embedded in a frame. Returns
+ * null for an element in `targetWindow` itself, where the defaults are right,
+ * and for one that is not below it.
  */
 export async function getClippingRectAcrossFrames(
   platform: ClippingRectPlatform,
   element: Element,
   strategy: Strategy,
+  targetWindow: Window,
 ): Promise<Rect | null> {
-  let frame = getFrameElement(element);
-  if (!frame) {
+  if (getWindow(element) === targetWindow) {
     return null;
   }
   let clippingRect = await platform.getClippingRect({
@@ -51,6 +55,7 @@ export async function getClippingRectAcrossFrames(
     rootBoundary: 'viewport',
     strategy,
   });
+  let frame = getFrameElement(element);
   while (frame) {
     const origin = getContentBoxOrigin(frame);
     clippingRect = {
@@ -65,31 +70,40 @@ export async function getClippingRectAcrossFrames(
       strategy,
     });
     clippingRect = intersect(clippingRect, frameClippingRect);
+    if (getWindow(frame) === targetWindow) {
+      return clippingRect;
+    }
     frame = getFrameElement(frame);
   }
-  return clippingRect;
+  return null;
 }
 
 /** The slice of a Floating UI middleware state `getBoundaryAcrossFrames` reads. */
 export type FrameBoundaryState = {
-  elements: { reference: unknown };
+  elements: { reference: unknown; floating: unknown };
   platform: ClippingRectPlatform;
   strategy: Strategy;
 };
 
 /**
- * `boundary` and `rootBoundary` for a reference inside a same-origin frame,
- * to spread into `hide()` or `detectOverflow()` options; undefined for a
- * reference in the top window, where Floating UI's defaults are right.
+ * `boundary` and `rootBoundary` for a reference that lives in a same-origin
+ * frame below the floating element's window, to spread into `hide()` or
+ * `detectOverflow()` options; undefined for a reference in the floating
+ * element's own window, where Floating UI's defaults are right.
  */
 export async function getBoundaryAcrossFrames(
   state: FrameBoundaryState,
 ): Promise<{ boundary: Rect; rootBoundary: Rect } | undefined> {
   const { elements, platform, strategy } = state;
-  if (!isElement(elements.reference)) {
+  if (!isElement(elements.reference) || !isElement(elements.floating)) {
     return undefined;
   }
-  const clippingRect = await getClippingRectAcrossFrames(platform, elements.reference, strategy);
+  const clippingRect = await getClippingRectAcrossFrames(
+    platform,
+    elements.reference,
+    strategy,
+    getWindow(elements.floating),
+  );
   return clippingRect ? { boundary: clippingRect, rootBoundary: clippingRect } : undefined;
 }
 
