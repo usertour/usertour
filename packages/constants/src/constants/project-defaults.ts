@@ -254,7 +254,7 @@ export const defaultEvents = [
   {
     displayName: 'Embed Step Seen',
     codeName: BizEvents.EMBED_STEP_SEEN,
-    description: 'When an embed step is shown to a user for the first time in a session',
+    description: 'When an embed step becomes visible',
     attributes: [
       EventAttributes.EMBED_ID,
       EventAttributes.EMBED_NAME,
