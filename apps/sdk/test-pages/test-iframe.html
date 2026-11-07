@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iframe Test - targets inside frames</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        padding: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+        color: #1f2937;
+      }
+      /* Sizes and weights are spelled out: the dev server injects the widget
+         stylesheet, reset included, into this page. The built SDK does not. */
+      body > h1 {
+        margin: 0 0 10px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .description {
+        color: #666;
+        margin-bottom: 30px;
+      }
+      .section {
+        margin-bottom: 32px;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background: #fafafa;
+      }
+      .section h2 {
+        margin: 0 0 6px;
+        color: #333;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .section p {
+        margin: 0 0 12px;
+        color: #666;
+        font-size: 14px;
+      }
+      code {
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #eef2ff;
+        font-size: 13px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+        background: #fff;
+      }
+      th,
+      td {
+        padding: 8px 10px;
+        border: 1px solid #e5e7eb;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #f3f4f6;
+        font-weight: 600;
+      }
+      iframe {
+        display: block;
+        border: 2px solid #9ca3af;
+        border-radius: 6px;
+        background: #fff;
+      }
+      .frame-plain,
+      .frame-blocked {
+        width: 560px;
+        height: 150px;
+      }
+      .frame-lesson {
+        width: 620px;
+        height: 220px;
+      }
+      /* Laid out at 560×150, drawn at 0.75×: the box reserves the drawn size. */
+      .scaled-box {
+        width: 420px;
+        height: 113px;
+      }
+      .frame-scaled {
+        width: 560px;
+        height: 150px;
+        transform: scale(0.75);
+        transform-origin: 0 0;
+      }
+      .status {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .status.readable {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .status.opaque {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .page-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .page-row button {
+        padding: 6px 14px;
+        border: 1px solid #111827;
+        border-radius: 4px;
+        background: #111827;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .page-row button.hint-button {
+        background: #fff;
+        color: #111827;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Targets inside frames</h1>
+    <p class="description">
+      Selectors are resolved on this page first, then in every same-origin frame, nested ones
+      included. Create a flow with a tooltip step (or a launcher, or an element condition), type
+      one of the selectors below by hand, and check where it lands. The badge next to each frame
+      shows whether this page can read it; Usertour can reach exactly the frames the page can.
+    </p>
+
+    <div class="section">
+      <h2>What to try</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Selector</th>
+            <th>Expected</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>#page-button</code></td>
+            <td>The button on this page. Nothing changed here.</td>
+          </tr>
+          <tr>
+            <td><code>[data-activity="plain"] #activity-submit</code></td>
+            <td>Submit inside the same-origin frame; the tooltip sits under it and follows scrolling.</td>
+          </tr>
+          <tr>
+            <td><code>[data-activity="nested"] #activity-submit</code></td>
+            <td>Submit inside the frame within a frame.</td>
+          </tr>
+          <tr>
+            <td><code>[data-activity="scaled"] #activity-submit</code></td>
+            <td>Submit inside the frame drawn at 0.75×; the tooltip points at where it is drawn.</td>
+          </tr>
+          <tr>
+            <td><code>#activity-submit</code> with <b>1st / 2nd / 3rd</b></td>
+            <td>The plain, the nested and the scaled frame, in that order (the order of the frames on this page).</td>
+          </tr>
+          <tr>
+            <td><code>.hint-button</code> with <b>1st / 2nd</b></td>
+            <td>1st is this page's Hint; 2nd is the plain frame's. The page comes first.</td>
+          </tr>
+          <tr>
+            <td><code>[data-activity="plain"] #activity-answer</code></td>
+            <td>A text-input or text-fill condition on the input inside the frame.</td>
+          </tr>
+          <tr>
+            <td><code>[data-activity="cross-origin"] #activity-submit</code></td>
+            <td>Not found: the frame is on another origin.</td>
+          </tr>
+          <tr>
+            <td><code>[data-activity="sandboxed"] #activity-submit</code></td>
+            <td>Not found: the frame is sandboxed without <code>allow-same-origin</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>This page</h2>
+      <p>Elements of the page itself, matched before any frame's.</p>
+      <div class="page-row">
+        <button id="page-button" type="button">Page button</button>
+        <button class="hint-button" type="button">Hint</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Same-origin frame <span class="status" data-status-for="frame-plain"></span></h2>
+      <p>Use "Reload this activity" inside it: an open tooltip should stay on the new document's button.</p>
+      <iframe
+        id="frame-plain"
+        class="frame-plain"
+        src="./test-iframe-activity.html?id=plain"
+        title="Lesson activity"
+      ></iframe>
+    </div>
+
+    <div class="section">
+      <h2>Nested frame <span class="status" data-status-for="frame-lesson"></span></h2>
+      <p>A lesson page that embeds the activity in a frame of its own.</p>
+      <iframe
+        id="frame-lesson"
+        class="frame-lesson"
+        src="./test-iframe-lesson.html"
+        title="Lesson"
+      ></iframe>
+    </div>
+
+    <div class="section">
+      <h2>Scaled frame <span class="status" data-status-for="frame-scaled"></span></h2>
+      <p>Laid out at 560×150 and drawn at 0.75× with a CSS transform.</p>
+      <div class="scaled-box">
+        <iframe
+          id="frame-scaled"
+          class="frame-scaled"
+          src="./test-iframe-activity.html?id=scaled"
+          title="Scaled lesson activity"
+        ></iframe>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Cross-origin frame <span class="status" data-status-for="frame-cross-origin"></span></h2>
+      <p>
+        The same activity, loaded through another host name of this dev server, which makes it
+        another origin. Its elements are out of reach.
+      </p>
+      <iframe id="frame-cross-origin" class="frame-blocked" title="Cross-origin lesson activity"></iframe>
+    </div>
+
+    <div class="section">
+      <h2>Sandboxed frame <span class="status" data-status-for="frame-sandboxed"></span></h2>
+      <p>Same origin, but <code>sandbox="allow-scripts"</code> without <code>allow-same-origin</code>.</p>
+      <iframe
+        id="frame-sandboxed"
+        class="frame-blocked"
+        sandbox="allow-scripts"
+        src="./test-iframe-activity.html?id=sandboxed"
+        title="Sandboxed lesson activity"
+      ></iframe>
+    </div>
+
+    <script>
+      window.USERTOURJS_ENV_VARS = {
+        WS_URI: "http://localhost:3000/",
+      };
+    </script>
+    <script type="module" src="/src/usertour.ts"></script>
+
+    <script>
+      // The same dev server under another host name is another origin:
+      // localhost and [::1] both reach it.
+      const otherHost = location.hostname === "localhost" ? "[::1]" : "localhost";
+      const activityPath = new URL("./test-iframe-activity.html?id=cross-origin", location.href);
+      document.getElementById("frame-cross-origin").src =
+        `${location.protocol}//${otherHost}:${location.port}${activityPath.pathname}${activityPath.search}`;
+
+      // What the page can read is what Usertour can reach: a readable frame
+      // hands back its document, an opaque one hands back null.
+      const canRead = (frame) => {
+        try {
+          return frame.contentDocument !== null;
+        } catch {
+          return false;
+        }
+      };
+      const showStatus = (frame) => {
+        const badge = document.querySelector(`[data-status-for="${frame.id}"]`);
+        if (!badge) {
+          return;
+        }
+        const readable = canRead(frame);
+        badge.textContent = readable ? "readable by the page" : "not readable by the page";
+        badge.className = `status ${readable ? "readable" : "opaque"}`;
+      };
+      for (const frame of document.querySelectorAll("iframe")) {
+        frame.addEventListener("load", () => showStatus(frame));
+        showStatus(frame);
+      }
+
+      window.onload = async function () {
+        console.log("=== Iframe Test Page ===");
+        console.log("Create a flow whose tooltip step uses one of the selectors in the table.");
+        console.log(
+          'Check a frame by hand: document.querySelector("#frame-plain").contentDocument\n',
+        );
+
+        // Which environment and user to run as. The defaults match the other
+        // test pages; ?env=, ?user= and ?identity= override them, the last one
+        // for an environment that requires identity verification.
+        const params = new URLSearchParams(location.search);
+        const environmentToken = params.get("env") || "cm76brgn0000899t48qc7jz5o";
+        const userId = params.get("user") || "test-user-iframe-" + Date.now();
+        const identityToken = params.get("identity");
+
+        // Initialize SDK
+        try {
+          usertour.init(environmentToken);
+          await usertour.identify(
+            userId,
+            { name: "Test User", email: "test@example.com" },
+            identityToken ? { token: identityToken } : undefined,
+          );
+          console.log(`✓ SDK initialized (${environmentToken}), identified as ${userId}`);
+        } catch (error) {
+          console.error("Failed to initialize SDK:", error);
+        }
+      };
+    </script>
+  </body>
+</html>

@@ -41,6 +41,12 @@ export type Target = {
   type?: string;
 };
 
+/** A subtree a selector is resolved in: a document, or an element such as a document's body. */
+export type SearchRoot = Element | Document;
+
+const getRootOwnerDocument = (root: SearchRoot): Document =>
+  root.ownerDocument ?? (root as Document);
+
 const finderAttrs = [
   'data-for',
   'data-id',
@@ -159,6 +165,7 @@ function compareParentNode(
   let nodeParentNode = node.parentNode;
   let elParentElement = el.parentElement;
   const maxDepth = getMaxDepth(node);
+  const rootOwnerDocument = getRootOwnerDocument(rootDocument);
   const xresult: XResult = {
     maxDepth,
     failedDepth: 0,
@@ -169,9 +176,9 @@ function compareParentNode(
       break;
     }
     if (
-      elParentElement === document.body ||
-      elParentElement === document.documentElement ||
-      elParentElement.parentElement === document.body
+      elParentElement === rootOwnerDocument.body ||
+      elParentElement === rootOwnerDocument.documentElement ||
+      elParentElement.parentElement === rootOwnerDocument.body
     ) {
       break;
     }
@@ -343,7 +350,12 @@ export function parserV2(element: HTMLElement): TargetResult {
   return { content, selectors, selectorsList };
 }
 
-export function finderV2(target: Target, root: Element | Document) {
+/**
+ * Resolve a target in `roots`, in order: the first root whose match passes the
+ * target's content check wins, and a custom selector's sequence counts across
+ * all of them.
+ */
+export function finderV2(target: Target, roots: ReadonlyArray<SearchRoot>): HTMLElement | null {
   const {
     selectors,
     content = '',
@@ -362,10 +374,13 @@ export function finderV2(target: Target, root: Element | Document) {
       stricter: 8,
       strictest: 10,
     };
-    const el = finderX(selectors, root, mapping[precision]) as HTMLElement;
-    if (el) {
+    for (const root of roots) {
+      const el = finderX(selectors, root, mapping[precision]) as HTMLElement | null;
+      if (!el) {
+        continue;
+      }
       if (isDynamicContent && content && el.innerText !== content) {
-        return null;
+        continue;
       }
       return el;
     }
@@ -379,9 +394,9 @@ export function finderV2(target: Target, root: Element | Document) {
     };
     if (customSelector) {
       const selector = customSelector.replace(/\\\\/g, '\\');
-      const els = root.querySelectorAll(selector);
+      const els = roots.flatMap((root) => Array.from(root.querySelectorAll(selector)));
       if (els.length > 0) {
-        const el = (els[sequenceMapping[sequence]] as HTMLElement) || els[0];
+        const el = (els[sequenceMapping[sequence]] as HTMLElement) || (els[0] as HTMLElement);
         if (content && el.innerText.trim() !== content) {
           return null;
         }
@@ -392,11 +407,11 @@ export function finderV2(target: Target, root: Element | Document) {
   return null;
 }
 
-export function finderX(node: XNode, root: Element | Document, precision = 10) {
+export function finderX(node: XNode, root: SearchRoot, precision = 10) {
   if (!node || node.selectors.length === 0) {
     return null;
   }
-  const rootDocument = root || document;
+  const rootDocument = root;
   const elements: Element[] = [];
   const nodeList = queryNodeListBySelectors(node.selectors, rootDocument, false);
   if (!nodeList || nodeList.length === 0) {

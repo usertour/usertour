@@ -11,12 +11,14 @@ declare global {
   }
 }
 
+// Checked against the value's own realm: an element from a frame's document
+// is not an instance of this window's constructors.
 export function isHTMLElement(value: any): value is HTMLElement {
-  return value instanceof getWindow(value).HTMLElement;
+  return value instanceof HTMLElement || value instanceof getWindow(value).HTMLElement;
 }
 
 export function isElement(value: any): value is Element {
-  return value instanceof getWindow(value).Element;
+  return value instanceof Element || value instanceof getWindow(value).Element;
 }
 
 export function isShadowRoot(node: Node): node is ShadowRoot {

@@ -105,6 +105,25 @@ test.describe('client-evaluated conditions', () => {
     expect(reports()[1].isActive).toBe(false);
   });
 
+  // A condition can be about <html> or <body> themselves, so its element is
+  // looked up in the whole document — not under <body>, where the elements
+  // widgets attach to are looked up and which is not its own descendant.
+  test('element present: a condition can be about <html> or <body> themselves', async ({
+    sdk,
+    protocol,
+  }) => {
+    await setup(sdk);
+    await sdk.page.evaluate(() => {
+      document.documentElement.classList.add('theme-dark');
+      document.body.dataset.page = 'billing';
+    });
+    for (const selector of ['html.theme-dark', 'body[data-page="billing"]']) {
+      const reports = await track(protocol, elementRule(selector, 'present'));
+      await expect.poll(() => reports().length, { message: selector }).toBe(1);
+      expect(reports()[0].isActive, selector).toBe(true);
+    }
+  });
+
   test('element disabled and undisabled follow the disabled attribute', async ({
     sdk,
     protocol,

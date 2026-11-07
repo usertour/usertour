@@ -1,4 +1,3 @@
-import { finderV2 } from '@usertour/finder';
 import {
   RulesCondition,
   ElementConditionLogic,
@@ -13,6 +12,7 @@ import { evaluateRulesConditions, isEmptyString } from '@usertour/helpers';
 import {
   getClientContext,
   convertToAttributeEvaluationOptions,
+  findConditionElement,
   isVisible,
 } from '@/core/usertour-helper';
 import { customInputRegistry } from './registries/custom-input-registry';
@@ -62,6 +62,18 @@ const TEXT_FILL_DEBOUNCE_MS = 1000;
 // ============================================================================
 
 /**
+ * A native input or textarea, told by its tag rather than by `instanceof`: an
+ * element is an instance of the constructors of the window that created it,
+ * which for one inside a frame, or moved into one, is not always this window.
+ */
+function isNativeTextInput(el: Element): el is HTMLInputElement | HTMLTextAreaElement {
+  return (
+    el.namespaceURI === 'http://www.w3.org/1999/xhtml' &&
+    (el.localName === 'input' || el.localName === 'textarea')
+  );
+}
+
+/**
  * Gets the value of an input element (native or custom)
  * @param el - The input element
  * @returns The current value as a string
@@ -73,7 +85,7 @@ function getElementValue(el: Element): string {
   }
 
   // Check if it's a native input/textarea with value property
-  if ('value' in el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+  if (isNativeTextInput(el)) {
     return el.value ?? '';
   }
 
@@ -91,7 +103,7 @@ function isTextInputElement(el: Element | null): el is TextInputElement {
     return false;
   }
   // Native input/textarea
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+  if (isNativeTextInput(el)) {
     return true;
   }
   // Registered custom input
@@ -263,7 +275,7 @@ export class RulesEvaluator extends Evented {
     if (!document || !data?.elementData) {
       return false;
     }
-    const el = finderV2(data.elementData, document);
+    const el = findConditionElement(data.elementData);
     const isPresent = el ? await isVisible(el) : false;
 
     switch (data.logic) {
@@ -293,7 +305,7 @@ export class RulesEvaluator extends Evented {
       return false;
     }
     const { elementData, logic, value } = data;
-    const el = finderV2(elementData, document);
+    const el = findConditionElement(elementData);
     if (!el || !isTextInputElement(el)) {
       return false;
     }
@@ -337,7 +349,7 @@ export class RulesEvaluator extends Evented {
       return false;
     }
 
-    const el = finderV2(data.elementData, document);
+    const el = findConditionElement(data.elementData);
     if (!el || !isTextInputElement(el)) {
       return false;
     }

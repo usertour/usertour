@@ -1,4 +1,7 @@
-import { computePosition, hide } from '@floating-ui/dom';
+import { computePosition, hide, type Middleware } from '@floating-ui/dom';
+import { getBoundaryAcrossFrames, getSameOriginFrameDocuments } from '@usertour/dom';
+import { finderV2 } from '@usertour/finder';
+import { FRAME_MARKER_ATTRIBUTE } from '@usertour/frame';
 import {
   RulesCondition,
   RulesType,
@@ -11,6 +14,7 @@ import {
   ContentEditorElementType,
   ContentEditorRoot,
   ContentEditorButtonElement,
+  ElementSelectorPropsData,
 } from '@usertour/types';
 import { document, location, window } from '@/utils';
 import { uuidV4 } from '@usertour/helpers';
@@ -18,6 +22,56 @@ import { uuidV4 } from '@usertour/helpers';
 // ============================================================================
 // Element Visibility and Interaction Functions
 // ============================================================================
+
+/**
+ * The documents a selector is resolved in, in order: this page's, then each
+ * same-origin frame's in document order, nested ones included. The frames the
+ * SDK renders its own UI in are skipped.
+ */
+export const getSearchDocuments = (): Document[] => {
+  if (!document) {
+    return [];
+  }
+  const isUsertourFrame = (frame: HTMLIFrameElement) => frame.hasAttribute(FRAME_MARKER_ATTRIBUTE);
+  return [document, ...getSameOriginFrameDocuments(document, isUsertourFrame)];
+};
+
+const getBodies = (documents: Document[]): HTMLElement[] =>
+  documents
+    .map((searchDocument) => searchDocument.body)
+    .filter((body): body is HTMLElement => body !== null);
+
+/**
+ * Resolve the element a tooltip or a launcher attaches to: under the `<body>`
+ * of this page and of each same-origin frame. Nothing in a `<head>` is a
+ * target, whatever the selector matches there.
+ */
+export const findTargetElement = (target: ElementSelectorPropsData): HTMLElement | null =>
+  finderV2(target, getBodies(getSearchDocuments()));
+
+/**
+ * Resolve the element a banner is embedded at: under this page's `<body>`
+ * only. The banner is inserted into that element's document, and its styles
+ * are loaded in this page's.
+ */
+export const findTargetElementInPage = (target: ElementSelectorPropsData): HTMLElement | null =>
+  document?.body ? finderV2(target, [document.body]) : null;
+
+/**
+ * Resolve the element a condition is about: anywhere in the document of this
+ * page and of each same-origin frame. A condition may be about `<html>` or
+ * `<body>` themselves, or about an element in `<head>`.
+ */
+export const findConditionElement = (target: ElementSelectorPropsData): HTMLElement | null =>
+  finderV2(target, getSearchDocuments());
+
+/** Floating UI's `hide`, clipping a reference inside a same-origin frame in this window's space. */
+const hideAcrossFrames: Middleware = {
+  name: 'hide',
+  async fn(state) {
+    return hide({ ...(await getBoundaryAcrossFrames(state)) }).fn(state);
+  },
+};
 
 /**
  * Check if an element is visible in the viewport
@@ -30,7 +84,7 @@ export const isVisible = async (el: HTMLElement) => {
   }
   const { middlewareData } = await computePosition(el, document.body, {
     strategy: 'fixed',
-    middleware: [hide()],
+    middleware: [hideAcrossFrames],
   });
   if (middlewareData?.hide?.referenceHidden) {
     return false;
