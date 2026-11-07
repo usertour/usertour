@@ -25,7 +25,9 @@ export const representationTarget = z.object({
     .string()
     .min(1)
     .describe(
-      'A stable CSS selector for the element. The runtime targets the FIRST match — so either ' +
+      'A stable CSS selector for the element, on the page or inside a same-origin iframe ' +
+        "(written relative to the frame's own document). The runtime targets the FIRST " +
+        'match — so either ' +
         'make the selector unique, or pair a stable non-unique selector with `nth` to pick the ' +
         'intended match. A non-unique selector with no `nth` targets the first (often wrong) ' +
         "element and the tooltip silently won't render.",
