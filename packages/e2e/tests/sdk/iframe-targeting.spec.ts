@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type { Frame, Locator, Page } from '@playwright/test';
 import {
   bannerSession,
+  button,
   dismissFlow,
   flowSession,
   launcherSession,
@@ -27,8 +28,18 @@ test.describe('targets inside frames', () => {
     await sdk.identify('u1');
   };
 
-  /** Where a frame is laid out; `scale` draws it larger or smaller from its top-left corner. */
-  type Box = { left: number; top: number; width: number; height: number; scale?: number };
+  /**
+   * Where a frame is laid out; `scale` draws it larger or smaller from its
+   * top-left corner, `border` (px) moves its document inside its box.
+   */
+  type Box = {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    scale?: number;
+    border?: number;
+  };
 
   /** Far enough from the page's corner that a frame-local position or clip is visibly wrong. */
   const FRAME_BOX: Box = { left: 300, top: 400, width: 640, height: 420 };
@@ -41,7 +52,7 @@ test.describe('targets inside frames', () => {
           const element = document.createElement('iframe');
           element.id = id;
           element.src = src;
-          element.style.cssText = `position:absolute;left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px;border:0;transform-origin:0 0;transform:scale(${box.scale ?? 1})`;
+          element.style.cssText = `position:absolute;left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px;border:${box.border ?? 0}px solid #9ca3af;transform-origin:0 0;transform:scale(${box.scale ?? 1})`;
           element.addEventListener('load', () => resolveLoad(), { once: true });
           document.body.appendChild(element);
         }),
@@ -52,11 +63,17 @@ test.describe('targets inside frames', () => {
 
   /**
    * An element's rect in the top window, read through the frames that hold it,
-   * each of which may be drawn at a scale.
+   * each of which may be drawn at a scale. `client` reads the area inside the
+   * element's borders instead: what a scroll box or a frame shows.
    */
-  const targetRect = (page: Page, frameIds: string[], selector: string): Promise<Rect> =>
+  const rectInTopWindow = (
+    page: Page,
+    frameIds: string[],
+    selector: string,
+    area: 'border' | 'client' = 'border',
+  ): Promise<Rect> =>
     page.evaluate(
-      ({ ids, selector }) => {
+      ({ ids, selector, area }) => {
         let win: Window = window;
         let x = 0;
         let y = 0;
@@ -70,8 +87,17 @@ test.describe('targets inside frames', () => {
           scale *= frameScale;
           win = frame.contentWindow as Window;
         }
-        const target = win.document.querySelector(selector) as HTMLElement;
-        const rect = target.getBoundingClientRect();
+        const element = win.document.querySelector(selector) as HTMLElement;
+        const rect = element.getBoundingClientRect();
+        if (area === 'client') {
+          const ownScale = rect.width / element.offsetWidth;
+          return {
+            x: x + (rect.left + element.clientLeft * ownScale) * scale,
+            y: y + (rect.top + element.clientTop * ownScale) * scale,
+            width: element.clientWidth * ownScale * scale,
+            height: element.clientHeight * ownScale * scale,
+          };
+        }
         return {
           x: x + rect.left * scale,
           y: y + rect.top * scale,
@@ -79,7 +105,7 @@ test.describe('targets inside frames', () => {
           height: rect.height * scale,
         };
       },
-      { ids: frameIds, selector },
+      { ids: frameIds, selector, area },
     );
 
   /**
@@ -101,7 +127,7 @@ test.describe('targets inside frames', () => {
           if (!box) {
             return 'no surface';
           }
-          const target = await targetRect(page, frameIds, selector);
+          const target = await rectInTopWindow(page, frameIds, selector);
           const centerOffset = Math.abs(box.x + box.width / 2 - (target.x + target.width / 2));
           const gap = box.y - (target.y + target.height);
           return centerOffset < 2 && gap >= 0 && gap < 40
@@ -457,6 +483,176 @@ test.describe('targets inside frames', () => {
       0,
     );
     await expect(sdk.page.locator('.usertour-widget-banner')).toHaveCount(0);
+  });
+
+  test.describe('a target in a box that scrolls', () => {
+    /**
+     * One scroll box, four ways: a scrolling element on the page (no frame),
+     * a frame whose document scrolls, that frame drawn at 1.5×, and that frame
+     * inside another frame. Each lays the box out at the same place with the
+     * same content, so each must give the same answer on every row below: the
+     * tooltip shows while any part of the target is in the box, the spotlight
+     * opens on exactly that part, and the flow ends once none of it is.
+     */
+    const BOX: Box = { left: 300, top: 200, width: 480, height: 300, border: 2 };
+    const FRAME = { id: 'scroller', src: '/frame-scroller.html' };
+
+    type Container = {
+      name: string;
+      /** The frames from the SDK's page down to the target's document; none for the element. */
+      frames: string[];
+      mount: (page: Page) => Promise<void>;
+    };
+
+    const CONTAINERS: Container[] = [
+      {
+        name: 'a scrolling element on the page',
+        frames: [],
+        mount: (page) =>
+          page.evaluate(async (box) => {
+            // The frame's body, copied, so the element and the frames share one geometry.
+            const html = await (await fetch('/frame-scroller.html')).text();
+            const source = new DOMParser().parseFromString(html, 'text/html');
+            const scroller = document.createElement('div');
+            scroller.id = 'scroller';
+            scroller.style.cssText = `position:absolute;left:${box.left}px;top:${box.top}px;width:${box.width}px;height:${box.height}px;border:${box.border}px solid #9ca3af;overflow:auto`;
+            for (const child of Array.from(source.body.children)) {
+              scroller.appendChild(document.adoptNode(child));
+            }
+            document.body.appendChild(scroller);
+          }, BOX),
+      },
+      {
+        name: 'a same-origin frame',
+        frames: ['scroller'],
+        mount: (page) => mountFrame(page.mainFrame(), FRAME, BOX),
+      },
+      {
+        name: 'a frame drawn at 1.5×',
+        frames: ['scroller'],
+        mount: (page) => mountFrame(page.mainFrame(), FRAME, { ...BOX, scale: 1.5 }),
+      },
+      {
+        name: 'a frame inside another frame',
+        frames: ['holder', 'scroller'],
+        // The holder lays its frame out at (40, 80) with the same border, so the box lands on BOX.
+        mount: (page) =>
+          mountFrame(
+            page.mainFrame(),
+            { id: 'holder', src: '/frame-scroller-outer.html' },
+            { left: BOX.left - 40, top: BOX.top - 80, width: 560, height: 420 },
+          ),
+      },
+    ];
+
+    /** The target is 400–480px down the box's content; the box shows 300px of it. */
+    const SCENARIOS = [
+      { name: 'fully inside, low in the box', scrollTop: 250, expected: 'shown' },
+      { name: 'fully inside, 10px below the top edge', scrollTop: 390, expected: 'shown' },
+      { name: 'half scrolled out over the top edge', scrollTop: 440, expected: 'shown' },
+      { name: 'scrolled out above the box', scrollTop: 520, expected: 'ended' },
+    ] as const;
+
+    /** One tooltip step on the target, with the backdrop on so the spotlight opens on it. */
+    const spotlightFlow = () =>
+      flowSession({
+        sessionId: 'session-1',
+        contentId: 'flow-1',
+        steps: [
+          {
+            id: 'flow-1-step-1',
+            cvid: 'flow-1-cvid-1',
+            type: 'tooltip',
+            target: '#scroll-target',
+            setting: { enabledBackdrop: true },
+            data: [row(paragraph('Click here to begin')), row(button('Done', [dismissFlow()]))],
+          },
+        ],
+      });
+
+    /** Scroll the box: the element on the page, or the innermost frame's document. */
+    const scrollBox = (page: Page, frames: string[], top: number) =>
+      page.evaluate(
+        ({ ids, top }) => {
+          let doc = document;
+          for (const id of ids) {
+            doc = (doc.getElementById(id) as HTMLIFrameElement).contentDocument as Document;
+          }
+          const scroller = ids.length > 0 ? doc.scrollingElement : doc.getElementById('scroller');
+          (scroller as Element).scrollTop = top;
+        },
+        { ids: frames, top },
+      );
+
+    /** The part of the target the box shows, in the SDK page's viewport. */
+    const visiblePart = async (page: Page, frames: string[]): Promise<Rect | undefined> => {
+      const target = await rectInTopWindow(page, frames, '#scroll-target');
+      const box = await rectInTopWindow(page, frames.slice(0, -1), '#scroller', 'client');
+      const x = Math.max(target.x, box.x);
+      const y = Math.max(target.y, box.y);
+      const right = Math.min(target.x + target.width, box.x + box.width);
+      const bottom = Math.min(target.y + target.height, box.y + box.height);
+      if (right <= x || bottom <= y) {
+        return undefined;
+      }
+      return { x, y, width: right - x, height: bottom - y };
+    };
+
+    const expectSpotlightOnVisiblePart = (page: Page, frames: string[]) =>
+      expect
+        .poll(
+          async () => {
+            const hole = await page.locator('.usertour-widget-spotlight').boundingBox();
+            const visible = await visiblePart(page, frames);
+            if (!hole || !visible) {
+              return `hole=${JSON.stringify(hole)} visible=${JSON.stringify(visible)}`;
+            }
+            const edges = (rect: Rect) => [
+              rect.x,
+              rect.y,
+              rect.x + rect.width,
+              rect.y + rect.height,
+            ];
+            const visibleEdges = edges(visible);
+            const off = edges(hole).map((edge, index) => Math.abs(edge - visibleEdges[index]));
+            const describe = (rect: Rect) =>
+              `x ${rect.x.toFixed(1)}–${(rect.x + rect.width).toFixed(1)} y ${rect.y.toFixed(1)}–${(rect.y + rect.height).toFixed(1)}`;
+            return Math.max(...off) <= 1
+              ? 'on the visible part'
+              : `hole ${describe(hole)}, visible ${describe(visible)}`;
+          },
+          { message: 'the spotlight opens on exactly the part of the target the box shows' },
+        )
+        .toBe('on the visible part');
+
+    for (const container of CONTAINERS) {
+      for (const scenario of SCENARIOS) {
+        test(`${container.name}, target ${scenario.name}`, async ({ sdk, protocol }) => {
+          await start(sdk);
+          // Opening a step scrolls its target into the box; keep the row's scroll position.
+          await sdk.page.evaluate(() => window.usertour?.setCustomScrollIntoView?.(() => {}));
+          await container.mount(sdk.page);
+          await scrollBox(sdk.page, container.frames, scenario.scrollTop);
+          await protocol.push('SetFlowSession', spotlightFlow());
+
+          if (scenario.expected === 'shown') {
+            await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+            await expectSpotlightOnVisiblePart(sdk.page, container.frames);
+            // Still shown past the theme's tolerance (3s) that would end the flow.
+            await sdk.advance(4_000);
+            await expect(sdk.surface).toBeVisible();
+            expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
+          } else {
+            // Found but out of view: hidden, then closed once the tolerance runs out.
+            await sdk.advance(4_000);
+            await protocol.waitForMessages('EndContent', 1);
+            expect(protocol.messages('EndContent')[0].message.payload).toMatchObject({
+              endReason: 'tooltip_target_missing',
+            });
+          }
+        });
+      }
+    }
   });
 
   test.describe('with the SDK’s own page embedded in a same-origin frame', () => {

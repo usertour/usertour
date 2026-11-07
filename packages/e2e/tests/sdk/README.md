@@ -47,7 +47,9 @@ fixtures and never starts the SDK.
   centers; what each reports back.
 - `iframe-targeting.spec.ts` — targets inside frames: found in same-origin
   frames (nested too), positioned and judged visible with the frame's offset,
-  followed across the frame's navigations; opaque when cross-origin.
+  followed across the frame's navigations; opaque when cross-origin. A target
+  in a box that scrolls is shown, spotlighted and ended by the part of it the
+  box shows, the same in a frame as in an element on the page.
 - `messages.spec.ts` — the message framing (batches), `track()`, unknown server
   messages, the UI failing to initialise.
 - `content.ts` — the sessions the server pushes, reduced to what the widgets
