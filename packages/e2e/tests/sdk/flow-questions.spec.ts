@@ -170,3 +170,48 @@ test('a question’s actions run after its answer, and its next step can show th
   const kinds = protocol.seen.map((seen) => seen.message.kind);
   expect(kinds.indexOf('AnswerQuestion')).toBeLessThan(kinds.indexOf('GoToStep'));
 });
+
+test('a required text question keeps Submit off until something is typed', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push('SetFlowSession', questionFlow(question('text', { required: true })));
+  const submit = sdk.frame().getByRole('button', { name: 'Submit' });
+  await expect(submit).toBeDisabled();
+  await sdk.frame().getByRole('textbox', { name: 'Text input field' }).fill('Designer');
+  await expect(submit).toBeEnabled();
+});
+
+test('a multiple-choice question keeps Submit off outside its range of picks', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'SetFlowSession',
+    questionFlow(question('multi', { lowRange: 2, highRange: 2 })),
+  );
+  const submit = sdk.frame().getByRole('button', { name: 'Submit' });
+  await sdk.frame().getByText('Daily', { exact: true }).click();
+  await expect(submit).toBeDisabled();
+  await sdk.frame().getByText('Weekly', { exact: true }).click();
+  await expect(submit).toBeEnabled();
+  await sdk.frame().getByText('Monthly', { exact: true }).click();
+  await expect(submit).toBeDisabled();
+});
+
+test('the Other option adds what the user typed to the answer', async ({ sdk, protocol }) => {
+  await start(sdk);
+  await protocol.push('SetFlowSession', questionFlow(question('multi', { enableOther: true })));
+  await sdk.frame().getByText('Daily', { exact: true }).click();
+  // The Other row shows its placeholder as text until it is clicked into.
+  await sdk.frame().getByText('Other...', { exact: true }).click();
+  await sdk.frame().getByPlaceholder('Other...').fill('Quarterly');
+  await sdk.frame().getByRole('button', { name: 'Submit' }).click();
+  await protocol.waitForMessages('AnswerQuestion', 1);
+  expect(protocol.messages('AnswerQuestion')[0].message.payload).toMatchObject({
+    questionCvid: 'q-multi',
+    listAnswer: ['daily', 'Quarterly'],
+  });
+});

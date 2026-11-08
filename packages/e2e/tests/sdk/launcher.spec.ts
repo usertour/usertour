@@ -204,6 +204,49 @@ test('a hidden launcher has no box of its own to catch clicks; its target opens 
   await expect(sdk.frame().getByText('Start here')).toBeVisible();
 });
 
+test('a hover launcher opens its tooltip under the pointer and closes it once the pointer leaves', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push('AddLauncher', launcher({ triggerEvent: 'hovered' }));
+  await launchers(sdk).hover();
+  await protocol.waitForMessages('ActivateLauncher', 1);
+  await expect(sdk.frame().getByText('Start here')).toBeVisible();
+
+  await sdk.page.mouse.move(5, 5);
+  // The tooltip waits a moment for the pointer to land on it before closing.
+  await sdk.advance(300);
+  await expect(sdk.surface).toHaveCount(0);
+});
+
+test('a beacon pulses at its target; a button launcher carries its text and can anchor its tooltip to itself', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push('AddLauncher', launcher({ type: 'beacon' }));
+  await expect(sdk.page.locator('.usertour-widget-beacon')).toBeVisible();
+  await protocol.push('RemoveLauncher', { contentId: 'launcher-1' });
+  await expect(launchers(sdk)).toHaveCount(0);
+
+  await protocol.push(
+    'AddLauncher',
+    launcher({ type: 'button', buttonText: 'Need help?', tooltipReference: 'launcher' }),
+  );
+  const launcherButton = sdk.page.locator('.usertour-widget-launcher--button');
+  await expect(launcherButton).toHaveText('Need help?');
+  await launcherButton.click();
+  await expect(sdk.frame().getByText('Start here')).toBeVisible();
+  // Anchored to the launcher, which sits above its target: the tooltip ends
+  // above the launcher, not merely above the target.
+  const launcherBox = await launcherButton.boundingBox();
+  const surfaceBox = await sdk.surface.boundingBox();
+  expect(surfaceBox && launcherBox && surfaceBox.y + surfaceBox.height <= launcherBox.y + 1).toBe(
+    true,
+  );
+});
+
 test('several launchers show at once; a dismissed one is not added back', async ({
   sdk,
   protocol,

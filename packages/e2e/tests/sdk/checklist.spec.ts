@@ -288,3 +288,32 @@ test.describe('sessions', () => {
     expect(await sdk.isStarted('checklist-2')).toBe(true);
   });
 });
+
+test.describe('locale and reload', () => {
+  test('the built-in strings follow the session’s locale', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await protocol.push('SetChecklistSession', checklist({ userLocale: 'zh-Hans' }));
+    // The task's accessible name, the dismiss link and the close button, all in Simplified Chinese.
+    await expect(
+      sdk.frame().getByRole('button', { name: '标记为完成: Invite your team' }),
+    ).toBeVisible();
+    await expect(sdk.frame().getByRole('button', { name: '关闭清单' })).toBeVisible();
+    await expect(sdk.frame().getByRole('button', { name: '收起清单' })).toBeVisible();
+  });
+
+  test('a checklist left expanded is expanded again after the page reloads', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('SetChecklistSession', checklist());
+    await expect(task(sdk, 'Invite your team')).toBeVisible();
+
+    await sdk.reload();
+    await start(sdk);
+    await protocol.waitForConnections(2);
+    // The server does not ask to expand this time; the page remembers it was.
+    await protocol.push('SetChecklistSession', checklist({ expanded: false }));
+    await expect(task(sdk, 'Invite your team')).toBeVisible();
+  });
+});

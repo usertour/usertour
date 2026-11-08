@@ -40,16 +40,16 @@ its row.
 | `setUrlFilter`: the filtered URL in the handshake and UpdateClientContext, sent at once when set later; no report when only stripped parts change | ✓ api "setUrlFilter() › …" | — |
 | `setUrlFilter` applied to page rules (trackers, triggers) | ✓ rules "a tracker’s page-URL rule sees the URL as setUrlFilter() rewrites it", flow-steps "a page-URL condition sees the URL as setUrlFilter() rewrites it" | — |
 | `setLinkUrlDecorator` on page-navigate and rich-text links | ✓ api "a page-navigate action opens the URL, decorated…", "setLinkUrlDecorator() also decorates links…" | — |
-| `setLinkUrlDecorator` on image links | — | P3 |
+| `setLinkUrlDecorator` on image links | ✓ api "an image’s link is decorated by setLinkUrlDecorator() too" | — |
 | `setCustomNavigate` replaces same-tab page navigation; a new tab still opens in the browser | ✓ api "setCustomNavigate() takes same-tab navigation…" | — |
 | `disableEvalJs` skips the JavaScript action, with a warning, and the other actions still run | ✓ api "after disableEvalJs() it is skipped…" | — |
-| `disableEvalJs` skips custom chat code | — | P3 |
+| `disableEvalJs` skips custom chat code | ✓ resource-center "a custom live chat block’s code is skipped after disableEvalJs()" | — |
 | `registerCustomInput` feeds text-input conditions, by its getter or the element's text | ✓ api "text-input conditions read a registered element…" | — |
 | `registerCustomInput` feeds text-fill conditions | ✓ rules "text-fill on a custom input registered by the host…" | — |
 | `setBaseZIndex` moves the widgets' stacking level | ✓ api "setBaseZIndex() moves the stacking level…" (flow and launcher) | — |
 | `setTargetMissingSeconds` over the theme's `tooltip.missingTargetTolerance`, else the theme default (3 s); above 10 throws | ✓ api "setTargetMissingSeconds() › …" | — |
 | `setCustomScrollIntoView` is called with the target instead of the default scroll | ✓ api "setCustomScrollIntoView() is handed the target…" | — |
-| `setDebug(false)` and its persistence | — (the fixture forces debug on) | P3 |
+| `setDebug(false)` silences the log and drops the SDK from the stored flag | ✓ api "setDebug(false) silences the log at once…" | — |
 | `open/close/toggleResourceCenter`, `isResourceCenterOpen`; no-ops before a resource center exists | ✓ api "open, close and toggle drive the panel…" | — |
 | `show/hideResourceCenterLauncher`, remembered for a resource center that arrives later | ✓ api "a launcher hidden before the resource center arrives…" | — |
 | `on`/`off` (no-ops that warn) | n/a | — |
@@ -64,7 +64,7 @@ its row.
 | URL monitor reports navigation | ✓ rules "a navigation is reported with the new page URL" (popstate alone is not) | — |
 | The reconnect handshake carries flow, checklist, banner and launcher sessions, conditions and timers | ✓ flow, content-types, rules | — |
 | … and the resource center session and the company | ✓ content-types "names every session on screen and the company" | — |
-| Expanded state and resource-center position restored after a reload | — (needs a reload helper) | P3 |
+| Expanded state and the resource center's page restored after a reload | ✓ checklist "a checklist left expanded is expanded again after the page reloads", resource-center "an open resource center comes back on the page it was on…" | — |
 
 ## Flows
 
@@ -84,9 +84,9 @@ its row.
 | A modal's backdrop click: `backdrop_dismiss` with `backdropClickBehavior: dismiss-flow`, nothing with `do-nothing` | ✓ flow-steps "a click on a modal's backdrop…" | — |
 | Spotlight on the visible part of the target | ✓ iframe "a target in a box that scrolls" | — |
 | `enabledBlockTarget` stops clicks reaching the target; without it they go through | ✓ flow-steps "with the backdrop on, a click on the target…" | — |
-| Placement side/align; `alignType: auto` flips and shifts | partial: bottom/center only (other sides: widget render only) | P3 |
-| `sideOffset`, `alignOffset`, step width | — | P3 |
-| Progress bar; branding unless `removeBranding` | — | P3 |
+| Placement side/align; `alignType: auto` flips a tooltip that would not fit | ✓ flow-layout "side and align put it on that side…", "alignType auto flips…" | — |
+| `sideOffset`, `alignOffset`, step width | ✓ flow-layout "sideOffset and alignOffset move it by that much", "a step’s own width is used over the theme’s" | — |
+| Progress bar; branding unless `removeBranding` | ✓ flow-layout "the progress bar counts the steps…", "the branding line shows unless the project removes it" | — |
 | Selector + sequence across the page and frames; never `<head>` | ✓ flow.spec, iframe-targeting.spec | — |
 | A target's `content`: the matched element must have that text, or there is no target | ✓ flow-steps "a target pinned to the text…" | — |
 | A target that appears after the step opens | ✓ flow-steps "a target that appears after the step opens…" | — |
@@ -111,14 +111,14 @@ its row.
 | Button disable/hide rules evaluated, and re-evaluated as the page changes | ✓ flow-steps "button rules follow the page…" | — |
 | Question answers send AnswerQuestion with the right payload, for every question type; submit types only on submit | ✓ flow-questions "a <kind> answer is reported with its value" ×7 | — |
 | A question's actions run only once its answer is acknowledged; `bindToAttribute` shows in a later step | ✓ flow-questions "a question’s actions run…" ×2 | — |
-| Required text, choice ranges, "Other" option | — | P3 |
+| Required text, choice ranges, "Other" option | ✓ flow-questions "a required text question…", "…outside its range of picks", "the Other option adds what the user typed…" | — |
 | Step theme over version theme; no theme ends with `store_not_found` | ✓ flow-themes "a step’s own theme is used…", "a flow without a theme…" | — |
 | Theme variations: the first whose conditions match wins | ✓ flow-themes "the first variation whose conditions match is used" | — |
 | A variation that starts matching mid-step recolours the open step | ✓ flow-themes "a variation that starts matching while the step is open…" | — |
 | Theme `customCss` and its Google font are loaded into the step | ✓ flow-themes "the theme’s custom CSS and its Google font…" | — |
-| Built-in strings follow `userLocale` | — | P3 |
-| User attributes fill text and links | — (widget render only) | P3 |
-| Stacking: flow above resource center above checklist above launcher and banner | — | P3 |
+| Built-in strings follow `userLocale` | ✓ checklist "the built-in strings follow the session’s locale" | — |
+| User attributes fill text and links | ✓ flow-layout "user attributes fill text and link URLs" | — |
+| Stacking: flow above resource center above checklist above launcher and banner | ✓ flow-layout "the widgets stack…" | — |
 
 ## Checklists
 
@@ -154,8 +154,8 @@ its row.
 | Tooltip button rules re-evaluated as the page changes | ✓ launcher "a tooltip button’s rules follow the page…" | — |
 | `dismissAfterFirstActivation` sends DismissLauncher and removes it | ✓ launcher "set to dismiss after its first use…" | — |
 | Several launchers at once; a dismissed one is not re-added | ✓ launcher "several launchers show at once…" | — |
-| Hover trigger | — (widget render only) | P3 |
-| Beacon and button types; tooltip anchored to the launcher | — | P3 |
+| Hover trigger: opens on hover, closes once the pointer leaves | ✓ launcher "a hover launcher opens its tooltip…" | — |
+| Beacon and button types; tooltip anchored to the launcher | ✓ launcher "a beacon pulses at its target; a button launcher…" | — |
 
 ## Banners
 
@@ -166,7 +166,7 @@ its row.
 | Embedded in a container element (top/bottom of it, before/after it) | ✓ banner "placed <placement>, a banner goes…" ×4 | — |
 | A container the page re-renders gets the banner back with its content | banner "a container the page re-renders…" — fixme until the banner mount of feat/embed (#601) is under this branch | — |
 | Container hidden removes the banner and its placeholder; back again reopens it | ✓ banner "a banner placed by a container leaves with it…" | — |
-| Sticky / overlay positioning | — | P3 |
+| Sticky / overlay positioning | ✓ banner "sticky and overlay › …" ×3 | — |
 | Dismiss button hidden unless `allowUsersToDismissEmbed` | ✓ banner "without user dismissal allowed…" | — |
 | Button actions, live button rules, `banner-dismis` action | ✓ banner "its buttons › …" | — |
 | A session updated in place, including a placement change | ✓ banner "a session updated in place › …" (the placement change: fixme until #601 is under this branch) | — |
@@ -182,8 +182,8 @@ its row.
 | Content-list block: list request, the block's labels over the server's names, item click starts the content, navigates, closes the panel | ✓ resource-center "a content list asks the server for its items…" | — |
 | Announcement feed: listed, the unseen ones marked seen in one batch, the launcher badge lowered | ✓ resource-center "the announcement feed lists what the server has…" | — |
 | Popup announcement shown only while collapsed; closing it marks it seen with its source | ✓ resource-center "a popup announcement shows while the panel is closed…" | — |
-| Tabs, page stack, single-block tab opening by itself | — (widget render only) | P3 |
-| Live chat providers: hide their own launcher, open, give the panel back on close | — (needs provider fakes) | P3 |
+| Tabs, page stack, single-block tab opening by itself | ✓ resource-center "tabs switch the page…", content-types "a tab holding a single page…" | — |
+| Live chat providers: hide their own launcher, open, give the panel back on close | ✓ resource-center "a live chat provider: its own launcher hidden…" (one provider, faked on the page) | — |
 
 ## Trackers, conditions and timers
 

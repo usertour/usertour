@@ -3,9 +3,11 @@ import {
   announcementItem,
   contentListBlock,
   evaluateJs,
+  liveChatBlock,
   popupAnnouncement,
   resourceCenterSession,
   richTextBlock,
+  subPageBlock,
 } from './content';
 import { type SdkPage, expect, test } from './fixtures';
 import { defaultAnswer } from './protocol-server';
@@ -181,4 +183,145 @@ test('a popup announcement shows while the panel is closed; closing it marks it 
   });
   await expect(popupFrame(sdk)).toHaveCount(0);
   await expect(badgeFrame(sdk)).toHaveCount(0);
+});
+
+test('a custom live chat block’s code is skipped after disableEvalJs()', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await sdk.call('disableEvalJs');
+  await protocol.push(
+    'SetResourceCenterSession',
+    resourceCenter({
+      blocks: [
+        richTextBlock('block-intro', 'How can we help?'),
+        liveChatBlock(
+          'block-chat',
+          'Chat with us',
+          'custom',
+          "window.__usertourRecorded.chat = ['opened']",
+        ),
+      ],
+    }),
+  );
+  await openPanel(sdk);
+  await panel(sdk).getByRole('button', { name: 'Chat with us' }).click();
+  await protocol.waitForMessages('ClickResourceCenter', 1);
+  await protocol.waitForMessages('CloseResourceCenter', 1);
+  expect(await sdk.recorded('chat')).toEqual([]);
+  expect(await sdk.logLines(/JavaScript evaluation is disabled/)).toHaveLength(1);
+});
+
+test('a live chat provider: its own launcher hidden, opened on click, the panel given back when it closes', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  // A provider script on the host page, recording what the SDK asks of it.
+  await sdk.page.evaluate(() => {
+    window.__usertourRecorded.intercom = [];
+    const host = window as unknown as {
+      Intercom?: (command: string, argument?: unknown) => void;
+      __intercomOnHide?: () => void;
+    };
+    host.Intercom = (command, argument) => {
+      window.__usertourRecorded.intercom.push(
+        argument === undefined ? command : `${command}:${JSON.stringify(argument)}`,
+      );
+      if (command === 'onHide') {
+        host.__intercomOnHide = argument as () => void;
+      }
+    };
+  });
+  await protocol.push(
+    'SetResourceCenterSession',
+    resourceCenter({
+      blocks: [
+        richTextBlock('block-intro', 'How can we help?'),
+        liveChatBlock('block-chat', 'Chat with us', 'intercom'),
+      ],
+    }),
+  );
+  await expect
+    .poll(() => sdk.recorded('intercom'))
+    .toContain('update:{"hide_default_launcher":true}');
+
+  await openPanel(sdk);
+  await panel(sdk).getByRole('button', { name: 'Chat with us' }).click();
+  await expect.poll(() => sdk.recorded('intercom')).toContain('show');
+  const anchor = sdk.page.locator('.usertour-widget-resource-center');
+  await expect(anchor).toHaveCSS('visibility', 'hidden');
+  await protocol.waitForMessages('CloseResourceCenter', 1);
+
+  // The user closes the chat: the provider says so, and the launcher is back.
+  await sdk.page.evaluate(() =>
+    (window as unknown as { __intercomOnHide?: () => void }).__intercomOnHide?.(),
+  );
+  await expect(anchor).toHaveCSS('visibility', 'visible');
+});
+
+test('tabs switch the page; a block’s page goes on the stack and Back comes off it', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'SetResourceCenterSession',
+    resourceCenter({
+      tabs: [
+        {
+          id: 'tab-home',
+          name: 'Home',
+          blocks: [
+            richTextBlock('block-intro', 'How can we help?'),
+            subPageBlock('block-guide', 'Getting started', 'Step one: connect your data.'),
+          ],
+        },
+        {
+          id: 'tab-guides',
+          name: 'Guides',
+          blocks: [richTextBlock('block-list', 'Browse the guides.')],
+        },
+      ],
+    }),
+  );
+  await openPanel(sdk);
+  await expect(panel(sdk).getByText('How can we help?')).toBeVisible();
+  await panel(sdk).getByRole('button', { name: 'Guides' }).click();
+  await expect(panel(sdk).getByText('Browse the guides.')).toBeVisible();
+  await expect(panel(sdk).getByText('How can we help?')).toBeHidden();
+
+  await panel(sdk).getByRole('button', { name: 'Home' }).click();
+  await panel(sdk).getByRole('button', { name: 'Getting started' }).click();
+  await expect(panel(sdk).getByText('Step one: connect your data.')).toBeVisible();
+  // On a page, the tab bar makes way for Back.
+  await expect(panel(sdk).getByRole('button', { name: 'Guides' })).toBeHidden();
+  await panel(sdk).getByRole('button', { name: 'Back' }).click();
+  await expect(panel(sdk).getByText('How can we help?')).toBeVisible();
+  await expect(panel(sdk).getByRole('button', { name: 'Back' })).toHaveCount(0);
+});
+
+test('an open resource center comes back on the page it was on after the page reloads', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  const session = resourceCenter({
+    blocks: [
+      richTextBlock('block-intro', 'How can we help?'),
+      subPageBlock('block-guide', 'Getting started', 'Step one: connect your data.'),
+    ],
+  });
+  await protocol.push('SetResourceCenterSession', session);
+  await openPanel(sdk);
+  await panel(sdk).getByRole('button', { name: 'Getting started' }).click();
+  await expect(panel(sdk).getByText('Step one: connect your data.')).toBeVisible();
+
+  await sdk.reload();
+  await start(sdk);
+  await protocol.waitForConnections(2);
+  await protocol.push('SetResourceCenterSession', session);
+  await expect(panel(sdk).getByText('Step one: connect your data.')).toBeVisible();
+  await expect(panel(sdk).getByRole('button', { name: 'Back' })).toBeVisible();
 });

@@ -6,10 +6,12 @@ import {
   checklistSession,
   dismissFlow,
   evaluateJs,
+  image,
   launcherSession,
   link,
   modalFlow,
   navigate,
+  paragraph,
   resourceCenterSession,
   richText,
   row,
@@ -410,6 +412,30 @@ test.describe('links and navigation', () => {
     await expect.poll(opened).toEqual([{ url: `${docs}?ref=tour`, target: '_self' }]);
   });
 
+  test('an image’s link is decorated by setLinkUrlDecorator() too', async ({
+    sdk,
+    protocol,
+    page,
+  }) => {
+    await start(sdk);
+    await page.evaluate(() =>
+      window.usertour?.setLinkUrlDecorator((url: string) => `${url}?ref=tour`),
+    );
+    await protocol.push(
+      'SetFlowSession',
+      modalFlow('session-1', 'flow-1', [
+        row(image('https://example.com/guide.png', { url: docs, openType: 'new' })),
+      ]),
+    );
+    // The branding line is a link too: take the one around the image.
+    const anchor = sdk
+      .frame()
+      .locator('a')
+      .filter({ has: sdk.frame().locator('img') });
+    await expect(anchor).toHaveAttribute('href', `${docs}?ref=tour`);
+    await expect(anchor).toHaveAttribute('target', '_blank');
+  });
+
   test('setCustomNavigate() takes same-tab navigation; a new tab still opens in the browser', async ({
     sdk,
     protocol,
@@ -634,6 +660,26 @@ test.describe('stacking and scrolling', () => {
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     expect(await sdk.logLines(/scroll-into-view callback threw/)).toHaveLength(1);
     expect(protocol.messages('EndContent')).toHaveLength(0);
+  });
+});
+
+test.describe('setDebug()', () => {
+  test('setDebug(false) silences the log at once and drops the SDK from the stored debug flag', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    const storedFlag = () => sdk.page.evaluate(() => localStorage.getItem('debug') ?? '');
+    // The fixture turned it on: remembered for the next load.
+    expect(await storedFlag()).toContain('usertour-widget');
+    expect((await sdk.logs()).length).toBeGreaterThan(0);
+
+    await sdk.call('setDebug', false);
+    const quiet = (await sdk.logs()).length;
+    await protocol.push('SetFlowSession', modalFlow('session-1', 'flow-1', [row(paragraph('Hi'))]));
+    await expect(sdk.frame().getByText('Hi')).toBeVisible();
+    expect((await sdk.logs()).length).toBe(quiet);
+    expect(await storedFlag()).not.toContain('usertour-widget');
   });
 });
 

@@ -61,8 +61,11 @@ fixtures and never starts the SDK.
   frame of another page (`hosts/frame-app.html`): what it does stays in that
   frame.
 - `resource-center.spec.ts` — the resource center's blocks: an action block,
-  a content list fetched from the server, the announcement feed and a popup
-  announcement.
+  a content list fetched from the server, the announcement feed, a popup
+  announcement, live chat, tabs and the page stack.
+- `flow-layout.spec.ts` — how a flow step is laid out: where a tooltip goes
+  and how far, its width, the progress bar, the branding line, the order the
+  widgets stack in, user attributes in text and links.
 - `iframe-targeting.spec.ts` — targets inside frames: found in same-origin
   frames (nested too), positioned and judged visible with the frame's offset,
   followed across the frame's navigations; opaque when cross-origin. A target

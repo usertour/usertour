@@ -124,6 +124,17 @@ export class SdkPage {
   }
 
   /**
+   * Reload the host page as a user refreshing it: the SDK loads again with
+   * nothing but what the page kept in its storage.
+   */
+  async reload(): Promise<void> {
+    await this.page.reload();
+    await this.page.addScriptTag({ type: 'module', url: SDK_BUNDLE_URL });
+    await this.waitForBundle();
+    await this.page.evaluate(() => window.usertour?.setDebug?.(true));
+  }
+
+  /**
    * Stop the page's clock: from here on no timer fires until `advance`, so a
    * test can say what has, and has not, happened by an exact time.
    */

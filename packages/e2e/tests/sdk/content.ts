@@ -124,6 +124,21 @@ export const richText = (...children: unknown[]) => ({
 
 export const link = (text: string, url: string) => ({ type: 'link', url, children: [{ text }] });
 
+/** A link whose URL is a template of text and user-attribute chips. */
+export const linkTemplate = (text: string, chips: unknown[]) => ({
+  type: 'link',
+  url: '',
+  data: [{ type: 'paragraph', children: chips }],
+  children: [{ text }],
+});
+
+/** An image block, linked when `link` is given. */
+export const image = (url: string, link?: { url: string; openType?: 'same' | 'new' }) => ({
+  type: 'image',
+  url,
+  ...(link ? { link: { url: link.url, openType: link.openType ?? 'same' } } : {}),
+});
+
 /** A user attribute's value in text, `fallback` when the user has none. */
 export const userAttribute = (attrCode: string, fallback = '') => ({
   type: 'user-attribute',
@@ -229,7 +244,7 @@ export type StepInput = {
     | { customSelector: string; sequence?: string; content?: string; actions?: Action[] };
   /** The step's own theme, over the version's. */
   theme?: unknown;
-  setting?: Partial<typeof stepSetting>;
+  setting?: Partial<typeof stepSetting> & { width?: number };
   trigger?: unknown[];
 };
 
@@ -265,6 +280,8 @@ export type FlowInput = {
   themeSettings?: unknown;
   /** The whole version theme (settings, variations), instead of `themeSettings`; null for none. */
   theme?: unknown;
+  /** The project's licence lets it drop the branding line. */
+  removeBranding?: boolean;
 };
 
 export const flowSession = (input: FlowInput) => {
@@ -277,7 +294,12 @@ export const flowSession = (input: FlowInput) => {
     type: 'flow',
     draftMode: false,
     attributes: input.attributes ?? [],
-    content: { id: input.contentId, name: input.contentId, type: 'flow', project: PROJECT },
+    content: {
+      id: input.contentId,
+      name: input.contentId,
+      type: 'flow',
+      project: { ...PROJECT, removeBranding: input.removeBranding ?? PROJECT.removeBranding },
+    },
     version: {
       id: input.versionId ?? `${input.contentId}-version`,
       theme:
@@ -363,11 +385,14 @@ export const checklistSession = (input: {
   completionOrder?: 'any' | 'ordered';
   /** The blocks above the tasks. */
   content?: unknown[];
+  /** The user's locale, for the widget's built-in strings. */
+  userLocale?: string;
 }) => ({
   id: input.sessionId,
   type: 'checklist',
   draftMode: false,
   attributes: [],
+  ...(input.userLocale ? { userLocale: input.userLocale } : {}),
   expandPending: input.expanded ?? true,
   content: { id: input.contentId, name: input.contentId, type: 'checklist', project: PROJECT },
   version: {
@@ -414,6 +439,10 @@ export const bannerSession = (input: {
   allowDismiss?: boolean;
   /** Blocks after the text. */
   blocks?: unknown[];
+  /** Stays at the viewport's edge while the page scrolls. */
+  sticky?: boolean;
+  /** Floats over the page instead of pushing it. */
+  overlay?: boolean;
 }) => ({
   id: input.sessionId,
   type: 'banner',
@@ -431,6 +460,8 @@ export const bannerSession = (input: {
         ? { containerElement: { type: 'manual', customSelector: input.container } }
         : {}),
       allowUsersToDismissEmbed: input.allowDismiss ?? true,
+      stickToTopOfViewport: input.sticky ?? false,
+      overlayEmbedOverAppContent: input.overlay ?? false,
       animateWhenEmbedAppears: false,
       contents: [row(paragraph(input.text)), ...(input.blocks ?? [])],
     },
@@ -450,6 +481,11 @@ export const launcherSession = (input: {
   triggerElement?: 'launcher' | 'target' | 'target-or-launcher';
   /** What the launcher looks like; `hidden` has no element of its own. */
   type?: 'icon' | 'beacon' | 'button' | 'hidden';
+  /** The `button` type's label. */
+  buttonText?: string;
+  /** What the tooltip is anchored to. */
+  tooltipReference?: 'target' | 'launcher';
+  triggerEvent?: 'clicked' | 'hovered';
   /** `perform-action` runs `actions` instead of opening the tooltip. */
   actions?: Action[];
   dismissAfterFirstActivation?: boolean;
@@ -465,12 +501,14 @@ export const launcherSession = (input: {
     launcher: {
       ...DEFAULT_LAUNCHER_DATA,
       type: input.type ?? DEFAULT_LAUNCHER_DATA.type,
+      ...(input.buttonText ? { buttonText: input.buttonText } : {}),
       target: {
         ...DEFAULT_LAUNCHER_DATA.target,
         element: { type: 'manual', customSelector: input.target },
       },
       tooltip: {
         ...DEFAULT_LAUNCHER_DATA.tooltip,
+        reference: input.tooltipReference ?? DEFAULT_LAUNCHER_DATA.tooltip.reference,
         content: [row(paragraph(input.text)), ...(input.blocks ?? [])],
         settings: {
           ...DEFAULT_LAUNCHER_DATA.tooltip.settings,
@@ -481,7 +519,7 @@ export const launcherSession = (input: {
         ...DEFAULT_LAUNCHER_DATA.behavior,
         triggerElement: input.triggerElement ?? 'launcher',
         actionType: input.actions ? 'perform-action' : 'show-tooltip',
-        triggerEvent: 'clicked',
+        triggerEvent: input.triggerEvent ?? 'clicked',
         actions: input.actions ?? [],
       },
     },
@@ -550,6 +588,17 @@ export const contentListBlock = (
   ...SHOWN,
 });
 
+/** A block that opens a live chat provider, or runs `code` for the `custom` one. */
+export const liveChatBlock = (id: string, name: string, provider: string, code = '') => ({
+  id,
+  type: 'live-chat',
+  name: blockName(name),
+  ...BLOCK_ICON,
+  liveChatProvider: provider,
+  customLiveChatCode: code,
+  ...SHOWN,
+});
+
 /** A block that opens the announcement feed. */
 export const announcementBlock = (id: string, name: string) => ({
   id,
@@ -600,6 +649,8 @@ export const resourceCenterSession = (input: {
   unreadCount?: number;
   /** An announcement that presents itself while the panel is closed. */
   popup?: unknown;
+  /** Several tabs, in place of the single home tab. */
+  tabs?: Array<{ id: string; name: string; blocks: unknown[] }>;
 }) => ({
   id: input.sessionId,
   type: 'resource-center',
@@ -620,7 +671,7 @@ export const resourceCenterSession = (input: {
       headerText: 'Resource Center',
       ...(input.unreadCount === undefined ? {} : { announcementUnreadCount: input.unreadCount }),
       ...(input.popup ? { popupAnnouncement: input.popup } : {}),
-      tabs: [
+      tabs: input.tabs?.map((tab) => ({ ...tab, ...BLOCK_ICON })) ?? [
         {
           id: `${input.contentId}-tab-home`,
           name: 'Home',

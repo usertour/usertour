@@ -249,3 +249,53 @@ test.describe('a session updated in place', () => {
     ).toBe(true);
   });
 });
+
+test.describe('sticky and overlay', () => {
+  const addSpacer = (sdk: SdkPage) =>
+    sdk.page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      document.body.appendChild(spacer);
+    });
+  const headingY = async (sdk: SdkPage) =>
+    (await sdk.page.getByRole('heading', { name: 'Runtime host' }).boundingBox())?.y ?? -1;
+
+  test('a sticky banner stays at the top of the viewport while the page scrolls', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await addSpacer(sdk);
+    await protocol.push('SetBannerSession', banner({ sticky: true }));
+    await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();
+    await expect(mount(sdk)).toHaveCSS('position', 'sticky');
+    const pushedHeading = await headingY(sdk);
+
+    await sdk.page.evaluate(() => window.scrollTo(0, 500));
+    expect((await mount(sdk).boundingBox())?.y).toBe(0);
+    expect(await headingY(sdk)).toBeLessThan(pushedHeading);
+  });
+
+  test('an overlay banner floats over the page without pushing it down', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    const headingBefore = await headingY(sdk);
+    await protocol.push('SetBannerSession', banner({ overlay: true }));
+    await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();
+    await expect(mount(sdk)).toHaveCSS('position', 'absolute');
+    expect((await mount(sdk).boundingBox())?.y).toBe(0);
+    expect(await headingY(sdk)).toBe(headingBefore);
+  });
+
+  test('sticky and overlay together pin the banner to the viewport', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await addSpacer(sdk);
+    await protocol.push('SetBannerSession', banner({ sticky: true, overlay: true }));
+    await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();
+    await expect(mount(sdk)).toHaveCSS('position', 'fixed');
+    await sdk.page.evaluate(() => window.scrollTo(0, 500));
+    expect((await mount(sdk).boundingBox())?.y).toBe(0);
+  });
+});
