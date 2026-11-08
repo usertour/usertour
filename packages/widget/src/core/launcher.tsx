@@ -244,16 +244,29 @@ const LauncherView = forwardRef<HTMLDivElement, LauncherViewProps>(
       classes = `${classes} usertour-widget-launcher--button`;
     } else if (type === LauncherDataType.BEACON) {
       classes = `${classes} usertour-widget-beacon`;
+    } else if (type === LauncherDataType.HIDDEN) {
+      classes = `${classes} usertour-widget-launcher--hidden`;
     } else {
       classes = `${classes} usertour-widget-launcher--icon`;
     }
+
+    // A hidden launcher has no element of its own to see or to click: its
+    // target is what the user interacts with. Keep the element for the refs
+    // that position and bind by it, with no box to catch pointer events.
+    const typeStyle: React.CSSProperties =
+      type === LauncherDataType.HIDDEN ? { width: 0, height: 0, pointerEvents: 'none' } : {};
 
     if (isClick) {
       classes = `${classes} usertour-widget-launcher--activate-on-click`;
     }
 
     return (
-      <div className={cn(classes, className)} ref={ref} style={style} dir={dir}>
+      <div
+        className={cn(classes, className)}
+        ref={ref}
+        style={{ ...style, ...typeStyle }}
+        dir={dir}
+      >
         {type === LauncherDataType.BUTTON ? (
           buttonText
         ) : (
