@@ -191,6 +191,25 @@ test.describe('flow sessions', () => {
     expect(await sdk.logLines(/Step target element was not found/)).toHaveLength(1);
   });
 
+  // A tooltip's target is looked up under <body>, a condition's element in
+  // the whole document. An element in <head> that the selector also matches
+  // comes first in the document and must not become the target.
+  test('a tooltip target is never an element in <head>', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const meta = document.createElement('meta');
+      meta.name = 'email';
+      document.head.append(meta);
+    });
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '[name="email"]'));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    await sdk.advance(4_000);
+    await expect(sdk.surface).toBeVisible();
+    expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
+  });
+
   test('a step trigger dismisses the flow after its wait', async ({ sdk, protocol }) => {
     await start(sdk);
     await protocol.push(

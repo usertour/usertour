@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-import { document } from '@/utils';
+import { document, isHTMLElement } from '@/utils';
 
 /**
  * Where an inline shell's mount element goes in the host document: inside a
@@ -52,12 +52,12 @@ export const resolveElementMountPlacement = (
 ): InlineMountPlacement | null => {
   switch (placement) {
     case INLINE_ELEMENT_PLACEMENTS.TOP_OF_CONTAINER_ELEMENT:
-      if (targetElement instanceof HTMLElement) {
+      if (isHTMLElement(targetElement)) {
         return { parent: targetElement, insertMode: 'prepend' };
       }
       return null;
     case INLINE_ELEMENT_PLACEMENTS.BOTTOM_OF_CONTAINER_ELEMENT:
-      if (targetElement instanceof HTMLElement) {
+      if (isHTMLElement(targetElement)) {
         return { parent: targetElement, insertMode: 'append' };
       }
       return null;

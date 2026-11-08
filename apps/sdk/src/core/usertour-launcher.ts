@@ -7,7 +7,7 @@ import {
 } from '@usertour/types';
 import { LauncherStore } from '@/types/store';
 import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-component';
-import { logger } from '@/utils';
+import { isElement, logger } from '@/utils';
 import { isVisibleNode } from '@usertour/dom';
 import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
@@ -230,7 +230,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
 
     // Handle element found
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
-      if (el instanceof Element) {
+      if (isElement(el)) {
         this.handleElementFound(el, this.pendingWatcherStore ?? store);
       }
     });
@@ -242,7 +242,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
 
     // Handle element changed
     this.watcher.on(SDKClientEvents.ELEMENT_CHANGED, (el) => {
-      if (el instanceof Element) {
+      if (isElement(el)) {
         this.handleElementChanged(el);
       }
     });

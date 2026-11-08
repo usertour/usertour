@@ -1,3 +1,5 @@
+import { isElement } from './is';
+
 // Define scroll options interface
 interface ScrollOptions extends ScrollIntoViewOptions {
   timeout?: number;
@@ -11,7 +13,8 @@ export const smoothScroll = (elem: Element | null, options: ScrollOptions = {}):
       return;
     }
 
-    if (!(elem instanceof Element)) {
+    // `instanceof Element` would fail for an element from a frame's realm
+    if (!isElement(elem)) {
       reject(new TypeError('Argument 1 must be an Element'));
       return;
     }

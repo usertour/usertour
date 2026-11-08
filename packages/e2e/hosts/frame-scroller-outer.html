@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Lesson with a scrolling activity</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      #scroller {
+        position: absolute;
+        left: 40px;
+        top: 80px;
+        width: 480px;
+        height: 300px;
+        border: 2px solid #9ca3af;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Holds the scrolling activity in its own frame: the target is two frames deep. -->
+    <iframe id="scroller" src="/frame-scroller.html" title="Scrolling activity"></iframe>
+  </body>
+</html>
