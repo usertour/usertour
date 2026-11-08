@@ -27,10 +27,10 @@ its row.
 | `identify`: handshake, batched upsert, `{ rejected }`, a different user resets | ✓ identity.spec, connection.spec | — |
 | `identify` of another user tears down the first user's widgets without EndContent | ✓ api "identifying another user removes the first user’s content…" | — |
 | `identifyAnonymous`: reuses the stored id, mints `anon-<uuid>`, upgrades bare UUIDs | ✓ api "identifyAnonymous() › …" | — |
-| `isIdentified` follows `identify` and `reset` | ✓ api "isIdentified() follows identify() and reset()" (after a failed identify: see "To pin down") | — |
+| `isIdentified` follows `identify` and `reset`, and stays true when `identify` fails | ✓ api "isIdentified() follows identify() and reset()", "isIdentified() stays true when identify() fails…" | — |
 | `updateUser`, `group`, `updateGroup`: change detection, caching after ack, replay | ✓ identity.spec (`membership`, the pre-group throw and token refresh are not) | — |
 | `track`: unbatched, refused before identify | ✓ messages.spec (`userOnly` and a refused event are not) | — |
-| `start(id, { once, continue, cvid })` sends StartContent with `start_from_program`; refused before identify | ✓ api "start() asks the server to start the content…" (its result when the server refuses: see "To pin down") | — |
+| `start(id, { once, continue, cvid })` sends StartContent with `start_from_program` and resolves with whether the server started it; refused before identify | ✓ api "start() asks the server to start the content…" | — |
 | `?usertour=<id>` in the URL starts that content and is removed from the URL | ✓ api "navigating to a URL with ?usertour=<id>…", "on a page opened with ?usertour=<id> › …" | — |
 | `endAll` | ✓ flow "endAll() asks the server to end everything…" | — |
 | `isStarted` for each content type | ✓ api "isStarted() is true for each kind of content…" | — |
@@ -46,7 +46,7 @@ its row.
 | `registerCustomInput` feeds text-input conditions, by its getter or the element's text | ✓ api "text-input conditions read a registered element…" | — |
 | `registerCustomInput` feeds text-fill conditions | — | P2 |
 | `setBaseZIndex` moves the widgets' stacking level | ✓ api "setBaseZIndex() moves the stacking level…" (flow and launcher) | — |
-| `setTargetMissingSeconds` over the theme's `tooltip.missingTargetTolerance`; above 10 throws | ✓ api "setTargetMissingSeconds() › …" (the 6 s fallback: see "To pin down") | — |
+| `setTargetMissingSeconds` over the theme's `tooltip.missingTargetTolerance`, else the theme default (3 s); above 10 throws | ✓ api "setTargetMissingSeconds() › …" | — |
 | `setCustomScrollIntoView` is called with the target instead of the default scroll | ✓ api "setCustomScrollIntoView() is handed the target…" | — |
 | `setDebug(false)` and its persistence | — (the fixture forces debug on) | P3 |
 | `open/close/toggleResourceCenter`, `isResourceCenterOpen`; no-ops before a resource center exists | ✓ api "open, close and toggle drive the panel…" | — |
@@ -88,12 +88,13 @@ its row.
 | Text-matched targets (`content`) | — | P2 |
 | A target that appears after the step opens | — | P2 |
 | A target re-rendered by the page (replaced element) | partial: frame navigation only | P2 |
-| Hidden target hides the tooltip; visible again reopens it | partial: the hidden end state only | P2 |
+| A target scrolled out of view (of the page, a scrolling container or a frame) hides the tooltip without a deadline; scrolled back, it reopens | ✓ flow "a tooltip whose target is scrolled out of the page…", iframe "…scrolled out above the box" | — |
 | Default scroll into view of an off-screen target | — | P2 |
 | Clicking the target runs `target.actions` | — | P2 |
 | Target never found: ReportTooltipTargetMissing, then `tooltip_target_missing`, at the theme's tolerance | ✓ flow "a tooltip whose target never appears…" | — |
-| Target found then hidden past the tolerance: `tooltip_target_missing` | ✓ iframe "…scrolled out above the box" | — |
-| `missingTooltipTarget: use-bubble` shows the step as a bubble | — | P2 |
+| A target that leaves the page (removed, not rendered) ends the flow at the tolerance with `tooltip_target_missing`, without ReportTooltipTargetMissing | ✓ flow "a tooltip whose target leaves the page…" | — |
+| Theme `missingTargetBehavior: use-bubble`: a target that left turns the step into a bubble | ✓ flow "with the theme set to show a bubble…" | — |
+| Theme `missingTargetBehavior: use-bubble`: a target never found shows the step as a bubble | — | P2 |
 | Step trigger: element condition, wait, dismiss | ✓ flow "a step trigger dismisses the flow after its wait" | — |
 | Step trigger: other condition types, a condition that turns true later, other actions | — | P2 |
 | A pending trigger wait is cancelled on step change or close | — | P2 |
@@ -213,19 +214,12 @@ Still missing:
 
 ## To pin down
 
-Behaviours found while compiling this list whose intended outcome needs a
-decision before a test can assert it. The first group is read from the code;
-the second has not been checked closely.
+Behaviours found while compiling this list that look wrong but are not
+confirmed; a test that settles each one belongs with its fix. The first group
+is read from the code; the second has not been checked closely.
 
 Read from the code:
 
-- `start()` resolves even when the server answers false; `track()` throws.
-- `isIdentified()` stays true after `identify()` fails: the id is set before
-  the await on purpose and not rolled back.
-- The SDK falls back to 6 s for a missing target when the theme has no
-  tolerance; the theme default is 3 s.
-- A target found and then hidden ends the flow without
-  ReportTooltipTargetMissing and without the `use-bubble` fallback.
 - A flow's `destroy()` runs `reset()`, which sets the element watcher to null,
   before `onDestroy()` calls `watcher?.destroy()`; the watcher is never
   destroyed. Whether its timers can still act is unchecked.
