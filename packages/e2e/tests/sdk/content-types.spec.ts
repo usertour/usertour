@@ -311,7 +311,7 @@ test.describe('resource center sessions', () => {
 });
 
 test.describe('the reconnect handshake', () => {
-  test('names every session on screen', async ({ sdk, protocol }) => {
+  test('names every session on screen and the company', async ({ sdk, protocol }) => {
     await start(sdk);
     await protocol.push(
       'SetChecklistSession',
@@ -336,6 +336,12 @@ test.describe('the reconnect handshake', () => {
       }),
     );
     await expect(sdk.page.locator('.usertour-widget-launcher')).toBeVisible();
+    await protocol.push(
+      'SetResourceCenterSession',
+      resourceCenterSession({ sessionId: 'rc-session-1', contentId: 'rc-1', actions: [] }),
+    );
+    await expect(sdk.page.locator('iframe.usertour-widget-resource-center-frame')).toBeVisible();
+    await sdk.group('acme');
     await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1'));
     await expect(sdk.surface).toBeVisible();
 
@@ -347,7 +353,9 @@ test.describe('the reconnect handshake', () => {
       flowSessionId: 'session-1',
       checklistSessionId: 'checklist-session-1',
       bannerSessionId: 'banner-session-1',
+      resourceCenterSessionId: 'rc-session-1',
       launchers: ['launcher-1'],
+      externalCompanyId: 'acme',
     });
   });
 });

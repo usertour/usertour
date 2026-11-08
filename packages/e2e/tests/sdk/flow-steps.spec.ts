@@ -584,6 +584,31 @@ test.describe('step triggers', () => {
     await expect(sdk.frame().getByText('Triggered')).toBeVisible();
   });
 
+  test('a page-URL condition sees the URL as setUrlFilter() rewrites it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetFlowSession',
+      triggeredFlow({
+        id: 'url-2',
+        type: 'current-page',
+        operators: 'and',
+        data: { includes: ['*/next.html*'], excludes: [] },
+      }),
+    );
+    await expect(sdk.frame().getByText('Welcome aboard')).toBeVisible();
+    await sdk.advance(1_000);
+    await expect(sdk.frame().getByText('Triggered')).toBeHidden();
+
+    await sdk.page.evaluate(() =>
+      window.usertour?.setUrlFilter((url: string) => url.replace('runtime.html', 'next.html')),
+    );
+    await sdk.advance(1_000);
+    await expect(sdk.frame().getByText('Triggered')).toBeVisible();
+  });
+
   test('a trigger still waiting is cancelled when the step changes', async ({ sdk, protocol }) => {
     await start(sdk);
     await protocol.push('SetFlowSession', triggeredFlow(elementPresent('#cta'), 3));

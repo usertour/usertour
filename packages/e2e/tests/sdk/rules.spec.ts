@@ -207,6 +207,39 @@ test.describe('client-evaluated conditions', () => {
     expect(reports()[1].isActive).toBe(false);
   });
 
+  test('text-fill on a custom input registered by the host reads its value through the host’s getter', async ({
+    sdk,
+    protocol,
+  }) => {
+    await setup(sdk);
+    await sdk.page.evaluate(() => {
+      const editor = document.createElement('div');
+      editor.id = 'editor';
+      editor.setAttribute('data-value', '');
+      document.querySelector('main')?.appendChild(editor);
+      window.usertour?.registerCustomInput(
+        '#editor',
+        (element: Element) => element.getAttribute('data-value') ?? '',
+      );
+    });
+    const reports = await track(protocol, textFillRule('#editor'));
+    await expect.poll(() => reports().length).toBe(1);
+    expect(reports()[0].isActive).toBe(false);
+
+    // The host's editor changes its value and says so with an input event.
+    await sdk.page.evaluate(() => {
+      const editor = document.getElementById('editor') as HTMLElement;
+      editor.setAttribute('data-value', 'Hello');
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await sdk.advance(500);
+    await sdk.page.waitForTimeout(100);
+    expect(reports()).toHaveLength(1);
+    await sdk.advance(1_500);
+    await expect.poll(() => reports().length).toBe(2);
+    expect(reports()[1].isActive).toBe(true);
+  });
+
   test('text-fill: true once the user typed something new and paused for a second', async ({
     sdk,
     protocol,
@@ -302,6 +335,23 @@ test.describe('wait timers', () => {
     await protocol.waitForMessages('FireConditionWaitTimer', 1);
   });
 
+  test('a timer started again for the same version starts over', async ({ sdk, protocol }) => {
+    await sdk.init();
+    await sdk.identify('u1');
+    await protocol.push('StartConditionWaitTimer', { ...CONTENT, waitTime: 5 });
+    await sdk.advance(3_000);
+    await protocol.push('StartConditionWaitTimer', { ...CONTENT, waitTime: 5 });
+    // 6s after the first start: the first timer would have fired by now.
+    await sdk.advance(3_000);
+    await sdk.page.waitForTimeout(100);
+    expect(protocol.messages('FireConditionWaitTimer')).toHaveLength(0);
+    await sdk.advance(2_000);
+    await protocol.waitForMessages('FireConditionWaitTimer', 1);
+    await sdk.advance(5_000);
+    await sdk.page.waitForTimeout(100);
+    expect(protocol.messages('FireConditionWaitTimer')).toHaveLength(1);
+  });
+
   test('a cancelled timer never fires', async ({ sdk, protocol }) => {
     await sdk.init();
     await sdk.identify('u1');
@@ -346,6 +396,60 @@ test.describe('trackers', () => {
     content: { id, type: 'tracker' },
     version: { id: `${id}-version`, config: { enabledAutoStartRules: true, autoStartRules } },
     attributes,
+  });
+
+  test('a tracker’s page-URL rule sees the URL as setUrlFilter() rewrites it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.init();
+    await sdk.identify('u1');
+    await protocol.push(
+      'AddTracker',
+      tracker('tracker-filtered', [
+        {
+          id: 'url-dashboard',
+          type: 'current-page',
+          operators: 'and',
+          data: { includes: ['*/dashboard*'], excludes: [] },
+        },
+      ]),
+    );
+    await sdk.advance(1_000);
+    await sdk.page.waitForTimeout(100);
+    expect(protocol.messages('TrackTrackerEvent')).toHaveLength(0);
+
+    await sdk.page.evaluate(() =>
+      window.usertour?.setUrlFilter((url: string) => url.replace('runtime.html', 'dashboard')),
+    );
+    await sdk.advance(1_000);
+    await protocol.waitForMessages('TrackTrackerEvent', 1);
+    expect(protocol.messages('TrackTrackerEvent')[0].message.payload).toEqual({
+      contentId: 'tracker-filtered',
+      versionId: 'tracker-filtered-version',
+    });
+  });
+
+  test('a tracker’s time rule holds once the clock passes its start', async ({ sdk, protocol }) => {
+    await sdk.init();
+    await sdk.identify('u1');
+    const now = await sdk.page.evaluate(() => Date.now());
+    const startTime = new Date(now + 5_000).toISOString();
+    await protocol.push(
+      'AddTracker',
+      tracker('tracker-timed', [
+        { id: 'time-1', type: 'time', operators: 'and', data: { startTime } },
+      ]),
+    );
+    await sdk.advance(4_000);
+    await sdk.page.waitForTimeout(100);
+    expect(protocol.messages('TrackTrackerEvent')).toHaveLength(0);
+    await sdk.advance(2_000);
+    await protocol.waitForMessages('TrackTrackerEvent', 1);
+    expect(protocol.messages('TrackTrackerEvent')[0].message.payload).toEqual({
+      contentId: 'tracker-timed',
+      versionId: 'tracker-timed-version',
+    });
   });
 
   test('a tracker whose page-URL rule matches reports once, and again after it stops matching', async ({

@@ -38,14 +38,14 @@ its row.
 | `reset`: closes the connection | ✓ connection.spec | — |
 | `reset`: removes every widget without EndContent and clears the attribute caches | ✓ api "reset() removes every widget and forgets the user…" | — |
 | `setUrlFilter`: the filtered URL in the handshake and UpdateClientContext, sent at once when set later; no report when only stripped parts change | ✓ api "setUrlFilter() › …" | — |
-| `setUrlFilter` applied to page rules (trackers, triggers) | — | P2 |
+| `setUrlFilter` applied to page rules (trackers, triggers) | ✓ rules "a tracker’s page-URL rule sees the URL as setUrlFilter() rewrites it", flow-steps "a page-URL condition sees the URL as setUrlFilter() rewrites it" | — |
 | `setLinkUrlDecorator` on page-navigate and rich-text links | ✓ api "a page-navigate action opens the URL, decorated…", "setLinkUrlDecorator() also decorates links…" | — |
 | `setLinkUrlDecorator` on image links | — | P3 |
 | `setCustomNavigate` replaces same-tab page navigation; a new tab still opens in the browser | ✓ api "setCustomNavigate() takes same-tab navigation…" | — |
 | `disableEvalJs` skips the JavaScript action, with a warning, and the other actions still run | ✓ api "after disableEvalJs() it is skipped…" | — |
 | `disableEvalJs` skips custom chat code | — | P3 |
 | `registerCustomInput` feeds text-input conditions, by its getter or the element's text | ✓ api "text-input conditions read a registered element…" | — |
-| `registerCustomInput` feeds text-fill conditions | — | P2 |
+| `registerCustomInput` feeds text-fill conditions | ✓ rules "text-fill on a custom input registered by the host…" | — |
 | `setBaseZIndex` moves the widgets' stacking level | ✓ api "setBaseZIndex() moves the stacking level…" (flow and launcher) | — |
 | `setTargetMissingSeconds` over the theme's `tooltip.missingTargetTolerance`, else the theme default (3 s); above 10 throws | ✓ api "setTargetMissingSeconds() › …" | — |
 | `setCustomScrollIntoView` is called with the target instead of the default scroll | ✓ api "setCustomScrollIntoView() is handed the target…" | — |
@@ -63,7 +63,7 @@ its row.
 | UI init retried every second, then critical | ✓ messages "is retried once a second…" | — |
 | URL monitor reports navigation | ✓ rules "a navigation is reported with the new page URL" (popstate alone is not) | — |
 | The reconnect handshake carries flow, checklist, banner and launcher sessions, conditions and timers | ✓ flow, content-types, rules | — |
-| … and the resource center session and the company | — | P2 |
+| … and the resource center session and the company | ✓ content-types "names every session on screen and the company" | — |
 | Expanded state and resource-center position restored after a reload | — (needs a reload helper) | P3 |
 
 ## Flows
@@ -178,10 +178,10 @@ its row.
 | A tab holding a single page counts a click each time the user opens onto it, never while closed | ✓ content-types "a tab holding a single page counts a click…" | — |
 | Opens and closes from its launcher; a clicked block is reported | ✓ content-types "the panel opens and closes…" | — |
 | Unset removes it | ✓ content-types.spec | — |
-| An action block runs its actions | — | P2 |
-| Content-list block: list request, item click starts the content, then navigates | — | P2 |
-| Announcement feed: listed, marked seen, unread badge lowered | — | P2 |
-| Popup announcement shown when collapsed; closing it marks it seen | — | P2 |
+| An action block runs its actions and closes the panel | ✓ resource-center "an action block runs its actions…" | — |
+| Content-list block: list request, the block's labels over the server's names, item click starts the content, navigates, closes the panel | ✓ resource-center "a content list asks the server for its items…" | — |
+| Announcement feed: listed, the unseen ones marked seen in one batch, the launcher badge lowered | ✓ resource-center "the announcement feed lists what the server has…" | — |
+| Popup announcement shown only while collapsed; closing it marks it seen with its source | ✓ resource-center "a popup announcement shows while the panel is closed…" | — |
 | Tabs, page stack, single-block tab opening by itself | — (widget render only) | P3 |
 | Live chat providers: hide their own launcher, open, give the panel back on close | — (needs provider fakes) | P3 |
 
@@ -192,9 +192,9 @@ its row.
 | Element conditions: present, unpresent, `<html>`/`<body>`, disabled, clicked | ✓ rules.spec | — |
 | text-input and text-fill | ✓ rules.spec | — |
 | Untracked conditions stop reporting; tracked ones ride the handshake | ✓ rules.spec | — |
-| current-page and time conditions evaluated in the page | — (unit tests only) | P2 |
+| current-page and time conditions evaluated in the page | ✓ rules "a tracker whose page-URL rule matches…", "a tracker’s time rule holds once the clock passes its start" | — |
 | Wait timers: fire once, clamp to 5 min, cancel | ✓ rules.spec | — |
-| A restarted wait timer starts over | — | P2 |
+| A restarted wait timer starts over | ✓ rules "a timer started again for the same version starts over" | — |
 | Trackers: page URL, user attribute, element rules | ✓ rules.spec | — |
 | A tracker reports again after its rule stops and starts matching | ✓ rules "a tracker whose page-URL rule matches reports once, and again…" | — |
 | Hide rules, priority, frequency | server | — |

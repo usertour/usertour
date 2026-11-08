@@ -60,6 +60,9 @@ fixtures and never starts the SDK.
 - `frame-hosted.spec.ts` — the SDK loaded by an app that itself runs inside a
   frame of another page (`hosts/frame-app.html`): what it does stays in that
   frame.
+- `resource-center.spec.ts` — the resource center's blocks: an action block,
+  a content list fetched from the server, the announcement feed and a popup
+  announcement.
 - `iframe-targeting.spec.ts` — targets inside frames: found in same-origin
   frames (nested too), positioned and judged visible with the frame's offset,
   followed across the frame's navigations; opaque when cross-origin. A target

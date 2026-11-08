@@ -490,25 +490,116 @@ export const launcherSession = (input: {
 
 // --- resource center ---
 
+const blockName = (name: string) => [{ type: 'paragraph', children: [{ text: name }] }];
+const BLOCK_ICON = { iconSource: 'builtin', iconType: 'book-open-fill' };
+const SHOWN = { onlyShowBlock: false, onlyShowBlockConditions: [] };
+
+/** A block of text in the panel. */
+export const richTextBlock = (id: string, text: string) => ({
+  id,
+  type: 'richtext',
+  content: [row(paragraph(text))],
+  ...SHOWN,
+});
+
 /** A resource center block that opens a page of its own content. */
 export const subPageBlock = (id: string, name: string, text: string) => ({
   id,
   type: 'sub-page',
-  name: [{ type: 'paragraph', children: [{ text: name }] }],
-  iconSource: 'builtin',
-  iconType: 'book-open-fill',
+  name: blockName(name),
+  ...BLOCK_ICON,
   content: [row(paragraph(text))],
-  onlyShowBlock: false,
-  onlyShowBlockConditions: [],
+  ...SHOWN,
 });
+
+/** A block that lists contents the server resolves for this user, each starting on a click. */
+export const contentListBlock = (
+  id: string,
+  name: string,
+  items: Array<{
+    contentId: string;
+    contentType?: 'flow' | 'checklist';
+    /** Shown in place of the content's name. */
+    label?: string;
+    /** Opened in this tab after the content starts. */
+    navigateUrl?: string;
+  }>,
+) => ({
+  id,
+  type: 'content-list',
+  name: blockName(name),
+  ...BLOCK_ICON,
+  flowIconSource: 'builtin',
+  flowIconType: 'book-open-fill',
+  checklistIconSource: 'builtin',
+  checklistIconType: 'book-open-fill',
+  showSearchField: false,
+  contentItems: items.map((item) => ({
+    contentId: item.contentId,
+    contentType: item.contentType ?? 'flow',
+    ...(item.label ? { label: item.label } : {}),
+    ...(item.navigateUrl
+      ? {
+          navigateUrl: [{ type: 'paragraph', children: [{ text: item.navigateUrl }] }],
+          navigateOpenType: 'same',
+        }
+      : {}),
+    onlyShowItem: false,
+    onlyShowItemConditions: [],
+  })),
+  ...SHOWN,
+});
+
+/** A block that opens the announcement feed. */
+export const announcementBlock = (id: string, name: string) => ({
+  id,
+  type: 'announcement',
+  name: blockName(name),
+  ...BLOCK_ICON,
+  ...SHOWN,
+});
+
+/** An announcement as the server lists it in the feed. */
+export const announcementItem = (id: string, title: string, text: string, seen = false) => ({
+  id,
+  versionId: `${id}-version`,
+  title,
+  content: [row(paragraph(text))],
+  moreEnabled: false,
+  moreButtonText: 'Read more',
+  level: 'badge',
+  time: '2026-11-01T09:00:00.000Z',
+  seen,
+});
+
+/** An announcement that presents itself while the panel is closed. */
+export const popupAnnouncement = (
+  id: string,
+  title: string,
+  text: string,
+  style: 'bubble' | 'modal' = 'bubble',
+) => {
+  const { seen: _unused, ...item } = announcementItem(id, title, text);
+  return {
+    ...item,
+    level: 'popup',
+    moreContent: null,
+    popupConfig: { style },
+    themeSettings: defaultSettings,
+  };
+};
 
 export const resourceCenterSession = (input: {
   sessionId: string;
   contentId: string;
   buttonText?: string;
-  actions: Array<{ id: string; name: string }>;
+  actions: Array<{ id: string; name: string; clickedActions?: Action[] }>;
   /** The home tab's blocks, in place of the intro and the action blocks. */
   blocks?: unknown[];
+  /** Announcements this user has not seen: the launcher's badge. */
+  unreadCount?: number;
+  /** An announcement that presents itself while the panel is closed. */
+  popup?: unknown;
 }) => ({
   id: input.sessionId,
   type: 'resource-center',
@@ -527,6 +618,8 @@ export const resourceCenterSession = (input: {
       ...DEFAULT_RESOURCE_CENTER_DATA,
       buttonText: input.buttonText ?? 'Help',
       headerText: 'Resource Center',
+      ...(input.unreadCount === undefined ? {} : { announcementUnreadCount: input.unreadCount }),
+      ...(input.popup ? { popupAnnouncement: input.popup } : {}),
       tabs: [
         {
           id: `${input.contentId}-tab-home`,
@@ -547,7 +640,7 @@ export const resourceCenterSession = (input: {
               name: [{ type: 'paragraph', children: [{ text: action.name }] }],
               iconSource: 'builtin',
               iconType: 'book-open-fill',
-              clickedActions: [],
+              clickedActions: action.clickedActions ?? [],
               onlyShowBlock: false,
               onlyShowBlockConditions: [],
             })),
