@@ -52,6 +52,13 @@ fixtures and never starts the SDK.
   box shows, the same in a frame as in an element on the page.
 - `messages.spec.ts` — the message framing (batches), `track()`, unknown server
   messages, the UI failing to initialise.
+- `api.spec.ts` — the rest of the public API a host page calls: `start()` and
+  `?usertour=` links, `isStarted()`, `reset()`, anonymous users, the
+  configuration setters (URL filter, link decorator, custom navigation and
+  scrolling, z-index, target-missing time, custom inputs, `disableEvalJs()`)
+  and the resource center's controls.
+- `loader.spec.ts` — the loader snippet: calls queued before the bundle loads,
+  and stub methods the bundle no longer has.
 - `content.ts` — the sessions the server pushes, reduced to what the widgets
   read; `protocol-server.ts` and `fixtures.ts` — the harness.
 
@@ -67,7 +74,8 @@ suite needs.
 
 ## Adding a scenario
 
-Every scenario here was a review finding once. Write the new one so that it
-is red on the code that had the bug: describe the host's calls and the
-server's behaviour, then assert on the handshakes and messages that must, or
-must not, arrive.
+`COVERAGE.md` lists what the SDK does at runtime and which test here asserts
+each behaviour; pick up an uncovered row, or add one with a new behaviour.
+When a scenario comes from a bug, write it so that it is red on the code that
+had the bug. Describe the host's calls and the server's behaviour, then
+assert on the handshakes and messages that must, or must not, arrive.
