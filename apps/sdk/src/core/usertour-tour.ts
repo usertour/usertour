@@ -40,6 +40,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private watcher: UsertourElementWatcher | null = null;
   private stepTrigger: UsertourTrigger | null = null;
   private currentStepCvid?: string;
+  // The tooltip step on screen as a bubble, its target missing: a store
+  // rebuilt from the session (the same session pushed again) keeps it a bubble.
+  private bubbleFallbackCvid?: string;
 
   // === Abstract Methods Implementation ===
   /**
@@ -183,7 +186,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     context: CustomStoreDataContext<TourBuildOptions>,
   ): Promise<Partial<TourStore>> {
     const { baseData, options } = context;
-    const currentStep = options?.stepOverride ?? this.getCurrentStep();
+    const currentStep = options?.stepOverride ?? this.getShownStep();
     const evaluatedData = currentStep?.data
       ? await this.evaluateButtonConditionsInData(currentStep.data as ContentEditorRoot[])
       : currentStep?.data;
@@ -279,6 +282,15 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private getCurrentStep(): SessionStep | undefined {
     if (!this.currentStepCvid) return undefined;
     return this.getStepByCvid(this.currentStepCvid);
+  }
+
+  /** The current step as it is shown: a tooltip that fell back to a bubble stays one. */
+  private getShownStep(): SessionStep | undefined {
+    const step = this.getCurrentStep();
+    if (step && step.cvid === this.bubbleFallbackCvid) {
+      return { ...step, type: StepContentType.BUBBLE };
+    }
+    return step;
   }
 
   /**
@@ -389,6 +401,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private async showBubble(step: SessionStep, useStepOverride = false): Promise<void> {
     // Only use stepOverride when explicitly requested (e.g., tooltip -> bubble fallback)
     const options = useStepOverride ? { stepOverride: step } : undefined;
+    if (useStepOverride) {
+      this.bubbleFallbackCvid = step.cvid;
+    }
     const storeData = await this.buildStoreData(options);
     if (!storeData) {
       log.warn('Flow store is missing; closing the flow', { step });
@@ -695,6 +710,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   protected onReset(): void {
     this.currentStepCvid = undefined;
+    this.bubbleFallbackCvid = undefined;
     this.resetStepTrigger();
     // The watcher retries on its own timer: stop it here, or it outlives its
     // step and can time out a later visit to the same step.
