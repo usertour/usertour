@@ -122,16 +122,17 @@ its row.
 | Behaviour | Covered by | Priority |
 |---|---|---|
 | Opens expanded when the server asks; expand/collapse reported | ✓ content-types.spec | — |
-| Opens collapsed otherwise | — | P2 |
+| Opens collapsed otherwise, its launcher counting the tasks left | ✓ checklist "a session the server does not ask to expand opens collapsed…" | — |
 | Task click reported; a completed task shown once the server pushes it | ✓ content-types.spec | — |
-| A task's `clickedActions` collapse the checklist and run | — | P2 |
-| A newly completed task re-expands the checklist when no flow runs | — | P2 |
-| Hidden tasks, ordered completion, progress count | — | P2 |
+| A task's `clickedActions` collapse the checklist and run; a task completed by its own click keeps it open | ✓ checklist "task clicks › …" | — |
+| A newly completed task re-expands the checklist when no flow runs | ✓ checklist "a task the server completes expands a collapsed checklist…" | — |
+| Hidden tasks: not listed, not counted in the progress or the launcher | ✓ checklist "a hidden task is not listed…" | — |
+| Ordered completion: a task waits for the visible tasks before it; a hidden one does not hold it back | ✓ checklist "in order, a task waits…" | — |
 | Dismiss asks first, then ends with `dismiss_button` | ✓ content-types.spec | — |
-| `preventDismissChecklist` hides the dismiss link | — | P2 |
-| Auto-dismiss after the last task | — | P2 |
-| Content buttons: actions and live disable/hide rules; `checklist-dismis` action | — | P2 |
-| A dismissed session pushed again is ignored; another session replaces it | — | P2 |
+| `preventDismissChecklist` hides the dismiss link | ✓ checklist "with dismissal prevented…" | — |
+| Auto-dismiss five seconds after the last task, with `auto_dismissed` | ✓ checklist "set to dismiss itself…" | — |
+| Content buttons: actions and live disable/hide rules; `checklist-dismis` action | ✓ checklist "the checklist’s own buttons › …" | — |
+| A dismissed session pushed again is ignored; another session replaces it | ✓ checklist "sessions › …" | — |
 | A flow starting collapses it | ✓ content-types "a flow starting collapses the checklist…" | — |
 | A checklist that arrives while a flow runs stays collapsed until the flow ends | ✓ flow-steps "a checklist that arrives while a flow runs…" | — |
 
@@ -141,13 +142,14 @@ its row.
 |---|---|---|
 | Appears on its target, opens its tooltip on click, removed by the server | ✓ content-types "a launcher appears on its target…" | — |
 | A press outside, in the page or a frame, closes a click tooltip | ✓ iframe-targeting.spec | — |
-| Target missing, appearing later, or hidden | — | P2 |
-| Found element with no session starts it (`start_from_condition`) | — | P2 |
-| Trigger on the target instead of the launcher | — | P2 |
-| `perform-action` runs actions instead of a tooltip | — | P2 |
-| Tooltip button actions and the `launcher-dismis` action | — | P2 |
-| `dismissAfterFirstActivation` sends DismissLauncher and removes it | — | P2 |
-| Several launchers at once; a dismissed one is not re-added | — | P2 |
+| Target missing, appearing later, or hidden | ✓ launcher "a launcher waits for its target…" | — |
+| Found element with no session starts it (`start_from_condition`) | ✓ launcher "offered without a session…" | — |
+| Trigger on the target instead of the launcher | ✓ launcher "set to open from its target…" | — |
+| `perform-action` runs actions instead of a tooltip | ✓ launcher "set to perform an action…" | — |
+| Tooltip button actions and the `launcher-dismis` action | ✓ launcher "a tooltip button runs its actions…" | — |
+| Tooltip button rules re-evaluated as the page changes | ✓ launcher "a tooltip button’s rules follow the page…" | — |
+| `dismissAfterFirstActivation` sends DismissLauncher and removes it | ✓ launcher "set to dismiss after its first use…" | — |
+| Several launchers at once; a dismissed one is not re-added | ✓ launcher "several launchers show at once…" | — |
 | Hover trigger | — (widget render only) | P3 |
 | Beacon and button types; tooltip anchored to the launcher | — | P3 |
 
@@ -156,13 +158,14 @@ its row.
 | Behaviour | Covered by | Priority |
 |---|---|---|
 | Top-of-page banner shown first in the body, above the page; dismissal ends with `dismiss_button`; Unset removes it | ✓ content-types.spec | — |
-| Bottom of page | — | P2 |
-| Embedded in a container element (top/bottom of it, before/after it) | — (only the frame refusal is tested) | P2 |
-| Container hidden removes the banner and its placeholder; back again reopens it | — | P2 |
+| Bottom of page | ✓ banner "at the bottom of the page…" | — |
+| Embedded in a container element (top/bottom of it, before/after it) | ✓ banner "placed <placement>, a banner goes…" ×4 | — |
+| A container the page re-renders gets the banner back with its content | banner "a container the page re-renders…" — fixme until the banner mount of feat/embed (#601) is under this branch | — |
+| Container hidden removes the banner and its placeholder; back again reopens it | ✓ banner "a banner placed by a container leaves with it…" | — |
 | Sticky / overlay positioning | — | P3 |
-| Dismiss button hidden unless `allowUsersToDismissEmbed` | — | P2 |
-| Button actions, live button rules, `banner-dismis` action | — | P2 |
-| A session updated in place, including a placement change | — | P2 |
+| Dismiss button hidden unless `allowUsersToDismissEmbed` | ✓ banner "without user dismissal allowed…" | — |
+| Button actions, live button rules, `banner-dismis` action | ✓ banner "its buttons › …" | — |
+| A session updated in place, including a placement change | ✓ banner "a session updated in place › …" (the placement change: fixme until #601 is under this branch) | — |
 
 ## Resource center
 
@@ -221,8 +224,6 @@ confirmed; a test that settles each one belongs with its fix. None has been
 checked closely yet.
 
 
-- Launcher tooltip buttons never re-evaluate their disable/hide rules.
-- Ordered checklist completion counts hidden tasks.
 - A tracker report the server did not acknowledge is not retried.
 - A tab with a single navigable block reports a click on mount, even collapsed.
 - Destroying a component resets click/fill latches shared with server-tracked

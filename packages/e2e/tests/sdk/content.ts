@@ -44,10 +44,55 @@ export const gotoStep = (stepCvid: string): Action => ({
   data: { stepCvid },
 });
 export const dismissFlow = (): Action => ({ id: id('action'), type: 'flow-dismis', data: {} });
+export const dismissChecklist = (): Action => ({
+  id: id('action'),
+  type: 'checklist-dismis',
+  data: {},
+});
+export const dismissLauncher = (): Action => ({
+  id: id('action'),
+  type: 'launcher-dismis',
+  data: {},
+});
+export const dismissBanner = (): Action => ({ id: id('action'), type: 'banner-dismis', data: {} });
 
-export const button = (text: string, actions: Action[] = []) => ({
+export const button = (
+  text: string,
+  actions: Action[] = [],
+  rules: { disableWhen?: unknown[]; hideWhen?: unknown[] } = {},
+) => ({
   type: 'button',
-  data: { text, type: 'primary', actions },
+  data: {
+    text,
+    type: 'primary',
+    actions,
+    ...(rules.disableWhen
+      ? { disableButton: true, disableButtonConditions: rules.disableWhen }
+      : {}),
+    ...(rules.hideWhen ? { hideButton: true, hideButtonConditions: rules.hideWhen } : {}),
+  },
+});
+
+// --- conditions evaluated in the page ---
+
+export const elementPresent = (selector: string) => ({
+  id: `present:${selector}`,
+  type: 'element',
+  operators: 'and',
+  data: {
+    logic: 'present',
+    elementData: { type: 'manual', customSelector: selector, sequence: '1st' },
+  },
+});
+
+export const inputEmpty = (selector: string) => ({
+  id: `empty:${selector}`,
+  type: 'text-input',
+  operators: 'and',
+  data: {
+    logic: 'empty',
+    elementData: { type: 'manual', customSelector: selector, sequence: '1st' },
+  },
 });
 
 /** Open `url` in this tab (`same`) or in a new one (`new`). */
@@ -300,7 +345,10 @@ export type TaskInput = {
   id: string;
   name: string;
   isCompleted?: boolean;
+  /** False for a task whose show-only-when rules do not hold for this user. */
+  isVisible?: boolean;
   clickedActions?: Action[];
+  completeConditions?: unknown[];
 };
 
 export const checklistSession = (input: {
@@ -311,6 +359,10 @@ export const checklistSession = (input: {
   expanded?: boolean;
   buttonText?: string;
   preventDismiss?: boolean;
+  autoDismiss?: boolean;
+  completionOrder?: 'any' | 'ordered';
+  /** The blocks above the tasks. */
+  content?: unknown[];
 }) => ({
   id: input.sessionId,
   type: 'checklist',
@@ -325,14 +377,16 @@ export const checklistSession = (input: {
       ...DEFAULT_CHECKLIST_DATA,
       buttonText: input.buttonText ?? 'Get started',
       preventDismissChecklist: input.preventDismiss ?? false,
-      content: [row(paragraph('Get set up in three steps.'))],
+      autoDismissChecklist: input.autoDismiss ?? false,
+      completionOrder: input.completionOrder ?? 'any',
+      content: input.content ?? [row(paragraph('Get set up in three steps.'))],
       items: input.tasks.map((task) => ({
         id: task.id,
         name: task.name,
         isCompleted: task.isCompleted ?? false,
-        isVisible: true,
+        isVisible: task.isVisible ?? true,
         clickedActions: task.clickedActions ?? [],
-        completeConditions: [],
+        completeConditions: task.completeConditions ?? [],
         onlyShowTask: false,
         onlyShowTaskConditions: [],
       })),
@@ -342,12 +396,24 @@ export const checklistSession = (input: {
 
 // --- banner ---
 
+export type BannerPlacement =
+  | 'top-of-page'
+  | 'bottom-of-page'
+  | 'top-of-container-element'
+  | 'bottom-of-container-element'
+  | 'immediately-before-element'
+  | 'immediately-after-element';
+
 export const bannerSession = (input: {
   sessionId: string;
   contentId: string;
   text: string;
-  /** Embed at the top of the element this selector matches, instead of the top of the page. */
+  /** The element a container placement attaches to. Alone, it embeds at its top. */
   container?: string;
+  placement?: BannerPlacement;
+  allowDismiss?: boolean;
+  /** Blocks after the text. */
+  blocks?: unknown[];
 }) => ({
   id: input.sessionId,
   type: 'banner',
@@ -359,13 +425,14 @@ export const bannerSession = (input: {
     theme: { settings: defaultSettings },
     banner: {
       ...DEFAULT_BANNER_DATA,
-      embedPlacement: input.container ? 'top-of-container-element' : 'top-of-page',
+      embedPlacement:
+        input.placement ?? (input.container ? 'top-of-container-element' : 'top-of-page'),
       ...(input.container
         ? { containerElement: { type: 'manual', customSelector: input.container } }
         : {}),
-      allowUsersToDismissEmbed: true,
+      allowUsersToDismissEmbed: input.allowDismiss ?? true,
       animateWhenEmbedAppears: false,
-      contents: [row(paragraph(input.text))],
+      contents: [row(paragraph(input.text)), ...(input.blocks ?? [])],
     },
   },
 });
@@ -373,10 +440,17 @@ export const bannerSession = (input: {
 // --- launcher ---
 
 export const launcherSession = (input: {
+  /** Empty for a launcher the server offers before it has a session. */
   sessionId: string;
   contentId: string;
   target: string;
   text: string;
+  /** Blocks after the tooltip's text. */
+  blocks?: unknown[];
+  triggerElement?: 'launcher' | 'target' | 'target-or-launcher';
+  /** `perform-action` runs `actions` instead of opening the tooltip. */
+  actions?: Action[];
+  dismissAfterFirstActivation?: boolean;
 }) => ({
   id: input.sessionId,
   type: 'launcher',
@@ -392,13 +466,20 @@ export const launcherSession = (input: {
         ...DEFAULT_LAUNCHER_DATA.target,
         element: { type: 'manual', customSelector: input.target },
       },
-      tooltip: { ...DEFAULT_LAUNCHER_DATA.tooltip, content: [row(paragraph(input.text))] },
+      tooltip: {
+        ...DEFAULT_LAUNCHER_DATA.tooltip,
+        content: [row(paragraph(input.text)), ...(input.blocks ?? [])],
+        settings: {
+          ...DEFAULT_LAUNCHER_DATA.tooltip.settings,
+          dismissAfterFirstActivation: input.dismissAfterFirstActivation ?? false,
+        },
+      },
       behavior: {
         ...DEFAULT_LAUNCHER_DATA.behavior,
-        triggerElement: 'launcher',
-        actionType: 'show-tooltip',
+        triggerElement: input.triggerElement ?? 'launcher',
+        actionType: input.actions ? 'perform-action' : 'show-tooltip',
         triggerEvent: 'clicked',
-        actions: [],
+        actions: input.actions ?? [],
       },
     },
   },

@@ -51,6 +51,12 @@ fixtures and never starts the SDK.
   turns. `flow-questions.spec.ts` — the answers question blocks report.
   `flow-themes.spec.ts` — which theme a step is drawn with, variations
   included, and what of it reaches the page.
+- `checklist.spec.ts`, `launcher.spec.ts`, `banner.spec.ts` — what the other
+  content types do with what the builder configures: a checklist's opening,
+  task clicks, the tasks it lists and their order, its dismissal and buttons;
+  a launcher following its target, what opens it and what it does, its
+  tooltip's buttons, several at once; a banner's placements, following its
+  container, its buttons, a session updated in place.
 - `iframe-targeting.spec.ts` — targets inside frames: found in same-origin
   frames (nested too), positioned and judged visible with the frame's offset,
   followed across the frame's navigations; opaque when cross-origin. A target
