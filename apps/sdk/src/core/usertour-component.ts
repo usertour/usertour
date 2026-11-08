@@ -667,11 +667,12 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
         customNavigate(url);
         return;
       }
-      // Fallback to default same-window navigation
-      window?.top?.open(url, '_self');
+      // Fallback to default same-window navigation. The SDK's own window: an
+      // app running in a frame navigates its frame, not the page around it.
+      window?.open(url, '_self');
     } else {
       // Use default browser navigation for new window/tab
-      window?.top?.open(url, '_blank');
+      window?.open(url, '_blank');
     }
   }
 
