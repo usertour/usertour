@@ -476,10 +476,16 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
     const stepInfo = this.getStepInfo(step);
 
-    // Scroll element into view if tour is visible
+    // Scroll element into view if tour is visible. The host's callback is
+    // theirs: one that throws must not keep the step from showing.
     const customScrollIntoView = this.instance.getCustomScrollIntoView();
     if (customScrollIntoView) {
-      customScrollIntoView(el);
+      try {
+        customScrollIntoView(el);
+      } catch (error) {
+        log.error('The custom scroll-into-view callback threw; scrolling the default way', error);
+        smoothScroll(el, { block: 'center' });
+      }
     } else {
       smoothScroll(el, { block: 'center' });
     }
