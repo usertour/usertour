@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Portal</title>
+    <style>
+      body {
+        margin: 0;
+        font: 14px/1.4 system-ui, sans-serif;
+        color: #1f2937;
+      }
+      header {
+        box-sizing: border-box;
+        height: 240px;
+        padding: 24px;
+        background: #f3f4f6;
+      }
+      #app {
+        display: block;
+        width: 1000px;
+        height: 520px;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      A portal that embeds the runtime host — the page the SDK is installed on —
+      in a same-origin frame, 240px down the page (tests/sdk/iframe-targeting.spec.ts).
+      The SDK's window is then not the top window.
+    -->
+    <header><h1>Portal</h1></header>
+    <iframe id="app" src="/runtime.html" title="App"></iframe>
+  </body>
+</html>

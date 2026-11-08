@@ -73,8 +73,8 @@ export type StepInput = {
   type: 'modal' | 'tooltip' | 'bubble' | 'hidden';
   name?: string;
   data: unknown[];
-  /** Tooltip target, by CSS selector. */
-  target?: string;
+  /** Tooltip target: a CSS selector, or one with which match to take. */
+  target?: string | { customSelector: string; sequence?: string };
   setting?: Partial<typeof stepSetting>;
   trigger?: unknown[];
 };
@@ -87,7 +87,14 @@ export const step = (input: StepInput, sequence: number) => ({
   sequence,
   setting: { ...stepSetting, ...(input.setting ?? {}) },
   data: input.data,
-  ...(input.target ? { target: { type: 'manual', customSelector: input.target } } : {}),
+  ...(input.target
+    ? {
+        target: {
+          type: 'manual',
+          ...(typeof input.target === 'string' ? { customSelector: input.target } : input.target),
+        },
+      }
+    : {}),
   ...(input.trigger ? { trigger: input.trigger } : {}),
 });
 
@@ -122,7 +129,11 @@ export const flowSession = (input: FlowInput) => {
 };
 
 /** Two steps: a modal with a Next button, then a tooltip on `target` with a Done button. */
-export const twoStepFlow = (sessionId: string, contentId: string, target = '#cta') =>
+export const twoStepFlow = (
+  sessionId: string,
+  contentId: string,
+  target: StepInput['target'] = '#cta',
+) =>
   flowSession({
     sessionId,
     contentId,
@@ -196,7 +207,13 @@ export const checklistSession = (input: {
 
 // --- banner ---
 
-export const bannerSession = (input: { sessionId: string; contentId: string; text: string }) => ({
+export const bannerSession = (input: {
+  sessionId: string;
+  contentId: string;
+  text: string;
+  /** Embed at the top of the element this selector matches, instead of the top of the page. */
+  container?: string;
+}) => ({
   id: input.sessionId,
   type: 'banner',
   draftMode: false,
@@ -207,7 +224,10 @@ export const bannerSession = (input: { sessionId: string; contentId: string; tex
     theme: { settings: defaultSettings },
     banner: {
       ...DEFAULT_BANNER_DATA,
-      embedPlacement: 'top-of-page',
+      embedPlacement: input.container ? 'top-of-container-element' : 'top-of-page',
+      ...(input.container
+        ? { containerElement: { type: 'manual', customSelector: input.container } }
+        : {}),
       allowUsersToDismissEmbed: true,
       animateWhenEmbedAppears: false,
       contents: [row(paragraph(input.text))],

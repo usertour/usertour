@@ -24,6 +24,8 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { useEventHandlers } from '../hooks/use-event-handlers';
 import { document } from '../utils/globals';
 import { on, off } from '../utils/listener';
+import { isElement } from '../utils/type-check';
+import { getSearchDocuments } from '@/core/usertour-helper';
 import { UsertourLauncher } from '@/core/usertour-launcher';
 import { AssetAttributes } from '@usertour/frame';
 
@@ -140,10 +142,15 @@ const useClickOutside = (
       }
     };
 
-    on(document, 'mousedown', handleClickOutside);
+    // A press inside a frame never reaches this document, so listen in every
+    // document a target can live in: the page's and each same-origin frame's.
+    const documents = getSearchDocuments();
+    for (const listenedDocument of documents) {
+      on(listenedDocument, 'mousedown', handleClickOutside);
+    }
     return () => {
-      if (document) {
-        off(document, 'mousedown', handleClickOutside);
+      for (const listenedDocument of documents) {
+        off(listenedDocument, 'mousedown', handleClickOutside);
       }
     };
   }, [open, setOpen]);
@@ -281,7 +288,7 @@ const LauncherWidgetCore = ({
 
   const triggerRef = useMemo(() => {
     const ref = { current: null as HTMLElement | null };
-    if (el instanceof Element) {
+    if (isElement(el)) {
       ref.current = el as HTMLElement;
     }
     return ref;

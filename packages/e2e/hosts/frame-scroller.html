@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Scrolling activity</title>
+  </head>
+  <body style="margin: 0">
+    <!--
+      A frame whose own document scrolls (tests/sdk/iframe-targeting.spec.ts):
+      the target starts 400px down an 1100px-tall page, so a scroll position
+      puts it fully inside the frame, across the frame's top edge or above it.
+      The page-scroller case copies this body into a scrolling <div>, so both
+      share one geometry. Inline styles only: they travel with the copy.
+    -->
+    <div style="height: 400px"></div>
+    <div id="scroll-target" style="width: 220px; height: 80px; margin-left: 24px; background: #4f46e5"></div>
+    <div style="height: 620px"></div>
+  </body>
+</html>
