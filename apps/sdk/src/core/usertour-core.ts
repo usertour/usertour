@@ -1379,8 +1379,9 @@ export class UsertourCore extends Evented {
     });
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
-    // Show checklist with appropriate expanded state
-    await this.activatedChecklist.show();
+    // Show checklist with appropriate expanded state; collapsed under a running
+    // flow, which expands it when it ends
+    await this.activatedChecklist.show(!this.activatedTour);
     return true;
   }
 
