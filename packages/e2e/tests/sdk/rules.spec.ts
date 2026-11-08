@@ -374,6 +374,17 @@ test.describe('trackers', () => {
     await sdk.advance(3_000);
     await sdk.page.waitForTimeout(100);
     expect(protocol.messages('TrackTrackerEvent')).toHaveLength(1);
+
+    // Off the page and back: the rule stops matching, then matches again.
+    await sdk.page.evaluate(() => history.pushState({}, '', '/elsewhere.html'));
+    await sdk.advance(1_500);
+    await sdk.page.evaluate(() => history.pushState({}, '', '/runtime.html'));
+    await sdk.advance(1_500);
+    await protocol.waitForMessages('TrackTrackerEvent', 2);
+    expect(protocol.messages('TrackTrackerEvent')[1].message.payload).toEqual({
+      contentId: 'tracker-url',
+      versionId: 'tracker-url-version',
+    });
   });
 
   test('a tracker with a user-attribute rule is evaluated against the session attributes', async ({

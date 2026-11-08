@@ -175,10 +175,14 @@ test.describe('flow sessions', () => {
     protocol,
   }) => {
     await start(sdk);
+    await sdk.pauseClock();
     await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#nowhere'));
     await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
     // The element watcher retries every 200ms until the theme's tolerance (3s).
-    await sdk.advance(4_000);
+    await sdk.advance(2_800);
+    await sdk.page.waitForTimeout(300);
+    expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
+    await sdk.advance(400);
     await protocol.waitForMessages('ReportTooltipTargetMissing', 1);
     expect(protocol.messages('ReportTooltipTargetMissing')[0].message.payload).toEqual({
       sessionId: 'session-1',

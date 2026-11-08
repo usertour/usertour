@@ -156,6 +156,15 @@ test.describe('banner sessions', () => {
     const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
     await expect(banner.getByText('Maintenance tonight')).toBeVisible();
     expect(await sdk.isStarted('banner-1')).toBe(true);
+    // First in the page's body, with the page's own content pushed below it.
+    const firstInBody = await sdk.page.evaluate(() => {
+      const frame = document.querySelector('iframe.usertour-widget-banner-frame');
+      return Boolean(frame && document.body.firstElementChild?.contains(frame));
+    });
+    expect(firstInBody).toBe(true);
+    const frameBox = await sdk.page.locator('iframe.usertour-widget-banner-frame').boundingBox();
+    const headingBox = await sdk.page.getByRole('heading', { name: 'Runtime host' }).boundingBox();
+    expect(headingBox?.y ?? 0).toBeGreaterThanOrEqual((frameBox?.y ?? 0) + (frameBox?.height ?? 0));
 
     await banner.getByRole('button', { name: 'Dismiss banner' }).click();
     await protocol.waitForMessages('EndContent', 1);
@@ -240,10 +249,17 @@ test.describe('resource center sessions', () => {
       blockId: 'block-docs',
     });
 
+    // Clicking the block closed the panel (and reported it); reopen, then close by hand.
     await sdk.advance(500);
     await frame.getByRole('button', { name: 'Open Help' }).click();
+    await expect(frame.getByText('How can we help?')).toBeVisible();
+    const closesBefore = protocol.messages('CloseResourceCenter').length;
     await frame.getByRole('button', { name: 'Close resource center' }).click();
-    await protocol.waitForMessages('CloseResourceCenter', 1);
+    await protocol.waitForMessages('CloseResourceCenter', closesBefore + 1);
+    expect(protocol.messages('CloseResourceCenter').at(-1)?.message.payload).toEqual({
+      sessionId: 'rc-session-1',
+    });
+    await expect(frame.getByText('How can we help?')).toBeHidden();
   });
 
   test('a resource center the server unsets disappears', async ({ sdk, protocol }) => {
