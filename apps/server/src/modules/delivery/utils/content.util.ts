@@ -1548,10 +1548,11 @@ export const canCompleteChecklistItem = (
 
   // For 'ordered' completion, every previous item the user can SEE must be
   // completed. Invisible items (onlyShowWhen not matching) are skipped: the
-  // widget receives only the visible slice and renders the first visible
-  // incomplete task as clickable, so counting hidden items here made that task
-  // silently uncompletable — the click was recorded but completion refused,
-  // with no feedback anywhere (checklist tier-C, landmine L3).
+  // widget receives every item, the hidden ones flagged `isVisible: false`,
+  // lists only the visible ones and skips the hidden ones the same way when it
+  // decides which task is clickable. Counting hidden items on either side
+  // made the first visible incomplete task uncompletable with no feedback
+  // anywhere (checklist tier-C, landmine L3).
   if (completionOrder === 'ordered') {
     const previousItems = items.slice(0, currentIndex);
     return previousItems.every((item) => item.isCompleted || item.isVisible === false);
