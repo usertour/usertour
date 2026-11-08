@@ -681,6 +681,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   protected onReset(): void {
     this.currentStepCvid = undefined;
     this.resetStepTrigger();
+    // The watcher retries on its own timer: stop it here, or it outlives its
+    // step and can time out a later visit to the same step.
+    this.watcher?.destroy();
     this.watcher = null;
   }
 }
