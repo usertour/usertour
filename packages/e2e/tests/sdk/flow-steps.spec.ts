@@ -471,6 +471,26 @@ test.describe('the tooltip target', () => {
     expect(protocol.messages('EndContent')).toHaveLength(0);
   });
 
+  test('a step shown as a bubble for its missing target stays a bubble when the session is pushed again', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await showTooltip(protocol, '#nowhere', useBubble);
+    await sdk.advance(4_000);
+    await expect(sdk.page.locator('iframe.usertour-widget-bubble__avatar')).toBeVisible();
+
+    // The server refreshes the session in place (an attribute changed, say).
+    await protocol.push(
+      'SetFlowSession',
+      twoStepFlow('session-1', 'flow-1', '#nowhere', useBubble),
+    );
+    await sdk.advance(400);
+    await expect(sdk.page.locator('iframe.usertour-widget-bubble__avatar')).toBeVisible();
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+    expect(protocol.messages('EndContent')).toHaveLength(0);
+  });
+
   test('returning to a tooltip step waits its full time again, not what the last visit left', async ({
     sdk,
     protocol,

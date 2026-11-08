@@ -21,6 +21,7 @@ its row.
 
 | Behaviour | Covered by | Priority |
 |---|---|---|
+| A `setCustomScrollIntoView` callback that throws: the step still shows, scrolled the default way | ✓ api "a setCustomScrollIntoView() callback that throws…" | — |
 | The loader snippet queues calls made before the bundle loads and replays them in order, settling their promises | ✓ loader "calls made before the bundle loads are replayed…" | — |
 | Methods left on the stub that the bundle no longer has resolve with a warning instead of hanging | ✓ loader "a method the bundle no longer has warns and resolves…" | — |
 | `init`: a different token resets; calls before `init` throw; an empty token throws | ✓ api "calls before init() are refused…", "init() with another token ends…" | — |
@@ -69,6 +70,8 @@ its row.
 
 | Behaviour | Covered by | Priority |
 |---|---|---|
+| A step shown as a bubble for its missing target stays a bubble when the session is pushed again | ✓ flow-steps "a step shown as a bubble for its missing target stays a bubble…" | — |
+| page-navigate from an SDK running in a frame navigates that frame, not the page around it | ✓ frame-hosted "a page-navigate action from an SDK running in a frame…" | — |
 | A pushed session opens on its first or current step; nothing is reported | ✓ flow.spec | — |
 | The same session pushed again updates the open step in place | ✓ flow-steps "the same session pushed again updates the open step in place" | — |
 | Another session replaces it silently; a dismissed one never returns; Unset removes it | ✓ flow.spec | — |
@@ -140,6 +143,7 @@ its row.
 
 | Behaviour | Covered by | Priority |
 |---|---|---|
+| A `hidden` launcher has no box of its own to catch clicks; its target opens the tooltip | ✓ launcher "a hidden launcher has no box of its own…" | — |
 | Appears on its target, opens its tooltip on click, removed by the server | ✓ content-types "a launcher appears on its target…" | — |
 | A press outside, in the page or a frame, closes a click tooltip | ✓ iframe-targeting.spec | — |
 | Target missing, appearing later, or hidden | ✓ launcher "a launcher waits for its target…" | — |
@@ -171,6 +175,7 @@ its row.
 
 | Behaviour | Covered by | Priority |
 |---|---|---|
+| A tab holding a single page counts a click each time the user opens onto it, never while closed | ✓ content-types "a tab holding a single page counts a click…" | — |
 | Opens and closes from its launcher; a clicked block is reported | ✓ content-types "the panel opens and closes…" | — |
 | Unset removes it | ✓ content-types.spec | — |
 | An action block runs its actions | — | P2 |
@@ -219,17 +224,19 @@ Still missing:
 
 ## To pin down
 
-Behaviours found while compiling this list that look wrong but are not
-confirmed; a test that settles each one belongs with its fix. None has been
-checked closely yet.
+Behaviours that look wrong but are not settled; a test that settles each one
+belongs with its fix.
 
-
-- A tracker report the server did not acknowledge is not retried.
-- A tab with a single navigable block reports a click on mount, even collapsed.
-- Destroying a component resets click/fill latches shared with server-tracked
-  conditions of the same content.
-- A hover launcher sends ActivateLauncher on every mouseenter.
-- A `hidden` launcher renders an empty clickable element over its target.
-- The `use-bubble` fallback is lost when the same session is pushed again.
-- A `setCustomScrollIntoView` callback that throws leaves the step unshown.
-- page-navigate from a frame navigates the top window.
+- A tracked "element clicked" or "text filled" condition is forgotten when a
+  widget of the same content is destroyed: `destroy()` removes the content's
+  shared rules evaluator, and the monitor's next report says the condition is
+  inactive. Confirmed by a test (the reports read `[false, true, false]`), but
+  not fixed on its own: the server starts content while a condition is true,
+  not when it turns true, so with the report corrected a repeatable flow
+  started by a click would restart as often as its frequency allows instead
+  of once per click, which is what the forgetting gave by accident. To settle
+  together with the server: a latched client condition used for auto-start
+  counts once per activation.
+- A tracker occurrence whose report got no answer (the 30 s send timeout, after
+  a long outage) or was refused is never reported again: the edge is consumed
+  either way. Whether an unanswered report should be retried is a decision.

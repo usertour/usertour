@@ -609,6 +609,32 @@ test.describe('stacking and scrolling', () => {
     await expect.poll(() => sdk.recorded('scrolledTo')).toEqual(['far-target']);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
+
+  test('a setCustomScrollIntoView() callback that throws still lets the step show, scrolled the default way', async ({
+    sdk,
+    protocol,
+    page,
+  }) => {
+    await start(sdk);
+    await page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      const target = document.createElement('button');
+      target.id = 'far-target';
+      target.textContent = 'Far away';
+      document.body.append(spacer, target);
+      window.usertour?.setCustomScrollIntoView(() => {
+        throw new Error('scroll helper is broken');
+      });
+    });
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    expect(await sdk.logLines(/scroll-into-view callback threw/)).toHaveLength(1);
+    expect(protocol.messages('EndContent')).toHaveLength(0);
+  });
 });
 
 test.describe('setTargetMissingSeconds()', () => {

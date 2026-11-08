@@ -448,6 +448,8 @@ export const launcherSession = (input: {
   /** Blocks after the tooltip's text. */
   blocks?: unknown[];
   triggerElement?: 'launcher' | 'target' | 'target-or-launcher';
+  /** What the launcher looks like; `hidden` has no element of its own. */
+  type?: 'icon' | 'beacon' | 'button' | 'hidden';
   /** `perform-action` runs `actions` instead of opening the tooltip. */
   actions?: Action[];
   dismissAfterFirstActivation?: boolean;
@@ -462,6 +464,7 @@ export const launcherSession = (input: {
     theme: { settings: defaultSettings },
     launcher: {
       ...DEFAULT_LAUNCHER_DATA,
+      type: input.type ?? DEFAULT_LAUNCHER_DATA.type,
       target: {
         ...DEFAULT_LAUNCHER_DATA.target,
         element: { type: 'manual', customSelector: input.target },
@@ -487,11 +490,25 @@ export const launcherSession = (input: {
 
 // --- resource center ---
 
+/** A resource center block that opens a page of its own content. */
+export const subPageBlock = (id: string, name: string, text: string) => ({
+  id,
+  type: 'sub-page',
+  name: [{ type: 'paragraph', children: [{ text: name }] }],
+  iconSource: 'builtin',
+  iconType: 'book-open-fill',
+  content: [row(paragraph(text))],
+  onlyShowBlock: false,
+  onlyShowBlockConditions: [],
+});
+
 export const resourceCenterSession = (input: {
   sessionId: string;
   contentId: string;
   buttonText?: string;
   actions: Array<{ id: string; name: string }>;
+  /** The home tab's blocks, in place of the intro and the action blocks. */
+  blocks?: unknown[];
 }) => ({
   id: input.sessionId,
   type: 'resource-center',
@@ -516,7 +533,7 @@ export const resourceCenterSession = (input: {
           name: 'Home',
           iconSource: 'builtin',
           iconType: 'home-line',
-          blocks: [
+          blocks: input.blocks ?? [
             {
               id: `${input.contentId}-intro`,
               type: 'richtext',

@@ -3,6 +3,7 @@ import {
   checklistSession,
   launcherSession,
   resourceCenterSession,
+  subPageBlock,
   twoStepFlow,
 } from './content';
 import { expect, test } from './fixtures';
@@ -260,6 +261,41 @@ test.describe('resource center sessions', () => {
       sessionId: 'rc-session-1',
     });
     await expect(frame.getByText('How can we help?')).toBeHidden();
+  });
+
+  test('a tab holding a single page counts a click each time the user opens onto it, never while closed', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetResourceCenterSession',
+      resourceCenterSession({
+        sessionId: 'rc-session-1',
+        contentId: 'rc-1',
+        actions: [],
+        blocks: [subPageBlock('block-guide', 'Getting started', 'Step one: connect your data.')],
+      }),
+    );
+    const frame = sdk.page.frameLocator('iframe.usertour-widget-resource-center-frame');
+    await expect(frame.getByRole('button', { name: 'Open Help' })).toBeVisible();
+    await sdk.advance(1_000);
+    await sdk.page.waitForTimeout(200);
+    expect(protocol.messages('ClickResourceCenter')).toHaveLength(0);
+
+    // Opening lands straight on the page: that is the click.
+    await frame.getByRole('button', { name: 'Open Help' }).click();
+    await expect(frame.getByText('Step one: connect your data.')).toBeVisible();
+    await protocol.waitForMessages('ClickResourceCenter', 1);
+    expect(protocol.messages('ClickResourceCenter')[0].message.payload).toEqual({
+      sessionId: 'rc-session-1',
+      blockId: 'block-guide',
+    });
+
+    await frame.getByRole('button', { name: 'Close resource center' }).click();
+    await sdk.advance(500);
+    await frame.getByRole('button', { name: 'Open Help' }).click();
+    await protocol.waitForMessages('ClickResourceCenter', 2);
   });
 
   test('a resource center the server unsets disappears', async ({ sdk, protocol }) => {

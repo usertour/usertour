@@ -184,6 +184,26 @@ test.describe('its tooltip', () => {
   });
 });
 
+test('a hidden launcher has no box of its own to catch clicks; its target opens the tooltip', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push('AddLauncher', launcher({ type: 'hidden', triggerElement: 'target' }));
+  await expect(launchers(sdk)).toHaveCount(1);
+  await expect
+    .poll(async () => {
+      const box = await launchers(sdk).boundingBox();
+      return box ? box.width * box.height : 0;
+    })
+    .toBe(0);
+  await expect(launchers(sdk)).toHaveCSS('pointer-events', 'none');
+
+  await sdk.page.click('#cta');
+  await protocol.waitForMessages('ActivateLauncher', 1);
+  await expect(sdk.frame().getByText('Start here')).toBeVisible();
+});
+
 test('several launchers show at once; a dismissed one is not added back', async ({
   sdk,
   protocol,

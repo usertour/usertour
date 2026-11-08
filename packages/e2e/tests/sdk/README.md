@@ -57,6 +57,9 @@ fixtures and never starts the SDK.
   a launcher following its target, what opens it and what it does, its
   tooltip's buttons, several at once; a banner's placements, following its
   container, its buttons, a session updated in place.
+- `frame-hosted.spec.ts` — the SDK loaded by an app that itself runs inside a
+  frame of another page (`hosts/frame-app.html`): what it does stays in that
+  frame.
 - `iframe-targeting.spec.ts` — targets inside frames: found in same-origin
   frames (nested too), positioned and judged visible with the frame's offset,
   followed across the frame's navigations; opaque when cross-origin. A target
