@@ -15,7 +15,7 @@ import {
   twoStepFlow,
 } from './content';
 import { RUNTIME_HOST_URL, type SdkPage, expect, test } from './fixtures';
-import type { ProtocolServer } from './protocol-server';
+import { type ProtocolServer, defaultAnswer } from './protocol-server';
 
 /**
  * The public API a host page calls on `window.usertour`, beyond the identity
@@ -181,6 +181,20 @@ test.describe('identity', () => {
     expect(await isIdentified(page)).toBe(false);
   });
 
+  test('isIdentified() stays true when identify() fails: the SDK goes on as that user', async ({
+    sdk,
+    protocol,
+    page,
+  }) => {
+    protocol.answer = (message, connection) =>
+      message.kind === 'UpsertUser'
+        ? { ok: false, rejected: [] }
+        : defaultAnswer(message, connection);
+    await sdk.init();
+    expect(await sdk.identify('u1')).toMatchObject({ ok: false });
+    expect(await isIdentified(page)).toBe(true);
+  });
+
   test.describe('identifyAnonymous()', () => {
     const KEY = 'USERTOUR@0.0.1/identify-anonymous';
     const storedId = (page: Page) =>
@@ -232,7 +246,7 @@ test.describe('identity', () => {
 });
 
 test.describe('starting content', () => {
-  test('start() asks the server to start the content, at a step when given', async ({
+  test('start() asks the server to start the content, at a step when given, and resolves with its answer', async ({
     sdk,
     protocol,
   }) => {
@@ -243,16 +257,22 @@ test.describe('starting content', () => {
     });
 
     await sdk.identify('u1');
-    expect((await sdk.call('start', 'flow-9', { cvid: 'flow-9-cvid-3', once: true })).ok).toBe(
-      true,
-    );
-    await protocol.waitForMessages('StartContent', 1);
+    expect(await sdk.call('start', 'flow-9', { cvid: 'flow-9-cvid-3', once: true })).toEqual({
+      ok: true,
+      value: true,
+    });
     expect(protocol.messages('StartContent')[0].message.payload).toEqual({
       contentId: 'flow-9',
       stepCvid: 'flow-9-cvid-3',
       once: true,
       startReason: 'start_from_program',
     });
+
+    // Not started (not found, not published, or `once` and already seen) is an
+    // outcome, not an error.
+    protocol.answer = (message, connection) =>
+      message.kind === 'StartContent' ? false : defaultAnswer(message, connection);
+    expect(await sdk.call('start', 'flow-9', { once: true })).toEqual({ ok: true, value: false });
   });
 
   test('navigating to a URL with ?usertour=<id> starts that content and drops the parameter', async ({
