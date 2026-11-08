@@ -107,7 +107,13 @@ export class UsertourElementWatcher extends Evented {
 
   // === Visibility Checking ===
   /**
-   * Checks if the found element is currently visible
+   * Checks whether the found element can be seen, and whether it has been gone
+   * for longer than the target-missing time.
+   *
+   * An element still rendered but scrolled out of view, of the page or of a
+   * scrolling container or frame, is hidden without a deadline: scrolling back
+   * brings it back. Only an element no longer rendered (removed, `display:
+   * none`, invisible, or without a size) counts towards the timeout.
    * @returns Object containing visibility state and timeout status
    */
   async checkVisibility(): Promise<{ isHidden: boolean; isTimeout: boolean }> {
@@ -127,22 +133,17 @@ export class UsertourElementWatcher extends Evented {
       }
     }
 
-    const isHidden =
-      !isVisibleNode(this.element as HTMLElement) ||
-      !(await isVisible(this.element as HTMLElement));
-
-    if (!isHidden) {
-      this.checker = null;
-      return { isHidden: false, isTimeout: false };
+    if (!this.isRendered(this.element)) {
+      this.updateChecker(true, Date.now());
+      return {
+        isHidden: true,
+        isTimeout: this.checker?.isTimeout || false,
+      };
     }
 
-    const now = Date.now();
-    this.updateChecker(isHidden, now);
-
-    return {
-      isHidden: true,
-      isTimeout: this.checker?.isTimeout || false,
-    };
+    this.checker = null;
+    const isInView = await isVisible(this.element as HTMLElement);
+    return { isHidden: !isInView, isTimeout: false };
   }
 
   // === State Management ===
@@ -170,6 +171,18 @@ export class UsertourElementWatcher extends Evented {
    */
   private isDocumentReady(): boolean {
     return !!document?.body;
+  }
+
+  /**
+   * Whether the element is laid out on its page at all, wherever it is
+   * scrolled to: still in the document, shown by its styles and with a size.
+   */
+  private isRendered(element: Element): boolean {
+    if (!element.isConnected || !isVisibleNode(element)) {
+      return false;
+    }
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
   }
 
   /**

@@ -1,3 +1,4 @@
+import { defaultSettings } from '@usertour/constants';
 import { dismissFlow, flowSession, gotoStep, button, paragraph, row, twoStepFlow } from './content';
 import { EMIT_TIMEOUT_MS, expect, test } from './fixtures';
 
@@ -193,6 +194,80 @@ test.describe('flow sessions', () => {
       endReason: 'tooltip_target_missing',
     });
     expect(await sdk.logLines(/Step target element was not found/)).toHaveLength(1);
+  });
+
+  test('a tooltip whose target is scrolled out of the page hides, stays, and comes back', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.style.height = '4000px';
+      document.body.appendChild(spacer);
+    });
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#cta'));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+
+    await sdk.page.evaluate(() => window.scrollTo(0, 2000));
+    await sdk.advance(400);
+    await expect(sdk.surface).toBeHidden();
+    // Well past the theme's tolerance (3s): reading on is not the target going missing.
+    await sdk.advance(5_000);
+    await sdk.page.waitForTimeout(200);
+    expect(protocol.messages('EndContent')).toHaveLength(0);
+
+    await sdk.page.evaluate(() => window.scrollTo(0, 0));
+    await sdk.advance(400);
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+  });
+
+  test('a tooltip whose target leaves the page ends the flow at the tolerance, without a missing-target report', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#cta'));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+
+    await sdk.pauseClock();
+    await sdk.page.evaluate(() => document.getElementById('cta')?.remove());
+    await sdk.advance(2_800);
+    await sdk.page.waitForTimeout(300);
+    expect(protocol.messages('EndContent')).toHaveLength(0);
+
+    await sdk.advance(800);
+    await protocol.waitForMessages('EndContent', 1);
+    expect(protocol.messages('EndContent')[0].message.payload).toMatchObject({
+      sessionId: 'session-1',
+      endReason: 'tooltip_target_missing',
+    });
+    // That report counts selectors that find nothing; this one did find its element.
+    expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
+    expect(await sdk.logLines(/stayed hidden past the timeout; closing the flow/)).toHaveLength(1);
+  });
+
+  test('with the theme set to show a bubble, a tooltip whose target left turns into a bubble', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    const useBubble = {
+      ...defaultSettings,
+      tooltip: { ...defaultSettings.tooltip, missingTargetBehavior: 'use-bubble' },
+    };
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#cta', useBubble));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+
+    await sdk.page.evaluate(() => document.getElementById('cta')?.remove());
+    await sdk.advance(4_000);
+    await expect(sdk.page.locator('iframe.usertour-widget-bubble__avatar')).toBeVisible();
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    expect(protocol.messages('EndContent')).toHaveLength(0);
+    expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
   });
 
   // A tooltip's target is looked up under <body>, a condition's element in

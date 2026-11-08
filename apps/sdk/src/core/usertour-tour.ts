@@ -511,6 +511,30 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
   }
 
+  /**
+   * Handles a target that was found and then stayed off the page past the
+   * target-missing time: the theme's missing-target behaviour, as for a target
+   * never found. No missing-target report: the selector did match, and that
+   * report is what tells authors a selector finds nothing.
+   * @private
+   */
+  private async handleTargetGone(step: SessionStep, store: TourStore): Promise<void> {
+    const useBubble =
+      store.themeSettings?.tooltip?.missingTargetBehavior ===
+      MissingTooltipTargetBehavior.USE_BUBBLE;
+    log.warn(
+      `Step target element stayed hidden past the timeout; ${
+        useBubble ? 'showing the step as a bubble' : 'closing the flow'
+      }`,
+      { target: step.target },
+    );
+    if (useBubble) {
+      await this.showBubble({ ...step, type: StepContentType.BUBBLE }, true);
+      return;
+    }
+    await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
+  }
+
   // === Trigger Management ===
   /**
    * Checks and processes the trigger for the current step
@@ -587,10 +611,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     if (isTimeout) {
-      log.warn('Step target element stayed hidden past the timeout; closing the flow', {
-        target: currentStep?.target,
-      });
-      await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
+      await this.handleTargetGone(currentStep, storeData);
       return;
     }
 
