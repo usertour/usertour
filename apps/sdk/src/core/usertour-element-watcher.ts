@@ -36,6 +36,7 @@ export class UsertourElementWatcher extends Evented {
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS; // Time allowed for target element to be missing
   private readonly id: string; // Unique identifier for this watcher
   private readonly findElementByTarget: FindElementByTarget; // Where and how the target is looked up
+  private destroyed = false; // Set by destroy(): no more lookups, no more events
 
   // === Constructor ===
   constructor(
@@ -68,6 +69,9 @@ export class UsertourElementWatcher extends Evented {
    * @param retryTimes Current number of retry attempts
    */
   findElement(retryTimes = 0): void {
+    if (this.destroyed) {
+      return;
+    }
     timerManager.clearTimeout(`${this.id}-retry`);
 
     // Timeout based on configured targetMissingSeconds only
@@ -158,10 +162,14 @@ export class UsertourElementWatcher extends Evented {
   }
 
   /**
-   * Cleans up resources and resets the watcher state
+   * Ends the watcher for good: its lookup stops and stays stopped, and nothing
+   * it registered hears from it again. The component that owned it has moved
+   * on; a lookup that somehow outlived its timer must not act on its behalf.
    */
   destroy() {
+    this.destroyed = true;
     this.reset();
+    this.removeAllListeners();
   }
 
   // === Private Helpers ===
