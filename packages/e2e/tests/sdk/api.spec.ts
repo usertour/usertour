@@ -1,3 +1,4 @@
+import { defaultSettings } from '@usertour/constants';
 import type { Page } from '@playwright/test';
 import {
   bannerSession,
@@ -611,6 +612,29 @@ test.describe('stacking and scrolling', () => {
 });
 
 test.describe('setTargetMissingSeconds()', () => {
+  test('with neither it nor the theme setting a time, a tooltip waits the theme default (3s)', async ({
+    sdk,
+    protocol,
+    page,
+  }) => {
+    await start(sdk);
+    // A theme saved before it had the setting.
+    const { missingTargetTolerance: _omitted, ...tooltip } = defaultSettings.tooltip;
+    const settings = { ...defaultSettings, tooltip };
+    await sdk.pauseClock();
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#nowhere', settings));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+    await sdk.advance(2_800);
+    await page.waitForTimeout(300);
+    expect(protocol.messages('EndContent')).toHaveLength(0);
+    await sdk.advance(400);
+    await protocol.waitForMessages('EndContent', 1);
+    expect(protocol.messages('EndContent')[0].message.payload).toMatchObject({
+      endReason: 'tooltip_target_missing',
+    });
+  });
+
   test('sets how long a tooltip waits for its target, over the theme’s tolerance', async ({
     sdk,
     protocol,

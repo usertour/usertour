@@ -22,7 +22,7 @@ import {
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { isElement, logger } from '@/utils';
 import { createQuestionAnswerEventData, rootsHaveButtonConditions } from '@/core/usertour-helper';
-import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
+import { SDKClientEvents, WidgetZIndex, defaultSettings } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
 
@@ -409,12 +409,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Create new watcher
     this.watcher = new UsertourElementWatcher(step.target);
 
-    // Priority: API setting > Theme setting > Default (6 seconds)
-    const DEFAULT_TARGET_MISSING_SECONDS = 6;
+    // Priority: API setting > theme setting > the theme's default, for a theme
+    // saved before it had the setting
     const targetMissingSeconds =
       this.instance.getTargetMissingSeconds() ??
       store.themeSettings?.tooltip?.missingTargetTolerance ??
-      DEFAULT_TARGET_MISSING_SECONDS;
+      defaultSettings.tooltip.missingTargetTolerance;
     this.watcher.setTargetMissingSeconds(targetMissingSeconds);
 
     // Handle element found

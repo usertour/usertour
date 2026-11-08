@@ -128,6 +128,8 @@ export type FlowInput = {
   /** Start on this step instead of the first. */
   currentCvid?: string;
   attributes?: unknown[];
+  /** The version's theme settings; the default theme when left out. */
+  themeSettings?: unknown;
 };
 
 export const flowSession = (input: FlowInput) => {
@@ -143,7 +145,7 @@ export const flowSession = (input: FlowInput) => {
     content: { id: input.contentId, name: input.contentId, type: 'flow', project: PROJECT },
     version: {
       id: input.versionId ?? `${input.contentId}-version`,
-      theme: { settings: defaultSettings },
+      theme: { settings: input.themeSettings ?? defaultSettings },
       steps,
     },
     ...(current ? { currentStep: { id: current.id, cvid: current.cvid } } : {}),
@@ -155,10 +157,12 @@ export const twoStepFlow = (
   sessionId: string,
   contentId: string,
   target: StepInput['target'] = '#cta',
+  themeSettings?: unknown,
 ) =>
   flowSession({
     sessionId,
     contentId,
+    themeSettings,
     steps: [
       {
         id: `${contentId}-step-1`,
