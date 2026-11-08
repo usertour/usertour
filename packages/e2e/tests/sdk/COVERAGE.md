@@ -95,7 +95,7 @@ its row.
 | Target never found: ReportTooltipTargetMissing, then `tooltip_target_missing`, at the theme's tolerance | ✓ flow "a tooltip whose target never appears…" | — |
 | A target that leaves the page (removed, not rendered) ends the flow at the tolerance with `tooltip_target_missing`, without ReportTooltipTargetMissing | ✓ flow "a tooltip whose target leaves the page…" | — |
 | Theme `missingTargetBehavior: use-bubble`: a target that left turns the step into a bubble | ✓ flow "with the theme set to show a bubble…" | — |
-| Theme `missingTargetBehavior: use-bubble`: a target never found shows the step as a bubble | ✓ flow-steps "with the theme set to show a bubble, a target never found…" (its report: see "To pin down") | — |
+| Theme `missingTargetBehavior: use-bubble`: a target never found shows the step as a bubble, and is still reported | ✓ flow-steps "with the theme set to show a bubble, a target never found…" | — |
 | Step trigger: element condition, wait, dismiss | ✓ flow "a step trigger dismisses the flow after its wait" | — |
 | Step trigger: a condition that turns true later, a page-URL condition, a step-goto action | ✓ flow-steps "step triggers › …" | — |
 | A pending trigger wait is cancelled on step change | ✓ flow-steps "a trigger still waiting is cancelled…" | — |
@@ -217,17 +217,9 @@ Still missing:
 ## To pin down
 
 Behaviours found while compiling this list that look wrong but are not
-confirmed; a test that settles each one belongs with its fix. The first group
-is read from the code; the second has not been checked closely.
+confirmed; a test that settles each one belongs with its fix. None has been
+checked closely yet.
 
-Read from the code:
-
-- A tooltip target that is never found, with the theme set to `use-bubble`,
-  shows the step as a bubble but sends no ReportTooltipTargetMissing, so the
-  "times not found" figure in the step analytics leaves these out although
-  the selector matched nothing.
-
-Not yet checked closely:
 
 - Launcher tooltip buttons never re-evaluate their disable/hide rules.
 - Ordered checklist completion counts hidden tasks.

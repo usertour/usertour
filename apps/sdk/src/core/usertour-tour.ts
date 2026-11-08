@@ -511,9 +511,13 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       { target: step.target },
     );
 
+    // The selector matched nothing: the report that counts as "not found" in
+    // the step's analytics goes out whichever way the step carries on.
     if (behavior === MissingTooltipTargetBehavior.USE_BUBBLE) {
-      // Convert tooltip to bubble, use stepOverride to ensure correct styles
+      // Convert tooltip to bubble, use stepOverride to ensure correct styles.
+      // Shown before the report, so the bubble does not wait on the server.
       await this.showBubble({ ...step, type: StepContentType.BUBBLE }, true);
+      await this.reportTooltipTargetMissing(step);
       return;
     }
 

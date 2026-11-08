@@ -453,7 +453,7 @@ test.describe('the tooltip target', () => {
     });
   });
 
-  test('with the theme set to show a bubble, a target never found shows the step as a bubble', async ({
+  test('with the theme set to show a bubble, a target never found shows the step as a bubble and is reported', async ({
     sdk,
     protocol,
   }) => {
@@ -462,6 +462,12 @@ test.describe('the tooltip target', () => {
     await sdk.advance(4_000);
     await expect(sdk.page.locator('iframe.usertour-widget-bubble__avatar')).toBeVisible();
     await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+    // The selector matched nothing: that is what the step's "times not found" counts.
+    await protocol.waitForMessages('ReportTooltipTargetMissing', 1);
+    expect(protocol.messages('ReportTooltipTargetMissing')[0].message.payload).toEqual({
+      sessionId: 'session-1',
+      stepId: 'flow-1-step-2',
+    });
     expect(protocol.messages('EndContent')).toHaveLength(0);
   });
 
