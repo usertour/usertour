@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { type FrameLocator, type Locator, type Page, test as base, expect } from '@playwright/test';
+import { USERTOUR_LOADER_SNIPPET } from '../../../../apps/web/src/pages/settings/installation/snippet';
 import { ProtocolServer } from './protocol-server';
 
 /**
@@ -32,8 +33,26 @@ declare global {
     usertour?: Record<string, (...args: unknown[]) => unknown> & { _stubbed?: boolean };
     __usertourLogs: LogLine[];
     __usertourCalls: Record<string, Outcome | undefined>;
+    __usertourOpened: Array<{ url: string; target: string | undefined }>;
+    /** What a test's own callbacks in the page recorded, by name. */
+    __usertourRecorded: Record<string, string[]>;
+    USERTOURJS_QUEUE?: unknown[];
   }
 }
+
+/**
+ * How the SDK gets onto the host page: `bundle` adds the built bundle
+ * directly; `snippet` runs the loader snippet the install page hands out,
+ * which loads the bundle on the first call and queues calls until then.
+ */
+export type Loader = 'bundle' | 'snippet';
+
+export type OpenOptions = {
+  assetsUri?: string;
+  loader?: Loader;
+  /** Query string for the host page, e.g. `usertour=flow-9`. */
+  query?: string;
+};
 
 /** Drives the SDK's public API on the host page and reads back what it did. */
 export class SdkPage {
@@ -49,11 +68,17 @@ export class SdkPage {
    * env vars must be on `window` before the bundle evaluates — that is when
    * the SDK reads its server URL, once.
    */
-  async open(options: { assetsUri?: string } = {}): Promise<void> {
+  async open(options: OpenOptions = {}): Promise<void> {
+    const loader = options.loader ?? 'bundle';
     await this.page.addInitScript(
-      ({ wsUri, assetsUri }) => {
-        window.USERTOURJS_ENV_VARS = { WS_URI: wsUri, ASSETS_URI: assetsUri };
+      ({ wsUri, assetsUri, bundleUrl }) => {
+        window.USERTOURJS_ENV_VARS = {
+          WS_URI: wsUri,
+          ASSETS_URI: assetsUri,
+          ...(bundleUrl ? { USERTOURJS_ES2020_URL: bundleUrl } : {}),
+        };
         window.__usertourCalls = {};
+        window.__usertourRecorded = {};
         const logs: LogLine[] = [];
         window.__usertourLogs = logs;
         for (const level of ['log', 'warn', 'error'] as const) {
@@ -70,17 +95,69 @@ export class SdkPage {
           };
         }
       },
-      { wsUri: this.protocol.url, assetsUri: options.assetsUri ?? `${RUNTIME_HOST_URL}/sdk-dist` },
+      {
+        wsUri: this.protocol.url,
+        assetsUri: options.assetsUri ?? `${RUNTIME_HOST_URL}/sdk-dist`,
+        bundleUrl: loader === 'snippet' ? SDK_BUNDLE_URL : undefined,
+      },
     );
     await this.page.clock.install();
     // Debug logging from the first line: the query flag is read when the
     // bundle evaluates, before any call could turn it on.
-    await this.page.goto(`${RUNTIME_HOST_URL}/runtime.html?usertour_debug=1`);
+    const query = ['usertour_debug=1', options.query].filter(Boolean).join('&');
+    await this.page.goto(`${RUNTIME_HOST_URL}/runtime.html?${query}`);
+    if (loader === 'snippet') {
+      // Only the stub: the bundle loads on the first call, as on a customer page.
+      await this.page.addScriptTag({ content: USERTOUR_LOADER_SNIPPET });
+      return;
+    }
     await this.page.addScriptTag({ type: 'module', url: SDK_BUNDLE_URL });
+    await this.waitForBundle();
+    await this.page.evaluate(() => window.usertour?.setDebug?.(true));
+  }
+
+  /** Wait until the bundle has replaced the loader's stub. */
+  async waitForBundle(): Promise<void> {
     await expect
       .poll(() => this.page.evaluate(() => Boolean(window.usertour && !window.usertour._stubbed)))
       .toBe(true);
-    await this.page.evaluate(() => window.usertour?.setDebug?.(true));
+  }
+
+  /**
+   * Stop the page's clock: from here on no timer fires until `advance`, so a
+   * test can say what has, and has not, happened by an exact time.
+   */
+  async pauseClock(): Promise<void> {
+    // The page's time keeps flowing between reading it and pausing, so pause
+    // a little ahead of it; a busy machine may need a wider margin.
+    for (const margin of [50, 250, 1_000]) {
+      const now = await this.page.evaluate(() => Date.now());
+      try {
+        await this.page.clock.pauseAt(now + margin);
+        return;
+      } catch (error) {
+        if (!String(error).includes('to the past')) {
+          throw error;
+        }
+      }
+    }
+    throw new Error('could not pause the page clock');
+  }
+
+  /**
+   * Record navigations instead of making them: the SDK opens pages through
+   * `window.top.open`, which would unload the page under test. Returns a
+   * reader of what was opened, oldest first.
+   */
+  async stubNavigation(): Promise<() => Promise<Array<{ url: string; target?: string }>>> {
+    await this.page.evaluate(() => {
+      window.__usertourOpened = [];
+      window.open = ((url?: string | URL, target?: string) => {
+        window.__usertourOpened.push({ url: String(url), target });
+        return null;
+      }) as typeof window.open;
+    });
+    return () => this.page.evaluate(() => window.__usertourOpened);
   }
 
   /** Advance the page's clock: timers due within `ms` fire, in order. */
@@ -195,6 +272,11 @@ export class SdkPage {
     return this.page.frameLocator('iframe.usertour-widget-surface-viewport');
   }
 
+  /** What the page's own callbacks recorded under `name` (see `__usertourRecorded`). */
+  recorded(name: string): Promise<string[]> {
+    return this.page.evaluate((name) => window.__usertourRecorded[name] ?? [], name);
+  }
+
   logs(): Promise<LogLine[]> {
     return this.page.evaluate(() => window.__usertourLogs);
   }
@@ -208,11 +290,17 @@ type Fixtures = {
   sdk: SdkPage;
   /** Where the page loads the SDK's CSS from; a test overrides it to break the UI. */
   assetsUri: string;
+  /** How the SDK is installed on the host page (see `Loader`). */
+  loader: Loader;
+  /** Query string the host page is opened with. */
+  hostQuery: string;
 };
 type WorkerFixtures = { protocol: ProtocolServer };
 
 export const test = base.extend<Fixtures, WorkerFixtures>({
   assetsUri: [`${RUNTIME_HOST_URL}/sdk-dist`, { option: true }],
+  loader: ['bundle', { option: true }],
+  hostQuery: ['', { option: true }],
   protocol: [
     // biome-ignore lint/correctness/noEmptyPattern: Playwright requires the destructuring form
     async ({}, use) => {
@@ -222,10 +310,10 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     },
     { scope: 'worker' },
   ],
-  sdk: async ({ page, protocol, assetsUri }, use) => {
+  sdk: async ({ page, protocol, assetsUri, loader, hostQuery }, use) => {
     protocol.reset();
     const sdk = new SdkPage(page, protocol);
-    await sdk.open({ assetsUri });
+    await sdk.open({ assetsUri, loader, query: hostQuery });
     await use(sdk);
   },
 });

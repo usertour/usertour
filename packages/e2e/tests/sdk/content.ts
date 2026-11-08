@@ -50,6 +50,28 @@ export const button = (text: string, actions: Action[] = []) => ({
   data: { text, type: 'primary', actions },
 });
 
+/** Open `url` in this tab (`same`) or in a new one (`new`). */
+export const navigate = (url: string, openType: 'same' | 'new' = 'same'): Action => ({
+  id: id('action'),
+  type: 'page-navigate',
+  data: { value: [{ type: 'paragraph', children: [{ text: url }] }], openType },
+});
+
+/** Run `code` in the page. */
+export const evaluateJs = (code: string): Action => ({
+  id: id('action'),
+  type: 'javascript-evaluate',
+  data: { value: code },
+});
+
+/** A text block whose paragraph mixes plain text (`{ text }`) and links. */
+export const richText = (...children: unknown[]) => ({
+  type: 'text',
+  data: [{ type: 'paragraph', children }],
+});
+
+export const link = (text: string, url: string) => ({ type: 'link', url, children: [{ text }] });
+
 // --- flow ---
 
 const stepSetting = {
@@ -155,6 +177,22 @@ export const twoStepFlow = (
         name: 'Call to action',
         target,
         data: [row(paragraph('Click here to begin')), row(button('Done', [dismissFlow()]))],
+      },
+    ],
+  });
+
+/** A flow of one modal step made of `rows`. */
+export const modalFlow = (sessionId: string, contentId: string, rows: unknown[]) =>
+  flowSession({
+    sessionId,
+    contentId,
+    steps: [
+      {
+        id: `${contentId}-step-1`,
+        cvid: `${contentId}-cvid-1`,
+        type: 'modal',
+        name: 'Only step',
+        data: rows,
       },
     ],
   });
