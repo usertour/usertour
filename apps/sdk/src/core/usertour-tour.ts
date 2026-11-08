@@ -10,6 +10,7 @@ import {
   contentEndReason,
   SessionStep,
   SessionTheme,
+  ThemeTypesSetting,
 } from '@usertour/types';
 import { isEqual, isQuestionElement } from '@usertour/helpers';
 import { TourStore, BaseStore } from '@/types/store';
@@ -217,6 +218,16 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     return {
       globalStyle: UsertourTheme.convertToCssVars(themeSettings, step.type),
     };
+  }
+
+  /**
+   * A modal or bubble step derives its CSS variables for its own type; keep
+   * that when the theme changes while the step is open.
+   * @protected
+   */
+  protected getThemeStoreData(themeSettings: ThemeTypesSetting): Partial<BaseStore> {
+    const themeData = super.getThemeStoreData(themeSettings);
+    return { ...themeData, ...this.getStepStyle(this.getStoreData()?.currentStep, themeData) };
   }
 
   // === Theme Management ===

@@ -591,8 +591,20 @@ export abstract class UsertourComponent<TStore extends BaseStore> extends Evente
       return;
     }
 
-    // Update theme settings in store
-    this.updateStore({ themeSettings } as Partial<TStore>);
+    // The CSS variables and assets are derived from the settings: a variation
+    // that starts matching has to reach them too, or the open widget keeps the
+    // old colours and custom CSS.
+    this.updateStore(this.getThemeStoreData(themeSettings) as Partial<TStore>);
+  }
+
+  /**
+   * The store fields derived from theme settings: the settings, their CSS
+   * variables and their assets. A component that derives its CSS variables
+   * differently overrides it.
+   * @protected
+   */
+  protected getThemeStoreData(themeSettings: ThemeTypesSetting): Partial<BaseStore> {
+    return UsertourTheme.createThemeData(themeSettings);
   }
 
   // === Action Handlers ===
