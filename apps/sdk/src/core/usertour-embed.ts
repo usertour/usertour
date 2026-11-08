@@ -19,9 +19,9 @@ import { UsertourComponent, CustomStoreDataContext } from '@/core/usertour-compo
 import { UsertourElementWatcher } from '@/core/usertour-element-watcher';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { UsertourTheme } from '@/core/usertour-theme';
-import { rootsHaveButtonConditions } from '@/core/usertour-helper';
+import { findTargetElementInPage, rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { ActionSource, CommonActionHandler, EmbedActionHandler } from '@/core/action-handlers';
-import { logger } from '@/utils';
+import { isElement, logger } from '@/utils';
 
 const log = logger.scope('embed');
 
@@ -406,7 +406,10 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     }
 
     this.watcherTargetKey = targetKey;
-    this.watcher = new UsertourElementWatcher(targetElement);
+    // Looked up in the page only, like the banner's container: the embed's
+    // shell is inserted into its target's document, and a selector that
+    // matches only inside a frame leaves the embed waiting for a page element.
+    this.watcher = new UsertourElementWatcher(targetElement, findTargetElementInPage);
     this.watcher.setTargetMissingSeconds(EMBED_TARGET_MISSING_SECONDS);
     // The embed shows while its target exists (ADR 0022), not while the target
     // is in view: it sits in the document flow, so being scrolled past is
@@ -414,7 +417,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     this.watcher.setViewportCheck(false);
 
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
-      if (el instanceof Element) {
+      if (isElement(el)) {
         this.handleElementFound(el, this.pendingWatcherStore ?? store);
       }
     });
@@ -425,7 +428,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     });
 
     this.watcher.on(SDKClientEvents.ELEMENT_CHANGED, (el) => {
-      if (el instanceof Element) {
+      if (isElement(el)) {
         this.updateStore({ targetElement: el });
       }
     });

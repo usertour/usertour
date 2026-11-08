@@ -80,7 +80,7 @@ export const resolveElementMountPlacement = (
 const MOUNT_MARKER_ATTRIBUTE = 'data-usertour-inline-mount';
 
 const isMountEl = (node: Node | null | undefined): node is HTMLElement => {
-  return node instanceof HTMLElement && node.hasAttribute(MOUNT_MARKER_ATTRIBUTE);
+  return isHTMLElement(node) && node.hasAttribute(MOUNT_MARKER_ATTRIBUTE);
 };
 
 /**

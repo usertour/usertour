@@ -7,6 +7,7 @@ import {
   dismissFlow,
   flowSession,
   launcherSession,
+  oneStepEmbed,
   paragraph,
   row,
   twoStepFlow,
@@ -484,6 +485,39 @@ test.describe('targets inside frames', () => {
       0,
     );
     await expect(sdk.page.locator('.usertour-widget-banner')).toHaveCount(0);
+  });
+
+  test('an embed’s target is looked up in the page, not in a frame', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await mountFrame(sdk.page.mainFrame(), { id: 'activity', src: '/frame-activity.html' });
+    await protocol.push(
+      'AddEmbed',
+      oneStepEmbed('embed-session-1', 'embed-1', '#activity-submit', 'Upgrade to unlock reports'),
+    );
+    // The embed looks for its target every 200ms; give it several turns.
+    await sdk.advance(2_000);
+    await sdk.page.waitForTimeout(300);
+    const embed = '.usertour-widget-embed';
+    await expect(sdk.page.frameLocator('#activity').locator(embed)).toHaveCount(0);
+    await expect(sdk.page.locator(embed)).toHaveCount(0);
+
+    // The page gets an element of that id later: the embed is still looking,
+    // and inserts itself after that one.
+    await sdk.page.evaluate(() => {
+      const late = document.createElement('div');
+      late.id = 'activity-submit';
+      document.querySelector('main')?.append(late);
+    });
+    await sdk.advance(2_000);
+    await expect(
+      sdk.page
+        .frameLocator('iframe.usertour-widget-embed-frame')
+        .getByText('Upgrade to unlock reports'),
+    ).toBeVisible();
+    const previous = await sdk.page
+      .locator(embed)
+      .evaluate((shell) => shell.previousElementSibling?.id);
+    expect(previous).toBe('activity-submit');
   });
 
   test.describe('a target in a box that scrolls', () => {
