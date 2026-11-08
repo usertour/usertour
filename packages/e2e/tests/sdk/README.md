@@ -45,6 +45,12 @@ fixtures and never starts the SDK.
 - `flow.spec.ts`, `content-types.spec.ts` — the content lifecycle: a pushed
   session rendered, navigated, ended; checklists, banners, launchers, resource
   centers; what each reports back.
+- `flow-steps.spec.ts` — what a flow's steps do beyond that: step types and
+  settings, how a tooltip finds and follows its target, step triggers, the
+  actions buttons and targets run, button rules, a flow and a checklist taking
+  turns. `flow-questions.spec.ts` — the answers question blocks report.
+  `flow-themes.spec.ts` — which theme a step is drawn with, variations
+  included, and what of it reaches the page.
 - `iframe-targeting.spec.ts` — targets inside frames: found in same-origin
   frames (nested too), positioned and judged visible with the frame's offset,
   followed across the frame's navigations; opaque when cross-origin. A target

@@ -70,48 +70,49 @@ its row.
 | Behaviour | Covered by | Priority |
 |---|---|---|
 | A pushed session opens on its first or current step; nothing is reported | ✓ flow.spec | — |
-| Same session pushed again refreshes it in place without moving the step | — | P2 |
+| The same session pushed again updates the open step in place | ✓ flow-steps "the same session pushed again updates the open step in place" | — |
 | Another session replaces it silently; a dismissed one never returns; Unset removes it | ✓ flow.spec | — |
-| The checklist re-expands when the flow ends | — | P2 |
+| The checklist a flow collapsed opens again when the flow ends | ✓ flow-steps "the checklist a flow collapsed opens again…" | — |
 | ForceGoToStep moves without a report | ✓ flow.spec | — |
 | Modal and tooltip steps | ✓ flow.spec, iframe-targeting.spec | — |
-| Bubble step; clicking the avatar minimises it | — (widget render only) | P2 |
-| Hidden step: reported on entry, its trigger runs, nothing renders | — | P2 |
-| Close button ends with `close_button_dismiss`; `skippable: false` hides it | partial: the close reason only | P2 |
-| Backdrop click with `backdropClickBehavior: dismiss-flow` ends with `backdrop_dismiss` | — | P2 |
+| Bubble step by its avatar; clicking the avatar folds it away and back | ✓ flow-steps "a bubble step sits by its avatar…" | — |
+| Hidden step: reported on entry, its trigger runs, nothing renders | ✓ flow-steps "a hidden step shows nothing…" | — |
+| Close button ends with `close_button_dismiss`; `skippable: false` hides it | ✓ flow "the close button ends the flow…", flow-steps "a step that is not skippable…" | — |
+| A modal's backdrop click: `backdrop_dismiss` with `backdropClickBehavior: dismiss-flow`, nothing with `do-nothing` | ✓ flow-steps "a click on a modal's backdrop…" | — |
 | Spotlight on the visible part of the target | ✓ iframe "a target in a box that scrolls" | — |
-| `enabledBlockTarget` stops clicks reaching the target | — | P2 |
+| `enabledBlockTarget` stops clicks reaching the target; without it they go through | ✓ flow-steps "with the backdrop on, a click on the target…" | — |
 | Placement side/align; `alignType: auto` flips and shifts | partial: bottom/center only (other sides: widget render only) | P3 |
 | `sideOffset`, `alignOffset`, step width | — | P3 |
 | Progress bar; branding unless `removeBranding` | — | P3 |
 | Selector + sequence across the page and frames; never `<head>` | ✓ flow.spec, iframe-targeting.spec | — |
-| Text-matched targets (`content`) | — | P2 |
-| A target that appears after the step opens | — | P2 |
-| A target re-rendered by the page (replaced element) | partial: frame navigation only | P2 |
+| A target's `content`: the matched element must have that text, or there is no target | ✓ flow-steps "a target pinned to the text…" | — |
+| A target that appears after the step opens | ✓ flow-steps "a target that appears after the step opens…" | — |
+| A target re-rendered by the page (replaced element) | ✓ flow-steps "a target the page re-renders keeps the tooltip…", iframe "a frame that navigates…" | — |
 | A target scrolled out of view (of the page, a scrolling container or a frame) hides the tooltip without a deadline; scrolled back, it reopens | ✓ flow "a tooltip whose target is scrolled out of the page…", iframe "…scrolled out above the box" | — |
-| Default scroll into view of an off-screen target | — | P2 |
-| Clicking the target runs `target.actions` | — | P2 |
+| Default scroll into view of an off-screen target | ✓ flow-steps "an off-screen target is scrolled into view…" | — |
+| Clicking the target runs `target.actions` | ✓ flow-steps "clicking the target runs the step’s target actions" | — |
+| Leaving a tooltip step stops its target lookup: coming back waits the full time again | ✓ flow-steps "returning to a tooltip step waits its full time again…" | — |
 | Target never found: ReportTooltipTargetMissing, then `tooltip_target_missing`, at the theme's tolerance | ✓ flow "a tooltip whose target never appears…" | — |
 | A target that leaves the page (removed, not rendered) ends the flow at the tolerance with `tooltip_target_missing`, without ReportTooltipTargetMissing | ✓ flow "a tooltip whose target leaves the page…" | — |
 | Theme `missingTargetBehavior: use-bubble`: a target that left turns the step into a bubble | ✓ flow "with the theme set to show a bubble…" | — |
-| Theme `missingTargetBehavior: use-bubble`: a target never found shows the step as a bubble | — | P2 |
+| Theme `missingTargetBehavior: use-bubble`: a target never found shows the step as a bubble | ✓ flow-steps "with the theme set to show a bubble, a target never found…" (its report: see "To pin down") | — |
 | Step trigger: element condition, wait, dismiss | ✓ flow "a step trigger dismisses the flow after its wait" | — |
-| Step trigger: other condition types, a condition that turns true later, other actions | — | P2 |
-| A pending trigger wait is cancelled on step change or close | — | P2 |
+| Step trigger: a condition that turns true later, a page-URL condition, a step-goto action | ✓ flow-steps "step triggers › …" | — |
+| A pending trigger wait is cancelled on step change | ✓ flow-steps "a trigger still waiting is cancelled…" | — |
 | step-goto held until acknowledged | ✓ flow.spec | — |
 | flow-dismis ends with `action_dismiss` | ✓ flow.spec | — |
-| flow-start action sends StartContent `start_from_action` | — | P2 |
+| flow-start action sends StartContent `start_from_action` with its step | ✓ flow-steps "a flow-start action asks the server…" | — |
 | page-navigate, same tab and new tab | ✓ api "links and navigation › …" | — |
-| page-navigate runs after the other actions of the same click | — | P2 |
+| page-navigate runs after the other actions of the same click | ✓ flow-steps "a page-navigate action runs after the other actions…" | — |
 | javascript-evaluate runs the code | ✓ api "a JavaScript action runs its code" | — |
-| Button disable/hide rules evaluated, and re-evaluated as the page changes | — (widget renders pre-evaluated fixtures) | P2 |
-| Question answers send AnswerQuestion with the right payload, for every question type | — (widget checks the call, not the message) | P2 |
-| A question's actions run after its answer is acknowledged; `bindToAttribute` updates the session | — | P2 |
+| Button disable/hide rules evaluated, and re-evaluated as the page changes | ✓ flow-steps "button rules follow the page…" | — |
+| Question answers send AnswerQuestion with the right payload, for every question type; submit types only on submit | ✓ flow-questions "a <kind> answer is reported with its value" ×7 | — |
+| A question's actions run only once its answer is acknowledged; `bindToAttribute` shows in a later step | ✓ flow-questions "a question’s actions run…" ×2 | — |
 | Required text, choice ranges, "Other" option | — | P3 |
-| Step theme over version theme; no theme ends with `store_not_found` | — | P2 |
-| Theme variations: the first whose conditions match wins | — | P2 |
-| A theme change mid-step | — | P2 |
-| Theme `customCss` and its font are loaded | — | P2 |
+| Step theme over version theme; no theme ends with `store_not_found` | ✓ flow-themes "a step’s own theme is used…", "a flow without a theme…" | — |
+| Theme variations: the first whose conditions match wins | ✓ flow-themes "the first variation whose conditions match is used" | — |
+| A variation that starts matching mid-step recolours the open step | ✓ flow-themes "a variation that starts matching while the step is open…" | — |
+| Theme `customCss` and its Google font are loaded into the step | ✓ flow-themes "the theme’s custom CSS and its Google font…" | — |
 | Built-in strings follow `userLocale` | — | P3 |
 | User attributes fill text and links | — (widget render only) | P3 |
 | Stacking: flow above resource center above checklist above launcher and banner | — | P3 |
@@ -132,6 +133,7 @@ its row.
 | Content buttons: actions and live disable/hide rules; `checklist-dismis` action | — | P2 |
 | A dismissed session pushed again is ignored; another session replaces it | — | P2 |
 | A flow starting collapses it | ✓ content-types "a flow starting collapses the checklist…" | — |
+| A checklist that arrives while a flow runs stays collapsed until the flow ends | ✓ flow-steps "a checklist that arrives while a flow runs…" | — |
 
 ## Launchers
 
@@ -220,13 +222,10 @@ is read from the code; the second has not been checked closely.
 
 Read from the code:
 
-- A flow's `destroy()` runs `reset()`, which sets the element watcher to null,
-  before `onDestroy()` calls `watcher?.destroy()`; the watcher is never
-  destroyed. Whether its timers can still act is unchecked.
-- A checklist session that arrives while a flow runs is expanded by `show()`
-  without the "no flow running" check `expandChecklist()` makes.
-- The mid-session theme check updates `themeSettings` but not `globalStyle`.
-  Whether colours stay stale on screen is unchecked.
+- A tooltip target that is never found, with the theme set to `use-bubble`,
+  shows the step as a bubble but sends no ReportTooltipTargetMissing, so the
+  "times not found" figure in the step analytics leaves these out although
+  the selector matched nothing.
 
 Not yet checked closely:
 

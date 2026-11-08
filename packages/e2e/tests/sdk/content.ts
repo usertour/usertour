@@ -57,6 +57,13 @@ export const navigate = (url: string, openType: 'same' | 'new' = 'same'): Action
   data: { value: [{ type: 'paragraph', children: [{ text: url }] }], openType },
 });
 
+/** Start another flow, at a step when given. */
+export const startFlow = (contentId: string, stepCvid?: string): Action => ({
+  id: id('action'),
+  type: 'flow-start',
+  data: { contentId, ...(stepCvid ? { stepCvid } : {}) },
+});
+
 /** Run `code` in the page. */
 export const evaluateJs = (code: string): Action => ({
   id: id('action'),
@@ -71,6 +78,79 @@ export const richText = (...children: unknown[]) => ({
 });
 
 export const link = (text: string, url: string) => ({ type: 'link', url, children: [{ text }] });
+
+/** A user attribute's value in text, `fallback` when the user has none. */
+export const userAttribute = (attrCode: string, fallback = '') => ({
+  type: 'user-attribute',
+  attrCode,
+  fallback,
+  children: [{ text: '' }],
+});
+
+// --- questions (the shapes the builder seeds, filled in as an author would) ---
+
+export type QuestionKind = 'nps' | 'star' | 'scale' | 'single' | 'multi' | 'text' | 'textarea';
+
+const choiceOptions = () => [
+  { label: 'Daily', value: 'daily', checked: false },
+  { label: 'Weekly', value: 'weekly', checked: false },
+  { label: 'Monthly', value: 'monthly', checked: false },
+];
+
+/** A question block of `kind`; `extra` adds actions or an attribute binding to its data. */
+export const question = (kind: QuestionKind, extra: Record<string, unknown> = {}) => {
+  const cvid = `q-${kind}`;
+  switch (kind) {
+    case 'nps':
+      return {
+        type: 'nps',
+        data: {
+          cvid,
+          name: 'How likely are you to recommend us?',
+          lowLabel: '',
+          highLabel: '',
+          ...extra,
+        },
+      };
+    case 'star':
+      return {
+        type: 'star-rating',
+        data: { cvid, name: 'Rate this feature', lowRange: 1, highRange: 5, ...extra },
+      };
+    case 'scale':
+      return {
+        type: 'scale',
+        data: { cvid, name: 'How easy was setup?', lowRange: 1, highRange: 5, ...extra },
+      };
+    case 'single':
+    case 'multi':
+      return {
+        type: 'multiple-choice',
+        data: {
+          cvid,
+          name: kind === 'single' ? 'How often do you report?' : 'Which reports do you use?',
+          options: choiceOptions(),
+          shuffleOptions: false,
+          enableOther: false,
+          allowMultiple: kind === 'multi',
+          ...extra,
+        },
+      };
+    case 'text':
+    case 'textarea':
+      return {
+        type: kind === 'text' ? 'single-line-text' : 'multi-line-text',
+        data: {
+          cvid,
+          name: kind === 'text' ? 'Your role' : 'Anything else?',
+          placeholder: '',
+          buttonText: '',
+          required: false,
+          ...extra,
+        },
+      };
+  }
+};
 
 // --- flow ---
 
@@ -95,8 +175,15 @@ export type StepInput = {
   type: 'modal' | 'tooltip' | 'bubble' | 'hidden';
   name?: string;
   data: unknown[];
-  /** Tooltip target: a CSS selector, or one with which match to take. */
-  target?: string | { customSelector: string; sequence?: string };
+  /**
+   * Tooltip target: a CSS selector, or one with which match to take, the text
+   * the element must have (`content`) and actions to run when it is clicked.
+   */
+  target?:
+    | string
+    | { customSelector: string; sequence?: string; content?: string; actions?: Action[] };
+  /** The step's own theme, over the version's. */
+  theme?: unknown;
   setting?: Partial<typeof stepSetting>;
   trigger?: unknown[];
 };
@@ -118,6 +205,7 @@ export const step = (input: StepInput, sequence: number) => ({
       }
     : {}),
   ...(input.trigger ? { trigger: input.trigger } : {}),
+  ...(input.theme ? { theme: input.theme } : {}),
 });
 
 export type FlowInput = {
@@ -130,6 +218,8 @@ export type FlowInput = {
   attributes?: unknown[];
   /** The version's theme settings; the default theme when left out. */
   themeSettings?: unknown;
+  /** The whole version theme (settings, variations), instead of `themeSettings`; null for none. */
+  theme?: unknown;
 };
 
 export const flowSession = (input: FlowInput) => {
@@ -145,7 +235,10 @@ export const flowSession = (input: FlowInput) => {
     content: { id: input.contentId, name: input.contentId, type: 'flow', project: PROJECT },
     version: {
       id: input.versionId ?? `${input.contentId}-version`,
-      theme: { settings: input.themeSettings ?? defaultSettings },
+      theme:
+        input.theme !== undefined
+          ? input.theme
+          : { settings: input.themeSettings ?? defaultSettings },
       steps,
     },
     ...(current ? { currentStep: { id: current.id, cvid: current.cvid } } : {}),
