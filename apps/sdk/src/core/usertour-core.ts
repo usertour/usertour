@@ -1584,7 +1584,13 @@ export class UsertourCore extends Evented {
    * Remove a tracker from SDK evaluation state.
    */
   private async removeTracker(contentId: string): Promise<boolean> {
-    return this.activeTrackers.delete(contentId);
+    const removed = this.activeTrackers.delete(contentId);
+    if (removed) {
+      // Its rules' click and fill listeners go with it; nothing else evaluates
+      // under a tracker's content id.
+      rulesEvaluatorManager.destroyEvaluator(contentId);
+    }
+    return removed;
   }
 
   // === Store Synchronization ===
