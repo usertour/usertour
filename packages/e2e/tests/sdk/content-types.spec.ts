@@ -260,6 +260,76 @@ test.describe('a banner in a scroll container', () => {
   });
 });
 
+test.describe('a banner whose container is replaced by a navigation', () => {
+  /**
+   * Shows a page view holding the card the banner is embedded at the top of,
+   * in place of the one already there: what an SPA navigation does.
+   */
+  const mountView = (label: string) => {
+    document.getElementById('view')?.remove();
+    const view = document.createElement('section');
+    view.id = 'view';
+    view.innerHTML = `<div id="card"><div style="height:120px">${label}</div></div>`;
+    document.querySelector('main')?.append(view);
+  };
+
+  const pushBanner = (protocol: { push: (kind: string, payload: unknown) => Promise<unknown> }) =>
+    protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Maintenance tonight',
+        container: '#card',
+      }),
+    );
+
+  // The shell is moved into the new card, and a moved iframe loads a new,
+  // empty document: the banner's content has to be rendered into it again.
+  test('shows its content in the new container when the old view is swapped out at once', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(mountView, 'old page');
+    await pushBanner(protocol);
+    const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+    await sdk.advance(1000);
+
+    // One call, so no check of the banner's can run between the removal and
+    // the insertion.
+    await sdk.page.evaluate(mountView, 'new page');
+    await sdk.advance(2000);
+
+    await expect(sdk.page.locator('#card > .usertour-widget-banner')).toHaveCount(1);
+    await expect(sdk.page.locator('#card')).toContainText('new page');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+  });
+
+  test('shows its content in the new container when the new view arrives a second later', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(mountView, 'old page');
+    await pushBanner(protocol);
+    const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+    await sdk.advance(1000);
+
+    await sdk.page.evaluate(() => document.getElementById('view')?.remove());
+    await sdk.advance(1000);
+    await sdk.page.waitForTimeout(50);
+    await sdk.page.evaluate(mountView, 'new page');
+    await sdk.advance(2000);
+
+    await expect(sdk.page.locator('#card > .usertour-widget-banner')).toHaveCount(1);
+    await expect(sdk.page.locator('#card')).toContainText('new page');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+  });
+});
+
 test.describe('launchers', () => {
   test('a launcher appears on its target, opens its tooltip on click, and goes away when removed', async ({
     sdk,
