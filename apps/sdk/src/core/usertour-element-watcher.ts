@@ -1,8 +1,7 @@
 import { isVisibleNode } from '@usertour/dom';
-import { finderV2 } from '@usertour/finder';
 import { ElementSelectorPropsData } from '@usertour/types';
 import { document, Evented } from '@/utils';
-import { isVisible } from '@/core/usertour-helper';
+import { findTargetElement, isVisible } from '@/core/usertour-helper';
 import { timerManager } from '@/utils/timer-manager';
 import { SDKClientEvents } from '@usertour/constants';
 import { uuidV4 } from '@usertour/helpers';
@@ -17,6 +16,9 @@ type CheckContentIsVisible = {
   checkHiddenTs: number;
   isTimeout: boolean;
 };
+
+/** Resolves a target to an element; the default looks in the page and its same-origin frames. */
+type FindElementByTarget = (target: ElementSelectorPropsData) => Element | null;
 
 // === Constants ===
 const RETRY_DELAY = 200; // Delay between retries in milliseconds
@@ -33,11 +35,16 @@ export class UsertourElementWatcher extends Evented {
   private checker: CheckContentIsVisible | null = null; // Visibility state tracker
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS; // Time allowed for target element to be missing
   private readonly id: string; // Unique identifier for this watcher
+  private readonly findElementByTarget: FindElementByTarget; // Where and how the target is looked up
 
   // === Constructor ===
-  constructor(target: ElementSelectorPropsData) {
+  constructor(
+    target: ElementSelectorPropsData,
+    findElementByTarget: FindElementByTarget = findTargetElement,
+  ) {
     super();
     this.target = target;
+    this.findElementByTarget = findElementByTarget;
     this.id = uuidV4();
   }
 
@@ -198,8 +205,9 @@ export class UsertourElementWatcher extends Evented {
       return false;
     }
 
-    // Check if element is still in DOM
-    if (!document.body.contains(this.element)) {
+    // Check if element is still in a displayed DOM: its own document's, which
+    // for an element inside a frame is not this page's
+    if (!this.element.isConnected || !this.element.ownerDocument.defaultView) {
       return false;
     }
 
@@ -226,13 +234,10 @@ export class UsertourElementWatcher extends Evented {
   }
 
   /**
-   * Finds the target element using finderV2
+   * Finds the target element with the lookup this watcher was given
    * @returns Found element or null if not found
    */
   private findElementBySelector(): Element | null {
-    if (!document?.body) {
-      return null;
-    }
-    return finderV2(this.target, document.body);
+    return this.findElementByTarget(this.target);
   }
 }

@@ -32,7 +32,7 @@ import {
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 
 import { UsertourTour } from '@/core/usertour-tour';
-import { off, on } from '@/utils';
+import { isElement, off, on } from '@/utils';
 
 // Base props that are shared between TourPopper and TourModal
 type TourBaseProps = {
@@ -176,7 +176,7 @@ const useTargetActions = (
   handleActions: (actions: RulesCondition[]) => Promise<void>,
 ) => {
   useEffect(() => {
-    const element = ref instanceof Element ? ref : ref?.current;
+    const element = isElement(ref) ? ref : ref?.current;
     if (!element || !currentStep?.target?.actions) return;
 
     const actions = currentStep.target.actions as RulesCondition[];
@@ -213,7 +213,7 @@ const TourPopper = (props: TourPopperProps) => {
   // Create a responsive React.RefObject that updates when triggerRef changes
   const responsiveRef = useMemo(() => {
     const ref = { current: null as HTMLElement | null };
-    if (triggerRef instanceof Element) {
+    if (isElement(triggerRef)) {
       ref.current = triggerRef as HTMLElement;
     }
     return ref;
