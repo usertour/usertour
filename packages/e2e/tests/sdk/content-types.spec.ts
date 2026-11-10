@@ -293,8 +293,14 @@ test.describe('a banner whose container is replaced by a navigation', () => {
     await expect(banner.getByText('Maintenance tonight')).toBeVisible();
     await sdk.advance(1000);
 
-    await sdk.page.evaluate(() => document.getElementById('view')?.remove());
-    await sdk.page.evaluate(mountView, 'new page');
+    // One call, so no check of the banner's can run between the two.
+    await sdk.page.evaluate(() => {
+      document.getElementById('view')?.remove();
+      const view = document.createElement('section');
+      view.id = 'view';
+      view.innerHTML = '<div id="card"><div style="height:120px">new page</div></div>';
+      document.querySelector('main')?.append(view);
+    });
     await sdk.advance(2000);
 
     await expect(sdk.page.locator('#card > .usertour-widget-banner')).toHaveCount(1);

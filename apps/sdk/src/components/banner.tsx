@@ -129,10 +129,18 @@ const insertMountEl = (mountEl: HTMLDivElement, placement: BannerMountPlacement)
   }
 
   if (mountEl.parentNode === parent) {
-    if (insertMode === 'append' && mountEl === parent.lastChild) return false;
-    if (insertMode === 'prepend' && mountEl === parent.firstChild) return false;
-    if (insertMode === 'before' && anchor && mountEl.nextSibling === anchor) return false;
-    if (insertMode === 'after' && anchor && anchor.nextSibling === mountEl) return false;
+    if (insertMode === 'append' && mountEl === parent.lastChild) {
+      return false;
+    }
+    if (insertMode === 'prepend' && mountEl === parent.firstChild) {
+      return false;
+    }
+    if (insertMode === 'before' && anchor && mountEl.nextSibling === anchor) {
+      return false;
+    }
+    if (insertMode === 'after' && anchor && anchor.nextSibling === mountEl) {
+      return false;
+    }
   }
 
   switch (insertMode) {
