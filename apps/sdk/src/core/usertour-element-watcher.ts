@@ -34,6 +34,8 @@ export class UsertourElementWatcher extends Evented {
   private element: Element | null = null; // Reference to the found element
   private checker: CheckContentIsVisible | null = null; // Visibility state tracker
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS; // Time allowed for target element to be missing
+  // Whether a rendered target must also be inside the viewport to count as visible
+  private viewportCheck = true;
   private readonly id: string; // Unique identifier for this watcher
   private readonly findElementByTarget: FindElementByTarget; // Where and how the target is looked up
 
@@ -55,6 +57,18 @@ export class UsertourElementWatcher extends Evented {
    */
   setTargetMissingSeconds(seconds: number) {
     this.targetMissingSeconds = seconds;
+  }
+
+  /**
+   * Turns the viewport half of the visibility check off: the target then only
+   * has to be rendered (in the DOM, not display:none / hidden / transparent).
+   * For content that lives in the document flow, where a target scrolled out
+   * of view is ordinary, and where the content's own height can push the
+   * target out of the viewport; with the check on, that hides the content,
+   * which reflows the target back in, which shows it again, every tick.
+   */
+  setViewportCheck(enabled: boolean) {
+    this.viewportCheck = enabled;
   }
 
   /** The element this watcher has found, if any. */
@@ -129,7 +143,7 @@ export class UsertourElementWatcher extends Evented {
 
     const isHidden =
       !isVisibleNode(this.element as HTMLElement) ||
-      !(await isVisible(this.element as HTMLElement));
+      (this.viewportCheck && !(await isVisible(this.element as HTMLElement)));
 
     if (!isHidden) {
       this.checker = null;
