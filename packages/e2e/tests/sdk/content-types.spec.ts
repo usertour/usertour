@@ -261,8 +261,12 @@ test.describe('a banner in a scroll container', () => {
 });
 
 test.describe('a banner whose container is replaced by a navigation', () => {
-  /** A page view holding the card the banner is embedded at the top of. */
+  /**
+   * Shows a page view holding the card the banner is embedded at the top of,
+   * in place of the one already there: what an SPA navigation does.
+   */
   const mountView = (label: string) => {
+    document.getElementById('view')?.remove();
     const view = document.createElement('section');
     view.id = 'view';
     view.innerHTML = `<div id="card"><div style="height:120px">${label}</div></div>`;
@@ -293,14 +297,9 @@ test.describe('a banner whose container is replaced by a navigation', () => {
     await expect(banner.getByText('Maintenance tonight')).toBeVisible();
     await sdk.advance(1000);
 
-    // One call, so no check of the banner's can run between the two.
-    await sdk.page.evaluate(() => {
-      document.getElementById('view')?.remove();
-      const view = document.createElement('section');
-      view.id = 'view';
-      view.innerHTML = '<div id="card"><div style="height:120px">new page</div></div>';
-      document.querySelector('main')?.append(view);
-    });
+    // One call, so no check of the banner's can run between the removal and
+    // the insertion.
+    await sdk.page.evaluate(mountView, 'new page');
     await sdk.advance(2000);
 
     await expect(sdk.page.locator('#card > .usertour-widget-banner')).toHaveCount(1);
