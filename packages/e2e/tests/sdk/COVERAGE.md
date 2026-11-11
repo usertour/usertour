@@ -92,6 +92,7 @@ its row.
 | A target that appears after the step opens | ✓ flow-steps "a target that appears after the step opens…" | — |
 | A target re-rendered by the page (replaced element) | ✓ flow-steps "a target the page re-renders keeps the tooltip…", iframe "a frame that navigates…" | — |
 | A target scrolled out of view (of the page, a scrolling container or a frame) hides the tooltip without a deadline; scrolled back, it reopens | ✓ flow "a tooltip whose target is scrolled out of the page…", iframe "…scrolled out above the box" | — |
+| A target with a width but no height (its children overflow it) is still pointed at | ✓ flow "a tooltip whose target has a width but no height…" | — |
 | Default scroll into view of an off-screen target | ✓ flow-steps "an off-screen target is scrolled into view…" | — |
 | Clicking the target runs `target.actions` | ✓ flow-steps "clicking the target runs the step’s target actions" | — |
 | Leaving a tooltip step stops its target lookup: coming back waits the full time again | ✓ flow-steps "returning to a tooltip step waits its full time again…" | — |
@@ -143,7 +144,7 @@ its row.
 
 | Behaviour | Covered by | Priority |
 |---|---|---|
-| A `hidden` launcher has no box of its own to catch clicks; its target opens the tooltip | ✓ launcher "a hidden launcher has no box of its own…" | — |
+| A `hidden` launcher has no box of its own to catch clicks; its target opens the tooltip, also with the trigger element left on "launcher" | ✓ launcher "a hidden launcher has no box of its own…", "a hidden launcher left on the default trigger element…" | — |
 | Appears on its target, opens its tooltip on click, removed by the server | ✓ content-types "a launcher appears on its target…" | — |
 | A press outside, in the page or a frame, closes a click tooltip | ✓ iframe-targeting.spec | — |
 | Target missing, appearing later, or hidden | ✓ launcher "a launcher waits for its target…" | — |

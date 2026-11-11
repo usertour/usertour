@@ -36,8 +36,9 @@ export interface Usertour {
 
   /**
    * Resolves true when the server started the content, false when it did not:
-   * not found or not published, or `once` and already seen. Not starting is an
-   * outcome, not an error, so it does not reject.
+   * not found or not published, or `once` and already seen. It is also false
+   * when the server could not be asked: not connected, or no answer in time.
+   * Not starting is an outcome, not an error, so it does not reject.
    */
   start: (contentId: string, opts?: StartOptions) => Promise<boolean>;
 

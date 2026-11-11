@@ -251,7 +251,8 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
   // button-clicked path. Without this, moving a block from a multi-block tab
   // into its own tab would silently zero out the block's click analytics.
   // Only while open: the page is computed while the panel is still closed,
-  // and a click the user never made must not be counted on mount.
+  // and a closed panel must not count a click. A panel restored open after a
+  // reload counts one, as each opening does.
   useEffect(() => {
     if (isOpen && autoExpandedPage) {
       onBlockClick?.(autoExpandedPage.block.id);
