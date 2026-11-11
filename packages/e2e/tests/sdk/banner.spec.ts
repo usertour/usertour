@@ -121,9 +121,6 @@ test.describe('placement', () => {
     sdk,
     protocol,
   }) => {
-    // Fixed on feat/embed (#601), where a moved mount gets its frame rebuilt;
-    // on this branch the moved iframe reloads blank. Runs once that lands here.
-    test.fixme(true, 'needs the banner mount of feat/embed (#601)');
     await start(sdk);
     await protocol.push('SetBannerSession', banner({ container: '#panel' }));
     await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();
@@ -204,9 +201,6 @@ test.describe('a session updated in place', () => {
     sdk,
     protocol,
   }) => {
-    // Fixed on feat/embed (#601), where a moved mount gets its frame rebuilt;
-    // on this branch the moved iframe reloads blank. Runs once that lands here.
-    test.fixme(true, 'needs the banner mount of feat/embed (#601)');
     await start(sdk);
     await protocol.push('SetBannerSession', banner());
     await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();

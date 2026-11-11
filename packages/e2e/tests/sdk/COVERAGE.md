@@ -164,12 +164,12 @@ its row.
 | Top-of-page banner shown first in the body, above the page; dismissal ends with `dismiss_button`; Unset removes it | ✓ content-types.spec | — |
 | Bottom of page | ✓ banner "at the bottom of the page…" | — |
 | Embedded in a container element (top/bottom of it, before/after it) | ✓ banner "placed <placement>, a banner goes…" ×4 | — |
-| A container the page re-renders gets the banner back with its content | banner "a container the page re-renders…" — fixme until the banner mount of feat/embed (#601) is under this branch | — |
+| A container the page re-renders gets the banner back with its content | ✓ banner "a container the page re-renders…" | — |
 | Container hidden removes the banner and its placeholder; back again reopens it | ✓ banner "a banner placed by a container leaves with it…" | — |
 | Sticky / overlay positioning | ✓ banner "sticky and overlay › …" ×3 | — |
 | Dismiss button hidden unless `allowUsersToDismissEmbed` | ✓ banner "without user dismissal allowed…" | — |
 | Button actions, live button rules, `banner-dismis` action | ✓ banner "its buttons › …" | — |
-| A session updated in place, including a placement change | ✓ banner "a session updated in place › …" (the placement change: fixme until #601 is under this branch) | — |
+| A session updated in place, including a placement change | ✓ banner "a session updated in place › …" | — |
 
 ## Resource center
 
