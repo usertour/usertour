@@ -604,14 +604,14 @@ export class UsertourCore extends Evented {
    * @param startReason - The reason for starting the content
    * @param opts - The options for starting the content
    * @param batch - Whether to batch the request
-   * @returns A promise that resolves when the content is started
+   * @returns Whether the server started the content
    */
   async startContent(
     contentId: string,
     startReason: contentStartReason,
     opts?: UserTourTypes.StartOptions,
     batch = false,
-  ) {
+  ): Promise<boolean> {
     // Ensure the SDK has been initialized before calling startContent
     this.ensureIdentify();
     // Validate content ID
@@ -627,8 +627,9 @@ export class UsertourCore extends Evented {
       startReason,
       contentId,
     };
-    // Start the content
-    await this.socketService.startContent(startOptions, { batch });
+    // The server answers false when it does not start the content (not found or
+    // not published, or `once` and already seen): an outcome, passed on as is.
+    return await this.socketService.startContent(startOptions, { batch });
   }
 
   /**
@@ -875,8 +876,9 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Checks if a user is identified
-   * @returns True if user info exists, false otherwise
+   * Whether identify() has been called for a user since the last reset(). Set
+   * before the server answers and kept if it fails: the SDK goes on as that
+   * user and sends the write again on reconnect.
    */
   isIdentified() {
     return Boolean(this.externalUserId);
@@ -1377,8 +1379,9 @@ export class UsertourCore extends Evented {
     });
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
-    // Show checklist with appropriate expanded state
-    await this.activatedChecklist.show();
+    // Show checklist with appropriate expanded state; collapsed under a running
+    // flow, which expands it when it ends
+    await this.activatedChecklist.show(!this.activatedTour);
     return true;
   }
 
@@ -1581,7 +1584,13 @@ export class UsertourCore extends Evented {
    * Remove a tracker from SDK evaluation state.
    */
   private async removeTracker(contentId: string): Promise<boolean> {
-    return this.activeTrackers.delete(contentId);
+    const removed = this.activeTrackers.delete(contentId);
+    if (removed) {
+      // Its rules' click and fill listeners go with it; nothing else evaluates
+      // under a tracker's content id.
+      rulesEvaluatorManager.destroyEvaluator(contentId);
+    }
+    return removed;
   }
 
   // === Store Synchronization ===

@@ -45,6 +45,27 @@ fixtures and never starts the SDK.
 - `flow.spec.ts`, `content-types.spec.ts` — the content lifecycle: a pushed
   session rendered, navigated, ended; checklists, banners, launchers, resource
   centers; what each reports back.
+- `flow-steps.spec.ts` — what a flow's steps do beyond that: step types and
+  settings, how a tooltip finds and follows its target, step triggers, the
+  actions buttons and targets run, button rules, a flow and a checklist taking
+  turns. `flow-questions.spec.ts` — the answers question blocks report.
+  `flow-themes.spec.ts` — which theme a step is drawn with, variations
+  included, and what of it reaches the page.
+- `checklist.spec.ts`, `launcher.spec.ts`, `banner.spec.ts` — what the other
+  content types do with what the builder configures: a checklist's opening,
+  task clicks, the tasks it lists and their order, its dismissal and buttons;
+  a launcher following its target, what opens it and what it does, its
+  tooltip's buttons, several at once; a banner's placements, following its
+  container, its buttons, a session updated in place.
+- `frame-hosted.spec.ts` — the SDK loaded by an app that itself runs inside a
+  frame of another page (`hosts/frame-app.html`): what it does stays in that
+  frame.
+- `resource-center.spec.ts` — the resource center's blocks: an action block,
+  a content list fetched from the server, the announcement feed, a popup
+  announcement, live chat, tabs and the page stack.
+- `flow-layout.spec.ts` — how a flow step is laid out: where a tooltip goes
+  and how far, its width, the progress bar, the branding line, the order the
+  widgets stack in, user attributes in text and links.
 - `iframe-targeting.spec.ts` — targets inside frames: found in same-origin
   frames (nested too), positioned and judged visible with the frame's offset,
   followed across the frame's navigations; opaque when cross-origin. A target
@@ -52,6 +73,13 @@ fixtures and never starts the SDK.
   box shows, the same in a frame as in an element on the page.
 - `messages.spec.ts` — the message framing (batches), `track()`, unknown server
   messages, the UI failing to initialise.
+- `api.spec.ts` — the rest of the public API a host page calls: `start()` and
+  `?usertour=` links, `isStarted()`, `reset()`, anonymous users, the
+  configuration setters (URL filter, link decorator, custom navigation and
+  scrolling, z-index, target-missing time, custom inputs, `disableEvalJs()`)
+  and the resource center's controls.
+- `loader.spec.ts` — the loader snippet: calls queued before the bundle loads,
+  and stub methods the bundle no longer has.
 - `content.ts` — the sessions the server pushes, reduced to what the widgets
   read; `protocol-server.ts` and `fixtures.ts` — the harness.
 
@@ -67,7 +95,8 @@ suite needs.
 
 ## Adding a scenario
 
-Every scenario here was a review finding once. Write the new one so that it
-is red on the code that had the bug: describe the host's calls and the
-server's behaviour, then assert on the handshakes and messages that must, or
-must not, arrive.
+`COVERAGE.md` lists what the SDK does at runtime and which test here asserts
+each behaviour; pick up an uncovered row, or add one with a new behaviour.
+When a scenario comes from a bug, write it so that it is red on the code that
+had the bug. Describe the host's calls and the server's behaviour, then
+assert on the handshakes and messages that must, or must not, arrive.

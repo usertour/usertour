@@ -100,12 +100,17 @@ export class TimerManager {
     this.clearTimeout(id); // Clear existing timeout with same id
 
     const timeoutId = setTimeout(() => {
+      // Forget this timeout before its callback runs: a callback that sets the
+      // next one under the same id (a retry loop) must leave that one tracked,
+      // or clearTimeout can no longer stop it.
+      if (this.timeouts.get(id) === timeoutId) {
+        this.timeouts.delete(id);
+      }
       try {
         callback();
       } catch (error) {
         log.error(`Timeout callback (${id}) threw`, error);
       }
-      this.timeouts.delete(id);
     }, delay);
 
     this.timeouts.set(id, timeoutId);

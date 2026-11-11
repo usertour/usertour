@@ -11,6 +11,8 @@ import { isElement, logger } from '@/utils';
 import { isVisibleNode } from '@usertour/dom';
 import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
 import { UsertourElementWatcher } from './usertour-element-watcher';
+import { rootsHaveButtonConditions } from './usertour-helper';
+import { isEqual } from '@usertour/helpers';
 import { CommonActionHandler, LauncherActionHandler } from '@/core/action-handlers';
 
 const log = logger.scope('launcher');
@@ -38,6 +40,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
   async check(): Promise<void> {
     try {
       await this.checkTargetVisibility();
+      await this.checkAndUpdateButtonConditions();
       await this.checkAndUpdateThemeSettings();
     } catch (error) {
       log.error('Failed to check the launcher state', error);
@@ -141,6 +144,29 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
     return {
       launcherData: evaluatedLauncherData,
     };
+  }
+
+  /**
+   * Re-evaluates the tooltip's button disable/hide conditions against the live
+   * page, as a flow step, a checklist and a banner do: evaluated only when the
+   * store was built, a page-state condition froze for as long as the launcher
+   * stayed.
+   * @private
+   */
+  private async checkAndUpdateButtonConditions(): Promise<void> {
+    const store = this.getStoreData();
+    const launcherData = store?.launcherData;
+    const content = launcherData?.tooltip?.content as ContentEditorRoot[] | undefined;
+    if (!launcherData || !content || !rootsHaveButtonConditions(content)) {
+      return;
+    }
+    const evaluated = await this.evaluateButtonConditionsInData(content);
+    if (isEqual(evaluated, content)) {
+      return;
+    }
+    this.updateStore({
+      launcherData: { ...launcherData, tooltip: { ...launcherData.tooltip, content: evaluated } },
+    } as unknown as Partial<LauncherStore>);
   }
 
   // === Element Watcher ===

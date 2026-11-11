@@ -41,8 +41,10 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
   /**
    * Shows the checklist by initializing its store data with closed state.
    * This method sets up the initial state of the checklist without displaying it.
+   * @param expandable - Whether it may open expanded now; false while a flow runs,
+   *   which expands it once the flow ends
    */
-  async show() {
+  async show(expandable = true) {
     const storeData = await this.buildStoreData();
     if (!storeData?.checklistData) {
       return;
@@ -50,7 +52,7 @@ export class UsertourChecklist extends UsertourComponent<ChecklistStore> {
     // Process items to determine their status
     this.setStoreData({ ...storeData, openState: true });
     // Expand the checklist with the appropriate expanded state and event reporting
-    if (this.isExpandable()) {
+    if (expandable && this.isExpandable()) {
       await this.expand(true);
     }
   }

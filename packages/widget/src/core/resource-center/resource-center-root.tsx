@@ -246,16 +246,19 @@ export const ResourceCenterRoot = memo((props: ResourceCenterRootProps) => {
     return null;
   }, [currentTab, currentPage]);
 
-  // Fire the block-click analytics event when a block auto-expands, so its
-  // click counts stay consistent with the button-clicked path. Without this,
-  // moving a block from a multi-block tab into its own tab would silently
-  // zero out the block's click analytics.
+  // Fire the block-click analytics event when the user opens onto a block
+  // that auto-expands, so its click counts stay consistent with the
+  // button-clicked path. Without this, moving a block from a multi-block tab
+  // into its own tab would silently zero out the block's click analytics.
+  // Only while open: the page is computed while the panel is still closed,
+  // and a closed panel must not count a click. A panel restored open after a
+  // reload counts one, as each opening does.
   useEffect(() => {
-    if (autoExpandedPage) {
+    if (isOpen && autoExpandedPage) {
       onBlockClick?.(autoExpandedPage.block.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoExpandedPage?.block.id]);
+  }, [isOpen, autoExpandedPage?.block.id]);
 
   // Trigger content list fetch for auto-expanded or pushed content list pages
   const activeContentListBlock =
