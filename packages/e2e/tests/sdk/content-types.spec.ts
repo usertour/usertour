@@ -182,6 +182,154 @@ test.describe('banner sessions', () => {
   });
 });
 
+test.describe('a banner in a scroll container', () => {
+  type RemovalCounter = Window & { __bannerRemovals: number };
+
+  test('stays put while its container is scrolled out of view, and the scroll does not jump', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    // A scroll box holding a card the banner is embedded at the top of. The
+    // banner sits in the box's flow, so taking it out moves what follows.
+    await sdk.page.evaluate(() => {
+      const box = document.createElement('div');
+      box.id = 'scroll-box';
+      box.style.cssText = 'height:300px;overflow:auto';
+      box.innerHTML =
+        '<div style="height:60px"></div><div id="card"><div style="height:120px"></div></div><div style="height:1200px"></div>';
+      document.querySelector('main')?.append(box);
+    });
+    await protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Maintenance tonight',
+        container: '#card',
+      }),
+    );
+    const shell = sdk.page.locator('#scroll-box .usertour-widget-banner');
+    await expect(shell).toHaveCount(1);
+    await sdk.advance(1000);
+    await expect
+      .poll(() => shell.evaluate((el) => (el as HTMLElement).offsetHeight))
+      .toBeGreaterThan(0);
+
+    await sdk.page.evaluate(() => {
+      const counter = window as unknown as RemovalCounter;
+      counter.__bannerRemovals = 0;
+      new MutationObserver((records) => {
+        for (const record of records) {
+          for (const node of record.removedNodes) {
+            if (node instanceof HTMLElement && node.classList.contains('usertour-widget-banner')) {
+              counter.__bannerRemovals += 1;
+            }
+          }
+        }
+      }).observe(document.getElementById('scroll-box') as HTMLElement, {
+        childList: true,
+        subtree: true,
+      });
+    });
+
+    // Scroll slowly, 8px at a time, until the card is well out of view. The
+    // check that hid a banner whose target left the view took it out, the
+    // content moved up by its height, and the scroll position came back.
+    const jumps: string[] = [];
+    for (let top = 8; top <= 400; top += 8) {
+      await sdk.page.evaluate((value) => {
+        (document.getElementById('scroll-box') as HTMLElement).scrollTop = value;
+      }, top);
+      await sdk.advance(250);
+      await sdk.page.waitForTimeout(20);
+      await sdk.advance(250);
+      const actual = await sdk.page.evaluate(
+        () => (document.getElementById('scroll-box') as HTMLElement).scrollTop,
+      );
+      if (Math.abs(actual - top) > 1) {
+        jumps.push(`${top} -> ${actual}`);
+      }
+    }
+    expect(jumps).toEqual([]);
+    expect(
+      await sdk.page.evaluate(() => (window as unknown as RemovalCounter).__bannerRemovals),
+    ).toBe(0);
+    await expect(shell).toHaveCount(1);
+    expect(await sdk.isStarted('banner-1')).toBe(true);
+  });
+});
+
+test.describe('a banner whose container is replaced by a navigation', () => {
+  /**
+   * Shows a page view holding the card the banner is embedded at the top of,
+   * in place of the one already there: what an SPA navigation does.
+   */
+  const mountView = (label: string) => {
+    document.getElementById('view')?.remove();
+    const view = document.createElement('section');
+    view.id = 'view';
+    view.innerHTML = `<div id="card"><div style="height:120px">${label}</div></div>`;
+    document.querySelector('main')?.append(view);
+  };
+
+  const pushBanner = (protocol: { push: (kind: string, payload: unknown) => Promise<unknown> }) =>
+    protocol.push(
+      'SetBannerSession',
+      bannerSession({
+        sessionId: 'banner-session-1',
+        contentId: 'banner-1',
+        text: 'Maintenance tonight',
+        container: '#card',
+      }),
+    );
+
+  // The shell is moved into the new card, and a moved iframe loads a new,
+  // empty document: the banner's content has to be rendered into it again.
+  test('shows its content in the new container when the old view is swapped out at once', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(mountView, 'old page');
+    await pushBanner(protocol);
+    const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+    await sdk.advance(1000);
+
+    // One call, so no check of the banner's can run between the removal and
+    // the insertion.
+    await sdk.page.evaluate(mountView, 'new page');
+    await sdk.advance(2000);
+
+    await expect(sdk.page.locator('#card > .usertour-widget-banner')).toHaveCount(1);
+    await expect(sdk.page.locator('#card')).toContainText('new page');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+  });
+
+  test('shows its content in the new container when the new view arrives a second later', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(mountView, 'old page');
+    await pushBanner(protocol);
+    const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+    await sdk.advance(1000);
+
+    await sdk.page.evaluate(() => document.getElementById('view')?.remove());
+    await sdk.advance(1000);
+    await sdk.page.waitForTimeout(50);
+    await sdk.page.evaluate(mountView, 'new page');
+    await sdk.advance(2000);
+
+    await expect(sdk.page.locator('#card > .usertour-widget-banner')).toHaveCount(1);
+    await expect(sdk.page.locator('#card')).toContainText('new page');
+    await expect(banner.getByText('Maintenance tonight')).toBeVisible();
+  });
+});
+
 test.describe('launchers', () => {
   test('a launcher appears on its target, opens its tooltip on click, and goes away when removed', async ({
     sdk,
