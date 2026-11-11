@@ -21,7 +21,7 @@ import {
   UserTourTypes,
 } from '@usertour/types';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { useEventHandlers } from '../hooks/use-event-handlers';
+import { getEffectiveTriggerElement, useEventHandlers } from '../hooks/use-event-handlers';
 import { document } from '../utils/globals';
 import { on, off } from '../utils/listener';
 import { isElement } from '../utils/type-check';
@@ -71,7 +71,7 @@ const isPointerOnTooltipOrTrigger = (
   launcher: HTMLElement | null,
   target: HTMLElement | null,
 ) => {
-  const { triggerElement } = data.behavior;
+  const triggerElement = getEffectiveTriggerElement(data);
   return [
     popper,
     triggerElement !== LauncherTriggerElement.TARGET ? launcher : null,

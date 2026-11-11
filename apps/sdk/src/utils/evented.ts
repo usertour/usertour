@@ -73,6 +73,17 @@ export class Evented {
   }
 
   /**
+   * Removes every listener of every event. For an emitter being destroyed:
+   * nothing registered with it hears from it again.
+   *
+   * @returns
+   */
+  removeAllListeners(): this {
+    this.bindings.clear();
+    return this;
+  }
+
+  /**
    * Triggers an event listener for the given event string.
    *
    * @param {string} event

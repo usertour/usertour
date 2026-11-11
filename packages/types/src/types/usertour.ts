@@ -27,9 +27,20 @@ export interface Usertour {
 
   track(name: string, attributes?: EventAttributes, opts?: TrackOptions): Promise<void>;
 
+  /**
+   * True once identify() has been called for a user, until reset(). It does not
+   * wait for the server: a user whose identify() failed, e.g. while offline,
+   * stays identified and the write is sent again on reconnect.
+   */
   isIdentified: () => boolean;
 
-  start: (contentId: string, opts?: StartOptions) => Promise<void>;
+  /**
+   * Resolves true when the server started the content, false when it did not:
+   * not found or not published, or `once` and already seen. It is also false
+   * when the server could not be asked: not connected, or no answer in time.
+   * Not starting is an outcome, not an error, so it does not reject.
+   */
+  start: (contentId: string, opts?: StartOptions) => Promise<boolean>;
 
   isStarted: (contentId: string) => boolean;
 
