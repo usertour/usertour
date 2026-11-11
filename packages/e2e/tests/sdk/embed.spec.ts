@@ -1,10 +1,14 @@
 import {
   button,
   dismissEmbed,
+  elementPresent,
   embedSession,
+  evaluateJs,
   gotoStep,
+  inputEmpty,
   oneStepEmbed,
   paragraph,
+  question,
   row,
   twoStepFlow,
 } from './content';
@@ -49,6 +53,8 @@ const appendLateTarget = (page: Page) =>
     late.id = 'late';
     document.querySelector('main')?.append(late);
   });
+
+const RUN = "window.__usertourRecorded.ran = ['yes']";
 
 const start = async (sdk: {
   init: () => Promise<unknown>;
@@ -134,6 +140,108 @@ test('a button press is reported with its step and cvid before its actions run',
   });
   const order = protocol.messages().map((seen) => seen.message.kind);
   expect(order.indexOf('ClickButton')).toBeLessThan(order.indexOf('EndContent'));
+});
+
+test('without user dismissal allowed, an embed has no close button', async ({ sdk, protocol }) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#panel',
+      allowDismiss: false,
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'inline',
+          data: [row(paragraph('Upgrade to unlock reports'))],
+        },
+      ],
+    }),
+  );
+  const frame = sdk.page.frameLocator(FRAME);
+  await expect(frame.getByText('Upgrade to unlock reports')).toBeVisible();
+  await expect(frame.getByRole('button', { name: 'Close' })).toHaveCount(0);
+});
+
+test('an embed’s buttons run their actions and follow their rules as the page changes', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#cta', 'Finish setting up', [
+      button('Read more', [evaluateJs(RUN)]),
+      button('Continue', [], { disableWhen: [inputEmpty('#email')] }),
+      button('Skip for now', [], { hideWhen: [elementPresent('#secondary')] }),
+    ]),
+  );
+  const frame = sdk.page.frameLocator(FRAME);
+  const next = frame.getByRole('button', { name: 'Continue' });
+  const skip = frame.getByRole('button', { name: 'Skip for now' });
+  await expect(next).toBeDisabled();
+  await expect(skip).toHaveCount(0);
+
+  await frame.getByRole('button', { name: 'Read more' }).click();
+  await expect.poll(() => sdk.recorded('ran')).toEqual(['yes']);
+
+  await sdk.page.fill('#email', 'ada@example.com');
+  await sdk.advance(400);
+  await expect(next).toBeEnabled();
+  await sdk.page.evaluate(() => document.getElementById('secondary')?.remove());
+  await sdk.advance(400);
+  await expect(skip).toBeVisible();
+});
+
+test('a question answered in an embed is reported against its session, then its actions run', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#panel',
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'inline',
+          data: [row(question('nps', { actions: [gotoStep('embed-1-cvid-2')] }))],
+        },
+        {
+          id: 'embed-1-step-2',
+          cvid: 'embed-1-cvid-2',
+          type: 'inline',
+          data: [row(paragraph('Thanks for the feedback'))],
+        },
+      ],
+    }),
+  );
+  const frame = sdk.page.frameLocator(FRAME);
+  await frame.getByRole('button', { name: '7', exact: true }).click();
+
+  await protocol.waitForMessages('AnswerQuestion', 1);
+  expect(protocol.messages('AnswerQuestion')[0].message.payload).toEqual({
+    sessionId: 'embed-session-1',
+    questionCvid: 'q-nps',
+    questionType: 'nps',
+    questionName: 'How likely are you to recommend us?',
+    numberAnswer: 7,
+  });
+  await expect(frame.getByText('Thanks for the feedback')).toBeVisible();
+  await protocol.waitForMessages('GoToStep', 1);
+  expect(protocol.messages('GoToStep')[0].message.payload).toMatchObject({
+    sessionId: 'embed-session-1',
+    stepId: 'embed-1-step-2',
+  });
+  const order = protocol.messages().map((seen) => seen.message.kind);
+  expect(order.indexOf('AnswerQuestion')).toBeLessThan(order.indexOf('GoToStep'));
 });
 
 test.describe('steps', () => {
@@ -1101,4 +1209,30 @@ test('an embed sent under another session is rebuilt, one sent under the same se
   expect(protocol.messages('ClickButton')[0].message.payload).toMatchObject({
     sessionId: 'embed-session-2',
   });
+});
+
+test('an embed whose session is re-sent with another target moves to it', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now'),
+  );
+  const frame = sdk.page.frameLocator(FRAME);
+  await expect(frame.getByText('Upgrade now')).toBeVisible();
+  const previous = () =>
+    sdk.page.locator(SHELL).evaluate((shell) => shell.previousElementSibling?.id);
+  expect(await previous()).toBe('panel');
+
+  // The same session, edited to point at another element.
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#cta', 'Upgrade now'),
+  );
+  await expect.poll(previous).toBe('cta');
+  await expect(sdk.page.locator(SHELL)).toHaveCount(1);
+  await expect(frame.getByText('Upgrade now')).toBeVisible();
+  expect(protocol.messages('EndContent')).toHaveLength(0);
 });
