@@ -140,6 +140,51 @@ test.describe('the session', () => {
       sdk.frame().getByRole('button', { name: 'Complete task: Invite your team' }),
     ).toBeVisible();
   });
+  const waitingFlow = () =>
+    flowSession({
+      sessionId: 'session-1',
+      contentId: 'flow-1',
+      steps: [{ id: 'flow-1-step-1', cvid: 'flow-1-cvid-1', type: 'hidden', data: [] }],
+    });
+  const openChecklist = () =>
+    checklistSession({
+      sessionId: 'checklist-session-1',
+      contentId: 'checklist-1',
+      tasks: [{ id: 'invite', name: 'Invite your team' }],
+    });
+
+  test('a checklist that arrives while a flow waits on a hidden step opens: nothing is on screen', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    // A flow can wait on a hidden step for the whole visit; it shows nothing.
+    await protocol.push('SetFlowSession', waitingFlow());
+    await sdk.advance(500);
+    await protocol.push('SetChecklistSession', openChecklist());
+    await expect(
+      sdk.frame().getByRole('button', { name: 'Complete task: Invite your team' }),
+    ).toBeVisible();
+    await protocol.waitForMessages('ShowChecklist', 1);
+  });
+
+  test('a flow that arrives on a hidden step leaves an open checklist open', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('SetChecklistSession', openChecklist());
+    await expect(
+      sdk.frame().getByRole('button', { name: 'Complete task: Invite your team' }),
+    ).toBeVisible();
+    await protocol.push('SetFlowSession', waitingFlow());
+    await sdk.advance(500);
+    await sdk.page.waitForTimeout(200);
+    await expect(
+      sdk.frame().getByRole('button', { name: 'Complete task: Invite your team' }),
+    ).toBeVisible();
+    expect(protocol.messages('HideChecklist')).toHaveLength(0);
+  });
 });
 
 test.describe('step types and settings', () => {

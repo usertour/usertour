@@ -1323,7 +1323,8 @@ export class UsertourCore extends Evented {
     } else {
       await usertourTour.showStepByIndex(0, false);
     }
-    if (!hasActivatedTour) {
+    // A flow waiting on a hidden step shows nothing, so it leaves the checklist as it is
+    if (!hasActivatedTour && this.hasTourOnScreen()) {
       await this.collapseChecklist();
     }
     return true;
@@ -1392,9 +1393,9 @@ export class UsertourCore extends Evented {
     });
     // Sync store
     this.syncChecklistsStore([this.activatedChecklist]);
-    // Show checklist with appropriate expanded state; collapsed under a running
-    // flow, which expands it when it ends
-    await this.activatedChecklist.show(!this.activatedTour);
+    // Show checklist with appropriate expanded state; collapsed under a flow
+    // that is on screen, which expands it when it ends
+    await this.activatedChecklist.show(!this.hasTourOnScreen());
     return true;
   }
 
@@ -1502,10 +1503,19 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Whether a flow is showing something on the page. A flow waiting on a hidden
+   * step is not: it can sit there for the whole visit, and must not keep the
+   * checklist collapsed as a flow the user is looking at does.
+   */
+  private hasTourOnScreen(): boolean {
+    return this.activatedTour !== null && !this.activatedTour.isOnHiddenStep();
+  }
+
+  /**
    * Expands the checklist
    */
   private async expandChecklist() {
-    if (!this.activatedTour && this.activatedChecklist?.isExpandable()) {
+    if (!this.hasTourOnScreen() && this.activatedChecklist?.isExpandable()) {
       await this.activatedChecklist.expand(true);
     }
   }
