@@ -139,6 +139,7 @@ its row.
 | A dismissed session pushed again is ignored; another session replaces it | ✓ checklist "sessions › …" | — |
 | A flow starting collapses it | ✓ content-types "a flow starting collapses the checklist…" | — |
 | A checklist that arrives while a flow runs stays collapsed until the flow ends | ✓ flow-steps "a checklist that arrives while a flow runs…" | — |
+| A flow waiting on a hidden step shows nothing, so it neither keeps an arriving checklist collapsed nor collapses an open one | ✓ flow-steps "a checklist that arrives while a flow waits on a hidden step…", "a flow that arrives on a hidden step…" | — |
 
 ## Launchers
 
