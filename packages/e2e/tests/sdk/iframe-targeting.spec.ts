@@ -475,7 +475,7 @@ test.describe('targets inside frames', () => {
         contentId: 'banner-1',
         text: 'Maintenance tonight',
         placement: 'top-of-container-element',
-        target: '#activity-notice',
+        container: '#activity-notice',
       }),
     );
     // The banner looks for its container every 200ms; give it several turns.
@@ -527,7 +527,8 @@ test.describe('targets inside frames', () => {
      * inside another frame. Each lays the box out at the same place with the
      * same content, so each must give the same answer on every row below: the
      * tooltip shows while any part of the target is in the box, the spotlight
-     * opens on exactly that part, and the flow ends once none of it is.
+     * opens on exactly that part, and once none of it is the tooltip hides
+     * without ending the flow, until the target is scrolled back.
      */
     const BOX: Box = { left: 300, top: 200, width: 480, height: 300, border: 2 };
     const FRAME = { id: 'scroller', src: '/frame-scroller.html' };
@@ -585,7 +586,7 @@ test.describe('targets inside frames', () => {
       { name: 'fully inside, low in the box', scrollTop: 250, expected: 'shown' },
       { name: 'fully inside, 10px below the top edge', scrollTop: 390, expected: 'shown' },
       { name: 'half scrolled out over the top edge', scrollTop: 440, expected: 'shown' },
-      { name: 'scrolled out above the box', scrollTop: 520, expected: 'ended' },
+      { name: 'scrolled out above the box', scrollTop: 520, expected: 'hidden' },
     ] as const;
 
     /** One tooltip step on the target, with the backdrop on so the spotlight opens on it. */
@@ -678,12 +679,16 @@ test.describe('targets inside frames', () => {
             await expect(sdk.surface).toBeVisible();
             expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
           } else {
-            // Found but out of view: hidden, then closed once the tolerance runs out.
+            // Scrolled out of view is not missing: hidden past the tolerance,
+            // and back with its spotlight once the target is scrolled back.
             await sdk.advance(4_000);
-            await protocol.waitForMessages('EndContent', 1);
-            expect(protocol.messages('EndContent')[0].message.payload).toMatchObject({
-              endReason: 'tooltip_target_missing',
-            });
+            await sdk.page.waitForTimeout(200);
+            await expect(sdk.surface).toBeHidden();
+            expect(protocol.messages('EndContent')).toHaveLength(0);
+            await scrollBox(sdk.page, container.frames, 250);
+            await sdk.advance(400);
+            await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+            await expectSpotlightOnVisiblePart(sdk.page, container.frames);
           }
         });
       }

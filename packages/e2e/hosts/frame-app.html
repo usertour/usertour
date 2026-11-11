@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Embedded app</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font: 14px/1.4 system-ui, sans-serif;
+        color: #1f2937;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      A customer app that runs INSIDE an <iframe> of some other page and loads
+      the SDK itself (tests/sdk/frame-hosted.spec.ts). The host's init script
+      has put USERTOURJS_ENV_VARS on this window too; the bundle to load is
+      named in the query string, as the test knows its URL.
+    -->
+    <h1>Embedded app</h1>
+    <button id="app-cta" type="button">Open settings</button>
+    <script>
+      const bundle = new URLSearchParams(location.search).get('bundle');
+      if (bundle) {
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = bundle;
+        document.head.appendChild(script);
+      }
+    </script>
+  </body>
+</html>

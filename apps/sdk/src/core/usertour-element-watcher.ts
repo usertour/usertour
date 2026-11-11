@@ -38,6 +38,7 @@ export class UsertourElementWatcher extends Evented {
   private viewportCheck = true;
   private readonly id: string; // Unique identifier for this watcher
   private readonly findElementByTarget: FindElementByTarget; // Where and how the target is looked up
+  private destroyed = false; // Set by destroy(): no more lookups, no more events
 
   // === Constructor ===
   constructor(
@@ -61,7 +62,8 @@ export class UsertourElementWatcher extends Evented {
 
   /**
    * Turns the viewport half of the visibility check off: the target then only
-   * has to be rendered (in the DOM, not display:none / hidden / transparent).
+   * has to be rendered (in the DOM, not display:none / hidden / transparent),
+   * with or without a size.
    * For content that lives in the document flow, where a target scrolled out
    * of view is ordinary, and where the content's own height can push the
    * target out of the viewport; with the check on, that hides the content,
@@ -82,6 +84,9 @@ export class UsertourElementWatcher extends Evented {
    * @param retryTimes Current number of retry attempts
    */
   findElement(retryTimes = 0): void {
+    if (this.destroyed) {
+      return;
+    }
     timerManager.clearTimeout(`${this.id}-retry`);
 
     // Timeout based on configured targetMissingSeconds only
@@ -121,7 +126,14 @@ export class UsertourElementWatcher extends Evented {
 
   // === Visibility Checking ===
   /**
-   * Checks if the found element is currently visible
+   * Checks whether the found element can be seen, and whether it has been gone
+   * for longer than the target-missing time.
+   *
+   * An element still rendered but scrolled out of view, of the page or of a
+   * scrolling container or frame, is hidden without a deadline: scrolling back
+   * brings it back. Only an element no longer rendered (removed, `display:
+   * none`, invisible, or, with the viewport check on, with neither a width
+   * nor a height) counts towards the timeout.
    * @returns Object containing visibility state and timeout status
    */
   async checkVisibility(): Promise<{ isHidden: boolean; isTimeout: boolean }> {
@@ -141,22 +153,20 @@ export class UsertourElementWatcher extends Evented {
       }
     }
 
-    const isHidden =
-      !isVisibleNode(this.element as HTMLElement) ||
-      (this.viewportCheck && !(await isVisible(this.element as HTMLElement)));
-
-    if (!isHidden) {
-      this.checker = null;
-      return { isHidden: false, isTimeout: false };
+    if (!this.isRendered(this.element)) {
+      this.updateChecker(true, Date.now());
+      return {
+        isHidden: true,
+        isTimeout: this.checker?.isTimeout || false,
+      };
     }
 
-    const now = Date.now();
-    this.updateChecker(isHidden, now);
-
-    return {
-      isHidden: true,
-      isTimeout: this.checker?.isTimeout || false,
-    };
+    this.checker = null;
+    if (!this.viewportCheck) {
+      return { isHidden: false, isTimeout: false };
+    }
+    const isInView = await isVisible(this.element as HTMLElement);
+    return { isHidden: !isInView, isTimeout: false };
   }
 
   // === State Management ===
@@ -171,10 +181,14 @@ export class UsertourElementWatcher extends Evented {
   }
 
   /**
-   * Cleans up resources and resets the watcher state
+   * Ends the watcher for good: its lookup stops and stays stopped, and nothing
+   * it registered hears from it again. The component that owned it has moved
+   * on; a lookup that somehow outlived its timer must not act on its behalf.
    */
   destroy() {
+    this.destroyed = true;
     this.reset();
+    this.removeAllListeners();
   }
 
   // === Private Helpers ===
@@ -184,6 +198,26 @@ export class UsertourElementWatcher extends Evented {
    */
   private isDocumentReady(): boolean {
     return !!document?.body;
+  }
+
+  /**
+   * Whether the element is laid out on its page at all, wherever it is
+   * scrolled to: still in the document, shown by its styles and, when content
+   * points at it, with a width or a height. A container whose children are all
+   * out of its flow has no height and is still a line to point at; an element
+   * with neither is a point with nowhere to point. Content placed by it, with
+   * the viewport check off, needs no size: an empty element is a usual anchor
+   * for a banner.
+   */
+  private isRendered(element: Element): boolean {
+    if (!element.isConnected || !isVisibleNode(element)) {
+      return false;
+    }
+    if (!this.viewportCheck) {
+      return true;
+    }
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 || rect.height > 0;
   }
 
   /**

@@ -3,6 +3,7 @@ import {
   checklistSession,
   launcherSession,
   resourceCenterSession,
+  subPageBlock,
   twoStepFlow,
 } from './content';
 import { expect, test } from './fixtures';
@@ -156,6 +157,15 @@ test.describe('banner sessions', () => {
     const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
     await expect(banner.getByText('Maintenance tonight')).toBeVisible();
     expect(await sdk.isStarted('banner-1')).toBe(true);
+    // First in the page's body, with the page's own content pushed below it.
+    const firstInBody = await sdk.page.evaluate(() => {
+      const frame = document.querySelector('iframe.usertour-widget-banner-frame');
+      return Boolean(frame && document.body.firstElementChild?.contains(frame));
+    });
+    expect(firstInBody).toBe(true);
+    const frameBox = await sdk.page.locator('iframe.usertour-widget-banner-frame').boundingBox();
+    const headingBox = await sdk.page.getByRole('heading', { name: 'Runtime host' }).boundingBox();
+    expect(headingBox?.y ?? 0).toBeGreaterThanOrEqual((frameBox?.y ?? 0) + (frameBox?.height ?? 0));
 
     await banner.getByRole('button', { name: 'Dismiss banner' }).click();
     await protocol.waitForMessages('EndContent', 1);
@@ -193,7 +203,7 @@ test.describe('banner sessions', () => {
         contentId: 'banner-1',
         text: 'Beside the panel',
         placement: 'immediately-after-element',
-        target: '#panel',
+        container: '#panel',
       }),
     );
     const bannerFrame = sdk.page.locator('iframe.usertour-widget-banner-frame');
@@ -233,7 +243,7 @@ test.describe('banner sessions', () => {
         contentId: 'banner-1',
         text: 'Inside the panel',
         placement: 'top-of-container-element',
-        target: '#panel',
+        container: '#panel',
       }),
     );
     const banner = sdk.page.frameLocator('iframe.usertour-widget-banner-frame');
@@ -267,7 +277,7 @@ test.describe('banner sessions', () => {
         contentId: 'banner-1',
         text: 'Right before the panel',
         placement: 'immediately-before-element',
-        target: '#panel',
+        container: '#panel',
       }),
     );
     await expect(sdk.page.locator('iframe.usertour-widget-banner-frame')).toHaveCount(1);
@@ -324,7 +334,7 @@ test.describe('a banner in a scroll container', () => {
         contentId: 'banner-1',
         text: 'Maintenance tonight',
         placement: 'top-of-container-element',
-        target: '#card',
+        container: '#card',
       }),
     );
     const shell = sdk.page.locator('#scroll-box .usertour-widget-banner');
@@ -399,7 +409,7 @@ test.describe('a banner whose container is replaced by a navigation', () => {
         contentId: 'banner-1',
         text: 'Maintenance tonight',
         placement: 'top-of-container-element',
-        target: '#card',
+        container: '#card',
       }),
     );
 
@@ -507,10 +517,64 @@ test.describe('resource center sessions', () => {
       blockId: 'block-docs',
     });
 
+    // Clicking the block closed the panel (and reported it); reopen, then close by hand.
     await sdk.advance(500);
     await frame.getByRole('button', { name: 'Open Help' }).click();
+    await expect(frame.getByText('How can we help?')).toBeVisible();
+    const closesBefore = protocol.messages('CloseResourceCenter').length;
     await frame.getByRole('button', { name: 'Close resource center' }).click();
-    await protocol.waitForMessages('CloseResourceCenter', 1);
+    await protocol.waitForMessages('CloseResourceCenter', closesBefore + 1);
+    expect(protocol.messages('CloseResourceCenter').at(-1)?.message.payload).toEqual({
+      sessionId: 'rc-session-1',
+    });
+    await expect(frame.getByText('How can we help?')).toBeHidden();
+  });
+
+  test('a tab holding a single page counts a click each time the user opens onto it, never while closed', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetResourceCenterSession',
+      resourceCenterSession({
+        sessionId: 'rc-session-1',
+        contentId: 'rc-1',
+        actions: [],
+        blocks: [subPageBlock('block-guide', 'Getting started', 'Step one: connect your data.')],
+      }),
+    );
+    const frame = sdk.page.frameLocator('iframe.usertour-widget-resource-center-frame');
+    await expect(frame.getByRole('button', { name: 'Open Help' })).toBeVisible();
+    await sdk.advance(1_000);
+    await sdk.page.waitForTimeout(200);
+    expect(protocol.messages('ClickResourceCenter')).toHaveLength(0);
+
+    // Opening lands straight on the page: that is the click.
+    await frame.getByRole('button', { name: 'Open Help' }).click();
+    await expect(frame.getByText('Step one: connect your data.')).toBeVisible();
+    await protocol.waitForMessages('ClickResourceCenter', 1);
+    expect(protocol.messages('ClickResourceCenter')[0].message.payload).toEqual({
+      sessionId: 'rc-session-1',
+      blockId: 'block-guide',
+    });
+
+    await frame.getByRole('button', { name: 'Close resource center' }).click();
+    await sdk.advance(500);
+    // The panel shrinks back to the launcher with a CSS transition, which runs in
+    // real time, not on the test clock. A click while it shrinks can land beside
+    // the moving launcher, so wait for the frame to settle before opening again.
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(
+          () =>
+            document.querySelector('iframe.usertour-widget-resource-center-frame')?.getAnimations()
+              .length ?? 0,
+        ),
+      )
+      .toBe(0);
+    await frame.getByRole('button', { name: 'Open Help' }).click();
+    await protocol.waitForMessages('ClickResourceCenter', 2);
   });
 
   test('a resource center the server unsets disappears', async ({ sdk, protocol }) => {
@@ -526,7 +590,7 @@ test.describe('resource center sessions', () => {
 });
 
 test.describe('the reconnect handshake', () => {
-  test('names every session on screen', async ({ sdk, protocol }) => {
+  test('names every session on screen and the company', async ({ sdk, protocol }) => {
     await start(sdk);
     await protocol.push(
       'SetChecklistSession',
@@ -551,6 +615,12 @@ test.describe('the reconnect handshake', () => {
       }),
     );
     await expect(sdk.page.locator('.usertour-widget-launcher')).toBeVisible();
+    await protocol.push(
+      'SetResourceCenterSession',
+      resourceCenterSession({ sessionId: 'rc-session-1', contentId: 'rc-1', actions: [] }),
+    );
+    await expect(sdk.page.locator('iframe.usertour-widget-resource-center-frame')).toBeVisible();
+    await sdk.group('acme');
     await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1'));
     await expect(sdk.surface).toBeVisible();
 
@@ -562,7 +632,9 @@ test.describe('the reconnect handshake', () => {
       flowSessionId: 'session-1',
       checklistSessionId: 'checklist-session-1',
       bannerSessionId: 'banner-session-1',
+      resourceCenterSessionId: 'rc-session-1',
       launchers: ['launcher-1'],
+      externalCompanyId: 'acme',
     });
   });
 });

@@ -9,6 +9,7 @@ import {
   contentEndReason,
   SessionStep,
   SessionTheme,
+  ThemeTypesSetting,
 } from '@usertour/types';
 import { isEqual, isQuestionElement } from '@usertour/helpers';
 import { TourStore, BaseStore } from '@/types/store';
@@ -21,7 +22,7 @@ import {
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { isElement, logger } from '@/utils';
 import { rootsHaveButtonConditions } from '@/core/usertour-helper';
-import { SDKClientEvents, WidgetZIndex } from '@usertour/constants';
+import { SDKClientEvents, WidgetZIndex, defaultSettings } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
 
@@ -38,6 +39,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private watcher: UsertourElementWatcher | null = null;
   private stepTrigger: UsertourTrigger | null = null;
   private currentStepCvid?: string;
+  // The tooltip step on screen as a bubble, its target missing: a store
+  // rebuilt from the session (the same session pushed again) keeps it a bubble.
+  private bubbleFallbackCvid?: string;
 
   // === Abstract Methods Implementation ===
   /**
@@ -177,7 +181,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     context: CustomStoreDataContext<TourBuildOptions>,
   ): Promise<Partial<TourStore>> {
     const { baseData, options } = context;
-    const currentStep = options?.stepOverride ?? this.getCurrentStep();
+    const currentStep = options?.stepOverride ?? this.getShownStep();
     const evaluatedData = currentStep?.data
       ? await this.evaluateButtonConditionsInData(currentStep.data as ContentEditorRoot[])
       : currentStep?.data;
@@ -212,6 +216,16 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     return {
       globalStyle: UsertourTheme.convertToCssVars(themeSettings, step.type),
     };
+  }
+
+  /**
+   * A modal or bubble step derives its CSS variables for its own type; keep
+   * that when the theme changes while the step is open.
+   * @protected
+   */
+  protected getThemeStoreData(themeSettings: ThemeTypesSetting): Partial<BaseStore> {
+    const themeData = super.getThemeStoreData(themeSettings);
+    return { ...themeData, ...this.getStepStyle(this.getStoreData()?.currentStep, themeData) };
   }
 
   // === Theme Management ===
@@ -263,6 +277,15 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private getCurrentStep(): SessionStep | undefined {
     if (!this.currentStepCvid) return undefined;
     return this.getStepByCvid(this.currentStepCvid);
+  }
+
+  /** The current step as it is shown: a tooltip that fell back to a bubble stays one. */
+  private getShownStep(): SessionStep | undefined {
+    const step = this.getCurrentStep();
+    if (step && step.cvid === this.bubbleFallbackCvid) {
+      return { ...step, type: StepContentType.BUBBLE };
+    }
+    return step;
   }
 
   /**
@@ -373,6 +396,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private async showBubble(step: SessionStep, useStepOverride = false): Promise<void> {
     // Only use stepOverride when explicitly requested (e.g., tooltip -> bubble fallback)
     const options = useStepOverride ? { stepOverride: step } : undefined;
+    if (useStepOverride) {
+      this.bubbleFallbackCvid = step.cvid;
+    }
     const storeData = await this.buildStoreData(options);
     if (!storeData) {
       log.warn('Flow store is missing; closing the flow', { step });
@@ -404,12 +430,12 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Create new watcher
     this.watcher = new UsertourElementWatcher(step.target);
 
-    // Priority: API setting > Theme setting > Default (6 seconds)
-    const DEFAULT_TARGET_MISSING_SECONDS = 6;
+    // Priority: API setting > theme setting > the theme's default, for a theme
+    // saved before it had the setting
     const targetMissingSeconds =
       this.instance.getTargetMissingSeconds() ??
       store.themeSettings?.tooltip?.missingTargetTolerance ??
-      DEFAULT_TARGET_MISSING_SECONDS;
+      defaultSettings.tooltip.missingTargetTolerance;
     this.watcher.setTargetMissingSeconds(targetMissingSeconds);
 
     // Handle element found
@@ -445,10 +471,16 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
     const stepInfo = this.getStepInfo(step);
 
-    // Scroll element into view if tour is visible
+    // Scroll element into view if tour is visible. The host's callback is
+    // theirs: one that throws must not keep the step from showing.
     const customScrollIntoView = this.instance.getCustomScrollIntoView();
     if (customScrollIntoView) {
-      customScrollIntoView(el);
+      try {
+        customScrollIntoView(el);
+      } catch (error) {
+        log.error('The custom scroll-into-view callback threw; scrolling the default way', error);
+        smoothScroll(el, { block: 'center' });
+      }
     } else {
       smoothScroll(el, { block: 'center' });
     }
@@ -495,14 +527,42 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       { target: step.target },
     );
 
+    // The selector matched nothing: the report that counts as "not found" in
+    // the step's analytics goes out whichever way the step carries on.
     if (behavior === MissingTooltipTargetBehavior.USE_BUBBLE) {
-      // Convert tooltip to bubble, use stepOverride to ensure correct styles
+      // Convert tooltip to bubble, use stepOverride to ensure correct styles.
+      // Shown before the report, so the bubble does not wait on the server.
       await this.showBubble({ ...step, type: StepContentType.BUBBLE }, true);
+      await this.reportTooltipTargetMissing(step);
       return;
     }
 
     // Default: AUTO_DISMISS
     await this.reportTooltipTargetMissing(step);
+    await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
+  }
+
+  /**
+   * Handles a target that was found and then stayed off the page past the
+   * target-missing time: the theme's missing-target behaviour, as for a target
+   * never found. No missing-target report: the selector did match, and that
+   * report is what tells authors a selector finds nothing.
+   * @private
+   */
+  private async handleTargetGone(step: SessionStep, store: TourStore): Promise<void> {
+    const useBubble =
+      store.themeSettings?.tooltip?.missingTargetBehavior ===
+      MissingTooltipTargetBehavior.USE_BUBBLE;
+    log.warn(
+      `Step target element stayed hidden past the timeout; ${
+        useBubble ? 'showing the step as a bubble' : 'closing the flow'
+      }`,
+      { target: step.target },
+    );
+    if (useBubble) {
+      await this.showBubble({ ...step, type: StepContentType.BUBBLE }, true);
+      return;
+    }
     await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
   }
 
@@ -582,10 +642,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     }
 
     if (isTimeout) {
-      log.warn('Step target element stayed hidden past the timeout; closing the flow', {
-        target: currentStep?.target,
-      });
-      await this.close(contentEndReason.TOOLTIP_TARGET_MISSING);
+      await this.handleTargetGone(currentStep, storeData);
       return;
     }
 
@@ -638,7 +695,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   protected onReset(): void {
     this.currentStepCvid = undefined;
+    this.bubbleFallbackCvid = undefined;
     this.resetStepTrigger();
+    // The watcher retries on its own timer: stop it here, or it outlives its
+    // step and can time out a later visit to the same step.
+    this.watcher?.destroy();
     this.watcher = null;
   }
 }

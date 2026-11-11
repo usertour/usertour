@@ -114,7 +114,7 @@ test('a button press is reported with its step and cvid before its actions run',
   await protocol.push(
     'AddEmbed',
     oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now', [
-      button('Not now', [dismissEmbed()], 'button-not-now'),
+      button('Not now', [dismissEmbed()], { cvid: 'button-not-now' }),
     ]),
   );
   const frame = sdk.page.frameLocator(FRAME);
@@ -151,7 +151,7 @@ test.describe('steps', () => {
           name: 'Step 1',
           data: [
             row(paragraph('Step one')),
-            row(button('Next', [gotoStep(`${contentId}-cvid-2`)], 'button-next')),
+            row(button('Next', [gotoStep(`${contentId}-cvid-2`)], { cvid: 'button-next' })),
           ],
         },
         {
@@ -1018,7 +1018,7 @@ test('an embed whose session is gone starts over when the server sends it withou
   protocol,
 }) => {
   await start(sdk);
-  const buttons = [button('Learn more', [], 'button-learn')];
+  const buttons = [button('Learn more', [], { cvid: 'button-learn' })];
   await protocol.push(
     'AddEmbed',
     oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now', buttons),
@@ -1067,7 +1067,7 @@ test('an embed sent under another session is rebuilt, one sent under the same se
   protocol,
 }) => {
   await start(sdk);
-  const buttons = [button('Learn more', [], 'button-learn')];
+  const buttons = [button('Learn more', [], { cvid: 'button-learn' })];
   await protocol.push(
     'AddEmbed',
     oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade now', buttons),
