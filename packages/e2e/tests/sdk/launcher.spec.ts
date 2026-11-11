@@ -204,6 +204,21 @@ test('a hidden launcher has no box of its own to catch clicks; its target opens 
   await expect(sdk.frame().getByText('Start here')).toBeVisible();
 });
 
+test('a hidden launcher left on the default trigger element is opened by its target', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  // The builder leaves the trigger element on "launcher" when the type is
+  // switched to hidden, and a hidden launcher has nothing of its own to click.
+  await protocol.push('AddLauncher', launcher({ type: 'hidden' }));
+  await expect(launchers(sdk)).toHaveCount(1);
+
+  await sdk.page.click('#cta');
+  await protocol.waitForMessages('ActivateLauncher', 1);
+  await expect(sdk.frame().getByText('Start here')).toBeVisible();
+});
+
 test('a hover launcher opens its tooltip under the pointer and closes it once the pointer leaves', async ({
   sdk,
   protocol,
