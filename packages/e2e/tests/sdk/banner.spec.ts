@@ -57,7 +57,7 @@ test.describe('placement', () => {
     const place = await mount(sdk).evaluate((element) => ({
       inBody: element.parentElement === document.body,
       afterMain: Boolean(
-        document.querySelector('main')?.compareDocumentPosition(element) &
+        (document.querySelector('main')?.compareDocumentPosition(element) ?? 0) &
           Node.DOCUMENT_POSITION_FOLLOWING,
       ),
     }));
@@ -241,7 +241,7 @@ test.describe('a session updated in place', () => {
     expect(
       await mount(sdk).evaluate((element) =>
         Boolean(
-          document.querySelector('main')?.compareDocumentPosition(element) &
+          (document.querySelector('main')?.compareDocumentPosition(element) ?? 0) &
             Node.DOCUMENT_POSITION_FOLLOWING,
         ),
       ),
