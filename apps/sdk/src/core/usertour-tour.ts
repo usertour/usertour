@@ -276,6 +276,14 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   /**
+   * Whether the flow is on a step that shows nothing: a hidden step, waiting
+   * for its triggers. Such a flow is running but not on screen.
+   */
+  isOnHiddenStep(): boolean {
+    return this.getCurrentStep()?.type === StepContentType.HIDDEN;
+  }
+
+  /**
    * Gets the current step by cvid
    * @private
    */
