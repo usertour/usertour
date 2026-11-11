@@ -229,6 +229,12 @@ export class UsertourBanner extends UsertourComponent<BannerStore> {
     // appear long after load) — the old 6s default gave up for good and the
     // banner never mounted without a full page reload.
     this.watcher.setTargetMissingSeconds(BANNER_TARGET_MISSING_SECONDS);
+    // An element-relative banner sits in the document flow, so its target
+    // being scrolled past is ordinary, and the banner's own height can push
+    // the target out of the viewport: with the viewport check on, that hid
+    // the banner, reflowed the target back in, and showed it again, every
+    // tick. The target only has to be rendered.
+    this.watcher.setViewportCheck(false);
 
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (isElement(el)) {

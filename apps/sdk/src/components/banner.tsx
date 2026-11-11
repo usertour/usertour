@@ -117,18 +117,30 @@ const resolveBannerPlacement = (
   }
 };
 
-const insertMountEl = (mountEl: HTMLDivElement, placement: BannerMountPlacement) => {
+/**
+ * Puts the mount element at its placement. Returns whether it was inserted:
+ * false when it already sits there, or when the placement cannot take it.
+ */
+const insertMountEl = (mountEl: HTMLDivElement, placement: BannerMountPlacement): boolean => {
   const { parent, insertMode, anchor } = placement;
 
   if (!parent.isConnected) {
-    return;
+    return false;
   }
 
   if (mountEl.parentNode === parent) {
-    if (insertMode === 'append' && mountEl === parent.lastChild) return;
-    if (insertMode === 'prepend' && mountEl === parent.firstChild) return;
-    if (insertMode === 'before' && anchor && mountEl.nextSibling === anchor) return;
-    if (insertMode === 'after' && anchor && anchor.nextSibling === mountEl) return;
+    if (insertMode === 'append' && mountEl === parent.lastChild) {
+      return false;
+    }
+    if (insertMode === 'prepend' && mountEl === parent.firstChild) {
+      return false;
+    }
+    if (insertMode === 'before' && anchor && mountEl.nextSibling === anchor) {
+      return false;
+    }
+    if (insertMode === 'after' && anchor && anchor.nextSibling === mountEl) {
+      return false;
+    }
   }
 
   switch (insertMode) {
@@ -139,18 +151,21 @@ const insertMountEl = (mountEl: HTMLDivElement, placement: BannerMountPlacement)
       parent.insertBefore(mountEl, parent.firstChild);
       break;
     case 'before':
-      if (anchor?.parentNode) {
-        anchor.parentNode.insertBefore(mountEl, anchor);
+      if (!anchor?.parentNode) {
+        return false;
       }
+      anchor.parentNode.insertBefore(mountEl, anchor);
       break;
     case 'after':
-      if (anchor?.parentNode) {
-        anchor.parentNode.insertBefore(mountEl, anchor.nextSibling);
+      if (!anchor?.parentNode) {
+        return false;
       }
+      anchor.parentNode.insertBefore(mountEl, anchor.nextSibling);
       break;
     default:
       parent.appendChild(mountEl);
   }
+  return true;
 };
 
 const useBannerStore = (banner: BannerWidgetInstance) => {
@@ -170,6 +185,13 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   // null = pending, keeps the wrapper hidden until the reveal can use the real
   // height. BannerRoot fails open after 500ms so this always resolves.
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  // Whether the shell sits in the page with the frame rendered into it, and
+  // how many times it was moved while it did. A moved iframe loads a new,
+  // empty document while the frame keeps rendering into the old one, so the
+  // frame is rebuilt (keyed by this count) whenever its shell is moved: a
+  // target replaced by an SPA navigation, a sibling that took its place.
+  const placedRef = useRef(false);
+  const [frameGeneration, setFrameGeneration] = useState(0);
 
   const { bannerData, themeSettings, assets, userAttributes, targetElement, zIndex, globalStyle } =
     store ?? {};
@@ -208,6 +230,7 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
       if (mountEl?.parentNode) {
         mountEl.parentNode.removeChild(mountEl);
       }
+      placedRef.current = false;
       return;
     }
 
@@ -225,7 +248,13 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
       return;
     }
 
-    insertMountEl(mountEl, resolved);
+    if (!insertMountEl(mountEl, resolved)) {
+      return;
+    }
+    if (placedRef.current) {
+      setFrameGeneration((generation) => generation + 1);
+    }
+    placedRef.current = true;
   }, [store, bannerData, placement, targetElement, requiresElement, portalEl, measuredHeight]);
 
   if (!store || !bannerData || !themeSettings) {
@@ -242,7 +271,7 @@ export const BannerWidget = ({ banner }: BannerWidgetProps) => {
   }
 
   return createPortal(
-    <WidgetLocaleProvider locale={store.userLocale}>
+    <WidgetLocaleProvider key={frameGeneration} locale={store.userLocale}>
       <LinkDecoratorContext.Provider value={store.linkUrlDecorator || null}>
         <BannerRoot
           themeSettings={themeSettings}
