@@ -442,6 +442,18 @@ test.describe('resource center sessions', () => {
 
     await frame.getByRole('button', { name: 'Close resource center' }).click();
     await sdk.advance(500);
+    // The panel shrinks back to the launcher with a CSS transition, which runs in
+    // real time, not on the test clock. A click while it shrinks can land beside
+    // the moving launcher, so wait for the frame to settle before opening again.
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(
+          () =>
+            document.querySelector('iframe.usertour-widget-resource-center-frame')?.getAnimations()
+              .length ?? 0,
+        ),
+      )
+      .toBe(0);
     await frame.getByRole('button', { name: 'Open Help' }).click();
     await protocol.waitForMessages('ClickResourceCenter', 2);
   });
