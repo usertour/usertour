@@ -131,7 +131,7 @@ its row.
 | A task's `clickedActions` collapse the checklist and run; a task completed by its own click keeps it open | ✓ checklist "task clicks › …" | — |
 | A newly completed task re-expands the checklist when no flow runs | ✓ checklist "a task the server completes expands a collapsed checklist…" | — |
 | Hidden tasks: not listed, not counted in the progress or the launcher | ✓ checklist "a hidden task is not listed…" | — |
-| Ordered completion: a task waits for the visible tasks before it; a hidden one does not hold it back | ✓ checklist "in order, a task waits…" | — |
+| Ordered completion: a task waits for the tasks before it (the server sends only the tasks the user can see) | ✓ checklist "in order, a task waits…" | — |
 | Dismiss asks first, then ends with `dismiss_button` | ✓ content-types.spec | — |
 | `preventDismissChecklist` hides the dismiss link | ✓ checklist "with dismissal prevented…" | — |
 | Auto-dismiss five seconds after the last task, with `auto_dismissed` | ✓ checklist "set to dismiss itself…" | — |

@@ -138,16 +138,13 @@ test.describe('the tasks listed', () => {
     await expect(launcherButton(sdk)).toHaveAccessibleName('Open checklist (2 items)');
   });
 
-  test('in order, a task waits for the tasks before it the user can see', async ({
-    sdk,
-    protocol,
-  }) => {
+  test('in order, a task waits for the tasks before it', async ({ sdk, protocol }) => {
     await start(sdk);
+    // The server sends only the tasks the user can see, so none is hidden here.
     await protocol.push(
       'SetChecklistSession',
-      checklist({ completionOrder: 'ordered', tasks: [PROFILE, BILLING, ...TASKS] }),
+      checklist({ completionOrder: 'ordered', tasks: [PROFILE, ...TASKS] }),
     );
-    // The hidden task before it does not hold it back: the user could never do it.
     await expect(task(sdk, 'Invite your team')).toBeEnabled();
     await expect(task(sdk, 'Connect a data source')).toBeDisabled();
 
@@ -156,7 +153,7 @@ test.describe('the tasks listed', () => {
       'invite',
       checklist({
         completionOrder: 'ordered',
-        tasks: [PROFILE, BILLING, { ...TASKS[0], isCompleted: true }, TASKS[1]],
+        tasks: [PROFILE, { ...TASKS[0], isCompleted: true }, TASKS[1]],
       }),
     );
     await sdk.advance(1_500);

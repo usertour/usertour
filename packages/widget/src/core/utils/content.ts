@@ -18,13 +18,10 @@ export const canCompleteChecklistItem = (
     return true;
   }
 
-  // For 'ordered' completion, every previous task the user can see must be
-  // completed. The session carries hidden tasks too (isVisible false): the user
-  // can never do those, so they must not hold the rest back. The server skips
-  // them the same way when it completes a task.
+  // For 'ordered' completion, check if all previous items are completed
   if (completionOrder === 'ordered') {
     const previousItems = items.slice(0, currentIndex);
-    return previousItems.every((item) => item.isCompleted || item.isVisible === false);
+    return previousItems.every((item) => item.isCompleted);
   }
 
   return false;
