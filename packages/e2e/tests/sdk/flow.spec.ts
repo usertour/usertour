@@ -223,6 +223,34 @@ test.describe('flow sessions', () => {
     await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
   });
 
+  test('a tooltip whose target has a width but no height stays: its children overflow it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    // A container whose children are all out of its flow has no height of its
+    // own, yet what it holds is on screen and the tooltip has a line to point at.
+    await sdk.page.evaluate(() => {
+      const bar = document.createElement('div');
+      bar.id = 'toolbar';
+      bar.style.cssText = 'position:relative;width:300px;height:0';
+      const save = document.createElement('button');
+      save.textContent = 'Save';
+      save.style.cssText = 'position:absolute;top:0;left:0';
+      bar.appendChild(save);
+      document.querySelector('main')?.appendChild(bar);
+    });
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#toolbar'));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+
+    // Well past the theme's tolerance (3s).
+    await sdk.advance(5_000);
+    await sdk.page.waitForTimeout(200);
+    expect(protocol.messages('EndContent')).toHaveLength(0);
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+  });
+
   test('a tooltip whose target leaves the page ends the flow at the tolerance, without a missing-target report', async ({
     sdk,
     protocol,
