@@ -62,7 +62,8 @@ export class UsertourElementWatcher extends Evented {
 
   /**
    * Turns the viewport half of the visibility check off: the target then only
-   * has to be rendered (in the DOM, not display:none / hidden / transparent).
+   * has to be rendered (in the DOM, not display:none / hidden / transparent),
+   * with or without a size.
    * For content that lives in the document flow, where a target scrolled out
    * of view is ordinary, and where the content's own height can push the
    * target out of the viewport; with the check on, that hides the content,
@@ -131,7 +132,8 @@ export class UsertourElementWatcher extends Evented {
    * An element still rendered but scrolled out of view, of the page or of a
    * scrolling container or frame, is hidden without a deadline: scrolling back
    * brings it back. Only an element no longer rendered (removed, `display:
-   * none`, invisible, or without a size) counts towards the timeout.
+   * none`, invisible, or, with the viewport check on, without a size) counts
+   * towards the timeout.
    * @returns Object containing visibility state and timeout status
    */
   async checkVisibility(): Promise<{ isHidden: boolean; isTimeout: boolean }> {
@@ -200,11 +202,16 @@ export class UsertourElementWatcher extends Evented {
 
   /**
    * Whether the element is laid out on its page at all, wherever it is
-   * scrolled to: still in the document, shown by its styles and with a size.
+   * scrolled to: still in the document, shown by its styles and, when content
+   * points at it, with a size. Content placed by it, with the viewport check
+   * off, needs no size: an empty element is a usual anchor for a banner.
    */
   private isRendered(element: Element): boolean {
     if (!element.isConnected || !isVisibleNode(element)) {
       return false;
+    }
+    if (!this.viewportCheck) {
+      return true;
     }
     const rect = element.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0;

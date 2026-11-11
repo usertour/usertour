@@ -96,6 +96,32 @@ test.describe('placement', () => {
     });
   }
 
+  // An empty element is a common anchor for a banner: it has no height until the
+  // banner is put in it, and none at all when the banner goes beside it.
+  for (const placement of [
+    'immediately-before-element',
+    'immediately-after-element',
+    'top-of-container-element',
+  ] as const) {
+    test(`placed ${placement} an empty element, a banner shows and stays`, async ({
+      sdk,
+      protocol,
+    }) => {
+      await start(sdk);
+      await sdk.page.evaluate(() => {
+        const slot = document.createElement('div');
+        slot.id = 'banner-slot';
+        document.querySelector('main')?.prepend(slot);
+      });
+      await protocol.push('SetBannerSession', banner({ placement, container: '#banner-slot' }));
+      await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();
+
+      await sdk.advance(1000);
+      await expect(mount(sdk)).toHaveCount(1);
+      await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();
+    });
+  }
+
   test('a banner placed by a container leaves with it, gap and all, and returns with it', async ({
     sdk,
     protocol,

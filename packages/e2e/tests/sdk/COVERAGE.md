@@ -164,6 +164,7 @@ its row.
 | Top-of-page banner shown first in the body, above the page; dismissal ends with `dismiss_button`; Unset removes it | ✓ content-types.spec | — |
 | Bottom of page | ✓ banner "at the bottom of the page…" | — |
 | Embedded in a container element (top/bottom of it, before/after it) | ✓ banner "placed <placement>, a banner goes…" ×4 | — |
+| Anchored at an empty element (no height), before, after or in it, a banner shows and stays | ✓ banner "placed <placement> an empty element…" ×3 | — |
 | A container the page re-renders gets the banner back with its content | ✓ banner "a container the page re-renders…" | — |
 | Container hidden removes the banner and its placeholder; back again reopens it | ✓ banner "a banner placed by a container leaves with it…" | — |
 | Sticky / overlay positioning | ✓ banner "sticky and overlay › …" ×3 | — |
