@@ -219,6 +219,31 @@ test('a hidden launcher left on the default trigger element is opened by its tar
   await expect(sdk.frame().getByText('Start here')).toBeVisible();
 });
 
+test('a hidden hover launcher keeps its tooltip open while the pointer is back on its target', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push('AddLauncher', launcher({ type: 'hidden', triggerEvent: 'hovered' }));
+  await expect(launchers(sdk)).toHaveCount(1);
+
+  await sdk.page.hover('#cta');
+  await protocol.waitForMessages('ActivateLauncher', 1);
+  await expect(sdk.frame().getByText('Start here')).toBeVisible();
+
+  // Onto the tooltip and back: the target is what opened it, so leaving the
+  // tooltip for the target must not close it.
+  await sdk.surface.hover();
+  await sdk.advance(300);
+  await sdk.page.hover('#cta');
+  await sdk.advance(300);
+  await expect(sdk.frame().getByText('Start here')).toBeVisible();
+
+  await sdk.page.mouse.move(5, 5);
+  await sdk.advance(300);
+  await expect(sdk.surface).toHaveCount(0);
+});
+
 test('a hover launcher opens its tooltip under the pointer and closes it once the pointer leaves', async ({
   sdk,
   protocol,

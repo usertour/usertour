@@ -4,6 +4,18 @@ import { LauncherData } from '@usertour/types';
 import { useEffect } from 'react';
 import { off, on } from '../utils/listener';
 
+/**
+ * The element that triggers a launcher. A hidden launcher has nothing of its
+ * own to click or hover, so its target triggers it whatever the setting says:
+ * the builder leaves that on "launcher" when the type is switched to hidden.
+ */
+export const getEffectiveTriggerElement = (data: LauncherData): LauncherTriggerElement => {
+  if (data.type === LauncherDataType.HIDDEN) {
+    return LauncherTriggerElement.TARGET;
+  }
+  return data.behavior.triggerElement;
+};
+
 // Custom hook for event handling
 export const useEventHandlers = (
   data: LauncherData | undefined,
@@ -19,14 +31,11 @@ export const useEventHandlers = (
     if (!data) return;
     const launcher = launcherRef.current;
     const trigger = triggerRef.current;
-    const { triggerElement, triggerEvent } = data.behavior;
+    const { triggerEvent } = data.behavior;
+    const triggerElement = getEffectiveTriggerElement(data);
 
-    // A hidden launcher has nothing of its own to click or hover, so its
-    // target is what triggers it whatever the trigger element says: the
-    // builder leaves that setting on "launcher" when the type is switched.
-    const isHidden = data.type === LauncherDataType.HIDDEN;
-    const shouldBindLauncher = !isHidden && triggerElement !== LauncherTriggerElement.TARGET;
-    const shouldBindTrigger = isHidden || triggerElement !== LauncherTriggerElement.LAUNCHER;
+    const shouldBindLauncher = triggerElement !== LauncherTriggerElement.TARGET;
+    const shouldBindTrigger = triggerElement !== LauncherTriggerElement.LAUNCHER;
     const isClickTrigger = triggerEvent === LauncherTriggerEvent.CLICKED;
 
     // Bind events helper
