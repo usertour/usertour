@@ -92,12 +92,14 @@ its row.
 | A target that appears after the step opens | ✓ flow-steps "a target that appears after the step opens…" | — |
 | A target re-rendered by the page (replaced element) | ✓ flow-steps "a target the page re-renders keeps the tooltip…", iframe "a frame that navigates…" | — |
 | A target scrolled out of view (of the page, a scrolling container or a frame) hides the tooltip without a deadline; scrolled back, it reopens | ✓ flow "a tooltip whose target is scrolled out of the page…", iframe "…scrolled out above the box" | — |
-| A target with a width but no height (its children overflow it) is still pointed at | ✓ flow "a tooltip whose target has a width but no height…" | — |
+| A target with a width but no height (its children overflow it) is still pointed at: the flow stays and the tooltip shows | ✓ flow "a tooltip whose target has a width but no height…", target-states "…given a width but no height keeps its tooltip" | — |
 | Default scroll into view of an off-screen target | ✓ flow-steps "an off-screen target is scrolled into view…" | — |
 | Clicking the target runs `target.actions` | ✓ flow-steps "clicking the target runs the step’s target actions" | — |
 | Leaving a tooltip step stops its target lookup: coming back waits the full time again | ✓ flow-steps "returning to a tooltip step waits its full time again…" | — |
 | Target never found: ReportTooltipTargetMissing, then `tooltip_target_missing`, at the theme's tolerance | ✓ flow "a tooltip whose target never appears…" | — |
 | A target that leaves the page (removed, not rendered) ends the flow at the tolerance with `tooltip_target_missing`, without ReportTooltipTargetMissing | ✓ flow "a tooltip whose target leaves the page…" | — |
+| A target hidden by `display: none` on an ancestor, `visibility: hidden` or opacity 0, or with neither a width nor a height, ends the flow at the tolerance as a removed one does | ✓ target-states "a tooltip step › whose target is …" | — |
+| A target back before the tolerance keeps the flow | ✓ target-states "…comes back before the tolerance keeps the flow" | — |
 | Theme `missingTargetBehavior: use-bubble`: a target that left turns the step into a bubble | ✓ flow "with the theme set to show a bubble…" | — |
 | Theme `missingTargetBehavior: use-bubble`: a target never found shows the step as a bubble, and is still reported | ✓ flow-steps "with the theme set to show a bubble, a target never found…" | — |
 | Step trigger: element condition, wait, dismiss | ✓ flow "a step trigger dismisses the flow after its wait" | — |
@@ -140,6 +142,8 @@ its row.
 | A flow starting collapses it | ✓ content-types "a flow starting collapses the checklist…" | — |
 | A checklist that arrives while a flow runs stays collapsed until the flow ends | ✓ flow-steps "a checklist that arrives while a flow runs…" | — |
 | A flow waiting on a hidden step shows nothing, so it neither keeps an arriving checklist collapsed nor collapses an open one | ✓ flow-steps "a checklist that arrives while a flow waits on a hidden step…", "a flow that arrives on a hidden step…" | — |
+| A flow coming on screen collapses it however it comes: taking over from a flow waiting on a hidden step, or moving on from a hidden step by its trigger or by the server | ✓ flow-steps "a flow that takes over from one waiting on a hidden step…", "a flow that moves on from a hidden step…", "a step the server moves a waiting flow on to…" | — |
+| A flow moving on to a hidden step keeps it collapsed until the flow ends, so it does not open and close between two steps; a flow taking over from one on screen leaves it collapsed | ✓ flow-steps "a flow that moves on to a hidden step…", "a flow that takes over from one showing a step…" | — |
 
 ## Launchers
 
@@ -149,6 +153,7 @@ its row.
 | Appears on its target, opens its tooltip on click, removed by the server | ✓ content-types "a launcher appears on its target…" | — |
 | A press outside, in the page or a frame, closes a click tooltip | ✓ iframe-targeting.spec | — |
 | Target missing, appearing later, or hidden | ✓ launcher "a launcher waits for its target…" | — |
+| Its target scrolled out of view, removed, hidden by `display: none`, `visibility: hidden` or opacity 0, or with neither a width nor a height hides it until the target is back; a target with a width but no height keeps it | ✓ target-states "a launcher › whose target is …" | — |
 | Found element with no session starts it (`start_from_condition`) | ✓ launcher "offered without a session…" | — |
 | Trigger on the target instead of the launcher | ✓ launcher "set to open from its target…" | — |
 | `perform-action` runs actions instead of a tooltip | ✓ launcher "set to perform an action…" | — |
@@ -169,6 +174,7 @@ its row.
 | Anchored at an empty element (no height), before, after or in it, a banner shows and stays | ✓ banner "placed <placement> an empty element…" ×3 | — |
 | A container the page re-renders gets the banner back with its content | ✓ banner "a container the page re-renders…" | — |
 | Container hidden removes the banner and its placeholder; back again reopens it | ✓ banner "a banner placed by a container leaves with it…" | — |
+| Its target removed or hidden in any way takes it away until the target is back; scrolled out of view, or with no size at all, it stays | ✓ target-states "a banner placed after its target › …" | — |
 | Sticky / overlay positioning | ✓ banner "sticky and overlay › …" ×3 | — |
 | Dismiss button hidden unless `allowUsersToDismissEmbed` | ✓ banner "without user dismissal allowed…" | — |
 | Button actions, live button rules, `banner-dismis` action | ✓ banner "its buttons › …" | — |
@@ -202,6 +208,14 @@ its row.
 | A tracker reports again after its rule stops and starts matching | ✓ rules "a tracker whose page-URL rule matches reports once, and again…" | — |
 | Hide rules, priority, frequency | server | — |
 
+## Builder defaults
+
+| Behaviour | Covered by | Priority |
+|---|---|---|
+| Each step type made with `defaultStep` (a tooltip placed automatically) shows and closes; a hidden one keeps the flow running | ✓ defaults "a flow step made with the defaults › …" | — |
+| Each launcher type made with `DEFAULT_LAUNCHER_DATA` opens its tooltip on a click and closes it | ✓ defaults "a launcher made with the defaults › …" | — |
+| A banner, a checklist and a resource center made with their defaults show, take their click and close | ✓ defaults "a banner made with the defaults…", "a checklist made…", "a resource center made…" | — |
+
 ## Harness
 
 In place:
@@ -212,6 +226,9 @@ In place:
 - **`sdk.stubNavigation()`** records `window.open` calls instead of navigating.
 - **`sdk.pauseClock()`** stops the page clock, so a test can assert what has
   not happened yet before advancing past a deadline.
+- **`sdk.frame()`** resolves only a surface the page shows: Playwright judges
+  what is inside a frame by that frame alone, so text in a surface hidden
+  around its frame would otherwise count as visible.
 - **`sdk.recorded(name)`** reads what a test's own callbacks in the page
   recorded in `window.__usertourRecorded`.
 

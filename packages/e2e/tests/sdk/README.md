@@ -71,6 +71,15 @@ fixtures and never starts the SDK.
   followed across the frame's navigations; opaque when cross-origin. A target
   in a box that scrolls is shown, spotlighted and ended by the part of it the
   box shows, the same in a frame as in an element on the page.
+- `target-states.spec.ts` — one table of the states a target can be in
+  (scrolled away, removed, hidden by its styles, without a size), run against
+  each kind of content that follows a target: a tooltip step, a launcher, a
+  banner. They share the element watcher, so a state added to the table is
+  checked for all three.
+- `defaults.spec.ts` — content made with the builder's defaults
+  (`defaultStep`, the `DEFAULT_*` data), the author changing only a target and
+  some text: each step type, each launcher type, a banner, a checklist and a
+  resource center show, take their click and close.
 - `messages.spec.ts` — the message framing (batches), `track()`, unknown server
   messages, the UI failing to initialise.
 - `api.spec.ts` — the rest of the public API a host page calls: `start()` and
@@ -100,3 +109,19 @@ each behaviour; pick up an uncovered row, or add one with a new behaviour.
 When a scenario comes from a bug, write it so that it is red on the code that
 had the bug. Describe the host's calls and the server's behaviour, then
 assert on the handshakes and messages that must, or must not, arrive.
+
+Bugs this suite missed came from the same few gaps; keep to these:
+
+- **Start from the defaults.** A test that picks its own settings skips the
+  path most content in the field takes. When a setting is added, check what
+  content made with its default does (`defaults.spec.ts`).
+- **List the callers of shared code before changing it.** The element watcher,
+  the positioning in the widget and the timers serve several kinds of content;
+  each caller needs a test of the changed behaviour, not only the one the
+  change was made for. A new target state goes in the table in
+  `target-states.spec.ts`, which runs it for every kind of content.
+- **Assert the state before a change, not only after it.** "The checklist
+  opens again" passes when it never closed.
+- **Content in a frame is visible only if its frame is.** `sdk.frame()` already
+  resolves only a surface the page shows; for another frame (a banner's, the
+  resource center's), assert on the frame element as well.
