@@ -70,7 +70,9 @@ fixtures and never starts the SDK.
   frames (nested too), positioned and judged visible with the frame's offset,
   followed across the frame's navigations; opaque when cross-origin. A target
   in a box that scrolls is shown, spotlighted and ended by the part of it the
-  box shows, the same in a frame as in an element on the page.
+  box shows, the same in a frame as in an element on the page; with the
+  backdrop on, a click in the spotlight crosses into the frame to the target
+  unless the step blocks it, and one beside the target lands on the backdrop.
 - `target-states.spec.ts` — one table of the states a target can be in
   (scrolled away, removed, hidden by its styles, without a size), run against
   each kind of content that follows a target: a tooltip step, a launcher, a

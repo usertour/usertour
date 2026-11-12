@@ -658,6 +658,131 @@ test.describe('targets inside frames', () => {
         });
       }
     }
+
+    /**
+     * Clicks with the backdrop on, the target fully in the box. A click in the
+     * spotlight reaches the target, crossing into the frame's document when it
+     * is in one, and runs the step's target actions, unless the step blocks
+     * the target; a click on the box beside the target lands on the backdrop.
+     * Clicks go through the mouse at a point, as a user's do, so whatever is on
+     * top there gets them.
+     */
+    const clickFlow = (blockTarget: boolean) =>
+      flowSession({
+        sessionId: 'session-1',
+        contentId: 'flow-1',
+        steps: [
+          {
+            id: 'flow-1-step-1',
+            cvid: 'flow-1-cvid-1',
+            type: 'tooltip',
+            target: { customSelector: '#scroll-target', actions: [dismissFlow()] },
+            setting: { enabledBackdrop: true, enabledBlockTarget: blockTarget },
+            data: [row(paragraph('Click here to begin'))],
+          },
+        ],
+      });
+
+    /** Record the clicks an element of the box gets under `name` (read with `sdk.recorded`). */
+    const recordClicks = (page: Page, frames: string[], element: 'target' | 'box', name: string) =>
+      page.evaluate(
+        ({ ids, element, name }) => {
+          let doc = document;
+          for (const id of ids) {
+            doc = (doc.getElementById(id) as HTMLIFrameElement).contentDocument as Document;
+          }
+          // The box: the scrolling element on the page, or the whole document of the frame.
+          const box = ids.length > 0 ? doc.body : (doc.getElementById('scroller') as HTMLElement);
+          const listened = element === 'target' ? doc.getElementById('scroll-target') : box;
+          listened?.addEventListener('click', () => {
+            window.__usertourRecorded[name] = [...(window.__usertourRecorded[name] ?? []), 'click'];
+          });
+        },
+        { ids: frames, element, name },
+      );
+
+    const clickTarget = async (page: Page, frames: string[]) => {
+      const target = await rectInTopWindow(page, frames, '#scroll-target');
+      await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+    };
+
+    /** A point in the box to the right of the target, level with it. */
+    const clickBesideTarget = async (page: Page, frames: string[]) => {
+      const target = await rectInTopWindow(page, frames, '#scroll-target');
+      const box = await rectInTopWindow(page, frames.slice(0, -1), '#scroller', 'client');
+      await page.mouse.click(box.x + box.width - 40, target.y + target.height / 2);
+    };
+
+    const mountClickBox = async (sdk: SdkPage, container: Container) => {
+      await start(sdk);
+      await sdk.page.evaluate(() => window.usertour?.setCustomScrollIntoView?.(() => {}));
+      await container.mount(sdk.page);
+      await scrollBox(sdk.page, container.frames, 250);
+      await recordClicks(sdk.page, container.frames, 'target', 'target');
+      await recordClicks(sdk.page, container.frames, 'box', 'box');
+    };
+
+    const openClickFlow = async (
+      sdk: SdkPage,
+      protocol: ProtocolServer,
+      container: Container,
+      blockTarget: boolean,
+    ) => {
+      await protocol.push('SetFlowSession', clickFlow(blockTarget));
+      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+      await expectSpotlightOnVisiblePart(sdk.page, container.frames);
+    };
+
+    for (const container of CONTAINERS) {
+      test(`${container.name}, a click in the spotlight reaches the target and runs the step’s target actions`, async ({
+        sdk,
+        protocol,
+      }) => {
+        await mountClickBox(sdk, container);
+        await openClickFlow(sdk, protocol, container, false);
+        await clickTarget(sdk.page, container.frames);
+        await expect.poll(() => sdk.recorded('target')).toEqual(['click']);
+        await protocol.waitForMessages('EndContent', 1);
+        expect(protocol.messages('EndContent')[0].message.payload).toMatchObject({
+          sessionId: 'session-1',
+          endReason: 'action_dismiss',
+        });
+      });
+
+      test(`${container.name}, with the target blocked, a click on it reaches neither the target nor the step’s actions`, async ({
+        sdk,
+        protocol,
+      }) => {
+        await mountClickBox(sdk, container);
+        // Without the step, the same point is the target.
+        await clickTarget(sdk.page, container.frames);
+        await expect.poll(() => sdk.recorded('target')).toEqual(['click']);
+        await openClickFlow(sdk, protocol, container, true);
+        await clickTarget(sdk.page, container.frames);
+        await sdk.advance(500);
+        await sdk.page.waitForTimeout(300);
+        expect(await sdk.recorded('target')).toEqual(['click']);
+        expect(protocol.messages('EndContent')).toHaveLength(0);
+        await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+      });
+
+      test(`${container.name}, a click on the box beside the target lands on the backdrop`, async ({
+        sdk,
+        protocol,
+      }) => {
+        await mountClickBox(sdk, container);
+        // Without the step, the same point is in the box.
+        await clickBesideTarget(sdk.page, container.frames);
+        await expect.poll(() => sdk.recorded('box')).toEqual(['click']);
+        await openClickFlow(sdk, protocol, container, false);
+        await clickBesideTarget(sdk.page, container.frames);
+        await sdk.advance(500);
+        await sdk.page.waitForTimeout(300);
+        expect(await sdk.recorded('box')).toEqual(['click']);
+        expect(protocol.messages('EndContent')).toHaveLength(0);
+        await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+      });
+    }
   });
 
   test.describe('with the SDK’s own page embedded in a same-origin frame', () => {

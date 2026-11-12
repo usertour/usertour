@@ -83,6 +83,7 @@ its row.
 | Close button ends with `close_button_dismiss`; `skippable: false` hides it | ✓ flow "the close button ends the flow…", flow-steps "a step that is not skippable…" | — |
 | A modal's backdrop click: `backdrop_dismiss` with `backdropClickBehavior: dismiss-flow`, nothing with `do-nothing` | ✓ flow-steps "a click on a modal's backdrop…" | — |
 | Spotlight on the visible part of the target | ✓ iframe "a target in a box that scrolls" | — |
+| With the backdrop on, a click in the spotlight reaches the target, in a frame too, and runs the step's target actions; a blocked target gets neither; a click beside the target lands on the backdrop | ✓ iframe "a target in a box that scrolls › …a click in the spotlight…", "…with the target blocked…", "…a click on the box beside the target…" (×4 containers) | — |
 | `enabledBlockTarget` stops clicks reaching the target; without it they go through | ✓ flow-steps "with the backdrop on, a click on the target…" | — |
 | Placement side/align; `alignType: auto` flips a tooltip that would not fit | ✓ flow-layout "side and align put it on that side…", "alignType auto flips…" | — |
 | `sideOffset`, `alignOffset`, step width | ✓ flow-layout "sideOffset and alignOffset move it by that much", "a step’s own width is used over the theme’s" | — |
