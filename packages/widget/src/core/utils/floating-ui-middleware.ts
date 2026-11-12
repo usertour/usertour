@@ -1,6 +1,6 @@
 import { hide } from '@floating-ui/react-dom';
 import type { Middleware } from '@floating-ui/dom';
-import { getBoundaryAcrossFrames } from '@usertour/dom';
+import { getBoundaryAcrossFrames, hasPointableSize } from '@usertour/dom';
 import type { Side } from '@usertour/types';
 
 export interface CustomHideDetectOverflowOptions {
@@ -12,7 +12,8 @@ export interface CustomHideDetectOverflowOptions {
 
 /**
  * Custom hide middleware: wraps Floating UI's hide with referenceHidden, and also treats
- * invalid reference rect (0 width/height or 0,0,0,0) as hidden so the floating element is hidden.
+ * a reference with nothing to point at (neither a width nor a height, as a detached element
+ * measures) as hidden, by the same rule the SDK's element watcher keeps content running by.
  * A reference inside a same-origin frame is clipped in the floating element's window's
  * space, which replaces the caller's boundaries.
  */
@@ -39,10 +40,8 @@ export function createCustomHideMiddleware(
         }),
       });
       const originalResult = await originalHide.fn(state);
-      const { width, height, x, y } = rects.reference;
-      const isInvalid =
-        width === 0 || height === 0 || (x === 0 && y === 0 && width === 0 && height === 0);
-      const referenceHidden = originalResult.data?.referenceHidden || isInvalid;
+      const referenceHidden =
+        originalResult.data?.referenceHidden || !hasPointableSize(rects.reference);
       const escaped = (originalResult.data?.escaped as boolean) ?? false;
 
       return {

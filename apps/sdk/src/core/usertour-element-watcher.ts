@@ -1,4 +1,4 @@
-import { isVisibleNode } from '@usertour/dom';
+import { hasPointableSize, isVisibleNode } from '@usertour/dom';
 import { ElementSelectorPropsData } from '@usertour/types';
 import { document, Evented } from '@/utils';
 import { findTargetElement, isVisible } from '@/core/usertour-helper';
@@ -216,8 +216,7 @@ export class UsertourElementWatcher extends Evented {
     if (!this.viewportCheck) {
       return true;
     }
-    const rect = element.getBoundingClientRect();
-    return rect.width > 0 || rect.height > 0;
+    return hasPointableSize(element.getBoundingClientRect());
   }
 
   /**
