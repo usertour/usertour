@@ -253,6 +253,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (this.isOpen() && step.cvid === this.currentStepCvid) {
       return;
     }
+    // No step yet, or a hidden one: the flow is not on screen until this step shows
+    const wasOnScreen = this.currentStepCvid !== undefined && !this.isOnHiddenStep();
     // Reset tour state and set new step
     this.reset();
     this.currentStepCvid = step.cvid;
@@ -273,6 +275,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
 
     // Show step based on its type
     await this.showStep(step);
+    if (!wasOnScreen && !this.isOnHiddenStep()) {
+      this.trigger(SDKClientEvents.FLOW_ON_SCREEN, { sessionId: this.getSessionId() });
+    }
   }
 
   /**

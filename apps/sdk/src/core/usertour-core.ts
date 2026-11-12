@@ -1287,8 +1287,6 @@ export class UsertourCore extends Evented {
       return false;
     }
 
-    const hasActivatedTour = this.activatedTour !== null;
-
     if (this.activatedTour) {
       if (this.activatedTour.getSessionId() === session.id) {
         this.activatedTour.updateSession(session);
@@ -1306,6 +1304,15 @@ export class UsertourCore extends Evented {
         await this.expandChecklist();
       }
     });
+    // A flow coming on screen collapses the checklist, whether it arrives on a
+    // step that shows or moves on to one from a hidden step; its end expands it.
+    // Moving on to a hidden step leaves the checklist as it is: flows often wait
+    // there for a moment between two steps.
+    usertourTour.on(SDKClientEvents.FLOW_ON_SCREEN, async () => {
+      if (this.activatedTour === usertourTour) {
+        await this.collapseChecklist();
+      }
+    });
     this.activatedTour = usertourTour;
     // Sync store
     this.syncToursStore([this.activatedTour]);
@@ -1314,10 +1321,6 @@ export class UsertourCore extends Evented {
       await usertourTour.showStepByCvid(session.currentStep?.cvid, false);
     } else {
       await usertourTour.showStepByIndex(0, false);
-    }
-    // A flow waiting on a hidden step shows nothing, so it leaves the checklist as it is
-    if (!hasActivatedTour && this.hasTourOnScreen()) {
-      await this.collapseChecklist();
     }
     return true;
   }

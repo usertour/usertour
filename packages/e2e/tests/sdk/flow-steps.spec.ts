@@ -185,6 +185,156 @@ test.describe('the session', () => {
     ).toBeVisible();
     expect(protocol.messages('HideChecklist')).toHaveLength(0);
   });
+
+  // A flow coming on screen collapses the checklist however it comes: arriving,
+  // taking over from another flow, or moving on from a hidden step. Each test
+  // checks the checklist's state before the change as well as after it.
+  const surfaces = (sdk: SdkPage) => sdk.page.locator('iframe.usertour-widget-surface-viewport');
+  const taskButton = (sdk: SdkPage) =>
+    sdk.frame().getByRole('button', { name: 'Complete task: Invite your team' });
+  /** Waits on a hidden step until `#go-on` is on the page, then shows a modal. */
+  const flowWaitingForButton = () =>
+    flowSession({
+      sessionId: 'session-1',
+      contentId: 'flow-1',
+      steps: [
+        {
+          id: 'flow-1-step-1',
+          cvid: 'flow-1-cvid-1',
+          type: 'hidden',
+          data: [],
+          trigger: [
+            {
+              id: 'trigger-1',
+              conditions: [elementPresent('#go-on')],
+              actions: [gotoStep('flow-1-cvid-2')],
+              wait: 0,
+            },
+          ],
+        },
+        {
+          id: 'flow-1-step-2',
+          cvid: 'flow-1-cvid-2',
+          type: 'modal',
+          data: [row(paragraph('All set'))],
+        },
+      ],
+    });
+
+  test('a flow that takes over from one waiting on a hidden step collapses the checklist', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('SetFlowSession', waitingFlow());
+    await sdk.advance(500);
+    await protocol.push('SetChecklistSession', openChecklist());
+    await expect(taskButton(sdk)).toBeVisible();
+    await protocol.waitForMessages('ShowChecklist', 1);
+
+    await protocol.push('SetFlowSession', modalFlow('session-2', 'flow-2', [row(paragraph('Hi'))]));
+    await protocol.waitForMessages('HideChecklist', 1);
+    await expect(surfaces(sdk)).toHaveCount(1);
+    await expect(sdk.frame().getByText('Hi')).toBeVisible();
+  });
+
+  test('a flow that moves on from a hidden step to one that shows collapses the checklist', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('SetFlowSession', flowWaitingForButton());
+    await sdk.advance(500);
+    await protocol.push('SetChecklistSession', openChecklist());
+    await expect(taskButton(sdk)).toBeVisible();
+    await protocol.waitForMessages('ShowChecklist', 1);
+
+    await addButton(sdk.page, 'go-on', 'Go on');
+    await sdk.advance(600);
+    await protocol.waitForMessages('HideChecklist', 1);
+    await expect(surfaces(sdk)).toHaveCount(1);
+    await expect(sdk.frame().getByText('All set')).toBeVisible();
+  });
+
+  test('a step the server moves a waiting flow on to collapses the checklist', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('SetFlowSession', flowWaitingForButton());
+    await sdk.advance(500);
+    await protocol.push('SetChecklistSession', openChecklist());
+    await expect(taskButton(sdk)).toBeVisible();
+    await protocol.waitForMessages('ShowChecklist', 1);
+
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+    await protocol.waitForMessages('HideChecklist', 1);
+    await expect(surfaces(sdk)).toHaveCount(1);
+    await expect(sdk.frame().getByText('All set')).toBeVisible();
+  });
+
+  test('a flow that moves on to a hidden step keeps the checklist collapsed until it ends', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('SetChecklistSession', openChecklist());
+    await expect(taskButton(sdk)).toBeVisible();
+    await protocol.push(
+      'SetFlowSession',
+      flowSession({
+        sessionId: 'session-1',
+        contentId: 'flow-1',
+        steps: [
+          {
+            id: 'flow-1-step-1',
+            cvid: 'flow-1-cvid-1',
+            type: 'modal',
+            data: [
+              row(paragraph('Welcome aboard')),
+              row(button('Next', [gotoStep('flow-1-cvid-2')])),
+            ],
+          },
+          { id: 'flow-1-step-2', cvid: 'flow-1-cvid-2', type: 'hidden', data: [] },
+        ],
+      }),
+    );
+    await protocol.waitForMessages('HideChecklist', 1);
+
+    // Flows often wait on a hidden step for a moment between two steps; opening
+    // the checklist there would open and close it between them.
+    await sdk.frame().getByRole('button', { name: 'Next' }).click();
+    await protocol.waitForMessages('GoToStep', 1);
+    await sdk.advance(600);
+    await expect(surfaces(sdk)).toHaveCount(0);
+    await protocol.waitForBatchesToClose();
+    expect(protocol.messages('ShowChecklist')).toHaveLength(1);
+
+    await protocol.push('UnsetFlowSession', { sessionId: 'session-1' });
+    await protocol.waitForMessages('ShowChecklist', 2);
+    await expect(taskButton(sdk)).toBeVisible();
+  });
+
+  test('a flow that takes over from one showing a step leaves the checklist collapsed', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('SetChecklistSession', openChecklist());
+    await expect(taskButton(sdk)).toBeVisible();
+    await protocol.push('SetFlowSession', modalFlow('session-1', 'flow-1', [row(paragraph('Hi'))]));
+    await protocol.waitForMessages('HideChecklist', 1);
+
+    await protocol.push(
+      'SetFlowSession',
+      modalFlow('session-2', 'flow-2', [row(paragraph('Next one'))]),
+    );
+    await expect(sdk.frame().getByText('Next one')).toBeVisible();
+    await sdk.advance(500);
+    await protocol.waitForBatchesToClose();
+    expect(protocol.messages('ShowChecklist')).toHaveLength(1);
+    await expect(surfaces(sdk)).toHaveCount(1);
+  });
 });
 
 test.describe('step types and settings', () => {

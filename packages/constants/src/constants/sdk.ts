@@ -13,6 +13,8 @@ export enum SDKClientEvents {
   COMPONENT_CLOSED = 'component-closed',
   CONTENT_STARTED = 'content-started',
   CONTENT_CHANGED = 'content-changed',
+  // Flow-specific events
+  FLOW_ON_SCREEN = 'flow-on-screen',
   // Checklist-specific events
   CHECKLIST_EXPANDED_CHANGE = 'checklist-expanded-change',
   CHECKLIST_FIRST_SEEN = 'checklist-first-seen',
