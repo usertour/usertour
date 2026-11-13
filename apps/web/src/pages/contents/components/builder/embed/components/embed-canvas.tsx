@@ -4,7 +4,12 @@ import { BUILDER_Z } from '@usertour/constants';
 import { CONTENT_ACTION_CAPABILITIES } from '@usertour/helpers';
 import { ContentEditorSerialize, EmbedPreview, EmbedRoot, InlineContainer } from '@usertour/widget';
 import type { ContentEditorRoot, EmbedData, Step } from '@usertour/types';
-import { ContentDataType, EmbedPlacement, StepContentType } from '@usertour/types';
+import {
+  ContentDataType,
+  ContentEditorElementType,
+  EmbedPlacement,
+  StepContentType,
+} from '@usertour/types';
 import { cn } from '@usertour/tailwind';
 import type { ReactNode, Ref } from 'react';
 import { useMemo } from 'react';
@@ -27,6 +32,8 @@ import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oem
 import { getStepId } from '@/utils/content';
 
 const ACTION_ITEMS = [...CONTENT_ACTION_CAPABILITIES[ContentDataType.EMBED].actions];
+// Every element kind, questions included, as a flow step offers.
+const ENABLED_ELEMENT_TYPES = Object.values(ContentEditorElementType);
 
 interface PlacementPreviewProps {
   placement: EmbedPlacement;
@@ -161,6 +168,7 @@ export const EmbedStepCanvas = () => {
           projectId={projectId}
           attributes={attributeList}
           actionItems={ACTION_ITEMS}
+          enabledElementTypes={ENABLED_ELEMENT_TYPES}
           contentList={contents}
           currentContent={currentContent}
           currentVersion={currentVersion}
