@@ -98,7 +98,8 @@ export interface InlineRootContextValue {
   assets?: AssetAttributes[];
   onDismiss?: () => void;
   /**
-   * Live-measured height (content + padding), reported from inside the frame.
+   * Live-measured height (content + padding, plus the outer margin above and
+   * below), reported from inside the frame.
    * null until the first measurement; hosts that size their own wrapper keep
    * it hidden until then so a reveal never runs against a guessed height.
    */
@@ -241,23 +242,28 @@ const InlineRoot = memo((props: InlineRootProps) => {
     type: surface,
   });
   const globalStyle = props.globalStyle ?? derivedGlobalStyle;
-  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  const [contentHeight, setContentHeight] = useState<number | null>(null);
   const onContentSizeChange = useCallback((rect: { width: number; height: number }) => {
     if (rect.height > 0) {
-      setMeasuredHeight(rect.height);
+      setContentHeight(rect.height);
     }
   }, []);
+  // The frame carries the outer margin, and the wrapper is sized from this
+  // height: without the margin above and below, the frame would be left that
+  // much shorter than its content and cut it off.
+  const verticalMargin = (shell?.outerMargin?.top ?? 0) + (shell?.outerMargin?.bottom ?? 0);
+  const measuredHeight = contentHeight === null ? null : contentHeight + verticalMargin;
   useEffect(() => {
     onMeasuredHeightChange?.(measuredHeight);
   }, [measuredHeight, onMeasuredHeightChange]);
   // Fail open: if no measurement arrives (observer quirk, empty content),
   // reveal at the fallback height rather than staying hidden forever.
   useEffect(() => {
-    if (measuredHeight !== null) {
+    if (contentHeight !== null) {
       return;
     }
     const timer = setTimeout(() => {
-      setMeasuredHeight((current) => {
+      setContentHeight((current) => {
         if (current !== null) {
           return current;
         }
@@ -266,7 +272,7 @@ const InlineRoot = memo((props: InlineRootProps) => {
       });
     }, INLINE_MEASURE_FAIL_OPEN_MS);
     return () => clearTimeout(timer);
-  }, [measuredHeight, shell?.height, themeSetting, getPadding]);
+  }, [contentHeight, shell?.height, themeSetting, getPadding]);
 
   const contextValue = useMemo<InlineRootContextValue>(
     () => ({

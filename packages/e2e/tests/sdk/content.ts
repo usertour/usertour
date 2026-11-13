@@ -424,6 +424,8 @@ export const checklistSession = (input: {
 
 // --- banner ---
 
+export type OuterMargin = { top: number; right: number; bottom: number; left: number };
+
 export type BannerPlacement =
   | 'top-of-page'
   | 'bottom-of-page'
@@ -446,6 +448,8 @@ export const bannerSession = (input: {
   sticky?: boolean;
   /** Floats over the page instead of pushing it. */
   overlay?: boolean;
+  /** Space around the card, in px. */
+  outerMargin?: OuterMargin;
 }) => ({
   id: input.sessionId,
   type: 'banner',
@@ -467,6 +471,7 @@ export const bannerSession = (input: {
       overlayEmbedOverAppContent: input.overlay ?? false,
       animateWhenEmbedAppears: false,
       contents: [row(paragraph(input.text)), ...(input.blocks ?? [])],
+      ...(input.outerMargin ? { outerMargin: input.outerMargin } : {}),
     },
   },
 });
@@ -544,6 +549,8 @@ export type EmbedInput = {
   allowDismiss?: boolean;
   /** Content position inside a cover; center when omitted. */
   coverAlignment?: string;
+  /** Space around the card, in px. */
+  outerMargin?: OuterMargin;
 };
 
 export const embedSession = (input: EmbedInput) => {
@@ -567,6 +574,7 @@ export const embedSession = (input: EmbedInput) => {
         targetElement: { type: 'manual', customSelector: input.target },
         allowUsersToDismiss: input.allowDismiss ?? true,
         ...(input.coverAlignment ? { coverAlignment: input.coverAlignment } : {}),
+        ...(input.outerMargin ? { outerMargin: input.outerMargin } : {}),
       },
     },
     ...(current ? { currentStep: { id: current.id, cvid: current.cvid } } : {}),

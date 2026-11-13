@@ -166,6 +166,46 @@ test('without user dismissal allowed, an embed has no close button', async ({ sd
   await expect(frame.getByRole('button', { name: 'Close' })).toHaveCount(0);
 });
 
+test('an outer margin above and below goes around the card, not out of it', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#panel',
+      outerMargin: { top: 16, right: 0, bottom: 16, left: 0 },
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'inline',
+          data: [row(paragraph('Upgrade now')), row(button('Learn more'))],
+        },
+      ],
+    }),
+  );
+  await expect(sdk.page.frameLocator(FRAME).getByText('Upgrade now')).toBeVisible();
+  await expect
+    .poll(() =>
+      sdk.page.locator(FRAME).evaluate((frame) => {
+        const content = (frame as HTMLIFrameElement).contentDocument?.documentElement;
+        return {
+          // The frame is as tall as its content: nothing is cut off.
+          clipped: (content?.scrollHeight ?? 0) - frame.getBoundingClientRect().height,
+          // And the shell is taller than the frame by the two margins.
+          around:
+            (frame.closest('.usertour-widget-embed') as HTMLElement).getBoundingClientRect()
+              .height - frame.getBoundingClientRect().height,
+        };
+      }),
+    )
+    .toEqual({ clipped: 0, around: 32 });
+});
+
 test('an embed’s buttons run their actions and follow their rules as the page changes', async ({
   sdk,
   protocol,

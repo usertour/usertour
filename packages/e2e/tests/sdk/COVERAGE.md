@@ -172,6 +172,7 @@ its row.
 | Sticky / overlay positioning | ✓ banner "sticky and overlay › …" ×3 | — |
 | Dismiss button hidden unless `allowUsersToDismissEmbed` | ✓ banner "without user dismissal allowed…" | — |
 | Button actions, live button rules, `banner-dismis` action | ✓ banner "its buttons › …" | — |
+| An outer margin above and below goes around the banner: the frame keeps its content's height | ✓ banner "an outer margin above and below goes around the banner…" | — |
 | A session updated in place, including a placement change | ✓ banner "a session updated in place › …" | — |
 
 ## Embeds
@@ -198,7 +199,8 @@ its row.
 | A re-send of the same session with another target moves it there | ✓ embed "an embed whose session is re-sent with another target…" | — |
 | The target is looked up in the page only, never in a frame | ✓ iframe "an embed’s target is looked up in the page…" | — |
 | Show rules, frequency, a republish while the session rests on a later step | server (`apps/server/test/e2e/web-socket/conditions-frequency-and-identity`) | server |
-| `maxContentWidth`, `outerMargin`, `zIndex` and the theme's embed padding | — (shared with the banner's shell, uncovered there too) | P3 |
+| An outer margin above and below goes around the card: the frame keeps its content's height | ✓ embed "an outer margin above and below goes around the card…" | — |
+| `maxContentWidth`, `zIndex` and the theme's embed padding | — (shared with the banner's shell, uncovered there too) | P3 |
 
 ## Resource center
 
