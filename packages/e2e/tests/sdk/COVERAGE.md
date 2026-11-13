@@ -200,6 +200,7 @@ its row.
 | The target is looked up in the page only, never in a frame | ✓ iframe "an embed’s target is looked up in the page…" | — |
 | Show rules, frequency, a republish while the session rests on a later step | server (`apps/server/test/e2e/web-socket/conditions-frequency-and-identity`) | server |
 | An outer margin above and below goes around the card: the frame keeps its content's height | ✓ embed "an outer margin above and below goes around the card…" | — |
+| While a step change waits on its report: a button of the step still on screen is recorded against that step, and a step the embed has moved on from does not get its trigger run | ✓ embed "while a step change waits on its report › …" ×2 | — |
 | `maxContentWidth`, `zIndex` and the theme's embed padding | — (shared with the banner's shell, uncovered there too) | P3 |
 
 ## Resource center

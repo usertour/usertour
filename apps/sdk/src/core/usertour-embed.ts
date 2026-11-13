@@ -25,9 +25,9 @@ import { isElement, logger } from '@/utils';
 
 const log = logger.scope('embed');
 
-// An embed keeps watching for its target for as long as the session lives (same
-// as launchers and element-attached banners): in an SPA the target may only
-// render after a client-side navigation, long past a short one-shot timeout.
+// An embed keeps looking for its target for an hour (as launchers and
+// element-attached banners do): in an SPA the target may only render after a
+// client-side navigation, long past a short one-shot timeout.
 const EMBED_TARGET_MISSING_SECONDS = 3600;
 
 /**
@@ -156,7 +156,9 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     if (isQuestionElement(element)) {
       await this.handleQuestionAnswer(element as ContentEditorQuestionElement, value);
     } else if (element.type === 'button') {
-      this.reportButtonClick(element, this.getCurrentStep()?.id);
+      // The step on screen, not the one being moved to: while a step change
+      // waits on its report the old step is still the one being pressed.
+      this.reportButtonClick(element, this.getStoreData()?.currentStep?.id);
     }
     if (element?.data?.actions) {
       await this.handleActions(element.data.actions as RulesCondition[], ActionSource.BUTTON);
@@ -258,6 +260,11 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     this.currentStepCvid = step.cvid;
     if (reportStepSeen) {
       await this.reportStepSeen(step);
+    }
+    // The embed may have moved on, or gone, while the report was out: a step
+    // it is no longer on must not have its trigger run.
+    if (this.destroyed || this.currentStepCvid !== step.cvid) {
+      return;
     }
     // The trigger runs before the step is applied, as a flow's does: a step
     // its trigger routes away from on arrival is never applied, so a hidden

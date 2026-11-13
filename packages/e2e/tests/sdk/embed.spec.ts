@@ -417,6 +417,124 @@ const expectSameBox = (
   expect(Math.abs(actual!.height - expected!.height)).toBeLessThanOrEqual(1);
 };
 
+test.describe('while a step change waits on its report', () => {
+  /** Step one pages on or does nothing; step two's trigger runs code at once. */
+  const session = () =>
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#panel',
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'inline',
+          data: [
+            row(paragraph('Step one')),
+            row(
+              button('Next', [gotoStep('embed-1-cvid-2')], { cvid: 'button-next' }),
+              button('Learn more', [], { cvid: 'button-learn' }),
+            ),
+          ],
+        },
+        {
+          id: 'embed-1-step-2',
+          cvid: 'embed-1-cvid-2',
+          type: 'inline',
+          data: [row(paragraph('Step two'))],
+          trigger: [
+            {
+              id: 'trigger-1',
+              conditions: [
+                {
+                  id: 'trigger-cond-1',
+                  type: 'element',
+                  operators: 'and',
+                  data: {
+                    logic: 'present',
+                    elementData: { type: 'manual', customSelector: '#cta', sequence: '1st' },
+                  },
+                },
+              ],
+              actions: [evaluateJs(RUN)],
+              wait: 0,
+            },
+          ],
+        },
+        {
+          id: 'embed-1-step-3',
+          cvid: 'embed-1-cvid-3',
+          type: 'inline',
+          data: [row(paragraph('Step three'))],
+        },
+      ],
+    });
+
+  /** Holds the report of step two until the returned function is called. */
+  const holdStepTwoReport = (protocol: { answer: typeof defaultAnswer }) => {
+    let release: () => void = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let reached: () => void = () => {};
+    const arrived = new Promise<void>((resolve) => {
+      reached = resolve;
+    });
+    protocol.answer = async (message, connection) => {
+      if (message.kind === 'GoToStep' && message.payload?.stepId === 'embed-1-step-2') {
+        reached();
+        await held;
+      }
+      return defaultAnswer(message, connection);
+    };
+    return { release, arrived };
+  };
+
+  test('a button of the step still on screen is recorded against that step', async ({
+    sdk,
+    protocol,
+  }) => {
+    const report = holdStepTwoReport(protocol);
+    await start(sdk);
+    await protocol.push('AddEmbed', session());
+    const frame = sdk.page.frameLocator(FRAME);
+    await frame.getByRole('button', { name: 'Next' }).click();
+    await report.arrived;
+
+    await frame.getByRole('button', { name: 'Learn more' }).click();
+    await protocol.waitForMessages('ClickButton', 2);
+    expect(protocol.messages('ClickButton')[1].message.payload).toMatchObject({
+      stepId: 'embed-1-step-1',
+      buttonCvid: 'button-learn',
+    });
+    report.release();
+    await expect(frame.getByText('Step two')).toBeVisible();
+  });
+
+  test('a step the embed has moved on from does not get its trigger run', async ({
+    sdk,
+    protocol,
+  }) => {
+    const report = holdStepTwoReport(protocol);
+    await start(sdk);
+    await protocol.push('AddEmbed', session());
+    const frame = sdk.page.frameLocator(FRAME);
+    await frame.getByRole('button', { name: 'Next' }).click();
+    await report.arrived;
+
+    await protocol.push('ForceGoToStep', {
+      sessionId: 'embed-session-1',
+      stepId: 'embed-1-step-3',
+    });
+    await expect(frame.getByText('Step three')).toBeVisible();
+    report.release();
+    await sdk.advance(600);
+    await sdk.page.waitForTimeout(300);
+    expect(await sdk.recorded('ran')).toEqual([]);
+    await expect(frame.getByText('Step three')).toBeVisible();
+  });
+});
+
 test('the cover placement sits over the target and tracks its box', async ({ sdk, protocol }) => {
   await start(sdk);
   await protocol.push(
