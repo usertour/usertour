@@ -22,7 +22,7 @@ its row.
 | Behaviour | Covered by | Priority |
 |---|---|---|
 | A `setCustomScrollIntoView` callback that throws: the step still shows, scrolled the default way | ✓ api "a setCustomScrollIntoView() callback that throws…" | — |
-| The loader snippet queues calls made before the bundle loads and replays them in order, settling their promises | ✓ loader "calls made before the bundle loads are replayed…" | — |
+| The loader snippet queues calls made before the bundle loads and replays them in order, settling their promises (a queued `start()` with whether the server started it) | ✓ loader "calls made before the bundle loads are replayed…" | — |
 | Methods left on the stub that the bundle no longer has resolve with a warning instead of hanging | ✓ loader "a method the bundle no longer has warns and resolves…" | — |
 | `init`: a different token resets; calls before `init` throw; an empty token throws | ✓ api "calls before init() are refused…", "init() with another token ends…" | — |
 | `identify`: handshake, batched upsert, `{ rejected }`, a different user resets | ✓ identity.spec, connection.spec | — |
