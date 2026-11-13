@@ -277,8 +277,23 @@ export const findCurrentStepCvid = (
 
   const currentStepId = session.activeSession.currentStepId;
   const currentStepCvid = steps.find((step) => step.id === currentStepId)?.cvid ?? null;
+  const rememberedCvid =
+    currentStepCvid || findLatestStepCvid(session.activeSession?.bizEvent) || undefined;
 
-  return currentStepCvid || findLatestStepCvid(session.activeSession?.bizEvent);
+  // An embed is always delivered on the version now published, which may no
+  // longer have the step its session rests on. Without a step to open on the
+  // session could not be built, and as a running session keeps the embed from
+  // starting a new one, the user would never see it again: it reopens on the
+  // first step, as the SDK does for a step it cannot find.
+  if (
+    customContentVersion.content.type === ContentDataType.EMBED &&
+    rememberedCvid &&
+    !steps.some((step) => step.cvid === rememberedCvid)
+  ) {
+    return steps[0]?.cvid;
+  }
+
+  return rememberedCvid;
 };
 
 /**

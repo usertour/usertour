@@ -287,9 +287,9 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
     let environmentToken: string;
     let embedContentId: string;
     let config: Record<string, unknown>;
-    let firstVersionSteps: { id: string }[];
+    let liveSteps: { id: string }[];
 
-    const buildEmbedVersion = async (sequence: number) => {
+    const buildEmbedVersion = async (sequence: number, cvids: string[] = stepCvids) => {
       const version = await buildVersion(prisma, {
         contentId: embedContentId,
         sequence,
@@ -297,7 +297,7 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
         data: {},
       });
       const steps = [];
-      for (const [index, cvid] of stepCvids.entries()) {
+      for (const [index, cvid] of cvids.entries()) {
         steps.push(
           await buildStep(prisma, {
             versionId: version.id,
@@ -344,7 +344,7 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
       });
       embedContentId = embedContent.id;
       const first = await buildEmbedVersion(1);
-      firstVersionSteps = first.steps;
+      liveSteps = first.steps;
       await publishVersion(prisma, {
         environmentId,
         contentId: embedContentId,
@@ -378,6 +378,24 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
       return { client, embeds, until };
     };
 
+    /** Makes `built` the published version, as a publish does. */
+    const goLive = async (built: Awaited<ReturnType<typeof buildEmbedVersion>>) => {
+      await prisma.content.update({
+        where: { id: embedContentId },
+        data: { publishedVersionId: built.version.id },
+      });
+      await prisma.contentOnEnvironment.updateMany({
+        where: { contentId: embedContentId, environmentId },
+        data: { publishedVersionId: built.version.id },
+      });
+      const cache = harness.app.get(ProjectCacheService);
+      await cache.invalidate([
+        ...cache.envContentKeys(environmentId),
+        cache.keys.publishedVersionId(environmentId, embedContentId),
+      ]);
+      liveSteps = built.steps;
+    };
+
     it('reopens on the step it was on, found by its cvid in the new version', async () => {
       const first = await loadPage();
       let sessionId: string;
@@ -392,7 +410,7 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
         // The user pages to the second step.
         const stepAck = await first.client.sendClientMessage(ClientMessageKind.GO_TO_STEP, {
           sessionId,
-          stepId: firstVersionSteps[1].id,
+          stepId: liveSteps[1].id,
         });
         expect(stepAck).toBe(true);
       } finally {
@@ -401,19 +419,7 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
 
       // A new version with the same steps (other rows, same cvids) goes live.
       const second = await buildEmbedVersion(2);
-      await prisma.content.update({
-        where: { id: embedContentId },
-        data: { publishedVersionId: second.version.id },
-      });
-      await prisma.contentOnEnvironment.updateMany({
-        where: { contentId: embedContentId, environmentId },
-        data: { publishedVersionId: second.version.id },
-      });
-      const cache = harness.app.get(ProjectCacheService);
-      await cache.invalidate([
-        ...cache.envContentKeys(environmentId),
-        cache.keys.publishedVersionId(environmentId, embedContentId),
-      ]);
+      await goLive(second);
 
       const next = await loadPage();
       try {
@@ -421,6 +427,37 @@ describe('WebSocket v2 client conditions, frequency and identity (e2e)', () => {
         expect(delivered?.id).toBe(sessionId);
         expect(delivered?.version?.id).toBe(second.version.id);
         expect(delivered?.currentStep?.cvid).toBe(stepCvids[1]);
+      } finally {
+        next.client.disconnect();
+      }
+    });
+
+    it('reopens on the first step when the new version no longer has the step it was on', async () => {
+      const first = await loadPage();
+      let sessionId: string;
+      try {
+        sessionId = first.embeds().at(-1)?.payload?.id;
+        expect(sessionId).toBeTruthy();
+        // The session rests on the second step.
+        const stepAck = await first.client.sendClientMessage(ClientMessageKind.GO_TO_STEP, {
+          sessionId,
+          stepId: liveSteps[1].id,
+        });
+        expect(stepAck).toBe(true);
+      } finally {
+        first.client.disconnect();
+      }
+
+      // The next version drops that step.
+      const trimmed = await buildEmbedVersion(3, [stepCvids[0]]);
+      await goLive(trimmed);
+
+      const next = await loadPage();
+      try {
+        const delivered = next.embeds().at(-1)?.payload;
+        expect(delivered?.id).toBe(sessionId);
+        expect(delivered?.version?.id).toBe(trimmed.version.id);
+        expect(delivered?.currentStep?.cvid).toBe(stepCvids[0]);
       } finally {
         next.client.disconnect();
       }

@@ -237,4 +237,15 @@ describe('the step a session resumes on after its version changed', () => {
       } as never),
     ).toBe('v2-step-2');
   });
+
+  it('an embed whose step the new version dropped resumes on the first step; a flow does not', () => {
+    const embedEvents = [
+      stepSeen('embed_step_seen', 'embed_step_cvid', 'cvid-9', '2026-01-01T00:00:00Z'),
+    ];
+    expect(findCurrentStepCvid(republished('embed', embedEvents))).toBe('cvid-1');
+    const flowEvents = [
+      stepSeen('flow_step_seen', 'flow_step_cvid', 'cvid-9', '2026-01-01T00:00:00Z'),
+    ];
+    expect(findCurrentStepCvid(republished('flow', flowEvents))).toBe('cvid-9');
+  });
 });
