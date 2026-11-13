@@ -4553,6 +4553,10 @@ const translations = {
         label: '关闭横幅',
         summary: '关闭横幅',
       },
+      embedDismiss: {
+        label: '关闭嵌入',
+        summary: '关闭嵌入',
+      },
       flowStart: {
         label: '启动新的流程或任务清单',
         placeholder: '选择流程或任务清单',

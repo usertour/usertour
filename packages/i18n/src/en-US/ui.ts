@@ -4768,6 +4768,10 @@ const translations = {
         label: 'Dismiss banner',
         summary: 'Dismiss banner',
       },
+      embedDismiss: {
+        label: 'Dismiss embed',
+        summary: 'Dismiss embed',
+      },
       flowStart: {
         label: 'Start new flow / checklist',
         placeholder: 'Pick a flow or checklist',
