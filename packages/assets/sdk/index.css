@@ -185,6 +185,14 @@
 .usertour-widget-launcher--icon svg {
   display: block;
 }
+/* A hidden launcher has no element of its own to see or to click: its target
+   is what the user interacts with. The element stays for what is positioned
+   and bound by it, with no box to catch pointer events. */
+.usertour-widget-launcher--hidden {
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
 .usertour-widget-launcher--button {
   width: var(--usertour-launcher-button-width);
   height: var(--usertour-launcher-button-height);
