@@ -77,6 +77,7 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
     createStep,
     attributes,
     projectId,
+    actionItems,
   } = useContentEditorContext();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -94,6 +95,7 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
       createStep,
       attributes,
       projectId,
+      actionItems,
     }),
     [
       zIndex,
@@ -104,6 +106,7 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
       createStep,
       attributes,
       projectId,
+      actionItems,
     ],
   );
 

@@ -41,6 +41,7 @@ export const MultipleChoicePopoverContent = memo(
       createStep,
       attributes,
       projectId,
+      actionItems,
     } = contextProps;
     const { t } = useTranslation();
 
@@ -123,6 +124,7 @@ export const MultipleChoicePopoverContent = memo(
           currentStep={currentStep}
           currentVersion={currentVersion}
           currentContent={currentContent}
+          filterItems={actionItems}
           onChange={(actions) => handleDataChange({ actions })}
           conditions={localData.actions || []}
           attributes={attributes}

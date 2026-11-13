@@ -22,6 +22,8 @@ export interface QuestionContextProps {
   ) => Promise<Step | undefined>;
   attributes?: Attribute[];
   projectId: string;
+  /** The actions the host editor offers, as its buttons get; the default set when absent. */
+  actionItems?: string[];
 }
 
 // Question Name Field Component
@@ -66,6 +68,7 @@ export const ContentActionsField = memo<ContentActionsFieldProps>(
       contentList,
       createStep,
       attributes,
+      actionItems,
     } = contextProps;
     const { t } = useTranslation();
 
@@ -77,6 +80,7 @@ export const ContentActionsField = memo<ContentActionsFieldProps>(
           currentStep={currentStep}
           currentVersion={currentVersion}
           currentContent={currentContent}
+          filterItems={actionItems}
           onChange={onActionsChange}
           conditions={actions || []}
           attributes={attributes}
