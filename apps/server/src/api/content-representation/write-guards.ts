@@ -190,6 +190,19 @@ export function collectWriteViolations(input: {
         });
       }
     }
+    // An inline step renders in the embed shell, which the embed `data.target`
+    // places; a hidden step renders nothing. Neither reads a step-level
+    // target, so one would be stored and published yet never used.
+    if (s.target !== undefined && (caps?.placement === 'inline' || caps?.placement === 'none')) {
+      issues.push({
+        rule: 'step_shape',
+        path: `${at}.target`,
+        message:
+          caps.placement === 'inline'
+            ? 'An inline step renders in the embed shell, which is placed by the embed `data.target` — a step-level target does not apply; remove it (to move the embed, change `data.target`).'
+            : 'A hidden step renders no UI, so a target does not apply — remove it. (To wait for an element, use a step trigger with an `element` condition.)',
+      });
+    }
     // At most ONE question block per step: the runtime renders and reports
     // only the first — a second is invisible (no answers, no analytics). A
     // step's content is authored atomically (steps are full-list replacements),

@@ -314,6 +314,28 @@ describe('collectWriteViolations — embed steps', () => {
     ]);
   });
 
+  it('a step-level target: rejected on inline and hidden steps, kept on a tooltip', () => {
+    const target = { selector: '#elsewhere' };
+    const embed = collectWriteViolations({
+      steps: [
+        { name: 'Card', type: 'inline', target, content: [] },
+        { name: 'Router', type: 'hidden', target, content: [] },
+      ],
+      contentType: 'embed',
+    });
+    expect(embed.issues.map((issue) => ({ rule: issue.rule, path: issue.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].target' },
+      { rule: 'step_shape', path: 'steps[1].target' },
+    ]);
+    expect(embed.issues[0].message).toMatch(/data\.target/);
+
+    const flow = collectWriteViolations({
+      steps: [{ name: 'Tip', type: 'tooltip', target, content: [] }],
+      contentType: 'flow',
+    });
+    expect(flow.issues).toEqual([]);
+  });
+
   it('the embed shell (data) carries no action slots — a clean shell write has no issues', () => {
     const out = collectWriteViolations({
       data: { placement: 'cover-element', target: { selector: '#x' }, allowDismiss: true },

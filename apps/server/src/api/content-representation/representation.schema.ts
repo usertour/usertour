@@ -1282,7 +1282,12 @@ export const representationStepInput = z.object({
       'Per-step theme override. Omit to keep the current value; set to a theme id ' +
         '(from the themes list) to override; set to null to clear and inherit the flow theme.',
     ),
-  target: representationTarget.optional(),
+  target: representationTarget
+    .optional()
+    .describe(
+      'The element a `tooltip` step anchors to. Not used by `inline` / `hidden` steps (an ' +
+        "embed's steps render at the embed data's `target`), so sending one there is rejected.",
+    ),
   placement: representationPlacement.optional(),
   width: z
     .number()

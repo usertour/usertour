@@ -262,6 +262,23 @@ describe('decompileStep', () => {
     });
     expect(out.placement).toBeUndefined();
   });
+
+  it('inline / hidden: never emit a stored target — the write rejects one there', () => {
+    const target = { type: 'manual', customSelector: '#card' };
+    for (const type of ['inline', 'hidden']) {
+      const out = decompileStep({
+        id: 's7',
+        cvid: 'cv7',
+        name: 'Card',
+        type,
+        sequence: 0,
+        data: [],
+        target,
+        setting: {},
+      });
+      expect(out.target).toBeUndefined();
+    }
+  });
 });
 
 describe('decompilePlainText — inverse of compilePlainText (plain-text fields)', () => {

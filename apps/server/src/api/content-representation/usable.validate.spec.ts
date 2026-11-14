@@ -1455,6 +1455,29 @@ describe('embed (shell + steps)', () => {
     expect(embed(shell, [inlineStep({ target: undefined })]).ok).toBe(true);
   });
 
+  it('warns on a stored step-level target the SDK ignores (inline, or an embed hidden step)', () => {
+    const target = { type: 'manual', customSelector: '#elsewhere' };
+    const r = embed(shell, [
+      inlineStep({ target }),
+      inlineStep({ type: StepContentType.HIDDEN, data: [], cvid: 'b', sequence: 1, target }),
+    ]);
+    expect(r.ok).toBe(true);
+    const messages = r.warnings.map((issue) => issue.message);
+    expect(messages).toContain(
+      "Inline step has its own target, which the SDK ignores: the embed is placed at the embed data's target.",
+    );
+    expect(messages).toContain(
+      'Hidden step has a target, which the SDK ignores: a hidden step renders no UI.',
+    );
+
+    const flow = validateVersionUsable({
+      type: ContentDataType.FLOW,
+      themeId: 't',
+      steps: [inlineStep({ type: StepContentType.HIDDEN, data: [], target })],
+    });
+    expect(flow.warnings.some((issue) => issue.message.includes('SDK ignores'))).toBe(false);
+  });
+
   it('a goto by cvid must resolve; an unreferenced later step is only a warning', () => {
     const goto = (data: Record<string, unknown>) => [
       {

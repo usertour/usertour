@@ -837,6 +837,25 @@ function validateSteps(
       err(label, 'Tooltip step has no target element; the SDK skips it.');
     }
 
+    // A stored step-level target on an inline step (the shell is placed by
+    // the embed data) or an embed's hidden step (no UI) is never read: the
+    // write now rejects one, so only rows saved before that carry it. A flow's
+    // hidden step is left alone — the builder keeps the target of a tooltip
+    // switched to hidden.
+    const placementKind = stepCapabilities(step.type)?.placement;
+    if (
+      (placementKind === 'inline' ||
+        (placementKind === 'none' && contentType === ContentDataType.EMBED)) &&
+      hasTarget(step.target)
+    ) {
+      warn(
+        label,
+        placementKind === 'inline'
+          ? "Inline step has its own target, which the SDK ignores: the embed is placed at the embed data's target."
+          : 'Hidden step has a target, which the SDK ignores: a hidden step renders no UI.',
+      );
+    }
+
     // Hidden steps carry only logic (no rendered body); every other step must
     // have content and no element missing its required data.
     if (step.type !== StepContentType.HIDDEN) {
