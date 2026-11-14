@@ -31,6 +31,15 @@ const log = logger.scope('embed');
 const EMBED_TARGET_MISSING_SECONDS = 3600;
 
 /**
+ * What a step's trigger is armed from: the step and its trigger as published.
+ * `actived` is evaluation state, not configuration, so it is left out.
+ */
+const stepTriggerKey = (step: SessionStep): string =>
+  JSON.stringify([step.cvid, step.trigger ?? []], (key, value) =>
+    key === 'actived' ? undefined : value,
+  );
+
+/**
  * An embed: editor content rendered inline at a target element, one of
  * several that may show at once. Its steps are flow steps (INLINE / HIDDEN)
  * paged inside one shell, so the step machinery is the tour's; its mounting is
@@ -50,11 +59,24 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   // Set once and for good: an embed is created per delivery and never reused.
   private destroyed = false;
   private stepTrigger: UsertourTrigger | null = null;
-  /** The step the live trigger was armed for, so a re-run does not re-arm it. */
-  private stepTriggerCvid: string | null = null;
+  /**
+   * The step and trigger configuration the live trigger was armed for, so a
+   * re-send of the same configuration does not re-arm it and a republished
+   * one does.
+   */
+  private stepTriggerKey: string | null = null;
+  /** The step on screen (or to be shown once the target is there). */
   private currentStepCvid?: string;
+  /**
+   * The step a step change is moving to while its report is out. It becomes
+   * the current step only once the report is back, so nothing in between —
+   * a session re-send, the check loop — acts on it early.
+   */
+  private pendingStepCvid: string | null = null;
   /** Whether the target is found and visible — one of the two gates on openState. */
   private targetVisible = false;
+  /** Set once a sessionless embed has asked the server to start its content. */
+  private startRequested = false;
 
   protected initializeActionHandlers(): void {
     this.registerActionHandlers([new CommonActionHandler(), new EmbedActionHandler()]);
@@ -227,11 +249,17 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
    * sessionless pre-activation) nothing is shown, and a step it routed to
    * could not be reported. So the trigger is armed once the session is there
    * — on a resumed session that is at once; after a pre-activation it is when
-   * the server hands the session back — and only once per step.
+   * the server hands the session back. It is armed once per configuration: a
+   * re-send of the same one leaves the live trigger alone, a republished one
+   * replaces it, and a removed one stops it with any action it had waiting.
+   * While a step change is in flight the step it lands on arms its own.
    */
   private armStepTrigger(): void {
     const step = this.getCurrentStep();
-    if (!step || !this.getSessionId() || this.stepTriggerCvid === step.cvid) {
+    if (!step || !this.getSessionId() || this.pendingStepCvid) {
+      return;
+    }
+    if (this.stepTriggerKey === stepTriggerKey(step)) {
       return;
     }
     void this.setupStepTrigger(step);
@@ -254,24 +282,34 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   }
 
   private async showStep(step: SessionStep, reportStepSeen: boolean): Promise<void> {
-    if (step.cvid === this.currentStepCvid && this.isOpen()) {
+    if (step.cvid === this.currentStepCvid && !this.pendingStepCvid && this.isOpen()) {
       return;
     }
-    this.currentStepCvid = step.cvid;
+    if (step.cvid === this.pendingStepCvid) {
+      return;
+    }
+    // The step on screen stays current until the report is back: a button
+    // pressed on it is its own, a session re-send renders it, and nothing arms
+    // the step being moved to before it is reached.
+    this.pendingStepCvid = step.cvid ?? null;
     if (reportStepSeen) {
       await this.reportStepSeen(step);
     }
     // The embed may have moved on, or gone, while the report was out: a step
-    // it is no longer on must not have its trigger run.
-    if (this.destroyed || this.currentStepCvid !== step.cvid) {
+    // it is no longer moving to must not have its trigger run.
+    if (this.destroyed || this.pendingStepCvid !== step.cvid) {
       return;
     }
+    this.pendingStepCvid = null;
+    // A republish while the report was out may have changed the step.
+    const target = this.getStepByCvid(step.cvid) ?? step;
+    this.currentStepCvid = target.cvid;
     // The trigger runs before the step is applied, as a flow's does: a step
     // its trigger routes away from on arrival is never applied, so a hidden
     // router between two inline steps leaves the frame — and a cover's
     // target — untouched.
-    await this.setupStepTrigger(step);
-    if (this.currentStepCvid !== step.cvid) {
+    await this.setupStepTrigger(target);
+    if (this.destroyed || this.currentStepCvid !== target.cvid || this.pendingStepCvid) {
       return;
     }
     await this.applyCurrentStep();
@@ -297,17 +335,26 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   /** Installs the step's trigger and runs its first pass. */
   private async setupStepTrigger(step: SessionStep): Promise<void> {
     this.resetStepTrigger();
-    this.stepTriggerCvid = step.cvid ?? null;
+    this.stepTriggerKey = stepTriggerKey(step);
     if (!step.trigger?.length) {
       return;
     }
-    this.stepTrigger = new UsertourTrigger(
+    const trigger: UsertourTrigger = new UsertourTrigger(
       this.getContentId(),
       step.trigger,
       () => this.getSessionAttributes(),
-      (actions) => this.handleActions(actions, ActionSource.TRIGGER),
+      async (actions) => {
+        // A replaced or destroyed trigger may still finish an evaluation it
+        // started, or fire a wait timer it set after its destroy: its actions
+        // belong to a configuration or step the embed has left.
+        if (this.destroyed || this.stepTrigger !== trigger) {
+          return;
+        }
+        await this.handleActions(actions, ActionSource.TRIGGER);
+      },
     );
-    await this.stepTrigger.process();
+    this.stepTrigger = trigger;
+    await trigger.process();
   }
 
   private async checkAndProcessTrigger(): Promise<void> {
@@ -319,7 +366,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   private resetStepTrigger(): void {
     this.stepTrigger?.destroy();
     this.stepTrigger = null;
-    this.stepTriggerCvid = null;
+    this.stepTriggerKey = null;
   }
 
   // === Button conditions ===
@@ -345,8 +392,12 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
    * disappears and reappears through SPA navigation is noticed.
    */
   private async checkTargetVisibility(): Promise<void> {
+    if (!this.watcher) {
+      return;
+    }
     const store = this.getStoreData();
-    if (!store || !this.watcher) {
+    if (!store) {
+      await this.checkPreActivationTarget();
       return;
     }
     const { isHidden } = await this.watcher.checkVisibility();
@@ -452,12 +503,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   private handleElementFound(el: Element, store: EmbedStore): void {
     this.targetVisible = isVisibleNode(el);
     if (!this.getSessionId()) {
-      void this.instance.startContent(
-        this.getContentId(),
-        contentStartReason.START_FROM_CONDITION,
-        undefined,
-        false,
-      );
+      this.requestStart(el);
       return;
     }
     // The store was built when the watcher was set up. A step change since
@@ -488,6 +534,42 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     });
   }
 
+  /**
+   * Before a session exists the check loop has no store to reconcile; it
+   * watches the found target instead (re-found by selector if it was
+   * replaced) and asks for the session once it can be seen.
+   */
+  private async checkPreActivationTarget(): Promise<void> {
+    if (!this.watcher || this.getSessionId() || this.startRequested) {
+      return;
+    }
+    const { isHidden } = await this.watcher.checkVisibility();
+    const el = this.watcher?.getElement();
+    if (!isHidden && el) {
+      this.requestStart(el);
+    }
+  }
+
+  /**
+   * Asks the server to start the content, once, and only for a target that
+   * can be seen: "seen" means rendered, so a target in the page but hidden
+   * (`display: none`, a closed tab panel) waits for the check loop to see it
+   * shown. A later delivery, a rebuilt watcher or the check loop do not ask
+   * again; only a request that failed to go out is retried.
+   */
+  private requestStart(el: Element): void {
+    if (this.destroyed || this.getSessionId() || this.startRequested || !isVisibleNode(el)) {
+      return;
+    }
+    this.startRequested = true;
+    this.instance
+      .startContent(this.getContentId(), contentStartReason.START_FROM_CONDITION, undefined, false)
+      .catch((error) => {
+        this.startRequested = false;
+        log.error('Failed to start the embed content', error);
+      });
+  }
+
   // === Reporting ===
   private async reportStepSeen(step: SessionStep): Promise<void> {
     await this.socketService.goToStep({
@@ -506,6 +588,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     }
     this.watcherTargetKey = null;
     this.pendingWatcherStore = null;
+    this.pendingStepCvid = null;
   }
 
   protected onReset(): void {

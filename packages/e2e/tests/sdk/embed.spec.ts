@@ -55,6 +55,8 @@ const appendLateTarget = (page: Page) =>
   });
 
 const RUN = "window.__usertourRecorded.ran = ['yes']";
+/** Unlike RUN, records every run, so a trigger run twice shows. */
+const COUNT_RUN = "(window.__usertourRecorded.ran ||= []).push('yes')";
 
 const start = async (sdk: {
   init: () => Promise<unknown>;
@@ -456,7 +458,7 @@ test.describe('while a step change waits on its report', () => {
                   },
                 },
               ],
-              actions: [evaluateJs(RUN)],
+              actions: [evaluateJs(COUNT_RUN)],
               wait: 0,
             },
           ],
@@ -532,6 +534,95 @@ test.describe('while a step change waits on its report', () => {
     await sdk.page.waitForTimeout(300);
     expect(await sdk.recorded('ran')).toEqual([]);
     await expect(frame.getByText('Step three')).toBeVisible();
+  });
+
+  test('a session re-sent meanwhile keeps the step on screen and runs the next step’s trigger once, on arrival', async ({
+    sdk,
+    protocol,
+  }) => {
+    const report = holdStepTwoReport(protocol);
+    await start(sdk);
+    await protocol.push('AddEmbed', session());
+    const frame = sdk.page.frameLocator(FRAME);
+    await frame.getByRole('button', { name: 'Next' }).click();
+    await report.arrived;
+
+    await protocol.push('AddEmbed', session());
+    await sdk.advance(600);
+    await sdk.page.waitForTimeout(300);
+    expect(await sdk.recorded('ran')).toEqual([]);
+    await expect(frame.getByText('Step one')).toBeVisible();
+
+    report.release();
+    await expect(frame.getByText('Step two')).toBeVisible();
+    await expect.poll(() => sdk.recorded('ran')).toEqual(['yes']);
+    await sdk.advance(600);
+    await sdk.page.waitForTimeout(300);
+    expect(await sdk.recorded('ran')).toEqual(['yes']);
+  });
+});
+
+test.describe('a republished step trigger', () => {
+  /** A one-step embed whose step runs COUNT_RUN when `selector` is present. */
+  const published = (trigger?: { selector: string; wait?: number }) =>
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#panel',
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'inline',
+          data: [row(paragraph('Card'))],
+          ...(trigger
+            ? {
+                trigger: [
+                  {
+                    id: 'trigger-1',
+                    conditions: [elementPresent(trigger.selector)],
+                    actions: [evaluateJs(COUNT_RUN)],
+                    wait: trigger.wait ?? 0,
+                  },
+                ],
+              }
+            : {}),
+        },
+      ],
+    });
+
+  test('takes effect at once, and a re-send of the same one does not run it again', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('AddEmbed', published({ selector: '#missing' }));
+    await expect(sdk.page.frameLocator(FRAME).getByText('Card')).toBeVisible();
+    await sdk.advance(600);
+    expect(await sdk.recorded('ran')).toEqual([]);
+
+    const atCta = published({ selector: '#cta' });
+    await protocol.push('AddEmbed', atCta);
+    await expect.poll(() => sdk.recorded('ran')).toEqual(['yes']);
+
+    await protocol.push('AddEmbed', atCta);
+    await sdk.advance(600);
+    await sdk.page.waitForTimeout(300);
+    expect(await sdk.recorded('ran')).toEqual(['yes']);
+  });
+
+  test('removed, cancels the action it had waiting', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await protocol.push('AddEmbed', published({ selector: '#cta', wait: 5 }));
+    await expect(sdk.page.frameLocator(FRAME).getByText('Card')).toBeVisible();
+    await sdk.advance(600);
+
+    await protocol.push('AddEmbed', published());
+    await sdk.page.waitForTimeout(300);
+    await sdk.advance(6000);
+    await sdk.page.waitForTimeout(300);
+    expect(await sdk.recorded('ran')).toEqual([]);
+    await expect(sdk.page.frameLocator(FRAME).getByText('Card')).toBeVisible();
   });
 });
 
@@ -827,6 +918,38 @@ test('a sessionless embed starts its content once the target is found and render
   await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Pending'));
   await expect(sdk.page.frameLocator(FRAME).getByText('Pending')).toBeVisible();
   expect(await sdk.isStarted('embed-1')).toBe(true);
+});
+
+test('a sessionless embed waits for its target to be shown, even a replaced one, and asks to start once', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await sdk.page.evaluate(() => {
+    (document.getElementById('panel') as HTMLElement).style.display = 'none';
+  });
+  await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
+  await sdk.advance(1000);
+  await sdk.page.waitForTimeout(300);
+  expect(protocol.messages('StartContent')).toHaveLength(0);
+
+  // The host re-renders the hidden target as a new, shown node.
+  await sdk.page.evaluate(() => {
+    const hidden = document.getElementById('panel') as HTMLElement;
+    const shown = hidden.cloneNode(true) as HTMLElement;
+    shown.style.display = '';
+    hidden.replaceWith(shown);
+  });
+  await sdk.advance(600);
+  await protocol.waitForMessages('StartContent', 1);
+
+  // A re-delivery while the session is on its way, even to another target,
+  // does not ask again.
+  await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#cta', 'Pending'));
+  await sdk.advance(600);
+  await sdk.page.waitForTimeout(300);
+  expect(protocol.messages('StartContent')).toHaveLength(1);
+  await expect(sdk.page.locator(FRAME)).toHaveCount(0);
 });
 
 test('a hidden first step routes only once the session exists, and reports where it lands', async ({
