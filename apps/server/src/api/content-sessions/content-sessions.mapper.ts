@@ -19,6 +19,7 @@ const END_REASON_KEY: Partial<Record<string, string>> = {
   [ContentDataType.LAUNCHER]: EventAttributes.LAUNCHER_END_REASON,
   [ContentDataType.BANNER]: EventAttributes.BANNER_END_REASON,
   [ContentDataType.RESOURCE_CENTER]: EventAttributes.RESOURCE_CENTER_END_REASON,
+  [ContentDataType.EMBED]: EventAttributes.EMBED_END_REASON,
 };
 
 /**

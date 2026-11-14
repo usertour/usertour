@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ContentDataType } from '@usertour/types';
-import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
+import { TZDate, tz } from '@date-fns/tz';
+import { endOfDay, format, startOfDay } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 
 import { AnalyticsService } from '@/modules/analytics/services/analytics.service';
@@ -151,8 +152,8 @@ export function resolveRange(
   // ahead-of-UTC zones during their morning (e.g. 08:00 Tokyo is still "yesterday"
   // in UTC), silently excluding today's data.
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const startDate = query.startDate || formatInTimeZone(monthAgo, timezone, 'yyyy-MM-dd');
-  const endDate = query.endDate || formatInTimeZone(now, timezone, 'yyyy-MM-dd');
+  const startDate = query.startDate || format(monthAgo, 'yyyy-MM-dd', { in: tz(timezone) });
+  const endDate = query.endDate || format(now, 'yyyy-MM-dd', { in: tz(timezone) });
   const domainStartDate = toDayBoundary(startDate, timezone, 'start');
   const domainEndDate = toDayBoundary(endDate, timezone, 'end');
   // An inverted range matches no rows, and every downstream aggregation then
@@ -178,9 +179,11 @@ export function toDayBoundary(value: string, timezone: string, edge: 'start' | '
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return value; // already a timestamp — caller controls the instant
   }
-  // fromZonedTime: "this wall-clock time in that zone" -> the UTC instant.
-  // Building the end edge from its own wall-clock time (not start + 24h)
-  // keeps DST-transition days (23h/25h) correct.
-  const wallClock = edge === 'start' ? `${value} 00:00:00.000` : `${value} 23:59:59.999`;
-  return fromZonedTime(wallClock, timezone).toISOString();
+  // The day's own first/last instant in `timezone`, resolved by date-fns: a
+  // wall-clock "00:00" built by hand lands an hour early where a DST switch
+  // removes midnight itself (America/Santiago, America/Havana), and the end
+  // edge from its own instant (not start + 24h) keeps 23h/25h days correct.
+  const [year, month, day] = value.split('-').map(Number);
+  const inDay = new TZDate(year, month - 1, day, timezone);
+  return new Date(edge === 'start' ? startOfDay(inDay) : endOfDay(inDay)).toISOString();
 }

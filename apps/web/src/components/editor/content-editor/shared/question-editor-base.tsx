@@ -72,10 +72,12 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
     zIndex,
     currentStep,
     currentVersion,
+    currentContent,
     contentList,
     createStep,
     attributes,
     projectId,
+    actionItems,
   } = useContentEditorContext();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -88,12 +90,24 @@ function QuestionEditorBaseInner<T extends QuestionElementBase>(props: QuestionE
       zIndex,
       currentStep,
       currentVersion,
+      currentContent,
       contentList,
       createStep,
       attributes,
       projectId,
+      actionItems,
     }),
-    [zIndex, currentStep, currentVersion, contentList, createStep, attributes, projectId],
+    [
+      zIndex,
+      currentStep,
+      currentVersion,
+      currentContent,
+      contentList,
+      createStep,
+      attributes,
+      projectId,
+      actionItems,
+    ],
   );
 
   // Handle data change

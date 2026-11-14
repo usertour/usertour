@@ -137,6 +137,78 @@ const BannerProgressColumn = ({
 };
 BannerProgressColumn.displayName = 'BannerProgressColumn';
 
+// Embed: lifecycle icon, the step the user is on and the buttons they
+// pressed, in order.
+const EmbedProgressColumn = ({
+  original,
+  eventList,
+}: { original: BizSession; eventList: Event[] }) => {
+  const { t } = useTranslation();
+  const { bizEvent } = original;
+  if (!eventList || !bizEvent || bizEvent.length === 0) {
+    return <></>;
+  }
+
+  const isSeen = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.EMBED_STARTED);
+  const isDismissed = !!bizEvent.find((e) => e?.event?.codeName === BizEvents.EMBED_DISMISSED);
+  if (!isSeen && !isDismissed) {
+    return <></>;
+  }
+
+  const byTime = (a: (typeof bizEvent)[number], b: (typeof bizEvent)[number]) =>
+    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  const lastSeenBizEvent = bizEvent
+    .filter((e) => e.event?.codeName === BizEvents.EMBED_STEP_SEEN)
+    .sort((a, b) => byTime(b, a))[0];
+  const clickedButtons = bizEvent
+    .filter((e) => e.event?.codeName === BizEvents.BUTTON_CLICKED)
+    .sort(byTime)
+    .map((e) => attributeText(e.data?.button_text))
+    .filter((text): text is string => Boolean(text));
+  const stepNumber = attributeNumber(lastSeenBizEvent?.data?.embed_step_number);
+  const stepName = attributeText(lastSeenBizEvent?.data?.embed_step_name);
+
+  return (
+    <div className="flex flex-row items-center space-x-3">
+      {!isDismissed && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-default">
+              <PlayIcon className="text-success h-5 w-5" />
+            </TooltipTrigger>
+            <TooltipContent>{t('users.sessions.status.active')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {isDismissed && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-default">
+              <CancelIcon className="text-foreground/60 h-5 w-5" />
+            </TooltipTrigger>
+            <TooltipContent>{t('users.sessions.status.dismissed')}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      <div className="flex flex-col min-w-0">
+        {lastSeenBizEvent && (
+          <div className="text-left">{formatFlowStepDisplay(stepNumber, stepName || null, t)}</div>
+        )}
+        {clickedButtons.length > 0 ? (
+          <div className="text-left text-muted-foreground truncate">
+            {t('users.sessions.clickedButtons', { buttons: clickedButtons.join(', ') })}
+          </div>
+        ) : (
+          <div className="text-muted-foreground">
+            {isDismissed ? t('users.sessions.status.dismissed') : t('users.sessions.status.seen')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+EmbedProgressColumn.displayName = 'EmbedProgressColumn';
+
 const ChecklistProgressColumn = ({
   original,
   eventList,
@@ -407,6 +479,7 @@ ResourceCenterProgressColumn.displayName = 'ResourceCenterProgressColumn';
 
 export {
   BannerProgressColumn,
+  EmbedProgressColumn,
   LauncherProgressColumn,
   ChecklistProgressColumn,
   FlowProgressColumn,

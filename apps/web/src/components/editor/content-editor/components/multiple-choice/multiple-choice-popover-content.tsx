@@ -32,8 +32,17 @@ interface MultipleChoicePopoverContentProps {
 
 export const MultipleChoicePopoverContent = memo(
   ({ localData, handleDataChange, contextProps }: MultipleChoicePopoverContentProps) => {
-    const { zIndex, currentStep, currentVersion, contentList, createStep, attributes, projectId } =
-      contextProps;
+    const {
+      zIndex,
+      currentStep,
+      currentVersion,
+      currentContent,
+      contentList,
+      createStep,
+      attributes,
+      projectId,
+      actionItems,
+    } = contextProps;
     const { t } = useTranslation();
 
     // Handle option field change
@@ -114,6 +123,8 @@ export const MultipleChoicePopoverContent = memo(
           baseZIndex={zIndex}
           currentStep={currentStep}
           currentVersion={currentVersion}
+          currentContent={currentContent}
+          filterItems={actionItems}
           onChange={(actions) => handleDataChange({ actions })}
           conditions={localData.actions || []}
           attributes={attributes}

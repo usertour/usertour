@@ -331,6 +331,17 @@
   flex: 1 1 0%;
 }
 
+.usertour-widget-embed {
+  height: var(--usertour-widget-embed-height);
+  display: flex;
+  justify-content: center;
+}
+.usertour-widget-embed-frame {
+  display: block;
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
 @keyframes usertour-widget-stage-reveal {
   0% {
     opacity: 0;

@@ -11,4 +11,6 @@ export interface EventBuildParams {
   taskId?: string;
   blockId?: string;
   answer?: AnswerQuestionDto;
+  /** The pressed button, for button_clicked. */
+  button?: { cvid?: string; text?: string };
 }

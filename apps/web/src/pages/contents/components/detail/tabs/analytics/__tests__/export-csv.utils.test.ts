@@ -5,6 +5,7 @@ import {
   ContentDataType,
   ContentVersion,
   EventAttributes,
+  contentEndReason,
   contentStartReason,
 } from '@usertour/types';
 import { type BizEvent, type SessionExportRow } from '@usertour/data';
@@ -424,5 +425,112 @@ describe('buildExportPayload', () => {
     });
 
     expect(payload.headers.length).toBe(payload.rows[0].length);
+  });
+
+  // A version's sequence is zero-based; the dashboard prints the first one as
+  // v1 everywhere, and the export is read next to it.
+  it.each([
+    ContentDataType.FLOW,
+    ContentDataType.CHECKLIST,
+    ContentDataType.LAUNCHER,
+    ContentDataType.BANNER,
+    ContentDataType.EMBED,
+  ])('prints the version of a %s session as the dashboard does, one-based', (contentType) => {
+    const versionOf = (sequence: number) => {
+      const payload = buildExportPayload({
+        sessions: [createSession({ version: { sequence } } as Partial<SessionExportRow>)],
+        contentType,
+        contentName: 'Content',
+        includeAllAttributes: false,
+        version: { sequence, steps: [] } as unknown as ContentVersion,
+      });
+      return payload.rows[0][payload.headers.indexOf('Version')];
+    };
+
+    expect(versionOf(0)).toBe('v1');
+    expect(versionOf(3)).toBe('v4');
+  });
+
+  describe('embed', () => {
+    const embedVersion = {
+      sequence: 0,
+      steps: [
+        { sequence: 0, name: 'Intro', data: {} },
+        { sequence: 1, name: 'Details', data: {} },
+      ],
+    } as unknown as ContentVersion;
+
+    const exportEmbed = (bizEvent: BizEvent[]) =>
+      buildExportPayload({
+        sessions: [
+          createSession({ bizEvent, version: { sequence: 0 } } as Partial<SessionExportRow>),
+        ],
+        contentType: ContentDataType.EMBED,
+        contentName: 'Embed',
+        includeAllAttributes: false,
+        version: embedVersion,
+      });
+
+    it('exports the session as a flow is: state, reasons, answers and step views', () => {
+      mockExtractQuestionData.mockReturnValue([
+        { type: 'nps', data: { cvid: 'q-nps', name: 'Score' } },
+      ] as unknown[]);
+
+      const payload = exportEmbed([
+        createEvent(BizEvents.EMBED_STARTED, {
+          [EventAttributes.EMBED_START_REASON]: contentStartReason.START_FROM_CONDITION,
+        }),
+        createEvent(BizEvents.EMBED_STEP_SEEN, { [EventAttributes.EMBED_STEP_NUMBER]: 0 }),
+        createEvent(BizEvents.BUTTON_CLICKED, {
+          [EventAttributes.BUTTON_TEXT]: 'See how it works',
+        }),
+        createEvent(BizEvents.EMBED_STEP_SEEN, { [EventAttributes.EMBED_STEP_NUMBER]: 1 }),
+        createEvent(BizEvents.EMBED_STEP_SEEN, { [EventAttributes.EMBED_STEP_NUMBER]: 1 }),
+        createEvent(BizEvents.QUESTION_ANSWERED, {
+          [EventAttributes.QUESTION_CVID]: 'q-nps',
+          question_type: 'nps',
+          number_answer: 9,
+        }),
+        createEvent(BizEvents.BUTTON_CLICKED, { [EventAttributes.BUTTON_TEXT]: 'Got it' }),
+        createEvent(BizEvents.EMBED_DISMISSED, {
+          [EventAttributes.EMBED_END_REASON]: contentEndReason.ACTION_DISMISS,
+        }),
+      ]);
+
+      const cell = (header: string) => {
+        const index = payload.headers.indexOf(header);
+        expect(index).toBeGreaterThan(-1);
+        return payload.rows[0][index];
+      };
+
+      expect(cell('Version')).toBe('v1');
+      expect(cell('Last activity at (UTC)')).toBe('2026-03-05 10:27:41');
+      expect(cell('State')).toBe('Dismissed');
+      expect(cell('Clicked buttons')).toBe('See how it works, Got it');
+      expect(cell('Start reason')).toBe('Matched auto-start condition');
+      expect(cell('End reason')).toBe('Dismissed by action');
+      expect(cell('Question (nps): Score')).toBe('9');
+      expect(cell('Step 1. Intro')).toBe(1);
+      expect(cell('Step 2. Details')).toBe(2);
+      // An embed has no completion and no progress.
+      expect(payload.headers).not.toContain('Completed at (UTC)');
+      expect(payload.headers).not.toContain('Progress');
+      expect(payload.headers.length).toBe(payload.rows[0].length);
+    });
+
+    it('states a running session as the session list does: Clicked, else Active', () => {
+      const stateOf = (bizEvent: BizEvent[]) => {
+        const payload = exportEmbed(bizEvent);
+        return payload.rows[0][payload.headers.indexOf('State')];
+      };
+
+      expect(stateOf([createEvent(BizEvents.EMBED_STARTED)])).toBe('Active');
+      expect(
+        stateOf([
+          createEvent(BizEvents.EMBED_STARTED),
+          createEvent(BizEvents.BUTTON_CLICKED, { [EventAttributes.BUTTON_TEXT]: 'Got it' }),
+        ]),
+      ).toBe('Clicked');
+    });
   });
 });

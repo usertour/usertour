@@ -64,6 +64,10 @@ export const themeDetailSelectorTypes: ThemeDetailSelectorType[] = [
     type: ThemeDetailPreviewType.BANNER,
   },
   {
+    name: 'Embed',
+    type: ThemeDetailPreviewType.EMBED,
+  },
+  {
     name: 'Launcher icon',
     type: ThemeDetailPreviewType.LAUNCHER_ICON,
   },

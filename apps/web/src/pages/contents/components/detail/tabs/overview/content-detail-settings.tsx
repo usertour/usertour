@@ -19,6 +19,9 @@ const getContentTypeLabel = (contentType: ContentDataType, t: TFunction): string
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return t('contents.overview.contentTypeLabel.resourceCenter');
   }
+  if (contentType === ContentDataType.EMBED) {
+    return t('contents.overview.contentTypeLabel.embed');
+  }
   return contentType;
 };
 
@@ -29,20 +32,32 @@ const getAutoStartRulesName = (contentType: ContentDataType, t: TFunction) => {
   if (contentType === ContentDataType.LAUNCHER) {
     return t('contents.overview.autoStart.showLauncherIf');
   }
+  if (contentType === ContentDataType.EMBED) {
+    return t('contents.overview.autoStart.showEmbedIf');
+  }
   return t('contents.overview.autoStart.autoStartIf', {
     label: getContentTypeLabel(contentType, t),
   });
 };
 
-const SHOW_ONLY_CONTENT_TYPES = [ContentDataType.LAUNCHER, ContentDataType.BANNER];
+// Types whose rules gate visibility (level-triggered "show if") rather than
+// starting a session once.
+const SHOW_ONLY_CONTENT_TYPES = [
+  ContentDataType.LAUNCHER,
+  ContentDataType.BANNER,
+  ContentDataType.EMBED,
+];
+
+const SHOW_ONLY_LABEL_KEY: Partial<Record<ContentDataType, string>> = {
+  [ContentDataType.BANNER]: 'contents.overview.contentTypeLabel.banner',
+  [ContentDataType.LAUNCHER]: 'contents.overview.contentTypeLabel.launcher',
+  [ContentDataType.EMBED]: 'contents.overview.contentTypeLabel.embed',
+};
 
 const AutoStartTooltips = (contentType: ContentDataType, t: TFunction) => {
-  if (SHOW_ONLY_CONTENT_TYPES.includes(contentType)) {
-    const contentLabel =
-      contentType === ContentDataType.BANNER
-        ? t('contents.overview.contentTypeLabel.banner')
-        : t('contents.overview.contentTypeLabel.launcher');
-    return <>{t('contents.overview.autoStart.tooltipShowOnly', { label: contentLabel })}</>;
+  const showOnlyLabelKey = SHOW_ONLY_LABEL_KEY[contentType];
+  if (SHOW_ONLY_CONTENT_TYPES.includes(contentType) && showOnlyLabelKey) {
+    return <>{t('contents.overview.autoStart.tooltipShowOnly', { label: t(showOnlyLabelKey) })}</>;
   }
   const label = getContentTypeLabel(contentType, t);
   return <>{t('contents.overview.autoStart.tooltipAutoStart', { label })}</>;

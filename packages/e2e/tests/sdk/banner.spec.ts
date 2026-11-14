@@ -165,6 +165,33 @@ test.describe('placement', () => {
   });
 });
 
+test('an outer margin above and below goes around the banner, not out of it', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'SetBannerSession',
+    banner({ container: '#panel', outerMargin: { top: 16, right: 0, bottom: 16, left: 0 } }),
+  );
+  await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();
+  await expect
+    .poll(() =>
+      sdk.page.locator('iframe.usertour-widget-banner-frame').evaluate((frame) => {
+        const inner = (frame as HTMLIFrameElement).contentDocument?.documentElement;
+        return {
+          // The frame is as tall as its content: nothing is cut off.
+          clipped: (inner?.scrollHeight ?? 0) - frame.getBoundingClientRect().height,
+          // And the banner is taller than the frame by the two margins.
+          around:
+            (frame.closest('.usertour-widget-banner') as HTMLElement).getBoundingClientRect()
+              .height - frame.getBoundingClientRect().height,
+        };
+      }),
+    )
+    .toEqual({ clipped: 0, around: 32 });
+});
+
 test.describe('its buttons', () => {
   test('without user dismissal allowed, there is no dismiss button', async ({ sdk, protocol }) => {
     await start(sdk);

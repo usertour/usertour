@@ -24,6 +24,7 @@ import { createDefaultResourceCenterData, getErrorMessage } from '@usertour/help
 import { ContentDataType } from '@usertour/types';
 import {
   DEFAULT_ANNOUNCEMENT_DATA,
+  DEFAULT_EMBED_DATA,
   DEFAULT_BANNER_DATA,
   DEFAULT_CHECKLIST_DATA,
   DEFAULT_LAUNCHER_DATA,
@@ -46,6 +47,7 @@ const CONTENT_TYPE_I18N_KEY: Record<ContentDataType, string> = {
   [ContentDataType.TRACKER]: 'contents.types.tracker',
   [ContentDataType.RESOURCE_CENTER]: 'contents.types.resourceCenter',
   [ContentDataType.ANNOUNCEMENT]: 'contents.types.announcement',
+  [ContentDataType.EMBED]: 'contents.types.embed',
 };
 
 interface ContentCreateFormProps {
@@ -73,6 +75,7 @@ const CONTENT_TYPE_INITIAL_DATA: Partial<Record<ContentDataType, () => unknown>>
   [ContentDataType.BANNER]: () => ({ ...DEFAULT_BANNER_DATA }),
   [ContentDataType.RESOURCE_CENTER]: createDefaultResourceCenterData,
   [ContentDataType.ANNOUNCEMENT]: () => ({ ...DEFAULT_ANNOUNCEMENT_DATA }),
+  [ContentDataType.EMBED]: () => ({ ...DEFAULT_EMBED_DATA }),
 };
 
 const defaultValues: Partial<FormValues> = {

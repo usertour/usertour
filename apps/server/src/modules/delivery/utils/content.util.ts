@@ -220,10 +220,11 @@ export const findLatestStepCvid = (
       return undefined;
     }
     const data = latestStepSeenEvent.data as Record<string, unknown>;
-    if (isUndefined(data[EventAttributes.FLOW_STEP_CVID])) {
+    const cvidAttribute = STEP_SEEN_CVID_ATTRIBUTE[latestStepSeenEvent.event.codeName as BizEvents];
+    if (!cvidAttribute || isUndefined(data[cvidAttribute])) {
       return undefined;
     }
-    return data[EventAttributes.FLOW_STEP_CVID] as string;
+    return data[cvidAttribute] as string;
   } catch (_) {
     return undefined;
   }
@@ -276,8 +277,32 @@ export const findCurrentStepCvid = (
 
   const currentStepId = session.activeSession.currentStepId;
   const currentStepCvid = steps.find((step) => step.id === currentStepId)?.cvid ?? null;
+  const rememberedCvid =
+    currentStepCvid || findLatestStepCvid(session.activeSession?.bizEvent) || undefined;
 
-  return currentStepCvid || findLatestStepCvid(session.activeSession?.bizEvent);
+  // An embed is always delivered on the version now published, which may no
+  // longer have the step its session rests on. Without a step to open on the
+  // session could not be built, and as a running session keeps the embed from
+  // starting a new one, the user would never see it again: it reopens on the
+  // first step, as the SDK does for a step it cannot find.
+  if (
+    customContentVersion.content.type === ContentDataType.EMBED &&
+    rememberedCvid &&
+    !steps.some((step) => step.cvid === rememberedCvid)
+  ) {
+    return steps[0]?.cvid;
+  }
+
+  return rememberedCvid;
+};
+
+/**
+ * The step-seen event of each step-bodied type, with the attribute the step's
+ * cvid is recorded under. A session's events are all of one type.
+ */
+const STEP_SEEN_CVID_ATTRIBUTE: Partial<Record<BizEvents, EventAttributes>> = {
+  [BizEvents.FLOW_STEP_SEEN]: EventAttributes.FLOW_STEP_CVID,
+  [BizEvents.EMBED_STEP_SEEN]: EventAttributes.EMBED_STEP_CVID,
 };
 
 /**
@@ -295,7 +320,7 @@ export const findLatestStepSeenEvent = (
   // Use reduce to find the latest event instead of sorting the entire array
   // This is more efficient (O(n) vs O(n log n)) when we only need the latest one
   const stepSeenEvents = bizEvents.filter(
-    (event) => event?.event?.codeName === BizEvents.FLOW_STEP_SEEN,
+    (event) => !!STEP_SEEN_CVID_ATTRIBUTE[event?.event?.codeName as BizEvents],
   );
 
   if (!stepSeenEvents.length) {
@@ -540,6 +565,15 @@ export const isAllowedByHideRules = (
 };
 
 /**
+ * Whether this is an embed whose session already runs. An embed keeps
+ * showing while its rules match, and its session counts against `once` from
+ * the moment it exists, so frequency is not asked about it (ADR 0022).
+ */
+const hasRunningEmbedSession = (customContentVersion: CustomContentVersion): boolean =>
+  customContentVersion.content.type === ContentDataType.EMBED &&
+  !!customContentVersion.session.activeSession;
+
+/**
  * Filters the available auto-start custom content versions
  * @param customContentVersions - The custom content versions
  * @param contentType - The content type
@@ -569,8 +603,14 @@ export const filterAvailableAutoStartContentVersions = (
         return false;
       }
 
-      // Check auto-start rules settings
-      if (!isAllowedByAutoStartRulesSetting(customContentVersion)) {
+      // Check auto-start rules settings (frequency). They govern starting a
+      // session, not keeping one: the batch path judges an embed again on
+      // every sync, and without this its `once` session would remove it the
+      // moment it counted against `once`
+      if (
+        !hasRunningEmbedSession(customContentVersion) &&
+        !isAllowedByAutoStartRulesSetting(customContentVersion)
+      ) {
         return false;
       }
 
@@ -592,22 +632,19 @@ export const filterAvailableAutoStartContentVersions = (
 };
 
 /**
- * Helper function to check if auto-start content is eligible
+ * Whether the version's start rules are enabled and every condition the
+ * server can judge by itself is met. Its browser-side conditions are not
+ * asked here: they are what is handed to the SDK for tracking.
  * @param customContentVersion - The content version to check
- * @param allowedConditionTypes - Allowed condition types for filtering
- * @returns True if the content is eligible for auto-start
+ * @param allowedConditionTypes - The condition types the server judges
+ * @returns True if the rules match as far as the server can tell
  */
-const isAutoStartContentEligible = (
+const hasMatchingServerRules = (
   customContentVersion: CustomContentVersion,
   allowedConditionTypes: RulesType[],
 ): boolean => {
   // Check if auto-start rules are enabled
   if (!isEnabledAutoStartRules(customContentVersion)) {
-    return false;
-  }
-
-  // Check auto-start rules settings
-  if (!isAllowedByAutoStartRulesSetting(customContentVersion)) {
     return false;
   }
 
@@ -624,6 +661,20 @@ const isAutoStartContentEligible = (
 
   return isConditionsActived(filteredConditions);
 };
+
+/**
+ * Helper function to check if auto-start content is eligible: its rules
+ * match and its auto-start settings (frequency) allow a new session
+ * @param customContentVersion - The content version to check
+ * @param allowedConditionTypes - Allowed condition types for filtering
+ * @returns True if the content is eligible for auto-start
+ */
+const isAutoStartContentEligible = (
+  customContentVersion: CustomContentVersion,
+  allowedConditionTypes: RulesType[],
+): boolean =>
+  hasMatchingServerRules(customContentVersion, allowedConditionTypes) &&
+  isAllowedByAutoStartRulesSetting(customContentVersion);
 
 /**
  * Filters activated custom content versions that do not have client-side conditions
@@ -669,9 +720,21 @@ export const filterActivatedContentWithoutClientConditions = (
       return true;
     }
 
-    // Launcher is not eligible for auto-start, return false
+    // Multi-instance types (launcher, embed) show only while their rules
+    // match: an active session alone does not justify tracking conditions.
     if (contentType === ContentDataType.LAUNCHER) {
       return false;
+    }
+
+    // An embed whose session runs is tracked while its rules match. Frequency
+    // may be what refused it above, and frequency decides whether a NEW
+    // session may start, not whether a running one keeps showing; without its
+    // conditions the card would be gone on the next page load.
+    if (contentType === ContentDataType.EMBED) {
+      return (
+        hasRunningEmbedSession(customContentVersion) &&
+        hasMatchingServerRules(customContentVersion, allowedConditionTypes)
+      );
     }
 
     // Path 2: Check activated content versions (session-based)
@@ -2175,6 +2238,10 @@ export const hasContentSessionChanges = (
   }
 
   if (!isEqual(oldVersion.banner, newVersion.banner)) {
+    return true;
+  }
+
+  if (!isEqual(oldVersion.embed, newVersion.embed)) {
     return true;
   }
 

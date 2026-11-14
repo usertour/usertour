@@ -48,6 +48,14 @@ export const extendSdk = {
         'foreground-hover': 'hsl(var(--usertour-banner-hover-foreground-color))',
         'foreground-active': 'hsl(var(--usertour-banner-active-foreground-color))',
       },
+      embed: {
+        DEFAULT: 'hsl(var(--usertour-embed-background-color))',
+        foreground: 'hsl(var(--usertour-embed-foreground-color))',
+        hover: 'hsl(var(--usertour-embed-hover-background-color))',
+        active: 'hsl(var(--usertour-embed-active-background-color))',
+        'foreground-hover': 'hsl(var(--usertour-embed-hover-foreground-color))',
+        'foreground-active': 'hsl(var(--usertour-embed-active-foreground-color))',
+      },
       // Button colors (border colors are in borderColor extension)
       btn: {
         primary: {
@@ -85,9 +93,12 @@ export const extendSdk = {
   borderWidth: {
     'sdk-btn-primary': 'var(--usertour-primary-border-width)',
     'sdk-btn-secondary': 'var(--usertour-secondary-border-width)',
+    // The theme's shared Border section, as the popper draws it (index.css).
+    'sdk-popper': 'var(--usertour-widget-popper-border-width)',
   },
   // Use same key as borderWidth so single class sets both width and color
   borderColor: {
+    'sdk-popper': 'var(--usertour-widget-popper-border-color)',
     'sdk-btn-primary': {
       DEFAULT: 'var(--usertour-primary-border-color)',
       hover: 'var(--usertour-primary-border-hover)',
@@ -108,6 +119,7 @@ export const extendSdk = {
   padding: {
     'sdk-button-x': 'var(--usertour-button-px)',
     'sdk-banner': 'var(--usertour-banner-padding, 8px)',
+    'sdk-embed': 'var(--usertour-embed-padding, 16px)',
     'sdk-resource-center-launcher': 'calc(var(--usertour-resource-center-launcher-height) / 4)',
     // Button vertical padding: centers text within button height accounting for borders
     // Formula: (button-height - font-size) / 2 - border-width

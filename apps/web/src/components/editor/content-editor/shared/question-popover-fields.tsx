@@ -12,6 +12,7 @@ export interface QuestionContextProps {
   zIndex: number;
   currentStep?: Step;
   currentVersion?: ContentVersion;
+  currentContent?: Content;
   contentList?: Content[];
   createStep?: (
     currentVersion: ContentVersion,
@@ -21,6 +22,8 @@ export interface QuestionContextProps {
   ) => Promise<Step | undefined>;
   attributes?: Attribute[];
   projectId: string;
+  /** The actions the host editor offers, as its buttons get; the default set when absent. */
+  actionItems?: string[];
 }
 
 // Question Name Field Component
@@ -57,8 +60,16 @@ interface ContentActionsFieldProps {
 
 export const ContentActionsField = memo<ContentActionsFieldProps>(
   ({ actions, onActionsChange, contextProps }) => {
-    const { zIndex, currentStep, currentVersion, contentList, createStep, attributes } =
-      contextProps;
+    const {
+      zIndex,
+      currentStep,
+      currentVersion,
+      currentContent,
+      contentList,
+      createStep,
+      attributes,
+      actionItems,
+    } = contextProps;
     const { t } = useTranslation();
 
     return (
@@ -68,6 +79,8 @@ export const ContentActionsField = memo<ContentActionsFieldProps>(
           baseZIndex={zIndex}
           currentStep={currentStep}
           currentVersion={currentVersion}
+          currentContent={currentContent}
+          filterItems={actionItems}
           onChange={onActionsChange}
           conditions={actions || []}
           attributes={attributes}

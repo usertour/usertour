@@ -22,6 +22,7 @@ const CONTENT_TYPE_I18N_KEY: Record<ContentDataType, string> = {
   [ContentDataType.TRACKER]: 'contents.types.tracker',
   [ContentDataType.RESOURCE_CENTER]: 'contents.types.resourceCenter',
   [ContentDataType.ANNOUNCEMENT]: 'contents.types.announcement',
+  [ContentDataType.EMBED]: 'contents.types.embed',
 };
 
 // Content type configuration interface
@@ -145,6 +146,27 @@ const buildContentConfig = (t: TFunction): Record<string, ContentConfig> => {
       createForm: ({ open, onOpenChange, onSubmit }) => (
         <ContentCreateForm
           contentType={ContentDataType.BANNER}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+        />
+      ),
+    },
+    embeds: {
+      dataType: ContentDataType.EMBED,
+      title: t('contents.list.embeds.title'),
+      description: (
+        <ContentDescription
+          text={t('contents.list.embeds.text')}
+          docUrl="https://docs.usertour.io/how-to-guides/embeds"
+          linkText={t('contents.list.embeds.link')}
+        />
+      ),
+      emptyTitle: t('contents.list.embeds.emptyTitle'),
+      emptyDescription: t('contents.list.embeds.emptyDescription'),
+      createForm: ({ open, onOpenChange, onSubmit }) => (
+        <ContentCreateForm
+          contentType={ContentDataType.EMBED}
           open={open}
           onOpenChange={onOpenChange}
           onSubmit={onSubmit}

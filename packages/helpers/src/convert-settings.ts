@@ -339,6 +339,27 @@ export const convertSettings = (settings: ThemeTypesSetting) => {
     data.banner.textColor.active = fgStates.active;
   }
 
+  // Embed color: a card in the host layout, so Auto follows the MAIN colours
+  // (the modal look), not the brand colours a banner strip uses.
+  const embed = data.embed;
+  if (embed) {
+    embed.textColor.color = resolveAutoValue(embed.textColor.color, data.mainColor.color);
+    embed.backgroundColor.background = resolveAutoValue(
+      embed.backgroundColor.background,
+      data.mainColor.background,
+    );
+    const embedBackground = embed.backgroundColor.background;
+    const embedForeground = embed.textColor.color;
+    if (embedBackground != null && embedForeground != null) {
+      const bgStates = generateStateColors(embedBackground, embedForeground);
+      const fgStates = generateStateColors(embedForeground, embedBackground);
+      embed.backgroundColor.hover = bgStates.hover;
+      embed.backgroundColor.active = bgStates.active;
+      embed.textColor.hover = fgStates.hover;
+      embed.textColor.active = fgStates.active;
+    }
+  }
+
   // Survey auto values
   data.survey.color = resolveAutoValue(data.survey.color, data.brandColor.background);
 
@@ -592,6 +613,25 @@ export const convertToCssVars = (settings: ThemeTypesSetting, type = 'tooltip') 
     '--usertour-banner-hover-foreground-color': hexToHSLString(settings.banner.textColor.hover),
     '--usertour-banner-active-foreground-color': hexToHSLString(settings.banner.textColor.active),
     '--usertour-banner-padding': `${settings.banner.padding}px`,
+    ...(settings.embed
+      ? {
+          '--usertour-embed-foreground-color': hexToHSLString(settings.embed.textColor.color),
+          '--usertour-embed-background-color': hexToHSLString(
+            settings.embed.backgroundColor.background,
+          ),
+          '--usertour-embed-hover-background-color': hexToHSLString(
+            settings.embed.backgroundColor.hover,
+          ),
+          '--usertour-embed-active-background-color': hexToHSLString(
+            settings.embed.backgroundColor.active,
+          ),
+          '--usertour-embed-hover-foreground-color': hexToHSLString(settings.embed.textColor.hover),
+          '--usertour-embed-active-foreground-color': hexToHSLString(
+            settings.embed.textColor.active,
+          ),
+          '--usertour-embed-padding': `${settings.embed.padding}px`,
+        }
+      : {}),
     '--usertour-checklist-trigger-height': `${settings.checklistLauncher.height}px`,
     '--usertour-checklist-trigger-hover-background-color': settings.checklistLauncher.color.hover,
     '--usertour-question-color': hexToHSLString(settings.survey.color),

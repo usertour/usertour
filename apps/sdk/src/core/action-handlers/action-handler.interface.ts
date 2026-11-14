@@ -37,7 +37,7 @@ export interface ActionHandlerContext {
    */
   close: (reason: contentEndReason) => Promise<void>;
   /**
-   * Shows a step by cvid (Tour-specific)
+   * Shows a step by cvid (step-bodied content: tour, embed)
    */
   showStepByCvid?: (stepCvid: string) => Promise<void>;
   /**

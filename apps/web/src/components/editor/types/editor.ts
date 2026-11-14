@@ -57,6 +57,8 @@ export interface ContentEditorProps {
   initialValue?: ContentEditorRoot[];
   attributes?: Attribute[];
   contentList?: Content[];
+  /** The content being edited; action editors read its type (e.g. which step kinds a goto may create). */
+  currentContent?: Content;
   currentVersion?: ContentVersion;
   currentStep?: Step;
   actionItems?: string[] | undefined;

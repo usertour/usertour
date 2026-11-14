@@ -14,6 +14,8 @@ import {
   ChecklistTaskCompletedHandler,
   AddLauncherHandler,
   RemoveLauncherHandler,
+  AddEmbedHandler,
+  RemoveEmbedHandler,
   AddTrackerHandler,
   RemoveTrackerHandler,
   TrackClientConditionHandler,
@@ -51,6 +53,8 @@ export class ServerMessageHandlerManager {
     this.registerHandler(new ChecklistTaskCompletedHandler());
     this.registerHandler(new AddLauncherHandler());
     this.registerHandler(new RemoveLauncherHandler());
+    this.registerHandler(new AddEmbedHandler());
+    this.registerHandler(new RemoveEmbedHandler());
     this.registerHandler(new AddTrackerHandler());
     this.registerHandler(new RemoveTrackerHandler());
     this.registerHandler(new TrackClientConditionHandler());

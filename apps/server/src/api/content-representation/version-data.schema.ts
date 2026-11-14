@@ -1,3 +1,4 @@
+import { EmbedPlacement } from '@usertour/types';
 import { z } from 'zod';
 
 import {
@@ -11,7 +12,8 @@ import { representationResourceCenter } from './resource-center.schema';
 
 /**
  * Representation of a version's type-specific body — the `version.data` payload
- * for the non-flow content types (flow keeps everything in `steps`). Each shape
+ * for the content types that have one (flow keeps everything in `steps`; an
+ * embed keeps its shell here and its steps in `steps`). Each shape
  * is intent-level and lossy: styling / screenshots / computed sizes / runtime
  * state are dropped on read and preserved on write via field-level merge against
  * the existing `version.data`. The nested parts (blocks, conditions, actions,
@@ -545,9 +547,81 @@ export const representationAnnouncement = z
   );
 export type RepresentationAnnouncement = z.infer<typeof representationAnnouncement>;
 
+// ── embed  (from EmbedData) ──────────────────────────────────────────────────
+// The SHELL only: where the embed mounts and whether it can be dismissed. Its
+// steps are `steps` (kinds `inline` / `hidden`) written alongside — an embed
+// is the one type whose version carries BOTH `data` and `steps`. Appearance
+// (colors, padding, border) lives in the theme's `embed` section.
+export const representationEmbed = z
+  .object({
+    placement: z
+      .enum(Object.values(EmbedPlacement) as [`${EmbedPlacement}`, ...`${EmbedPlacement}`[]])
+      .optional()
+      .describe(
+        'Where the embed mounts relative to `target`: inside it at the top / bottom ' +
+          '(`top-of-container-element` / `bottom-of-container-element`), as a sibling ' +
+          '(`immediately-before-element` / `immediately-after-element`), or `cover-element` — ' +
+          'positioned over the element and sized to it (the element stays in the page ' +
+          'underneath; this places content, it does not gate access). Every placement needs ' +
+          '`target`; there is no page-level placement (that is a banner).',
+      ),
+    target: representationTarget
+      .optional()
+      .describe(
+        'The page element the embed mounts at (required to show — validate rejects an embed ' +
+          'without one). The embed is visible only while this element exists and the start ' +
+          'rules match; several embeds may share one target and stack in delivery order.',
+      ),
+    allowDismiss: z
+      .boolean()
+      .optional()
+      .describe(
+        'Adds an X button. Dismissing ends the current session; whether a new one may start ' +
+          'later is decided by `startRules.frequency`: `once` = closable forever, `unlimited` / ' +
+          '`multiple` = back once the `every` gap has passed since the dismissal (`0` = right ' +
+          'away while the start rules still match).',
+      ),
+    zIndex: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        'Stacking order (CSS z-index). Integer; negative values are allowed. Omit to use the ' +
+          "SDK's default stacking.",
+      ),
+    maxContentWidth: z
+      .number()
+      .optional()
+      .describe('Max width of the embed content, in pixels. Omit to fill the container.'),
+    outerMargin: z
+      .object({
+        top: z.number(),
+        right: z.number(),
+        bottom: z.number(),
+        left: z.number(),
+      })
+      .optional()
+      .describe('Space (in pixels) around the embed on all four sides.'),
+    coverAlignment: z
+      .enum(['top', 'center', 'bottom'])
+      .optional()
+      .describe(
+        'Where the content sits inside the covered box — `cover-element` only, since the ' +
+          'cover is as tall as its target while the other placements are as tall as their ' +
+          'content. Default `center`.',
+      ),
+  })
+  .strict()
+  .describe(
+    "The embed's shell (`data`). The steps the user pages through are the version's `steps` " +
+      '(kinds `inline` / `hidden`, same step vocabulary as a flow); write both on the same ' +
+      '`update_content_version` call or separately — each field merges / replaces on its own.',
+  );
+export type RepresentationEmbed = z.infer<typeof representationEmbed>;
+
 // ── union (selected by content type) ─────────────────────────────────────────
 // resource-center lives in its own codec area (resource-center.*); referenced here
-// only so the union type covers every non-flow body.
+// only so the union type covers every `data` body.
 export const representationVersionData = z.union([
   representationTracker,
   representationChecklist,
@@ -555,6 +629,7 @@ export const representationVersionData = z.union([
   representationBanner,
   representationAnnouncement,
   representationResourceCenter,
+  representationEmbed,
 ]);
 export type RepresentationVersionData = z.infer<typeof representationVersionData>;
 

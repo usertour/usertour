@@ -1,6 +1,7 @@
 import type { Role } from '@usertour/types';
 import type { PlanType as SubscriptionPlanType } from '@usertour/types';
 import type { AnalyticsViewsByBlock } from '@usertour/types';
+import type { AnalyticsViewsByButton } from '@usertour/types';
 import type { AnalyticsViewsByDay } from '@usertour/types';
 import type { AnalyticsViewsByStep } from '@usertour/types';
 import type { AnalyticsViewsByTask } from '@usertour/types';
@@ -31,6 +32,8 @@ export type Scalars = {
   Float: { input: number; output: number; }
   /** One resource center block's click counts. */
   AnalyticsViewsByBlock: { input: AnalyticsViewsByBlock; output: AnalyticsViewsByBlock; }
+  /** One embed button's click counts. */
+  AnalyticsViewsByButton: { input: AnalyticsViewsByButton; output: AnalyticsViewsByButton; }
   /** One day's view and completion counts. */
   AnalyticsViewsByDay: { input: AnalyticsViewsByDay; output: AnalyticsViewsByDay; }
   /** One step's view and completion counts. */
@@ -167,8 +170,10 @@ export type Analytics = {
   totalCompletions: Scalars['Int']['output'];
   totalViews: Scalars['Int']['output'];
   uniqueCompletions: Scalars['Int']['output'];
+  uniqueDismissals?: Maybe<Scalars['Int']['output']>;
   uniqueViews: Scalars['Int']['output'];
   viewsByBlock?: Maybe<Array<Scalars['AnalyticsViewsByBlock']['output']>>;
+  viewsByButton?: Maybe<Array<Scalars['AnalyticsViewsByButton']['output']>>;
   viewsByDay?: Maybe<Array<Scalars['AnalyticsViewsByDay']['output']>>;
   viewsByStep?: Maybe<Array<Scalars['AnalyticsViewsByStep']['output']>>;
   viewsByTask?: Maybe<Array<Scalars['AnalyticsViewsByTask']['output']>>;

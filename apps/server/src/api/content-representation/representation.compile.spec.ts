@@ -1029,3 +1029,104 @@ describe('rating scale `default` round-trip (flow acceptance eval #22)', () => {
     expect(JSON.stringify(compiled.data)).not.toContain('"rating"');
   });
 });
+
+describe('embed: dismiss variant, button cvid', () => {
+  it('dismiss compiles to embed-dismis for an embed host and decompiles back to dismiss', () => {
+    const compiled = compileActions([{ type: 'dismiss' }], ids, 'embed-dismis');
+    expect((compiled[0] as any).type).toBe('embed-dismis');
+    expect(decompileActions(compiled)).toEqual([{ type: 'dismiss' }]);
+  });
+
+  it('goto_step needs a step; a direction is not a target (schema)', () => {
+    const parse = (action: unknown) =>
+      representationStepInput.safeParse({
+        name: 'S',
+        type: 'inline',
+        content: [{ type: 'button', text: 'Go', actions: [action] }],
+      }).success;
+    expect(parse({ type: 'goto_step', step: 'a' })).toBe(true);
+    expect(parse({ type: 'goto_step' })).toBe(false);
+    expect(parse({ type: 'goto_step', direction: 'next' })).toBe(false);
+  });
+
+  it('button cvid: echoed wins, then the block-id match, then a fresh one; decompile surfaces it', () => {
+    const cvidOf = (content: any) => content[0].children[0].children[0].element.data.cvid;
+    const button = (over: Record<string, unknown>) =>
+      [
+        { object: 'block', type: 'button', text: 'Go', actions: [{ type: 'dismiss' }], ...over },
+      ] as any;
+
+    const echoed: any = compileContent(button({ cvid: 'keep-me' }), undefined, ids);
+    expect(cvidOf(echoed)).toBe('keep-me');
+
+    const existing = [
+      {
+        id: 'r1',
+        element: { type: 'group' },
+        children: [
+          {
+            id: 'c1',
+            element: { type: 'column' },
+            children: [
+              {
+                id: 'b1',
+                element: { type: 'button', data: { cvid: 'stored', text: 'Old', actions: [] } },
+                children: null,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const matched: any = compileContent(button({ id: 'b1' }), existing, ids);
+    expect(cvidOf(matched)).toBe('stored');
+
+    const fresh: any = compileContent(button({}), undefined, ids);
+    expect(typeof cvidOf(fresh)).toBe('string');
+    expect(cvidOf(fresh).length).toBeGreaterThan(0);
+
+    const read = decompileContent(echoed).blocks[0] as any;
+    expect(read.cvid).toBe('keep-me');
+  });
+
+  it('a question block in the embed shell (data) is rejected like any other data body', () => {
+    let msg = '';
+    try {
+      compileVersionData(
+        'embed',
+        { target: { selector: '#x' }, blocks: [{ type: 'question' }] },
+        undefined,
+        ids,
+      );
+    } catch (e) {
+      msg = String(e);
+    }
+    expect(msg).toMatch(/only supported in flows/i);
+    expect(msg).toMatch(/embed steps/i);
+  });
+});
+
+describe('compileStep threads the host dismiss variant (embed steps)', () => {
+  it('embed-dismis lands in content buttons, triggers and onClick alike; flow keeps flow-dismis', () => {
+    const step = {
+      name: 'Card',
+      type: 'inline',
+      sequence: 0,
+      content: [
+        { object: 'block', type: 'button', text: 'Close', actions: [{ type: 'dismiss' }] },
+      ] as any,
+      triggers: [
+        { when: [{ type: 'current_url', includes: ['*/done'] }], do: [{ type: 'dismiss' }] },
+      ] as any,
+      onClick: [{ type: 'dismiss' }] as any,
+    };
+    const embed: any = compileStep(step, undefined, ids, 'embed-dismis');
+    expect(embed.data[0].children[0].children[0].element.data.actions[0].type).toBe('embed-dismis');
+    expect(embed.trigger[0].actions[0].type).toBe('embed-dismis');
+    expect(embed.target.actions[0].type).toBe('embed-dismis');
+
+    const flow: any = compileStep({ ...step, type: 'modal' }, undefined, ids);
+    expect(flow.data[0].children[0].children[0].element.data.actions[0].type).toBe('flow-dismis');
+    expect(flow.trigger[0].actions[0].type).toBe('flow-dismis');
+  });
+});

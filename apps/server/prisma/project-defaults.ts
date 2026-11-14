@@ -45,9 +45,22 @@ const initializeProject = async (tx: Prisma.TransactionClient, projectId: string
   // Events
   const existingEvents = await tx.event.findMany({
     where: { projectId },
-    select: { codeName: true },
+    select: { codeName: true, predefined: true },
   });
   const existingEventKeys = new Set(existingEvents.map((event) => event.codeName));
+  // A default event is skipped when the project already has an event of that
+  // code name — including one the project's users defined themselves. The
+  // runtime then writes the built-in event into that user-defined definition
+  // silently, so name the collision for the operator (ADR 0022).
+  for (const existing of existingEvents) {
+    const collides =
+      !existing.predefined && defaultEvents.some((event) => event.codeName === existing.codeName);
+    if (collides) {
+      console.warn(
+        `[project-defaults] project ${projectId} already defines a custom event "${existing.codeName}"; the built-in event of that name now records into it`,
+      );
+    }
+  }
   const eventsToCreate = defaultEvents
     .filter((event) => !existingEventKeys.has(event.codeName))
     .map((event) => ({

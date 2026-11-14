@@ -9,6 +9,7 @@ import { UsertourTour } from '@/core/usertour-tour';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 import { UsertourBanner } from './usertour-banner';
+import { UsertourEmbed } from './usertour-embed';
 import { UsertourResourceCenter } from './usertour-resource-center';
 import { SDKClientEvents } from '@usertour/constants';
 
@@ -25,6 +26,7 @@ interface UIManagerInitializeProps {
   checklistsStore: ExternalStore<UsertourChecklist[]>;
   launchersStore: ExternalStore<UsertourLauncher[]>;
   bannersStore: ExternalStore<UsertourBanner[]>;
+  embedsStore: ExternalStore<UsertourEmbed[]>;
   resourceCentersStore: ExternalStore<UsertourResourceCenter[]>;
 }
 

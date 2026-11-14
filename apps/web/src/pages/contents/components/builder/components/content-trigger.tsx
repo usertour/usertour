@@ -1,5 +1,6 @@
 import { Button, Label, SurfaceCard } from '@usertour/ui';
 import { BUILDER_Z } from '@usertour/constants';
+import { CONTENT_ACTION_CAPABILITIES } from '@usertour/helpers';
 import { Delete2Icon } from '@usertour/icons';
 import {
   CLIENT_EVALUABLE_CONDITION_TYPES,
@@ -70,6 +71,13 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
   // valid payloads, so the local copy is what the chip row renders while
   // the user edits a draft.
   const [localActions, setLocalActions] = useState<RulesCondition[]>(actions);
+  // What the content type's action slots offer (the capability matrix). Only
+  // step-bodied types have triggers, a flow or an embed.
+  const contentType = currentContent?.type;
+  const actionTypes = useMemo(
+    () => (contentType ? [...CONTENT_ACTION_CAPABILITIES[contentType].actions] : undefined),
+    [contentType],
+  );
 
   useEffect(() => {
     setLocalConditions(conditions);
@@ -154,6 +162,11 @@ export const ContentTrigger = (props: ContentTriggerProps) => {
               baseZIndex={BUILDER_Z.popover}
               currentStep={currentStep}
               currentVersion={currentVersion}
+              // The content decides both the menu and the step kinds "new
+              // step" offers: a trigger sits outside the content editor, which
+              // is where a button or a question gets its action set from.
+              currentContent={currentContent}
+              filterItems={actionTypes}
               conditions={localActions}
               onChange={handleActionsChange}
               attributes={attributeList}

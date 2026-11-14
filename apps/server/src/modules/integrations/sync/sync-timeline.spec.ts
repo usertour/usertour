@@ -1,3 +1,7 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { SYNC_TIMELINE_EVENTS } from '@usertour/constants';
 import { BizEvents, EventAttributes } from '@usertour/types';
 import { timelineEventTypeName, timelinePropertiesFor } from './sync-timeline';
 
@@ -64,5 +68,17 @@ describe('timeline occurrences', () => {
         'u',
       ).answer,
     ).toBe('Price, Speed');
+  });
+
+  // An occurrence of a type the provider app does not declare is refused, and
+  // a newly enabled timeline sends every listed event.
+  it('lists only events the provider app declares for both objects', () => {
+    const appEvents = join(__dirname, '../../../../../../integrations/hubspot/src/app/app-events');
+    const undeclared = SYNC_TIMELINE_EVENTS.flatMap((codeName) =>
+      ['contact', 'company']
+        .map((object) => `${codeName}-${object}-hsmeta.json`)
+        .filter((file) => !existsSync(join(appEvents, file))),
+    );
+    expect(undeclared).toEqual([]);
   });
 });

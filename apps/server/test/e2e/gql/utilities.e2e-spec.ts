@@ -205,11 +205,12 @@ describe('GraphQL utilities (e2e)', () => {
       expect(oembed).toEqual({ html: '', width: 0, height: 0 });
     });
 
-    it('errors gracefully for a provider url that is unreachable', async () => {
+    it('returns empty metadata when the provider refuses the url', async () => {
       // A YouTube watch url matches a provider scheme, so the service issues a
       // real outbound request to the provider endpoint. With a bogus video id
-      // the provider rejects (or, offline, the request fails) — either way the
-      // resolver surfaces a GraphQL error rather than data.
+      // the provider refuses it (or, offline, the request fails) — either way
+      // the url has no oEmbed answer, the same empty metadata as a url no
+      // provider claims, and the editor iframes it directly.
       //
       // DOCUMENTED GAP: the success path (valid url -> real embed html/width/
       // height) is network-dependent on a third-party service and is NOT
@@ -219,7 +220,8 @@ describe('GraphQL utilities (e2e)', () => {
         query: QUERY_OEMBED,
         variables: { url: 'https://www.youtube.com/watch?v=usertour-e2e-bogus-id-000000' },
       });
-      expect(res.body.errors?.length).toBeGreaterThan(0);
+      const oembed = gqlData(res).queryOembedInfo;
+      expect(oembed).toEqual({ html: '', width: 0, height: 0 });
     }, 30000);
   });
 

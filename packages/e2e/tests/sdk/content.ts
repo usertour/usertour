@@ -1,6 +1,7 @@
 import {
   DEFAULT_BANNER_DATA,
   DEFAULT_CHECKLIST_DATA,
+  DEFAULT_EMBED_DATA,
   DEFAULT_LAUNCHER_DATA,
   DEFAULT_RESOURCE_CENTER_DATA,
   defaultSettings,
@@ -44,6 +45,7 @@ export const gotoStep = (stepCvid: string): Action => ({
   data: { stepCvid },
 });
 export const dismissFlow = (): Action => ({ id: id('action'), type: 'flow-dismis', data: {} });
+export const dismissEmbed = (): Action => ({ id: id('action'), type: 'embed-dismis', data: {} });
 export const dismissChecklist = (): Action => ({
   id: id('action'),
   type: 'checklist-dismis',
@@ -59,13 +61,14 @@ export const dismissBanner = (): Action => ({ id: id('action'), type: 'banner-di
 export const button = (
   text: string,
   actions: Action[] = [],
-  rules: { disableWhen?: unknown[]; hideWhen?: unknown[] } = {},
+  rules: { disableWhen?: unknown[]; hideWhen?: unknown[]; cvid?: string } = {},
 ) => ({
   type: 'button',
   data: {
     text,
     type: 'primary',
     actions,
+    ...(rules.cvid ? { cvid: rules.cvid } : {}),
     ...(rules.disableWhen
       ? { disableButton: true, disableButtonConditions: rules.disableWhen }
       : {}),
@@ -232,7 +235,7 @@ const stepSetting = {
 export type StepInput = {
   id: string;
   cvid: string;
-  type: 'modal' | 'tooltip' | 'bubble' | 'hidden';
+  type: 'modal' | 'tooltip' | 'bubble' | 'hidden' | 'inline';
   name?: string;
   data: unknown[];
   /**
@@ -421,6 +424,8 @@ export const checklistSession = (input: {
 
 // --- banner ---
 
+export type OuterMargin = { top: number; right: number; bottom: number; left: number };
+
 export type BannerPlacement =
   | 'top-of-page'
   | 'bottom-of-page'
@@ -443,6 +448,8 @@ export const bannerSession = (input: {
   sticky?: boolean;
   /** Floats over the page instead of pushing it. */
   overlay?: boolean;
+  /** Space around the card, in px. */
+  outerMargin?: OuterMargin;
 }) => ({
   id: input.sessionId,
   type: 'banner',
@@ -464,6 +471,7 @@ export const bannerSession = (input: {
       overlayEmbedOverAppContent: input.overlay ?? false,
       animateWhenEmbedAppears: false,
       contents: [row(paragraph(input.text)), ...(input.blocks ?? [])],
+      ...(input.outerMargin ? { outerMargin: input.outerMargin } : {}),
     },
   },
 });
@@ -525,6 +533,80 @@ export const launcherSession = (input: {
     },
   },
 });
+
+// --- embed ---
+
+export type EmbedInput = {
+  /** Absent for a sessionless pre-activation (a full sync before any session exists). */
+  sessionId?: string;
+  contentId: string;
+  /** Target element, by CSS selector. */
+  target: string;
+  placement?: string;
+  steps: StepInput[];
+  /** Open on this step instead of the first (the session's remembered step). */
+  currentCvid?: string;
+  allowDismiss?: boolean;
+  /** Content position inside a cover; center when omitted. */
+  coverAlignment?: string;
+  /** Space around the card, in px. */
+  outerMargin?: OuterMargin;
+};
+
+export const embedSession = (input: EmbedInput) => {
+  const steps = input.steps.map((item, index) => step(item, index));
+  const current = input.currentCvid
+    ? steps.find((item) => item.cvid === input.currentCvid)
+    : undefined;
+  return {
+    id: input.sessionId,
+    type: 'embed',
+    draftMode: false,
+    attributes: [],
+    content: { id: input.contentId, name: input.contentId, type: 'embed', project: PROJECT },
+    version: {
+      id: `${input.contentId}-version`,
+      theme: { settings: defaultSettings },
+      steps,
+      embed: {
+        ...DEFAULT_EMBED_DATA,
+        placement: input.placement ?? 'immediately-after-element',
+        targetElement: { type: 'manual', customSelector: input.target },
+        allowUsersToDismiss: input.allowDismiss ?? true,
+        ...(input.coverAlignment ? { coverAlignment: input.coverAlignment } : {}),
+        ...(input.outerMargin ? { outerMargin: input.outerMargin } : {}),
+      },
+    },
+    ...(current ? { currentStep: { id: current.id, cvid: current.cvid } } : {}),
+  };
+};
+
+/** One step with a paragraph; `buttons` go on a second row. */
+export const oneStepEmbed = (
+  sessionId: string | undefined,
+  contentId: string,
+  target: string,
+  text: string,
+  buttons: ReturnType<typeof button>[] = [],
+  placement?: string,
+  coverAlignment?: string,
+) =>
+  embedSession({
+    sessionId,
+    contentId,
+    target,
+    placement,
+    coverAlignment,
+    steps: [
+      {
+        id: `${contentId}-step-1`,
+        cvid: `${contentId}-cvid-1`,
+        type: 'inline',
+        name: 'Step 1',
+        data: buttons.length ? [row(paragraph(text)), row(...buttons)] : [row(paragraph(text))],
+      },
+    ],
+  });
 
 // --- resource center ---
 

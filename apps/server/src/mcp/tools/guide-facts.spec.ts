@@ -58,21 +58,23 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(AUTHORING_GUIDE).not.toContain('"type": "flow"');
   });
 
-  it('auto-start knobs: frequency/wait/ifCompleted are flow+checklist; atLeast flow-only; priority adds resource-center + banner; launcher none', () => {
+  it('auto-start knobs: frequency is flow+checklist+embed; wait/ifCompleted flow+checklist; atLeast flow-only; priority adds resource-center + banner; launcher none', () => {
     const typesWith = (cap: 'frequency' | 'atLeast' | 'wait' | 'ifCompleted' | 'priority') =>
       Object.values(ContentDataType)
         .filter((t) => AUTO_START_CAPABILITIES[t][cap])
         .sort();
     // matrix side
-    expect(typesWith('frequency')).toEqual(['checklist', 'flow']);
+    expect(typesWith('frequency')).toEqual(['checklist', 'embed', 'flow']);
     expect(typesWith('wait')).toEqual(['checklist', 'flow']);
     expect(typesWith('ifCompleted')).toEqual(['checklist', 'flow']);
     expect(typesWith('atLeast')).toEqual(['flow']);
     expect(typesWith('priority')).toEqual(['banner', 'checklist', 'flow', 'resource-center']);
     // guide side: the sentence carrying the claim
+    expect(AUTHORING_GUIDE).toContain('`frequency` is **flow + checklist + embed**');
     expect(AUTHORING_GUIDE).toContain(
-      '`frequency`, `waitSeconds`, `startIfNotComplete` are **flow + checklist** only',
+      '`waitSeconds`, `startIfNotComplete` are **flow + checklist** only',
     );
+    expect(AUTHORING_GUIDE).toContain('An **embed** takes `frequency` and nothing else');
     expect(AUTHORING_GUIDE).toContain('(`frequency.atLeast`, flow only)');
     expect(AUTHORING_GUIDE).toContain(
       '`priority` is flow + checklist + resource-center + **banner**',
@@ -133,13 +135,13 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
     expect(AUTHORING_GUIDE).toContain('no theme (it has no UI)');
   });
 
-  it('persistent surfaces need start rules to appear: matrix trio matches the guide claim', () => {
+  it('persistent surfaces need start rules to appear: matrix quartet matches the guide claim', () => {
     // matrix side
-    const trio = Object.entries(CONTENT_TYPE_TRAITS)
+    const quartet = Object.entries(CONTENT_TYPE_TRAITS)
       .filter(([, t]) => t.autoStartRequiredToAppear)
       .map(([type]) => type)
       .sort();
-    expect(trio).toEqual(['banner', 'launcher', 'resource-center']);
+    expect(quartet).toEqual(['banner', 'embed', 'launcher', 'resource-center']);
     // guide side: the claim carriers (validate section + start-rules section)
     expect(AUTHORING_GUIDE).toContain('a persistent surface with no start rules');
     expect(AUTHORING_GUIDE).toContain('Banner, Launcher, and Resource Center are single-session');
@@ -148,6 +150,22 @@ describe('authoring guide facts (locked to the capability matrix)', () => {
   it('resource center has no dismiss: matrix null variant matches the guide claim', () => {
     expect(CONTENT_ACTION_CAPABILITIES[ContentDataType.RESOURCE_CENTER].dismissVariant).toBeNull();
     expect(AUTHORING_GUIDE).toContain('NO dismiss affordance');
+  });
+
+  it('embed: the step-kind matrix and the inline placement match the Embeds section claims', () => {
+    // matrix side
+    expect(STEP_CAPABILITIES[StepContentType.INLINE]).toEqual({
+      placement: 'inline',
+      onClick: false,
+      requiresTarget: false,
+    });
+    expect(CONTENT_ACTION_CAPABILITIES[ContentDataType.EMBED].dismissVariant).toBe('embed-dismis');
+    // guide side: the claim carriers
+    expect(AUTHORING_GUIDE).toContain('restricted to kinds `inline`');
+    expect(AUTHORING_GUIDE).toContain('**several embeds show at once**');
+    expect(AUTHORING_GUIDE).toContain('there is no relative previous / next');
+    expect(AUTHORING_GUIDE).toContain('**Button `cvid` is the analytics key.**');
+    expect(AUTHORING_GUIDE).toContain('**no completion state**');
   });
 });
 
@@ -188,6 +206,17 @@ describe('guide sections (the structure the slicing tool serves)', () => {
     );
     expect(guideSectionNamesFor(ContentDataType.BANNER)).not.toEqual(
       expect.arrayContaining(['surveys']),
+    );
+    // An embed's body is steps, so it gets the step-body sections (surveys,
+    // targets) plus its own; the flow-only sections stay off it and vice versa.
+    expect(guideSectionNamesFor(ContentDataType.EMBED)).toEqual(
+      expect.arrayContaining(['embeds', 'surveys', 'targets', 'localization']),
+    );
+    expect(guideSectionNamesFor(ContentDataType.EMBED)).not.toEqual(
+      expect.arrayContaining(['flow-steps', 'orchestration']),
+    );
+    expect(guideSectionNamesFor(ContentDataType.FLOW)).not.toEqual(
+      expect.arrayContaining(['embeds']),
     );
     for (const t of Object.values(ContentDataType)) {
       expect(guideSectionNamesFor(t)).toEqual(
