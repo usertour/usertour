@@ -130,7 +130,16 @@ const EmbedPreview = memo(
   forwardRef<HTMLDivElement, EmbedPreviewProps>((props, ref) => {
     const { children, style, ...restProps } = props;
     const { shell } = useInlineRootContext();
-    const contentStyle = useMemo(() => getInlineContentWrapperStyle(shell), [shell]);
+    const contentStyle = useMemo<CSSProperties>(() => {
+      const style = getInlineContentWrapperStyle(shell);
+      // The live cover's frame is stretched to the box minus its vertical
+      // margin; a full-height card plus that margin would overflow the box.
+      if (shell.fill) {
+        const vertical = (shell.outerMargin?.top ?? 0) + (shell.outerMargin?.bottom ?? 0);
+        style.height = `calc(100% - ${vertical}px)`;
+      }
+      return style;
+    }, [shell]);
     // A filling shell (the cover) takes its host's height, as the live cover
     // takes the target's; everything else sizes to its content.
     const wrapperStyle = useMemo<CSSProperties>(
