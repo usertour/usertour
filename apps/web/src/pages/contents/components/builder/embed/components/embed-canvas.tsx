@@ -71,13 +71,15 @@ const PlacementPreview = (props: PlacementPreviewProps) => {
 interface EmbedShellProps {
   data: EmbedData;
   card: ReactNode;
+  /** The step shown in the card, when it is not the store's current step. */
+  themeStep?: { step: Step | undefined };
 }
 
 // The browser frame with the shell at its placement; the card is whatever the
 // caller renders inside the embed's surface (an editor or a read-only step).
 const EmbedShell = (props: EmbedShellProps) => {
-  const { data, card } = props;
-  const theme = useCurrentTheme({ fallbackToDefault: true });
+  const { data, card, themeStep } = props;
+  const theme = useCurrentTheme({ fallbackToDefault: true, ...themeStep });
   const { t } = useTranslation();
 
   const previewData = useMemo(
@@ -125,7 +127,9 @@ export const EmbedOverviewCanvas = () => {
     </EmbedPreview>
   );
 
-  return <EmbedShell data={data} card={card} />;
+  // The card shows the first step, not the store's current step (which can
+  // still hold the step edited last): theme the shell as that step.
+  return <EmbedShell data={data} card={card} themeStep={{ step }} />;
 };
 
 EmbedOverviewCanvas.displayName = 'EmbedOverviewCanvas';
