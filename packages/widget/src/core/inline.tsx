@@ -152,12 +152,9 @@ const useInlineSurface = (): InlineSurface | null => {
   return useOptionalInlineRootContext()?.surface ?? null;
 };
 
-/** Frame-level style: the frame's own box, as opposed to the content column. */
+/** Box layout shared by the live frame and the non-iframe preview card. */
 export function getInlineContentWrapperStyle(shell: InlineShell): CSSProperties {
-  // Always inline: the frame mounts outside #usertour-widget, where index.css's
-  // iframe reset does not reach, so otherwise it keeps the browser's 2px inset
-  // border (or the host's own iframe border).
-  const style: CSSProperties = { border: 'none' };
+  const style: CSSProperties = {};
   if (shell?.maxFrameWidth != null) {
     style.maxWidth = `${shell.maxFrameWidth}px`;
   }
@@ -412,7 +409,15 @@ const InlineFrame = memo(
   forwardRef<HTMLIFrameElement, InlineFrameProps>((props, ref) => {
     const { children, className, ...restProps } = props;
     const { surface, shell, globalStyle, assets } = useInlineRootContext();
-    const contentWrapperStyle = useMemo(() => getInlineContentWrapperStyle(shell), [shell]);
+    const contentWrapperStyle = useMemo<CSSProperties>(
+      () => ({
+        ...getInlineContentWrapperStyle(shell),
+        // The frame mounts outside #usertour-widget, so reset its browser/host
+        // border here without overriding the themed border on preview cards.
+        border: 'none',
+      }),
+      [shell],
+    );
     const frameClassName = cn(`usertour-widget-${surface}-frame`, className);
 
     return (
