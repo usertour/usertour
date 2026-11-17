@@ -83,10 +83,22 @@ export const INLINE_ANIMATION_TIMING_PRESETS: Record<BannerAnimationTiming, stri
 const INLINE_DEFAULT_CONTENT_HEIGHT_PX = 56;
 const INLINE_MEASURE_FAIL_OPEN_MS = 500;
 
-const SURFACE_CLASSES: Record<InlineSurface, { container: string; dismiss: string }> = {
+const SURFACE_CLASSES: Record<
+  InlineSurface,
+  {
+    container: string;
+    dismiss: string;
+    /** Where the dismiss button sits in the content container. */
+    dismissSlot: string;
+    /** Added to the content container while it shows the dismiss button. */
+    withDismiss?: string;
+  }
+> = {
   banner: {
     container: 'p-sdk-banner bg-sdk-banner text-sdk-banner-foreground',
     dismiss: 'text-sdk-banner-foreground hover:bg-sdk-banner-hover',
+    // A one-line strip: the X ends the line, in a column of its own.
+    dismissSlot: 'flex-none',
   },
   embed: {
     // A card in the page: the theme's shared Border section gives it its
@@ -94,6 +106,11 @@ const SURFACE_CLASSES: Record<InlineSurface, { container: string; dismiss: strin
     container:
       'p-sdk-embed bg-sdk-embed text-sdk-embed-foreground rounded-sdk-popper border-sdk-popper',
     dismiss: 'text-sdk-embed-foreground hover:bg-sdk-embed-hover',
+    // A card of any height: the X sits in its top corner, as a flow step's
+    // does, instead of taking a column down the whole card. The minimum
+    // height keeps the corner X inside a card with no padding.
+    dismissSlot: 'absolute top-2 right-2 size-6 z-10',
+    withDismiss: 'min-h-10',
   },
 };
 
@@ -340,8 +357,9 @@ export interface InlineBodyProps {
 const InlineBody = memo(
   forwardRef<HTMLDivElement, InlineBodyProps>((props, ref) => {
     const { children, style, className } = props;
-    const { shell, onDismiss } = useInlineRootContext();
+    const { shell, onDismiss, surface } = useInlineRootContext();
     const showDismiss = shell?.allowDismiss ?? false;
+    const surfaceClasses = SURFACE_CLASSES[surface];
 
     const fill = shell?.fill ?? false;
     const fillAlignment = shell?.fillAlignment ?? EmbedCoverAlignment.CENTER;
@@ -364,7 +382,11 @@ const InlineBody = memo(
     }, [onDismiss]);
 
     return (
-      <InlineContentContainer ref={ref} className={className} style={style}>
+      <InlineContentContainer
+        ref={ref}
+        className={cn(showDismiss && surfaceClasses.withDismiss, className)}
+        style={style}
+      >
         <div
           className={cn(
             'min-w-0 flex-1 w-full mx-auto flex flex-col',
@@ -374,7 +396,9 @@ const InlineBody = memo(
         >
           {children}
         </div>
-        {showDismiss && <InlineDismissButton className="flex-none" onClick={handleDismiss} />}
+        {showDismiss && (
+          <InlineDismissButton className={surfaceClasses.dismissSlot} onClick={handleDismiss} />
+        )}
       </InlineContentContainer>
     );
   }),

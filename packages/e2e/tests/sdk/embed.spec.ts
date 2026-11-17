@@ -169,6 +169,41 @@ test('without user dismissal allowed, an embed has no close button', async ({ sd
   await expect(frame.getByRole('button', { name: 'Close' })).toHaveCount(0);
 });
 
+test('the close button sits in the card’s top corner and the content keeps the full width', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Upgrade to unlock reports'),
+  );
+  const close = sdk.page.frameLocator(FRAME).getByRole('button', { name: 'Close' });
+  await expect(close).toBeVisible();
+  const layout = await close.evaluate((button) => {
+    const container = button.parentElement as HTMLElement;
+    const column = container.firstElementChild as HTMLElement;
+    const card = container.getBoundingClientRect();
+    const x = button.getBoundingClientRect();
+    const padding = getComputedStyle(container);
+    return {
+      top: x.top - card.top,
+      right: card.right - x.right,
+      size: [x.width, x.height],
+      columnWidth: column.getBoundingClientRect().width,
+      innerWidth:
+        container.clientWidth -
+        Number.parseFloat(padding.paddingLeft) -
+        Number.parseFloat(padding.paddingRight),
+    };
+  });
+  expect(layout.top).toBe(8);
+  expect(layout.right).toBe(8);
+  expect(layout.size).toEqual([24, 24]);
+  // No column is kept for the X: the content spans the card's inner width.
+  expect(layout.columnWidth).toBe(layout.innerWidth);
+});
+
 test('an outer margin above and below goes around the card, not out of it', async ({
   sdk,
   protocol,
