@@ -12,6 +12,7 @@ import {
   InlineDismissButton,
   InlineFrame,
   InlineInFrame,
+  INLINE_ANIMATION_TIMING_PRESETS,
   InlineRoot,
   getInlineContentWrapperStyle,
   useInlineRootContext,
@@ -29,13 +30,6 @@ import {
 const BANNER_DEFAULT_HEIGHT_PX = 56;
 const BANNER_DEFAULT_ANIMATION_DURATION_MS = 320;
 const BANNER_DEFAULT_ANIMATION_TIMING: BannerAnimationTiming = 'smooth';
-
-const BANNER_ANIMATION_TIMING_PRESETS: Record<BannerAnimationTiming, string> = {
-  smooth: 'cubic-bezier(0.42, 0, 0.58, 1)',
-  snappy: 'cubic-bezier(0.22, 1, 0.36, 1)',
-  gentle: 'cubic-bezier(0, 0, 0.58, 1)',
-  linear: 'linear',
-};
 
 /** Maps the banner's stored data onto the shared inline shell. */
 const toInlineShell = (data: BannerData): InlineShell => ({
@@ -178,7 +172,7 @@ export function getBannerWrapperStyle(
       const timing = themeSetting?.banner?.animationTiming ?? BANNER_DEFAULT_ANIMATION_TIMING;
       style.animationName = WidgetAnimation.bannerReveal;
       style.animationDuration = `${duration}ms`;
-      style.animationTimingFunction = BANNER_ANIMATION_TIMING_PRESETS[timing];
+      style.animationTimingFunction = INLINE_ANIMATION_TIMING_PRESETS[timing];
     }
   }
 

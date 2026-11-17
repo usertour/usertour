@@ -3393,6 +3393,9 @@ const translations = {
       // Banner
       bannerAnimationDuration: 'Duration of the banner reveal animation, in milliseconds.',
       bannerAnimationTiming: 'Easing curve for the banner reveal animation.',
+      embedAnimationDuration:
+        'Duration of the embed reveal animation, in milliseconds. Applies to embeds with "Animate on appear" on.',
+      embedAnimationTiming: 'Easing curve for the embed reveal animation.',
       // Checklist
       checklistWidth: 'Width of the checklist in pixels.',
       checklistPlacement: 'Where the checklist appears on screen.',
@@ -3558,6 +3561,8 @@ const translations = {
       embed: {
         backgroundColor: 'Background color',
         textColor: 'Text color',
+        animationDuration: 'Animation duration',
+        animationStyle: 'Animation style',
       },
       checklist: {
         checkmarkColor: 'Checkmark color',
@@ -4214,6 +4219,9 @@ const translations = {
       allowDismiss: 'Allow users to dismiss',
       allowDismissTooltip:
         'Shows a close button. Dismissing ends the session; whether the embed shows again is decided by its frequency setting.',
+      animateOnAppear: 'Animate on appear',
+      animateOnAppearTooltip:
+        'Reveals the embed with an animation instead of just popping into place: it expands to its height and fades in, or fades in over the element it covers. Duration and easing are set in the theme.',
     },
     banner: {
       embedPlacement: 'Embed placement',

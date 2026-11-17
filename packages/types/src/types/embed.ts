@@ -46,4 +46,10 @@ export interface EmbedData {
   outerMargin?: EmbedOuterMargin;
   /** Content position inside the covered box; `cover-element` only. Center when absent. */
   coverAlignment?: EmbedCoverAlignment;
+  /**
+   * Reveal the embed with an animation when it appears: in-flow placements
+   * expand to their height while fading in, a cover fades in. Off when absent;
+   * duration and easing come from the theme's `embed` section.
+   */
+  animateOnAppear?: boolean;
 }

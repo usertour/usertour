@@ -5,6 +5,7 @@ import {
   InlineFrame,
   LinkDecoratorContext,
   WidgetLocaleProvider,
+  getEmbedRevealStyle,
   getEmbedWrapperStyle,
 } from '@usertour/widget';
 import {
@@ -16,7 +17,14 @@ import {
   ThemeTypesSetting,
   UserTourTypes,
 } from '@usertour/types';
-import { type CSSProperties, useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { placeCover } from './embed-cover';
@@ -67,6 +75,11 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
   // Live height reported from inside the frame (EmbedRoot measures it); null =
   // pending, keeps an in-flow shell at zero height until the real height lands.
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
+  // The reveal plays once per appearance. Left on the mount, it would replay
+  // whenever the mount is re-inserted (a re-placed target) or re-measured from
+  // null (a rebuilt frame); dropped at its end, the final state is the same.
+  const [revealed, setRevealed] = useState(false);
+  const open = store !== null;
 
   const { embedData, currentStep, themeSettings, assets, userAttributes, zIndex } = store ?? {};
   const targetElement = store?.targetElement ?? null;
@@ -78,11 +91,36 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
     [currentStep?.data],
   );
 
+  useEffect(() => {
+    if (!open) {
+      setRevealed(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!mountEl) {
+      return;
+    }
+    const handleAnimationEnd = (event: AnimationEvent) => {
+      if (event.target === mountEl) {
+        setRevealed(true);
+      }
+    };
+    mountEl.addEventListener('animationend', handleAnimationEnd);
+    return () => mountEl.removeEventListener('animationend', handleAnimationEnd);
+  }, [mountEl]);
+
+  const reveal = useMemo(
+    () => (revealed ? null : getEmbedRevealStyle(embedData, themeSettings)),
+    [revealed, embedData, themeSettings],
+  );
+
   // The shell's own style: a cover fills whatever holds it (see embed-cover),
   // an in-flow shell is as tall as its measured content.
   const shellStyle = useMemo<CSSProperties>(
-    () => (isCover ? { zIndex: zIndex ?? 0 } : getEmbedWrapperStyle(measuredHeight)),
-    [isCover, zIndex, measuredHeight],
+    () =>
+      isCover ? { zIndex: zIndex ?? 0, ...reveal } : getEmbedWrapperStyle(measuredHeight, reveal),
+    [isCover, zIndex, measuredHeight, reveal],
   );
   const placeEmbed = useCallback<MountPlacer>(
     (el, target, style) => {

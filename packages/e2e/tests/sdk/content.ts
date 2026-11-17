@@ -551,6 +551,10 @@ export type EmbedInput = {
   coverAlignment?: string;
   /** Space around the card, in px. */
   outerMargin?: OuterMargin;
+  /** Reveal the embed with an animation when it appears. */
+  animateOnAppear?: boolean;
+  /** The version theme's settings; the defaults when omitted. */
+  themeSettings?: unknown;
 };
 
 export const embedSession = (input: EmbedInput) => {
@@ -566,7 +570,7 @@ export const embedSession = (input: EmbedInput) => {
     content: { id: input.contentId, name: input.contentId, type: 'embed', project: PROJECT },
     version: {
       id: `${input.contentId}-version`,
-      theme: { settings: defaultSettings },
+      theme: { settings: input.themeSettings ?? defaultSettings },
       steps,
       embed: {
         ...DEFAULT_EMBED_DATA,
@@ -575,6 +579,7 @@ export const embedSession = (input: EmbedInput) => {
         allowUsersToDismiss: input.allowDismiss ?? true,
         ...(input.coverAlignment ? { coverAlignment: input.coverAlignment } : {}),
         ...(input.outerMargin ? { outerMargin: input.outerMargin } : {}),
+        ...(input.animateOnAppear !== undefined ? { animateOnAppear: input.animateOnAppear } : {}),
       },
     },
     ...(current ? { currentStep: { id: current.id, cvid: current.cvid } } : {}),

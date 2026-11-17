@@ -610,6 +610,14 @@ export const representationEmbed = z
           'cover is as tall as its target while the other placements are as tall as their ' +
           'content. Default `center`.',
       ),
+    animateOnAppear: z
+      .boolean()
+      .optional()
+      .describe(
+        'Reveal the embed with an animation when it appears: the in-flow placements expand to ' +
+          'their height while fading in, `cover-element` fades in. Duration and easing are the ' +
+          "theme's `embed.animationDuration` / `embed.animationTiming`. Default `false`.",
+      ),
   })
   .strict()
   .describe(

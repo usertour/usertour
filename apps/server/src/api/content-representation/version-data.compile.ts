@@ -389,5 +389,8 @@ function compileEmbed(rep: RepresentationEmbed, existing: unknown): unknown {
   if (rep.coverAlignment !== undefined) {
     out.coverAlignment = rep.coverAlignment;
   }
+  if (rep.animateOnAppear !== undefined) {
+    out.animateOnAppear = rep.animateOnAppear;
+  }
   return out;
 }

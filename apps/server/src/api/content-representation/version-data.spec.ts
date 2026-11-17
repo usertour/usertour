@@ -195,6 +195,7 @@ describe('version-data builder settings round-trip', () => {
         maxContentWidth: 400,
         outerMargin: { top: 1, right: 2, bottom: 3, left: 4 },
         coverAlignment: 'bottom',
+        animateOnAppear: true,
       },
       internal,
       ids,
@@ -207,6 +208,7 @@ describe('version-data builder settings round-trip', () => {
       maxContentWidth: 400,
       outerMargin: { top: 1, right: 2, bottom: 3, left: 4 },
       coverAlignment: 'bottom',
+      animateOnAppear: true,
     });
   });
 

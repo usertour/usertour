@@ -126,6 +126,9 @@ export type EmbedThemeSettings = {
   backgroundColor: ThemeTypesSettingsColor;
   textColor: ThemeTypesSettingsColor;
   padding: number;
+  /** Reveal animation for embeds that turn on `animateOnAppear`. */
+  animationDuration: number;
+  animationTiming: BannerAnimationTiming;
 };
 
 export type ThemeTypesSetting = {

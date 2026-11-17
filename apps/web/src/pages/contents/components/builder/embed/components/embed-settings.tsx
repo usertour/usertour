@@ -241,6 +241,12 @@ export const EmbedSettings = () => {
         checked={localData.allowUsersToDismiss}
         onChange={(checked) => updateLocalData({ allowUsersToDismiss: checked })}
       />
+      <BooleanField
+        label={t('contentBuilder.embed.animateOnAppear')}
+        tooltip={t('contentBuilder.embed.animateOnAppearTooltip')}
+        checked={localData.animateOnAppear ?? false}
+        onChange={(checked) => updateLocalData({ animateOnAppear: checked })}
+      />
     </FieldCard>
   );
 };

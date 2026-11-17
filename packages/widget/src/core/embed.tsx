@@ -1,10 +1,12 @@
 import type { AssetAttributes } from '@usertour/frame';
-import type { EmbedData, ThemeTypesSetting } from '@usertour/types';
+import type { BannerAnimationTiming, EmbedData, ThemeTypesSetting } from '@usertour/types';
 import { EmbedCoverAlignment, EmbedPlacement } from '@usertour/types';
 import type { CSSProperties } from 'react';
 import { forwardRef, memo, useMemo } from 'react';
 
+import { WidgetAnimation } from './class-names';
 import {
+  INLINE_ANIMATION_TIMING_PRESETS,
   InlineBody,
   InlineRoot,
   getInlineContentWrapperStyle,
@@ -18,6 +20,8 @@ import {
 // section it reads its padding from (ADR 0022).
 
 export const EMBED_DEFAULT_PADDING_PX = 16;
+const EMBED_DEFAULT_ANIMATION_DURATION_MS = 320;
+const EMBED_DEFAULT_ANIMATION_TIMING: BannerAnimationTiming = 'smooth';
 
 /** Maps the embed's stored data onto the shared inline shell. */
 export const toEmbedInlineShell = (data: EmbedData | undefined): InlineShell => ({
@@ -34,10 +38,39 @@ export const getEmbedPadding = (themeSetting: ThemeTypesSetting | undefined): nu
   themeSetting?.embed?.padding ?? EMBED_DEFAULT_PADDING_PX;
 
 /**
- * Host-side wrapper style for an in-flow embed: sized to the live measurement
- * and kept invisible until it lands, so the page never shows a guessed height.
+ * The reveal animation of an embed with `animateOnAppear` on, null when off.
+ * An in-flow embed expands from zero to its measured height while fading in;
+ * a cover is sized to its target, so it only fades in. Timing comes from the
+ * theme's embed section.
  */
-export function getEmbedWrapperStyle(measuredHeight: number | null): CSSProperties {
+export function getEmbedRevealStyle(
+  data: EmbedData | undefined,
+  themeSetting: ThemeTypesSetting | undefined,
+): CSSProperties | null {
+  if (!data?.animateOnAppear) {
+    return null;
+  }
+  const duration = themeSetting?.embed?.animationDuration ?? EMBED_DEFAULT_ANIMATION_DURATION_MS;
+  const timing = themeSetting?.embed?.animationTiming ?? EMBED_DEFAULT_ANIMATION_TIMING;
+  return {
+    animationName:
+      data.placement === EmbedPlacement.COVER_ELEMENT
+        ? WidgetAnimation.stageReveal
+        : WidgetAnimation.embedReveal,
+    animationDuration: `${duration}ms`,
+    animationTimingFunction: INLINE_ANIMATION_TIMING_PRESETS[timing],
+  };
+}
+
+/**
+ * Host-side wrapper style for an in-flow embed: sized to the live measurement
+ * and kept invisible until it lands, so the page never shows a guessed height
+ * and a reveal animation only ever runs against the real one.
+ */
+export function getEmbedWrapperStyle(
+  measuredHeight: number | null,
+  reveal?: CSSProperties | null,
+): CSSProperties {
   const style: CSSProperties = {
     position: 'relative',
     ['--usertour-widget-embed-height' as string]:
@@ -45,6 +78,8 @@ export function getEmbedWrapperStyle(measuredHeight: number | null): CSSProperti
   };
   if (measuredHeight === null) {
     style.visibility = 'hidden';
+  } else if (reveal) {
+    Object.assign(style, reveal);
   }
   return style;
 }

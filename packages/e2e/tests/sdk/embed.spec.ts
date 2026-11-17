@@ -13,6 +13,7 @@ import {
   twoStepFlow,
 } from './content';
 import type { Page } from '@playwright/test';
+import { defaultSettings } from '@usertour/constants';
 
 import { expect, test } from './fixtures';
 import { defaultAnswer } from './protocol-server';
@@ -1516,4 +1517,149 @@ test('an embed whose session is re-sent with another target moves to it', async 
   await expect(sdk.page.locator(SHELL)).toHaveCount(1);
   await expect(frame.getByText('Upgrade now')).toBeVisible();
   expect(protocol.messages('EndContent')).toHaveLength(0);
+});
+
+test.describe('the reveal animation', () => {
+  // Long enough to catch the shell mid-reveal.
+  const REVEAL_MS = 1500;
+  const slowReveal = {
+    ...defaultSettings,
+    embed: { ...defaultSettings.embed, animationDuration: REVEAL_MS },
+  };
+
+  const animatedEmbed = (placement?: string) =>
+    embedSession({
+      sessionId: 'embed-session-1',
+      contentId: 'embed-1',
+      target: '#panel',
+      placement,
+      animateOnAppear: true,
+      themeSettings: slowReveal,
+      steps: [
+        {
+          id: 'embed-1-step-1',
+          cvid: 'embed-1-cvid-1',
+          type: 'inline',
+          name: 'Step 1',
+          data: [
+            row(paragraph('Step one')),
+            row(button('Next', [gotoStep('embed-1-cvid-2')], { cvid: 'button-next' })),
+          ],
+        },
+        {
+          id: 'embed-1-step-2',
+          cvid: 'embed-1-cvid-2',
+          type: 'inline',
+          name: 'Step 2',
+          data: [
+            row(paragraph('Step two')),
+            row(paragraph('A taller step')),
+            row(paragraph('With more lines')),
+            row(paragraph('Than the first')),
+          ],
+        },
+      ],
+    });
+
+  const animationName = (page: Page) =>
+    page.locator(SHELL).evaluate((shell) => getComputedStyle(shell).animationName);
+
+  /** The shell's rendered height against the measured height it reveals to. */
+  const heights = (page: Page) =>
+    page.locator(SHELL).evaluate((shell) => ({
+      rendered: (shell as HTMLElement).offsetHeight,
+      measured: Number.parseFloat(
+        (shell as HTMLElement).style.getPropertyValue('--usertour-widget-embed-height'),
+      ),
+    }));
+
+  const revealDone = (page: Page) =>
+    expect.poll(() => animationName(page), { timeout: REVEAL_MS * 4 }).toBe('none');
+
+  test('is off by default', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Here'));
+    await expect(sdk.page.frameLocator(FRAME).getByText('Here')).toBeVisible();
+    expect(await animationName(sdk.page)).toBe('none');
+  });
+
+  test('expands an in-flow embed to its measured height once, not again on a step change', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('AddEmbed', animatedEmbed());
+    await expect.poll(() => animationName(sdk.page)).toBe('usertour-widget-embed-reveal');
+    // Mid-reveal the shell is shorter than the measured height it is opening to.
+    await expect
+      .poll(async () => {
+        const { rendered, measured } = await heights(sdk.page);
+        return measured > 0 && rendered < measured;
+      })
+      .toBe(true);
+
+    await revealDone(sdk.page);
+    const settled = await heights(sdk.page);
+    expect(settled.rendered).toBe(settled.measured);
+
+    const frame = sdk.page.frameLocator(FRAME);
+    await frame.getByRole('button', { name: 'Next' }).click();
+    await expect(frame.getByText('A taller step')).toBeVisible();
+    await expect
+      .poll(async () => (await heights(sdk.page)).measured)
+      .toBeGreaterThan(settled.measured);
+    expect(await animationName(sdk.page)).toBe('none');
+  });
+
+  test('replays when the embed comes back with its target, not when the target is replaced in place', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push('AddEmbed', animatedEmbed('bottom-of-container-element'));
+    await revealDone(sdk.page);
+
+    // A re-placed mount rebuilds its frame and re-measures; the reveal does not rerun.
+    await sdk.page.evaluate(() => {
+      const oldPanel = document.getElementById('panel') as HTMLElement;
+      const newPanel = oldPanel.cloneNode(true) as HTMLElement;
+      for (const shell of newPanel.querySelectorAll('.usertour-widget-embed')) {
+        shell.remove();
+      }
+      newPanel.dataset.replaced = 'true';
+      oldPanel.replaceWith(newPanel);
+    });
+    await sdk.advance(600);
+    await expect(sdk.page.locator('#panel[data-replaced] > .usertour-widget-embed')).toHaveCount(1);
+    await expect(sdk.page.frameLocator(FRAME).getByText('Step one')).toBeVisible();
+    expect(await animationName(sdk.page)).toBe('none');
+
+    await sdk.page.evaluate(() => {
+      (document.getElementById('panel') as HTMLElement).style.display = 'none';
+    });
+    await sdk.advance(600);
+    await expect(sdk.page.locator(SHELL)).toHaveCount(0);
+    await sdk.page.evaluate(() => {
+      (document.getElementById('panel') as HTMLElement).style.display = '';
+    });
+    await sdk.advance(600);
+    await expect.poll(() => animationName(sdk.page)).toBe('usertour-widget-embed-reveal');
+  });
+
+  test('only fades a cover in, since it is as tall as its target', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await protocol.push('AddEmbed', animatedEmbed('cover-element'));
+    await expect.poll(() => animationName(sdk.page)).toBe('usertour-widget-stage-reveal');
+    await revealDone(sdk.page);
+  });
+
+  test('does not play for a visitor who asks for reduced motion', async ({ sdk, protocol }) => {
+    await sdk.page.emulateMedia({ reducedMotion: 'reduce' });
+    await start(sdk);
+    await protocol.push('AddEmbed', animatedEmbed());
+    await expect(sdk.page.frameLocator(FRAME).getByText('Step one')).toBeVisible();
+    expect(await animationName(sdk.page)).toBe('none');
+    const { rendered, measured } = await heights(sdk.page);
+    expect(rendered).toBe(measured);
+  });
 });

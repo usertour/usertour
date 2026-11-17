@@ -371,6 +371,22 @@
     opacity: 1;
   }
 }
+@keyframes usertour-widget-embed-reveal {
+  0% {
+    height: 0;
+    opacity: 0;
+  }
+  100% {
+    height: var(--usertour-widget-embed-height);
+    opacity: 1;
+  }
+}
+/* An embed is part of the page: honor the visitor's reduced-motion setting. */
+@media (prefers-reduced-motion: reduce) {
+  .usertour-widget-embed {
+    animation: none !important;
+  }
+}
 /* Resource Center */
 @keyframes usertour-widget-indicator-enter {
   0% {

@@ -2,7 +2,7 @@ import type { AssetAttributes } from '@usertour/frame';
 import { Frame, useFrame } from '@usertour/frame';
 import { useSize } from '@usertour/react-use-size';
 import { RiCloseLargeFill } from '@usertour/icons';
-import type { ThemeTypesSetting } from '@usertour/types';
+import type { BannerAnimationTiming, ThemeTypesSetting } from '@usertour/types';
 import { EmbedCoverAlignment } from '@usertour/types';
 import type { CSSProperties } from 'react';
 import {
@@ -70,6 +70,14 @@ const FILL_ALIGNMENT_CLASS: Record<EmbedCoverAlignment, string> = {
   [EmbedCoverAlignment.TOP]: 'justify-start',
   [EmbedCoverAlignment.CENTER]: 'justify-center',
   [EmbedCoverAlignment.BOTTOM]: 'justify-end',
+};
+
+/** Easing curves for the theme's reveal-animation timing, shared by banner and embed. */
+export const INLINE_ANIMATION_TIMING_PRESETS: Record<BannerAnimationTiming, string> = {
+  smooth: 'cubic-bezier(0.42, 0, 0.58, 1)',
+  snappy: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  gentle: 'cubic-bezier(0, 0, 0.58, 1)',
+  linear: 'linear',
 };
 
 const INLINE_DEFAULT_CONTENT_HEIGHT_PX = 56;

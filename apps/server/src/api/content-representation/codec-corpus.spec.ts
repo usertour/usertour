@@ -489,6 +489,7 @@ describe('codec corpus: non-flow version data is round-trip idempotent', () => {
         maxContentWidth: 480,
         outerMargin: { top: 8, right: 8, bottom: 8, left: 8 },
         coverAlignment: 'top',
+        animateOnAppear: true,
       },
     ],
     [

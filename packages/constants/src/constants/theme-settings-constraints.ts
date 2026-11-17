@@ -137,6 +137,13 @@ export const THEME_SETTING_CONSTRAINTS = {
   'checklistLauncher.placement.positionOffsetX': { kind: 'number', min: 0, max: 1000 },
   'checklistLauncher.placement.positionOffsetY': { kind: 'number', min: 0, max: 1000 },
   customCss: { kind: 'string' },
+  'embed.animationDuration': {
+    kind: 'number',
+    min: 0,
+    max: 10000,
+    describe: 'Milliseconds. Applies to embeds with `animateOnAppear` on.',
+  },
+  'embed.animationTiming': { kind: 'enum', values: ['smooth', 'snappy', 'gentle', 'linear'] },
   'embed.backgroundColor.background': { kind: 'color', allowAuto: true },
   'embed.padding': { kind: 'number', min: 0, max: 100 },
   'embed.textColor.color': { kind: 'color', allowAuto: true },

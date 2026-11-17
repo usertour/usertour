@@ -77,5 +77,6 @@ export const WidgetAnimation = {
   stageReveal: `${PREFIX}-stage-reveal`,
   beaconHalo: `${PREFIX}-beacon-halo`,
   bannerReveal: `${PREFIX}-banner-reveal`,
+  embedReveal: `${PREFIX}-embed-reveal`,
   resourceCenterReveal: `${PREFIX}-resource-center-reveal`,
 } as const;

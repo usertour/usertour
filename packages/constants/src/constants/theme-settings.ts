@@ -170,6 +170,8 @@ export const defaultSettings = {
       active: 'Auto',
     },
     padding: 16,
+    animationDuration: 320,
+    animationTiming: 'smooth',
   },
   mainColor: {
     color: '#0f172a',
@@ -464,6 +466,8 @@ export const standardDarkSettings = {
       active: 'Auto',
     },
     padding: 16,
+    animationDuration: 320,
+    animationTiming: 'smooth',
   },
   mainColor: {
     color: '#ffffff',

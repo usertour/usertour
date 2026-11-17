@@ -689,6 +689,27 @@ export const builderSections: BuilderSection[] = [
         max: 100,
         suffix: 'px',
       },
+      {
+        type: 'number',
+        path: 'embed.animationDuration',
+        label: 'themeBuilder.fields.embed.animationDuration',
+        tooltip: 'themeBuilder.tooltips.embedAnimationDuration',
+        min: 0,
+        max: 10000,
+        suffix: 'ms',
+      },
+      {
+        type: 'select',
+        path: 'embed.animationTiming',
+        label: 'themeBuilder.fields.embed.animationStyle',
+        tooltip: 'themeBuilder.tooltips.embedAnimationTiming',
+        options: [
+          { value: 'smooth', label: 'themeBuilder.options.bannerAnimation.smooth' },
+          { value: 'snappy', label: 'themeBuilder.options.bannerAnimation.snappy' },
+          { value: 'gentle', label: 'themeBuilder.options.bannerAnimation.gentle' },
+          { value: 'linear', label: 'themeBuilder.options.bannerAnimation.linear' },
+        ],
+      },
     ],
   },
 

@@ -5,4 +5,5 @@ export const DEFAULT_EMBED_DATA: EmbedData = {
   placement: EmbedPlacement.IMMEDIATELY_AFTER_ELEMENT,
   allowUsersToDismiss: true,
   coverAlignment: EmbedCoverAlignment.CENTER,
+  animateOnAppear: false,
 };

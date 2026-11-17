@@ -74,6 +74,9 @@ function decompileEmbed(data: unknown): RepresentationEmbed {
     ...(typeof shell.coverAlignment === 'string' && EMBED_COVER_ALIGNMENTS.has(shell.coverAlignment)
       ? { coverAlignment: shell.coverAlignment as RepresentationEmbed['coverAlignment'] }
       : {}),
+    ...(typeof shell.animateOnAppear === 'boolean'
+      ? { animateOnAppear: shell.animateOnAppear }
+      : {}),
   };
 }
 

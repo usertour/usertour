@@ -3225,6 +3225,9 @@ const translations = {
       // Banner
       bannerAnimationDuration: 'Banner 入场动画的时长(毫秒)。',
       bannerAnimationTiming: 'Banner 入场动画的缓动曲线。',
+      embedAnimationDuration:
+        '嵌入内容入场动画的时长(毫秒)。只对开启了「出现时动画」的嵌入内容生效。',
+      embedAnimationTiming: '嵌入内容入场动画的缓动曲线。',
       // Checklist
       checklistWidth: 'Checklist 的宽度(像素)。',
       checklistPlacement: 'Checklist 在屏幕上显示的位置。',
@@ -3384,6 +3387,8 @@ const translations = {
       embed: {
         backgroundColor: '背景颜色',
         textColor: '文字颜色',
+        animationDuration: '动画时长',
+        animationStyle: '动画风格',
       },
       checklist: {
         checkmarkColor: '勾选颜色',
@@ -4026,6 +4031,9 @@ const translations = {
       settings: '设置',
       allowDismiss: '允许用户关闭',
       allowDismissTooltip: '显示关闭按钮。关闭会结束本次会话;是否再次显示由频率设置决定。',
+      animateOnAppear: '出现时动画',
+      animateOnAppearTooltip:
+        '让嵌入内容带动画出现，而不是一下子蹦出来：展开到自身高度并淡入；覆盖元素时只淡入。时长和缓动曲线在主题里设置。',
     },
     banner: {
       embedPlacement: '嵌入位置',
