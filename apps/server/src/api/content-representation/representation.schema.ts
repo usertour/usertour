@@ -454,8 +454,8 @@ export const representationCondition = z.lazy(() =>
         .string()
         .describe(
           'contentId of the FLOW or CHECKLIST whose per-user state to check (an id from the content list). ' +
-            'Only flows and checklists record this state — referencing a banner / launcher / ' +
-            'resource-center / tracker is rejected at write.',
+            'Only flows and checklists record this state — referencing content of any other ' +
+            'type is rejected at write.',
         ),
       state: z
         .enum(['seen', 'unseen', 'completed', 'uncompleted', 'active', 'inactive'])
@@ -838,6 +838,8 @@ export type RepresentationBlock =
       object: ApiObjectType.BLOCK;
       id?: string;
       type: 'button';
+      /** Stable analytics identity (`button_clicked` keys on it); echo to keep it. */
+      cvid?: string;
       text: string;
       actions?: RepresentationAction[];
       disabledWhen?: RepresentationCondition[];
@@ -962,6 +964,14 @@ export const representationBlock = z.lazy(() =>
     z.object({
       ...blockBase,
       type: z.literal('button'),
+      cvid: z
+        .string()
+        .optional()
+        .describe(
+          "The button's stable analytics identity — `button_clicked` events key on it (same role " +
+            "as a question's cvid). ECHO it back when rewriting a step so click analytics stay " +
+            'continuous; a button written without one gets a new cvid.',
+        ),
       text: z.string(),
       actions: z.array(representationAction).optional(),
       disabledWhen: z
@@ -1054,8 +1064,12 @@ export const representationBlock = z.lazy(() =>
   ]),
 ) as unknown as z.ZodType<RepresentationBlock>;
 
-/** The four flow step kinds (mirrors the write-side step type enum). */
-export const stepTypeEnum = z.enum(['tooltip', 'modal', 'hidden', 'bubble']);
+/**
+ * The step kinds: the four flow popups plus `inline`, an embed step rendered
+ * inside the embed's shell. Which kinds a content type accepts is the
+ * STEP_TYPES_BY_CONTENT_TYPE matrix (enforced by the write guards and validate).
+ */
+export const stepTypeEnum = z.enum(['tooltip', 'modal', 'hidden', 'bubble', 'inline']);
 /** The six question element kinds (the question members of ContentEditorElementType). */
 export const questionTypeEnum = z.enum([
   'nps',
@@ -1156,13 +1170,13 @@ export const representationStartRules = z.preprocess(
         mode: z
           .enum(['once', 'multiple', 'unlimited'])
           .describe(
-            'once = show a single time; multiple = up to N times per window; unlimited = every time the conditions match (subject to `every`).',
+            'once = show a single time; multiple = at most `every.times` sessions in total (a lifetime count, not per window), each new one only after the `every` gap; unlimited = no count cap, a new session after the `every` gap.',
           ),
         every: z
           .object({ times: z.number().optional(), duration: z.number(), unit: durationUnit })
           .optional()
           .describe(
-            'Re-show window. Used by `multiple` (with `times`) and `unlimited`; ignored for `once`. If omitted for those modes a default window is applied. Manual and programmatic starts also count toward the `multiple` limit.',
+            'Gap after a session ends: a new one may start once `duration` `unit` has passed since the previous session of this content ended (dismissed / ended). Used by `multiple` (with `times`, the total session cap) and `unlimited`; ignored for `once`. If omitted for those modes the default is stored: 1 day, plus `times: 2` for `multiple`. `duration: 0` = no gap. Manual and programmatic starts also count toward the `multiple` limit.',
           ),
         atLeast: z
           .object({ duration: z.number(), unit: durationUnit })
@@ -1254,9 +1268,11 @@ export const representationStepInput = z.object({
         'this step even before it exists. Write-only — not stored, not returned on read.',
     ),
   name: z.string(),
-  type: z
-    .enum(['tooltip', 'modal', 'hidden', 'bubble'])
-    .describe('Step kind. Only `tooltip` anchors to a target element; the rest are page-level.'),
+  type: stepTypeEnum.describe(
+    'Step kind. Flow steps: `tooltip` (anchors to a target element), `modal`, `bubble`, `hidden` ' +
+      '(no UI — triggers only). Embed steps: `inline` (rendered inside the embed shell at its ' +
+      'target element) and `hidden`. A kind the content type does not accept is rejected.',
+  ),
   sequence: z.number().optional(),
   themeId: z
     .string()
@@ -1266,7 +1282,12 @@ export const representationStepInput = z.object({
       'Per-step theme override. Omit to keep the current value; set to a theme id ' +
         '(from the themes list) to override; set to null to clear and inherit the flow theme.',
     ),
-  target: representationTarget.optional(),
+  target: representationTarget
+    .optional()
+    .describe(
+      'The element a `tooltip` step anchors to. Not used by `inline` / `hidden` steps (an ' +
+        "embed's steps render at the embed data's `target`), so sending one there is rejected.",
+    ),
   placement: representationPlacement.optional(),
   width: z
     .number()
@@ -1313,10 +1334,18 @@ export const question = z.object({
   type: questionTypeEnum,
 });
 
+/** A version's number as the API returns it, wherever a version appears. */
+export const versionNumber = z
+  .number()
+  .describe(
+    "The version's number within its content, starting from 0. The dashboard labels versions " +
+      'from 1, so the version it shows as V1 has `number: 0`.',
+  );
+
 export const contentVersion = z.object({
   id: z.string(),
   object: z.literal(ApiObjectType.CONTENT_VERSION),
-  number: z.number(),
+  number: versionNumber,
   firstPublishedAt: z
     .string()
     .nullable()
@@ -1338,9 +1367,10 @@ export const contentVersion = z.object({
   /** Hide rules (present on the standalone content-versions endpoint). */
   hideRules: representationHideRules.optional(),
   /**
-   * Decompiled type-specific body for non-flow content (checklist / launcher /
-   * banner / tracker / announcement / resource-center) — only present when the
-   * `data` expand is requested. Shape is determined by the content type.
+   * Decompiled type-specific body (checklist / launcher / banner / tracker /
+   * announcement / resource-center, and an embed's shell) — only present when
+   * the `data` expand is requested. Shape is determined by the content type; a
+   * flow has none (its body is `steps`), an embed carries both.
    */
   data: z.unknown().optional(),
   /**

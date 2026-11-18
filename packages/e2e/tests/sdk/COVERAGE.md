@@ -172,7 +172,37 @@ its row.
 | Sticky / overlay positioning | ✓ banner "sticky and overlay › …" ×3 | — |
 | Dismiss button hidden unless `allowUsersToDismissEmbed` | ✓ banner "without user dismissal allowed…" | — |
 | Button actions, live button rules, `banner-dismis` action | ✓ banner "its buttons › …" | — |
+| An outer margin above and below goes around the banner: the frame keeps its content's height | ✓ banner "an outer margin above and below goes around the banner…" | — |
 | A session updated in place, including a placement change | ✓ banner "a session updated in place › …" | — |
+
+## Embeds
+
+| Behaviour | Covered by | Priority |
+|---|---|---|
+| The handshake declares the `embed` capability | ✓ embed "the handshake declares the embed capability" | — |
+| Rendered in the page's flow right after its target; the close button ends it with `dismiss_button` | ✓ embed "an embed renders after its target…" | — |
+| Container placements: top and bottom of the target, before and after it | ✓ embed after (above), top ("several embeds on one target…"), bottom ("an embed survives its target being replaced…"); before shares the banner's mount helper (banner "placed <placement>…") | — |
+| Several embeds at once, each at its own target; `RemoveEmbed` takes one away | ✓ embed "several embeds show at once…" | — |
+| Several embeds on one target keep their frames and their delivery order | ✓ embed "several embeds on one target…" | — |
+| Close button hidden unless `allowUsersToDismiss` | ✓ embed "without user dismissal allowed…" | — |
+| A button press is reported with its step and cvid before its actions run; `embed-dismis` ends it with `action_dismiss` | ✓ embed "a button press is reported…" | — |
+| Button actions, live button rules | ✓ embed "an embed’s buttons run their actions…" | — |
+| A question answer is reported against the embed's session; its actions run after | ✓ embed "a question answered in an embed…" | — |
+| Steps paged inside one shell: step-goto reports the step, a step change rebuilds the content, a remembered step opens unreported, the server can force a step | ✓ embed "steps › …" ×4 | — |
+| Hidden steps route on: as the first step once the session exists, as the resting step once the target appears, between two inline steps without unmounting the frame; a step forced before the target appears is the one it opens on | ✓ embed "a hidden first step…", "a session resting on a hidden step…", "a hidden step between two inline steps…", "a step forced before the target appears…" | — |
+| Sessionless pre-activation: the content starts once the target is found, nothing renders until the session is back; a hidden target (or one replaced while hidden) is waited for until shown, and the start is asked for once | ✓ embed "a sessionless embed starts its content…", "a sessionless embed waits for its target to be shown…" | — |
+| Cover placement: over the target and sized to it; moved, not repositioned, by a page or container scroll; mounted in the body for a target that scrolls its own content or takes no child; two covers share the target's positioning; content at the top, center or bottom | ✓ embed "the cover placement…", "a scroll moves the cover…", "a cover inside a scrolling container…", "a cover on a target that scrolls…", "a cover on an element that takes no child…", "two covers on one target…", "the cover places its content…" | — |
+| The target scrolled out of view leaves the embed mounted | ✓ embed "an embed stays mounted while its target is scrolled out…" | — |
+| The target replaced in place keeps the embed, inside it or beside it; the target leaving the page unmounts it until it comes back | ✓ embed "an embed survives its target being replaced…", "an embed beside its target stays put…", "an embed whose target leaves the page…" | — |
+| Another widget kind loading leaves the embed in place | ✓ embed "an embed stays put while another widget kind loads" | — |
+| A re-send of the same session updates in place; another session rebuilds it; a re-send without a session starts over | ✓ embed "an embed sent under another session…", "an embed whose session is gone…" | — |
+| A re-send of the same session with another target moves it there | ✓ embed "an embed whose session is re-sent with another target…" | — |
+| The target is looked up in the page only, never in a frame | ✓ iframe "an embed’s target is looked up in the page…" | — |
+| Show rules, frequency, a republish while the session rests on a later step | server (`apps/server/test/e2e/web-socket/conditions-frequency-and-identity`) | server |
+| An outer margin above and below goes around the card: the frame keeps its content's height | ✓ embed "an outer margin above and below goes around the card…" | — |
+| While a step change waits on its report: a button of the step still on screen is recorded against that step, a step the embed has moved on from does not get its trigger run, and a session re-sent meanwhile keeps the step on screen and runs the next step's trigger once, on arrival | ✓ embed "while a step change waits on its report › …" ×3 | — |
+| A republished step trigger takes effect at once, a re-send of the same one does not run it again, and a removed one cancels the action it had waiting | ✓ embed "a republished step trigger › …" ×2 | — |
+| `maxContentWidth`, `zIndex` and the theme's embed padding | — (shared with the banner's shell, uncovered there too) | P3 |
 
 ## Resource center
 

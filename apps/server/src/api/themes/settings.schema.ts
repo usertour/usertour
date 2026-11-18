@@ -161,9 +161,10 @@ const COLOR_GROUP_KEY_SETS: Readonly<Record<string, readonly string[]>> = {
  * Two kinds of evidence back the list (the SSOT cannot discriminate):
  * - For the `color`-keyed entries, the built-in default theme stores exactly
  *   one color on each — pinned by settings.schema.spec.
- * - The banner pair DOES store a legacy {background,color,hover,active} shape
- *   (defaults + every stored theme), but the renderer recomputes hover/active
- *   unconditionally from the two base colors (convert-settings' banner block),
+ * - The banner and embed pairs DO store a legacy {background,color,hover,active}
+ *   shape (defaults + every stored theme), but the renderer recomputes
+ *   hover/active unconditionally from the two base colors (convert-settings'
+ *   banner and embed blocks),
  *   so the companions carry no information: reads strip them
  *   (normalizeStoredSettings), writes reject them with the signpost below.
  */
@@ -178,6 +179,8 @@ const SINGLE_COLOR_SETTINGS: Readonly<Record<string, string>> = {
   'resourceCenter.headerBackground': 'color',
   'banner.backgroundColor': 'background',
   'banner.textColor': 'color',
+  'embed.backgroundColor': 'background',
+  'embed.textColor': 'color',
 };
 
 /** Unified allowed-keys lookup covering both single-color and group nodes. */

@@ -6,6 +6,7 @@ import {
   CustomContentSession,
   SessionStep,
   SessionTheme,
+  EmbedData,
 } from '@usertour/types';
 
 /**
@@ -160,6 +161,13 @@ export class UsertourSession {
    */
   getBannerData(): BannerData | undefined {
     return this.session.version.banner;
+  }
+
+  /**
+   * Gets the embed data (the shell) from session
+   */
+  getEmbedData(): EmbedData | undefined {
+    return this.session.version.embed;
   }
 
   /**

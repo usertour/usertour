@@ -26,20 +26,46 @@ import { calculateRate, calculateUniqueFailureRate } from '@/utils/analytics';
 import { AnalyticsStepsSkeleton } from './analytics-skeleton';
 import { TooltipTargetMissingDialog } from './components/tooltip-target-missing-dialog';
 
-export const AnalyticsSteps = () => {
+export interface AnalyticsStepsProps {
+  /**
+   * `flow` (default): a step funnel with the goal step, the view rate and the
+   * tooltip target-missing column. `embed`: inline steps inside one shell — no
+   * goal, no tooltip targets, and nothing to show for a single step (its one
+   * row would repeat the overview card). No view rate either: an embed's
+   * session can outlive any range, so the users who saw a step in a range are
+   * not a share of the users a session started for in it. Its bars compare
+   * the steps with each other.
+   */
+  variant?: 'flow' | 'embed';
+}
+
+export const AnalyticsSteps = (props: AnalyticsStepsProps) => {
+  const { variant = 'flow' } = props;
   const { analyticsData, loading } = useContentAnalytics();
   const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStep, setSelectedStep] = useState<AnalyticsViewsByStep | null>(null);
+  const isEmbed = variant === 'embed';
 
   if (loading) {
     return <AnalyticsStepsSkeleton />;
   }
 
   const viewsByStep = Array.isArray(analyticsData?.viewsByStep) ? analyticsData.viewsByStep : [];
+  if (isEmbed && viewsByStep.length < 2) {
+    return null;
+  }
   const hasExplicitGoalStep = viewsByStep.some((step) => step.explicitCompletionStep);
+  // What a full bar stands for: the users the content started for (flow), or
+  // the step most users saw (embed)
+  const barBase = isEmbed
+    ? Math.max(0, ...viewsByStep.map((step) => step.analytics.uniqueViews))
+    : (analyticsData?.uniqueViews ?? 0);
 
   const isGoalStep = (step: AnalyticsViewsByStep, index: number) => {
+    if (isEmbed) {
+      return false;
+    }
     if (hasExplicitGoalStep) {
       return step.explicitCompletionStep;
     }
@@ -68,35 +94,38 @@ export const AnalyticsSteps = () => {
                   {t('contents.analytics.steps.uniqueViews')}
                 </TableHead>
                 <TableHead className="w-6" />
-                <TableHead className="w-28 text-right">
-                  {t('contents.analytics.steps.viewRate')}
-                </TableHead>
-                <TableHead className="w-6" />
+                {!isEmbed && (
+                  <>
+                    <TableHead className="w-28 text-right">
+                      {t('contents.analytics.steps.viewRate')}
+                    </TableHead>
+                    <TableHead className="w-6" />
+                  </>
+                )}
                 <TableHead />
-                <TableHead className="w-28 text-right">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center justify-end cursor-help">
-                          <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{t('contents.analytics.steps.tooltipTargetNotFound')}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableHead>
+                {!isEmbed && (
+                  <TableHead className="w-28 text-right">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-end cursor-help">
+                            <AlertTriangleIcon className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{t('contents.analytics.steps.tooltipTargetNotFound')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
+                )}
                 <TableHead className="w-6" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {viewsByStep.length > 0 ? (
                 viewsByStep.map((step: AnalyticsViewsByStep, index) => {
-                  const viewRate = calculateRate(
-                    step.analytics.uniqueViews,
-                    analyticsData?.uniqueViews ?? 0,
-                  );
+                  const barWidth = calculateRate(step.analytics.uniqueViews, barBase);
                   return (
                     <TableRow key={index}>
                       <TableCell className="py-[1px]">
@@ -111,50 +140,58 @@ export const AnalyticsSteps = () => {
                         {step.analytics.uniqueViews}
                       </TableCell>
                       <TableCell className="py-[1px] w-6" />
-                      <TableCell className="py-[1px] text-right">{viewRate}%</TableCell>
-                      <TableCell className="py-[1px] w-6" />
+                      {!isEmbed && (
+                        <>
+                          <TableCell className="py-[1px] text-right">{barWidth}%</TableCell>
+                          <TableCell className="py-[1px] w-6" />
+                        </>
+                      )}
                       <TableCell className="py-[1px] px-0">
                         <div
                           className="h-9 bg-gradient-to-r from-success/50 to-success max-w-full"
                           style={{
-                            width: `${viewRate}%`,
+                            width: `${barWidth}%`,
                           }}
                         />
                       </TableCell>
-                      <TableCell className="py-[1px] text-right">
-                        {(() => {
-                          const failureRate = calculateUniqueFailureRate(
-                            step.analytics.uniqueTooltipTargetMissingCount ?? 0,
-                            step.analytics.uniqueViews || 0,
-                          );
-                          return failureRate === 0 || step.type !== StepContentType.TOOLTIP ? (
-                            <span className="text-muted-foreground">-</span>
-                          ) : (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span
-                                    className="text-destructive cursor-pointer hover:underline underline-offset-4"
-                                    onClick={() => handleOpenDialog(step)}
-                                  >
-                                    {failureRate}%
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{t('contents.analytics.steps.clickToViewTargetsNotFound')}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          );
-                        })()}
-                      </TableCell>
+                      {!isEmbed && (
+                        <TableCell className="py-[1px] text-right">
+                          {(() => {
+                            const failureRate = calculateUniqueFailureRate(
+                              step.analytics.uniqueTooltipTargetMissingCount ?? 0,
+                              step.analytics.uniqueViews || 0,
+                            );
+                            return failureRate === 0 || step.type !== StepContentType.TOOLTIP ? (
+                              <span className="text-muted-foreground">-</span>
+                            ) : (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span
+                                      className="text-destructive cursor-pointer hover:underline underline-offset-4"
+                                      onClick={() => handleOpenDialog(step)}
+                                    >
+                                      {failureRate}%
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {t('contents.analytics.steps.clickToViewTargetsNotFound')}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          })()}
+                        </TableCell>
+                      )}
                       <TableCell className="py-[1px] w-6" />
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
+                  <TableCell colSpan={isEmbed ? 5 : 8} className="h-24 text-center">
                     {t('contents.analytics.common.noResults')}
                   </TableCell>
                 </TableRow>

@@ -33,6 +33,11 @@ import {
   getAnswer,
   assignClientContext,
   assignDeliveredLocale,
+  buildEmbedStartedEventData,
+  buildEmbedDismissedEventData,
+  buildEmbedStepEventData,
+  buildButtonClickedEventData,
+  getStepSeenEventType,
 } from '../utils/event.util';
 import { BizEvents, EventAttributes, ChecklistItemType } from '@usertour/types';
 import type { ClientContext } from '@usertour/types';
@@ -1074,6 +1079,31 @@ export class EventTrackingService {
   }
 
   /**
+   * Track the step-seen event of a step-bodied session: FLOW_STEP_SEEN for a
+   * flow, EMBED_STEP_SEEN for an embed. The SDK reports a step by session and
+   * step id only; the session's content type picks the event.
+   * @param params - Event tracking parameters with the stepId
+   * @returns True if the event was tracked successfully
+   */
+  async trackStepSeen(params: EventTrackingParams): Promise<boolean> {
+    // Only the content type is read here. This runs on every step of every
+    // flow, and the handler it dispatches to loads the session it works on
+    // inside its own transaction — loading it here too, with its events and
+    // its version's steps, doubled the heaviest query of the path.
+    const bizSession = await this.prisma.bizSession.findUnique({
+      where: { id: params.sessionId },
+      select: { content: { select: { type: true } } },
+    });
+    const eventType = bizSession?.content
+      ? getStepSeenEventType(bizSession.content.type)
+      : undefined;
+    if (!eventType) {
+      return false;
+    }
+    return await this.trackEventByType(eventType, params);
+  }
+
+  /**
    * Handle question answered event with pre-process (update user attributes)
    * @param tx - Transaction client
    * @param params - Event tracking parameters
@@ -1242,6 +1272,30 @@ export class EventTrackingService {
     register({
       eventName: BizEvents.BANNER_DISMISSED,
       buildEventData: (session) => buildBannerDismissedEventData(session),
+    });
+
+    // Embed events
+    register({
+      eventName: BizEvents.EMBED_STARTED,
+      buildEventData: (session, params) => buildEmbedStartedEventData(session, params),
+    });
+
+    register({
+      eventName: BizEvents.EMBED_DISMISSED,
+      buildEventData: (session, params) => buildEmbedDismissedEventData(session, params),
+    });
+
+    // Embed step seen: every time a step is shown, as a flow's. The recorded
+    // event moves the session's current step.
+    register({
+      eventName: BizEvents.EMBED_STEP_SEEN,
+      buildEventData: (session, params) => buildEmbedStepEventData(session, params),
+    });
+
+    // Button clicked (generic across content types)
+    register({
+      eventName: BizEvents.BUTTON_CLICKED,
+      buildEventData: (session, params) => buildButtonClickedEventData(session, params),
     });
 
     // Resource center events

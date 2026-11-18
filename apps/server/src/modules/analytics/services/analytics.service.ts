@@ -6,9 +6,14 @@ import {
   contentEndReason,
   ContentEditorElementType,
   ContentEditorQuestionElement,
+  ContentEditorRoot,
 } from '@usertour/types';
-import { rollingDayWindows } from '../utils/rolling-day-windows.util';
-import { GENUINE_COMPLETION_EVENTS } from '@/modules/delivery/utils/event.util';
+import { type DayWindow, dayLabelSql, rollingDayWindows } from '../utils/rolling-day-windows.util';
+import { extractStepButtons } from '../utils/step-buttons.util';
+import {
+  GENUINE_COMPLETION_EVENTS,
+  getStepSeenEventType,
+} from '@/modules/delivery/utils/event.util';
 import { createdAtWhere } from '@/modules/common/utils/query-filters.util';
 import type { Pagination } from '@/modules/common/types/pagination.type';
 import { ContentType } from '@/modules/content/constants/content-type.constant';
@@ -17,12 +22,12 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BIZ_EVENT_TRACKED, BizEventTrackedPayload } from '@/modules/webhooks/types/webhook.type';
 import { BizSession, Event } from '@prisma/client';
-import { isBefore } from 'date-fns';
+import { tz } from '@date-fns/tz';
+import { format, isBefore } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 import type { AnalyticsFilter } from '../types/analytics-filter.type';
 import type { AnalyticsOrdering } from '../types/analytics-ordering.type';
 import type { TooltipTargetMissingFilter } from '../types/tooltip-target-missing-filter.type';
-import { formatInTimeZone } from 'date-fns-tz';
 
 import {
   extractStepQuestion,
@@ -54,6 +59,31 @@ type RollWindowConfig = {
 type ItemAnalyticsConditions = AnalyticsConditions & {
   key: string;
   value: string;
+  // Further `data ->> key = value` pairs the event must also match. A button
+  // is identified by its cvid AND its step's cvid: a duplicated step kept the
+  // original button cvids until the duplicate path regenerated them.
+  additionalAttributes?: Record<string, string>;
+};
+
+/** `"BizEvent"."data" ->> key = value` for the primary pair and every additional pair. */
+const dataAttributeMatches = ({
+  key,
+  value,
+  additionalAttributes = {},
+}: Pick<ItemAnalyticsConditions, 'key' | 'value' | 'additionalAttributes'>) =>
+  Prisma.join(
+    [[key, value], ...Object.entries(additionalAttributes)].map(
+      ([attributeKey, attributeValue]) =>
+        Prisma.sql`"BizEvent"."data" ->> ${attributeKey} = ${String(attributeValue)}`,
+    ),
+    ' AND ',
+  );
+
+// Step-scoped events carry the step's cvid under a per-type attribute key;
+// only the types whose steps are Step rows have one.
+const STEP_CVID_ATTRIBUTE: Partial<Record<ContentType, EventAttributes>> = {
+  [ContentType.FLOW]: EventAttributes.FLOW_STEP_CVID,
+  [ContentType.EMBED]: EventAttributes.EMBED_STEP_CVID,
 };
 
 const defaultRollWindowConfig = { nps: 365, rate: 365, scale: 365 };
@@ -107,6 +137,10 @@ const DISMISSED_END_CONFIG: Partial<
     eventCodeName: BizEvents.BANNER_DISMISSED,
     reasonAttribute: EventAttributes.BANNER_END_REASON,
   },
+  [ContentType.EMBED]: {
+    eventCodeName: BizEvents.EMBED_DISMISSED,
+    reasonAttribute: EventAttributes.EMBED_END_REASON,
+  },
   [ContentType.RESOURCE_CENTER]: {
     eventCodeName: BizEvents.RESOURCE_CENTER_DISMISSED,
     reasonAttribute: EventAttributes.RESOURCE_CENTER_END_REASON,
@@ -133,6 +167,11 @@ export const EVENT_TYPE_MAPPING = {
     start: BizEvents.BANNER_SEEN,
     complete: BizEvents.BANNER_DISMISSED,
   },
+  // An embed's success action is a button press; dismissal is its own counter
+  [ContentType.EMBED]: {
+    start: BizEvents.EMBED_STARTED,
+    complete: BizEvents.BUTTON_CLICKED,
+  },
   [ContentType.RESOURCE_CENTER]: {
     start: BizEvents.RESOURCE_CENTER_OPENED,
     complete: BizEvents.RESOURCE_CENTER_CLICKED,
@@ -155,6 +194,10 @@ const EVENTS = [
   BizEvents.TOOLTIP_TARGET_MISSING,
   BizEvents.BANNER_SEEN,
   BizEvents.BANNER_DISMISSED,
+  BizEvents.EMBED_STARTED,
+  BizEvents.EMBED_STEP_SEEN,
+  BizEvents.EMBED_DISMISSED,
+  BizEvents.BUTTON_CLICKED,
   BizEvents.RESOURCE_CENTER_STARTED,
   BizEvents.RESOURCE_CENTER_OPENED,
   BizEvents.RESOURCE_CENTER_CLOSED,
@@ -302,6 +345,8 @@ export class AnalyticsService {
       viewsByDay: null,
       viewsByStep: null,
       viewsByTask: null,
+      viewsByButton: null,
+      uniqueDismissals: null,
     };
   }
 
@@ -386,7 +431,7 @@ export class AnalyticsService {
       { date: string; totalViews: number; uniqueUserIds: Set<string> }
     >();
     for (const item of trackerEvents) {
-      const date = formatInTimeZone(item.createdAt, timezone, 'yyyy-MM-dd');
+      const date = format(item.createdAt, 'yyyy-MM-dd', { in: tz(timezone) });
       const current = viewsByDayMap.get(date) ?? {
         date,
         totalViews: 0,
@@ -459,9 +504,11 @@ export class AnalyticsService {
       return emptyAnalytics;
     }
 
+    // Flow and embed steps are Step rows; each type has its own step-seen event
+    const stepSeenEventCodeName = getStepSeenEventType(contentType);
     const startEventFilter = (ev: Event) => ev.codeName === eventTypeMapping.start;
     const completeEventFilter = (ev: Event) => ev.codeName === eventTypeMapping.complete;
-    const stepSeenEventFilter = (ev: Event) => ev.codeName === BizEvents.FLOW_STEP_SEEN;
+    const stepSeenEventFilter = (ev: Event) => ev.codeName === stepSeenEventCodeName;
     const tooltipTargetMissingEventFilter = (ev: Event) =>
       ev.codeName === BizEvents.TOOLTIP_TARGET_MISSING;
 
@@ -471,7 +518,9 @@ export class AnalyticsService {
     const tooltipTargetMissingEvent = events.find(tooltipTargetMissingEventFilter);
 
     const isFlow = contentType === ContentType.FLOW;
-    if (!startEvent || !completeEvent || (isFlow && !stepSeenEvent)) {
+    const isEmbed = contentType === ContentType.EMBED;
+    const hasSteps = isFlow || isEmbed;
+    if (!startEvent || !completeEvent || (hasSteps && !stepSeenEvent)) {
       return emptyAnalytics;
     }
 
@@ -494,7 +543,9 @@ export class AnalyticsService {
     // (user, content) — filterSingleSessionContentVersions blocks a second
     // session for life — but pre-rework production code wrote repeat events, so
     // these aggregate each user's FIRST event over all history (then filter to
-    // the range) instead of trusting the stored stream to be clean.
+    // the range) instead of trusting the stored stream to be clean. An embed is
+    // not one of them: frequency gives it session after session, so its views
+    // are the users a session started for in the range, as a flow's are.
     const isFirstTouchSeen =
       startEvent.codeName === BizEvents.LAUNCHER_SEEN ||
       startEvent.codeName === BizEvents.BANNER_SEEN;
@@ -513,15 +564,19 @@ export class AnalyticsService {
     const uniqueCompletions = isFirstTouchComplete
       ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
       : await this.aggregationByEvent({ ...condition, eventId: completeEvent.id });
-    const totalCompletions = isResourceCenter
-      ? await this.countEventsByContent({ ...condition, eventId: completeEvent.id })
-      : isFirstTouchComplete
-        ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
-        : await this.aggregationByEvent({
-            ...condition,
-            eventId: completeEvent.id,
-            isDistinct: false,
-          });
+    // An embed's success action is a button press and a session holds many of
+    // them, so its total counts click EVENTS (as the resource center's does)
+    // while its total views stay sessions (frequency restarts them, as flow's).
+    const totalCompletions =
+      isResourceCenter || isEmbed
+        ? await this.countEventsByContent({ ...condition, eventId: completeEvent.id })
+        : isFirstTouchComplete
+          ? await this.aggregationFirstEvent({ ...condition, eventId: completeEvent.id })
+          : await this.aggregationByEvent({
+              ...condition,
+              eventId: completeEvent.id,
+              isDistinct: false,
+            });
     // Checklist panel-open counters — same pair as the resource-center's:
     // CHECKLIST_SEEN fires on every collapsed→expanded transition, so unique
     // counts users who opened the panel and total counts expansions (events).
@@ -545,16 +600,36 @@ export class AnalyticsService {
           ? { uniqueOpens: 0, totalOpens: 0 }
           : {};
 
-    const viewsByStep = isFlow
+    // Embed dismissals ride beside the click counters (dismissal is not its
+    // "complete"). The users who dismissed in the range, as the clickers are
+    // the users who clicked in it: frequency lets one user dismiss an embed
+    // again and again, so the banner's first-touch count would drop every
+    // dismissal after the first.
+    const embedDismissedEvent = events.find((ev) => ev.codeName === BizEvents.EMBED_DISMISSED);
+    const dismissals =
+      isEmbed && embedDismissedEvent
+        ? {
+            uniqueDismissals: await this.aggregationByEvent({
+              ...condition,
+              eventId: embedDismissedEvent.id,
+            }),
+          }
+        : isEmbed
+          ? { uniqueDismissals: 0 }
+          : {};
+
+    // Embed steps carry views only: no completion, no tooltip target
+    const viewsByStep = hasSteps
       ? await this.aggregationStepsByContent(
           condition,
           stepSeenEvent!,
-          completeEvent,
-          tooltipTargetMissingEvent,
+          isFlow ? completeEvent : undefined,
+          isFlow ? tooltipTargetMissingEvent : undefined,
         )
       : null;
     const viewsByTask = await this.aggregationTasksByContent(condition, projectId);
     const viewsByBlock = await this.aggregationBlocksByContent(condition, projectId);
+    const viewsByButton = await this.aggregationButtonsByContent(condition, projectId);
     const viewsByDay = await this.aggregationViewsByDay(
       { ...condition },
       timezone,
@@ -569,10 +644,12 @@ export class AnalyticsService {
       uniqueCompletions,
       totalCompletions,
       ...opens,
+      ...dismissals,
       viewsByDay,
       viewsByStep,
       viewsByTask,
       viewsByBlock,
+      viewsByButton,
     };
   }
 
@@ -771,11 +848,16 @@ export class AnalyticsService {
     if (isBefore(endDate, startDate)) {
       return [];
     }
+    // The calendar days, resolved once: the SQL buckets and the rows below
+    // both read these, so a count always lands on its own row's label.
+    const days = rollingDayWindows(startDate, endDate, timezone, 1);
 
     // Get aggregated statistics. Resource-center totals count events per day
     // (see querySessionBasedContentAnalytics) so the rows still sum to the
     // headline totals.
     const isResourceCenter = startEvent.codeName === BizEvents.RESOURCE_CENTER_OPENED;
+    // Embed clicks count events per day too (see querySessionBasedContentAnalytics).
+    const isEmbed = startEvent.codeName === BizEvents.EMBED_STARTED;
     // First-touch pairs (see querySessionBasedContentAnalytics): each user
     // lands on the day of their first-ever event, immune to legacy repeats.
     const isFirstTouchSeen =
@@ -785,46 +867,44 @@ export class AnalyticsService {
       completeEvent.codeName === BizEvents.LAUNCHER_ACTIVATED ||
       completeEvent.codeName === BizEvents.BANNER_DISMISSED;
     const uniqueViewsByDay = isFirstTouchSeen
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: startEvent.id }, timezone)
-      : await this.aggregationByDay({ ...condition, eventId: startEvent.id }, timezone);
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: startEvent.id }, days)
+      : await this.aggregationByDay({ ...condition, eventId: startEvent.id }, days);
     const totalViewsByDay = isResourceCenter
-      ? await this.countEventsByContentByDay({ ...condition, eventId: startEvent.id }, timezone)
+      ? await this.countEventsByContentByDay({ ...condition, eventId: startEvent.id }, days)
       : await this.aggregationByDay(
           { ...condition, eventId: startEvent.id, isDistinct: false },
-          timezone,
+          days,
         );
     const uniqueCompletionByDay = isFirstTouchComplete
-      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, timezone)
-      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, timezone);
-    const totalCompletionByDay = isResourceCenter
-      ? await this.countEventsByContentByDay({ ...condition, eventId: completeEvent.id }, timezone)
-      : isFirstTouchComplete
-        ? await this.aggregationFirstEventByDay(
-            { ...condition, eventId: completeEvent.id },
-            timezone,
-          )
-        : await this.aggregationByDay(
-            {
-              ...condition,
-              eventId: completeEvent.id,
-              isDistinct: false,
-            },
-            timezone,
-          );
+      ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, days)
+      : await this.aggregationByDay({ ...condition, eventId: completeEvent.id }, days);
+    const totalCompletionByDay =
+      isResourceCenter || isEmbed
+        ? await this.countEventsByContentByDay({ ...condition, eventId: completeEvent.id }, days)
+        : isFirstTouchComplete
+          ? await this.aggregationFirstEventByDay({ ...condition, eventId: completeEvent.id }, days)
+          : await this.aggregationByDay(
+              {
+                ...condition,
+                eventId: completeEvent.id,
+                isDistinct: false,
+              },
+              days,
+            );
     const uniqueOpensByDay = opensEvent
-      ? await this.aggregationByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      ? await this.aggregationByDay({ ...condition, eventId: opensEvent.id }, days)
       : null;
     const totalOpensByDay = opensEvent
-      ? await this.countEventsByContentByDay({ ...condition, eventId: opensEvent.id }, timezone)
+      ? await this.countEventsByContentByDay({ ...condition, eventId: opensEvent.id }, days)
       : null;
 
     // Calendar walk in the requested timezone (NOT 24h stepping — see the
-    // tracker path). The SQL buckets label days as plain `to_char` strings in
-    // the same timezone, so matching is string === string; no Date parsing
+    // tracker path). The SQL buckets carry the very `day` labels of these
+    // windows (dayLabelSql), so matching is string === string; no Date parsing
     // round-trip (the old lightFormat(new Date(day)) read a UTC-parsed bucket
     // with the SERVER clock and shifted a day on negative-offset machines).
     const data = [];
-    for (const { day: dd, dayStart } of rollingDayWindows(startDate, endDate, timezone, 1)) {
+    for (const { day: dd, dayStart } of days) {
       data.push({
         date: dayStart,
         uniqueViews: uniqueViewsByDay.find((views) => views.day === dd)?.count || 0,
@@ -846,7 +926,7 @@ export class AnalyticsService {
   async aggregationStepsByContent(
     condition: AnalyticsConditions,
     stepSeenEvent: Event,
-    completeEvent: Event,
+    completeEvent?: Event,
     tooltipTargetMissingEvent?: Event,
   ) {
     const { contentId, environmentId } = condition;
@@ -854,11 +934,11 @@ export class AnalyticsService {
       where: { id: contentId },
       include: { contentOnEnvironments: true },
     });
-    if (
-      !content ||
-      content.type === ContentType.CHECKLIST ||
-      content.type === ContentType.LAUNCHER
-    ) {
+    if (!content) {
+      return [];
+    }
+    const stepCvidKey = STEP_CVID_ATTRIBUTE[content.type as ContentType];
+    if (!stepCvidKey) {
       return [];
     }
     const versionId = resolveContentVersionId(content, environmentId);
@@ -877,7 +957,7 @@ export class AnalyticsService {
     const ret = [];
     for (let index = 0; index < maxStepIndex; index++) {
       const stepInfo = version.steps[index];
-      const analytics = await this.getStepAnalyticsMetrics(condition, stepInfo.cvid, {
+      const analytics = await this.getStepAnalyticsMetrics(condition, stepCvidKey, stepInfo.cvid, {
         stepSeenEvent,
         completeEvent,
         tooltipTargetMissingEvent,
@@ -1070,6 +1150,78 @@ export class AnalyticsService {
     return ret;
   }
 
+  /**
+   * Per-button click counts of an embed: the published version's steps are
+   * walked in sequence, each step's editor tree in document order, and every
+   * button carrying a cvid gets a row keyed by (step cvid, button cvid).
+   */
+  async aggregationButtonsByContent(condition: AnalyticsConditions, projectId: string) {
+    const { contentId, environmentId } = condition;
+    const content = await this.prisma.content.findFirst({
+      where: { id: contentId },
+      include: { contentOnEnvironments: true },
+    });
+    if (!content || content.type !== ContentType.EMBED) {
+      return [];
+    }
+    const versionId = resolveContentVersionId(content, environmentId);
+    if (!versionId) {
+      return [];
+    }
+    const version = await this.prisma.version.findFirst({
+      where: { id: versionId },
+      include: { steps: { orderBy: { sequence: 'asc' } } },
+    });
+    if (!version || !version.steps || version.steps.length === 0) {
+      return [];
+    }
+
+    const clickEvent = await this.prisma.event.findFirst({
+      where: {
+        projectId,
+        codeName: BizEvents.BUTTON_CLICKED,
+      },
+    });
+    if (!clickEvent) {
+      return [];
+    }
+
+    const ret = [];
+    for (const [stepIndex, step] of version.steps.entries()) {
+      const buttons = extractStepButtons(step.data as unknown as ContentEditorRoot[]);
+      for (const button of buttons) {
+        const cvid = button.data.cvid;
+        if (!cvid) {
+          continue;
+        }
+        const buttonCondition = {
+          ...condition,
+          eventId: clickEvent.id,
+          key: EventAttributes.BUTTON_CVID,
+          value: cvid,
+          additionalAttributes: { [EventAttributes.EMBED_STEP_CVID]: step.cvid },
+        };
+        const uniqueClicks = await this.aggregationByItem({
+          ...buttonCondition,
+          isDistinct: true,
+        });
+        const totalClicks = await this.countTotalEvents(buttonCondition);
+        ret.push({
+          name: button.data.text,
+          cvid,
+          stepCvid: step.cvid,
+          stepName: step.name,
+          stepIndex,
+          analytics: {
+            uniqueClicks,
+            totalClicks,
+          },
+        });
+      }
+    }
+    return ret;
+  }
+
   async aggregationByEvent(condition: AnalyticsConditions) {
     const { contentId, eventId, startDateStr, endDateStr, isDistinct, environmentId } = condition;
     const startDate = new Date(startDateStr);
@@ -1096,7 +1248,7 @@ export class AnalyticsService {
     return Number.parseInt(data[0].count.toString());
   }
 
-  async aggregationByDay(condition: AnalyticsConditions, timezone: string) {
+  async aggregationByDay(condition: AnalyticsConditions, days: readonly DayWindow[]) {
     const { contentId, eventId, startDateStr, endDateStr, isDistinct, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
@@ -1105,11 +1257,12 @@ export class AnalyticsService {
     // timezone). A DATE_TRUNC timestamp here gets parsed as UTC by Prisma and
     // any local re-formatting shifts it a day on negative-offset servers —
     // calendar names travel as strings, never as instants.
+    const day = dayLabelSql(Prisma.sql`"BizEvent"."createdAt"`, days);
     let data: [{ day: string; count: number }];
     if (!isDistinct) {
       // Count total sessions per day
       data = await this.prisma.$queryRaw`
-        SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+        SELECT ${day} AS DAY,
           Count(DISTINCT("BizEvent"."bizSessionId")) from "BizEvent"
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
@@ -1119,7 +1272,7 @@ export class AnalyticsService {
     } else {
       // Count unique users per day
       data = await this.prisma.$queryRaw`
-        SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+        SELECT ${day} AS DAY,
           Count(DISTINCT("BizEvent"."bizUserId")) from "BizEvent"
           left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
           "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
@@ -1136,7 +1289,7 @@ export class AnalyticsService {
    * The first event is determined from all historical events, then filtered by the query time range
    * Only first events that occurred within the query time range are included
    */
-  async aggregationFirstEventByDay(condition: AnalyticsConditions, timezone: string) {
+  async aggregationFirstEventByDay(condition: AnalyticsConditions, days: readonly DayWindow[]) {
     const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
@@ -1148,7 +1301,7 @@ export class AnalyticsService {
         SELECT DISTINCT ON (be."bizUserId")
           be."bizUserId",
           be."createdAt",
-          to_char(be."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD') AS day
+          ${dayLabelSql(Prisma.sql`be."createdAt"`, days)} AS day
         FROM "BizEvent" be
         LEFT JOIN "BizSession" bs ON be."bizSessionId" = bs.id
         WHERE
@@ -1236,8 +1389,7 @@ export class AnalyticsService {
   }
 
   async aggregationByItem(condition: ItemAnalyticsConditions) {
-    const { contentId, eventId, startDateStr, endDateStr, isDistinct, key, value, environmentId } =
-      condition;
+    const { contentId, eventId, startDateStr, endDateStr, isDistinct, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -1248,7 +1400,7 @@ export class AnalyticsService {
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
-        AND "BizEvent"."data" ->> ${key} = ${String(value)}
+        AND ${dataAttributeMatches(condition)}
       `;
       return Number.parseInt(data[0].count.toString());
     }
@@ -1259,13 +1411,13 @@ export class AnalyticsService {
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
-        AND "BizEvent"."data" ->> ${key} = ${String(value)}
+        AND ${dataAttributeMatches(condition)}
         `;
     return Number.parseInt(data[0].count.toString());
   }
 
   async countTotalEvents(condition: Omit<ItemAnalyticsConditions, 'isDistinct'>) {
-    const { contentId, eventId, startDateStr, endDateStr, key, value, environmentId } = condition;
+    const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -1274,7 +1426,7 @@ export class AnalyticsService {
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
         AND "BizEvent"."createdAt" >= ${startDate} AND "BizEvent"."createdAt" <= ${endDate}
-        AND "BizEvent"."data" ->> ${key} = ${String(value)}
+        AND ${dataAttributeMatches(condition)}
     `;
     return Number.parseInt(data[0].count.toString());
   }
@@ -1303,14 +1455,15 @@ export class AnalyticsService {
   /** Per-day companion of countEventsByContent — same day-label contract as aggregationByDay. */
   async countEventsByContentByDay(
     condition: Omit<AnalyticsConditions, 'isDistinct'>,
-    timezone: string,
+    days: readonly DayWindow[],
   ) {
     const { contentId, eventId, startDateStr, endDateStr, environmentId } = condition;
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
+    const day = dayLabelSql(Prisma.sql`"BizEvent"."createdAt"`, days);
 
     const data = (await this.prisma.$queryRaw`
-      SELECT to_char( "BizEvent"."createdAt" AT TIME ZONE ${timezone}, 'YYYY-MM-DD' ) AS DAY,
+      SELECT ${day} AS DAY,
         Count(*) from "BizEvent"
         left join "BizSession" on "BizEvent"."bizSessionId" = "BizSession".id WHERE
         "BizSession"."contentId" = ${contentId} AND "BizEvent"."eventId" = ${eventId} AND "BizSession"."environmentId" = ${environmentId}
@@ -1324,12 +1477,14 @@ export class AnalyticsService {
    * Get analytics metrics for a specific step
    * Unified method to aggregate views, completions, and tooltip target missing counts
    * @param baseCondition - Base analytics conditions
+   * @param stepCvidKey - The attribute the content type's events carry the step cvid under
    * @param stepCvid - Step CVID to query
    * @param events - Event configuration (all optional)
    * @returns Unified step analytics metrics
    */
   private async getStepAnalyticsMetrics(
     baseCondition: Omit<AnalyticsConditions, 'eventId' | 'isDistinct'>,
+    stepCvidKey: EventAttributes,
     stepCvid: string,
     events: StepAnalyticsEvents,
   ): Promise<StepAnalyticsMetrics> {
@@ -1337,7 +1492,7 @@ export class AnalyticsService {
 
     const itemCondition = {
       ...baseCondition,
-      key: 'flow_step_cvid',
+      key: stepCvidKey,
       value: stepCvid,
     };
 
@@ -1415,57 +1570,53 @@ export class AnalyticsService {
     const { contentId, startDate, endDate, environmentId } = query;
     const startDateObj = new Date(startDate);
     const endDateObj = new Date(endDate);
-    try {
-      const content = await this.prisma.content.findUnique({
-        where: { id: contentId },
-      });
-      if (!content) {
-        return false;
-      }
-      const resp = await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizSession.findMany({
-            where: {
-              contentId,
-              createdAt: {
-                gte: startDateObj,
-                lte: endDateObj,
-              },
-              environmentId,
-              bizEvent: {
-                some: {},
-              },
-            },
-            include: {
-              bizUser: true,
-              bizCompany: true,
-              bizEvent: { include: { event: true } },
-              content: true,
-              version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
-            },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
-            ...args,
-          }),
-        () =>
-          this.prisma.bizSession.count({
-            where: {
-              contentId,
-              environmentId,
-              createdAt: {
-                gte: startDateObj,
-                lte: endDateObj,
-              },
-              bizEvent: {
-                some: {},
-              },
-            },
-          }),
-        { first, last, before, after },
-      );
-      return resp;
-    } catch (_) {
-      // console.log(error);
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+    });
+    if (!content) {
+      return false;
     }
+    const resp = await findManyCursorConnection(
+      (args) =>
+        this.prisma.bizSession.findMany({
+          where: {
+            contentId,
+            createdAt: {
+              gte: startDateObj,
+              lte: endDateObj,
+            },
+            environmentId,
+            bizEvent: {
+              some: {},
+            },
+          },
+          include: {
+            bizUser: true,
+            bizCompany: true,
+            bizEvent: { include: { event: true } },
+            content: true,
+            version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+          },
+          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
+          ...args,
+        }),
+      () =>
+        this.prisma.bizSession.count({
+          where: {
+            contentId,
+            environmentId,
+            createdAt: {
+              gte: startDateObj,
+              lte: endDateObj,
+            },
+            bizEvent: {
+              some: {},
+            },
+          },
+        }),
+      { first, last, before, after },
+    );
+    return resp;
   }
 
   async listSessionsDetail(
@@ -1473,34 +1624,27 @@ export class AnalyticsService {
     pagination: Pagination,
     orderBy: AnalyticsOrdering,
   ) {
-    try {
-      const sessions = await this.queryRecentSessions(query, pagination, orderBy);
-      if (!sessions) {
-        throw new UnknownError('Failed to fetch sessions');
-      }
-
-      // Fetch all session details in a single query
-      const sessionIds = sessions.edges.map((edge) => edge.node.id);
-      const sessionDetails = await this.querySessionsDetail(sessionIds);
-
-      // Create a map of session ID to session details for efficient lookup
-      const sessionDetailMap = new Map(sessionDetails.map((detail) => [detail.id, detail]));
-
-      // Build the response with enhanced session details
-      return {
-        edges: sessions.edges.map((edge) => ({
-          node: sessionDetailMap.get(edge.node.id) || edge.node,
-          cursor: edge.cursor,
-        })),
-        pageInfo: sessions.pageInfo,
-        totalCount: sessions.totalCount,
-      };
-    } catch (error) {
-      if (error instanceof UnknownError) {
-        throw error;
-      }
-      throw new UnknownError('Failed to fetch session details');
+    const sessions = await this.queryRecentSessions(query, pagination, orderBy);
+    if (!sessions) {
+      throw new UnknownError('Failed to fetch sessions');
     }
+
+    // Fetch all session details in a single query
+    const sessionIds = sessions.edges.map((edge) => edge.node.id);
+    const sessionDetails = await this.querySessionsDetail(sessionIds);
+
+    // Create a map of session ID to session details for efficient lookup
+    const sessionDetailMap = new Map(sessionDetails.map((detail) => [detail.id, detail]));
+
+    // Build the response with enhanced session details
+    return {
+      edges: sessions.edges.map((edge) => ({
+        node: sessionDetailMap.get(edge.node.id) || edge.node,
+        cursor: edge.cursor,
+      })),
+      pageInfo: sessions.pageInfo,
+      totalCount: sessions.totalCount,
+    };
   }
 
   async getSession(sessionId: string) {
@@ -1576,117 +1720,113 @@ export class AnalyticsService {
       },
     };
 
-    try {
-      // Get projectId from environment
-      const environment = await this.prisma.environment.findUnique({
-        where: { id: environmentId },
-      });
-      if (!environment) {
-        return emptyResponse;
-      }
-      const projectId = environment.projectId;
-
-      // Find required events
-      const [tooltipTargetMissingEvent, flowStepSeenEvent, flowCompletedEvent] = await Promise.all([
-        this.prisma.event.findFirst({
-          where: {
-            projectId,
-            codeName: BizEvents.TOOLTIP_TARGET_MISSING,
-          },
-        }),
-        this.prisma.event.findFirst({
-          where: {
-            projectId,
-            codeName: BizEvents.FLOW_STEP_SEEN,
-          },
-        }),
-        this.prisma.event.findFirst({
-          where: {
-            projectId,
-            codeName: BizEvents.FLOW_COMPLETED,
-          },
-        }),
-      ]);
-
-      if (!tooltipTargetMissingEvent) {
-        return emptyResponse;
-      }
-
-      // Build the event filter condition with stepCvid
-      const eventFilter: Prisma.BizEventWhereInput = {
-        eventId: tooltipTargetMissingEvent.id,
-        createdAt: {
-          gte: startDateObj,
-          lte: endDateObj,
-        },
-        data: {
-          path: ['flow_step_cvid'],
-          equals: stepCvid,
-        },
-      };
-
-      // Query sessions and step analytics in parallel
-      const baseCondition = {
-        environmentId,
-        contentId,
-        startDateStr: startDate,
-        endDateStr: endDate,
-      };
-
-      const [sessions, stepAnalytics] = await Promise.all([
-        // Query sessions
-        findManyCursorConnection(
-          (args) =>
-            this.prisma.bizSession.findMany({
-              where: {
-                contentId,
-                environmentId,
-                deleted: false,
-                bizEvent: {
-                  some: eventFilter,
-                },
-              },
-              include: {
-                bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
-                bizEvent: {
-                  where: eventFilter,
-                  include: { event: true },
-                  orderBy: { createdAt: 'desc' },
-                },
-                content: true,
-                version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
-              },
-              orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
-              ...args,
-            }),
-          () =>
-            this.prisma.bizSession.count({
-              where: {
-                contentId,
-                environmentId,
-                deleted: false,
-                bizEvent: {
-                  some: eventFilter,
-                },
-              },
-            }),
-          { first, last, before, after },
-        ),
-        // Query step analytics using unified method
-        this.getStepAnalyticsMetrics(baseCondition, stepCvid, {
-          stepSeenEvent: flowStepSeenEvent ?? undefined,
-          completeEvent: flowCompletedEvent ?? undefined,
-          tooltipTargetMissingEvent,
-        }),
-      ]);
-
-      return {
-        sessions,
-        stepAnalytics,
-      };
-    } catch (_) {
-      throw new UnknownError('Failed to query tooltip target missing sessions');
+    // Get projectId from environment
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+    });
+    if (!environment) {
+      return emptyResponse;
     }
+    const projectId = environment.projectId;
+
+    // Find required events
+    const [tooltipTargetMissingEvent, flowStepSeenEvent, flowCompletedEvent] = await Promise.all([
+      this.prisma.event.findFirst({
+        where: {
+          projectId,
+          codeName: BizEvents.TOOLTIP_TARGET_MISSING,
+        },
+      }),
+      this.prisma.event.findFirst({
+        where: {
+          projectId,
+          codeName: BizEvents.FLOW_STEP_SEEN,
+        },
+      }),
+      this.prisma.event.findFirst({
+        where: {
+          projectId,
+          codeName: BizEvents.FLOW_COMPLETED,
+        },
+      }),
+    ]);
+
+    if (!tooltipTargetMissingEvent) {
+      return emptyResponse;
+    }
+
+    // Build the event filter condition with stepCvid
+    const eventFilter: Prisma.BizEventWhereInput = {
+      eventId: tooltipTargetMissingEvent.id,
+      createdAt: {
+        gte: startDateObj,
+        lte: endDateObj,
+      },
+      data: {
+        path: ['flow_step_cvid'],
+        equals: stepCvid,
+      },
+    };
+
+    // Query sessions and step analytics in parallel
+    const baseCondition = {
+      environmentId,
+      contentId,
+      startDateStr: startDate,
+      endDateStr: endDate,
+    };
+
+    const [sessions, stepAnalytics] = await Promise.all([
+      // Query sessions
+      findManyCursorConnection(
+        (args) =>
+          this.prisma.bizSession.findMany({
+            where: {
+              contentId,
+              environmentId,
+              deleted: false,
+              bizEvent: {
+                some: eventFilter,
+              },
+            },
+            include: {
+              bizUser: { include: { bizUsersOnCompany: { include: { bizCompany: true } } } },
+              bizEvent: {
+                where: eventFilter,
+                include: { event: true },
+                orderBy: { createdAt: 'desc' },
+              },
+              content: true,
+              version: { include: { steps: { orderBy: { sequence: 'asc' } } } },
+            },
+            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : { createdAt: 'desc' },
+            ...args,
+          }),
+        () =>
+          this.prisma.bizSession.count({
+            where: {
+              contentId,
+              environmentId,
+              deleted: false,
+              bizEvent: {
+                some: eventFilter,
+              },
+            },
+          }),
+        { first, last, before, after },
+      ),
+      // Query step analytics using unified method
+      this.getStepAnalyticsMetrics(baseCondition, EventAttributes.FLOW_STEP_CVID, stepCvid, {
+        stepSeenEvent: flowStepSeenEvent ?? undefined,
+        completeEvent: flowCompletedEvent ?? undefined,
+        tooltipTargetMissingEvent,
+      }),
+    ]);
+
+    return {
+      sessions,
+      stepAnalytics,
+    };
   }
 
   async endSession(sessionId: string) {
@@ -2142,89 +2282,46 @@ export class AnalyticsService {
     const { environmentId, externalUserId, externalCompanyId, contentId, startDate, endDate } =
       query;
 
-    try {
-      // Build where conditions
-      const where: Prisma.BizSessionWhereInput = {
-        environmentId,
-        deleted: false,
-        bizEvent: {
-          some: {},
-        },
+    // Build where conditions
+    const where: Prisma.BizSessionWhereInput = {
+      environmentId,
+      deleted: false,
+      bizEvent: {
+        some: {},
+      },
+    };
+
+    // Add contentId filter if provided
+    if (contentId) {
+      where.contentId = contentId;
+    }
+
+    // Add date range filters if provided
+    if (startDate && endDate) {
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      where.createdAt = {
+        gte: startDateObj,
+        lte: endDateObj,
       };
+    }
 
-      // Add contentId filter if provided
-      if (contentId) {
-        where.contentId = contentId;
-      }
+    // Add external user filter
+    if (externalUserId) {
+      where.bizUser = {
+        externalId: externalUserId,
+      };
+    }
 
-      // Add date range filters if provided
-      if (startDate && endDate) {
-        const startDateObj = new Date(startDate);
-        const endDateObj = new Date(endDate);
-        where.createdAt = {
-          gte: startDateObj,
-          lte: endDateObj,
-        };
-      }
+    // Add external company filter
+    if (externalCompanyId) {
+      where.bizCompany = {
+        externalId: externalCompanyId,
+      };
+    }
 
-      // Add external user filter
-      if (externalUserId) {
-        where.bizUser = {
-          externalId: externalUserId,
-        };
-      }
-
-      // Add external company filter
-      if (externalCompanyId) {
-        where.bizCompany = {
-          externalId: externalCompanyId,
-        };
-      }
-
-      // Ensure at least one of externalUserId or externalCompanyId is provided
-      if (!externalUserId && !externalCompanyId) {
-        return {
-          edges: [],
-          pageInfo: {
-            hasNextPage: false,
-            hasPreviousPage: false,
-            startCursor: null,
-            endCursor: null,
-          },
-          totalCount: 0,
-        };
-      }
-
-      const resp = await findManyCursorConnection(
-        (args) =>
-          this.prisma.bizSession.findMany({
-            where,
-            include: {
-              bizUser: {
-                include: {
-                  bizUsersOnCompany: {
-                    include: { bizCompany: true },
-                  },
-                },
-              },
-              bizEvent: {
-                include: { event: true },
-              },
-              content: true,
-              version: true,
-            },
-            orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
-            ...args,
-          }),
-        () =>
-          this.prisma.bizSession.count({
-            where,
-          }),
-        { first, last, before, after },
-      );
-      return resp;
-    } catch (_) {
-      // console.log(error);
+    // Ensure at least one of externalUserId or externalCompanyId is provided
+    if (!externalUserId && !externalCompanyId) {
       return {
         edges: [],
         pageInfo: {
@@ -2236,6 +2333,35 @@ export class AnalyticsService {
         totalCount: 0,
       };
     }
+
+    const resp = await findManyCursorConnection(
+      (args) =>
+        this.prisma.bizSession.findMany({
+          where,
+          include: {
+            bizUser: {
+              include: {
+                bizUsersOnCompany: {
+                  include: { bizCompany: true },
+                },
+              },
+            },
+            bizEvent: {
+              include: { event: true },
+            },
+            content: true,
+            version: true,
+          },
+          orderBy: orderBy ? { [orderBy.field]: orderBy.direction } : undefined,
+          ...args,
+        }),
+      () =>
+        this.prisma.bizSession.count({
+          where,
+        }),
+      { first, last, before, after },
+    );
+    return resp;
   }
 
   async deleteContentSessionWithRelations(id: string, environmentId: string) {

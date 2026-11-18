@@ -1195,6 +1195,30 @@ export const AnnouncementIcon = React.forwardRef<SVGSVGElement, IconProps>(
   },
 );
 
+/**
+ * Embed: four content blocks laid into a page grid, two rows of a narrow
+ * and a wide block with the wide one swapping sides, the lower row the
+ * heavier. Same 24 grid, 2u padding and 2u gutters as the rest of the
+ * content-type set; the filled blocks keep its weight.
+ */
+export const EmbedIcon = React.forwardRef<SVGSVGElement, IconProps>(
+  ({ ...props }, forwardedRef) => {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        {...props}
+        ref={forwardedRef}
+      >
+        <path d="M4.25 2H7.25C8.493 2 9.5 3.007 9.5 4.25V7.25C9.5 8.493 8.493 9.5 7.25 9.5H4.25C3.007 9.5 2 8.493 2 7.25V4.25C2 3.007 3.007 2 4.25 2ZM13.75 2H19.75C20.993 2 22 3.007 22 4.25V7.25C22 8.493 20.993 9.5 19.75 9.5H13.75C12.507 9.5 11.5 8.493 11.5 7.25V4.25C11.5 3.007 12.507 2 13.75 2ZM16.75 11.5H19.75C20.993 11.5 22 12.507 22 13.75V19.75C22 20.993 20.993 22 19.75 22H16.75C15.507 22 14.5 20.993 14.5 19.75V13.75C14.5 12.507 15.507 11.5 16.75 11.5ZM4.75 11.5H9.75C11.269 11.5 12.5 12.731 12.5 14.25V19.25C12.5 20.769 11.269 22 9.75 22H4.75C3.231 22 2 20.769 2 19.25V14.25C2 12.731 3.231 11.5 4.75 11.5Z" />
+      </svg>
+    );
+  },
+);
+
 export const SurveyIcon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ ...props }, forwardedRef) => {
     return (

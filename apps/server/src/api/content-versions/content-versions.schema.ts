@@ -16,6 +16,7 @@ import {
   representationAnnouncement,
   representationBanner,
   representationChecklist,
+  representationEmbed,
   representationLauncher,
   representationTracker,
 } from '../content-representation/version-data.schema';
@@ -24,8 +25,8 @@ export const versionExpand = z.enum(['questions', 'steps', 'data', 'localization
 
 export const getContentVersionQuery = z.object({
   expand: singleOrArray(versionExpand).describe(
-    'Inline: questions, steps (the full step tree — how you read a flow body), data, ' +
-      'localizations (per-locale translation status: enabled / missing / outdated).',
+    "Inline: questions, steps (the full step tree — how you read a flow body or an embed's " +
+      'steps), data, localizations (per-locale translation status: enabled / missing / outdated).',
   ),
 });
 export class GetContentVersionQueryDto extends createZodDto(getContentVersionQuery) {}
@@ -54,10 +55,10 @@ export const contentVersionRead = contentVersion.extend({
     .unknown()
     .optional()
     .describe(
-      'Decompiled type-specific body for non-flow content — the same six per-type shapes as ' +
+      'Decompiled type-specific body for non-flow content — the same per-type shapes as ' +
         'the write `data` (that schema is the field dictionary), fully populated on read. ' +
         'Present only when the `data` expand is requested; a flow has no `data` — its body ' +
-        'is `steps`.',
+        'is `steps`; an embed has both (`data` is its shell, `steps` its steps).',
     ),
 });
 export class ContentVersionDto extends createZodDto(contentVersionRead) {}
@@ -93,8 +94,9 @@ export const updateVersionBody = z
       ),
     themeId: z.string().optional().describe('Theme to apply (cannot be cleared).'),
     /**
-     * Type-specific body for non-flow content — one of the five `*Data` shapes. The
-     * members are `.loose()` so a partial body for the content's actual type is never
+     * Type-specific body for non-flow content — one of the per-type `*Data` shapes
+     * (an embed's is its shell; its steps are `steps`). The members are
+     * `.loose()` so a partial body for the content's actual type is never
      * stripped at this boundary (the union only documents the shapes; the strict,
      * type-correct validation happens in `compileVersionData`). Field-level merged
      * onto the existing version data. Not used by `flow` (use `steps`).
@@ -107,11 +109,13 @@ export const updateVersionBody = z
         representationTracker.loose(),
         representationAnnouncement.loose(),
         representationResourceCenter.loose(),
+        representationEmbed.loose(),
       ])
       .optional()
       .describe(
         'Type-specific body for a non-flow content version: checklist / launcher / banner / ' +
-          'tracker / announcement / resource-center. Field-level merged onto the existing data.',
+          "tracker / announcement / resource-center, or an embed's shell (placement + target " +
+          'element; its steps are `steps`). Field-level merged onto the existing data.',
       ),
     scheduledAt: isoDateTime
       .nullable()

@@ -55,7 +55,7 @@ import { ContentType } from '@/pages/contents/components/builder/components/cont
 import { FlowPlacement } from '@/pages/contents/components/builder/flow/components/flow-placement';
 import { ContentBubble } from '@/pages/contents/components/builder/components/content-bubble';
 
-const FlowBuilderDetailHeader = () => {
+export const FlowBuilderDetailHeader = () => {
   const currentContent = useBuilderStore((state) => state.currentContent);
   const { currentStep, updateCurrentStep, exitToFlow } = useFlowEditor();
 
@@ -229,7 +229,7 @@ const FlowBuilderDetailBody = () => {
   );
 };
 
-const FlowBuilderDetailFooter = () => {
+export const FlowBuilderDetailFooter = () => {
   const contentRef = useBuilderContentRef();
   const { currentStep, setIsShowError, exitToFlow } = useFlowEditor();
   const { toast } = useToast();

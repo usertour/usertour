@@ -4,8 +4,8 @@ import type { ActionTypeSchema } from '../schema-types';
 import { useTranslation } from 'react-i18next';
 import { summaryTextClass } from '@/components/rules';
 
-// Shared factory for the four dismiss variants — flow / launcher / checklist
-// / banner. The persisted data shape is the same (empty object), only the
+// Shared factory for the five dismiss variants — flow / launcher / checklist
+// / banner / embed. The persisted data shape is the same (empty object), only the
 // summary label and i18n key differ. Editor is omitted so ActionRow renders
 // a static chip with no popover, matching v1 actions-dismis.tsx.
 

@@ -25,8 +25,7 @@ import { buildAuthorizedUser, teardownProject } from './_support';
  * Service semantics worth noting:
  *  - createContent: needs an existing environment; writes a Content + a
  *    sequence-0 Version and points `Content.editedVersionId` at it. A bad
- *    environmentId is wrapped into a generic UnknownError (the whole create is
- *    in one try/catch).
+ *    environmentId is a ParamsError.
  *  - getContent: nullable — soft-deleted (`deleted=true`) content resolves to
  *    null rather than erroring.
  *  - "editable" gate (addContentStep[s] / updateContentStep / updateContentVersion

@@ -18,6 +18,8 @@ export interface SocketData {
   clientContext: ClientContext;
   /** The SDK bundle version the connection declared; absent from older bundles. */
   sdkVersion?: string;
+  /** Content types the SDK bundle declared it can render (SdkCapability values). */
+  capabilities?: string[];
   clientConditions?: ClientCondition[];
   waitTimers?: ConditionWaitTimer[];
   flowSession?: CustomContentSession;
@@ -25,6 +27,7 @@ export interface SocketData {
   bannerSession?: CustomContentSession;
   resourceCenterSession?: CustomContentSession;
   launcherSessions?: CustomContentSession[];
+  embedSessions?: CustomContentSession[];
   trackerSessions?: CustomContentSession[];
   lastDismissedFlowId?: string;
   lastDismissedChecklistId?: string;

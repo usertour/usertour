@@ -7,14 +7,20 @@ import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow
 // "Add step" goes straight into the step-detail view for a new step
 // (defaulting to a modal). The step type is chosen there via the type grid,
 // which is more direct than a separate type-picker popover.
-export const SidebarCreate = () => {
+export interface SidebarCreateProps {
+  /** The step kind a new step starts as; the detail view's type grid can change it. */
+  defaultType?: StepContentType;
+}
+
+export const SidebarCreate = (props: SidebarCreateProps) => {
+  const { defaultType = StepContentType.MODAL } = props;
   const { t } = useTranslation();
   const { startCreateStep } = useFlowEditor();
 
   return (
     <Button
       variant="ghost"
-      onClick={() => startCreateStep(StepContentType.MODAL)}
+      onClick={() => startCreateStep(defaultType)}
       className="h-9 w-full rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:bg-accent/50 hover:text-primary"
     >
       <RiAddCircleLine className="mr-2 size-4 opacity-70" />

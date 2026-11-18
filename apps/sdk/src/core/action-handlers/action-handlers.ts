@@ -108,3 +108,34 @@ export class BannerActionHandler extends BaseActionHandler {
     }
   }
 }
+
+/**
+ * Handler for embed-specific actions: paging between steps by cvid and
+ * dismissing the embed.
+ */
+export class EmbedActionHandler extends BaseActionHandler {
+  protected readonly supportedActionTypes = [
+    ContentActionsItemType.STEP_GOTO,
+    ContentActionsItemType.EMBED_DISMIS,
+  ] as const;
+
+  async handle(action: RulesCondition, context: ActionHandlerContext): Promise<void> {
+    switch (action.type) {
+      case ContentActionsItemType.STEP_GOTO: {
+        if (!context.showStepByCvid) {
+          throw new Error(ErrorMessages.SHOW_STEP_BY_CVID_NOT_AVAILABLE);
+        }
+        await context.showStepByCvid(action.data.stepCvid);
+        break;
+      }
+      case ContentActionsItemType.EMBED_DISMIS: {
+        const reason =
+          context.source === ActionSource.TRIGGER
+            ? contentEndReason.TRIGGER_DISMISS
+            : contentEndReason.ACTION_DISMISS;
+        await context.close(reason);
+        break;
+      }
+    }
+  }
+}
