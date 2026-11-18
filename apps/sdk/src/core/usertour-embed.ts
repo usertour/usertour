@@ -77,6 +77,11 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   private targetVisible = false;
   /** Set once a sessionless embed has asked the server to start its content. */
   private startRequested = false;
+  /**
+   * Set when a start request came back without a start (an ack timeout, a
+   * refusal): the check loop does not ask again, the next delivery does.
+   */
+  private startAwaitingDelivery = false;
 
   protected initializeActionHandlers(): void {
     this.registerActionHandlers([new CommonActionHandler(), new EmbedActionHandler()]);
@@ -124,6 +129,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
    */
   async update(session: CustomContentSession): Promise<void> {
     this.updateSession(session);
+    this.startAwaitingDelivery = false;
     this.ensureCurrentStep();
     if (!this.hasStoreData()) {
       await this.show();
@@ -301,8 +307,13 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
       return;
     }
     this.pendingStepCvid = null;
-    // A republish while the report was out may have changed the step.
-    const target = this.getStepByCvid(step.cvid) ?? step;
+    // A republish while the report was out may have changed the step, or
+    // removed it: a removed step's trigger must not run, and the current step
+    // stays whatever the republish settled on.
+    const target = step.cvid ? this.getStepByCvid(step.cvid) : step;
+    if (!target) {
+      return;
+    }
     this.currentStepCvid = target.cvid;
     // The trigger runs before the step is applied, as a flow's does: a step
     // its trigger routes away from on arrival is never applied, so a hidden
@@ -554,16 +565,30 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
    * Asks the server to start the content, once, and only for a target that
    * can be seen: "seen" means rendered, so a target in the page but hidden
    * (`display: none`, a closed tab panel) waits for the check loop to see it
-   * shown. A later delivery, a rebuilt watcher or the check loop do not ask
-   * again; only a request that failed to go out is retried.
+   * shown. While a request is out nothing asks again. A request that failed
+   * to go out is retried by the check loop; one that came back without a
+   * start (an ack timeout resolves false, it does not reject) is retried on
+   * the next delivery, not every check tick.
    */
   private requestStart(el: Element): void {
-    if (this.destroyed || this.getSessionId() || this.startRequested || !isVisibleNode(el)) {
+    if (
+      this.destroyed ||
+      this.getSessionId() ||
+      this.startRequested ||
+      this.startAwaitingDelivery ||
+      !isVisibleNode(el)
+    ) {
       return;
     }
     this.startRequested = true;
     this.instance
       .startContent(this.getContentId(), contentStartReason.START_FROM_CONDITION, undefined, false)
+      .then((started) => {
+        if (!started && !this.getSessionId()) {
+          this.startRequested = false;
+          this.startAwaitingDelivery = true;
+        }
+      })
       .catch((error) => {
         this.startRequested = false;
         log.error('Failed to start the embed content', error);

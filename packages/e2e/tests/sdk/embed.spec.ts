@@ -456,8 +456,11 @@ const expectSameBox = (
 };
 
 test.describe('while a step change waits on its report', () => {
-  /** Step one pages on or does nothing; step two's trigger runs code at once. */
-  const session = () =>
+  /**
+   * Step one pages on or does nothing; step two's trigger runs code at once.
+   * Without step two, the version a republish leaves once it removed that step.
+   */
+  const session = (withStepTwo = true) =>
     embedSession({
       sessionId: 'embed-session-1',
       contentId: 'embed-1',
@@ -505,7 +508,7 @@ test.describe('while a step change waits on its report', () => {
           type: 'inline',
           data: [row(paragraph('Step three'))],
         },
-      ],
+      ].filter((step) => withStepTwo || step.cvid !== 'embed-1-cvid-2'),
     });
 
   /** Holds the report of step two until the returned function is called. */
@@ -570,6 +573,25 @@ test.describe('while a step change waits on its report', () => {
     await sdk.page.waitForTimeout(300);
     expect(await sdk.recorded('ran')).toEqual([]);
     await expect(frame.getByText('Step three')).toBeVisible();
+  });
+
+  test('a step a republish removed meanwhile does not get its trigger run', async ({
+    sdk,
+    protocol,
+  }) => {
+    const report = holdStepTwoReport(protocol);
+    await start(sdk);
+    await protocol.push('AddEmbed', session());
+    const frame = sdk.page.frameLocator(FRAME);
+    await frame.getByRole('button', { name: 'Next' }).click();
+    await report.arrived;
+
+    await protocol.push('AddEmbed', session(false));
+    report.release();
+    await sdk.advance(600);
+    await sdk.page.waitForTimeout(300);
+    expect(await sdk.recorded('ran')).toEqual([]);
+    await expect(frame.getByText('Step one')).toBeVisible();
   });
 
   test('a session re-sent meanwhile keeps the step on screen and runs the next step’s trigger once, on arrival', async ({
@@ -986,6 +1008,28 @@ test('a sessionless embed waits for its target to be shown, even a replaced one,
   await sdk.page.waitForTimeout(300);
   expect(protocol.messages('StartContent')).toHaveLength(1);
   await expect(sdk.page.locator(FRAME)).toHaveCount(0);
+});
+
+test('a sessionless embed whose start came back without a session asks again on the next delivery, not before', async ({
+  sdk,
+  protocol,
+}) => {
+  // The first start is not taken; an ack timeout resolves the same way.
+  let starts = 0;
+  protocol.answer = (message, connection) =>
+    message.kind === 'StartContent' && starts++ === 0 ? false : defaultAnswer(message, connection);
+  await start(sdk);
+  await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
+  await protocol.waitForMessages('StartContent', 1);
+  await sdk.advance(1000);
+  await sdk.page.waitForTimeout(300);
+  expect(protocol.messages('StartContent')).toHaveLength(1);
+
+  await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
+  await sdk.advance(600);
+  await protocol.waitForMessages('StartContent', 2);
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Pending'));
+  await expect(sdk.page.frameLocator(FRAME).getByText('Pending')).toBeVisible();
 });
 
 test('a hidden first step routes only once the session exists, and reports where it lands', async ({
