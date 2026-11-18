@@ -26,6 +26,11 @@ const SELF = fileURLToPath(import.meta.url);
 // privacy policies). A logger or cache touching storage unguarded at module
 // scope kills the whole SDK in exactly those pages, and the normal pass can't
 // see it.
+//
+// `--static-only` runs the static scan alone. The legacy IIFE build uses it:
+// its bundle is one file, so it has no chunk order for the boot check to
+// catch, but it bakes in the same env values the scan guards.
+const STATIC_ONLY = process.argv.includes('--static-only');
 if (!process.env.SMOKE_MODE) {
   // Static scan: no bundle file may contain the string `VITE_`. When a
   // `VITE_*` var has a value at build time, vite substitutes the value and the
@@ -45,6 +50,10 @@ if (!process.env.SMOKE_MODE) {
     }
   };
   if (existsSync(distRoot)) walk(distRoot);
+  if (STATIC_ONLY && bundleFiles.length === 0) {
+    console.error(`smoke: no bundle under ${distRoot} — build first.`);
+    process.exit(1);
+  }
   const leaked = bundleFiles.filter((f) => readFileSync(f, 'utf8').includes('VITE_'));
   if (leaked.length > 0) {
     console.error('SMOKE FAIL [env-vars] — unreplaced VITE_* env vars in the bundle:');
@@ -54,8 +63,38 @@ if (!process.env.SMOKE_MODE) {
       console.error(`   ${f}`);
       console.error(`     ...${src.slice(Math.max(0, i - 40), i + 40)}...`);
     }
-    console.error('   Build with apps/sdk/.env present (see .env.example) so every VITE_* var has a value.');
+    console.error(
+      '   Build with apps/sdk/.env present (see .env.example) so every VITE_* var has a value.',
+    );
     process.exit(1);
+  }
+  // Static scan: no endpoint on this machine baked in as a fallback. `vite
+  // build` reads .env.production over .env; without it, a developer's .env
+  // (pointing at localhost) gives the bundle a WS_URI / ASSETS_URI that a
+  // hosted customer page, which sets no USERTOURJS_ENV_VARS, would use: the
+  // SDK connects to the visitor's own machine and loads nothing.
+  // SMOKE_ALLOW_LOCAL_ENDPOINTS=1 lets a local build (for the e2e suite) pass.
+  const LOCAL_ENDPOINT = /\b(?:https?|wss?):\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])\b/;
+  if (process.env.SMOKE_ALLOW_LOCAL_ENDPOINTS !== '1') {
+    const local = bundleFiles
+      .map((f) => ({ f, m: readFileSync(f, 'utf8').match(LOCAL_ENDPOINT) }))
+      .filter(({ m }) => m);
+    if (local.length > 0) {
+      console.error('SMOKE FAIL [local-endpoint] — a local endpoint is baked into the bundle:');
+      for (const { f, m } of local) {
+        const src = readFileSync(f, 'utf8');
+        console.error(`   ${f}`);
+        console.error(`     ...${src.slice(Math.max(0, m.index - 40), m.index + 60)}...`);
+      }
+      console.error(
+        '   Build for release with apps/sdk/.env.production present, or set SMOKE_ALLOW_LOCAL_ENDPOINTS=1 for a local-only build.',
+      );
+      process.exit(1);
+    }
+  }
+  if (STATIC_ONLY) {
+    console.log(`smoke OK [static] — ${bundleFiles.length} bundle files scanned.`);
+    process.exit(0);
   }
   for (const mode of ['normal', 'no-storage']) {
     execFileSync(process.execPath, [SELF], {
@@ -126,10 +165,34 @@ for (const storageKey of ['localStorage', 'sessionStorage']) {
 }
 // Shims for APIs jsdom lacks; put them on window too (bundle may read either).
 const shims = {
-  matchMedia: () => ({ matches: false, media: '', addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false }),
-  ResizeObserver: class { observe() {} unobserve() {} disconnect() {} },
-  IntersectionObserver: class { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } },
-  WebSocket: class { close() {} send() {} addEventListener() {} removeEventListener() {} },
+  matchMedia: () => ({
+    matches: false,
+    media: '',
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent: () => false,
+  }),
+  ResizeObserver: class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  },
+  IntersectionObserver: class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  },
+  WebSocket: class {
+    close() {}
+    send() {}
+    addEventListener() {}
+    removeEventListener() {}
+  },
 };
 for (const [k, v] of Object.entries(shims)) {
   jsdomWindow[k] ??= v;
@@ -142,7 +205,13 @@ try {
   await import(pathToFileURL(entry).href);
 } catch (e) {
   console.error(`SMOKE FAIL [${process.env.SMOKE_MODE}] — bundle threw during module evaluation:`);
-  console.error('  ', String(e?.stack ?? e).split('\n').slice(0, 4).join('\n   '));
+  console.error(
+    '  ',
+    String(e?.stack ?? e)
+      .split('\n')
+      .slice(0, 4)
+      .join('\n   '),
+  );
   process.exit(1);
 }
 
@@ -150,8 +219,12 @@ try {
 await new Promise((r) => setTimeout(r, 300));
 
 if (typeof w.usertour === 'undefined' || w.usertour === null) {
-  console.error(`SMOKE FAIL [${process.env.SMOKE_MODE}] — bundle evaluated but window.usertour never appeared.`);
+  console.error(
+    `SMOKE FAIL [${process.env.SMOKE_MODE}] — bundle evaluated but window.usertour never appeared.`,
+  );
   process.exit(1);
 }
-console.log(`smoke OK [${process.env.SMOKE_MODE}] — chunked es2020 bundle boots; window.usertour is present.`);
+console.log(
+  `smoke OK [${process.env.SMOKE_MODE}] — chunked es2020 bundle boots; window.usertour is present.`,
+);
 process.exit(0);
