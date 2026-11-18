@@ -982,6 +982,19 @@ test('a sessionless embed waits for its target to be shown, even a replaced one,
   sdk,
   protocol,
 }) => {
+  // The start stays out: its answer is held until the end. A held message is
+  // logged once answered, so the asks are counted here.
+  let starts = 0;
+  let answerStart: (answer: boolean) => void = () => {};
+  protocol.answer = (message, connection) => {
+    if (message.kind !== 'StartContent') {
+      return defaultAnswer(message, connection);
+    }
+    starts++;
+    return new Promise<boolean>((resolve) => {
+      answerStart = resolve;
+    });
+  };
   await start(sdk);
   await sdk.page.evaluate(() => {
     (document.getElementById('panel') as HTMLElement).style.display = 'none';
@@ -989,7 +1002,7 @@ test('a sessionless embed waits for its target to be shown, even a replaced one,
   await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
   await sdk.advance(1000);
   await sdk.page.waitForTimeout(300);
-  expect(protocol.messages('StartContent')).toHaveLength(0);
+  expect(starts).toBe(0);
 
   // The host re-renders the hidden target as a new, shown node.
   await sdk.page.evaluate(() => {
@@ -999,34 +1012,70 @@ test('a sessionless embed waits for its target to be shown, even a replaced one,
     hidden.replaceWith(shown);
   });
   await sdk.advance(600);
-  await protocol.waitForMessages('StartContent', 1);
+  await expect.poll(() => starts).toBe(1);
 
   // A re-delivery while the session is on its way, even to another target,
   // does not ask again.
   await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#cta', 'Pending'));
   await sdk.advance(600);
   await sdk.page.waitForTimeout(300);
-  expect(protocol.messages('StartContent')).toHaveLength(1);
+  expect(starts).toBe(1);
   await expect(sdk.page.locator(FRAME)).toHaveCount(0);
+  answerStart(true);
 });
 
-test('a sessionless embed whose start came back without a session asks again on the next delivery, not before', async ({
+for (const [outcome, first] of [
+  ['refused', false],
+  ['acked with nothing delivered', true],
+] as const) {
+  test(`a sessionless embed whose start was ${outcome} asks again after a backoff, and at once on the next delivery`, async ({
+    sdk,
+    protocol,
+  }) => {
+    let starts = 0;
+    protocol.answer = (message, connection) =>
+      message.kind === 'StartContent' && starts++ < 2 ? first : defaultAnswer(message, connection);
+    await start(sdk);
+    await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
+    await protocol.waitForMessages('StartContent', 1);
+    await sdk.advance(2_500);
+    await sdk.page.waitForTimeout(300);
+    expect(protocol.messages('StartContent')).toHaveLength(1);
+
+    await sdk.advance(1_000);
+    await protocol.waitForMessages('StartContent', 2);
+    // The backoff doubles: no third ask 3s on.
+    await sdk.advance(4_000);
+    await sdk.page.waitForTimeout(300);
+    expect(protocol.messages('StartContent')).toHaveLength(2);
+
+    await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
+    await sdk.advance(600);
+    await protocol.waitForMessages('StartContent', 3);
+    await protocol.push(
+      'AddEmbed',
+      oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Pending'),
+    );
+    await expect(sdk.page.frameLocator(FRAME).getByText('Pending')).toBeVisible();
+  });
+}
+
+test('a sessionless embed whose start timed out asks again with no new delivery', async ({
   sdk,
   protocol,
 }) => {
-  // The first start is not taken; an ack timeout resolves the same way.
   let starts = 0;
   protocol.answer = (message, connection) =>
-    message.kind === 'StartContent' && starts++ === 0 ? false : defaultAnswer(message, connection);
+    message.kind === 'StartContent'
+      ? starts++ === 0
+        ? 'silent'
+        : true
+      : defaultAnswer(message, connection);
   await start(sdk);
   await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
   await protocol.waitForMessages('StartContent', 1);
-  await sdk.advance(1000);
-  await sdk.page.waitForTimeout(300);
-  expect(protocol.messages('StartContent')).toHaveLength(1);
-
-  await protocol.push('AddEmbed', oneStepEmbed(undefined, 'embed-1', '#panel', 'Pending'));
-  await sdk.advance(600);
+  await sdk.advance(30_000);
+  await sdk.advance(3_500);
   await protocol.waitForMessages('StartContent', 2);
   await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Pending'));
   await expect(sdk.page.frameLocator(FRAME).getByText('Pending')).toBeVisible();

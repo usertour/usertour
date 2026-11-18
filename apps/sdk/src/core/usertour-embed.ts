@@ -29,6 +29,9 @@ const log = logger.scope('embed');
 // element-attached banners do): in an SPA the target may only render after a
 // client-side navigation, long past a short one-shot timeout.
 const EMBED_TARGET_MISSING_SECONDS = 3600;
+/** Backoff for asking again after a start request came back with no session. */
+const START_RETRY_MIN_MS = 3000;
+const START_RETRY_MAX_MS = 60000;
 
 /**
  * What a step's trigger is armed from: the step and its trigger as published.
@@ -78,10 +81,12 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
   /** Set once a sessionless embed has asked the server to start its content. */
   private startRequested = false;
   /**
-   * Set when a start request came back without a start (an ack timeout, a
-   * refusal): the check loop does not ask again, the next delivery does.
+   * When a start request came back without a session (refused, acked with
+   * nothing delivered, timed out), the check loop asks again only from this
+   * time on, backing off each time; a new delivery clears it.
    */
-  private startAwaitingDelivery = false;
+  private nextStartAt = 0;
+  private startRetryDelay = START_RETRY_MIN_MS;
 
   protected initializeActionHandlers(): void {
     this.registerActionHandlers([new CommonActionHandler(), new EmbedActionHandler()]);
@@ -129,7 +134,8 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
    */
   async update(session: CustomContentSession): Promise<void> {
     this.updateSession(session);
-    this.startAwaitingDelivery = false;
+    this.nextStartAt = 0;
+    this.startRetryDelay = START_RETRY_MIN_MS;
     this.ensureCurrentStep();
     if (!this.hasStoreData()) {
       await this.show();
@@ -566,16 +572,17 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
    * can be seen: "seen" means rendered, so a target in the page but hidden
    * (`display: none`, a closed tab panel) waits for the check loop to see it
    * shown. While a request is out nothing asks again. A request that failed
-   * to go out is retried by the check loop; one that came back without a
-   * start (an ack timeout resolves false, it does not reject) is retried on
-   * the next delivery, not every check tick.
+   * to go out is retried by the check loop. One that came back with no
+   * session — refused, timed out (an ack timeout resolves false, it does not
+   * reject), or acked while the server delivered nothing — is retried by the
+   * check loop after a backoff, or at once on the next delivery.
    */
   private requestStart(el: Element): void {
     if (
       this.destroyed ||
       this.getSessionId() ||
       this.startRequested ||
-      this.startAwaitingDelivery ||
+      Date.now() < this.nextStartAt ||
       !isVisibleNode(el)
     ) {
       return;
@@ -583,10 +590,11 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     this.startRequested = true;
     this.instance
       .startContent(this.getContentId(), contentStartReason.START_FROM_CONDITION, undefined, false)
-      .then((started) => {
-        if (!started && !this.getSessionId()) {
-          this.startRequested = false;
-          this.startAwaitingDelivery = true;
+      .then(() => {
+        this.startRequested = false;
+        if (!this.getSessionId()) {
+          this.nextStartAt = Date.now() + this.startRetryDelay;
+          this.startRetryDelay = Math.min(this.startRetryDelay * 2, START_RETRY_MAX_MS);
         }
       })
       .catch((error) => {
