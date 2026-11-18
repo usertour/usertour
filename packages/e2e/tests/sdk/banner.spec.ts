@@ -275,6 +275,40 @@ test.describe('a session updated in place', () => {
     ).toBe(true);
   });
 
+  test('follows a target the page moved, the very same node, when its data is refreshed', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await protocol.push(
+      'SetBannerSession',
+      banner({ placement: 'immediately-before-element', container: '#panel' }),
+    );
+    await expect(content(sdk).getByText('Maintenance tonight')).toBeVisible();
+
+    await sdk.page.evaluate(() => {
+      const elsewhere = document.createElement('section');
+      elsewhere.id = 'elsewhere';
+      document.body.append(elsewhere);
+      elsewhere.append(document.getElementById('panel') as HTMLElement);
+    });
+    await protocol.push(
+      'SetBannerSession',
+      banner({
+        text: 'Maintenance moved to Friday',
+        placement: 'immediately-before-element',
+        container: '#panel',
+      }),
+    );
+    await expect(content(sdk).getByText('Maintenance moved to Friday')).toBeVisible();
+    await expect(mount(sdk)).toHaveCount(1);
+    expect(
+      await mount(sdk).evaluate(
+        (element) => element.nextElementSibling === document.getElementById('panel'),
+      ),
+    ).toBe(true);
+  });
+
   test('moved off a hidden container to the top of the page, a banner shows again', async ({
     sdk,
     protocol,

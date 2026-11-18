@@ -16,6 +16,10 @@ export type MountPlacer = (
  * Returns a generation that advances when the mount was re-placed while a
  * frame rendered into it: a re-inserted iframe reloads its document while the
  * frame keeps rendering into the old one, so the caller rebuilds the frame.
+ * The place is re-checked whenever the shell's style changes too (new
+ * content data, a new measurement): the host may have moved the very same
+ * target since, which no target change reports. The check is a sibling walk,
+ * and a mount still in place is left alone.
  *
  * Nothing here releases the mount from a layout-effect cleanup: a Suspense
  * boundary that re-suspends (another widget kind loading its chunk) runs
@@ -33,11 +37,9 @@ export const usePlacedMount = (
   const placedRef = useRef<PlacedMount | null>(null);
   const placedByRef = useRef<MountPlacer | null>(null);
   const wasPlacedRef = useRef(false);
-  const styleRef = useRef(style);
   const [frameGeneration, setFrameGeneration] = useState(0);
 
   useLayoutEffect(() => {
-    styleRef.current = style;
     placedRef.current?.restyle(style);
   }, [style]);
 
@@ -54,7 +56,7 @@ export const usePlacedMount = (
     }
     placed?.release();
     placedRef.current = null;
-    const next = place(mountEl, target, styleRef.current);
+    const next = place(mountEl, target, style);
     if (!next) {
       return;
     }
@@ -64,7 +66,7 @@ export const usePlacedMount = (
     wasPlacedRef.current = true;
     placedRef.current = next;
     placedByRef.current = place;
-  }, [mountEl, open, target, place]);
+  }, [mountEl, open, target, place, style]);
 
   useEffect(
     () => () => {
