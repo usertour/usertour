@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && BROWSERSLIST_ENV=production vite build && node scripts/smoke-bundle.mjs",
-    "build:iife": "tsc && BROWSERSLIST_ENV=legacy vite build",
+    "build:iife": "tsc && BROWSERSLIST_ENV=legacy vite build && node scripts/smoke-bundle.mjs --static-only",
     "build:dev": "tsc && BROWSERSLIST_ENV=production vite build --mode development",
     "build:dev:iife": "tsc && BROWSERSLIST_ENV=legacy vite build --mode development",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",

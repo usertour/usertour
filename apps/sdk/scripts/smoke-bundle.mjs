@@ -26,6 +26,11 @@ const SELF = fileURLToPath(import.meta.url);
 // privacy policies). A logger or cache touching storage unguarded at module
 // scope kills the whole SDK in exactly those pages, and the normal pass can't
 // see it.
+//
+// `--static-only` runs the static scan alone. The legacy IIFE build uses it:
+// its bundle is one file, so it has no chunk order for the boot check to
+// catch, but it bakes in the same env values the scan guards.
+const STATIC_ONLY = process.argv.includes('--static-only');
 if (!process.env.SMOKE_MODE) {
   // Static scan: no bundle file may contain the string `VITE_`. When a
   // `VITE_*` var has a value at build time, vite substitutes the value and the
@@ -45,6 +50,10 @@ if (!process.env.SMOKE_MODE) {
     }
   };
   if (existsSync(distRoot)) walk(distRoot);
+  if (STATIC_ONLY && bundleFiles.length === 0) {
+    console.error(`smoke: no bundle under ${distRoot} — build first.`);
+    process.exit(1);
+  }
   const leaked = bundleFiles.filter((f) => readFileSync(f, 'utf8').includes('VITE_'));
   if (leaked.length > 0) {
     console.error('SMOKE FAIL [env-vars] — unreplaced VITE_* env vars in the bundle:');
@@ -80,6 +89,10 @@ if (!process.env.SMOKE_MODE) {
       );
       process.exit(1);
     }
+  }
+  if (STATIC_ONLY) {
+    console.log(`smoke OK [static] — ${bundleFiles.length} bundle files scanned.`);
+    process.exit(0);
   }
   for (const mode of ['normal', 'no-storage']) {
     execFileSync(process.execPath, [SELF], {
