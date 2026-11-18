@@ -156,6 +156,23 @@ export const defaultSettings = {
     animationDuration: 320,
     animationTiming: 'smooth',
   },
+  embed: {
+    backgroundColor: {
+      background: 'Auto',
+      color: '#FFFFFF',
+      hover: 'Auto',
+      active: 'Auto',
+    },
+    textColor: {
+      background: '#FFFFFF',
+      color: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+    },
+    padding: 16,
+    animationDuration: 320,
+    animationTiming: 'smooth',
+  },
   mainColor: {
     color: '#0f172a',
     hover: 'Auto',
@@ -432,6 +449,23 @@ export const standardDarkSettings = {
       active: 'Auto',
     },
     padding: 8,
+    animationDuration: 320,
+    animationTiming: 'smooth',
+  },
+  embed: {
+    backgroundColor: {
+      background: 'Auto',
+      color: '#FFFFFF',
+      hover: 'Auto',
+      active: 'Auto',
+    },
+    textColor: {
+      background: '#FFFFFF',
+      color: 'Auto',
+      hover: 'Auto',
+      active: 'Auto',
+    },
+    padding: 16,
     animationDuration: 320,
     animationTiming: 'smooth',
   },

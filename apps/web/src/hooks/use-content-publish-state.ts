@@ -1,3 +1,4 @@
+import { hasStepBody } from '@usertour/helpers';
 import { useAppContext } from '@/contexts/app-context';
 import { useContentDetailUI } from '@/contexts/content-detail-ui-context';
 import { useEnvironmentList } from '@/hooks/use-environment-list';
@@ -23,9 +24,9 @@ export const useContentPublishState = () => {
       return true;
     }
 
-    // Flow needs at least one step to publish — an empty flow has
-    // nothing for the runtime to render.
-    if (content?.type === ContentDataType.FLOW) {
+    // Step-bodied content (flow, embed) needs at least one step to publish —
+    // an empty one has nothing for the runtime to render.
+    if (hasStepBody(content?.type)) {
       return !version?.steps?.length;
     }
 

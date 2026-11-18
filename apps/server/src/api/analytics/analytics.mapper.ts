@@ -1,5 +1,6 @@
+import { tz } from '@date-fns/tz';
 import { ContentDataType, ContentEditorElementType } from '@usertour/types';
-import { formatInTimeZone } from 'date-fns-tz';
+import { format } from 'date-fns';
 
 import { ApiObjectType } from '../shared/object-type';
 import type { ContentAnalytics, QuestionAnalytics } from './analytics.schema';
@@ -19,7 +20,7 @@ const dayLabelIn = (timezone: string, value: unknown): string => {
   const date = value instanceof Date ? value : new Date(String(value));
   return Number.isNaN(date.getTime())
     ? String(value)
-    : formatInTimeZone(date, timezone, 'yyyy-MM-dd');
+    : format(date, 'yyyy-MM-dd', { in: tz(timezone) });
 };
 
 const int = (value: unknown): number => (typeof value === 'number' ? Math.trunc(value) : 0);
@@ -59,6 +60,14 @@ const launcherCounts = (c: ReturnType<typeof counts>) => ({
 const bannerCounts = (c: ReturnType<typeof counts>) => ({
   uniqueSeen: c.uniqueViews,
   uniqueDismissals: c.uniqueCompletions,
+});
+// Embed: views are the users a session started for (as a flow's), the
+// success action is a button press, counted as events; dismissals ride
+// beside, not as "complete".
+const embedCounts = (c: ReturnType<typeof counts>) => ({
+  uniqueViews: c.uniqueViews,
+  uniqueClickers: c.uniqueCompletions,
+  totalClicks: c.totalCompletions,
 });
 const opensClicks = (c: ReturnType<typeof counts>) => ({
   uniqueOpens: c.uniqueViews,
@@ -171,6 +180,33 @@ export function mapContentAnalytics(raw: any, meta: AnalyticsMeta): ContentAnaly
         contentType: 'banner',
         ...bannerCounts(top),
         byDay: byDay(bannerCounts),
+      };
+    case ContentDataType.EMBED:
+      return {
+        ...base,
+        contentType: 'embed',
+        ...embedCounts(top),
+        uniqueDismissals: int(raw?.uniqueDismissals),
+        byDay: byDay(embedCounts),
+        steps: Array.isArray(raw?.viewsByStep)
+          ? // biome-ignore lint/suspicious/noExplicitAny: see above
+            raw.viewsByStep.map((row: any) => ({
+              name: String(row.name ?? ''),
+              cvid: String(row.cvid ?? ''),
+              stepIndex: int(row.stepIndex),
+              uniqueViews: int(row.analytics?.uniqueViews),
+            }))
+          : [],
+        buttons: Array.isArray(raw?.viewsByButton)
+          ? // biome-ignore lint/suspicious/noExplicitAny: see above
+            raw.viewsByButton.map((row: any) => ({
+              name: String(row.name ?? ''),
+              cvid: String(row.cvid ?? ''),
+              stepCvid: String(row.stepCvid ?? ''),
+              uniqueClicks: int(row.analytics?.uniqueClicks),
+              totalClicks: int(row.analytics?.totalClicks),
+            }))
+          : [],
       };
     case ContentDataType.RESOURCE_CENTER:
       return {

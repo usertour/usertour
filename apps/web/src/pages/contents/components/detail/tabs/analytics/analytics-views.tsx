@@ -170,6 +170,35 @@ const ChecklistAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   );
 };
 
+// Embed: the users a session started for, the users who pressed a button and
+// the users a session ended for, all in the range. No rate: a session can
+// outlive any range, so the users who saw the embed in a range are not known.
+const EmbedAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
+  const { t } = useTranslation();
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      <AnalyticsCard
+        title={t('contents.analytics.views.uniqueViews')}
+        tooltip={t('contents.analytics.views.embed.uniqueViewsTooltip')}
+        value={analyticsData?.uniqueViews || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.embed.uniqueClickers')}
+        tooltip={t('contents.analytics.views.embed.uniqueClickersTooltip')}
+        value={analyticsData?.uniqueCompletions || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+      <AnalyticsCard
+        title={t('contents.analytics.views.embed.dismissals')}
+        tooltip={t('contents.analytics.views.embed.dismissalsTooltip')}
+        value={analyticsData?.uniqueDismissals || 0}
+        icon={<AnalyticsUserIcon className="h-4 w-4 text-muted-foreground" />}
+      />
+    </div>
+  );
+};
+
 const ResourceCenterAnalyticsViews = ({ analyticsData }: AnalyticsViewsProps) => {
   const { t } = useTranslation();
   return (
@@ -250,6 +279,9 @@ export const AnalyticsViews = () => {
   }
   if (contentType === ContentDataType.RESOURCE_CENTER) {
     return <ResourceCenterAnalyticsViews analyticsData={analyticsData} />;
+  }
+  if (contentType === ContentDataType.EMBED) {
+    return <EmbedAnalyticsViews analyticsData={analyticsData} />;
   }
   if (contentType === ContentDataType.FLOW) {
     return <FlowAnalyticsViews analyticsData={analyticsData} />;

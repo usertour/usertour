@@ -18,6 +18,7 @@ import {
   LauncherIcon,
   ResourceCenterIcon,
   SpinnerIcon,
+  EmbedIcon,
 } from '@usertour/icons';
 import {
   ActivityLogIcon,
@@ -73,6 +74,7 @@ type EventCategory =
   | 'checklist'
   | 'launcher'
   | 'banner'
+  | 'embed'
   | 'resource_center'
   | 'announcement'
   | 'event_tracker'
@@ -86,6 +88,7 @@ function getEventCategory(event: BizEvent): EventCategory {
   if (data[EventAttributes.CHECKLIST_ID]) return 'checklist';
   if (data[EventAttributes.LAUNCHER_ID]) return 'launcher';
   if (data[EventAttributes.BANNER_ID]) return 'banner';
+  if (data[EventAttributes.EMBED_ID]) return 'embed';
   if (data[EventAttributes.ANNOUNCEMENT_ID]) return 'announcement';
   if (data[EventAttributes.RESOURCE_CENTER_ID]) return 'resource_center';
   if (data[EventAttributes.EVENT_TRACKER_ID]) return 'event_tracker';
@@ -98,6 +101,7 @@ const CATEGORY_ICON: Record<EventCategory, React.ComponentType<{ className?: str
   checklist: ChecklistIcon,
   launcher: LauncherIcon,
   banner: BannerIcon,
+  embed: EmbedIcon,
   resource_center: ResourceCenterIcon,
   announcement: AnnouncementIcon,
   event_tracker: EventTrackerIcon,
@@ -120,20 +124,23 @@ function getEventDescriptor(
   const str = (v: unknown): string | undefined =>
     typeof v === 'string' && v ? v : typeof v === 'number' ? String(v) : undefined;
 
+  // A step number is 0-indexed in event data; display it 1-based to match the
+  // expanded detail (getFieldValue) and the sessions list, which both +1.
+  const stepLabel = (rawStep: unknown, stepName: string | undefined): string | undefined => {
+    const stepNumber =
+      rawStep === undefined || rawStep === null ? undefined : String(Number(rawStep) + 1);
+    return stepNumber ? `${formatStep(stepNumber)}${stepName ? `: ${stepName}` : ''}` : stepName;
+  };
+
   switch (category) {
-    case 'flow': {
-      const primary = str(data[EventAttributes.FLOW_NAME]);
-      // FLOW_STEP_NUMBER is 0-indexed in event data; display it 1-based to match
-      // the expanded detail (getFieldValue) and the sessions list, which both +1.
-      const rawStep = data[EventAttributes.FLOW_STEP_NUMBER];
-      const stepNumber =
-        rawStep === undefined || rawStep === null ? undefined : String(Number(rawStep) + 1);
-      const stepName = str(data[EventAttributes.FLOW_STEP_NAME]);
-      const secondary = stepNumber
-        ? `${formatStep(stepNumber)}${stepName ? `: ${stepName}` : ''}`
-        : stepName;
-      return { primary, secondary };
-    }
+    case 'flow':
+      return {
+        primary: str(data[EventAttributes.FLOW_NAME]),
+        secondary: stepLabel(
+          data[EventAttributes.FLOW_STEP_NUMBER],
+          str(data[EventAttributes.FLOW_STEP_NAME]),
+        ),
+      };
     case 'checklist':
       return {
         primary: str(data[EventAttributes.CHECKLIST_NAME]),
@@ -143,6 +150,20 @@ function getEventDescriptor(
       return { primary: str(data[EventAttributes.LAUNCHER_NAME]) };
     case 'banner':
       return { primary: str(data[EventAttributes.BANNER_NAME]) };
+    case 'embed': {
+      // A button press names the button; a step event names the step, as a
+      // flow's does.
+      const buttonText = str(data[EventAttributes.BUTTON_TEXT]);
+      return {
+        primary: str(data[EventAttributes.EMBED_NAME]),
+        secondary:
+          buttonText ??
+          stepLabel(
+            data[EventAttributes.EMBED_STEP_NUMBER],
+            str(data[EventAttributes.EMBED_STEP_NAME]),
+          ),
+      };
+    }
     case 'resource_center':
       return {
         primary: str(data[EventAttributes.RESOURCE_CENTER_NAME]),
@@ -164,6 +185,7 @@ const CATEGORY_SESSION_ATTRIBUTE_KEY: Partial<Record<EventCategory, EventAttribu
   checklist: EventAttributes.CHECKLIST_SESSION_ID,
   launcher: EventAttributes.LAUNCHER_SESSION_ID,
   banner: EventAttributes.BANNER_SESSION_ID,
+  embed: EventAttributes.EMBED_SESSION_ID,
   resource_center: EventAttributes.RESOURCE_CENTER_SESSION_ID,
 };
 
@@ -194,6 +216,7 @@ const SESSION_ID_ATTRIBUTES = new Set<string>([
   EventAttributes.LAUNCHER_SESSION_ID,
   EventAttributes.CHECKLIST_SESSION_ID,
   EventAttributes.BANNER_SESSION_ID,
+  EventAttributes.EMBED_SESSION_ID,
   EventAttributes.RESOURCE_CENTER_SESSION_ID,
 ]);
 

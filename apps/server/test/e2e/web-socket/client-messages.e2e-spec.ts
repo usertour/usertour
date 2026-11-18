@@ -286,6 +286,47 @@ describe('WebSocket v2 client messages (e2e)', () => {
     expect(eventCodeNames).toContain('flow_started');
   });
 
+  it('ClickButton refuses a session of another user and records only the owner’s click', async () => {
+    const bizSession = await prisma.bizSession.findFirst({
+      where: {
+        contentId: flowContentId,
+        bizUser: { externalId: externalUserId, environmentId },
+        deleted: false,
+        state: 0,
+      },
+    });
+    expect(bizSession).not.toBeNull();
+    const sessionId = bizSession?.id as string;
+    const clickedEvents = () =>
+      prisma.bizEvent.count({
+        where: { bizSessionId: sessionId, event: { codeName: BizEvents.BUTTON_CLICKED } },
+      });
+
+    const intruder = await connectWebSocketClient(harness.baseUrl, {
+      token: environmentToken,
+      externalUserId: `${externalUserId}-intruder`,
+    });
+    try {
+      const forgedAck = await intruder.sendClientMessage(ClientMessageKind.CLICK_BUTTON, {
+        sessionId,
+        buttonCvid: 'button-forged',
+        buttonText: 'Forged',
+      });
+      expect(forgedAck).toBe(false);
+      expect(await clickedEvents()).toBe(0);
+    } finally {
+      intruder.disconnect();
+    }
+
+    const ownAck = await client.sendClientMessage(ClientMessageKind.CLICK_BUTTON, {
+      sessionId,
+      buttonCvid: 'button-own',
+      buttonText: 'Own',
+    });
+    expect(ownAck).toBe(true);
+    expect(await clickedEvents()).toBe(1);
+  });
+
   it('EndContent ends the flow session and records flow_ended', async () => {
     const bizSession = await prisma.bizSession.findFirst({
       where: {

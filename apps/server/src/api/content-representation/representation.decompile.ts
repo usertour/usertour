@@ -15,6 +15,7 @@ import {
   decompileTriggers,
   decompileWhen,
 } from './rules.decompile';
+import { stepCapabilities } from './contract-map';
 import { decompileTarget, hasAutoTarget } from './target.decompile';
 
 /** Internal step row, untyped at the relation boundary (generic Prisma include). */
@@ -45,7 +46,14 @@ export function decompileStep(
   resolvers: DecompileResolvers = IDENTITY_RESOLVERS,
 ): RepresentationStep {
   const { blocks, hasUnsupported: contentUnsupported } = decompileContent(step.data, resolvers);
-  const target = decompileTarget(step.target);
+  // Inline and hidden steps never read a step-level target and the write
+  // rejects one, so a stored one is left out to keep read→write round-trips
+  // closed (an omitted target keeps the stored value on write).
+  const targetPlacement = stepCapabilities(step.type)?.placement;
+  const target =
+    targetPlacement === 'inline' || targetPlacement === 'none'
+      ? undefined
+      : decompileTarget(step.target);
   const placement = decompilePlacement(step.setting, step.type ?? '');
   const setting = (step.setting ?? {}) as Record<string, unknown>;
   const triggers = decompileTriggers(step.trigger, resolvers);
@@ -63,7 +71,7 @@ export function decompileStep(
     id: step.id,
     cvid: step.cvid ?? null,
     name: step.name ?? '',
-    // Stored steps always carry one of the four kinds (the builder requires it);
+    // Stored steps always carry one of the step kinds (the builder requires it);
     // the legacy '' fallback survives only for hypothetical pre-builder rows.
     type: (step.type ?? '') as RepresentationStep['type'],
     sequence: step.sequence,
@@ -230,6 +238,7 @@ function decompileElement(
         block: {
           ...base,
           type: 'button',
+          ...(typeof e.data?.cvid === 'string' && e.data.cvid ? { cvid: e.data.cvid } : {}),
           text: typeof e.data?.text === 'string' ? e.data.text : '',
           ...(variant ? { variant } : {}),
           ...(actions.length ? { actions } : {}),

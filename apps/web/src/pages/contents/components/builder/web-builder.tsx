@@ -5,6 +5,7 @@ import {
   useBuilderStore,
 } from '@/pages/contents/components/builder/core';
 import { BannerBuilder } from '@/pages/contents/components/builder/banner';
+import { EmbedBuilder } from '@/pages/contents/components/builder/embed';
 import { ChecklistBuilder } from '@/pages/contents/components/builder/checklist';
 import { FlowBuilder } from '@/pages/contents/components/builder/flow';
 import { LauncherBuilder } from '@/pages/contents/components/builder/launcher';
@@ -28,8 +29,8 @@ export interface WebBuilderProps {
 // loading, gates on `ready`, then dispatches on the content
 // type to that type's view. Flow / Launcher / Checklist / ResourceCenter own
 // their sub-views via a descendant <Routes> (under the builder route's `/*`);
-// Banner is a single view with no sub-routes. The URL is the view's source of
-// truth.
+// Banner is a single view with no sub-routes; Embed reuses the flow's step
+// routes. The URL is the view's source of truth.
 function WebBuilderContent() {
   const { ready, failed, retry } = useBuilderInit();
   const listsLoading = useListsLoading();
@@ -62,6 +63,8 @@ function WebBuilderContent() {
       return <ResourceCenterBuilder />;
     case ContentDataType.BANNER:
       return <BannerBuilder />;
+    case ContentDataType.EMBED:
+      return <EmbedBuilder />;
     default:
       return null;
   }

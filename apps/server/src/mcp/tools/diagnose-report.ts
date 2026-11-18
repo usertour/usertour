@@ -1,5 +1,5 @@
 import { getAutoStartCapabilities, isConditionsActived } from '@usertour/helpers';
-import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
+import { ContentDataType, Frequency, RulesCondition, RulesType } from '@usertour/types';
 
 import type { RepresentationCondition } from '@/api/content-representation/representation.schema';
 import type { DiagnoseFacts } from '@/modules/delivery/services/content-diagnosis.service';
@@ -369,6 +369,25 @@ const foldAssumingUnknown = (
   return node.status === 'matched';
 };
 
+/**
+ * Why an embed's frequency refuses a new session, by mode. Every session
+ * counts, however it ended — dismissed, or ended another way, such as the
+ * content being unpublished — and the `every` gap runs from that end.
+ */
+const embedFrequencyCapDetail = (mode: Frequency | undefined): string => {
+  const ended = 'dismissed, or ended another way, such as the content being unpublished';
+  switch (mode) {
+    case Frequency.ONCE:
+      return `frequency cap reached — this user already had a session of this content (${ended}); \`once\` never starts another for this user.`;
+    case Frequency.MULTIPLE:
+      return `frequency cap reached — either this user has reached the total number of sessions \`every.times\` allows, or the \`every\` gap since their previous session ended (${ended}) has not passed yet.`;
+    case Frequency.UNLIMITED:
+      return `frequency cap reached — the \`every\` gap since this user's previous session ended (${ended}) has not passed yet.`;
+    default:
+      return `frequency cap reached — this user already had a session of this content (${ended}) and \`frequency\` does not allow another one yet.`;
+  }
+};
+
 export const buildDiagnoseReport = (
   facts: DiagnoseFacts,
   startConditions?: AnnotatedCondition,
@@ -381,6 +400,14 @@ export const buildDiagnoseReport = (
   const gates: Gate[] = [];
 
   const isAnnouncement = facts.contentType === ContentDataType.ANNOUNCEMENT;
+  // An embed is LEVEL-triggered (ADR 0022): the batch path re-evaluates its
+  // running session on every sync and hides it the moment the show rules stop
+  // matching (the session is kept, so the current step survives). So a
+  // failing start_rules gate blocks it even with an active session — the
+  // opposite of the resume semantics every other session type has.
+  const isLevelTriggered = facts.contentType === ContentDataType.EMBED;
+  const startRulesInformational =
+    !!facts.hasActiveSession && !facts.startRulesActive && !isLevelTriggered;
 
   gates.push({
     id: 'published',
@@ -474,9 +501,10 @@ export const buildDiagnoseReport = (
           gates.push({
             id: 'start_rules',
             status: facts.startRulesActive ? 'pass' : undetermined ? 'unknown' : 'fail',
-            detail:
-              facts.hasActiveSession && !facts.startRulesActive
-                ? `informational, not a blocker here (this user is covered by the active session): ${startRulesDetail}`
+            detail: startRulesInformational
+              ? `informational, not a blocker here (this user is covered by the active session): ${startRulesDetail}`
+              : isLevelTriggered && facts.hasActiveSession && !facts.startRulesActive
+                ? `the session is kept but the embed is HIDDEN while its show rules do not match (it reappears, on the same step, once they match again): ${startRulesDetail}`
                 : startRulesDetail,
           });
         }
@@ -507,9 +535,16 @@ export const buildDiagnoseReport = (
             gates.push({
               id: 'frequency',
               status: facts.frequencyAllowed ? 'pass' : 'fail',
-              detail: facts.frequencyAllowed
-                ? 'frequency / start-if-not-complete allows it now.'
-                : 'frequency cap reached, or start-if-not-complete and already completed.',
+              // An embed's frequency decides only whether a NEW session may
+              // start after a dismissal (a running one is never subject to it);
+              // it has no start-if-not-complete.
+              detail: isLevelTriggered
+                ? facts.frequencyAllowed
+                  ? 'frequency allows a new session now (the previous one, if any, has ended).'
+                  : embedFrequencyCapDetail(facts.frequencyMode)
+                : facts.frequencyAllowed
+                  ? 'frequency / start-if-not-complete allows it now.'
+                  : 'frequency cap reached, or start-if-not-complete and already completed.',
             });
           }
           if (facts.singleSessionApplicable) {
@@ -595,8 +630,9 @@ export const buildDiagnoseReport = (
     .filter((g) => g.status === 'fail')
     .map((g) => g.id)
     // A failing start_rules during an ACTIVE session is informational — the
-    // content IS showing (resumed), nothing is blocked by it.
-    .filter((id) => !(facts.hasActiveSession && id === 'start_rules'));
+    // content IS showing (resumed), nothing is blocked by it. Not for a
+    // level-triggered embed: there the failing rules hide it.
+    .filter((id) => !(startRulesInformational && id === 'start_rules'));
   // `unknown` conditions are NOT blockers (only `blockedBy` blocks). Classify them so the
   // summary names what resolves each, and never lets an agent read an `unknown` leaf as a
   // second blocker beside the real ones.
@@ -637,11 +673,13 @@ export const buildDiagnoseReport = (
   } else if (facts.hasActiveSession) {
     summary = facts.hidden
       ? 'Has an active session, but a hide rule is active — the runtime will cancel it (won’t show).'
-      : `Currently active for this user — it is showing (or resumes on the next load)${
-          renderTargets.length
-            ? ' — provided its target element exists on the page; the server cannot verify that (see the target gate)'
-            : ''
-        }.`;
+      : isLevelTriggered && blockedBy.includes('start_rules')
+        ? 'Has an active session, but its show rules do not match right now — the embed is hidden (the session is kept) until they match again.'
+        : `Currently active for this user — it is showing (or resumes on the next load)${
+            renderTargets.length
+              ? ' — provided its target element exists on the page; the server cannot verify that (see the target gate)'
+              : ''
+          }.`;
   } else if (blockedBy.length) {
     summary = `Blocked by: ${blockedBy.join(', ')}.${
       anyUnknown

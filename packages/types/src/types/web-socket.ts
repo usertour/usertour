@@ -1,6 +1,7 @@
 import { AttributeBizTypes, BizAttributeTypes } from './attribute';
 import { BannerData } from './banner';
 import { ChecklistData } from './checklist';
+import { EmbedData } from './embed';
 import { Content, ContentDataType, Step } from './contents';
 import { ContentConfigObject, RulesCondition } from './config';
 import { LauncherData } from './launcher';
@@ -34,6 +35,14 @@ export interface SocketAuthData {
    */
   waitTimers?: ConditionWaitTimer[];
   launchers?: string[];
+  /** Content ids of the embeds the SDK currently holds (same role as `launchers`). */
+  embeds?: string[];
+  /**
+   * Feature flags the SDK bundle understands, e.g. `embed`. The server only
+   * delivers a content type to a connection that declares its capability;
+   * absent from bundles that predate the field.
+   */
+  capabilities?: string[];
   token?: string;
   /**
    * The version of the SDK bundle making the connection, as built into it;
@@ -83,6 +92,7 @@ export enum ClientMessageKind {
   FIRE_CONDITION_WAIT_TIMER = 'FireConditionWaitTimer',
   ACTIVATE_LAUNCHER = 'ActivateLauncher',
   DISMISS_LAUNCHER = 'DismissLauncher',
+  CLICK_BUTTON = 'ClickButton',
   TRACK_TRACKER_EVENT = 'TrackTrackerEvent',
   OPEN_RESOURCE_CENTER = 'OpenResourceCenter',
   CLOSE_RESOURCE_CENTER = 'CloseResourceCenter',
@@ -111,6 +121,8 @@ export enum ServerMessageKind {
   UNSET_RESOURCE_CENTER_SESSION = 'UnsetResourceCenterSession',
   ADD_LAUNCHER = 'AddLauncher',
   REMOVE_LAUNCHER = 'RemoveLauncher',
+  ADD_EMBED = 'AddEmbed',
+  REMOVE_EMBED = 'RemoveEmbed',
   ADD_TRACKER = 'AddTracker',
   REMOVE_TRACKER = 'RemoveTracker',
   FORCE_GO_TO_STEP = 'ForceGoToStep',
@@ -320,6 +332,18 @@ export type DismissLauncherDto = {
   endReason: string;
 };
 
+/**
+ * A button block was pressed. Generic across content types; the server picks
+ * the base attributes from the session's content type (ADR 0022).
+ */
+export type ClickButtonDto = {
+  sessionId: string;
+  /** The step the button lives on, for step-bodied content (flow, embed). */
+  stepId?: string;
+  buttonCvid?: string;
+  buttonText?: string;
+};
+
 // ============================================================================
 // Resource Center DTOs
 // ============================================================================
@@ -429,6 +453,7 @@ export type CustomContentSession = {
     checklist?: ChecklistData;
     launcher?: LauncherData;
     banner?: BannerData;
+    embed?: EmbedData;
     resourceCenter?: ResourceCenterData;
     tracker?: { eventId: string };
   };

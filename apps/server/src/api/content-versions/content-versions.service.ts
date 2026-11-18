@@ -27,10 +27,14 @@ import { ApiThemesService } from '../themes/themes.service';
 import { loadConditionContext } from '../content-representation/condition-context';
 import { resolveStaleEmbeds } from '@/modules/utilities/utils/embed-resolve.util';
 import { UtilitiesService } from '@/modules/utilities/services/utilities.service';
-import { CONTENT_REFERENCE_TARGET_TYPE_SET } from '../content-representation/contract-map';
+import {
+  CONTENT_REFERENCE_TARGET_TYPE_SET,
+  dismissVariantFor,
+} from '../content-representation/contract-map';
 import {
   type ContentReference,
   collectWriteViolations,
+  compiledButtonCvidIssues,
 } from '../content-representation/write-guards';
 import { compileStep } from '../content-representation/representation.compile';
 import { decompileStep } from '../content-representation/representation.decompile';
@@ -561,9 +565,23 @@ export class ApiContentVersionsService {
         },
       };
 
+      // A `dismiss` on a step compiles to the HOST type's variant (flow →
+      // flow-dismis, embed → embed-dismis); the renderer only handles its own.
+      const stepDismiss = dismissVariantFor(contentType as ContentDataType);
       content.steps = planned.map((p) =>
-        compileStep({ ...p.input, cvid: p.cvid, sequence: p.sequence }, p.existing, stepResolvers),
+        compileStep(
+          { ...p.input, cvid: p.cvid, sequence: p.sequence },
+          p.existing,
+          stepResolvers,
+          stepDismiss,
+        ),
       );
+      const cvidIssues = compiledButtonCvidIssues(
+        content.steps as Array<{ name?: unknown; data?: unknown }>,
+      );
+      if (cvidIssues.length > 0) {
+        throw ValidationError.fromIssues(cvidIssues);
+      }
     }
 
     if (body.startRules !== undefined || body.hideRules !== undefined) {

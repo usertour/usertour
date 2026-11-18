@@ -27,8 +27,8 @@ import {
   extractVersionDataTranslationUnits,
   isTranslationUnitOptional,
   isVersionDataLocalizable,
+  hasStepBody,
 } from '@usertour/helpers';
-import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot, LocalizedFlowContent } from '@usertour/types';
 
 /** The source side of a translation: what the version currently says. */
@@ -66,7 +66,7 @@ const FLOW_PATH_PREFIX = 'steps/';
 
 /** Whether the content type has any translatable text at all (a tracker has no UI). */
 export const isContentTypeLocalizable = (contentType: string): boolean =>
-  contentType === ContentDataType.FLOW || isVersionDataLocalizable(contentType);
+  hasStepBody(contentType) || isVersionDataLocalizable(contentType);
 
 const isNonEmptyObject = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && Object.keys(value as object).length > 0;
@@ -96,7 +96,7 @@ export const readTranslationUnits = (
   source: TranslationSource,
   stored: StoredTranslation | undefined,
 ): TranslationUnitView[] => {
-  if (source.contentType === ContentDataType.FLOW) {
+  if (hasStepBody(source.contentType)) {
     const localized = (stored?.localized ?? undefined) as LocalizedFlowContent | undefined;
     const backup = (stored?.backup ?? undefined) as LocalizedFlowContent | undefined;
     return source.steps.flatMap((step) => {
@@ -151,7 +151,7 @@ export const applyTranslationUnits = (
   stored: StoredTranslation | undefined,
   translations: TranslationUnitChanges,
 ): { localized: unknown; backup: unknown } => {
-  if (source.contentType === ContentDataType.FLOW) {
+  if (hasStepBody(source.contentType)) {
     const storedLocalized = (stored?.localized ?? undefined) as LocalizedFlowContent | undefined;
     const storedBackup = isNonEmptyObject(stored?.backup)
       ? (stored?.backup as LocalizedFlowContent)

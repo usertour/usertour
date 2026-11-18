@@ -48,6 +48,7 @@ const SESSION_ATTRIBUTE_BY_CONTENT_ID: ReadonlyArray<[string, string]> = [
   [EventAttributes.CHECKLIST_ID, EventAttributes.CHECKLIST_SESSION_ID],
   [EventAttributes.LAUNCHER_ID, EventAttributes.LAUNCHER_SESSION_ID],
   [EventAttributes.BANNER_ID, EventAttributes.BANNER_SESSION_ID],
+  [EventAttributes.EMBED_ID, EventAttributes.EMBED_SESSION_ID],
   [EventAttributes.RESOURCE_CENTER_ID, EventAttributes.RESOURCE_CENTER_SESSION_ID],
 ];
 

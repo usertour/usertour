@@ -6,11 +6,30 @@ import { z } from 'zod';
  * A timezone-less datetime ("2026-07-10T00:00:00") is REJECTED: JS parses it in
  * the SERVER's local zone, so the same request would filter a different range on
  * a UTC cloud deployment vs a UTC+8 self-host — an incremental-sync client then
- * silently skips or re-reads hours of records.
+ * silently skips or re-reads hours of records. The day must also exist in
+ * its month (see isRealCalendarDay).
  */
 const UNAMBIGUOUS_ISO = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2}))?$/;
+
+/**
+ * The calendar day the string names must exist. Date.parse takes any day
+ * number up to 31 and rolls an impossible one forward (2026-02-30 → 03-02),
+ * so a typo would silently filter or report a different range than asked;
+ * the date part is rebuilt in UTC and must read back unchanged.
+ */
+const isRealCalendarDay = (s: string): boolean => {
+  const [year, month, day] = s.slice(0, 10).split('-').map(Number);
+  const rebuilt = new Date(0);
+  rebuilt.setUTCFullYear(year, month - 1, day);
+  return (
+    rebuilt.getUTCFullYear() === year &&
+    rebuilt.getUTCMonth() === month - 1 &&
+    rebuilt.getUTCDate() === day
+  );
+};
+
 export const isUnambiguousIsoDate = (s: string): boolean =>
-  UNAMBIGUOUS_ISO.test(s) && !Number.isNaN(Date.parse(s));
+  UNAMBIGUOUS_ISO.test(s) && !Number.isNaN(Date.parse(s)) && isRealCalendarDay(s);
 
 const ISO_MESSAGE =
   'Expected an ISO 8601 date ("2026-07-10") or datetime WITH timezone ' +

@@ -1,5 +1,6 @@
 import { useThemeList } from '@/hooks/use-theme-list';
 import type { Theme } from '@usertour/data';
+import type { Step } from '@usertour/types';
 import { mergeThemeDefaultSettings } from '@usertour/helpers';
 import { useMemo } from 'react';
 import { useBuilderStore } from '@/pages/contents/components/builder/core';
@@ -7,6 +8,12 @@ import { useBuilderStore } from '@/pages/contents/components/builder/core';
 interface UseCurrentThemeOptions {
   /** Whether to fall back to the default theme if no themeId is found */
   fallbackToDefault?: boolean;
+  /**
+   * The step whose theme to use instead of the store's current step — for a
+   * view that shows a step other than the one being edited. When given and
+   * undefined, no step theme applies.
+   */
+  step?: Pick<Step, 'themeId'>;
 }
 
 /**
@@ -16,7 +23,8 @@ interface UseCurrentThemeOptions {
  */
 export function useCurrentTheme(options: UseCurrentThemeOptions = {}): Theme | undefined {
   const { fallbackToDefault = false } = options;
-  const currentStep = useBuilderStore((state) => state.currentStep);
+  const storeStep = useBuilderStore((state) => state.currentStep);
+  const stepThemeId = 'step' in options ? options.step?.themeId : storeStep?.themeId;
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { themeList } = useThemeList();
 
@@ -25,8 +33,8 @@ export function useCurrentTheme(options: UseCurrentThemeOptions = {}): Theme | u
 
     // Priority: currentStep.themeId > currentVersion.themeId > default (if enabled)
     let theme: Theme | undefined;
-    if (currentStep?.themeId) {
-      theme = themeList.find((item) => item.id === currentStep.themeId);
+    if (stepThemeId) {
+      theme = themeList.find((item) => item.id === stepThemeId);
     } else if (currentVersion?.themeId) {
       theme = themeList.find((item) => item.id === currentVersion.themeId);
     } else if (fallbackToDefault) {
@@ -42,5 +50,5 @@ export function useCurrentTheme(options: UseCurrentThemeOptions = {}): Theme | u
     }
 
     return undefined;
-  }, [themeList, currentStep?.themeId, currentVersion?.themeId, fallbackToDefault]);
+  }, [themeList, stepThemeId, currentVersion?.themeId, fallbackToDefault]);
 }

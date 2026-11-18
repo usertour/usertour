@@ -1,3 +1,4 @@
+import { getStepTypesForContentType } from '@usertour/constants';
 import {
   Badge,
   ScrollArea,
@@ -13,6 +14,7 @@ import {
   RiEyeOffLine,
   RiMessage2Line,
   RiWindow2Line,
+  EmbedIcon,
 } from '@usertour/icons';
 import { cn } from '@usertour/tailwind';
 import {
@@ -22,7 +24,7 @@ import {
   type Step,
   StepContentType,
 } from '@usertour/types';
-import { useCallback, useMemo, useState } from 'react';
+import { type ComponentType, useCallback, useMemo, useState } from 'react';
 import { useActionsContext } from '../actions-context';
 import { registerActionSchema } from '../registry';
 import type { ActionTypeSchema } from '../schema-types';
@@ -61,10 +63,36 @@ const getStepTypeIcon = (type: string) => {
       return <RiWindow2Line className="h-4 w-4 shrink-0" />;
     case StepContentType.HIDDEN:
       return <RiEyeOffLine className="h-4 w-4 shrink-0" />;
+    case StepContentType.INLINE:
+      return <EmbedIcon className="h-4 w-4 shrink-0" />;
     default:
       return null;
   }
 };
+
+// The "Add new step" submenu, filtered to the step kinds the content type accepts.
+const NEW_STEP_ITEMS: {
+  type: StepContentType;
+  Icon: ComponentType<{ className?: string }>;
+  labelKey: string;
+}[] = [
+  { type: StepContentType.BUBBLE, Icon: RiMessage2Line, labelKey: 'actions.types.stepGoto.bubble' },
+  { type: StepContentType.TOOLTIP, Icon: RiChat2Line, labelKey: 'actions.types.stepGoto.tooltip' },
+  { type: StepContentType.MODAL, Icon: RiWindow2Line, labelKey: 'actions.types.stepGoto.modal' },
+  {
+    type: StepContentType.INLINE,
+    Icon: EmbedIcon,
+    labelKey: 'actions.types.stepGoto.inline',
+  },
+  { type: StepContentType.HIDDEN, Icon: RiEyeOffLine, labelKey: 'actions.types.stepGoto.hidden' },
+];
+
+const FLOW_NEW_STEP_TYPES: readonly StepContentType[] = [
+  StepContentType.BUBBLE,
+  StepContentType.TOOLTIP,
+  StepContentType.MODAL,
+  StepContentType.HIDDEN,
+];
 
 const findStep = (
   currentVersion: ContentVersion | undefined,
@@ -110,8 +138,10 @@ function StepGotoEditor({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { currentVersion, currentStep, createStep } = useActionsContext();
+  const { currentVersion, currentStep, createStep, currentContent } = useActionsContext();
   const data = readData(condition);
+  const stepTypeOptions = getStepTypesForContentType(currentContent?.type);
+  const newStepTypes = stepTypeOptions.length > 0 ? stepTypeOptions : FLOW_NEW_STEP_TYPES;
 
   // Open this editor as a controlled dropdown — distinct from ActionRow's
   // chip popover. ActionRow's popover renders the dropdown trigger; the
@@ -204,22 +234,14 @@ function StepGotoEditor({
                   {t('actions.types.stepGoto.addNewStep')}
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.BUBBLE)}>
-                    <RiMessage2Line className="h-4 w-4 shrink-0" />
-                    {t('actions.types.stepGoto.bubble')}
-                  </RulesDropdownMenuItem>
-                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.TOOLTIP)}>
-                    <RiChat2Line className="h-4 w-4 shrink-0" />
-                    {t('actions.types.stepGoto.tooltip')}
-                  </RulesDropdownMenuItem>
-                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.MODAL)}>
-                    <RiWindow2Line className="h-4 w-4 shrink-0" />
-                    {t('actions.types.stepGoto.modal')}
-                  </RulesDropdownMenuItem>
-                  <RulesDropdownMenuItem onSelect={() => handleCreate(StepContentType.HIDDEN)}>
-                    <RiEyeOffLine className="h-4 w-4 shrink-0" />
-                    {t('actions.types.stepGoto.hidden')}
-                  </RulesDropdownMenuItem>
+                  {NEW_STEP_ITEMS.filter((item) => newStepTypes.includes(item.type)).map(
+                    ({ type, Icon, labelKey }) => (
+                      <RulesDropdownMenuItem key={type} onSelect={() => handleCreate(type)}>
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {t(labelKey)}
+                      </RulesDropdownMenuItem>
+                    ),
+                  )}
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
             )}

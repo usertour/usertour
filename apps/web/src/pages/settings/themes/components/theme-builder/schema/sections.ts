@@ -665,6 +665,55 @@ export const builderSections: BuilderSection[] = [
   },
 
   {
+    id: 'embed',
+    label: 'themeBuilder.sections.embed',
+    previewWidget: ThemeDetailPreviewType.EMBED,
+    fields: [
+      {
+        type: 'color',
+        path: 'embed.backgroundColor.background',
+        label: 'themeBuilder.fields.embed.backgroundColor',
+        allowAuto: true,
+      },
+      {
+        type: 'color',
+        path: 'embed.textColor.color',
+        label: 'themeBuilder.fields.embed.textColor',
+        allowAuto: true,
+      },
+      {
+        type: 'number',
+        path: 'embed.padding',
+        label: 'themeBuilder.fields.common.padding',
+        min: 0,
+        max: 100,
+        suffix: 'px',
+      },
+      {
+        type: 'number',
+        path: 'embed.animationDuration',
+        label: 'themeBuilder.fields.embed.animationDuration',
+        tooltip: 'themeBuilder.tooltips.embedAnimationDuration',
+        min: 0,
+        max: 10000,
+        suffix: 'ms',
+      },
+      {
+        type: 'select',
+        path: 'embed.animationTiming',
+        label: 'themeBuilder.fields.embed.animationStyle',
+        tooltip: 'themeBuilder.tooltips.embedAnimationTiming',
+        options: [
+          { value: 'smooth', label: 'themeBuilder.options.bannerAnimation.smooth' },
+          { value: 'snappy', label: 'themeBuilder.options.bannerAnimation.snappy' },
+          { value: 'gentle', label: 'themeBuilder.options.bannerAnimation.gentle' },
+          { value: 'linear', label: 'themeBuilder.options.bannerAnimation.linear' },
+        ],
+      },
+    ],
+  },
+
+  {
     id: 'checklist',
     label: 'themeBuilder.sections.checklist',
     previewWidget: ThemeDetailPreviewType.CHECKLIST,

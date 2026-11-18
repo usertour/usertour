@@ -34,6 +34,7 @@ export interface ButtonPopoverContentProps {
   // ContentActions related props
   currentStep?: Step;
   currentVersion?: ContentVersion;
+  currentContent?: Content;
   attributes?: Attribute[];
   segments?: Segment[];
   token?: string;
@@ -67,6 +68,7 @@ export const ButtonPopoverContent = memo(
     onHideConditionsChange,
     currentStep,
     currentVersion,
+    currentContent,
     attributes,
     segments,
     token,
@@ -115,6 +117,7 @@ export const ButtonPopoverContent = memo(
           baseZIndex={zIndex}
           currentStep={currentStep}
           currentVersion={currentVersion}
+          currentContent={currentContent}
           onChange={onActionChange}
           conditions={element?.data?.actions ?? []}
           attributes={attributes}

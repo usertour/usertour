@@ -1,5 +1,6 @@
 import { bannerCases } from './banner';
 import { checklistCases } from './checklist';
+import { embedCases } from './embed';
 import { flowCases } from './flow';
 import { launcherCases } from './launcher';
 import { resourceCenterCases } from './resource-center';
@@ -10,5 +11,6 @@ export const cases: Record<string, GalleryCase> = {
   ...checklistCases,
   ...launcherCases,
   ...bannerCases,
+  ...embedCases,
   ...resourceCenterCases,
 };

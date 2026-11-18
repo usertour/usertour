@@ -98,8 +98,76 @@ export const LIST_PREVIEW_CONTENT = [
 ] as ContentEditorRoot[];
 
 /**
- * Preview content for banner theme preview
+ * Preview content for the embed theme preview: an upsell card, the copy on
+ * the left and the call to action beside it in its own column, so the button
+ * keeps its width.
  */
+export const EMBED_PREVIEW_CONTENT: ContentEditorRoot[] = [
+  {
+    element: {
+      type: 'group',
+    },
+    children: [
+      {
+        element: {
+          type: 'column',
+          justifyContent: 'justify-start',
+          alignItems: 'items-center',
+          width: {
+            type: 'fill',
+          },
+          style: {},
+        },
+        children: [
+          {
+            element: {
+              type: 'text',
+              data: [
+                {
+                  type: 'h2',
+                  children: [{ text: 'Advanced reports are a Business feature' }],
+                  align: 'left',
+                },
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      text: 'Break down usage by team, export to CSV and schedule weekly digests.',
+                    },
+                  ],
+                  align: 'left',
+                },
+              ],
+            },
+            children: null,
+          },
+        ],
+      },
+      {
+        element: {
+          type: 'column',
+          justifyContent: 'justify-end',
+          alignItems: 'items-center',
+          style: {},
+        },
+        children: [
+          {
+            element: {
+              type: 'button',
+              data: {
+                action: 'goto',
+                text: 'Upgrade plan',
+                type: 'primary',
+              },
+            },
+            children: null,
+          },
+        ],
+      },
+    ],
+  },
+] as unknown as ContentEditorRoot[];
+
 export const BANNER_PREVIEW_CONTENT = [
   {
     element: {

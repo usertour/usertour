@@ -49,9 +49,21 @@ const initializationAttributes = async (tx: Prisma.TransactionClient, projectId:
 const initializationEvents = async (tx: Prisma.TransactionClient, projectId: string) => {
   const existing = await tx.event.findMany({
     where: { projectId },
-    select: { codeName: true },
+    select: { codeName: true, predefined: true },
   });
   const existingKeys = new Set(existing.map((e) => e.codeName));
+  // Same collision rule as the deploy-time backfill (prisma/project-defaults):
+  // a user-defined event of a built-in name silently receives the built-in
+  // event's rows, so say so where an operator can see it (ADR 0022).
+  for (const event of existing) {
+    const collides =
+      !event.predefined && defaultEvents.some((candidate) => candidate.codeName === event.codeName);
+    if (collides) {
+      console.warn(
+        `[project-initialization] project ${projectId} already defines a custom event "${event.codeName}"; the built-in event of that name now records into it`,
+      );
+    }
+  }
   const toCreate = defaultEvents
     .filter((event) => !existingKeys.has(event.codeName))
     .map((event) => ({

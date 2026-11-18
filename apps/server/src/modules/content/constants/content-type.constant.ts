@@ -9,4 +9,5 @@ export enum ContentType {
   EVENT = 'event',
   RESOURCE_CENTER = 'resource-center',
   ANNOUNCEMENT = 'announcement',
+  EMBED = 'embed',
 }

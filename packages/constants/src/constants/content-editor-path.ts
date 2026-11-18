@@ -15,4 +15,5 @@ export const CONTENT_TYPE_PATH_SEGMENT: Record<ContentDataType, string> = {
   [ContentDataType.TRACKER]: 'trackers',
   [ContentDataType.RESOURCE_CENTER]: 'resource-centers',
   [ContentDataType.ANNOUNCEMENT]: 'announcements',
+  [ContentDataType.EMBED]: 'embeds',
 };
