@@ -27,6 +27,10 @@ const FILL_STYLE: CSSProperties = {
 
 /** Whether the element scrolls its own content, so a child would scroll with it. */
 const scrollsItsContent = (element: HTMLElement): boolean => {
+  // Scrolled already: `overflow: hidden` is scrolled by script, too.
+  if (element.scrollTop !== 0 || element.scrollLeft !== 0) {
+    return true;
+  }
   const style = element.ownerDocument.defaultView?.getComputedStyle(element);
   if (!style) {
     return false;
@@ -83,11 +87,17 @@ const holdAsContainingBlock = (host: HTMLElement): (() => void) => {
   };
 };
 
-/** Inside the host, filling it. Null when the host renders no child. */
+/**
+ * Inside the host, filling it. Null when the host renders no child. A host
+ * that starts scrolling its content (it grew past its box since) would carry
+ * the cover away with it: its first scroll asks for the place to be checked
+ * again, which then no longer holds.
+ */
 const placeInsideTarget = (
   mountEl: HTMLDivElement,
   host: HTMLElement,
   style: CSSProperties,
+  recheck: () => void,
 ): PlacedMount | null => {
   applyStyleObject(mountEl, { ...FILL_STYLE, ...style });
   insertMountEl(mountEl, { parent: host, insertMode: 'append' });
@@ -96,10 +106,12 @@ const placeInsideTarget = (
     return null;
   }
   const releaseHost = holdAsContainingBlock(host);
+  host.addEventListener('scroll', recheck, { passive: true });
   return {
-    holds: (next) => next === host && mountEl.parentElement === host,
+    holds: (next) => next === host && mountEl.parentElement === host && !scrollsItsContent(host),
     restyle: (next) => applyStyleObject(mountEl, { ...FILL_STYLE, ...next }),
     release: () => {
+      host.removeEventListener('scroll', recheck);
       releaseHost();
       detachMountEl(mountEl);
     },
@@ -170,9 +182,10 @@ export const placeCover = (
   mountEl: HTMLDivElement,
   target: Element,
   style: CSSProperties,
+  recheck: () => void,
 ): PlacedMount | null => {
   if (target instanceof HTMLElement && !scrollsItsContent(target)) {
-    const inside = placeInsideTarget(mountEl, target, style);
+    const inside = placeInsideTarget(mountEl, target, style, recheck);
     if (inside) {
       return inside;
     }

@@ -1,12 +1,24 @@
-import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import type { PlacedMount } from './inline-mount';
 
-/** Places a shell's mount element for a target; null when it cannot be placed. */
+/**
+ * Places a shell's mount element for a target; null when it cannot be placed.
+ * A placement that learns its place may no longer hold (the page changed
+ * under it) calls `recheck`, and is asked `holds` again.
+ */
 export type MountPlacer = (
   mountEl: HTMLDivElement,
   target: Element | null,
   style: CSSProperties,
+  recheck: () => void,
 ) => PlacedMount | null;
 
 /**
@@ -19,7 +31,8 @@ export type MountPlacer = (
  * The place is re-checked whenever the shell's style changes too (new
  * content data, a new measurement): the host may have moved the very same
  * target since, which no target change reports. The check is a sibling walk,
- * and a mount still in place is left alone.
+ * and a mount still in place is left alone. A placement may ask for the
+ * check itself, through the `recheck` it is given.
  *
  * Nothing here releases the mount from a layout-effect cleanup: a Suspense
  * boundary that re-suspends (another widget kind loading its chunk) runs
@@ -38,6 +51,8 @@ export const usePlacedMount = (
   const placedByRef = useRef<MountPlacer | null>(null);
   const wasPlacedRef = useRef(false);
   const [frameGeneration, setFrameGeneration] = useState(0);
+  const [checks, setChecks] = useState(0);
+  const recheck = useCallback(() => setChecks((count) => count + 1), []);
 
   useLayoutEffect(() => {
     placedRef.current?.restyle(style);
@@ -56,7 +71,7 @@ export const usePlacedMount = (
     }
     placed?.release();
     placedRef.current = null;
-    const next = place(mountEl, target, style);
+    const next = place(mountEl, target, style, recheck);
     if (!next) {
       return;
     }
@@ -66,7 +81,7 @@ export const usePlacedMount = (
     wasPlacedRef.current = true;
     placedRef.current = next;
     placedByRef.current = place;
-  }, [mountEl, open, target, place, style]);
+  }, [mountEl, open, target, place, style, recheck, checks]);
 
   useEffect(
     () => () => {

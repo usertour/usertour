@@ -264,11 +264,19 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
    * the server hands the session back. It is armed once per configuration: a
    * re-send of the same one leaves the live trigger alone, a republished one
    * replaces it, and a removed one stops it with any action it had waiting.
-   * While a step change is in flight the step it lands on arms its own.
+   * While a step change is in flight the step it lands on arms its own; a
+   * trigger the republish changed or removed meanwhile is stopped at once, with
+   * any action it had waiting.
    */
   private armStepTrigger(): void {
     const step = this.getCurrentStep();
-    if (!step || !this.getSessionId() || this.pendingStepCvid) {
+    if (this.pendingStepCvid) {
+      if (this.stepTriggerKey !== null && (!step || this.stepTriggerKey !== stepTriggerKey(step))) {
+        this.resetStepTrigger();
+      }
+      return;
+    }
+    if (!step || !this.getSessionId()) {
       return;
     }
     if (this.stepTriggerKey === stepTriggerKey(step)) {
@@ -318,6 +326,9 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     // stays whatever the republish settled on.
     const target = step.cvid ? this.getStepByCvid(step.cvid) : step;
     if (!target) {
+      // The republish was held off arming the step that stays while the change
+      // was in flight; it may have changed that step's trigger.
+      this.armStepTrigger();
       return;
     }
     this.currentStepCvid = target.cvid;
@@ -457,13 +468,21 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
       // pre-activation, so complete the found path here.
       const el = this.watcher.getElement();
       if (el && this.getSessionId()) {
-        if (el.isConnected) {
-          this.targetVisible = isVisibleNode(el);
+        // The node the selector finds now: the found one, or one that took its
+        // place since the last check (moved to at once, not hidden until then).
+        const target = this.watcher.resolveElement();
+        if (target) {
+          this.targetVisible = isVisibleNode(target);
           this.setStoreData({
             ...store,
             openState: this.computeOpenState(store.currentStep),
-            targetElement: el,
+            targetElement: target,
           });
+        } else if (el.isConnected) {
+          // Still in the page but no longer what the selector finds: hidden
+          // until the check loop sees the selector find it, or another, again.
+          this.targetVisible = false;
+          this.setStoreData({ ...store, openState: false, targetElement: el });
         } else {
           // Detached (SPA re-render): the check loop re-finds by selector and
           // reopens via ELEMENT_CHANGED.
@@ -490,6 +509,7 @@ export class UsertourEmbed extends UsertourComponent<EmbedStore> {
     // is in view: it sits in the document flow, so being scrolled past is
     // ordinary, and its own height can push the target out of the viewport.
     this.watcher.setViewportCheck(false);
+    this.watcher.setRequireSelectorMatch(true);
 
     this.watcher.once(SDKClientEvents.ELEMENT_FOUND, (el) => {
       if (isElement(el)) {

@@ -116,19 +116,27 @@ export const EmbedWidget = ({ embed }: EmbedWidgetProps) => {
   );
 
   // The shell's own style: a cover fills whatever holds it (see embed-cover),
-  // an in-flow shell is as tall as its measured content.
+  // an in-flow shell is as tall as its measured content. An in-flow shell is
+  // stacked only by a z-index the author set: the SDK's own base would lift
+  // it over the host's menus and dialogs.
+  const authoredZIndex = embedData?.zIndex;
   const shellStyle = useMemo<CSSProperties>(
     () =>
-      isCover ? { zIndex: zIndex ?? 0, ...reveal } : getEmbedWrapperStyle(measuredHeight, reveal),
-    [isCover, zIndex, measuredHeight, reveal],
+      isCover
+        ? { zIndex: zIndex ?? 0, ...reveal }
+        : {
+            ...getEmbedWrapperStyle(measuredHeight, reveal),
+            ...(authoredZIndex != null && { zIndex: authoredZIndex }),
+          },
+    [isCover, zIndex, authoredZIndex, measuredHeight, reveal],
   );
   const placeEmbed = useCallback<MountPlacer>(
-    (el, target, style) => {
+    (el, target, style, recheck) => {
       if (!target) {
         return null;
       }
       return isCover
-        ? placeCover(el, target, style)
+        ? placeCover(el, target, style, recheck)
         : placeInFlow(el, (next) => resolveElementMountPlacement(placement, next), target, style);
     },
     [isCover, placement],

@@ -11,6 +11,7 @@ import {
   question,
   row,
   twoStepFlow,
+  type StepInput,
 } from './content';
 import type { Page } from '@playwright/test';
 import { defaultSettings } from '@usertour/constants';
@@ -458,57 +459,73 @@ const expectSameBox = (
 test.describe('while a step change waits on its report', () => {
   /**
    * Step one pages on or does nothing; step two's trigger runs code at once.
-   * Without step two, the version a republish leaves once it removed that step.
+   * Without step two, the version a republish leaves once it removed that step;
+   * `stepOneTrigger` gives step one a trigger that runs code `wait` seconds
+   * after `#cta` is present.
    */
-  const session = (withStepTwo = true) =>
+  const session = (withStepTwo = true, stepOneTrigger?: { wait: number }) =>
     embedSession({
       sessionId: 'embed-session-1',
       contentId: 'embed-1',
       target: '#panel',
-      steps: [
-        {
-          id: 'embed-1-step-1',
-          cvid: 'embed-1-cvid-1',
-          type: 'inline',
-          data: [
-            row(paragraph('Step one')),
-            row(
-              button('Next', [gotoStep('embed-1-cvid-2')], { cvid: 'button-next' }),
-              button('Learn more', [], { cvid: 'button-learn' }),
-            ),
-          ],
-        },
-        {
-          id: 'embed-1-step-2',
-          cvid: 'embed-1-cvid-2',
-          type: 'inline',
-          data: [row(paragraph('Step two'))],
-          trigger: [
-            {
-              id: 'trigger-1',
-              conditions: [
-                {
-                  id: 'trigger-cond-1',
-                  type: 'element',
-                  operators: 'and',
-                  data: {
-                    logic: 'present',
-                    elementData: { type: 'manual', customSelector: '#cta', sequence: '1st' },
+      steps: (
+        [
+          {
+            id: 'embed-1-step-1',
+            cvid: 'embed-1-cvid-1',
+            type: 'inline',
+            data: [
+              row(paragraph('Step one')),
+              row(
+                button('Next', [gotoStep('embed-1-cvid-2')], { cvid: 'button-next' }),
+                button('Learn more', [], { cvid: 'button-learn' }),
+              ),
+            ],
+            ...(stepOneTrigger
+              ? {
+                  trigger: [
+                    {
+                      id: 'trigger-step-one',
+                      conditions: [elementPresent('#cta')],
+                      actions: [evaluateJs(COUNT_RUN)],
+                      wait: stepOneTrigger.wait,
+                    },
+                  ],
+                }
+              : {}),
+          },
+          {
+            id: 'embed-1-step-2',
+            cvid: 'embed-1-cvid-2',
+            type: 'inline',
+            data: [row(paragraph('Step two'))],
+            trigger: [
+              {
+                id: 'trigger-1',
+                conditions: [
+                  {
+                    id: 'trigger-cond-1',
+                    type: 'element',
+                    operators: 'and',
+                    data: {
+                      logic: 'present',
+                      elementData: { type: 'manual', customSelector: '#cta', sequence: '1st' },
+                    },
                   },
-                },
-              ],
-              actions: [evaluateJs(COUNT_RUN)],
-              wait: 0,
-            },
-          ],
-        },
-        {
-          id: 'embed-1-step-3',
-          cvid: 'embed-1-cvid-3',
-          type: 'inline',
-          data: [row(paragraph('Step three'))],
-        },
-      ].filter((step) => withStepTwo || step.cvid !== 'embed-1-cvid-2'),
+                ],
+                actions: [evaluateJs(COUNT_RUN)],
+                wait: 0,
+              },
+            ],
+          },
+          {
+            id: 'embed-1-step-3',
+            cvid: 'embed-1-cvid-3',
+            type: 'inline',
+            data: [row(paragraph('Step three'))],
+          },
+        ] satisfies StepInput[]
+      ).filter((step) => withStepTwo || step.cvid !== 'embed-1-cvid-2'),
     });
 
   /** Holds the report of step two until the returned function is called. */
@@ -592,6 +609,48 @@ test.describe('while a step change waits on its report', () => {
     await sdk.page.waitForTimeout(300);
     expect(await sdk.recorded('ran')).toEqual([]);
     await expect(frame.getByText('Step one')).toBeVisible();
+  });
+
+  test('a republish that removed the step moved to and changed the trigger of the step on screen runs the new trigger', async ({
+    sdk,
+    protocol,
+  }) => {
+    const report = holdStepTwoReport(protocol);
+    await start(sdk);
+    await protocol.push('AddEmbed', session());
+    const frame = sdk.page.frameLocator(FRAME);
+    await frame.getByRole('button', { name: 'Next' }).click();
+    await report.arrived;
+
+    await protocol.push('AddEmbed', session(false, { wait: 0 }));
+    report.release();
+    await expect.poll(() => sdk.recorded('ran')).toEqual(['yes']);
+    await expect(frame.getByText('Step one')).toBeVisible();
+  });
+
+  test('a republish that removed the step on screen stops its trigger at once, before the report is back', async ({
+    sdk,
+    protocol,
+  }) => {
+    const report = holdStepTwoReport(protocol);
+    await start(sdk);
+    await protocol.push('AddEmbed', session(true, { wait: 5 }));
+    const frame = sdk.page.frameLocator(FRAME);
+    await expect(frame.getByText('Step one')).toBeVisible();
+    await sdk.advance(600);
+    await frame.getByRole('button', { name: 'Next' }).click();
+    await report.arrived;
+
+    const onlyStepThree = session();
+    onlyStepThree.version.steps = onlyStepThree.version.steps.filter(
+      (step) => step.cvid === 'embed-1-cvid-3',
+    );
+    await protocol.push('AddEmbed', onlyStepThree);
+    await expect(frame.getByText('Step three')).toBeVisible();
+    await sdk.advance(6000);
+    await sdk.page.waitForTimeout(300);
+    expect(await sdk.recorded('ran')).toEqual([]);
+    report.release();
   });
 
   test('a session re-sent meanwhile keeps the step on screen and runs the next step’s trigger once, on arrival', async ({
@@ -841,6 +900,45 @@ test('a cover on a target that scrolls its own content mounts in the body and st
   await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBe(100);
   expectSameBox(await shell.boundingBox(), await panel.boundingBox());
 });
+
+for (const overflow of ['auto', 'hidden']) {
+  test(`a cover whose overflow: ${overflow} target starts scrolling its own content moves to the body and stays over the box`, async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate((value) => {
+      const panel = document.getElementById('panel') as HTMLElement;
+      panel.style.height = '80px';
+      panel.style.overflow = value;
+    }, overflow);
+    await protocol.push(
+      'AddEmbed',
+      oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Locked', [], 'cover-element'),
+    );
+    const shell = sdk.page.locator(SHELL);
+    await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+    expect(await shell.evaluate((el) => el.parentElement?.id)).toBe('panel');
+
+    // The target's content grows past its box, and the target is scrolled.
+    await sdk.page.evaluate(() => {
+      const panel = document.getElementById('panel') as HTMLElement;
+      const tall = document.createElement('div');
+      tall.style.height = '400px';
+      panel.append(tall);
+      panel.scrollTop = 100;
+    });
+    await expect.poll(() => shell.evaluate((el) => el.parentElement?.tagName)).toBe('BODY');
+    await expect(sdk.page.frameLocator(FRAME).getByText('Locked')).toBeVisible();
+    const panel = sdk.page.locator('#panel');
+    await expect
+      .poll(async () => {
+        const [cover, box] = [await shell.boundingBox(), await panel.boundingBox()];
+        return Math.abs(cover!.y - box!.y) <= 1 && Math.abs(cover!.height - box!.height) <= 1;
+      })
+      .toBe(true);
+  });
+}
 
 test('two covers on one target keep it positioned until the last one leaves', async ({
   sdk,
@@ -1529,6 +1627,108 @@ test('an embed whose target leaves the page unmounts and comes back with it', as
   });
   await sdk.advance(600);
   await expect(sdk.page.locator(FRAME)).toBeVisible();
+});
+
+test('an embed whose target its selector no longer finds unmounts, and comes back when it does', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Here'));
+  await expect(sdk.page.locator(FRAME)).toBeVisible();
+
+  // The host re-keys the very same node: still in the page, no longer `#panel`.
+  await sdk.page.evaluate(() => {
+    (document.getElementById('panel') as HTMLElement).id = 'panel-renamed';
+  });
+  await sdk.advance(600);
+  await expect(sdk.page.locator(FRAME)).toHaveCount(0);
+  // An update of the session meanwhile does not put it back on the old node,
+  // not even until the next check.
+  await sdk.page.evaluate(() => {
+    const seen = { count: 0 };
+    (window as unknown as { shellSeen: typeof seen }).shellSeen = seen;
+    new MutationObserver(() => {
+      if (document.querySelector('.usertour-widget-embed')) seen.count += 1;
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Here again'),
+  );
+  await sdk.page.waitForTimeout(300);
+  expect(
+    await sdk.page.evaluate(
+      () => (window as unknown as { shellSeen: { count: number } }).shellSeen.count,
+    ),
+  ).toBe(0);
+
+  await sdk.page.evaluate(() => {
+    (document.getElementById('panel-renamed') as HTMLElement).id = 'panel';
+  });
+  await sdk.advance(600);
+  await expect(sdk.page.locator(FRAME)).toBeVisible();
+});
+
+test('an embed whose target another node took over is moved there by a session re-send, without leaving the page', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Here'));
+  await expect(sdk.page.locator(FRAME)).toBeVisible();
+
+  // The host swaps the node the selector finds, before the next check runs.
+  await sdk.page.evaluate(() => {
+    const old = document.getElementById('panel') as HTMLElement;
+    old.id = 'panel-old';
+    const next = document.createElement('div');
+    next.id = 'panel';
+    next.textContent = 'New panel';
+    document.body.append(next);
+    const seen = { gone: 0 };
+    (window as unknown as { shellSeen: typeof seen }).shellSeen = seen;
+    new MutationObserver(() => {
+      if (!document.querySelector('.usertour-widget-embed')) seen.gone += 1;
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+  await protocol.push(
+    'AddEmbed',
+    oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Here again'),
+  );
+  await expect
+    .poll(() => sdk.page.locator(SHELL).evaluate((el) => el.previousElementSibling?.id))
+    .toBe('panel');
+  expect(
+    await sdk.page.evaluate(
+      () => (window as unknown as { shellSeen: { gone: number } }).shellSeen.gone,
+    ),
+  ).toBe(0);
+});
+
+test('an in-flow embed is stacked by the z-index its author set, and by none otherwise', async ({
+  sdk,
+  protocol,
+}) => {
+  await start(sdk);
+  const stacked = oneStepEmbed('embed-session-1', 'embed-1', '#panel', 'Stacked');
+  stacked.version.embed = { ...stacked.version.embed, zIndex: 7 };
+  await protocol.push('AddEmbed', stacked);
+  await protocol.push('AddEmbed', oneStepEmbed('embed-session-2', 'embed-2', '#cta', 'Plain'));
+  const shells = sdk.page.locator(SHELL);
+  await expect(shells).toHaveCount(2);
+  const zIndexOf = (target: string) =>
+    sdk.page.evaluate(
+      ([selector, id]) => {
+        const shell = [...document.querySelectorAll<HTMLElement>(selector)].find(
+          (el) => el.previousElementSibling?.id === id,
+        );
+        return shell ? getComputedStyle(shell).zIndex : null;
+      },
+      [SHELL, target],
+    );
+  await expect.poll(() => zIndexOf('panel')).toBe('7');
+  await expect.poll(() => zIndexOf('cta')).toBe('auto');
 });
 
 test('an embed whose session is gone starts over when the server sends it without one', async ({
