@@ -57,6 +57,30 @@ if (!process.env.SMOKE_MODE) {
     console.error('   Build with apps/sdk/.env present (see .env.example) so every VITE_* var has a value.');
     process.exit(1);
   }
+  // Static scan: no endpoint on this machine baked in as a fallback. `vite
+  // build` reads .env.production over .env; without it, a developer's .env
+  // (pointing at localhost) gives the bundle a WS_URI / ASSETS_URI that a
+  // hosted customer page, which sets no USERTOURJS_ENV_VARS, would use: the
+  // SDK connects to the visitor's own machine and loads nothing.
+  // SMOKE_ALLOW_LOCAL_ENDPOINTS=1 lets a local build (for the e2e suite) pass.
+  const LOCAL_ENDPOINT = /\b(?:https?|wss?):\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])\b/;
+  if (process.env.SMOKE_ALLOW_LOCAL_ENDPOINTS !== '1') {
+    const local = bundleFiles
+      .map((f) => ({ f, m: readFileSync(f, 'utf8').match(LOCAL_ENDPOINT) }))
+      .filter(({ m }) => m);
+    if (local.length > 0) {
+      console.error('SMOKE FAIL [local-endpoint] — a local endpoint is baked into the bundle:');
+      for (const { f, m } of local) {
+        const src = readFileSync(f, 'utf8');
+        console.error(`   ${f}`);
+        console.error(`     ...${src.slice(Math.max(0, m.index - 40), m.index + 60)}...`);
+      }
+      console.error(
+        '   Build for release with apps/sdk/.env.production present, or set SMOKE_ALLOW_LOCAL_ENDPOINTS=1 for a local-only build.',
+      );
+      process.exit(1);
+    }
+  }
   for (const mode of ['normal', 'no-storage']) {
     execFileSync(process.execPath, [SELF], {
       stdio: 'inherit',
