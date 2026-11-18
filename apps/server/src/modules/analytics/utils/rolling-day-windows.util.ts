@@ -1,6 +1,6 @@
 import { tz } from '@date-fns/tz';
 import { Prisma } from '@prisma/client';
-import { eachDayOfInterval, endOfDay, format, isBefore, startOfDay, subDays } from 'date-fns';
+import { addDays, eachDayOfInterval, format, isBefore, startOfDay, subDays } from 'date-fns';
 
 export interface DayWindow {
   /** Calendar day label in the requested timezone, yyyy-MM-dd. */
@@ -11,6 +11,18 @@ export interface DayWindow {
   windowStart: Date;
   /** Last instant of `day` in the requested timezone. */
   windowEnd: Date;
+}
+
+/**
+ * The last instant of the calendar day containing `day` in `timezone`: the next
+ * day's first instant minus 1ms. date-fns `endOfDay` sets the wall clock to
+ * 23:59:59.999, which is ambiguous on a day that turns its clock back at
+ * midnight (America/Santiago 2026-04-04 is 25h) and resolves to the first
+ * occurrence, dropping the day's last hour.
+ */
+export function endOfDayInZone(day: Date | number, timezone: string): Date {
+  const inZone = { in: tz(timezone) };
+  return new Date(startOfDay(addDays(day, 1, inZone), inZone).getTime() - 1);
 }
 
 /**
@@ -44,7 +56,7 @@ export function rollingDayWindows(
     day: format(day, 'yyyy-MM-dd', inZone),
     dayStart: new Date(startOfDay(day, inZone)),
     windowStart: new Date(startOfDay(subDays(day, rollingWindow - 1), inZone)),
-    windowEnd: new Date(endOfDay(day, inZone)),
+    windowEnd: endOfDayInZone(day, timezone),
   }));
 }
 

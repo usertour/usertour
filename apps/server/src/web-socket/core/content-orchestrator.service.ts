@@ -1535,7 +1535,7 @@ export class ContentOrchestratorService {
    * @returns True if the session was canceled successfully
    */
   private async cancelBatchSocketSession(params: CancelSessionParams): Promise<boolean> {
-    const { socket, socketData, contentId, contentType, unsetSession } = params;
+    const { server, socket, socketData, sessionId, contentId, contentType, unsetSession } = params;
     if (!contentId) {
       this.logger.warn('cancelBatchSocketSession: contentId is required but not provided');
       return false;
@@ -1545,6 +1545,21 @@ export class ContentOrchestratorService {
     if (!currentSession) {
       this.logger.warn(`cancelBatchSocketSession: session not found for contentId: ${contentId}`);
       return false;
+    }
+    // A stale cancel (e.g. a room-sync job queued before this connection moved
+    // on) must not remove a newer session of the same content.
+    if (sessionId && currentSession.id && currentSession.id !== sessionId) {
+      this.logger.debug(
+        `cancelBatchSocketSession: skipping stale cancel for session ${sessionId}, current is ${currentSession.id}`,
+      );
+      return false;
+    }
+    // A candidate with no session yet is not the session the cancel names: it
+    // may be a new round delivered since, or one the ended session leaves
+    // ineligible (a once embed). Re-evaluating the type for this connection
+    // keeps the first and removes the second.
+    if (sessionId && !currentSession.id) {
+      return await this.toggleContents({ server, socket, socketData }, [contentType]);
     }
 
     return await this.socketOperationService.cleanupBatchSession(

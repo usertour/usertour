@@ -34,6 +34,7 @@ import {
 import {
   type ContentReference,
   collectWriteViolations,
+  compiledButtonCvidIssues,
 } from '../content-representation/write-guards';
 import { compileStep } from '../content-representation/representation.compile';
 import { decompileStep } from '../content-representation/representation.decompile';
@@ -575,6 +576,12 @@ export class ApiContentVersionsService {
           stepDismiss,
         ),
       );
+      const cvidIssues = compiledButtonCvidIssues(
+        content.steps as Array<{ name?: unknown; data?: unknown }>,
+      );
+      if (cvidIssues.length > 0) {
+        throw ValidationError.fromIssues(cvidIssues);
+      }
     }
 
     if (body.startRules !== undefined || body.hideRules !== undefined) {

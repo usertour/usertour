@@ -64,6 +64,75 @@ export type ContentReference = {
 
 export type WriteWalkResult = { issues: ValidationIssue[]; refs: ContentReference[] };
 
+type ButtonCvidOf = (node: Record<string, unknown>) => unknown;
+
+/** A representation button block's cvid. */
+const representationButtonCvid: ButtonCvidOf = (node) =>
+  node.type === 'button' ? node.cvid : undefined;
+
+/** A compiled button element's cvid, set or inherited from the stored button. */
+const compiledButtonCvid: ButtonCvidOf = (node) =>
+  node.type === 'button' && node.data && typeof node.data === 'object'
+    ? (node.data as Record<string, unknown>).cvid
+    : undefined;
+
+/** Every button's cvid in a content tree (columns included), in document order. */
+function collectButtonCvids(
+  node: unknown,
+  cvidOf: ButtonCvidOf,
+  visit: (cvid: string) => void,
+): void {
+  if (Array.isArray(node)) {
+    for (const n of node) collectButtonCvids(n, cvidOf, visit);
+    return;
+  }
+  if (!node || typeof node !== 'object') return;
+  const obj = node as Record<string, unknown>;
+  const cvid = cvidOf(obj);
+  if (typeof cvid === 'string' && cvid) {
+    visit(cvid);
+  }
+  for (const value of Object.values(obj)) {
+    collectButtonCvids(value, cvidOf, visit);
+  }
+}
+
+/**
+ * A button's cvid is its click-analytics identity, keyed per step: two
+ * buttons sharing one in the same step would merge their clicks.
+ */
+function duplicateButtonCvidIssues(
+  content: unknown,
+  cvidOf: ButtonCvidOf,
+  index: number,
+  name: unknown,
+): ValidationIssue[] {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  collectButtonCvids(content, cvidOf, (cvid) => {
+    if (seen.has(cvid)) duplicates.add(cvid);
+    seen.add(cvid);
+  });
+  return [...duplicates].map((cvid) => ({
+    rule: 'step_shape' as const,
+    path: `steps[${index}].content`,
+    message: `Step ${index}${typeof name === 'string' && name ? ` "${name}"` : ''} has more than one button with cvid "${cvid}" — a button's cvid is its click-analytics identity, so their clicks would merge. Give each button its own cvid (or omit it to get a new one).`,
+  }));
+}
+
+/**
+ * The same check on compiled steps: a button echoed by id alone inherits its
+ * stored cvid only at compile, so a new button that names that cvid passes the
+ * write walk but not this.
+ */
+export function compiledButtonCvidIssues(
+  steps: ReadonlyArray<{ name?: unknown; data?: unknown }>,
+): ValidationIssue[] {
+  return steps.flatMap((step, i) =>
+    duplicateButtonCvidIssues(step.data, compiledButtonCvid, i, step.name),
+  );
+}
+
 export function collectWriteViolations(input: {
   steps?: unknown;
   data?: unknown;
@@ -216,6 +285,7 @@ export function collectWriteViolations(input: {
         message: `A step renders only its FIRST question — ${questionCount} question blocks would leave the rest invisible (no answers, no analytics). One question per step; chain steps for a multi-question survey.`,
       });
     }
+    issues.push(...duplicateButtonCvidIssues(s.content, representationButtonCvid, i, s.name));
     const onClick = s.onClick;
     if (Array.isArray(onClick) && onClick.length > 0 && !caps?.onClick) {
       issues.push({

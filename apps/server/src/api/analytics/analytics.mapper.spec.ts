@@ -432,6 +432,16 @@ describe('toDayBoundary', () => {
     expect(toDayBoundary('2026-07-04', 'Asia/Shanghai', 'end')).toBe('2026-07-04T15:59:59.999Z');
   });
 
+  it('covers the whole 25h day where the clock turns back at midnight (America/Santiago)', () => {
+    expect(toDayBoundary('2026-04-04', 'America/Santiago', 'start')).toBe(
+      '2026-04-04T03:00:00.000Z',
+    );
+    expect(toDayBoundary('2026-04-04', 'America/Santiago', 'end')).toBe('2026-04-05T03:59:59.999Z');
+    expect(toDayBoundary('2026-04-05', 'America/Santiago', 'start')).toBe(
+      '2026-04-05T04:00:00.000Z',
+    );
+  });
+
   it('passes full timestamps through untouched', () => {
     expect(toDayBoundary('2026-07-04T12:30:00.000Z', 'UTC', 'end')).toBe(
       '2026-07-04T12:30:00.000Z',

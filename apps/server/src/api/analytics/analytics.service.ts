@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ContentDataType } from '@usertour/types';
 import { TZDate, tz } from '@date-fns/tz';
-import { endOfDay, format, startOfDay } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { PrismaService } from 'nestjs-prisma';
 
 import { AnalyticsService } from '@/modules/analytics/services/analytics.service';
+import { endOfDayInZone } from '@/modules/analytics/utils/rolling-day-windows.util';
 import {
   ContentNotFoundError,
   EnvironmentNotFoundError,
@@ -185,5 +186,7 @@ export function toDayBoundary(value: string, timezone: string, edge: 'start' | '
   // edge from its own instant (not start + 24h) keeps 23h/25h days correct.
   const [year, month, day] = value.split('-').map(Number);
   const inDay = new TZDate(year, month - 1, day, timezone);
-  return new Date(edge === 'start' ? startOfDay(inDay) : endOfDay(inDay)).toISOString();
+  return (
+    edge === 'start' ? new Date(startOfDay(inDay)) : endOfDayInZone(inDay, timezone)
+  ).toISOString();
 }

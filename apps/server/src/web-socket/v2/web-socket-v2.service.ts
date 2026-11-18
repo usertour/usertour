@@ -719,8 +719,17 @@ export class WebSocketV2Service {
    */
   async clickButton(context: WebSocketContext, params: ClickButtonDto): Promise<boolean> {
     const { socketData } = context;
-    const { environment, clientContext } = socketData;
+    const { environment, clientContext, bizUserId } = socketData;
     const { sessionId, stepId, buttonCvid, buttonText } = params;
+    // The click is recorded against the session's user, so the session must
+    // be this connection's own: a session id of another user is refused.
+    const owner = await this.prisma.bizSession.findUnique({
+      where: { id: sessionId },
+      select: { bizUserId: true, environmentId: true },
+    });
+    if (!owner || owner.bizUserId !== bizUserId || owner.environmentId !== environment.id) {
+      return false;
+    }
     return await this.eventTrackingService.trackEventByType(BizEvents.BUTTON_CLICKED, {
       sessionId,
       environment,

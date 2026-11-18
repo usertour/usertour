@@ -280,6 +280,36 @@ describe('collectWriteViolations (single write walk)', () => {
 });
 
 describe('collectWriteViolations — embed steps', () => {
+  it('two buttons sharing a cvid in one step are rejected; the same cvid in different steps is fine', () => {
+    const button = (cvid: string) => ({
+      type: 'button',
+      cvid,
+      text: 'Go',
+      actions: [{ type: 'dismiss' }],
+    });
+    const out = collectWriteViolations({
+      steps: [
+        {
+          name: 'Card',
+          type: 'inline',
+          content: [
+            button('btn-a'),
+            {
+              type: 'columns',
+              columns: [{ blocks: [button('btn-a')] }, { blocks: [button('btn-b')] }],
+            },
+          ],
+        },
+        { name: 'Next', type: 'inline', content: [button('btn-b')] },
+      ],
+      contentType: 'embed',
+    });
+    expect(out.issues.map((issue) => ({ rule: issue.rule, path: issue.path }))).toEqual([
+      { rule: 'step_shape', path: 'steps[0].content' },
+    ]);
+    expect(out.issues[0].message).toMatch(/"Card".*"btn-a"/);
+  });
+
   it('step kinds follow the content type: inline is rejected in a flow, modal in an embed', () => {
     const flow = collectWriteViolations({
       steps: [{ name: 'Card', type: 'inline', content: [] }],
