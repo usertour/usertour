@@ -63,7 +63,9 @@ if (!process.env.SMOKE_MODE) {
       console.error(`   ${f}`);
       console.error(`     ...${src.slice(Math.max(0, i - 40), i + 40)}...`);
     }
-    console.error('   Build with apps/sdk/.env present (see .env.example) so every VITE_* var has a value.');
+    console.error(
+      '   Build with apps/sdk/.env present (see .env.example) so every VITE_* var has a value.',
+    );
     process.exit(1);
   }
   // Static scan: no endpoint on this machine baked in as a fallback. `vite
@@ -163,10 +165,34 @@ for (const storageKey of ['localStorage', 'sessionStorage']) {
 }
 // Shims for APIs jsdom lacks; put them on window too (bundle may read either).
 const shims = {
-  matchMedia: () => ({ matches: false, media: '', addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false }),
-  ResizeObserver: class { observe() {} unobserve() {} disconnect() {} },
-  IntersectionObserver: class { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } },
-  WebSocket: class { close() {} send() {} addEventListener() {} removeEventListener() {} },
+  matchMedia: () => ({
+    matches: false,
+    media: '',
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent: () => false,
+  }),
+  ResizeObserver: class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  },
+  IntersectionObserver: class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  },
+  WebSocket: class {
+    close() {}
+    send() {}
+    addEventListener() {}
+    removeEventListener() {}
+  },
 };
 for (const [k, v] of Object.entries(shims)) {
   jsdomWindow[k] ??= v;
@@ -179,7 +205,13 @@ try {
   await import(pathToFileURL(entry).href);
 } catch (e) {
   console.error(`SMOKE FAIL [${process.env.SMOKE_MODE}] — bundle threw during module evaluation:`);
-  console.error('  ', String(e?.stack ?? e).split('\n').slice(0, 4).join('\n   '));
+  console.error(
+    '  ',
+    String(e?.stack ?? e)
+      .split('\n')
+      .slice(0, 4)
+      .join('\n   '),
+  );
   process.exit(1);
 }
 
@@ -187,8 +219,12 @@ try {
 await new Promise((r) => setTimeout(r, 300));
 
 if (typeof w.usertour === 'undefined' || w.usertour === null) {
-  console.error(`SMOKE FAIL [${process.env.SMOKE_MODE}] — bundle evaluated but window.usertour never appeared.`);
+  console.error(
+    `SMOKE FAIL [${process.env.SMOKE_MODE}] — bundle evaluated but window.usertour never appeared.`,
+  );
   process.exit(1);
 }
-console.log(`smoke OK [${process.env.SMOKE_MODE}] — chunked es2020 bundle boots; window.usertour is present.`);
+console.log(
+  `smoke OK [${process.env.SMOKE_MODE}] — chunked es2020 bundle boots; window.usertour is present.`,
+);
 process.exit(0);
