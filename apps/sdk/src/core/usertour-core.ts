@@ -1316,6 +1316,7 @@ export class UsertourCore extends Evented {
     // step that shows or moves on to one from a hidden step; its end expands it.
     // Moving on to a hidden step leaves the checklist as it is: flows often wait
     // there for a moment between two steps.
+    // Visible-step changes and target recovery leave a manually reopened checklist alone.
     usertourTour.on(SDKClientEvents.FLOW_ON_SCREEN, async () => {
       if (this.activatedTour === usertourTour) {
         await this.collapseChecklist();
@@ -1506,12 +1507,11 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Whether a flow is showing something on the page. A flow waiting on a hidden
-   * step is not: it can sit there for the whole visit, and must not keep the
-   * checklist collapsed as a flow the user is looking at does.
+   * Whether a flow is showing something on the page. Hidden steps and tooltips
+   * still waiting for their target must not keep a new checklist collapsed.
    */
   private hasTourOnScreen(): boolean {
-    return this.activatedTour !== null && !this.activatedTour.isOnHiddenStep();
+    return this.activatedTour?.isOpen() ?? false;
   }
 
   /**

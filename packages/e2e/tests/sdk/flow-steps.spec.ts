@@ -192,11 +192,36 @@ test.describe('the session', () => {
   const surfaces = (sdk: SdkPage) => sdk.page.locator('iframe.usertour-widget-surface-viewport');
   const taskButton = (sdk: SdkPage) =>
     sdk.frame().getByRole('button', { name: 'Complete task: Invite your team' });
-  /** Waits on a hidden step until `#go-on` is on the page, then shows a modal. */
-  const flowWaitingForButton = () =>
+  const reopenChecklist = async (sdk: SdkPage) => {
+    await sdk.page
+      .frameLocator('iframe.usertour-widget-checklist-launcher')
+      .getByRole('button', { name: /Open checklist/ })
+      .click();
+  };
+  const expectChecklistAlongsideStep = async (sdk: SdkPage, text: string) => {
+    const visibleSurfaces = surfaces(sdk).filter({ visible: true });
+    await expect(visibleSurfaces).toHaveCount(2);
+    await expect
+      .poll(() =>
+        visibleSurfaces.evaluateAll((frames) =>
+          frames.map((frame) =>
+            frame instanceof HTMLIFrameElement ? frame.contentDocument?.body.textContent : '',
+          ),
+        ),
+      )
+      .toEqual(
+        expect.arrayContaining([
+          expect.stringContaining(text),
+          expect.stringContaining('Invite your team'),
+        ]),
+      );
+  };
+  /** Waits on a hidden step until `#go-on` is on the page, then moves on. */
+  const flowWaitingForButton = (nextStep: 'modal' | 'tooltip' = 'modal', themeSettings?: unknown) =>
     flowSession({
       sessionId: 'session-1',
       contentId: 'flow-1',
+      themeSettings,
       steps: [
         {
           id: 'flow-1-step-1',
@@ -215,7 +240,8 @@ test.describe('the session', () => {
         {
           id: 'flow-1-step-2',
           cvid: 'flow-1-cvid-2',
-          type: 'modal',
+          type: nextStep,
+          ...(nextStep === 'tooltip' ? { target: '#late-tooltip' } : {}),
           data: [row(paragraph('All set'))],
         },
       ],
@@ -272,6 +298,196 @@ test.describe('the session', () => {
     await expect(surfaces(sdk)).toHaveCount(1);
     await expect(sdk.frame().getByText('All set')).toBeVisible();
   });
+
+  for (const initialTarget of ['missing', 'hidden'] as const) {
+    for (const outcome of ['target appears', 'auto-dismiss', 'use-bubble'] as const) {
+      test(`a tooltip after a hidden step leaves the checklist open until shown: ${initialTarget} target, ${outcome}`, async ({
+        sdk,
+        protocol,
+      }) => {
+        await start(sdk);
+        await sdk.pauseClock();
+        await protocol.push('SetChecklistSession', openChecklist());
+        await expect(taskButton(sdk)).toBeVisible();
+        await protocol.waitForMessages('ShowChecklist', 1);
+        if (initialTarget === 'hidden') {
+          await addButton(sdk.page, 'late-tooltip', 'Tooltip target', 'display:none');
+        }
+        await protocol.push(
+          'SetFlowSession',
+          flowWaitingForButton('tooltip', outcome === 'use-bubble' ? useBubble : undefined),
+        );
+
+        await addButton(sdk.page, 'go-on', 'Go on');
+        await sdk.advance(600);
+        await protocol.waitForMessages('GoToStep', 1);
+        await protocol.waitForBatchesToClose();
+        await expect(taskButton(sdk)).toBeVisible();
+        await expect(sdk.frame().getByText('All set')).toHaveCount(0);
+        expect(protocol.messages('HideChecklist')).toHaveLength(0);
+
+        if (outcome === 'target appears') {
+          if (initialTarget === 'hidden') {
+            await sdk.page.locator('#late-tooltip').evaluate((el) => {
+              el.style.display = '';
+            });
+          } else {
+            await addButton(sdk.page, 'late-tooltip', 'Tooltip target');
+          }
+          await sdk.advance(400);
+        } else {
+          await sdk.advance(4_000);
+          if (initialTarget === 'missing') {
+            await protocol.waitForMessages('ReportTooltipTargetMissing', 1);
+          }
+        }
+
+        if (outcome === 'auto-dismiss') {
+          await protocol.waitForMessages('EndContent', 1);
+          await protocol.waitForBatchesToClose();
+          await expect(taskButton(sdk)).toBeVisible();
+          expect(protocol.messages('HideChecklist')).toHaveLength(0);
+          expect(await sdk.isStarted('flow-1')).toBe(false);
+        } else {
+          await expect(sdk.frame().getByText('All set')).toBeVisible();
+          await expect(taskButton(sdk)).toHaveCount(0);
+          await protocol.waitForMessages('HideChecklist', 1);
+          await protocol.waitForBatchesToClose();
+          expect(protocol.messages('HideChecklist')).toHaveLength(1);
+          if (outcome === 'use-bubble') {
+            await expect(sdk.page.locator('iframe.usertour-widget-bubble__avatar')).toBeVisible();
+          }
+        }
+        if (initialTarget === 'hidden') {
+          expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
+        }
+      });
+    }
+  }
+
+  test('a checklist arriving while a tooltip waits for its target opens, then collapses when the target appears', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.pauseClock();
+    await protocol.push('SetFlowSession', flowWaitingForButton('tooltip'));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+    await sdk.advance(400);
+    await protocol.push('SetChecklistSession', openChecklist());
+    await expect(taskButton(sdk)).toBeVisible();
+    await protocol.waitForMessages('ShowChecklist', 1);
+    expect(protocol.messages('HideChecklist')).toHaveLength(0);
+
+    await addButton(sdk.page, 'late-tooltip', 'Tooltip target');
+    await sdk.advance(400);
+    await expect(sdk.frame().getByText('All set')).toBeVisible();
+    await expect(taskButton(sdk)).toHaveCount(0);
+    await protocol.waitForMessages('HideChecklist', 1);
+  });
+
+  for (const nextStep of ['modal', 'tooltip'] as const) {
+    test(`a checklist the user reopens stays open across visible steps (${nextStep}), but collapses after a hidden step`, async ({
+      sdk,
+      protocol,
+    }) => {
+      await start(sdk);
+      await protocol.push('SetChecklistSession', openChecklist());
+      await expect(taskButton(sdk)).toBeVisible();
+      await protocol.push(
+        'SetFlowSession',
+        flowSession({
+          sessionId: 'session-1',
+          contentId: 'flow-1',
+          steps: [
+            {
+              id: 'flow-1-step-1',
+              cvid: 'flow-1-cvid-1',
+              type: 'modal',
+              data: [row(paragraph('First visible step'))],
+            },
+            {
+              id: 'flow-1-step-2',
+              cvid: 'flow-1-cvid-2',
+              type: nextStep,
+              ...(nextStep === 'tooltip' ? { target: '#cta' } : {}),
+              data: [row(paragraph('Second visible step'))],
+            },
+            { id: 'flow-1-step-3', cvid: 'flow-1-cvid-3', type: 'hidden', data: [] },
+          ],
+        }),
+      );
+      await protocol.waitForMessages('HideChecklist', 1);
+      await expect(sdk.frame().getByText('First visible step')).toBeVisible();
+      await reopenChecklist(sdk);
+      await protocol.waitForMessages('ShowChecklist', 2);
+      await expectChecklistAlongsideStep(sdk, 'First visible step');
+
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+      await sdk.advance(400);
+      await expectChecklistAlongsideStep(sdk, 'Second visible step');
+      await protocol.waitForBatchesToClose();
+      expect(protocol.messages('HideChecklist')).toHaveLength(1);
+
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-3' });
+      await sdk.advance(400);
+      await expect(taskButton(sdk)).toBeVisible();
+      expect(protocol.messages('HideChecklist')).toHaveLength(1);
+
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+      await sdk.advance(400);
+      await protocol.waitForMessages('HideChecklist', 2);
+      await expect(sdk.frame().getByText('Second visible step')).toBeVisible();
+      await expect(taskButton(sdk)).toHaveCount(0);
+    });
+  }
+
+  for (const recovery of ['target replacement', 'scrolling'] as const) {
+    test(`a checklist the user reopens stays open when a tooltip recovers after ${recovery}`, async ({
+      sdk,
+      protocol,
+    }) => {
+      await start(sdk);
+      if (recovery === 'scrolling') {
+        await sdk.page.evaluate(() => {
+          const spacer = document.createElement('div');
+          spacer.style.height = '4000px';
+          document.body.appendChild(spacer);
+        });
+      }
+      await protocol.push('SetChecklistSession', openChecklist());
+      await expect(taskButton(sdk)).toBeVisible();
+      const session = twoStepFlow('session-1', 'flow-1');
+      await protocol.push('SetFlowSession', {
+        ...session,
+        currentStep: { id: 'flow-1-step-2', cvid: 'flow-1-cvid-2' },
+      });
+      await protocol.waitForMessages('HideChecklist', 1);
+      await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+      await reopenChecklist(sdk);
+      await protocol.waitForMessages('ShowChecklist', 2);
+      await expectChecklistAlongsideStep(sdk, STEP_TEXT);
+      await sdk.pauseClock();
+
+      if (recovery === 'scrolling') {
+        await sdk.page.evaluate(() => window.scrollTo(0, 2000));
+      } else {
+        await sdk.page.locator('#cta').evaluate((el) => el.remove());
+      }
+      await sdk.advance(400);
+      await expect(taskButton(sdk)).toBeVisible();
+
+      if (recovery === 'scrolling') {
+        await sdk.page.evaluate(() => window.scrollTo(0, 0));
+      } else {
+        await addButton(sdk.page, 'cta', 'Replacement target');
+      }
+      await sdk.advance(400);
+      await expectChecklistAlongsideStep(sdk, STEP_TEXT);
+      await protocol.waitForBatchesToClose();
+      expect(protocol.messages('HideChecklist')).toHaveLength(1);
+    });
+  }
 
   test('a flow that moves on to a hidden step keeps the checklist collapsed until it ends', async ({
     sdk,
@@ -597,6 +813,38 @@ test.describe('the tooltip target', () => {
           : `off by ${(tip.x + tip.width / 2 - (target.x + target.width / 2)).toFixed(1)}`;
       })
       .toBe('centered on the new element');
+  });
+
+  test('a tooltip that loses its target recovers on a replacement and runs the new target actions', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    const session = structuredClone(twoStepFlow('session-1', 'flow-1'));
+    session.version.steps[1].target = {
+      type: 'manual',
+      customSelector: '#cta',
+      actions: [dismissFlow()],
+    };
+    await protocol.push('SetFlowSession', session);
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+    await sdk.pauseClock();
+
+    await sdk.page.locator('#cta').evaluate((el) => el.remove());
+    await sdk.advance(400);
+    await expect(sdk.surface).toBeHidden();
+
+    await addButton(sdk.page, 'cta', 'Replacement target', 'margin-left:320px');
+    await sdk.advance(400);
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+    await sdk.page.locator('#cta').click();
+    await protocol.waitForMessages('EndContent', 1);
+    expect(protocol.messages('EndContent')[0].message.payload).toMatchObject({
+      sessionId: 'session-1',
+      endReason: 'action_dismiss',
+    });
+    expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
   });
 
   test('an off-screen target is scrolled into view when its step opens', async ({
