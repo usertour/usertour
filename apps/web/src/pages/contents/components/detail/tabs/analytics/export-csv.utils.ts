@@ -50,6 +50,8 @@ type ExportMode = {
 type HeaderContext = {
   questionHeaders: Map<string, string>;
   stepHeaders: Map<string, string>;
+  /** Each step column's step cvid, by the column's key (the step's sequence). */
+  stepCvids: Map<string, string>;
   checklistTaskHeaders: Map<string, string>;
 };
 
@@ -321,6 +323,7 @@ const collectHeaderContext = (
 ) => {
   const questionHeaders = new Map<string, string>();
   const stepHeaders = new Map<string, string>();
+  const stepCvids = new Map<string, string>();
   const checklistTaskHeaders = new Map<string, string>();
 
   if (version?.steps) {
@@ -340,6 +343,9 @@ const collectHeaderContext = (
 
       if (step.name) {
         stepHeaders.set(step.sequence.toString(), `Step ${step.sequence + 1}. ${step.name}`);
+        if (step.cvid) {
+          stepCvids.set(step.sequence.toString(), step.cvid);
+        }
       }
     }
   }
@@ -354,6 +360,7 @@ const collectHeaderContext = (
   return {
     questionHeaders,
     stepHeaders,
+    stepCvids,
     checklistTaskHeaders,
   };
 };
@@ -446,9 +453,16 @@ const buildQuestionAnswers = (events: BizEvent[]) => {
   return questionAnswers;
 };
 
+/**
+ * Each step column's views. A view is matched to its step by the step's cvid,
+ * which stays with the step across versions: a session of an older version,
+ * whose steps were since reordered, counts under the step it saw, not under
+ * whatever step now has its number. An event recorded without a cvid falls
+ * back to the step number.
+ */
 const buildStepViews = (
   events: BizEvent[],
-  stepHeaders: Map<string, string>,
+  { stepHeaders, stepCvids }: Pick<HeaderContext, 'stepHeaders' | 'stepCvids'>,
   contentType?: ContentDataType,
 ) => {
   const stepViews = new Map<string, number>();
@@ -458,13 +472,22 @@ const buildStepViews = (
   const stepNumberAttribute = isEmbed
     ? EventAttributes.EMBED_STEP_NUMBER
     : EventAttributes.FLOW_STEP_NUMBER;
+  const stepCvidAttribute = isEmbed
+    ? EventAttributes.EMBED_STEP_CVID
+    : EventAttributes.FLOW_STEP_CVID;
 
   for (const stepNumber of stepHeaders.keys()) {
     const stepIndex = Number.parseInt(stepNumber, 10);
-    const viewCount = events.filter(
-      (event) =>
-        event.event?.codeName === stepSeenEvent && event.data?.[stepNumberAttribute] === stepIndex,
-    ).length;
+    const stepCvid = stepCvids.get(stepNumber);
+    const viewCount = events.filter((event) => {
+      if (event.event?.codeName !== stepSeenEvent) {
+        return false;
+      }
+      const seenCvid = event.data?.[stepCvidAttribute];
+      return stepCvid && seenCvid
+        ? seenCvid === stepCvid
+        : event.data?.[stepNumberAttribute] === stepIndex;
+    }).length;
 
     stepViews.set(stepNumber, viewCount);
   }
@@ -515,7 +538,7 @@ const buildRows = (args: {
     const includeReasonColumns = hasSessionReasons(contentType);
 
     const questionAnswers = buildQuestionAnswers(events);
-    const stepViews = buildStepViews(events, headerContext.stepHeaders, contentType);
+    const stepViews = buildStepViews(events, headerContext, contentType);
     const checklistCompletedTaskIds = buildChecklistCompletedTaskIds(events);
 
     const baseRow = [

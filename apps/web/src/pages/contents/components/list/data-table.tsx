@@ -27,6 +27,7 @@ import {
   TrackerPreview,
 } from '../shared/content-preview';
 import { useAppContext } from '@/contexts/app-context';
+import { getPreviewStep } from '@/utils/content';
 
 // Compact footer strip for the solid-block card, carved out by the divider:
 // name + status pill on one line, last-updated time + row-actions menu on the
@@ -184,7 +185,11 @@ const ContentPreview = ({
   if (type === ContentDataType.EMBED && currentTheme && currentVersion) {
     return (
       <AutoScaledPreviewContainer padding={16}>
-        <EmbedPreviewContent currentTheme={currentTheme} currentVersion={currentVersion} />
+        <EmbedPreviewContent
+          currentTheme={currentTheme}
+          currentVersion={currentVersion}
+          currentStep={currentStep}
+        />
       </AutoScaledPreviewContainer>
     );
   }
@@ -218,11 +223,11 @@ const ContentTableItem = ({
 
   // Derive all preview data in one pass to avoid chained useEffects and multiple re-renders
   const { currentVersion, currentStep, currentTheme } = useMemo(() => {
-    const step = editedVersion?.steps?.[0];
+    const step = getPreviewStep(content.type, editedVersion?.steps);
 
     let theme: Theme | undefined;
     if (themeList && themeList.length > 0) {
-      const themeId = step?.themeId ?? editedVersion?.themeId;
+      const themeId = step?.themeId || editedVersion?.themeId;
       if (themeId) {
         theme = themeList.find((item) => item.id === themeId);
       }
@@ -233,7 +238,7 @@ const ContentTableItem = ({
       currentStep: step,
       currentTheme: theme,
     };
-  }, [editedVersion, themeList]);
+  }, [content.type, editedVersion, themeList]);
 
   // Consider loading if query is loading or themeList is not ready yet
   const isLoading = loading || !themeList;

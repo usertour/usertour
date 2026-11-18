@@ -518,6 +518,40 @@ describe('buildExportPayload', () => {
       expect(payload.headers.length).toBe(payload.rows[0].length);
     });
 
+    it('counts a view under the step it saw, by cvid, after the steps were reordered', () => {
+      mockExtractQuestionData.mockReturnValue([]);
+      // v1 had A first; the exported version moved B to the front.
+      const payload = buildExportPayload({
+        sessions: [
+          createSession({
+            bizEvent: [
+              createEvent(BizEvents.EMBED_STEP_SEEN, {
+                [EventAttributes.EMBED_STEP_NUMBER]: 0,
+                [EventAttributes.EMBED_STEP_CVID]: 'cvid-a',
+              }),
+              // Recorded before step cvids were: matched by its number.
+              createEvent(BizEvents.EMBED_STEP_SEEN, { [EventAttributes.EMBED_STEP_NUMBER]: 0 }),
+            ],
+            version: { sequence: 0 },
+          } as Partial<SessionExportRow>),
+        ],
+        contentType: ContentDataType.EMBED,
+        contentName: 'Embed',
+        includeAllAttributes: false,
+        version: {
+          sequence: 1,
+          steps: [
+            { sequence: 0, cvid: 'cvid-b', name: 'B', data: {} },
+            { sequence: 1, cvid: 'cvid-a', name: 'A', data: {} },
+          ],
+        } as unknown as ContentVersion,
+      });
+      const cell = (header: string) => payload.rows[0][payload.headers.indexOf(header)];
+
+      expect(cell('Step 1. B')).toBe(1);
+      expect(cell('Step 2. A')).toBe(1);
+    });
+
     it('states a running session as the session list does: Clicked, else Active', () => {
       const stateOf = (bizEvent: BizEvent[]) => {
         const payload = exportEmbed(bizEvent);

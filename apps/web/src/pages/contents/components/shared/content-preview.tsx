@@ -349,21 +349,23 @@ const BannerPreviewContent = ({
   );
 };
 
-// The embed's first visible step inside its shell, read-only.
+// An embed step inside its shell, read-only. The caller picks the step (its
+// first visible one) and themes by it.
 const EmbedPreviewContent = ({
   currentTheme,
   currentVersion,
+  currentStep: step,
   previewWidth,
 }: {
   currentTheme: Theme;
   currentVersion: ContentVersion;
+  currentStep: Step | undefined;
   previewWidth?: number;
 }) => {
   const data: EmbedData = {
     ...DEFAULT_EMBED_DATA,
     ...((currentVersion.data as EmbedData | undefined) ?? {}),
   };
-  const step = (currentVersion.steps ?? []).find((item) => item.type !== StepContentType.HIDDEN);
   if (!step) {
     return null;
   }

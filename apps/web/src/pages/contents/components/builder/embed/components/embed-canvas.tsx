@@ -29,7 +29,7 @@ import { useFlowEditor } from '@/pages/contents/components/builder/flow/use-flow
 import { useContentList } from '@/pages/contents/components/builder/hooks/use-content-list';
 import { useCurrentTheme } from '@/pages/contents/components/builder/hooks/use-current-theme';
 import { useOembedInfo } from '@/pages/contents/components/builder/hooks/use-oembed-info';
-import { getStepId } from '@/utils/content';
+import { getFirstVisibleStep, getStepId } from '@/utils/content';
 
 const ACTION_ITEMS = [...CONTENT_ACTION_CAPABILITIES[ContentDataType.EMBED].actions];
 // Every element kind, questions included, as a flow step offers.
@@ -106,16 +106,12 @@ const EmbedShell = (props: EmbedShellProps) => {
   );
 };
 
-/** The first step a user would see: the first non-hidden step, if any. */
-const firstVisibleStep = (steps: Step[] | undefined): Step | undefined =>
-  steps?.find((step) => step.type !== StepContentType.HIDDEN);
-
 // Overview canvas: the shell with its first visible step, read-only, so
 // placement and layout edits in the sidebar are seen in place.
 export const EmbedOverviewCanvas = () => {
   const currentVersion = useBuilderStore((state) => state.currentVersion);
   const { data } = useEmbedEditor();
-  const step = firstVisibleStep(currentVersion?.steps as Step[] | undefined);
+  const step = getFirstVisibleStep(currentVersion?.steps as Step[] | undefined);
 
   const card = step ? (
     <EmbedPreview>

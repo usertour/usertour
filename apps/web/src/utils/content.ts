@@ -1,5 +1,19 @@
-import { Content, ContentDataType, Environment, Step } from '@usertour/types';
+import { Content, ContentDataType, Environment, Step, StepContentType } from '@usertour/types';
 import type { ContentVersionInput } from '@usertour/data';
+
+/**
+ * The step an embed shows first: its first non-hidden step, if any. Previews
+ * of an embed render this step, so they theme by it too.
+ */
+export const getFirstVisibleStep = <T extends Pick<Step, 'type'>>(
+  steps: T[] | null | undefined,
+): T | undefined => steps?.find((step) => step.type !== StepContentType.HIDDEN);
+
+/** The step a content's list thumbnail renders, and so the one it themes by. */
+export const getPreviewStep = <T extends Pick<Step, 'type'>>(
+  type: ContentDataType,
+  steps: T[] | null | undefined,
+): T | undefined => (type === ContentDataType.EMBED ? getFirstVisibleStep(steps) : steps?.[0]);
 
 /**
  * Convert content list type (plural) to ContentDataType enum
