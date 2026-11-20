@@ -43,15 +43,13 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           pull: true
-          no-cache-filters: runtime
+          no-cache: true
           tags: |
             usertour/usertour:${{ steps.extract_tag.outputs.VERSION }}
             usertour/usertour:latest
           labels: |
             org.opencontainers.image.version=${{ steps.extract_tag.outputs.VERSION }}
             org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
