@@ -43,6 +43,7 @@ export const WidgetClass = {
   launcherActivateOnClick: `${PREFIX}-launcher--activate-on-click`,
   launcherIcon: `${PREFIX}-launcher--icon`,
   launcherButton: `${PREFIX}-launcher--button`,
+  launcherHidden: `${PREFIX}-launcher--hidden`,
 
   // Checklist launcher
   checklistLauncher: `${PREFIX}-checklist-launcher`,
@@ -77,5 +78,6 @@ export const WidgetAnimation = {
   stageReveal: `${PREFIX}-stage-reveal`,
   beaconHalo: `${PREFIX}-beacon-halo`,
   bannerReveal: `${PREFIX}-banner-reveal`,
+  embedReveal: `${PREFIX}-embed-reveal`,
   resourceCenterReveal: `${PREFIX}-resource-center-reveal`,
 } as const;

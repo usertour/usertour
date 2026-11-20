@@ -16,7 +16,6 @@ import {
   DeletedDefinitionReferencedError,
   EnvironmentProjectMismatchError,
   ParamsError,
-  UnknownError,
   VersionConflictError,
   VersionNotEditableError,
 } from '@/modules/common/errors/errors';
@@ -30,6 +29,7 @@ import {
   duplicateStep,
   remapFlowTranslationIdentifiers,
   remapVersionDataTranslationIdentifiers,
+  hasStepBody,
 } from '@usertour/helpers';
 import { ProjectCacheService } from '@/modules/common/services/project-cache.service';
 
@@ -98,43 +98,39 @@ export class ContentService {
   async createContent(input: NewContent) {
     const { steps = [], name, buildUrl, environmentId, config, data, themeId, type } = input;
 
-    try {
-      const environment = await this.prisma.environment.findUnique({
-        where: { id: environmentId },
-      });
-      if (!environment) {
-        throw new ParamsError();
-      }
-
-      return await this.prisma.$transaction(async (tx) => {
-        const content = await tx.content.create({
-          data: {
-            name,
-            buildUrl,
-            type,
-            environmentId,
-            projectId: environment.projectId,
-          },
-        });
-        const version = await tx.version.create({
-          data: {
-            sequence: 0,
-            contentId: content.id,
-            config,
-            data,
-            themeId,
-            steps: { create: [...steps] },
-          } as any,
-        });
-        await tx.content.update({
-          where: { id: content.id },
-          data: { editedVersionId: version.id } as any,
-        });
-        return await tx.content.findUnique({ where: { id: content.id } });
-      });
-    } catch (_) {
-      throw new UnknownError();
+    const environment = await this.prisma.environment.findUnique({
+      where: { id: environmentId },
+    });
+    if (!environment) {
+      throw new ParamsError();
     }
+
+    return await this.prisma.$transaction(async (tx) => {
+      const content = await tx.content.create({
+        data: {
+          name,
+          buildUrl,
+          type,
+          environmentId,
+          projectId: environment.projectId,
+        },
+      });
+      const version = await tx.version.create({
+        data: {
+          sequence: 0,
+          contentId: content.id,
+          config,
+          data,
+          themeId,
+          steps: { create: [...steps] },
+        } as any,
+      });
+      await tx.content.update({
+        where: { id: content.id },
+        data: { editedVersionId: version.id } as any,
+      });
+      return await tx.content.findUnique({ where: { id: content.id } });
+    });
   }
 
   async updateContent(contentId: string, data: ContentChanges) {
@@ -169,107 +165,100 @@ export class ContentService {
   async createContentVersion(input: NewContentVersion, actor?: WriteActor) {
     const { versionId, config } = input;
 
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        // Fetch source version with related content and its edited version in one query
-        const sourceVersion = await tx.version.findUnique({
-          where: { id: versionId },
-          include: {
-            steps: true,
-            content: {
-              include: { editedVersion: true },
-            },
+    return await this.prisma.$transaction(async (tx) => {
+      // Fetch source version with related content and its edited version in one query
+      const sourceVersion = await tx.version.findUnique({
+        where: { id: versionId },
+        include: {
+          steps: true,
+          content: {
+            include: { editedVersion: true },
           },
-        });
-
-        if (!sourceVersion?.content?.editedVersion) {
-          throw new ParamsError();
-        }
-
-        const contentId = sourceVersion.content.id;
-
-        // Serialize concurrent forks on this Content row. Two autosaves (data +
-        // config) editing a live version each fork independently; without this
-        // lock they race — both compute the same sequence and one INSERT hits
-        // @@unique([contentId, sequence]), so that save errors and its edit is
-        // lost. Mirrors assertVersionEditableLocked used by updateContentVersion.
-        await tx.$queryRaw`SELECT id FROM "Content" WHERE id = ${contentId} FOR UPDATE`;
-
-        // Re-read the edit version under the lock. If a concurrent fork already
-        // turned it into an unpublished draft, reuse it instead of forking
-        // again — the other autosave's write then lands on the same draft and
-        // both edits survive.
-        const content = await tx.content.findUnique({
-          where: { id: contentId },
-          include: { editedVersion: true, contentOnEnvironments: true },
-        });
-        const editedVersion = content?.editedVersion;
-        if (!editedVersion) {
-          throw new ParamsError();
-        }
-        const editedVersionPublished = content.contentOnEnvironments?.some(
-          (env) => env.published && env.publishedVersionId === editedVersion.id,
-        );
-        // Frozen covers EVER-published too: an unpublished-but-once-live edit
-        // version must fork, not be reused as a draft (same rule as the write
-        // guards — see versionFrozen).
-        if (!this.versionFrozen(editedVersion, editedVersionPublished)) {
-          // A concurrent save already forked this into an unpublished draft.
-          // Honor the same contract the fork branch does — the returned draft
-          // carries THIS caller's config, with regenerated condition ids — by
-          // applying it here. A data save passes no config and must leave the
-          // draft's targeting untouched.
-          if (config) {
-            return await tx.version.update({
-              where: { id: editedVersion.id },
-              data: { config: duplicateConfig(config as ContentConfigObject) },
-            });
-          }
-          return editedVersion;
-        }
-
-        // Prepare steps by removing database-specific fields
-        const steps = sourceVersion.steps.map(
-          ({ id, createdAt, updatedAt, versionId, ...step }) => step,
-        );
-
-        // Create new version with regenerated config IDs
-        const newConfig = duplicateConfig((config ?? editedVersion.config) as ContentConfigObject);
-
-        const version = await tx.version.create({
-          data: {
-            sequence: editedVersion.sequence + 1,
-            config: newConfig,
-            data: editedVersion.data,
-            themeId: editedVersion.themeId,
-            // Carry the publish schedule across the fork. Announcement
-            // visibility is gated on publishedVersion.scheduledAt, so dropping
-            // it here would silently turn a future-scheduled announcement into
-            // an immediately-visible one once the forked draft is republished.
-            scheduledAt: editedVersion.scheduledAt,
-            contentId,
-            createdByUserId: actor?.userId ?? null,
-            updatedByUserId: actor?.userId ?? null,
-            steps: { create: steps },
-          } as any,
-        });
-
-        await this.copyVersionLocalizations(tx, sourceVersion.id, version.id);
-
-        // Update content to point to the new edited version
-        await tx.content.update({
-          where: { id: contentId },
-          data: { editedVersionId: version.id } as any,
-        });
-
-        return version;
+        },
       });
-    } catch (error) {
-      if (error instanceof ParamsError) {
-        throw error;
+
+      if (!sourceVersion?.content?.editedVersion) {
+        throw new ParamsError();
       }
-      throw new UnknownError();
-    }
+
+      const contentId = sourceVersion.content.id;
+
+      // Serialize concurrent forks on this Content row. Two autosaves (data +
+      // config) editing a live version each fork independently; without this
+      // lock they race — both compute the same sequence and one INSERT hits
+      // @@unique([contentId, sequence]), so that save errors and its edit is
+      // lost. Mirrors assertVersionEditableLocked used by updateContentVersion.
+      await tx.$queryRaw`SELECT id FROM "Content" WHERE id = ${contentId} FOR UPDATE`;
+
+      // Re-read the edit version under the lock. If a concurrent fork already
+      // turned it into an unpublished draft, reuse it instead of forking
+      // again — the other autosave's write then lands on the same draft and
+      // both edits survive.
+      const content = await tx.content.findUnique({
+        where: { id: contentId },
+        include: { editedVersion: true, contentOnEnvironments: true },
+      });
+      const editedVersion = content?.editedVersion;
+      if (!editedVersion) {
+        throw new ParamsError();
+      }
+      const editedVersionPublished = content.contentOnEnvironments?.some(
+        (env) => env.published && env.publishedVersionId === editedVersion.id,
+      );
+      // Frozen covers EVER-published too: an unpublished-but-once-live edit
+      // version must fork, not be reused as a draft (same rule as the write
+      // guards — see versionFrozen).
+      if (!this.versionFrozen(editedVersion, editedVersionPublished)) {
+        // A concurrent save already forked this into an unpublished draft.
+        // Honor the same contract the fork branch does — the returned draft
+        // carries THIS caller's config, with regenerated condition ids — by
+        // applying it here. A data save passes no config and must leave the
+        // draft's targeting untouched.
+        if (config) {
+          return await tx.version.update({
+            where: { id: editedVersion.id },
+            data: { config: duplicateConfig(config as ContentConfigObject) },
+          });
+        }
+        return editedVersion;
+      }
+
+      // Prepare steps by removing database-specific fields
+      const steps = sourceVersion.steps.map(
+        ({ id, createdAt, updatedAt, versionId, ...step }) => step,
+      );
+
+      // Create new version with regenerated config IDs
+      const newConfig = duplicateConfig((config ?? editedVersion.config) as ContentConfigObject);
+
+      const version = await tx.version.create({
+        data: {
+          sequence: editedVersion.sequence + 1,
+          config: newConfig,
+          data: editedVersion.data,
+          themeId: editedVersion.themeId,
+          // Carry the publish schedule across the fork. Announcement
+          // visibility is gated on publishedVersion.scheduledAt, so dropping
+          // it here would silently turn a future-scheduled announcement into
+          // an immediately-visible one once the forked draft is republished.
+          scheduledAt: editedVersion.scheduledAt,
+          contentId,
+          createdByUserId: actor?.userId ?? null,
+          updatedByUserId: actor?.userId ?? null,
+          steps: { create: steps },
+        } as any,
+      });
+
+      await this.copyVersionLocalizations(tx, sourceVersion.id, version.id);
+
+      // Update content to point to the new edited version
+      await tx.content.update({
+        where: { id: contentId },
+        data: { editedVersionId: version.id } as any,
+      });
+
+      return version;
+    });
   }
 
   async getContentVersionById(versionId: string) {
@@ -832,137 +821,129 @@ export class ContentService {
     if (!duplicateContent || duplicateContent.deleted) {
       throw new ParamsError();
     }
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const editedVersion = await tx.version.findUnique({
-          where: { id: duplicateContent.editedVersionId },
-          include: { steps: true },
-        });
-
-        const content = await tx.content.create({
-          data: {
-            name: name || duplicateContent.name,
-            buildUrl: duplicateContent.buildUrl,
-            // Homing follows the source — the legacy column is inert (nothing
-            // user-visible reads WHICH env it names), so there is no target choice.
-            environmentId: duplicateContent.environmentId,
-            type: duplicateContent.type,
-            projectId: duplicateContent.projectId,
-          },
-        });
-
-        const steps = editedVersion.steps.map((step) => duplicateStep(step));
-        const newConfig = duplicateConfig(editedVersion.config as ContentConfigObject);
-        const processedData = duplicateData(editedVersion.data, duplicateContent.type);
-
-        const version = await tx.version.create({
-          data: {
-            sequence: 0,
-            contentId: content.id,
-            config: newConfig,
-            data: processedData as Prisma.JsonValue,
-            themeId: editedVersion.themeId,
-            // Announcement time carries into the copy like fork/restore —
-            // without it, duplicating a future-scheduled announcement and
-            // publishing made it live IMMEDIATELY (publish stamps an empty
-            // scheduledAt with `now`).
-            scheduledAt: editedVersion.scheduledAt,
-            steps: { create: [...steps] },
-          },
-        });
-
-        // Translations copy over like fork/restore do, but duplicating
-        // regenerates question cvids and checklist item ids (the copy must
-        // not share analytics identities), so localized/backup get the new
-        // identifiers written in by position first.
-        const remapTranslationPayload = (payload: unknown): unknown => {
-          if (duplicateContent.type === ContentDataType.FLOW) {
-            return remapFlowTranslationIdentifiers(steps, payload);
-          }
-          return remapVersionDataTranslationIdentifiers(
-            duplicateContent.type,
-            processedData,
-            payload,
-          );
-        };
-        const versionLocalizations = await tx.versionOnLocalization.findMany({
-          where: { versionId: editedVersion.id },
-        });
-        if (versionLocalizations.length > 0) {
-          await tx.versionOnLocalization.createMany({
-            data: versionLocalizations.map((versionLocalization) => ({
-              versionId: version.id,
-              localizationId: versionLocalization.localizationId,
-              enabled: versionLocalization.enabled,
-              localized: remapTranslationPayload(
-                versionLocalization.localized,
-              ) as Prisma.InputJsonValue,
-              backup: remapTranslationPayload(versionLocalization.backup) as Prisma.InputJsonValue,
-              // Remapping only rewrites identifiers, so the copy stays in the
-              // source row's link format (see copyVersionLocalizations).
-              localizedSchemaVersion: versionLocalization.localizedSchemaVersion,
-            })),
-          });
-        }
-
-        await tx.content.update({
-          where: { id: content.id },
-          data: { editedVersionId: version.id },
-        });
-        return content;
+    return await this.prisma.$transaction(async (tx) => {
+      const editedVersion = await tx.version.findUnique({
+        where: { id: duplicateContent.editedVersionId },
+        include: { steps: true },
       });
-    } catch (_) {
-      throw new UnknownError();
-    }
+
+      const content = await tx.content.create({
+        data: {
+          name: name || duplicateContent.name,
+          buildUrl: duplicateContent.buildUrl,
+          // Homing follows the source — the legacy column is inert (nothing
+          // user-visible reads WHICH env it names), so there is no target choice.
+          environmentId: duplicateContent.environmentId,
+          type: duplicateContent.type,
+          projectId: duplicateContent.projectId,
+        },
+      });
+
+      const steps = editedVersion.steps.map((step) => duplicateStep(step));
+      const newConfig = duplicateConfig(editedVersion.config as ContentConfigObject);
+      const processedData = duplicateData(editedVersion.data, duplicateContent.type);
+
+      const version = await tx.version.create({
+        data: {
+          sequence: 0,
+          contentId: content.id,
+          config: newConfig,
+          data: processedData as Prisma.JsonValue,
+          themeId: editedVersion.themeId,
+          // Announcement time carries into the copy like fork/restore —
+          // without it, duplicating a future-scheduled announcement and
+          // publishing made it live IMMEDIATELY (publish stamps an empty
+          // scheduledAt with `now`).
+          scheduledAt: editedVersion.scheduledAt,
+          steps: { create: [...steps] },
+        },
+      });
+
+      // Translations copy over like fork/restore do, but duplicating
+      // regenerates question cvids and checklist item ids (the copy must
+      // not share analytics identities), so localized/backup get the new
+      // identifiers written in by position first.
+      const remapTranslationPayload = (payload: unknown): unknown => {
+        if (hasStepBody(duplicateContent.type)) {
+          return remapFlowTranslationIdentifiers(steps, payload);
+        }
+        return remapVersionDataTranslationIdentifiers(
+          duplicateContent.type,
+          processedData,
+          payload,
+        );
+      };
+      const versionLocalizations = await tx.versionOnLocalization.findMany({
+        where: { versionId: editedVersion.id },
+      });
+      if (versionLocalizations.length > 0) {
+        await tx.versionOnLocalization.createMany({
+          data: versionLocalizations.map((versionLocalization) => ({
+            versionId: version.id,
+            localizationId: versionLocalization.localizationId,
+            enabled: versionLocalization.enabled,
+            localized: remapTranslationPayload(
+              versionLocalization.localized,
+            ) as Prisma.InputJsonValue,
+            backup: remapTranslationPayload(versionLocalization.backup) as Prisma.InputJsonValue,
+            // Remapping only rewrites identifiers, so the copy stays in the
+            // source row's link format (see copyVersionLocalizations).
+            localizedSchemaVersion: versionLocalization.localizedSchemaVersion,
+          })),
+        });
+      }
+
+      await tx.content.update({
+        where: { id: content.id },
+        data: { editedVersionId: version.id },
+      });
+      return content;
+    });
   }
 
   async restoreContentVersion(versionId: string, actor?: WriteActor) {
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const restoreVersion = await tx.version.findUnique({
-          where: {
-            id: versionId,
-          },
-          include: { steps: true },
-        });
-        const editedVersion = await tx.content
-          .findUnique({
-            where: { id: restoreVersion.contentId },
-          })
-          .editedVersion();
-        const contentId = restoreVersion.contentId;
-        const oldSteps = restoreVersion.steps.map(
-          ({ id, createdAt, updatedAt, versionId, ...step }) => {
-            return step;
-          },
-        );
-
-        const version = await tx.version.create({
-          data: {
-            sequence: editedVersion.sequence + 1,
-            contentId: restoreVersion.contentId,
-            createdByUserId: actor?.userId ?? null,
-            updatedByUserId: actor?.userId ?? null,
-            config: restoreVersion.config,
-            data: restoreVersion.data,
-            themeId: restoreVersion.themeId,
-            // Announcement time carries like fork does — restoring an old
-            // announcement then publishing must not re-stamp `now` and hoist
-            // it to the top of the feed.
-            scheduledAt: restoreVersion.scheduledAt,
-            steps: { create: [...oldSteps] },
-          } as any,
-        });
-        await this.copyVersionLocalizations(tx, restoreVersion.id, version.id);
-        await tx.content.update({
-          where: { id: contentId },
-          data: { editedVersionId: version.id },
-        });
-        return version;
+    return await this.prisma.$transaction(async (tx) => {
+      const restoreVersion = await tx.version.findUnique({
+        where: {
+          id: versionId,
+        },
+        include: { steps: true },
       });
-    } catch (_) {
-      throw new UnknownError();
-    }
+      const editedVersion = await tx.content
+        .findUnique({
+          where: { id: restoreVersion.contentId },
+        })
+        .editedVersion();
+      const contentId = restoreVersion.contentId;
+      const oldSteps = restoreVersion.steps.map(
+        ({ id, createdAt, updatedAt, versionId, ...step }) => {
+          return step;
+        },
+      );
+
+      const version = await tx.version.create({
+        data: {
+          sequence: editedVersion.sequence + 1,
+          contentId: restoreVersion.contentId,
+          createdByUserId: actor?.userId ?? null,
+          updatedByUserId: actor?.userId ?? null,
+          config: restoreVersion.config,
+          data: restoreVersion.data,
+          themeId: restoreVersion.themeId,
+          // Announcement time carries like fork does — restoring an old
+          // announcement then publishing must not re-stamp `now` and hoist
+          // it to the top of the feed.
+          scheduledAt: restoreVersion.scheduledAt,
+          steps: { create: [...oldSteps] },
+        } as any,
+      });
+      await this.copyVersionLocalizations(tx, restoreVersion.id, version.id);
+      await tx.content.update({
+        where: { id: contentId },
+        data: { editedVersionId: version.id },
+      });
+      return version;
+    });
   }
 
   async getEnvironment(id: string) {

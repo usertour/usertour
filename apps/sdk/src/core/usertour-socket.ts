@@ -30,6 +30,8 @@ import {
   RejectedAttributeWrite,
   SocketAuthData,
   UpsertAck,
+  ClickButtonDto,
+  SdkCapability,
 } from '@usertour/types';
 import { Socket, logger, timerManager } from '@/utils';
 import { getSdkVersion, getWsUri } from '@/core/usertour-env';
@@ -45,6 +47,12 @@ import {
   uuidV4,
   WriteTarget,
 } from '@usertour/helpers';
+
+/**
+ * The content types this bundle can render beyond the original set; the server
+ * delivers a type only to connections that declare it (ADR 0022).
+ */
+const SDK_CAPABILITIES: string[] = [SdkCapability.EMBED];
 
 const log = logger.scope('socket');
 // === Interfaces ===
@@ -219,7 +227,15 @@ export class UsertourSocket implements IUsertourSocket {
         // bundle's version rides every handshake so the server can tell
         // which SDK a connection runs.
         auth: (cb) => {
-          cb(this.authCredentials ? { ...this.authCredentials, sdkVersion: getSdkVersion() } : {});
+          cb(
+            this.authCredentials
+              ? {
+                  ...this.authCredentials,
+                  sdkVersion: getSdkVersion(),
+                  capabilities: SDK_CAPABILITIES,
+                }
+              : {},
+          );
         },
       },
     });
@@ -675,6 +691,11 @@ export class UsertourSocket implements IUsertourSocket {
 
   async dismissLauncher(params: DismissLauncherDto, options?: BatchOptions): Promise<boolean> {
     return await this.sendClientMessage(ClientMessageKind.DISMISS_LAUNCHER, params, options);
+  }
+
+  // === Block Interactions ===
+  async clickButton(params: ClickButtonDto, options?: BatchOptions): Promise<boolean> {
+    return await this.sendClientMessage(ClientMessageKind.CLICK_BUTTON, params, options);
   }
 
   async trackTrackerEvent(params: TrackTrackerEventDto): Promise<boolean> {

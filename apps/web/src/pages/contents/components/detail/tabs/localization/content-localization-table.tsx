@@ -23,9 +23,9 @@ import {
   countMissingTranslations,
   countMissingVersionDataTranslations,
   serverErrorMessage,
+  hasStepBody,
 } from '@usertour/helpers';
 import {
-  ContentDataType,
   ContentVersion,
   Localization,
   LocalizedFlowContent,
@@ -49,7 +49,7 @@ const countVersionMissing = (
   version: ContentVersion,
   localized: VersionOnLocalization['localized'] | undefined,
 ): number => {
-  if (contentType === ContentDataType.FLOW) {
+  if (hasStepBody(contentType)) {
     const flowLocalized = localized as LocalizedFlowContent | null | undefined;
     return (version.steps ?? []).reduce((missing, step) => {
       if (!step.data) {

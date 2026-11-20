@@ -1,9 +1,29 @@
-import { defaultColumn, uuidV4 } from '@usertour/helpers';
+import { cuid, defaultColumn, uuidV4 } from '@usertour/helpers';
 import {
+  type ContentEditorButtonElement,
+  type ContentEditorElement,
+  ContentEditorElementType,
   ContentEditorRoot,
   ContentEditorRootColumn,
   ContentEditorRootElement,
 } from '../types/editor';
+
+/**
+ * A button carries a stable `cvid` from the moment it is created: the key its
+ * clicks are counted under, kept across text edits and translations (a
+ * question block's cvid plays the same role). Other blocks pass through.
+ *
+ * Every element handed to an insert becomes a new block, so it always gets a
+ * cvid of its own: "add left" and "add right" pass the button they sit on as
+ * the template, and a copy that kept its cvid would be counted as that button.
+ */
+export const withBlockIdentity = (element: ContentEditorElement): ContentEditorElement => {
+  if (element.type !== ContentEditorElementType.BUTTON) {
+    return element;
+  }
+  const button = element as ContentEditorButtonElement;
+  return { ...button, data: { ...button.data, cvid: cuid() } } as ContentEditorElement;
+};
 
 export const EmptyGroup = {
   element: { type: 'group' },

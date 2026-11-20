@@ -19,6 +19,7 @@ const SESSION_KINDS = new Set<string>([
   ContentDataType.CHECKLIST,
   ContentDataType.LAUNCHER,
   ContentDataType.BANNER,
+  ContentDataType.EMBED,
   ContentDataType.RESOURCE_CENTER,
 ]);
 
@@ -33,6 +34,7 @@ const GOAL_KIND: Partial<Record<string, 'completed' | 'activated' | 'dismissed' 
   [ContentDataType.CHECKLIST]: 'completed',
   [ContentDataType.LAUNCHER]: 'activated',
   [ContentDataType.BANNER]: 'dismissed',
+  [ContentDataType.EMBED]: 'clicked',
   [ContentDataType.RESOURCE_CENTER]: 'clicked',
 };
 

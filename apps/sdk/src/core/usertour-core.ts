@@ -56,6 +56,7 @@ import { formatErrorMessage } from '@/types/error-messages';
 import { UsertourChecklist } from './usertour-checklist';
 import { UsertourLauncher } from './usertour-launcher';
 import { UsertourBanner } from './usertour-banner';
+import { UsertourEmbed } from './usertour-embed';
 import { UsertourResourceCenter } from './usertour-resource-center';
 import { customInputRegistry } from './registries/custom-input-registry';
 import {
@@ -116,12 +117,14 @@ export class UsertourCore extends Evented {
   checklistsStore = new ExternalStore<UsertourChecklist[]>([]);
   launchersStore = new ExternalStore<UsertourLauncher[]>([]);
   bannersStore = new ExternalStore<UsertourBanner[]>([]);
+  embedsStore = new ExternalStore<UsertourEmbed[]>([]);
   resourceCentersStore = new ExternalStore<UsertourResourceCenter[]>([]);
   activatedTour: UsertourTour | null = null;
   activatedChecklist: UsertourChecklist | null = null;
   activatedBanner: UsertourBanner | null = null;
   activatedResourceCenter: UsertourResourceCenter | null = null;
   launchers: UsertourLauncher[] = [];
+  embeds: UsertourEmbed[] = [];
   // Active trackers keyed by contentId
   private activeTrackers = new Map<
     string,
@@ -930,6 +933,7 @@ export class UsertourCore extends Evented {
       checklistsStore: this.checklistsStore,
       launchersStore: this.launchersStore,
       bannersStore: this.bannersStore,
+      embedsStore: this.embedsStore,
       resourceCentersStore: this.resourceCentersStore,
     });
 
@@ -949,7 +953,8 @@ export class UsertourCore extends Evented {
       this.activatedTour?.getContentId() === contentId ||
       this.activatedBanner?.getContentId() === contentId ||
       this.activatedResourceCenter?.getContentId() === contentId ||
-      this.launchers.some((launcher) => launcher.getContentId() === contentId)
+      this.launchers.some((launcher) => launcher.getContentId() === contentId) ||
+      this.embeds.some((embed) => embed.getContentId() === contentId)
     );
   }
 
@@ -1022,6 +1027,8 @@ export class UsertourCore extends Evented {
     this.cleanupActivatedResourceCenter();
     // Cleanup launchers
     this.cleanupLaunchers();
+    // Cleanup embeds
+    this.cleanupEmbeds();
     // Cleanup trackers
     this.activeTrackers.clear();
     // Clear all unacked tasks
@@ -1255,6 +1262,7 @@ export class UsertourCore extends Evented {
       | UsertourChecklist
       | UsertourLauncher
       | UsertourBanner
+      | UsertourEmbed
       | UsertourResourceCenter,
     onDismissed?: (sessionId: string) => void | Promise<void>,
   ): void {
@@ -1287,8 +1295,6 @@ export class UsertourCore extends Evented {
       return false;
     }
 
-    const hasActivatedTour = this.activatedTour !== null;
-
     if (this.activatedTour) {
       if (this.activatedTour.getSessionId() === session.id) {
         this.activatedTour.updateSession(session);
@@ -1306,6 +1312,16 @@ export class UsertourCore extends Evented {
         await this.expandChecklist();
       }
     });
+    // A flow coming on screen collapses the checklist, whether it arrives on a
+    // step that shows or moves on to one from a hidden step; its end expands it.
+    // Moving on to a hidden step leaves the checklist as it is: flows often wait
+    // there for a moment between two steps.
+    // Visible-step changes and target recovery leave a manually reopened checklist alone.
+    usertourTour.on(SDKClientEvents.FLOW_ON_SCREEN, async () => {
+      if (this.activatedTour === usertourTour) {
+        await this.collapseChecklist();
+      }
+    });
     this.activatedTour = usertourTour;
     // Sync store
     this.syncToursStore([this.activatedTour]);
@@ -1314,10 +1330,6 @@ export class UsertourCore extends Evented {
       await usertourTour.showStepByCvid(session.currentStep?.cvid, false);
     } else {
       await usertourTour.showStepByIndex(0, false);
-    }
-    // A flow waiting on a hidden step shows nothing, so it leaves the checklist as it is
-    if (!hasActivatedTour && this.hasTourOnScreen()) {
-      await this.collapseChecklist();
     }
     return true;
   }
@@ -1344,11 +1356,16 @@ export class UsertourCore extends Evented {
    * @returns True if the step was forced to be shown, false otherwise
    */
   private async forceGoToStep(sessionId: string, stepId: string): Promise<boolean> {
-    if (!this.activatedTour || this.activatedTour.getSessionId() !== sessionId) {
-      return false;
+    if (this.activatedTour?.getSessionId() === sessionId) {
+      await this.activatedTour.showStepById(stepId, false);
+      return true;
     }
-    await this.activatedTour.showStepById(stepId, false);
-    return true;
+    const embed = this.embeds.find((candidate) => candidate.getSessionId() === sessionId);
+    if (embed) {
+      await embed.showStepById(stepId, false);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -1490,12 +1507,11 @@ export class UsertourCore extends Evented {
   }
 
   /**
-   * Whether a flow is showing something on the page. A flow waiting on a hidden
-   * step is not: it can sit there for the whole visit, and must not keep the
-   * checklist collapsed as a flow the user is looking at does.
+   * Whether a flow is showing something on the page. Hidden steps and tooltips
+   * still waiting for their target must not keep a new checklist collapsed.
    */
   private hasTourOnScreen(): boolean {
-    return this.activatedTour !== null && !this.activatedTour.isOnHiddenStep();
+    return this.activatedTour?.isOpen() ?? false;
   }
 
   /**
@@ -1571,6 +1587,62 @@ export class UsertourCore extends Evented {
     return true;
   }
 
+  // === Embed Management ===
+  /**
+   * Adds an embed (or updates the one already held for its content)
+   * @param session - The SDK content session to add the embed for
+   * @returns True if the embed was added or updated, false otherwise
+   */
+  private async addEmbed(session: CustomContentSession): Promise<boolean> {
+    // Check if this session has been dismissed (terminal state check)
+    if (this.isSessionDismissed(session.id)) {
+      log.debug(`Ignoring AddEmbed for a dismissed session (${session.id})`);
+      return false;
+    }
+
+    const contentId = session.content.id;
+    const existingEmbed = this.embeds.find((embed) => embed.getContentId() === contentId);
+    if (existingEmbed) {
+      // The same content under another session, or under none, means the
+      // session this embed holds is gone (deleted, or ended elsewhere). It is
+      // rebuilt rather than updated: the card it shows belongs to that session,
+      // and an embed that already found its target would not start a new one.
+      // An embed still waiting for its session takes whichever it is handed.
+      const heldSessionId = existingEmbed.getSessionId();
+      if (!heldSessionId || heldSessionId === session.id) {
+        await existingEmbed.update(session);
+        return true;
+      }
+      await this.removeEmbed(contentId);
+    }
+    const embed = new UsertourEmbed(this, new UsertourSession(session));
+    this.setupComponentDismissHandler(embed, async (_sessionId) => {
+      // Embed removal is based on contentId, not sessionId
+      await this.removeEmbed(contentId);
+    });
+    this.embeds.push(embed);
+    this.syncEmbedsStore(this.embeds);
+    await embed.show();
+    return true;
+  }
+
+  /**
+   * Removes an embed from the application
+   * @param contentId - The content ID to remove the embed for
+   * @returns True if the embed was removed, false otherwise
+   */
+  private async removeEmbed(contentId: string): Promise<boolean> {
+    const embed = this.embeds.find((candidate) => candidate.getContentId() === contentId);
+    if (!embed) {
+      return false;
+    }
+    // dismissedSessionIds is a terminal record and is not cleared here (see removeLauncher)
+    embed.destroy();
+    this.embeds = this.embeds.filter((item) => item.getContentId() !== contentId);
+    this.syncEmbedsStore(this.embeds);
+    return true;
+  }
+
   // === Tracker Management ===
   /**
    * Register or update a tracker session.
@@ -1633,6 +1705,13 @@ export class UsertourCore extends Evented {
   }
 
   /**
+   * Synchronizes embeds store
+   */
+  private syncEmbedsStore(embeds: UsertourEmbed[]) {
+    this.embedsStore.setData([...embeds]);
+  }
+
+  /**
    * Synchronizes resource centers store
    */
   private syncResourceCentersStore(resourceCenters: UsertourResourceCenter[]) {
@@ -1657,6 +1736,8 @@ export class UsertourCore extends Evented {
       unsetResourceCenterSession: this.unsetResourceCenterSession,
       addLauncher: this.addLauncher,
       removeLauncher: this.removeLauncher,
+      addEmbed: this.addEmbed,
+      removeEmbed: this.removeEmbed,
       addTracker: this.addTracker,
       removeTracker: this.removeTracker,
       trackClientCondition: this.trackClientCondition,
@@ -1926,6 +2007,7 @@ export class UsertourCore extends Evented {
     const bannerSessionId = this.activatedBanner?.getSessionId();
     const resourceCenterSessionId = this.activatedResourceCenter?.getSessionId();
     const launchers = this.launchers.map((l) => l.getContentId());
+    const embeds = this.embeds.map((embed) => embed.getContentId());
     // Running and fired wait timers travel with the handshake so a reconnect
     // neither restarts nor forgets them (ADR 0018 §6).
     const waitTimers = this.waitTimerMonitor?.getWaitTimers() ?? [];
@@ -1941,6 +2023,7 @@ export class UsertourCore extends Evented {
       bannerSessionId,
       resourceCenterSessionId,
       launchers,
+      embeds,
       waitTimers,
     });
   }
@@ -2045,6 +2128,17 @@ export class UsertourCore extends Evented {
     }
     this.launchers = [];
     this.syncLaunchersStore(this.launchers);
+  }
+
+  /**
+   * Cleans up all embeds from the application
+   */
+  private cleanupEmbeds() {
+    for (const embed of this.embeds) {
+      embed.destroy();
+    }
+    this.embeds = [];
+    this.syncEmbedsStore(this.embeds);
   }
 
   /**

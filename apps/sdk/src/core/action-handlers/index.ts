@@ -10,5 +10,6 @@ export {
   ChecklistActionHandler,
   TourActionHandler,
   BannerActionHandler,
+  EmbedActionHandler,
 } from './action-handlers';
 export { ActionManager } from './action-manager';

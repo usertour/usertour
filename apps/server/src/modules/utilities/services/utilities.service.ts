@@ -74,10 +74,16 @@ export class UtilitiesService {
       } else {
         requestUrl = `${endpoint.url}?url=${encodeURIComponent(url)}&format=json`;
       }
-      const resp = await this.httpService.axiosRef.get(requestUrl);
-      if (resp.data) {
+      // A provider answers a url it cannot embed (removed, private, embedding
+      // disabled, malformed) with a 4xx, and a photo or link answer carries no
+      // markup. Either way the url has no oEmbed answer here: try the next
+      // endpoint, then fall through to the empty answer, on which the editor
+      // iframes the url directly — the same outcome as a url no provider claims.
+      const resp = await this.httpService.axiosRef.get(requestUrl).catch(() => undefined);
+      const html = resp?.data?.html;
+      if (typeof html === 'string' && html) {
         return {
-          html: resp.data.html,
+          html,
           width: toPixels(resp.data.width),
           height: toPixels(resp.data.height),
         };

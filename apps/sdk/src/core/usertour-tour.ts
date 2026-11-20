@@ -1,6 +1,5 @@
 import { smoothScroll } from '@usertour/dom';
 import {
-  AttributeBizTypes,
   ContentEditorRoot,
   ContentEditorClickableElement,
   ContentEditorQuestionElement,
@@ -22,7 +21,7 @@ import {
 } from '@/core/usertour-component';
 import { UsertourTrigger } from '@/core/usertour-trigger';
 import { isElement, logger } from '@/utils';
-import { createQuestionAnswerEventData, rootsHaveButtonConditions } from '@/core/usertour-helper';
+import { rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex, defaultSettings } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
@@ -40,6 +39,8 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   private watcher: UsertourElementWatcher | null = null;
   private stepTrigger: UsertourTrigger | null = null;
   private currentStepCvid?: string;
+  // Survives step resets; only an explicit hidden step re-arms the notification.
+  private shouldNotifyOnScreen = true;
   // The tooltip step on screen as a bubble, its target missing: a store
   // rebuilt from the session (the same session pushed again) keeps it a bubble.
   private bubbleFallbackCvid?: string;
@@ -148,11 +149,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   async handleOnClick(element: ContentEditorClickableElement, value?: any) {
     if (isQuestionElement(element)) {
-      const el = element as ContentEditorQuestionElement;
-      if (el?.data?.bindToAttribute && el?.data?.selectedAttribute) {
-        this.updateSessionAttribute(AttributeBizTypes.User, el.data.selectedAttribute, value);
-      }
-      await this.reportQuestionAnswer(el, value);
+      await this.handleQuestionAnswer(element as ContentEditorQuestionElement, value);
     }
     if (element?.data?.actions) {
       await this.handleActions(element.data.actions as RulesCondition[]);
@@ -256,6 +253,9 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Reset tour state and set new step
     this.reset();
     this.currentStepCvid = step.cvid;
+    if (step.type === StepContentType.HIDDEN) {
+      this.shouldNotifyOnScreen = true;
+    }
     // Report step seen event
     if (reportStepSeen) {
       await this.reportStepSeen(step);
@@ -350,6 +350,29 @@ export class UsertourTour extends UsertourComponent<TourStore> {
   }
 
   // === Step Display Methods ===
+  private openStep(step: SessionStep, store: TourStore): void {
+    if (step.cvid !== this.currentStepCvid) {
+      return;
+    }
+    this.setStoreData({
+      ...store,
+      ...this.getStepInfo(step),
+      openState: this.isOpen(),
+    });
+    this.openCurrentStep();
+  }
+
+  private openCurrentStep(): void {
+    if (!this.hasStoreData() || this.isOpen()) {
+      return;
+    }
+    this.open();
+    if (this.shouldNotifyOnScreen) {
+      this.shouldNotifyOnScreen = false;
+      this.trigger(SDKClientEvents.FLOW_ON_SCREEN, { sessionId: this.getSessionId() });
+    }
+  }
+
   /**
    * Displays a tooltip step in the tour
    * This method handles:
@@ -391,13 +414,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
-    const stepInfo = this.getStepInfo(step);
-    // Set up modal state
-    this.setStoreData({
-      ...storeData,
-      ...stepInfo,
-      openState: true,
-    });
+    this.openStep(step, storeData);
   }
 
   /**
@@ -418,14 +435,7 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       await this.close(contentEndReason.STORE_NOT_FOUND);
       return;
     }
-    const stepInfo = this.getStepInfo(step);
-
-    // Set up bubble state
-    this.setStoreData({
-      ...storeData,
-      ...stepInfo,
-      openState: true,
-    });
+    this.openStep(step, storeData);
   }
 
   // === Element Watcher ===
@@ -482,8 +492,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     if (currentStep?.cvid !== step.cvid) {
       return;
     }
-    const stepInfo = this.getStepInfo(step);
-
     // Scroll element into view if tour is visible. The host's callback is
     // theirs: one that throws must not keep the step from showing.
     const customScrollIntoView = this.instance.getCustomScrollIntoView();
@@ -498,12 +506,11 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       smoothScroll(el, { block: 'center' });
     }
 
-    // Update store
     this.setStoreData({
       ...store,
-      ...stepInfo,
+      ...this.getStepInfo(step),
       triggerRef: el,
-      openState: true,
+      openState: false,
     });
   }
 
@@ -633,29 +640,38 @@ export class UsertourTour extends UsertourComponent<TourStore> {
    */
   private async checkTargetVisibility(): Promise<void> {
     const storeData = this.getStoreData();
-    if (!storeData) {
+    const watcher = this.watcher;
+    if (!storeData || !watcher) {
       return;
     }
 
-    const { triggerRef, currentStep, openState } = storeData;
+    const { triggerRef, currentStep } = storeData;
     const isTooltipStep = currentStep?.type === StepContentType.TOOLTIP;
-    const hasRequiredData = triggerRef && this.watcher && currentStep?.cvid;
+    const hasRequiredData = triggerRef && currentStep?.cvid;
 
-    if (!isTooltipStep || !hasRequiredData || !this.watcher) {
+    if (!isTooltipStep || !hasRequiredData) {
       return;
     }
 
-    const { isHidden, isTimeout } = await this.watcher.checkVisibility();
+    const { isHidden, isTimeout } = await watcher.checkVisibility();
+    // The check may replace the target or outlive the step it started on.
+    const currentStore = this.getStoreData();
+    if (
+      this.watcher !== watcher ||
+      this.currentStepCvid !== currentStep.cvid ||
+      currentStore?.currentStep?.type !== StepContentType.TOOLTIP ||
+      currentStore.currentStep.cvid !== currentStep.cvid
+    ) {
+      return;
+    }
 
     if (!isHidden) {
-      if (!openState) {
-        this.open();
-      }
+      this.openCurrentStep();
       return;
     }
 
     if (isTimeout) {
-      await this.handleTargetGone(currentStep, storeData);
+      await this.handleTargetGone(currentStore.currentStep, currentStore);
       return;
     }
 
@@ -688,22 +704,6 @@ export class UsertourTour extends UsertourComponent<TourStore> {
       },
       { batch: true },
     );
-  }
-
-  /**
-   * Reports the question answer event
-   * This method handles:
-   * 1. Reporting the question answer event with the correct event name
-   * 2. Adding the question cvid, name, and type to the event data
-   * 3. Handling multiple choice, scale, NPS, and star rating elements
-   *
-   * @param element - The question element that was answered
-   * @param value - The value of the answer
-   * @private
-   */
-  private async reportQuestionAnswer(element: ContentEditorQuestionElement, value?: any) {
-    const eventData = createQuestionAnswerEventData(element, value, this.getSessionId());
-    await this.socketService.answerQuestion(eventData);
   }
 
   // === Lifecycle Hooks ===

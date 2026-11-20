@@ -14,6 +14,7 @@ export * as UserTourTypes from './types/usertour';
 export * from './types/localizations';
 export * from './types/launcher';
 export * from './types/banner';
+export * from './types/embed';
 export * from './types/checklist';
 export * from './types/resource-center';
 export * from './types/announcement';

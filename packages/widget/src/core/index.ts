@@ -1,4 +1,6 @@
 export * from './banner';
+export * from './inline';
+export * from './embed';
 export * from './popper';
 export * from './bubble';
 export {

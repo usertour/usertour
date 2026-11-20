@@ -9,14 +9,14 @@
  * non-flow `data` shapes, re-targeting blindly instead of diagnosing, treating
  * a truncated list as complete).
  */
-export const SERVER_INSTRUCTIONS = `You are connected to a Usertour workspace — a user-onboarding platform whose content (flows, checklists, launchers, banners, trackers, resource centers, announcements) is delivered to end users by an in-app SDK.
+export const SERVER_INSTRUCTIONS = `You are connected to a Usertour workspace — a user-onboarding platform whose content (flows, checklists, launchers, banners, embeds, trackers, resource centers, announcements) is delivered to end users by an in-app SDK.
 
 Before AUTHORING or EDITING content, call \`get_authoring_guide\` once with no args (the core contract + a table of contents), then fetch the sections that apply to your content type in one array call (the parameter is \`section\`, singular, and takes an array). It is the contract for content that actually renders; do not author from guesswork.
 
 Route by intent:
 - Create / edit content → create_content, then update_content_version on the draft, then validate_content_version, then publish_content. A version that is live — or has EVER been live (unpublishing does not unlock it) — is immutable; fork it with create_content_version before editing.
 - Pick a theme → list_themes (page with nextCursor). Every visual type except tracker requires a themeId; call get_theme_schema before writing theme settings.
-- Non-flow content body → the \`data\` shape is per-type: fetch it with get_content_schema BEFORE writing a checklist / launcher / banner / tracker / resource-center body.
+- Non-flow content body → the \`data\` shape is per-type: fetch it with get_content_schema BEFORE writing a checklist / launcher / banner / tracker / resource-center body. An embed writes both: \`data\` (its shell — placement + target element) and \`steps\` (its steps, kinds \`inline\` / \`hidden\`).
 - Translate content → list_localizations (target language missing → create_localization), then get_version_localization / update_version_localization per locale (read the guide's \`localization\` section). Without localization scopes, read the locale codes from get_content_version with expand: ["localizations"]. After editing source text, check get_content_version with expand: ["localizations"] for outdated / missing translations BEFORE publishing.
 - "Why isn't my content showing?" → diagnose_content. It evaluates the SAME runtime gates the SDK uses (published / user identified / start rules / frequency / session state). Use it before changing targeting blindly.
 - "What would this USER see right now?" → diagnose_user. One call sorts every published content into showing / queued / blocked / browser-dependent, with the slot races settled — start here for support questions, then deep-dive one content with diagnose_content.

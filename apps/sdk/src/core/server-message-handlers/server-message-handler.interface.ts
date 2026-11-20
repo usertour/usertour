@@ -16,6 +16,8 @@ export interface ServerMessageHandlerContext {
   unsetResourceCenterSession: (sessionId: string) => Promise<boolean>;
   addLauncher: (session: CustomContentSession) => Promise<boolean>;
   removeLauncher: (contentId: string) => Promise<boolean>;
+  addEmbed: (session: CustomContentSession) => Promise<boolean>;
+  removeEmbed: (contentId: string) => Promise<boolean>;
   addTracker: (session: CustomContentSession) => Promise<boolean>;
   removeTracker: (contentId: string) => Promise<boolean>;
   trackClientCondition: (condition: TrackCondition) => Promise<boolean>;

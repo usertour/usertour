@@ -1,6 +1,9 @@
 import {
   canCompleteChecklistItem,
   extractClientConditionWaitTimers,
+  filterActivatedContentWithoutClientConditions,
+  findCurrentStepCvid,
+  findStepIdByLatestCvid,
   getAttributeValue,
   priorityCompare,
 } from './content.util';
@@ -114,5 +117,135 @@ describe('extractClientConditionWaitTimers — the delivery-side 300s cap', () =
     const [timer] = extractClientConditionWaitTimers([version(45)]);
     expect(timer.waitTime).toBe(45);
     expect(extractClientConditionWaitTimers([version(0)])).toEqual([]);
+  });
+});
+
+describe('filterActivatedContentWithoutClientConditions — whose browser conditions are tracked', () => {
+  // A version whose only start rule is one the browser answers (an element
+  // being present): the server cannot judge it, so it has to hand it to the
+  // SDK on every page load, or the rule never reads true again.
+  const version = (
+    type: string,
+    session: Record<string, unknown>,
+    frequency: string | undefined = 'once',
+  ) =>
+    ({
+      id: 'v1',
+      contentId: 'c1',
+      content: { id: 'c1', type },
+      config: {
+        enabledAutoStartRules: true,
+        autoStartRules: [{ id: 'element-1', type: 'element', operators: 'and', actived: false }],
+        enabledHideRules: false,
+        hideRules: [],
+        autoStartRulesSetting: frequency
+          ? { frequency: { frequency, every: { duration: 0, unit: 'days' } } }
+          : {},
+      },
+      session: { totalSessions: 0, completedSessions: 0, ...session },
+    }) as never;
+  const tracked = (candidate: never, type: string) =>
+    filterActivatedContentWithoutClientConditions([candidate], type as never).length === 1;
+
+  it('tracks an embed that has not started yet', () => {
+    expect(tracked(version('embed', {}), 'embed')).toBe(true);
+  });
+
+  it('keeps tracking an embed whose session runs, though `once` allows no new one', () => {
+    // The session counts against `once` the moment it exists. Frequency
+    // governs starting a session, not keeping one: without its condition the
+    // card is gone on the next page load while its session still runs.
+    const running = version('embed', { activeSession: { id: 's1' }, totalSessions: 1 });
+    expect(tracked(running, 'embed')).toBe(true);
+  });
+
+  it('does not track an embed whose `once` session was dismissed', () => {
+    const dismissed = version('embed', { totalSessions: 1, latestDismissedEvent: {} });
+    expect(tracked(dismissed, 'embed')).toBe(false);
+  });
+
+  it('stops tracking a running embed once a rule the server judges no longer matches', () => {
+    // Level-triggered: the embed shows only while its rules match, so a
+    // running session alone is no reason to track its browser conditions.
+    const running = version('embed', { activeSession: { id: 's1' }, totalSessions: 1 });
+    (running as { config: { autoStartRules: unknown[] } }).config.autoStartRules.unshift({
+      id: 'plan-1',
+      type: 'user-attr',
+      operators: 'and',
+      actived: false,
+    });
+    expect(tracked(running, 'embed')).toBe(false);
+  });
+
+  it('leaves a launcher as it was: a running session alone is not tracked', () => {
+    // A stored frequency refuses a new session; a launcher has one per user.
+    const running = version('launcher', { activeSession: { id: 's1' }, totalSessions: 1 });
+    expect(tracked(running, 'launcher')).toBe(false);
+  });
+
+  it('leaves a flow as it was: a running session is tracked, a spent `once` is not', () => {
+    const running = version('flow', { activeSession: { id: 's1' }, totalSessions: 1 });
+    expect(tracked(running, 'flow')).toBe(true);
+    expect(tracked(version('flow', { totalSessions: 1 }), 'flow')).toBe(false);
+  });
+});
+
+describe('the step a session resumes on after its version changed', () => {
+  // The session still points at a step row of the version it started on. The
+  // version now published has other rows for the same steps, so the step is
+  // found again by its cvid, read from the last step the session reported.
+  const stepSeen = (codeName: string, cvidAttribute: string, cvid: string, at: string) => ({
+    createdAt: new Date(at),
+    event: { codeName },
+    data: { [cvidAttribute]: cvid },
+  });
+  const republished = (type: string, bizEvent: unknown[]) =>
+    ({
+      id: 'v2',
+      contentId: 'c1',
+      content: { id: 'c1', type },
+      steps: [
+        { id: 'v2-step-1', cvid: 'cvid-1' },
+        { id: 'v2-step-2', cvid: 'cvid-2' },
+      ],
+      session: { activeSession: { id: 's1', currentStepId: 'v1-step-2', bizEvent } },
+    }) as never;
+
+  it("finds a flow session's step by the cvid of its last step-seen event", () => {
+    const events = [
+      stepSeen('flow_step_seen', 'flow_step_cvid', 'cvid-1', '2026-01-01T00:00:00Z'),
+      stepSeen('flow_step_seen', 'flow_step_cvid', 'cvid-2', '2026-01-01T00:01:00Z'),
+    ];
+    expect(findCurrentStepCvid(republished('flow', events))).toBe('cvid-2');
+  });
+
+  it("finds an embed session's step the same way", () => {
+    const events = [
+      stepSeen('embed_step_seen', 'embed_step_cvid', 'cvid-1', '2026-01-01T00:00:00Z'),
+      stepSeen('embed_step_seen', 'embed_step_cvid', 'cvid-2', '2026-01-01T00:01:00Z'),
+    ];
+    expect(findCurrentStepCvid(republished('embed', events))).toBe('cvid-2');
+    expect(
+      findStepIdByLatestCvid({
+        version: {
+          steps: [
+            { id: 'v2-step-1', cvid: 'cvid-1' },
+            { id: 'v2-step-2', cvid: 'cvid-2' },
+          ],
+        },
+        bizEvent: events,
+      } as never),
+    ).toBe('v2-step-2');
+  });
+
+  it('an embed whose step the new version dropped resumes on the first step; a flow does not', () => {
+    const embedEvents = [
+      stepSeen('embed_step_seen', 'embed_step_cvid', 'cvid-9', '2026-01-01T00:00:00Z'),
+    ];
+    expect(findCurrentStepCvid(republished('embed', embedEvents))).toBe('cvid-1');
+    const flowEvents = [
+      stepSeen('flow_step_seen', 'flow_step_cvid', 'cvid-9', '2026-01-01T00:00:00Z'),
+    ];
+    expect(findCurrentStepCvid(republished('flow', flowEvents))).toBe('cvid-9');
   });
 });

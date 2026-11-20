@@ -32,6 +32,7 @@ import {
   ResourceCenterData,
   Step,
   ThemeTypesSetting,
+  StepContentType,
 } from '@usertour/types';
 import type { Theme } from '@usertour/data';
 import { format } from 'date-fns';
@@ -218,6 +219,9 @@ const ContentDetailContentStep = ({
   if (!currentStep || !currentTheme) return null;
 
   const isHiddenStep = currentStep.type === 'hidden';
+  // An inline step has no popup geometry: its placement and dismiss button
+  // are the shell's, so only its theme is worth a badge.
+  const isInlineStep = currentStep.type === StepContentType.INLINE;
 
   const leftContent = isHiddenStep ? (
     <div className="w-40 h-32 flex flex-none items-center justify-center">
@@ -243,7 +247,12 @@ const ContentDetailContentStep = ({
   const badges = (
     <>
       <ContentBadge>{currentStep.type}</ContentBadge>
-      {!isHiddenStep && (
+      {isInlineStep && (
+        <ContentBadge>
+          {t('contents.overview.step.theme', { name: currentTheme.name })}
+        </ContentBadge>
+      )}
+      {!isHiddenStep && !isInlineStep && (
         <>
           <ContentBadge>
             {t('contents.overview.step.width', {
@@ -645,7 +654,8 @@ export const ContentDetailContent = () => {
 
   if (!version || !content || !contentType) return null;
 
-  const showAddButton = contentType === ContentTypeName.FLOWS;
+  const showAddButton =
+    contentType === ContentTypeName.FLOWS || contentType === ContentTypeName.EMBEDS;
 
   return (
     <>
@@ -685,6 +695,17 @@ export const ContentDetailContent = () => {
             disabled={isViewOnly}
           />
         )}
+        {contentType === ContentTypeName.EMBEDS &&
+          version.steps?.map((step, index) => (
+            <ContentDetailContentStep
+              onEdit={() => openBuilder(content, contentType, getStepId(step, index))}
+              currentStep={step}
+              index={index}
+              key={getStepId(step, index)}
+              currentVersion={version}
+              disabled={isViewOnly}
+            />
+          ))}
         {contentType === ContentTypeName.RESOURCE_CENTERS && content && version.data && (
           <ResourceCenterContentPreview
             currentVersion={version}

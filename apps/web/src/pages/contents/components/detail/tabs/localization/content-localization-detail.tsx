@@ -18,6 +18,7 @@ import {
   extractVersionDataTranslationUnits,
   mergeLocalizedEditorContents,
   mergeLocalizedVersionData,
+  hasStepBody,
 } from '@usertour/helpers';
 import { RiArrowLeftLine, RiArrowRightLine } from '@usertour/icons';
 import type {
@@ -736,8 +737,9 @@ export const ContentLocalizationDetail = (props: ContentLocalizationDetailProps)
   const contentLocalization = contentLocalizationList.find(
     (row) => row.localizationId === localization.id,
   );
-  const MainComponent =
-    content.type === ContentDataType.FLOW ? FlowLocalizationMain : VersionDataLocalizationMain;
+  const MainComponent = hasStepBody(content.type)
+    ? FlowLocalizationMain
+    : VersionDataLocalizationMain;
 
   return (
     <MainComponent

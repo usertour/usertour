@@ -5,8 +5,8 @@ import {
   deepClone,
   isSafeDestinationUrl,
   isHttpUrl,
+  hasStepBody,
 } from '@usertour/helpers';
-import { ContentDataType } from '@usertour/types';
 import type { ContentEditorRoot } from '@usertour/types';
 import { PrismaService } from 'nestjs-prisma';
 
@@ -310,15 +310,14 @@ export class VersionTranslationService {
   ): TranslationSource {
     return {
       contentType,
-      steps:
-        contentType === ContentDataType.FLOW
-          ? steps
-              .filter((step) => Boolean(step.cvid && step.data))
-              .map((step) => ({
-                cvid: step.cvid as string,
-                data: step.data as ContentEditorRoot[],
-              }))
-          : [],
+      steps: hasStepBody(contentType)
+        ? steps
+            .filter((step) => Boolean(step.cvid && step.data))
+            .map((step) => ({
+              cvid: step.cvid as string,
+              data: step.data as ContentEditorRoot[],
+            }))
+        : [],
       data,
     };
   }

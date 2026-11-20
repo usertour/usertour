@@ -1,4 +1,5 @@
-import { rollingDayWindows } from './rolling-day-windows.util';
+import { Prisma } from '@prisma/client';
+import { dayLabelSql, rollingDayWindows } from './rolling-day-windows.util';
 
 /**
  * Timezone-purity regression. The old inline logic cut days with server-local
@@ -59,7 +60,58 @@ describe('rollingDayWindows', () => {
     expect(dst.windowEnd.toISOString()).toBe('2026-03-09T03:59:59.999Z');
   });
 
+  it('DST switch at midnight (America/Santiago, 2026-09-06 begins at 01:00): the day starts at its first real instant', () => {
+    // 00:00-01:00 does not exist on 09-06. A wall-clock "00:00" resolves an
+    // hour early, into 09-05 23:00, which would move that hour's events to
+    // 09-06; the day must start where its clock actually starts.
+    const days = rollingDayWindows(
+      '2026-09-05T04:00:00.000Z',
+      '2026-09-07T02:59:59.999Z',
+      'America/Santiago',
+      1,
+    );
+    expect(days.map((window) => window.day)).toEqual(['2026-09-05', '2026-09-06']);
+    const [before, dst] = days;
+    expect(before.windowEnd.toISOString()).toBe('2026-09-06T03:59:59.999Z');
+    expect(dst.dayStart.toISOString()).toBe('2026-09-06T04:00:00.000Z');
+    expect(dst.windowEnd.toISOString()).toBe('2026-09-07T02:59:59.999Z');
+  });
+
+  it('DST switch back at midnight (America/Santiago, 2026-04-04 is 25h): the day ends where the next begins', () => {
+    // Clocks go from 00:00 (-03) back to 23:00 (-04), so 23:00-23:59 happens
+    // twice on 04-04; the day must run to the second one, up to 04-05's start.
+    const days = rollingDayWindows(
+      '2026-04-04T03:00:00.000Z',
+      '2026-04-06T03:59:59.999Z',
+      'America/Santiago',
+      1,
+    );
+    const [dst, next] = days;
+    expect(dst.day).toBe('2026-04-04');
+    expect(dst.windowEnd.toISOString()).toBe('2026-04-05T03:59:59.999Z');
+    expect(next.dayStart.toISOString()).toBe('2026-04-05T04:00:00.000Z');
+  });
+
   it('inverted range yields no days', () => {
     expect(rollingDayWindows('2026-07-05T00:00:00Z', '2026-07-01T00:00:00Z', 'UTC', 7)).toEqual([]);
+  });
+});
+
+describe('dayLabelSql', () => {
+  it('hands the database day labels and instants, never the zone name', () => {
+    // An older alias a browser still reports; the database may not know it.
+    const days = rollingDayWindows(
+      '2026-11-02T22:00:00.000Z',
+      '2026-11-04T21:59:59.999Z',
+      'Europe/Kiev',
+      1,
+    );
+    const sql = dayLabelSql(Prisma.sql`"createdAt"`, days);
+
+    expect(sql.text).toBe('($1::text[])[width_bucket("createdAt", $2::timestamptz[])]');
+    expect(sql.values).toEqual([
+      ['2026-11-03', '2026-11-04'],
+      ['2026-11-02T22:00:00.000Z', '2026-11-03T22:00:00.000Z'],
+    ]);
   });
 });

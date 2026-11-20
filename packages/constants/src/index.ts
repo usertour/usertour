@@ -19,6 +19,8 @@ export * from './constants/project-defaults';
 export * from './constants/theme-settings';
 export * from './constants/attribute';
 export * from './constants/banner';
+export * from './constants/embed';
+export * from './constants/step-types';
 export * from './constants/button';
 export * from './constants/checklist';
 export * from './constants/launcher';

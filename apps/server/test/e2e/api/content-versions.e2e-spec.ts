@@ -908,6 +908,37 @@ describe('API v2 /content-versions (e2e)', () => {
     expect(modalOnClick.status).toBe(400);
   });
 
+  it('rejects a new button taking the cvid a button echoed by id alone keeps (400)', async () => {
+    const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
+    const patch = (steps: unknown[]) =>
+      api(
+        'patch',
+        `/v2/projects/${projectId}/content/${writeContentId}/versions/${writeVersionId}`,
+        token,
+      ).send({ steps });
+    const step = { name: 'Buttons', type: 'modal', placement: { position: 'center' } };
+
+    const first = await patch([{ ...step, content: [{ type: 'button', text: 'Old' }] }]);
+    expect(first.status).toBe(200);
+    const written = first.body.steps.find((s: { name: string }) => s.name === 'Buttons');
+    const old = written.content[0];
+    expect(typeof old.id).toBe('string');
+    expect(typeof old.cvid).toBe('string');
+
+    const res = await patch([
+      {
+        ...step,
+        id: written.id,
+        content: [
+          { type: 'button', id: old.id, text: 'Old' },
+          { type: 'button', text: 'New', cvid: old.cvid },
+        ],
+      },
+    ]);
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toContain(old.cvid);
+  });
+
   it('rejects a content-state condition targeting a non-flow/checklist, for any state (400)', async () => {
     const token = await mint([Capability.ContentRead, Capability.ContentUpdate]);
     // A content-state condition can only track a flow or checklist; a banner carries no such

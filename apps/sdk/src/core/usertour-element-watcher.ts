@@ -1,4 +1,4 @@
-import { isVisibleNode } from '@usertour/dom';
+import { hasPointableSize, isVisibleNode } from '@usertour/dom';
 import { ElementSelectorPropsData } from '@usertour/types';
 import { document, Evented } from '@/utils';
 import { findTargetElement, isVisible } from '@/core/usertour-helper';
@@ -36,6 +36,8 @@ export class UsertourElementWatcher extends Evented {
   private targetMissingSeconds = DEFAULT_TARGET_MISSING_SECONDS; // Time allowed for target element to be missing
   // Whether a rendered target must also be inside the viewport to count as visible
   private viewportCheck = true;
+  // Whether an element its selector no longer finds stops counting as the target
+  private requireSelectorMatch = false;
   private readonly id: string; // Unique identifier for this watcher
   private readonly findElementByTarget: FindElementByTarget; // Where and how the target is looked up
   private destroyed = false; // Set by destroy(): no more lookups, no more events
@@ -71,6 +73,35 @@ export class UsertourElementWatcher extends Evented {
    */
   setViewportCheck(enabled: boolean) {
     this.viewportCheck = enabled;
+  }
+
+  /**
+   * Makes an element the selector no longer finds — still in the page, but
+   * re-keyed or re-classed by the host — count as gone, the way a removed one
+   * does, until the selector finds one again. Off by default: a tooltip keeps
+   * pointing at the node it found, which a dynamic-content selector may no
+   * longer re-find as its text changes.
+   */
+  setRequireSelectorMatch(enabled: boolean) {
+    this.requireSelectorMatch = enabled;
+  }
+
+  /**
+   * The target as its selector finds it now, outside the check loop: the found
+   * element, or one that took its place (adopted and announced with
+   * ELEMENT_CHANGED); null when the selector finds none.
+   */
+  resolveElement(): Element | null {
+    if (this.isElementValid()) {
+      return this.element;
+    }
+    const el = this.findElementBySelector();
+    if (!el) {
+      return null;
+    }
+    this.element = el;
+    this.trigger(SDKClientEvents.ELEMENT_CHANGED, el);
+    return el;
   }
 
   /** The element this watcher has found, if any. */
@@ -143,6 +174,7 @@ export class UsertourElementWatcher extends Evented {
 
     // Check if the element is still in the current DOM tree and is the correct target
     // This handles SPA page changes where the element might have been removed or changed
+    let unmatched = false;
     if (!this.isElementValid()) {
       // Try to find the element again with the same selector
       const el = this.findElementBySelector();
@@ -150,10 +182,12 @@ export class UsertourElementWatcher extends Evented {
         // Found a new element that matches our selector
         this.element = el;
         this.trigger(SDKClientEvents.ELEMENT_CHANGED, el);
+      } else {
+        unmatched = this.requireSelectorMatch;
       }
     }
 
-    if (!this.isRendered(this.element)) {
+    if (unmatched || !this.isRendered(this.element)) {
       this.updateChecker(true, Date.now());
       return {
         isHidden: true,
@@ -216,8 +250,7 @@ export class UsertourElementWatcher extends Evented {
     if (!this.viewportCheck) {
       return true;
     }
-    const rect = element.getBoundingClientRect();
-    return rect.width > 0 || rect.height > 0;
+    return hasPointableSize(element.getBoundingClientRect());
   }
 
   /**
