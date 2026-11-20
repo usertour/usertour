@@ -8,11 +8,13 @@ import { Button } from '../primitives';
 import type { Rect, SideObject } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
+import { computeViewportClampStyle } from './utils/viewport';
 import { cn } from '@usertour/tailwind';
 import { Align, ProgressBarType, Side } from '@usertour/types';
 import { WidgetClass } from './class-names';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
+import { useFrameContentHeight } from './hooks/use-frame-content-height';
 import { POPPER_NAME, PopperProvider, usePopperContext } from './popper-context';
 import { useWidgetLocale } from '../locale/context';
 
@@ -339,6 +341,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
           data-usertour-popper-content-wrapper=""
           style={{
             ...style,
+            ...computeViewportClampStyle(position, positionOffsetX, positionOffsetY),
             width: width,
             zIndex: context.zIndex + 1,
           }}
@@ -355,10 +358,12 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
 
 const PopperContentInFrame = forwardRef<HTMLDivElement, PopperContentProps>((props, _) => {
   const { children, globalStyle } = props;
-  const { setStyle, document } = useFrame();
-  const onSizeChange = (rect: { width: number; height: number }) => {
-    setStyle(`height: ${rect.height}px !important`);
-  };
+  const { document } = useFrame();
+  const [height, setHeight] = useState<number>();
+  useFrameContentHeight(height);
+  const onSizeChange = useCallback((rect: { width: number; height: number }) => {
+    setHeight(rect.height);
+  }, []);
   useEffect(() => {
     if (globalStyle) {
       document.body.style.cssText = globalStyle;

@@ -14,6 +14,8 @@ import { WidgetClass } from '../class-names';
 import { PopperClose } from '../popper';
 import { useWidgetLocale } from '../../locale/context';
 import { computePositionStyle } from '../utils/position';
+import { computeViewportClampStyle } from '../utils/viewport';
+import { useFrameContentHeight } from '../hooks/use-frame-content-height';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import { AnnouncementReadMoreButton, formatAnnouncementDate } from './resource-center-body';
 import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from './constants';
@@ -47,9 +49,10 @@ interface PopupFrameContentProps {
 
 const PopupFrameContent = (props: PopupFrameContentProps) => {
   const { globalStyle, children } = props;
-  const { setStyle, document: frameDocument } = useFrame();
+  const { document: frameDocument } = useFrame();
   const [contentElement, setContentElement] = useState<HTMLDivElement | null>(null);
   const rect = useSize(contentElement);
+  useFrameContentHeight(rect?.height);
 
   useEffect(() => {
     if (globalStyle) {
@@ -57,12 +60,6 @@ const PopupFrameContent = (props: PopupFrameContentProps) => {
       frameDocument.body.className = 'usertour-widget-root';
     }
   }, [globalStyle, frameDocument]);
-
-  useEffect(() => {
-    if (rect) {
-      setStyle(`height: ${rect.height}px !important`);
-    }
-  }, [rect, setStyle]);
 
   return <div ref={setContentElement}>{children}</div>;
 };
@@ -209,7 +206,12 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
       />
       <div
         className={`${WidgetClass.surface} ${WidgetClass.elevation} ${WidgetClass.announcementModal}`}
-        style={{ ...computePositionStyle('center', 0, 0), width: `${width}px`, zIndex: zIndex + 3 }}
+        style={{
+          ...computePositionStyle('center', 0, 0),
+          ...computeViewportClampStyle(),
+          width: `${width}px`,
+          zIndex: zIndex + 3,
+        }}
       >
         <div className={WidgetClass.surfaceShell}>
           <div className={WidgetClass.surfaceFrame}>
@@ -347,7 +349,11 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
       alignTop={alignTop}
       launcherHeight={launcherHeight}
       tailColor={themeSetting?.mainColor?.background}
-      style={{ ...positionStyle, zIndex: zIndex + 1 }}
+      style={{
+        ...positionStyle,
+        ...computeViewportClampStyle(position, positionOffsetX, positionOffsetY),
+        zIndex: zIndex + 1,
+      }}
     >
       <Frame assets={assets} className={WidgetClass.surfaceViewport}>
         <PopupFrameContent globalStyle={globalStyle}>

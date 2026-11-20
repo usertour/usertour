@@ -72,6 +72,18 @@
     var(--usertour-widget-popper-border-radius) -
     var(--usertour-widget-popper-border-width)
   );
+  /* The frame is as tall as its content (inline height), capped to the
+     viewport so a long step scrolls inside the frame instead of running off
+     screen. The inset is set on the surface (utils/viewport.ts); 32px is a
+     16px margin on both sides. !important: `#usertour-widget iframe` resets
+     max-height with a higher specificity. */
+  max-height: calc(100vh - var(--usertour-widget-surface-inset-y, 32px)) !important;
+}
+/* dvh: on mobile, 100vh is taller than what the browser chrome leaves visible. */
+@supports (height: 100dvh) {
+  .usertour-widget-surface-viewport {
+    max-height: calc(100dvh - var(--usertour-widget-surface-inset-y, 32px)) !important;
+  }
 }
 .usertour-widget-surface-panel {
   position: relative;

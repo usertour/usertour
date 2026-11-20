@@ -303,3 +303,79 @@ test('the widgets stack: flow over resource center over checklist over launcher 
   expect(layers.checklist).toBeGreaterThan(layers.launcher);
   expect(layers.checklist).toBeGreaterThan(layers.banner);
 });
+
+test.describe('on a viewport smaller than the step', () => {
+  const VIEWPORT = { width: 390, height: 600 };
+  const MARGIN = 16;
+  const longRows = [
+    ...Array.from({ length: 40 }, (_, index) => row(paragraph(`Line ${index + 1} of a long step`))),
+    row(button('Next', [])),
+  ];
+
+  const expectInsideViewport = async (locator: Locator) => {
+    await expect
+      .poll(async () => {
+        const rect = await box(locator);
+        return (
+          rect.x >= MARGIN - 1 &&
+          rect.y >= MARGIN - 1 &&
+          right(rect) <= VIEWPORT.width - MARGIN + 1 &&
+          bottom(rect) <= VIEWPORT.height - MARGIN + 1
+        );
+      })
+      .toBe(true);
+  };
+
+  test('a modal shrinks to the viewport and its content scrolls inside it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    await protocol.push('SetFlowSession', modalFlow('session-1', 'flow-1', longRows));
+    await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+    await expectInsideViewport(sdk.surface);
+
+    // The last block is reachable: scrolled to, it lands inside the frame's own viewport.
+    const next = sdk.frame().getByRole('button', { name: 'Next' });
+    await next.scrollIntoViewIfNeeded();
+    const reachable = await next.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const view = element.ownerDocument.defaultView;
+      return rect.top >= 0 && rect.bottom <= (view?.innerHeight ?? 0);
+    });
+    expect(reachable).toBe(true);
+
+    // Given room again, the step is back to its own width and does not scroll.
+    await sdk.page.setViewportSize({ width: 1280, height: 3000 });
+    await expect
+      .poll(async () => Math.round((await box(sdk.surface)).width))
+      .toBe(defaultSettings.modal.width);
+    await expect
+      .poll(() => next.evaluate((element) => element.ownerDocument.documentElement.style.overflowY))
+      .toBe('hidden');
+  });
+
+  test('a bubble stays on screen, avatar included', async ({ sdk, protocol }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    await protocol.push(
+      'SetFlowSession',
+      flowSession({
+        sessionId: 'session-1',
+        contentId: 'flow-1',
+        steps: [
+          {
+            id: 'flow-1-step-1',
+            cvid: 'flow-1-cvid-1',
+            type: 'bubble',
+            setting: { width: 600 },
+            data: longRows,
+          },
+        ],
+      }),
+    );
+    await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+    await expectInsideViewport(sdk.surface);
+  });
+});

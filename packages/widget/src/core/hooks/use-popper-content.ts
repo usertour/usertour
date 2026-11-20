@@ -15,6 +15,7 @@ import { createPlatformWithDetachedReferenceFallback } from '../utils/floating-u
 import { createCustomHideMiddleware } from '../utils/floating-ui-middleware';
 import { getBoundaryAcrossFrames } from '@usertour/dom';
 import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position';
+import { computeViewportClampStyle } from '../utils/viewport';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
 import { Align, Side } from '@usertour/types';
@@ -202,6 +203,7 @@ export const usePopperContent = (
 
   const inlineStyle: React.CSSProperties = {
     ...finalStyles,
+    ...computeViewportClampStyle(),
     width: width,
     zIndex: zIndex + 1,
     ...(referenceHiddenByMiddleware ? hiddenStyle : { opacity: 1 }),

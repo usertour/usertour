@@ -12,6 +12,7 @@ import { cn } from '@usertour/tailwind';
 import { Frame, useFrame } from '@usertour/frame';
 import { type AvatarComponent } from '@usertour/icons';
 import { computePositionStyle } from './utils/position';
+import { computeViewportClampStyle } from './utils/viewport';
 import { usePopperContext } from './popper-context';
 import { useBubbleExpandAnimation } from './hooks';
 import { WidgetClass } from './class-names';
@@ -202,6 +203,12 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
           data-usertour-popper-content-wrapper=""
           style={{
             ...style,
+            ...computeViewportClampStyle(
+              position,
+              positionOffsetX,
+              positionOffsetY,
+              avatarSpacePadding,
+            ),
             width: width,
             zIndex: enabledBackdrop ? zIndex + 1 : zIndex,
           }}
