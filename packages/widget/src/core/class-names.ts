@@ -43,6 +43,7 @@ export const WidgetClass = {
   launcherActivateOnClick: `${PREFIX}-launcher--activate-on-click`,
   launcherIcon: `${PREFIX}-launcher--icon`,
   launcherButton: `${PREFIX}-launcher--button`,
+  launcherHidden: `${PREFIX}-launcher--hidden`,
 
   // Checklist launcher
   checklistLauncher: `${PREFIX}-checklist-launcher`,
