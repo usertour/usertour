@@ -42,6 +42,8 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          pull: true
+          no-cache-filters: runtime
           tags: |
             usertour/usertour:${{ steps.extract_tag.outputs.VERSION }}
             usertour/usertour:latest

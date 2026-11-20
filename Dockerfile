@@ -47,7 +47,7 @@ RUN SDK_VERSION=$(node -e "console.log(require('./apps/sdk/package.json').versio
     cp -r apps/sdk/dist/$SDK_VERSION/* /sdk-dist/
 
 # Production stage
-FROM node:22.23-trixie-slim
+FROM node:22.23-trixie-slim AS runtime
 
 WORKDIR /app
 
