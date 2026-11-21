@@ -478,27 +478,33 @@ test.describe('on a viewport smaller than the step', () => {
     }
   });
 
-  test('a negative offset on an anchored edge leaves a usable part of the step on screen', async ({
+  test('an offset past the edge a modal is anchored to is dropped, so all of it can be reached', async ({
     sdk,
     protocol,
   }) => {
     await sdk.page.setViewportSize(VIEWPORT);
     await start(sdk);
+    const onScreen = (rect: Box) =>
+      rect.x >= 0 &&
+      rect.y >= 0 &&
+      right(rect) <= VIEWPORT.width &&
+      bottom(rect) <= VIEWPORT.height;
     const settings = [
-      { position: 'leftTop', positionOffsetX: -400, positionOffsetY: 20 },
+      { position: 'leftTop', positionOffsetX: -400, positionOffsetY: 20, width: 120 },
       { position: 'rightBottom', positionOffsetX: 20, positionOffsetY: -700 },
+      { position: 'leftTop', positionOffsetX: 20, positionOffsetY: -700 },
     ];
     for (const setting of settings) {
       await protocol.push('SetFlowSession', oneStep('modal', setting));
-      await expect(sdk.frame().getByText('Line 1 of a long step')).toBeAttached();
-      await expect
-        .poll(async () => {
-          const rect = await box(sdk.surface);
-          const visibleWidth = Math.min(right(rect), VIEWPORT.width) - Math.max(rect.x, 0);
-          const visibleHeight = Math.min(bottom(rect), VIEWPORT.height) - Math.max(rect.y, 0);
-          return visibleWidth >= 240 && visibleHeight >= 120;
-        })
-        .toBe(true);
+      const first = sdk.frame().getByText('Line 1 of a long step');
+      const next = sdk.frame().getByRole('button', { name: 'Next' });
+      await expect(first).toBeAttached();
+      await expect.poll(async () => onScreen(await box(sdk.surface))).toBe(true);
+      // Both ends of the content are on screen once scrolled to.
+      await first.scrollIntoViewIfNeeded();
+      expect(onScreen(await box(first))).toBe(true);
+      await next.scrollIntoViewIfNeeded();
+      expect(onScreen(await box(next))).toBe(true);
     }
   });
 
