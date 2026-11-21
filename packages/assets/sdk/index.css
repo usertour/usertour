@@ -79,23 +79,30 @@
      left on that side — whichever is smaller — less the two borders the
      wrapper draws around the frame. !important: `#usertour-widget iframe`
      resets max-height with a higher specificity.
-     The first declaration is for browsers without min() (the legacy build's,
-     and Firefox 74): they keep the viewport cap and drop the one below. */
+     This declaration is all a browser without min() gets (the legacy build's,
+     and Firefox 74): the viewport cap, without the room left beside a target. */
   max-height: calc(
     100vh -
     var(--usertour-widget-surface-inset-y, 32px) -
     2 *
     var(--usertour-widget-popper-border-width, 0px)
   ) !important;
-  max-height: calc(
-    min(
-      100vh -
-      var(--usertour-widget-surface-inset-y, 32px),
-      var(--usertour-widget-surface-available-height, 100vh)
-    ) -
-    2 *
-    var(--usertour-widget-popper-border-width, 0px)
-  ) !important;
+}
+/* Behind @supports, not a second declaration in the rule above: a declaration
+   with var() in it is always valid at parse time, so it would replace the one
+   above even where min() is unknown, and then compute to no cap at all. */
+@supports (width: min(1px, 2px)) {
+  .usertour-widget-surface-viewport {
+    max-height: calc(
+      min(
+        100vh -
+        var(--usertour-widget-surface-inset-y, 32px),
+        var(--usertour-widget-surface-available-height, 100vh)
+      ) -
+      2 *
+      var(--usertour-widget-popper-border-width, 0px)
+    ) !important;
+  }
 }
 /* dvh: on mobile, 100vh is taller than what the browser chrome leaves visible. */
 @supports (height: 100dvh) {

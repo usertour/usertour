@@ -51,12 +51,15 @@ export const computeViewportClampStyle = (
   } as CSSProperties;
 };
 
-/** The largest offset on an axis `room` long that still leaves the surface `min` of it. */
+/**
+ * The offset closest to `offset`, either way, that still leaves a surface
+ * filling an axis `room` long `min` of it on screen.
+ */
 const fitOffset = (anchored: boolean, offset: number, room: number, min: number) => {
-  if (anchored) {
-    return Math.min(offset, Math.max(0, room - SURFACE_VIEWPORT_MARGIN - min));
-  }
-  const limit = Math.max(0, (room - SURFACE_VIEWPORT_MARGIN * 2 - min) / 2);
+  const spare = anchored
+    ? room - SURFACE_VIEWPORT_MARGIN - min
+    : (room - SURFACE_VIEWPORT_MARGIN * 2 - min) / 2;
+  const limit = Math.max(0, spare);
   return Math.max(-limit, Math.min(limit, offset));
 };
 
@@ -64,7 +67,10 @@ const fitOffset = (anchored: boolean, offset: number, room: number, min: number)
  * The offsets a fixed-position surface can actually take in this viewport.
  * The clamp above takes an offset out of the surface's size, so an offset the
  * viewport has no room for would shrink the surface to nothing; it is cut
- * back instead, until the surface keeps a usable width and height.
+ * back instead, until the surface keeps a usable width and height. A negative
+ * offset on an anchored edge pushes the surface off that edge: the clamp has
+ * already made the surface no larger than the viewport, so it is cut back the
+ * same way, or nothing of the surface would be left on screen.
  */
 export const fitOffsetsToViewport = (
   position: string,

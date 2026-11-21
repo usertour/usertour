@@ -478,6 +478,30 @@ test.describe('on a viewport smaller than the step', () => {
     }
   });
 
+  test('a negative offset on an anchored edge leaves a usable part of the step on screen', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    const settings = [
+      { position: 'leftTop', positionOffsetX: -400, positionOffsetY: 20 },
+      { position: 'rightBottom', positionOffsetX: 20, positionOffsetY: -700 },
+    ];
+    for (const setting of settings) {
+      await protocol.push('SetFlowSession', oneStep('modal', setting));
+      await expect(sdk.frame().getByText('Line 1 of a long step')).toBeAttached();
+      await expect
+        .poll(async () => {
+          const rect = await box(sdk.surface);
+          const visibleWidth = Math.min(right(rect), VIEWPORT.width) - Math.max(rect.x, 0);
+          const visibleHeight = Math.min(bottom(rect), VIEWPORT.height) - Math.max(rect.y, 0);
+          return visibleWidth >= 240 && visibleHeight >= 120;
+        })
+        .toBe(true);
+    }
+  });
+
   test('a tooltip with no room on either side of its target moves back over it', async ({
     sdk,
     protocol,
