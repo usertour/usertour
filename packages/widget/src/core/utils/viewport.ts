@@ -11,8 +11,13 @@ export const SURFACE_VIEWPORT_MARGIN = 16;
 const SURFACE_INSET_Y_VAR = '--usertour-widget-surface-inset-y';
 const SURFACE_AVAILABLE_HEIGHT_VAR = '--usertour-widget-surface-available-height';
 
-/** A surface squeezed by its target keeps at least this much height. */
-const MIN_AVAILABLE_HEIGHT = 120;
+/** A surface squeezed by its target or its offset keeps at least this much. */
+const MIN_SURFACE_HEIGHT = 120;
+const MIN_SURFACE_WIDTH = 240;
+
+const isAnchoredX = (position: string) =>
+  position.startsWith('left') || position.startsWith('right');
+const isAnchoredY = (position: string) => position.endsWith('Top') || position.endsWith('Bottom');
 
 /**
  * What an axis loses to the viewport's edges. Edge-anchored: its offset plus
@@ -40,23 +45,54 @@ export const computeViewportClampStyle = (
 ): CSSProperties => {
   // computePositionStyle ignores both offsets for a plain 'center'.
   const [x, y] = position === 'center' ? [0, 0] : [offsetX, offsetY];
-  const anchoredX = position.startsWith('left') || position.startsWith('right');
-  const anchoredY = position.endsWith('Top') || position.endsWith('Bottom');
   return {
-    maxWidth: `calc(100vw - ${inset(anchoredX, x)}px)`,
-    [SURFACE_INSET_Y_VAR]: `${inset(anchoredY, y) + reservedHeight}px`,
+    maxWidth: `calc(100vw - ${inset(isAnchoredX(position), x)}px)`,
+    [SURFACE_INSET_Y_VAR]: `${inset(isAnchoredY(position), y) + reservedHeight}px`,
   } as CSSProperties;
+};
+
+/** The largest offset on an axis `room` long that still leaves the surface `min` of it. */
+const fitOffset = (anchored: boolean, offset: number, room: number, min: number) => {
+  if (anchored) {
+    return Math.min(offset, Math.max(0, room - SURFACE_VIEWPORT_MARGIN - min));
+  }
+  const limit = Math.max(0, (room - SURFACE_VIEWPORT_MARGIN * 2 - min) / 2);
+  return Math.max(-limit, Math.min(limit, offset));
+};
+
+/**
+ * The offsets a fixed-position surface can actually take in this viewport.
+ * The clamp above takes an offset out of the surface's size, so an offset the
+ * viewport has no room for would shrink the surface to nothing; it is cut
+ * back instead, until the surface keeps a usable width and height.
+ */
+export const fitOffsetsToViewport = (
+  position: string,
+  offsetX: number,
+  offsetY: number,
+  viewport: { width: number; height: number },
+  reservedHeight = 0,
+): [number, number] => {
+  if (position === 'center') {
+    return [offsetX, offsetY];
+  }
+  return [
+    fitOffset(isAnchoredX(position), offsetX, viewport.width, MIN_SURFACE_WIDTH),
+    fitOffset(isAnchoredY(position), offsetY, viewport.height - reservedHeight, MIN_SURFACE_HEIGHT),
+  ];
 };
 
 /**
  * For a surface placed against a target: caps its frame to the room left on
  * the side it ended up on (floating-ui's `size` middleware reports it), which
- * is less than the viewport whenever the target is not at its edge.
+ * is less than the viewport whenever the target is not at its edge. Returns
+ * whether that room is below the minimum the surface keeps.
  */
 export const applyAvailableHeight = (floating: HTMLElement, availableHeight: number) => {
-  const height = Math.max(
-    MIN_AVAILABLE_HEIGHT,
-    Math.floor(availableHeight) - SURFACE_VIEWPORT_MARGIN,
+  const room = Math.floor(availableHeight) - SURFACE_VIEWPORT_MARGIN;
+  floating.style.setProperty(
+    SURFACE_AVAILABLE_HEIGHT_VAR,
+    `${Math.max(MIN_SURFACE_HEIGHT, room)}px`,
   );
-  floating.style.setProperty(SURFACE_AVAILABLE_HEIGHT_VAR, `${height}px`);
+  return room < MIN_SURFACE_HEIGHT;
 };

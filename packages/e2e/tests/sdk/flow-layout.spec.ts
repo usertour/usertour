@@ -456,6 +456,53 @@ test.describe('on a viewport smaller than the step', () => {
     }
   });
 
+  test('an offset the viewport has no room for is cut back, not taken out of the step', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    const settings = [
+      { position: 'centerBottom', positionOffsetX: 185, positionOffsetY: 20 },
+      { position: 'centerTop', positionOffsetX: -400, positionOffsetY: 20 },
+      { position: 'leftCenter', positionOffsetX: 20, positionOffsetY: 290 },
+      { position: 'rightBottom', positionOffsetX: 300, positionOffsetY: 500 },
+    ];
+    for (const setting of settings) {
+      await protocol.push('SetFlowSession', oneStep('modal', setting));
+      await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+      await expectInsideViewport(sdk.surface);
+      const rect = await box(sdk.surface);
+      expect(rect.width).toBeGreaterThanOrEqual(240);
+      expect(rect.height).toBeGreaterThanOrEqual(120);
+    }
+  });
+
+  test('a tooltip with no room on either side of its target moves back over it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const target = document.createElement('div');
+      target.id = 'tall-target';
+      target.style.cssText = 'position:fixed;left:20px;top:40px;width:350px;height:520px;';
+      document.body.appendChild(target);
+    });
+    await protocol.push(
+      'SetFlowSession',
+      oneStep(
+        'tooltip',
+        { side: 'bottom', align: 'center', alignType: 'auto' },
+        { target: '#tall-target' },
+      ),
+    );
+    await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+    await expectInsideViewport(sdk.surface);
+    expect(await lastBlockBottom(sdk)).toBeLessThanOrEqual(VIEWPORT.height);
+  });
+
   test('a thick theme border comes out of the height, not off the screen', async ({
     sdk,
     protocol,

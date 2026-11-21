@@ -15,6 +15,7 @@ import { WidgetClass } from './class-names';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
 import { useFrameContentHeight } from './hooks/use-frame-content-height';
+import { useViewportFitOffsets } from './hooks/use-viewport-fit-offsets';
 import { POPPER_NAME, PopperProvider, usePopperContext } from './popper-context';
 import { useWidgetLocale } from '../locale/context';
 
@@ -324,7 +325,8 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
     const containerRef = useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, containerRef);
 
-    const style = computePositionStyle(position, positionOffsetX, positionOffsetY);
+    const [offsetX, offsetY] = useViewportFitOffsets(position, positionOffsetX, positionOffsetY);
+    const style = computePositionStyle(position, offsetX, offsetY);
 
     return (
       <>
@@ -341,7 +343,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
           data-usertour-popper-content-wrapper=""
           style={{
             ...style,
-            ...computeViewportClampStyle(position, positionOffsetX, positionOffsetY),
+            ...computeViewportClampStyle(position, offsetX, offsetY),
             width: width,
             zIndex: context.zIndex + 1,
           }}

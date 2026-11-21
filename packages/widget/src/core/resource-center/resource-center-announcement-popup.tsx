@@ -16,6 +16,7 @@ import { useWidgetLocale } from '../../locale/context';
 import { computePositionStyle } from '../utils/position';
 import { computeViewportClampStyle } from '../utils/viewport';
 import { useFrameContentHeight } from '../hooks/use-frame-content-height';
+import { useViewportFitOffsets } from '../hooks/use-viewport-fit-offsets';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import { AnnouncementReadMoreButton, formatAnnouncementDate } from './resource-center-body';
 import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from './constants';
@@ -334,11 +335,13 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
   const alignTop = String(placement).includes('top');
   const position = resourceCenterPlacementToPosition(placement);
   const launcherHeight = resourceCenterThemeSetting.resourceCenterLauncherButton?.height ?? 60;
-  const positionOffsetX = resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX;
-  const positionOffsetY =
+  const [positionOffsetX, positionOffsetY] = useViewportFitOffsets(
+    position,
+    resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX,
     (resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY) +
-    launcherHeight +
-    BUBBLE_TAIL_SIZE;
+      launcherHeight +
+      BUBBLE_TAIL_SIZE,
+  );
 
   const positionStyle = computePositionStyle(position, positionOffsetX, positionOffsetY);
 

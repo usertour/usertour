@@ -78,7 +78,15 @@
      margin on both sides) or, for a surface placed against a target, the room
      left on that side — whichever is smaller — less the two borders the
      wrapper draws around the frame. !important: `#usertour-widget iframe`
-     resets max-height with a higher specificity. */
+     resets max-height with a higher specificity.
+     The first declaration is for browsers without min() (the legacy build's,
+     and Firefox 74): they keep the viewport cap and drop the one below. */
+  max-height: calc(
+    100vh -
+    var(--usertour-widget-surface-inset-y, 32px) -
+    2 *
+    var(--usertour-widget-popper-border-width, 0px)
+  ) !important;
   max-height: calc(
     min(
       100vh -

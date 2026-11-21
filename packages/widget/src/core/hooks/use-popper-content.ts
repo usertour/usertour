@@ -15,7 +15,11 @@ import { createPlatformWithDetachedReferenceFallback } from '../utils/floating-u
 import { createCustomHideMiddleware } from '../utils/floating-ui-middleware';
 import { getBoundaryAcrossFrames } from '@usertour/dom';
 import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position';
-import { applyAvailableHeight, computeViewportClampStyle } from '../utils/viewport';
+import {
+  SURFACE_VIEWPORT_MARGIN,
+  applyAvailableHeight,
+  computeViewportClampStyle,
+} from '../utils/viewport';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
 import { Align, Side } from '@usertour/types';
@@ -90,6 +94,8 @@ export const usePopperContent = (
 
   const arrowRef = useRef(null);
   const lastReferenceRectRef = useRef<Rect | null>(null);
+  // Set while positioning: the side the surface is on has less room than its minimum height.
+  const squeezedRef = useRef(false);
   const referenceEl = triggerRef?.current as ReferenceElement;
 
   // Clear cached rect when the reference element changes (e.g. step change) so we never use a
@@ -106,6 +112,17 @@ export const usePopperContent = (
     typeof collisionPaddingProp === 'number'
       ? collisionPaddingProp
       : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
+
+  // The viewport margin the height cap keeps, on top of the collision padding.
+  const squeezedPadding =
+    typeof collisionPadding === 'number'
+      ? collisionPadding + SURFACE_VIEWPORT_MARGIN
+      : {
+          top: collisionPadding.top + SURFACE_VIEWPORT_MARGIN,
+          right: collisionPadding.right + SURFACE_VIEWPORT_MARGIN,
+          bottom: collisionPadding.bottom + SURFACE_VIEWPORT_MARGIN,
+          left: collisionPadding.left + SURFACE_VIEWPORT_MARGIN,
+        };
 
   const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
   const hasExplicitBoundaries = boundary.length > 0;
@@ -159,9 +176,28 @@ export const usePopperContent = (
       size({
         ...detectOverflowOptions,
         apply({ availableHeight, elements }) {
-          applyAvailableHeight(elements.floating, availableHeight);
+          squeezedRef.current = applyAvailableHeight(elements.floating, availableHeight);
         },
       }),
+      avoidCollisions && {
+        // Neither side of the target has room for even the minimum height: rather than run
+        // off screen with its last blocks out of reach, the surface moves back over the
+        // target — as far as it needs to, and never so far that it leaves the target.
+        // Not when collisions are left alone: the surface then keeps the side it was given.
+        name: 'fitSqueezed',
+        fn(state) {
+          if (!squeezedRef.current) {
+            return {};
+          }
+          return shift({
+            mainAxis: false,
+            crossAxis: true,
+            limiter: limitShift({ mainAxis: false, crossAxis: true }),
+            ...detectOverflowOptions,
+            padding: squeezedPadding,
+          }).fn(state);
+        },
+      },
       arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
       transformOrigin({ arrowWidth, arrowHeight }),
       hideWhenDetached && createCustomHideMiddleware(detectOverflowOptions),
