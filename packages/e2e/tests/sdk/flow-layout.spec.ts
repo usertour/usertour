@@ -378,4 +378,103 @@ test.describe('on a viewport smaller than the step', () => {
     await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
     await expectInsideViewport(sdk.surface);
   });
+
+  const oneStep = (
+    type: StepInput['type'],
+    setting: StepInput['setting'],
+    extra: { target?: string; themeSettings?: unknown } = {},
+  ) =>
+    flowSession({
+      sessionId: 'session-1',
+      contentId: 'flow-1',
+      themeSettings: extra.themeSettings,
+      steps: [
+        {
+          id: 'flow-1-step-1',
+          cvid: 'flow-1-cvid-1',
+          type,
+          target: extra.target,
+          setting,
+          data: longRows,
+        },
+      ],
+    });
+
+  /** Where the step's last block ends on the page once its frame is scrolled to the end. */
+  const lastBlockBottom = async (sdk: SdkPage) => {
+    const frame = await box(
+      sdk.page.locator('iframe.usertour-widget-surface-viewport').filter({ visible: true }),
+    );
+    const next = sdk.frame().getByRole('button', { name: 'Next' });
+    await next.scrollIntoViewIfNeeded();
+    return frame.y + (await next.evaluate((element) => element.getBoundingClientRect().bottom));
+  };
+
+  test('a tooltip on a target mid-screen only takes the room left beside it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const target = document.createElement('button');
+      target.id = 'mid-target';
+      target.textContent = 'In the middle';
+      target.style.cssText = 'position:fixed;left:150px;top:280px;';
+      document.body.appendChild(target);
+    });
+    for (const alignType of ['auto', 'fixed']) {
+      await protocol.push(
+        'SetFlowSession',
+        oneStep(
+          'tooltip',
+          { side: 'bottom', align: 'center', alignType },
+          { target: '#mid-target' },
+        ),
+      );
+      await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+      await expect
+        .poll(async () => bottom(await box(sdk.surface)))
+        .toBeLessThanOrEqual(VIEWPORT.height - MARGIN + 1);
+      expect(await lastBlockBottom(sdk)).toBeLessThanOrEqual(VIEWPORT.height);
+    }
+  });
+
+  test('a modal moved off-center by its offset still fits', async ({ sdk, protocol }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    const settings = [
+      { position: 'centerBottom', positionOffsetX: 80, positionOffsetY: 20 },
+      { position: 'centerTop', positionOffsetX: -80, positionOffsetY: 20 },
+      { position: 'leftCenter', positionOffsetX: 20, positionOffsetY: 80 },
+      { position: 'rightCenter', positionOffsetX: 20, positionOffsetY: -80 },
+    ];
+    for (const setting of settings) {
+      await protocol.push('SetFlowSession', oneStep('modal', setting));
+      await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+      await expectInsideViewport(sdk.surface);
+    }
+  });
+
+  test('a thick theme border comes out of the height, not off the screen', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    const themeSettings = {
+      ...defaultSettings,
+      border: { ...defaultSettings.border, borderWidth: 50, borderWidthEnabled: true },
+    };
+    await protocol.push(
+      'SetFlowSession',
+      oneStep(
+        'modal',
+        { position: 'rightBottom', positionOffsetX: 20, positionOffsetY: 20 },
+        { themeSettings },
+      ),
+    );
+    await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+    await expectInsideViewport(sdk.surface);
+  });
 });

@@ -15,7 +15,7 @@ import { createPlatformWithDetachedReferenceFallback } from '../utils/floating-u
 import { createCustomHideMiddleware } from '../utils/floating-ui-middleware';
 import { getBoundaryAcrossFrames } from '@usertour/dom';
 import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position';
-import { computeViewportClampStyle } from '../utils/viewport';
+import { applyAvailableHeight, computeViewportClampStyle } from '../utils/viewport';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
 import { Align, Side } from '@usertour/types';
@@ -158,6 +158,9 @@ export const usePopperContent = (
       avoidCollisions && flip({ ...detectOverflowOptions }),
       size({
         ...detectOverflowOptions,
+        apply({ availableHeight, elements }) {
+          applyAvailableHeight(elements.floating, availableHeight);
+        },
       }),
       arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
       transformOrigin({ arrowWidth, arrowHeight }),
