@@ -22,7 +22,7 @@ its row.
 | Behaviour | Covered by | Priority |
 |---|---|---|
 | A `setCustomScrollIntoView` callback that throws: the step still shows, scrolled the default way | ✓ api "a setCustomScrollIntoView() callback that throws…" | — |
-| The loader snippet queues calls made before the bundle loads and replays them in order, settling their promises | ✓ loader "calls made before the bundle loads are replayed…" | — |
+| The loader snippet queues calls made before the bundle loads and replays them in order, settling their promises (a queued `start()` with whether the server started it) | ✓ loader "calls made before the bundle loads are replayed…" | — |
 | Methods left on the stub that the bundle no longer has resolve with a warning instead of hanging | ✓ loader "a method the bundle no longer has warns and resolves…" | — |
 | `init`: a different token resets; calls before `init` throw; an empty token throws | ✓ api "calls before init() are refused…", "init() with another token ends…" | — |
 | `identify`: handshake, batched upsert, `{ rejected }`, a different user resets | ✓ identity.spec, connection.spec | — |
@@ -83,6 +83,7 @@ its row.
 | Close button ends with `close_button_dismiss`; `skippable: false` hides it | ✓ flow "the close button ends the flow…", flow-steps "a step that is not skippable…" | — |
 | A modal's backdrop click: `backdrop_dismiss` with `backdropClickBehavior: dismiss-flow`, nothing with `do-nothing` | ✓ flow-steps "a click on a modal's backdrop…" | — |
 | Spotlight on the visible part of the target | ✓ iframe "a target in a box that scrolls" | — |
+| With the backdrop on, a click in the spotlight reaches the target, in a frame too, and runs the step's target actions; a blocked target gets neither; a click beside the target lands on the backdrop | ✓ iframe "a target in a box that scrolls › …a click in the spotlight…", "…with the target blocked…", "…a click on the box beside the target…" (×4 containers) | — |
 | `enabledBlockTarget` stops clicks reaching the target; without it they go through | ✓ flow-steps "with the backdrop on, a click on the target…" | — |
 | Placement side/align; `alignType: auto` flips a tooltip that would not fit | ✓ flow-layout "side and align put it on that side…", "alignType auto flips…" | — |
 | `sideOffset`, `alignOffset`, step width | ✓ flow-layout "sideOffset and alignOffset move it by that much", "a step’s own width is used over the theme’s" | — |
@@ -92,12 +93,14 @@ its row.
 | A target that appears after the step opens | ✓ flow-steps "a target that appears after the step opens…" | — |
 | A target re-rendered by the page (replaced element) | ✓ flow-steps "a target the page re-renders keeps the tooltip…", iframe "a frame that navigates…" | — |
 | A target scrolled out of view (of the page, a scrolling container or a frame) hides the tooltip without a deadline; scrolled back, it reopens | ✓ flow "a tooltip whose target is scrolled out of the page…", iframe "…scrolled out above the box" | — |
-| A target with a width but no height (its children overflow it) is still pointed at | ✓ flow "a tooltip whose target has a width but no height…" | — |
+| A target with a width but no height (its children overflow it) is still pointed at: the flow stays and the tooltip shows | ✓ flow "a tooltip whose target has a width but no height…", target-states "…given a width but no height keeps its tooltip" | — |
 | Default scroll into view of an off-screen target | ✓ flow-steps "an off-screen target is scrolled into view…" | — |
 | Clicking the target runs `target.actions` | ✓ flow-steps "clicking the target runs the step’s target actions" | — |
 | Leaving a tooltip step stops its target lookup: coming back waits the full time again | ✓ flow-steps "returning to a tooltip step waits its full time again…" | — |
 | Target never found: ReportTooltipTargetMissing, then `tooltip_target_missing`, at the theme's tolerance | ✓ flow "a tooltip whose target never appears…" | — |
 | A target that leaves the page (removed, not rendered) ends the flow at the tolerance with `tooltip_target_missing`, without ReportTooltipTargetMissing | ✓ flow "a tooltip whose target leaves the page…" | — |
+| A target hidden by `display: none` on an ancestor, `visibility: hidden` or opacity 0, or with neither a width nor a height, ends the flow at the tolerance as a removed one does | ✓ target-states "a tooltip step › whose target is …" | — |
+| A target back before the tolerance keeps the flow | ✓ target-states "…comes back before the tolerance keeps the flow" | — |
 | Theme `missingTargetBehavior: use-bubble`: a target that left turns the step into a bubble | ✓ flow "with the theme set to show a bubble…" | — |
 | Theme `missingTargetBehavior: use-bubble`: a target never found shows the step as a bubble, and is still reported | ✓ flow-steps "with the theme set to show a bubble, a target never found…" | — |
 | Step trigger: element condition, wait, dismiss | ✓ flow "a step trigger dismisses the flow after its wait" | — |
@@ -140,6 +143,8 @@ its row.
 | A flow starting collapses it | ✓ content-types "a flow starting collapses the checklist…" | — |
 | A checklist that arrives while a flow runs stays collapsed until the flow ends | ✓ flow-steps "a checklist that arrives while a flow runs…" | — |
 | A flow waiting on a hidden step shows nothing, so it neither keeps an arriving checklist collapsed nor collapses an open one | ✓ flow-steps "a checklist that arrives while a flow waits on a hidden step…", "a flow that arrives on a hidden step…" | — |
+| A flow coming on screen collapses it however it comes: taking over from a flow waiting on a hidden step, or moving on from a hidden step by its trigger or by the server | ✓ flow-steps "a flow that takes over from one waiting on a hidden step…", "a flow that moves on from a hidden step…", "a step the server moves a waiting flow on to…" | — |
+| A flow moving on to a hidden step keeps it collapsed until the flow ends, so it does not open and close between two steps; a flow taking over from one on screen leaves it collapsed | ✓ flow-steps "a flow that moves on to a hidden step…", "a flow that takes over from one showing a step…" | — |
 
 ## Launchers
 
@@ -149,6 +154,7 @@ its row.
 | Appears on its target, opens its tooltip on click, removed by the server | ✓ content-types "a launcher appears on its target…" | — |
 | A press outside, in the page or a frame, closes a click tooltip | ✓ iframe-targeting.spec | — |
 | Target missing, appearing later, or hidden | ✓ launcher "a launcher waits for its target…" | — |
+| Its target scrolled out of view, removed, hidden by `display: none`, `visibility: hidden` or opacity 0, or with neither a width nor a height hides it until the target is back; a target with a width but no height keeps it | ✓ target-states "a launcher › whose target is …" | — |
 | Found element with no session starts it (`start_from_condition`) | ✓ launcher "offered without a session…" | — |
 | Trigger on the target instead of the launcher | ✓ launcher "set to open from its target…" | — |
 | `perform-action` runs actions instead of a tooltip | ✓ launcher "set to perform an action…" | — |
@@ -169,10 +175,41 @@ its row.
 | Anchored at an empty element (no height), before, after or in it, a banner shows and stays | ✓ banner "placed <placement> an empty element…" ×3 | — |
 | A container the page re-renders gets the banner back with its content | ✓ banner "a container the page re-renders…" | — |
 | Container hidden removes the banner and its placeholder; back again reopens it | ✓ banner "a banner placed by a container leaves with it…" | — |
+| Its target removed or hidden in any way takes it away until the target is back; scrolled out of view, or with no size at all, it stays | ✓ target-states "a banner placed after its target › …" | — |
 | Sticky / overlay positioning | ✓ banner "sticky and overlay › …" ×3 | — |
 | Dismiss button hidden unless `allowUsersToDismissEmbed` | ✓ banner "without user dismissal allowed…" | — |
 | Button actions, live button rules, `banner-dismis` action | ✓ banner "its buttons › …" | — |
+| An outer margin above and below goes around the banner: the frame keeps its content's height | ✓ banner "an outer margin above and below goes around the banner…" | — |
 | A session updated in place, including a placement change | ✓ banner "a session updated in place › …" | — |
+
+## Embeds
+
+| Behaviour | Covered by | Priority |
+|---|---|---|
+| The handshake declares the `embed` capability | ✓ embed "the handshake declares the embed capability" | — |
+| Rendered in the page's flow right after its target; the close button ends it with `dismiss_button` | ✓ embed "an embed renders after its target…" | — |
+| Container placements: top and bottom of the target, before and after it | ✓ embed after (above), top ("several embeds on one target…"), bottom ("an embed survives its target being replaced…"); before shares the banner's mount helper (banner "placed <placement>…") | — |
+| Several embeds at once, each at its own target; `RemoveEmbed` takes one away | ✓ embed "several embeds show at once…" | — |
+| Several embeds on one target keep their frames and their delivery order | ✓ embed "several embeds on one target…" | — |
+| Close button hidden unless `allowUsersToDismiss` | ✓ embed "without user dismissal allowed…" | — |
+| A button press is reported with its step and cvid before its actions run; `embed-dismis` ends it with `action_dismiss` | ✓ embed "a button press is reported…" | — |
+| Button actions, live button rules | ✓ embed "an embed’s buttons run their actions…" | — |
+| A question answer is reported against the embed's session; its actions run after | ✓ embed "a question answered in an embed…" | — |
+| Steps paged inside one shell: step-goto reports the step, a step change rebuilds the content, a remembered step opens unreported, the server can force a step | ✓ embed "steps › …" ×4 | — |
+| Hidden steps route on: as the first step once the session exists, as the resting step once the target appears, between two inline steps without unmounting the frame; a step forced before the target appears is the one it opens on | ✓ embed "a hidden first step…", "a session resting on a hidden step…", "a hidden step between two inline steps…", "a step forced before the target appears…" | — |
+| Sessionless pre-activation: the content starts once the target is found, nothing renders until the session is back; a hidden target (or one replaced while hidden) is waited for until shown, and the start is asked for once | ✓ embed "a sessionless embed starts its content…", "a sessionless embed waits for its target to be shown…" | — |
+| Cover placement: over the target and sized to it; moved, not repositioned, by a page or container scroll; mounted in the body for a target that scrolls its own content or takes no child; two covers share the target's positioning; content at the top, center or bottom | ✓ embed "the cover placement…", "a scroll moves the cover…", "a cover inside a scrolling container…", "a cover on a target that scrolls…", "a cover on an element that takes no child…", "two covers on one target…", "the cover places its content…" | — |
+| The target scrolled out of view leaves the embed mounted | ✓ embed "an embed stays mounted while its target is scrolled out…" | — |
+| The target replaced in place keeps the embed, inside it or beside it; the target leaving the page unmounts it until it comes back | ✓ embed "an embed survives its target being replaced…", "an embed beside its target stays put…", "an embed whose target leaves the page…" | — |
+| Another widget kind loading leaves the embed in place | ✓ embed "an embed stays put while another widget kind loads" | — |
+| A re-send of the same session updates in place; another session rebuilds it; a re-send without a session starts over | ✓ embed "an embed sent under another session…", "an embed whose session is gone…" | — |
+| A re-send of the same session with another target moves it there | ✓ embed "an embed whose session is re-sent with another target…" | — |
+| The target is looked up in the page only, never in a frame | ✓ iframe "an embed’s target is looked up in the page…" | — |
+| Show rules, frequency, a republish while the session rests on a later step | server (`apps/server/test/e2e/web-socket/conditions-frequency-and-identity`) | server |
+| An outer margin above and below goes around the card: the frame keeps its content's height | ✓ embed "an outer margin above and below goes around the card…" | — |
+| While a step change waits on its report: a button of the step still on screen is recorded against that step, a step the embed has moved on from does not get its trigger run, and a session re-sent meanwhile keeps the step on screen and runs the next step's trigger once, on arrival | ✓ embed "while a step change waits on its report › …" ×3 | — |
+| A republished step trigger takes effect at once, a re-send of the same one does not run it again, and a removed one cancels the action it had waiting | ✓ embed "a republished step trigger › …" ×2 | — |
+| `maxContentWidth`, `zIndex` and the theme's embed padding | — (shared with the banner's shell, uncovered there too) | P3 |
 
 ## Resource center
 
@@ -202,6 +239,14 @@ its row.
 | A tracker reports again after its rule stops and starts matching | ✓ rules "a tracker whose page-URL rule matches reports once, and again…" | — |
 | Hide rules, priority, frequency | server | — |
 
+## Builder defaults
+
+| Behaviour | Covered by | Priority |
+|---|---|---|
+| Each step type made with `defaultStep` (a tooltip placed automatically) shows and closes; a hidden one keeps the flow running | ✓ defaults "a flow step made with the defaults › …" | — |
+| Each launcher type made with `DEFAULT_LAUNCHER_DATA` opens its tooltip on a click and closes it | ✓ defaults "a launcher made with the defaults › …" | — |
+| A banner, a checklist and a resource center made with their defaults show, take their click and close | ✓ defaults "a banner made with the defaults…", "a checklist made…", "a resource center made…" | — |
+
 ## Harness
 
 In place:
@@ -212,6 +257,9 @@ In place:
 - **`sdk.stubNavigation()`** records `window.open` calls instead of navigating.
 - **`sdk.pauseClock()`** stops the page clock, so a test can assert what has
   not happened yet before advancing past a deadline.
+- **`sdk.frame()`** resolves only a surface the page shows: Playwright judges
+  what is inside a frame by that frame alone, so text in a surface hidden
+  around its frame would otherwise count as visible.
 - **`sdk.recorded(name)`** reads what a test's own callbacks in the page
   recorded in `window.__usertourRecorded`.
 

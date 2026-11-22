@@ -15,7 +15,7 @@ import type {
   DropPreview,
 } from '../types/editor';
 import { ContentEditorElementInsertDirection, ContentEditorElementType } from '../types/editor';
-import { createNewColumn, createNewGroup } from '../utils/helper';
+import { createNewColumn, createNewGroup, withBlockIdentity } from '../utils/helper';
 
 const ContentEditorContext = createContext<ContentEditorContextProps | undefined>(undefined);
 
@@ -123,7 +123,8 @@ export const ContentEditorContextProvider = ({
   );
 
   const insertGroupAtTop = useCallback(
-    (element: ContentEditorElement) => {
+    (inserted: ContentEditorElement) => {
+      const element = withBlockIdentity(inserted);
       setContents((prev) => {
         if (!handleRestrictedTypeCheck(prev, element)) return prev;
         const group = createNewGroup([{ element, children: null, id: uuidV4() }]);
@@ -134,7 +135,8 @@ export const ContentEditorContextProvider = ({
   );
 
   const insertGroupAtBottom = useCallback(
-    (element: ContentEditorElement) => {
+    (inserted: ContentEditorElement) => {
+      const element = withBlockIdentity(inserted);
       setContents((prev) => {
         if (!handleRestrictedTypeCheck(prev, element)) return prev;
         return [...prev, createNewGroup([{ element, children: null, id: uuidV4() }])];
@@ -145,10 +147,11 @@ export const ContentEditorContextProvider = ({
 
   const insertColumnInGroup = useCallback(
     (
-      element: ContentEditorElement,
+      inserted: ContentEditorElement,
       path: number[],
       direction: ContentEditorElementInsertDirection,
     ) => {
+      const element = withBlockIdentity(inserted);
       setContents((prev) => {
         if (!handleRestrictedTypeCheck(prev, element)) return prev;
 
@@ -206,10 +209,11 @@ export const ContentEditorContextProvider = ({
   // path=[groupIndex, columnIndex, elementIndex]
   const insertElementInColumn = useCallback(
     (
-      element: ContentEditorElement,
+      inserted: ContentEditorElement,
       path: number[],
       direction: ContentEditorElementInsertDirection,
     ) => {
+      const element = withBlockIdentity(inserted);
       setContents((prev) => {
         const groupIndex = path[0];
         const columnIndex = path[1];

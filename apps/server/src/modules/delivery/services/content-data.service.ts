@@ -30,6 +30,7 @@ import {
   mergeLocalizedEditorContents,
   mergeLocalizedVersionData,
   resolveUserLocaleCode,
+  hasStepBody,
 } from '@usertour/helpers';
 import { getAttributeValue, getPublishedVersionId } from '../utils/content.util';
 import { CustomContentVersion } from '../types/custom-content-version.type';
@@ -1184,7 +1185,7 @@ export class ContentDataService {
       return version;
     }
 
-    if (version.content.type === ContentDataType.FLOW) {
+    if (hasStepBody(version.content.type)) {
       const localized = matched.localized as LocalizedFlowContent;
       const steps = version.steps.map((step) => {
         const localizedStepContent = localized[step.cvid];

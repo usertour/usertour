@@ -278,9 +278,17 @@ export class SdkPage {
     return this.page.locator('[data-usertour-popper-content-wrapper]');
   }
 
-  /** The content frame inside a surface: a step's blocks, the checklist's items. */
+  /**
+   * The content frame inside a surface: a step's blocks, the checklist's items.
+   * Only a surface the page shows: Playwright judges what is inside a frame by
+   * that frame's document alone, so text in a surface hidden around its frame
+   * would still count as visible.
+   */
   frame(): FrameLocator {
-    return this.page.frameLocator('iframe.usertour-widget-surface-viewport');
+    return this.page
+      .locator('iframe.usertour-widget-surface-viewport')
+      .filter({ visible: true })
+      .contentFrame();
   }
 
   /** What the page's own callbacks recorded under `name` (see `__usertourRecorded`). */

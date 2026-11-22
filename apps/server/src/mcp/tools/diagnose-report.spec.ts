@@ -1,4 +1,4 @@
-import { ContentDataType, RulesCondition, RulesType } from '@usertour/types';
+import { ContentDataType, Frequency, RulesCondition, RulesType } from '@usertour/types';
 
 import { decompileConditions } from '@/api/content-representation/rules.decompile';
 import type { DiagnoseFacts } from '@/modules/delivery/services/content-diagnosis.service';
@@ -524,5 +524,61 @@ describe('annotateFromVerdicts (segment expansion, three-valued fold)', () => {
       annotateFromVerdicts(or([leaf(false), leaf(undefined)]), [readableLeaf, readableLeaf])
         ?.status,
     ).toBe('unknown');
+  });
+});
+
+describe('buildDiagnoseReport — embed (multi-instance, level-triggered)', () => {
+  const embedFacts = (over: Partial<DiagnoseFacts> = {}) =>
+    facts({ contentType: ContentDataType.EMBED, singleSessionApplicable: false, ...over });
+
+  it('per-type gates: frequency (new-session semantics) but no single_session, hidden or slot gates', () => {
+    const r = buildDiagnoseReport(embedFacts({ frequencyAllowed: false }));
+    const ids = r.gates.map((gate) => gate.id);
+    expect(ids).toContain('frequency');
+    expect(ids).not.toContain('single_session');
+    expect(ids).not.toContain('hidden');
+    expect(r.blockedBy).toEqual(['frequency']);
+    expect(r.gates.find((gate) => gate.id === 'frequency')?.detail).toMatch(/dismissed/);
+  });
+
+  it('the frequency cap is explained by mode: once never again, multiple count or gap, unlimited gap', () => {
+    const detail = (frequencyMode: Frequency) =>
+      buildDiagnoseReport(embedFacts({ frequencyAllowed: false, frequencyMode })).gates.find(
+        (gate) => gate.id === 'frequency',
+      )?.detail;
+    expect(detail(Frequency.ONCE)).toMatch(/`once` never starts another/);
+    expect(detail(Frequency.MULTIPLE)).toMatch(/`every.times`/);
+    expect(detail(Frequency.MULTIPLE)).toMatch(/gap/);
+    expect(detail(Frequency.UNLIMITED)).toMatch(/gap/);
+    expect(detail(Frequency.UNLIMITED)).not.toMatch(/`once`/);
+    // Every mode says that a session counts however it ended.
+    for (const mode of [Frequency.ONCE, Frequency.MULTIPLE, Frequency.UNLIMITED]) {
+      expect(detail(mode)).toMatch(/unpublished/);
+    }
+  });
+
+  it('a running session is exempt from frequency: the gate is not emitted while active', () => {
+    const r = buildDiagnoseReport(embedFacts({ hasActiveSession: true, frequencyAllowed: false }));
+    expect(r.gates.map((gate) => gate.id)).not.toContain('frequency');
+    expect(r.blockedBy).toEqual([]);
+    expect(r.summary).toMatch(/currently active/i);
+  });
+
+  it('active session + show rules no longer matching → hidden, so start_rules BLOCKS (level-triggered)', () => {
+    const stamped: RulesCondition[] = [attr('free', false)];
+    const tree = annotateConditions(stamped, decompileConditions(stamped, resolvers), true);
+    const r = buildDiagnoseReport(
+      embedFacts({ hasActiveSession: true, startRulesActive: false, autoStartRules: stamped }),
+      tree,
+    );
+    expect(r.blockedBy).toEqual(['start_rules']);
+    expect(r.gates.find((gate) => gate.id === 'start_rules')?.detail).toMatch(/HIDDEN/);
+    expect(r.summary).toMatch(/hidden/);
+    // The flow semantics are untouched: an active flow is never blocked by its start rules.
+    const flow = buildDiagnoseReport(
+      facts({ hasActiveSession: true, startRulesActive: false, autoStartRules: stamped }),
+      tree,
+    );
+    expect(flow.blockedBy).toEqual([]);
   });
 });

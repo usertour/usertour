@@ -530,7 +530,7 @@ describe('MCP endpoint (e2e)', () => {
       await buildVersion(prisma, { contentId: content.id, sequence: 0 });
 
       // Invalid IANA timezone — must be rejected at the schema (as REST does),
-      // not flow into AT TIME ZONE / date-fns-tz and throw an internal RangeError.
+      // not flow into the zone math and throw an internal RangeError.
       const badTz = extractResult(
         await rpc(
           {

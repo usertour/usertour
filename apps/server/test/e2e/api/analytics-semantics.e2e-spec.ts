@@ -33,6 +33,11 @@ import { createTestApp } from '../create-test-app';
  * - banner exposes only the two first-touch user counts; announcement only
  *   uniqueSeen. The session totals the domain still computes for them repeat
  *   the unique numbers and must NOT appear in the payload.
+ * - embed counts the users it happened to IN the range, all three ways: a
+ *   session started (uniqueViews), a button was pressed (uniqueClickers), a
+ *   session ended (uniqueDismissals). It is not first-touch as launcher and
+ *   banner are: frequency gives an embed session after session, and
+ *   first-touch would drop every one after the first.
  */
 describe('API v2 analytics per-type counting semantics (e2e)', () => {
   let app: INestApplication;
@@ -317,6 +322,65 @@ describe('API v2 analytics per-type counting semantics (e2e)', () => {
     });
     expect(res.body).not.toHaveProperty('totalSeen');
     expect(res.body).not.toHaveProperty('totalDismissals');
+  });
+
+  it('embed: views, clickers and dismissals are the users it happened to in the range', async () => {
+    const def = (codeName: string) => buildEvent(prisma, { projectId, codeName });
+    const startedDef = await def(BizEvents.EMBED_STARTED);
+    await def(BizEvents.EMBED_STEP_SEEN);
+    const clickedDef = await def(BizEvents.BUTTON_CLICKED);
+    const dismissedDef = await def(BizEvents.EMBED_DISMISSED);
+    const embed = await buildContent(prisma, {
+      projectId,
+      environmentId,
+      type: 'embed',
+      name: 'Upgrade card',
+    });
+    const versionId = (await buildVersion(prisma, { contentId: embed.id, sequence: 0 })).id;
+    const mkSession = (bizUserId: string) =>
+      buildSession(prisma, {
+        bizUserId,
+        contentId: embed.id,
+        versionId,
+        environmentId,
+        projectId,
+      });
+    // returning: reached and dismissed 40 days ago; frequency brought the embed
+    // back, and they pressed a button and dismissed it again inside the range.
+    const returning = await buildBizUser(prisma, { environmentId });
+    const firstSession = await mkSession(returning.id);
+    const secondSession = await mkSession(returning.id);
+    // fresh: first reached inside the range, did nothing.
+    const fresh = await buildBizUser(prisma, { environmentId });
+    const freshSession = await mkSession(fresh.id);
+    const event = (bizSessionId: string, bizUserId: string, eventId: string, createdAt: Date) => ({
+      bizSessionId,
+      bizUserId,
+      eventId,
+      data: {},
+      createdAt,
+    });
+    await prisma.bizEvent.createMany({
+      data: [
+        event(firstSession.id, returning.id, startedDef.id, daysAgo(40)),
+        event(firstSession.id, returning.id, dismissedDef.id, daysAgo(40)),
+        event(secondSession.id, returning.id, startedDef.id, daysAgo(5)),
+        event(secondSession.id, returning.id, clickedDef.id, daysAgo(4)),
+        event(secondSession.id, returning.id, dismissedDef.id, daysAgo(4)),
+        event(freshSession.id, fresh.id, startedDef.id, daysAgo(3)),
+      ],
+    });
+
+    const res = await rest(analyticsUrl(embed.id));
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      contentType: 'embed',
+      // A session started in the range for both: `fresh`, and `returning`
+      // when the embed came back.
+      uniqueViews: 2,
+      uniqueClickers: 1,
+      uniqueDismissals: 1,
+    });
   });
 
   it('checklist: panel opens count events, task rows carry only their own counts, completion needs no open', async () => {

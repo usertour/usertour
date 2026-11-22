@@ -29,6 +29,8 @@ test('calls made before the bundle loads are replayed in order, and their promis
     usertour.init('env-token');
     settle('identify', usertour.identify('u1', { plan: 'pro' }));
     settle('track', usertour.track('signed_up'));
+    // Resolves with whether the server started it, like a call made after the bundle loaded.
+    settle('start', usertour.start('flow-9'));
     return { stubbed: usertour._stubbed, identified: usertour.isIdentified() };
   });
   expect(early).toEqual({ stubbed: true, identified: false });
@@ -36,6 +38,7 @@ test('calls made before the bundle loads are replayed in order, and their promis
   await sdk.waitForBundle();
   expect(await sdk.settle('identify')).toEqual({ ok: true, value: { rejected: [] } });
   expect(await sdk.settle('track')).toEqual({ ok: true, value: undefined });
+  expect(await sdk.settle('start')).toEqual({ ok: true, value: true });
 
   expect(protocol.connections[0].auth).toMatchObject({
     token: 'env-token',
@@ -46,6 +49,10 @@ test('calls made before the bundle loads are replayed in order, and their promis
     attributes: { plan: 'pro' },
   });
   expect(protocol.messages('TrackEvent')[0].message.payload).toMatchObject({ name: 'signed_up' });
+  expect(protocol.messages('StartContent')[0].message.payload).toMatchObject({
+    contentId: 'flow-9',
+    startReason: 'start_from_program',
+  });
   expect(await page.evaluate(() => window.usertour?.isIdentified())).toBe(true);
 });
 

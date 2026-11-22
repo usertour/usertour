@@ -6,12 +6,13 @@ import { cn } from '@usertour/tailwind';
 import { useTranslation } from 'react-i18next';
 import { attributeNumber, attributeText } from '@/utils/attributes';
 
-type StatusVariant = 'active' | 'completed' | 'dismissed' | 'seen' | 'activated';
+type StatusVariant = 'active' | 'completed' | 'dismissed' | 'seen' | 'activated' | 'clicked';
 
 const statusClass: Record<StatusVariant, string> = {
   active: 'bg-success/15 text-success hover:bg-success/15',
   completed: 'bg-success/15 text-success hover:bg-success/15',
   activated: 'bg-success/15 text-success hover:bg-success/15',
+  clicked: 'bg-success/15 text-success hover:bg-success/15',
   seen: 'bg-muted text-muted-foreground hover:bg-muted',
   dismissed: 'bg-muted text-muted-foreground hover:bg-muted',
 };
@@ -49,6 +50,13 @@ const deriveStatus = (
   if (contentType === ContentDataType.BANNER) {
     if (has(BizEvents.BANNER_DISMISSED)) return 'dismissed';
     if (has(BizEvents.BANNER_SEEN)) return 'active';
+    return null;
+  }
+
+  if (contentType === ContentDataType.EMBED) {
+    if (has(BizEvents.EMBED_DISMISSED)) return 'dismissed';
+    if (has(BizEvents.BUTTON_CLICKED)) return 'clicked';
+    if (has(BizEvents.EMBED_STARTED)) return 'active';
     return null;
   }
 
@@ -182,6 +190,33 @@ export const BannerProgressCell = () => {
   return <span className="text-sm text-muted-foreground">—</span>;
 };
 BannerProgressCell.displayName = 'BannerProgressCell';
+
+// The step the user is on, printed as a flow's is: its number among the
+// version's steps and its name. Every visit to a step is recorded, so the last
+// one seen is it. Read from the event alone, whatever the number of steps.
+export const EmbedProgressCell = ({
+  original,
+  eventList,
+}: { original: BizSession; eventList: Event[] }) => {
+  const { t } = useTranslation();
+  const { bizEvent } = original;
+  if (!eventList || !bizEvent || bizEvent.length === 0) return null;
+  const lastSeenBizEvent = bizEvent
+    .filter((e) => e.event?.codeName === BizEvents.EMBED_STEP_SEEN)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+  const stepDisplay = lastSeenBizEvent
+    ? formatFlowStepDisplay(
+        attributeNumber(lastSeenBizEvent.data?.embed_step_number),
+        attributeText(lastSeenBizEvent.data?.embed_step_name) || null,
+        t,
+      )
+    : '';
+  if (!stepDisplay) {
+    return <span className="text-sm text-muted-foreground">—</span>;
+  }
+  return <span className="text-sm truncate">{stepDisplay}</span>;
+};
+EmbedProgressCell.displayName = 'EmbedProgressCell';
 
 export const ResourceCenterProgressCell = () => {
   return <span className="text-sm text-muted-foreground">—</span>;

@@ -15,6 +15,13 @@ import { createPlatformWithDetachedReferenceFallback } from '../utils/floating-u
 import { createCustomHideMiddleware } from '../utils/floating-ui-middleware';
 import { getBoundaryAcrossFrames } from '@usertour/dom';
 import { getSideAndAlignFromPlacement, transformOrigin } from '../utils/position';
+import {
+  SURFACE_VIEWPORT_MARGIN,
+  applyAvailableHeight,
+  computeViewportClampStyle,
+  surfaceMarginY,
+} from '../utils/viewport';
+import { useViewportSize } from './use-viewport-size';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
 import { Align, Side } from '@usertour/types';
@@ -89,6 +96,9 @@ export const usePopperContent = (
 
   const arrowRef = useRef(null);
   const lastReferenceRectRef = useRef<Rect | null>(null);
+  // Set while positioning: the side the surface is on has no room for it — less than its
+  // minimum height above or below the target, less than its width beside it.
+  const squeezedRef = useRef(false);
   const referenceEl = triggerRef?.current as ReferenceElement;
 
   // Clear cached rect when the reference element changes (e.g. step change) so we never use a
@@ -106,6 +116,27 @@ export const usePopperContent = (
       ? collisionPaddingProp
       : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
 
+  const viewport = useViewportSize();
+
+  // The viewport margins the surface keeps, on top of the collision padding.
+  // Middleware reads the margin when it runs: useFloating keeps the first of two
+  // functions with the same source, so a value closed over at render goes stale.
+  const padded =
+    typeof collisionPadding === 'number'
+      ? {
+          top: collisionPadding,
+          right: collisionPadding,
+          bottom: collisionPadding,
+          left: collisionPadding,
+        }
+      : collisionPadding;
+  const squeezedPadding = (marginY: number) => ({
+    top: padded.top + marginY,
+    right: padded.right + SURFACE_VIEWPORT_MARGIN,
+    bottom: padded.bottom + marginY,
+    left: padded.left + SURFACE_VIEWPORT_MARGIN,
+  });
+
   const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
   const hasExplicitBoundaries = boundary.length > 0;
 
@@ -119,7 +150,7 @@ export const usePopperContent = (
   // DOM we supply the last known reference rect instead of reading getBoundingClientRect (which
   // returns 0,0). This prevents (0,0) from ever being fed into the position pipeline and avoids
   // the top-left flash. We always pass the reference so autoUpdate and middleware run normally.
-  const { refs, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
+  const { refs, elements, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
     open: enabled,
     strategy: 'fixed',
     placement: desiredPlacement,
@@ -157,7 +188,38 @@ export const usePopperContent = (
       avoidCollisions && flip({ ...detectOverflowOptions }),
       size({
         ...detectOverflowOptions,
+        apply({ availableWidth, availableHeight, elements, rects, placement }) {
+          const tooShort = applyAvailableHeight(
+            elements.floating,
+            availableHeight,
+            surfaceMarginY(window.innerWidth),
+          );
+          // Beside its target a surface runs short of width, not height: its height is
+          // capped to the room there is, its width is its own.
+          const [side] = getSideAndAlignFromPlacement(placement);
+          squeezedRef.current =
+            side === 'left' || side === 'right' ? availableWidth < rects.floating.width : tooShort;
+        },
       }),
+      avoidCollisions && {
+        // Neither side of the target has room for the surface (see squeezedRef): rather than
+        // run off screen with part of it out of reach, the surface moves back over the
+        // target — as far as it needs to, and never so far that it leaves the target.
+        // Not when collisions are left alone: the surface then keeps the side it was given.
+        name: 'fitSqueezed',
+        fn(state) {
+          if (!squeezedRef.current) {
+            return {};
+          }
+          return shift({
+            mainAxis: false,
+            crossAxis: true,
+            limiter: limitShift({ mainAxis: false, crossAxis: true }),
+            ...detectOverflowOptions,
+            padding: squeezedPadding(surfaceMarginY(window.innerWidth)),
+          }).fn(state);
+        },
+      },
       arrowRef && floatingUIarrow({ element: arrowRef, padding: arrowPadding }),
       transformOrigin({ arrowWidth, arrowHeight }),
       hideWhenDetached && createCustomHideMiddleware(detectOverflowOptions),
@@ -179,11 +241,19 @@ export const usePopperContent = (
   });
 
   // Use the animation hook
+  // useSize re-renders when the surface resizes; the size itself is read here, as the
+  // state lags a frame behind a position computed for the new size.
+  useSize(elements.floating);
+  const floatingSize = elements.floating
+    ? { width: elements.floating.offsetWidth, height: elements.floating.offsetHeight }
+    : undefined;
   const { finalStyles } = usePopperAnimation(floatingStyles, placement, {
     stableThreshold: 250,
     offset: 20,
     animationDuration: 500,
     enabled: enabled, // Pass the enabled parameter
+    size: floatingSize,
+    viewport,
   });
 
   const [placedSide] = getSideAndAlignFromPlacement(placement);
@@ -202,6 +272,7 @@ export const usePopperContent = (
 
   const inlineStyle: React.CSSProperties = {
     ...finalStyles,
+    ...computeViewportClampStyle(viewport),
     width: width,
     zIndex: zIndex + 1,
     ...(referenceHiddenByMiddleware ? hiddenStyle : { opacity: 1 }),

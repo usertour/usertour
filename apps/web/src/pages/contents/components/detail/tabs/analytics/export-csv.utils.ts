@@ -43,12 +43,15 @@ type ExportMode = {
   isLauncherContent: boolean;
   isChecklistContent: boolean;
   isResourceCenterContent: boolean;
+  isEmbedContent: boolean;
   isSimpleExport: boolean;
 };
 
 type HeaderContext = {
   questionHeaders: Map<string, string>;
   stepHeaders: Map<string, string>;
+  /** Each step column's step cvid, by the column's key (the step's sequence). */
+  stepCvids: Map<string, string>;
   checklistTaskHeaders: Map<string, string>;
 };
 
@@ -60,12 +63,15 @@ const getExportMode = (contentType?: ContentDataType): ExportMode => {
   const isLauncherContent = contentType === ContentDataType.LAUNCHER;
   const isChecklistContent = contentType === ContentDataType.CHECKLIST;
   const isResourceCenterContent = contentType === ContentDataType.RESOURCE_CENTER;
+  const isEmbedContent = contentType === ContentDataType.EMBED;
 
   return {
     isBannerContent,
     isLauncherContent,
     isChecklistContent,
     isResourceCenterContent,
+    isEmbedContent,
+    // An embed is step-bodied and carries questions, so it exports as a flow does
     isSimpleExport: isBannerContent || isLauncherContent || isResourceCenterContent,
   };
 };
@@ -135,6 +141,15 @@ const toCSVCell = (value: unknown) => {
   return normalizedValue;
 };
 
+/**
+ * The version a session ran on, as the dashboard prints it: a version's
+ * sequence is zero-based, the first version reads v1.
+ */
+const formatVersion = (session: SessionExportRow) => {
+  const sequence = session.version?.sequence;
+  return sequence === undefined || sequence === null ? '' : `v${sequence + 1}`;
+};
+
 const getLastActivityAt = (session: SessionExportRow) => {
   if (!session.bizEvent || session.bizEvent.length === 0) {
     return session.createdAt;
@@ -183,7 +198,9 @@ const getCompletedAt = (session: SessionExportRow, contentType?: ContentDataType
 const getState = (session: SessionExportRow, contentType?: ContentDataType) => {
   const events = session.bizEvent || [];
   if (events.length === 0) {
-    return contentType === ContentDataType.CHECKLIST ? 'Active' : 'In Progress';
+    return contentType === ContentDataType.CHECKLIST || contentType === ContentDataType.EMBED
+      ? 'Active'
+      : 'In Progress';
   }
 
   if (contentType === ContentDataType.BANNER) {
@@ -192,6 +209,15 @@ const getState = (session: SessionExportRow, contentType?: ContentDataType) => {
     if (isDismissed) return 'Dismissed';
     if (isSeen) return 'Seen';
     return 'In Progress';
+  }
+
+  // An embed has no completion: the words of the session list's status badge
+  if (contentType === ContentDataType.EMBED) {
+    const isDismissed = !!events.find((e) => e.event?.codeName === BizEvents.EMBED_DISMISSED);
+    const isClicked = !!events.find((e) => e.event?.codeName === BizEvents.BUTTON_CLICKED);
+    if (isDismissed) return 'Dismissed';
+    if (isClicked) return 'Clicked';
+    return 'Active';
   }
 
   if (contentType === ContentDataType.LAUNCHER) {
@@ -235,29 +261,55 @@ const getQuestionAnswer = (answerEvent: BizEvent): string => {
   }
 };
 
+/**
+ * Where a session's start and end reasons are recorded, for the types whose
+ * export carries them.
+ */
+const SESSION_REASON_SOURCES: Partial<
+  Record<
+    ContentDataType,
+    {
+      startEvent: BizEvents;
+      startReason: EventAttributes;
+      endEvent: BizEvents;
+      endReason: EventAttributes;
+    }
+  >
+> = {
+  [ContentDataType.FLOW]: {
+    startEvent: BizEvents.FLOW_STARTED,
+    startReason: EventAttributes.FLOW_START_REASON,
+    endEvent: BizEvents.FLOW_ENDED,
+    endReason: EventAttributes.FLOW_END_REASON,
+  },
+  [ContentDataType.CHECKLIST]: {
+    startEvent: BizEvents.CHECKLIST_STARTED,
+    startReason: EventAttributes.CHECKLIST_START_REASON,
+    endEvent: BizEvents.CHECKLIST_DISMISSED,
+    endReason: EventAttributes.CHECKLIST_END_REASON,
+  },
+  [ContentDataType.EMBED]: {
+    startEvent: BizEvents.EMBED_STARTED,
+    startReason: EventAttributes.EMBED_START_REASON,
+    endEvent: BizEvents.EMBED_DISMISSED,
+    endReason: EventAttributes.EMBED_END_REASON,
+  },
+};
+
+const hasSessionReasons = (contentType?: ContentDataType) =>
+  !!contentType && !!SESSION_REASON_SOURCES[contentType];
+
 const getSessionReasons = (events: BizEvent[], contentType?: ContentDataType) => {
-  if (contentType !== ContentDataType.FLOW && contentType !== ContentDataType.CHECKLIST) {
+  const source = contentType ? SESSION_REASON_SOURCES[contentType] : undefined;
+  if (!source) {
     return { startReason: '', endReason: '' };
   }
 
-  const isFlow = contentType === ContentDataType.FLOW;
-  const startEvent = events.find((event) =>
-    isFlow
-      ? event.event?.codeName === BizEvents.FLOW_STARTED
-      : event.event?.codeName === BizEvents.CHECKLIST_STARTED,
-  );
-  const endEvent = events.find((event) =>
-    isFlow
-      ? event.event?.codeName === BizEvents.FLOW_ENDED
-      : event.event?.codeName === BizEvents.CHECKLIST_DISMISSED,
-  );
+  const startEvent = events.find((event) => event.event?.codeName === source.startEvent);
+  const endEvent = events.find((event) => event.event?.codeName === source.endEvent);
 
-  const startReasonKey = isFlow
-    ? (startEvent?.data?.[EventAttributes.FLOW_START_REASON] as contentStartReason)
-    : (startEvent?.data?.[EventAttributes.CHECKLIST_START_REASON] as contentStartReason);
-  const endReasonKey = isFlow
-    ? (endEvent?.data?.[EventAttributes.FLOW_END_REASON] as contentEndReason)
-    : (endEvent?.data?.[EventAttributes.CHECKLIST_END_REASON] as contentEndReason);
+  const startReasonKey = startEvent?.data?.[source.startReason] as contentStartReason;
+  const endReasonKey = endEvent?.data?.[source.endReason] as contentEndReason;
 
   return {
     startReason: flowReasonTitleMap[startReasonKey] || startReasonKey || '',
@@ -271,6 +323,7 @@ const collectHeaderContext = (
 ) => {
   const questionHeaders = new Map<string, string>();
   const stepHeaders = new Map<string, string>();
+  const stepCvids = new Map<string, string>();
   const checklistTaskHeaders = new Map<string, string>();
 
   if (version?.steps) {
@@ -290,6 +343,9 @@ const collectHeaderContext = (
 
       if (step.name) {
         stepHeaders.set(step.sequence.toString(), `Step ${step.sequence + 1}. ${step.name}`);
+        if (step.cvid) {
+          stepCvids.set(step.sequence.toString(), step.cvid);
+        }
       }
     }
   }
@@ -304,6 +360,7 @@ const collectHeaderContext = (
   return {
     questionHeaders,
     stepHeaders,
+    stepCvids,
     checklistTaskHeaders,
   };
 };
@@ -327,6 +384,20 @@ const buildOtherHeaders = (contentType: ContentDataType | undefined, mode: Expor
     return ['Version', 'Started at (UTC)', ...(mode.isLauncherContent ? ['Activated'] : [])];
   }
 
+  // An embed has no completion and no progress; its success action is a
+  // button press, so it lists the buttons pressed instead.
+  if (mode.isEmbedContent) {
+    return [
+      'Version',
+      'Started at (UTC)',
+      'Last activity at (UTC)',
+      'State',
+      'Clicked buttons',
+      'Start reason',
+      'End reason',
+    ];
+  }
+
   return [
     'Version',
     'Started at (UTC)',
@@ -334,9 +405,7 @@ const buildOtherHeaders = (contentType: ContentDataType | undefined, mode: Expor
     'Completed at (UTC)',
     'Progress',
     'State',
-    ...((contentType === ContentDataType.FLOW || contentType === ContentDataType.CHECKLIST
-      ? ['Start reason', 'End reason']
-      : []) as string[]),
+    ...(hasSessionReasons(contentType) ? ['Start reason', 'End reason'] : []),
   ];
 };
 
@@ -384,22 +453,58 @@ const buildQuestionAnswers = (events: BizEvent[]) => {
   return questionAnswers;
 };
 
-const buildStepViews = (events: BizEvent[], stepHeaders: Map<string, string>) => {
+/**
+ * Each step column's views. A view is matched to its step by the step's cvid,
+ * which stays with the step across versions: a session of an older version,
+ * whose steps were since reordered, counts under the step it saw, not under
+ * whatever step now has its number. An event recorded without a cvid falls
+ * back to the step number.
+ */
+const buildStepViews = (
+  events: BizEvent[],
+  { stepHeaders, stepCvids }: Pick<HeaderContext, 'stepHeaders' | 'stepCvids'>,
+  contentType?: ContentDataType,
+) => {
   const stepViews = new Map<string, number>();
+  // A flow's and an embed's steps are seen under their own event and attribute
+  const isEmbed = contentType === ContentDataType.EMBED;
+  const stepSeenEvent = isEmbed ? BizEvents.EMBED_STEP_SEEN : BizEvents.FLOW_STEP_SEEN;
+  const stepNumberAttribute = isEmbed
+    ? EventAttributes.EMBED_STEP_NUMBER
+    : EventAttributes.FLOW_STEP_NUMBER;
+  const stepCvidAttribute = isEmbed
+    ? EventAttributes.EMBED_STEP_CVID
+    : EventAttributes.FLOW_STEP_CVID;
 
   for (const stepNumber of stepHeaders.keys()) {
     const stepIndex = Number.parseInt(stepNumber, 10);
-    const viewCount = events.filter(
-      (event) =>
-        event.event?.codeName === BizEvents.FLOW_STEP_SEEN &&
-        event.data?.[EventAttributes.FLOW_STEP_NUMBER] === stepIndex,
-    ).length;
+    const stepCvid = stepCvids.get(stepNumber);
+    const viewCount = events.filter((event) => {
+      if (event.event?.codeName !== stepSeenEvent) {
+        return false;
+      }
+      const seenCvid = event.data?.[stepCvidAttribute];
+      return stepCvid && seenCvid
+        ? seenCvid === stepCvid
+        : event.data?.[stepNumberAttribute] === stepIndex;
+    }).length;
 
     stepViews.set(stepNumber, viewCount);
   }
 
   return stepViews;
 };
+
+/** The texts of the buttons pressed in a session, in the order they were pressed. */
+const buildClickedButtons = (events: BizEvent[]) =>
+  events
+    .filter((event) => event.event?.codeName === BizEvents.BUTTON_CLICKED)
+    .sort(
+      (first, second) => new Date(first.createdAt).getTime() - new Date(second.createdAt).getTime(),
+    )
+    .map((event) => attributeText(event.data?.[EventAttributes.BUTTON_TEXT]))
+    .filter(Boolean)
+    .join(', ');
 
 const buildChecklistCompletedTaskIds = (events: BizEvent[]) => {
   return new Set(
@@ -430,11 +535,10 @@ const buildRows = (args: {
   return sessions.map((session) => {
     const events = session.bizEvent || [];
     const { startReason, endReason } = getSessionReasons(events, contentType);
-    const includeReasonColumns =
-      contentType === ContentDataType.FLOW || contentType === ContentDataType.CHECKLIST;
+    const includeReasonColumns = hasSessionReasons(contentType);
 
     const questionAnswers = buildQuestionAnswers(events);
-    const stepViews = buildStepViews(events, headerContext.stepHeaders);
+    const stepViews = buildStepViews(events, headerContext, contentType);
     const checklistCompletedTaskIds = buildChecklistCompletedTaskIds(events);
 
     const baseRow = [
@@ -465,19 +569,29 @@ const buildRows = (args: {
       ? [formatUTCDate(session.createdAt)]
       : mode.isSimpleExport
         ? [
-            `v${session.version?.sequence}`,
+            formatVersion(session),
             formatUTCDate(session.createdAt),
             ...(mode.isLauncherContent ? [activatedCount] : []),
           ]
-        : [
-            `v${session.version?.sequence}`,
-            formatUTCDate(session.createdAt),
-            formatUTCDate(getLastActivityAt(session)),
-            formatUTCDate(getCompletedAt(session, contentType)),
-            `${session.progress}%`,
-            getState(session, contentType),
-            ...(includeReasonColumns ? [startReason, endReason] : []),
-          ];
+        : mode.isEmbedContent
+          ? [
+              formatVersion(session),
+              formatUTCDate(session.createdAt),
+              formatUTCDate(getLastActivityAt(session)),
+              getState(session, contentType),
+              buildClickedButtons(events),
+              startReason,
+              endReason,
+            ]
+          : [
+              formatVersion(session),
+              formatUTCDate(session.createdAt),
+              formatUTCDate(getLastActivityAt(session)),
+              formatUTCDate(getCompletedAt(session, contentType)),
+              `${session.progress}%`,
+              getState(session, contentType),
+              ...(includeReasonColumns ? [startReason, endReason] : []),
+            ];
 
     const questionAnswersRow = mode.isSimpleExport
       ? []

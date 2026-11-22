@@ -268,6 +268,30 @@ export class DismissLauncherPayload {
 }
 
 /**
+ * Click button payload validator
+ */
+export class ClickButtonPayload {
+  @IsString()
+  @MaxLength(255)
+  sessionId: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  stepId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  buttonCvid?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  buttonText?: string;
+}
+
+/**
  * Track tracker event payload validator
  */
 export class TrackTrackerEventPayload {
@@ -365,6 +389,7 @@ export const payloadValidatorMap = new Map<ClientMessageKind, new () => object>(
   [ClientMessageKind.REPORT_TOOLTIP_TARGET_MISSING, TooltipTargetMissingPayload],
   [ClientMessageKind.ACTIVATE_LAUNCHER, SessionOnlyPayload],
   [ClientMessageKind.DISMISS_LAUNCHER, DismissLauncherPayload],
+  [ClientMessageKind.CLICK_BUTTON, ClickButtonPayload],
   [ClientMessageKind.TRACK_TRACKER_EVENT, TrackTrackerEventPayload],
   [ClientMessageKind.OPEN_RESOURCE_CENTER, SessionOnlyPayload],
   [ClientMessageKind.CLOSE_RESOURCE_CENTER, SessionOnlyPayload],

@@ -14,6 +14,9 @@ import { WidgetClass } from '../class-names';
 import { PopperClose } from '../popper';
 import { useWidgetLocale } from '../../locale/context';
 import { computePositionStyle } from '../utils/position';
+import { computeViewportClampStyle, fitOffsetsToViewport } from '../utils/viewport';
+import { useFrameContentHeight } from '../hooks/use-frame-content-height';
+import { useViewportSize } from '../hooks/use-viewport-size';
 import { useSettingsStyles } from '../hooks/use-settings-styles';
 import { AnnouncementReadMoreButton, formatAnnouncementDate } from './resource-center-body';
 import { RESOURCE_CENTER_DEFAULTS, resourceCenterPlacementToPosition } from './constants';
@@ -47,9 +50,10 @@ interface PopupFrameContentProps {
 
 const PopupFrameContent = (props: PopupFrameContentProps) => {
   const { globalStyle, children } = props;
-  const { setStyle, document: frameDocument } = useFrame();
+  const { document: frameDocument } = useFrame();
   const [contentElement, setContentElement] = useState<HTMLDivElement | null>(null);
   const rect = useSize(contentElement);
+  useFrameContentHeight(rect?.height);
 
   useEffect(() => {
     if (globalStyle) {
@@ -57,12 +61,6 @@ const PopupFrameContent = (props: PopupFrameContentProps) => {
       frameDocument.body.className = 'usertour-widget-root';
     }
   }, [globalStyle, frameDocument]);
-
-  useEffect(() => {
-    if (rect) {
-      setStyle(`height: ${rect.height}px !important`);
-    }
-  }, [rect, setStyle]);
 
   return <div ref={setContentElement}>{children}</div>;
 };
@@ -199,6 +197,7 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
   // optional — so fall back to the same constant the merge uses rather than a
   // stale literal.
   const width = themeSetting.announcement?.modalWidth ?? defaultSettings.announcement.modalWidth;
+  const viewport = useViewportSize();
 
   return (
     <>
@@ -209,7 +208,12 @@ const AnnouncementPopupModal = (props: AnnouncementPopupModalProps) => {
       />
       <div
         className={`${WidgetClass.surface} ${WidgetClass.elevation} ${WidgetClass.announcementModal}`}
-        style={{ ...computePositionStyle('center', 0, 0), width: `${width}px`, zIndex: zIndex + 3 }}
+        style={{
+          ...computePositionStyle('center', 0, 0),
+          ...computeViewportClampStyle(viewport),
+          width: `${width}px`,
+          zIndex: zIndex + 3,
+        }}
       >
         <div className={WidgetClass.surfaceShell}>
           <div className={WidgetClass.surfaceFrame}>
@@ -332,11 +336,15 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
   const alignTop = String(placement).includes('top');
   const position = resourceCenterPlacementToPosition(placement);
   const launcherHeight = resourceCenterThemeSetting.resourceCenterLauncherButton?.height ?? 60;
-  const positionOffsetX = resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX;
-  const positionOffsetY =
+  const viewport = useViewportSize();
+  const [positionOffsetX, positionOffsetY] = fitOffsetsToViewport(
+    position,
+    resourceCenter?.offsetX ?? RESOURCE_CENTER_DEFAULTS.offsetX,
     (resourceCenter?.offsetY ?? RESOURCE_CENTER_DEFAULTS.offsetY) +
-    launcherHeight +
-    BUBBLE_TAIL_SIZE;
+      launcherHeight +
+      BUBBLE_TAIL_SIZE,
+    viewport,
+  );
 
   const positionStyle = computePositionStyle(position, positionOffsetX, positionOffsetY);
 
@@ -347,7 +355,11 @@ const AnnouncementPopupBubble = (props: AnnouncementPopupBubbleProps) => {
       alignTop={alignTop}
       launcherHeight={launcherHeight}
       tailColor={themeSetting?.mainColor?.background}
-      style={{ ...positionStyle, zIndex: zIndex + 1 }}
+      style={{
+        ...positionStyle,
+        ...computeViewportClampStyle(viewport, position, positionOffsetX, positionOffsetY),
+        zIndex: zIndex + 1,
+      }}
     >
       <Frame assets={assets} className={WidgetClass.surfaceViewport}>
         <PopupFrameContent globalStyle={globalStyle}>

@@ -6,6 +6,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import {
   BANNER_PREVIEW_CONTENT,
   BUBBLE_PREVIEW_CONTENT,
+  EMBED_PREVIEW_CONTENT,
   MODAL_PREVIEW_CONTENT,
   NPS_PREVIEW_CONTENT,
   TOOLTIP_PREVIEW_CONTENT,
@@ -20,6 +21,7 @@ import { ThemePreviewResourceCenter } from '../../preview/theme-preview-resource
 import type { Rect } from '../../preview/types';
 import { WidgetSwitcher } from '../top-bar/widget-switcher';
 import { BannerPreview } from './banner-preview';
+import { EmbedPreview } from './embed-preview';
 import { BrowserFrame } from './browser-frame';
 
 export interface PreviewPaneProps {
@@ -76,6 +78,13 @@ export const PreviewPane = (props: PreviewPaneProps) => {
         {widgetType === ThemeDetailPreviewType.BANNER && (
           <BannerPreview
             contents={BANNER_PREVIEW_CONTENT}
+            settings={settings}
+            customStyle={customStyle}
+          />
+        )}
+        {widgetType === ThemeDetailPreviewType.EMBED && (
+          <EmbedPreview
+            contents={EMBED_PREVIEW_CONTENT}
             settings={settings}
             customStyle={customStyle}
           />
