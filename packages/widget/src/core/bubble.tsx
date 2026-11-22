@@ -12,6 +12,8 @@ import { cn } from '@usertour/tailwind';
 import { Frame, useFrame } from '@usertour/frame';
 import { type AvatarComponent } from '@usertour/icons';
 import { computePositionStyle } from './utils/position';
+import { computeViewportClampStyle, fitOffsetsToViewport } from './utils/viewport';
+import { useViewportSize } from './hooks/use-viewport-size';
 import { usePopperContext } from './popper-context';
 import { useBubbleExpandAnimation } from './hooks';
 import { WidgetClass } from './class-names';
@@ -171,13 +173,21 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
     const containerRef = useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, containerRef);
 
-    const style = computePositionStyle(position, positionOffsetX, positionOffsetY);
+    // Calculate padding for avatar and notch space (0 when avatar is hidden)
+    const avatarSpacePadding = showAvatar ? avatarSize + notchSize : 0;
+
+    const viewport = useViewportSize();
+    const [offsetX, offsetY] = fitOffsetsToViewport(
+      position,
+      positionOffsetX,
+      positionOffsetY,
+      viewport,
+      avatarSpacePadding,
+    );
+    const style = computePositionStyle(position, offsetX, offsetY);
 
     // Derive anchor position for internal elements (notch, avatar) from bubble placement
     const { vertical, horizontal } = useAnchorPosition(position);
-
-    // Calculate padding for avatar and notch space (0 when avatar is hidden)
-    const avatarSpacePadding = showAvatar ? avatarSize + notchSize : 0;
 
     // Use hook for expand/collapse animation styles
     const { outlineStyle } = useBubbleExpandAnimation({
@@ -202,6 +212,7 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
           data-usertour-popper-content-wrapper=""
           style={{
             ...style,
+            ...computeViewportClampStyle(viewport, position, offsetX, offsetY, avatarSpacePadding),
             width: width,
             zIndex: enabledBackdrop ? zIndex + 1 : zIndex,
           }}

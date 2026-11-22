@@ -72,6 +72,51 @@
     var(--usertour-widget-popper-border-radius) -
     var(--usertour-widget-popper-border-width)
   );
+  /* The frame is as tall as its content (inline height), capped so a long
+     step scrolls inside the frame instead of running off screen. The cap is
+     the viewport less the surface's inset (utils/viewport.ts; the fallback
+     32px is a 16px margin above and below, which a narrow viewport drops) or, for a surface placed against a target, the room
+     left on that side — whichever is smaller — less the two borders the
+     wrapper draws around the frame. !important: `#usertour-widget iframe`
+     resets max-height with a higher specificity.
+     This declaration is all a browser without min() gets (the legacy build's,
+     and Firefox 74): the viewport cap, without the room left beside a target. */
+  max-height: calc(
+    100vh -
+    var(--usertour-widget-surface-inset-y, 32px) -
+    2 *
+    var(--usertour-widget-popper-border-width, 0px)
+  ) !important;
+}
+/* Behind @supports, not a second declaration in the rule above: a declaration
+   with var() in it is always valid at parse time, so it would replace the one
+   above even where min() is unknown, and then compute to no cap at all. */
+@supports (width: min(1px, 2px)) {
+  .usertour-widget-surface-viewport {
+    max-height: calc(
+      min(
+        100vh -
+        var(--usertour-widget-surface-inset-y, 32px),
+        var(--usertour-widget-surface-available-height, 100vh)
+      ) -
+      2 *
+      var(--usertour-widget-popper-border-width, 0px)
+    ) !important;
+  }
+}
+/* dvh: on mobile, 100vh is taller than what the browser chrome leaves visible. */
+@supports (height: 100dvh) {
+  .usertour-widget-surface-viewport {
+    max-height: calc(
+      min(
+        100dvh -
+        var(--usertour-widget-surface-inset-y, 32px),
+        var(--usertour-widget-surface-available-height, 100dvh)
+      ) -
+      2 *
+      var(--usertour-widget-popper-border-width, 0px)
+    ) !important;
+  }
 }
 .usertour-widget-surface-panel {
   position: relative;

@@ -1,12 +1,20 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Placement } from '@floating-ui/dom';
 
+interface Size {
+  width: number;
+  height: number;
+}
+
 interface UsePopperAnimationOptions {
   stableThreshold?: number;
   offset?: number;
   animationDuration?: number;
   easing?: string;
   enabled?: boolean;
+  /** The surface's size and the viewport's: with both, the surface never starts off screen. */
+  size?: Size;
+  viewport?: Size;
 }
 
 interface UsePopperAnimationReturn {
@@ -24,20 +32,39 @@ const parseTransform = (transform: string) => {
 };
 
 // Calculate offset transform based on placement
-const getOffsetTransform = (transform: string, placement: Placement, offset = 20) => {
+const getOffsetTransform = (
+  transform: string,
+  placement: Placement,
+  offset = 20,
+  size?: Size,
+  viewport?: Size,
+) => {
   const { x, y } = parseTransform(transform);
+  // The surface slides in from further out, but only as far out as the viewport has room:
+  // against the viewport's edge it would start past it, cut off until it has slid back.
+  const room =
+    size && viewport
+      ? {
+          top: y,
+          left: x,
+          bottom: viewport.height - y - size.height,
+          right: viewport.width - x - size.width,
+        }
+      : undefined;
+  const within = (side: keyof NonNullable<typeof room>) =>
+    room ? Math.max(0, Math.min(offset, room[side])) : offset;
 
   let offsetX = x;
   let offsetY = y;
 
   if (placement.startsWith('bottom')) {
-    offsetY = y + offset; // Offset downward
+    offsetY = y + within('bottom'); // Offset downward
   } else if (placement.startsWith('top')) {
-    offsetY = y - offset; // Offset upward
+    offsetY = y - within('top'); // Offset upward
   } else if (placement.startsWith('left')) {
-    offsetX = x - offset; // Offset leftward
+    offsetX = x - within('left'); // Offset leftward
   } else if (placement.startsWith('right')) {
-    offsetX = x + offset; // Offset rightward
+    offsetX = x + within('right'); // Offset rightward
   }
 
   return `translate(${offsetX}px, ${offsetY}px)`;
@@ -54,7 +81,11 @@ export const usePopperAnimation = (
     animationDuration = 500,
     easing = 'cubic-bezier(0.25, 0.8, 0.5, 1)',
     enabled = true,
+    size,
+    viewport,
   } = options;
+  const { width, height } = size ?? {};
+  const { width: viewportWidth, height: viewportHeight } = viewport ?? {};
 
   // Animation state management
   const [animationPhase, setAnimationPhase] = useState<'offset' | 'animating'>('offset');
@@ -128,7 +159,15 @@ export const usePopperAnimation = (
       return {
         ...floatingStyles,
         transform: floatingStyles.transform
-          ? getOffsetTransform(floatingStyles.transform as string, placement, offset)
+          ? getOffsetTransform(
+              floatingStyles.transform as string,
+              placement,
+              offset,
+              width !== undefined && height !== undefined ? { width, height } : undefined,
+              viewportWidth !== undefined && viewportHeight !== undefined
+                ? { width: viewportWidth, height: viewportHeight }
+                : undefined,
+            )
           : floatingStyles.transform,
         transition: 'none',
       };
@@ -139,7 +178,19 @@ export const usePopperAnimation = (
       ...floatingStyles,
       transition: `opacity 250ms linear, transform ${animationDuration}ms ${easing}`,
     };
-  }, [floatingStyles, placement, animationPhase, offset, animationDuration, easing, enabled]);
+  }, [
+    floatingStyles,
+    placement,
+    animationPhase,
+    offset,
+    animationDuration,
+    easing,
+    enabled,
+    width,
+    height,
+    viewportWidth,
+    viewportHeight,
+  ]);
 
   return {
     finalStyles,
