@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { DEFAULT_LAUNCHER_DATA } from '@usertour/constants';
 import type { LauncherData, ThemeTypesSetting } from '@usertour/types';
 import { StepContentType } from '@usertour/types';
 import type { PopperContentProps } from '../popper';
@@ -36,6 +37,11 @@ export function useLauncherPopperContentProps(
     data.tooltip.width ?? getThemeWidthByStepType(StepContentType.TOOLTIP, themeSetting);
   const { alignment } = data.tooltip;
   const align = alignment.alignType === 'auto' ? 'center' : (alignment.align ?? 'center');
+  // Auto picks the side for the author, as a flow tooltip's does (above here, flipping below).
+  // The side kept from an earlier fixed setting is not followed: the builder does not show it
+  // under auto, and left or right has no room beside a wide target.
+  const side =
+    alignment.alignType === 'auto' ? DEFAULT_LAUNCHER_DATA.tooltip.alignment.side : alignment.side;
   const notchSize = themeSetting?.tooltip?.notchSize ?? DEFAULT_NOTCH_SIZE;
 
   const arrowSize = useMemo(
@@ -51,7 +57,7 @@ export function useLauncherPopperContentProps(
       width: `${tooltipWidth}px`,
       sideOffset: alignment.sideOffset,
       alignOffset: alignment.alignOffset,
-      side: alignment.side,
+      side,
       align,
       avoidCollisions: alignment.alignType === 'auto',
       arrowSize,
@@ -61,7 +67,7 @@ export function useLauncherPopperContentProps(
       tooltipWidth,
       alignment.sideOffset,
       alignment.alignOffset,
-      alignment.side,
+      side,
       alignment.alignType,
       align,
       arrowSize,

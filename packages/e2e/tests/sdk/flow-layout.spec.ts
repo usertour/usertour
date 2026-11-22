@@ -556,16 +556,17 @@ test.describe('on a viewport smaller than the step', () => {
     expect(await lastBlockBottom(sdk)).toBeLessThanOrEqual(VIEWPORT.height);
   });
 
-  test('a tooltip beside a target as wide as the screen moves back over it', async ({
+  test('an auto-aligned launcher tooltip does not follow a side kept from a fixed setting', async ({
     sdk,
     protocol,
   }) => {
     await sdk.page.setViewportSize(VIEWPORT);
     await start(sdk);
+    // As wide as the screen: a tooltip to its right, the side stored below, would be off screen.
     await sdk.page.evaluate((width) => {
       const target = document.createElement('div');
       target.id = 'wide-target';
-      target.style.cssText = `position:fixed;left:0;top:40px;width:${width}px;height:40px;`;
+      target.style.cssText = `position:fixed;left:0;top:300px;width:${width}px;height:40px;`;
       document.body.appendChild(target);
     }, VIEWPORT.width);
     await protocol.push(
@@ -574,7 +575,7 @@ test.describe('on a viewport smaller than the step', () => {
         sessionId: 'launcher-session-1',
         contentId: 'launcher-1',
         target: '#wide-target',
-        text: 'Beside the target',
+        text: 'Above the target',
         type: 'hidden',
         triggerElement: 'target',
         tooltipReference: 'target',
@@ -583,8 +584,10 @@ test.describe('on a viewport smaller than the step', () => {
     );
     await expect.poll(() => sdk.isStarted('launcher-1')).toBe(true);
     await sdk.page.click('#wide-target');
-    await expect(sdk.frame().getByText('Beside the target')).toBeVisible();
+    await expect(sdk.frame().getByText('Above the target')).toBeVisible();
     await expectInsideViewport(sdk.surface);
+    // Above the target, not over it.
+    await expect.poll(async () => bottom(await box(sdk.surface))).toBeLessThanOrEqual(300);
   });
 
   test('a tooltip against the edge of the screen does not slide in from past it', async ({
