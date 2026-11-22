@@ -1945,6 +1945,9 @@ test.describe('the reveal animation', () => {
   }) => {
     await start(sdk);
     await protocol.push('AddEmbed', animatedEmbed('bottom-of-container-element'));
+    // Before its height is measured the shell has no animation either: wait for the
+    // reveal to start, or "none" would pass before it has played.
+    await expect.poll(() => animationName(sdk.page)).toBe('usertour-widget-embed-reveal');
     await revealDone(sdk.page);
 
     // A re-placed mount rebuilds its frame and re-measures; the reveal does not rerun.
