@@ -556,6 +556,79 @@ test.describe('on a viewport smaller than the step', () => {
     expect(await lastBlockBottom(sdk)).toBeLessThanOrEqual(VIEWPORT.height);
   });
 
+  test('a tooltip beside a target as wide as the screen moves back over it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    await sdk.page.evaluate((width) => {
+      const target = document.createElement('div');
+      target.id = 'wide-target';
+      target.style.cssText = `position:fixed;left:0;top:40px;width:${width}px;height:40px;`;
+      document.body.appendChild(target);
+    }, VIEWPORT.width);
+    await protocol.push(
+      'AddLauncher',
+      launcherSession({
+        sessionId: 'launcher-session-1',
+        contentId: 'launcher-1',
+        target: '#wide-target',
+        text: 'Beside the target',
+        type: 'hidden',
+        triggerElement: 'target',
+        tooltipReference: 'target',
+        tooltipAlignment: { side: 'right', align: 'center', alignType: 'auto' },
+      }),
+    );
+    await expect.poll(() => sdk.isStarted('launcher-1')).toBe(true);
+    await sdk.page.click('#wide-target');
+    await expect(sdk.frame().getByText('Beside the target')).toBeVisible();
+    await expectInsideViewport(sdk.surface);
+  });
+
+  test('a tooltip against the edge of the screen does not slide in from past it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize(VIEWPORT);
+    await start(sdk);
+    // Every frame's bottom edge, from before the step is shown until it has settled.
+    await sdk.page.evaluate(() => {
+      const bottoms: number[] = [];
+      (window as unknown as { bottoms: number[] }).bottoms = bottoms;
+      const target = document.createElement('button');
+      target.id = 'mid-target';
+      target.textContent = 'In the middle';
+      target.style.cssText = 'position:fixed;left:150px;top:280px;';
+      document.body.appendChild(target);
+      const frame = () => {
+        for (const surface of document.querySelectorAll('.usertour-widget-surface')) {
+          bottoms.push(surface.getBoundingClientRect().bottom);
+        }
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+    await protocol.push(
+      'SetFlowSession',
+      oneStep(
+        'tooltip',
+        { side: 'bottom', align: 'center', alignType: 'auto' },
+        { target: '#mid-target' },
+      ),
+    );
+    await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+    // It ends against the bottom edge, where sliding in from below would start off screen.
+    await expect.poll(async () => Math.round(bottom(await box(sdk.surface)))).toBe(VIEWPORT.height);
+    await sdk.page.waitForTimeout(1000);
+    const bottoms = await sdk.page.evaluate(
+      () => (window as unknown as { bottoms: number[] }).bottoms,
+    );
+    expect(bottoms.length).toBeGreaterThan(0);
+    expect(Math.max(...bottoms)).toBeLessThanOrEqual(VIEWPORT.height + 1);
+  });
+
   test('a thick theme border comes out of the height, not off the screen', async ({
     sdk,
     protocol,

@@ -96,7 +96,8 @@ export const usePopperContent = (
 
   const arrowRef = useRef(null);
   const lastReferenceRectRef = useRef<Rect | null>(null);
-  // Set while positioning: the side the surface is on has less room than its minimum height.
+  // Set while positioning: the side the surface is on has no room for it — less than its
+  // minimum height above or below the target, less than its width beside it.
   const squeezedRef = useRef(false);
   const referenceEl = triggerRef?.current as ReferenceElement;
 
@@ -149,7 +150,7 @@ export const usePopperContent = (
   // DOM we supply the last known reference rect instead of reading getBoundingClientRect (which
   // returns 0,0). This prevents (0,0) from ever being fed into the position pipeline and avoids
   // the top-left flash. We always pass the reference so autoUpdate and middleware run normally.
-  const { refs, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
+  const { refs, elements, floatingStyles, placement, isPositioned, middlewareData } = useFloating({
     open: enabled,
     strategy: 'fixed',
     placement: desiredPlacement,
@@ -187,17 +188,22 @@ export const usePopperContent = (
       avoidCollisions && flip({ ...detectOverflowOptions }),
       size({
         ...detectOverflowOptions,
-        apply({ availableHeight, elements }) {
-          squeezedRef.current = applyAvailableHeight(
+        apply({ availableWidth, availableHeight, elements, rects, placement }) {
+          const tooShort = applyAvailableHeight(
             elements.floating,
             availableHeight,
             surfaceMarginY(window.innerWidth),
           );
+          // Beside its target a surface runs short of width, not height: its height is
+          // capped to the room there is, its width is its own.
+          const [side] = getSideAndAlignFromPlacement(placement);
+          squeezedRef.current =
+            side === 'left' || side === 'right' ? availableWidth < rects.floating.width : tooShort;
         },
       }),
       avoidCollisions && {
-        // Neither side of the target has room for even the minimum height: rather than run
-        // off screen with its last blocks out of reach, the surface moves back over the
+        // Neither side of the target has room for the surface (see squeezedRef): rather than
+        // run off screen with part of it out of reach, the surface moves back over the
         // target — as far as it needs to, and never so far that it leaves the target.
         // Not when collisions are left alone: the surface then keeps the side it was given.
         name: 'fitSqueezed',
@@ -235,11 +241,19 @@ export const usePopperContent = (
   });
 
   // Use the animation hook
+  // useSize re-renders when the surface resizes; the size itself is read here, as the
+  // state lags a frame behind a position computed for the new size.
+  useSize(elements.floating);
+  const floatingSize = elements.floating
+    ? { width: elements.floating.offsetWidth, height: elements.floating.offsetHeight }
+    : undefined;
   const { finalStyles } = usePopperAnimation(floatingStyles, placement, {
     stableThreshold: 250,
     offset: 20,
     animationDuration: 500,
     enabled: enabled, // Pass the enabled parameter
+    size: floatingSize,
+    viewport,
   });
 
   const [placedSide] = getSideAndAlignFromPlacement(placement);

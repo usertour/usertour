@@ -493,6 +493,8 @@ export const launcherSession = (input: {
   buttonText?: string;
   /** What the tooltip is anchored to. */
   tooltipReference?: 'target' | 'launcher';
+  /** Where the tooltip goes relative to what it is anchored to. */
+  tooltipAlignment?: Partial<typeof DEFAULT_LAUNCHER_DATA.tooltip.alignment>;
   triggerEvent?: 'clicked' | 'hovered';
   /** `perform-action` runs `actions` instead of opening the tooltip. */
   actions?: Action[];
@@ -517,6 +519,7 @@ export const launcherSession = (input: {
       tooltip: {
         ...DEFAULT_LAUNCHER_DATA.tooltip,
         reference: input.tooltipReference ?? DEFAULT_LAUNCHER_DATA.tooltip.reference,
+        alignment: { ...DEFAULT_LAUNCHER_DATA.tooltip.alignment, ...input.tooltipAlignment },
         content: [row(paragraph(input.text)), ...(input.blocks ?? [])],
         settings: {
           ...DEFAULT_LAUNCHER_DATA.tooltip.settings,
