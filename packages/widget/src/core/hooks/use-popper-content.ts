@@ -19,7 +19,9 @@ import {
   SURFACE_VIEWPORT_MARGIN,
   applyAvailableHeight,
   computeViewportClampStyle,
+  surfaceMarginY,
 } from '../utils/viewport';
+import { useViewportSize } from './use-viewport-size';
 import { hiddenStyle } from '../utils/content';
 import { usePopperAnimation } from './use-popper-animation';
 import { Align, Side } from '@usertour/types';
@@ -113,16 +115,26 @@ export const usePopperContent = (
       ? collisionPaddingProp
       : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
 
-  // The viewport margin the height cap keeps, on top of the collision padding.
-  const squeezedPadding =
+  const viewport = useViewportSize();
+
+  // The viewport margins the surface keeps, on top of the collision padding.
+  // Middleware reads the margin when it runs: useFloating keeps the first of two
+  // functions with the same source, so a value closed over at render goes stale.
+  const padded =
     typeof collisionPadding === 'number'
-      ? collisionPadding + SURFACE_VIEWPORT_MARGIN
-      : {
-          top: collisionPadding.top + SURFACE_VIEWPORT_MARGIN,
-          right: collisionPadding.right + SURFACE_VIEWPORT_MARGIN,
-          bottom: collisionPadding.bottom + SURFACE_VIEWPORT_MARGIN,
-          left: collisionPadding.left + SURFACE_VIEWPORT_MARGIN,
-        };
+      ? {
+          top: collisionPadding,
+          right: collisionPadding,
+          bottom: collisionPadding,
+          left: collisionPadding,
+        }
+      : collisionPadding;
+  const squeezedPadding = (marginY: number) => ({
+    top: padded.top + marginY,
+    right: padded.right + SURFACE_VIEWPORT_MARGIN,
+    bottom: padded.bottom + marginY,
+    left: padded.left + SURFACE_VIEWPORT_MARGIN,
+  });
 
   const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
   const hasExplicitBoundaries = boundary.length > 0;
@@ -176,7 +188,11 @@ export const usePopperContent = (
       size({
         ...detectOverflowOptions,
         apply({ availableHeight, elements }) {
-          squeezedRef.current = applyAvailableHeight(elements.floating, availableHeight);
+          squeezedRef.current = applyAvailableHeight(
+            elements.floating,
+            availableHeight,
+            surfaceMarginY(window.innerWidth),
+          );
         },
       }),
       avoidCollisions && {
@@ -194,7 +210,7 @@ export const usePopperContent = (
             crossAxis: true,
             limiter: limitShift({ mainAxis: false, crossAxis: true }),
             ...detectOverflowOptions,
-            padding: squeezedPadding,
+            padding: squeezedPadding(surfaceMarginY(window.innerWidth)),
           }).fn(state);
         },
       },
@@ -242,7 +258,7 @@ export const usePopperContent = (
 
   const inlineStyle: React.CSSProperties = {
     ...finalStyles,
-    ...computeViewportClampStyle(),
+    ...computeViewportClampStyle(viewport),
     width: width,
     zIndex: zIndex + 1,
     ...(referenceHiddenByMiddleware ? hiddenStyle : { opacity: 1 }),

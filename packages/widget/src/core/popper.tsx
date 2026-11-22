@@ -8,14 +8,14 @@ import { Button } from '../primitives';
 import type { Rect, SideObject } from '@floating-ui/dom';
 import { positionModal, getReClippingRect, getViewportRect } from './utils/backdrop';
 import { computePositionStyle } from './utils/position';
-import { computeViewportClampStyle } from './utils/viewport';
+import { computeViewportClampStyle, fitOffsetsToViewport } from './utils/viewport';
 import { cn } from '@usertour/tailwind';
 import { Align, ProgressBarType, Side } from '@usertour/types';
 import { WidgetClass } from './class-names';
 import { hiddenStyle } from './utils/content';
 import { usePopperContent } from './hooks/use-popper-content';
 import { useFrameContentHeight } from './hooks/use-frame-content-height';
-import { useViewportFitOffsets } from './hooks/use-viewport-fit-offsets';
+import { useViewportSize } from './hooks/use-viewport-size';
 import { POPPER_NAME, PopperProvider, usePopperContext } from './popper-context';
 import { useWidgetLocale } from '../locale/context';
 
@@ -325,7 +325,13 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
     const containerRef = useRef(null);
     const composedRefs = useComposedRefs(forwardedRef, containerRef);
 
-    const [offsetX, offsetY] = useViewportFitOffsets(position, positionOffsetX, positionOffsetY);
+    const viewport = useViewportSize();
+    const [offsetX, offsetY] = fitOffsetsToViewport(
+      position,
+      positionOffsetX,
+      positionOffsetY,
+      viewport,
+    );
     const style = computePositionStyle(position, offsetX, offsetY);
 
     return (
@@ -343,7 +349,7 @@ const PopperModalContentPotal = forwardRef<HTMLDivElement, ModalContentProps>(
           data-usertour-popper-content-wrapper=""
           style={{
             ...style,
-            ...computeViewportClampStyle(position, offsetX, offsetY),
+            ...computeViewportClampStyle(viewport, position, offsetX, offsetY),
             width: width,
             zIndex: context.zIndex + 1,
           }}

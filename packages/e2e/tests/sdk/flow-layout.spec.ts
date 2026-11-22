@@ -306,7 +306,9 @@ test('the widgets stack: flow over resource center over checklist over launcher 
 
 test.describe('on a viewport smaller than the step', () => {
   const VIEWPORT = { width: 390, height: 600 };
-  const MARGIN = 16;
+  // A narrow viewport keeps the side margins only: height is what runs short there.
+  const MARGIN_X = 16;
+  const MARGIN_Y = 0;
   const longRows = [
     ...Array.from({ length: 40 }, (_, index) => row(paragraph(`Line ${index + 1} of a long step`))),
     row(button('Next', [])),
@@ -317,10 +319,10 @@ test.describe('on a viewport smaller than the step', () => {
       .poll(async () => {
         const rect = await box(locator);
         return (
-          rect.x >= MARGIN - 1 &&
-          rect.y >= MARGIN - 1 &&
-          right(rect) <= VIEWPORT.width - MARGIN + 1 &&
-          bottom(rect) <= VIEWPORT.height - MARGIN + 1
+          rect.x >= MARGIN_X - 1 &&
+          rect.y >= MARGIN_Y - 1 &&
+          right(rect) <= VIEWPORT.width - MARGIN_X + 1 &&
+          bottom(rect) <= VIEWPORT.height - MARGIN_Y + 1
         );
       })
       .toBe(true);
@@ -346,6 +348,11 @@ test.describe('on a viewport smaller than the step', () => {
     });
     expect(reachable).toBe(true);
 
+    // All the height goes to the content: no margin above or below on a narrow viewport.
+    await expect
+      .poll(async () => Math.round((await box(sdk.surface)).height))
+      .toBe(VIEWPORT.height);
+
     // Given room again, the step is back to its own width and does not scroll.
     await sdk.page.setViewportSize({ width: 1280, height: 3000 });
     await expect
@@ -354,6 +361,22 @@ test.describe('on a viewport smaller than the step', () => {
     await expect
       .poll(() => next.evaluate((element) => element.ownerDocument.documentElement.style.overflowY))
       .toBe('hidden');
+  });
+
+  test('a viewport 800px wide or more keeps the margin above and below too', async ({
+    sdk,
+    protocol,
+  }) => {
+    await sdk.page.setViewportSize({ width: 800, height: VIEWPORT.height });
+    await start(sdk);
+    await protocol.push('SetFlowSession', modalFlow('session-1', 'flow-1', longRows));
+    await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
+    await expect
+      .poll(async () => {
+        const rect = await box(sdk.surface);
+        return [Math.round(rect.y), Math.round(bottom(rect))];
+      })
+      .toEqual([16, VIEWPORT.height - 16]);
   });
 
   test('a bubble stays on screen, avatar included', async ({ sdk, protocol }) => {
@@ -435,7 +458,7 @@ test.describe('on a viewport smaller than the step', () => {
       await expect(sdk.frame().getByText('Line 1 of a long step')).toBeVisible();
       await expect
         .poll(async () => bottom(await box(sdk.surface)))
-        .toBeLessThanOrEqual(VIEWPORT.height - MARGIN + 1);
+        .toBeLessThanOrEqual(VIEWPORT.height - MARGIN_Y + 1);
       expect(await lastBlockBottom(sdk)).toBeLessThanOrEqual(VIEWPORT.height);
     }
   });

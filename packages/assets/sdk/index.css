@@ -74,8 +74,8 @@
   );
   /* The frame is as tall as its content (inline height), capped so a long
      step scrolls inside the frame instead of running off screen. The cap is
-     the viewport less the surface's inset (utils/viewport.ts; 32px is a 16px
-     margin on both sides) or, for a surface placed against a target, the room
+     the viewport less the surface's inset (utils/viewport.ts; the fallback
+     32px is a 16px margin above and below, which a narrow viewport drops) or, for a surface placed against a target, the room
      left on that side — whichever is smaller — less the two borders the
      wrapper draws around the frame. !important: `#usertour-widget iframe`
      resets max-height with a higher specificity.

@@ -3,6 +3,19 @@ import { CSSProperties } from 'react';
 /** Gap kept between a floating surface and the edge of the viewport. */
 export const SURFACE_VIEWPORT_MARGIN = 16;
 
+/** Below this viewport width (phones, portrait tablets) height is what runs short. */
+const NARROW_VIEWPORT_WIDTH = 800;
+
+/**
+ * The gap kept above and below a surface. None on a narrow viewport: a long
+ * step there gets every pixel of height; the side margins
+ * still set it apart from the page.
+ */
+export const surfaceMarginY = (viewportWidth: number) =>
+  viewportWidth < NARROW_VIEWPORT_WIDTH ? 0 : SURFACE_VIEWPORT_MARGIN;
+
+export type ViewportSize = { width: number; height: number };
+
 /**
  * Read by `.usertour-widget-surface-viewport` (packages/assets/sdk/index.css)
  * to cap the content frame's height: the frame is a descendant of the surface
@@ -24,10 +37,8 @@ const isAnchoredY = (position: string) => position.endsWith('Top') || position.e
  * one margin. Centered: a margin on both sides, and twice its offset — the
  * offset moves the center, so the surface has to give way on both sides.
  */
-const inset = (anchored: boolean, offset: number) =>
-  anchored
-    ? Math.max(0, offset) + SURFACE_VIEWPORT_MARGIN
-    : (SURFACE_VIEWPORT_MARGIN + Math.abs(offset)) * 2;
+const inset = (anchored: boolean, offset: number, margin: number) =>
+  anchored ? Math.max(0, offset) + margin : (margin + Math.abs(offset)) * 2;
 
 /**
  * Style that keeps a fixed-position surface inside the viewport: its width
@@ -38,6 +49,7 @@ const inset = (anchored: boolean, offset: number) =>
  * avatar and notch).
  */
 export const computeViewportClampStyle = (
+  viewport: ViewportSize,
   position = 'center',
   offsetX = 0,
   offsetY = 0,
@@ -45,9 +57,11 @@ export const computeViewportClampStyle = (
 ): CSSProperties => {
   // computePositionStyle ignores both offsets for a plain 'center'.
   const [x, y] = position === 'center' ? [0, 0] : [offsetX, offsetY];
+  const insetX = inset(isAnchoredX(position), x, SURFACE_VIEWPORT_MARGIN);
+  const insetY = inset(isAnchoredY(position), y, surfaceMarginY(viewport.width));
   return {
-    maxWidth: `calc(100vw - ${inset(isAnchoredX(position), x)}px)`,
-    [SURFACE_INSET_Y_VAR]: `${inset(isAnchoredY(position), y) + reservedHeight}px`,
+    maxWidth: `calc(100vw - ${insetX}px)`,
+    [SURFACE_INSET_Y_VAR]: `${insetY + reservedHeight}px`,
   } as CSSProperties;
 };
 
@@ -57,11 +71,17 @@ export const computeViewportClampStyle = (
  * edge: a negative offset would push the surface off that edge, where part of
  * it, and of what scrolls inside it, could not be reached.
  */
-const fitOffset = (anchored: boolean, offset: number, room: number, min: number) => {
+const fitOffset = (
+  anchored: boolean,
+  offset: number,
+  room: number,
+  min: number,
+  margin: number,
+) => {
   if (anchored) {
-    return Math.max(0, Math.min(offset, room - SURFACE_VIEWPORT_MARGIN - min));
+    return Math.max(0, Math.min(offset, room - margin - min));
   }
-  const limit = Math.max(0, (room - SURFACE_VIEWPORT_MARGIN * 2 - min) / 2);
+  const limit = Math.max(0, (room - margin * 2 - min) / 2);
   return Math.max(-limit, Math.min(limit, offset));
 };
 
@@ -76,15 +96,27 @@ export const fitOffsetsToViewport = (
   position: string,
   offsetX: number,
   offsetY: number,
-  viewport: { width: number; height: number },
+  viewport: ViewportSize,
   reservedHeight = 0,
 ): [number, number] => {
   if (position === 'center') {
     return [offsetX, offsetY];
   }
   return [
-    fitOffset(isAnchoredX(position), offsetX, viewport.width, MIN_SURFACE_WIDTH),
-    fitOffset(isAnchoredY(position), offsetY, viewport.height - reservedHeight, MIN_SURFACE_HEIGHT),
+    fitOffset(
+      isAnchoredX(position),
+      offsetX,
+      viewport.width,
+      MIN_SURFACE_WIDTH,
+      SURFACE_VIEWPORT_MARGIN,
+    ),
+    fitOffset(
+      isAnchoredY(position),
+      offsetY,
+      viewport.height - reservedHeight,
+      MIN_SURFACE_HEIGHT,
+      surfaceMarginY(viewport.width),
+    ),
   ];
 };
 
@@ -94,8 +126,12 @@ export const fitOffsetsToViewport = (
  * is less than the viewport whenever the target is not at its edge. Returns
  * whether that room is below the minimum the surface keeps.
  */
-export const applyAvailableHeight = (floating: HTMLElement, availableHeight: number) => {
-  const room = Math.floor(availableHeight) - SURFACE_VIEWPORT_MARGIN;
+export const applyAvailableHeight = (
+  floating: HTMLElement,
+  availableHeight: number,
+  marginY: number,
+) => {
+  const room = Math.floor(availableHeight) - marginY;
   floating.style.setProperty(
     SURFACE_AVAILABLE_HEIGHT_VAR,
     `${Math.max(MIN_SURFACE_HEIGHT, room)}px`,

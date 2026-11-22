@@ -12,8 +12,8 @@ import { cn } from '@usertour/tailwind';
 import { Frame, useFrame } from '@usertour/frame';
 import { type AvatarComponent } from '@usertour/icons';
 import { computePositionStyle } from './utils/position';
-import { computeViewportClampStyle } from './utils/viewport';
-import { useViewportFitOffsets } from './hooks/use-viewport-fit-offsets';
+import { computeViewportClampStyle, fitOffsetsToViewport } from './utils/viewport';
+import { useViewportSize } from './hooks/use-viewport-size';
 import { usePopperContext } from './popper-context';
 import { useBubbleExpandAnimation } from './hooks';
 import { WidgetClass } from './class-names';
@@ -176,10 +176,12 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
     // Calculate padding for avatar and notch space (0 when avatar is hidden)
     const avatarSpacePadding = showAvatar ? avatarSize + notchSize : 0;
 
-    const [offsetX, offsetY] = useViewportFitOffsets(
+    const viewport = useViewportSize();
+    const [offsetX, offsetY] = fitOffsetsToViewport(
       position,
       positionOffsetX,
       positionOffsetY,
+      viewport,
       avatarSpacePadding,
     );
     const style = computePositionStyle(position, offsetX, offsetY);
@@ -210,7 +212,7 @@ const PopperBubblePortal = forwardRef<HTMLDivElement, PopperBubblePortalProps>(
           data-usertour-popper-content-wrapper=""
           style={{
             ...style,
-            ...computeViewportClampStyle(position, offsetX, offsetY, avatarSpacePadding),
+            ...computeViewportClampStyle(viewport, position, offsetX, offsetY, avatarSpacePadding),
             width: width,
             zIndex: enabledBackdrop ? zIndex + 1 : zIndex,
           }}
