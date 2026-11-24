@@ -19,22 +19,10 @@ import {
 } from './_support';
 
 /**
- * Room sync must respect each connection's own page context.
- *
- * When content starts in one tab the server syncs it to every other connection
- * in the user's room (runRoomSyncJob). That sync delivers the originating
- * session verbatim, so without a per-connection check a hide rule excluding the
- * target tab's page is bypassed: an already-open tab shows content it would
- * never be sent on a fresh load. Covers flows and banners, since the leak is
- * above the content-type dispatch.
- *
- * The reverse holds too: a tab where the content is hidden must not end it in
- * the tabs where it shows.
- *
- * Show-only content (banners) has no hide rules to author, so its visibility
- * rests on its show rules holding on the current page — the fan-out gates on
- * those instead. Flows deliberately keep the looser hide-rules-only gate,
- * because a multi-page flow continues onto pages its start rules never matched.
+ * Room sync delivers a session to the user's other tabs, but each tab still
+ * honours its own page: hide rules for every content type, and show rules for
+ * banners. Flows are not gated on start rules, so a multi-page flow keeps
+ * syncing.
  */
 describe('WebSocket v2 cross-socket activation honours per-socket page conditions (e2e)', () => {
   let harness: WebSocketTestApp;
@@ -248,10 +236,7 @@ describe('WebSocket v2 cross-socket activation honours per-socket page condition
     });
     expect(ack).toBe(true);
 
-    // The originating tab is on an allowed page, so it receives the session.
     await startingTab.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION);
-
-    // The tab sitting on the excluded page must not be pushed the session.
     await expect(
       hiddenTab.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION, 1500),
     ).rejects.toThrow(/Timed out/);
@@ -267,7 +252,6 @@ describe('WebSocket v2 cross-socket activation honours per-socket page condition
     });
     expect(ack).toBe(true);
 
-    // Cross-tab sync within allowed pages is intended behaviour and must keep working.
     await expect(
       otherAllowedTab.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION),
     ).resolves.toMatchObject({ kind: ServerMessageKind.SET_FLOW_SESSION });
@@ -300,8 +284,6 @@ describe('WebSocket v2 cross-socket activation honours per-socket page condition
     expect(ack).toBe(true);
     await startingTab.waitForServerMessage(ServerMessageKind.SET_BANNER_SESSION);
 
-    // A banner is only ever visible while its show rules hold, so a tab those
-    // rules do not reach must not be pushed the session.
     await expect(
       hiddenTab.waitForServerMessage(ServerMessageKind.SET_BANNER_SESSION, 1500),
     ).rejects.toThrow(/Timed out/);
@@ -322,10 +304,7 @@ describe('WebSocket v2 cross-socket activation honours per-socket page condition
     ).resolves.toMatchObject({ kind: ServerMessageKind.SET_BANNER_SESSION });
   });
 
-  // Characterisation test: pins the deliberate asymmetry between content types.
-  // Flows are gated on hide rules only, so unmatched start rules do not block
-  // the fan-out. Passes with or without the show-only gate; it fails if a future
-  // change extends that gate to every content type.
+  // Fails if the banner show-rule gate is ever extended to flows.
   it('still activates a flow on another socket whose page does not match its start rules', async () => {
     const hiddenTab = await connectOnPage(HIDDEN_PAGE);
     const startingTab = await connectOnPage(ALLOWED_PAGE);
@@ -336,8 +315,6 @@ describe('WebSocket v2 cross-socket activation honours per-socket page condition
     });
     expect(ack).toBe(true);
 
-    // Multi-page flows legitimately continue onto pages their start rules never
-    // matched, so the tab on the unmatched page still receives the session.
     await expect(
       hiddenTab.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION),
     ).resolves.toMatchObject({ kind: ServerMessageKind.SET_FLOW_SESSION });
@@ -395,8 +372,7 @@ describe('WebSocket v2 cross-socket activation honours per-socket page condition
       hiddenTab.waitForServerMessage(ServerMessageKind.SET_FLOW_SESSION, 1500),
     ).rejects.toThrow(/Timed out/);
 
-    // Skipping the sync must not lose the session: once the tab leaves the
-    // hidden page, its own evaluation resumes the flow.
+    // Skipping the sync must not lose the session.
     expect(
       await hiddenTab.sendClientMessage(ClientMessageKind.UPDATE_CLIENT_CONTEXT, {
         pageUrl: OTHER_ALLOWED_PAGE,

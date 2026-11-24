@@ -1439,9 +1439,7 @@ export class ContentOrchestratorService {
       return false;
     }
     if (job.kind === 'activate') {
-      // The sender evaluated the session against its own page, which says
-      // nothing about where this connection is: re-check against this one's
-      // context before delivering.
+      // The sender judged the session against its own page, not this one's.
       if (!(await this.isActivationAllowedOnSocket(socketData, job.session))) {
         this.logger.debug(
           `Skipping room sync activation, session ${job.session.id} is not allowed on this connection's page`,
@@ -1470,20 +1468,11 @@ export class ContentOrchestratorService {
   }
 
   /**
-   * Whether a synced session may be activated on this connection, judged by
-   * this connection's own page context rather than the sender's.
-   *
-   * Without it a hide rule excluding this tab's page is bypassed: an open tab
-   * shows content it would never be sent on a fresh load. Applies to every
-   * content type, since the check sits above the type dispatch.
-   *
-   * Gates on hide rules only. Requiring auto-start rules to match here would
-   * break multi-page flows, which continue onto pages their start rules never
-   * matched. Show-only types (banners) are the exception: they have no hide
-   * rules to author and are visible only while their show rules hold, so the
-   * sync honours those instead.
-   *
-   * @param socketData - This connection's socket data, with its own clientContext
+   * Whether a synced session may be activated on this connection, judged by its
+   * own page rather than the sender's. Hide rules gate every content type, and
+   * show-only types (banners) also need their show rules to hold. Flows are not
+   * gated on start rules, since a multi-page flow continues past them.
+   * @param socketData - This connection's socket data
    * @param session - The session being synced
    * @returns True when activation may proceed
    */
@@ -1498,9 +1487,7 @@ export class ContentOrchestratorService {
       session.version.id,
     );
 
-    // A version this connection cannot resolve (e.g. outside its company's
-    // scope) fails closed: the tab picks the session up on its next message,
-    // which goes through the evaluating path.
+    // Fails closed; the connection picks the session up on its next evaluation.
     if (!evaluatedVersion) {
       return false;
     }
