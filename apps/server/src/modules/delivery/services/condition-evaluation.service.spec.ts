@@ -45,8 +45,7 @@ describe('ConditionEvaluationService', () => {
       id: 'biz-user-1',
       // The model field is `externalId` (prisma: BizUser.externalId) and the
       // CONDITION-segment path reads it directly. The fixture used to carry
-      // `externalUserId`, a name that exists only as a local in
-      // web-socket.service.ts — no code reads it off a BizUser, and the `as
+      // `externalUserId`, a name that no code reads off a BizUser, and the `as
       // any` cast hid the mismatch.
       externalId: 'user-1',
       externalCompanyId: 'company-1',

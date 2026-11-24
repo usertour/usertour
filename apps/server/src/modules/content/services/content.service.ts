@@ -7,7 +7,6 @@ import type { ContentChanges } from '../types/content-changes.type';
 import type { NewContent } from '../types/new-content.type';
 import type { NewContentVersion } from '../types/new-content-version.type';
 import type { VersionUpdate } from '../types/version-update.type';
-import { WebSocketGateway } from '@/web-socket/web-socket.gateway';
 import { WebSocketV2Gateway } from '@/web-socket/v2/web-socket-v2.gateway';
 import { findManyCursorConnection } from '@devoxa/prisma-relay-cursor-connection';
 import { Prisma } from '@prisma/client';
@@ -88,7 +87,6 @@ export interface VersionLocalizationWrite {
 export class ContentService {
   constructor(
     private prisma: PrismaService,
-    private webSocketGateway: WebSocketGateway,
     private webSocketV2Gateway: WebSocketV2Gateway,
     private readonly cache: ProjectCacheService,
     private readonly eventEmitter: EventEmitter2,
