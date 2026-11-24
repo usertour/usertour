@@ -1439,6 +1439,15 @@ export class ContentOrchestratorService {
       return false;
     }
     if (job.kind === 'activate') {
+      // The sender evaluated the session against its own page, which says
+      // nothing about where this connection is: re-check against this one's
+      // context before delivering.
+      if (!(await this.isActivationAllowedOnSocket(socketData, job.session))) {
+        this.logger.debug(
+          `Skipping room sync activation, session ${job.session.id} is not allowed on this connection's page`,
+        );
+        return false;
+      }
       return await this.activateSocketSession({
         server,
         socket,
@@ -1458,6 +1467,47 @@ export class ContentOrchestratorService {
       setLastDismissedId: job.setLastDismissedId,
       trackConditions: job.trackConditions,
     });
+  }
+
+  /**
+   * Whether a synced session may be activated on this connection, judged by
+   * this connection's own page context rather than the sender's.
+   *
+   * Without it a hide rule excluding this tab's page is bypassed: an open tab
+   * shows content it would never be sent on a fresh load. Applies to every
+   * content type, since the check sits above the type dispatch.
+   *
+   * Gates on hide rules only. Requiring auto-start rules to match here would
+   * break multi-page flows, which continue onto pages their start rules never
+   * matched. Show-only types (banners) are the exception: they have no hide
+   * rules to author and are visible only while their show rules hold, so the
+   * sync honours those instead.
+   *
+   * @param socketData - This connection's socket data, with its own clientContext
+   * @param session - The session being synced
+   * @returns True when activation may proceed
+   */
+  private async isActivationAllowedOnSocket(
+    socketData: SocketData,
+    session: CustomContentSession,
+  ): Promise<boolean> {
+    const contentType = session.content.type as ContentDataType;
+    const evaluatedVersion = await this.findEvaluatedContentVersion(
+      socketData,
+      contentType,
+      session.version.id,
+    );
+
+    // A version this connection cannot resolve (e.g. outside its company's
+    // scope) fails closed: the tab picks the session up on its next message,
+    // which goes through the evaluating path.
+    if (!evaluatedVersion) {
+      return false;
+    }
+    if (isShowOnlyContentType(contentType) && !isActivedAutoStartRules(evaluatedVersion)) {
+      return false;
+    }
+    return !isActivedHideRules(evaluatedVersion);
   }
 
   // ============================================================================
