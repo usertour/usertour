@@ -13,7 +13,7 @@ import {
   buildProject,
   buildSegment,
 } from '../factories';
-import { WebSocketService } from '@/web-socket/web-socket.service';
+import { ConditionEvaluationService } from '@/modules/delivery/services/condition-evaluation.service';
 import { buildAuthorizedUser, teardownProject } from '../gql/_support';
 import { createTestApp } from '../create-test-app';
 
@@ -505,19 +505,25 @@ describe('API v2 segments (e2e)', () => {
     // ...and one with no membership at all.
     const outsider = await buildBizUser(prisma, { environmentId, data: {} });
 
-    const ws = app.get(WebSocketService);
+    const evaluator = app.get(ConditionEvaluationService);
     const environment = await prisma.environment.findUniqueOrThrow({
       where: { id: environmentId },
     });
-    const attributes = (await prisma.attribute.findMany({ where: { projectId } })) as never;
+    const attributes = await prisma.attribute.findMany({ where: { projectId } });
     const rules = { type: 'segment', data: { segmentId: seg.body.id, logic: 'is' } } as never;
+    const isActivated = async (bizUser: typeof insider, externalCompanyId?: string) => {
+      const [evaluated] = await evaluator.evaluateRulesConditions([rules], {
+        environment,
+        attributes,
+        bizUser,
+        externalCompanyId,
+      });
+      return evaluated.actived;
+    };
 
-    expect(await ws.activedUserSegmentRulesCondition(rules, environment, attributes, insider)).toBe(
-      true,
-    );
-    expect(
-      await ws.activedUserSegmentRulesCondition(rules, environment, attributes, outsider),
-    ).toBe(false);
+    // The runtime binds company leaves to the session's current company.
+    expect(await isActivated(insider, acme.externalId)).toBe(true);
+    expect(await isActivated(outsider)).toBe(false);
   });
 
   it('deletes a segment (204), then 404', async () => {
