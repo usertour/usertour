@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerStorageService } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
-import { WebSocketGateway } from './web-socket.gateway';
-import { WebSocketService } from './web-socket.service';
-import { WebSocketPerformanceInterceptor } from './web-socket.interceptor';
 import { WebSocketTraceInterceptor } from './web-socket-trace.interceptor';
 import { BizModule } from '@/modules/biz/biz.module';
 import { LicenseModule } from '@/modules/license/license.module';
@@ -26,9 +23,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
 @Module({
   imports: [DeliveryModule, BizModule, LicenseModule, ProjectsModule, CommonModule, ConfigModule],
   providers: [
-    WebSocketGateway,
-    WebSocketService,
-    WebSocketPerformanceInterceptor,
     WebSocketTraceInterceptor,
     WebSocketV2Gateway,
     WebSocketV2Service,
@@ -51,6 +45,6 @@ import { WebSocketV2MessageHandler } from './v2/web-socket-v2-message-handler';
     WebSocketV2MessageHandler,
   ],
   // DeliveryModule is re-exported: the api and mcp modules reach the runtime through this module.
-  exports: [WebSocketGateway, WebSocketV2Gateway, DeliveryModule],
+  exports: [WebSocketV2Gateway, DeliveryModule],
 })
 export class WebSocketModule {}

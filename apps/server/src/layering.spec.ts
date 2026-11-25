@@ -39,10 +39,9 @@ const LAYERS: Record<string, Layer> = {
  * it is fixed. Adding an entry is the one move reviewers must question.
  */
 const KNOWN_VIOLATIONS: readonly string[] = [
-  // 1. content pushes to the websocket gateways directly
+  // 1. content pushes to the websocket gateway directly
   'modules/content/content.module.ts -> web-socket/web-socket.module',
   'modules/content/services/content.service.ts -> web-socket/v2/web-socket-v2.gateway',
-  'modules/content/services/content.service.ts -> web-socket/web-socket.gateway',
   // 2. integrations and outbound webhooks build payloads with REST v2 mappers
   'modules/integrations/listeners/integrations.listener.ts -> api/events/event.mapper',
   'modules/integrations/services/integrations.service.ts -> api/shared/object-type',
