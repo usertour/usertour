@@ -77,6 +77,13 @@ export interface Usertour {
    * Room to keep clear at the edges of the page when a tooltip's target is
    * scrolled into view, e.g. `{ top: 64 }` under a fixed 64px header. `null`
    * clears it. Not used while a `setCustomScrollIntoView` callback is set.
+   *
+   * It applies when at least one side is a positive number and scrolling the
+   * page itself is all it takes to reach the target; it then stands in for any
+   * CSS `scroll-padding` on the page. Otherwise the browser does the scroll and
+   * keeps the page's CSS `scroll-padding` clear instead: when no side is
+   * positive (`{ top: 0 }` is the same as `null`), and when the target has to
+   * be scrolled inside a scrolling container or a frame.
    */
   setScrollPadding(scrollPadding: ScrollPadding | null): void;
 
