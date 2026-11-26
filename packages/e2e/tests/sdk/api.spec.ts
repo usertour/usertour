@@ -661,6 +661,65 @@ test.describe('stacking and scrolling', () => {
     expect(await sdk.logLines(/scroll-into-view callback threw/)).toHaveLength(1);
     expect(protocol.messages('EndContent')).toHaveLength(0);
   });
+
+  test.describe('setScrollPadding()', () => {
+    const addFarTarget = (page: Page, height: number) =>
+      page.evaluate((height) => {
+        const spacer = document.createElement('div');
+        spacer.style.height = '3000px';
+        const target = document.createElement('div');
+        target.id = 'far-target';
+        target.style.height = `${height}px`;
+        target.textContent = 'Far away';
+        // Room below too, so the page can scroll the target to any spot.
+        document.body.append(spacer, target, spacer.cloneNode());
+      }, height);
+    const targetRect = (page: Page) =>
+      page.evaluate(() => {
+        const rect = (document.getElementById('far-target') as HTMLElement).getBoundingClientRect();
+        return { top: Math.round(rect.top), middle: Math.round(rect.top + rect.height / 2) };
+      });
+
+    test('a target that fits is centred in the part of the page the padding leaves', async ({
+      sdk,
+      protocol,
+      page,
+    }) => {
+      await start(sdk);
+      await addFarTarget(page, 40);
+      await sdk.call('setScrollPadding', { top: 100 });
+      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+      // The viewport is 800 high: below a 100 header, the middle is at 450, not 400.
+      await expect.poll(async () => (await targetRect(page)).middle).toBe(450);
+      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    });
+
+    test('a taller target lands its top under the padding, and the host’s own inline style is put back', async ({
+      sdk,
+      protocol,
+      page,
+    }) => {
+      await start(sdk);
+      await addFarTarget(page, 2000);
+      await page.evaluate(() => {
+        document.documentElement.style.scrollPaddingBottom = '7px';
+      });
+      await sdk.call('setScrollPadding', { top: 100 });
+      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+      await expect.poll(async () => (await targetRect(page)).top).toBe(100);
+      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+      expect(
+        await page.evaluate(() => ({
+          top: document.documentElement.style.scrollPaddingTop,
+          bottom: document.documentElement.style.scrollPaddingBottom,
+        })),
+      ).toEqual({ top: '', bottom: '7px' });
+    });
+  });
 });
 
 test.describe('setDebug()', () => {

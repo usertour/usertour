@@ -73,7 +73,12 @@ export interface Usertour {
 
   // setInferenceClassNameFilter(filters: StringFilters): void;
 
-  // setScrollPadding(scrollPadding: ScrollPadding | null): void;
+  /**
+   * Room to keep clear at the edges of the page when a tooltip's target is
+   * scrolled into view, e.g. `{ top: 64 }` under a fixed 64px header. `null`
+   * clears it. Not used while a `setCustomScrollIntoView` callback is set.
+   */
+  setScrollPadding(scrollPadding: ScrollPadding | null): void;
 
   setCustomScrollIntoView(scrollIntoView: ((el: Element) => void) | null): void;
 
@@ -283,12 +288,12 @@ export interface StartOptions {
   cvid?: string;
 }
 
-// interface ScrollPadding {
-//   top?: number;
-//   right?: number;
-//   bottom?: number;
-//   left?: number;
-// }
+export interface ScrollPadding {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+}
 
 // type StringFilter = ((className: string) => boolean) | RegExp;
 

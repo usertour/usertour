@@ -1,4 +1,3 @@
-import { smoothScroll } from '@usertour/dom';
 import {
   ContentEditorRoot,
   ContentEditorClickableElement,
@@ -25,6 +24,7 @@ import { rootsHaveButtonConditions } from '@/core/usertour-helper';
 import { SDKClientEvents, WidgetZIndex, defaultSettings } from '@usertour/constants';
 import { CommonActionHandler, TourActionHandler, ActionSource } from '@/core/action-handlers';
 import { UsertourTheme } from './usertour-theme';
+import { scrollTargetIntoView } from './usertour-scroll';
 
 const log = logger.scope('flow');
 /**
@@ -495,15 +495,16 @@ export class UsertourTour extends UsertourComponent<TourStore> {
     // Scroll element into view if tour is visible. The host's callback is
     // theirs: one that throws must not keep the step from showing.
     const customScrollIntoView = this.instance.getCustomScrollIntoView();
+    const scrollPadding = this.instance.getScrollPadding();
     if (customScrollIntoView) {
       try {
         customScrollIntoView(el);
       } catch (error) {
         log.error('The custom scroll-into-view callback threw; scrolling the default way', error);
-        smoothScroll(el, { block: 'center' });
+        scrollTargetIntoView(el, scrollPadding);
       }
     } else {
-      smoothScroll(el, { block: 'center' });
+      scrollTargetIntoView(el, scrollPadding);
     }
 
     this.setStoreData({

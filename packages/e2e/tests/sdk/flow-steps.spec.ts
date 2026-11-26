@@ -876,6 +876,34 @@ test.describe('the tooltip target', () => {
     await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
   });
 
+  test('a target taller than the viewport is scrolled in by its top, not its middle', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      const table = document.createElement('div');
+      table.id = 'tall';
+      table.style.height = '2000px';
+      table.textContent = 'A long table';
+      document.body.append(spacer, table);
+    });
+    await showTooltip(protocol, '#tall');
+    for (let tick = 0; tick < 10; tick++) {
+      await sdk.advance(200);
+    }
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(() =>
+          Math.round((document.getElementById('tall') as HTMLElement).getBoundingClientRect().top),
+        ),
+      )
+      .toBe(0);
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
   test('clicking the target runs the step’s target actions', async ({ sdk, protocol }) => {
     await start(sdk);
     const session = structuredClone(twoStepFlow('session-1', 'flow-1'));

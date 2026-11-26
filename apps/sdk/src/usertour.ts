@@ -17,7 +17,7 @@ type QueueItem = [string, Deferred | null, unknown[]];
 
 /**
  * Replace loader stubs left on the merged object by methods this SDK build
- * doesn't implement (e.g. setScrollPadding, setServerEndpoint — the loader
+ * doesn't implement (e.g. setServerEndpoint, setShadowDomEnabled — the loader
  * stubs the full historical API surface).
  *
  * This is load-bearing, not cosmetic: a leftover stub still closes over the
@@ -206,6 +206,10 @@ function createUsertourAPI(app: UsertourCore): UserTourTypes.Usertour {
 
     setCustomScrollIntoView: (customScrollIntoView: ((el: Element) => void) | null) => {
       app.setCustomScrollIntoView(customScrollIntoView);
+    },
+
+    setScrollPadding: (scrollPadding: UserTourTypes.ScrollPadding | null) => {
+      app.setScrollPadding(scrollPadding);
     },
 
     setUrlFilter: (urlFilter: ((url: string) => string) | null) => {
