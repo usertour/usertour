@@ -81,30 +81,49 @@ const project = (box: Box, frame: Box, scale: { x: number; y: number }): Box => 
 });
 
 /**
+ * A computed scroll-padding value in pixels: `auto`, a length, a percentage of
+ * `size`, or a `calc()` the browser has reduced to a sum of those. Null for
+ * anything else (`min()`, `clamp()`…): only the browser can tell how much that is.
+ */
+const paddingInPx = (value: string | undefined, size: number): number | null => {
+  const text = (value ?? '').trim();
+  if (text === '' || text === 'auto') {
+    return 0;
+  }
+  const tokens = (/^calc\((.*)\)$/.exec(text)?.[1] ?? text).trim().split(/\s+/);
+  let total = 0;
+  let sign = 1;
+  for (let index = 0; index < tokens.length; index++) {
+    const token = tokens[index];
+    if (index % 2 === 1) {
+      if (token !== '+' && token !== '-') {
+        return null;
+      }
+      sign = token === '-' ? -1 : 1;
+      continue;
+    }
+    const term = /^(-?\d*\.?\d+(?:e[+-]?\d+)?)(px|%)$/.exec(token);
+    if (!term) {
+      return null;
+    }
+    total += sign * (term[2] === '%' ? (Number(term[1]) / 100) * size : Number(term[1]));
+  }
+  return tokens.length % 2 === 1 ? Math.max(total, 0) : null;
+};
+
+/**
  * The scroll-padding the host's own CSS sets on the page (read, never written),
  * which the browser keeps clear when it scrolls something into view. Null when
- * a side is neither `auto`, a length in px nor a percentage (a `calc()` mixing
- * the two, say): only the browser can tell how much that is.
+ * a side cannot be worked out here.
  */
 const hostScrollPadding = (): ScrollPadding | null => {
   const style = window?.getComputedStyle(window.document.documentElement);
   const height = window?.innerHeight ?? 0;
   const width = window?.innerWidth ?? 0;
-  const px = (value: string | undefined, size: number) => {
-    const text = (value ?? '').trim();
-    if (text === '' || text === 'auto') {
-      return 0;
-    }
-    const match = /^(\d*\.?\d+)(px|%)$/.exec(text);
-    if (!match) {
-      return null;
-    }
-    return match[2] === '%' ? (Number(match[1]) / 100) * size : Number(match[1]);
-  };
-  const top = px(style?.scrollPaddingTop, height);
-  const right = px(style?.scrollPaddingRight, width);
-  const bottom = px(style?.scrollPaddingBottom, height);
-  const left = px(style?.scrollPaddingLeft, width);
+  const top = paddingInPx(style?.scrollPaddingTop, height);
+  const right = paddingInPx(style?.scrollPaddingRight, width);
+  const bottom = paddingInPx(style?.scrollPaddingBottom, height);
+  const left = paddingInPx(style?.scrollPaddingLeft, width);
   return top === null || right === null || bottom === null || left === null
     ? null
     : { top, right, bottom, left };

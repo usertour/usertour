@@ -769,7 +769,7 @@ test.describe('stacking and scrolling', () => {
       await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
     });
 
-    test('a host scroll-padding that only the browser can work out is left to the browser', async ({
+    test('a host scroll-padding written as calc() counts like any other', async ({
       sdk,
       protocol,
       page,
@@ -778,6 +778,43 @@ test.describe('stacking and scrolling', () => {
       await addFarTarget(page, 40);
       await page.evaluate(() => {
         document.documentElement.style.scrollPaddingTop = 'calc(10% + 80px)';
+      });
+      // The host's is 160px of the 800px viewport: ours is the larger one.
+      await sdk.call('setScrollPadding', { top: 240 });
+      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+      await expect.poll(async () => (await targetRect(page)).middle).toBe(520);
+      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    });
+
+    test('a target taller than what the host’s calc() scroll-padding leaves lands its top under it', async ({
+      sdk,
+      protocol,
+      page,
+    }) => {
+      await start(sdk);
+      // It fits the 800px viewport, but not the 640px left under the host's 160px.
+      await addFarTarget(page, 700);
+      await page.evaluate(() => {
+        document.documentElement.style.scrollPaddingTop = 'calc(10% + 80px)';
+      });
+      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+      await expect.poll(async () => (await targetRect(page)).top).toBe(160);
+      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    });
+
+    test('a host scroll-padding that only the browser can work out is left to the browser', async ({
+      sdk,
+      protocol,
+      page,
+    }) => {
+      await start(sdk);
+      await addFarTarget(page, 40);
+      await page.evaluate(() => {
+        document.documentElement.style.scrollPaddingTop = 'min(20%, 160px)';
       });
       await sdk.call('setScrollPadding', { top: 64 });
       await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
