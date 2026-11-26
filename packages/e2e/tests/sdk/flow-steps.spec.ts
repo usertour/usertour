@@ -904,6 +904,42 @@ test.describe('the tooltip target', () => {
     await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
   });
 
+  test('a target taller than its scrolling container is scrolled in by the container’s top', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const box = document.createElement('div');
+      box.id = 'box';
+      box.style.cssText = 'height: 200px; overflow: auto';
+      const spacer = document.createElement('div');
+      spacer.style.height = '1000px';
+      const tall = document.createElement('div');
+      tall.id = 'tall';
+      tall.style.height = '600px';
+      tall.textContent = 'A long list';
+      box.append(spacer, tall, spacer.cloneNode());
+      document.body.prepend(box);
+    });
+    await showTooltip(protocol, '#tall');
+    for (let tick = 0; tick < 10; tick++) {
+      await sdk.advance(200);
+    }
+    // It fits the 800px page, but not the 200px box: centred in the box, its top would be cut off.
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(
+          () =>
+            Math.round(
+              (document.getElementById('tall') as HTMLElement).getBoundingClientRect().top,
+            ) -
+            Math.round((document.getElementById('box') as HTMLElement).getBoundingClientRect().top),
+        ),
+      )
+      .toBe(0);
+  });
+
   test('clicking the target runs the step’s target actions', async ({ sdk, protocol }) => {
     await start(sdk);
     const session = structuredClone(twoStepFlow('session-1', 'flow-1'));
