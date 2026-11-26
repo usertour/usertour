@@ -81,7 +81,7 @@ const elementRule = (operators: Join = 'and'): Cond => ({
   type: 'element',
   data: {
     logic: 'present',
-    elementData: { selectors: '#cta', type: 'auto', precision: 'loose', content: '' },
+    elementData: { customSelector: '#cta', type: 'manual', precision: 'loose', content: '' },
   },
   operators,
 });

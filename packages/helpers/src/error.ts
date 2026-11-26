@@ -16,18 +16,7 @@ import { isTimeConditionDataV2, isTimeConditionDataLegacy } from './conditions/t
 // condition is incomplete — user-facing messaging lives in the i18n'd
 // validators in apps/web/src/components/conditions.
 
-const isValidSelector = (selector: ElementSelectorPropsData) => {
-  if (!selector) {
-    return false;
-  }
-  if (selector.type === 'auto' && !selector.selectors) {
-    return false;
-  }
-  if (selector.type === 'manual' && !selector.customSelector) {
-    return false;
-  }
-  return true;
-};
+const isValidSelector = (selector: ElementSelectorPropsData) => Boolean(selector?.customSelector);
 
 const getUserAttrError = (data: RulesUserAttributeData | undefined, attributes: Attribute[]) => {
   const ret = { showError: false };

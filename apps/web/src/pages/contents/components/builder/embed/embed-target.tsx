@@ -69,12 +69,8 @@ const EmbedTargetBody = () => {
         }
         const nextTarget = { ...previous.targetElement, ...value };
         let nextType = nextTarget.type;
-        if (!nextType) {
-          if (value.customSelector) {
-            nextType = 'manual';
-          } else if (value.selectors) {
-            nextType = 'auto';
-          }
+        if (!nextType && value.customSelector) {
+          nextType = 'manual';
         }
         return {
           ...previous,

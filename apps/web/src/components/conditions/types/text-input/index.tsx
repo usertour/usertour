@@ -17,7 +17,7 @@ export interface TextInputData {
 }
 
 const DEFAULT_ELEMENT_DATA: ElementSelectorPropsData = {
-  type: 'auto',
+  type: 'manual',
   precision: 'strict',
   isDynamicContent: false,
   sequence: '1st',
@@ -46,12 +46,8 @@ const writeData = (condition: RulesCondition, patch: Partial<TextInputData>): Ru
   data: { ...readData(condition), ...patch },
 });
 
-const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean => {
-  if (!data) return false;
-  if (data.type === 'auto') return Boolean(data.selectors);
-  if (data.type === 'manual') return Boolean(data.customSelector);
-  return false;
-};
+const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean =>
+  Boolean(data?.customSelector);
 
 // ---------- Summary ----------
 

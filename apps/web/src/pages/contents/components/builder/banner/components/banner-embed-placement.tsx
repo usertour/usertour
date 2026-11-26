@@ -34,12 +34,8 @@ export const BannerEmbedPlacementSelect = () => {
       const nextContainer = { ...localData.containerElement, ...value };
       let nextType = nextContainer.type;
 
-      if (!nextType) {
-        if (value.customSelector) {
-          nextType = 'manual';
-        } else if (value.selectors) {
-          nextType = 'auto';
-        }
+      if (!nextType && value.customSelector) {
+        nextType = 'manual';
       }
 
       updateLocalData({

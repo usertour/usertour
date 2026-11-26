@@ -91,16 +91,11 @@ export type EventAttrShape = UserAttrShape;
 
 // ---------- Helpers ----------
 
-// Mirrors v1 helpers/error.ts `isValidSelector` and the runtime contract in
-// finder finderV2 — auto needs the captured selectors tree to query
-// against, manual needs an actual CSS customSelector. content alone is just
+// Mirrors helpers/error.ts `isValidSelector` and the runtime finderV2, which
+// resolves a target only by its CSS customSelector. content alone is just
 // label text and the runtime ignores it without a selector to anchor on.
-const isElementSelected = (data: ElementShape['elementData']): boolean => {
-  if (!data) return false;
-  if (data.type === 'auto') return Boolean(data.selectors);
-  if (data.type === 'manual') return Boolean(data.customSelector);
-  return false;
-};
+const isElementSelected = (data: ElementShape['elementData']): boolean =>
+  Boolean(data?.customSelector);
 
 const cleanList = (values: string[] | undefined): string[] =>
   (values ?? []).map((v) => v.trim()).filter((v) => v !== '');

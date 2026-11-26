@@ -260,11 +260,7 @@ export const FlowBuilderDetailFooter = () => {
       });
       return;
     }
-    if (
-      currentStep.type === StepContentType.TOOLTIP &&
-      ((currentStep.target?.type === 'auto' && !currentStep.target?.selectors) ||
-        (currentStep.target?.type === 'manual' && !currentStep.target?.customSelector))
-    ) {
+    if (currentStep.type === StepContentType.TOOLTIP && !currentStep.target?.customSelector) {
       setIsShowError(true);
       return;
     }
