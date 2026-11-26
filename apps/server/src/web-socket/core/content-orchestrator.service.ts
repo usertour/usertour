@@ -1439,6 +1439,13 @@ export class ContentOrchestratorService {
       return false;
     }
     if (job.kind === 'activate') {
+      // The sender judged the session against its own page, not this one's.
+      if (!(await this.isActivationAllowedOnSocket(socketData, job.session))) {
+        this.logger.debug(
+          `Skipping room sync activation, session ${job.session.id} is not allowed on this connection's page`,
+        );
+        return false;
+      }
       return await this.activateSocketSession({
         server,
         socket,
@@ -1458,6 +1465,36 @@ export class ContentOrchestratorService {
       setLastDismissedId: job.setLastDismissedId,
       trackConditions: job.trackConditions,
     });
+  }
+
+  /**
+   * Whether a synced session may be activated on this connection, judged by its
+   * own page rather than the sender's. Hide rules gate every content type, and
+   * show-only types (banners) also need their show rules to hold. Flows are not
+   * gated on start rules, since a multi-page flow continues past them.
+   * @param socketData - This connection's socket data
+   * @param session - The session being synced
+   * @returns True when activation may proceed
+   */
+  private async isActivationAllowedOnSocket(
+    socketData: SocketData,
+    session: CustomContentSession,
+  ): Promise<boolean> {
+    const contentType = session.content.type as ContentDataType;
+    const evaluatedVersion = await this.findEvaluatedContentVersion(
+      socketData,
+      contentType,
+      session.version.id,
+    );
+
+    // Fails closed; the connection picks the session up on its next evaluation.
+    if (!evaluatedVersion) {
+      return false;
+    }
+    if (isShowOnlyContentType(contentType) && !isActivedAutoStartRules(evaluatedVersion)) {
+      return false;
+    }
+    return !isActivedHideRules(evaluatedVersion);
   }
 
   // ============================================================================
