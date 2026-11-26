@@ -28,7 +28,7 @@ export interface BaseStore {
 
 // Tour store type
 export type TourStore = BaseStore & {
-  triggerRef?: any;
+  triggerRef?: Element | null;
   currentStep: Step | undefined;
   progress: number;
   currentStepIndex?: number; // Current step number (0-based)
@@ -44,7 +44,7 @@ export type ChecklistStore = BaseStore & {
 // Launcher store type
 export type LauncherStore = BaseStore & {
   launcherData?: LauncherData;
-  triggerRef?: any;
+  triggerRef?: Element | null;
 };
 
 // Banner store type

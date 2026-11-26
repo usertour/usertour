@@ -226,7 +226,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
           this.setStoreData({
             ...store,
             openState: isVisibleNode(el),
-            triggerRef: el as HTMLElement,
+            triggerRef: el,
           });
           log.debug('Target element handed off to the beacon');
         } else {
@@ -292,7 +292,7 @@ export class UsertourLauncher extends UsertourComponent<LauncherStore> {
         false,
       );
     } else {
-      this.setStoreData({ ...store, openState: true, triggerRef: el as HTMLElement });
+      this.setStoreData({ ...store, openState: true, triggerRef: el });
     }
   }
 

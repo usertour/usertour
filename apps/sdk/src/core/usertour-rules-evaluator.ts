@@ -31,7 +31,7 @@ type TextInputElement = HTMLInputElement | HTMLTextAreaElement | Element;
  * Click cache entry for tracking element click state
  */
 interface ClickCacheEntry {
-  element: HTMLElement;
+  element: Element;
   clicked: boolean;
   handler: () => void;
 }
@@ -199,7 +199,7 @@ export class RulesEvaluator extends Evented {
    * @param ruleId - The rule ID used as cache key
    * @param el - The target element to track clicks on
    */
-  private isClicked(ruleId: string, el: HTMLElement): boolean {
+  private isClicked(ruleId: string, el: Element): boolean {
     const cached = this.clickCache.get(ruleId);
 
     if (cached) {
@@ -227,7 +227,7 @@ export class RulesEvaluator extends Evented {
   /**
    * Creates a click handler for click cache
    */
-  private createClickHandler(ruleId: string, el: HTMLElement): () => void {
+  private createClickHandler(ruleId: string, el: Element): () => void {
     const handler = () => {
       const cacheData = this.clickCache.get(ruleId);
       if (cacheData) {
@@ -241,7 +241,7 @@ export class RulesEvaluator extends Evented {
   /**
    * Check if an element is disabled
    */
-  private isDisabled(el: HTMLElement | null): boolean {
+  private isDisabled(el: Element | null): boolean {
     if (!el) {
       return false;
     }

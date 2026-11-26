@@ -20,7 +20,7 @@ export const getEffectiveTriggerElement = (data: LauncherData): LauncherTriggerE
 export const useEventHandlers = (
   data: LauncherData | undefined,
   launcherRef: React.RefObject<HTMLDivElement>,
-  triggerRef: React.RefObject<HTMLElement | undefined>,
+  triggerRef: React.RefObject<Element>,
   handlers: {
     handleClick: () => void;
     handleMouseEnter: () => void;
@@ -39,7 +39,7 @@ export const useEventHandlers = (
     const isClickTrigger = triggerEvent === LauncherTriggerEvent.CLICKED;
 
     // Bind events helper
-    const bindEvents = (element: HTMLElement) => {
+    const bindEvents = (element: Element) => {
       if (isClickTrigger) {
         on(element, 'click', handlers.handleClick);
       } else {
@@ -49,7 +49,7 @@ export const useEventHandlers = (
     };
 
     // Unbind events helper
-    const unbindEvents = (element: HTMLElement) => {
+    const unbindEvents = (element: Element) => {
       if (isClickTrigger) {
         off(element, 'click', handlers.handleClick);
       } else {

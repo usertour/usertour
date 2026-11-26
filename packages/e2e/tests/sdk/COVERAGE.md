@@ -91,6 +91,7 @@ its row.
 | Progress bar; branding unless `removeBranding` | ✓ flow-layout "the progress bar counts the steps…", "the branding line shows unless the project removes it" | — |
 | Selector + sequence across the page and frames; never `<head>` | ✓ flow.spec, iframe-targeting.spec | — |
 | A target's `content`: the matched element must have that text, or there is no target | ✓ flow-steps "a target pinned to the text…" | — |
+| An SVG element can be a target, including one pinned to its text | ✓ flow-steps "an SVG target pinned to its text gets the tooltip" | — |
 | A target that appears after the step opens | ✓ flow-steps "a target that appears after the step opens…" | — |
 | A target re-rendered by the page (replaced element) | ✓ flow-steps "a target the page re-renders keeps the tooltip…", iframe "a frame that navigates…" | — |
 | A target scrolled out of view (of the page, a scrolling container or a frame) hides the tooltip without a deadline; scrolled back, it reopens | ✓ flow "a tooltip whose target is scrolled out of the page…", iframe "…scrolled out above the box" | — |
