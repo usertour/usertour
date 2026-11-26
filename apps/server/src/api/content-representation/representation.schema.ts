@@ -17,8 +17,7 @@ import { ApiObjectType } from '../shared/object-type';
 // A target is a CSS `selector` (required), optionally narrowed by the element's
 // visible `text`, with `nth` to disambiguate when several elements match. This
 // mirrors how the runtime resolves a target (finderV2: querySelector + optional
-// innerText check + nth). A legacy "auto" selectors fingerprint is NOT authorable — an auto-only target decompiles
-// to undefined + hasUnsupported.
+// innerText check + nth).
 export const representationTarget = z.object({
   selector: z
     .string()
