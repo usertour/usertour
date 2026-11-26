@@ -740,6 +740,54 @@ test.describe('stacking and scrolling', () => {
       ).toEqual({ mutations: 0, top: '72px' });
     });
 
+    test('a target shown whole in a container below the fold is brought in with the page', async ({
+      sdk,
+      protocol,
+      page,
+    }) => {
+      await start(sdk);
+      await page.evaluate(() => {
+        const spacer = document.createElement('div');
+        spacer.style.height = '3000px';
+        const box = document.createElement('div');
+        box.style.cssText = 'height: 200px; overflow: auto';
+        const target = document.createElement('div');
+        target.id = 'far-target';
+        target.style.height = '40px';
+        target.textContent = 'At the top of a box that scrolls';
+        const filler = document.createElement('div');
+        filler.style.height = '1000px';
+        box.append(target, filler);
+        document.body.append(spacer, box, spacer.cloneNode());
+      });
+      await sdk.call('setScrollPadding', { top: 100 });
+      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+      // The box moves with the page: where it was before the scroll is not where the target can be seen.
+      await expect.poll(async () => (await targetRect(page)).middle).toBe(450);
+      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    });
+
+    test('a host scroll-padding that only the browser can work out is left to the browser', async ({
+      sdk,
+      protocol,
+      page,
+    }) => {
+      await start(sdk);
+      await addFarTarget(page, 40);
+      await page.evaluate(() => {
+        document.documentElement.style.scrollPaddingTop = 'calc(10% + 80px)';
+      });
+      await sdk.call('setScrollPadding', { top: 64 });
+      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
+      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+      // 160px of the 800px viewport: centred in what is left, not in what our 64 would leave.
+      await expect.poll(async () => (await targetRect(page)).middle).toBe(480);
+      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+    });
+
     test('a target already in view, clear of the padding, is not scrolled to', async ({
       sdk,
       protocol,

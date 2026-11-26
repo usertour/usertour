@@ -82,25 +82,32 @@ const project = (box: Box, frame: Box, scale: { x: number; y: number }): Box => 
 
 /**
  * The scroll-padding the host's own CSS sets on the page (read, never written),
- * which the browser keeps clear when it scrolls something into view.
+ * which the browser keeps clear when it scrolls something into view. Null when
+ * a side is neither `auto`, a length in px nor a percentage (a `calc()` mixing
+ * the two, say): only the browser can tell how much that is.
  */
-const hostScrollPadding = (): ScrollPadding => {
+const hostScrollPadding = (): ScrollPadding | null => {
   const style = window?.getComputedStyle(window.document.documentElement);
-  const px = (value: string | undefined, size: number) => {
-    const number = Number.parseFloat(value ?? '');
-    if (!Number.isFinite(number) || number <= 0) {
-      return 0;
-    }
-    return value?.trim().endsWith('%') ? (number / 100) * size : number;
-  };
   const height = window?.innerHeight ?? 0;
   const width = window?.innerWidth ?? 0;
-  return {
-    top: px(style?.scrollPaddingTop, height),
-    right: px(style?.scrollPaddingRight, width),
-    bottom: px(style?.scrollPaddingBottom, height),
-    left: px(style?.scrollPaddingLeft, width),
+  const px = (value: string | undefined, size: number) => {
+    const text = (value ?? '').trim();
+    if (text === '' || text === 'auto') {
+      return 0;
+    }
+    const match = /^(\d*\.?\d+)(px|%)$/.exec(text);
+    if (!match) {
+      return null;
+    }
+    return match[2] === '%' ? (Number(match[1]) / 100) * size : Number(match[1]);
   };
+  const top = px(style?.scrollPaddingTop, height);
+  const right = px(style?.scrollPaddingRight, width);
+  const bottom = px(style?.scrollPaddingBottom, height);
+  const left = px(style?.scrollPaddingLeft, width);
+  return top === null || right === null || bottom === null || left === null
+    ? null
+    : { top, right, bottom, left };
 };
 
 type Measure = {
@@ -108,6 +115,8 @@ type Measure = {
   rect: Box;
   /** The part of the page's viewport the target can be seen in, padding left clear. */
   visible: Box;
+  /** The page's viewport, padding left clear. */
+  page: Box;
   /** The height of the smallest viewport or clipping container the target is in. */
   room: number;
   /** Whether scrolling the page itself is all it takes to reach the target. */
@@ -160,7 +169,7 @@ const measure = (el: Element, padding: ScrollPadding): Measure => {
     room = Math.min(room, viewport.bottom - viewport.top);
     const frame = isPage ? null : (view?.frameElement ?? null);
     if (!frame) {
-      return { rect, visible, room, pageOnly };
+      return { rect, visible, page: viewport, room, pageOnly };
     }
     pageOnly = false;
     const { box, scale } = contentBox(frame);
@@ -183,41 +192,43 @@ const measure = (el: Element, padding: ScrollPadding): Measure => {
  * only when the page alone scrolls, is the distance worked out here instead:
  * that keeps the padding clear without touching the host's page. A target in a
  * container or a frame is still scrolled the browser's way then, so the
- * padding only counts towards whether it is already in view.
+ * padding only counts towards whether it is already in view. So is any target
+ * on a page whose CSS scroll-padding cannot be read as a length.
  */
 export const scrollTargetIntoView = (el: Element, padding: ScrollPadding | null): void => {
   // Whichever keeps more clear: the host may have both a CSS scroll-padding and ours.
   const host = hostScrollPadding();
   const clear = {
-    top: Math.max(host.top, padding?.top ?? 0),
-    right: Math.max(host.right, padding?.right ?? 0),
-    bottom: Math.max(host.bottom, padding?.bottom ?? 0),
-    left: Math.max(host.left, padding?.left ?? 0),
+    top: Math.max(host?.top ?? 0, padding?.top ?? 0),
+    right: Math.max(host?.right ?? 0, padding?.right ?? 0),
+    bottom: Math.max(host?.bottom ?? 0, padding?.bottom ?? 0),
+    left: Math.max(host?.left ?? 0, padding?.left ?? 0),
   };
-  const { rect, visible, room, pageOnly } = measure(el, clear);
+  const { rect, visible, page, room, pageOnly } = measure(el, clear);
   const height = rect.bottom - rect.top;
   const width = rect.right - rect.left;
-  if (within(rect, visible)) {
+  // With a host padding only the browser can work out, it may lie under what that keeps clear.
+  if (host && within(rect, visible)) {
     return;
   }
   const tall = height > room;
 
-  if (!padding || !pageOnly || !window) {
+  if (!padding || !host || !pageOnly || !window) {
     void smoothScroll(el, { block: tall ? 'start' : 'center' });
     return;
   }
 
-  const roomHeight = visible.bottom - visible.top;
+  // Against the page's viewport alone: a container the target shows whole in moves with the page.
   let top = 0;
-  if (rect.top < visible.top || rect.bottom > visible.bottom) {
-    top = tall ? rect.top - visible.top : rect.top - visible.top - (roomHeight - height) / 2;
+  if (rect.top < page.top || rect.bottom > page.bottom) {
+    top = tall ? rect.top - page.top : rect.top - page.top - (page.bottom - page.top - height) / 2;
   }
   let left = 0;
-  if (rect.left < visible.left || rect.right > visible.right) {
+  if (rect.left < page.left || rect.right > page.right) {
     left =
-      width > visible.right - visible.left || rect.left < visible.left
-        ? rect.left - visible.left
-        : rect.right - visible.right;
+      width > page.right - page.left || rect.left < page.left
+        ? rect.left - page.left
+        : rect.right - page.right;
   }
   window.scrollBy({ top, left, behavior: 'smooth' });
 };
