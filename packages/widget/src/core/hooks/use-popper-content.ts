@@ -27,8 +27,6 @@ import { usePopperAnimation } from './use-popper-animation';
 import { Align, Side } from '@usertour/types';
 import { useComposedRefs } from '@usertour/react-compose-refs';
 
-type Boundary = Element | null;
-
 interface PopperContentProps {
   children?: React.ReactNode;
   onOpenChange?: (open: boolean) => void;
@@ -42,7 +40,6 @@ interface PopperContentProps {
   avoidCollisions?: boolean;
   arrowColor?: string;
   arrowSize?: { width: number; height: number };
-  collisionBoundary?: Boundary | Boundary[];
   collisionPadding?: number | Partial<Record<Side, number>>;
   sticky?: 'partial' | 'always';
   hideWhenDetached?: boolean;
@@ -58,10 +55,6 @@ interface PopperContext {
   setReferenceHidden: (hidden: boolean) => void;
   setRect: (rect: Rect | undefined) => void;
   setOverflow: (overflow: SideObject | undefined) => void;
-}
-
-function isNotNull<T>(value: T | null): value is T {
-  return value !== null;
 }
 
 const OPPOSITE_SIDE: Record<Side, Side> = {
@@ -84,7 +77,6 @@ export const usePopperContent = (
     alignOffset = 0,
     arrowPadding = 0,
     avoidCollisions = true,
-    collisionBoundary = [],
     collisionPadding: collisionPaddingProp = 0,
     sticky = 'partial',
     hideWhenDetached = false,
@@ -137,13 +129,10 @@ export const usePopperContent = (
     left: padded.left + SURFACE_VIEWPORT_MARGIN,
   });
 
-  const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
-  const hasExplicitBoundaries = boundary.length > 0;
-
   const detectOverflowOptions = {
     padding: collisionPadding,
-    boundary: boundary.filter(isNotNull),
-    altBoundary: hasExplicitBoundaries,
+    // Collide with the viewport only, not the floating element's clipping ancestors.
+    boundary: [] as Element[],
   };
 
   // Source fix: override platform.getElementRects so that when the reference is detached from the
