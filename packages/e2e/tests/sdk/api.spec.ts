@@ -729,8 +729,9 @@ test.describe('stacking and scrolling', () => {
       await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
       await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
 
-      // Our padding, not the host's 72px, decides where it lands.
-      await expect.poll(async () => (await targetRect(page)).middle).toBe(450);
+      // Each side keeps the larger of the two clear: our 100 at the top, the host's 72 at
+      // the bottom. The middle of what is left of the 800px viewport is at 414.
+      await expect.poll(async () => (await targetRect(page)).middle).toBe(414);
       expect(
         await page.evaluate(() => ({
           mutations: (window as unknown as { rootMutations: number }).rootMutations,

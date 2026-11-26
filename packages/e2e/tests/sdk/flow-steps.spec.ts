@@ -940,6 +940,66 @@ test.describe('the tooltip target', () => {
       .toBe(0);
   });
 
+  test('a target cut off by an overflow: hidden container is scrolled into view in it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const box = document.createElement('div');
+      box.id = 'box';
+      box.style.cssText = 'height: 200px; overflow: hidden';
+      const spacer = document.createElement('div');
+      spacer.style.height = '300px';
+      const target = document.createElement('div');
+      target.id = 'clipped';
+      target.style.height = '40px';
+      target.textContent = 'Below the fold of the box';
+      box.append(spacer, target, spacer.cloneNode());
+      document.body.prepend(box);
+    });
+    await showTooltip(protocol, '#clipped');
+    // It lies inside the page's viewport, but the box shows none of it until the box scrolls.
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(() => {
+          const box = (document.getElementById('box') as HTMLElement).getBoundingClientRect();
+          const rect = (document.getElementById('clipped') as HTMLElement).getBoundingClientRect();
+          return rect.top >= box.top && rect.bottom <= box.bottom;
+        }),
+      )
+      .toBe(true);
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
+  test('the host’s own CSS scroll-padding is kept clear when the target is scrolled to', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      document.documentElement.style.scrollPaddingTop = '160px';
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      const target = document.createElement('div');
+      target.id = 'far';
+      target.style.height = '40px';
+      target.textContent = 'Far away';
+      document.body.append(spacer, target, spacer.cloneNode());
+    });
+    await showTooltip(protocol, '#far');
+    // Centred in the 640px the host's padding leaves of the 800px viewport, not in all of it.
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(() => {
+          const rect = (document.getElementById('far') as HTMLElement).getBoundingClientRect();
+          return Math.round(rect.top + rect.height / 2);
+        }),
+      )
+      .toBe(480);
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
   test('clicking the target runs the step’s target actions', async ({ sdk, protocol }) => {
     await start(sdk);
     const session = structuredClone(twoStepFlow('session-1', 'flow-1'));
