@@ -1000,6 +1000,34 @@ test.describe('the tooltip target', () => {
     await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
   });
 
+  test('on a page with its own CSS scroll-padding, a target in the viewport is still scrolled to', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      document.documentElement.style.scrollPaddingTop = '160px';
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      const target = document.createElement('div');
+      target.id = 'far';
+      target.style.height = '40px';
+      target.textContent = 'Under the header';
+      document.body.append(spacer, target, spacer.cloneNode());
+      // In the viewport, but in the 160px the host keeps clear for its header.
+      window.scrollBy(0, target.getBoundingClientRect().top - 50);
+    });
+    await showTooltip(protocol, '#far');
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(() => {
+          const rect = (document.getElementById('far') as HTMLElement).getBoundingClientRect();
+          return Math.round(rect.top + rect.height / 2);
+        }),
+      )
+      .toBe(480);
+  });
+
   test('clicking the target runs the step’s target actions', async ({ sdk, protocol }) => {
     await start(sdk);
     const session = structuredClone(twoStepFlow('session-1', 'flow-1'));

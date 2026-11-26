@@ -80,53 +80,16 @@ const project = (box: Box, frame: Box, scale: { x: number; y: number }): Box => 
   left: frame.left + box.left * scale.x,
 });
 
-/**
- * A computed scroll-padding value in pixels: `auto`, a length, a percentage of
- * `size`, or a `calc()` the browser has reduced to a sum of those. Null for
- * anything else (`min()`, `clamp()`…): only the browser can tell how much that is.
- */
-const paddingInPx = (value: string | undefined, size: number): number | null => {
-  const text = (value ?? '').trim();
-  if (text === '' || text === 'auto') {
-    return 0;
-  }
-  const tokens = (/^calc\((.*)\)$/.exec(text)?.[1] ?? text).trim().split(/\s+/);
-  let total = 0;
-  let sign = 1;
-  for (let index = 0; index < tokens.length; index++) {
-    const token = tokens[index];
-    if (index % 2 === 1) {
-      if (token !== '+' && token !== '-') {
-        return null;
-      }
-      sign = token === '-' ? -1 : 1;
-      continue;
-    }
-    const term = /^(-?\d*\.?\d+(?:e[+-]?\d+)?)(px|%)$/.exec(token);
-    if (!term) {
-      return null;
-    }
-    total += sign * (term[2] === '%' ? (Number(term[1]) / 100) * size : Number(term[1]));
-  }
-  return tokens.length % 2 === 1 ? Math.max(total, 0) : null;
-};
-
-/**
- * The scroll-padding the host's own CSS sets on the page (read, never written),
- * which the browser keeps clear when it scrolls something into view. Null when
- * a side cannot be worked out here.
- */
-const hostScrollPadding = (): ScrollPadding | null => {
+/** Whether the host's own CSS sets a scroll-padding on the page (read, never written). */
+const hostHasScrollPadding = (): boolean => {
   const style = window?.getComputedStyle(window.document.documentElement);
-  const height = window?.innerHeight ?? 0;
-  const width = window?.innerWidth ?? 0;
-  const top = paddingInPx(style?.scrollPaddingTop, height);
-  const right = paddingInPx(style?.scrollPaddingRight, width);
-  const bottom = paddingInPx(style?.scrollPaddingBottom, height);
-  const left = paddingInPx(style?.scrollPaddingLeft, width);
-  return top === null || right === null || bottom === null || left === null
-    ? null
-    : { top, right, bottom, left };
+  const set = (value: string | undefined) => !!value && value !== 'auto' && value !== '0px';
+  return (
+    set(style?.scrollPaddingTop) ||
+    set(style?.scrollPaddingRight) ||
+    set(style?.scrollPaddingBottom) ||
+    set(style?.scrollPaddingLeft)
+  );
 };
 
 type Measure = {
@@ -206,33 +169,30 @@ const measure = (el: Element, padding: ScrollPadding): Measure => {
  * that fits is centred, and a taller one is brought in by its top: centred,
  * its top would be cut off and the user would land in the middle of it.
  *
- * The browser does the scrolling, each container as needed and the host's CSS
- * scroll-padding kept clear. Only with a padding from setScrollPadding(), and
- * only when the page alone scrolls, is the distance worked out here instead:
- * that keeps the padding clear without touching the host's page. A target in a
- * container or a frame is still scrolled the browser's way then, so the
- * padding only counts towards whether it is already in view. So is any target
- * on a page whose CSS scroll-padding cannot be read as a length.
+ * Without a padding from setScrollPadding() the browser does the scrolling,
+ * each container as needed and the host's CSS scroll-padding kept clear. How
+ * much that is is not worked out here, so on a page that has one the target
+ * is always scrolled to: it may lie under what the host keeps clear.
+ *
+ * With a padding, and when scrolling the page is all it takes, the distance is
+ * worked out here instead: that keeps the padding clear without touching the
+ * host's page, and the padding stands in for any CSS scroll-padding. A target
+ * in a container or a frame is still scrolled the browser's way then, so the
+ * padding only counts towards whether it is already in view.
  */
 export const scrollTargetIntoView = (el: Element, padding: ScrollPadding | null): void => {
-  // Whichever keeps more clear: the host may have both a CSS scroll-padding and ours.
-  const host = hostScrollPadding();
-  const clear = {
-    top: Math.max(host?.top ?? 0, padding?.top ?? 0),
-    right: Math.max(host?.right ?? 0, padding?.right ?? 0),
-    bottom: Math.max(host?.bottom ?? 0, padding?.bottom ?? 0),
-    left: Math.max(host?.left ?? 0, padding?.left ?? 0),
-  };
-  const { rect, visible, page, room, pageOnly } = measure(el, clear);
+  const { rect, visible, page, room, pageOnly } = measure(
+    el,
+    padding ?? { top: 0, right: 0, bottom: 0, left: 0 },
+  );
   const height = rect.bottom - rect.top;
   const width = rect.right - rect.left;
-  // With a host padding only the browser can work out, it may lie under what that keeps clear.
-  if (host && within(rect, visible)) {
+  if ((padding || !hostHasScrollPadding()) && within(rect, visible)) {
     return;
   }
   const tall = height > room;
 
-  if (!padding || !host || !pageOnly || !window) {
+  if (!padding || !pageOnly || !window) {
     void smoothScroll(el, { block: tall ? 'start' : 'center' });
     return;
   }

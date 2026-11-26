@@ -729,9 +729,8 @@ test.describe('stacking and scrolling', () => {
       await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
       await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
 
-      // Each side keeps the larger of the two clear: our 100 at the top, the host's 72 at
-      // the bottom. The middle of what is left of the 800px viewport is at 414.
-      await expect.poll(async () => (await targetRect(page)).middle).toBe(414);
+      // Our padding stands in for the host's 72px: it decides where the target lands.
+      await expect.poll(async () => (await targetRect(page)).middle).toBe(450);
       expect(
         await page.evaluate(() => ({
           mutations: (window as unknown as { rootMutations: number }).rootMutations,
@@ -766,62 +765,6 @@ test.describe('stacking and scrolling', () => {
 
       // The box moves with the page: where it was before the scroll is not where the target can be seen.
       await expect.poll(async () => (await targetRect(page)).middle).toBe(450);
-      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
-    });
-
-    test('a host scroll-padding written as calc() counts like any other', async ({
-      sdk,
-      protocol,
-      page,
-    }) => {
-      await start(sdk);
-      await addFarTarget(page, 40);
-      await page.evaluate(() => {
-        document.documentElement.style.scrollPaddingTop = 'calc(10% + 80px)';
-      });
-      // The host's is 160px of the 800px viewport: ours is the larger one.
-      await sdk.call('setScrollPadding', { top: 240 });
-      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
-      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
-
-      await expect.poll(async () => (await targetRect(page)).middle).toBe(520);
-      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
-    });
-
-    test('a target taller than what the host’s calc() scroll-padding leaves lands its top under it', async ({
-      sdk,
-      protocol,
-      page,
-    }) => {
-      await start(sdk);
-      // It fits the 800px viewport, but not the 640px left under the host's 160px.
-      await addFarTarget(page, 700);
-      await page.evaluate(() => {
-        document.documentElement.style.scrollPaddingTop = 'calc(10% + 80px)';
-      });
-      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
-      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
-
-      await expect.poll(async () => (await targetRect(page)).top).toBe(160);
-      await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
-    });
-
-    test('a host scroll-padding that only the browser can work out is left to the browser', async ({
-      sdk,
-      protocol,
-      page,
-    }) => {
-      await start(sdk);
-      await addFarTarget(page, 40);
-      await page.evaluate(() => {
-        document.documentElement.style.scrollPaddingTop = 'min(20%, 160px)';
-      });
-      await sdk.call('setScrollPadding', { top: 64 });
-      await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#far-target'));
-      await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
-
-      // 160px of the 800px viewport: centred in what is left, not in what our 64 would leave.
-      await expect.poll(async () => (await targetRect(page)).middle).toBe(480);
       await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
     });
 

@@ -49,7 +49,7 @@ its row.
 | `setBaseZIndex` moves the widgets' stacking level | ✓ api "setBaseZIndex() moves the stacking level…" (flow and launcher) | — |
 | `setTargetMissingSeconds` over the theme's `tooltip.missingTargetTolerance`, else the theme default (3 s); above 10 throws | ✓ api "setTargetMissingSeconds() › …" | — |
 | `setCustomScrollIntoView` is called with the target instead of the default scroll | ✓ api "setCustomScrollIntoView() is handed the target…" | — |
-| `setScrollPadding` keeps its room clear in the default scroll: a target that fits is centred in what is left, a taller one lands its top under it; a target already in view is not scrolled to; the host's page, its own `scroll-padding` included, is never touched, and each side keeps the larger of the two paddings clear; a target shown whole in a container below the fold is brought in with the page; a host `scroll-padding` written as `calc()` counts like any other (the larger padding wins, a target taller than what it leaves lands its top under it); one only the browser can work out (`min()`, `clamp()`) is left to the browser | ✓ api "setScrollPadding() › …" | — |
+| `setScrollPadding` keeps its room clear in the default scroll: a target that fits is centred in what is left, a taller one lands its top under it; a target already in view is not scrolled to; the host's page, its own `scroll-padding` included, is never touched, and with both set ours decides where the target lands; a target shown whole in a container below the fold is brought in with the page | ✓ api "setScrollPadding() › …" | — |
 | `setDebug(false)` silences the log and drops the SDK from the stored flag | ✓ api "setDebug(false) silences the log at once…" | — |
 | `open/close/toggleResourceCenter`, `isResourceCenterOpen`; no-ops before a resource center exists | ✓ api "open, close and toggle drive the panel…" | — |
 | `show/hideResourceCenterLauncher`, remembered for a resource center that arrives later | ✓ api "a launcher hidden before the resource center arrives…" | — |
@@ -100,6 +100,7 @@ its row.
 | A target taller than its scrolling container is scrolled in by the container's top | ✓ flow-steps "a target taller than its scrolling container…" | — |
 | A target cut off by an `overflow: hidden` container is scrolled into view in it | ✓ flow-steps "a target cut off by an overflow: hidden container…" | — |
 | The host's own CSS `scroll-padding` is kept clear by the default scroll | ✓ flow-steps "the host’s own CSS scroll-padding is kept clear…" | — |
+| On a page with its own CSS `scroll-padding`, a target in the viewport is still scrolled to (it may lie under what the host keeps clear) | ✓ flow-steps "on a page with its own CSS scroll-padding…" | — |
 | A target in a frame drawn at a scale, drawn below the viewport, is scrolled to | ✓ iframe-targeting "a frame drawn at a scale: a target drawn below the viewport…" | — |
 | Clicking the target runs `target.actions` | ✓ flow-steps "clicking the target runs the step’s target actions" | — |
 | Leaving a tooltip step stops its target lookup: coming back waits the full time again | ✓ flow-steps "returning to a tooltip step waits its full time again…" | — |
