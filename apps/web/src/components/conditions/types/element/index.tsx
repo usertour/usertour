@@ -7,7 +7,7 @@ import {
 } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
-import { validateElement } from '../../validators';
+import { isElementSelected, validateElement } from '../../validators';
 import { useTranslation } from 'react-i18next';
 import { summaryTextClass } from '@/components/rules';
 
@@ -23,9 +23,6 @@ const writeData = (condition: RulesCondition, patch: Partial<ElementData>): Rule
   ...condition,
   data: { ...readData(condition), ...patch },
 });
-
-const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean =>
-  Boolean(data?.customSelector);
 
 const OPERATOR_KEYS = [
   { value: 'present', labelKey: 'conditions.types.element.operators.present' },

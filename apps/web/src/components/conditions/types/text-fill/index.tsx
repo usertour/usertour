@@ -6,7 +6,7 @@ import {
   DEFAULT_ELEMENT_DATA,
 } from '../../primitives/condition-element-selector';
 import type { ConditionTypeSchema } from '../../schema-types';
-import { validateTextFill } from '../../validators';
+import { isElementSelected, validateTextFill } from '../../validators';
 import { useTranslation } from 'react-i18next';
 import { summaryTextClass } from '@/components/rules';
 
@@ -21,9 +21,6 @@ const writeData = (condition: RulesCondition, patch: Partial<TextFillData>): Rul
   ...condition,
   data: { ...readData(condition), ...patch },
 });
-
-const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean =>
-  Boolean(data?.customSelector);
 
 // ---------- Summary ----------
 

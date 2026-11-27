@@ -3,6 +3,7 @@
 // MCP), so the rules can't drift between the two surfaces. Re-exported here so
 // existing builder imports keep resolving unchanged.
 export {
+  isElementSelected,
   validateUserAttr,
   validateCurrentPage,
   validateSegment,

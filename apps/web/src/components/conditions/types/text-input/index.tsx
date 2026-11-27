@@ -8,7 +8,7 @@ import {
 } from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
-import { validateTextInput } from '../../validators';
+import { isElementSelected, validateTextInput } from '../../validators';
 import { Input } from '@usertour/ui';
 import { useTranslation } from 'react-i18next';
 import { summaryTextClass } from '@/components/rules';
@@ -41,9 +41,6 @@ const writeData = (condition: RulesCondition, patch: Partial<TextInputData>): Ru
   ...condition,
   data: { ...readData(condition), ...patch },
 });
-
-const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean =>
-  Boolean(data?.customSelector);
 
 // ---------- Summary ----------
 
