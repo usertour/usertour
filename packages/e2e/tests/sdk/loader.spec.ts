@@ -65,15 +65,15 @@ test('a method the bundle no longer has warns and resolves instead of hanging th
     const queue = window.USERTOURJS_QUEUE as unknown[];
     // An older loader queued every method it knew, including ones since
     // removed: the stub keeps its own reference to the queue.
-    usertour.setScrollPadding = (...args: unknown[]) => {
+    usertour.setShadowDomEnabled = (...args: unknown[]) => {
       usertour.load();
-      queue.push(['setScrollPadding', null, args]);
+      queue.push(['setShadowDomEnabled', null, args]);
     };
-    usertour.setScrollPadding(24);
+    usertour.setShadowDomEnabled(true);
     usertour.init('env-token');
   });
   await sdk.waitForBundle();
-  expect(await sdk.logLines(/setScrollPadding\(\) is not supported/)).toHaveLength(1);
+  expect(await sdk.logLines(/setShadowDomEnabled\(\) is not supported/)).toHaveLength(1);
 
   // The current loader's stub for a removed method, called once the bundle is in.
   const later = await page.evaluate(async () => {

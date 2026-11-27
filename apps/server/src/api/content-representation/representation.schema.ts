@@ -16,10 +16,8 @@ import { ApiObjectType } from '../shared/object-type';
 // ── Targeting ──────────────────────────────────────────────────────────────
 // A target is a CSS `selector` (required), optionally narrowed by the element's
 // visible `text`, with `nth` to disambiguate when several elements match. This
-// mirrors the only runtime path that resolves an API-authored target (finderV2's
-// `manual` branch: querySelector + optional innerText check + nth). The internal
-// "auto" selectors fingerprint is NOT authorable — an auto-only target decompiles
-// to undefined + hasUnsupported.
+// mirrors how the runtime resolves a target (finderV2: querySelector + optional
+// innerText check + nth).
 export const representationTarget = z.object({
   selector: z
     .string()

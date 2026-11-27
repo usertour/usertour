@@ -187,10 +187,9 @@ describe('validateContent', () => {
 });
 
 describe('validateElement / validateTextFill', () => {
-  // Validator semantics mirror v1 isValidSelector + runtime finderV2:
-  // - auto needs the captured `selectors` tree (screenshot alone isn't queryable)
-  // - manual needs `customSelector` (content alone is just label text — runtime
-  //   ignores it without a CSS anchor)
+  // Validator semantics mirror runtime finderV2: a target resolves only by its
+  // `customSelector` (content alone is just label text — runtime ignores it
+  // without a CSS anchor).
 
   it('flags element with no selection', () => {
     expect(validateElement({})).toEqual({
@@ -204,24 +203,16 @@ describe('validateElement / validateTextFill', () => {
     ).toEqual({ key: 'conditions.errors.element.selectElement' });
   });
 
-  it('flags auto with only screenshot (selectors missing)', () => {
-    // Runtime finderV2 needs `selectors` to call finderX; a thumbnail with
-    // no selectors tree is dead-on-arrival.
-    expect(validateElement({ elementData: { type: 'auto', screenshot: 'data:...' } })).toEqual({
-      key: 'conditions.errors.element.selectElement',
-    });
-  });
-
-  it('passes when auto has selectors', () => {
+  it('flags a legacy auto selectors fingerprint (no longer resolved at runtime)', () => {
     expect(
       validateElement({
         elementData: { type: 'auto', selectors: { tag: 'button' } },
       }),
-    ).toBeUndefined();
+    ).toEqual({ key: 'conditions.errors.element.selectElement' });
   });
 
   it('flags manual with only content (no customSelector)', () => {
-    // Runtime finderV2 manual branch is gated on customSelector — content
+    // Runtime finderV2 is gated on customSelector — content
     // alone produces a never-firing condition.
     expect(validateElement({ elementData: { type: 'manual', content: 'Submit' } })).toEqual({
       key: 'conditions.errors.element.selectElement',

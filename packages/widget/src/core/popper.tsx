@@ -26,8 +26,6 @@ const OPPOSITE_SIDE: Record<Side, Side> = {
   left: 'right',
 };
 
-type Boundary = Element | null;
-
 interface PopperContentProps {
   children?: React.ReactNode;
   onOpenChange?: (open: boolean) => void;
@@ -41,7 +39,6 @@ interface PopperContentProps {
   avoidCollisions?: boolean;
   arrowColor?: string;
   arrowSize?: { width: number; height: number };
-  collisionBoundary?: Boundary | Boundary[];
   collisionPadding?: number | Partial<Record<Side, number>>;
   sticky?: 'partial' | 'always';
   hideWhenDetached?: boolean;

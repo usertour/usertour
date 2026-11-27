@@ -341,6 +341,33 @@ test.describe('targets inside frames', () => {
     expect(protocol.messages('ReportTooltipTargetMissing')).toHaveLength(0);
   });
 
+  test('a frame drawn at a scale: a target drawn below the viewport is scrolled to', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    // The button, 300px into the frame, is drawn 600px below the frame's top at
+    // 2×: at 900 in the 800px viewport, though 600 by the frame's own measure.
+    await mountFrame(
+      sdk.page.mainFrame(),
+      { id: 'activity', src: '/frame-activity.html' },
+      { left: 40, top: 300, width: 560, height: 340, scale: 2 },
+    );
+    expect((await rectInTopWindow(sdk.page, ['activity'], '#activity-submit')).y).toBeGreaterThan(
+      800,
+    );
+    await protocol.push('SetFlowSession', twoStepFlow('session-1', 'flow-1', '#activity-submit'));
+    await protocol.push('ForceGoToStep', { sessionId: 'session-1', stepId: 'flow-1-step-2' });
+
+    await expect
+      .poll(async () => {
+        const rect = await rectInTopWindow(sdk.page, ['activity'], '#activity-submit');
+        return rect.y >= 0 && rect.y + rect.height <= 800;
+      })
+      .toBe(true);
+    await expect(sdk.frame().getByText('Click here to begin')).toBeVisible();
+  });
+
   test('a text-input condition reads an input inside a same-origin frame', async ({
     sdk,
     protocol,

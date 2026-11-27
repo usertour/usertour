@@ -49,6 +49,7 @@ its row.
 | `setBaseZIndex` moves the widgets' stacking level | ✓ api "setBaseZIndex() moves the stacking level…" (flow and launcher) | — |
 | `setTargetMissingSeconds` over the theme's `tooltip.missingTargetTolerance`, else the theme default (3 s); above 10 throws | ✓ api "setTargetMissingSeconds() › …" | — |
 | `setCustomScrollIntoView` is called with the target instead of the default scroll | ✓ api "setCustomScrollIntoView() is handed the target…" | — |
+| `setScrollPadding` keeps its room clear in the default scroll: a target that fits is centred in what is left, a taller one lands its top under it; a target already in view is not scrolled to; the host's page, its own `scroll-padding` included, is never touched, and with both set ours decides where the target lands; a target shown whole in a container below the fold is brought in with the page | ✓ api "setScrollPadding() › …" | — |
 | `setDebug(false)` silences the log and drops the SDK from the stored flag | ✓ api "setDebug(false) silences the log at once…" | — |
 | `open/close/toggleResourceCenter`, `isResourceCenterOpen`; no-ops before a resource center exists | ✓ api "open, close and toggle drive the panel…" | — |
 | `show/hideResourceCenterLauncher`, remembered for a resource center that arrives later | ✓ api "a launcher hidden before the resource center arrives…" | — |
@@ -95,6 +96,12 @@ its row.
 | A target scrolled out of view (of the page, a scrolling container or a frame) hides the tooltip without a deadline; scrolled back, it reopens | ✓ flow "a tooltip whose target is scrolled out of the page…", iframe "…scrolled out above the box" | — |
 | A target with a width but no height (its children overflow it) is still pointed at: the flow stays and the tooltip shows | ✓ flow "a tooltip whose target has a width but no height…", target-states "…given a width but no height keeps its tooltip" | — |
 | Default scroll into view of an off-screen target | ✓ flow-steps "an off-screen target is scrolled into view…" | — |
+| A target taller than the viewport is scrolled in by its top, not its middle | ✓ flow-steps "a target taller than the viewport is scrolled in by its top…" | — |
+| A target taller than its scrolling container is scrolled in by the container's top | ✓ flow-steps "a target taller than its scrolling container…" | — |
+| A target cut off by an `overflow: hidden` container is scrolled into view in it | ✓ flow-steps "a target cut off by an overflow: hidden container…" | — |
+| The host's own CSS `scroll-padding` is kept clear by the default scroll | ✓ flow-steps "the host’s own CSS scroll-padding is kept clear…" | — |
+| On a page with its own CSS `scroll-padding`, a target in the viewport is still scrolled to (it may lie under what the host keeps clear) | ✓ flow-steps "on a page with its own CSS scroll-padding…" | — |
+| A target in a frame drawn at a scale, drawn below the viewport, is scrolled to | ✓ iframe-targeting "a frame drawn at a scale: a target drawn below the viewport…" | — |
 | Clicking the target runs `target.actions` | ✓ flow-steps "clicking the target runs the step’s target actions" | — |
 | Leaving a tooltip step stops its target lookup: coming back waits the full time again | ✓ flow-steps "returning to a tooltip step waits its full time again…" | — |
 | Target never found: ReportTooltipTargetMissing, then `tooltip_target_missing`, at the theme's tolerance | ✓ flow "a tooltip whose target never appears…" | — |
