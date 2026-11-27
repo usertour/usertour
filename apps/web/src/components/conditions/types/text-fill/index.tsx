@@ -1,22 +1,18 @@
 import { TextFillIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { FORM_CONTROL_PICK_TARGETS } from '@/components/element-picker';
-import { ConditionElementSelector } from '../../primitives/condition-element-selector';
+import {
+  ConditionElementSelector,
+  DEFAULT_ELEMENT_DATA,
+} from '../../primitives/condition-element-selector';
 import type { ConditionTypeSchema } from '../../schema-types';
-import { validateTextFill } from '../../validators';
+import { isElementSelected, validateTextFill } from '../../validators';
 import { useTranslation } from 'react-i18next';
 import { summaryTextClass } from '@/components/rules';
 
 export interface TextFillData {
   elementData?: ElementSelectorPropsData;
 }
-
-const DEFAULT_ELEMENT_DATA: ElementSelectorPropsData = {
-  type: 'auto',
-  precision: 'strict',
-  isDynamicContent: false,
-  sequence: '1st',
-};
 
 const readData = (condition: RulesCondition): TextFillData =>
   (condition.data as TextFillData | undefined) ?? {};
@@ -25,13 +21,6 @@ const writeData = (condition: RulesCondition, patch: Partial<TextFillData>): Rul
   ...condition,
   data: { ...readData(condition), ...patch },
 });
-
-const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean => {
-  if (!data) return false;
-  if (data.type === 'auto') return Boolean(data.selectors);
-  if (data.type === 'manual') return Boolean(data.customSelector);
-  return false;
-};
 
 // ---------- Summary ----------
 

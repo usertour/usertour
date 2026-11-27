@@ -2,7 +2,6 @@ import {
   Attribute,
   AttributeBizTypes,
   AttributeDataType,
-  ElementSelectorPropsData,
   EventAttrConditionData,
   EventConditionData,
   EventCountLogic,
@@ -11,23 +10,11 @@ import {
   RulesUserAttributeData,
 } from '@usertour/types';
 import { isTimeConditionDataV2, isTimeConditionDataLegacy } from './conditions/time';
+import { isElementSelected } from './conditions/validate';
 
 // Internal validity predicates backing `hasError`. They only flag whether a
 // condition is incomplete — user-facing messaging lives in the i18n'd
 // validators in apps/web/src/components/conditions.
-
-const isValidSelector = (selector: ElementSelectorPropsData) => {
-  if (!selector) {
-    return false;
-  }
-  if (selector.type === 'auto' && !selector.selectors) {
-    return false;
-  }
-  if (selector.type === 'manual' && !selector.customSelector) {
-    return false;
-  }
-  return true;
-};
 
 const getUserAttrError = (data: RulesUserAttributeData | undefined, attributes: Attribute[]) => {
   const ret = { showError: false };
@@ -99,7 +86,7 @@ const getWaitError = (data: any) => {
 
 const getElementError = (data: any) => {
   const ret = { showError: false };
-  if (!isValidSelector(data.elementData)) {
+  if (!isElementSelected(data.elementData)) {
     ret.showError = true;
   }
   return ret;
@@ -109,7 +96,7 @@ const getTextInputError = (data: any) => {
   const ret = { showError: false };
   if (data.logic !== 'any' && data.logic !== 'empty' && data.value === '') {
     ret.showError = true;
-  } else if (!isValidSelector(data.elementData)) {
+  } else if (!isElementSelected(data.elementData)) {
     ret.showError = true;
   }
   return ret;
@@ -117,7 +104,7 @@ const getTextInputError = (data: any) => {
 
 const getTextFillError = (data: any) => {
   const ret = { showError: false };
-  if (!isValidSelector(data.elementData)) {
+  if (!isElementSelected(data.elementData)) {
     ret.showError = true;
   }
   return ret;

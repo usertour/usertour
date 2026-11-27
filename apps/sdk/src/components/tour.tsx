@@ -171,7 +171,7 @@ const PopperContent = (props: PopperContentProps) => {
 
 // Hooks
 const useTargetActions = (
-  ref: React.RefObject<HTMLElement> | Element | null | undefined,
+  ref: React.RefObject<Element> | Element | null | undefined,
   currentStep: SessionStep,
   handleActions: (actions: RulesCondition[]) => Promise<void>,
 ) => {
@@ -212,9 +212,9 @@ const TourPopper = (props: TourPopperProps) => {
 
   // Create a responsive React.RefObject that updates when triggerRef changes
   const responsiveRef = useMemo(() => {
-    const ref = { current: null as HTMLElement | null };
+    const ref = { current: null as Element | null };
     if (isElement(triggerRef)) {
-      ref.current = triggerRef as HTMLElement;
+      ref.current = triggerRef;
     }
     return ref;
   }, [triggerRef]);

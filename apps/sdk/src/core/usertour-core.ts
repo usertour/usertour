@@ -59,6 +59,7 @@ import { UsertourBanner } from './usertour-banner';
 import { UsertourEmbed } from './usertour-embed';
 import { UsertourResourceCenter } from './usertour-resource-center';
 import { customInputRegistry } from './registries/custom-input-registry';
+import { normalizeScrollPadding, type ScrollPadding } from './usertour-scroll';
 import {
   ServerMessageHandlerManager,
   ServerMessageHandlerContext,
@@ -145,6 +146,7 @@ export class UsertourCore extends Evented {
   private targetMissingSeconds: number | undefined = undefined;
   private customNavigate: ((url: string) => void) | null = null;
   private customScrollIntoView: ((el: Element) => void) | null = null;
+  private scrollPadding: ScrollPadding | null = null;
   private urlFilter: ((url: string) => string) | null = null;
   private linkUrlDecorator: ((url: string) => string) | null = null;
   private evalJsDisabled = false;
@@ -738,6 +740,22 @@ export class UsertourCore extends Evented {
    */
   getCustomScrollIntoView(): ((el: Element) => void) | null {
     return this.customScrollIntoView;
+  }
+
+  /**
+   * Sets the room the default scroll keeps clear at the page's edges
+   * @param scrollPadding - Pixels per side, or null to clear it
+   */
+  setScrollPadding(scrollPadding: UserTourTypes.ScrollPadding | null) {
+    this.scrollPadding = normalizeScrollPadding(scrollPadding);
+  }
+
+  /**
+   * Gets the room the default scroll keeps clear at the page's edges
+   * @returns Pixels per side, or null when none is set
+   */
+  getScrollPadding(): ScrollPadding | null {
+    return this.scrollPadding;
   }
 
   /**

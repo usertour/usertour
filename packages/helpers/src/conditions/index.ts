@@ -27,6 +27,7 @@ export {
   type OperatorEntry,
 } from './operator-mappings';
 export {
+  isElementSelected,
   validateUserAttr,
   validateCurrentPage,
   validateSegment,

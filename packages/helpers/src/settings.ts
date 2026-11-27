@@ -46,6 +46,6 @@ export const defaultStep: Step = {
     precision: 'stricter',
     isDynamicContent: false,
     customSelector: '',
-    type: 'auto',
+    type: 'manual',
   },
 };

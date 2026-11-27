@@ -9,10 +9,9 @@ import { RepresentationTarget } from './representation.schema';
  * unsupported by hasAutoTarget).
  *
  * NOTE: the captured `selectors` fingerprint tree (and its `precision`
- * threshold / `isDynamicContent` flag) is NOT used by the current runtime —
- * finderV2 (packages/finder) resolves a `manual` target by `customSelector`
- * (+ optional `content` / `sequence`) and only reads `selectors`/`precision` on
- * the legacy `auto` branch. So dropping the fingerprint here is lossless for live
+ * threshold / `isDynamicContent` flag) is NOT used by the runtime — finderV2
+ * (packages/finder) resolves a target only by `customSelector` (+ optional
+ * `content` / `sequence`). So dropping the fingerprint here is lossless for live
  * targeting; it is intentionally neither modeled nor preserved on write-back.
  */
 export function decompileTarget(raw: unknown): RepresentationTarget | undefined {

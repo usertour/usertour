@@ -774,6 +774,25 @@ test.describe('the tooltip target', () => {
     });
   }
 
+  test('an SVG target pinned to its text gets the tooltip', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      document.body.insertAdjacentHTML(
+        'afterbegin',
+        '<svg width="120" height="40"><text id="chart-label" x="10" y="25">Revenue</text></svg>',
+      );
+    });
+    const session = structuredClone(twoStepFlow('session-2', 'flow-2'));
+    session.version.steps[1].target = {
+      type: 'manual',
+      customSelector: '#chart-label',
+      content: 'Revenue',
+    };
+    await protocol.push('SetFlowSession', session);
+    await protocol.push('ForceGoToStep', { sessionId: 'session-2', stepId: 'flow-2-step-2' });
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
   test('a target that appears after the step opens gets the tooltip', async ({ sdk, protocol }) => {
     await start(sdk);
     await showTooltip(protocol, '#late');
@@ -874,6 +893,158 @@ test.describe('the tooltip target', () => {
       )
       .toBe(true);
     await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
+  test('a target taller than the viewport is scrolled in by its top, not its middle', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      const table = document.createElement('div');
+      table.id = 'tall';
+      table.style.height = '2000px';
+      table.textContent = 'A long table';
+      document.body.append(spacer, table);
+    });
+    await showTooltip(protocol, '#tall');
+    for (let tick = 0; tick < 10; tick++) {
+      await sdk.advance(200);
+    }
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(() =>
+          Math.round((document.getElementById('tall') as HTMLElement).getBoundingClientRect().top),
+        ),
+      )
+      .toBe(0);
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
+  test('a target taller than its scrolling container is scrolled in by the container’s top', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const box = document.createElement('div');
+      box.id = 'box';
+      box.style.cssText = 'height: 200px; overflow: auto';
+      const spacer = document.createElement('div');
+      spacer.style.height = '1000px';
+      const tall = document.createElement('div');
+      tall.id = 'tall';
+      tall.style.height = '600px';
+      tall.textContent = 'A long list';
+      box.append(spacer, tall, spacer.cloneNode());
+      document.body.prepend(box);
+    });
+    await showTooltip(protocol, '#tall');
+    for (let tick = 0; tick < 10; tick++) {
+      await sdk.advance(200);
+    }
+    // It fits the 800px page, but not the 200px box: centred in the box, its top would be cut off.
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(
+          () =>
+            Math.round(
+              (document.getElementById('tall') as HTMLElement).getBoundingClientRect().top,
+            ) -
+            Math.round((document.getElementById('box') as HTMLElement).getBoundingClientRect().top),
+        ),
+      )
+      .toBe(0);
+  });
+
+  test('a target cut off by an overflow: hidden container is scrolled into view in it', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      const box = document.createElement('div');
+      box.id = 'box';
+      box.style.cssText = 'height: 200px; overflow: hidden';
+      const spacer = document.createElement('div');
+      spacer.style.height = '300px';
+      const target = document.createElement('div');
+      target.id = 'clipped';
+      target.style.height = '40px';
+      target.textContent = 'Below the fold of the box';
+      box.append(spacer, target, spacer.cloneNode());
+      document.body.prepend(box);
+    });
+    await showTooltip(protocol, '#clipped');
+    // It lies inside the page's viewport, but the box shows none of it until the box scrolls.
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(() => {
+          const box = (document.getElementById('box') as HTMLElement).getBoundingClientRect();
+          const rect = (document.getElementById('clipped') as HTMLElement).getBoundingClientRect();
+          return rect.top >= box.top && rect.bottom <= box.bottom;
+        }),
+      )
+      .toBe(true);
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
+  test('the host’s own CSS scroll-padding is kept clear when the target is scrolled to', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      document.documentElement.style.scrollPaddingTop = '160px';
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      const target = document.createElement('div');
+      target.id = 'far';
+      target.style.height = '40px';
+      target.textContent = 'Far away';
+      document.body.append(spacer, target, spacer.cloneNode());
+    });
+    await showTooltip(protocol, '#far');
+    // Centred in the 640px the host's padding leaves of the 800px viewport, not in all of it.
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(() => {
+          const rect = (document.getElementById('far') as HTMLElement).getBoundingClientRect();
+          return Math.round(rect.top + rect.height / 2);
+        }),
+      )
+      .toBe(480);
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
+  test('on a page with its own CSS scroll-padding, a target in the viewport is still scrolled to', async ({
+    sdk,
+    protocol,
+  }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      document.documentElement.style.scrollPaddingTop = '160px';
+      const spacer = document.createElement('div');
+      spacer.style.height = '3000px';
+      const target = document.createElement('div');
+      target.id = 'far';
+      target.style.height = '40px';
+      target.textContent = 'Under the header';
+      document.body.append(spacer, target, spacer.cloneNode());
+      // In the viewport, but in the 160px the host keeps clear for its header.
+      window.scrollBy(0, target.getBoundingClientRect().top - 50);
+    });
+    await showTooltip(protocol, '#far');
+    await expect
+      .poll(() =>
+        sdk.page.evaluate(() => {
+          const rect = (document.getElementById('far') as HTMLElement).getBoundingClientRect();
+          return Math.round(rect.top + rect.height / 2);
+        }),
+      )
+      .toBe(480);
   });
 
   test('clicking the target runs the step’s target actions', async ({ sdk, protocol }) => {

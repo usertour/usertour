@@ -46,7 +46,7 @@ const getBodies = (documents: Document[]): HTMLElement[] =>
  * of this page and of each same-origin frame. Nothing in a `<head>` is a
  * target, whatever the selector matches there.
  */
-export const findTargetElement = (target: ElementSelectorPropsData): HTMLElement | null =>
+export const findTargetElement = (target: ElementSelectorPropsData): Element | null =>
   finderV2(target, getBodies(getSearchDocuments()));
 
 /**
@@ -54,7 +54,7 @@ export const findTargetElement = (target: ElementSelectorPropsData): HTMLElement
  * only. The banner is inserted into that element's document, and its styles
  * are loaded in this page's.
  */
-export const findTargetElementInPage = (target: ElementSelectorPropsData): HTMLElement | null =>
+export const findTargetElementInPage = (target: ElementSelectorPropsData): Element | null =>
   document?.body ? finderV2(target, [document.body]) : null;
 
 /**
@@ -62,7 +62,7 @@ export const findTargetElementInPage = (target: ElementSelectorPropsData): HTMLE
  * page and of each same-origin frame. A condition may be about `<html>` or
  * `<body>` themselves, or about an element in `<head>`.
  */
-export const findConditionElement = (target: ElementSelectorPropsData): HTMLElement | null =>
+export const findConditionElement = (target: ElementSelectorPropsData): Element | null =>
   finderV2(target, getSearchDocuments());
 
 /** Floating UI's `hide`, clipping a reference inside a same-origin frame in this window's space. */
@@ -75,10 +75,10 @@ const hideAcrossFrames: Middleware = {
 
 /**
  * Check if an element is visible in the viewport
- * @param el - The HTML element to check
+ * @param el - The element to check
  * @returns True if the element is visible, false otherwise
  */
-export const isVisible = async (el: HTMLElement) => {
+export const isVisible = async (el: Element) => {
   if (!document?.body) {
     return false;
   }

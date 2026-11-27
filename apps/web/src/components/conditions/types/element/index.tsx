@@ -1,10 +1,13 @@
 import { ElementIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
-import { ConditionElementSelector } from '../../primitives/condition-element-selector';
+import {
+  ConditionElementSelector,
+  DEFAULT_ELEMENT_DATA,
+} from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
-import { validateElement } from '../../validators';
+import { isElementSelected, validateElement } from '../../validators';
 import { useTranslation } from 'react-i18next';
 import { summaryTextClass } from '@/components/rules';
 
@@ -13,13 +16,6 @@ export interface ElementData {
   logic?: string;
 }
 
-const DEFAULT_ELEMENT_DATA: ElementSelectorPropsData = {
-  type: 'auto',
-  precision: 'strict',
-  isDynamicContent: false,
-  sequence: '1st',
-};
-
 const readData = (condition: RulesCondition): ElementData =>
   (condition.data as ElementData | undefined) ?? {};
 
@@ -27,13 +23,6 @@ const writeData = (condition: RulesCondition, patch: Partial<ElementData>): Rule
   ...condition,
   data: { ...readData(condition), ...patch },
 });
-
-const isElementSelected = (data: ElementSelectorPropsData | undefined): boolean => {
-  if (!data) return false;
-  if (data.type === 'auto') return Boolean(data.selectors);
-  if (data.type === 'manual') return Boolean(data.customSelector);
-  return false;
-};
 
 const OPERATOR_KEYS = [
   { value: 'present', labelKey: 'conditions.types.element.operators.present' },

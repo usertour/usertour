@@ -199,7 +199,7 @@ export class UsertourElementWatcher extends Evented {
     if (!this.viewportCheck) {
       return { isHidden: false, isTimeout: false };
     }
-    const isInView = await isVisible(this.element as HTMLElement);
+    const isInView = await isVisible(this.element);
     return { isHidden: !isInView, isTimeout: false };
   }
 
