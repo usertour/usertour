@@ -44,6 +44,8 @@ View details in [Self-hosting](https://docs.usertour.io/open-source/self-hosting
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/usertour-1?referralCode=npdaK5&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
+[![Deploy to ZopDay](https://zop.dev/deploytozopday-inkhard.svg)](https://zop.dev/zopday/app/deploy?image=usertour/usertour:latest&port=80&name=usertour&utm_source=github&utm_medium=one_click&utm_content=usertour)
+
 ### Local Development
 View details in [CONTRIBUTING](./CONTRIBUTING.md).
 
