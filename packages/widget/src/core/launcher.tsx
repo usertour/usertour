@@ -29,6 +29,12 @@ import { useWidgetLocale } from '../locale/context';
 import { hiddenStyle } from './utils/content';
 import { WidgetClass } from './class-names';
 
+function isNotNull<T>(value: T | null): value is T {
+  return value !== null;
+}
+
+type Boundary = Element | null;
+
 /**
  * Convert icon name to display text
  * e.g., 'home-line' -> 'Home Line', 'chat1-fill' -> 'Chat1 Fill'
@@ -77,6 +83,7 @@ interface LauncherContentProps {
   align?: Align;
   alignOffset?: number;
   avoidCollisions?: boolean;
+  collisionBoundary?: Boundary | Boundary[];
   collisionPadding?: number | Partial<Record<Side, number>>;
   sticky?: 'partial' | 'always';
   hideWhenDetached?: boolean;
@@ -275,6 +282,7 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
     align = 'center',
     alignOffset = 0,
     avoidCollisions = true,
+    collisionBoundary = [],
     collisionPadding: collisionPaddingProp = 0,
     sticky = 'partial',
     hideWhenDetached = false,
@@ -305,10 +313,14 @@ const LauncherContent = forwardRef<HTMLDivElement, LauncherContentProps>((props,
       ? collisionPaddingProp
       : { top: 0, right: 0, bottom: 0, left: 0, ...collisionPaddingProp };
 
+  const boundary = Array.isArray(collisionBoundary) ? collisionBoundary : [collisionBoundary];
+  const hasExplicitBoundaries = boundary.length > 0;
+
   const detectOverflowOptions = {
     padding: collisionPadding,
-    // Collide with the viewport only, not the floating element's clipping ancestors.
-    boundary: [] as Element[],
+    boundary: boundary.filter(isNotNull),
+    // with `strategy: 'fixed'`, this is the only way to get it to respect boundaries
+    altBoundary: hasExplicitBoundaries,
   };
 
   const { refs, floatingStyles, isPositioned, middlewareData } = useFloating({
