@@ -774,6 +774,25 @@ test.describe('the tooltip target', () => {
     });
   }
 
+  test('an SVG target pinned to its text gets the tooltip', async ({ sdk, protocol }) => {
+    await start(sdk);
+    await sdk.page.evaluate(() => {
+      document.body.insertAdjacentHTML(
+        'afterbegin',
+        '<svg width="120" height="40"><text id="chart-label" x="10" y="25">Revenue</text></svg>',
+      );
+    });
+    const session = structuredClone(twoStepFlow('session-2', 'flow-2'));
+    session.version.steps[1].target = {
+      type: 'manual',
+      customSelector: '#chart-label',
+      content: 'Revenue',
+    };
+    await protocol.push('SetFlowSession', session);
+    await protocol.push('ForceGoToStep', { sessionId: 'session-2', stepId: 'flow-2-step-2' });
+    await expect(sdk.frame().getByText(STEP_TEXT)).toBeVisible();
+  });
+
   test('a target that appears after the step opens gets the tooltip', async ({ sdk, protocol }) => {
     await start(sdk);
     await showTooltip(protocol, '#late');

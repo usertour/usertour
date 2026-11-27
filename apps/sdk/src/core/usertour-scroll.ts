@@ -37,7 +37,8 @@ const parentOf = (node: Element): Element | null =>
 
 /** How much a CSS transform has scaled an element, on each axis. */
 const scaleOf = (node: Element, rect: DOMRect) => {
-  const { offsetWidth, offsetHeight } = node as HTMLElement;
+  // An SVG or MathML element has no offset size and is taken as unscaled.
+  const { offsetWidth = 0, offsetHeight = 0 } = node as Partial<HTMLElement>;
   return {
     x: offsetWidth > 0 && rect.width > 0 ? rect.width / offsetWidth : 1,
     y: offsetHeight > 0 && rect.height > 0 ? rect.height / offsetHeight : 1,

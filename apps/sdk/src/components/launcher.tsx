@@ -37,7 +37,7 @@ type LauncherWidgetProps = {
 type LauncherWidgetCoreProps = {
   data: LauncherData;
   handleActions: (actions: RulesCondition[]) => void;
-  el: HTMLElement;
+  el: Element;
   themeSettings: ThemeTypesSetting;
   zIndex: number;
   handleOnClick: ({ type, data }: ContentEditorClickableElement) => Promise<void>;
@@ -67,9 +67,9 @@ const TOOLTIP_CLOSE_GRACE_MS = 100;
  */
 const isPointerOnTooltipOrTrigger = (
   data: LauncherData,
-  popper: HTMLElement | null,
-  launcher: HTMLElement | null,
-  target: HTMLElement | null,
+  popper: Element | null,
+  launcher: Element | null,
+  target: Element | null,
 ) => {
   const triggerElement = getEffectiveTriggerElement(data);
   return [
@@ -87,7 +87,7 @@ const useLauncherHandlers = (
   handleActions: (actions: RulesCondition[]) => void,
   popperRef: React.RefObject<HTMLDivElement>,
   launcherRef: React.RefObject<HTMLDivElement>,
-  triggerRef: React.RefObject<HTMLElement>,
+  triggerRef: React.RefObject<Element>,
 ): LauncherHandlers => {
   return useMemo(
     () => ({
@@ -159,7 +159,7 @@ const useClickOutside = (
 const usePopperMouseLeave = (
   popperRef: React.RefObject<HTMLDivElement>,
   launcherRef: React.RefObject<HTMLDivElement>,
-  triggerRef: React.RefObject<HTMLElement>,
+  triggerRef: React.RefObject<Element>,
   data: LauncherData,
   open: boolean,
   setOpen: (open: boolean) => void,
@@ -287,9 +287,9 @@ const LauncherWidgetCore = ({
   const prevOpenRef = useRef(open);
 
   const triggerRef = useMemo(() => {
-    const ref = { current: null as HTMLElement | null };
+    const ref = { current: null as Element | null };
     if (isElement(el)) {
-      ref.current = el as HTMLElement;
+      ref.current = el;
     }
     return ref;
   }, [el]);
