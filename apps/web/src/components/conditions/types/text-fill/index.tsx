@@ -1,7 +1,10 @@
 import { TextFillIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { FORM_CONTROL_PICK_TARGETS } from '@/components/element-picker';
-import { ConditionElementSelector } from '../../primitives/condition-element-selector';
+import {
+  ConditionElementSelector,
+  DEFAULT_ELEMENT_DATA,
+} from '../../primitives/condition-element-selector';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextFill } from '../../validators';
 import { useTranslation } from 'react-i18next';
@@ -10,13 +13,6 @@ import { summaryTextClass } from '@/components/rules';
 export interface TextFillData {
   elementData?: ElementSelectorPropsData;
 }
-
-const DEFAULT_ELEMENT_DATA: ElementSelectorPropsData = {
-  type: 'manual',
-  precision: 'strict',
-  isDynamicContent: false,
-  sequence: '1st',
-};
 
 const readData = (condition: RulesCondition): TextFillData =>
   (condition.data as TextFillData | undefined) ?? {};

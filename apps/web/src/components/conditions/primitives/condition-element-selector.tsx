@@ -6,6 +6,13 @@ import type { PickElementResult } from '@/components/element-picker';
 import { PickElementButton } from '@/components/element-picker';
 import { useTranslation } from 'react-i18next';
 
+export const DEFAULT_ELEMENT_DATA: ElementSelectorPropsData = {
+  type: 'manual',
+  precision: 'strict',
+  isDynamicContent: false,
+  sequence: '1st',
+};
+
 export interface ConditionElementSelectorProps {
   data: ElementSelectorPropsData;
   onDataChange: (data: ElementSelectorPropsData) => void;

@@ -2,7 +2,10 @@ import { TextInputIcon } from '@usertour/icons';
 import type { ElementSelectorPropsData, RulesCondition } from '@usertour/types';
 import { useMemo } from 'react';
 import { FORM_CONTROL_PICK_TARGETS } from '@/components/element-picker';
-import { ConditionElementSelector } from '../../primitives/condition-element-selector';
+import {
+  ConditionElementSelector,
+  DEFAULT_ELEMENT_DATA,
+} from '../../primitives/condition-element-selector';
 import { OperatorSelect } from '../../primitives/operator-select';
 import type { ConditionTypeSchema } from '../../schema-types';
 import { validateTextInput } from '../../validators';
@@ -15,13 +18,6 @@ export interface TextInputData {
   logic?: string;
   value?: string;
 }
-
-const DEFAULT_ELEMENT_DATA: ElementSelectorPropsData = {
-  type: 'manual',
-  precision: 'strict',
-  isDynamicContent: false,
-  sequence: '1st',
-};
 
 const VALUELESS_OPERATORS = new Set(['any', 'empty']);
 
