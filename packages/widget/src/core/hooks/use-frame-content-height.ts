@@ -9,6 +9,18 @@ import { useFrame } from '@usertour/frame';
 export const useFrameContentHeight = (height: number | undefined) => {
   const { setStyle, document: frameDocument, window: frameWindow } = useFrame();
 
+  // Lay the content out at the frame's full width, scrollbar or not: a
+  // scrollbar that takes width (Windows, Linux, macOS with a mouse) would
+  // otherwise narrow it, and content whose height follows its width (an image
+  // at a percentage width, wrapped text) would get shorter, fit, drop the
+  // scrollbar, widen and overflow again — the scrollbar flickering on and off
+  // for good. The scrollbar sits over the panel's padding instead.
+  useEffect(() => {
+    const root = frameDocument.documentElement;
+    root.style.width = '100vw';
+    root.style.overflowX = 'hidden';
+  }, [frameDocument]);
+
   useEffect(() => {
     if (height === undefined) {
       return;
